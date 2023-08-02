@@ -6,6 +6,7 @@ export interface SettingsContextType {
   apiKey: Parameters<(typeof APIManager)["configure"]>[0]["apiKey"];
   theme?: ThemeWrapperTheme;
   connectKitForceTheme?: "lightMode" | "darkMode";
+  ledgerLive?: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

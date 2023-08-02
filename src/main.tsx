@@ -7,5 +7,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <SKApp
     apiKey={config.apiKey}
     theme={{ darkMode: darkTheme, lightMode: lightTheme }}
+    ledgerLive={true}
   />
 );
