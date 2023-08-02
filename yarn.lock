@@ -3379,12 +3379,128 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ledgerhq/devices@npm:^8.0.5":
+  version: 8.0.5
+  resolution: "@ledgerhq/devices@npm:8.0.5"
+  dependencies:
+    "@ledgerhq/errors": ^6.13.0
+    "@ledgerhq/logs": ^6.10.1
+    rxjs: 6
+    semver: ^7.3.5
+  checksum: c10784e89fdc252ea60a48dc07cbe279922fb6b2ae95a686dc50445b5494b5ee1db02eecf4abaf321812702992874d3abcd3c555db2bcb93c8e8bc3c9947c2dd
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/errors@npm:^6.12.6, @ledgerhq/errors@npm:^6.13.0":
+  version: 6.13.0
+  resolution: "@ledgerhq/errors@npm:6.13.0"
+  checksum: 47f3942715ab7eb93e183276b22b3b1e16cfa2543986be8f327eacc233f9e3dcc73fc645c96cb3d004db34b7a35d079c1767b41b90ba49f1f08d6bc004c2c3ad
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/hw-transport-http@npm:^6.27.15":
+  version: 6.28.1
+  resolution: "@ledgerhq/hw-transport-http@npm:6.28.1"
+  dependencies:
+    "@ledgerhq/errors": ^6.13.0
+    "@ledgerhq/hw-transport": ^6.28.6
+    "@ledgerhq/logs": ^6.10.1
+    axios: ^0.26.1
+    ws: ^7.5.2
+  checksum: cd741baefd12c64390cc04154b4392c5c7fb9718ad65380582402b62d0943454dcd7025e3371d3112c301176547526daf97c1e888d21ce26edda488d8815656f
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/hw-transport@npm:^6.28.4, @ledgerhq/hw-transport@npm:^6.28.6":
+  version: 6.28.6
+  resolution: "@ledgerhq/hw-transport@npm:6.28.6"
+  dependencies:
+    "@ledgerhq/devices": ^8.0.5
+    "@ledgerhq/errors": ^6.13.0
+    events: ^3.3.0
+  checksum: 835e3de33be404276d4951fb0ba4d085a46a6f39bb5261324885378ccee2dd75742888f9b00fd6129e26d439c82a9ef5010e292181a1b8199370de7abc481c01
+  languageName: node
+  linkType: hard
+
 "@ledgerhq/iframe-provider@npm:^0.4.3":
   version: 0.4.3
   resolution: "@ledgerhq/iframe-provider@npm:0.4.3"
   dependencies:
     eventemitter3: ^4.0.0
   checksum: 7dd6cd241c532993c9d37e788ce8b756580d277624fffec220372d6693366527206743985b14e66fe14bc1d843dbf17ef084ea4725501fa408e91bed66ff80f2
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/logs@npm:^6.10.1":
+  version: 6.10.1
+  resolution: "@ledgerhq/logs@npm:6.10.1"
+  checksum: 4dde46557d9daa6028f7040d26585aaa7260445212ad8348ae4a01463b7d76a1592dfc36921e47f5fc477c50b5d73e840070ac167e3cbe5b45123f36a4f96b08
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/wallet-api-client-react@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@ledgerhq/wallet-api-client-react@npm:1.0.1"
+  dependencies:
+    "@ledgerhq/wallet-api-client": 1.0.1
+  peerDependencies:
+    react: ^16.8.0 || ^17 || ^18
+  checksum: 478b6885186b6171c4df4162b218dc1b8b41c623ccab712e0b82395550b6748b60b8d176d2c4848aea753f98194165364aa879d3f0a5a81d6dfffa6acd1a8eea
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/wallet-api-client@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@ledgerhq/wallet-api-client@npm:1.0.1"
+  dependencies:
+    "@ledgerhq/hw-transport": ^6.28.4
+    "@ledgerhq/wallet-api-core": 1.0.1
+    bignumber.js: ^9.1.1
+  checksum: 70e480616a063ad2a3b80a64699456546322e1b1b458fed4acab0526f3574d199954c07b7edd35344cdb8d9c34a4efd3e3b9b13f6a39f8901bc79ab85a85f3f7
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/wallet-api-core@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@ledgerhq/wallet-api-core@npm:1.0.1"
+  dependencies:
+    "@ledgerhq/errors": ^6.12.6
+    bignumber.js: ^9.1.1
+    uuid: ^9.0.0
+    zod: ^3.21.4
+  checksum: 4ff7c9f4845fd21ea2259434577de69783091b9b08420a744b73cbe62bf72cb7c7ef89140c35f86d7509dc1ed6276d1cb953bc157394ad5979566da4ddebeaf6
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/wallet-api-server@npm:1.0.1":
+  version: 1.0.1
+  resolution: "@ledgerhq/wallet-api-server@npm:1.0.1"
+  dependencies:
+    "@ledgerhq/wallet-api-core": 1.0.1
+    bignumber.js: ^9.1.1
+    picomatch: ^2.3.1
+  peerDependencies:
+    react: ^17.x || ^18.x
+    rxjs: ^7.x
+  peerDependenciesMeta:
+    react:
+      optional: true
+  checksum: 701c23399e33dab91c965e1306ca26d8a65f70f14969dd26bf9180aca8fefc9d7001301619e7445417a356f1f7f12dc2e267b36c4710791ff67a97dbd7991ff5
+  languageName: node
+  linkType: hard
+
+"@ledgerhq/wallet-api-simulator@npm:^1.0.1":
+  version: 1.0.1
+  resolution: "@ledgerhq/wallet-api-simulator@npm:1.0.1"
+  dependencies:
+    "@ledgerhq/hw-transport": ^6.28.4
+    "@ledgerhq/hw-transport-http": ^6.27.15
+    "@ledgerhq/wallet-api-client": 1.0.1
+    "@ledgerhq/wallet-api-core": 1.0.1
+    "@ledgerhq/wallet-api-server": 1.0.1
+    rxjs: ^7.8.1
+    ws: ^8.13.0
+  checksum: bf60853678d8b3e0fd78d9a1c409800849ff3a3747016eace71653354e35f8908593a5f150810d8c4e273502c0a5592ac0ae2842188301fdffafcf90ae6e228d
   languageName: node
   linkType: hard
 
@@ -4394,6 +4510,8 @@ __metadata:
     "@cosmos-kit/react-lite": 1.5.3
     "@cosmos-kit/walletconnect": 0.3.19
     "@ledgerhq/iframe-provider": ^0.4.3
+    "@ledgerhq/wallet-api-client-react": ^1.0.1
+    "@ledgerhq/wallet-api-simulator": ^1.0.1
     "@radix-ui/react-alert-dialog": ^1.0.4
     "@rainbow-me/rainbowkit": ^1.0.7
     "@stakekit/api-hooks": ^0.0.21
@@ -4446,7 +4564,6 @@ __metadata:
     reselect: ^4.1.8
     stream-browserify: ^3.0.0
     tsx: ^3.12.7
-    turbo: ^1.8.3
     typescript: ^5.1.6
     viem: ^1.4.1
     vite: ^4.4.7
@@ -6650,6 +6767,15 @@ __metadata:
   dependencies:
     follow-redirects: ^1.14.0
   checksum: 44245f24ac971e7458f3120c92f9d66d1fc695e8b97019139de5b0cc65d9b8104647db01e5f46917728edfc0cfd88eb30fc4c55e6053eef4ace76768ce95ff3c
+  languageName: node
+  linkType: hard
+
+"axios@npm:^0.26.1":
+  version: 0.26.1
+  resolution: "axios@npm:0.26.1"
+  dependencies:
+    follow-redirects: ^1.14.8
+  checksum: d9eb58ff4bc0b36a04783fc9ff760e9245c829a5a1052ee7ca6013410d427036b1d10d04e7380c02f3508c5eaf3485b1ae67bd2adbfec3683704745c8d7a6e1a
   languageName: node
   linkType: hard
 
@@ -9217,7 +9343,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.10.0, follow-redirects@npm:^1.14.0, follow-redirects@npm:^1.14.9, follow-redirects@npm:^1.15.0":
+"follow-redirects@npm:^1.10.0, follow-redirects@npm:^1.14.0, follow-redirects@npm:^1.14.8, follow-redirects@npm:^1.14.9, follow-redirects@npm:^1.15.0":
   version: 1.15.2
   resolution: "follow-redirects@npm:1.15.2"
   peerDependenciesMeta:
@@ -12913,7 +13039,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^6.6.3":
+"rxjs@npm:6, rxjs@npm:^6.6.3":
   version: 6.6.7
   resolution: "rxjs@npm:6.6.7"
   dependencies:
@@ -12922,7 +13048,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rxjs@npm:^7.5.5":
+"rxjs@npm:^7.5.5, rxjs@npm:^7.8.1":
   version: 7.8.1
   resolution: "rxjs@npm:7.8.1"
   dependencies:
@@ -13858,77 +13984,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"turbo-darwin-64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-darwin-64@npm:1.10.12"
-  conditions: os=darwin & cpu=x64
-  languageName: node
-  linkType: hard
-
-"turbo-darwin-arm64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-darwin-arm64@npm:1.10.12"
-  conditions: os=darwin & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"turbo-linux-64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-linux-64@npm:1.10.12"
-  conditions: os=linux & cpu=x64
-  languageName: node
-  linkType: hard
-
-"turbo-linux-arm64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-linux-arm64@npm:1.10.12"
-  conditions: os=linux & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"turbo-windows-64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-windows-64@npm:1.10.12"
-  conditions: os=win32 & cpu=x64
-  languageName: node
-  linkType: hard
-
-"turbo-windows-arm64@npm:1.10.12":
-  version: 1.10.12
-  resolution: "turbo-windows-arm64@npm:1.10.12"
-  conditions: os=win32 & cpu=arm64
-  languageName: node
-  linkType: hard
-
-"turbo@npm:^1.8.3":
-  version: 1.10.12
-  resolution: "turbo@npm:1.10.12"
-  dependencies:
-    turbo-darwin-64: 1.10.12
-    turbo-darwin-arm64: 1.10.12
-    turbo-linux-64: 1.10.12
-    turbo-linux-arm64: 1.10.12
-    turbo-windows-64: 1.10.12
-    turbo-windows-arm64: 1.10.12
-  dependenciesMeta:
-    turbo-darwin-64:
-      optional: true
-    turbo-darwin-arm64:
-      optional: true
-    turbo-linux-64:
-      optional: true
-    turbo-linux-arm64:
-      optional: true
-    turbo-windows-64:
-      optional: true
-    turbo-windows-arm64:
-      optional: true
-  bin:
-    turbo: bin/turbo
-  checksum: 266b70404e149b92cd64051fcdd03c56b474ed22f6bd11cf4cf1b70f55c72f9a2aaa90109b19b95e43d68e53a6be54485f0cc0135c8d5b505db09fd126a34052
-  languageName: node
-  linkType: hard
-
 "type-check@npm:^0.4.0, type-check@npm:~0.4.0":
   version: 0.4.0
   resolution: "type-check@npm:0.4.0"
@@ -14298,6 +14353,15 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 5575a8a75c13120e2f10e6ddc801b2c7ed7d8f3c8ac22c7ed0c7b2ba6383ec0abda88c905085d630e251719e0777045ae3236f04c812184b7c765f63a70e58df
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "uuid@npm:9.0.0"
+  bin:
+    uuid: dist/bin/uuid
+  checksum: 8dd2c83c43ddc7e1c71e36b60aea40030a6505139af6bee0f382ebcd1a56f6cd3028f7f06ffb07f8cf6ced320b76aea275284b224b002b289f89fe89c389b028
   languageName: node
   linkType: hard
 
@@ -14883,7 +14947,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:^7, ws@npm:^7.4.0, ws@npm:^7.4.5, ws@npm:^7.5.1":
+"ws@npm:^7, ws@npm:^7.4.0, ws@npm:^7.4.5, ws@npm:^7.5.1, ws@npm:^7.5.2":
   version: 7.5.9
   resolution: "ws@npm:7.5.9"
   peerDependencies:
@@ -15055,6 +15119,13 @@ __metadata:
   version: 1.0.0
   resolution: "yocto-queue@npm:1.0.0"
   checksum: 2cac84540f65c64ccc1683c267edce396b26b1e931aa429660aefac8fbe0188167b7aee815a3c22fa59a28a58d898d1a2b1825048f834d8d629f4c2a5d443801
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.21.4":
+  version: 3.21.4
+  resolution: "zod@npm:3.21.4"
+  checksum: f185ba87342ff16f7a06686767c2b2a7af41110c7edf7c1974095d8db7a73792696bcb4a00853de0d2edeb34a5b2ea6a55871bc864227dace682a0a28de33e1f
   languageName: node
   linkType: hard
 

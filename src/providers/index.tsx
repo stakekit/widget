@@ -10,6 +10,7 @@ import { CosmosProvider } from "./cosmos/provider";
 import { ThemeWrapper } from "./theme-wrapper";
 import { useSettings } from "./settings";
 import { LocationTransitionProvider } from "./location-transition";
+import TransportProvider from "./ledger-wallet-api/TransportProvider";
 
 export const Providers = ({ children }: PropsWithChildren) => {
   const { apiKey } = useSettings();
@@ -33,21 +34,23 @@ export const Providers = ({ children }: PropsWithChildren) => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <StakeKitQueryProvider>
-          <CosmosProvider>
-            <EVMProvider>
-              <MemoryRouter>
-                <AppStateProvider>
-                  <DerivedAppStateProvider>
-                    <ThemeWrapper>
-                      <LocationTransitionProvider>
-                        {children}
-                      </LocationTransitionProvider>
-                    </ThemeWrapper>
-                  </DerivedAppStateProvider>
-                </AppStateProvider>
-              </MemoryRouter>
-            </EVMProvider>
-          </CosmosProvider>
+          <TransportProvider>
+            <CosmosProvider>
+              <EVMProvider>
+                <MemoryRouter>
+                  <AppStateProvider>
+                    <DerivedAppStateProvider>
+                      <ThemeWrapper>
+                        <LocationTransitionProvider>
+                          {children}
+                        </LocationTransitionProvider>
+                      </ThemeWrapper>
+                    </DerivedAppStateProvider>
+                  </AppStateProvider>
+                </MemoryRouter>
+              </EVMProvider>
+            </CosmosProvider>
+          </TransportProvider>
         </StakeKitQueryProvider>
       </QueryClientProvider>
     </StrictMode>

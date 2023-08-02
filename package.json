@@ -67,6 +67,8 @@
     "@cosmos-kit/react-lite": "1.5.3",
     "@cosmos-kit/walletconnect": "0.3.19",
     "@ledgerhq/iframe-provider": "^0.4.3",
+    "@ledgerhq/wallet-api-client-react": "^1.0.1",
+    "@ledgerhq/wallet-api-simulator": "^1.0.1",
     "@radix-ui/react-alert-dialog": "^1.0.4",
     "@rainbow-me/rainbowkit": "^1.0.7",
     "@stakekit/api-hooks": "^0.0.21",
