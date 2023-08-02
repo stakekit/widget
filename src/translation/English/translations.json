@@ -33,7 +33,7 @@
     "deposit_description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
     "yearn_description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
     "info_2": "You'll start earning right away",
-    "info_3": "Rewards will be automatically credited to your wallet every day",
+    "info_3": "Rewards will be automatically accrued according to the protocol payout schedules",
     "opportunity_search_title": "Select a yield",
     "validator_search_title": "Select validator",
     "reward_token": "Get {{symbol}} <highlight0>via {{providerName}}</highlight0>",

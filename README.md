@@ -2,13 +2,11 @@
 
 StakeKit Widget is a component that you can embed in your website with few lines of code. It allows your users to stake their crypto assets and earn rewards.
 
-
 StakeKit Widget is mainly built as a React component and can be easily added in your application by importing it. There is also an option to use fully bundled widget component which can be added in any javascript library. If your application is already using React, using it as a React component will reduce bundle size of your application. If not, there is option for fully bundled component.
 
 ## Development
 
 Create `.env.development.local` file and add variables from `.env.example`. For production builds, add `.env.production.local` file
-
 
 ## Installation
 
@@ -17,11 +15,15 @@ To install StakeKit Widget:
 ```bash
 npm install @stakekit/widget
 ```
+
 or
+
 ```bash
 yarn add @stakekit/widget
 ```
+
 or
+
 ```bash
 pnpm add @stakekit/widget
 ```
@@ -31,11 +33,15 @@ If you are going to use StakeKit Widget as a React component, you'll need to ins
 ```bash
 npm install wagmi viem
 ```
+
 or
+
 ```bash
 yarn add wagmi viem
 ```
+
 or
+
 ```bash
 pnpm add wagmi viem
 ```
@@ -66,15 +72,15 @@ After you get the API key, you can import styles and widget component:
 ## Bundled component usage
 
 ```ts
-  import "@stakekit/widget/bundle/css";
-  import { renderSKWidget, lightTheme } from "@stakekit/widget/bundle";
+import "@stakekit/widget/bundle/css";
+import { renderSKWidget, lightTheme } from "@stakekit/widget/bundle";
 
-  renderSKWidget({
-    container: document.getElementById("sk_widget_container")!,
-    apiKey: 'your-api-key',
-    theme: lightTheme,
-    connectKitForceTheme: false,
-  });
+renderSKWidget({
+  container: document.getElementById("sk_widget_container")!,
+  apiKey: "your-api-key",
+  theme: lightTheme,
+  connectKitForceTheme: false,
+});
 ```
 
 After this is done, you can start using the widget.
@@ -83,68 +89,67 @@ After this is done, you can start using the widget.
 
 You can customize look of widget by overriding `darkTheme` or `lightTheme`, or providing your own theme and passing it to StakeKit. If theme is not provided, widget will use default `lightTheme`.
 
-
 ```tsx
-  import "@stakekit/widget/package/css";
-  import { SKApp } from "@stakekit/widget";
+import "@stakekit/widget/package/css";
+import { SKApp } from "@stakekit/widget";
 
-  const App = () => {
-    return (
-      <SKApp
-        apiKey="your-api-key"
-        theme={{
-          lightMode: {
-            font: { body: '"IBM Plex Mono", monospace' },
-            color: {
-              primaryButtonBackground: "#8323fd",
-              primaryButtonActiveOutline: "#8323fd",
-              primaryButtonOutline: "#8323fd",
-            },
-            borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      theme={{
+        lightMode: {
+          font: { body: '"IBM Plex Mono", monospace' },
+          color: {
+            primaryButtonBackground: "#8323fd",
+            primaryButtonActiveOutline: "#8323fd",
+            primaryButtonOutline: "#8323fd",
           },
-        }}
-        connectKitForceTheme="lightMode"
-      />
-    )
-  }
+          borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
+        },
+      }}
+      connectKitForceTheme="lightMode"
+    />
+  );
+};
 ```
 
 ```tsx
-  import "@stakekit/widget/package/css";
-  import { SKApp, darkTheme } from "@stakekit/widget";
+import "@stakekit/widget/package/css";
+import { SKApp, darkTheme } from "@stakekit/widget";
 
-  const App = () => {
-    return (
-      <SKApp
-        apiKey="your-api-key"
-        theme={{
-          ...darkTheme,
-          borderRadius: { ...darkTheme.borderRadius, widgetBorderRadius: "10px" },
-        }}
-        connectKitForceTheme="darkMode"
-      />
-    )
-  }
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      theme={{
+        ...darkTheme,
+        borderRadius: { ...darkTheme.borderRadius, widgetBorderRadius: "10px" },
+      }}
+      connectKitForceTheme="darkMode"
+    />
+  );
+};
 ```
 
 You can also provide both themes, and widget will respect preference if a user has requested light or dark color themes
 
 ```tsx
-  import "@stakekit/widget/package/css";
-  import { SKApp, darkTheme, lightTheme } from "@stakekit/widget";
+import "@stakekit/widget/package/css";
+import { SKApp, darkTheme, lightTheme } from "@stakekit/widget";
 
-  const App = () => {
-    return (
-      <SKApp
-        apiKey="your-api-key"
-        theme={{
-          lightMode: lightTheme,
-          darkMode: darkTheme
-        }}
-        connectKitForceTheme="darkMode"
-      />
-    )
-  }
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      theme={{
+        lightMode: lightTheme,
+        darkMode: darkTheme,
+      }}
+      connectKitForceTheme="darkMode"
+    />
+  );
+};
 ```
 
 #### Theme properties:
@@ -374,49 +379,52 @@ You can also provide both themes, and widget will respect preference if a user h
 }
 ```
 
-
 ## React Native wallets usage
 
 To use StakeKit with your wallets managed provider, you can use utility hook to get prepared props and pass them to `WebView` component from `react-native-webview`. Using widget with injected provider skips connection step.
 
 First, install package:
 
-
 ```bash
-npm install @steakwallet/use-inject-provider
-```
-or
-```bash
-yarn add @steakwallet/use-inject-provider
-```
-or
-```bash
-pnpm add @steakwallet/use-inject-provider
+npm install @stakekit/use-inject-provider
 ```
 
-After that, pass wallets managed EIP-1193 provider and web-views ref to `useInjectProvider`, and you'll receive  `injectedJavaScript` and `onMessage` props that you need to pass to `WebView` component.
+or
+
+```bash
+yarn add @stakekit/use-inject-provider
+```
+
+or
+
+```bash
+pnpm add @stakekit/use-inject-provider
+```
+
+After that, pass wallets managed EIP-1193 provider and web-views ref to `useInjectProvider`, and you'll receive `injectedJavaScript` and `onMessage` props that you need to pass to `WebView` component.
 
 Example:
+
 ```tsx
-import React, { useRef } from 'react';
-import { StyleSheet } from 'react-native';
-import WebView from 'react-native-webview';
-import { useInjectProvider } from '@steakwallet/use-inject-provider';
+import React, { useRef } from "react";
+import { StyleSheet } from "react-native";
+import WebView from "react-native-webview";
+import { useInjectProvider } from "@stakekit/use-inject-provider";
 
 // Some EIP1193Provider thats managed by wallet
 class Provider {
   async request(args) {
     switch (args.method) {
-      case 'eth_accounts':
-      case 'eth_requestAccounts': {
+      case "eth_accounts":
+      case "eth_requestAccounts": {
         // get accounts from your wallet
         // ...
-        return ['0xe455036e2f3a26df7014b7dbf6cedbbf81433478']
+        return ["0xe455036e2f3a26df7014b7dbf6cedbbf81433478"];
       }
 
-      case 'eth_chainId': {
+      case "eth_chainId": {
         // get current chain id
-        return  '1';
+        return "1";
       }
 
       case "eth_sendTransaction": {
@@ -426,7 +434,7 @@ class Provider {
       }
 
       default:
-        throw new Error('unhandled method');
+        throw new Error("unhandled method");
     }
   }
 }
