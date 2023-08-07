@@ -54,7 +54,7 @@ export const cosmosChainsToWagmiChains = chains.map(
           http: c.apis?.rpc?.map((r) => r.address) ?? [""],
         },
       },
-    } as Chain)
+    }) as Chain
 );
 
 export class CosmosWagmiConnector extends Connector {

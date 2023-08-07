@@ -74,21 +74,15 @@ export const buttonStyle = recipe({
         },
       ],
       disabled: [
+        { transition: "none", transform: "none" },
         atoms({
           background: "disabledButtonBackground",
           color: "disabledButtonColor",
           borderColor: "disabledButtonOutline",
         }),
         {
-          ":hover": {
-            background: vars.color.disabledButtonHoverBackground,
-            color: vars.color.disabledButtonHoverColor,
-            borderColor: vars.color.disabledButtonHoverOutline,
-          },
           ":active": {
-            background: vars.color.disabledButtonActiveBackground,
-            color: vars.color.disabledButtonActiveColor,
-            borderColor: vars.color.disabledButtonActiveOutline,
+            transform: "none",
           },
         },
       ],

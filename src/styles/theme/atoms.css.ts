@@ -8,17 +8,20 @@ const unresponsiveAtomicProperties = defineProperties({
 });
 
 const responsiveAtomicProperties = defineProperties({
-  conditions: Object.keys(breakpoints).reduce((acc, key) => {
-    const k = key as Breakpoint;
+  conditions: Object.keys(breakpoints).reduce(
+    (acc, key) => {
+      const k = key as Breakpoint;
 
-    if (k === "mobile") {
-      acc[k] = {};
-    } else {
-      acc[k] = { "@media": minMediaQuery(k) };
-    }
+      if (k === "mobile") {
+        acc[k] = {};
+      } else {
+        acc[k] = { "@media": minMediaQuery(k) };
+      }
 
-    return acc;
-  }, {} as { [Key in Breakpoint]: {} | { "@media": string } }),
+      return acc;
+    },
+    {} as { [Key in Breakpoint]: {} | { "@media": string } }
+  ),
 
   defaultCondition: "mobile",
   properties: responsiveProperties,

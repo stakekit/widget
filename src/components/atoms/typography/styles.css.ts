@@ -8,20 +8,32 @@ export const heading = recipe({
 
   variants: {
     level: {
-      ...Object.keys(vars.heading).reduce((acc, key) => {
-        const K = key as Heading;
+      ...Object.keys(vars.heading).reduce(
+        (acc, key) => {
+          const K = key as Heading;
 
-        acc[K] = {
-          fontSize: vars.heading[K].mobile.fontSize,
-          "@media": {
-            [minMediaQuery("tablet")]: {
-              fontSize: vars.heading[K].tablet.fontSize,
+          acc[K] = {
+            fontSize: vars.heading[K].mobile.fontSize,
+            "@media": {
+              [minMediaQuery("tablet")]: {
+                fontSize: vars.heading[K].tablet.fontSize,
+              },
             },
-          },
-        };
+          };
 
-        return acc;
-      }, {} as Record<Heading, { fontSize: typeof vars.heading.h1.mobile.fontSize; "@media": Record<string, { fontSize: typeof vars.heading.h1.mobile.fontSize }> }>),
+          return acc;
+        },
+        {} as Record<
+          Heading,
+          {
+            fontSize: typeof vars.heading.h1.mobile.fontSize;
+            "@media": Record<
+              string,
+              { fontSize: typeof vars.heading.h1.mobile.fontSize }
+            >;
+          }
+        >
+      ),
     },
     weight: {
       normal: atoms({ fontWeight: "normal" }),
@@ -57,20 +69,32 @@ export const textStyles = recipe({
       danger: atoms({ color: "textDanger" }),
     },
     size: {
-      ...Object.keys(vars.text).reduce((acc, key) => {
-        const K = key as Text;
+      ...Object.keys(vars.text).reduce(
+        (acc, key) => {
+          const K = key as Text;
 
-        acc[K] = {
-          fontSize: vars.text[K].mobile.fontSize,
-          "@media": {
-            [minMediaQuery("tablet")]: {
-              fontSize: vars.text[K].tablet.fontSize,
+          acc[K] = {
+            fontSize: vars.text[K].mobile.fontSize,
+            "@media": {
+              [minMediaQuery("tablet")]: {
+                fontSize: vars.text[K].tablet.fontSize,
+              },
             },
-          },
-        };
+          };
 
-        return acc;
-      }, {} as Record<Text, { fontSize: typeof vars.text.small.mobile.fontSize; "@media": Record<string, { fontSize: typeof vars.text.small.mobile.fontSize }> }>),
+          return acc;
+        },
+        {} as Record<
+          Text,
+          {
+            fontSize: typeof vars.text.small.mobile.fontSize;
+            "@media": Record<
+              string,
+              { fontSize: typeof vars.text.small.mobile.fontSize }
+            >;
+          }
+        >
+      ),
     },
   },
 
