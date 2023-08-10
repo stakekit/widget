@@ -1,7 +1,5 @@
 import {
-  GasModeValueDto,
   StakeDto,
-  StakeRequestDto,
   ValidatorDto,
   YieldOpportunityDto,
 } from "@stakekit/api-hooks";
@@ -19,13 +17,7 @@ export type State = {
 };
 
 export type ExtraData = {
-  gasEstimateTotal: BigNumber;
-  availableAmount: BigNumber;
-  maxStakeAmount: BigNumber;
-  minStakeAmount: BigNumber;
   stakeSession: Maybe<StakeDto>;
-  gasModeValue: Maybe<GasModeValueDto>;
-  stakeRequestDto: Maybe<StakeRequestDto>;
   stakeEnterTxGas: Maybe<BigNumber>;
   actions: { onMaxClick: () => void };
 };

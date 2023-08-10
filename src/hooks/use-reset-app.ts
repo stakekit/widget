@@ -1,10 +1,10 @@
 import { APIManager } from "@stakekit/api-hooks";
 import { useCallback } from "react";
-import { useAppDispatch } from "../state";
 import { queryClient } from "../services/query-client";
+import { useStakeDispatch } from "../state/stake";
 
 export const useResetApp = () => {
-  const appDispatch = useAppDispatch();
+  const appDispatch = useStakeDispatch();
 
   return useCallback(() => {
     appDispatch({ type: "state/reset" });

@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import { Prices, TokenString } from "./types";
 import { EvmNetworks, Token } from "@stakekit/common";
 import {
-  GasModeValueDto,
   StakeDto,
   TransactionDto,
   TransactionStatusResponseDto,
@@ -47,45 +46,19 @@ export const getTokenPriceInUSD = ({
   return amountBN.times(price);
 };
 
-export const getGasEstimateTotal = ({
-  gasModeValue,
-}: {
-  gasModeValue: GasModeValueDto;
-}) => {
-  return new BigNumber(
-    gasModeValue.value ? toEther({ val: gasModeValue.value, decimals: 9 }) : 0
-  );
-};
-
-export const getMaxStakeAmount = ({
+export const getMaxAmount = ({
   availableAmount,
   gasEstimateTotal,
-  stakeIntegrationMaxLimit,
+  integrationMaxLimit,
 }: {
   availableAmount: BigNumber;
   gasEstimateTotal: BigNumber;
-  stakeIntegrationMaxLimit: BigNumber;
+  integrationMaxLimit: BigNumber;
 }) => {
   return BigNumber.max(
-    BigNumber.min(
-      stakeIntegrationMaxLimit,
-      availableAmount.minus(gasEstimateTotal)
-    ),
+    BigNumber.min(integrationMaxLimit, availableAmount.minus(gasEstimateTotal)),
     new BigNumber(0)
   );
-};
-
-export const toWei = (amount: string, decimals: number) => {
-  return new BigNumber(amount)
-    .times(new BigNumber(1).shiftedBy(decimals))
-    .toFixed(0);
-};
-
-export const toEther = ({ val, decimals }: { val: string; decimals: number }) =>
-  new BigNumber(val).dividedBy(10 ** decimals);
-
-export const etherToGwei = (amount: BigNumber) => {
-  return amount.times(10 ** 9);
 };
 
 export const getBaseToken = (token: Token) => {

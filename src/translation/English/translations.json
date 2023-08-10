@@ -13,6 +13,7 @@
     "cancel": "Cancel",
     "ok": "Ok",
     "something_went_wrong": "Something went wrong",
+    "not_enough_gas_token": "Not enough gas token",
     "retry": "Try Again",
     "unsupported_network": "Unsupported network"
   },

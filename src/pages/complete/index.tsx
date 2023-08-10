@@ -4,13 +4,13 @@ import { PageContainer } from "../components";
 import { CheckCircleIcon } from "../../components/atoms/icons/check-circle";
 import { useComplete } from "./use-complete";
 import { TokenIcon } from "../../components/atoms/token-icon";
-import { useAppState } from "../../state";
 import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
-import { useUnstakeOrClaimState } from "../../state/unstake";
 import { useMatch, useParams } from "react-router-dom";
 import { usePositionData } from "../../hooks/use-position-data";
 import BigNumber from "bignumber.js";
 import { formatTokenBalance } from "../../utils";
+import { useStakeState } from "../../state/stake";
+import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
 
 type Props = {
   token: TokenDto | null;
@@ -122,7 +122,7 @@ const CompletePage = ({ amount, metadata, network, token }: Props) => {
 };
 
 export const StakeCompletePage = () => {
-  const { stakeAmount, selectedStake } = useAppState();
+  const { stakeAmount, selectedStake } = useStakeState();
 
   const token = selectedStake.map((y) => y.token).extractNullable();
   const metadata = selectedStake.map((y) => y.metadata).extractNullable();

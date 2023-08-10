@@ -237,8 +237,6 @@ export const createCosmosConnector = ({
                     if (data) {
                       console.log("qrcode", data);
                       res(data);
-                    } else {
-                      rej();
                     }
                   },
                 },

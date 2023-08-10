@@ -29,10 +29,10 @@ import classNames from "classnames";
 import { PositionDetails } from "./pages/position-details";
 import { useLocationTransition } from "./providers/location-transition";
 import { UnstakeOrClaimReviewPage } from "./pages/unstake-or-claim-review";
-import { UnstakeOrClaimContextProvider } from "./state/unstake";
 import { StakeCheck } from "./pages/cheks/stake-check";
 import { UnstakeOrClaimCheck } from "./pages/cheks/unstake-or-claim-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
+import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
 
 const Widget = () => {
   useToggleTheme();

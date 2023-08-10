@@ -1,16 +1,26 @@
 import { useNavigate } from "react-router-dom";
-import { useDerivedAppState } from "../../state";
-import { useAppState } from "../../state/app-state";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
 import { useSelectedStakePrice } from "../../hooks";
 import { Maybe } from "purify-ts";
 import { formatTokenBalance } from "../../utils";
 import { useMemo } from "react";
 import { Token } from "@stakekit/common";
+import { useEstimatedRewards } from "../../hooks/use-estimated-rewards";
+import { useYieldType } from "../../hooks/use-yield-type";
+import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
+import { useStakeState } from "../../state/stake";
 
 export const useReview = () => {
-  const { stakeAmount, selectedStake, stakeEnterTxGas } = useAppState();
-  const { estimatedRewards, yieldType, rewardToken } = useDerivedAppState();
+  const { stakeAmount, selectedStake, stakeEnterTxGas, selectedValidator } =
+    useStakeState();
+
+  const rewardToken = useRewardTokenDetails(selectedStake);
+  const estimatedRewards = useEstimatedRewards({
+    selectedStake,
+    stakeAmount,
+    selectedValidator,
+  });
+  const yieldType = useYieldType(selectedStake);
 
   const tokenNetwork = selectedStake.mapOrDefault((y) => y.token.symbol, "");
   const amount = stakeAmount.mapOrDefault((a) => a.toString(), "");

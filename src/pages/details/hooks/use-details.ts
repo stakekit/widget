@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -8,21 +8,25 @@ import {
   YieldOpportunityDto,
   useStakeGetValidators,
 } from "@stakekit/api-hooks";
-import { NumberInputProps, SelectModalProps } from "../../components";
-import { getTokenPriceInUSD } from "../../domain";
-import { yieldTypesMap } from "../../domain/types";
-import { useSelectedStakePrice } from "../../hooks";
-import { useDerivedAppState } from "../../state";
-import { useAppDispatch, useAppState } from "../../state/app-state";
-import { formatTokenBalance } from "../../utils";
-import { useStakeEnterEnabledOpportunities } from "../../hooks/api/use-filtered-opportunities";
+import { NumberInputProps, SelectModalProps } from "../../../components";
+import { getTokenPriceInUSD } from "../../../domain";
+import { yieldTypesMap } from "../../../domain/types";
+import { useSelectedStakePrice } from "../../../hooks";
+import { formatTokenBalance } from "../../../utils";
+import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/use-filtered-opportunities";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
-import { SelectedStakeData } from "./types";
+import { SelectedStakeData } from "../types";
 import { Token } from "@stakekit/common";
-import { useSKWallet } from "../../hooks/use-sk-wallet";
-import { useMutation } from "@tanstack/react-query";
-import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
-import { useNetworkGas } from "../../hooks/api/use-network-gas";
+import { useSKWallet } from "../../../hooks/use-sk-wallet";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
+import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import { useTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
+import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
+import { useOnStakeEnter } from "./use-on-stake-enter";
+import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
+import { useStakeDispatch, useStakeState } from "../../../state/stake";
+import { NotEnoughGasTokenError } from "../../../api/check-gas-amount";
 
 export const useDetails = () => {
   const {
@@ -30,15 +34,8 @@ export const useDetails = () => {
     selectedStake,
     selectedValidator,
     stakeAmount,
-    availableAmount,
-    maxStakeAmount,
-    minStakeAmount,
-    stakeRequestDto,
-    gasModeValue,
-  } = useAppState();
-  const appDispatch = useAppDispatch();
-
-  const gasParameters = useNetworkGas(selectedStake);
+  } = useStakeState();
+  const appDispatch = useStakeDispatch();
 
   const selectedStakeId = selectedStake.mapOrDefault((y) => y.id, "");
 
@@ -46,8 +43,22 @@ export const useDetails = () => {
     query: { enabled: !!selectedStakeId },
   });
 
-  const { estimatedRewards, accountBalanceIsFetching, yieldType, rewardToken } =
-    useDerivedAppState();
+  const stakeTokenAvailableAmount = useTokenAvailableAmount({
+    tokenDto: selectedStake.map((ss) => ss.token),
+  });
+
+  const availableAmount = useMemo(
+    () => stakeTokenAvailableAmount.data ?? new BigNumber(0),
+    [stakeTokenAvailableAmount.data]
+  );
+
+  const yieldType = useYieldType(selectedStake);
+  const estimatedRewards = useEstimatedRewards({
+    selectedStake,
+    selectedValidator,
+    stakeAmount,
+  });
+  const rewardToken = useRewardTokenDetails(selectedStake);
 
   const opportunities = useStakeEnterEnabledOpportunities();
 
@@ -132,14 +143,16 @@ export const useDetails = () => {
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     appDispatch({ type: "stakeAmount/change", data: val });
 
-  const isOverLimit = stakeAmount.mapOrDefault(
-    (sa) =>
-      sa.isGreaterThan(availableAmount) || sa.isGreaterThan(maxStakeAmount),
-    false
-  );
+  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
+    type: "enter",
+    yieldOpportunity: selectedStake,
+  });
 
-  const isBellowLimit = stakeAmount.mapOrDefault(
-    (sa) => sa.isLessThan(minStakeAmount),
+  const amountValid = stakeAmount.mapOrDefault(
+    (sa) =>
+      sa.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+      sa.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+      sa.isLessThanOrEqualTo(availableAmount),
     false
   );
 
@@ -147,43 +160,26 @@ export const useDetails = () => {
 
   const { isConnected } = useSKWallet();
 
-  const buttonText = isConnected
-    ? t("shared.review")
-    : t("init.connect_wallet");
+  const onStakeEnter = useOnStakeEnter();
+  const stakeRequestDto = useStakeEnterRequestDto();
 
-  const onStakeEnter = useMutation(async () => {
-    const result = await EitherAsync.liftEither(
-      stakeRequestDto.toEither(new Error("Stake request not ready"))
-    ).chain((val) =>
-      EitherAsync(() =>
-        stakeEnterAndTxsConstruct.mutateAsync({
-          stakeRequestDto: val,
-          gasModeValue: gasModeValue.extract(),
-        })
-      ).mapLeft(() => new Error("Stake enter and txs construct failed"))
-    );
+  const isError = onStakeEnter.isError || opportunities.isError;
 
-    return result.caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (v) => Promise.resolve(v),
-    });
-  });
-
-  const isError =
-    onStakeEnter.isError || opportunities.isError || onStakeEnter.isError;
+  const errorMessage =
+    onStakeEnter.error instanceof NotEnoughGasTokenError
+      ? t("shared.not_enough_gas_token")
+      : t("shared.something_went_wrong");
 
   const { openConnectModal } = useConnectModal();
 
   const navigate = useNavigate();
-
-  const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
   const onClick = () => {
     if (buttonDisabled) return;
 
     if (!isConnected) return openConnectModal?.();
 
-    onStakeEnter.mutateAsync().then(() => navigate("/review"));
+    onStakeEnter.mutateAsync(stakeRequestDto).then(() => navigate("/review"));
   };
 
   const selectedStakeYieldType = selectedStake
@@ -236,19 +232,17 @@ export const useDetails = () => {
 
   const isFetching =
     opportunities.isFetching ||
-    accountBalanceIsFetching ||
+    stakeTokenAvailableAmount.isFetching ||
     pricesState.isFetching ||
-    onStakeEnter.isLoading ||
     stakeValidators.isInitialLoading;
 
   const buttonDisabled =
     isConnected &&
     (isFetching ||
-      isOverLimit ||
-      isBellowLimit ||
+      stakeRequestDto.isNothing() ||
+      !amountValid ||
       stakeAmount.isNothing() ||
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
-      gasParameters.isLoading ||
       onStakeEnter.isLoading ||
       stakeValidators.isInitialLoading);
 
@@ -265,9 +259,7 @@ export const useDetails = () => {
     onMaxClick,
     stakeAmount,
     isFetching,
-    accountBalanceIsFetching,
-    isOverLimit,
-    isBellowLimit,
+    amountValid,
     buttonDisabled,
     onClick,
     footerItems,
@@ -276,10 +268,12 @@ export const useDetails = () => {
     onValidatorSelect,
     selectedValidator,
     isError,
-    buttonText,
+    errorMessage,
     rewardToken,
     onSelectOpportunityClose,
     onStakeEnterIsLoading: onStakeEnter.isLoading,
     selectedStakeYieldType,
+    tokenAvailableAmountIsFetching: stakeTokenAvailableAmount.isFetching,
+    isConnected,
   };
 };

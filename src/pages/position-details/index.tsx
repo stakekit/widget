@@ -9,7 +9,7 @@ import {
 } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { PageContainer } from "../components";
-import { usePositionDetails } from "./use-position-details";
+import { usePositionDetails } from "./hooks/use-position-details";
 import { Image } from "../../components/atoms/image";
 import { ImageFallback } from "../../components/atoms/image-fallback";
 import { Trans, useTranslation } from "react-i18next";

@@ -7,11 +7,11 @@ import { Token } from "@stakekit/common";
 import { tokenToTokenDto } from "../../utils/mappers";
 import { Maybe } from "purify-ts";
 import { formatTokenBalance } from "../../utils";
-import { useUnstakeOrClaimState } from "../../state/unstake";
 import { usePositionData } from "../../hooks/use-position-data";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
+import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
 
 export const useUnstakeOrClaimReview = () => {
   const integrationId = useParams<{ integrationId: string }>().integrationId!;
