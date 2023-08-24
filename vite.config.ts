@@ -12,11 +12,6 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, "tests/utils/setup.ts")],
   },
   plugins: [react(), vanillaExtractPlugin()],
-  resolve: {
-    alias: {
-      crypto: "crypto-js",
-    },
-  },
   optimizeDeps: { include: ["@stakekit/common"] },
   build: {
     outDir: "dist/website",
