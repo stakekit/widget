@@ -5,7 +5,7 @@ import {
   cosmosWagmiChains,
   connector as cosmosConnector,
 } from "../cosmos/config";
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
 
 export const { chains, publicClient, webSocketPublicClient } = configureChains(

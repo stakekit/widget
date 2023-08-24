@@ -1,5 +1,5 @@
 import "./polyfills";
-import "@rainbow-me/rainbowkit/styles.css";
+import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
 import ReactDOM from "react-dom/client";

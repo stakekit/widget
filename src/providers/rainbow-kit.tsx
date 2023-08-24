@@ -4,7 +4,7 @@ import {
   Theme,
   RainbowKitProvider,
   Chain as RainbowKitChain,
-} from "@rainbow-me/rainbowkit";
+} from "@stakekit/rainbowkit";
 import merge from "lodash.merge";
 import { PropsWithChildren } from "react";
 import { id, vars } from "../styles";

@@ -6,7 +6,7 @@ import { Address, Connector } from "wagmi";
 import { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
 import { EthereumProvider } from "eip1193-provider";
 import { createWalletClient, custom } from "viem";
-import { Wallet } from "@rainbow-me/rainbowkit";
+import { Wallet } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { cosmosChainsMap } from "./chains";

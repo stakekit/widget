@@ -1,4 +1,4 @@
-import { Chain } from "@rainbow-me/rainbowkit";
+import { Chain } from "@stakekit/rainbowkit";
 import { CosmosNetworks, EvmNetworks } from "@stakekit/common";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 

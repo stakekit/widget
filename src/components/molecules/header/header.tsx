@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CaretDownIcon, CaretLeftIcon, XIcon } from "../../atoms/icons";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../hooks";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "@stakekit/rainbowkit";
 import {
   container,
   parentButton,

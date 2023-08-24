@@ -4,7 +4,7 @@ import {
   omniWallet,
   rainbowWallet,
   walletConnectWallet,
-} from "@rainbow-me/rainbowkit/wallets";
+} from "@stakekit/rainbowkit/wallets";
 import {
   mainnet,
   arbitrum,

@@ -191,7 +191,6 @@ dist
 # https://yarnpkg.com/getting-started/qa/\#which-files-should-be-gitignored
 .pnp.*
 .yarn/*
-!.yarn/cache/@rainbow-me-rainbowkit-*.zip
 !.yarn/patches
 !.yarn/plugins
 !.yarn/releases

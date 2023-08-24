@@ -10,7 +10,7 @@ import { yieldTypesMap } from "../../../domain/types";
 import { useSelectedStakePrice } from "../../../hooks";
 import { formatTokenBalance } from "../../../utils";
 import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/use-filtered-opportunities";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useConnectModal } from "@stakekit/rainbowkit";
 import { SelectedStakeData } from "../types";
 import { Token } from "@stakekit/common";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";

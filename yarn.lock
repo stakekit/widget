@@ -6342,25 +6342,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rainbow-me/rainbowkit@https://github.com/petar-omni/rainbowkit#commit=3f0b04b87ddf07b573747fdf7bdaafbb612faaba&workspace=@rainbow-me/rainbowkit":
-  version: 1.0.9
-  resolution: "@rainbow-me/rainbowkit@https://github.com/petar-omni/rainbowkit.git#workspace=%40rainbow-me%2Frainbowkit&commit=3f0b04b87ddf07b573747fdf7bdaafbb612faaba"
-  dependencies:
-    "@vanilla-extract/css": 1.9.1
-    "@vanilla-extract/dynamic": 2.0.2
-    "@vanilla-extract/sprinkles": 1.5.0
-    clsx: 1.1.1
-    qrcode: 1.5.0
-    react-remove-scroll: 2.5.4
-  peerDependencies:
-    react: ">=17"
-    react-dom: ">=17"
-    viem: ~0.3.19 || ^1.0.0
-    wagmi: ~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0
-  checksum: 0a0f6293e8a4e8bb31d776bc6a335d24bfe060b36f304de9be4fa6c0250bd49c55cc30e800ecc2adbf2fbe2efe9b4d17307b7e4d3d2bcdf98584175b22233549
-  languageName: node
-  linkType: hard
-
 "@remix-run/router@npm:1.8.0":
   version: 1.8.0
   resolution: "@remix-run/router@npm:1.8.0"
@@ -6887,6 +6868,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stakekit/rainbowkit@npm:^1.0.9":
+  version: 1.0.9
+  resolution: "@stakekit/rainbowkit@npm:1.0.9"
+  dependencies:
+    "@vanilla-extract/css": 1.9.1
+    "@vanilla-extract/dynamic": 2.0.2
+    "@vanilla-extract/sprinkles": 1.5.0
+    clsx: 1.1.1
+    qrcode: 1.5.0
+    react-remove-scroll: 2.5.4
+  peerDependencies:
+    react: ">=17"
+    react-dom: ">=17"
+    viem: ~0.3.19 || ^1.0.0
+    wagmi: ~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0
+  checksum: 8357f8da7dfa99e01ff1d6753093dc4c260f30bba05959fe58d343741d3fb98ff41d8152e64af4f9c3cdf484322d1c0e57802c3ed6f9020e22ad9a06ad67d3b0
+  languageName: node
+  linkType: hard
+
 "@stakekit/signers@npm:^0.0.47":
   version: 0.0.47
   resolution: "@stakekit/signers@npm:0.0.47"
@@ -6967,9 +6967,9 @@ __metadata:
     "@cosmos-kit/walletconnect": 2.3.0
     "@ledgerhq/wallet-api-client": ^1.0.2
     "@radix-ui/react-alert-dialog": ^1.0.4
-    "@rainbow-me/rainbowkit": "https://github.com/petar-omni/rainbowkit#commit=3f0b04b87ddf07b573747fdf7bdaafbb612faaba&workspace=@rainbow-me/rainbowkit"
     "@stakekit/api-hooks": ^0.0.23
     "@stakekit/common": ^0.0.13
+    "@stakekit/rainbowkit": ^1.0.9
     "@stakekit/signers": ^0.0.47
     "@tanstack/react-query": ^4.32.6
     "@testing-library/jest-dom": ^5.17.0

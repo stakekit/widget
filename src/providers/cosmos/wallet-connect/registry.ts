@@ -1,5 +1,5 @@
 import { OS, Wallet } from "@cosmos-kit/core";
-import { walletConnectWallet } from "@rainbow-me/rainbowkit/wallets";
+import { walletConnectWallet } from "@stakekit/rainbowkit/wallets";
 import { config } from "../../../config";
 
 export const walletConnectInfo: Wallet = {

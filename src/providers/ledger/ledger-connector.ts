@@ -1,7 +1,7 @@
 import { Chain, Connector, mainnet } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { Address, createWalletClient, custom } from "viem";
-import { Wallet } from "@rainbow-me/rainbowkit";
+import { Wallet } from "@stakekit/rainbowkit";
 import { EthereumProvider } from "eip1193-provider";
 import {
   Account,
