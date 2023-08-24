@@ -6357,7 +6357,7 @@ __metadata:
     react-dom: ">=17"
     viem: ~0.3.19 || ^1.0.0
     wagmi: ~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0
-  checksum: 1c530febd7f5cebd8cc37b50af15c42b5ff5fc8d622e9014de771054f39d8fef326a9ace47a17d8d5aa14e9a56c9273b22d231c03c32ca78fd9f5e4d358c2d8c
+  checksum: 0a0f6293e8a4e8bb31d776bc6a335d24bfe060b36f304de9be4fa6c0250bd49c55cc30e800ecc2adbf2fbe2efe9b4d17307b7e4d3d2bcdf98584175b22233549
   languageName: node
   linkType: hard
 
