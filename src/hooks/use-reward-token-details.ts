@@ -9,7 +9,7 @@ export const useRewardTokenDetails = (
     () =>
       yieldOpportunity
         .chain((y) =>
-          Maybe.fromNullable(y.config.rewardTokens).chain((rt) =>
+          Maybe.fromNullable(y.metadata.rewardTokens).chain((rt) =>
             Maybe.fromNullable(y.metadata.provider).map((p) => ({ rt, p }))
           )
         )

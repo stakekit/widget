@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { Location, useLocation } from "react-router-dom";
@@ -19,6 +20,7 @@ const LocationTransitionContext = createContext<
   | {
       location: Location;
       displayLocation: Location;
+      prevLocationPathName: Location["pathname"] | null;
       onAnimationEnd: () => void;
       transitionClassName: string;
     }
@@ -27,6 +29,14 @@ const LocationTransitionContext = createContext<
 
 export const LocationTransitionProvider = ({ children }: PropsWithChildren) => {
   const location = useLocation();
+
+  const [locationP, setLocationP] = useState<Location["pathname"] | null>(null);
+  const prevLocationPathName = useRef(locationP);
+
+  if (location.pathname !== locationP) {
+    prevLocationPathName.current = locationP;
+    setLocationP(location.pathname);
+  }
 
   const [displayLocation, setDisplayLocation] = useState(location);
   const [transitionStage, setTransitionStage] =
@@ -39,6 +49,7 @@ export const LocationTransitionProvider = ({ children }: PropsWithChildren) => {
   const onAnimationEnd = useCallback(() => {
     if (transitionStage === "fadeOut") {
       setTransitionStage("fadeIn");
+
       setDisplayLocation(location);
     }
   }, [location, transitionStage]);
@@ -47,11 +58,20 @@ export const LocationTransitionProvider = ({ children }: PropsWithChildren) => {
     () => ({
       location,
       displayLocation: config.isTestMode ? location : displayLocation,
+      prevLocationPathName: config.isTestMode
+        ? location.pathname
+        : prevLocationPathName.current,
       onAnimationEnd,
       transitionClassName:
         transitionStage === "fadeIn" ? transitions.fadeIn : transitions.fadeOut,
     }),
-    [displayLocation, location, onAnimationEnd, transitionStage]
+    [
+      displayLocation,
+      location,
+      onAnimationEnd,
+      prevLocationPathName,
+      transitionStage,
+    ]
   );
 
   return (

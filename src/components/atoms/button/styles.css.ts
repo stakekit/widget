@@ -11,17 +11,13 @@ export const pressAnimation = style({
 
 export const buttonStyle = recipe({
   base: [
-    {
-      borderWidth: "1px",
-      borderStyle: "solid",
-    },
+    { borderStyle: "solid" },
     atoms({
       letterSpacing: "tight",
       display: "flex",
       justifyContent: "center",
       alignItems: "center",
       gap: "2",
-      borderRadius: "primaryButton",
       width: "full",
       border: "none",
       fontSize: "md",
@@ -92,15 +88,28 @@ export const buttonStyle = recipe({
       press: [pressAnimation],
     },
 
-    size: {
+    height: {
       small: atoms({ minHeight: "12" }),
+    },
+    border: {
+      regular: atoms({ borderWidth: 1, borderRadius: "primaryButton" }),
+      thick: atoms({ borderWidth: 2, borderRadius: "half" }),
+    },
+    size: {
       regular: atoms({ minHeight: "buttonMinHeight" }),
+      small: atoms({
+        minHeight: "auto",
+        width: "auto",
+        px: "4",
+        py: "3",
+      }),
     },
   },
 
   defaultVariants: {
     color: "primary",
     animation: "press",
+    border: "regular",
     size: "regular",
   },
 });

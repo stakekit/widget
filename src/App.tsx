@@ -19,7 +19,7 @@ import {
   StakeCompletePage,
 } from "./pages";
 import { Box } from "./components";
-import { useWebViewConnectMachine } from "./hooks/use-webview-connect-machine";
+import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
 import { Providers } from "./providers";
 import {
   SettingsContextProvider,
@@ -37,17 +37,23 @@ import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
 const Widget = () => {
   useToggleTheme();
 
-  useWebViewConnectMachine();
+  useAutoConnectInjectedProviderMachine();
 
-  const { location, displayLocation, transitionClassName, onAnimationEnd } =
-    useLocationTransition();
+  const {
+    location,
+    displayLocation,
+    prevLocationPathName,
+    transitionClassName,
+    onAnimationEnd,
+  } = useLocationTransition();
 
   return (
     <Box
       background="background"
       className={classNames([
         container,
-        shouldAnimate(displayLocation, location) && transitionClassName,
+        shouldAnimate({ displayLocation, location, prevLocationPathName }) &&
+          transitionClassName,
       ])}
       onAnimationEnd={onAnimationEnd}
     >
@@ -131,11 +137,22 @@ export const renderSKWidget = ({
   root.render(<SKApp {...rest} />);
 };
 
-const shouldAnimate = (prevLocation: Location, nextLocation: Location) => {
-  return (
-    (nextLocation.pathname !== "/" && nextLocation.pathname !== "/positions") ||
-    (prevLocation.pathname !== "/" &&
-      prevLocation.pathname !== "/positions" &&
-      (nextLocation.pathname === "/" || nextLocation.pathname === "/positions"))
-  );
+const shouldAnimate = ({
+  displayLocation,
+  location,
+  prevLocationPathName,
+}: {
+  displayLocation: Location;
+  location: Location;
+  prevLocationPathName: Location["pathname"] | null;
+}) => {
+  const routesToSkip = ["/", "/positions"];
+
+  const goingToNonSkippedRoute = !routesToSkip.includes(location.pathname);
+  const returningFromNonSkippedRoute =
+    routesToSkip.includes(location.pathname) &&
+    prevLocationPathName &&
+    !routesToSkip.includes(prevLocationPathName);
+
+  return goingToNonSkippedRoute || returningFromNonSkippedRoute;
 };

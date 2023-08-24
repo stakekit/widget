@@ -2,21 +2,31 @@ import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useConnect } from "wagmi";
 import { InjectedConnector } from "@wagmi/connectors/injected";
-import { useSKWallet } from "./use-sk-wallet";
-import { isMobile } from "../utils";
+import { useSKWallet } from "./wallet/use-sk-wallet";
+import { isLedgerDappBrowserProvider, isMobile } from "../utils";
+import { LedgerLiveConnector } from "../providers/ledger/ledger-connector";
+import { useMemo } from "react";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
 };
 
-export const useWebViewConnectMachine = () => {
+export const useAutoConnectInjectedProviderMachine = () => {
   const { isConnected, isConnecting } = useSKWallet();
   const { connectors, connect } = useConnect();
 
+  const initial = useMemo(
+    () =>
+      isMobile()
+        ? !isConnected && !isConnecting
+          ? "connect"
+          : "done"
+        : "disabled",
+    [isConnected, isConnecting]
+  );
   return useStateMachine({
     schema: { context: tt<{ timeoutId: number | null; retryTimes: number }>() },
-    initial:
-      isMobile() && !isConnected && !isConnecting ? "connect" : "disabled",
+    initial: initial,
     context: { timeoutId: null, retryTimes: 0 },
     states: {
       disabled: {},
@@ -25,12 +35,22 @@ export const useWebViewConnectMachine = () => {
         effect: ({ send }) => {
           if (isConnected) return send("DONE");
 
-          const injConn = connectors.find(
-            (c) => c instanceof InjectedConnector
-          );
+          if (isLedgerDappBrowserProvider()) {
+            const ledgerLiveConnector = connectors.find(
+              (c) => c instanceof LedgerLiveConnector
+            );
 
-          if (injConn) {
-            connect({ connector: injConn });
+            if (ledgerLiveConnector) {
+              connect({ connector: ledgerLiveConnector });
+            }
+          } else {
+            const injConn = connectors.find(
+              (c) => c instanceof InjectedConnector
+            );
+
+            if (injConn) {
+              connect({ connector: injConn });
+            }
           }
 
           return send("DONE");

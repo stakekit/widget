@@ -5,7 +5,7 @@ import {
   TokenDto,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../use-sk-wallet";
+import { useSKWallet } from "../wallet/use-sk-wallet";
 
 export const useTokenAvailableAmount = ({
   tokenDto,

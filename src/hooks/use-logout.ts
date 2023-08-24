@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useSKWallet } from "./use-sk-wallet";
+import { useSKWallet } from "./wallet/use-sk-wallet";
 import { useResetApp } from "./use-reset-app";
 
 export const useLogout = () => {

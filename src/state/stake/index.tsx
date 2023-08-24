@@ -11,9 +11,8 @@ import {
 } from "react";
 import { Actions, ExtraData, State } from "./types";
 import { useStakeEnterEnabledOpportunities } from "../../hooks/api/use-filtered-opportunities";
-import { useStakeGetValidators } from "@stakekit/api-hooks";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
-import { useSKWallet } from "../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
@@ -83,7 +82,9 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
    * Can happen on initial load with default selected stake
    */
   selectedStake.ifJust((ss) => {
-    ss.token.network !== network && dispatch({ type: "state/reset" });
+    network &&
+      ss.token.network !== network &&
+      dispatch({ type: "state/reset" });
   });
 
   const opportunities = useStakeEnterEnabledOpportunities();
@@ -102,36 +103,18 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       );
   }, [address, opportunities.data]);
 
-  const selectedStakeId = selectedStake.mapOrDefault((s) => s.id, "");
-
-  const { data: validators } = useStakeGetValidators(selectedStakeId, {
-    query: { enabled: !!selectedStakeId },
-  });
-
   /**
    * Set initial validator
    */
   useEffect(() => {
-    selectedValidator.ifNothing(() => {
-      Maybe.fromNullable(validators)
-        .chain((v) => selectedStake.map((ss) => ({ v, ss })))
-        .toEither(null)
-        .chain((val) =>
-          List.find(
-            (item) =>
-              !!(
-                item.address &&
-                val.ss.config.defaultValidator &&
-                item.address === val.ss.config.defaultValidator
-              ),
-            val.v
-          )
-            .toEither(null)
-            .chainLeft(() => List.head(val.v).toEither(null))
-        )
-        .ifRight((val) => dispatch({ type: "validator/select", data: val }));
+    selectedStake.ifJust((ss) => {
+      selectedValidator.ifNothing(() => {
+        List.head(ss.validators).ifJust((val) =>
+          dispatch({ type: "validator/select", data: val })
+        );
+      });
     });
-  }, [selectedStake, selectedValidator, validators]);
+  }, [selectedStake, selectedValidator]);
 
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 

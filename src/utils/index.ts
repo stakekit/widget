@@ -17,14 +17,8 @@ export const getBackgroundColor = (stringInput: string) => {
   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
 };
 
-export const isRNWebViewContext = () =>
-  typeof window !== "undefined" && !!window.ReactNativeWebView;
-
 export const waitForSec = (sec: number) =>
   new Promise((res) => setTimeout(res, sec * 1000));
-
-export const isIframe = () =>
-  typeof window !== "undefined" && window.self !== window.top;
 
 export const isLedgerDappBrowserProvider = (() => {
   let state: boolean | null = null;
@@ -35,9 +29,8 @@ export const isLedgerDappBrowserProvider = (() => {
 
     try {
       const params = new URLSearchParams(window.self.location.search);
-      const isEmbed = !!params.get("embed");
 
-      state = isIframe() && isEmbed;
+      state = !!params.get("embed");
     } catch (error) {
       state = false;
     } finally {

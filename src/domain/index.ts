@@ -8,19 +8,16 @@ import {
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
-import {
-  SupportedCosmosNetworks,
-  supportedCosmosNetworks,
-} from "../providers/cosmos/config";
+import { Chain } from "wagmi";
+import { cosmosWagmiChains } from "../providers/cosmos/config";
 
 export const evmNetworksSet = new Set(Object.values(EvmNetworks));
 
 export const isEvmNetwork = (network: string): network is EvmNetworks =>
   evmNetworksSet.has(network.toLowerCase() as EvmNetworks);
 
-export const isCosmosNetwork = (
-  network: string
-): network is SupportedCosmosNetworks => supportedCosmosNetworks.has(network);
+export const isCosmosChain = (chain: Chain) =>
+  cosmosWagmiChains.some((c) => c.id === chain.id);
 
 export const tokenString = (token: Token): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;

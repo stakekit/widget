@@ -1,60 +1,24 @@
-import { chains as allChains } from "./chains";
 import { CosmosNetworks } from "@stakekit/common";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
-import { Address, Connector, mainnet } from "wagmi";
+import { Address, Connector } from "wagmi";
 import { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
 import { EthereumProvider } from "eip1193-provider";
 import { createWalletClient, custom } from "viem";
-import { Chain, Wallet } from "@rainbow-me/rainbowkit";
-import { getNetworkLogo } from "../../utils";
+import { Wallet } from "@rainbow-me/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
+import { cosmosChainsMap } from "./chains";
 
-type SetKeys<T> = T extends Set<infer U> ? U : never;
+export const wallets = [
+  ...keplrWallets,
+  ...leapWallets,
+  new WalletConnectWallet(walletConnectInfo),
+];
 
-export const supportedCosmosNetworks = new Map([
-  ["cosmoshub", "cosmos"],
-  ...Object.values(CosmosNetworks).map((val) => [val, val] as const),
-]);
-
-export type SupportedCosmosNetworks = SetKeys<typeof supportedCosmosNetworks>;
-
-export const chains: typeof allChains = allChains.filter((chain) =>
-  supportedCosmosNetworks.has(chain.chain_name as SupportedCosmosNetworks)
-);
-
-export const initialChain: (typeof allChains)[number] = chains.find(
-  (c) => c.chain_name === "cosmoshub"
-)!;
-
-export const wcWallet = new WalletConnectWallet(walletConnectInfo);
-
-export const wallets = [...keplrWallets, ...leapWallets, wcWallet];
-
-export const cosmosChainsToWagmiChains = chains.map(
-  (c) =>
-    ({
-      ...c,
-      id: c.chain_id as unknown as number,
-      iconUrl:
-        c.chain_name === "osmosis"
-          ? getNetworkLogo(CosmosNetworks.Osmosis)
-          : c.logo_URIs?.png ?? c.logo_URIs?.svg ?? "",
-      name: c.chain_name,
-      network: c.chain_id,
-      // TODO: change this
-      nativeCurrency: mainnet.nativeCurrency,
-      rpcUrls: {
-        default: {
-          http: c.apis?.rpc?.map((r) => r.address) ?? [""],
-        },
-        public: {
-          http: c.apis?.rpc?.map((r) => r.address) ?? [""],
-        },
-      },
-    }) as Chain
+export const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
+  (c) => c.wagmiChain
 );
 
 export class CosmosWagmiConnector extends Connector {
@@ -70,14 +34,16 @@ export class CosmosWagmiConnector extends Connector {
   readonly wallet: MainWalletBase;
 
   constructor(opts: { wallet: MainWalletBase }) {
-    super({ chains: cosmosChainsToWagmiChains, options: {} });
+    super({ chains: cosmosWagmiChains, options: {} });
     this.id = opts.wallet.walletInfo.name;
     this.name = opts.wallet.walletInfo.name;
     this.wallet = opts.wallet;
 
     this.chainWallet = new Promise((res) => {
       setTimeout(() => {
-        const cw = this.wallet.chainWalletMap.get(initialChain.chain_name)!;
+        const cw = this.wallet.chainWalletMap.get(
+          cosmosChainsMap[CosmosNetworks.Cosmos].chain.chain_name
+        )!;
         this.ready = !!cw.client;
         res(cw);
       }, 1000); // no other way to check if wallet is ready :(
@@ -129,9 +95,13 @@ export class CosmosWagmiConnector extends Connector {
   };
 
   switchChain = async (chainId: number) => {
-    const chainName = this.chains.find((c) => c.id === chainId)?.name!;
+    const chainName = this.chains.find((c) => c.id === chainId)?.name;
 
-    const newCw = this.wallet.getChainWallet(chainName) as ChainWalletBase;
+    if (!chainName) throw new Error("Chain not found");
+
+    const newCw = this.wallet.getChainWallet(
+      chainName.toLowerCase()
+    ) as ChainWalletBase;
 
     if (!newCw) throw new Error("Wallet not found");
 
@@ -165,7 +135,7 @@ export class CosmosWagmiConnector extends Connector {
 
   getWalletClient = async () => {
     const chainId = await this.getChainId();
-    const chain = cosmosChainsToWagmiChains.find((c) => c.id === chainId)!;
+    const chain = cosmosWagmiChains.find((c) => c.id === chainId)!;
     const provider = await this.getProvider();
     const account = await this.getAccount();
 

@@ -13,10 +13,10 @@ import {
 } from "./styles.css";
 import classNames from "classnames";
 import { HelpModal } from "../help-modal";
-import { isMobile } from "../../../utils";
-import { useSKWallet } from "../../../hooks/use-sk-wallet";
+import { isLedgerDappBrowserProvider, isMobile } from "../../../utils";
+import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 
-const mobile = isMobile();
+const showDisconnect = isMobile() || isLedgerDappBrowserProvider();
 
 export const Header = () => {
   const location = useLocation();
@@ -42,41 +42,54 @@ export const Header = () => {
 
   return (
     <Box className={parentContainer} paddingTop="4" paddingBottom="1">
-      {showBack ? (
-        <Box
-          as="button"
-          hw="7"
-          onClick={onLeftIconPress}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <CaretLeftIcon />
-        </Box>
-      ) : (
-        <Box hw="7">
-          <HelpModal type="main" />
-        </Box>
-      )}
+      <Box display="flex" justifyContent="space-between" alignItems="center">
+        {showBack ? (
+          <Box
+            as="button"
+            hw="7"
+            onClick={onLeftIconPress}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <CaretLeftIcon />
+          </Box>
+        ) : (
+          <Box hw="7">
+            <HelpModal type="main" />
+          </Box>
+        )}
 
-      <Box display="flex" justifyContent="center" alignItems="center">
-        <ConnectButton.Custom>
-          {({ account, chain, openAccountModal, openChainModal, mounted }) => {
-            return (
-              <Box
-                className={classNames({ [parentButton]: !mounted })}
-                aria-hidden={!mounted}
-              >
-                {(() => {
-                  if (!isConnected || !chain || !account) {
-                    return (
-                      <Text variant={{ size: "small" }}>
-                        {t("shared.stake_kit")}
-                      </Text>
-                    );
-                  }
+        {!showDisconnect && (
+          <Box display="flex" alignItems="center" justifyContent="center">
+            <Box as="button" hw="5" onClick={onXPress}>
+              <XIcon />
+            </Box>
+          </Box>
+        )}
+      </Box>
 
+      <ConnectButton.Custom>
+        {({ account, chain, openAccountModal, openChainModal, mounted }) => {
+          return (
+            <Box
+              className={classNames({ [parentButton]: !mounted })}
+              aria-hidden={!mounted}
+              display="flex"
+              justifyContent="center"
+              gap="2"
+            >
+              {(() => {
+                if (!isConnected || !chain || !account) {
                   return (
+                    <Text variant={{ size: "small" }}>
+                      {t("shared.stake_kit")}
+                    </Text>
+                  );
+                }
+
+                return (
+                  <>
                     <Box
                       borderRadius="2xl"
                       background="backgroundMuted"
@@ -84,6 +97,7 @@ export const Header = () => {
                       justifyContent="space-between"
                       alignItems="center"
                       className={container}
+                      onClick={openChainModal}
                     >
                       {(() => {
                         if (chain.unsupported) {
@@ -110,20 +124,48 @@ export const Header = () => {
                               alignItems="center"
                               paddingLeft="2"
                               py="2"
-                              onClick={openChainModal}
                             >
                               {chain?.iconUrl && (
                                 <Box as="img" hw="6" src={chain.iconUrl} />
                               )}
+
+                              <Box marginLeft="2">
+                                <Text
+                                  className={titleStyle}
+                                  variant={{ size: "small" }}
+                                >
+                                  {chain.name}
+                                </Text>
+                              </Box>
+
+                              <Box mx="2">
+                                <CaretDownIcon />
+                              </Box>
                             </Box>
+                          </>
+                        );
+                      })()}
+                    </Box>
+
+                    <Box
+                      borderRadius="2xl"
+                      background="backgroundMuted"
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      className={container}
+                      onClick={openAccountModal}
+                    >
+                      {(() => {
+                        return (
+                          <>
                             <Box
                               as="button"
                               display="flex"
                               justifyContent="space-between"
                               alignItems="center"
-                              px="2"
+                              paddingLeft="2"
                               py="2"
-                              onClick={openAccountModal}
                             >
                               {account.ensAvatar ? (
                                 <Box
@@ -141,7 +183,7 @@ export const Header = () => {
                                 </Text>
                               )}
 
-                              <Box marginLeft="2">
+                              <Box mx="2">
                                 <CaretDownIcon />
                               </Box>
                             </Box>
@@ -149,21 +191,13 @@ export const Header = () => {
                         );
                       })()}
                     </Box>
-                  );
-                })()}
-              </Box>
-            );
-          }}
-        </ConnectButton.Custom>
-      </Box>
-
-      {!mobile && (
-        <Box display="flex" alignItems="center" justifyContent="center">
-          <Box as="button" hw="6" onClick={onXPress}>
-            <XIcon />
-          </Box>
-        </Box>
-      )}
+                  </>
+                );
+              })()}
+            </Box>
+          );
+        }}
+      </ConnectButton.Custom>
     </Box>
   );
 };

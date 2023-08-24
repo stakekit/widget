@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { useSKWallet } from "../../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { StakeRequestDto, YieldOpportunityDto } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../state/stake";
 
@@ -26,7 +26,6 @@ export const useStakeEnterRequestDto = () => {
             gasFeeToken: YieldOpportunityDto["token"]; // TODO: change this on api-hooks update
           }
         >((val) => ({
-          // @ts-expect-error
           gasFeeToken: val.stake.metadata.gasFeeToken,
           addresses: {
             address: val.address,
@@ -35,7 +34,8 @@ export const useStakeEnterRequestDto = () => {
           integrationId: val.stake.id,
           args: {
             amount: val.amount.toString(),
-            validatorAddress: val.validator?.address,
+            validatorAddress:
+              val.validator?.address ?? val.stake.config.defaultValidator,
           },
         })),
     [

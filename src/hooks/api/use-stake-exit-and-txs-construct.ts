@@ -9,8 +9,11 @@ import {
 import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
+import { useSKWallet } from "../wallet/use-sk-wallet";
 
 export const useStakeExitAndTxsConstruct = () => {
+  const { isLedgerLive } = useSKWallet();
+
   return useSharedMutation<
     { stakeExitRes: StakeDto; transactionConstructRes: TransactionDto[] },
     Error,
@@ -28,6 +31,8 @@ export const useStakeExitAndTxsConstruct = () => {
             EitherAsync(() =>
               transactionConstruct(tx.id, {
                 gasArgs: gasModeValue?.gasArgs,
+                // @ts-expect-error
+                ledgerWalletAPICompatible: isLedgerLive,
               })
             ).mapLeft(() => new Error("Transaction construct error"))
           )

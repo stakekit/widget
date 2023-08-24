@@ -7,7 +7,7 @@ import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { useTranslation } from "react-i18next";
 import { claimRewardsContainer, virtuosoContainer } from "./style.css";
 import BigNumber from "bignumber.js";
-import { useSKWallet } from "../../../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { SKLink } from "../../../../components/atoms/link";
 import { ConnectButton } from "../../../../components/molecules/connect-button";
 

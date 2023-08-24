@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { useSKWallet } from "../../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrClaimState } from "../../../state/unstake-or-claim";
 import {
@@ -41,7 +41,6 @@ export const useStakeClaimRequestDto = ({
         >((val) => ({
           address: val.addr,
           additionalAddresses: additionalAddresses ?? undefined,
-          // @ts-expect-error
           gasFeeToken: val.u.integration.metadata.gasFeeToken,
           args: {
             validatorAddress: val.sb.validatorAddress,

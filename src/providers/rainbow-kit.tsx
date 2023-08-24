@@ -3,12 +3,12 @@ import {
   lightTheme,
   Theme,
   RainbowKitProvider,
+  Chain as RainbowKitChain,
 } from "@rainbow-me/rainbowkit";
 import merge from "lodash.merge";
 import { PropsWithChildren } from "react";
 import { id, vars } from "../styles";
 import { RecursivePartial } from "../types";
-import { RainbowKitChain } from "@rainbow-me/rainbowkit/dist/components/RainbowKitProvider/RainbowKitChainContext";
 import { usePrefersColorScheme } from "../hooks";
 import { useSettings } from "./settings";
 

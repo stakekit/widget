@@ -3,11 +3,7 @@ import { Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import {
-  ValidatorDto,
-  YieldOpportunityDto,
-  useStakeGetValidators,
-} from "@stakekit/api-hooks";
+import { ValidatorDto, YieldOpportunityDto } from "@stakekit/api-hooks";
 import { NumberInputProps, SelectModalProps } from "../../../components";
 import { getTokenPriceInUSD } from "../../../domain";
 import { yieldTypesMap } from "../../../domain/types";
@@ -17,7 +13,7 @@ import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/use-filter
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { SelectedStakeData } from "../types";
 import { Token } from "@stakekit/common";
-import { useSKWallet } from "../../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
@@ -36,12 +32,6 @@ export const useDetails = () => {
     stakeAmount,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
-
-  const selectedStakeId = selectedStake.mapOrDefault((y) => y.id, "");
-
-  const stakeValidators = useStakeGetValidators(selectedStakeId, {
-    query: { enabled: !!selectedStakeId },
-  });
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedStake.map((ss) => ss.token),
@@ -118,7 +108,7 @@ export const useDetails = () => {
             curr.token.name.toLowerCase().includes(lowerSearch) ||
             curr.token.symbol.toLowerCase().includes(lowerSearch) ||
             curr.metadata.name.toLowerCase().includes(lowerSearch) ||
-            curr.config.rewardTokens?.some(
+            curr.metadata.rewardTokens?.some(
               (rt) =>
                 rt.name.toLowerCase().includes(lowerSearch) ||
                 rt.symbol.toLowerCase().includes(lowerSearch)
@@ -200,7 +190,8 @@ export const useDetails = () => {
               description: t("details.lent_description", {
                 stakeToken: y.token.symbol,
                 lendToken:
-                  y.config.rewardTokens?.map((t) => t.symbol).join(", ") ?? "",
+                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
+                  "",
               }),
             };
           case yieldTypesMap.vault.type:
@@ -208,7 +199,8 @@ export const useDetails = () => {
               description: t("details.yearn_description", {
                 stakeToken: y.token.symbol,
                 depositToken:
-                  y.config.rewardTokens?.map((t) => t.symbol).join(", ") ?? "",
+                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
+                  "",
               }),
             };
           case yieldTypesMap["liquid-staking"].type:
@@ -216,7 +208,8 @@ export const useDetails = () => {
               description: t("details.liquid_stake_description", {
                 stakeToken: y.token.symbol,
                 liquidToken:
-                  y.config.rewardTokens?.map((t) => t.symbol).join(", ") ?? "",
+                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
+                  "",
               }),
             };
 
@@ -231,10 +224,7 @@ export const useDetails = () => {
   const onSelectOpportunityClose = () => setStakeSearch("");
 
   const isFetching =
-    opportunities.isFetching ||
-    stakeTokenAvailableAmount.isFetching ||
-    pricesState.isFetching ||
-    stakeValidators.isInitialLoading;
+    opportunities.isFetching || stakeTokenAvailableAmount.isFetching;
 
   const buttonDisabled =
     isConnected &&
@@ -243,8 +233,7 @@ export const useDetails = () => {
       !amountValid ||
       stakeAmount.isNothing() ||
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
-      onStakeEnter.isLoading ||
-      stakeValidators.isInitialLoading);
+      onStakeEnter.isLoading);
 
   return {
     availableTokens,
@@ -264,7 +253,6 @@ export const useDetails = () => {
     onClick,
     footerItems,
     onSearch,
-    validators: stakeValidators.data,
     onValidatorSelect,
     selectedValidator,
     isError,

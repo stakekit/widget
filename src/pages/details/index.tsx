@@ -100,7 +100,6 @@ export const EarnPage = () => {
     onClick,
     footerItems,
     onSearch,
-    validators,
     onValidatorSelect,
     selectedValidator,
     isError,
@@ -251,7 +250,7 @@ export const EarnPage = () => {
             <SelectValidator
               onValidatorSelect={onValidatorSelect}
               selectedValidator={selectedValidator}
-              validators={validators}
+              selectedStake={selectedStake}
             />
 
             <Box display="flex" flexDirection="column" gap="1">

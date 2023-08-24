@@ -90,3 +90,11 @@ globalStyle(`.simple-display-wallet-list-icon`, {
     },
   },
 });
+
+globalStyle(
+  '[aria-labelledby="rk_chain_modal_title"] > [role="document"] > div > div > div',
+  {
+    maxHeight: "80vh",
+    overflow: "scroll",
+  }
+);

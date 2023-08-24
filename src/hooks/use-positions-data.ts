@@ -1,6 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useFilteredOpportunities } from "./api/use-filtered-opportunities";
-import { useSKWallet } from "./use-sk-wallet";
+import { useSKWallet } from "./wallet/use-sk-wallet";
 import {
   YieldBalanceWithIntegrationIdRequestDto,
   YieldBalancesWithIntegrationIdDto,
