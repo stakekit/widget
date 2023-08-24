@@ -71,7 +71,7 @@
     "@cosmos-kit/walletconnect": "2.3.0",
     "@ledgerhq/wallet-api-client": "^1.0.2",
     "@radix-ui/react-alert-dialog": "^1.0.4",
-    "@rainbow-me/rainbowkit": "https://github.com/petar-omni/rainbowkit#head=main&workspace=@rainbow-me/rainbowkit",
+    "@rainbow-me/rainbowkit": "https://github.com/petar-omni/rainbowkit#commit=3f0b04b87ddf07b573747fdf7bdaafbb612faaba&workspace=@rainbow-me/rainbowkit",
     "@stakekit/api-hooks": "^0.0.23",
     "@stakekit/common": "^0.0.13",
     "@stakekit/signers": "^0.0.47",
