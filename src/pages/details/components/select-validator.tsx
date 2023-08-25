@@ -43,6 +43,14 @@ export const SelectValidator = ({
   const data = useMemo(
     () =>
       selectedStake.map((ss) => {
+        if (!ss.validators.length) {
+          return {
+            tableData: [],
+            groupedItems: [],
+            groupCounts: [],
+          };
+        }
+
         const groupedItems = ss.validators.reduce(
           (acc, val) => {
             if (val.preferred) {
@@ -65,10 +73,23 @@ export const SelectValidator = ({
           ]
         );
 
+        // If we do not have preferred validators, show all other
+        if (!groupedItems[0].items.length && ss.validators.length) {
+          return {
+            canViewMore: false,
+            tableData: ss.validators,
+            groupCounts: [ss.validators.length],
+            groupedItems: [groupedItems[0]],
+          };
+        }
+
         return {
           tableData: groupedItems.flatMap((val) => val.items),
-          groupedItems,
-          groupCounts: groupedItems.map((val) => val.items.length),
+          groupedItems: groupedItems.filter((val) => val.items.length),
+          groupCounts: groupedItems
+            .filter((val) => val.items.length)
+            .map((val) => val.items.length),
+          canViewMore: groupedItems[0].items.length !== ss.validators.length,
         };
       }),
     [selectedStake, t, viewMore]
@@ -245,7 +266,7 @@ export const SelectValidator = ({
                 }}
                 components={{
                   Footer: () =>
-                    !viewMore ? (
+                    !viewMore && val.canViewMore ? (
                       <Box display="flex" justifyContent="center" marginTop="6">
                         <Button
                           variant={{
