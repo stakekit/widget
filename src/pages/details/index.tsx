@@ -140,7 +140,7 @@ export const EarnPage = () => {
               alignItems="center"
               justifyContent="space-between"
             >
-              <Box display="flex" alignItems="center">
+              <Box display="flex" alignItems="center" minHeight="8">
                 <Text variant={{ size: "small" }}>{title}</Text>
                 {isFetching && (
                   <Box display="flex" marginLeft="2">
