@@ -24,7 +24,6 @@ export const ImageFallback = ({
       })}
       hw={tokenLogoHw ?? "9"}
       display="flex"
-      alignItems="center"
       justifyContent="center"
     >
       <Text

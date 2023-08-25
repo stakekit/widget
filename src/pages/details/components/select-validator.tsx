@@ -123,7 +123,7 @@ export const SelectValidator = ({
                       fallback={
                         <Box marginRight="1">
                           <ImageFallback
-                            name={sv.name}
+                            name={sv.name || sv.address}
                             tokenLogoHw="5"
                             textVariant={{
                               size: "small",
@@ -214,7 +214,7 @@ export const SelectValidator = ({
                           className={tokenLogo}
                           fallback={
                             <ImageFallback
-                              name={item.name}
+                              name={item.name || item.address}
                               tokenLogoHw="9"
                               textVariant={{
                                 size: "small",
