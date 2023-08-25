@@ -79,7 +79,9 @@ export const SelectValidator = ({
             canViewMore: false,
             tableData: ss.validators,
             groupCounts: [ss.validators.length],
-            groupedItems: [groupedItems[0]],
+            groupedItems: [
+              { items: ss.validators, label: t("details.validators_other") },
+            ],
           };
         }
 
@@ -137,7 +139,7 @@ export const SelectValidator = ({
                       variant={{ weight: "bold", size: "small" }}
                     >
                       {t("details.staked_via", {
-                        validator: sv.name,
+                        validator: sv.name ?? sv.address,
                       })}
                     </Text>
 
@@ -241,7 +243,7 @@ export const SelectValidator = ({
                                   weight: "bold",
                                 }}
                               >
-                                {item.name}
+                                {item.name ?? item.address}
                               </Text>
 
                               {isPreferred && (
