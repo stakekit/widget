@@ -1,6 +1,7 @@
 import { Maybe } from "purify-ts";
 import {
   Box,
+  Button,
   CaretDownIcon,
   Divider,
   SelectModal,
@@ -13,30 +14,98 @@ import { Image } from "../../../components/atoms/image";
 import { useTranslation } from "react-i18next";
 import { apyToPercentage } from "../../../utils";
 import { breakWord, modalItemNameContainer, tokenLogo } from "../style.css";
-import { Virtuoso } from "react-virtuoso";
+import { GroupedVirtuoso } from "react-virtuoso";
 import { ValidatorDto } from "@stakekit/api-hooks";
-import { triggerStyles, validatorVirtuosoContainer } from "./styles.css";
+import {
+  hideScrollbar,
+  triggerStyles,
+  validatorVirtuosoContainer,
+} from "./styles.css";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { State } from "../../../state/stake/types";
+import classNames from "classnames";
+import { useMemo, useState } from "react";
+import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 
 export const SelectValidator = ({
-  validators,
+  selectedStake,
   selectedValidator,
   onValidatorSelect,
 }: {
-  validators: ValidatorDto[] | undefined;
+  selectedStake: State["selectedStake"];
   selectedValidator: Maybe<ValidatorDto>;
   onValidatorSelect: (item: ValidatorDto) => void;
 }) => {
   const { t } = useTranslation();
 
-  return Maybe.fromNullable(validators)
-    .chain((v) => selectedValidator.map((sv) => ({ v, sv })))
-    .map(({ sv, v }) => {
+  const [viewMore, setViewMore] = useState(false);
+
+  const data = useMemo(
+    () =>
+      selectedStake.map((ss) => {
+        if (!ss.validators.length) {
+          return {
+            tableData: [],
+            groupedItems: [],
+            groupCounts: [],
+          };
+        }
+
+        const groupedItems = ss.validators.reduce(
+          (acc, val) => {
+            if (val.preferred) {
+              acc[0].items.push(val);
+            } else if (viewMore) {
+              acc[1].items.push(val);
+            }
+
+            return acc;
+          },
+          [
+            {
+              items: [] as ValidatorDto[],
+              label: t("details.validators_preferred"),
+            },
+            {
+              items: [] as ValidatorDto[],
+              label: t("details.validators_other"),
+            },
+          ]
+        );
+
+        // If we do not have preferred validators, show all other
+        if (!groupedItems[0].items.length && ss.validators.length) {
+          return {
+            canViewMore: false,
+            tableData: ss.validators,
+            groupCounts: [ss.validators.length],
+            groupedItems: [
+              { items: ss.validators, label: t("details.validators_other") },
+            ],
+          };
+        }
+
+        return {
+          tableData: groupedItems.flatMap((val) => val.items),
+          groupedItems: groupedItems.filter((val) => val.items.length),
+          groupCounts: groupedItems
+            .filter((val) => val.items.length)
+            .map((val) => val.items.length),
+          canViewMore: groupedItems[0].items.length !== ss.validators.length,
+        };
+      }),
+    [selectedStake, t, viewMore]
+  );
+
+  return selectedStake
+    .chain((ss) => selectedValidator.map((sv) => ({ ss, sv })))
+    .map(({ sv, ss }) => {
       return (
         <SelectModal
           title={t("details.validator_search_title")}
+          onClose={() => setViewMore(false)}
           trigger={
-            <Trigger disabled={!v.length} className={triggerStyles}>
+            <Trigger disabled={!ss.validators.length} className={triggerStyles}>
               <Box display="flex">
                 <Box flex={1}>
                   <Box
@@ -54,7 +123,7 @@ export const SelectValidator = ({
                       fallback={
                         <Box marginRight="1">
                           <ImageFallback
-                            name={sv.name}
+                            name={sv.name || sv.address}
                             tokenLogoHw="5"
                             textVariant={{
                               size: "small",
@@ -70,10 +139,16 @@ export const SelectValidator = ({
                       variant={{ weight: "bold", size: "small" }}
                     >
                       {t("details.staked_via", {
-                        validator: sv.name,
+                        validator: sv.name ?? sv.address,
                       })}
                     </Text>
-                    {!!v.length && (
+
+                    {sv.preferred && (
+                      <Box marginLeft="1" display="flex">
+                        <PreferredIcon />
+                      </Box>
+                    )}
+                    {!!ss.validators.length && (
                       <Box marginLeft="2">
                         <CaretDownIcon />
                       </Box>
@@ -87,66 +162,130 @@ export const SelectValidator = ({
             </Trigger>
           }
         >
-          <Virtuoso
-            className={validatorVirtuosoContainer}
-            data={v}
-            itemContent={(_index, item) => {
-              return (
-                <SelectModalItemContainer>
-                  <SelectModalItem onItemClick={() => onValidatorSelect(item)}>
-                    <Image
-                      hw="9"
-                      src={item.image}
-                      className={tokenLogo}
-                      fallback={
-                        <ImageFallback
-                          name={item.name}
-                          tokenLogoHw="9"
-                          textVariant={{
-                            size: "small",
-                            type: "white",
-                            weight: "bold",
-                          }}
-                        />
-                      }
-                    />
-
+          {data
+            .map((val) => (
+              <GroupedVirtuoso
+                groupCounts={val.groupCounts}
+                groupContent={(index) => {
+                  return val.groupedItems[index].items.length ? (
                     <Box
+                      py="4"
+                      px="4"
+                      background="background"
                       display="flex"
-                      flexDirection="column"
-                      flex={1}
-                      marginLeft="2"
+                      justifyContent="space-between"
+                      alignItems="center"
                     >
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Box className={modalItemNameContainer}>
-                          <Text
-                            variant={{
-                              size: "small",
-                              weight: "bold",
-                            }}
-                          >
-                            {item.name}
-                          </Text>
-                        </Box>
+                      <Text variant={{ weight: "medium", size: "small" }}>
+                        {val.groupedItems[index].label}
+                      </Text>
 
-                        {item.apr && (
-                          <Box>
-                            <Text variant={{ size: "small" }}>
-                              {apyToPercentage(item.apr)}%
-                            </Text>
-                          </Box>
-                        )}
+                      <Box marginRight="4">
+                        <Text
+                          variant={{
+                            weight: "normal",
+                            type: "muted",
+                            size: "small",
+                          }}
+                        >
+                          APR
+                        </Text>
                       </Box>
                     </Box>
-                  </SelectModalItem>
-                </SelectModalItemContainer>
-              );
-            }}
-          />
+                  ) : null;
+                }}
+                className={classNames([
+                  validatorVirtuosoContainer,
+                  hideScrollbar,
+                ])}
+                itemContent={(index) => {
+                  const item = val.tableData[index];
+
+                  const isPreferred = item.preferred;
+
+                  return (
+                    <SelectModalItemContainer>
+                      <SelectModalItem
+                        onItemClick={() => onValidatorSelect(item)}
+                      >
+                        <Image
+                          hw="9"
+                          src={item.image}
+                          className={tokenLogo}
+                          fallback={
+                            <ImageFallback
+                              name={item.name || item.address}
+                              tokenLogoHw="9"
+                              textVariant={{
+                                size: "small",
+                                type: "white",
+                                weight: "bold",
+                              }}
+                            />
+                          }
+                        />
+
+                        <Box
+                          display="flex"
+                          flexDirection="column"
+                          flex={1}
+                          marginLeft="2"
+                        >
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                          >
+                            <Box className={modalItemNameContainer}>
+                              <Text
+                                variant={{
+                                  size: "small",
+                                  weight: "bold",
+                                }}
+                              >
+                                {item.name ?? item.address}
+                              </Text>
+
+                              {isPreferred && (
+                                <Box marginLeft="1" display="flex">
+                                  <PreferredIcon />
+                                </Box>
+                              )}
+                            </Box>
+
+                            {item.apr && (
+                              <Box>
+                                <Text variant={{ size: "small" }}>
+                                  {apyToPercentage(item.apr)}%
+                                </Text>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </SelectModalItem>
+                    </SelectModalItemContainer>
+                  );
+                }}
+                components={{
+                  Footer: () =>
+                    !viewMore && val.canViewMore ? (
+                      <Box display="flex" justifyContent="center" marginTop="6">
+                        <Button
+                          variant={{
+                            color: "secondary",
+                            size: "small",
+                            border: "thick",
+                          }}
+                          onClick={() => setViewMore(true)}
+                        >
+                          <Text>{t("details.validators_view_all")}</Text>
+                        </Button>
+                      </Box>
+                    ) : null,
+                }}
+              />
+            ))
+            .extract()}
         </SelectModal>
       );
     })

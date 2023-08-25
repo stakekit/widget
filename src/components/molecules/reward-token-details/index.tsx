@@ -1,16 +1,16 @@
-import { DerivedAppState } from "../../../state";
 import { Box } from "../../atoms/box";
 import { Divider } from "../../atoms/divider";
 import { Text } from "../../atoms/typography";
 import { Trans } from "react-i18next";
 import { inlineText } from "./style.css";
 import { Image } from "../../atoms/image";
+import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
 
 export const RewardTokenDetails = ({
   rewardToken,
   type = "stake",
 }: {
-  rewardToken: DerivedAppState["rewardToken"];
+  rewardToken: ReturnType<typeof useRewardTokenDetails>;
   type?: "stake" | "unstake" | "claim";
 }) => {
   return rewardToken

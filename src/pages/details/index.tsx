@@ -1,11 +1,10 @@
-import { Button } from "../../components/atoms/button";
 import { Text } from "../../components/atoms/typography";
 import { Box } from "../../components/atoms/box";
 import { Divider } from "../../components/atoms/divider";
 import { PageContainer } from "../components";
 import { useTranslation } from "react-i18next";
-import { NumberInput, Spinner } from "../../components";
-import { useDetails } from "./use-details";
+import { Button, NumberInput, Spinner } from "../../components";
+import { useDetails } from "./hooks/use-details";
 import { Footer } from "./components/footer";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { SelectOpportunity } from "./components/select-opportunity";
@@ -17,20 +16,21 @@ import { Positions } from "./components/positions";
 import { Location, Outlet, useNavigate } from "react-router-dom";
 import { useLocationTransition } from "../../providers/location-transition";
 import { useMemo, useState } from "react";
-import { usePositionsData } from "../../hooks/use-positions-data";
+import { usePositions } from "./components/positions/use-positions";
+import { ConnectButton } from "../../components/molecules/connect-button";
 
 export const Details = () => {
   const { location, transitionClassName, onAnimationEnd } =
     useLocationTransition();
 
-  const { positionsData } = usePositionsData(); // trigger fetch of position data
+  const { tableData } = usePositions();
 
   const hasPendingRewards = useMemo(
     () =>
-      [...positionsData.values()].some((p) =>
+      tableData.some((p) =>
         p.balanceData.balances.some((b) => b.type === "rewards")
       ),
-    [positionsData]
+    [tableData]
   );
 
   const navigate = useNavigate();
@@ -95,23 +95,22 @@ export const EarnPage = () => {
     yieldType,
     onMaxClick,
     stakeAmount,
-    isBellowLimit,
-    isOverLimit,
-    accountBalanceIsFetching,
+    tokenAvailableAmountIsFetching,
     buttonDisabled,
     onClick,
-    buttonText,
     footerItems,
     onSearch,
-    validators,
     onValidatorSelect,
     selectedValidator,
     isError,
+    errorMessage,
     rewardToken,
     onSelectOpportunityClose,
     onStakeEnterIsLoading,
     selectedStakeYieldType,
     isFetching,
+    amountValid,
+    isConnected,
   } = useDetails();
 
   const { t } = useTranslation();
@@ -141,7 +140,7 @@ export const EarnPage = () => {
               alignItems="center"
               justifyContent="space-between"
             >
-              <Box display="flex" alignItems="center">
+              <Box display="flex" alignItems="center" minHeight="8">
                 <Text variant={{ size: "small" }}>{title}</Text>
                 {isFetching && (
                   <Box display="flex" marginLeft="2">
@@ -209,13 +208,13 @@ export const EarnPage = () => {
                   justifyContent="flex-end"
                   alignItems="center"
                 >
-                  {accountBalanceIsFetching ? (
+                  {tokenAvailableAmountIsFetching ? (
                     <Spinner />
                   ) : (
                     <Text
                       variant={{
                         size: "small",
-                        type: isBellowLimit || isOverLimit ? "danger" : "muted",
+                        type: amountValid ? "muted" : "danger",
                         weight: "normal",
                       }}
                     >
@@ -251,7 +250,7 @@ export const EarnPage = () => {
             <SelectValidator
               onValidatorSelect={onValidatorSelect}
               selectedValidator={selectedValidator}
-              validators={validators}
+              selectedStake={selectedStake}
             />
 
             <Box display="flex" flexDirection="column" gap="1">
@@ -333,9 +332,7 @@ export const EarnPage = () => {
               justifyContent="center"
               marginBottom="6"
             >
-              <Text variant={{ type: "danger" }}>
-                {t("shared.something_went_wrong")}
-              </Text>
+              <Text variant={{ type: "danger" }}>{errorMessage}</Text>
             </Box>
           )}
 
@@ -345,20 +342,24 @@ export const EarnPage = () => {
             justifyContent="flex-end"
             flexDirection="column"
           >
-            <Button
-              disabled={buttonDisabled}
-              isLoading={onStakeEnterIsLoading}
-              onClick={onClick}
-              variant={{
-                color:
-                  buttonDisabled || onStakeEnterIsLoading
-                    ? "disabled"
-                    : "primary",
-                animation: "press",
-              }}
-            >
-              {buttonText}
-            </Button>
+            {isConnected ? (
+              <Button
+                disabled={buttonDisabled}
+                isLoading={onStakeEnterIsLoading}
+                onClick={onClick}
+                variant={{
+                  color:
+                    buttonDisabled || onStakeEnterIsLoading
+                      ? "disabled"
+                      : "primary",
+                  animation: "press",
+                }}
+              >
+                {t("shared.review")}
+              </Button>
+            ) : (
+              <ConnectButton />
+            )}
           </Box>
         </Box>
       </PageContainer>

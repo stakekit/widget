@@ -5,14 +5,18 @@ import { ListItem } from "../../../../components/atoms/list/list-item";
 import { apyToPercentage, formatTokenBalance } from "../../../../utils";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { useTranslation } from "react-i18next";
-import {
-  claimRewardsContainer,
-  messageContainer,
-  virtuosoContainer,
-} from "./style.css";
+import { claimRewardsContainer, virtuosoContainer } from "./style.css";
 import BigNumber from "bignumber.js";
-import { useSKWallet } from "../../../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { SKLink } from "../../../../components/atoms/link";
+import { ConnectButton } from "../../../../components/molecules/connect-button";
+
+/**
+ *
+ * TODO:
+ * - Reduce multiple "staked" positions to single amount
+ * - Token price with price per share
+ */
 
 export const Positions = () => {
   const { tableData, isLoading } = usePositions();
@@ -23,22 +27,24 @@ export const Positions = () => {
 
   return (
     <Box display="flex" justifyContent="center" flex={1}>
-      {isLoading && (
-        <Box className={messageContainer}>
-          <Box display="flex">
-            <Spinner />
-          </Box>
+      {(isLoading || !isConnected) && (
+        <Box marginTop="2" flex={1}>
+          {isLoading && (
+            <Box display="flex" flex={1} justifyContent="center">
+              <Spinner />
+            </Box>
+          )}
+
+          {!isConnected && (
+            <Box flex={1}>
+              <ConnectButton />
+            </Box>
+          )}
         </Box>
       )}
 
-      {!isConnected ? (
-        <Box className={messageContainer}>
-          <Text variant={{ weight: "medium", size: "small" }}>
-            {t("positions.connect_wallet")}
-          </Text>
-        </Box>
-      ) : !tableData?.length && !isLoading ? (
-        <Box className={messageContainer}>
+      {isConnected && !tableData?.length && !isLoading ? (
+        <Box marginTop="2">
           <Text variant={{ weight: "medium", size: "small" }}>
             {t("positions.no_current_positions")}
           </Text>
@@ -51,14 +57,9 @@ export const Positions = () => {
           style={{ height: "auto" }}
           data={tableData}
           itemContent={(_index, item) => {
-            const stakedBalance = item.balanceData.balances.find(
-              (b) => b.type === "staked"
+            const balance = item.balanceData.balances.find(
+              (b) => b.type === "staked" || b.type === "available"
             );
-            const availableBalance = item.balanceData.balances.find(
-              (b) => b.type === "available"
-            );
-
-            const balance = stakedBalance ?? availableBalance;
 
             if (!balance) return null;
 

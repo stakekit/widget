@@ -13,7 +13,7 @@ export const useSharedMutation = <
   TData = unknown,
   TError = unknown,
   TVariables = unknown,
-  TContext = unknown
+  TContext = unknown,
 >(
   mutationKey: MutationKey,
   mutationFn: MutationFunction<TData, TVariables>,

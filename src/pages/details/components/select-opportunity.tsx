@@ -1,6 +1,5 @@
 import { List, Maybe } from "purify-ts";
 import { GroupedVirtuoso } from "react-virtuoso";
-import { State } from "../../../state/types";
 import { SelectedStakeData } from "../types";
 import {
   Box,
@@ -19,6 +18,7 @@ import { useMemo } from "react";
 import { hideScrollbar, selectItemText } from "./styles.css";
 import { YieldOpportunityDto } from "@stakekit/api-hooks";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
+import { State } from "../../../state/stake/types";
 
 export const SelectOpportunity = ({
   selectedStake,
@@ -140,7 +140,7 @@ export const SelectOpportunity = ({
                 >
                   <TokenIcon
                     metadata={item.metadata}
-                    token={Maybe.fromNullable(item.config.rewardTokens)
+                    token={Maybe.fromNullable(item.metadata.rewardTokens)
                       .chain((rt) => List.head(rt))
                       .orDefault(item.token)}
                   />
@@ -183,12 +183,12 @@ export const SelectOpportunity = ({
                           type: "muted",
                         }}
                       >
-                        {Maybe.fromNullable(item.config.rewardTokens)
+                        {Maybe.fromNullable(item.metadata.rewardTokens)
                           .map((rt) => rt.map((t) => t.symbol).join(", "))
                           .orDefault(item.token.symbol)}
                       </Text>
 
-                      {Maybe.fromNullable(item.config.rewardTokens)
+                      {Maybe.fromNullable(item.metadata.rewardTokens)
                         .map(() => (
                           <Box
                             background="background"

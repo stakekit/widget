@@ -8,20 +8,24 @@ import {
   useMemo,
   useReducer,
 } from "react";
-import { Action } from "./types";
-import { useStakeExitAndTxsConstruct } from "../hooks/api/use-stake-exit-and-txs-construct";
-import { StakeDto, StakeSessionTypes } from "@stakekit/api-hooks";
-import { usePendingActionAndTxsConstruct } from "../hooks/api/use-pending-action-and-txs-construct";
+import { Action } from "../stake/types";
+import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
+import {
+  StakeDto,
+  StakeSessionTypes,
+  YieldOpportunityDto,
+} from "@stakekit/api-hooks";
+import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
 
 type UnstakeAmountChange = Action<
   "unstake/amount/change",
-  { integrationId: string; amount: Maybe<BigNumber> }
+  { integration: YieldOpportunityDto; amount: Maybe<BigNumber> }
 >;
 
 type ClaimSet = Action<
   "claim/set",
   {
-    integrationId: string;
+    integration: YieldOpportunityDto;
     type: StakeSessionTypes;
     passthrough: string;
     amount: string;
@@ -35,10 +39,13 @@ const getInitialState = (): State => ({
   claim: Maybe.empty(),
 });
 
-type State = {
-  unstake: Maybe<{ integrationId: string; amount: Maybe<BigNumber> }>;
+export type State = {
+  unstake: Maybe<{
+    integration: YieldOpportunityDto;
+    amount: Maybe<BigNumber>;
+  }>;
   claim: Maybe<{
-    integrationId: string;
+    integration: YieldOpportunityDto;
     type: StakeSessionTypes;
     passthrough: string;
     amount: string;

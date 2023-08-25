@@ -2,26 +2,22 @@ import BigNumber from "bignumber.js";
 import { Prices, TokenString } from "./types";
 import { EvmNetworks, Token } from "@stakekit/common";
 import {
-  GasModeValueDto,
   StakeDto,
   TransactionDto,
   TransactionStatusResponseDto,
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
-import {
-  SupportedCosmosNetworks,
-  supportedCosmosNetworks,
-} from "../providers/cosmos/config";
+import { Chain } from "wagmi";
+import { cosmosWagmiChains } from "../providers/cosmos/config";
 
 export const evmNetworksSet = new Set(Object.values(EvmNetworks));
 
 export const isEvmNetwork = (network: string): network is EvmNetworks =>
   evmNetworksSet.has(network.toLowerCase() as EvmNetworks);
 
-export const isCosmosNetwork = (
-  network: string
-): network is SupportedCosmosNetworks => supportedCosmosNetworks.has(network);
+export const isCosmosChain = (chain: Chain) =>
+  cosmosWagmiChains.some((c) => c.id === chain.id);
 
 export const tokenString = (token: Token): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
@@ -47,45 +43,19 @@ export const getTokenPriceInUSD = ({
   return amountBN.times(price);
 };
 
-export const getGasEstimateTotal = ({
-  gasModeValue,
-}: {
-  gasModeValue: GasModeValueDto;
-}) => {
-  return new BigNumber(
-    gasModeValue.value ? toEther({ val: gasModeValue.value, decimals: 9 }) : 0
-  );
-};
-
-export const getMaxStakeAmount = ({
+export const getMaxAmount = ({
   availableAmount,
   gasEstimateTotal,
-  stakeIntegrationMaxLimit,
+  integrationMaxLimit,
 }: {
   availableAmount: BigNumber;
   gasEstimateTotal: BigNumber;
-  stakeIntegrationMaxLimit: BigNumber;
+  integrationMaxLimit: BigNumber;
 }) => {
   return BigNumber.max(
-    BigNumber.min(
-      stakeIntegrationMaxLimit,
-      availableAmount.minus(gasEstimateTotal)
-    ),
+    BigNumber.min(integrationMaxLimit, availableAmount.minus(gasEstimateTotal)),
     new BigNumber(0)
   );
-};
-
-export const toWei = (amount: string, decimals: number) => {
-  return new BigNumber(amount)
-    .times(new BigNumber(1).shiftedBy(decimals))
-    .toFixed(0);
-};
-
-export const toEther = ({ val, decimals }: { val: string; decimals: number }) =>
-  new BigNumber(val).dividedBy(10 ** decimals);
-
-export const etherToGwei = (amount: BigNumber) => {
-  return amount.times(10 ** 9);
 };
 
 export const getBaseToken = (token: Token) => {

@@ -8,13 +8,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render, RenderOptions } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { queryClient } from "../../src/services/query-client";
-import { AppStateProvider, DerivedAppStateProvider } from "../../src/state";
 import { RainbowKitProviderWithTheme } from "../../src/providers/rainbow-kit";
 import { VirtuosoMockContext } from "react-virtuoso";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { config } from "../../src/config";
 import { WagmiConfig } from "wagmi";
 import { getWagmiConfig } from "./wagmi-utils";
+import { StakeStateProvider } from "../../src/state/stake";
 
 APIManager.configure({
   apiKey: config.apiKey,
@@ -42,15 +42,13 @@ const Providers = ({
           <WagmiConfig config={wagmiConfig.config}>
             <RainbowKitProviderWithTheme chains={wagmiConfig.chains}>
               <BrowserRouter>
-                <AppStateProvider>
-                  <DerivedAppStateProvider>
-                    <VirtuosoMockContext.Provider
-                      value={{ viewportHeight: 800, itemHeight: 60 }}
-                    >
-                      {children}
-                    </VirtuosoMockContext.Provider>
-                  </DerivedAppStateProvider>
-                </AppStateProvider>
+                <StakeStateProvider>
+                  <VirtuosoMockContext.Provider
+                    value={{ viewportHeight: 800, itemHeight: 60 }}
+                  >
+                    {children}
+                  </VirtuosoMockContext.Provider>
+                </StakeStateProvider>
               </BrowserRouter>
             </RainbowKitProviderWithTheme>
           </WagmiConfig>

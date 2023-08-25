@@ -13,6 +13,7 @@
     "cancel": "Cancel",
     "ok": "Ok",
     "something_went_wrong": "Something went wrong",
+    "not_enough_gas_token": "Not enough gas token",
     "retry": "Try Again",
     "unsupported_network": "Unsupported network"
   },
@@ -38,7 +39,10 @@
     "validator_search_title": "Select validator",
     "reward_token": "Get {{symbol}} <highlight0>via {{providerName}}</highlight0>",
     "tab_earn": "Earn",
-    "tab_positions": "Positions"
+    "tab_positions": "Positions",
+    "validators_preferred": "Preferred",
+    "validators_other": "All validators",
+    "validators_view_all": "View all"
   },
   "review": {
     "estimated_reward": "Estimated rewards",

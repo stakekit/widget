@@ -5,7 +5,7 @@ import BigNumber from "bignumber.js";
 export const usePositions = () => {
   const { positionsData, isLoading } = usePositionsData();
 
-  const tableData = positionsDataSelector(positionsData);
+  const tableData = positionsTableDataSelector(positionsData);
 
   return {
     isLoading,
@@ -13,18 +13,14 @@ export const usePositions = () => {
   };
 };
 
-const positionsDataSelector = createSelector(
+export const positionsTableDataSelector = createSelector(
   (data: ReturnType<typeof usePositionsData>["positionsData"]) => data,
   (data) =>
     [...data.values()].filter((p) => {
       return p.balanceData.balances.some((b) => {
         const amount = new BigNumber(b.amount);
 
-        return (
-          !amount.isZero() &&
-          !amount.isNaN() &&
-          (b.type === "staked" || b.type === "available")
-        );
+        return !amount.isZero() && !amount.isNaN();
       });
     })
 );

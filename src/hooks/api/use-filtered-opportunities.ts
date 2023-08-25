@@ -1,5 +1,5 @@
 import { useOpportunities } from "./use-opportunities";
-import { useSKWallet } from "../use-sk-wallet";
+import { useSKWallet } from "../wallet/use-sk-wallet";
 import { YieldOpportunityDto } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
@@ -16,6 +16,7 @@ export const useFilteredOpportunities = () => {
   return useOpportunities({
     query: {
       select: (data) => defaultFiltered({ data, isConnected, network }),
+      staleTime: 1000 * 60 * 5,
     },
   });
 };

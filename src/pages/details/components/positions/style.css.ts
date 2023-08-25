@@ -10,13 +10,6 @@ export const virtuosoContainer = style({
   },
 });
 
-export const messageContainer = style([
-  {
-    alignSelf: "flex-start",
-  },
-  atoms({ marginTop: "2" }),
-]);
-
 export const claimRewardsContainer = style([
   atoms({
     background: "positionsClaimRewardsBackground",

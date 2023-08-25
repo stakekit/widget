@@ -18,6 +18,12 @@ export const opportunities: YieldOpportunityDto[] = [
       warmupPeriod: { days: 0 },
       cooldownPeriod: { days: 0 },
       rewardClaiming: "auto",
+      fee: { enabled: true },
+      revshare: { enabled: true },
+    },
+    apy: 0.044016396588880874,
+    validators: [],
+    metadata: {
       rewardTokens: [
         {
           network: "ethereum",
@@ -29,11 +35,16 @@ export const opportunities: YieldOpportunityDto[] = [
             "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/steth.png",
         },
       ],
-      fee: { enabled: true },
-      revshare: { enabled: true },
-    },
-    apy: 0.044016396588880874,
-    metadata: {
+      gasFeeToken: {
+        network: "ethereum",
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+        coinGeckoId: "ethereum",
+        logoURI:
+          "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/eth.png",
+      },
+
       description: "Stake ETH and earn stETH",
       logoURI:
         "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/steth.png",
@@ -65,6 +76,7 @@ export const opportunities: YieldOpportunityDto[] = [
       logoURI:
         "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/avax.png",
     },
+    validators: [],
     config: {
       type: "liquid-staking",
       rewardSchedule: "day",
@@ -73,6 +85,20 @@ export const opportunities: YieldOpportunityDto[] = [
       withdrawPeriod: { days: 2 },
       rewardClaiming: "auto",
       supportsMultipleValidators: false,
+      fee: { enabled: true },
+      revshare: { enabled: true },
+    },
+    apy: 0.072,
+    metadata: {
+      gasFeeToken: {
+        name: "Avalanche C Chain",
+        symbol: "AVAX",
+        decimals: 18,
+        network: "avalanche-c",
+        coinGeckoId: "avalanche-2",
+        logoURI:
+          "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/avax.png",
+      },
       rewardTokens: [
         {
           name: "Staked AVAX",
@@ -84,11 +110,6 @@ export const opportunities: YieldOpportunityDto[] = [
           address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
         },
       ],
-      fee: { enabled: true },
-      revshare: { enabled: true },
-    },
-    apy: 0.072,
-    metadata: {
       name: "Benqi",
       description: "test",
       logoURI: "",
@@ -128,10 +149,21 @@ export const opportunities: YieldOpportunityDto[] = [
       logoURI:
         "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/grt.png",
     },
+    validators: [],
     metadata: {
       name: "The Graph",
       description: "Stake GRT and earn GRT",
       logoURI: "",
+
+      gasFeeToken: {
+        network: "ethereum",
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+        coinGeckoId: "ethereum",
+        logoURI:
+          "https://raw.githubusercontent.com/steakwallet/assets/master/tokenicons/eth.png",
+      },
     },
     config: {
       type: "staking",

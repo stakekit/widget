@@ -1,13 +1,16 @@
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
-import { useDerivedAppState } from "../../state";
 import { useResetApp } from "../../hooks/use-reset-app";
+import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
+import { useStakeState } from "../../state/stake";
 
 export const useComplete = () => {
   const resetApp = useResetApp();
 
   const navigate = useNavigate();
 
-  const { rewardToken } = useDerivedAppState();
+  const { selectedStake } = useStakeState();
+
+  const rewardToken = useRewardTokenDetails(selectedStake);
 
   const location = useLocation();
 

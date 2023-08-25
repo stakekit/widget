@@ -24,7 +24,7 @@ export const Image = ({ fallback, ...props }: ImageProps) => {
     props.onError?.(e);
   };
 
-  if (isError && isValidElement(fallback)) {
+  if ((isError || !props.src) && isValidElement(fallback)) {
     return fallback;
   }
 

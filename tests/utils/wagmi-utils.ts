@@ -2,14 +2,14 @@ import { configureChains, createConfig, mainnet } from "wagmi";
 import { arbitrum, avalanche, optimism, polygon } from "wagmi/chains";
 import { MockConnector } from "wagmi/connectors/mock";
 import { publicProvider } from "wagmi/providers/public";
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { rkMockWallet } from "./mock-connector";
 import {
   injectedWallet,
   omniWallet,
   rainbowWallet,
   walletConnectWallet,
-} from "@rainbow-me/rainbowkit/wallets";
+} from "@stakekit/rainbowkit/wallets";
 import { config } from "../../src/config";
 
 const defaultChains = [mainnet, polygon, optimism, arbitrum, avalanche];

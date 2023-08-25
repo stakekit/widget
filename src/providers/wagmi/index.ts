@@ -1,23 +1,25 @@
 import { configureChains, createConfig } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
+import { evmChains, connector as ethConnector } from "../ethereum/config";
 import {
-  chains as ethChains,
-  connector as ethConnector,
-} from "../ethereum/config";
-import {
+  cosmosWagmiChains,
   connector as cosmosConnector,
-  cosmosChainsToWagmiChains,
 } from "../cosmos/config";
-import { connectorsForWallets } from "@rainbow-me/rainbowkit";
+import { connectorsForWallets } from "@stakekit/rainbowkit";
+import { ledgerLiveConnector } from "../ledger/ledger-connector";
 
 export const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [...ethChains, ...cosmosChainsToWagmiChains],
+  [...evmChains, ...cosmosWagmiChains],
   [publicProvider()]
 );
 
 export const wagmiConfig = createConfig({
   autoConnect: true,
-  connectors: connectorsForWallets([ethConnector, cosmosConnector]),
+  connectors: connectorsForWallets([
+    ethConnector,
+    cosmosConnector,
+    ledgerLiveConnector,
+  ]),
   publicClient,
   webSocketPublicClient,
 });

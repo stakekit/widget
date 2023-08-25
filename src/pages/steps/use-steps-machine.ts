@@ -9,23 +9,22 @@ import {
   TransactionConstructError,
 } from "./errors";
 import { Override } from "../../types/utils";
-import { useAppState } from "../../state";
 import {
   stakeGetStakeSession,
   transactionConstruct,
   transactionGetTransactionStatusFromId,
   transactionSubmitHash,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../hooks/use-sk-wallet";
+import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
+import { getAverageGasMode } from "../../api/get-gas-mode-value";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
 };
 
 export const useStepsMachine = () => {
-  const { gasModeValue } = useAppState();
-  const { sendTransaction } = useSKWallet();
+  const { sendTransaction, isLedgerLive } = useSKWallet();
 
   return useStateMachine({
     initial: "idle",
@@ -79,29 +78,34 @@ export const useStepsMachine = () => {
                     > => !!tx.unsignedTransaction
                   )
                   .map((tx, i) =>
-                    EitherAsync(() =>
-                      transactionConstruct(tx.id, {
-                        gasArgs: gasModeValue
-                          .map((val) => val.gasArgs)
-                          .extract(),
-                      })
-                    )
-                      .mapLeft(() => new TransactionConstructError())
+                    getAverageGasMode(tx.network)
+                      .chainLeft(async () => Right(null))
+                      .chain((gas) =>
+                        EitherAsync(() =>
+                          transactionConstruct(tx.id, {
+                            gasArgs: gas?.gasArgs,
+                            // @ts-expect-error
+                            ledgerWalletAPICompatible: isLedgerLive,
+                          })
+                        ).mapLeft((e) => {
+                          console.log(e);
+                          return new TransactionConstructError();
+                        })
+                      )
                       .chain((tx) => {
-                        if (tx.unsignedTransaction) {
-                          return sendTransaction(
-                            tx.unsignedTransaction,
-                            i
-                          ).chain((val) =>
-                            EitherAsync(() =>
-                              transactionSubmitHash(tx.id, {
-                                hash: val.hash,
-                              })
-                            ).mapLeft(() => new SubmitError())
-                          );
+                        if (!tx.unsignedTransaction) {
+                          return EitherAsync.liftEither(Right(undefined));
                         }
 
-                        return EitherAsync.liftEither(Right(undefined));
+                        return sendTransaction({
+                          tx: tx.unsignedTransaction,
+                          txId: tx.id,
+                          index: i,
+                        }).chain((val) =>
+                          EitherAsync(() =>
+                            transactionSubmitHash(tx.id, { hash: val.hash })
+                          ).mapLeft(() => new SubmitError())
+                        );
                       })
                   )
               )
