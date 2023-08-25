@@ -2,7 +2,17 @@ import { Chain } from "@stakekit/rainbowkit";
 import { CosmosNetworks, EvmNetworks } from "@stakekit/common";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
-type SupportedCosmosChains = CosmosNetworks;
+export type SupportedCosmosChains = Exclude<
+  CosmosNetworks,
+  | "canto"
+  | "evmos"
+  | "injective"
+  | "nym"
+  | "okex-chain"
+  | "stafi"
+  | "stride"
+  | "tgrade"
+>;
 
 export type CosmosChainsMap = {
   [Key in SupportedCosmosChains]: {
