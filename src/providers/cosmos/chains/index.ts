@@ -67,6 +67,10 @@ const filteredChains = Object.fromEntries(
   )
 );
 
+export const filteredCosmosChainNames = new Set(
+  Object.keys(filteredChains).map((key) => filteredChains[key].chain_name)
+);
+
 export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 
 const getWagmiChain = (chain: CosmosChainsAssets) => ({
