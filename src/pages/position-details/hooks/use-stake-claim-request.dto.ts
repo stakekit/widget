@@ -32,7 +32,7 @@ export const useStakeClaimRequestDto = ({
         .chain((val) => claimAvailableRewards.map((car) => ({ ...val, car })))
         .map<
           PendingActionRequestDto & {
-            gasFeeToken: YieldOpportunityDto["token"]; // TODO: change this on api-hooks update
+            gasFeeToken: YieldOpportunityDto["token"];
             address: NonNullable<SKWallet["address"]>;
             additionalAddresses:
               | NonNullable<SKWallet["additionalAddresses"]>

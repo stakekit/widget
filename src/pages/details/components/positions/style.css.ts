@@ -19,3 +19,10 @@ export const claimRewardsContainer = style([
     padding: "2px 6px",
   },
 ]);
+
+export const viaText = style({
+  textOverflow: "ellipsis",
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  width: "100%",
+});

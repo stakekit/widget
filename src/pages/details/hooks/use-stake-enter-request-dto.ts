@@ -23,7 +23,7 @@ export const useStakeEnterRequestDto = () => {
         )
         .map<
           StakeRequestDto & {
-            gasFeeToken: YieldOpportunityDto["token"]; // TODO: change this on api-hooks update
+            gasFeeToken: YieldOpportunityDto["token"];
           }
         >((val) => ({
           gasFeeToken: val.stake.metadata.gasFeeToken,

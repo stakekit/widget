@@ -3,9 +3,17 @@ import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
 import ReactDOM from "react-dom/client";
-import { ComponentProps } from "react";
-import { Location, Navigate, Outlet, Route, Routes } from "react-router-dom";
-import { useToggleTheme } from "./hooks";
+import { ComponentProps, useEffect } from "react";
+import {
+  Location,
+  Navigate,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
+import { useSavedRef, useToggleTheme } from "./hooks";
 import { container } from "./style.css";
 import {
   ReviewPage,
@@ -25,7 +33,7 @@ import {
   SettingsContextProvider,
   SettingsContextType,
 } from "./providers/settings";
-import classNames from "classnames";
+import classNames from "clsx";
 import { PositionDetails } from "./pages/position-details";
 import { useLocationTransition } from "./providers/location-transition";
 import { UnstakeOrClaimReviewPage } from "./pages/unstake-or-claim-review";
@@ -33,9 +41,24 @@ import { StakeCheck } from "./pages/cheks/stake-check";
 import { UnstakeOrClaimCheck } from "./pages/cheks/unstake-or-claim-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
+import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 
 const Widget = () => {
   useToggleTheme();
+
+  const { chain } = useSKWallet();
+
+  const pathnameRef = useSavedRef(useLocation().pathname);
+  const navigateRef = useSavedRef(useNavigate());
+
+  /**
+   * On chain change, navigate to home page
+   */
+  useEffect(() => {
+    if (pathnameRef.current !== "/") {
+      navigateRef.current("/", { replace: true });
+    }
+  }, [chain, pathnameRef, navigateRef]);
 
   useAutoConnectInjectedProviderMachine();
 
@@ -79,11 +102,11 @@ const Widget = () => {
               }
             >
               <Route
-                path="positions/:integrationId"
+                path="positions/:integrationId/:defaultOrValidatorId"
                 element={<PositionDetails />}
               />
               <Route
-                path="unstake/:integrationId"
+                path="unstake/:integrationId/:defaultOrValidatorId"
                 element={<UnstakeOrClaimCheck />}
               >
                 <Route path="review" element={<UnstakeOrClaimReviewPage />} />
@@ -95,7 +118,7 @@ const Widget = () => {
               </Route>
 
               <Route
-                path="claim/:integrationId"
+                path="claim/:integrationId/:defaultOrValidatorId"
                 element={<UnstakeOrClaimCheck />}
               >
                 <Route path="review" element={<UnstakeOrClaimReviewPage />} />

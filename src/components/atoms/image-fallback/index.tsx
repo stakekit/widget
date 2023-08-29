@@ -24,6 +24,7 @@ export const ImageFallback = ({
       })}
       hw={tokenLogoHw ?? "9"}
       display="flex"
+      alignItems="center"
       justifyContent="center"
     >
       <Text
@@ -35,7 +36,7 @@ export const ImageFallback = ({
           }
         }
       >
-        {name.charAt(0)}
+        {name.charAt(0).toUpperCase()}
       </Text>
     </Box>
   );

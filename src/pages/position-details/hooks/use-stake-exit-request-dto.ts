@@ -21,7 +21,7 @@ export const useStakeExitRequestDto = ({
         .chain((val) => balance.map((sb) => ({ ...val, sb })))
         .map<
           StakeRequestDto & {
-            gasFeeToken: YieldOpportunityDto["token"]; // TODO: change this on api-hooks update
+            gasFeeToken: YieldOpportunityDto["token"];
           }
         >((val) => ({
           gasFeeToken: val.u.integration.metadata.gasFeeToken,

@@ -14,17 +14,25 @@ import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balan
 import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
 
 export const useUnstakeOrClaimReview = () => {
-  const integrationId = useParams<{ integrationId: string }>().integrationId!;
+  const params = useParams<{
+    integrationId: string;
+    defaultOrValidatorId: "default" | (string & {});
+  }>();
+
+  const integrationId = params.integrationId;
+  const defaultOrValidatorId = params.defaultOrValidatorId ?? "default";
 
   const { position } = usePositionData(integrationId);
 
-  const claimMatch = useMatch("claim/:integrationId/review");
+  const claimMatch = useMatch(
+    "claim/:integrationId/:defaultOrValidatorId/review"
+  );
 
   const { unstake, pendingActionSession } = useUnstakeOrClaimState();
 
   const { t } = useTranslation();
 
-  const balance = useStakedOrLiquidBalance(position);
+  const balance = useStakedOrLiquidBalance(position, defaultOrValidatorId);
 
   const amount = claimMatch
     ? pendingActionSession.map((val) =>

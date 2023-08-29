@@ -205,8 +205,8 @@ export const PositionDetails = () => {
                       display="flex"
                       justifyContent="space-between"
                       alignItems="center"
-                      px="3"
-                      py="3"
+                      px="4"
+                      py="4"
                       borderRadius="2xl"
                       borderColor="backgroundMuted"
                       borderWidth={1}
@@ -236,15 +236,24 @@ export const PositionDetails = () => {
                         </Text>
                       </Box>
 
-                      {onClaimIsLoading && (
-                        <Box marginRight="2" display="flex">
-                          <Spinner />
-                        </Box>
-                      )}
-                      <Box flex={1} maxWidth="24">
+                      <Box
+                        flex={1}
+                        maxWidth="24"
+                        justifyContent="flex-end"
+                        display="flex"
+                        alignItems="center"
+                      >
+                        {onClaimIsLoading && (
+                          <Box marginRight="2" display="flex">
+                            <Spinner />
+                          </Box>
+                        )}
                         <Button
                           onClick={onClaimClick}
-                          variant={{ size: "small" }}
+                          variant={{
+                            size: "small",
+                            color: onClaimIsLoading ? "disabled" : "primary",
+                          }}
                           disabled={onClaimIsLoading}
                         >
                           {t("position_details.claim")}

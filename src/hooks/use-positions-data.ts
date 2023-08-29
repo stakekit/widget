@@ -1,7 +1,8 @@
 import { Maybe } from "purify-ts";
-import { useFilteredOpportunities } from "./api/use-filtered-opportunities";
+import { useEnabledFilteredOpportunities } from "./api/use-filtered-opportunities";
 import { useSKWallet } from "./wallet/use-sk-wallet";
 import {
+  YieldBalanceDto,
   YieldBalanceWithIntegrationIdRequestDto,
   YieldBalancesWithIntegrationIdDto,
   YieldOpportunityDto,
@@ -11,7 +12,7 @@ import { createSelector } from "reselect";
 import { SKWallet } from "../domain/types";
 
 export const usePositionsData = () => {
-  const filteredOpportunities = useFilteredOpportunities();
+  const filteredOpportunities = useEnabledFilteredOpportunities();
 
   const { address, additionalAddresses } = useSKWallet();
 
@@ -85,6 +86,8 @@ type positionsDataSelectorData = {
   opportunitiesMap: ReturnType<typeof opportunitiesMapSelector>;
 };
 
+type ValidatorAddress = NonNullable<YieldBalanceDto["validatorAddress"]>;
+
 const positionsDataSelector = createSelector(
   (data: positionsDataSelectorData) => data.balancesData,
   (data: positionsDataSelectorData) => data.opportunitiesMap,
@@ -93,7 +96,21 @@ const positionsDataSelector = createSelector(
       (acc, val) => {
         acc.set(val.integrationId, {
           integrationData: opportunitiesMap.get(val.integrationId)!,
-          balanceData: val,
+          balanceData: val.balances.reduce(
+            (acc, b) => {
+              if (b.validatorAddress) {
+                if (!acc[b.validatorAddress]) acc[b.validatorAddress] = [];
+                acc[b.validatorAddress].push(b);
+              } else {
+                if (!acc["default"]) acc["default"] = [];
+                acc["default"].push(b);
+              }
+              return acc;
+            },
+            {} as {
+              default: YieldBalanceDto[];
+            } & Record<ValidatorAddress, YieldBalanceDto[]>
+          ),
         });
 
         return acc;
@@ -101,7 +118,9 @@ const positionsDataSelector = createSelector(
       new Map<
         YieldBalancesWithIntegrationIdDto["integrationId"],
         {
-          balanceData: (typeof balancesData)[number];
+          balanceData: {
+            default: YieldBalanceDto[];
+          } & Record<ValidatorAddress, YieldBalanceDto[]>;
           integrationData: YieldOpportunityDto;
         }
       >()

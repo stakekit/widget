@@ -78,3 +78,40 @@ export const isMobile = () => {
 
   return mobile;
 };
+
+const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+/**
+ *
+ * @summary Retry with exponential backoff. Fire once + retry times
+ */
+export const withRetry = <T extends () => Promise<any>>({
+  fn,
+  retryTimes,
+}: {
+  fn: T;
+  retryTimes: number;
+}) => {
+  let retryCount = 0;
+
+  return async (): Promise<Awaited<ReturnType<T>>> => {
+    try {
+      return await fn();
+    } catch (error) {
+      let err = error;
+
+      while (retryCount < retryTimes) {
+        try {
+          await wait(2 ** (retryCount + 1) * 1000);
+
+          return await fn();
+        } catch (newError) {
+          err = newError;
+          retryCount++;
+        }
+      }
+
+      throw err;
+    }
+  };
+};

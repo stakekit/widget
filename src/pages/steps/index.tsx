@@ -10,7 +10,7 @@ import {
   stepsBefore,
   stepsBeforeMuted,
 } from "./styles.css";
-import cls from "classnames";
+import cls from "clsx";
 import { Maybe } from "purify-ts";
 import { StakeDto } from "@stakekit/api-hooks";
 import { useMatch } from "react-router-dom";
@@ -286,7 +286,7 @@ export const UnstakeOrClaimStepsPage = () => {
   return (
     <StepsPage
       session={
-        useMatch("claim/:integrationId/steps")
+        useMatch("claim/:integrationId/:defaultOrValidatorId/steps")
           ? pendingActionSession
           : unstakeSession
       }

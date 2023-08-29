@@ -3,6 +3,7 @@ import { useSKWallet } from "../wallet/use-sk-wallet";
 import { YieldOpportunityDto } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
+import { useAllEnabledOpportunities } from "./use-all-enabled-opportunities";
 
 type SelectorInputData = {
   data: YieldOpportunityDto[];
@@ -10,6 +11,10 @@ type SelectorInputData = {
   network: SKWallet["network"];
 };
 
+/**
+ *
+ * @summary Opportunities with default filter applied
+ */
 export const useFilteredOpportunities = () => {
   const { network, isConnected } = useSKWallet();
 
@@ -21,6 +26,10 @@ export const useFilteredOpportunities = () => {
   });
 };
 
+/**
+ *
+ * @summary Opportunities with default and staking enabled filter applied
+ */
 export const useStakeEnterEnabledOpportunities = () => {
   const { network, isConnected } = useSKWallet();
 
@@ -29,6 +38,19 @@ export const useStakeEnterEnabledOpportunities = () => {
       select: (data) =>
         stakeEnterEnabledFiltered({ data, isConnected, network }),
     },
+  });
+};
+
+/**
+ *
+ * @summary Get all enabled opportunities with default filter applied
+ */
+export const useEnabledFilteredOpportunities = () => {
+  const { network, isConnected } = useSKWallet();
+
+  return useAllEnabledOpportunities({
+    select: (data) => defaultFiltered({ data, isConnected, network }),
+    staleTime: 1000 * 60 * 5,
   });
 };
 

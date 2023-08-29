@@ -18,6 +18,7 @@ import {
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../api/get-gas-mode-value";
+import { withRetry } from "../../utils";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -102,9 +103,11 @@ export const useStepsMachine = () => {
                           txId: tx.id,
                           index: i,
                         }).chain((val) =>
-                          EitherAsync(() =>
-                            transactionSubmitHash(tx.id, { hash: val.hash })
-                          ).mapLeft(() => new SubmitError())
+                          EitherAsync(async () => {
+                            if (val.broadcasted) return;
+
+                            transactionSubmitHash(tx.id, { hash: val.hash });
+                          }).mapLeft(() => new SubmitError())
                         );
                       })
                   )
@@ -138,8 +141,11 @@ export const useStepsMachine = () => {
             .chain((val) =>
               EitherAsync.sequence(
                 val.transactions.map((tx) =>
-                  EitherAsync(() =>
-                    transactionGetTransactionStatusFromId(tx.id)
+                  EitherAsync(
+                    withRetry({
+                      retryTimes: 2,
+                      fn: () => transactionGetTransactionStatusFromId(tx.id),
+                    })
                   )
                     .mapLeft(() => new MissingHashError())
                     .chain((result) =>

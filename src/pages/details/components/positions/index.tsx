@@ -5,7 +5,7 @@ import { ListItem } from "../../../../components/atoms/list/list-item";
 import { apyToPercentage, formatTokenBalance } from "../../../../utils";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { useTranslation } from "react-i18next";
-import { claimRewardsContainer, virtuosoContainer } from "./style.css";
+import { claimRewardsContainer, viaText, virtuosoContainer } from "./style.css";
 import BigNumber from "bignumber.js";
 import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { SKLink } from "../../../../components/atoms/link";
@@ -57,7 +57,7 @@ export const Positions = () => {
           style={{ height: "auto" }}
           data={tableData}
           itemContent={(_index, item) => {
-            const balance = item.balanceData.balances.find(
+            const balance = item.balances.find(
               (b) => b.type === "staked" || b.type === "available"
             );
 
@@ -65,14 +65,23 @@ export const Positions = () => {
 
             const amount = new BigNumber(balance.amount);
 
-            const hasRewards = item.balanceData.balances
+            const hasPendingClaimRewards = item.balances
               .find((b) => b.type === "rewards")
               ?.pendingActions.some((a) => a.type === "CLAIM_REWARDS");
+
+            const validator = item.integrationData.validators.find(
+              (v) => v.address === item.defaultOrValidatorId
+            );
+
+            const providerName =
+              item.defaultOrValidatorId === "default"
+                ? item.integrationData.metadata.provider?.name
+                : validator?.name ?? "";
 
             return (
               <SKLink
                 relative="path"
-                to={`../positions/${item.integrationData.id}`}
+                to={`../positions/${item.integrationData.id}/${item.defaultOrValidatorId}`}
               >
                 <Box my="2">
                   <ListItem>
@@ -80,6 +89,8 @@ export const Positions = () => {
                       display="flex"
                       justifyContent="flex-start"
                       alignItems="center"
+                      flex={3}
+                      minWidth="0"
                     >
                       <TokenIcon
                         metadata={item.integrationData.metadata}
@@ -91,6 +102,7 @@ export const Positions = () => {
                         flexDirection="column"
                         justifyContent="center"
                         alignItems="flex-start"
+                        minWidth="0"
                       >
                         <Box
                           display="flex"
@@ -102,7 +114,7 @@ export const Positions = () => {
                             {balance.token.symbol}
                           </Text>
 
-                          {hasRewards && (
+                          {hasPendingClaimRewards && (
                             <Box className={claimRewardsContainer}>
                               <Text variant={{ size: "xsmall", type: "white" }}>
                                 {t("positions.claim_rewards")}
@@ -111,16 +123,14 @@ export const Positions = () => {
                           )}
                         </Box>
                         <Text
+                          className={viaText}
                           variant={{
                             size: "small",
                             type: "muted",
                             weight: "normal",
                           }}
                         >
-                          {t("positions.via", {
-                            providerName:
-                              item.integrationData.metadata.provider?.name,
-                          })}
+                          {t("positions.via", { providerName })}
                         </Text>
                       </Box>
                     </Box>
@@ -130,9 +140,14 @@ export const Positions = () => {
                       justifyContent="center"
                       alignItems="flex-end"
                       flexDirection="column"
+                      flex={1}
+                      textAlign="end"
                     >
                       <Text variant={{ size: "small", weight: "normal" }}>
-                        {apyToPercentage(item.integrationData.apy)}%
+                        {apyToPercentage(
+                          validator?.apr ?? item.integrationData.apy
+                        )}
+                        %
                       </Text>
                       {balance.amount && (
                         <Text

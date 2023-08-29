@@ -1,7 +1,7 @@
 import { Box, Text } from "../../../components";
 import { useTranslation } from "react-i18next";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
-import classNames from "classnames";
+import classNames from "clsx";
 import { rewardsDot, tab } from "./styles.css";
 
 export type TabsProps = {

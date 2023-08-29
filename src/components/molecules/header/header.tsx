@@ -11,7 +11,7 @@ import {
   parentContainer,
   titleStyle,
 } from "./styles.css";
-import classNames from "classnames";
+import classNames from "clsx";
 import { HelpModal } from "../help-modal";
 import { isLedgerDappBrowserProvider, isMobile } from "../../../utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";

@@ -26,10 +26,7 @@ export const Details = () => {
   const { tableData } = usePositions();
 
   const hasPendingRewards = useMemo(
-    () =>
-      tableData.some((p) =>
-        p.balanceData.balances.some((b) => b.type === "rewards")
-      ),
+    () => tableData.some((p) => p.balances.some((b) => b.type === "rewards")),
     [tableData]
   );
 

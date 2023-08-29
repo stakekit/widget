@@ -8,7 +8,7 @@ export const unresponsiveProperties = {
   border: ["none"],
   gap: vars.space,
   borderRadius: vars.borderRadius,
-  textAlign: ["left", "center", "right"],
+  textAlign: ["left", "center", "right", "end"],
   flex: [1, 2, 3, 4, 5],
   lineHeight: vars.lineHeight,
   letterSpacing: vars.letterSpacing,
