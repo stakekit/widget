@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "clsx";
 import { createElement, PropsWithChildren } from "react";
 import { heading, HeadingVariants } from "./styles.css";
 

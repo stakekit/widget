@@ -1,4 +1,4 @@
-import classNames from "classnames";
+import classNames from "clsx";
 import { PropsWithChildren } from "react";
 import { Box } from "../box";
 

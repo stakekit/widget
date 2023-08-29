@@ -56,7 +56,7 @@ const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Chihuahua]: "chihuahua-1",
   [CosmosNetworks.Comdex]: "comdex-1",
   [CosmosNetworks.Crescent]: "crescent-1",
-  [CosmosNetworks.Cronos]: "cronosmainnet_25-1",
+  [CosmosNetworks.Cronos]: "crypto-org-chain-mainnet-1",
   [CosmosNetworks.Cudos]: "cudos-1",
   [CosmosNetworks.FetchAi]: "fetchhub-4",
   [CosmosNetworks.GravityBridge]: "gravity-bridge-3",

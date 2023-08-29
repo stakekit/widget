@@ -23,7 +23,7 @@ import {
 } from "./styles.css";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { State } from "../../../state/stake/types";
-import classNames from "classnames";
+import classNames from "clsx";
 import { useMemo, useState } from "react";
 import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 
@@ -51,7 +51,11 @@ export const SelectValidator = ({
           };
         }
 
-        const groupedItems = ss.validators.reduce(
+        const sortedValidators = ss.validators
+          .slice()
+          .sort((a, b) => (b.apr ?? 0) - (a.apr ?? 0));
+
+        const groupedItems = sortedValidators.reduce(
           (acc, val) => {
             if (val.preferred) {
               acc[0].items.push(val);
@@ -74,13 +78,13 @@ export const SelectValidator = ({
         );
 
         // If we do not have preferred validators, show all other
-        if (!groupedItems[0].items.length && ss.validators.length) {
+        if (!groupedItems[0].items.length && sortedValidators.length) {
           return {
             canViewMore: false,
-            tableData: ss.validators,
-            groupCounts: [ss.validators.length],
+            tableData: sortedValidators,
+            groupCounts: [sortedValidators.length],
             groupedItems: [
-              { items: ss.validators, label: t("details.validators_other") },
+              { items: sortedValidators, label: t("details.validators_other") },
             ],
           };
         }

@@ -26,11 +26,16 @@ export const useOnClaim = () => {
           EitherAsync(() =>
             pendingActionAndTxsConstruct.mutateAsync({
               gasModeValue: val.gas ?? undefined,
-              pendingActionRequestDto: val.stakeRequestDto,
+              pendingActionRequestDto: {
+                integrationId: val.stakeRequestDto.integrationId,
+                type: val.stakeRequestDto.type,
+                passthrough: val.stakeRequestDto.passthrough,
+                args: val.stakeRequestDto.args,
+              },
             })
           )
-            .map((res) => ({ ...val, ...res }))
             .mapLeft(() => new Error("Stake claim and txs construct failed"))
+            .map((res) => ({ ...val, ...res }))
         )
         .chain(
           ({ stakeRequestDto, pendingActionRes, transactionConstructRes }) =>

@@ -144,7 +144,9 @@ export const StakeCompletePage = () => {
 export const UnstakeOrClaimCompletePage = () => {
   const { unstake, claim } = useUnstakeOrClaimState();
 
-  const claimMatch = useMatch("claim/:integrationId/complete");
+  const claimMatch = useMatch(
+    "claim/:integrationId/:defaultOrValidatorId/complete"
+  );
 
   const integrationId = useParams<{ integrationId: string }>().integrationId!;
 

@@ -27,10 +27,16 @@ import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { useStakeClaimRequestDto } from "./use-stake-claim-request.dto";
 
 export const usePositionDetails = () => {
-  const { unstake } = useUnstakeOrClaimState();
+  const { unstake, claim } = useUnstakeOrClaimState();
   const dispatch = useUnstakeOrClaimDispatch();
 
-  const integrationId = useParams<{ integrationId: string }>().integrationId!;
+  const params = useParams<{
+    integrationId: string;
+    defaultOrValidatorId: "default" | (string & {});
+  }>();
+
+  const integrationId = params.integrationId;
+  const defaultOrValidatorId = params.defaultOrValidatorId ?? "default";
 
   const unstakeAmount = unstake.chain((u) => u.amount);
 
@@ -53,14 +59,17 @@ export const usePositionDetails = () => {
     }
   });
 
-  const balance = useStakedOrLiquidBalance(position);
+  const balance = useStakedOrLiquidBalance(position, defaultOrValidatorId);
 
   const rewardsBalance = useMemo(
     () =>
       position.chain((p) =>
-        List.find((b) => b.type === "rewards", p.balanceData.balances)
+        List.find(
+          (b) => b.type === "rewards",
+          p.balanceData[defaultOrValidatorId]
+        )
       ),
-    [position]
+    [position, defaultOrValidatorId]
   );
 
   const prices = usePrices(
@@ -152,6 +161,29 @@ export const usePositionDetails = () => {
       });
     });
   }, [dispatch, integrationId, position, unstake]);
+
+  /**
+   *
+   * @summary Set claim state
+   */
+  useEffect(() => {
+    claim.ifNothing(() => {
+      claimAvailableRewards
+        .chain((car) => position.map((p) => ({ car, p })))
+        .chain((val) => rewardsBalance.map((rb) => ({ ...val, rb })))
+        .ifJust(({ car, p, rb }) => {
+          dispatch({
+            type: "claim/set",
+            data: {
+              integration: p.integrationData,
+              amount: rb.amount,
+              passthrough: car.passthrough,
+              type: car.type,
+            },
+          });
+        });
+    });
+  }, [claim, claimAvailableRewards, dispatch, position, rewardsBalance]);
 
   // If changing unstake amount is not allowed, set `unstakeAmount` to staked amount
   // If `unstakeAmount` is less then min or greater than max, set in bounds
@@ -250,6 +282,8 @@ export const usePositionDetails = () => {
 
   const onStakeExit = useOnStakeExit();
   const stakeExitRequestDto = useStakeExitRequestDto({ balance });
+
+  const onClaim = useOnClaim();
   const stakeClaimRequestDto = useStakeClaimRequestDto({
     balance,
     claimAvailableRewards,
@@ -266,8 +300,6 @@ export const usePositionDetails = () => {
       false
     );
 
-  const onClaim = useOnClaim();
-
   const unstakeAvailable = position.mapOrDefault(
     (p) => p.integrationData.status.exit,
     false
@@ -283,7 +315,10 @@ export const usePositionDetails = () => {
     onStakeExit
       .mutateAsync({ stakeRequestDto: stakeExitRequestDto })
       .then(() =>
-        navigate(`../../unstake/${integrationId}/review`, { relative: "path" })
+        navigate(
+          `../../../unstake/${integrationId}/${defaultOrValidatorId}/review`,
+          { relative: "path" }
+        )
       );
   };
 
@@ -291,7 +326,10 @@ export const usePositionDetails = () => {
     onClaim
       .mutateAsync({ stakeRequestDto: stakeClaimRequestDto })
       .then(() =>
-        navigate(`../../claim/${integrationId}/review`, { relative: "path" })
+        navigate(
+          `../../../claim/${integrationId}/${defaultOrValidatorId}/review`,
+          { relative: "path" }
+        )
       );
   };
 

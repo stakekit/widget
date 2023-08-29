@@ -31,8 +31,12 @@ export const useComplete = () => {
 
   const rewardTokenDetails = rewardToken.extractNullable();
 
-  const unstakeMatch = useMatch("unstake/:integrationId/complete");
-  const claimMatch = useMatch("claim/:integrationId/complete");
+  const unstakeMatch = useMatch(
+    "unstake/:integrationId/:defaultOrValidatorId/complete"
+  );
+  const claimMatch = useMatch(
+    "claim/:integrationId/:defaultOrValidatorId/complete"
+  );
 
   return {
     rewardTokenDetails,

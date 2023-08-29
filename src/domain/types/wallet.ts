@@ -20,7 +20,7 @@ export type SKWallet = {
     index: number;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { hash: Hash }
+    { hash: Hash; broadcasted: boolean }
   >;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;

@@ -65,7 +65,8 @@ export const getBaseToken = (token: Token) => {
 };
 
 /**
- * Get stake transactions available for signing or tx status check
+ *
+ * @summary Get stake transactions available for signing or tx status check.
  * If any of the transactions are in a failed state, return an error
  */
 export const getValidStakeSessionTx = (stakeDto: StakeDto) => {

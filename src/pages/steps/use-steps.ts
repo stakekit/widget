@@ -12,7 +12,8 @@ export const useSteps = (session: Maybe<StakeDto>) => {
   const id = session.map((val) => val.id).extractNullable();
 
   /**
-   * Start sign + check tx on mount
+   *
+   * @summary Start sign + check tx on mount
    */
   useEffect(() => {
     if (!id) return;
@@ -21,7 +22,8 @@ export const useSteps = (session: Maybe<StakeDto>) => {
   }, [id, send]);
 
   /**
-   * Clear timeout on unmount
+   *
+   * @summary Clear timeout on unmount
    */
   useEffect(() => {
     return () => {
@@ -35,6 +37,7 @@ export const useSteps = (session: Maybe<StakeDto>) => {
       navigate("../complete", {
         state: { urls: machine.context.urls },
         relative: "path",
+        replace: true,
       });
     }
   }, [machine.context.urls, machine.value, navigate]);
