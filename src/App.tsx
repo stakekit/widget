@@ -75,7 +75,7 @@ const Widget = () => {
       background="background"
       className={classNames([
         container,
-        shouldAnimate({ displayLocation, location, prevLocationPathName }) &&
+        shouldAnimate({ location, prevLocationPathName }) &&
           transitionClassName,
       ])}
       onAnimationEnd={onAnimationEnd}
@@ -161,11 +161,9 @@ export const renderSKWidget = ({
 };
 
 const shouldAnimate = ({
-  displayLocation,
   location,
   prevLocationPathName,
 }: {
-  displayLocation: Location;
   location: Location;
   prevLocationPathName: Location["pathname"] | null;
 }) => {
