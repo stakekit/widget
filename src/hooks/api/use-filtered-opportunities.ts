@@ -45,12 +45,15 @@ export const useStakeEnterEnabledOpportunities = () => {
  *
  * @summary Get all enabled opportunities with default filter applied
  */
-export const useEnabledFilteredOpportunities = () => {
+export const useEnabledFilteredOpportunities = (
+  opts?: Parameters<typeof useAllEnabledOpportunities>[0]
+) => {
   const { network, isConnected } = useSKWallet();
 
   return useAllEnabledOpportunities({
     select: (data) => defaultFiltered({ data, isConnected, network }),
     staleTime: 1000 * 60 * 5,
+    ...opts,
   });
 };
 

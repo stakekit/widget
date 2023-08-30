@@ -4,7 +4,7 @@ export const CheckSteps = (props: { hw?: number }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 448 512"
-    fill={vars.color.white}
+    fill={vars.color.background}
     height={props.hw ?? 24}
     width={props.hw ?? 24}
   >

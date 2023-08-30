@@ -30,7 +30,12 @@ export const Positions = () => {
       {(isLoading || !isConnected) && (
         <Box marginTop="2" flex={1}>
           {isLoading && (
-            <Box display="flex" flex={1} justifyContent="center">
+            <Box
+              marginBottom="2"
+              display="flex"
+              flex={1}
+              justifyContent="center"
+            >
               <Spinner />
             </Box>
           )}

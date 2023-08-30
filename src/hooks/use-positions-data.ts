@@ -6,15 +6,20 @@ import {
   YieldBalanceWithIntegrationIdRequestDto,
   YieldBalancesWithIntegrationIdDto,
   YieldOpportunityDto,
+  getStakeGetMultipleIntegrationBalancesQueryKey,
   useStakeGetMultipleIntegrationBalances,
+  useStakeKitQueryClient,
 } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
 import { SKWallet } from "../domain/types";
+import { useCallback } from "react";
 
 export const usePositionsData = () => {
-  const filteredOpportunities = useEnabledFilteredOpportunities();
+  const { address, additionalAddresses, isConnected } = useSKWallet();
 
-  const { address, additionalAddresses } = useSKWallet();
+  const filteredOpportunities = useEnabledFilteredOpportunities({
+    enabled: isConnected,
+  });
 
   const yieldBalanceWithIntegrationIdRequestDto = Maybe.fromNullable(
     filteredOpportunities.data
@@ -30,7 +35,12 @@ export const usePositionsData = () => {
   const stakeGetMultipleIntegrationBalances =
     useStakeGetMultipleIntegrationBalances(
       yieldBalanceWithIntegrationIdRequestDto,
-      { query: { enabled: !!yieldBalanceWithIntegrationIdRequestDto.length } }
+      {
+        query: {
+          enabled: !!yieldBalanceWithIntegrationIdRequestDto.length,
+          staleTime: 1000 * 60 * 5,
+        },
+      }
     );
 
   const positionsData = Maybe.fromNullable(
@@ -126,3 +136,13 @@ const positionsDataSelector = createSelector(
       >()
     )
 );
+
+export const useInvalidateBalances = () => {
+  const queryClient = useStakeKitQueryClient();
+
+  return useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: [getStakeGetMultipleIntegrationBalancesQueryKey({} as any)[0]],
+    });
+  }, [queryClient]);
+};

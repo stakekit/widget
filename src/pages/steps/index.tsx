@@ -64,9 +64,9 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
                   <Spinner variant={{ color: "inverted" }} />
                 ) : state.sign.isError ? (
                   <XIcon color="background" />
-                ) : (
+                ) : state.sign.isSuccess ? (
                   <CheckSteps hw={18} />
-                )}
+                ) : null}
               </Box>
             </Box>
 
@@ -185,9 +185,9 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
                   <Spinner variant={{ color: "inverted" }} />
                 ) : state.checkTxStatus.isError ? (
                   <XIcon color="background" />
-                ) : (
+                ) : state.checkTxStatus.isSuccess ? (
                   <CheckSteps hw={18} />
-                )}
+                ) : null}
               </Box>
             </Box>
 
@@ -235,7 +235,9 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
                 alignItems="center"
                 justifyContent="center"
               >
-                <CheckSteps hw={18} />
+                {state.checkTxStatus.isSuccess && state.sign.isSuccess && (
+                  <CheckSteps hw={18} />
+                )}
               </Box>
             </Box>
 

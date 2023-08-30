@@ -19,6 +19,8 @@ import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../api/get-gas-mode-value";
 import { withRetry } from "../../utils";
+import { useInvalidateBalances } from "../../hooks/use-positions-data";
+import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -26,6 +28,9 @@ const tt = t as <T extends unknown>() => {
 
 export const useStepsMachine = () => {
   const { sendTransaction, isLedgerLive } = useSKWallet();
+
+  const invalidateBalances = useInvalidateBalances();
+  const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
 
   return useStateMachine({
     initial: "idle",
@@ -169,6 +174,9 @@ export const useStepsMachine = () => {
               },
               Right: (v) => {
                 if (v.every((val) => val.isConfirmed)) {
+                  invalidateBalances();
+                  invalidateTokenAvailableAmount();
+
                   setContext((ctx) => ({
                     ...ctx,
                     urls: v.map((val) => val.result.url),
