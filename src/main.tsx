@@ -2,9 +2,7 @@ import ReactDOM from "react-dom/client";
 import { SKApp } from "./App";
 import { darkTheme } from "./styles";
 import { config } from "./config";
-
-document.getElementById("root")!.style.background = "#211F25";
-document.body!.style.background = "#211F25";
+import "./standalone.styles.css";
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <SKApp

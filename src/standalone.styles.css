@@ -1,0 +1,14 @@
+body {
+  background: #211f25;
+}
+
+#root {
+  padding-top: 80px;
+  background: #211f25;
+}
+
+@media (max-width: 520px) {
+  #root {
+    padding-top: 0;
+  }
+}
