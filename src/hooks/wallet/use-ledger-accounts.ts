@@ -25,7 +25,11 @@ export const useLedgerAccounts = (connector?: Connector) => {
     return connector.getAccountsOnCurrentChain();
   }, [connector]);
 
-  return useSyncExternalStore(subscribe, getSnapshot);
+  const getServerSnapshot = useCallback(() => {
+    return defaultValue;
+  }, []);
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 };
 
 const defaultValue: Account[] = [];
