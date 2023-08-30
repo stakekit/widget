@@ -14,8 +14,12 @@ export const useAllEnabledOpportunities = (
 ) => {
   return useQuery<YieldOpportunityDto[], Error>(
     ["enabled-opportunities"],
-    async () => {
-      const result = await getMyYieldOpportunitiesRecursive();
+    async ({ signal }) => {
+      const result = await getMyYieldOpportunitiesRecursive({
+        data: [],
+        page: 1,
+        signal,
+      });
 
       return result.caseOf({
         Left: (e) => Promise.reject(e),
@@ -26,18 +30,26 @@ export const useAllEnabledOpportunities = (
   );
 };
 
-const getMyYieldOpportunitiesRecursive = (
-  page = 1,
-  data: YieldOpportunityDto[] = []
-): EitherAsync<Error, YieldOpportunityDto[]> => {
+const getMyYieldOpportunitiesRecursive = ({
+  data,
+  page,
+  signal,
+}: {
+  page: number;
+  data: YieldOpportunityDto[];
+  signal?: AbortSignal;
+}): EitherAsync<Error, YieldOpportunityDto[]> => {
   return EitherAsync(
     withRetry({
       retryTimes: 2,
       fn: () =>
-        stakeV2GetMyYieldOpportunities({
-          page: page,
-          limit: 50,
-        }),
+        stakeV2GetMyYieldOpportunities(
+          {
+            page: page,
+            limit: 50,
+          },
+          signal
+        ),
     })
   )
     .mapLeft(
@@ -47,7 +59,11 @@ const getMyYieldOpportunitiesRecursive = (
       data.push(...response.data);
 
       if (response.hasNextPage) {
-        return getMyYieldOpportunitiesRecursive(page + 1, data);
+        return getMyYieldOpportunitiesRecursive({
+          page: page + 1,
+          data,
+          signal,
+        });
       } else {
         return EitherAsync(async () => data);
       }
