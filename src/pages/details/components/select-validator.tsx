@@ -52,6 +52,7 @@ export const SelectValidator = ({
         }
 
         const sortedValidators = ss.validators
+          .filter((val) => !!val.apr)
           .slice()
           .sort((a, b) => (b.apr ?? 0) - (a.apr ?? 0));
 
@@ -257,7 +258,7 @@ export const SelectValidator = ({
                               )}
                             </Box>
 
-                            {item.apr && (
+                            {"apr" in item && (
                               <Box>
                                 <Text variant={{ size: "small" }}>
                                   {apyToPercentage(item.apr)}%
