@@ -3,9 +3,12 @@ import { List, Maybe } from "purify-ts";
 import {
   BalancesRequestDto,
   TokenDto,
+  getTokenGetTokenBalancesQueryKey,
+  useStakeKitQueryClient,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../wallet/use-sk-wallet";
+import { useCallback } from "react";
 
 export const useTokenAvailableAmount = ({
   tokenDto,
@@ -60,4 +63,14 @@ export const useTokenAvailableAmount = ({
         ),
     },
   });
+};
+
+export const useInvalidateTokenAvailableAmount = () => {
+  const queryClient = useStakeKitQueryClient();
+
+  return useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
+    });
+  }, [queryClient]);
 };

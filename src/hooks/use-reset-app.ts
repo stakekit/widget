@@ -1,6 +1,4 @@
-import { APIManager } from "@stakekit/api-hooks";
 import { useCallback } from "react";
-import { queryClient } from "../services/query-client";
 import { useStakeDispatch } from "../state/stake";
 
 export const useResetApp = () => {
@@ -8,7 +6,5 @@ export const useResetApp = () => {
 
   return useCallback(() => {
     appDispatch({ type: "state/reset" });
-    APIManager.getQueryClient()?.resetQueries();
-    queryClient.resetQueries();
   }, [appDispatch]);
 };

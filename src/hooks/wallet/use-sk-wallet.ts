@@ -1,7 +1,7 @@
 import { decodeSignature } from "@cosmjs/amino";
-import { fromHex } from "@cosmjs/encoding";
+import { fromHex, toHex } from "@cosmjs/encoding";
 import { sendTransaction as wagmiSendTransaction } from "@wagmi/core";
-import { SignDoc } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useAccount, useDisconnect, useNetwork } from "wagmi";
@@ -10,7 +10,6 @@ import {
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/errors";
-import { withRetry } from "../../utils";
 import {
   getCosmosChainWallet,
   isCosmosConnector,
@@ -25,7 +24,6 @@ import {
   CosmosTransaction,
   deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
-import BigNumber from "bignumber.js";
 
 export const useSKWallet = (): SKWallet => {
   const {
@@ -64,6 +62,9 @@ export const useSKWallet = (): SKWallet => {
           : Right(connector)
       ).chain((conn) => {
         if (isLedgerLiveConnector(conn)) {
+          /**
+           * Ledger Live connector
+           */
           return EitherAsync.liftEither(
             Either.encase(() => conn.getWalletApiClient()).mapLeft(
               () => new Error("getWalletApiClient failed")
@@ -96,9 +97,6 @@ export const useSKWallet = (): SKWallet => {
                   ...deserializedTransaction,
                   mode: "delegate",
                   family: "cosmos",
-                  amount: new BigNumber(100000),
-                  recipient:
-                    "cosmosvaloper15urq2dtp9qce4fyc85m6upwm9xul3049e02707",
                 };
 
                 return walletApiClient.transaction.sign(
@@ -122,6 +120,9 @@ export const useSKWallet = (): SKWallet => {
             )
             .map((val) => ({ hash: val, broadcasted: true as boolean }));
         } else if (isCosmosConnector(conn)) {
+          /**
+           * Cosmos connector
+           */
           return getCosmosChainWallet(conn).chain((cw) =>
             // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
             EitherAsync(() =>
@@ -133,25 +134,28 @@ export const useSKWallet = (): SKWallet => {
             )
               .mapLeft(() => new Error("signDirect failed"))
               .chain((val) => {
-                return EitherAsync(
-                  withRetry({
-                    fn: () =>
-                      cw.broadcast({
-                        authInfoBytes: val.signed.authInfoBytes,
-                        bodyBytes: val.signed.bodyBytes,
-                        signatures: [decodeSignature(val.signature).signature],
-                      }),
-                    retryTimes: 2,
-                  })
+                const signed = toHex(
+                  TxRaw.encode({
+                    authInfoBytes: val.signed.authInfoBytes,
+                    bodyBytes: val.signed.bodyBytes,
+                    signatures: [decodeSignature(val.signature).signature],
+                  }).finish()
+                );
+
+                return EitherAsync(() =>
+                  transactionSubmit(txId, { signedTransaction: signed })
                 )
                   .mapLeft(() => new Error("broadcast failed"))
                   .map((val) => ({
                     hash: val.transactionHash,
-                    broadcasted: false,
+                    broadcasted: true,
                   }));
               })
           );
         } else {
+          /**
+           * EVM connector
+           */
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
               .chain((val) => unsignedTransactionCodec.decode(val))
