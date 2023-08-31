@@ -15,14 +15,7 @@ export const Footer = ({ description }: FooterProps) => {
   const { t } = useTranslation();
 
   return (
-    <Box
-      background="backgroundMuted"
-      px="6"
-      py="6"
-      gap="3"
-      display="flex"
-      flexDirection="column"
-    >
+    <Box gap="3" display="flex" flexDirection="column">
       {description && (
         <Box display="flex" alignItems="center">
           <Box hw="4" marginRight="2">
@@ -30,6 +23,7 @@ export const Footer = ({ description }: FooterProps) => {
           </Box>
           <Text
             variant={{
+              weight: "normal",
               type: "muted",
               size: "small",
             }}
@@ -45,6 +39,7 @@ export const Footer = ({ description }: FooterProps) => {
         </Box>
         <Text
           variant={{
+            weight: "normal",
             type: "muted",
             size: "small",
           }}
@@ -59,6 +54,7 @@ export const Footer = ({ description }: FooterProps) => {
         </Box>
         <Text
           variant={{
+            weight: "normal",
             type: "muted",
             size: "small",
           }}
