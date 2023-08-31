@@ -5,7 +5,6 @@ import { queryClient } from "../services/query-client";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { config } from "../config";
 import { EVMProvider } from "./ethereum/provider";
-import { CosmosProvider } from "./cosmos/provider";
 import { ThemeWrapper } from "./theme-wrapper";
 import { useSettings } from "./settings";
 import { LocationTransitionProvider } from "./location-transition";
@@ -33,19 +32,17 @@ export const Providers = ({ children }: PropsWithChildren) => {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <StakeKitQueryProvider>
-          <CosmosProvider>
-            <EVMProvider>
-              <MemoryRouter>
-                <StakeStateProvider>
-                  <ThemeWrapper>
-                    <LocationTransitionProvider>
-                      {children}
-                    </LocationTransitionProvider>
-                  </ThemeWrapper>
-                </StakeStateProvider>
-              </MemoryRouter>
-            </EVMProvider>
-          </CosmosProvider>
+          <EVMProvider>
+            <MemoryRouter>
+              <StakeStateProvider>
+                <ThemeWrapper>
+                  <LocationTransitionProvider>
+                    {children}
+                  </LocationTransitionProvider>
+                </ThemeWrapper>
+              </StakeStateProvider>
+            </MemoryRouter>
+          </EVMProvider>
         </StakeKitQueryProvider>
       </QueryClientProvider>
     </StrictMode>

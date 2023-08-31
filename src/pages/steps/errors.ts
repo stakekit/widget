@@ -1,8 +1,8 @@
 export class SendTransactionError extends Error {
   name = "SendTransactionError";
 }
-export class SubmitError extends Error {
-  name = "SubmitError";
+export class SignError extends Error {
+  name = "SignError";
 }
 export class GetStakeSessionError extends Error {
   name = "GetStakeSessionError";
@@ -15,4 +15,10 @@ export class MissingHashError extends Error {
 }
 export class TransactionDecodeError extends Error {
   name = "TransactionDecodeError";
+}
+export class SubmitHashError extends Error {
+  name = "SubmitHashError";
+}
+export class SubmitError extends Error {
+  name = "SubmitError";
 }

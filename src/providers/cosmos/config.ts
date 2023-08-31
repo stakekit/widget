@@ -3,13 +3,22 @@ import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
 import { Address, Connector } from "wagmi";
-import { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
+import {
+  ChainWalletBase,
+  Logger,
+  MainWalletBase,
+  WalletManager,
+} from "@cosmos-kit/core";
 import { EthereumProvider } from "eip1193-provider";
 import { createWalletClient, custom } from "viem";
 import { Wallet } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { cosmosChainsMap } from "./chains";
+import { cosmosChainsMap, filteredCosmosChainNames } from "./chains";
+import { assets } from "chain-registry";
+import { config } from "../../config";
+import { waitForMs } from "../../utils";
+import { WCClient } from "@cosmos-kit/walletconnect";
 
 export const wallets = [
   ...keplrWallets,
@@ -39,14 +48,29 @@ export class CosmosWagmiConnector extends Connector {
     this.name = opts.wallet.walletInfo.name;
     this.wallet = opts.wallet;
 
-    this.chainWallet = new Promise((res) => {
-      setTimeout(() => {
+    this.chainWallet = new Promise((res, rej) => {
+      let retryTimes = 0;
+
+      const check = async () => {
+        if (retryTimes > 3) {
+          this.ready = false;
+          return rej();
+        }
+
         const cw = this.wallet.chainWalletMap.get(
           cosmosChainsMap[CosmosNetworks.Cosmos].chain.chain_name
         )!;
-        this.ready = !!cw.client;
-        res(cw);
-      }, 1000); // no other way to check if wallet is ready :(
+        if (cw && cw.clientMutable.state === "Done") {
+          res(cw);
+          this.ready = true;
+        } else {
+          await waitForMs(1000);
+          retryTimes++;
+          check();
+        }
+      };
+
+      check();
     });
   }
 
@@ -56,6 +80,10 @@ export class CosmosWagmiConnector extends Connector {
     const cw = await this.chainWallet;
 
     if (cw.address && cw.chainId) {
+      if (cw.walletInfo.mode === "wallet-connect") {
+        await (cw.client as WCClient).init();
+      }
+
       return {
         account: cw.address as Address,
         chain: {
@@ -223,3 +251,22 @@ export const connector = {
   groupName: "Cosmos",
   wallets: wallets.map((w) => createCosmosConnector({ wallet: w })),
 };
+
+export const cosmosWalletManager = new WalletManager(
+  Object.values(cosmosChainsMap).map((c) => c.chain),
+  assets.filter((a) => {
+    // Patch comdex assets coingecko id
+    if (a.chain_name === "comdex") {
+      a.assets[1].coingecko_id = "harbor-2";
+    }
+
+    return filteredCosmosChainNames.has(a.chain_name);
+  }),
+  wallets,
+  new Logger("ERROR"),
+  false,
+  true,
+  undefined,
+  { signClient: { projectId: config.walletConnectV2.projectId } },
+  undefined
+);

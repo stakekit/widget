@@ -17,9 +17,6 @@ export const getBackgroundColor = (stringInput: string) => {
   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
 };
 
-export const waitForSec = (sec: number) =>
-  new Promise((res) => setTimeout(res, sec * 1000));
-
 export const isLedgerDappBrowserProvider = (() => {
   let state: boolean | null = null;
 
@@ -79,7 +76,8 @@ export const isMobile = () => {
   return mobile;
 };
 
-const wait = (ms: number) => new Promise((res) => setTimeout(res, ms));
+export const waitForMs = (ms: number) =>
+  new Promise((res) => setTimeout(res, ms));
 
 /**
  *
@@ -102,7 +100,7 @@ export const withRetry = <T extends () => Promise<any>>({
 
       while (retryCount < retryTimes) {
         try {
-          await wait(2 ** (retryCount + 1) * 1000);
+          await waitForMs(2 ** (retryCount + 1) * 1000);
 
           return await fn();
         } catch (newError) {

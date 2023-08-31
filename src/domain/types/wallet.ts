@@ -10,17 +10,14 @@ import {
 import { GetNetworkResult } from "@wagmi/core";
 import { CosmosNetworks, EvmNetworks } from "@stakekit/common";
 
-export type Hash = string;
-
 export type SKWallet = {
   disconnect: () => Promise<void>;
-  sendTransaction: (args: {
+  signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
-    txId: NonNullable<TransactionDto["id"]>;
     index: number;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { hash: Hash; broadcasted: boolean }
+    { signedTx: string; broadcasted: boolean }
   >;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;

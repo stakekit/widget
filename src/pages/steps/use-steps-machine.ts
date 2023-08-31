@@ -5,7 +5,9 @@ import {
   GetStakeSessionError,
   MissingHashError,
   SendTransactionError,
+  SignError,
   SubmitError,
+  SubmitHashError,
   TransactionConstructError,
 } from "./errors";
 import { Override } from "../../types/utils";
@@ -13,6 +15,7 @@ import {
   stakeGetStakeSession,
   transactionConstruct,
   transactionGetTransactionStatusFromId,
+  transactionSubmit,
   transactionSubmitHash,
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
@@ -27,7 +30,7 @@ const tt = t as <T extends unknown>() => {
 };
 
 export const useStepsMachine = () => {
-  const { sendTransaction, isLedgerLive } = useSKWallet();
+  const { signTransaction, isLedgerLive } = useSKWallet();
 
   const invalidateBalances = useInvalidateBalances();
   const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
@@ -36,28 +39,29 @@ export const useStepsMachine = () => {
     initial: "idle",
     schema: {
       context: tt<{
+        sessionId: string | null;
         signError:
           | Error
           | GetStakeSessionError
           | SendTransactionError
-          | SubmitError
+          | SignError
           | null;
         txCheckError: GetStakeSessionError | null;
         txCheckTimeoutId: number | null;
+        txs: { signedTx: string; broadcasted: boolean; txId: string }[] | null;
         urls: string[];
       }>(),
       events: {
         START: tt<{ id: string }>(),
         SIGN_RETRY: tt<{ id: string }>(),
-        SIGN_SUCCESS: tt<{ id: string }>(),
-        RETRY: tt<{ id: string }>(),
-        TX_CHECK_RETRY: tt<{ id: string }>(),
       },
     },
     context: {
+      sessionId: null,
       signError: null,
       txCheckError: null,
       txCheckTimeoutId: null,
+      txs: null,
       urls: [],
     },
     states: {
@@ -65,9 +69,11 @@ export const useStepsMachine = () => {
         on: { START: "signLoading" },
       },
       signLoading: {
-        on: { SIGN_SUCCESS: "txCheckLoading", SIGN_ERROR: "signError" },
+        on: { SIGN_SUCCESS: "broadcastLoading", SIGN_ERROR: "signError" },
         effect: ({ send, setContext, event }) => {
           const id = event.id;
+
+          setContext((ctx) => ({ ...ctx, sessionId: id }));
 
           EitherAsync(() => stakeGetStakeSession(id))
             .mapLeft(() => new GetStakeSessionError())
@@ -100,20 +106,15 @@ export const useStepsMachine = () => {
                       )
                       .chain((tx) => {
                         if (!tx.unsignedTransaction) {
-                          return EitherAsync.liftEither(Right(undefined));
+                          return EitherAsync.liftEither(
+                            Left(new TransactionConstructError())
+                          );
                         }
 
-                        return sendTransaction({
+                        return signTransaction({
                           tx: tx.unsignedTransaction,
-                          txId: tx.id,
                           index: i,
-                        }).chain((val) =>
-                          EitherAsync(async () => {
-                            if (val.broadcasted) return;
-
-                            transactionSubmitHash(tx.id, { hash: val.hash });
-                          }).mapLeft(() => new SubmitError())
-                        );
+                        }).map((val) => ({ ...val, txId: tx.id }));
                       })
                   )
               )
@@ -124,47 +125,100 @@ export const useStepsMachine = () => {
                 setContext((ctx) => ({ ...ctx, signError: l }));
                 send("SIGN_ERROR");
               },
-              Right: () => send({ type: "SIGN_SUCCESS", id }),
+              Right: (val) => {
+                setContext((ctx) => ({ ...ctx, txs: val }));
+                send({ type: "SIGN_SUCCESS" });
+              },
             });
         },
       },
       signError: {
         on: { SIGN_RETRY: "signLoading" },
       },
+
+      broadcastLoading: {
+        on: {
+          BROADCAST_SUCCESS: "txCheckLoading",
+          BROADCAST_ERROR: "broadcastError",
+        },
+        effect: ({ send, context }) => {
+          EitherAsync.liftEither(
+            context.txs ? Right(context.txs) : Left(new Error("missing txs"))
+          )
+            .chain((txs) =>
+              EitherAsync.sequence(
+                txs.map((tx) => {
+                  if (tx.broadcasted) {
+                    return EitherAsync(() =>
+                      transactionSubmitHash(tx.txId, { hash: tx.signedTx })
+                    ).mapLeft(() => new SubmitHashError());
+                  } else {
+                    return EitherAsync(async () => {
+                      await transactionSubmit(tx.txId, {
+                        signedTransaction: tx.signedTx,
+                      });
+                    }).mapLeft(() => new SubmitError());
+                  }
+                })
+              )
+            )
+            .caseOf({
+              Left: (l) => {
+                console.log(l);
+                send({ type: "BROADCAST_ERROR" });
+              },
+              Right: () => {
+                send({ type: "BROADCAST_SUCCESS" });
+              },
+            });
+        },
+      },
+      broadcastError: {
+        on: { BROADCAST_RETRY: "broadcastLoading" },
+      },
+
       txCheckLoading: {
         on: {
           TX_CHECK_SUCCESS: "done",
           TX_CHECK_ERROR: "txCheckError",
           TX_CHECK_RETRY: "txCheckRetry",
         },
-        effect: ({ send, event, setContext }) => {
-          const id = event.id;
-
-          EitherAsync(() => stakeGetStakeSession(id))
-            .mapLeft(() => new GetStakeSessionError())
-            .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
-            .chain((val) =>
-              EitherAsync.sequence(
-                val.transactions.map((tx) =>
-                  EitherAsync(
-                    withRetry({
-                      retryTimes: 2,
-                      fn: () => transactionGetTransactionStatusFromId(tx.id),
-                    })
-                  )
-                    .mapLeft(() => new MissingHashError())
-                    .chain((result) =>
-                      EitherAsync.liftEither(
-                        isTxError(result)
-                          ? Left(new SubmitError())
-                          : Right({
-                              result,
-                              isConfirmed: result.status === "CONFIRMED",
-                            })
-                      )
-                    )
+        effect: ({ send, context, setContext }) => {
+          EitherAsync.liftEither(
+            context.sessionId
+              ? Right(context.sessionId)
+              : Left(new Error("missing sessionId"))
+          )
+            .chain((sessionId) =>
+              EitherAsync(() => stakeGetStakeSession(sessionId))
+                .mapLeft(() => new GetStakeSessionError())
+                .chain((val) =>
+                  EitherAsync.liftEither(getValidStakeSessionTx(val))
                 )
-              )
+                .chain((val) =>
+                  EitherAsync.sequence(
+                    val.transactions.map((tx) =>
+                      EitherAsync(
+                        withRetry({
+                          retryTimes: 2,
+                          fn: () =>
+                            transactionGetTransactionStatusFromId(tx.id),
+                        })
+                      )
+                        .mapLeft(() => new MissingHashError())
+                        .chain((result) =>
+                          EitherAsync.liftEither(
+                            isTxError(result)
+                              ? Left(new SignError())
+                              : Right({
+                                  result,
+                                  isConfirmed: result.status === "CONFIRMED",
+                                })
+                          )
+                        )
+                    )
+                  )
+                )
             )
             .caseOf({
               Left: (l) => {
@@ -183,7 +237,7 @@ export const useStepsMachine = () => {
                   }));
                   send("TX_CHECK_SUCCESS");
                 } else {
-                  send({ type: "TX_CHECK_RETRY", id });
+                  send({ type: "TX_CHECK_RETRY" });
                 }
               },
             });
@@ -191,11 +245,9 @@ export const useStepsMachine = () => {
       },
       txCheckRetry: {
         on: { TX_CHECK_RETRY: "txCheckLoading" },
-        effect: ({ send, event, setContext }) => {
-          const id = event.id;
-
+        effect: ({ send, setContext }) => {
           const timeoutHandler = setTimeout(() => {
-            send({ type: "TX_CHECK_RETRY", id });
+            send({ type: "TX_CHECK_RETRY" });
           }, 4000);
 
           setContext((ctx) => ({
