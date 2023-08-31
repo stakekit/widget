@@ -8,11 +8,14 @@ import {
 import { BoxProps } from "../box";
 import { Box } from "../box";
 
+const failLoadImages = new Set<string>();
+
 export type ImageProps = Omit<BoxProps, "as"> & {
   fallback?: string | ReactNode;
+  retryOnFail?: boolean;
 };
 
-export const Image = ({ fallback, ...props }: ImageProps) => {
+export const Image = ({ fallback, retryOnFail, ...props }: ImageProps) => {
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
@@ -21,10 +24,18 @@ export const Image = ({ fallback, ...props }: ImageProps) => {
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
     setIsError(true);
+    if (props.src) {
+      failLoadImages.add(props.src);
+    }
     props.onError?.(e);
   };
 
-  if ((isError || !props.src) && isValidElement(fallback)) {
+  if (
+    (isError ||
+      !props.src ||
+      (failLoadImages.has(props.src) && !retryOnFail)) &&
+    isValidElement(fallback)
+  ) {
     return fallback;
   }
 

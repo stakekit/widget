@@ -42,6 +42,7 @@ import { UnstakeOrClaimCheck } from "./pages/cheks/unstake-or-claim-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
+import { cosmosWalletManager } from "./providers/cosmos/config";
 
 const Widget = () => {
   useToggleTheme();
@@ -59,6 +60,17 @@ const Widget = () => {
       navigateRef.current("/", { replace: true });
     }
   }, [chain, pathnameRef, navigateRef]);
+
+  /**
+   * On mount, initialize cosmos wallet manager
+   */
+  useEffect(() => {
+    cosmosWalletManager.onMounted();
+
+    return () => {
+      cosmosWalletManager.onUnmounted();
+    };
+  }, []);
 
   useAutoConnectInjectedProviderMachine();
 

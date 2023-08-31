@@ -133,17 +133,17 @@ export const darkThemeColors: typeof colorsContract = {
   textDanger: "#FF1515",
 
   background: "#2B2B2B",
-  backgroundMuted: "#383838",
+  backgroundMuted: "#363636",
 
-  tokenSelectBackground: "#383838",
+  tokenSelectBackground: "#363636",
   tokenSelectHoverBackground: "#444444",
   tokenSelect: "#FFFFFF",
 
-  stakeSectionBackground: "#383838",
+  stakeSectionBackground: "#363636",
 
   positionsSectionBackgroundColor: "#2B2B2B",
   positionsSectionBorderColor: "#2B2B2B",
-  positionsSectionDividerColor: "#383838",
+  positionsSectionDividerColor: "#363636",
   positionsClaimRewardsBackground: "#45D65C",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",

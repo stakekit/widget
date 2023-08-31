@@ -42,6 +42,21 @@ export const usePositionDetails = () => {
 
   const { position, isLoading } = usePositionData(integrationId);
 
+  const validatorDetails = useMemo(
+    () =>
+      position.chain((p) =>
+        defaultOrValidatorId === "default"
+          ? Maybe.fromNullable(p.integrationData.metadata.provider).map(
+              (v) => ({ name: v.name, logoURI: v.logoURI })
+            )
+          : List.find(
+              (v) => v.address === defaultOrValidatorId,
+              p.integrationData.validators
+            ).map((v) => ({ name: v.name, logoURI: v.image }))
+      ),
+    [defaultOrValidatorId, position]
+  );
+
   const { t } = useTranslation();
 
   const stakeType = position.map((p) => {
@@ -357,5 +372,6 @@ export const usePositionDetails = () => {
     onStakeExitIsLoading: onStakeExit.isLoading,
     onClaimClick,
     onClaimIsLoading: onClaim.isLoading,
+    validatorDetails,
   };
 };

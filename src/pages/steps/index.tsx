@@ -94,7 +94,13 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
           <Box
             display="flex"
             alignItems="center"
-            opacity={state.sign.isSuccess ? 1 : 0.5}
+            opacity={
+              state.broadcast.isLoading ||
+              state.broadcast.isSuccess ||
+              state.broadcast.isError
+                ? 1
+                : 0.5
+            }
           >
             <Box
               display="flex"
@@ -104,22 +110,42 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
               className={cls({
                 [stepsAfter]: true,
                 [stepsBefore]: true,
-                [stepsAfterMuted]: !state.sign.isSuccess,
+                [stepsAfterMuted]: !state.broadcast.isSuccess,
+                [halfOpacityAfter]:
+                  state.broadcast.isLoading || state.broadcast.isError,
                 [stepsBeforeMuted]: !state.sign.isSuccess,
               })}
             >
               <Box
-                background={state.sign.isSuccess ? "text" : "white"}
-                borderColor={state.sign.isSuccess ? "text" : "textMuted"}
+                background={
+                  state.broadcast.isLoading ||
+                  state.broadcast.isSuccess ||
+                  state.broadcast.isError
+                    ? "text"
+                    : "white"
+                }
+                borderColor={
+                  state.broadcast.isLoading ||
+                  state.broadcast.isSuccess ||
+                  state.broadcast.isError
+                    ? "text"
+                    : "textMuted"
+                }
                 borderRadius="half"
-                hw="10"
                 borderWidth={3}
                 borderStyle="solid"
+                hw="10"
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
               >
-                {state.sign.isSuccess && <CheckSteps hw={18} />}
+                {state.broadcast.isLoading ? (
+                  <Spinner variant={{ color: "inverted" }} />
+                ) : state.broadcast.isError ? (
+                  <XIcon color="background" />
+                ) : state.broadcast.isSuccess ? (
+                  <CheckSteps hw={18} />
+                ) : null}
               </Box>
             </Box>
 
@@ -129,7 +155,12 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
               alignItems="flex-start"
               gap="1"
             >
-              <Text variant={{ size: "small" }}>{t("steps.submitted")}</Text>
+              <Text variant={{ size: "small" }}>{t("steps.submitting")}</Text>
+              {state.broadcast.isError && (
+                <Text variant={{ type: "danger", size: "small" }}>
+                  {t("shared.something_went_wrong")}
+                </Text>
+              )}
             </Box>
           </Box>
 
@@ -155,7 +186,7 @@ const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
                 [stepsAfterMuted]: !state.checkTxStatus.isSuccess,
                 [halfOpacityAfter]:
                   state.checkTxStatus.isLoading || state.checkTxStatus.isError,
-                [stepsBeforeMuted]: !state.sign.isSuccess,
+                [stepsBeforeMuted]: !state.broadcast.isSuccess,
               })}
             >
               <Box

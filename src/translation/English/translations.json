@@ -62,6 +62,7 @@
     "send_to_finalize_stake": "Send transaction to finalize your stake",
     "approve": "Approve",
     "approve_desc": "Approve this transaction in your wallet",
+    "submitting": "Submitting transaction",
     "submitted": "Submitted",
     "pending": "Pending",
     "completed": "Completed",

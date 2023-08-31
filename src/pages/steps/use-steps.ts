@@ -44,18 +44,35 @@ export const useSteps = (session: Maybe<StakeDto>) => {
 
   const onClick = () => navigate(-1);
 
+  const isSignSuccess =
+    machine.value !== "idle" &&
+    machine.value !== "signLoading" &&
+    machine.value !== "signError";
+
+  const isBroadcastSuccess =
+    isSignSuccess &&
+    machine.value !== "broadcastLoading" &&
+    machine.value !== "broadcastError";
+
   const state = {
     sign: {
-      isSuccess:
-        machine.value !== "idle" &&
-        machine.value !== "signLoading" &&
-        machine.value !== "signError",
+      isSuccess: isSignSuccess,
       isLoading: machine.value === "signLoading",
       isError: machine.value === "signError",
       retry: () => {
-        if (machine.value === "signLoading" || !id) return;
+        if (machine.value !== "signError" || !id) return;
 
         send({ type: "SIGN_RETRY", id });
+      },
+    },
+    broadcast: {
+      isSuccess: isBroadcastSuccess,
+      isLoading: machine.value === "broadcastLoading",
+      isError: machine.value === "broadcastError",
+      retry: () => {
+        if (machine.value !== "broadcastError") return;
+
+        send({ type: "BROADCAST_RETRY" });
       },
     },
     checkTxStatus: {
@@ -64,9 +81,9 @@ export const useSteps = (session: Maybe<StakeDto>) => {
         machine.value === "txCheckLoading" || machine.value === "txCheckRetry",
       isError: machine.value === "txCheckError",
       retry: () => {
-        if (machine.value === "txCheckLoading" || !id) return;
+        if (machine.value === "txCheckLoading") return;
 
-        send({ type: "TX_CHECK_RETRY", id });
+        send({ type: "TX_CHECK_RETRY" });
       },
     },
   };

@@ -1,6 +1,6 @@
 import { WCClient } from "@cosmos-kit/walletconnect";
 
-export class WalletConnect extends WCClient {
+export class WalletConnectClient extends WCClient {
   disconnect() {
     this.signClient?.pairing
       .getAll()
@@ -16,9 +16,7 @@ export class WalletConnect extends WCClient {
       throw new Error("WalletConnect is not initialized");
     }
     this.pairings = this.signClient.pairing
-      .getAll({
-        active: true,
-      })
+      .getAll({ active: true })
       .filter((p) => p.expiry * 1000 > Date.now() + 1000);
     this.logger?.debug("RESTORED PAIRINGS: ", this.pairings);
   }

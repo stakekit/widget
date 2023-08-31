@@ -43,6 +43,7 @@ export const PositionDetails = () => {
     unstakeDisabled,
     onClaimClick,
     onClaimIsLoading,
+    validatorDetails,
   } = positionDetails;
 
   const { t } = useTranslation();
@@ -84,53 +85,55 @@ export const PositionDetails = () => {
                 </Text>
               </Box>
 
-              <Box display="flex" flexDirection="column" marginTop="6">
-                <Divider />
+              {validatorDetails
+                .map((vd) => (
+                  <Box display="flex" flexDirection="column" marginTop="6">
+                    <Divider my="1" />
 
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Box
-                    my="1"
-                    display="flex"
-                    justifyContent="flex-start"
-                    alignItems="center"
-                  >
-                    <Image
-                      hw="8"
-                      marginRight="1"
-                      src={p.integrationData.metadata.provider?.logoURI}
-                      fallback={
-                        <Box marginRight="1">
-                          <ImageFallback
-                            name={
-                              p.integrationData.metadata.provider?.name ?? ""
-                            }
-                            tokenLogoHw="5"
-                            textVariant={{
-                              size: "small",
-                              type: "white",
-                              weight: "bold",
-                            }}
-                          />
-                        </Box>
-                      }
-                    />
-                    <Text variant={{ size: "small" }}>
-                      {st}{" "}
-                      {t("position_details.via", {
-                        providerName: p.integrationData.metadata.provider?.name,
-                      })}
-                    </Text>
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Box
+                        my="1"
+                        display="flex"
+                        justifyContent="flex-start"
+                        alignItems="center"
+                      >
+                        <Image
+                          hw="8"
+                          marginRight="1"
+                          src={vd.logoURI}
+                          fallback={
+                            <Box marginRight="1">
+                              <ImageFallback
+                                name={vd.name ?? ""}
+                                tokenLogoHw="5"
+                                textVariant={{
+                                  size: "small",
+                                  type: "white",
+                                  weight: "bold",
+                                }}
+                              />
+                            </Box>
+                          }
+                        />
+                        <Text variant={{ size: "small" }}>
+                          {st}{" "}
+                          {t("position_details.via", {
+                            providerName: vd.name,
+                          })}
+                        </Text>
+                      </Box>
+
+                      <HelpModal type={p.integrationData.config.type} />
+                    </Box>
+
+                    <Divider my="1" />
                   </Box>
-
-                  <HelpModal type={p.integrationData.config.type} />
-                </Box>
-
-                <Divider />
-              </Box>
+                ))
+                .extractNullable()}
 
               <Box py="3" gap="1" display="flex" flexDirection="column">
                 <Box
@@ -262,6 +265,7 @@ export const PositionDetails = () => {
                     </Box>
                   ))
                   .extractNullable()}
+
                 {hasUnstakeAction
                   .chain(() => balance.map((b) => ({ b })))
                   .chain((val) => unstakeText.map((ut) => ({ ...val, ut })))
@@ -372,7 +376,7 @@ export const PositionDetails = () => {
                                 variant={{
                                   size: "small",
                                   weight: "semibold",
-                                  type: "accent",
+                                  type: "white",
                                 }}
                               >
                                 {t("shared.max")}

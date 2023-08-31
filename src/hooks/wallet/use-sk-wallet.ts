@@ -19,7 +19,6 @@ import {
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { unsignedTransactionCodec } from "./validation";
 import { useLedgerAccounts } from "./use-ledger-accounts";
-import { transactionSubmit } from "@stakekit/api-hooks";
 import {
   CosmosTransaction,
   deserializeTransaction,
@@ -54,13 +53,16 @@ export const useSKWallet = (): SKWallet => {
     connector,
   });
 
-  const sendTransaction = useCallback<SKWallet["sendTransaction"]>(
-    ({ index, tx, txId }) =>
+  const signTransaction = useCallback<SKWallet["signTransaction"]>(
+    ({ index, tx }) =>
       EitherAsync.liftEither(
         !isConnected || !network || !connector
           ? Left(new Error("No wallet connected"))
           : Right(connector)
-      ).chain((conn) => {
+      ).chain<
+        TransactionDecodeError | SendTransactionError,
+        { signedTx: string; broadcasted: boolean }
+      >((conn) => {
         if (isLedgerLiveConnector(conn)) {
           /**
            * Ledger Live connector
@@ -109,16 +111,7 @@ export const useSKWallet = (): SKWallet => {
                 return new Error("sign failed");
               })
             )
-            .chain((signedTx) =>
-              EitherAsync(() =>
-                transactionSubmit(txId, {
-                  signedTransaction: signedTx.toString(),
-                })
-              )
-                .mapLeft(() => new Error("broadcast failed"))
-                .map((val) => val.transactionHash)
-            )
-            .map((val) => ({ hash: val, broadcasted: true as boolean }));
+            .map((val) => ({ signedTx: val.toString(), broadcasted: false }));
         } else if (isCosmosConnector(conn)) {
           /**
            * Cosmos connector
@@ -132,8 +125,11 @@ export const useSKWallet = (): SKWallet => {
                 SignDoc.decode(fromHex(tx))
               )
             )
-              .mapLeft(() => new Error("signDirect failed"))
-              .chain((val) => {
+              .mapLeft((e) => {
+                console.log(e);
+                return new Error("signDirect failed");
+              })
+              .map((val) => {
                 const signed = toHex(
                   TxRaw.encode({
                     authInfoBytes: val.signed.authInfoBytes,
@@ -142,14 +138,7 @@ export const useSKWallet = (): SKWallet => {
                   }).finish()
                 );
 
-                return EitherAsync(() =>
-                  transactionSubmit(txId, { signedTransaction: signed })
-                )
-                  .mapLeft(() => new Error("broadcast failed"))
-                  .map((val) => ({
-                    hash: val.transactionHash,
-                    broadcasted: true,
-                  }));
+                return { signedTx: signed, broadcasted: false };
               })
           );
         } else {
@@ -177,7 +166,7 @@ export const useSKWallet = (): SKWallet => {
                 console.log(e);
                 return new SendTransactionError();
               })
-              .map((val) => ({ hash: val.hash, broadcasted: false }))
+              .map((val) => ({ signedTx: val.hash, broadcasted: true }))
           );
         }
       }),
@@ -185,7 +174,7 @@ export const useSKWallet = (): SKWallet => {
   );
 
   const value = useMemo((): SKWallet => {
-    const common = { disconnect, sendTransaction };
+    const common = { disconnect, signTransaction };
 
     if (isConnected && address && network) {
       const isLedgerLive = isLedgerLiveConnector(connector);
@@ -214,7 +203,7 @@ export const useSKWallet = (): SKWallet => {
     };
   }, [
     disconnect,
-    sendTransaction,
+    signTransaction,
     isConnected,
     address,
     network,
