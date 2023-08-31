@@ -1,20 +1,22 @@
 import { Text } from "../../atoms/typography";
 import { Box } from "../../atoms/box";
+import { Address } from "wagmi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CaretDownIcon, CaretLeftIcon, XIcon } from "../../atoms/icons";
 import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../hooks";
-import { ConnectButton } from "@stakekit/rainbowkit";
+import { ConnectButton, AvatarContext } from "@stakekit/rainbowkit";
 import {
+  avatarContainer,
   container,
   parentButton,
-  parentContainer,
   titleStyle,
 } from "./styles.css";
 import classNames from "clsx";
 import { HelpModal } from "../help-modal";
 import { isLedgerDappBrowserProvider, isMobile } from "../../../utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
+import { useContext } from "react";
 
 const showDisconnect = isMobile() || isLedgerDappBrowserProvider();
 
@@ -22,7 +24,7 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { isConnected } = useSKWallet();
+  const { isConnected, address } = useSKWallet();
 
   const { t } = useTranslation();
 
@@ -40,8 +42,10 @@ export const Header = () => {
     logout();
   };
 
+  const AvatarComponent = useContext(AvatarContext);
+
   return (
-    <Box className={parentContainer} paddingTop="4" paddingBottom="1">
+    <Box paddingTop="4" paddingBottom="1">
       <Box display="flex" justifyContent="space-between" alignItems="center">
         {showBack ? (
           <Box
@@ -175,12 +179,25 @@ export const Header = () => {
                                   borderRadius="half"
                                 />
                               ) : (
-                                <Text
-                                  className={titleStyle}
-                                  variant={{ size: "small" }}
-                                >
-                                  {account.ensName ?? account.displayName}
-                                </Text>
+                                <>
+                                  <Box
+                                    borderRadius="half"
+                                    marginRight="2"
+                                    className={avatarContainer}
+                                  >
+                                    <AvatarComponent
+                                      address={address as Address}
+                                      size={24}
+                                    />
+                                  </Box>
+
+                                  <Text
+                                    className={titleStyle}
+                                    variant={{ size: "small" }}
+                                  >
+                                    {account.ensName ?? account.displayName}
+                                  </Text>
+                                </>
                               )}
 
                               <Box mx="2">

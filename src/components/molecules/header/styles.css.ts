@@ -20,4 +20,4 @@ export const parentButton = style({
   userSelect: "none",
 });
 
-export const parentContainer = style({});
+export const avatarContainer = style({ overflow: "hidden" });
