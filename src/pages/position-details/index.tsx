@@ -127,7 +127,9 @@ export const PositionDetails = () => {
                         </Text>
                       </Box>
 
-                      <HelpModal type={p.integrationData.config.type} />
+                      <HelpModal
+                        modal={{ type: p.integrationData.config.type }}
+                      />
                     </Box>
 
                     <Divider my="1" />

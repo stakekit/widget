@@ -99,8 +99,19 @@
     "fees": {
       "title": "About fees",
       "description": "Crypto network fees, also known as gas fees, are the costs associated with executing transactions or smart contracts on a blockchain network. These fees ensure the prioritization and security of transactions. Higher demand and congestion can lead to increased gas fees, while lower fees may result in slower transaction processing."
+    },
+    "geo_block": {
+      "title": "Geo Block",
+      "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
+      "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
+      "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
+      "crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} has implemented firm regulations against the use of cryptocurrencies. Please refer to official {{countryName}} resources to learn more.",
+      "staking_ban": "This feature is not available in {{countryName}}. The Securities and Exchange Commission (“SEC”) of {{countryName}} has restricted digital asset business operators from offering staking services. You can learn more about the SEC regualtions here <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
+      "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
+      "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries, as well as the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>."
     }
   },
+
   "positions": {
     "title": "My Positions",
     "via": "via {{providerName}}",

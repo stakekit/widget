@@ -1,37 +1,31 @@
-import { QueryClient } from "@tanstack/react-query";
-import { AxiosError } from "axios";
+import { DefaultOptions, QueryClient } from "@tanstack/react-query";
 import { config } from "../config";
+import { isAxiosError, shouldRetryRequest } from "../api/utils";
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      cacheTime: config.queryClient.cacheTime,
-      staleTime: config.queryClient.staleTime,
-      retry: (failureCount, error) => {
-        if (error instanceof AxiosError) {
-          return !!(
-            error.response?.status &&
-            error.response.status >= 500 &&
-            failureCount < 2
-          );
-        }
+export const defaultQueryClientConfiguration: DefaultOptions = {
+  queries: {
+    cacheTime: config.queryClient.cacheTime,
+    staleTime: config.queryClient.staleTime,
+    retry: (failureCount, error) => {
+      if (isAxiosError(error)) {
+        return !!(shouldRetryRequest(error) && failureCount < 2);
+      }
 
-        return failureCount < 2;
-      },
-      refetchOnWindowFocus: false,
+      return false;
     },
-    mutations: {
-      retry: (failureCount, error) => {
-        if (error instanceof AxiosError) {
-          return !!(
-            error.response?.status &&
-            error.response.status >= 500 &&
-            failureCount < 2
-          );
-        }
+    refetchOnWindowFocus: false,
+  },
+  mutations: {
+    retry: (failureCount, error) => {
+      if (isAxiosError(error)) {
+        return !!(shouldRetryRequest(error) && failureCount < 2);
+      }
 
-        return false;
-      },
+      return false;
     },
   },
+};
+
+export const queryClient = new QueryClient({
+  defaultOptions: defaultQueryClientConfiguration,
 });

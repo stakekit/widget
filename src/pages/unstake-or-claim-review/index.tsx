@@ -63,7 +63,7 @@ export const UnstakeOrClaimReviewPage = () => {
             <Text variant={{ weight: "semibold", size: "small" }}>
               {t("shared.fees")}
             </Text>
-            <HelpModal type="fees" />
+            <HelpModal modal={{ type: "fees" }} />
           </Box>
 
           <Box

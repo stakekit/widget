@@ -24,6 +24,7 @@ export type SelectModalProps = PropsWithChildren<{
   onSearch?: (value: string) => void;
   trigger: ReactNode;
   onClose?: () => void;
+  forceOpen?: boolean;
 }>;
 
 export const SelectModalContext = createContext<
@@ -47,6 +48,7 @@ export const SelectModal = ({
   onSearch,
   inputPlaceholder,
   onClose,
+  forceOpen,
 }: SelectModalProps) => {
   const [open, setOpen] = useState(false);
 
@@ -65,10 +67,12 @@ export const SelectModal = ({
 
   const rootElement = useRootElement();
 
+  const showTopBar = !!title || !forceOpen || onSearch;
+
   return (
     <SelectModalContext.Provider value={value}>
-      <Root open={open} onOpenChange={setOpen}>
-        {trigger}
+      <Root open={forceOpen || open} onOpenChange={setOpen}>
+        {!forceOpen && trigger}
 
         <Portal container={rootElement}>
           <Box className={container}>
@@ -76,26 +80,30 @@ export const SelectModal = ({
 
             <Content data-testid="select-modal__container" className={content}>
               <Box display="flex" flexDirection="column" height="full">
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  px="4"
-                >
-                  <Box flex={1}>
-                    {title && (
-                      <Text
-                        data-testid="select-modal__title"
-                        variant={{ weight: "bold" }}
-                      >
-                        {title}
-                      </Text>
+                {showTopBar && (
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    px="4"
+                  >
+                    <Box flex={1}>
+                      {title && (
+                        <Text
+                          data-testid="select-modal__title"
+                          variant={{ weight: "bold" }}
+                        >
+                          {title}
+                        </Text>
+                      )}
+                    </Box>
+                    {!forceOpen && (
+                      <Box as="button" onClick={() => setOpen(false)}>
+                        <XIcon />
+                      </Box>
                     )}
                   </Box>
-                  <Box as="button" onClick={() => setOpen(false)}>
-                    <XIcon />
-                  </Box>
-                </Box>
+                )}
 
                 {onSearch && (
                   <Box
@@ -128,9 +136,11 @@ export const SelectModal = ({
                   </Box>
                 )}
 
-                <Box marginTop="2">
-                  <Divider />
-                </Box>
+                {showTopBar && (
+                  <Box marginTop="2">
+                    <Divider />
+                  </Box>
+                )}
 
                 {children}
               </Box>

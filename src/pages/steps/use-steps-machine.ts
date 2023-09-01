@@ -21,9 +21,9 @@ import {
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../api/get-gas-mode-value";
-import { withRetry } from "../../utils";
 import { useInvalidateBalances } from "../../hooks/use-positions-data";
 import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
+import { withRequestErrorRetry } from "../../api/utils";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -75,7 +75,7 @@ export const useStepsMachine = () => {
 
           setContext((ctx) => ({ ...ctx, sessionId: id }));
 
-          EitherAsync(() => stakeGetStakeSession(id))
+          withRequestErrorRetry({ fn: () => stakeGetStakeSession(id) })
             .mapLeft(() => new GetStakeSessionError())
             .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
             .chain((val) =>
@@ -93,16 +93,14 @@ export const useStepsMachine = () => {
                     getAverageGasMode(tx.network)
                       .chainLeft(async () => Right(null))
                       .chain((gas) =>
-                        EitherAsync(() =>
-                          transactionConstruct(tx.id, {
-                            gasArgs: gas?.gasArgs,
-                            // @ts-expect-error
-                            ledgerWalletAPICompatible: isLedgerLive,
-                          })
-                        ).mapLeft((e) => {
-                          console.log(e);
-                          return new TransactionConstructError();
-                        })
+                        withRequestErrorRetry({
+                          fn: () =>
+                            transactionConstruct(tx.id, {
+                              gasArgs: gas?.gasArgs,
+                              // @ts-expect-error
+                              ledgerWalletAPICompatible: isLedgerLive,
+                            }),
+                        }).mapLeft(() => new TransactionConstructError())
                       )
                       .chain((tx) => {
                         if (!tx.unsignedTransaction) {
@@ -149,14 +147,17 @@ export const useStepsMachine = () => {
               EitherAsync.sequence(
                 txs.map((tx) => {
                   if (tx.broadcasted) {
-                    return EitherAsync(() =>
-                      transactionSubmitHash(tx.txId, { hash: tx.signedTx })
-                    ).mapLeft(() => new SubmitHashError());
+                    return withRequestErrorRetry({
+                      fn: () =>
+                        transactionSubmitHash(tx.txId, { hash: tx.signedTx }),
+                    }).mapLeft(() => new SubmitHashError());
                   } else {
-                    return EitherAsync(async () => {
-                      await transactionSubmit(tx.txId, {
-                        signedTransaction: tx.signedTx,
-                      });
+                    return withRequestErrorRetry({
+                      fn: async () => {
+                        await transactionSubmit(tx.txId, {
+                          signedTransaction: tx.signedTx,
+                        });
+                      },
                     }).mapLeft(() => new SubmitError());
                   }
                 })
@@ -190,7 +191,9 @@ export const useStepsMachine = () => {
               : Left(new Error("missing sessionId"))
           )
             .chain((sessionId) =>
-              EitherAsync(() => stakeGetStakeSession(sessionId))
+              withRequestErrorRetry({
+                fn: () => stakeGetStakeSession(sessionId),
+              })
                 .mapLeft(() => new GetStakeSessionError())
                 .chain((val) =>
                   EitherAsync.liftEither(getValidStakeSessionTx(val))
@@ -198,13 +201,9 @@ export const useStepsMachine = () => {
                 .chain((val) =>
                   EitherAsync.sequence(
                     val.transactions.map((tx) =>
-                      EitherAsync(
-                        withRetry({
-                          retryTimes: 2,
-                          fn: () =>
-                            transactionGetTransactionStatusFromId(tx.id),
-                        })
-                      )
+                      withRequestErrorRetry({
+                        fn: () => transactionGetTransactionStatusFromId(tx.id),
+                      })
                         .mapLeft(() => new MissingHashError())
                         .chain((result) =>
                           EitherAsync.liftEither(
