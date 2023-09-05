@@ -27,8 +27,6 @@ export const spanStyle = style([
   fontStyles,
   {
     position: "absolute",
-    left: "-100%",
-    bottom: "-100%",
     visibility: "hidden",
   },
 ]);
