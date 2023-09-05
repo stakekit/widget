@@ -82,8 +82,6 @@ const Widget = () => {
     onAnimationEnd,
   } = useLocationTransition();
 
-  // console.log({ geoBlock });
-
   return (
     <>
       <Box
