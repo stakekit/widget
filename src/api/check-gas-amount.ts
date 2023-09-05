@@ -5,6 +5,7 @@ import {
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
+import { withRequestErrorRetry } from "./utils";
 
 export const checkGasAmount = ({
   addressWithTokenDto,
@@ -13,11 +14,12 @@ export const checkGasAmount = ({
   addressWithTokenDto: AddressWithTokenDto;
   transactionConstructRes: TransactionDto[];
 }) =>
-  EitherAsync(() =>
-    tokenGetTokenBalances({
-      addresses: [addressWithTokenDto],
-    })
-  )
+  withRequestErrorRetry({
+    fn: () =>
+      tokenGetTokenBalances({
+        addresses: [addressWithTokenDto],
+      }),
+  })
     .mapLeft(() => new GetGasTokenError())
     .chain((res) =>
       EitherAsync.liftEither(

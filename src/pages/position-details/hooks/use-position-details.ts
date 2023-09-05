@@ -3,7 +3,11 @@ import { useEffect, useMemo } from "react";
 import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { usePrices } from "../../../hooks/api/use-prices";
-import { PriceRequestDto } from "@stakekit/api-hooks";
+import {
+  PendingActionDto,
+  PriceRequestDto,
+  YieldBalanceDto,
+} from "@stakekit/api-hooks";
 import { config } from "../../../config";
 import { tokenToTokenDto } from "../../../utils/mappers";
 import {
@@ -18,17 +22,19 @@ import { usePositionData } from "../../../hooks/use-position-data";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { useOnStakeExit } from "./use-on-stake-exit";
-import { useOnClaim } from "./use-on-claim";
+import { useOnPendingAction } from "./use-on-pending-action";
 import {
-  useUnstakeOrClaimDispatch,
-  useUnstakeOrClaimState,
-} from "../../../state/unstake-or-claim";
+  useUnstakeOrPendingActionDispatch,
+  useUnstakeOrPendingActionState,
+} from "../../../state/unstake-or-pending-action";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-import { useStakeClaimRequestDto } from "./use-stake-claim-request.dto";
+import { preparePendingActionRequestDto } from "./utils";
+import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
+import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 
 export const usePositionDetails = () => {
-  const { unstake, claim } = useUnstakeOrClaimState();
-  const dispatch = useUnstakeOrClaimDispatch();
+  const { unstake } = useUnstakeOrPendingActionState();
+  const dispatch = useUnstakeOrPendingActionDispatch();
 
   const params = useParams<{
     integrationId: string;
@@ -60,7 +66,7 @@ export const usePositionDetails = () => {
   const { t } = useTranslation();
 
   const stakeType = position.map((p) => {
-    switch (p.integrationData.config.type) {
+    switch (p.integrationData.metadata.type) {
       case "staking":
         return t("position_details.staked");
 
@@ -74,71 +80,34 @@ export const usePositionDetails = () => {
     }
   });
 
-  const balance = useStakedOrLiquidBalance(position, defaultOrValidatorId);
-
-  const rewardsBalance = useMemo(
-    () =>
-      position.chain((p) =>
-        List.find(
-          (b) => b.type === "rewards",
-          p.balanceData[defaultOrValidatorId]
-        )
-      ),
-    [position, defaultOrValidatorId]
+  const positionsByValidatorOrDefault = position.map(
+    (p) => p.balanceData[defaultOrValidatorId]
   );
 
   const prices = usePrices(
-    balance
-      .map((sb): PriceRequestDto => {
-        return {
-          currency: config.currency,
-          tokenList: [
-            sb.token,
-            tokenToTokenDto(getBaseToken(sb.token as Token)),
-          ],
-        };
-      })
+    positionsByValidatorOrDefault
+      .chain((val) => List.head(val))
+      .map<PriceRequestDto>((sb) => ({
+        currency: config.currency,
+        tokenList: [sb.token, tokenToTokenDto(getBaseToken(sb.token as Token))],
+      }))
       .extractNullable()
   );
 
-  const stakedPrice = useMemo(
-    () =>
-      balance
-        .chain((sb) => Maybe.fromNullable(prices.data).map((p) => ({ p, sb })))
-        .map(({ p, sb }) =>
-          getTokenPriceInUSD({
-            amount: sb.amount,
-            prices: p,
-            token: sb.token as Token,
-          })
-        ),
-    [prices.data, balance]
+  /**
+   * @summary Position balance by type
+   */
+  const positionBalancesByType = usePositionBalanceByType(
+    position,
+    defaultOrValidatorId
   );
 
-  const rewardsPrice = useMemo(
-    () =>
-      rewardsBalance
-        .chain((rb) => Maybe.fromNullable(prices.data).map((p) => ({ p, rb })))
-        .map(({ p, rb }) =>
-          getTokenPriceInUSD({
-            amount: rb.amount,
-            prices: p,
-            token: rb.token as Token,
-          })
-        ),
-    [prices.data, rewardsBalance]
-  );
-
-  const claimAvailableRewards = useMemo(
-    () =>
-      rewardsBalance.chain((rb) =>
-        List.find((pa) => pa.type === "CLAIM_REWARDS", rb.pendingActions)
-      ),
-    [rewardsBalance]
+  const stakedOrLiquidBalance = useStakedOrLiquidBalance(
+    positionBalancesByType
   );
 
   const unstakeText = position.map((p) => {
-    switch (p.integrationData.config.type) {
+    switch (p.integrationData.metadata.type) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake");
@@ -150,8 +119,7 @@ export const usePositionDetails = () => {
     }
   });
 
-  const hasUnstakeAction = position.map((p) => !!p.integrationData.args.exit);
-
+  const canUnstake = position.map((p) => !!p.integrationData.args.exit);
   const canChangeAmount = position.map(
     (p) => !!p.integrationData.args.exit?.args?.amount?.required
   );
@@ -159,7 +127,7 @@ export const usePositionDetails = () => {
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
     yieldOpportunity: position.map((p) => p.integrationData),
     type: "exit",
-    balance,
+    positionBalancesByType,
   });
 
   // set initial unstake amount to 0
@@ -177,33 +145,10 @@ export const usePositionDetails = () => {
     });
   }, [dispatch, integrationId, position, unstake]);
 
-  /**
-   *
-   * @summary Set claim state
-   */
-  useEffect(() => {
-    claim.ifNothing(() => {
-      claimAvailableRewards
-        .chain((car) => position.map((p) => ({ car, p })))
-        .chain((val) => rewardsBalance.map((rb) => ({ ...val, rb })))
-        .ifJust(({ car, p, rb }) => {
-          dispatch({
-            type: "claim/set",
-            data: {
-              integration: p.integrationData,
-              amount: rb.amount,
-              passthrough: car.passthrough,
-              type: car.type,
-            },
-          });
-        });
-    });
-  }, [claim, claimAvailableRewards, dispatch, position, rewardsBalance]);
-
   // If changing unstake amount is not allowed, set `unstakeAmount` to staked amount
   // If `unstakeAmount` is less then min or greater than max, set in bounds
   useEffect(() => {
-    balance
+    stakedOrLiquidBalance
       .chain((sb) => unstakeAmount.map((ua) => ({ sb, ua })))
       .chain((val) => canChangeAmount.map((cca) => ({ ...val, cca })))
       .chain((val) => position.map((p) => ({ ...val, p })))
@@ -243,7 +188,7 @@ export const usePositionDetails = () => {
     integrationId,
     maxEnterOrExitAmount,
     minEnterOrExitAmount,
-    balance,
+    stakedOrLiquidBalance,
     unstakeAmount,
     position,
   ]);
@@ -258,19 +203,20 @@ export const usePositionDetails = () => {
   };
 
   const unstakeFormattedAmount = Maybe.fromNullable(prices.data)
-    .chain((prices) => balance.map((sb) => ({ sb, prices })))
+    .chain((prices) => stakedOrLiquidBalance.map((sb) => ({ sb, prices })))
     .chain((val) => unstakeAmount.map((sa) => ({ ...val, sa })))
     .map((val) =>
       getTokenPriceInUSD({
         amount: val.sa,
         token: val.sb.token as Token,
         prices: val.prices,
+        pricePerShare: val.sb.pricePerShare,
       })
     )
     .mapOrDefault((v) => `$${formatTokenBalance(v, 2)}`, "");
 
   const onMaxClick = () => {
-    balance
+    stakedOrLiquidBalance
       .chain((sb) => position.map((p) => ({ p, sb })))
       .ifJust(({ p, sb }) => {
         dispatch({
@@ -296,14 +242,11 @@ export const usePositionDetails = () => {
   const navigate = useNavigate();
 
   const onStakeExit = useOnStakeExit();
-  const stakeExitRequestDto = useStakeExitRequestDto({ balance });
-
-  const onClaim = useOnClaim();
-  const stakeClaimRequestDto = useStakeClaimRequestDto({
-    balance,
-    claimAvailableRewards,
-    rewardsBalance,
+  const stakeExitRequestDto = useStakeExitRequestDto({
+    balance: stakedOrLiquidBalance,
   });
+
+  const onPendingAction = useOnPendingAction();
 
   const unstakeAmountValid = unstake
     .chain((u) => u.amount)
@@ -323,7 +266,7 @@ export const usePositionDetails = () => {
   const unstakeDisabled =
     !unstakeAmountValid ||
     onStakeExit.isLoading ||
-    onClaim.isLoading ||
+    onPendingAction.isLoading ||
     !unstakeAvailable;
 
   const onUnstakeClick = () => {
@@ -337,29 +280,58 @@ export const usePositionDetails = () => {
       );
   };
 
-  const onClaimClick = () => {
-    onClaim
-      .mutateAsync({ stakeRequestDto: stakeClaimRequestDto })
-      .then(() =>
-        navigate(
-          `../../../claim/${integrationId}/${defaultOrValidatorId}/review`,
-          { relative: "path" }
-        )
-      );
+  const { additionalAddresses, address } = useSKWallet();
+
+  const onPendingActionClick = ({
+    opportunityBalance,
+    pendingActionDto,
+  }: {
+    pendingActionDto: PendingActionDto;
+    opportunityBalance: YieldBalanceDto;
+  }) => {
+    position
+      .toEither(new Error("missing position"))
+      .chain((p) =>
+        preparePendingActionRequestDto({
+          opportunityBalance,
+          pendingActionDto,
+          additionalAddresses,
+          address,
+          integration: p.integrationData,
+        })
+      )
+      .ifRight((pendingActionRequestDto) => {
+        onPendingAction
+          .mutateAsync({ pendingActionRequestDto })
+          .then(() =>
+            navigate(
+              `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
+              { relative: "path" }
+            )
+          );
+      });
   };
 
-  const error = onStakeExit.isError || onClaim.isError;
+  const error = onStakeExit.isError || onPendingAction.isError;
+
+  const pendingActions = useMemo(() => {
+    return positionBalancesByType.map((pbbt) =>
+      [...pbbt.values()].flatMap((val) =>
+        val.pendingActions.map((pa) => ({
+          pendingActionDto: pa,
+          opportunityBalance: val,
+        }))
+      )
+    );
+  }, [positionBalancesByType]);
 
   return {
     position,
     stakeType,
-    balance,
-    stakedPrice,
-    rewardsBalance,
-    rewardsPrice,
-    claimAvailableRewards,
+    stakedOrLiquidBalance,
+    positionBalancesByType,
     unstakeText,
-    hasUnstakeAction,
+    hasUnstakeAction: canUnstake,
     unstakeAmount,
     onUnstakeAmountChange,
     unstakeFormattedAmount,
@@ -370,8 +342,9 @@ export const usePositionDetails = () => {
     unstakeDisabled,
     isLoading: isLoading || prices.isLoading,
     onStakeExitIsLoading: onStakeExit.isLoading,
-    onClaimClick,
-    onClaimIsLoading: onClaim.isLoading,
+    onPendingActionClick,
+    onPendingActionIsLoading: onPendingAction.isLoading,
     validatorDetails,
+    pendingActions,
   };
 };

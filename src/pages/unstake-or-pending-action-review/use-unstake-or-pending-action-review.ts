@@ -11,9 +11,11 @@ import { usePositionData } from "../../hooks/use-position-data";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
-import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
+import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
+import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
+import { ActionTypes } from "@stakekit/api-hooks";
 
-export const useUnstakeOrClaimReview = () => {
+export const useUnstakeOrPendingActionReview = () => {
   const params = useParams<{
     integrationId: string;
     defaultOrValidatorId: "default" | (string & {});
@@ -24,24 +26,36 @@ export const useUnstakeOrClaimReview = () => {
 
   const { position } = usePositionData(integrationId);
 
-  const claimMatch = useMatch(
-    "claim/:integrationId/:defaultOrValidatorId/review"
+  const pendingActionMatch = useMatch(
+    "pending-action/:integrationId/:defaultOrValidatorId/review"
   );
 
-  const { unstake, pendingActionSession } = useUnstakeOrClaimState();
+  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
+
+  const pendingActionType = pendingActionSession.map((val) => val.type);
 
   const { t } = useTranslation();
 
-  const balance = useStakedOrLiquidBalance(position, defaultOrValidatorId);
+  /**
+   * @summary Position balance by type
+   */
+  const positionBalancesByType = usePositionBalanceByType(
+    position,
+    defaultOrValidatorId
+  );
 
-  const amount = claimMatch
+  const stakedOrLiquidBalance = useStakedOrLiquidBalance(
+    positionBalancesByType
+  );
+
+  const amount = pendingActionMatch
     ? pendingActionSession.map((val) =>
         formatTokenBalance(new BigNumber(val.amount ?? 0), 6)
       )
     : unstake.chain((u) => u.amount).map((val) => formatTokenBalance(val, 6));
 
   const text = position.map((p) => {
-    switch (p.integrationData.config.type) {
+    switch (p.integrationData.metadata.type) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake");
@@ -53,15 +67,24 @@ export const useUnstakeOrClaimReview = () => {
     }
   });
 
+  const pendingActionText = pendingActionType.map((type) =>
+    t(
+      `position_details.pending_action_button.${
+        type.toLowerCase() as Lowercase<ActionTypes>
+      }`
+    )
+  );
+
   const navigate = useNavigate();
 
-  const { stakeExitTxGas, claimTxGas } = useUnstakeOrClaimState();
+  const { stakeExitTxGas, pendingActionTxGas } =
+    useUnstakeOrPendingActionState();
 
-  const txGas = claimMatch ? claimTxGas : stakeExitTxGas;
+  const txGas = pendingActionMatch ? pendingActionTxGas : stakeExitTxGas;
 
   const pricesState = usePrices({
     currency: config.currency,
-    tokenList: balance.mapOrDefault(
+    tokenList: stakedOrLiquidBalance.mapOrDefault(
       (sb) => [sb.token, tokenToTokenDto(getBaseToken(sb.token as Token))],
       []
     ),
@@ -84,6 +107,7 @@ export const useUnstakeOrClaimReview = () => {
             amount: gas.toString(),
             prices,
             token: getBaseToken(p.integrationData.token as Token),
+            pricePerShare: undefined,
           })
         ),
     [position, pricesState.data, txGas]
@@ -119,6 +143,8 @@ export const useUnstakeOrClaimReview = () => {
     position,
     onClick,
     fee,
-    claimMatch,
+    pendingActionMatch,
+    pendingActionText,
+    pendingActionType,
   };
 };

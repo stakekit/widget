@@ -1,8 +1,7 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../atoms/box";
 import { HelpIcon } from "../../atoms/icons";
 import { SelectModal } from "../../atoms/select-modal";
-
 import poweredBy from "../../../assets/images/powered-by.png";
 import whatIsStaking from "../../../assets/images/what-is-staking.png";
 import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.png";
@@ -13,20 +12,38 @@ import { Text } from "../../atoms/typography";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { imageStyle, linkStyle } from "./style.css";
 import { YieldType } from "@stakekit/api-hooks";
+import { formatCountryCode } from "../../../utils/formatters";
+import { useGeoBlock } from "../../../hooks/use-geo-block";
+import { ReactNode } from "react";
+import { SKAnchor } from "../../atoms/anchor";
+import { useRegionCodeName } from "../../../hooks/use-region-code-names";
 
-type ModalType = "main" | "fees" | YieldType;
+type ModalType =
+  | { type: "main" }
+  | { type: "fees" }
+  | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false>)
+  | { type: YieldType };
 
 type HelpModalProps = {
-  type: ModalType;
+  modal: ModalType;
 };
 
-export const HelpModal = ({ type }: HelpModalProps) => {
-  const { t } = useTranslation();
+export const HelpModal = ({ modal }: HelpModalProps) => {
+  const { t, i18n } = useTranslation();
+
+  const regionCodeName = useRegionCodeName(
+    modal.type === "geoBlock" ? modal.regionCode : undefined
+  );
 
   const getContent = (
-    type: ModalType
-  ): { title: string; description: string; image: string; link?: string } => {
-    switch (type) {
+    modal: ModalType
+  ): {
+    title: string;
+    description: string | ReactNode;
+    image: string;
+    link?: string;
+  } => {
+    switch (modal.type) {
       case "main": {
         return {
           title: t("help_modals.main.title"),
@@ -75,13 +92,123 @@ export const HelpModal = ({ type }: HelpModalProps) => {
           image: fees,
         };
       }
+
+      case "geoBlock": {
+        const title = t("help_modals.geo_block.title");
+        const countryName = formatCountryCode({
+          language: i18n.language,
+          countryCode: modal.countryCode,
+        });
+
+        if (modal.tags.has("OFAC") && modal.tags.has("OFSI")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.ofac_ofsi"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.ofsi_crypto_ban"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("Crypto Ban")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.crypto_ban"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("OFAC")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.ofac"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("OFSI")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.ofsi"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("Pending Litigation")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.pending_litigation"
+                values={{
+                  countryName,
+                  nameOfRegion: regionCodeName.data ?? "",
+                }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        } else if (modal.tags.has("Staking Ban")) {
+          return {
+            title,
+            description: (
+              <Trans
+                i18nKey="help_modals.geo_block.staking_ban"
+                values={{ countryName }}
+                components={{ link0: <SKAnchor /> }}
+              />
+            ),
+            image: fees,
+          };
+        }
+
+        return {
+          title,
+          description: (
+            <Trans
+              i18nKey="help_modals.geo_block.staking_ban"
+              values={{ countryName }}
+              components={{ link0: <SKAnchor /> }}
+            />
+          ),
+          image: fees,
+        };
+      }
     }
   };
 
-  const { description, image, title, link } = getContent(type);
+  const { description, image, title, link } = getContent(modal);
 
   return (
     <SelectModal
+      forceOpen={modal.type === "geoBlock"}
       trigger={
         <Trigger>
           <Box display="flex" alignItems="center" justifyContent="center">
@@ -100,7 +227,7 @@ export const HelpModal = ({ type }: HelpModalProps) => {
       >
         <Box as="img" src={image} className={imageStyle} />
 
-        <Text>{title}</Text>
+        <Text variant={{ size: "standard" }}>{title}</Text>
 
         <Box marginTop="2">
           <Text

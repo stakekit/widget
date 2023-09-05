@@ -1,24 +1,25 @@
-import { YieldBalanceDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import { useTokenAvailableAmount } from "./api/use-token-available-amount";
+import { PositionBalancesByType } from "../domain/types/positions";
 
 export const useMaxMinYieldAmount = ({
   type,
   yieldOpportunity,
-  balance,
+  positionBalancesByType,
 }: {
-  yieldOpportunity: Maybe<YieldOpportunityDto>;
+  yieldOpportunity: Maybe<YieldDto>;
 } & (
   | {
       type: "enter";
-      balance?: never;
+      positionBalancesByType?: never;
     }
   | {
       type: "exit";
-      balance: Maybe<YieldBalanceDto>;
+      positionBalancesByType: Maybe<PositionBalancesByType>;
     }
 )) => {
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
@@ -29,10 +30,15 @@ export const useMaxMinYieldAmount = ({
     () =>
       type === "enter"
         ? stakeTokenAvailableAmount.data ?? new BigNumber(0)
-        : balance
+        : positionBalancesByType
+            .chain((p) =>
+              Maybe.fromNullable(p.get("staked")).altLazy(() =>
+                Maybe.fromNullable(p.get("available"))
+              )
+            )
             .map((b) => new BigNumber(b.amount))
             .orDefault(new BigNumber(0)),
-    [balance, stakeTokenAvailableAmount.data, type]
+    [positionBalancesByType, stakeTokenAvailableAmount.data, type]
   );
 
   const minIntegrationAmount = useMemo(

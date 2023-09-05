@@ -22,8 +22,8 @@ import {
   PositionsPage,
   EarnPage,
   StakeStepsPage,
-  UnstakeOrClaimStepsPage,
-  UnstakeOrClaimCompletePage,
+  UnstakeOrPendingActionStepsPage,
+  UnstakeOrPendingActionCompletePage,
   StakeCompletePage,
 } from "./pages";
 import { Box } from "./components";
@@ -36,16 +36,21 @@ import {
 import classNames from "clsx";
 import { PositionDetails } from "./pages/position-details";
 import { useLocationTransition } from "./providers/location-transition";
-import { UnstakeOrClaimReviewPage } from "./pages/unstake-or-claim-review";
+import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { StakeCheck } from "./pages/cheks/stake-check";
-import { UnstakeOrClaimCheck } from "./pages/cheks/unstake-or-claim-check";
+import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
-import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
+import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 import { cosmosWalletManager } from "./providers/cosmos/config";
+import { useGeoBlock } from "./hooks/use-geo-block";
+import { HelpModal } from "./components/molecules/help-modal";
+import { createPortal } from "react-dom";
 
 const Widget = () => {
   useToggleTheme();
+
+  const geoBlock = useGeoBlock();
 
   const { chain } = useSKWallet();
 
@@ -83,70 +88,90 @@ const Widget = () => {
   } = useLocationTransition();
 
   return (
-    <Box
-      background="background"
-      className={classNames([
-        container,
-        shouldAnimate({ location, prevLocationPathName }) &&
-          transitionClassName,
-      ])}
-      onAnimationEnd={onAnimationEnd}
-    >
-      <Routes location={displayLocation}>
-        <Route element={<Layout />}>
-          <Route element={<Details />}>
-            <Route index element={<EarnPage />} />
-            <Route path="positions" element={<PositionsPage />} />
-          </Route>
-
-          <Route element={<ConnectedCheck />}>
-            <Route element={<StakeCheck />}>
-              <Route path="review" element={<ReviewPage />} />
-              <Route path="steps" element={<StakeStepsPage />} />
-              <Route path="complete" element={<StakeCompletePage />} />R
+    <>
+      <Box
+        background="background"
+        className={classNames([
+          container,
+          shouldAnimate({ location, prevLocationPathName }) &&
+            transitionClassName,
+        ])}
+        onAnimationEnd={onAnimationEnd}
+      >
+        <Routes location={displayLocation}>
+          <Route element={<Layout />}>
+            <Route element={<Details />}>
+              <Route index element={<EarnPage />} />
+              <Route path="positions" element={<PositionsPage />} />
             </Route>
 
-            <Route
-              element={
-                <UnstakeOrClaimContextProvider>
-                  <Outlet />
-                </UnstakeOrClaimContextProvider>
-              }
-            >
-              <Route
-                path="positions/:integrationId/:defaultOrValidatorId"
-                element={<PositionDetails />}
-              />
-              <Route
-                path="unstake/:integrationId/:defaultOrValidatorId"
-                element={<UnstakeOrClaimCheck />}
-              >
-                <Route path="review" element={<UnstakeOrClaimReviewPage />} />
-                <Route path="steps" element={<UnstakeOrClaimStepsPage />} />
-                <Route
-                  path="complete"
-                  element={<UnstakeOrClaimCompletePage />}
-                />
+            <Route element={<ConnectedCheck />}>
+              <Route element={<StakeCheck />}>
+                <Route path="review" element={<ReviewPage />} />
+                <Route path="steps" element={<StakeStepsPage />} />
+                <Route path="complete" element={<StakeCompletePage />} />R
               </Route>
 
               <Route
-                path="claim/:integrationId/:defaultOrValidatorId"
-                element={<UnstakeOrClaimCheck />}
+                element={
+                  <UnstakeOrPendingActionContextProvider>
+                    <Outlet />
+                  </UnstakeOrPendingActionContextProvider>
+                }
               >
-                <Route path="review" element={<UnstakeOrClaimReviewPage />} />
-                <Route path="steps" element={<UnstakeOrClaimStepsPage />} />
                 <Route
-                  path="complete"
-                  element={<UnstakeOrClaimCompletePage />}
+                  path="positions/:integrationId/:defaultOrValidatorId"
+                  element={<PositionDetails />}
                 />
+                <Route
+                  path="unstake/:integrationId/:defaultOrValidatorId"
+                  element={<UnstakeOrPendingActionCheck />}
+                >
+                  <Route
+                    path="review"
+                    element={<UnstakeOrPendingActionReviewPage />}
+                  />
+                  <Route
+                    path="steps"
+                    element={<UnstakeOrPendingActionStepsPage />}
+                  />
+                  <Route
+                    path="complete"
+                    element={<UnstakeOrPendingActionCompletePage />}
+                  />
+                </Route>
+
+                <Route
+                  path="pending-action/:integrationId/:defaultOrValidatorId"
+                  element={<UnstakeOrPendingActionCheck />}
+                >
+                  <Route
+                    path="review"
+                    element={<UnstakeOrPendingActionReviewPage />}
+                  />
+                  <Route
+                    path="steps"
+                    element={<UnstakeOrPendingActionStepsPage />}
+                  />
+                  <Route
+                    path="complete"
+                    element={<UnstakeOrPendingActionCompletePage />}
+                  />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </Box>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </Box>
+
+      {geoBlock &&
+        createPortal(
+          <HelpModal modal={{ type: "geoBlock", ...geoBlock }} />,
+          document.body
+        )}
+    </>
   );
 };
 

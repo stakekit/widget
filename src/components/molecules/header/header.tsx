@@ -60,7 +60,7 @@ export const Header = () => {
           </Box>
         ) : (
           <Box hw="7">
-            <HelpModal type="main" />
+            <HelpModal modal={{ type: "main" }} />
           </Box>
         )}
 

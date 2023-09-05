@@ -1,7 +1,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { PropsWithChildren, StrictMode, useState } from "react";
 import { MemoryRouter } from "react-router-dom";
-import { queryClient } from "../services/query-client";
+import {
+  defaultQueryClientConfiguration,
+  queryClient,
+} from "../services/query-client";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { config } from "../config";
 import { EVMProvider } from "./ethereum/provider";
@@ -18,12 +21,7 @@ export const Providers = ({ children }: PropsWithChildren) => {
       apiKey: apiKey,
       baseURL: config.apiUrl,
       queryClientConfig: {
-        defaultOptions: {
-          queries: {
-            cacheTime: config.queryClient.cacheTime,
-            staleTime: config.queryClient.staleTime,
-          },
-        },
+        defaultOptions: defaultQueryClientConfiguration as any,
       },
     })
   );

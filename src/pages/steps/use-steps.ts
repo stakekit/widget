@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStepsMachine } from "./use-steps-machine";
-import { StakeDto } from "@stakekit/api-hooks";
+import { ActionDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 
-export const useSteps = (session: Maybe<StakeDto>) => {
+export const useSteps = (session: Maybe<ActionDto>) => {
   const navigate = useNavigate();
 
   const [machine, send] = useStepsMachine();

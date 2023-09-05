@@ -71,9 +71,20 @@
   "complete": {
     "successfully_staked": "Successfully staked {{amount}} {{tokenNetwork}}",
     "successfully_unstaked": "Successfully unstaked {{amount}} {{tokenNetwork}}",
-    "successfully_claimed": "Successfully claimed {{amount}} {{tokenNetwork}}",
+    "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View transaction",
-    "via": "via {{providerName}}"
+    "via": "via {{providerName}}",
+    "pending_action": {
+      "stake": "staked",
+      "unstake": "unstaked",
+      "claim_rewards": "claimed rewards",
+      "restake_rewards": "restaked rewards",
+      "withdraw": "withdrawn",
+      "restake": "restaked",
+      "claim_unstaked": "claimed unstaked",
+      "unlock_locked": "unlocked locked",
+      "stake_locked": "staked locked"
+    }
   },
   "help_modals": {
     "main": {
@@ -99,8 +110,19 @@
     "fees": {
       "title": "About fees",
       "description": "Crypto network fees, also known as gas fees, are the costs associated with executing transactions or smart contracts on a blockchain network. These fees ensure the prioritization and security of transactions. Higher demand and congestion can lead to increased gas fees, while lower fees may result in slower transaction processing."
+    },
+    "geo_block": {
+      "title": "Geo Block",
+      "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
+      "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
+      "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
+      "crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} has implemented firm regulations against the use of cryptocurrencies. Please refer to official {{countryName}} resources to learn more.",
+      "staking_ban": "This feature is not available in {{countryName}}. The Securities and Exchange Commission (“SEC”) of {{countryName}} has restricted digital asset business operators from offering staking services. You can learn more about the SEC regualtions here <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
+      "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
+      "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries, as well as the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>."
     }
   },
+
   "positions": {
     "title": "My Positions",
     "via": "via {{providerName}}",
@@ -114,17 +136,58 @@
     "deposited": "Deposited",
     "via": "via {{providerName}}",
     "rewards": "Rewards",
-    "available_to_claim": "<bold>{{amount}} {{symbol}}</bold> available to claim",
+    "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
-    "available": "available"
+    "available": "available",
+    "balance_type": {
+      "available": "Available",
+      "staked": "Staked",
+      "unstaking": "Unstaking",
+      "unstaked": "Unstaked",
+      "preparing": "Preparing",
+      "rewards": "Rewards",
+      "locked": "Locked"
+    },
+    "pending_action": {
+      "stake": "Stake",
+      "unstake": "Unstake",
+      "claim_rewards": "Claim rewards",
+      "restake_rewards": "Restake rewards",
+      "withdraw": "Withdraw",
+      "restake": "Restake",
+      "claim_unstaked": "Claim unstaked",
+      "unlock_locked": "Unlock locked",
+      "stake_locked": "Stake locked"
+    },
+    "pending_action_button": {
+      "stake": "Stake",
+      "unstake": "Unstake",
+      "claim_rewards": "Claim",
+      "restake_rewards": "Restake",
+      "withdraw": "Withdraw",
+      "restake": "Restake",
+      "claim_unstaked": "Claim",
+      "unlock_locked": "Unlock",
+      "stake_locked": "Stake"
+    }
   },
   "unstake_review": {
     "terms_of_use": "By clicking confirm & stake your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
     "unstake_from": "Unstake from {{providerName}}"
   },
-  "claim_review": {
-    "claim_from": "Claim from {{providerName}}"
+  "pending_action_review": {
+    "pending_action_type": {
+      "stake": "Stake with {{providerName}}",
+      "unstake": "Unstake from {{providerName}}",
+      "claim_rewards": "Claim rewards from {{providerName}}",
+      "restake_rewards": "Restake rewards with {{providerName}}",
+      "withdraw": "Withdraw from {{providerName}}",
+      "restake": "Restake with {{providerName}}",
+      "claim_unstaked": "Claim unstaked from {{providerName}}",
+      "unlock_locked": "Unlock locked from {{providerName}}",
+      "stake_locked": "Stake locked with {{providerName}}"
+    }
   }
 }

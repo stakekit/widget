@@ -10,10 +10,10 @@ import {
   useReducer,
 } from "react";
 import { Actions, ExtraData, State } from "./types";
-import { useStakeEnterEnabledOpportunities } from "../../hooks/api/use-filtered-opportunities";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
+import { useStakeEnterEnabledOpportunities } from "../../hooks/api/opportunities";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined

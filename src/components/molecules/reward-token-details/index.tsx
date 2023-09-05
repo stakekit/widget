@@ -5,14 +5,20 @@ import { Trans } from "react-i18next";
 import { inlineText } from "./style.css";
 import { Image } from "../../atoms/image";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import { ActionTypes } from "@stakekit/api-hooks";
 
 export const RewardTokenDetails = ({
   rewardToken,
-  type = "stake",
+  ...rest
 }: {
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
-  type?: "stake" | "unstake" | "claim";
-}) => {
+} & (
+  | { type?: "stake" | "unstake"; pendingAction?: never }
+  | {
+      type: "pendingAction";
+      pendingAction: ActionTypes;
+    }
+)) => {
   return rewardToken
     .map((rt) => (
       <>
@@ -22,10 +28,12 @@ export const RewardTokenDetails = ({
           <Text variant={{ size: "small", weight: "semibold" }}>
             <Trans
               i18nKey={
-                type === "stake"
+                rest.type === "stake"
                   ? "details.reward_token"
-                  : type === "claim"
-                  ? "claim_review.claim_from"
+                  : rest.type === "pendingAction"
+                  ? `pending_action_review.pending_action_type.${
+                      rest.pendingAction.toLowerCase() as Lowercase<ActionTypes>
+                    }`
                   : "unstake_review.unstake_from"
               }
               values={{

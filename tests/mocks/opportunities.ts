@@ -1,6 +1,4 @@
-import { YieldOpportunityDto } from "@stakekit/api-hooks";
-
-export const opportunities: YieldOpportunityDto[] = [
+export const opportunities: any[] = [
   {
     id: "ethereum-eth-lido-staking",
     token: {
