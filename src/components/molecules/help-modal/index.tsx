@@ -193,7 +193,7 @@ export const HelpModal = ({ modal }: HelpModalProps) => {
           title,
           description: (
             <Trans
-              i18nKey="help_modals.geo_block.staking_ban"
+              i18nKey="help_modals.geo_block.default"
               values={{ countryName }}
               components={{ link0: <SKAnchor /> }}
             />
