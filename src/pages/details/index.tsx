@@ -229,7 +229,7 @@ export const EarnPage = () => {
                     variant={{
                       size: "small",
                       weight: "semibold",
-                      type: "white",
+                      type: "regular",
                     }}
                   >
                     {t("shared.max")}
