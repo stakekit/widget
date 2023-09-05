@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import { Prices, TokenString } from "./types";
 import { EvmNetworks, Token } from "@stakekit/common";
 import {
-  StakeDto,
+  ActionDto,
   TransactionDto,
   TransactionStatusResponseDto,
 } from "@stakekit/api-hooks";
@@ -31,16 +31,19 @@ export const getTokenPriceInUSD = ({
   token,
   amount,
   prices,
+  pricePerShare,
 }: {
   token: Token;
   amount: string | BigNumber;
+  pricePerShare: string | undefined;
   prices: Prices;
 }): BigNumber => {
   const amountBN = BigNumber(amount);
   const ts = tokenString(token);
   const price = prices.get(ts)?.price ?? 0;
+  const pricePerShareBN = BigNumber(pricePerShare ?? 1);
 
-  return amountBN.times(price);
+  return amountBN.times(price).times(pricePerShareBN);
 };
 
 export const getMaxAmount = ({
@@ -69,8 +72,8 @@ export const getBaseToken = (token: Token) => {
  * @summary Get stake transactions available for signing or tx status check.
  * If any of the transactions are in a failed state, return an error
  */
-export const getValidStakeSessionTx = (stakeDto: StakeDto) => {
-  const val: StakeDto = {
+export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
+  const val: ActionDto = {
     ...stakeDto,
     transactions: stakeDto.transactions.filter(
       (

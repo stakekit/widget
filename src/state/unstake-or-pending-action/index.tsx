@@ -10,64 +10,43 @@ import {
 } from "react";
 import { Action } from "../stake/types";
 import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
-import {
-  StakeDto,
-  StakeSessionTypes,
-  YieldOpportunityDto,
-} from "@stakekit/api-hooks";
+import { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
 
 type UnstakeAmountChange = Action<
   "unstake/amount/change",
-  { integration: YieldOpportunityDto; amount: Maybe<BigNumber> }
+  { integration: YieldDto; amount: Maybe<BigNumber> }
 >;
 
-type ClaimSet = Action<
-  "claim/set",
-  {
-    integration: YieldOpportunityDto;
-    type: StakeSessionTypes;
-    passthrough: string;
-    amount: string;
-  }
->;
-
-type Actions = UnstakeAmountChange | ClaimSet;
+type Actions = UnstakeAmountChange;
 
 const getInitialState = (): State => ({
   unstake: Maybe.empty(),
-  claim: Maybe.empty(),
 });
 
 export type State = {
   unstake: Maybe<{
-    integration: YieldOpportunityDto;
+    integration: YieldDto;
     amount: Maybe<BigNumber>;
-  }>;
-  claim: Maybe<{
-    integration: YieldOpportunityDto;
-    type: StakeSessionTypes;
-    passthrough: string;
-    amount: string;
   }>;
 };
 
 type ExtraData = {
   stakeExitTxGas: Maybe<BigNumber>;
-  claimTxGas: Maybe<BigNumber>;
-  unstakeSession: Maybe<StakeDto>;
-  pendingActionSession: Maybe<StakeDto>;
+  pendingActionTxGas: Maybe<BigNumber>;
+  unstakeSession: Maybe<ActionDto>;
+  pendingActionSession: Maybe<ActionDto>;
 };
 
-const UnstakeOrClaimContext = createContext<(State & ExtraData) | undefined>(
-  undefined
-);
+const UnstakeOrPendingActionContext = createContext<
+  (State & ExtraData) | undefined
+>(undefined);
 
-const UnstakeOrClaimDispatchContext = createContext<
+const UnstakeOrPendingActionDispatchContext = createContext<
   Dispatch<Actions> | undefined
 >(undefined);
 
-export const UnstakeOrClaimContextProvider = ({
+export const UnstakeOrPendingActionContextProvider = ({
   children,
 }: PropsWithChildren) => {
   const reducer = (state: State, action: Actions): State => {
@@ -76,12 +55,6 @@ export const UnstakeOrClaimContextProvider = ({
         return {
           ...state,
           unstake: Maybe.of(action.data),
-        };
-      }
-      case "claim/set": {
-        return {
-          ...state,
-          claim: Maybe.of(action.data),
         };
       }
 
@@ -115,7 +88,7 @@ export const UnstakeOrClaimContextProvider = ({
     );
   }, [stakeExitAndTxsConstruct.data]);
 
-  const claimTxGas = useMemo(() => {
+  const pendingActionTxGas = useMemo(() => {
     return Maybe.fromNullable(pendingActionAndTxsConstruct.data).map((val) =>
       val.transactionConstructRes.reduce(
         (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
@@ -130,30 +103,28 @@ export const UnstakeOrClaimContextProvider = ({
       unstakeSession,
       pendingActionSession,
       unstake: state.unstake,
-      claim: state.claim,
-      claimTxGas,
+      pendingActionTxGas,
     }),
     [
       stakeExitTxGas,
-      state.claim,
       state.unstake,
       unstakeSession,
       pendingActionSession,
-      claimTxGas,
+      pendingActionTxGas,
     ]
   );
 
   return (
-    <UnstakeOrClaimContext.Provider value={value}>
-      <UnstakeOrClaimDispatchContext.Provider value={dispatch}>
+    <UnstakeOrPendingActionContext.Provider value={value}>
+      <UnstakeOrPendingActionDispatchContext.Provider value={dispatch}>
         {children}
-      </UnstakeOrClaimDispatchContext.Provider>
-    </UnstakeOrClaimContext.Provider>
+      </UnstakeOrPendingActionDispatchContext.Provider>
+    </UnstakeOrPendingActionContext.Provider>
   );
 };
 
-export const useUnstakeOrClaimState = () => {
-  const state = useContext(UnstakeOrClaimContext);
+export const useUnstakeOrPendingActionState = () => {
+  const state = useContext(UnstakeOrPendingActionContext);
   if (state === undefined) {
     throw new Error("useState must be used within a UnstakeContextProvider");
   }
@@ -161,8 +132,8 @@ export const useUnstakeOrClaimState = () => {
   return state;
 };
 
-export const useUnstakeOrClaimDispatch = () => {
-  const dispatch = useContext(UnstakeOrClaimDispatchContext);
+export const useUnstakeOrPendingActionDispatch = () => {
+  const dispatch = useContext(UnstakeOrPendingActionDispatchContext);
   if (dispatch === undefined) {
     throw new Error("useDispatch must be used within a UnstakeContextProvider");
   }

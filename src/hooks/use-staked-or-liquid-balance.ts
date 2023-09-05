@@ -1,19 +1,17 @@
 import { useMemo } from "react";
-import { usePositionData } from "./use-position-data";
-import { List } from "purify-ts";
+import { Maybe } from "purify-ts";
+import { PositionBalancesByType } from "../domain/types/positions";
 
 export const useStakedOrLiquidBalance = (
-  position: ReturnType<typeof usePositionData>["position"],
-  defaultOrValidatorId: "default" | (string & {})
+  positionBalancesByType: Maybe<PositionBalancesByType>
 ) => {
   return useMemo(
     () =>
-      position.chain((p) =>
-        List.find(
-          (b) => b.type === "staked" || b.type === "available",
-          p.balanceData[defaultOrValidatorId]
+      positionBalancesByType.chain((pbbt) =>
+        Maybe.fromNullable(pbbt.get("staked")).altLazy(() =>
+          Maybe.fromNullable(pbbt.get("available"))
         )
       ),
-    [defaultOrValidatorId, position]
+    [positionBalancesByType]
   );
 };

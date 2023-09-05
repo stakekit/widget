@@ -12,7 +12,7 @@ import {
 } from "./errors";
 import { Override } from "../../types/utils";
 import {
-  stakeGetStakeSession,
+  actionGetAction,
   transactionConstruct,
   transactionGetTransactionStatusFromId,
   transactionSubmit,
@@ -75,7 +75,7 @@ export const useStepsMachine = () => {
 
           setContext((ctx) => ({ ...ctx, sessionId: id }));
 
-          withRequestErrorRetry({ fn: () => stakeGetStakeSession(id) })
+          withRequestErrorRetry({ fn: () => actionGetAction(id) })
             .mapLeft(() => new GetStakeSessionError())
             .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
             .chain((val) =>
@@ -192,7 +192,7 @@ export const useStepsMachine = () => {
           )
             .chain((sessionId) =>
               withRequestErrorRetry({
-                fn: () => stakeGetStakeSession(sessionId),
+                fn: () => actionGetAction(sessionId),
               })
                 .mapLeft(() => new GetStakeSessionError())
                 .chain((val) =>

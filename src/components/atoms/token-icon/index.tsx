@@ -1,4 +1,4 @@
-import { TokenDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Box } from "../box";
 import { Image } from "../image";
 import { logoContainer, smallLogo } from "./style.css";
@@ -14,7 +14,7 @@ export const TokenIcon = ({
   tokenNetworkLogoHw,
 }: {
   token: TokenDto;
-  metadata: YieldOpportunityDto["metadata"];
+  metadata: YieldMetadataDto;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];
 }) => {

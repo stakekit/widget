@@ -1,15 +1,17 @@
 import { Navigate, Outlet, useMatch } from "react-router-dom";
-import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
+import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 
-export const UnstakeOrClaimCheck = () => {
-  const { unstake, pendingActionSession } = useUnstakeOrClaimState();
+export const UnstakeOrPendingActionCheck = () => {
+  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
 
-  const claimMatch = useMatch("claim/:integrationId/:defaultOrValidatorId/*");
+  const pendingActionMatch = useMatch(
+    "pending-action/:integrationId/:defaultOrValidatorId/*"
+  );
   const unstakeMatch = useMatch(
     "unstake/:integrationId/:defaultOrValidatorId/*"
   );
 
-  const isReady = claimMatch
+  const isReady = pendingActionMatch
     ? pendingActionSession.isJust()
     : unstakeMatch
     ? unstake

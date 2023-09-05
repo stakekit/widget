@@ -1,7 +1,7 @@
 import {
   GasModeValueDto,
-  StakeRequestDto,
-  stakeExit,
+  ActionRequestDto,
+  actionExit,
   transactionConstruct,
 } from "@stakekit/api-hooks";
 import { EitherAsync } from "purify-ts";
@@ -18,7 +18,7 @@ export const useStakeExitAndTxsConstruct = () => {
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
-      stakeRequestDto: StakeRequestDto;
+      stakeRequestDto: ActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;
     }
   >(["stake-exit"], async (args) => {
@@ -34,11 +34,11 @@ const fn = ({
   stakeRequestDto,
   isLedgerLive,
 }: {
-  stakeRequestDto: StakeRequestDto;
+  stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
 }) =>
-  withRequestErrorRetry({ fn: () => stakeExit(stakeRequestDto) })
+  withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
     .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
     .chain((val) =>

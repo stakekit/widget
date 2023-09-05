@@ -43,6 +43,7 @@ export const useReview = () => {
             amount: gas.toString(),
             prices,
             token: getBaseToken(ss.token as Token),
+            pricePerShare: undefined,
           })
         ),
     [selectedStake, pricesState.data, stakeEnterTxGas]

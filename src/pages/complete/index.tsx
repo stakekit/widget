@@ -4,22 +4,30 @@ import { PageContainer } from "../components";
 import { CheckCircleIcon } from "../../components/atoms/icons/check-circle";
 import { useComplete } from "./use-complete";
 import { TokenIcon } from "../../components/atoms/token-icon";
-import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import { ActionTypes, TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { useMatch, useParams } from "react-router-dom";
 import { usePositionData } from "../../hooks/use-position-data";
 import BigNumber from "bignumber.js";
 import { formatTokenBalance } from "../../utils";
 import { useStakeState } from "../../state/stake";
-import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
+import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
+import { useMemo } from "react";
 
 type Props = {
   token: TokenDto | null;
   metadata: YieldMetadataDto | null;
   network: string;
   amount: string;
+  pendingActionType?: ActionTypes;
 };
 
-const CompletePage = ({ amount, metadata, network, token }: Props) => {
+const CompletePage = ({
+  amount,
+  metadata,
+  network,
+  token,
+  pendingActionType,
+}: Props) => {
   const { t } = useTranslation();
 
   const {
@@ -27,7 +35,7 @@ const CompletePage = ({ amount, metadata, network, token }: Props) => {
     onClick,
     onViewTransactionClick,
     unstakeMatch,
-    claimMatch,
+    pendingActionMatch,
     hasUrs,
   } = useComplete();
 
@@ -61,12 +69,17 @@ const CompletePage = ({ amount, metadata, network, token }: Props) => {
             {t(
               unstakeMatch
                 ? "complete.successfully_unstaked"
-                : claimMatch
-                ? "complete.successfully_claimed"
+                : pendingActionMatch
+                ? `complete.successfully_pending_action`
                 : "complete.successfully_staked",
               {
                 amount,
                 tokenNetwork: network,
+                pendingAction: t(
+                  `complete.pending_action.${
+                    pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
+                  }`
+                ),
               }
             )}
           </Heading>
@@ -141,11 +154,11 @@ export const StakeCompletePage = () => {
   );
 };
 
-export const UnstakeOrClaimCompletePage = () => {
-  const { unstake, claim } = useUnstakeOrClaimState();
+export const UnstakeOrPendingActionCompletePage = () => {
+  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
 
-  const claimMatch = useMatch(
-    "claim/:integrationId/:defaultOrValidatorId/complete"
+  const pendingActionMatch = useMatch(
+    "pending-action/:integrationId/:defaultOrValidatorId/complete"
   );
 
   const integrationId = useParams<{ integrationId: string }>().integrationId!;
@@ -157,14 +170,22 @@ export const UnstakeOrClaimCompletePage = () => {
     .map((p) => p.integrationData.metadata)
     .extractNullable();
   const network = token?.symbol ?? "";
-  const amount = claimMatch
-    ? claim.mapOrDefault(
-        (val) => formatTokenBalance(new BigNumber(val.amount), 6),
-        ""
-      )
-    : unstake
-        .chain((u) => u.amount)
-        .mapOrDefault((a) => formatTokenBalance(a, 6), "");
+  const amount = useMemo(
+    () =>
+      pendingActionMatch
+        ? pendingActionSession.mapOrDefault(
+            (val) => formatTokenBalance(new BigNumber(val.amount ?? 0), 6),
+            ""
+          )
+        : unstake
+            .chain((u) => u.amount)
+            .mapOrDefault((a) => formatTokenBalance(a, 6), ""),
+    [pendingActionMatch, pendingActionSession, unstake]
+  );
+
+  const pendingActionType = pendingActionSession
+    .map((val) => val.type)
+    .extract();
 
   return (
     <CompletePage
@@ -172,6 +193,7 @@ export const UnstakeOrClaimCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={amount}
+      pendingActionType={pendingActionType}
     />
   );
 };

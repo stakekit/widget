@@ -3,13 +3,12 @@ import { Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ValidatorDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { NumberInputProps, SelectModalProps } from "../../../components";
 import { getTokenPriceInUSD } from "../../../domain";
 import { yieldTypesMap } from "../../../domain/types";
 import { useSelectedStakePrice } from "../../../hooks";
 import { formatTokenBalance } from "../../../utils";
-import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/use-filtered-opportunities";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { SelectedStakeData } from "../types";
 import { Token } from "@stakekit/common";
@@ -23,6 +22,7 @@ import { useOnStakeEnter } from "./use-on-stake-enter";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { useStakeDispatch, useStakeState } from "../../../state/stake";
 import { NotEnoughGasTokenError } from "../../../api/check-gas-amount";
+import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/opportunities";
 
 export const useDetails = () => {
   const {
@@ -65,6 +65,7 @@ export const useDetails = () => {
           amount: val.sa,
           token: val.ss.token as Token,
           prices: val.prices,
+          pricePerShare: undefined,
         })
       )
       .mapOrDefault((v) => `$${formatTokenBalance(v, 2)}`, "");
@@ -91,7 +92,7 @@ export const useDetails = () => {
         const initialData = Object.fromEntries(
           Object.entries(yieldTypesMap).map(([key, value]) => {
             const k = key as keyof typeof yieldTypesMap;
-            return [k, { ...value, items: [] as YieldOpportunityDto[] }];
+            return [k, { ...value, items: [] as YieldDto[] }];
           })
         ) as SelectedStakeData;
 
@@ -99,7 +100,7 @@ export const useDetails = () => {
       })
       .map(({ y, initialData }) =>
         y.reduce((acc, curr) => {
-          const type = curr.config.type;
+          const type = curr.metadata.type;
 
           const lowerSearch = deferredStakeSearch?.toLowerCase();
 
@@ -124,7 +125,7 @@ export const useDetails = () => {
 
   const onSearch: SelectModalProps["onSearch"] = (val) => setStakeSearch(val);
 
-  const onItemSelect = (item: YieldOpportunityDto) =>
+  const onItemSelect = (item: YieldDto) =>
     appDispatch({ type: "stake/select", data: item });
 
   const onValidatorSelect = (item: ValidatorDto) =>
@@ -173,13 +174,13 @@ export const useDetails = () => {
   };
 
   const selectedStakeYieldType = selectedStake
-    .map((val) => val.config.type)
+    .map((val) => val.metadata.type)
     .extractNullable();
 
   const footerItems = useMemo(() => {
     return selectedStake.mapOrDefault(
       (y) => {
-        switch (y.config.type) {
+        switch (y.metadata.type) {
           case yieldTypesMap.staking.type: {
             return {
               description: null,

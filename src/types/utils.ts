@@ -1,4 +1,4 @@
-import { EitherAsync } from "purify-ts";
+import { Either, EitherAsync } from "purify-ts";
 
 export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;
@@ -15,3 +15,7 @@ export type GetEitherAsyncRight<T> = T extends EitherAsync<any, infer R>
 export type GetEitherAsyncLeft<T> = T extends EitherAsync<infer E, any>
   ? E
   : never;
+
+export type GetEitherRight<T> = T extends Either<any, infer R> ? R : never;
+
+export type GetEitherLeft<T> = T extends Either<infer E, any> ? E : never;

@@ -1,7 +1,7 @@
 import {
   GasModeValueDto,
   PendingActionRequestDto,
-  stakePendingActions,
+  actionPending,
   transactionConstruct,
 } from "@stakekit/api-hooks";
 import { EitherAsync } from "purify-ts";
@@ -39,7 +39,7 @@ const fn = ({
   isLedgerLive: boolean;
 }) =>
   withRequestErrorRetry({
-    fn: () => stakePendingActions(pendingActionRequestDto),
+    fn: () => actionPending(pendingActionRequestDto),
   })
     .mapLeft(() => new Error("Pending actions error"))
     .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))

@@ -22,3 +22,7 @@ i18n
       escapeValue: false,
     },
   });
+
+i18n.services.formatter?.add("lowercase", (value, _, __) => {
+  return value.toLowerCase();
+});

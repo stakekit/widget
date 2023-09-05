@@ -1,7 +1,7 @@
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { createSelector } from "reselect";
 import BigNumber from "bignumber.js";
-import { YieldBalanceDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 
 export const usePositions = () => {
   const { positionsData, isLoading } = usePositionsData();
@@ -42,7 +42,7 @@ export const positionsTableDataSelector = createSelector(
         return acc;
       },
       [] as {
-        integrationData: YieldOpportunityDto;
+        integrationData: YieldDto;
         balances: YieldBalanceDto[];
         defaultOrValidatorId: "default" | (string & {}); // either default balance or balance by validator
       }[]

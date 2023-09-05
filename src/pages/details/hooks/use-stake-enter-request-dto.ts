@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
-import { StakeRequestDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../state/stake";
 
 export const useStakeEnterRequestDto = () => {
@@ -22,8 +22,8 @@ export const useStakeEnterRequestDto = () => {
           Maybe.fromNullable(address).map((a) => ({ ...v, address: a }))
         )
         .map<
-          StakeRequestDto & {
-            gasFeeToken: YieldOpportunityDto["token"];
+          ActionRequestDto & {
+            gasFeeToken: YieldDto["token"];
           }
         >((val) => ({
           gasFeeToken: val.stake.metadata.gasFeeToken,
@@ -35,7 +35,7 @@ export const useStakeEnterRequestDto = () => {
           args: {
             amount: val.amount.toString(),
             validatorAddress:
-              val.validator?.address ?? val.stake.config.defaultValidator,
+              val.validator?.address ?? val.stake.metadata.defaultValidator,
           },
         })),
     [

@@ -16,7 +16,7 @@ import { TokenIcon } from "../../../components/atoms/token-icon";
 import { apyToPercentage } from "../../../utils";
 import { useMemo } from "react";
 import { hideScrollbar, selectItemText } from "./styles.css";
-import { YieldOpportunityDto } from "@stakekit/api-hooks";
+import { YieldDto } from "@stakekit/api-hooks";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import { State } from "../../../state/stake/types";
 
@@ -30,7 +30,7 @@ export const SelectOpportunity = ({
   selectedStake: State["selectedStake"];
   selectedStakeData: Maybe<SelectedStakeData>;
   onSearch: SelectModalProps["onSearch"];
-  onItemSelect: (item: YieldOpportunityDto) => void;
+  onItemSelect: (item: YieldDto) => void;
   onSelectOpportunityClose: () => void;
 }) => {
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export const SelectOpportunity = ({
                   acc.push(...val.items);
 
                   return acc;
-                }, [] as YieldOpportunityDto[]),
+                }, [] as YieldDto[]),
               })
             )
             .map((val) => ({

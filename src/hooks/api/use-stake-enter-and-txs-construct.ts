@@ -1,7 +1,7 @@
 import {
   GasModeValueDto,
-  StakeRequestDto,
-  stakeEnter,
+  ActionRequestDto,
+  actionEnter,
   transactionConstruct,
 } from "@stakekit/api-hooks";
 import { EitherAsync } from "purify-ts";
@@ -18,7 +18,7 @@ export const useStakeEnterAndTxsConstruct = () => {
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
-      stakeRequestDto: StakeRequestDto;
+      stakeRequestDto: ActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;
     }
   >(["stake-enter"], async (args) => {
@@ -34,11 +34,11 @@ const fn = ({
   stakeRequestDto,
   isLedgerLive,
 }: {
-  stakeRequestDto: StakeRequestDto;
+  stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
 }) =>
-  withRequestErrorRetry({ fn: () => stakeEnter(stakeRequestDto) })
+  withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft(() => new Error("Stake enter error"))
     .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
     .chain((val) =>

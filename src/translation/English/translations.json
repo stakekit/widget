@@ -71,9 +71,20 @@
   "complete": {
     "successfully_staked": "Successfully staked {{amount}} {{tokenNetwork}}",
     "successfully_unstaked": "Successfully unstaked {{amount}} {{tokenNetwork}}",
-    "successfully_claimed": "Successfully claimed {{amount}} {{tokenNetwork}}",
+    "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View transaction",
-    "via": "via {{providerName}}"
+    "via": "via {{providerName}}",
+    "pending_action": {
+      "stake": "staked",
+      "unstake": "unstaked",
+      "claim_rewards": "claimed rewards",
+      "restake_rewards": "restaked rewards",
+      "withdraw": "withdrawn",
+      "restake": "restaked",
+      "claim_unstaked": "claimed unstaked",
+      "unlock_locked": "unlocked locked",
+      "stake_locked": "staked locked"
+    }
   },
   "help_modals": {
     "main": {
@@ -125,17 +136,58 @@
     "deposited": "Deposited",
     "via": "via {{providerName}}",
     "rewards": "Rewards",
-    "available_to_claim": "<bold>{{amount}} {{symbol}}</bold> available to claim",
+    "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
-    "available": "available"
+    "available": "available",
+    "balance_type": {
+      "available": "Available",
+      "staked": "Staked",
+      "unstaking": "Unstaking",
+      "unstaked": "Unstaked",
+      "preparing": "Preparing",
+      "rewards": "Rewards",
+      "locked": "Locked"
+    },
+    "pending_action": {
+      "stake": "Stake",
+      "unstake": "Unstake",
+      "claim_rewards": "Claim rewards",
+      "restake_rewards": "Restake rewards",
+      "withdraw": "Withdraw",
+      "restake": "Restake",
+      "claim_unstaked": "Claim unstaked",
+      "unlock_locked": "Unlock locked",
+      "stake_locked": "Stake locked"
+    },
+    "pending_action_button": {
+      "stake": "Stake",
+      "unstake": "Unstake",
+      "claim_rewards": "Claim",
+      "restake_rewards": "Restake",
+      "withdraw": "Withdraw",
+      "restake": "Restake",
+      "claim_unstaked": "Claim",
+      "unlock_locked": "Unlock",
+      "stake_locked": "Stake"
+    }
   },
   "unstake_review": {
     "terms_of_use": "By clicking confirm & stake your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
     "unstake_from": "Unstake from {{providerName}}"
   },
-  "claim_review": {
-    "claim_from": "Claim from {{providerName}}"
+  "pending_action_review": {
+    "pending_action_type": {
+      "stake": "Stake with {{providerName}}",
+      "unstake": "Unstake from {{providerName}}",
+      "claim_rewards": "Claim rewards from {{providerName}}",
+      "restake_rewards": "Restake rewards with {{providerName}}",
+      "withdraw": "Withdraw from {{providerName}}",
+      "restake": "Restake with {{providerName}}",
+      "claim_unstaked": "Claim unstaked from {{providerName}}",
+      "unlock_locked": "Unlock locked from {{providerName}}",
+      "stake_locked": "Stake locked with {{providerName}}"
+    }
   }
 }

@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { Maybe } from "purify-ts";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
-import { useUnstakeOrClaimState } from "../../../state/unstake-or-claim";
-import { StakeRequestDto, YieldOpportunityDto } from "@stakekit/api-hooks";
+import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
+import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 
 export const useStakeExitRequestDto = ({
   balance,
@@ -11,7 +11,7 @@ export const useStakeExitRequestDto = ({
   balance: ReturnType<typeof useStakedOrLiquidBalance>;
 }) => {
   const { address, additionalAddresses } = useSKWallet();
-  const { unstake } = useUnstakeOrClaimState();
+  const { unstake } = useUnstakeOrPendingActionState();
 
   return useMemo(
     () =>
@@ -20,8 +20,8 @@ export const useStakeExitRequestDto = ({
         .chain((val) => val.u.amount.map((amount) => ({ ...val, amount })))
         .chain((val) => balance.map((sb) => ({ ...val, sb })))
         .map<
-          StakeRequestDto & {
-            gasFeeToken: YieldOpportunityDto["token"];
+          ActionRequestDto & {
+            gasFeeToken: YieldDto["token"];
           }
         >((val) => ({
           gasFeeToken: val.u.integration.metadata.gasFeeToken,

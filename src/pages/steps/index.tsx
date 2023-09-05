@@ -12,12 +12,12 @@ import {
 } from "./styles.css";
 import cls from "clsx";
 import { Maybe } from "purify-ts";
-import { StakeDto } from "@stakekit/api-hooks";
+import { ActionDto } from "@stakekit/api-hooks";
 import { useMatch } from "react-router-dom";
 import { useStakeState } from "../../state/stake";
-import { useUnstakeOrClaimState } from "../../state/unstake-or-claim";
+import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 
-const StepsPage = ({ session }: { session: Maybe<StakeDto> }) => {
+const StepsPage = ({ session }: { session: Maybe<ActionDto> }) => {
   const { state, onClick } = useSteps(session);
 
   const { t } = useTranslation();
@@ -313,13 +313,14 @@ export const StakeStepsPage = () => {
   return <StepsPage session={stakeSession} />;
 };
 
-export const UnstakeOrClaimStepsPage = () => {
-  const { unstakeSession, pendingActionSession } = useUnstakeOrClaimState();
+export const UnstakeOrPendingActionStepsPage = () => {
+  const { unstakeSession, pendingActionSession } =
+    useUnstakeOrPendingActionState();
 
   return (
     <StepsPage
       session={
-        useMatch("claim/:integrationId/:defaultOrValidatorId/steps")
+        useMatch("pending-action/:integrationId/:defaultOrValidatorId/steps")
           ? pendingActionSession
           : unstakeSession
       }

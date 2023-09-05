@@ -62,13 +62,12 @@ export const Positions = () => {
           style={{ height: "auto" }}
           data={tableData}
           itemContent={(_index, item) => {
-            const balance = item.balances.find(
-              (b) => b.type === "staked" || b.type === "available"
+            const amount = item.balances.reduce(
+              (acc, b) => new BigNumber(b.amount).plus(acc),
+              new BigNumber(0)
             );
 
-            if (!balance) return null;
-
-            const amount = new BigNumber(balance.amount);
+            const token = item.balances[0].token;
 
             const hasPendingClaimRewards = item.balances
               .find((b) => b.type === "rewards")
@@ -99,7 +98,7 @@ export const Positions = () => {
                     >
                       <TokenIcon
                         metadata={item.integrationData.metadata}
-                        token={balance.token}
+                        token={token}
                       />
 
                       <Box
@@ -116,7 +115,7 @@ export const Positions = () => {
                           gap="1"
                         >
                           <Text variant={{ size: "small" }}>
-                            {balance.token.symbol}
+                            {token.symbol}
                           </Text>
 
                           {hasPendingClaimRewards && (
@@ -145,7 +144,7 @@ export const Positions = () => {
                       justifyContent="center"
                       alignItems="flex-end"
                       flexDirection="column"
-                      flex={1}
+                      flex={2}
                       textAlign="end"
                     >
                       <Text variant={{ size: "small", weight: "normal" }}>
@@ -154,17 +153,15 @@ export const Positions = () => {
                         )}
                         %
                       </Text>
-                      {balance.amount && (
-                        <Text
-                          variant={{
-                            size: "small",
-                            weight: "normal",
-                            type: "muted",
-                          }}
-                        >
-                          {formatTokenBalance(amount, 6)} {balance.token.symbol}
-                        </Text>
-                      )}
+                      <Text
+                        variant={{
+                          size: "small",
+                          weight: "normal",
+                          type: "muted",
+                        }}
+                      >
+                        {formatTokenBalance(amount, 6)} {token.symbol}
+                      </Text>
                     </Box>
                   </ListItem>
                 </Box>

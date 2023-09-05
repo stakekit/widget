@@ -2,22 +2,31 @@ import { Trans, useTranslation } from "react-i18next";
 import { Box, Button, Divider, Heading, Text } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { PageContainer } from "../components";
-import { useUnstakeOrClaimReview } from "./use-unstake-or-claim-review";
+import { useUnstakeOrPendingActionReview } from "./use-unstake-or-pending-action-review";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { Maybe } from "purify-ts";
 import { HelpModal } from "../../components/molecules/help-modal";
 import { feeStyles } from "../review/style.css";
 
-export const UnstakeOrClaimReviewPage = () => {
-  const { amount, position, text, onClick, fee, claimMatch } =
-    useUnstakeOrClaimReview();
+export const UnstakeOrPendingActionReviewPage = () => {
+  const {
+    amount,
+    position,
+    text,
+    onClick,
+    fee,
+    pendingActionMatch,
+    pendingActionText,
+    pendingActionType,
+  } = useUnstakeOrPendingActionReview();
 
   const { t } = useTranslation();
 
   return position
     .chain((p) => amount.map((ua) => ({ p, ua })))
     .chain((val) => text.map((ut) => ({ ...val, ut })))
-    .map(({ p, ua, ut }) => (
+    .chain((val) => pendingActionText.map((pat) => ({ ...val, pat })))
+    .map(({ p, ua, ut, pat }) => (
       <PageContainer>
         <Box>
           <Box marginBottom="4">
@@ -28,7 +37,7 @@ export const UnstakeOrClaimReviewPage = () => {
               marginBottom="1"
             >
               <Heading variant={{ level: "h1" }}>
-                {claimMatch ? t("review.claim") : ut}
+                {pendingActionMatch ? pat : ut}
               </Heading>
               <TokenIcon
                 token={p.integrationData.token}
@@ -45,7 +54,12 @@ export const UnstakeOrClaimReviewPage = () => {
 
           {p.integrationData.metadata.provider && (
             <RewardTokenDetails
-              type="unstake"
+              {...(pendingActionMatch
+                ? {
+                    type: "pendingAction",
+                    pendingAction: pendingActionType.extract()!,
+                  }
+                : { type: "unstake" })}
               rewardToken={Maybe.of({
                 logoUri: p.integrationData.metadata.provider.logoURI,
                 providerName: p.integrationData.metadata.provider.name,

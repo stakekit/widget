@@ -1,18 +1,18 @@
 import { Maybe } from "purify-ts";
-import { useEnabledFilteredOpportunities } from "./api/use-filtered-opportunities";
 import { useSKWallet } from "./wallet/use-sk-wallet";
 import {
   YieldBalanceDto,
   YieldBalanceWithIntegrationIdRequestDto,
   YieldBalancesWithIntegrationIdDto,
-  YieldOpportunityDto,
-  getStakeGetMultipleIntegrationBalancesQueryKey,
-  useStakeGetMultipleIntegrationBalances,
+  YieldDto,
+  getYieldGetMultipleYieldBalancesQueryKey,
+  useYieldGetMultipleYieldBalances,
   useStakeKitQueryClient,
 } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
 import { SKWallet } from "../domain/types";
 import { useCallback } from "react";
+import { useEnabledFilteredOpportunities } from "./api/opportunities";
 
 export const usePositionsData = () => {
   const { address, additionalAddresses, isConnected } = useSKWallet();
@@ -32,16 +32,15 @@ export const usePositionsData = () => {
     )
     .orDefault([]);
 
-  const stakeGetMultipleIntegrationBalances =
-    useStakeGetMultipleIntegrationBalances(
-      yieldBalanceWithIntegrationIdRequestDto,
-      {
-        query: {
-          enabled: !!yieldBalanceWithIntegrationIdRequestDto.length,
-          staleTime: 1000 * 60 * 5,
-        },
-      }
-    );
+  const stakeGetMultipleIntegrationBalances = useYieldGetMultipleYieldBalances(
+    yieldBalanceWithIntegrationIdRequestDto,
+    {
+      query: {
+        enabled: !!yieldBalanceWithIntegrationIdRequestDto.length,
+        staleTime: 1000 * 60 * 5,
+      },
+    }
+  );
 
   const positionsData = Maybe.fromNullable(
     stakeGetMultipleIntegrationBalances.data
@@ -67,7 +66,7 @@ export const usePositionsData = () => {
 type YieldBalanceDtoSelectorData = {
   addr: string;
   additionalAddresses: SKWallet["additionalAddresses"];
-  opportunities: YieldOpportunityDto[];
+  opportunities: YieldDto[];
 };
 
 const yieldBalanceDtoSelector = createSelector(
@@ -87,7 +86,7 @@ const yieldBalanceDtoSelector = createSelector(
 );
 
 const opportunitiesMapSelector = createSelector(
-  (opportunities: YieldOpportunityDto[]) => opportunities,
+  (opportunities: YieldDto[]) => opportunities,
   (opportunities) => new Map(opportunities.map((val) => [val.id, val]))
 );
 
@@ -131,7 +130,7 @@ const positionsDataSelector = createSelector(
           balanceData: {
             default: YieldBalanceDto[];
           } & Record<ValidatorAddress, YieldBalanceDto[]>;
-          integrationData: YieldOpportunityDto;
+          integrationData: YieldDto;
         }
       >()
     )
@@ -142,7 +141,7 @@ export const useInvalidateBalances = () => {
 
   return useCallback(() => {
     queryClient.invalidateQueries({
-      queryKey: [getStakeGetMultipleIntegrationBalancesQueryKey({} as any)[0]],
+      queryKey: [getYieldGetMultipleYieldBalancesQueryKey({} as any)[0]],
     });
   }, [queryClient]);
 };

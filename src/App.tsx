@@ -22,8 +22,8 @@ import {
   PositionsPage,
   EarnPage,
   StakeStepsPage,
-  UnstakeOrClaimStepsPage,
-  UnstakeOrClaimCompletePage,
+  UnstakeOrPendingActionStepsPage,
+  UnstakeOrPendingActionCompletePage,
   StakeCompletePage,
 } from "./pages";
 import { Box } from "./components";
@@ -36,11 +36,11 @@ import {
 import classNames from "clsx";
 import { PositionDetails } from "./pages/position-details";
 import { useLocationTransition } from "./providers/location-transition";
-import { UnstakeOrClaimReviewPage } from "./pages/unstake-or-claim-review";
+import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { StakeCheck } from "./pages/cheks/stake-check";
-import { UnstakeOrClaimCheck } from "./pages/cheks/unstake-or-claim-check";
+import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
-import { UnstakeOrClaimContextProvider } from "./state/unstake-or-claim";
+import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 import { cosmosWalletManager } from "./providers/cosmos/config";
 import { useGeoBlock } from "./hooks/use-geo-block";
@@ -114,9 +114,9 @@ const Widget = () => {
 
               <Route
                 element={
-                  <UnstakeOrClaimContextProvider>
+                  <UnstakeOrPendingActionContextProvider>
                     <Outlet />
-                  </UnstakeOrClaimContextProvider>
+                  </UnstakeOrPendingActionContextProvider>
                 }
               >
                 <Route
@@ -125,25 +125,37 @@ const Widget = () => {
                 />
                 <Route
                   path="unstake/:integrationId/:defaultOrValidatorId"
-                  element={<UnstakeOrClaimCheck />}
+                  element={<UnstakeOrPendingActionCheck />}
                 >
-                  <Route path="review" element={<UnstakeOrClaimReviewPage />} />
-                  <Route path="steps" element={<UnstakeOrClaimStepsPage />} />
+                  <Route
+                    path="review"
+                    element={<UnstakeOrPendingActionReviewPage />}
+                  />
+                  <Route
+                    path="steps"
+                    element={<UnstakeOrPendingActionStepsPage />}
+                  />
                   <Route
                     path="complete"
-                    element={<UnstakeOrClaimCompletePage />}
+                    element={<UnstakeOrPendingActionCompletePage />}
                   />
                 </Route>
 
                 <Route
-                  path="claim/:integrationId/:defaultOrValidatorId"
-                  element={<UnstakeOrClaimCheck />}
+                  path="pending-action/:integrationId/:defaultOrValidatorId"
+                  element={<UnstakeOrPendingActionCheck />}
                 >
-                  <Route path="review" element={<UnstakeOrClaimReviewPage />} />
-                  <Route path="steps" element={<UnstakeOrClaimStepsPage />} />
+                  <Route
+                    path="review"
+                    element={<UnstakeOrPendingActionReviewPage />}
+                  />
+                  <Route
+                    path="steps"
+                    element={<UnstakeOrPendingActionStepsPage />}
+                  />
                   <Route
                     path="complete"
-                    element={<UnstakeOrClaimCompletePage />}
+                    element={<UnstakeOrPendingActionCompletePage />}
                   />
                 </Route>
               </Route>

@@ -17,6 +17,7 @@ import { HelpModal } from "../../components/molecules/help-modal";
 import { apyToPercentage, formatTokenBalance } from "../../utils";
 import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
+import { ActionTypes } from "@stakekit/api-hooks";
 
 export const PositionDetails = () => {
   const positionDetails = usePositionDetails();
@@ -24,12 +25,9 @@ export const PositionDetails = () => {
   const {
     isLoading,
     position,
-    balance,
+    stakedOrLiquidBalance,
     stakeType,
-    stakedPrice,
-    rewardsBalance,
-    rewardsPrice,
-    claimAvailableRewards,
+    positionBalancesByType,
     unstakeText,
     hasUnstakeAction,
     onUnstakeAmountChange,
@@ -41,8 +39,9 @@ export const PositionDetails = () => {
     onStakeExitIsLoading,
     error,
     unstakeDisabled,
-    onClaimClick,
-    onClaimIsLoading,
+    onPendingActionClick,
+    onPendingActionIsLoading,
+    pendingActions,
     validatorDetails,
   } = positionDetails;
 
@@ -58,10 +57,12 @@ export const PositionDetails = () => {
 
       {!isLoading &&
         position
-          .chain((p) => balance.map((b) => ({ b, p })))
+          .chain((p) => stakedOrLiquidBalance.map((b) => ({ b, p })))
           .chain((val) => stakeType.map((st) => ({ ...val, st })))
-          .chain((val) => stakedPrice.map((sp) => ({ ...val, sp })))
-          .map(({ p, b, st, sp }) => (
+          .chain((val) =>
+            positionBalancesByType.map((pbbt) => ({ ...val, pbbt }))
+          )
+          .map(({ p, b, st, pbbt }) => (
             <Box flex={1} display="flex" flexDirection="column">
               <Box display="flex" justifyContent="center" alignItems="center">
                 <TokenIcon
@@ -109,7 +110,7 @@ export const PositionDetails = () => {
                             <Box marginRight="1">
                               <ImageFallback
                                 name={vd.name ?? ""}
-                                tokenLogoHw="5"
+                                tokenLogoHw="8"
                                 textVariant={{
                                   size: "small",
                                   type: "white",
@@ -128,7 +129,7 @@ export const PositionDetails = () => {
                       </Box>
 
                       <HelpModal
-                        modal={{ type: p.integrationData.config.type }}
+                        modal={{ type: p.integrationData.metadata.type }}
                       />
                     </Box>
 
@@ -149,36 +150,23 @@ export const PositionDetails = () => {
                   </Text>
                 </Box>
 
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Text variant={{ weight: "normal" }}>{st}</Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {formatTokenBalance(new BigNumber(b.amount ?? 0), 6)}{" "}
-                    {b.token.symbol} (${formatTokenBalance(sp, 2)})
-                  </Text>
-                </Box>
-
-                {rewardsBalance
-                  .chain((rb) => rewardsPrice.map((rp) => ({ rb, rp })))
-                  .map(({ rb, rp }) => (
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Text variant={{ weight: "normal" }}>
-                        {t("position_details.rewards")}
-                      </Text>
-                      <Text variant={{ type: "muted", weight: "normal" }}>
-                        {formatTokenBalance(new BigNumber(rb.amount ?? 0), 6)}{" "}
-                        {rb.token.symbol} (${formatTokenBalance(rp, 2)})
-                      </Text>
-                    </Box>
-                  ))
-                  .extractNullable()}
+                {[...pbbt.values()].map((val) => (
+                  <Box
+                    key={val.type}
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="center"
+                  >
+                    <Text variant={{ weight: "normal" }}>
+                      {t(`position_details.balance_type.${val.type}`)}
+                    </Text>
+                    <Text variant={{ type: "muted", weight: "normal" }}>
+                      {formatTokenBalance(new BigNumber(val.amount ?? 0), 6)}{" "}
+                      {val.token.symbol} ($
+                      {formatTokenBalance(val.tokenPriceInUsd, 2)})
+                    </Text>
+                  </Box>
+                ))}
               </Box>
 
               {error && (
@@ -201,75 +189,91 @@ export const PositionDetails = () => {
                 flexDirection="column"
                 marginTop="10"
               >
-                {rewardsBalance
-                  .chain((rb) =>
-                    claimAvailableRewards.map((claim) => ({ rb, claim }))
-                  )
-                  .map(({ rb }) => (
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      px="4"
-                      py="4"
-                      borderRadius="2xl"
-                      borderColor="backgroundMuted"
-                      borderWidth={1}
-                      borderStyle="solid"
-                    >
-                      <Box flex={2}>
-                        <Text variant={{ weight: "normal" }}>
-                          <Trans
-                            i18nKey="position_details.available_to_claim"
-                            values={{
-                              amount: formatTokenBalance(
-                                new BigNumber(rb.amount ?? 0),
-                                6
-                              ),
-                              symbol: rb.token.symbol,
-                            }}
-                            components={{
-                              bold: (
-                                <Box
-                                  as="span"
-                                  fontWeight="bold"
-                                  display="block"
-                                />
-                              ),
-                            }}
-                          />
-                        </Text>
-                      </Box>
-
+                {pendingActions
+                  .map((val) =>
+                    val.map((pa) => (
                       <Box
-                        flex={1}
-                        maxWidth="24"
-                        justifyContent="flex-end"
+                        key={pa.pendingActionDto.type}
                         display="flex"
+                        justifyContent="space-between"
                         alignItems="center"
+                        px="4"
+                        py="4"
+                        borderRadius="2xl"
+                        borderColor="backgroundMuted"
+                        borderWidth={1}
+                        borderStyle="solid"
                       >
-                        {onClaimIsLoading && (
-                          <Box marginRight="2" display="flex">
-                            <Spinner />
-                          </Box>
-                        )}
-                        <Button
-                          onClick={onClaimClick}
-                          variant={{
-                            size: "small",
-                            color: onClaimIsLoading ? "disabled" : "primary",
-                          }}
-                          disabled={onClaimIsLoading}
+                        <Box flex={2}>
+                          <Text variant={{ weight: "normal" }}>
+                            <Trans
+                              i18nKey="position_details.available_to"
+                              values={{
+                                amount: formatTokenBalance(
+                                  new BigNumber(pa.opportunityBalance.amount),
+                                  6
+                                ),
+                                symbol: pa.opportunityBalance.token.symbol,
+                                pendingAction: t(
+                                  `position_details.pending_action.${
+                                    pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                                  }`
+                                ),
+                              }}
+                              components={{
+                                bold: (
+                                  <Box
+                                    as="span"
+                                    fontWeight="bold"
+                                    display="block"
+                                  />
+                                ),
+                              }}
+                            />
+                          </Text>
+                        </Box>
+
+                        <Box
+                          flex={1}
+                          maxWidth="24"
+                          justifyContent="flex-end"
+                          display="flex"
+                          alignItems="center"
                         >
-                          {t("position_details.claim")}
-                        </Button>
+                          {onPendingActionIsLoading && (
+                            <Box marginRight="2" display="flex">
+                              <Spinner />
+                            </Box>
+                          )}
+                          <Button
+                            onClick={() =>
+                              onPendingActionClick({
+                                opportunityBalance: pa.opportunityBalance,
+                                pendingActionDto: pa.pendingActionDto,
+                              })
+                            }
+                            variant={{
+                              size: "small",
+                              color: onPendingActionIsLoading
+                                ? "disabled"
+                                : "primary",
+                            }}
+                            disabled={onPendingActionIsLoading}
+                          >
+                            {t(
+                              `position_details.pending_action_button.${
+                                pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                              }`
+                            )}
+                          </Button>
+                        </Box>
                       </Box>
-                    </Box>
-                  ))
+                    ))
+                  )
                   .extractNullable()}
 
                 {hasUnstakeAction
-                  .chain(() => balance.map((b) => ({ b })))
+                  .chain(() => stakedOrLiquidBalance.map((b) => ({ b })))
                   .chain((val) => unstakeText.map((ut) => ({ ...val, ut })))
                   .chain((val) =>
                     canChangeAmount.map((cca) => ({ ...val, cca }))

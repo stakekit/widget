@@ -30,8 +30,8 @@ export const useComplete = () => {
   const unstakeMatch = useMatch(
     "unstake/:integrationId/:defaultOrValidatorId/complete"
   );
-  const claimMatch = useMatch(
-    "claim/:integrationId/:defaultOrValidatorId/complete"
+  const pendingActionMatch = useMatch(
+    "pending-action/:integrationId/:defaultOrValidatorId/complete"
   );
 
   return {
@@ -39,7 +39,7 @@ export const useComplete = () => {
     onClick,
     onViewTransactionClick,
     unstakeMatch,
-    claimMatch,
+    pendingActionMatch,
     hasUrs: !!urls?.length,
   };
 };
