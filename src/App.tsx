@@ -43,14 +43,9 @@ import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 import { cosmosWalletManager } from "./providers/cosmos/config";
-import { useGeoBlock } from "./hooks/use-geo-block";
-import { HelpModal } from "./components/molecules/help-modal";
-import { createPortal } from "react-dom";
 
 const Widget = () => {
   useToggleTheme();
-
-  const geoBlock = useGeoBlock();
 
   const { chain } = useSKWallet();
 
@@ -86,6 +81,8 @@ const Widget = () => {
     transitionClassName,
     onAnimationEnd,
   } = useLocationTransition();
+
+  // console.log({ geoBlock });
 
   return (
     <>
@@ -165,12 +162,6 @@ const Widget = () => {
           </Route>
         </Routes>
       </Box>
-
-      {geoBlock &&
-        createPortal(
-          <HelpModal modal={{ type: "geoBlock", ...geoBlock }} />,
-          document.body
-        )}
     </>
   );
 };
