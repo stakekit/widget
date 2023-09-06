@@ -241,7 +241,7 @@ export const PositionDetails = () => {
                           alignItems="center"
                         >
                           {onPendingActionIsLoading && (
-                            <Box marginRight="2" display="flex">
+                            <Box marginRight="3" display="flex">
                               <Spinner />
                             </Box>
                           )}
@@ -305,7 +305,7 @@ export const PositionDetails = () => {
                         </Box>
 
                         {onStakeExitIsLoading && (
-                          <Box marginRight="2" display="flex">
+                          <Box marginRight="3" display="flex">
                             <Spinner />
                           </Box>
                         )}

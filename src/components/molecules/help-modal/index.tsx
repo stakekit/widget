@@ -8,32 +8,33 @@ import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.p
 import whatIsDeposit from "../../../assets/images/what-is-deposit.png";
 import whatIsLending from "../../../assets/images/what-is-lending.png";
 import fees from "../../../assets/images/fees.png";
-import { Text } from "../../atoms/typography";
+import { Heading, Text } from "../../atoms/typography";
 import { Trigger } from "@radix-ui/react-alert-dialog";
-import { imageStyle, linkStyle } from "./style.css";
+import { imageStyle } from "./style.css";
 import { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
 import { ReactNode } from "react";
 import { SKAnchor } from "../../atoms/anchor";
-import { useRegionCodeName } from "../../../hooks/use-region-code-names";
+import { Button } from "../../atoms/button";
 
 type ModalType =
   | { type: "main" }
   | { type: "fees" }
-  | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false>)
-  | { type: YieldType };
+  | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false> & {
+        regionCodeName: string | undefined;
+      })
+  | { type: YieldType }
+  | { type: "getInTouch" }
+  | { type: "whatIsStakeKit" };
 
 type HelpModalProps = {
   modal: ModalType;
+  customTrigger?: ReactNode;
 };
 
-export const HelpModal = ({ modal }: HelpModalProps) => {
+export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
   const { t, i18n } = useTranslation();
-
-  const regionCodeName = useRegionCodeName(
-    modal.type === "geoBlock" ? modal.regionCode : undefined
-  );
 
   const getContent = (
     modal: ModalType
@@ -42,6 +43,7 @@ export const HelpModal = ({ modal }: HelpModalProps) => {
     description: string | ReactNode;
     image: string;
     link?: string;
+    button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
       case "main": {
@@ -168,7 +170,7 @@ export const HelpModal = ({ modal }: HelpModalProps) => {
                 i18nKey="help_modals.geo_block.pending_litigation"
                 values={{
                   countryName,
-                  nameOfRegion: regionCodeName.data ?? "",
+                  nameOfRegion: modal.regionCodeName ?? "",
                 }}
                 components={{ link0: <SKAnchor /> }}
               />
@@ -201,19 +203,51 @@ export const HelpModal = ({ modal }: HelpModalProps) => {
           image: fees,
         };
       }
+
+      case "getInTouch": {
+        return {
+          title: t("help_modals.get_in_touch.title"),
+          button: {
+            title: t("help_modals.get_in_touch.button"),
+            onClick: () =>
+              window.open("https://twitter.com/stakekit", "_blank"),
+          },
+          description: "",
+          image: whatIsStaking,
+        };
+      }
+
+      case "whatIsStakeKit": {
+        return {
+          title: t("help_modals.what_is_stakekit.title"),
+          description: (
+            <Trans
+              i18nKey="help_modals.what_is_stakekit.description"
+              components={{
+                br0: <br />,
+                link0: <SKAnchor href="https://www.stakek.it/" />,
+                link1: <SKAnchor href="https://www.stakek.it/" />,
+              }}
+            />
+          ),
+          image: poweredBy,
+        };
+      }
     }
   };
 
-  const { description, image, title, link } = getContent(modal);
+  const { description, image, title, link, button } = getContent(modal);
 
   return (
     <SelectModal
       forceOpen={modal.type === "geoBlock"}
       trigger={
-        <Trigger>
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <HelpIcon />
-          </Box>
+        <Trigger asChild={!!customTrigger}>
+          {customTrigger ?? (
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <HelpIcon />
+            </Box>
+          )}
         </Trigger>
       }
     >
@@ -227,26 +261,26 @@ export const HelpModal = ({ modal }: HelpModalProps) => {
       >
         <Box as="img" src={image} className={imageStyle} />
 
-        <Text variant={{ size: "standard" }}>{title}</Text>
+        <Heading variant={{ level: "h4" }}>{title}</Heading>
 
-        <Box marginTop="2">
+        <Box marginTop="2" lineHeight="short">
           <Text
-            variant={{ size: "small", type: "muted", weight: "normal" }}
+            variant={{ size: "standard", type: "muted", weight: "normal" }}
             textAlign="center"
           >
             {description}
           </Text>
         </Box>
 
-        {link && (
-          <Box
-            as="a"
-            href={link}
-            target="_blank"
-            marginTop="2"
-            className={linkStyle}
-          >
-            <Text variant={{ size: "small", weight: "normal" }}>{link}</Text>
+        {!!link && <SKAnchor>{link}</SKAnchor>}
+
+        {button && (
+          <Box marginTop="4" width="full">
+            <Button variant={{ color: "secondary" }} onClick={button.onClick}>
+              <Text variant={{ size: "standard", weight: "bold" }}>
+                {button.title}
+              </Text>
+            </Button>
           </Box>
         )}
       </Box>
