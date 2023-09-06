@@ -25,8 +25,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
   return position
     .chain((p) => amount.map((ua) => ({ p, ua })))
     .chain((val) => text.map((ut) => ({ ...val, ut })))
-    .chain((val) => pendingActionText.map((pat) => ({ ...val, pat })))
-    .map(({ p, ua, ut, pat }) => (
+    .map(({ p, ua, ut }) => (
       <PageContainer>
         <Box>
           <Box marginBottom="4">
@@ -37,7 +36,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
               marginBottom="1"
             >
               <Heading variant={{ level: "h1" }}>
-                {pendingActionMatch ? pat : ut}
+                {pendingActionMatch ? pendingActionText.extract() : ut}
               </Heading>
               <TokenIcon
                 token={p.integrationData.token}

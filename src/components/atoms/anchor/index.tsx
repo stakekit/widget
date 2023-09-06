@@ -2,12 +2,12 @@ import { PropsWithChildren } from "react";
 import { Box } from "../box";
 import { container } from "./style.css";
 
-export const SKAnchor = (props: PropsWithChildren) => {
+export const SKAnchor = (props: PropsWithChildren<{ href?: string }>) => {
   return (
     <Box
       className={container}
       as="a"
-      href={(props.children as string) ?? ""}
+      href={props.href ?? (props.children as string) ?? ""}
       target="_blank"
     >
       {props.children}

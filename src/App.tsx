@@ -2,6 +2,7 @@ import "./polyfills";
 import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
+import "./services/install-api-manager";
 import ReactDOM from "react-dom/client";
 import { ComponentProps, useEffect } from "react";
 import {
@@ -43,9 +44,18 @@ import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 import { cosmosWalletManager } from "./providers/cosmos/config";
+import { createPortal } from "react-dom";
+import { HelpModal } from "./components/molecules/help-modal";
+import { useGeoBlock } from "./hooks/use-geo-block";
+import { useRegionCodeName } from "./hooks/use-region-code-names";
 
 const Widget = () => {
   useToggleTheme();
+
+  const geoBlock = useGeoBlock();
+  const regionCodeName = useRegionCodeName(
+    geoBlock ? geoBlock.regionCode : undefined
+  );
 
   const { chain } = useSKWallet();
 
@@ -160,6 +170,18 @@ const Widget = () => {
           </Route>
         </Routes>
       </Box>
+
+      {geoBlock &&
+        createPortal(
+          <HelpModal
+            modal={{
+              type: "geoBlock",
+              ...geoBlock,
+              regionCodeName: regionCodeName.data,
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 };

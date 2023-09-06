@@ -121,6 +121,14 @@
       "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
       "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries, as well as the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
       "default": "This feature is not available in {{countryName}}."
+    },
+    "get_in_touch": {
+      "title": "Need help or have a questions?",
+      "button": "Get in touch"
+    },
+    "what_is_stakekit": {
+      "title": "What is StakeKit?",
+      "description": "StakeKit is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. StakeKit abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about StakeKit on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     }
   },
 
