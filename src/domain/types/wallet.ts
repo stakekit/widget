@@ -8,7 +8,7 @@ import {
   TransactionDecodeError,
 } from "../../pages/steps/errors";
 import { GetNetworkResult } from "@wagmi/core";
-import { CosmosNetworks, EvmNetworks } from "@stakekit/common";
+import { SupportedSKChains } from "./chains";
 
 export type SKWallet = {
   disconnect: () => Promise<void>;
@@ -23,7 +23,7 @@ export type SKWallet = {
   isLedgerLive: boolean;
 } & (
   | {
-      network: EvmNetworks | CosmosNetworks;
+      network: SupportedSKChains;
       address: string;
       chain: GetNetworkResult["chain"];
       isConnected: true;

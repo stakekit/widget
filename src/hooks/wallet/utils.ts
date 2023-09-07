@@ -5,10 +5,11 @@ import { EitherAsync, Left, Right } from "purify-ts";
 import { LedgerLiveConnector } from "../../providers/ledger/ledger-connector";
 import { cosmosChainsMap } from "../../providers/cosmos/chains";
 import { evmChainMap } from "../../providers/ethereum/config";
+import { miscChainMap } from "../../providers/misc/config";
 
 export const wagmiNetworkToSKNetwork = (chain: Chain): SKWallet["network"] => {
   return (
-    Object.values({ ...evmChainMap, ...cosmosChainsMap }).find(
+    Object.values({ ...evmChainMap, ...cosmosChainsMap, ...miscChainMap }).find(
       (c) => c.wagmiChain.id === chain.id
     )?.skChainName ?? null
   );

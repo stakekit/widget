@@ -7,9 +7,10 @@ import {
 } from "../cosmos/config";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
+import { miscChains } from "../misc/config";
 
 export const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [...evmChains, ...cosmosWagmiChains],
+  [...evmChains, ...cosmosWagmiChains, ...miscChains],
   [publicProvider()]
 );
 

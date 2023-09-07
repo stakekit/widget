@@ -18,11 +18,8 @@ import {
 } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { unsignedTransactionCodec } from "./validation";
-import { useLedgerAccounts } from "./use-ledger-accounts";
-import {
-  CosmosTransaction,
-  deserializeTransaction,
-} from "@ledgerhq/wallet-api-client";
+// import { useLedgerAccounts } from "./use-ledger-accounts";
+import { deserializeTransaction } from "@ledgerhq/wallet-api-client";
 
 export const useSKWallet = (): SKWallet => {
   const {
@@ -32,7 +29,7 @@ export const useSKWallet = (): SKWallet => {
     connector,
   } = useAccount();
 
-  const ledgerAccounts = useLedgerAccounts(connector);
+  // const ledgerAccounts = useLedgerAccounts(connector);
 
   const isConnected = _isConnected && !!address && !!connector;
 
@@ -58,11 +55,11 @@ export const useSKWallet = (): SKWallet => {
       EitherAsync.liftEither(
         !isConnected || !network || !connector
           ? Left(new Error("No wallet connected"))
-          : Right(connector)
+          : Right({ conn: connector, network })
       ).chain<
         TransactionDecodeError | SendTransactionError,
         { signedTx: string; broadcasted: boolean }
-      >((conn) => {
+      >(({ conn }) => {
         if (isLedgerLiveConnector(conn)) {
           /**
            * Ledger Live connector
@@ -95,23 +92,16 @@ export const useSKWallet = (): SKWallet => {
             )
             .chain(({ walletApiClient, accountId, deserializedTransaction }) =>
               EitherAsync(() => {
-                const transaction: CosmosTransaction = {
-                  ...deserializedTransaction,
-                  mode: "delegate",
-                  family: "cosmos",
-                };
-
-                return walletApiClient.transaction.sign(
+                return walletApiClient.transaction.signAndBroadcast(
                   accountId,
-                  transaction,
-                  { hwAppId: "Cosmos" }
+                  deserializedTransaction
                 );
               }).mapLeft((e) => {
                 console.log(e);
                 return new Error("sign failed");
               })
             )
-            .map((val) => ({ signedTx: val.toString(), broadcasted: false }));
+            .map((val) => ({ signedTx: val, broadcasted: true }));
         } else if (isCosmosConnector(conn)) {
           /**
            * Cosmos connector
@@ -129,17 +119,16 @@ export const useSKWallet = (): SKWallet => {
                 console.log(e);
                 return new Error("signDirect failed");
               })
-              .map((val) => {
-                const signed = toHex(
+              .map((val) => ({
+                broadcasted: false,
+                signedTx: toHex(
                   TxRaw.encode({
                     authInfoBytes: val.signed.authInfoBytes,
                     bodyBytes: val.signed.bodyBytes,
                     signatures: [decodeSignature(val.signature).signature],
                   }).finish()
-                );
-
-                return { signedTx: signed, broadcasted: false };
-              })
+                ),
+              }))
           );
         } else {
           /**

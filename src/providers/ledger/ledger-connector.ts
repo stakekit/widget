@@ -13,6 +13,8 @@ import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { CosmosNetworks } from "@stakekit/common";
 import { isCosmosChain } from "../../domain";
 import { cosmosChainsMap } from "../cosmos/chains";
+import { SupportedCosmosChains } from "../../domain/types/chains";
+import { near } from "../misc/config";
 
 export class LedgerLiveConnector extends Connector {
   readonly id = "ledgerLive";
@@ -28,32 +30,43 @@ export class LedgerLiveConnector extends Connector {
   #accountsOnCurrentChain: Account[] = [];
   #currentAccount?: Account;
 
-  static readonly #skSupportedChains = new Map<
-    SupportedFamilies,
-    { currencyFamily: SupportedFamilies; chain: Chain }
-  >([
-    ...Object.values(cosmosChainsMap).map(
-      (c) =>
-        [
-          c.skChainName,
-          { currencyFamily: c.skChainName, chain: c.wagmiChain },
-        ] as const
-    ),
-    ["ethereum", { currencyFamily: "ethereum", chain: mainnet }],
-  ]);
+  static readonly #skSupportedChains: SupportedFamiliesMap = {
+    ...(Object.fromEntries(
+      Object.values(cosmosChainsMap).map(
+        (c) =>
+          [
+            c.skChainName,
+            { currencyFamily: c.skChainName, chain: c.wagmiChain },
+          ] as const
+      )
+    ) as {
+      [Key in keyof typeof cosmosChainsMap]: {
+        currencyFamily: SupportedFamilies;
+        chain: Chain;
+      };
+    }),
+    ethereum: { currencyFamily: "ethereum", chain: mainnet },
+    near: { currencyFamily: "near", chain: near },
+  };
+
+  static readonly #skSupportedChainsValues = Object.values(
+    LedgerLiveConnector.#skSupportedChains
+  );
+  static readonly #skSupportedChainsKeys = Object.keys(
+    LedgerLiveConnector.#skSupportedChains
+  ) as (keyof SupportedFamiliesMap)[];
+
   #currentChain: Chain | null = null;
   chains: Chain[];
-
-  #cosmosPubKey: string | null = null;
 
   #cachedTransports: {
     Cosmos: Awaited<ReturnType<WalletAPIClient["device"]["transport"]>> | null;
   } = { Cosmos: null };
 
   constructor() {
-    const defaultChains = [
-      ...LedgerLiveConnector.#skSupportedChains.values(),
-    ].map((val) => val.chain);
+    const defaultChains = LedgerLiveConnector.#skSupportedChainsValues.map(
+      (val) => val.chain
+    );
 
     super({ chains: defaultChains, options: {} });
 
@@ -85,44 +98,34 @@ export class LedgerLiveConnector extends Connector {
     return this.#walletApiClient;
   };
 
-  getLedgerPath = () => "44'/118'/0'/0/0";
-
   async connect() {
     this.emit("message", { type: "connecting" });
 
     const walletApiClient = this.getWalletApiClient();
 
-    const currencyIds = [...LedgerLiveConnector.#skSupportedChains.keys()];
-
-    const accounts = await walletApiClient.account.list({ currencyIds });
+    const accounts = await walletApiClient.account.list({
+      currencyIds: LedgerLiveConnector.#skSupportedChainsKeys,
+    });
 
     this.#ledgerAccounts = accounts;
     this.#currentAccount = this.#ledgerAccounts[0];
 
-    this.#currentChain = LedgerLiveConnector.#skSupportedChains.get(
-      this.#currentAccount.currency as SupportedFamilies
-    )!.chain;
+    this.#currentChain =
+      LedgerLiveConnector.#skSupportedChains[
+        this.#currentAccount.currency as keyof SupportedFamiliesMap
+      ].chain;
 
     this.#accountsOnCurrentChain = this.#getAccountsOnCurrentChain();
 
     const accountsCurrencies = new Set(accounts.map((val) => val.currency));
 
-    this.chains = [...LedgerLiveConnector.#skSupportedChains.values()]
+    this.chains = LedgerLiveConnector.#skSupportedChainsValues
       .filter((val) =>
         isCosmosChain(val.chain)
           ? accountsCurrencies.has(CosmosNetworks.Cosmos)
           : accountsCurrencies.has(val.currencyFamily)
       )
       .map((val) => val.chain);
-
-    // if (accountsCurrencies.has(CosmosNetworks.Cosmos)) {
-    //   const transport = await this.getTransport("Cosmos");
-    //   const cosmosApp = new CosmosApp(transport);
-    //   const address = await cosmosApp.getAddress(
-    //     this.getLedgerPath(),
-    //     "Cosmos"
-    //   );
-    // }
 
     const id = await this.getChainId();
 
@@ -134,22 +137,6 @@ export class LedgerLiveConnector extends Connector {
       chain: { id, unsupported: false },
     };
   }
-
-  getTransport = async (
-    appName: "Cosmos"
-  ): Promise<Awaited<ReturnType<WalletAPIClient["device"]["transport"]>>> => {
-    const cachedTransport = this.#cachedTransports[appName];
-
-    if (cachedTransport) return cachedTransport;
-
-    const walletApiClient = this.getWalletApiClient();
-
-    const transport = await walletApiClient.device.transport({ appName });
-
-    this.#cachedTransports[appName] = transport;
-
-    return transport;
-  };
 
   #getAccountsOnCurrentChain = () => {
     const currentChain = this.#currentChain;
@@ -174,9 +161,10 @@ export class LedgerLiveConnector extends Connector {
           };
         });
     } else {
-      const supportedSkChain = [
-        ...LedgerLiveConnector.#skSupportedChains.values(),
-      ].find((c) => c.chain.id === currentChain.id);
+      const supportedSkChain =
+        LedgerLiveConnector.#skSupportedChainsValues.find(
+          (c) => c.chain.id === currentChain.id
+        );
 
       if (!supportedSkChain) throw new Error("SkSupported chain not found");
 
@@ -220,9 +208,9 @@ export class LedgerLiveConnector extends Connector {
 
     if (!currentChain) throw new Error("Chain not found");
 
-    const skSupportedChain = [
-      ...LedgerLiveConnector.#skSupportedChains.values(),
-    ].find((c) => c.chain.id === chainId);
+    const skSupportedChain = LedgerLiveConnector.#skSupportedChainsValues.find(
+      (c) => c.chain.id === chainId
+    );
 
     if (!skSupportedChain) throw new Error("Chain not found");
 
@@ -264,7 +252,7 @@ export class LedgerLiveConnector extends Connector {
   }
 }
 
-export const ledgerLive = (): Wallet => {
+const ledgerLive = (): Wallet => {
   return {
     id: "ledgerLive",
     name: "Ledger Live",
@@ -283,4 +271,10 @@ export const ledgerLiveConnector = {
   wallets: [ledgerLive()],
 };
 
-type SupportedFamilies = "ethereum" | CosmosNetworks;
+type SupportedFamilies = "ethereum" | "near" | SupportedCosmosChains;
+type SupportedFamiliesMap = {
+  [Key in SupportedFamilies]: {
+    currencyFamily: SupportedFamilies;
+    chain: Chain;
+  };
+};
