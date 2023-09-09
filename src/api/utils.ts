@@ -23,7 +23,7 @@ export const withRequestErrorRetry = <
 }: {
   fn: T;
   retryTimes?: number;
-  shouldRetry?: (error: unknown) => boolean;
+  shouldRetry?: (error: unknown, retryCount: number) => boolean;
 }) => {
   let retryCount = 0;
 
@@ -34,15 +34,13 @@ export const withRequestErrorRetry = <
       } catch (error) {
         let err = error;
 
-        if (shouldRetry && !shouldRetry(error)) {
-          throw err;
-        }
+        const retry = shouldRetry
+          ? shouldRetry(err, retryCount)
+          : isAxiosError(err) &&
+            shouldRetryRequest(err) &&
+            retryCount < retryTimes;
 
-        while (
-          isAxiosError(err) &&
-          shouldRetryRequest(err) &&
-          retryCount < retryTimes
-        ) {
+        while (retry) {
           try {
             await waitForMs(2 ** (retryCount + 1) * 1000);
 

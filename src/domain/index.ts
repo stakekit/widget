@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Prices, TokenString } from "./types";
-import { EvmNetworks, Token } from "@stakekit/common";
+import { Token } from "@stakekit/common";
 import {
   ActionDto,
   TransactionDto,
@@ -10,11 +10,6 @@ import { Override } from "../types";
 import { Left, Right } from "purify-ts";
 import { Chain } from "wagmi";
 import { cosmosWagmiChains } from "../providers/cosmos/config";
-
-export const evmNetworksSet = new Set(Object.values(EvmNetworks));
-
-export const isEvmNetwork = (network: string): network is EvmNetworks =>
-  evmNetworksSet.has(network.toLowerCase() as EvmNetworks);
 
 export const isCosmosChain = (chain: Chain) =>
   cosmosWagmiChains.some((c) => c.id === chain.id);

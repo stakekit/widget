@@ -23,7 +23,7 @@ import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../api/get-gas-mode-value";
 import { useInvalidateBalances } from "../../hooks/use-positions-data";
 import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
-import { withRequestErrorRetry } from "../../api/utils";
+import { isAxiosError, withRequestErrorRetry } from "../../api/utils";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -203,6 +203,10 @@ export const useStepsMachine = () => {
                     val.transactions.map((tx) =>
                       withRequestErrorRetry({
                         fn: () => transactionGetTransactionStatusFromId(tx.id),
+                        shouldRetry: (e, retryCount) =>
+                          retryCount <= 3 &&
+                          isAxiosError(e) &&
+                          e.response?.status === 404,
                       })
                         .mapLeft(() => new MissingHashError())
                         .chain((result) =>

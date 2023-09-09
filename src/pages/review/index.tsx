@@ -65,7 +65,7 @@ export const ReviewPage = () => {
 
         <Divider />
 
-        <RewardTokenDetails rewardToken={rewardToken} />
+        <RewardTokenDetails rewardToken={rewardToken} type="stake" />
 
         <Box
           display="flex"

@@ -3,14 +3,18 @@ import { Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import {
+  ValidatorDto,
+  YieldDto,
+  YieldType,
+  YieldYields200,
+} from "@stakekit/api-hooks";
 import { NumberInputProps, SelectModalProps } from "../../../components";
 import { getTokenPriceInUSD } from "../../../domain";
 import { yieldTypesMap } from "../../../domain/types";
 import { useSelectedStakePrice } from "../../../hooks";
 import { formatTokenBalance } from "../../../utils";
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { SelectedStakeData } from "../types";
 import { Token } from "@stakekit/common";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -22,7 +26,9 @@ import { useOnStakeEnter } from "./use-on-stake-enter";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { useStakeDispatch, useStakeState } from "../../../state/stake";
 import { NotEnoughGasTokenError } from "../../../api/check-gas-amount";
-import { useStakeEnterEnabledOpportunities } from "../../../hooks/api/opportunities";
+import { useYields } from "../../../hooks/api/opportunities";
+import { createSelector } from "reselect";
+import { SelectedStakeData } from "../types";
 
 export const useDetails = () => {
   const {
@@ -49,8 +55,6 @@ export const useDetails = () => {
     stakeAmount,
   });
   const rewardToken = useRewardTokenDetails(selectedStake);
-
-  const opportunities = useStakeEnterEnabledOpportunities();
 
   const pricesState = useSelectedStakePrice({ selectedStake });
 
@@ -86,42 +90,62 @@ export const useDetails = () => {
   const [stakeSearch, setStakeSearch] = useState("");
   const deferredStakeSearch = useDeferredValue(stakeSearch);
 
-  const selectedStakeData = useMemo((): Maybe<SelectedStakeData> => {
-    return Maybe.fromNullable(opportunities.data)
-      .map((y) => {
-        const initialData = Object.fromEntries(
-          Object.entries(yieldTypesMap).map(([key, value]) => {
-            const k = key as keyof typeof yieldTypesMap;
-            return [k, { ...value, items: [] as YieldDto[] }];
-          })
-        ) as SelectedStakeData;
+  const ops = useYields();
 
-        return { y, initialData };
-      })
-      .map(({ y, initialData }) =>
-        y.reduce((acc, curr) => {
-          const type = curr.metadata.type;
+  const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
+    () =>
+      Maybe.fromNullable(ops.data?.pages)
+        .alt(Maybe.of([]))
+        .map((pages) =>
+          pages.reduce(
+            (acc, curr) => {
+              const data = Maybe.of(deferredStakeSearch)
+                .chain((val) =>
+                  val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
+                )
+                .map((lowerSearch) =>
+                  curr.data.filter(
+                    // TODO: filtering should be done on the backend
+                    (d) =>
+                      d.token.name.toLowerCase().includes(lowerSearch) ||
+                      d.token.symbol.toLowerCase().includes(lowerSearch) ||
+                      d.metadata.name.toLowerCase().includes(lowerSearch) ||
+                      d.metadata.rewardTokens?.some(
+                        (rt) =>
+                          rt.name.toLowerCase().includes(lowerSearch) ||
+                          rt.symbol.toLowerCase().includes(lowerSearch)
+                      )
+                  )
+                )
+                .orDefault(curr.data);
 
-          const lowerSearch = deferredStakeSearch?.toLowerCase();
+              acc.all.push(...data);
 
-          if (
-            !deferredStakeSearch ||
-            curr.token.name.toLowerCase().includes(lowerSearch) ||
-            curr.token.symbol.toLowerCase().includes(lowerSearch) ||
-            curr.metadata.name.toLowerCase().includes(lowerSearch) ||
-            curr.metadata.rewardTokens?.some(
-              (rt) =>
-                rt.name.toLowerCase().includes(lowerSearch) ||
-                rt.symbol.toLowerCase().includes(lowerSearch)
-            )
-          ) {
-            acc[type].items.push(curr);
-          }
+              selector(data).forEach((val) => {
+                acc.groupsWithCounts.set(val.type, {
+                  title: val.title,
+                  itemsLength:
+                    (acc.groupsWithCounts.get(val.type)?.itemsLength ?? 0) +
+                    val.items.length,
+                });
+              });
 
-          return acc;
-        }, initialData)
-      );
-  }, [opportunities.data, deferredStakeSearch]);
+              return acc;
+            },
+            {
+              all: [] as YieldDto[],
+              groupsWithCounts: new Map<
+                YieldType,
+                { itemsLength: number; title: string }
+              >(),
+            }
+          )
+        ),
+    [deferredStakeSearch, ops.data?.pages]
+  );
+
+  const onEndReached = () => ops.fetchNextPage();
+  const opsIsFetchingNextPage = ops.isFetchingNextPage;
 
   const onSearch: SelectModalProps["onSearch"] = (val) => setStakeSearch(val);
 
@@ -139,22 +163,23 @@ export const useDetails = () => {
     yieldOpportunity: selectedStake,
   });
 
+  const { isConnected } = useSKWallet();
+
   const amountValid = stakeAmount.mapOrDefault(
     (sa) =>
-      sa.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-      sa.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-      sa.isLessThanOrEqualTo(availableAmount),
+      !isConnected ||
+      (sa.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+        sa.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+        sa.isLessThanOrEqualTo(availableAmount)),
     false
   );
 
   const { t } = useTranslation();
 
-  const { isConnected } = useSKWallet();
-
   const onStakeEnter = useOnStakeEnter();
   const stakeRequestDto = useStakeEnterRequestDto();
 
-  const isError = onStakeEnter.isError || opportunities.isError;
+  const isError = onStakeEnter.isError || ops.isError;
 
   const errorMessage =
     onStakeEnter.error instanceof NotEnoughGasTokenError
@@ -224,8 +249,7 @@ export const useDetails = () => {
 
   const onSelectOpportunityClose = () => setStakeSearch("");
 
-  const isFetching =
-    opportunities.isFetching || stakeTokenAvailableAmount.isFetching;
+  const isFetching = ops.isFetching || stakeTokenAvailableAmount.isFetching;
 
   const buttonDisabled =
     isConnected &&
@@ -264,5 +288,40 @@ export const useDetails = () => {
     selectedStakeYieldType,
     tokenAvailableAmountIsFetching: stakeTokenAvailableAmount.isFetching,
     isConnected,
+    onEndReached,
+    opsIsFetchingNextPage,
   };
 };
+
+const selector = createSelector(
+  (val: YieldYields200["data"]) => val,
+  (val) => {
+    return val.reduce(
+      (acc, curr) => {
+        if (!acc.has(curr.metadata.type)) {
+          acc.set(curr.metadata.type, {
+            type: curr.metadata.type,
+            title: yieldTypesMap[curr.metadata.type].title,
+            items: [curr],
+          });
+        } else {
+          acc.get(curr.metadata.type)!.items.push(curr);
+        }
+        return acc;
+      },
+      new Map<
+        YieldType,
+        {
+          type: YieldType;
+          title: (typeof yieldTypesMap)[YieldType]["title"];
+          items: YieldDto[];
+        }
+      >()
+    );
+  },
+  {
+    memoizeOptions: {
+      maxSize: Infinity,
+    },
+  }
+);

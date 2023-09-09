@@ -8,6 +8,7 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
   SelectModalProps,
+  Spinner,
   Text,
 } from "../../../components";
 import { useTranslation } from "react-i18next";
@@ -26,12 +27,16 @@ export const SelectOpportunity = ({
   onSearch,
   onItemSelect,
   onSelectOpportunityClose,
+  isLoading,
+  onEndReached,
 }: {
   selectedStake: State["selectedStake"];
   selectedStakeData: Maybe<SelectedStakeData>;
   onSearch: SelectModalProps["onSearch"];
   onItemSelect: (item: YieldDto) => void;
   onSelectOpportunityClose: () => void;
+  isLoading: boolean;
+  onEndReached: () => void;
 }) => {
   const { t } = useTranslation();
 
@@ -39,37 +44,16 @@ export const SelectOpportunity = ({
     () =>
       selectedStakeData
         .chain((ssd) =>
-          selectedStake
-            .chain((ss) =>
-              Maybe.of({
-                ss,
-                ssd,
-                stakeData: Object.values(ssd).reduce((acc, val) => {
-                  if (!val.items.length) return acc;
+          selectedStake.map((ss) => {
+            const val = [...ssd.groupsWithCounts.values()];
 
-                  acc.push(...val.items);
-
-                  return acc;
-                }, [] as YieldDto[]),
-              })
-            )
-            .map((val) => ({
-              ...val,
-              ...Object.values(val.ssd)
-                .filter((val) => !!val.items.length)
-                .reduce(
-                  (acc, curr) => {
-                    acc.groups.push(curr.title as keyof typeof val.ssd);
-                    acc.groupCounts.push(curr.items.length);
-
-                    return acc;
-                  },
-                  {
-                    groups: [] as (keyof typeof val.ssd)[],
-                    groupCounts: [] as number[],
-                  }
-                ),
-            }))
+            return {
+              ss,
+              all: ssd.all,
+              groups: val.map((v) => v.title),
+              groupCounts: val.map((v) => v.itemsLength),
+            };
+          })
         )
         .extractNullable(),
     [selectedStake, selectedStakeData]
@@ -111,8 +95,18 @@ export const SelectOpportunity = ({
       }
     >
       <GroupedVirtuoso
+        endReached={onEndReached}
+        increaseViewportBy={{ bottom: 50, top: 0 }}
         groupCounts={data.groupCounts}
         className={hideScrollbar}
+        components={{
+          Footer: () =>
+            isLoading && (
+              <Box display="flex" justifyContent="center" marginTop="6">
+                <Spinner />
+              </Box>
+            ),
+        }}
         groupContent={(index) => {
           return (
             <Box py="4" px="4" background="background">
@@ -123,7 +117,7 @@ export const SelectOpportunity = ({
           );
         }}
         itemContent={(index) => {
-          const item = data.stakeData[index];
+          const item = data.all[index];
 
           return (
             <SelectModalItemContainer>

@@ -1,37 +1,56 @@
 import { useSKWallet } from "../../wallet/use-sk-wallet";
-import { YieldDto } from "@stakekit/api-hooks";
+import {
+  YieldDto,
+  YieldYields200,
+  YieldYieldsParams,
+  getYieldYieldsQueryKey,
+  yieldYields,
+} from "@stakekit/api-hooks";
+import {
+  UseInfiniteQueryOptions,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../../domain/types";
 import { useAllEnabledOpportunities } from "./use-all-enabled-opportunities";
+import { isSupportedChain } from "../../../domain/types/chains";
+import { EitherAsync } from "purify-ts";
+
+export const useYields = (opts?: UseInfiniteQueryOptions<YieldYields200>) => {
+  const { network, isReconnecting } = useSKWallet();
+
+  const params: YieldYieldsParams = {
+    network: network ?? undefined,
+  };
+
+  return useInfiniteQuery<YieldYields200>({
+    queryKey: getYieldYieldsQueryKey(params),
+    getNextPageParam: (lastPage) => lastPage.page + 1,
+    queryFn: async ({ pageParam = 1 }) =>
+      await EitherAsync(() =>
+        yieldYields({
+          sortBy: "relevantYieldType",
+          page: pageParam,
+          limit: 50,
+          network: network ?? undefined,
+        })
+      ).caseOf({
+        Left(l) {
+          return Promise.reject(l);
+        },
+        Right(r) {
+          return Promise.resolve(r);
+        },
+      }),
+    enabled: !isReconnecting,
+    ...opts,
+  });
+};
 
 type SelectorInputData = {
   data: YieldDto[];
   isConnected: boolean;
   network: SKWallet["network"];
-};
-
-/**
- *
- * @summary Opportunities with default filter applied
- */
-export const useFilteredOpportunities = () => {
-  const { network, isConnected } = useSKWallet();
-
-  return useAllEnabledOpportunities({
-    select: (data) => defaultFiltered({ data, isConnected, network }),
-  });
-};
-
-/**
- *
- * @summary Opportunities with default and staking enabled filter applied
- */
-export const useStakeEnterEnabledOpportunities = () => {
-  const { network, isConnected } = useSKWallet();
-
-  return useAllEnabledOpportunities({
-    select: (data) => stakeEnterEnabledFiltered({ data, isConnected, network }),
-  });
 };
 
 /**
@@ -61,7 +80,8 @@ const skFilter = ({
   const defaultFilter =
     !o.args.enter.args?.nfts &&
     o.id !== "binance-bnb-native-staking" &&
-    o.id !== "binance-testnet-bnb-native-staking";
+    o.id !== "binance-testnet-bnb-native-staking" &&
+    isSupportedChain(o.token.network);
 
   if (!isConnected) return defaultFilter;
 
@@ -76,14 +96,7 @@ const defaultFiltered = createSelector(
   selectData,
   selectConnected,
   selectNetwork,
-  (data, isConnected, network) =>
-    data.filter((o) => skFilter({ o, isConnected, network }))
-);
-
-const stakeEnterEnabledFiltered = createSelector(
-  selectData,
-  selectConnected,
-  selectNetwork,
-  (data, isConnected, network) =>
-    data.filter((o) => skFilter({ o, isConnected, network }) && o.status.enter)
+  (data, isConnected, network) => {
+    return data.filter((o) => skFilter({ o, isConnected, network }));
+  }
 );

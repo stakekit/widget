@@ -108,6 +108,8 @@ export const EarnPage = () => {
     isFetching,
     amountValid,
     isConnected,
+    onEndReached,
+    opsIsFetchingNextPage,
   } = useDetails();
 
   const { t } = useTranslation();
@@ -176,6 +178,8 @@ export const EarnPage = () => {
                   selectedStake={selectedStake}
                   selectedStakeData={selectedStakeData}
                   onSelectOpportunityClose={onSelectOpportunityClose}
+                  onEndReached={onEndReached}
+                  isLoading={opsIsFetchingNextPage}
                 />
               </Box>
             </Box>
@@ -246,7 +250,7 @@ export const EarnPage = () => {
           />
 
           <Box display="flex" flexDirection="column" gap="1">
-            <RewardTokenDetails rewardToken={rewardToken} />
+            <RewardTokenDetails rewardToken={rewardToken} type="stake" />
 
             <Box
               display="flex"
