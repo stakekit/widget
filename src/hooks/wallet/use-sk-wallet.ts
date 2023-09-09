@@ -23,6 +23,7 @@ import { deserializeTransaction } from "@ledgerhq/wallet-api-client";
 
 export const useSKWallet = (): SKWallet => {
   const {
+    isReconnecting,
     isConnected: _isConnected,
     isConnecting,
     address,
@@ -163,7 +164,7 @@ export const useSKWallet = (): SKWallet => {
   );
 
   const value = useMemo((): SKWallet => {
-    const common = { disconnect, signTransaction };
+    const common = { disconnect, signTransaction, isReconnecting };
 
     if (isConnected && address && network) {
       const isLedgerLive = isLedgerLiveConnector(connector);
@@ -200,6 +201,7 @@ export const useSKWallet = (): SKWallet => {
     connector,
     chain,
     additionalAddresses,
+    isReconnecting,
   ]);
 
   return value;

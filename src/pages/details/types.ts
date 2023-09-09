@@ -1,10 +1,12 @@
-import { YieldDto } from "@stakekit/api-hooks";
-import { yieldTypesMap } from "../../domain/types";
+import { YieldDto, YieldType } from "@stakekit/api-hooks";
 
 export type SelectedStakeData = {
-  [Key in keyof typeof yieldTypesMap]: {
-    type: Key;
-    title: (typeof yieldTypesMap)[Key]["title"];
-    items: YieldDto[];
-  };
+  all: YieldDto[];
+  groupsWithCounts: Map<
+    YieldType,
+    {
+      itemsLength: number;
+      title: string;
+    }
+  >;
 };

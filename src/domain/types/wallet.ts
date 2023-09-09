@@ -21,6 +21,7 @@ export type SKWallet = {
   >;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;
+  isReconnecting: boolean;
 } & (
   | {
       network: SupportedSKChains;

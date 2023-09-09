@@ -13,7 +13,7 @@ import { Actions, ExtraData, State } from "./types";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useStakeEnterEnabledOpportunities } from "../../hooks/api/opportunities";
+import { useYields } from "../../hooks/api/opportunities";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -30,8 +30,6 @@ const getInitialState = (): State => ({
 
 export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const reducer = (state: State, action: Actions): State => {
-    // console.log("__APP_STATE_ACTION__: ", state, action);
-
     switch (action.type) {
       case "stake/select":
         return {
@@ -87,21 +85,22 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       dispatch({ type: "state/reset" });
   });
 
-  const opportunities = useStakeEnterEnabledOpportunities();
+  const ops = useYields();
 
   /**
    * Set initial stake opportunity
    */
   useEffect(() => {
-    Maybe.fromNullable(opportunities.data)
-      .chain((val) => List.find((o) => o.status.enter, val))
+    Maybe.fromNullable(ops.data?.pages)
+      .chain((val) => List.head(val))
+      .chain((val) => List.find((v) => v.status.enter, val.data))
       .ifJust((val) =>
         dispatch({
           type: "stake/select",
           data: val,
         })
       );
-  }, [address, opportunities.data]);
+  }, [address, ops.data?.pages]);
 
   /**
    * Set initial validator

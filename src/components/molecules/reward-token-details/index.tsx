@@ -13,7 +13,7 @@ export const RewardTokenDetails = ({
 }: {
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
 } & (
-  | { type?: "stake" | "unstake"; pendingAction?: never }
+  | { type: "stake" | "unstake"; pendingAction?: never }
   | {
       type: "pendingAction";
       pendingAction: ActionTypes;
