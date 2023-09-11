@@ -32,6 +32,7 @@ const supportedCosmosChains = [
   CosmosNetworks.Sommelier,
   CosmosNetworks.Teritori,
   CosmosNetworks.Umee,
+  CosmosNetworks.Coreum,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
 const supportedCosmosChainsSet = new Set(supportedCosmosChains);

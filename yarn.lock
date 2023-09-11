@@ -4359,10 +4359,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/common@npm:^0.0.14":
-  version: 0.0.14
-  resolution: "@stakekit/common@npm:0.0.14"
-  checksum: 115ba470f6d58dc3eba035796c314ee1c86c0dfaae91920a2ed6cb5642a90222a235dd6bbb40e974f04336d2e91930b71d015e7fed3df1812989d6df6da3e344
+"@stakekit/common@npm:^0.0.17":
+  version: 0.0.17
+  resolution: "@stakekit/common@npm:0.0.17"
+  checksum: 6ca9c65687caa398e2df6868aebf7384f8f1d9412918d37e6d1e42ac2605d5d3f40e57b5dd7d6ff7f8efb21596b2dacb3127abaea1ea6f7a2aa054a00cfb1200
   languageName: node
   linkType: hard
 
@@ -4404,7 +4404,7 @@ __metadata:
     "@ledgerhq/wallet-api-client": ^1.0.3
     "@radix-ui/react-alert-dialog": ^1.0.4
     "@stakekit/api-hooks": ^0.0.30
-    "@stakekit/common": ^0.0.14
+    "@stakekit/common": ^0.0.17
     "@stakekit/rainbowkit": ^1.0.11
     "@tanstack/react-query": ^4.33.0
     "@testing-library/jest-dom": ^5.17.0

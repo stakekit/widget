@@ -37,6 +37,7 @@ const supportedCosmosChains: SupportedCosmosChains[] = [
   CosmosNetworks.Umee,
   CosmosNetworks.Persistence,
   CosmosNetworks.Bitsong,
+  CosmosNetworks.Coreum,
 ];
 
 // CosmosNetworks -> chain_id from registry
@@ -72,6 +73,7 @@ const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Umee]: "umee-1",
   [CosmosNetworks.Persistence]: "core-1",
   [CosmosNetworks.Bitsong]: "bitsong-2b",
+  [CosmosNetworks.Coreum]: "coreum-mainnet-1",
 };
 
 // chain_id from registry -> CosmosNetworks
