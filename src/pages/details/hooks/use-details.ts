@@ -48,7 +48,10 @@ export const useDetails = () => {
     [stakeTokenAvailableAmount.data]
   );
 
-  const yieldType = useYieldType(selectedStake);
+  const yieldType = useYieldType(selectedStake).mapOrDefault(
+    (y) => y.title,
+    ""
+  );
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
     selectedValidator,

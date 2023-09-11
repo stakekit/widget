@@ -37,6 +37,7 @@ const CompletePage = ({
     unstakeMatch,
     pendingActionMatch,
     hasUrs,
+    yieldType,
   } = useComplete();
 
   return (
@@ -73,6 +74,13 @@ const CompletePage = ({
                 ? `complete.successfully_pending_action`
                 : "complete.successfully_staked",
               {
+                action: yieldType.mapOrDefault(
+                  (yt) =>
+                    unstakeMatch
+                      ? t(`complete.unstake.${yt}`)
+                      : t(`complete.stake.${yt}`),
+                  ""
+                ),
                 amount,
                 tokenNetwork: network,
                 pendingAction: t(

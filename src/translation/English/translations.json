@@ -49,7 +49,7 @@
     "estimated_gas_fee": "Estimated gas fee",
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
-    "terms_of_use": "By clicking confirm & stake your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
+    "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
     "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenNetwork}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>%"
   },
   "steps": {
@@ -69,11 +69,23 @@
     "failed": "Failed"
   },
   "complete": {
-    "successfully_staked": "Successfully staked {{amount}} {{tokenNetwork}}",
-    "successfully_unstaked": "Successfully unstaked {{amount}} {{tokenNetwork}}",
+    "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
+    "successfully_unstaked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View transaction",
     "via": "via {{providerName}}",
+    "stake": {
+      "staking": "staked",
+      "liquid-staking": "staked",
+      "vault": "deposited",
+      "lending": "supplied"
+    },
+    "unstake": {
+      "staking": "un-staked",
+      "liquid-staking": "un-staked",
+      "vault": "withdrawn",
+      "lending": "withdrawn"
+    },
     "pending_action": {
       "stake": "staked",
       "unstake": "unstaked",
@@ -89,23 +101,23 @@
   "help_modals": {
     "main": {
       "title": "Powered by StakeKit",
-      "description": "StakeKit is a powerful API & widget for self-custodial staking. It supports the most popular tokens and chains out of the box, and provides a beautiful, seamless experience."
+      "description": "StakeKit is the most powerful API & widget to access all types of yields crypto offers. It supports the most popular tokens and chains out of the box, and provides a beautiful, seamless experience."
     },
     "staking": {
       "title": "What is Staking?",
-      "description": "Staking is a way to earn passive income by holding and \"staking\" your cryptocurrency. It helps secure the network and validate transactions, while rewarding you with additional tokens for your contribution."
+      "description": "Staking is a way to earn passive income by holding and \"staking\" your cryptocurrency. It helps secure the network and validate transactions, while rewarding you with additional tokens for your contribution to the network."
     },
     "liquid_staking": {
       "title": "What is Liquid Staking?",
-      "description": "Liquid crypto staking lets you earn rewards by staking your cryptocurrency while still keeping it easily accessible for trading or other purposes. It's a flexible way to make your crypto work for you without locking it up, allowing you to enjoy the benefits of staking while maintaining liquidity."
+      "description": "Liquid crypto staking lets you earn rewards through staking your cryptocurrency while still keeping it easily accessible for trading or other purposes. It's a flexible way to make your crypto work for you without locking it up, allowing you to enjoy the benefits of staking while maintaining liquidity."
     },
     "deposit": {
       "title": "What are yield vault deposits?",
-      "description": "Yield deposit vaults, like Yearn Finance (YFI), automatically optimize your crypto investments for higher returns. By pooling funds and using advanced strategies across DeFi protocols, these vaults generate passive yield. Enjoy higher interest rates and benefit from professional yield farming expertise with a hands-off approach to earning more from your crypto."
+      "description": "Yield vaults, like Yearn Finance (YFI), automatically optimize your crypto investments for higher returns. By pooling funds and using advanced strategies across DeFi protocols, these vaults generate passive yield. Enjoy higher interest rates and benefit from professional yield farming expertise with a hands-off approach to earning more from your crypto."
     },
     "lending": {
       "title": "What is lending?",
-      "description": "Crypto lending platforms, such as Aave, allow you to lend your digital assets and earn interest on them. By depositing your crypto into lending pools, you become a lender, and borrowers can access your funds in exchange for paying interest. It's a way to put your idle crypto to work and earn passive income while helping others access the funds they need."
+      "description": "Crypto lending platforms, such as Aave and Compound, allow you to lend your digital assets and earn interest on them. By supplying your crypto into lending pools, you become a lender, and borrowers can access your funds in exchange for paying interest. It's a way to put your idle crypto to work and earn passive income while helping others access the funds they need."
     },
     "fees": {
       "title": "About fees",
@@ -183,7 +195,7 @@
     }
   },
   "unstake_review": {
-    "terms_of_use": "By clicking confirm & stake your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
+    "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
     "unstake_from": "Unstake from {{providerName}}"
   },
   "pending_action_review": {
