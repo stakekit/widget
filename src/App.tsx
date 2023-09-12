@@ -24,6 +24,7 @@ import {
   StakeCompletePage,
   UnstakeOrPendingActionCompletePage,
   PositionsPage,
+  EarnPage,
 } from "./pages";
 import { Box } from "./components";
 import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
@@ -47,7 +48,6 @@ import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { Details } from "./pages/details/details.page";
-import EarnPage from "./pages/details/earn.page";
 
 const Widget = () => {
   useToggleTheme();

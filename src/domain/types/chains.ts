@@ -2,7 +2,7 @@ import { Chain } from "@stakekit/rainbowkit";
 import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
-const supportedCosmosChains = [
+export const supportedCosmosChains = [
   CosmosNetworks.Akash,
   CosmosNetworks.Cosmos,
   CosmosNetworks.Juno,
@@ -32,9 +32,10 @@ const supportedCosmosChains = [
   CosmosNetworks.Sommelier,
   CosmosNetworks.Teritori,
   CosmosNetworks.Umee,
+  CosmosNetworks.Coreum,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
-const supportedCosmosChainsSet = new Set(supportedCosmosChains);
+export const supportedCosmosChainsSet = new Set(supportedCosmosChains);
 export type CosmosChainsMap = {
   [Key in SupportedCosmosChains]: {
     type: "cosmos";

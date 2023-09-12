@@ -2,42 +2,11 @@ import { CosmosNetworks } from "@stakekit/common";
 import {
   CosmosChainsMap,
   SupportedCosmosChains,
+  supportedCosmosChains,
 } from "../../../domain/types/chains";
 import { getNetworkLogo } from "../../../utils";
 import { mainnet } from "wagmi";
 import { cosmosRegistryChains } from "./chain-registry";
-
-const supportedCosmosChains: SupportedCosmosChains[] = [
-  CosmosNetworks.Cosmos,
-  CosmosNetworks.Akash,
-  CosmosNetworks.Osmosis,
-  CosmosNetworks.Juno,
-  CosmosNetworks.Kava,
-  CosmosNetworks.Stargaze,
-  CosmosNetworks.Agoric,
-  CosmosNetworks.Regen,
-  CosmosNetworks.Axelar,
-  CosmosNetworks.BandProtocol,
-  CosmosNetworks.Chihuahua,
-  CosmosNetworks.Comdex,
-  CosmosNetworks.Crescent,
-  CosmosNetworks.Cronos,
-  CosmosNetworks.Cudos,
-  CosmosNetworks.FetchAi,
-  CosmosNetworks.GravityBridge,
-  CosmosNetworks.IRISnet,
-  CosmosNetworks.KiNetwork,
-  CosmosNetworks.MarsProtocol,
-  CosmosNetworks.Onomy,
-  CosmosNetworks.Quicksilver,
-  CosmosNetworks.Secret,
-  CosmosNetworks.Sentinel,
-  CosmosNetworks.Sommelier,
-  CosmosNetworks.Teritori,
-  CosmosNetworks.Umee,
-  CosmosNetworks.Persistence,
-  CosmosNetworks.Bitsong,
-];
 
 // CosmosNetworks -> chain_id from registry
 const sKCosmosNetworksToRegistryIds: {
@@ -72,6 +41,7 @@ const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Umee]: "umee-1",
   [CosmosNetworks.Persistence]: "core-1",
   [CosmosNetworks.Bitsong]: "bitsong-2b",
+  [CosmosNetworks.Coreum]: "coreum-mainnet-1",
 };
 
 // chain_id from registry -> CosmosNetworks

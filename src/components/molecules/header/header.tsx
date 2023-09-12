@@ -14,11 +14,11 @@ import {
 } from "./styles.css";
 import classNames from "clsx";
 import { HelpModal } from "../help-modal";
-import { isLedgerDappBrowserProvider, isMobile } from "../../../utils";
+import { isLedgerDappBrowserProvider } from "../../../utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useContext } from "react";
 
-const showDisconnect = isMobile() || isLedgerDappBrowserProvider();
+const showDisconnect = isLedgerDappBrowserProvider();
 
 export const Header = () => {
   const location = useLocation();
@@ -37,7 +37,7 @@ export const Header = () => {
   const logout = useLogout();
 
   const onXPress = () => {
-    if (isMobile()) return;
+    if (isLedgerDappBrowserProvider()) return;
 
     logout();
   };

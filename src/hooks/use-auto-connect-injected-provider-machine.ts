@@ -3,7 +3,7 @@ import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useConnect } from "wagmi";
 import { InjectedConnector } from "@wagmi/connectors/injected";
 import { useSKWallet } from "./wallet/use-sk-wallet";
-import { isLedgerDappBrowserProvider, isMobile } from "../utils";
+import { isLedgerDappBrowserProvider } from "../utils";
 import { LedgerLiveConnector } from "../providers/ledger/ledger-connector";
 import { useMemo } from "react";
 
@@ -17,7 +17,7 @@ export const useAutoConnectInjectedProviderMachine = () => {
 
   const initial = useMemo(
     () =>
-      isMobile()
+      isLedgerDappBrowserProvider()
         ? !isConnected && !isConnecting
           ? "connect"
           : "done"
