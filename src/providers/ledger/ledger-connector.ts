@@ -59,10 +59,6 @@ export class LedgerLiveConnector extends Connector {
   #currentChain: Chain | null = null;
   chains: Chain[];
 
-  #cachedTransports: {
-    Cosmos: Awaited<ReturnType<WalletAPIClient["device"]["transport"]>> | null;
-  } = { Cosmos: null };
-
   constructor() {
     const defaultChains = LedgerLiveConnector.#skSupportedChainsValues.map(
       (val) => val.chain

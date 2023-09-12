@@ -1,4 +1,4 @@
-import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { usePositionsData } from "../../../hooks/use-positions-data";
 import { createSelector } from "reselect";
 import BigNumber from "bignumber.js";
 import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";

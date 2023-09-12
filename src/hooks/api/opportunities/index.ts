@@ -47,7 +47,7 @@ export const useYields = (opts?: UseInfiniteQueryOptions<YieldYields200>) => {
             return Promise.resolve(r);
           },
         }),
-    enabled: isConnected && !isReconnecting,
+    enabled: !isReconnecting,
     ...opts,
   });
 };
