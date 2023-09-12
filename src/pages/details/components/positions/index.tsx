@@ -78,9 +78,9 @@ export const Positions = () => {
             );
 
             const providerName =
-              item.defaultOrValidatorId === "default"
+              (item.defaultOrValidatorId === "default"
                 ? item.integrationData.metadata.provider?.name
-                : validator?.name ?? "";
+                : validator?.name) ?? "";
 
             return (
               <SKLink

@@ -4,9 +4,9 @@ import BigNumber from "bignumber.js";
 import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 
 export const usePositions = () => {
-  const { positionsData, isLoading } = usePositionsData();
+  const { data, isLoading } = usePositionsData();
 
-  const tableData = positionsTableDataSelector(positionsData);
+  const tableData = positionsTableDataSelector(data);
 
   return {
     isLoading,
@@ -19,7 +19,7 @@ export const usePositions = () => {
  * @summary This selector is used to map object with all default + validator balances to a map
  */
 export const positionsTableDataSelector = createSelector(
-  (data: ReturnType<typeof usePositionsData>["positionsData"]) => data,
+  (data: ReturnType<typeof usePositionsData>["data"]) => data,
   (data) => {
     return [...data.values()].reduce(
       (acc, val) => {
