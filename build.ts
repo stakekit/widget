@@ -1,8 +1,14 @@
 import { vanillaExtractPlugin } from "@vanilla-extract/esbuild-plugin";
 import autoprefixer from "autoprefixer";
 import * as esbuild from "esbuild";
+import * as babel from "@babel/core";
 import postcss from "postcss";
 import dotenv from "dotenv";
+import fs from "node:fs";
+import path from "node:path";
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 
 dotenv.config({ path: ".env.production.local" });
 
@@ -19,7 +25,7 @@ if (!VITE_API_URL || !MODE) {
   }
 }
 
-const commonPlugins = [
+const commonPlugins: esbuild.Plugin[] = [
   vanillaExtractPlugin({
     outputCss: true,
     processCss: async (css) => {
@@ -29,7 +35,50 @@ const commonPlugins = [
 
       return result.css;
     },
-  }),
+  }) as esbuild.Plugin,
+  {
+    name: "chain-registry-transform",
+    setup(build) {
+      build.onResolve({ filter: /^\.\/.*chain-registry/ }, (args) => {
+        return {
+          path: path.resolve(args.resolveDir, `${args.path}.ts`),
+          namespace: "chain-registry",
+        };
+      });
+
+      build.onLoad(
+        { filter: /.*/, namespace: "chain-registry" },
+        async (args) => {
+          console.log("onLoad: ", args.path);
+          const code = await fs.promises.readFile(args.path, "utf8");
+
+          const result = await babel.transformAsync(code, {
+            filename: "chain-registry.ts",
+            plugins: [
+              require.resolve("@babel/plugin-syntax-jsx"),
+              [
+                require.resolve("@babel/plugin-syntax-typescript"),
+                { isTSX: false },
+              ],
+              require.resolve("babel-plugin-macros"),
+            ],
+            babelrc: false,
+            configFile: false,
+            sourceMaps: true,
+          });
+
+          if (!result?.code) {
+            throw new Error("Failed to transform chain-registry.ts");
+          }
+
+          return {
+            contents: result.code,
+            loader: "ts",
+          };
+        }
+      );
+    },
+  },
 ];
 
 const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
@@ -78,8 +127,8 @@ const buildAsPackage = async () => {
       {
         name: "make-all-packages-external",
         setup(build) {
-          let filter = /^[^./]|^\.[^./]|^\.\.[^/]/; // Must not start with "/" or "./" or "../"
-          build.onResolve({ filter }, (args) =>
+          // Must not start with "/" or "./" or "../"
+          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
             args.path === "@cassiozen/usestatemachine"
               ? { external: false, namespace: "usestatemachine" }
               : { external: true, path: args.path }

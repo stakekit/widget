@@ -15,10 +15,10 @@ import { Wallet } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { cosmosChainsMap, filteredCosmosChainNames } from "./chains";
-import { assets } from "chain-registry";
 import { config } from "../../config";
 import { waitForMs } from "../../utils";
 import { WCClient } from "@cosmos-kit/walletconnect";
+import { cosmosAssets } from "./chains/chain-registry";
 
 export const wallets = [
   ...keplrWallets,
@@ -254,7 +254,7 @@ export const connector = {
 
 export const cosmosWalletManager = new WalletManager(
   Object.values(cosmosChainsMap).map((c) => c.chain),
-  assets.filter((a) => {
+  cosmosAssets.filter((a) => {
     // Patch comdex assets coingecko id
     if (a.chain_name === "comdex") {
       a.assets[1].coingecko_id = "harbor-2";

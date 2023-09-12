@@ -1,4 +1,3 @@
-import { chains as cosmosRegistryChains } from "chain-registry";
 import { CosmosNetworks } from "@stakekit/common";
 import {
   CosmosChainsMap,
@@ -6,6 +5,7 @@ import {
 } from "../../../domain/types/chains";
 import { getNetworkLogo } from "../../../utils";
 import { mainnet } from "wagmi";
+import { cosmosRegistryChains } from "./chain-registry";
 
 const supportedCosmosChains: SupportedCosmosChains[] = [
   CosmosNetworks.Cosmos,
