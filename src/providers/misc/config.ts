@@ -21,7 +21,7 @@ export const near = {
 } as const satisfies Chain;
 
 export const tron = {
-  id: 79,
+  id: 1,
   name: "Tron Network",
   iconUrl:
     "https://raw.githubusercontent.com/stakekit/assets/main/tokens/tron.svg",
