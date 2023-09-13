@@ -4,12 +4,7 @@ import { ListItem } from "../../components/atoms/list/list-item";
 import { apyToPercentage, formatTokenBalance } from "../../utils";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { useTranslation } from "react-i18next";
-import {
-  claimRewardsContainer,
-  listContainer,
-  viaText,
-  virtuosoContainer,
-} from "./style.css";
+import { claimRewardsContainer, viaText, virtuosoContainer } from "./style.css";
 import BigNumber from "bignumber.js";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { SKLink } from "../../components/atoms/link";
@@ -64,121 +59,120 @@ export const PositionsPage = () => {
         ) : null}
 
         {!!data?.length && (
-          <Box className={listContainer}>
-            <Virtuoso
-              className={virtuosoContainer}
-              data={data}
-              itemContent={(_index, item) => {
-                const amount = item.balances.reduce(
-                  (acc, b) => new BigNumber(b.amount).plus(acc),
-                  new BigNumber(0)
-                );
+          <Virtuoso
+            className={virtuosoContainer}
+            style={{ height: "auto" }}
+            data={data}
+            itemContent={(_index, item) => {
+              const amount = item.balances.reduce(
+                (acc, b) => new BigNumber(b.amount).plus(acc),
+                new BigNumber(0)
+              );
 
-                const token = item.balances[0].token;
+              const token = item.balances[0].token;
 
-                const hasPendingClaimRewards = item.balances
-                  .find((b) => b.type === "rewards")
-                  ?.pendingActions.some((a) => a.type === "CLAIM_REWARDS");
+              const hasPendingClaimRewards = item.balances
+                .find((b) => b.type === "rewards")
+                ?.pendingActions.some((a) => a.type === "CLAIM_REWARDS");
 
-                const validator = item.integrationData.validators.find(
-                  (v) => v.address === item.defaultOrValidatorId
-                );
+              const validator = item.integrationData.validators.find(
+                (v) => v.address === item.defaultOrValidatorId
+              );
 
-                const providerName =
-                  (item.defaultOrValidatorId === "default"
-                    ? item.integrationData.metadata.provider?.name
-                    : validator?.name) ?? "";
+              const providerName =
+                (item.defaultOrValidatorId === "default"
+                  ? item.integrationData.metadata.provider?.name
+                  : validator?.name) ?? "";
 
-                return (
-                  <SKLink
-                    relative="path"
-                    to={`../positions/${item.integrationData.id}/${item.defaultOrValidatorId}`}
-                  >
-                    <Box my="2">
-                      <ListItem>
+              return (
+                <SKLink
+                  relative="path"
+                  to={`../positions/${item.integrationData.id}/${item.defaultOrValidatorId}`}
+                >
+                  <Box my="2">
+                    <ListItem>
+                      <Box
+                        display="flex"
+                        justifyContent="flex-start"
+                        alignItems="center"
+                        flex={3}
+                        minWidth="0"
+                      >
+                        <TokenIcon
+                          metadata={item.integrationData.metadata}
+                          token={token}
+                        />
+
                         <Box
                           display="flex"
-                          justifyContent="flex-start"
-                          alignItems="center"
-                          flex={3}
+                          flexDirection="column"
+                          justifyContent="center"
+                          alignItems="flex-start"
                           minWidth="0"
                         >
-                          <TokenIcon
-                            metadata={item.integrationData.metadata}
-                            token={token}
-                          />
-
                           <Box
                             display="flex"
-                            flexDirection="column"
                             justifyContent="center"
-                            alignItems="flex-start"
-                            minWidth="0"
+                            alignItems="center"
+                            gap="1"
                           >
-                            <Box
-                              display="flex"
-                              justifyContent="center"
-                              alignItems="center"
-                              gap="1"
-                            >
-                              <Text variant={{ size: "small" }}>
-                                {token.symbol}
-                              </Text>
-
-                              {hasPendingClaimRewards && (
-                                <Box className={claimRewardsContainer}>
-                                  <Text
-                                    variant={{ size: "xsmall", type: "white" }}
-                                  >
-                                    {t("positions.claim_rewards")}
-                                  </Text>
-                                </Box>
-                              )}
-                            </Box>
-                            <Text
-                              className={viaText}
-                              variant={{
-                                size: "small",
-                                type: "muted",
-                                weight: "normal",
-                              }}
-                            >
-                              {t("positions.via", { providerName })}
+                            <Text variant={{ size: "small" }}>
+                              {token.symbol}
                             </Text>
-                          </Box>
-                        </Box>
 
-                        <Box
-                          display="flex"
-                          justifyContent="center"
-                          alignItems="flex-end"
-                          flexDirection="column"
-                          flex={2}
-                          textAlign="end"
-                        >
-                          <Text variant={{ size: "small", weight: "normal" }}>
-                            {apyToPercentage(
-                              validator?.apr ?? item.integrationData.apy
+                            {hasPendingClaimRewards && (
+                              <Box className={claimRewardsContainer}>
+                                <Text
+                                  variant={{ size: "xsmall", type: "white" }}
+                                >
+                                  {t("positions.claim_rewards")}
+                                </Text>
+                              </Box>
                             )}
-                            %
-                          </Text>
+                          </Box>
                           <Text
+                            className={viaText}
                             variant={{
                               size: "small",
-                              weight: "normal",
                               type: "muted",
+                              weight: "normal",
                             }}
                           >
-                            {formatTokenBalance(amount, 6)} {token.symbol}
+                            {t("positions.via", { providerName })}
                           </Text>
                         </Box>
-                      </ListItem>
-                    </Box>
-                  </SKLink>
-                );
-              }}
-            />
-          </Box>
+                      </Box>
+
+                      <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="flex-end"
+                        flexDirection="column"
+                        flex={2}
+                        textAlign="end"
+                      >
+                        <Text variant={{ size: "small", weight: "normal" }}>
+                          {apyToPercentage(
+                            validator?.apr ?? item.integrationData.apy
+                          )}
+                          %
+                        </Text>
+                        <Text
+                          variant={{
+                            size: "small",
+                            weight: "normal",
+                            type: "muted",
+                          }}
+                        >
+                          {formatTokenBalance(amount, 6)} {token.symbol}
+                        </Text>
+                      </Box>
+                    </ListItem>
+                  </Box>
+                </SKLink>
+              );
+            }}
+          />
         )}
       </Box>
     </PageContainer>

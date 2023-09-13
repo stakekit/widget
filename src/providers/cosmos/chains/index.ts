@@ -4,7 +4,7 @@ import {
   SupportedCosmosChains,
   supportedCosmosChains,
 } from "../../../domain/types/chains";
-import { getNetworkLogo } from "../../../utils";
+import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import { mainnet } from "wagmi";
 import { cosmosRegistryChains } from "./chain-registry";
 
@@ -76,10 +76,13 @@ export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 const getWagmiChain = (chain: CosmosChainsAssets) => ({
   id: chain.chain_id as unknown as number,
   iconUrl:
-    chain.chain_name === CosmosNetworks.Osmosis
+    chain.chain_id === "osmosis-1"
       ? getNetworkLogo(CosmosNetworks.Osmosis)
+      : chain.chain_id === "mars-1"
+      ? getTokenLogo("mars")
       : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
-  name: chain.chain_name[0].toUpperCase() + chain.chain_name.slice(1),
+
+  name: chain.chain_name,
   network: chain.chain_id,
   // TODO: change this
   nativeCurrency: mainnet.nativeCurrency,

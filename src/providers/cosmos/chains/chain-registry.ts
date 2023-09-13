@@ -38,23 +38,59 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     "desmos-mainnet"
   ]);
 
-  const cosmosRegistryChains = chains.filter((c) => chainsSet.has(c.chain_id));
+  const chainMapper = (val) => {
+    let name = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
-  const filteredCosmosChainNames = new Set(
-    cosmosRegistryChains.map((c) => c.chain_name)
-  );
-
-  const cosmosAssets = assets.filter((a) => {
-    // Patch comdex assets coingecko id
-    if (a.chain_name === "comdex") {
-      a.assets[1].coingecko_id = "harbor-2";
+    if (val.chain_id === "crypto-org-chain-mainnet-1") {
+      name = "Crypto.org Chain";
+    } else if (val.chain_id === "laozi-mainnet") {
+      name = "Band Chain";
+    } else if (val.chain_id === "secret-4") {
+      name = "Secret Network";
+    } else if (val.chain_id === "fetchhub-4") {
+      name = "Fetch.AI";
+    } else if (val.chain_id === "kichain-2") {
+      name = "Ki Chain";
+    } else if (val.chain_id === "irishub-1") {
+      name = "IRISnet";
+    } else if (val.chain_id === "gravity-bridge-3") {
+      name = "Gravity Bridge";
     }
 
-    return filteredCosmosChainNames.has(a.chain_name);
-  });
+    return {
+      ...val,
+      chain_name: name,
+    };
+  }
+
+  const assetMapper = (val) => {
+    if (val.chain_id === "comdex-1") {
+      val.assets[1].coingecko_id = "harbor-2";
+    }
+
+    return val
+  }
+
+  const cosmosRegistryChains = chains.filter((c) => chainsSet.has(c.chain_id)).map(chainMapper);
+
+  const filteredCosmosChainNames = new Map(
+    cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id])
+  );
+
+  const cosmosAssets = assets
+    .filter((a) => filteredCosmosChainNames.has(a.chain_name))
+    .map((val) => ({
+      ...val,
+      chain_id: filteredCosmosChainNames.get(val.chain_name),
+    }))
+    .map(chainMapper)
+    .map(assetMapper);
 
   module.exports = {
     cosmosRegistryChains,
     cosmosAssets,
   };
-` as { cosmosRegistryChains: Chain[]; cosmosAssets: AssetList[] };
+` as {
+  cosmosRegistryChains: Chain[];
+  cosmosAssets: (AssetList & { chain_id: string })[];
+};

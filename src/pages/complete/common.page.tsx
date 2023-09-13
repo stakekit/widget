@@ -127,7 +127,7 @@ export const CompletePage = ({
           )}
         </Box>
 
-        <Box display="flex" alignItems="flex-end">
+        <Box display="flex" alignItems="flex-end" marginTop="8">
           <Button onClick={onClick}>{t("shared.ok")}</Button>
         </Box>
       </Box>

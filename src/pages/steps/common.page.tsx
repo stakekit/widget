@@ -295,7 +295,7 @@ export const StepsPage = ({ session }: { session: Maybe<ActionDto> }) => {
         </Box>
       )}
 
-      <Box display="flex" alignItems="flex-end">
+      <Box display="flex" alignItems="flex-end" marginTop="8">
         <Button onClick={onClick} variant={{ color: "secondary" }}>
           {t("shared.cancel")}
         </Button>

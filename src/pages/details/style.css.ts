@@ -72,11 +72,6 @@ export const virtuosoContainer = style({
   },
 });
 
-export const listContainer = style({
-  width: "100%",
-  height: "500px",
-});
-
 export const claimRewardsContainer = style([
   atoms({
     background: "positionsClaimRewardsBackground",

@@ -14,7 +14,7 @@ import { createWalletClient, custom } from "viem";
 import { Wallet } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { cosmosChainsMap, filteredCosmosChainNames } from "./chains";
+import { cosmosChainsMap } from "./chains";
 import { config } from "../../config";
 import { waitForMs } from "../../utils";
 import { WCClient } from "@cosmos-kit/walletconnect";
@@ -127,9 +127,7 @@ export class CosmosWagmiConnector extends Connector {
 
     if (!chainName) throw new Error("Chain not found");
 
-    const newCw = this.wallet.getChainWallet(
-      chainName.toLowerCase()
-    ) as ChainWalletBase;
+    const newCw = this.wallet.getChainWallet(chainName) as ChainWalletBase;
 
     if (!newCw) throw new Error("Wallet not found");
 
@@ -254,14 +252,7 @@ export const connector = {
 
 export const cosmosWalletManager = new WalletManager(
   Object.values(cosmosChainsMap).map((c) => c.chain),
-  cosmosAssets.filter((a) => {
-    // Patch comdex assets coingecko id
-    if (a.chain_name === "comdex") {
-      a.assets[1].coingecko_id = "harbor-2";
-    }
-
-    return filteredCosmosChainNames.has(a.chain_name);
-  }),
+  cosmosAssets,
   wallets,
   new Logger("ERROR"),
   false,
