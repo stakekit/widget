@@ -1,7 +1,7 @@
-import { Chain } from "@stakekit/rainbowkit";
-import { isLedgerDappBrowserProvider } from "../../utils";
-import { MiscChainsMap } from "../../domain/types/chains";
 import { MiscNetworks } from "@stakekit/common";
+import { Chain } from "@stakekit/rainbowkit";
+import { MiscChainsMap } from "../../domain/types/chains";
+import { isLedgerDappBrowserProvider } from "../../utils";
 
 export const near = {
   id: 397,
@@ -20,11 +20,33 @@ export const near = {
   },
 } as const satisfies Chain;
 
+export const tron = {
+  id: 79,
+  name: "Tron Network",
+  iconUrl:
+    "https://raw.githubusercontent.com/stakekit/assets/main/tokens/tron.svg",
+  network: "tron",
+  nativeCurrency: {
+    decimals: 6,
+    name: "Tron",
+    symbol: "TRX",
+  },
+  rpcUrls: {
+    public: { http: ["https://api.trongrid.io"] },
+    default: { http: ["https://api.trongrid.io"] },
+  },
+} as const satisfies Chain;
+
 export const miscChainMap: MiscChainsMap = {
   [MiscNetworks.Near]: {
     type: "misc",
     skChainName: MiscNetworks.Near,
     wagmiChain: near,
+  },
+  [MiscNetworks.Tron]: {
+    type: "misc",
+    skChainName: MiscNetworks.Tron,
+    wagmiChain: tron,
   },
 };
 

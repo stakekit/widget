@@ -1,5 +1,5 @@
-import { Chain } from "@stakekit/rainbowkit";
 import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
+import { Chain } from "@stakekit/rainbowkit";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
 const supportedCosmosChains = [
@@ -65,7 +65,10 @@ export type EvmChainsMap = {
   };
 };
 
-export const supportedMiscChains = [MiscNetworks.Near] as const;
+export const supportedMiscChains = [
+  MiscNetworks.Near,
+  MiscNetworks.Tron,
+] as const;
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
 export type SupportedMiscChains = (typeof supportedMiscChains)[number];
 export type MiscChainsMap = {
