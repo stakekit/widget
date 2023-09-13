@@ -17,15 +17,14 @@ import {
 import { useSavedRef, useToggleTheme } from "./hooks";
 import { container } from "./style.css";
 import {
-  ReviewPage,
   Layout,
-  Details,
-  PositionsPage,
-  EarnPage,
+  ReviewPage,
   StakeStepsPage,
   UnstakeOrPendingActionStepsPage,
-  UnstakeOrPendingActionCompletePage,
   StakeCompletePage,
+  UnstakeOrPendingActionCompletePage,
+  PositionsPage,
+  EarnPage,
 } from "./pages";
 import { Box } from "./components";
 import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
@@ -37,7 +36,6 @@ import {
 import classNames from "clsx";
 import { PositionDetails } from "./pages/position-details";
 import { useLocationTransition } from "./providers/location-transition";
-import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { StakeCheck } from "./pages/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
@@ -48,6 +46,8 @@ import { createPortal } from "react-dom";
 import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
+import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
+import { Details } from "./pages/details/details.page";
 
 const Widget = () => {
   useToggleTheme();
@@ -107,7 +107,7 @@ const Widget = () => {
           <Route element={<Layout />}>
             <Route element={<Details />}>
               <Route index element={<EarnPage />} />
-              <Route path="positions" element={<PositionsPage />} />
+              <Route path="positions" element={<PositionsPage />} />S
             </Route>
 
             <Route element={<ConnectedCheck />}>

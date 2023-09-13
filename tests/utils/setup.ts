@@ -1,7 +1,5 @@
-import { vi, expect } from "vitest";
-import matchers from "@testing-library/jest-dom/matchers";
-
-expect.extend(matchers);
+import { vi } from "vitest";
+import "@testing-library/jest-dom/vitest";
 
 if (typeof window !== "undefined") {
   Object.defineProperty(window, "matchMedia", {

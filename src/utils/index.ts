@@ -39,6 +39,9 @@ export const isLedgerDappBrowserProvider = (() => {
 export const getNetworkLogo = (network: Networks) =>
   `https://raw.githubusercontent.com/stakekit/assets/main/networks/${network}.svg`;
 
+export const getTokenLogo = (tokenName: string) =>
+  `https://raw.githubusercontent.com/stakekit/assets/main/tokens/${tokenName}.svg`;
+
 export const isMobile = () => {
   let mobile = false;
 

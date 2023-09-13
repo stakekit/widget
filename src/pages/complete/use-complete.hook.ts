@@ -1,6 +1,7 @@
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
 import { useStakeState } from "../../state/stake";
+import { useYieldType } from "../../hooks/use-yield-type";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -8,6 +9,8 @@ export const useComplete = () => {
   const { selectedStake } = useStakeState();
 
   const rewardToken = useRewardTokenDetails(selectedStake);
+
+  const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
   const location = useLocation();
 
@@ -41,5 +44,6 @@ export const useComplete = () => {
     unstakeMatch,
     pendingActionMatch,
     hasUrs: !!urls?.length,
+    yieldType,
   };
 };

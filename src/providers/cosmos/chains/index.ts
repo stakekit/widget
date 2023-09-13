@@ -1,44 +1,12 @@
-import { chains as cosmosRegistryChains } from "chain-registry";
 import { CosmosNetworks } from "@stakekit/common";
 import {
   CosmosChainsMap,
   SupportedCosmosChains,
+  supportedCosmosChains,
 } from "../../../domain/types/chains";
-import { getNetworkLogo } from "../../../utils";
+import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import { mainnet } from "wagmi";
-
-const supportedCosmosChains: SupportedCosmosChains[] = [
-  CosmosNetworks.Cosmos,
-  CosmosNetworks.Akash,
-  CosmosNetworks.Osmosis,
-  CosmosNetworks.Juno,
-  CosmosNetworks.Kava,
-  CosmosNetworks.Stargaze,
-  CosmosNetworks.Agoric,
-  CosmosNetworks.Regen,
-  CosmosNetworks.Axelar,
-  CosmosNetworks.BandProtocol,
-  CosmosNetworks.Chihuahua,
-  CosmosNetworks.Comdex,
-  CosmosNetworks.Crescent,
-  CosmosNetworks.Cronos,
-  CosmosNetworks.Cudos,
-  CosmosNetworks.FetchAi,
-  CosmosNetworks.GravityBridge,
-  CosmosNetworks.IRISnet,
-  CosmosNetworks.KiNetwork,
-  CosmosNetworks.MarsProtocol,
-  CosmosNetworks.Onomy,
-  CosmosNetworks.Quicksilver,
-  CosmosNetworks.Secret,
-  CosmosNetworks.Sentinel,
-  CosmosNetworks.Sommelier,
-  CosmosNetworks.Teritori,
-  CosmosNetworks.Umee,
-  CosmosNetworks.Persistence,
-  CosmosNetworks.Bitsong,
-  CosmosNetworks.Coreum,
-];
+import { cosmosRegistryChains } from "./chain-registry";
 
 // CosmosNetworks -> chain_id from registry
 const sKCosmosNetworksToRegistryIds: {
@@ -74,6 +42,7 @@ const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Persistence]: "core-1",
   [CosmosNetworks.Bitsong]: "bitsong-2b",
   [CosmosNetworks.Coreum]: "coreum-mainnet-1",
+  [CosmosNetworks.Desmos]: "desmos-mainnet",
 };
 
 // chain_id from registry -> CosmosNetworks
@@ -107,10 +76,13 @@ export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 const getWagmiChain = (chain: CosmosChainsAssets) => ({
   id: chain.chain_id as unknown as number,
   iconUrl:
-    chain.chain_name === CosmosNetworks.Osmosis
+    chain.chain_id === "osmosis-1"
       ? getNetworkLogo(CosmosNetworks.Osmosis)
+      : chain.chain_id === "mars-1"
+      ? getTokenLogo("mars")
       : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
-  name: chain.chain_name[0].toUpperCase() + chain.chain_name.slice(1),
+
+  name: chain.chain_name,
   network: chain.chain_id,
   // TODO: change this
   nativeCurrency: mainnet.nativeCurrency,

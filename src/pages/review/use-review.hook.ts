@@ -20,7 +20,10 @@ export const useReview = () => {
     stakeAmount,
     selectedValidator,
   });
-  const yieldType = useYieldType(selectedStake);
+  const yieldType = useYieldType(selectedStake).mapOrDefault(
+    (y) => y.review,
+    ""
+  );
 
   const tokenNetwork = selectedStake.mapOrDefault((y) => y.token.symbol, "");
   const amount = stakeAmount.mapOrDefault((a) => a.toString(), "");

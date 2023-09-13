@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useStepsMachine } from "./use-steps-machine";
+import { useStepsMachine } from "./use-steps-machine.hook";
 import { ActionDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 
