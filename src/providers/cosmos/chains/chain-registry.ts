@@ -34,7 +34,8 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     "umee-1",
     "core-1",
     "bitsong-2b",
-    "coreum-mainnet-1"
+    "coreum-mainnet-1",
+    "desmos-mainnet"
   ]);
 
   const cosmosRegistryChains = chains.filter((c) => chainsSet.has(c.chain_id));

@@ -10,11 +10,11 @@ export const Details = () => {
   const { location, transitionClassName, onAnimationEnd } =
     useLocationTransition();
 
-  const { tableData } = usePositions();
+  const { data } = usePositions();
 
   const hasPendingRewards = useMemo(
-    () => tableData.some((p) => p.balances.some((b) => b.type === "rewards")),
-    [tableData]
+    () => data.some((p) => p.balances.some((b) => b.type === "rewards")),
+    [data]
   );
 
   const navigate = useNavigate();

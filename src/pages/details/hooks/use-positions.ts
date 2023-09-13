@@ -4,13 +4,11 @@ import BigNumber from "bignumber.js";
 import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 
 export const usePositions = () => {
-  const { data, isLoading } = usePositionsData();
-
-  const tableData = positionsTableDataSelector(data);
+  const { data, ...rest } = usePositionsData();
 
   return {
-    isLoading,
-    tableData,
+    ...rest,
+    data: positionsTableDataSelector(data),
   };
 };
 

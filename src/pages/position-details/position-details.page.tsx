@@ -109,7 +109,7 @@ export const PositionDetails = () => {
                           fallback={
                             <Box marginRight="1">
                               <ImageFallback
-                                name={vd.name ?? ""}
+                                name={vd.name ?? vd.address ?? ""}
                                 tokenLogoHw="8"
                                 textVariant={{
                                   size: "small",
@@ -123,7 +123,7 @@ export const PositionDetails = () => {
                         <Text variant={{ size: "small" }}>
                           {st}{" "}
                           {t("position_details.via", {
-                            providerName: vd.name,
+                            providerName: vd.name ?? vd.address ?? "",
                           })}
                         </Text>
                       </Box>

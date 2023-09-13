@@ -42,6 +42,7 @@ const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Persistence]: "core-1",
   [CosmosNetworks.Bitsong]: "bitsong-2b",
   [CosmosNetworks.Coreum]: "coreum-mainnet-1",
+  [CosmosNetworks.Desmos]: "desmos-mainnet",
 };
 
 // chain_id from registry -> CosmosNetworks

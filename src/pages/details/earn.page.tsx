@@ -273,7 +273,7 @@ export const EarnPage = () => {
         display="flex"
         justifyContent="flex-end"
         flexDirection="column"
-        marginTop="12"
+        marginTop="8"
       >
         {isConnected ? (
           <Button

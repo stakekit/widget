@@ -53,12 +53,16 @@ export const usePositionDetails = () => {
       position.chain((p) =>
         defaultOrValidatorId === "default"
           ? Maybe.fromNullable(p.integrationData.metadata.provider).map(
-              (v) => ({ name: v.name, logoURI: v.logoURI })
+              (v) => ({ name: v.name, logoURI: v.logoURI, address: v.id })
             )
           : List.find(
               (v) => v.address === defaultOrValidatorId,
               p.integrationData.validators
-            ).map((v) => ({ name: v.name, logoURI: v.image }))
+            ).map((v) => ({
+              name: v.name,
+              logoURI: v.image,
+              address: v.address,
+            }))
       ),
     [defaultOrValidatorId, position]
   );
