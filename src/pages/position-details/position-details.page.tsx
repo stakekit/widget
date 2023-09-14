@@ -18,6 +18,7 @@ import { apyToPercentage, formatTokenBalance } from "../../utils";
 import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
 import { ActionTypes } from "@stakekit/api-hooks";
+import { PositionBalances } from "./components/position-balances";
 
 export const PositionDetails = () => {
   const positionDetails = usePositionDetails();
@@ -29,7 +30,7 @@ export const PositionDetails = () => {
     stakeType,
     positionBalancesByType,
     unstakeText,
-    hasUnstakeAction,
+    canUnstake,
     onUnstakeAmountChange,
     unstakeAmount,
     unstakeFormattedAmount,
@@ -57,12 +58,11 @@ export const PositionDetails = () => {
 
       {!isLoading &&
         position
-          .chain((p) => stakedOrLiquidBalance.map((b) => ({ b, p })))
-          .chain((val) => stakeType.map((st) => ({ ...val, st })))
+          .chain((p) => stakeType.map((st) => ({ p, st })))
           .chain((val) =>
             positionBalancesByType.map((pbbt) => ({ ...val, pbbt }))
           )
-          .map(({ p, b, st, pbbt }) => (
+          .map(({ p, st, pbbt }) => (
             <Box flex={1} display="flex" flexDirection="column">
               <Box display="flex" justifyContent="center" alignItems="center">
                 <TokenIcon
@@ -138,7 +138,7 @@ export const PositionDetails = () => {
                 ))
                 .extractNullable()}
 
-              <Box py="3" gap="1" display="flex" flexDirection="column">
+              <Box py="3" gap="2" display="flex" flexDirection="column">
                 <Box
                   display="flex"
                   justifyContent="space-between"
@@ -151,21 +151,7 @@ export const PositionDetails = () => {
                 </Box>
 
                 {[...pbbt.values()].map((val) => (
-                  <Box
-                    key={val.type}
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Text variant={{ weight: "normal" }}>
-                      {t(`position_details.balance_type.${val.type}`)}
-                    </Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {formatTokenBalance(new BigNumber(val.amount ?? 0), 6)}{" "}
-                      {val.token.symbol} ($
-                      {formatTokenBalance(val.tokenPriceInUsd, 2)})
-                    </Text>
-                  </Box>
+                  <PositionBalances key={val.type} val={val} />
                 ))}
               </Box>
 
@@ -272,7 +258,7 @@ export const PositionDetails = () => {
                   )
                   .extractNullable()}
 
-                {hasUnstakeAction
+                {canUnstake
                   .chain(() => stakedOrLiquidBalance.map((b) => ({ b })))
                   .chain((val) => unstakeText.map((ut) => ({ ...val, ut })))
                   .chain((val) =>

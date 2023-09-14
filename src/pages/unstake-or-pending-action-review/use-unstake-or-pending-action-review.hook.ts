@@ -10,9 +10,7 @@ import { formatTokenBalance } from "../../utils";
 import { usePositionData } from "../../hooks/use-position-data";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
-import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
 import { ActionTypes } from "@stakekit/api-hooks";
 
 export const useUnstakeOrPendingActionReview = () => {
@@ -22,7 +20,6 @@ export const useUnstakeOrPendingActionReview = () => {
   }>();
 
   const integrationId = params.integrationId;
-  const defaultOrValidatorId = params.defaultOrValidatorId ?? "default";
 
   const { position } = usePositionData(integrationId);
 
@@ -35,18 +32,6 @@ export const useUnstakeOrPendingActionReview = () => {
   const pendingActionType = pendingActionSession.map((val) => val.type);
 
   const { t } = useTranslation();
-
-  /**
-   * @summary Position balance by type
-   */
-  const positionBalancesByType = usePositionBalanceByType(
-    position,
-    defaultOrValidatorId
-  );
-
-  const stakedOrLiquidBalance = useStakedOrLiquidBalance(
-    positionBalancesByType
-  );
 
   const amount = pendingActionMatch
     ? pendingActionSession.map((val) =>
@@ -84,8 +69,11 @@ export const useUnstakeOrPendingActionReview = () => {
 
   const pricesState = usePrices({
     currency: config.currency,
-    tokenList: stakedOrLiquidBalance.mapOrDefault(
-      (sb) => [sb.token, tokenToTokenDto(getBaseToken(sb.token as Token))],
+    tokenList: position.mapOrDefault(
+      (p) => [
+        p.integrationData.token,
+        tokenToTokenDto(getBaseToken(p.integrationData.token as Token)),
+      ],
       []
     ),
   });

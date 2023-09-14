@@ -171,6 +171,8 @@
       "rewards": "Rewards",
       "locked": "Locked"
     },
+    "unstaking_days_one": "{{count}} day remaining",
+    "unstaking_days_other": "{{count}} days remaining",
     "pending_action": {
       "stake": "Stake",
       "unstake": "Unstake",

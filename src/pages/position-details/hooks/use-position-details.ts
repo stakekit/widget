@@ -335,7 +335,7 @@ export const usePositionDetails = () => {
     stakedOrLiquidBalance,
     positionBalancesByType,
     unstakeText,
-    hasUnstakeAction: canUnstake,
+    canUnstake,
     unstakeAmount,
     onUnstakeAmountChange,
     unstakeFormattedAmount,
