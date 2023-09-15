@@ -1,7 +1,14 @@
 import { yieldYieldBalancesScan } from "@stakekit/api-hooks";
-import { UseQueryOptions, useQuery } from "@tanstack/react-query";
+import {
+  UseQueryOptions,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useSKWallet } from "../wallet/use-sk-wallet";
+import { useCallback } from "react";
+
+const queryKey = "yield-balances-scan";
 
 export const useYieldYieldBalancesScan = (
   opts?: Omit<
@@ -12,7 +19,7 @@ export const useYieldYieldBalancesScan = (
   const { network, address, additionalAddresses } = useSKWallet();
 
   return useQuery(
-    ["yield-balances-scan", network, address, additionalAddresses],
+    [queryKey, network, address, additionalAddresses],
     async () => {
       return await EitherAsync(() =>
         yieldYieldBalancesScan({
@@ -37,4 +44,14 @@ export const useYieldYieldBalancesScan = (
       ...opts,
     } as typeof opts
   );
+};
+
+export const useInvalidateYieldBalances = () => {
+  const queryClient = useQueryClient();
+
+  return useCallback(() => {
+    queryClient.invalidateQueries({
+      queryKey: [queryKey],
+    });
+  }, [queryClient]);
 };

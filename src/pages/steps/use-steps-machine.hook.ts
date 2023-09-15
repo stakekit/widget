@@ -21,9 +21,9 @@ import {
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../api/get-gas-mode-value";
-import { useInvalidateBalances } from "../../hooks/use-positions-data";
 import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 import { isAxiosError, withRequestErrorRetry } from "../../api/utils";
+import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -32,7 +32,7 @@ const tt = t as <T extends unknown>() => {
 export const useStepsMachine = () => {
   const { signTransaction, isLedgerLive } = useSKWallet();
 
-  const invalidateBalances = useInvalidateBalances();
+  const invalidateBalances = useInvalidateYieldBalances();
   const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
 
   return useStateMachine({
