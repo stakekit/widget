@@ -18,8 +18,6 @@ const prixClipFix = keyframes({
 
 export const spinnerStyles = recipe({
   base: {
-    width: "24px",
-    height: "24px",
     borderRadius: "50%",
     position: "relative",
     animation: "rotate 1s linear infinite",
@@ -42,12 +40,17 @@ export const spinnerStyles = recipe({
     },
   },
   variants: {
+    size: {
+      regular: { width: "24px", height: "24px" },
+      small: { width: "18px", height: "18px" },
+    },
     color: {
       regular: [atoms({ borderColor: "accent", color: "accent" })],
       inverted: [atoms({ borderColor: "white", color: "background" })],
     },
   },
   defaultVariants: {
+    size: "regular",
     color: "regular",
   },
 });

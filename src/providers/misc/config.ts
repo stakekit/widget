@@ -1,13 +1,13 @@
 import { MiscNetworks } from "@stakekit/common";
 import { Chain } from "@stakekit/rainbowkit";
+import { getTokenLogo, isLedgerDappBrowserProvider } from "../../utils";
 import { MiscChainsMap } from "../../domain/types/chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
 
 export const near = {
   id: 397,
   name: "NEAR Protocol",
-  iconUrl:
-    "https://raw.githubusercontent.com/stakekit/assets/main/tokens/near.svg",
+  iconUrl: getTokenLogo("near"),
   network: "near",
   nativeCurrency: {
     decimals: 24,

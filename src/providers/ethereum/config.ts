@@ -16,7 +16,7 @@ import {
   polygon,
 } from "wagmi/chains";
 import { config } from "../../config";
-import { getNetworkLogo, isMobile } from "../../utils";
+import { getNetworkLogo } from "../../utils";
 import { EvmNetworks } from "@stakekit/common";
 import { EvmChainsMap } from "../../domain/types/chains";
 
@@ -76,7 +76,7 @@ export const evmChains = Object.values(evmChainMap).map(
 export const connector = {
   groupName: "Ethereum",
   wallets: [
-    injectedWallet({ chains: evmChains, shimDisconnect: !isMobile() }),
+    injectedWallet({ chains: evmChains, shimDisconnect: true }),
     walletConnectWallet({
       chains: evmChains,
       options: {

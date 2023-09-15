@@ -12,12 +12,11 @@ import {
 } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../../domain/types";
-import { useAllEnabledOpportunities } from "./use-all-enabled-opportunities";
 import { isSupportedChain } from "../../../domain/types/chains";
 import { EitherAsync } from "purify-ts";
 
 export const useYields = (opts?: UseInfiniteQueryOptions<YieldYields200>) => {
-  const { network, isReconnecting } = useSKWallet();
+  const { network, isReconnecting, isConnected } = useSKWallet();
 
   const params: YieldYieldsParams = {
     network: network ?? undefined,
@@ -25,7 +24,8 @@ export const useYields = (opts?: UseInfiniteQueryOptions<YieldYields200>) => {
 
   return useInfiniteQuery<YieldYields200>({
     queryKey: getYieldYieldsQueryKey(params),
-    getNextPageParam: (lastPage) => lastPage.page + 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasNextPage ? lastPage.page + 1 : undefined,
     queryFn: async ({ pageParam = 1 }) =>
       await EitherAsync(() =>
         yieldYields({
@@ -34,14 +34,19 @@ export const useYields = (opts?: UseInfiniteQueryOptions<YieldYields200>) => {
           limit: 50,
           network: network ?? undefined,
         })
-      ).caseOf({
-        Left(l) {
-          return Promise.reject(l);
-        },
-        Right(r) {
-          return Promise.resolve(r);
-        },
-      }),
+      )
+        .map((val) => ({
+          ...val,
+          data: defaultFiltered({ data: val.data, isConnected, network }),
+        }))
+        .caseOf({
+          Left(l) {
+            return Promise.reject(l);
+          },
+          Right(r) {
+            return Promise.resolve(r);
+          },
+        }),
     enabled: !isReconnecting,
     ...opts,
   });
@@ -51,21 +56,6 @@ type SelectorInputData = {
   data: YieldDto[];
   isConnected: boolean;
   network: SKWallet["network"];
-};
-
-/**
- *
- * @summary Get all enabled opportunities with default filter applied
- */
-export const useEnabledFilteredOpportunities = (
-  opts?: Parameters<typeof useAllEnabledOpportunities>[0]
-) => {
-  const { network, isConnected } = useSKWallet();
-
-  return useAllEnabledOpportunities({
-    select: (data) => defaultFiltered({ data, isConnected, network }),
-    ...opts,
-  });
 };
 
 const skFilter = ({
