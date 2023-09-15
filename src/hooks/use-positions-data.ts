@@ -1,11 +1,9 @@
 import {
   YieldBalanceDto,
   YieldBalancesWithMetadataDto,
-  getYieldGetMultipleYieldBalancesQueryKey,
-  useStakeKitQueryClient,
 } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useYieldYieldBalancesScan } from "./api/use-yield-balances-scan";
 
 export const usePositionsData = () => {
@@ -62,13 +60,3 @@ const positionsDataSelector = createSelector(
       >()
     )
 );
-
-export const useInvalidateBalances = () => {
-  const queryClient = useStakeKitQueryClient();
-
-  return useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: [getYieldGetMultipleYieldBalancesQueryKey({} as any)[0]],
-    });
-  }, [queryClient]);
-};
