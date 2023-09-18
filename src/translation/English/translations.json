@@ -29,12 +29,70 @@
   "details": {
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via {{validator}}",
-    "liquid_stake_description": "When you stake {{stakeToken}} you'll receive {{liquidToken}}. You can trade this liquid asset at any time.",
-    "lent_description": "When you lend {{stakeToken}} you'll receive {{lendToken}}. You can trade this liquid asset at any time.",
-    "deposit_description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
-    "yearn_description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
-    "info_2": "You'll start earning right away",
-    "info_3": "Rewards will be automatically accrued according to the protocol payout schedules",
+
+    "native_staking": {
+      "earn_now": "You'll start earning right away",
+      "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
+
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
+
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
+      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
+
+      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}."
+    },
+
+    "vault": {
+      "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
+
+      "earn_now": "You'll start earning right away",
+      "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
+
+      "earn_yield_auto": "Earned yield is distributed each {{rewardSchedule}} and accrues automatically",
+      "earn_yield_manual": "Earned yield is distributed each {{rewardSchedule}} and needs to be claimed manually",
+
+      "withdrawn_time_immediately": "When withdrawing, your assets will be available immediately",
+      "withdrawn_time_days": "When withdrawing it takes {{cooldownPeriodDays}} days for your assets will be available",
+
+      "minimum_deposit_amount": "The minimum deposit requirement is {{minimumStakeAmount}} {{stakeToken}}."
+    },
+
+    "lend": {
+      "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
+      "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}.",
+
+      "earn_now": "You'll start earning right away",
+      "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
+
+      "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
+      "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
+
+      "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
+      "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days",
+
+      "compound_rewards": "{{rewardTokens}} rewards you are earning need to be claimed manually",
+
+      "minimum_lend_amount": "The minimum supply requirement is {{minimumStakeAmount}} {{stakeToken}}."
+    },
+
+    "liquid_stake": {
+      "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time.",
+
+      "earn_now": "You'll start earning right away",
+      "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you stake",
+
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and needs to be claimed manually",
+
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
+      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
+
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
+
+      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}."
+    },
+
     "opportunity_search_title": "Select a yield",
     "validator_search_title": "Select validator",
     "reward_token": "Get {{symbol}} <highlight0>via {{providerName}}</highlight0>",

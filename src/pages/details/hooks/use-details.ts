@@ -29,6 +29,7 @@ import { NotEnoughGasTokenError } from "../../../api/check-gas-amount";
 import { useYields } from "../../../hooks/api/opportunities";
 import { createSelector } from "reselect";
 import { SelectedStakeData } from "../types";
+import { useFooterItems } from "./use-footer-items";
 
 export const useDetails = () => {
   const {
@@ -205,50 +206,7 @@ export const useDetails = () => {
     .map((val) => val.metadata.type)
     .extractNullable();
 
-  const footerItems = useMemo(() => {
-    return selectedStake.mapOrDefault(
-      (y) => {
-        switch (y.metadata.type) {
-          case yieldTypesMap.staking.type: {
-            return {
-              description: null,
-            };
-          }
-          case yieldTypesMap.lending.type:
-            return {
-              description: t("details.lent_description", {
-                stakeToken: y.token.symbol,
-                lendToken:
-                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
-                  "",
-              }),
-            };
-          case yieldTypesMap.vault.type:
-            return {
-              description: t("details.yearn_description", {
-                stakeToken: y.token.symbol,
-                depositToken:
-                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
-                  "",
-              }),
-            };
-          case yieldTypesMap["liquid-staking"].type:
-            return {
-              description: t("details.liquid_stake_description", {
-                stakeToken: y.token.symbol,
-                liquidToken:
-                  y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ??
-                  "",
-              }),
-            };
-
-          default:
-            return { description: "" };
-        }
-      },
-      { description: "" }
-    );
-  }, [selectedStake, t]);
+  const footerItems = useFooterItems();
 
   const onSelectOpportunityClose = () => setStakeSearch("");
 
