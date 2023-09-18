@@ -3,6 +3,7 @@ import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
 import "./services/install-api-manager";
+import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
 import { ComponentProps, useEffect } from "react";
 import {
