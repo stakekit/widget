@@ -27,8 +27,11 @@
     "deposit": "Deposit"
   },
   "details": {
+    "earn": "Earn",
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via {{validator}}",
+
+    "no_opportunities": "No yield opportunities for this token",
 
     "native_staking": {
       "earn_now": "You'll start earning right away",
@@ -95,7 +98,7 @@
 
     "opportunity_search_title": "Select a yield",
     "validator_search_title": "Select validator",
-    "reward_token": "Get {{symbol}} <highlight0>via {{providerName}}</highlight0>",
+    "reward_token": "You'll receive {{symbol}} <highlight0>via {{providerName}}</highlight0>",
     "tab_earn": "Earn",
     "tab_positions": "Positions",
     "validators_preferred": "Preferred",
@@ -207,7 +210,13 @@
     "via": "via {{providerName}}",
     "connect_wallet": "Connect wallet",
     "no_current_positions": "No current positions",
-    "claim_rewards": "Claim rewards"
+    "claim_rewards": "Claim rewards",
+    "dont_see_position": "Don't see a position?",
+    "import_validator": "Import a validator you have staked with to view your position.",
+    "import_button": "Import",
+    "import_validator_modal_title": "Import validator",
+    "import_validator_already_imported": "Imported"
+
   },
   "position_details": {
     "liquid_staked": "Liquid staked",
@@ -227,7 +236,8 @@
       "unstaked": "Unstaked",
       "preparing": "Preparing",
       "rewards": "Rewards",
-      "locked": "Locked"
+      "locked": "Locked",
+      "unlocking": "Unlocking"
     },
     "unstaking_days_one": "{{count}} day remaining",
     "unstaking_days_other": "{{count}} days remaining",
@@ -270,5 +280,9 @@
       "unlock_locked": "Unlock locked from {{providerName}}",
       "stake_locked": "Stake locked with {{providerName}}"
     }
+  },
+  "select_token": {
+    "title": "Select token",
+    "n_available_opps": "{{count}} available opportunities"
   }
 }

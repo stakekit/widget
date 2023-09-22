@@ -7,7 +7,6 @@ export const config = {
     staleTime: 1000 * 5,
     cacheTime: 1000 * 30,
   },
-  gasEstimatePercentFix: 20,
   isTestMode: import.meta.env.MODE === "test",
   walletConnectV2: {
     relayUrl: "wss://relay.walletconnect.com",

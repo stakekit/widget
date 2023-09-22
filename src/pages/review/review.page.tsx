@@ -56,7 +56,7 @@ export const ReviewPage = () => {
             />
           </Heading>
 
-          <Box marginTop="1">
+          <Box marginTop="2">
             <Text variant={{ size: "small", type: "muted", weight: "normal" }}>
               {t("review.estimated_reward")}
             </Text>
@@ -65,7 +65,17 @@ export const ReviewPage = () => {
 
         <Divider />
 
-        <RewardTokenDetails rewardToken={rewardToken} type="stake" />
+        {rewardToken
+          .map(() => (
+            <>
+              <Box my="4">
+                <RewardTokenDetails rewardToken={rewardToken} type="stake" />
+              </Box>
+
+              <Divider />
+            </>
+          ))
+          .extractNullable()}
 
         <Box
           display="flex"

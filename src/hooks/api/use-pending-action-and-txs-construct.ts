@@ -8,7 +8,7 @@ import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
 import { useSKWallet } from "../wallet/use-sk-wallet";
-import { withRequestErrorRetry } from "../../api/utils";
+import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 
 export const usePendingActionAndTxsConstruct = () => {
@@ -50,7 +50,6 @@ const fn = ({
             fn: () =>
               transactionConstruct(tx.id, {
                 gasArgs: gasModeValue?.gasArgs,
-                // @ts-expect-error
                 ledgerWalletAPICompatible: isLedgerLive,
               }),
           }).mapLeft(() => new Error("Transaction construct error"))

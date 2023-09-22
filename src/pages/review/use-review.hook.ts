@@ -11,8 +11,13 @@ import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
 import { useStakeState } from "../../state/stake";
 
 export const useReview = () => {
-  const { stakeAmount, selectedStake, stakeEnterTxGas, selectedValidator } =
-    useStakeState();
+  const {
+    stakeAmount,
+    selectedStake,
+    stakeEnterTxGas,
+    selectedValidator,
+    selectedTokenBalance,
+  } = useStakeState();
 
   const rewardToken = useRewardTokenDetails(selectedStake);
   const estimatedRewards = useEstimatedRewards({
@@ -32,7 +37,7 @@ export const useReview = () => {
     ""
   );
 
-  const pricesState = useSelectedStakePrice({ selectedStake });
+  const pricesState = useSelectedStakePrice({ selectedTokenBalance });
 
   const gasFeeInUSD = useMemo(
     () =>

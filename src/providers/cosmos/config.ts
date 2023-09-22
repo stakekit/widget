@@ -117,9 +117,13 @@ export class CosmosWagmiConnector extends Connector {
 
     const { address, pubkey } = result;
 
-    const prevVal = getStorageItem("skPubKeys").orDefault({}) ?? {};
+    const prevVal =
+      getStorageItem("sk-widget@1//skPubKeys").orDefault({}) ?? {};
 
-    setStorageItem("skPubKeys", { ...prevVal, [address]: toBase64(pubkey) });
+    setStorageItem("sk-widget@1//skPubKeys", {
+      ...prevVal,
+      [address]: toBase64(pubkey),
+    });
   };
 
   switchChain = async (chainId: number) => {
@@ -200,7 +204,10 @@ export const createCosmosConnector = ({
   return {
     id: wallet.walletInfo.name,
     name: wallet.walletInfo.prettyName,
-    iconUrl: wallet.walletInfo.logo ?? "",
+    iconUrl:
+      (typeof wallet.walletInfo.logo === "string"
+        ? wallet.walletInfo.logo
+        : wallet.walletInfo.logo?.major ?? wallet.walletInfo.logo?.minor) ?? "",
     iconBackground: "transparent",
     downloadUrls: {
       chrome: wallet.walletInfo.downloads?.[0].link,
@@ -257,6 +264,7 @@ export const cosmosWalletManager = new WalletManager(
   new Logger("ERROR"),
   false,
   true,
+  undefined,
   undefined,
   { signClient: { projectId: config.walletConnectV2.projectId } },
   undefined

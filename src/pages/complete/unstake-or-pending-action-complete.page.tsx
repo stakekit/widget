@@ -1,10 +1,11 @@
 import { useMatch, useParams } from "react-router-dom";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
-import { usePositionData } from "../../hooks/use-position-data";
 import { useMemo } from "react";
 import { formatTokenBalance } from "../../utils";
 import BigNumber from "bignumber.js";
 import { CompletePage } from "./common.page";
+import { Maybe } from "purify-ts";
+import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 
 export const UnstakeOrPendingActionCompletePage = () => {
   const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
@@ -15,13 +16,15 @@ export const UnstakeOrPendingActionCompletePage = () => {
 
   const integrationId = useParams<{ integrationId: string }>().integrationId!;
 
-  const { position } = usePositionData(integrationId);
+  const yieldOpportunity = useYieldOpportunity(integrationId);
+  const integrationData = useMemo(
+    () => Maybe.fromNullable(yieldOpportunity.data),
+    [yieldOpportunity.data]
+  );
 
-  const token = position.map((p) => p.integrationData.token).extractNullable();
-  const metadata = position
-    .map((p) => p.integrationData.metadata)
-    .extractNullable();
-  const network = token?.symbol ?? "";
+  const token = integrationData.map((d) => d.token);
+  const metadata = integrationData.map((d) => d.metadata).extractNullable();
+  const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
       pendingActionMatch
@@ -41,7 +44,7 @@ export const UnstakeOrPendingActionCompletePage = () => {
 
   return (
     <CompletePage
-      token={token}
+      token={token.extractNullable()}
       metadata={metadata}
       network={network}
       amount={amount}

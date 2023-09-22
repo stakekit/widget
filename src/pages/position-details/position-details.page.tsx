@@ -19,13 +19,14 @@ import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { PositionBalances } from "./components/position-balances";
+import { Maybe } from "purify-ts";
 
 export const PositionDetails = () => {
   const positionDetails = usePositionDetails();
 
   const {
+    integrationData,
     isLoading,
-    position,
     stakedOrLiquidBalance,
     stakeType,
     positionBalancesByType,
@@ -50,24 +51,18 @@ export const PositionDetails = () => {
 
   return (
     <PageContainer>
-      {isLoading && (
+      {isLoading ? (
         <Box display="flex" justifyContent="center" alignItems="center">
           <Spinner />
         </Box>
-      )}
-
-      {!isLoading &&
-        position
-          .chain((p) => stakeType.map((st) => ({ p, st })))
-          .chain((val) =>
-            positionBalancesByType.map((pbbt) => ({ ...val, pbbt }))
-          )
-          .map(({ p, st, pbbt }) => (
+      ) : (
+        Maybe.fromRecord({ integrationData, stakeType, positionBalancesByType })
+          .map((val) => (
             <Box flex={1} display="flex" flexDirection="column">
               <Box display="flex" justifyContent="center" alignItems="center">
                 <TokenIcon
-                  metadata={p.integrationData.metadata}
-                  token={p.integrationData.token}
+                  metadata={val.integrationData.metadata}
+                  token={val.integrationData.token}
                   tokenLogoHw="14"
                 />
               </Box>
@@ -79,10 +74,10 @@ export const PositionDetails = () => {
                 flexDirection="column"
               >
                 <Heading variant={{ level: "h4" }}>
-                  {p.integrationData.metadata.name}
+                  {val.integrationData.metadata.name}
                 </Heading>
                 <Text variant={{ type: "muted" }}>
-                  {p.integrationData.token.symbol}
+                  {val.integrationData.token.symbol}
                 </Text>
               </Box>
 
@@ -121,7 +116,7 @@ export const PositionDetails = () => {
                           }
                         />
                         <Text variant={{ size: "small" }}>
-                          {st}{" "}
+                          {val.stakeType}{" "}
                           {t("position_details.via", {
                             providerName: vd.name ?? vd.address ?? "",
                           })}
@@ -129,7 +124,7 @@ export const PositionDetails = () => {
                       </Box>
 
                       <HelpModal
-                        modal={{ type: p.integrationData.metadata.type }}
+                        modal={{ type: val.integrationData.metadata.type }}
                       />
                     </Box>
 
@@ -146,11 +141,11 @@ export const PositionDetails = () => {
                 >
                   <Text variant={{ weight: "normal" }}>APR</Text>
                   <Text variant={{ type: "muted", weight: "normal" }}>
-                    {apyToPercentage(p.integrationData.apy)}%
+                    {apyToPercentage(val.integrationData.apy)}%
                   </Text>
                 </Box>
 
-                {[...pbbt.values()].map((val) => (
+                {[...val.positionBalancesByType.values()].map((val) => (
                   <PositionBalances key={val.type} val={val} />
                 ))}
               </Box>
@@ -383,7 +378,8 @@ export const PositionDetails = () => {
               </Box>
             </Box>
           ))
-          .extractNullable()}
+          .extractNullable()
+      )}
     </PageContainer>
   );
 };

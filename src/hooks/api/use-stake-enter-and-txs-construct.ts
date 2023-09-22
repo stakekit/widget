@@ -9,7 +9,7 @@ import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
 import { useSKWallet } from "../wallet/use-sk-wallet";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
-import { withRequestErrorRetry } from "../../api/utils";
+import { withRequestErrorRetry } from "../../common/utils";
 
 export const useStakeEnterAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
@@ -48,7 +48,6 @@ const fn = ({
             fn: () =>
               transactionConstruct(tx.id, {
                 gasArgs: gasModeValue?.gasArgs,
-                // @ts-expect-error
                 ledgerWalletAPICompatible: isLedgerLive,
               }),
           }).mapLeft(() => new Error("Transaction construct error"))

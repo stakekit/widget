@@ -1,7 +1,7 @@
 import { EitherAsync, Right } from "purify-ts";
-import { getAverageGasMode } from "../../../api/get-gas-mode-value";
+import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { usePendingActionAndTxsConstruct } from "../../../hooks/api/use-pending-action-and-txs-construct";
-import { checkGasAmount } from "../../../api/check-gas-amount";
+import { checkGasAmount } from "../../../common/check-gas-amount";
 import { useMutation } from "@tanstack/react-query";
 import { preparePendingActionRequestDto } from "./utils";
 import { GetEitherRight } from "../../../types";

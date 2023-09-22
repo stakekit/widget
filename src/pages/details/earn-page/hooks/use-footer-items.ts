@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useStakeState } from "../../../state/stake";
-import { yieldTypesMap } from "../../../domain/types";
+import { useStakeState } from "../../../../state/stake";
+import { yieldTypesMap } from "../../../../domain/types";
 
 export const useFooterItems = () => {
   const { t } = useTranslation();

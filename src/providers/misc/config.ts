@@ -19,11 +19,32 @@ export const near = {
   },
 } as const satisfies Chain;
 
+export const tezos = {
+  id: 1729,
+  name: "Tezos",
+  iconUrl: getTokenLogo("xtz"),
+  network: "NetXdQprcVkpaWU",
+  nativeCurrency: {
+    decimals: 6,
+    name: "Tezos",
+    symbol: "XTZ",
+  },
+  rpcUrls: {
+    public: { http: ["https://rpc.tzbeta.net/"] },
+    default: { http: ["https://rpc.tzbeta.net/"] },
+  },
+} as const satisfies Chain;
+
 export const miscChainMap: MiscChainsMap = {
   [MiscNetworks.Near]: {
     type: "misc",
     skChainName: MiscNetworks.Near,
     wagmiChain: near,
+  },
+  [MiscNetworks.Tezos]: {
+    type: "misc",
+    skChainName: MiscNetworks.Tezos,
+    wagmiChain: tezos,
   },
 };
 

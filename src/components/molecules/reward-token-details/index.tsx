@@ -1,5 +1,4 @@
 import { Box } from "../../atoms/box";
-import { Divider } from "../../atoms/divider";
 import { Text } from "../../atoms/typography";
 import { Trans } from "react-i18next";
 import { inlineText } from "./style.css";
@@ -22,7 +21,7 @@ export const RewardTokenDetails = ({
   return rewardToken
     .map((rt) => (
       <>
-        <Box display="flex" alignItems="center" my="4">
+        <Box display="flex" alignItems="center">
           {rt.logoUri && <Image hw="5" src={rt.logoUri} marginRight="1" />}
 
           <Text variant={{ size: "small", weight: "semibold" }}>
@@ -52,8 +51,6 @@ export const RewardTokenDetails = ({
             />
           </Text>
         </Box>
-
-        <Divider />
       </>
     ))
     .extractNullable();

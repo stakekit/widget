@@ -1,6 +1,6 @@
 import { DefaultOptions, QueryClient } from "@tanstack/react-query";
 import { config } from "../config";
-import { isAxiosError, shouldRetryRequest } from "../api/utils";
+import { isAxiosError, shouldRetryRequest } from "../common/utils";
 
 export const defaultQueryClientConfiguration: DefaultOptions = {
   queries: {

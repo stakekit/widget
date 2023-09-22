@@ -40,7 +40,7 @@ const getAdditionalAddresses = (
 
 const getCosmosPubKey = (connector: Connector) =>
   getCosmosChainWallet(connector).chain((val) =>
-    EitherAsync.liftEither(getStorageItem("skPubKeys"))
+    EitherAsync.liftEither(getStorageItem("sk-widget@1//skPubKeys"))
       .chain((prevSkPubKeys) => {
         if (!prevSkPubKeys) return EitherAsync.liftEither(Left(null));
 

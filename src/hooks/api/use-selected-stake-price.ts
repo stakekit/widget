@@ -8,20 +8,23 @@ import { tokenToTokenDto } from "../../utils/mappers";
 import { State } from "../../state/stake/types";
 
 export const useSelectedStakePrice = ({
-  selectedStake,
+  selectedTokenBalance,
 }: {
-  selectedStake: State["selectedStake"];
+  selectedTokenBalance: State["selectedTokenBalance"];
 }) => {
   const priceRequestDto = useMemo((): PriceRequestDto | null => {
-    return selectedStake
-      .map((y) => {
+    return selectedTokenBalance
+      .map((stb) => {
         return {
           currency: config.currency,
-          tokenList: [y.token, tokenToTokenDto(getBaseToken(y.token as Token))],
+          tokenList: [
+            stb.token,
+            tokenToTokenDto(getBaseToken(stb.token as Token)),
+          ],
         };
       })
       .extractNullable();
-  }, [selectedStake]);
+  }, [selectedTokenBalance]);
 
   return usePrices(priceRequestDto);
 };

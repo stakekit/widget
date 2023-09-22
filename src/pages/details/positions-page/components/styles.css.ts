@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { atoms, vars } from "../../../styles";
+import { atoms, vars } from "../../../../styles";
 
 export const selectItemText = style({
   color: vars.color.tokenSelect,
@@ -24,8 +24,14 @@ export const tab = style({
   userSelect: "none",
 });
 
-export const rewardsDot = style({
-  position: "absolute",
-  top: "-.5px",
-  right: "-5px",
+export const dotContainer = style({
+  width: "16px",
+  height: "16px",
+  textAlign: "center",
+});
+
+export const validatorAddress = style({
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 });

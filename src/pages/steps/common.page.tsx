@@ -14,8 +14,20 @@ import cls from "clsx";
 import { Maybe } from "purify-ts";
 import { ActionDto } from "@stakekit/api-hooks";
 
-export const StepsPage = ({ session }: { session: Maybe<ActionDto> }) => {
-  const { state, onClick } = useSteps(session);
+export const StepsPage = ({
+  session,
+  onSignSuccess,
+  onSubmitSuccess,
+}: {
+  session: Maybe<ActionDto>;
+  onSignSuccess?: () => void;
+  onSubmitSuccess?: () => void;
+}) => {
+  const { state, onClick } = useSteps({
+    session,
+    onSignSuccess,
+    onSubmitSuccess,
+  });
 
   const { t } = useTranslation();
 

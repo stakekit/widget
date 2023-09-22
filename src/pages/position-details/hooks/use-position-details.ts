@@ -31,6 +31,7 @@ import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { preparePendingActionRequestDto } from "./utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
+import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
@@ -44,33 +45,42 @@ export const usePositionDetails = () => {
   const integrationId = params.integrationId;
   const defaultOrValidatorId = params.defaultOrValidatorId ?? "default";
 
+  const yieldOpportunity = useYieldOpportunity(integrationId);
+
+  const integrationData = useMemo(
+    () => Maybe.fromNullable(yieldOpportunity.data),
+    [yieldOpportunity.data]
+  );
+
   const unstakeAmount = unstake.chain((u) => u.amount);
 
-  const { position, isLoading } = usePositionData(integrationId);
+  const positionData = usePositionData(integrationId);
 
   const validatorDetails = useMemo(
     () =>
-      position.chain((p) =>
+      positionData.position.chain((p) =>
         defaultOrValidatorId === "default"
-          ? Maybe.fromNullable(p.integrationData.metadata.provider).map(
-              (v) => ({ name: v.name, logoURI: v.logoURI, address: v.id })
-            )
-          : List.find(
-              (v) => v.address === defaultOrValidatorId,
-              p.integrationData.validators
-            ).map((v) => ({
-              name: v.name,
-              logoURI: v.image,
-              address: v.address,
-            }))
+          ? integrationData
+              .chainNullable((d) => d.metadata.provider)
+              .map((v) => ({ name: v.name, logoURI: v.logoURI, address: v.id }))
+          : integrationData
+              .map((d) => d.validators)
+              .chain((val) =>
+                List.find((v) => v.address === defaultOrValidatorId, val)
+              )
+              .map((v) => ({
+                name: v.name,
+                logoURI: v.image,
+                address: v.address,
+              }))
       ),
-    [defaultOrValidatorId, position]
+    [defaultOrValidatorId, integrationData, positionData.position]
   );
 
   const { t } = useTranslation();
 
-  const stakeType = position.map((p) => {
-    switch (p.integrationData.metadata.type) {
+  const stakeType = integrationData.map((d) => {
+    switch (d.metadata.type) {
       case "staking":
         return t("position_details.staked");
 
@@ -84,7 +94,7 @@ export const usePositionDetails = () => {
     }
   });
 
-  const positionsByValidatorOrDefault = position.map(
+  const positionsByValidatorOrDefault = positionData.position.map(
     (p) => p.balanceData[defaultOrValidatorId]
   );
 
@@ -102,7 +112,7 @@ export const usePositionDetails = () => {
    * @summary Position balance by type
    */
   const positionBalancesByType = usePositionBalanceByType(
-    position,
+    positionData.position,
     defaultOrValidatorId
   );
 
@@ -110,8 +120,8 @@ export const usePositionDetails = () => {
     positionBalancesByType
   );
 
-  const unstakeText = position.map((p) => {
-    switch (p.integrationData.metadata.type) {
+  const unstakeText = integrationData.map((d) => {
+    switch (d.metadata.type) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake");
@@ -123,85 +133,87 @@ export const usePositionDetails = () => {
     }
   });
 
-  const canUnstake = position.map((p) => !!p.integrationData.args.exit);
-  const canChangeAmount = position.map(
-    (p) => !!p.integrationData.args.exit?.args?.amount?.required
+  const canUnstake = integrationData.map((d) => !!d.args.exit);
+  const canChangeAmount = integrationData.map(
+    (d) => !!d.args.exit?.args?.amount?.required
   );
 
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
-    yieldOpportunity: position.map((p) => p.integrationData),
+    yieldOpportunity: integrationData,
     type: "exit",
     positionBalancesByType,
   });
 
   // set initial unstake amount to 0
   useEffect(() => {
-    position.ifJust((p) => {
+    integrationData.ifJust((d) => {
       unstake.ifNothing(() => {
         dispatch({
           type: "unstake/amount/change",
           data: {
-            integration: p.integrationData,
+            integration: d,
             amount: Maybe.of(new BigNumber(0)),
           },
         });
       });
     });
-  }, [dispatch, integrationId, position, unstake]);
+  }, [dispatch, integrationData, unstake]);
 
   // If changing unstake amount is not allowed, set `unstakeAmount` to staked amount
   // If `unstakeAmount` is less then min or greater than max, set in bounds
+
   useEffect(() => {
-    stakedOrLiquidBalance
-      .chain((sb) => unstakeAmount.map((ua) => ({ sb, ua })))
-      .chain((val) => canChangeAmount.map((cca) => ({ ...val, cca })))
-      .chain((val) => position.map((p) => ({ ...val, p })))
-      .ifJust(({ sb, ua, cca, p }) => {
-        const sbAmount = new BigNumber(sb.amount);
-        if (!cca && !sbAmount.isEqualTo(ua)) {
+    Maybe.fromRecord({
+      stakedOrLiquidBalance,
+      unstakeAmount,
+      canChangeAmount,
+      integrationData,
+    }).ifJust((val) => {
+      const sbAmount = new BigNumber(val.stakedOrLiquidBalance.amount);
+
+      if (!val.canChangeAmount && !sbAmount.isEqualTo(val.unstakeAmount)) {
+        dispatch({
+          type: "unstake/amount/change",
+          data: {
+            integration: val.integrationData,
+            amount: Maybe.of(sbAmount),
+          },
+        });
+      } else if (val.canChangeAmount) {
+        if (val.unstakeAmount.isGreaterThan(maxEnterOrExitAmount)) {
           dispatch({
             type: "unstake/amount/change",
             data: {
-              integration: p.integrationData,
-              amount: Maybe.of(sbAmount),
+              integration: val.integrationData,
+              amount: Maybe.of(maxEnterOrExitAmount),
             },
           });
-        } else if (cca) {
-          if (ua.isGreaterThan(maxEnterOrExitAmount)) {
-            dispatch({
-              type: "unstake/amount/change",
-              data: {
-                integration: p.integrationData,
-                amount: Maybe.of(maxEnterOrExitAmount),
-              },
-            });
-          } else if (ua.isLessThan(minEnterOrExitAmount)) {
-            dispatch({
-              type: "unstake/amount/change",
-              data: {
-                integration: p.integrationData,
-                amount: Maybe.of(minEnterOrExitAmount),
-              },
-            });
-          }
+        } else if (val.unstakeAmount.isLessThan(minEnterOrExitAmount)) {
+          dispatch({
+            type: "unstake/amount/change",
+            data: {
+              integration: val.integrationData,
+              amount: Maybe.of(minEnterOrExitAmount),
+            },
+          });
         }
-      });
+      }
+    });
   }, [
     canChangeAmount,
     dispatch,
-    integrationId,
+    integrationData,
     maxEnterOrExitAmount,
     minEnterOrExitAmount,
     stakedOrLiquidBalance,
     unstakeAmount,
-    position,
   ]);
 
   const onUnstakeAmountChange = (value: Maybe<BigNumber>) => {
-    position.ifJust((p) =>
+    integrationData.ifJust((d) =>
       dispatch({
         type: "unstake/amount/change",
-        data: { integration: p.integrationData, amount: value },
+        data: { integration: d, amount: value },
       })
     );
   };
@@ -220,19 +232,20 @@ export const usePositionDetails = () => {
     .mapOrDefault((v) => `$${formatTokenBalance(v, 2)}`, "");
 
   const onMaxClick = () => {
-    stakedOrLiquidBalance
-      .chain((sb) => position.map((p) => ({ p, sb })))
-      .ifJust(({ p, sb }) => {
+    Maybe.fromRecord({ stakedOrLiquidBalance, integrationData }).ifJust(
+      (val) => {
         dispatch({
           type: "unstake/amount/change",
           data: {
-            integration: p.integrationData,
+            integration: val.integrationData,
             amount: Maybe.of(
               getMaxAmount({
                 gasEstimateTotal: new BigNumber(0),
-                availableAmount: new BigNumber(sb.amount),
+                availableAmount: new BigNumber(
+                  val.stakedOrLiquidBalance.amount
+                ),
                 integrationMaxLimit: Maybe.fromNullable(
-                  p.integrationData.args.exit?.args?.amount?.maximum
+                  val.integrationData.args.exit?.args?.amount?.maximum
                 )
                   .map((a) => new BigNumber(a))
                   .orDefault(new BigNumber(Number.POSITIVE_INFINITY)),
@@ -240,7 +253,8 @@ export const usePositionDetails = () => {
             ),
           },
         });
-      });
+      }
+    );
   };
 
   const navigate = useNavigate();
@@ -262,8 +276,8 @@ export const usePositionDetails = () => {
       false
     );
 
-  const unstakeAvailable = position.mapOrDefault(
-    (p) => p.integrationData.status.exit,
+  const unstakeAvailable = integrationData.mapOrDefault(
+    (d) => d.status.exit,
     false
   );
 
@@ -271,6 +285,7 @@ export const usePositionDetails = () => {
     !unstakeAmountValid ||
     onStakeExit.isLoading ||
     onPendingAction.isLoading ||
+    yieldOpportunity.isLoading ||
     !unstakeAvailable;
 
   const onUnstakeClick = () => {
@@ -293,15 +308,15 @@ export const usePositionDetails = () => {
     pendingActionDto: PendingActionDto;
     opportunityBalance: YieldBalanceDto;
   }) => {
-    position
-      .toEither(new Error("missing position"))
-      .chain((p) =>
+    integrationData
+      .toEither(new Error("missing integration data"))
+      .chain((d) =>
         preparePendingActionRequestDto({
           opportunityBalance,
           pendingActionDto,
           additionalAddresses,
           address,
-          integration: p.integrationData,
+          integration: d,
         })
       )
       .ifRight((pendingActionRequestDto) => {
@@ -329,8 +344,11 @@ export const usePositionDetails = () => {
     );
   }, [positionBalancesByType]);
 
+  const isLoading =
+    positionData.isLoading || prices.isLoading || yieldOpportunity.isLoading;
+
   return {
-    position,
+    integrationData,
     stakeType,
     stakedOrLiquidBalance,
     positionBalancesByType,
@@ -344,7 +362,7 @@ export const usePositionDetails = () => {
     onUnstakeClick,
     error,
     unstakeDisabled,
-    isLoading: isLoading || prices.isLoading,
+    isLoading,
     onStakeExitIsLoading: onStakeExit.isLoading,
     onPendingActionClick,
     onPendingActionIsLoading: onPendingAction.isLoading,

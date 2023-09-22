@@ -1,6 +1,6 @@
 import { List, Maybe } from "purify-ts";
 import { GroupedVirtuoso } from "react-virtuoso";
-import { SelectedStakeData } from "../types";
+import { SelectedStakeData } from "../../types";
 import {
   Box,
   CaretDownIcon,
@@ -8,18 +8,16 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
   SelectModalProps,
-  Spinner,
   Text,
-} from "../../../components";
+} from "../../../../../components";
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
-import { TokenIcon } from "../../../components/atoms/token-icon";
-import { apyToPercentage } from "../../../utils";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { apyToPercentage } from "../../../../../utils";
 import { useMemo } from "react";
-import { hideScrollbar, selectItemText } from "./styles.css";
-import { YieldDto } from "@stakekit/api-hooks";
-import { pressAnimation } from "../../../components/atoms/button/styles.css";
-import { State } from "../../../state/stake/types";
+import { ExtraData } from "../../../../../state/stake/types";
+import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
+import { hideScrollbar, selectItemText } from "../../styles.css";
 
 export const SelectOpportunity = ({
   selectedStake,
@@ -27,16 +25,12 @@ export const SelectOpportunity = ({
   onSearch,
   onItemSelect,
   onSelectOpportunityClose,
-  isLoading,
-  onEndReached,
 }: {
-  selectedStake: State["selectedStake"];
+  selectedStake: ExtraData["selectedStake"];
   selectedStakeData: Maybe<SelectedStakeData>;
   onSearch: SelectModalProps["onSearch"];
-  onItemSelect: (item: YieldDto) => void;
+  onItemSelect: (yieldId: string) => void;
   onSelectOpportunityClose: () => void;
-  isLoading: boolean;
-  onEndReached: () => void;
 }) => {
   const { t } = useTranslation();
 
@@ -95,18 +89,9 @@ export const SelectOpportunity = ({
       }
     >
       <GroupedVirtuoso
-        endReached={onEndReached}
         increaseViewportBy={{ bottom: 50, top: 0 }}
         groupCounts={data.groupCounts}
         className={hideScrollbar}
-        components={{
-          Footer: () =>
-            isLoading && (
-              <Box display="flex" justifyContent="center" marginTop="6">
-                <Spinner />
-              </Box>
-            ),
-        }}
         groupContent={(index) => {
           return (
             <Box py="4" px="4" background="background">
@@ -130,7 +115,7 @@ export const SelectOpportunity = ({
               ) : (
                 <SelectModalItem
                   testId={`select-opportunity__item_${item.id}-${index}`}
-                  onItemClick={() => onItemSelect(item)}
+                  onItemClick={() => onItemSelect(item.id)}
                 >
                   <TokenIcon
                     metadata={item.metadata}
