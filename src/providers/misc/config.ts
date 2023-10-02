@@ -38,7 +38,7 @@ export const tezos = {
 export const solana = {
   id: 501,
   name: "Solana",
-  iconUrl: getTokenLogo("solana"),
+  iconUrl: getTokenLogo("sol"),
   network: "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
   nativeCurrency: {
     decimals: 9,
