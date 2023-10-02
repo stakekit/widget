@@ -38,6 +38,8 @@ const codecs = {
 export const getStorageItem = <K extends keyof LocalStorageKV>(
   key: K
 ): Either<Error, LocalStorageValue<K> | null> => {
+  if (typeof window === "undefined") return Right(null);
+
   const val = localStorage.getItem(key);
 
   if (!val) return Right(null);
@@ -54,8 +56,10 @@ export const setStorageItem = <K extends keyof LocalStorageKV>(
   key: K,
   value: GetType<(typeof codecs)[K]>
 ) => {
-  return Either.encase(() =>
-    localStorage.setItem(key, JSON.stringify(value))
+  return Either.encase(
+    () =>
+      typeof window !== "undefined" &&
+      localStorage.setItem(key, JSON.stringify(value))
   ).ifRight(() => notify(key));
 };
 
