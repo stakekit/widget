@@ -63,10 +63,10 @@ export const useReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${setg.toPrecision(5)} ${tokenNetwork} ($${formatTokenBalance(
-              gfiu,
+            `${formatTokenBalance(
+              setg,
               6
-            )})`,
+            )} ${tokenNetwork} ($${formatTokenBalance(gfiu, 6)})`,
           ""
         ),
     [gasFeeInUSD, stakeEnterTxGas, tokenNetwork]

@@ -12,12 +12,10 @@ export const UnstakeOrPendingActionReviewPage = () => {
   const {
     integrationData,
     amount,
-    text,
+    title,
     onClick,
     fee,
-    pendingActionMatch,
-    pendingActionText,
-    pendingActionType,
+    rewardTokenDetailsProps,
   } = useUnstakeOrPendingActionReview();
 
   const { t } = useTranslation();
@@ -25,7 +23,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
   return Maybe.fromRecord({
     integrationData,
     amount,
-    text,
+    title,
   })
     .map((val) => (
       <PageContainer>
@@ -37,9 +35,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
               alignItems="center"
               marginBottom="1"
             >
-              <Heading variant={{ level: "h1" }}>
-                {pendingActionMatch ? pendingActionText.extract() : val.text}
-              </Heading>
+              <Heading variant={{ level: "h1" }}>{val.title}</Heading>
               <TokenIcon
                 token={val.integrationData.token}
                 metadata={val.integrationData.metadata}
@@ -47,33 +43,23 @@ export const UnstakeOrPendingActionReviewPage = () => {
             </Box>
 
             <Heading variant={{ level: "h1" }}>
-              {val.text} {val.integrationData.token.symbol}
+              {val.amount} {val.integrationData.token.symbol}
             </Heading>
           </Box>
 
           <Divider />
 
-          {val.integrationData.metadata.provider && (
-            <>
-              <Box my="4">
-                <RewardTokenDetails
-                  {...(pendingActionMatch
-                    ? {
-                        type: "pendingAction",
-                        pendingAction: pendingActionType.extract()!,
-                      }
-                    : { type: "unstake" })}
-                  rewardToken={Maybe.of({
-                    logoUri: val.integrationData.metadata.provider.logoURI,
-                    providerName: val.integrationData.metadata.provider.name,
-                    symbol: val.integrationData.token.symbol,
-                  })}
-                />
-              </Box>
+          {rewardTokenDetailsProps
+            .map((val) => (
+              <>
+                <Box my="4">
+                  <RewardTokenDetails {...val} />
+                </Box>
 
-              <Divider />
-            </>
-          )}
+                <Divider />
+              </>
+            ))
+            .extractNullable()}
 
           <Box
             display="flex"

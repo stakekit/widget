@@ -1,5 +1,5 @@
 import { useMatch, useNavigate, useParams } from "react-router-dom";
-import { useMemo } from "react";
+import { ComponentProps, useMemo } from "react";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
@@ -12,6 +12,7 @@ import BigNumber from "bignumber.js";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 
 export const useUnstakeOrPendingActionReview = () => {
   const params = useParams<{
@@ -43,26 +44,26 @@ export const useUnstakeOrPendingActionReview = () => {
       )
     : unstake.chain((u) => u.amount).map((val) => formatTokenBalance(val, 6));
 
-  const text = integrationData.map((d) => {
-    switch (d.metadata.type) {
-      case "staking":
-      case "liquid-staking":
-        return t("position_details.unstake");
+  const title = pendingActionMatch
+    ? pendingActionType.map((type) =>
+        t(
+          `position_details.pending_action_button.${
+            type.toLowerCase() as Lowercase<ActionTypes>
+          }`
+        )
+      )
+    : integrationData.map((d) => {
+        switch (d.metadata.type) {
+          case "staking":
+          case "liquid-staking":
+            return t("position_details.unstake");
 
-      case "lending":
-      case "vault":
-      default:
-        return t("position_details.withdraw");
-    }
-  });
-
-  const pendingActionText = pendingActionType.map((type) =>
-    t(
-      `position_details.pending_action_button.${
-        type.toLowerCase() as Lowercase<ActionTypes>
-      }`
-    )
-  );
+          case "lending":
+          case "vault":
+          default:
+            return t("position_details.withdraw");
+        }
+      });
 
   const navigate = useNavigate();
 
@@ -104,10 +105,10 @@ export const useUnstakeOrPendingActionReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${setg.toPrecision(5)} ${tokenNetwork} ($${formatTokenBalance(
-              gfiu,
+            `${formatTokenBalance(
+              setg,
               6
-            )})`,
+            )} ${tokenNetwork} ($${formatTokenBalance(gfiu, 6)})`,
           ""
         ),
     [gasFeeInUSD, txGas, tokenNetwork]
@@ -117,14 +118,32 @@ export const useUnstakeOrPendingActionReview = () => {
     navigate("../steps", { relative: "path" });
   };
 
+  const rewardTokenDetailsProps = integrationData
+    .chainNullable((v) =>
+      v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
+    )
+    .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
+      const rewardToken = Maybe.of({
+        logoUri: v.provider.logoURI,
+        providerName: v.provider.name,
+        symbol: v.rest.token.symbol,
+      });
+
+      return pendingActionMatch
+        ? {
+            type: "pendingAction",
+            pendingAction: pendingActionType.extract()!,
+            rewardToken,
+          }
+        : { type: "unstake", rewardToken };
+    });
+
   return {
     integrationData,
-    text,
+    title,
     amount,
     onClick,
     fee,
-    pendingActionMatch,
-    pendingActionText,
-    pendingActionType,
+    rewardTokenDetailsProps,
   };
 };

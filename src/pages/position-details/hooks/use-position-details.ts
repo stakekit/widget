@@ -339,10 +339,20 @@ export const usePositionDetails = () => {
         val.pendingActions.map((pa) => ({
           pendingActionDto: pa,
           opportunityBalance: val,
+          isLoading:
+            onPendingAction.variables?.pendingActionRequestDto.passthrough ===
+              pa.passthrough &&
+            onPendingAction.variables?.pendingActionRequestDto.type ===
+              pa.type &&
+            onPendingAction.isLoading,
         }))
       )
     );
-  }, [positionBalancesByType]);
+  }, [
+    onPendingAction.isLoading,
+    onPendingAction.variables?.pendingActionRequestDto,
+    positionBalancesByType,
+  ]);
 
   const isLoading =
     positionData.isLoading || prices.isLoading || yieldOpportunity.isLoading;
@@ -365,7 +375,6 @@ export const usePositionDetails = () => {
     isLoading,
     onStakeExitIsLoading: onStakeExit.isLoading,
     onPendingActionClick,
-    onPendingActionIsLoading: onPendingAction.isLoading,
     validatorDetails,
     pendingActions,
   };

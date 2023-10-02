@@ -42,7 +42,6 @@ export const PositionDetails = () => {
     error,
     unstakeDisabled,
     onPendingActionClick,
-    onPendingActionIsLoading,
     pendingActions,
     validatorDetails,
   } = positionDetails;
@@ -221,7 +220,7 @@ export const PositionDetails = () => {
                           display="flex"
                           alignItems="center"
                         >
-                          {onPendingActionIsLoading && (
+                          {pa.isLoading && (
                             <Box marginRight="3" display="flex">
                               <Spinner />
                             </Box>
@@ -235,11 +234,9 @@ export const PositionDetails = () => {
                             }
                             variant={{
                               size: "small",
-                              color: onPendingActionIsLoading
-                                ? "disabled"
-                                : "primary",
+                              color: pa.isLoading ? "disabled" : "primary",
                             }}
-                            disabled={onPendingActionIsLoading}
+                            disabled={pa.isLoading}
                           >
                             {t(
                               `position_details.pending_action_button.${
