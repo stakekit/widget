@@ -76,16 +76,18 @@ export const ImportValidator = ({
                 <SelectModalItemContainer>
                   <SelectModalItem>
                     <Box display="flex" gap="2" minWidth="0" marginRight="4">
-                      <Image
-                        hw="9"
-                        src={item.validator.image}
-                        fallback={
-                          <ImageFallback
-                            name={item.validator.name}
-                            tokenLogoHw="9"
-                          />
-                        }
-                      />
+                      <Box>
+                        <Image
+                          hw="9"
+                          src={item.validator.image}
+                          fallback={
+                            <ImageFallback
+                              name={item.validator.name}
+                              tokenLogoHw="9"
+                            />
+                          }
+                        />
+                      </Box>
 
                       <Box display="flex" flexDirection="column" minWidth="0">
                         <Box display="flex" alignItems="center">
