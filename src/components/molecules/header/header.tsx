@@ -13,7 +13,6 @@ import {
   titleStyle,
 } from "./styles.css";
 import classNames from "clsx";
-import { HelpModal } from "../help-modal";
 import { isLedgerDappBrowserProvider } from "../../../utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useContext } from "react";
@@ -59,9 +58,7 @@ export const Header = () => {
             <CaretLeftIcon />
           </Box>
         ) : (
-          <Box hw="7">
-            <HelpModal modal={{ type: "main" }} />
-          </Box>
+          <Box />
         )}
 
         {!showDisconnect && (

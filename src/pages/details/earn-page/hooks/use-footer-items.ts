@@ -154,12 +154,13 @@ export const useFooterItems = () => {
                 : t("details.liquid_stake.earn_rewards_auto", {
                     rewardSchedule,
                   }),
-            withdrawnTime:
-              cooldownPeriodDays > 0
+            withdrawnTime: y.status.exit
+              ? cooldownPeriodDays > 0
                 ? t("details.liquid_stake.unstake_time_days", {
                     cooldownPeriodDays,
                   })
-                : t("details.liquid_stake.unstake_time_immediately"),
+                : t("details.liquid_stake.unstake_time_immediately")
+              : null,
             withdrawnNotAvailable: !y.status.exit
               ? t("details.liquid_stake.withdrawn_not_available", {
                   rewardTokens,

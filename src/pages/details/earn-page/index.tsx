@@ -1,7 +1,6 @@
 import { Text } from "../../../components/atoms/typography";
 import { Box } from "../../../components/atoms/box";
 import { PageContainer } from "../../components";
-import { useTranslation } from "react-i18next";
 import { Button, Spinner } from "../../../components";
 import { Footer } from "./components/footer";
 import { SelectValidator } from "./components/select-validator";
@@ -26,9 +25,8 @@ const EarnPageComponent = () => {
     isFetching,
     isConnected,
     isLoading,
+    buttonCTAText,
   } = useDetailsContext();
-
-  const { t } = useTranslation();
 
   const title = yieldType;
 
@@ -42,6 +40,9 @@ const EarnPageComponent = () => {
             justifyContent="space-between"
           >
             <Box display="flex" alignItems="center" minHeight="8">
+              {selectedStakeYieldType && (
+                <HelpModal modal={{ type: selectedStakeYieldType }} />
+              )}
               <Text variant={{ size: "small" }}>{title}</Text>
               {(isFetching || isLoading) && (
                 <Box display="flex" marginLeft="2">
@@ -49,10 +50,6 @@ const EarnPageComponent = () => {
                 </Box>
               )}
             </Box>
-
-            {selectedStakeYieldType && (
-              <HelpModal modal={{ type: selectedStakeYieldType }} />
-            )}
           </Box>
 
           <SelectTokenSection />
@@ -98,7 +95,7 @@ const EarnPageComponent = () => {
               animation: "press",
             }}
           >
-            {t("shared.review")}
+            {buttonCTAText}
           </Button>
         ) : (
           <ConnectButton />

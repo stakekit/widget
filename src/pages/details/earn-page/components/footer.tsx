@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { dotContainer } from "../styles.css";
 import { useDetailsContext } from "../hooks/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
+import { InfoIcon } from "../../../../components/atoms/icons/info";
 
 export const Footer = () => {
   const {
@@ -30,13 +31,11 @@ export const Footer = () => {
         { text: description, icon: <ArrowsLeftRightIcon /> },
         { text: earnPeriod, icon: <ClockClockWiseIcon /> },
         { text: earnRewards, icon: <GifIcon /> },
-        { text: minimumStakeAmount, icon: null },
-        { text: withdrawnNotAvailable, icon: null },
-        { text: withdrawnTime, icon: null },
-        { text: compoundRewards, icon: null },
-      ].filter(
-        (val): val is { text: string; icon: JSX.Element | null } => !!val.text
-      ),
+        { text: minimumStakeAmount, icon: <InfoIcon /> },
+        { text: withdrawnNotAvailable, icon: <InfoIcon /> },
+        { text: withdrawnTime, icon: <InfoIcon /> },
+        { text: compoundRewards, icon: <InfoIcon /> },
+      ].filter((val): val is { text: string; icon: JSX.Element } => !!val.text),
     [
       description,
       earnPeriod,

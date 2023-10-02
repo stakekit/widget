@@ -19,7 +19,6 @@ import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
 
 type ModalType =
-  | { type: "main" }
   | { type: "fees" }
   | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false> & {
         regionCodeName: string | undefined;
@@ -46,15 +45,6 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
-      case "main": {
-        return {
-          title: t("help_modals.main.title"),
-          description: t("help_modals.main.description"),
-          image: poweredBy,
-          link: "https://stakek.it",
-        };
-      }
-
       case "staking": {
         return {
           title: t("help_modals.staking.title"),
