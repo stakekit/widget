@@ -22,6 +22,7 @@ export const SelectTokenSection = () => {
     tokenAvailableAmountIsFetching,
     tokenBalancesData,
     onSelectOpportunityClose,
+    showTokenAmount,
   } = useDetailsContext();
 
   return isLoading ? (
@@ -43,6 +44,7 @@ export const SelectTokenSection = () => {
 
         <Box display="flex" justifyContent="center" alignItems="center">
           <SelectToken
+            showTokenAmount={showTokenAmount}
             selectedTokenBalance={selectedTokenBalance}
             tokenBalances={tokenBalancesData}
             onItemSelect={onTokenBalanceSelect}

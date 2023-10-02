@@ -30,7 +30,6 @@ import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useSelectedStakePrice } from "../../../../hooks";
 import { formatTokenBalance } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
-import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { createSelector } from "reselect";
 import { yieldTypesMap } from "../../../../domain/types";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +41,7 @@ import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
+import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 
 type DetailsContextType = {
   availableTokens: string;
@@ -83,6 +83,7 @@ type DetailsContextType = {
   selectedTokenBalance: State["selectedTokenBalance"];
   tokenBalancesData: Maybe<TokenBalanceScanResponseDto[]>;
   onTokenSearch: (value: string) => void;
+  showTokenAmount: boolean;
 };
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
@@ -96,6 +97,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
+
+  const {
+    isConnected,
+    isConnecting,
+    isReconnecting,
+    isNotConnectedOrReconnecting,
+  } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -159,11 +167,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, [])
   );
 
-  const tokenBalances = useTokenBalancesScan();
+  const tokenBalancesScan = useTokensBalances();
 
   const tokenBalancesData = useMemo(
     () =>
-      Maybe.fromNullable(tokenBalances.data).chain((tb) =>
+      Maybe.fromNullable(tokenBalancesScan.data).chain((tb) =>
         Maybe.of(deferredTokenSearch)
           .chain((val) =>
             val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
@@ -177,7 +185,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           )
           .alt(Maybe.of(tb))
       ),
-    [deferredTokenSearch, tokenBalances.data]
+    [deferredTokenSearch, tokenBalancesScan.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -264,8 +272,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     yieldOpportunity: selectedStake,
   });
 
-  const { isConnected, isConnecting, isReconnecting } = useSKWallet();
-
   const amountValid = stakeAmount.mapOrDefault(
     (sa) =>
       !isConnected ||
@@ -280,7 +286,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onStakeEnter = useOnStakeEnter();
   const stakeRequestDto = useStakeEnterRequestDto();
 
-  const isError = onStakeEnter.isError || multiYields.isError;
+  const isError =
+    onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
 
   const errorMessage =
     onStakeEnter.error instanceof NotEnoughGasTokenError
@@ -305,8 +312,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const onSelectOpportunityClose = () => setStakeSearch("");
 
-  const tokenBalancesScan = useTokenBalancesScan();
-
   const isFetching =
     multiYields.isFetching || stakeTokenAvailableAmount.isFetching;
 
@@ -325,6 +330,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       stakeAmount.isNothing() ||
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
       onStakeEnter.isLoading);
+
+  const showTokenAmount = !isNotConnectedOrReconnecting;
 
   const value = {
     availableTokens,
@@ -358,6 +365,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance,
     tokenBalancesData,
     onTokenSearch,
+    showTokenAmount,
   };
 
   return (

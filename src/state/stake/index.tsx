@@ -13,13 +13,13 @@ import { Actions, ExtraData, State } from "./types";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useSavedRef } from "../../hooks";
 import {
   APIManager,
   getYieldYieldOpportunityQueryKey,
 } from "@stakekit/api-hooks";
+import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -103,7 +103,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
 
   const { address, network } = useSKWallet();
 
-  const tokenBalances = useTokenBalancesScan();
+  const tokenBalances = useTokensBalances();
 
   /**
    * Reset selectedStake if networks don't match.

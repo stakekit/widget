@@ -31,7 +31,9 @@ export const SelectToken = ({
   onSearch,
   onItemSelect,
   onSelectOpportunityClose,
+  showTokenAmount = true,
 }: {
+  showTokenAmount?: boolean;
   selectedTokenBalance: State["selectedTokenBalance"];
   tokenBalances: Maybe<TokenBalanceScanResponseDto[]>;
   onSearch: SelectModalProps["onSearch"];
@@ -119,14 +121,16 @@ export const SelectToken = ({
                       {item.token.name}
                     </Text>
 
-                    <Text
-                      variant={{
-                        size: "small",
-                        weight: "normal",
-                      }}
-                    >
-                      {formatTokenBalance(amount, 6)}
-                    </Text>
+                    {showTokenAmount && (
+                      <Text
+                        variant={{
+                          size: "small",
+                          weight: "normal",
+                        }}
+                      >
+                        {formatTokenBalance(amount, 6)}
+                      </Text>
+                    )}
                   </Box>
 
                   <Box
