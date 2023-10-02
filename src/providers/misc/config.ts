@@ -35,6 +35,22 @@ export const tezos = {
   },
 } as const satisfies Chain;
 
+export const solana = {
+  id: 501,
+  name: "Solana",
+  iconUrl: getTokenLogo("sol"),
+  network: "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
+  nativeCurrency: {
+    decimals: 9,
+    name: "Solana",
+    symbol: "SOL",
+  },
+  rpcUrls: {
+    public: { http: ["https://api.mainnet-beta.solana.com/"] },
+    default: { http: ["https://api.mainnet-beta.solana.com/"] },
+  },
+} as const satisfies Chain;
+
 export const miscChainMap: MiscChainsMap = {
   [MiscNetworks.Near]: {
     type: "misc",
@@ -45,6 +61,11 @@ export const miscChainMap: MiscChainsMap = {
     type: "misc",
     skChainName: MiscNetworks.Tezos,
     wagmiChain: tezos,
+  },
+  [MiscNetworks.Solana]: {
+    type: "misc",
+    skChainName: MiscNetworks.Solana,
+    wagmiChain: solana,
   },
 };
 

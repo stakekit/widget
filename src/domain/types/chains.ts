@@ -70,6 +70,7 @@ export type EvmChainsMap = {
 export const supportedMiscChains = [
   MiscNetworks.Near,
   MiscNetworks.Tezos,
+  MiscNetworks.Solana,
 ] as const;
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
 export type SupportedMiscChains = (typeof supportedMiscChains)[number];
@@ -97,7 +98,7 @@ export type SupportedSKChains =
   | SupportedMiscChains;
 
 export type SupportedLedgerLiveFamilies =
-  | Extract<Families, "ethereum" | "near" | "tezos">
+  | Extract<Families, "ethereum" | "near" | "tezos" | "solana">
   | SupportedCosmosChains;
 
 export type SupportedLedgerLiveFamiliesMap = {

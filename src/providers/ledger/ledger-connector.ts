@@ -13,7 +13,7 @@ import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { CosmosNetworks } from "@stakekit/common";
 import { isCosmosChain } from "../../domain";
 import { cosmosChainsMap } from "../cosmos/chains";
-import { near, tezos } from "../misc/config";
+import { near, solana, tezos } from "../misc/config";
 import {
   SupportedLedgerLiveFamilies,
   SupportedLedgerLiveFamiliesMap,
@@ -51,6 +51,7 @@ export class LedgerLiveConnector extends Connector {
     ethereum: { currencyFamily: "ethereum", chain: mainnet },
     near: { currencyFamily: "near", chain: near },
     tezos: { currencyFamily: "tezos", chain: tezos },
+    solana: { currencyFamily: "solana", chain: solana },
   };
 
   static readonly #skSupportedChainsValues = Object.values(
