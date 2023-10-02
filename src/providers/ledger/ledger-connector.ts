@@ -13,8 +13,11 @@ import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { CosmosNetworks } from "@stakekit/common";
 import { isCosmosChain } from "../../domain";
 import { cosmosChainsMap } from "../cosmos/chains";
-import { SupportedCosmosChains } from "../../domain/types/chains";
-import { near } from "../misc/config";
+import { near, solana, tezos } from "../misc/config";
+import {
+  SupportedLedgerLiveFamilies,
+  SupportedLedgerLiveFamiliesMap,
+} from "../../domain/types/chains";
 
 export class LedgerLiveConnector extends Connector {
   readonly id = "ledgerLive";
@@ -30,7 +33,7 @@ export class LedgerLiveConnector extends Connector {
   #accountsOnCurrentChain: Account[] = [];
   #currentAccount?: Account;
 
-  static readonly #skSupportedChains: SupportedFamiliesMap = {
+  static readonly #skSupportedChains: SupportedLedgerLiveFamiliesMap = {
     ...(Object.fromEntries(
       Object.values(cosmosChainsMap).map(
         (c) =>
@@ -41,12 +44,14 @@ export class LedgerLiveConnector extends Connector {
       )
     ) as {
       [Key in keyof typeof cosmosChainsMap]: {
-        currencyFamily: SupportedFamilies;
+        currencyFamily: SupportedLedgerLiveFamilies;
         chain: Chain;
       };
     }),
     ethereum: { currencyFamily: "ethereum", chain: mainnet },
     near: { currencyFamily: "near", chain: near },
+    tezos: { currencyFamily: "tezos", chain: tezos },
+    solana: { currencyFamily: "solana", chain: solana },
   };
 
   static readonly #skSupportedChainsValues = Object.values(
@@ -54,7 +59,7 @@ export class LedgerLiveConnector extends Connector {
   );
   static readonly #skSupportedChainsKeys = Object.keys(
     LedgerLiveConnector.#skSupportedChains
-  ) as (keyof SupportedFamiliesMap)[];
+  ) as (keyof SupportedLedgerLiveFamiliesMap)[];
 
   #currentChain: Chain | null = null;
   chains: Chain[];
@@ -108,7 +113,7 @@ export class LedgerLiveConnector extends Connector {
 
     this.#currentChain =
       LedgerLiveConnector.#skSupportedChains[
-        this.#currentAccount.currency as keyof SupportedFamiliesMap
+        this.#currentAccount.currency as keyof SupportedLedgerLiveFamiliesMap
       ].chain;
 
     this.#accountsOnCurrentChain = this.#getAccountsOnCurrentChain();
@@ -265,12 +270,4 @@ const ledgerLive = (): Wallet => {
 export const ledgerLiveConnector = {
   groupName: "Ledger Live",
   wallets: [ledgerLive()],
-};
-
-type SupportedFamilies = "ethereum" | "near" | SupportedCosmosChains;
-type SupportedFamiliesMap = {
-  [Key in SupportedFamilies]: {
-    currencyFamily: SupportedFamilies;
-    chain: Chain;
-  };
 };

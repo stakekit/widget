@@ -9,6 +9,17 @@ export const isAxiosError = (error: unknown): error is AxiosError => {
 export const shouldRetryRequest = (error: AxiosError) =>
   !!(error.response?.status && error.response.status >= 500);
 
+const _shouldRetry = ({
+  error,
+  retryCount,
+  retryTimes,
+}: {
+  error: unknown;
+  retryCount: number;
+  retryTimes: number;
+}) =>
+  isAxiosError(error) && shouldRetryRequest(error) && retryCount < retryTimes;
+
 /**
  *
  * @summary Retry with exponential backoff. Fire once + retry times
@@ -34,13 +45,10 @@ export const withRequestErrorRetry = <
       } catch (error) {
         let err = error;
 
-        const retry = shouldRetry
-          ? shouldRetry(err, retryCount)
-          : isAxiosError(err) &&
-            shouldRetryRequest(err) &&
-            retryCount < retryTimes;
-
-        while (retry) {
+        while (
+          shouldRetry?.(error, retryCount) ??
+          _shouldRetry({ error: err, retryCount, retryTimes })
+        ) {
           try {
             await waitForMs(2 ** (retryCount + 1) * 1000);
 

@@ -1,6 +1,7 @@
 import {
   coinbaseWallet,
   injectedWallet,
+  ledgerWallet,
   omniWallet,
   rainbowWallet,
   walletConnectWallet,
@@ -94,5 +95,9 @@ export const connector = {
       projectId: config.walletConnectV2.projectId,
     }),
     coinbaseWallet({ chains: evmChains, appName: config.appName }),
+    ledgerWallet({
+      chains: evmChains,
+      projectId: config.walletConnectV2.projectId,
+    }),
   ],
 };

@@ -20,9 +20,9 @@ import {
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
-import { getAverageGasMode } from "../../api/get-gas-mode-value";
+import { getAverageGasMode } from "../../common/get-gas-mode-value";
 import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
-import { isAxiosError, withRequestErrorRetry } from "../../api/utils";
+import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
 
 const tt = t as <T extends unknown>() => {
@@ -97,7 +97,6 @@ export const useStepsMachine = () => {
                           fn: () =>
                             transactionConstruct(tx.id, {
                               gasArgs: gas?.gasArgs,
-                              // @ts-expect-error
                               ledgerWalletAPICompatible: isLedgerLive,
                             }),
                         }).mapLeft(() => new TransactionConstructError())

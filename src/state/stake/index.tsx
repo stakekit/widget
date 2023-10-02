@@ -13,7 +13,13 @@ import { Actions, ExtraData, State } from "./types";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useYields } from "../../hooks/api/opportunities";
+import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import { useSavedRef } from "../../hooks";
+import {
+  APIManager,
+  getYieldYieldOpportunityQueryKey,
+} from "@stakekit/api-hooks";
+import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -23,7 +29,8 @@ const StakeDispatchContext = createContext<Dispatch<Actions> | undefined>(
 );
 
 const getInitialState = (): State => ({
-  selectedStake: Maybe.empty(),
+  selectedTokenBalance: Maybe.empty(),
+  selectedStakeId: Maybe.empty(),
   selectedValidator: Maybe.empty(),
   stakeAmount: Maybe.of(new BigNumber(0)),
 });
@@ -31,17 +38,26 @@ const getInitialState = (): State => ({
 export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
-      case "stake/select":
+      case "tokenBalance/select": {
+        const selectedStakeId = List.head(
+          action.data.tokenBalance.availableYields
+        );
+
+        return {
+          selectedTokenBalance: Maybe.of(action.data.tokenBalance),
+          selectedStakeId,
+          stakeAmount: Maybe.of(new BigNumber(0)),
+          selectedValidator: action.data.initYield.chain((val) =>
+            List.head(val.validators)
+          ),
+        };
+      }
+      case "yield/select":
         return {
           ...state,
-          selectedValidator: Maybe.empty(),
-          selectedStake: Maybe.of(action.data),
-          stakeAmount: Maybe.fromNullable(
-            action.data.args.enter.args?.amount?.minimum
-          )
-            .toEither(new BigNumber(0))
-            .map((min) => new BigNumber(min))
-            .toMaybe(),
+          selectedStakeId: Maybe.of(action.data.id),
+          selectedValidator: List.head(action.data.validators),
+          stakeAmount: Maybe.of(new BigNumber(0)),
         };
       case "validator/select": {
         return {
@@ -71,49 +87,78 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
 
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
-  const { selectedValidator, selectedStake, stakeAmount } = state;
+  const {
+    selectedTokenBalance,
+    selectedStakeId,
+    selectedValidator,
+    stakeAmount,
+  } = state;
+
+  const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
+
+  const selectedStake = useMemo(
+    () => Maybe.fromNullable(yieldOpportunity.data),
+    [yieldOpportunity.data]
+  );
 
   const { address, network } = useSKWallet();
+
+  const tokenBalances = useTokensBalances();
 
   /**
    * Reset selectedStake if networks don't match.
    * Can happen on initial load with default selected stake
    */
-  selectedStake.ifJust((ss) => {
-    network &&
-      ss.token.network !== network &&
+  selectedTokenBalance.ifJust((ss) => {
+    if (network && ss.token.network !== network) {
       dispatch({ type: "state/reset" });
+    }
   });
 
-  const ops = useYields();
-
-  /**
-   * Set initial stake opportunity
-   */
-  useEffect(() => {
-    Maybe.fromNullable(ops.data?.pages)
-      .chain((val) => List.head(val))
-      .chain((val) => List.find((v) => v.status.enter, val.data))
+  const trySetInitialTokenBalance = useSavedRef(() => {
+    Maybe.fromNullable(tokenBalances.data)
+      .chain((val) =>
+        List.find((v) => !!v.availableYields.length, val).alt(List.head(val))
+      )
       .ifJust((val) =>
         dispatch({
-          type: "stake/select",
-          data: val,
+          type: "tokenBalance/select",
+          data: {
+            tokenBalance: val,
+            initYield: List.head(val.availableYields).chainNullable(
+              (yId) =>
+                APIManager.getQueryClient()?.getQueryData(
+                  getYieldYieldOpportunityQueryKey(yId)
+                )
+            ),
+          },
         })
       );
-  }, [address, ops.data?.pages]);
+  });
+
+  /**
+   * Set initial token balance if:
+   * - address changed
+   * - selectedTokenBalance is nothing
+   * - tokenBalances changed
+   */
+  selectedTokenBalance.ifNothing(() => trySetInitialTokenBalance.current());
+  useEffect(() => {
+    trySetInitialTokenBalance.current();
+  }, [address, tokenBalances.data, trySetInitialTokenBalance]);
 
   /**
    * Set initial validator
    */
   useEffect(() => {
-    selectedStake.ifJust((ss) => {
-      selectedValidator.ifNothing(() => {
-        List.head(ss.validators).ifJust((val) =>
+    Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) =>
+      selectedValidator.ifNothing(() =>
+        List.head(yo.validators).ifJust((val) =>
           dispatch({ type: "validator/select", data: val })
-        );
-      });
-    });
-  }, [selectedStake, selectedValidator]);
+        )
+      )
+    );
+  }, [selectedValidator, yieldOpportunity.data]);
 
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
@@ -121,18 +166,20 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     stakeEnterAndTxsConstruct.data?.stakeEnterRes
   );
 
-  const stakeEnterTxGas = useMemo(() => {
-    return Maybe.fromNullable(stakeEnterAndTxsConstruct.data).map((val) =>
-      val.transactionConstructRes.reduce(
-        (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-        new BigNumber(0)
-      )
-    );
-  }, [stakeEnterAndTxsConstruct.data]);
+  const stakeEnterTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(stakeEnterAndTxsConstruct.data).map((val) =>
+        val.transactionConstructRes.reduce(
+          (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+          new BigNumber(0)
+        )
+      ),
+    [stakeEnterAndTxsConstruct.data]
+  );
 
   const { maxEnterOrExitAmount } = useMaxMinYieldAmount({
     type: "enter",
-    yieldOpportunity: selectedStake,
+    yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
   });
 
   const actions = useMemo(
@@ -149,20 +196,24 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
 
   const value: State & ExtraData = useMemo(
     () => ({
-      selectedValidator,
+      selectedStakeId,
       selectedStake,
+      selectedTokenBalance,
+      selectedValidator,
       stakeAmount,
       stakeSession,
       actions,
       stakeEnterTxGas,
     }),
     [
-      selectedValidator,
-      selectedStake,
-      stakeAmount,
-      stakeSession,
       actions,
+      selectedStake,
+      selectedStakeId,
+      selectedTokenBalance,
+      selectedValidator,
+      stakeAmount,
       stakeEnterTxGas,
+      stakeSession,
     ]
   );
 

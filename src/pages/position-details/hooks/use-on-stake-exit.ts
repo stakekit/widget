@@ -1,8 +1,8 @@
 import { EitherAsync, Right } from "purify-ts";
 import { useMutation } from "@tanstack/react-query";
-import { getAverageGasMode } from "../../../api/get-gas-mode-value";
+import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-and-txs-construct";
-import { checkGasAmount } from "../../../api/check-gas-amount";
+import { checkGasAmount } from "../../../common/check-gas-amount";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 
 export const useOnStakeExit = () => {
@@ -25,7 +25,7 @@ export const useOnStakeExit = () => {
         EitherAsync(() =>
           stakeExitAndTxsConstruct.mutateAsync({
             gasModeValue: val.gas ?? undefined,
-            stakeRequestDto: val.stakeRequestDto,
+            stakeRequestDto: val.stakeRequestDto.dto,
           })
         )
           .map((res) => ({ ...val, ...res }))
@@ -34,8 +34,9 @@ export const useOnStakeExit = () => {
       .chain(({ stakeRequestDto, stakeExitRes, transactionConstructRes }) =>
         checkGasAmount({
           addressWithTokenDto: {
-            address: stakeRequestDto.addresses.address,
-            additionalAddresses: stakeRequestDto.addresses.additionalAddresses,
+            address: stakeRequestDto.dto.addresses.address,
+            additionalAddresses:
+              stakeRequestDto.dto.addresses.additionalAddresses,
             network: stakeRequestDto.gasFeeToken.network,
             tokenAddress: stakeRequestDto.gasFeeToken.address,
           },

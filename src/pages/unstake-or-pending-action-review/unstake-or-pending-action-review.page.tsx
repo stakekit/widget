@@ -10,22 +10,22 @@ import { feeStyles } from "../review/style.css";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {
+    integrationData,
     amount,
-    position,
-    text,
+    title,
     onClick,
     fee,
-    pendingActionMatch,
-    pendingActionText,
-    pendingActionType,
+    rewardTokenDetailsProps,
   } = useUnstakeOrPendingActionReview();
 
   const { t } = useTranslation();
 
-  return position
-    .chain((p) => amount.map((ua) => ({ p, ua })))
-    .chain((val) => text.map((ut) => ({ ...val, ut })))
-    .map(({ p, ua, ut }) => (
+  return Maybe.fromRecord({
+    integrationData,
+    amount,
+    title,
+  })
+    .map((val) => (
       <PageContainer>
         <Box>
           <Box marginBottom="4">
@@ -35,37 +35,31 @@ export const UnstakeOrPendingActionReviewPage = () => {
               alignItems="center"
               marginBottom="1"
             >
-              <Heading variant={{ level: "h1" }}>
-                {pendingActionMatch ? pendingActionText.extract() : ut}
-              </Heading>
+              <Heading variant={{ level: "h1" }}>{val.title}</Heading>
               <TokenIcon
-                token={p.integrationData.token}
-                metadata={p.integrationData.metadata}
+                token={val.integrationData.token}
+                metadata={val.integrationData.metadata}
               />
             </Box>
 
             <Heading variant={{ level: "h1" }}>
-              {ua} {p.integrationData.token.symbol}
+              {val.amount} {val.integrationData.token.symbol}
             </Heading>
           </Box>
 
           <Divider />
 
-          {p.integrationData.metadata.provider && (
-            <RewardTokenDetails
-              {...(pendingActionMatch
-                ? {
-                    type: "pendingAction",
-                    pendingAction: pendingActionType.extract()!,
-                  }
-                : { type: "unstake" })}
-              rewardToken={Maybe.of({
-                logoUri: p.integrationData.metadata.provider.logoURI,
-                providerName: p.integrationData.metadata.provider.name,
-                symbol: p.integrationData.token.symbol,
-              })}
-            />
-          )}
+          {rewardTokenDetailsProps
+            .map((val) => (
+              <>
+                <Box my="4">
+                  <RewardTokenDetails {...val} />
+                </Box>
+
+                <Divider />
+              </>
+            ))
+            .extractNullable()}
 
           <Box
             display="flex"

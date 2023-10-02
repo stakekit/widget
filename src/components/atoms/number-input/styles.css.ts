@@ -28,5 +28,6 @@ export const spanStyle = style([
   {
     position: "absolute",
     visibility: "hidden",
+    right: "100%",
   },
 ]);

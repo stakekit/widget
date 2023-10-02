@@ -1,14 +1,16 @@
 import { useMemo } from "react";
 import { apyToPercentage } from "../utils";
 import { State } from "../state/stake/types";
+import { YieldDto } from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 
 export const useEstimatedRewards = ({
-  stakeAmount,
   selectedStake,
+  stakeAmount,
   selectedValidator,
 }: {
+  selectedStake: Maybe<YieldDto>;
   stakeAmount: State["stakeAmount"];
-  selectedStake: State["selectedStake"];
   selectedValidator: State["selectedValidator"];
 }) => {
   return useMemo(() => {

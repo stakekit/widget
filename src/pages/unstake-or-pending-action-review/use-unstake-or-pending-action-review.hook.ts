@@ -1,5 +1,5 @@
 import { useMatch, useNavigate, useParams } from "react-router-dom";
-import { useMemo } from "react";
+import { ComponentProps, useMemo } from "react";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
@@ -7,11 +7,12 @@ import { Token } from "@stakekit/common";
 import { tokenToTokenDto } from "../../utils/mappers";
 import { Maybe } from "purify-ts";
 import { formatTokenBalance } from "../../utils";
-import { usePositionData } from "../../hooks/use-position-data";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 import { ActionTypes } from "@stakekit/api-hooks";
+import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 
 export const useUnstakeOrPendingActionReview = () => {
   const params = useParams<{
@@ -21,7 +22,11 @@ export const useUnstakeOrPendingActionReview = () => {
 
   const integrationId = params.integrationId;
 
-  const { position } = usePositionData(integrationId);
+  const yieldOpportunity = useYieldOpportunity(integrationId);
+  const integrationData = useMemo(
+    () => Maybe.fromNullable(yieldOpportunity.data),
+    [yieldOpportunity.data]
+  );
 
   const pendingActionMatch = useMatch(
     "pending-action/:integrationId/:defaultOrValidatorId/review"
@@ -39,26 +44,26 @@ export const useUnstakeOrPendingActionReview = () => {
       )
     : unstake.chain((u) => u.amount).map((val) => formatTokenBalance(val, 6));
 
-  const text = position.map((p) => {
-    switch (p.integrationData.metadata.type) {
-      case "staking":
-      case "liquid-staking":
-        return t("position_details.unstake");
+  const title = pendingActionMatch
+    ? pendingActionType.map((type) =>
+        t(
+          `position_details.pending_action_button.${
+            type.toLowerCase() as Lowercase<ActionTypes>
+          }`
+        )
+      )
+    : integrationData.map((d) => {
+        switch (d.metadata.type) {
+          case "staking":
+          case "liquid-staking":
+            return t("position_details.unstake");
 
-      case "lending":
-      case "vault":
-      default:
-        return t("position_details.withdraw");
-    }
-  });
-
-  const pendingActionText = pendingActionType.map((type) =>
-    t(
-      `position_details.pending_action_button.${
-        type.toLowerCase() as Lowercase<ActionTypes>
-      }`
-    )
-  );
+          case "lending":
+          case "vault":
+          default:
+            return t("position_details.withdraw");
+        }
+      });
 
   const navigate = useNavigate();
 
@@ -69,42 +74,30 @@ export const useUnstakeOrPendingActionReview = () => {
 
   const pricesState = usePrices({
     currency: config.currency,
-    tokenList: position.mapOrDefault(
-      (p) => [
-        p.integrationData.token,
-        tokenToTokenDto(getBaseToken(p.integrationData.token as Token)),
-      ],
+    tokenList: integrationData.mapOrDefault(
+      (d) => [d.token, tokenToTokenDto(getBaseToken(d.token as Token))],
       []
     ),
   });
 
   const gasFeeInUSD = useMemo(
     () =>
-      position
-        .chain((p) =>
-          Maybe.fromNullable(pricesState.data).map((prices) => ({ prices, p }))
-        )
-        .chain((val) =>
-          txGas.map((gas) => ({
-            ...val,
-            gas,
-          }))
-        )
-        .map(({ prices, p, gas }) =>
-          getTokenPriceInUSD({
-            amount: gas.toString(),
-            prices,
-            token: getBaseToken(p.integrationData.token as Token),
-            pricePerShare: undefined,
-          })
-        ),
-    [position, pricesState.data, txGas]
+      Maybe.fromRecord({
+        integrationData,
+        prices: Maybe.fromNullable(pricesState.data),
+        txGas,
+      }).map((val) =>
+        getTokenPriceInUSD({
+          amount: val.txGas.toString(),
+          prices: val.prices,
+          token: getBaseToken(val.integrationData.token as Token),
+          pricePerShare: undefined,
+        })
+      ),
+    [integrationData, pricesState.data, txGas]
   );
 
-  const tokenNetwork = position.mapOrDefault(
-    (p) => p.integrationData.token.network,
-    ""
-  );
+  const tokenNetwork = integrationData.mapOrDefault((d) => d.token.network, "");
 
   const fee = useMemo(
     () =>
@@ -112,10 +105,10 @@ export const useUnstakeOrPendingActionReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${setg.toPrecision(5)} ${tokenNetwork} ($${formatTokenBalance(
-              gfiu,
+            `${formatTokenBalance(
+              setg,
               6
-            )})`,
+            )} ${tokenNetwork} ($${formatTokenBalance(gfiu, 6)})`,
           ""
         ),
     [gasFeeInUSD, txGas, tokenNetwork]
@@ -125,14 +118,32 @@ export const useUnstakeOrPendingActionReview = () => {
     navigate("../steps", { relative: "path" });
   };
 
+  const rewardTokenDetailsProps = integrationData
+    .chainNullable((v) =>
+      v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
+    )
+    .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
+      const rewardToken = Maybe.of({
+        logoUri: v.provider.logoURI,
+        providerName: v.provider.name,
+        symbol: v.rest.token.symbol,
+      });
+
+      return pendingActionMatch
+        ? {
+            type: "pendingAction",
+            pendingAction: pendingActionType.extract()!,
+            rewardToken,
+          }
+        : { type: "unstake", rewardToken };
+    });
+
   return {
-    text,
+    integrationData,
+    title,
     amount,
-    position,
     onClick,
     fee,
-    pendingActionMatch,
-    pendingActionText,
-    pendingActionType,
+    rewardTokenDetailsProps,
   };
 };

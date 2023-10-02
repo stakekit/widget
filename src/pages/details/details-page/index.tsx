@@ -1,20 +1,23 @@
-import { Box } from "../../components/atoms/box";
-import { Divider } from "../../components/atoms/divider";
+import { Box } from "../../../components/atoms/box";
+import { Divider } from "../../../components/atoms/divider";
 import { Tabs, TabsProps } from "./components/tabs";
 import { Location, Outlet, useNavigate } from "react-router-dom";
-import { useLocationTransition } from "../../providers/location-transition";
+import { useLocationTransition } from "../../../providers/location-transition";
 import { useMemo, useState } from "react";
-import { usePositions } from "./hooks/use-positions";
+import { usePositions } from "../positions-page/hooks/use-positions";
 
 export const Details = () => {
   const { location, transitionClassName, onAnimationEnd } =
     useLocationTransition();
 
-  const { data } = usePositions();
+  const { positionsData } = usePositions();
 
   const hasPendingRewards = useMemo(
-    () => data.some((p) => p.balances.some((b) => b.type === "rewards")),
-    [data]
+    () =>
+      positionsData.data.some((p) =>
+        p.balances.some((b) => b.type === "rewards")
+      ),
+    [positionsData.data]
   );
 
   const navigate = useNavigate();

@@ -15,26 +15,28 @@ export const useStakeExitRequestDto = ({
 
   return useMemo(
     () =>
-      Maybe.fromNullable(address)
-        .chain((addr) => unstake.map((u) => ({ u, addr })))
-        .chain((val) => val.u.amount.map((amount) => ({ ...val, amount })))
-        .chain((val) => balance.map((sb) => ({ ...val, sb })))
-        .map<
-          ActionRequestDto & {
-            gasFeeToken: YieldDto["token"];
-          }
-        >((val) => ({
-          gasFeeToken: val.u.integration.metadata.gasFeeToken,
+      Maybe.fromRecord({
+        address: Maybe.fromNullable(address),
+        unstake,
+        unstakeAmount: unstake.chain((val) => val.amount),
+        balance,
+      }).map<{
+        gasFeeToken: YieldDto["token"];
+        dto: ActionRequestDto;
+      }>((val) => ({
+        gasFeeToken: val.unstake.integration.metadata.gasFeeToken,
+        dto: {
           addresses: {
-            address: val.addr,
+            address: val.address,
             additionalAddresses: additionalAddresses ?? undefined,
           },
-          integrationId: val.u.integration.id,
+          integrationId: val.unstake.integration.id,
           args: {
-            amount: val.amount.toString(),
-            validatorAddress: val.sb.validatorAddress,
+            amount: val.unstakeAmount.toString(),
+            validatorAddress: val.balance.validatorAddress,
           },
-        })),
+        },
+      })),
     [additionalAddresses, address, balance, unstake]
   );
 };

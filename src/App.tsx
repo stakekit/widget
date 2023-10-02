@@ -26,6 +26,7 @@ import {
   UnstakeOrPendingActionCompletePage,
   PositionsPage,
   EarnPage,
+  Details,
 } from "./pages";
 import { Box } from "./components";
 import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
@@ -48,7 +49,6 @@ import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
-import { Details } from "./pages/details/details.page";
 
 const Widget = () => {
   useToggleTheme();
@@ -108,14 +108,14 @@ const Widget = () => {
           <Route element={<Layout />}>
             <Route element={<Details />}>
               <Route index element={<EarnPage />} />
-              <Route path="positions" element={<PositionsPage />} />S
+              <Route path="positions" element={<PositionsPage />} />
             </Route>
 
             <Route element={<ConnectedCheck />}>
               <Route element={<StakeCheck />}>
                 <Route path="review" element={<ReviewPage />} />
                 <Route path="steps" element={<StakeStepsPage />} />
-                <Route path="complete" element={<StakeCompletePage />} />R
+                <Route path="complete" element={<StakeCompletePage />} />
               </Route>
 
               <Route

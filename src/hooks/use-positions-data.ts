@@ -1,13 +1,13 @@
 import {
   YieldBalanceDto,
-  YieldBalancesWithMetadataDto,
+  YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
 import { useMemo } from "react";
-import { useYieldYieldBalancesScan } from "./api/use-yield-balances-scan";
+import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
 
 export const usePositionsData = () => {
-  const yieldYieldBalancesScan = useYieldYieldBalancesScan();
+  const yieldYieldBalancesScan = useYieldBalancesScan();
 
   const data = useMemo<ReturnType<typeof positionsDataSelector>>(() => {
     return yieldYieldBalancesScan.data
@@ -24,12 +24,12 @@ export const usePositionsData = () => {
 type ValidatorAddress = NonNullable<YieldBalanceDto["validatorAddress"]>;
 
 const positionsDataSelector = createSelector(
-  (balancesData: YieldBalancesWithMetadataDto[]) => balancesData,
+  (balancesData: YieldBalancesWithIntegrationIdDto[]) => balancesData,
   (balancesData) =>
     balancesData.reduce(
       (acc, val) => {
-        acc.set(val.id, {
-          integrationData: val,
+        acc.set(val.integrationId, {
+          integrationId: val.integrationId,
           balanceData: val.balances.reduce(
             (acc, b) => {
               if (b.validatorAddress) {
@@ -50,9 +50,9 @@ const positionsDataSelector = createSelector(
         return acc;
       },
       new Map<
-        YieldBalancesWithMetadataDto["id"],
+        YieldBalancesWithIntegrationIdDto["integrationId"],
         {
-          integrationData: Omit<YieldBalancesWithMetadataDto, "balances">;
+          integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
           balanceData: {
             default: YieldBalanceDto[];
           } & Record<ValidatorAddress, YieldBalanceDto[]>;

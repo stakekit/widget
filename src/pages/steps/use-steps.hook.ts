@@ -3,9 +3,20 @@ import { useNavigate } from "react-router-dom";
 import { useStepsMachine } from "./use-steps-machine.hook";
 import { ActionDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import { useSavedRef } from "../../hooks";
 
-export const useSteps = (session: Maybe<ActionDto>) => {
+export const useSteps = ({
+  session,
+  onSignSuccess,
+  onSubmitSuccess,
+}: {
+  onSignSuccess?: () => void;
+  onSubmitSuccess?: () => void;
+  session: Maybe<ActionDto>;
+}) => {
   const navigate = useNavigate();
+
+  const callbacksRef = useSavedRef({ onSignSuccess, onSubmitSuccess });
 
   const [machine, send] = useStepsMachine();
 
@@ -20,6 +31,14 @@ export const useSteps = (session: Maybe<ActionDto>) => {
 
     send({ type: "START", id });
   }, [id, send]);
+
+  useEffect(() => {
+    if (machine.event.type === "SIGN_SUCCESS") {
+      callbacksRef.current.onSignSuccess?.();
+    } else if (machine.event.type === "BROADCAST_SUCCESS") {
+      callbacksRef.current.onSubmitSuccess?.();
+    }
+  }, [machine.event.type, callbacksRef]);
 
   /**
    *

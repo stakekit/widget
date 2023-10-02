@@ -1,6 +1,7 @@
 import { Chain } from "@stakekit/rainbowkit";
 import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
+import { Families } from "@ledgerhq/wallet-api-client";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,
@@ -66,7 +67,11 @@ export type EvmChainsMap = {
   };
 };
 
-export const supportedMiscChains = [MiscNetworks.Near] as const;
+export const supportedMiscChains = [
+  MiscNetworks.Near,
+  MiscNetworks.Tezos,
+  MiscNetworks.Solana,
+] as const;
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
 export type SupportedMiscChains = (typeof supportedMiscChains)[number];
 export type MiscChainsMap = {
@@ -91,3 +96,14 @@ export type SupportedSKChains =
   | SupportedCosmosChains
   | SupportedEvmChain
   | SupportedMiscChains;
+
+export type SupportedLedgerLiveFamilies =
+  | Extract<Families, "ethereum" | "near" | "tezos" | "solana">
+  | SupportedCosmosChains;
+
+export type SupportedLedgerLiveFamiliesMap = {
+  [Key in SupportedLedgerLiveFamilies]: {
+    currencyFamily: SupportedLedgerLiveFamilies;
+    chain: Chain;
+  };
+};

@@ -14,7 +14,7 @@ export const TokenIcon = ({
   tokenNetworkLogoHw,
 }: {
   token: TokenDto;
-  metadata: YieldMetadataDto;
+  metadata?: YieldMetadataDto;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];
 }) => {
@@ -22,10 +22,10 @@ export const TokenIcon = ({
     <Box position="relative" marginRight="2" display="flex">
       <Image
         hw={tokenLogoHw ?? "9"}
-        src={metadata.logoURI ?? token.logoURI}
+        src={metadata?.logoURI ?? token.logoURI}
         fallback={
           <ImageFallback
-            name={metadata.name ?? token.name}
+            name={metadata?.name ?? token.name}
             tokenLogoHw={tokenLogoHw ?? "9"}
           />
         }

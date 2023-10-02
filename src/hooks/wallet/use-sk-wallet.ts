@@ -176,6 +176,7 @@ export const useSKWallet = (): SKWallet => {
         chain,
         isConnected: true,
         isConnecting: false,
+        isNotConnectedOrReconnecting: false,
         additionalAddresses: additionalAddresses ?? null,
         isLedgerLive,
       };
@@ -188,6 +189,7 @@ export const useSKWallet = (): SKWallet => {
       chain: null,
       isConnected: false,
       isConnecting,
+      isNotConnectedOrReconnecting: !isReconnecting && !isConnecting,
       additionalAddresses: null,
       isLedgerLive: false,
     };
