@@ -142,8 +142,8 @@
       "lending": "supplied"
     },
     "unstake": {
-      "staking": "un-staked",
-      "liquid-staking": "un-staked",
+      "staking": "unstaked",
+      "liquid-staking": "unstaked",
       "vault": "withdrawn",
       "lending": "withdrawn"
     },
