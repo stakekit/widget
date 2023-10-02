@@ -1,5 +1,4 @@
 import { useSKWallet } from "../wallet/use-sk-wallet";
-import { AxiosError } from "axios";
 import {
   APIManager,
   YieldDto,
@@ -11,7 +10,7 @@ import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
 import { EitherAsync } from "purify-ts";
-import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
+import { withRequestErrorRetry } from "../../common/utils";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
@@ -21,22 +20,20 @@ const getMultiYieldsQueryKey = (yieldIds: string[]) => [
 export const useMultiYields = (yieldIds: string[]) => {
   const { network, isConnected } = useSKWallet();
 
-  return useQuery<YieldDto[], AxiosError | Error>(
+  return useQuery<YieldDto[], Error>(
     getMultiYieldsQueryKey(yieldIds),
-    async () => {
+    async ({ signal }) => {
       const results: YieldDto[] = [];
 
       // Chunk the requests into groups of 5
       for (let i = 0; i < yieldIds.length; i += 5) {
-        const reqs: EitherAsync<AxiosError | Error, YieldDto>[] = [];
+        const reqs: EitherAsync<Error, YieldDto>[] = [];
 
         for (let j = 0; j < i + 5 && j < yieldIds.length; j++) {
           reqs.push(
             withRequestErrorRetry({
-              fn: () => yieldYieldOpportunity(yieldIds[j]),
-            }).mapLeft<AxiosError | Error>((e) => {
-              return isAxiosError(e) ? e : new Error("Unknown error");
-            })
+              fn: () => yieldYieldOpportunity(yieldIds[j], signal),
+            }).mapLeft(() => new Error("Unknown error"))
           );
         }
 

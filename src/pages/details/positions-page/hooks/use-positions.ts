@@ -98,16 +98,16 @@ export const positionsTableDataSelector = createSelector(
     return [...data.values()].reduce(
       (acc, val) => {
         Object.entries(val.balanceData).forEach(([key, value]) => {
-          if (
-            value.some((v) => {
-              const amount = new BigNumber(v.amount);
+          const filteredBalances = value.filter((v) => {
+            const amount = new BigNumber(v.amount);
 
-              return !amount.isZero() && !amount.isNaN();
-            })
-          ) {
+            return !amount.isZero() && !amount.isNaN();
+          });
+
+          if (filteredBalances.length) {
             acc.push({
               integrationId: val.integrationId,
-              balances: value,
+              balances: filteredBalances,
               defaultOrValidatorId: key,
             });
           }
