@@ -84,6 +84,7 @@ type DetailsContextType = {
   tokenBalancesData: Maybe<TokenBalanceScanResponseDto[]>;
   onTokenSearch: (value: string) => void;
   showTokenAmount: boolean;
+  buttonCTAText: string;
 };
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
@@ -331,6 +332,17 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
       onStakeEnter.isLoading);
 
+  const buttonCTAText = useMemo(() => {
+    switch (selectedStakeYieldType) {
+      case "lending":
+      case "vault":
+        return t("yield_types.deposit");
+
+      default:
+        return t("yield_types.stake");
+    }
+  }, [selectedStakeYieldType, t]);
+
   const showTokenAmount = !isNotConnectedOrReconnecting;
 
   const value = {
@@ -366,6 +378,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesData,
     onTokenSearch,
     showTokenAmount,
+    buttonCTAText,
   };
 
   return (

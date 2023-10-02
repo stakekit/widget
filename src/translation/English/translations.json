@@ -160,10 +160,6 @@
     }
   },
   "help_modals": {
-    "main": {
-      "title": "Powered by StakeKit",
-      "description": "StakeKit is the most powerful API & widget to access all types of yields crypto offers. It supports the most popular tokens and chains out of the box, and provides a beautiful, seamless experience."
-    },
     "staking": {
       "title": "What is Staking?",
       "description": "Staking is a way to earn passive income by holding and \"staking\" your cryptocurrency. It helps secure the network and validate transactions, while rewarding you with additional tokens for your contribution to the network."
