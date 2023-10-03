@@ -6,6 +6,8 @@ import BigNumber from "bignumber.js";
 import { CompletePage } from "./common.page";
 import { Maybe } from "purify-ts";
 import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import { useYieldType } from "../../hooks/use-yield-type";
+import { useProviderDetails } from "../../hooks/use-provider-details";
 
 export const UnstakeOrPendingActionCompletePage = () => {
   const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
@@ -22,8 +24,15 @@ export const UnstakeOrPendingActionCompletePage = () => {
     [yieldOpportunity.data]
   );
 
+  const providerDetails = useProviderDetails({
+    integrationData,
+    validatorAddress: Maybe.fromNullable(
+      pendingActionMatch?.params.defaultOrValidatorId
+    ),
+  });
+
   const token = integrationData.map((d) => d.token);
-  const metadata = integrationData.map((d) => d.metadata).extractNullable();
+  const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
@@ -38,13 +47,17 @@ export const UnstakeOrPendingActionCompletePage = () => {
     [pendingActionMatch, pendingActionSession, unstake]
   );
 
+  const yieldType = useYieldType(integrationData).map((v) => v.type);
+
   const pendingActionType = pendingActionSession
     .map((val) => val.type)
     .extract();
 
   return (
     <CompletePage
-      token={token.extractNullable()}
+      providerDetails={providerDetails}
+      yieldType={yieldType}
+      token={token}
       metadata={metadata}
       network={network}
       amount={amount}
