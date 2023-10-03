@@ -128,11 +128,10 @@ const buildAsPackage = async () => {
         name: "make-all-packages-external",
         setup(build) {
           // Must not start with "/" or "./" or "../"
-          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
-            args.path === "@cassiozen/usestatemachine"
-              ? { external: false, namespace: "usestatemachine" }
-              : { external: true, path: args.path }
-          );
+          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) => ({
+            external: true,
+            path: args.path,
+          }));
         },
       },
     ],
