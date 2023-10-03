@@ -142,5 +142,9 @@ const buildAsPackage = async () => {
   });
 };
 
-await buildAsStandaloneApp();
-await buildAsPackage();
+const main = async () => {
+  await buildAsStandaloneApp();
+  await buildAsPackage();
+};
+
+main();
