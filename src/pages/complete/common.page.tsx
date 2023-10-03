@@ -4,14 +4,25 @@ import { PageContainer } from "../components";
 import { CheckCircleIcon } from "../../components/atoms/icons/check-circle";
 import { useComplete } from "./use-complete.hook";
 import { TokenIcon } from "../../components/atoms/token-icon";
-import { ActionTypes, TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import {
+  ActionTypes,
+  TokenDto,
+  YieldMetadataDto,
+  YieldType,
+} from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 
 type Props = {
-  token: TokenDto | null;
-  metadata: YieldMetadataDto | null;
+  token: Maybe<TokenDto>;
+  metadata: Maybe<YieldMetadataDto>;
   network: string;
   amount: string;
   pendingActionType?: ActionTypes;
+  providerDetails: Maybe<{
+    logo: string;
+    name: string;
+  }>;
+  yieldType: Maybe<YieldType>;
 };
 
 export const CompletePage = ({
@@ -20,17 +31,17 @@ export const CompletePage = ({
   network,
   token,
   pendingActionType,
+  yieldType,
+  providerDetails,
 }: Props) => {
   const { t } = useTranslation();
 
   const {
-    rewardTokenDetails,
     onClick,
     onViewTransactionClick,
     unstakeMatch,
     pendingActionMatch,
     hasUrs,
-    yieldType,
   } = useComplete();
 
   return (
@@ -49,16 +60,19 @@ export const CompletePage = ({
           alignItems="center"
           textAlign="center"
         >
-          {token && metadata && (
-            <Box marginBottom="4">
-              <TokenIcon
-                metadata={metadata}
-                tokenLogoHw="32"
-                tokenNetworkLogoHw="8"
-                token={token}
-              />
-            </Box>
-          )}
+          {Maybe.fromRecord({ token, metadata })
+            .map((v) => (
+              <Box marginBottom="4">
+                <TokenIcon
+                  metadata={v.metadata}
+                  tokenLogoHw="32"
+                  tokenNetworkLogoHw="8"
+                  token={v.token}
+                />
+              </Box>
+            ))
+            .extractNullable()}
+
           <Heading variant={{ level: "h3" }}>
             {t(
               unstakeMatch
@@ -85,23 +99,18 @@ export const CompletePage = ({
             )}
           </Heading>
 
-          {rewardTokenDetails && (
-            <Box display="flex" marginTop="2">
-              {rewardTokenDetails.logoUri && (
-                <Box
-                  hw="5"
-                  as="img"
-                  src={rewardTokenDetails.logoUri}
-                  marginRight="1"
-                />
-              )}
-              <Text variant={{ type: "muted", size: "small" }}>
-                {t("complete.via", {
-                  providerName: rewardTokenDetails.providerName,
-                })}
-              </Text>
-            </Box>
-          )}
+          {providerDetails
+            .map((v) => (
+              <Box display="flex" marginTop="2">
+                {v.logo && <Box hw="5" as="img" src={v.logo} marginRight="1" />}
+                <Text variant={{ type: "muted", size: "small" }}>
+                  {t("complete.via", {
+                    providerName: v.name,
+                  })}
+                </Text>
+              </Box>
+            ))
+            .extractNullable()}
 
           {hasUrs && (
             <Box

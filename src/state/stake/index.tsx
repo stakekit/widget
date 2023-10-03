@@ -46,7 +46,10 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
         return {
           selectedTokenBalance: Maybe.of(action.data.tokenBalance),
           selectedStakeId,
-          stakeAmount: Maybe.of(new BigNumber(0)),
+          stakeAmount: action.data.initYield
+            .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+            .map((val) => new BigNumber(val))
+            .alt(Maybe.of(new BigNumber(0))),
           selectedValidator: action.data.initYield.chain((val) =>
             List.head(val.validators)
           ),
@@ -91,7 +94,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     selectedTokenBalance,
     selectedStakeId,
     selectedValidator,
-    stakeAmount,
+    stakeAmount: selectedStakeAmount,
   } = state;
 
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
@@ -99,6 +102,32 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const selectedStake = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
     [yieldOpportunity.data]
+  );
+
+  /**
+   * If stake amount is less then min, use min
+   */
+  const stakeAmount = useMemo(
+    () =>
+      selectedStake
+        .chainNullable((v) => v.args.enter.args?.amount?.minimum)
+        .map((v) => new BigNumber(v))
+        .chain((v) =>
+          Maybe.fromRecord({ minStakeAmount: Maybe.of(v), selectedStakeAmount })
+        )
+        .chain((v) => {
+          if (
+            !v.minStakeAmount.isNaN() &&
+            v.minStakeAmount.isGreaterThan(0) &&
+            v.selectedStakeAmount.isLessThan(v.minStakeAmount)
+          ) {
+            return Maybe.of(v.minStakeAmount);
+          }
+
+          return Maybe.of(v.selectedStakeAmount);
+        })
+        .alt(selectedStakeAmount),
+    [selectedStakeAmount, selectedStake]
   );
 
   const { address, network } = useSKWallet();
