@@ -170,7 +170,10 @@ export const PositionsListItem = memo(
                   .extractNullable()}
               </ListItem>
             ),
-            <ContentLoaderSquare heightPx={60} />
+            <ContentLoaderSquare
+              heightPx={60}
+              uniqueKey="positions-page/position-list-item/loader"
+            />
           )}
         </Box>
       </SKLink>

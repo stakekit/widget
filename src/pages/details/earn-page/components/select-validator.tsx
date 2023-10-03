@@ -102,7 +102,11 @@ export const SelectValidator = () => {
 
   return isLoading ? (
     <Box marginTop="2" display="flex">
-      <ContentLoaderSquare heightPx={20} />
+      <ContentLoaderSquare
+        heightPx={20}
+        rXY="7"
+        uniqueKey="earn-page/select-validator/loader"
+      />
     </Box>
   ) : (
     Maybe.fromRecord({ selectedStake, selectedValidator })
