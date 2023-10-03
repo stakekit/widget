@@ -18,7 +18,7 @@ const getMultiYieldsQueryKey = (yieldIds: string[]) => [
 ];
 
 export const useMultiYields = (yieldIds: string[]) => {
-  const { network, isConnected } = useSKWallet();
+  const { network, isConnected, isLedgerLive } = useSKWallet();
 
   return useQuery<YieldDto[], Error>(
     getMultiYieldsQueryKey(yieldIds),
@@ -32,7 +32,12 @@ export const useMultiYields = (yieldIds: string[]) => {
         for (let j = 0; j < i + 5 && j < yieldIds.length; j++) {
           reqs.push(
             withRequestErrorRetry({
-              fn: () => yieldYieldOpportunity(yieldIds[j], signal),
+              fn: () =>
+                yieldYieldOpportunity(
+                  yieldIds[j],
+                  { ledgerWalletAPICompatible: isLedgerLive },
+                  signal
+                ),
             }).mapLeft(() => new Error("Unknown error"))
           );
         }

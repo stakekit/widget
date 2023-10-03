@@ -1,15 +1,11 @@
 import { CosmosNetworks } from "@stakekit/common";
-import {
-  CosmosChainsMap,
-  SupportedCosmosChains,
-  supportedCosmosChains,
-} from "../../../domain/types/chains";
+import { SupportedCosmosChains } from "../../../domain/types/chains";
 import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import { mainnet } from "wagmi";
 import { cosmosRegistryChains } from "./chain-registry";
 
 // CosmosNetworks -> chain_id from registry
-const sKCosmosNetworksToRegistryIds: {
+export const sKCosmosNetworksToRegistryIds: {
   [Key in SupportedCosmosChains]: string;
 } = {
   [CosmosNetworks.Cosmos]: "cosmoshub-4",
@@ -54,7 +50,7 @@ const registryIdsToSKCosmosNetworks: Record<string, CosmosNetworks> =
     ])
   );
 
-const filteredChains = Object.fromEntries(
+export const filteredCosmosChains = Object.fromEntries(
   cosmosRegistryChains.reduce(
     (acc, chain) => {
       if (chain.chain_id in registryIdsToSKCosmosNetworks) {
@@ -67,13 +63,9 @@ const filteredChains = Object.fromEntries(
   )
 );
 
-export const filteredCosmosChainNames = new Set(
-  Object.keys(filteredChains).map((key) => filteredChains[key].chain_name)
-);
-
 export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 
-const getWagmiChain = (chain: CosmosChainsAssets) => ({
+export const getWagmiChain = (chain: CosmosChainsAssets) => ({
   id: chain.chain_id as unknown as number,
   iconUrl:
     chain.chain_id === "osmosis-1"
@@ -95,22 +87,3 @@ const getWagmiChain = (chain: CosmosChainsAssets) => ({
     },
   },
 });
-
-export const cosmosChainsMap: CosmosChainsMap = supportedCosmosChains.reduce(
-  (acc, next) => {
-    const chain = filteredChains[sKCosmosNetworksToRegistryIds[next]];
-
-    if (!chain) throw new Error("Chain not found");
-
-    return {
-      ...acc,
-      [next]: {
-        type: "cosmos",
-        skChainName: next,
-        chain,
-        wagmiChain: getWagmiChain(chain),
-      },
-    };
-  },
-  {} as CosmosChainsMap
-);

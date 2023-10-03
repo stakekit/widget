@@ -20,6 +20,7 @@ import { useAdditionalAddresses } from "./use-additional-addresses";
 import { unsignedTransactionCodec } from "./validation";
 // import { useLedgerAccounts } from "./use-ledger-accounts";
 import { deserializeTransaction } from "@ledgerhq/wallet-api-client";
+import { useWagmiConfig } from "../../providers/wagmi";
 
 export const useSKWallet = (): SKWallet => {
   const {
@@ -36,12 +37,24 @@ export const useSKWallet = (): SKWallet => {
 
   const { chain } = useNetwork();
 
+  const wagmiConfig = useWagmiConfig();
+
   const network = useMemo(
     () =>
-      Maybe.fromNullable(chain)
-        .map((val) => wagmiNetworkToSKNetwork(val))
+      Maybe.fromRecord({
+        chain: Maybe.fromNullable(chain),
+        wagmiConfig: Maybe.fromNullable(wagmiConfig.data),
+      })
+        .map((val) =>
+          wagmiNetworkToSKNetwork({
+            chain: val.chain,
+            evmChainsMap: val.wagmiConfig.evmConfig.evmChainsMap,
+            cosmosChainsMap: val.wagmiConfig.cosmosConfig.cosmosChainsMap,
+            miscChainsMap: val.wagmiConfig.miscConfig.miscChainsMap,
+          })
+        )
         .extractNullable(),
-    [chain]
+    [chain, wagmiConfig.data]
   );
 
   const { disconnectAsync: disconnect } = useDisconnect();

@@ -16,6 +16,7 @@ import classNames from "clsx";
 import { isLedgerDappBrowserProvider } from "../../../utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useContext } from "react";
+import { useWagmiConfig } from "../../../providers/wagmi";
 
 const showDisconnect = isLedgerDappBrowserProvider();
 
@@ -24,6 +25,8 @@ export const Header = () => {
   const navigate = useNavigate();
 
   const { isConnected, address } = useSKWallet();
+
+  const wagmiConfig = useWagmiConfig();
 
   const { t } = useTranslation();
 
@@ -70,148 +73,152 @@ export const Header = () => {
         )}
       </Box>
 
-      <ConnectButton.Custom>
-        {({ account, chain, openAccountModal, openChainModal, mounted }) => {
-          return (
-            <Box
-              className={classNames({ [parentButton]: !mounted })}
-              aria-hidden={!mounted}
-              display="flex"
-              justifyContent="center"
-              gap="2"
-            >
-              {(() => {
-                if (!isConnected || !chain || !account) {
+      {!wagmiConfig.isLoading && wagmiConfig.data && (
+        <ConnectButton.Custom>
+          {({ account, chain, openAccountModal, openChainModal, mounted }) => {
+            return (
+              <Box
+                className={classNames({ [parentButton]: !mounted })}
+                aria-hidden={!mounted}
+                display="flex"
+                justifyContent="center"
+                gap="2"
+              >
+                {(() => {
+                  if (!isConnected || !chain || !account) {
+                    return (
+                      <Text variant={{ size: "small" }}>
+                        {t("shared.stake_kit")}
+                      </Text>
+                    );
+                  }
+
                   return (
-                    <Text variant={{ size: "small" }}>
-                      {t("shared.stake_kit")}
-                    </Text>
-                  );
-                }
-
-                return (
-                  <>
-                    <Box
-                      borderRadius="2xl"
-                      background="backgroundMuted"
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      className={container}
-                      onClick={openChainModal}
-                    >
-                      {(() => {
-                        if (chain.unsupported) {
-                          return (
-                            <Box
-                              px="2"
-                              py="2"
-                              as="button"
-                              onClick={openChainModal}
-                            >
-                              <Text variant={{ size: "small", type: "danger" }}>
-                                {t("shared.unsupported_network")}
-                              </Text>
-                            </Box>
-                          );
-                        }
-
-                        return (
-                          <>
-                            <Box
-                              as="button"
-                              display="flex"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              paddingLeft="2"
-                              py="2"
-                            >
-                              {chain?.iconUrl && (
-                                <Box as="img" hw="6" src={chain.iconUrl} />
-                              )}
-
-                              <Box marginLeft="2">
+                    <>
+                      <Box
+                        borderRadius="2xl"
+                        background="backgroundMuted"
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        className={container}
+                        onClick={openChainModal}
+                      >
+                        {(() => {
+                          if (chain.unsupported) {
+                            return (
+                              <Box
+                                px="2"
+                                py="2"
+                                as="button"
+                                onClick={openChainModal}
+                              >
                                 <Text
-                                  className={titleStyle}
-                                  variant={{ size: "small" }}
+                                  variant={{ size: "small", type: "danger" }}
                                 >
-                                  {chain.name}
+                                  {t("shared.unsupported_network")}
                                 </Text>
                               </Box>
+                            );
+                          }
 
-                              <Box mx="2">
-                                <CaretDownIcon />
-                              </Box>
-                            </Box>
-                          </>
-                        );
-                      })()}
-                    </Box>
+                          return (
+                            <>
+                              <Box
+                                as="button"
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                paddingLeft="2"
+                                py="2"
+                              >
+                                {chain?.iconUrl && (
+                                  <Box as="img" hw="6" src={chain.iconUrl} />
+                                )}
 
-                    <Box
-                      borderRadius="2xl"
-                      background="backgroundMuted"
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      className={container}
-                      onClick={openAccountModal}
-                    >
-                      {(() => {
-                        return (
-                          <>
-                            <Box
-                              as="button"
-                              display="flex"
-                              justifyContent="space-between"
-                              alignItems="center"
-                              paddingLeft="2"
-                              py="2"
-                            >
-                              {account.ensAvatar ? (
-                                <Box
-                                  as="img"
-                                  src={account.ensAvatar}
-                                  hw="6"
-                                  borderRadius="half"
-                                />
-                              ) : (
-                                <>
-                                  <Box
-                                    borderRadius="half"
-                                    marginRight="2"
-                                    className={avatarContainer}
-                                  >
-                                    <AvatarComponent
-                                      address={address as Address}
-                                      size={24}
-                                    />
-                                  </Box>
-
+                                <Box marginLeft="2">
                                   <Text
                                     className={titleStyle}
                                     variant={{ size: "small" }}
                                   >
-                                    {account.ensName ?? account.displayName}
+                                    {chain.name}
                                   </Text>
-                                </>
-                              )}
+                                </Box>
 
-                              <Box mx="2">
-                                <CaretDownIcon />
+                                <Box mx="2">
+                                  <CaretDownIcon />
+                                </Box>
                               </Box>
-                            </Box>
-                          </>
-                        );
-                      })()}
-                    </Box>
-                  </>
-                );
-              })()}
-            </Box>
-          );
-        }}
-      </ConnectButton.Custom>
+                            </>
+                          );
+                        })()}
+                      </Box>
+
+                      <Box
+                        borderRadius="2xl"
+                        background="backgroundMuted"
+                        display="flex"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        className={container}
+                        onClick={openAccountModal}
+                      >
+                        {(() => {
+                          return (
+                            <>
+                              <Box
+                                as="button"
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                paddingLeft="2"
+                                py="2"
+                              >
+                                {account.ensAvatar ? (
+                                  <Box
+                                    as="img"
+                                    src={account.ensAvatar}
+                                    hw="6"
+                                    borderRadius="half"
+                                  />
+                                ) : (
+                                  <>
+                                    <Box
+                                      borderRadius="half"
+                                      marginRight="2"
+                                      className={avatarContainer}
+                                    >
+                                      <AvatarComponent
+                                        address={address as Address}
+                                        size={24}
+                                      />
+                                    </Box>
+
+                                    <Text
+                                      className={titleStyle}
+                                      variant={{ size: "small" }}
+                                    >
+                                      {account.ensName ?? account.displayName}
+                                    </Text>
+                                  </>
+                                )}
+
+                                <Box mx="2">
+                                  <CaretDownIcon />
+                                </Box>
+                              </Box>
+                            </>
+                          );
+                        })()}
+                      </Box>
+                    </>
+                  );
+                })()}
+              </Box>
+            );
+          }}
+        </ConnectButton.Custom>
+      )}
     </Box>
   );
 };

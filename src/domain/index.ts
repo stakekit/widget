@@ -9,10 +9,10 @@ import {
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
 import { Chain } from "wagmi";
-import { cosmosWagmiChains } from "../providers/cosmos/config";
+import { getConfig } from "../providers/cosmos/config";
 
 export const isCosmosChain = (chain: Chain) =>
-  cosmosWagmiChains.some((c) => c.id === chain.id);
+  getConfig().map((v) => v.cosmosWagmiChains.some((c) => c.id === chain.id));
 
 export const tokenString = (token: Token): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;

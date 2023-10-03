@@ -3,15 +3,29 @@ import { SKWallet } from "../../domain/types";
 import { CosmosWagmiConnector } from "../../providers/cosmos/config";
 import { EitherAsync, Left, Right } from "purify-ts";
 import { LedgerLiveConnector } from "../../providers/ledger/ledger-connector";
-import { cosmosChainsMap } from "../../providers/cosmos/chains";
-import { evmChainMap } from "../../providers/ethereum/config";
-import { miscChainMap } from "../../providers/misc/config";
+import {
+  CosmosChainsMap,
+  EvmChainsMap,
+  MiscChainsMap,
+} from "../../domain/types/chains";
 
-export const wagmiNetworkToSKNetwork = (chain: Chain): SKWallet["network"] => {
+export const wagmiNetworkToSKNetwork = ({
+  chain,
+  cosmosChainsMap,
+  evmChainsMap,
+  miscChainsMap,
+}: {
+  chain: Chain;
+  evmChainsMap: EvmChainsMap;
+  cosmosChainsMap: CosmosChainsMap;
+  miscChainsMap: MiscChainsMap;
+}): SKWallet["network"] => {
   return (
-    Object.values({ ...evmChainMap, ...cosmosChainsMap, ...miscChainMap }).find(
-      (c) => c.wagmiChain.id === chain.id
-    )?.skChainName ?? null
+    Object.values({
+      ...evmChainsMap,
+      ...cosmosChainsMap,
+      ...miscChainsMap,
+    }).find((c) => c.wagmiChain.id === chain.id)?.skChainName ?? null
   );
 };
 
