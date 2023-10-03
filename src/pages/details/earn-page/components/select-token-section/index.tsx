@@ -27,7 +27,10 @@ export const SelectTokenSection = () => {
 
   return isLoading ? (
     <Box marginTop="2" display="flex">
-      <ContentLoaderSquare heightPx={112.5} />
+      <ContentLoaderSquare
+        heightPx={112.5}
+        uniqueKey="earn-page/select-token-section/loader"
+      />
     </Box>
   ) : (
     <Box
