@@ -217,6 +217,11 @@ export class LedgerLiveConnector extends Connector {
     });
   };
 
+  switchAccount = (account: Account) => {
+    this.#currentAccount = account;
+    this.onAccountsChanged([this.#currentAccount.address as Address]);
+  };
+
   switchChain = async (chainId: number): Promise<Chain> => {
     const currentChain = this.#currentChain;
 

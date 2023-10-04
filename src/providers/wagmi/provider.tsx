@@ -1,16 +1,14 @@
 import { PropsWithChildren } from "react";
 import { WagmiConfig } from "wagmi";
-import { RainbowKitProviderWithTheme } from "../rainbow-kit";
 import { defaultConfig, useWagmiConfig } from "../wagmi";
+import { RainbowProvider } from "../rainbow";
 
 export const WagmiProvider = ({ children }: PropsWithChildren) => {
   const wagmiConfig = useWagmiConfig();
 
   return (
     <WagmiConfig config={wagmiConfig.data?.wagmiConfig ?? defaultConfig}>
-      <RainbowKitProviderWithTheme chains={wagmiConfig.data?.chains ?? []}>
-        {children}
-      </RainbowKitProviderWithTheme>
+      <RainbowProvider>{children}</RainbowProvider>
     </WagmiConfig>
   );
 };

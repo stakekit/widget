@@ -18,8 +18,8 @@ import {
 } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { unsignedTransactionCodec } from "./validation";
-// import { useLedgerAccounts } from "./use-ledger-accounts";
-import { deserializeTransaction } from "@ledgerhq/wallet-api-client";
+import { useLedgerAccounts } from "./use-ledger-accounts";
+import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
 import { useWagmiConfig } from "../../providers/wagmi";
 
 export const useSKWallet = (): SKWallet => {
@@ -31,7 +31,7 @@ export const useSKWallet = (): SKWallet => {
     connector,
   } = useAccount();
 
-  // const ledgerAccounts = useLedgerAccounts(connector);
+  const ledgerAccounts = useLedgerAccounts(connector);
 
   const isConnected = _isConnected && !!address && !!connector;
 
@@ -176,6 +176,15 @@ export const useSKWallet = (): SKWallet => {
     [isConnected, network, connector]
   );
 
+  const onLedgerAccountChange = useCallback(
+    (account: Account) => {
+      if (connector && isLedgerLiveConnector(connector)) {
+        connector.switchAccount(account);
+      }
+    },
+    [connector]
+  );
+
   const value = useMemo((): SKWallet => {
     const common = { disconnect, signTransaction, isReconnecting };
 
@@ -192,6 +201,8 @@ export const useSKWallet = (): SKWallet => {
         isNotConnectedOrReconnecting: false,
         additionalAddresses: additionalAddresses ?? null,
         isLedgerLive,
+        ledgerAccounts,
+        onLedgerAccountChange,
       };
     }
 
@@ -206,6 +217,8 @@ export const useSKWallet = (): SKWallet => {
         !wagmiConfig.isLoading && !isReconnecting && !isConnecting,
       additionalAddresses: null,
       isLedgerLive: false,
+      ledgerAccounts: null,
+      onLedgerAccountChange: null,
     };
   }, [
     disconnect,
@@ -219,6 +232,8 @@ export const useSKWallet = (): SKWallet => {
     additionalAddresses,
     isReconnecting,
     wagmiConfig,
+    ledgerAccounts,
+    onLedgerAccountChange,
   ]);
 
   return value;

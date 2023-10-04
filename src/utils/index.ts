@@ -95,3 +95,14 @@ export const typeSafeObjectEntries = <T extends Record<PropertyKey, unknown>>(
 ): { [K in keyof T]: [K, T[K]] }[keyof T][] => {
   return Object.entries(obj) as { [K in keyof T]: [K, T[K]] }[keyof T][];
 };
+
+export function formatAddress(address: string): string {
+  const leadingChars = 4;
+  const trailingChars = 4;
+
+  return address.length < leadingChars + trailingChars
+    ? address
+    : `${address.substring(0, leadingChars)}\u2026${address.substring(
+        address.length - trailingChars
+      )}`;
+}
