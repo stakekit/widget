@@ -34,7 +34,6 @@
     "no_opportunities": "No yield opportunities for this token",
 
     "native_staking": {
-      "earn_now": "You'll start earning right away",
       "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
 
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically.",
@@ -49,7 +48,6 @@
     "vault": {
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time.",
 
-      "earn_now": "You'll start earning right away",
       "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
 
       "earn_yield_auto": "Earned yield is distributed each {{rewardSchedule}} and accrues automatically",
@@ -65,7 +63,6 @@
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
       "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}.",
 
-      "earn_now": "You'll start earning right away",
       "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you supply your assets",
 
       "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
@@ -82,7 +79,6 @@
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time.",
 
-      "earn_now": "You'll start earning right away",
       "earn_after_warmup_days": "You’ll start earning {{warmupPeriodDays}} days after you stake",
 
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",

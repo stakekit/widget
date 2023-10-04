@@ -37,7 +37,7 @@ export const useFooterItems = () => {
                 ? t("details.native_staking.earn_after_warmup_days", {
                     warmupPeriodDays,
                   })
-                : t("details.native_staking.earn_now"),
+                : null,
             earnRewards:
               rewardClaiming === "manual"
                 ? t("details.native_staking.earn_rewards_manual", {
@@ -69,7 +69,7 @@ export const useFooterItems = () => {
             earnPeriod:
               warmupPeriodDays > 0
                 ? t("details.lend.earn_after_warmup_days", { warmupPeriodDays })
-                : t("details.lend.earn_now"),
+                : null,
             earnRewards:
               rewardClaiming === "manual"
                 ? t("details.lend.earn_interest_manual", { rewardSchedule })
@@ -114,7 +114,7 @@ export const useFooterItems = () => {
                 ? t("details.vault.earn_after_warmup_days", {
                     warmupPeriodDays,
                   })
-                : t("details.vault.earn_now"),
+                : null,
             earnRewards:
               rewardClaiming === "manual"
                 ? t("details.vault.earn_yield_manual", { rewardSchedule })
@@ -145,7 +145,7 @@ export const useFooterItems = () => {
                 ? t("details.liquid_stake.earn_after_warmup_days", {
                     warmupPeriodDays,
                   })
-                : t("details.liquid_stake.earn_now"),
+                : null,
             earnRewards:
               rewardClaiming === "manual"
                 ? t("details.liquid_stake.earn_rewards_manual", {
