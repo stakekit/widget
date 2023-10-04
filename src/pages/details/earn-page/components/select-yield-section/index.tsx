@@ -18,6 +18,7 @@ export const SelectYieldSection = () => {
     rewardToken,
     estimatedRewards,
     symbol,
+    providerDetails,
   } = useDetailsContext();
 
   const { t } = useTranslation();
@@ -70,8 +71,8 @@ export const SelectYieldSection = () => {
               >
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
                   <Text className={apyYield}>
-                    {selectedStake
-                      .map((ss) => `${apyToPercentage(ss.apy)}%`)
+                    {providerDetails
+                      .map((ss) => `${apyToPercentage(ss.apr)}%`)
                       .extractNullable()}
                   </Text>
                 </Box>

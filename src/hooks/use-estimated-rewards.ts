@@ -3,6 +3,7 @@ import { apyToPercentage } from "../utils";
 import { State } from "../state/stake/types";
 import { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import { useProviderDetails } from "./use-provider-details";
 
 export const useEstimatedRewards = ({
   selectedStake,
@@ -13,10 +14,14 @@ export const useEstimatedRewards = ({
   stakeAmount: State["stakeAmount"];
   selectedValidator: State["selectedValidator"];
 }) => {
+  const providerDetails = useProviderDetails({
+    integrationData: selectedStake,
+    validatorAddress: selectedValidator.map((v) => v.address),
+  });
+
   return useMemo(() => {
     return selectedStake.map((y) => {
-      const apy =
-        selectedValidator.map((v) => v.apr).extractNullable() ?? y.apy;
+      const apy = providerDetails.map((v) => v.apr).extract()!;
 
       return {
         percentage: apyToPercentage(apy),
@@ -30,5 +35,5 @@ export const useEstimatedRewards = ({
         ),
       };
     });
-  }, [selectedStake, selectedValidator, stakeAmount]);
+  }, [providerDetails, selectedStake, stakeAmount]);
 };
