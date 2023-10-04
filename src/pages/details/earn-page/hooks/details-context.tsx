@@ -42,6 +42,8 @@ import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount
 import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
 import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
+import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { useWagmiConfig } from "../../../../providers/wagmi";
 
 type DetailsContextType = {
   availableTokens: string;
@@ -85,6 +87,7 @@ type DetailsContextType = {
   onTokenSearch: (value: string) => void;
   showTokenAmount: boolean;
   buttonCTAText: string;
+  providerDetails: ReturnType<typeof useProviderDetails>;
 };
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
@@ -313,10 +316,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const onSelectOpportunityClose = () => setStakeSearch("");
 
+  const wagmiConfig = useWagmiConfig();
+
   const isFetching =
     multiYields.isFetching || stakeTokenAvailableAmount.isFetching;
 
   const isLoading =
+    wagmiConfig.isLoading ||
     isConnecting ||
     isReconnecting ||
     multiYields.isInitialLoading ||
@@ -344,6 +350,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   }, [selectedStakeYieldType, t]);
 
   const showTokenAmount = !isNotConnectedOrReconnecting;
+
+  const providerDetails = useProviderDetails({
+    integrationData: selectedStake,
+    validatorAddress: selectedValidator.map((v) => v.address),
+  });
 
   const value = {
     availableTokens,
@@ -379,6 +390,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onTokenSearch,
     showTokenAmount,
     buttonCTAText,
+    providerDetails,
   };
 
   return (

@@ -4926,14 +4926,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.35":
-  version: 0.0.35
-  resolution: "@stakekit/api-hooks@npm:0.0.35"
+"@stakekit/api-hooks@npm:^0.0.37":
+  version: 0.0.37
+  resolution: "@stakekit/api-hooks@npm:0.0.37"
   dependencies:
     "@tanstack/react-query": ^4.33.0
     axios: ^1.5.0
     lodash.merge: ^4.6.2
-  checksum: 8e7477036fa76d79932a43f3305b4ae6e2b2d848b438f4f2b4b9d3a1f9775123c593ce18fc9fcb09630c28a33e12478056a185cae1589fca974bb75acfe406ab
+  checksum: 802f6a1c9c76d75d82ec9af57cd1c94137c8b17ce8cbcb56af7ce02f6af4cfffa76098c1d4be6156367745adfebf5c50bdc12d3726cfcf777f267696cbe153f8
   languageName: node
   linkType: hard
 
@@ -4944,9 +4944,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/rainbowkit@npm:^1.0.11":
-  version: 1.0.11
-  resolution: "@stakekit/rainbowkit@npm:1.0.11"
+"@stakekit/rainbowkit@npm:^1.0.12":
+  version: 1.0.12
+  resolution: "@stakekit/rainbowkit@npm:1.0.12"
   dependencies:
     "@vanilla-extract/css": 1.9.1
     "@vanilla-extract/dynamic": 2.0.2
@@ -4959,7 +4959,7 @@ __metadata:
     react-dom: ">=17"
     viem: ~0.3.19 || ^1.0.0
     wagmi: ~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0
-  checksum: 366f4352b77d1e91486f6343b2625611b9246403009c4c7c7f97b8de3a4a1c5454025a847131dbd88495f716c48fc832f8bd7c83fc775058f0ad17212f77ca82
+  checksum: ab48fcb6cafb7ffbe7cf095ba13eb61e121068396b1fc5e482ef0e931326e1c32509e433b944ec8873178c5070dcd5948b4e15b0e2f8c27bc4a52be4f0038dd5
   languageName: node
   linkType: hard
 
@@ -4977,9 +4977,9 @@ __metadata:
     "@cosmos-kit/walletconnect": 2.3.9
     "@ledgerhq/wallet-api-client": ^1.1.0
     "@radix-ui/react-alert-dialog": ^1.0.4
-    "@stakekit/api-hooks": ^0.0.35
+    "@stakekit/api-hooks": ^0.0.37
     "@stakekit/common": ^0.0.17
-    "@stakekit/rainbowkit": ^1.0.11
+    "@stakekit/rainbowkit": ^1.0.12
     "@tanstack/react-query": ^4.35.3
     "@testing-library/jest-dom": ^6.1.3
     "@testing-library/react": ^14.0.0

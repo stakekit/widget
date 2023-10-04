@@ -81,3 +81,28 @@ export const isMobile = () => {
 
 export const waitForMs = (ms: number) =>
   new Promise((res) => setTimeout(res, ms));
+
+export const typeSafeObjectFromEntries = <
+  const T extends ReadonlyArray<readonly [PropertyKey, unknown]>,
+>(
+  entries: T
+): { [K in T[number] as K[0]]: K[1] } => {
+  return Object.fromEntries(entries) as { [K in T[number] as K[0]]: K[1] };
+};
+
+export const typeSafeObjectEntries = <T extends Record<PropertyKey, unknown>>(
+  obj: T
+): { [K in keyof T]: [K, T[K]] }[keyof T][] => {
+  return Object.entries(obj) as { [K in keyof T]: [K, T[K]] }[keyof T][];
+};
+
+export function formatAddress(address: string): string {
+  const leadingChars = 4;
+  const trailingChars = 4;
+
+  return address.length < leadingChars + trailingChars
+    ? address
+    : `${address.substring(0, leadingChars)}\u2026${address.substring(
+        address.length - trailingChars
+      )}`;
+}

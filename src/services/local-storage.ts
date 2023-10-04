@@ -7,9 +7,10 @@ import {
   record,
   string,
 } from "purify-ts";
+import { config } from "../config";
 
 export const localStorageBuildKey = <K extends string>(key: K) =>
-  `sk-widget@1//${key}` as const;
+  `${config.appPrefix}@1//${key}` as const;
 
 export type LocalStorageKV = {
   [Key in keyof typeof codecs]: GetType<(typeof codecs)[Key]>;

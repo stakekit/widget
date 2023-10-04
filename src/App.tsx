@@ -43,12 +43,12 @@ import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-ac
 import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
-import { cosmosWalletManager } from "./providers/cosmos/config";
 import { createPortal } from "react-dom";
 import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
+import { useCosmosConfig } from "./providers/cosmos/config";
 
 const Widget = () => {
   useToggleTheme();
@@ -72,16 +72,18 @@ const Widget = () => {
     }
   }, [chain, pathnameRef, navigateRef]);
 
+  const cosmosConfig = useCosmosConfig();
+
   /**
    * On mount, initialize cosmos wallet manager
    */
   useEffect(() => {
-    cosmosWalletManager.onMounted();
+    cosmosConfig.data?.cosmosWalletManager.onMounted();
 
     return () => {
-      cosmosWalletManager.onUnmounted();
+      cosmosConfig.data?.cosmosWalletManager.onUnmounted();
     };
-  }, []);
+  }, [cosmosConfig.data?.cosmosWalletManager]);
 
   useAutoConnectInjectedProviderMachine();
 

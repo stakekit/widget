@@ -43,7 +43,7 @@ export const PositionDetails = () => {
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
-    validatorDetails,
+    providerDetails,
   } = positionDetails;
 
   const { t } = useTranslation();
@@ -80,8 +80,8 @@ export const PositionDetails = () => {
                 </Text>
               </Box>
 
-              {validatorDetails
-                .map((vd) => (
+              {providerDetails
+                .map((pd) => (
                   <Box display="flex" flexDirection="column" marginTop="6">
                     <Divider my="1" />
 
@@ -99,11 +99,11 @@ export const PositionDetails = () => {
                         <Image
                           hw="8"
                           marginRight="1"
-                          src={vd.logoURI}
+                          src={pd.logo}
                           fallback={
                             <Box marginRight="1">
                               <ImageFallback
-                                name={vd.name ?? vd.address ?? ""}
+                                name={pd.name ?? pd.address ?? ""}
                                 tokenLogoHw="8"
                                 textVariant={{
                                   size: "small",
@@ -117,7 +117,7 @@ export const PositionDetails = () => {
                         <Text variant={{ size: "small" }}>
                           {val.stakeType}{" "}
                           {t("position_details.via", {
-                            providerName: vd.name ?? vd.address ?? "",
+                            providerName: pd.name ?? pd.address ?? "",
                           })}
                         </Text>
                       </Box>

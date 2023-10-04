@@ -32,6 +32,7 @@ import { preparePendingActionRequestDto } from "./utils";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import { useProviderDetails } from "../../../hooks/use-provider-details";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
@@ -56,26 +57,10 @@ export const usePositionDetails = () => {
 
   const positionData = usePositionData(integrationId);
 
-  const validatorDetails = useMemo(
-    () =>
-      positionData.position.chain((p) =>
-        defaultOrValidatorId === "default"
-          ? integrationData
-              .chainNullable((d) => d.metadata.provider)
-              .map((v) => ({ name: v.name, logoURI: v.logoURI, address: v.id }))
-          : integrationData
-              .map((d) => d.validators)
-              .chain((val) =>
-                List.find((v) => v.address === defaultOrValidatorId, val)
-              )
-              .map((v) => ({
-                name: v.name,
-                logoURI: v.image,
-                address: v.address,
-              }))
-      ),
-    [defaultOrValidatorId, integrationData, positionData.position]
-  );
+  const providerDetails = useProviderDetails({
+    integrationData,
+    validatorAddress: Maybe.of(defaultOrValidatorId),
+  });
 
   const { t } = useTranslation();
 
@@ -375,7 +360,7 @@ export const usePositionDetails = () => {
     isLoading,
     onStakeExitIsLoading: onStakeExit.isLoading,
     onPendingActionClick,
-    validatorDetails,
+    providerDetails,
     pendingActions,
   };
 };

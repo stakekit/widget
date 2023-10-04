@@ -18,7 +18,7 @@ const getMultiYieldsQueryKey = (yieldIds: string[]) => [
 ];
 
 export const useMultiYields = (yieldIds: string[]) => {
-  const { network, isConnected } = useSKWallet();
+  const { network, isConnected, isLedgerLive } = useSKWallet();
 
   return useQuery<YieldDto[], Error>(
     getMultiYieldsQueryKey(yieldIds),
@@ -32,19 +32,26 @@ export const useMultiYields = (yieldIds: string[]) => {
         for (let j = 0; j < i + 5 && j < yieldIds.length; j++) {
           reqs.push(
             withRequestErrorRetry({
-              fn: () => yieldYieldOpportunity(yieldIds[j], signal),
+              fn: () =>
+                yieldYieldOpportunity(
+                  yieldIds[j],
+                  { ledgerWalletAPICompatible: isLedgerLive },
+                  signal
+                ),
             }).mapLeft(() => new Error("Unknown error"))
           );
         }
 
-        const sliceRes = await EitherAsync.sequence(reqs);
+        const sliceRes = await EitherAsync.all(reqs);
 
         if (sliceRes.isLeft()) {
           return Promise.reject(sliceRes.extract());
         }
 
         sliceRes.ifRight((data) =>
-          results.push(...defaultFiltered({ data, isConnected, network }))
+          results.push(
+            ...defaultFiltered({ data, isConnected, network, isLedgerLive })
+          )
         );
       }
 
@@ -68,21 +75,26 @@ type SelectorInputData = {
   data: YieldDto[];
   isConnected: boolean;
   network: SKWallet["network"];
+  isLedgerLive: boolean;
 };
 
 const skFilter = ({
   o,
   isConnected,
   network,
+  isLedgerLive,
 }: {
   o: YieldDto;
   isConnected: boolean;
   network: SKWallet["network"];
+  isLedgerLive: boolean;
 }) => {
   const defaultFilter =
     !o.args.enter.args?.nfts &&
     o.id !== "binance-bnb-native-staking" &&
     o.id !== "binance-testnet-bnb-native-staking" &&
+    o.id !== "avax-native-staking" &&
+    (isLedgerLive ? o.metadata.supportsLedgerWalletApi : true) &&
     isSupportedChain(o.token.network);
 
   if (!isConnected) return defaultFilter;
@@ -93,11 +105,13 @@ const skFilter = ({
 const selectData = (val: SelectorInputData) => val.data;
 const selectConnected = (val: SelectorInputData) => val.isConnected;
 const selectNetwork = (val: SelectorInputData) => val.network;
+const selectSsLedgerLive = (val: SelectorInputData) => val.isLedgerLive;
 
 const defaultFiltered = createSelector(
   selectData,
   selectConnected,
   selectNetwork,
-  (data, isConnected, network) =>
-    data.filter((o) => skFilter({ o, isConnected, network }))
+  selectSsLedgerLive,
+  (data, isConnected, network, isLedgerLive) =>
+    data.filter((o) => skFilter({ o, isConnected, network, isLedgerLive }))
 );

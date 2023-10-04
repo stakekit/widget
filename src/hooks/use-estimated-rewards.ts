@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { apyToPercentage } from "../utils";
 import { State } from "../state/stake/types";
 import { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import { useProviderDetails } from "./use-provider-details";
 
 export const useEstimatedRewards = ({
   selectedStake,
@@ -13,22 +13,24 @@ export const useEstimatedRewards = ({
   stakeAmount: State["stakeAmount"];
   selectedValidator: State["selectedValidator"];
 }) => {
-  return useMemo(() => {
-    return selectedStake.map((y) => {
-      const apy =
-        selectedValidator.map((v) => v.apr).extractNullable() ?? y.apy;
+  const providerDetails = useProviderDetails({
+    integrationData: selectedStake,
+    validatorAddress: selectedValidator.map((v) => v.address),
+  });
 
-      return {
-        percentage: apyToPercentage(apy),
-        yearly: stakeAmount.mapOrDefault(
-          (am) => am.times(apy).decimalPlaces(5).toString(),
-          ""
-        ),
-        monthly: stakeAmount.mapOrDefault(
-          (am) => am.times(apy).dividedBy(12).decimalPlaces(5).toString(),
-          ""
-        ),
-      };
+  return useMemo(() => {
+    const apy = providerDetails.map((v) => v.apr).extract()!;
+
+    return Maybe.of({
+      percentage: apy,
+      yearly: stakeAmount.mapOrDefault(
+        (am) => am.times(apy).decimalPlaces(5).toString(),
+        ""
+      ),
+      monthly: stakeAmount.mapOrDefault(
+        (am) => am.times(apy).dividedBy(12).decimalPlaces(5).toString(),
+        ""
+      ),
     });
-  }, [selectedStake, selectedValidator, stakeAmount]);
+  }, [providerDetails, stakeAmount]);
 };

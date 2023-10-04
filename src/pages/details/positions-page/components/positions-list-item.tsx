@@ -4,13 +4,14 @@ import { SKLink } from "../../../../components/atoms/link";
 import { ListItem } from "../../../../components/atoms/list/list-item";
 import { usePositions } from "../hooks/use-positions";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
-import { apyToPercentage, formatTokenBalance } from "../../../../utils";
+import { formatTokenBalance } from "../../../../utils";
 import { memo, useMemo } from "react";
 import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { claimRewardsContainer, viaText } from "../style.css";
+import { useProviderDetails } from "../../../../hooks/use-provider-details";
 
 export const PositionsListItem = memo(
   ({
@@ -48,26 +49,18 @@ export const PositionsListItem = memo(
       [item.balances]
     );
 
-    const validator = useMemo(
-      () =>
-        item.defaultOrValidatorId === "default"
-          ? integrationData.map((d) => ({
-              providerName: d.metadata.provider?.name ?? d.metadata.name,
-              apy: apyToPercentage(d.apy ?? 0),
-            }))
-          : integrationData
-              .chain((d) =>
-                List.find(
-                  (v) => v.address === item.defaultOrValidatorId,
-                  d.validators
-                )
-              )
-              .map((v) => ({
-                providerName: v.name ?? v.address,
-                apy: apyToPercentage(v.apr ?? 0),
-              })),
-      [integrationData, item.defaultOrValidatorId]
-    );
+    const providerDetails = useProviderDetails({
+      integrationData,
+      validatorAddress: Maybe.of(item.defaultOrValidatorId),
+    });
+
+    console.log({
+      providerDetails,
+      token,
+      integrationData,
+      validatorAddress: item.defaultOrValidatorId,
+      item,
+    });
 
     return (
       <SKLink
@@ -121,7 +114,7 @@ export const PositionsListItem = memo(
                         </Box>
                       )}
                     </Box>
-                    {validator
+                    {providerDetails
                       .map((val) => (
                         <Text
                           className={viaText}
@@ -132,7 +125,7 @@ export const PositionsListItem = memo(
                           }}
                         >
                           {t("positions.via", {
-                            providerName: val.providerName,
+                            providerName: val.name ?? val.address,
                           })}
                         </Text>
                       ))
@@ -142,7 +135,7 @@ export const PositionsListItem = memo(
 
                 {Maybe.fromRecord({
                   token,
-                  validator,
+                  providerDetails,
                 })
                   .map((val) => (
                     <Box
@@ -154,7 +147,7 @@ export const PositionsListItem = memo(
                       textAlign="end"
                     >
                       <Text variant={{ size: "small", weight: "normal" }}>
-                        {val.validator.apy}%
+                        {val.providerDetails.apr}%
                       </Text>
                       <Text
                         variant={{

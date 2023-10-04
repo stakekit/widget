@@ -1,7 +1,7 @@
-import { Chain, Connector, mainnet } from "wagmi";
+import { Connector } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { Address, createWalletClient, custom } from "viem";
-import { Wallet } from "@stakekit/rainbowkit";
+import { Chain, Wallet } from "@stakekit/rainbowkit";
 import { EthereumProvider } from "eip1193-provider";
 import {
   Account,
@@ -9,15 +9,15 @@ import {
   WalletAPIClient,
   WindowMessageTransport,
 } from "@ledgerhq/wallet-api-client";
-import { fromBech32, toBech32 } from "@cosmjs/encoding";
-import { CosmosNetworks } from "@stakekit/common";
-import { isCosmosChain } from "../../domain";
-import { cosmosChainsMap } from "../cosmos/chains";
-import { near, solana, tezos } from "../misc/config";
+import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
 import {
-  SupportedLedgerLiveFamilies,
-  SupportedLedgerLiveFamiliesMap,
+  AllSupportedLedgerLiveFamiliesMap,
+  CosmosChainsMap,
+  EvmChainsMap,
+  FilteredSupportedLedgerLiveFamiliesMap,
+  MiscChainsMap,
 } from "../../domain/types/chains";
+import { getWagmiConfig } from "../wagmi";
 
 export class LedgerLiveConnector extends Connector {
   readonly id = "ledgerLive";
@@ -33,45 +33,19 @@ export class LedgerLiveConnector extends Connector {
   #accountsOnCurrentChain: Account[] = [];
   #currentAccount?: Account;
 
-  static readonly #skSupportedChains: SupportedLedgerLiveFamiliesMap = {
-    ...(Object.fromEntries(
-      Object.values(cosmosChainsMap).map(
-        (c) =>
-          [
-            c.skChainName,
-            { currencyFamily: c.skChainName, chain: c.wagmiChain },
-          ] as const
-      )
-    ) as {
-      [Key in keyof typeof cosmosChainsMap]: {
-        currencyFamily: SupportedLedgerLiveFamilies;
+  #filteredSkSupportedChainsValues:
+    | {
+        currencyFamily: NonNullable<
+          FilteredSupportedLedgerLiveFamiliesMap[keyof FilteredSupportedLedgerLiveFamiliesMap]
+        >["currencyFamily"];
         chain: Chain;
-      };
-    }),
-    ethereum: { currencyFamily: "ethereum", chain: mainnet },
-    near: { currencyFamily: "near", chain: near },
-    tezos: { currencyFamily: "tezos", chain: tezos },
-    solana: { currencyFamily: "solana", chain: solana },
-  };
-
-  static readonly #skSupportedChainsValues = Object.values(
-    LedgerLiveConnector.#skSupportedChains
-  );
-  static readonly #skSupportedChainsKeys = Object.keys(
-    LedgerLiveConnector.#skSupportedChains
-  ) as (keyof SupportedLedgerLiveFamiliesMap)[];
+      }[]
+    | null = null;
 
   #currentChain: Chain | null = null;
-  chains: Chain[];
 
   constructor() {
-    const defaultChains = LedgerLiveConnector.#skSupportedChainsValues.map(
-      (val) => val.chain
-    );
-
-    super({ chains: defaultChains, options: {} });
-
-    this.chains = defaultChains;
+    super({ options: {} });
 
     if (!isLedgerDappBrowserProvider()) {
       this.ready = false;
@@ -102,40 +76,99 @@ export class LedgerLiveConnector extends Connector {
   async connect() {
     this.emit("message", { type: "connecting" });
 
-    const walletApiClient = this.getWalletApiClient();
+    const wagmiConfig = (await getWagmiConfig()).extract();
 
-    const accounts = await walletApiClient.account.list({
-      currencyIds: LedgerLiveConnector.#skSupportedChainsKeys,
+    if (wagmiConfig instanceof Error) throw wagmiConfig;
+
+    // Filter default supported chains with chains from API, and add `chain` from wagmiConfig
+    const filteredSkSupportedChainsMap = Object.values({
+      ethereum: {
+        currencyFamily: "ethereum",
+        skChainName: EvmNetworks.Ethereum,
+      },
+      celo: { currencyFamily: "celo", skChainName: EvmNetworks.Celo },
+      cosmos: { currencyFamily: "cosmos", skChainName: CosmosNetworks.Cosmos },
+      crypto_org: {
+        currencyFamily: "crypto_org",
+        skChainName: CosmosNetworks.Cronos,
+      },
+      near: { currencyFamily: "near", skChainName: MiscNetworks.Near },
+      solana: { currencyFamily: "solana", skChainName: MiscNetworks.Solana },
+      tezos: { currencyFamily: "tezos", skChainName: MiscNetworks.Tezos },
+    } satisfies AllSupportedLedgerLiveFamiliesMap).reduce(
+      (acc, next) => {
+        const chain =
+          wagmiConfig.evmConfig.evmChainsMap[
+            next.skChainName as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
+          ]?.wagmiChain ||
+          wagmiConfig.cosmosConfig.cosmosChainsMap[
+            next.skChainName as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
+          ]?.wagmiChain ||
+          wagmiConfig.miscConfig.miscChainsMap[
+            next.skChainName as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
+          ]?.wagmiChain;
+
+        if (chain) {
+          return { ...acc, [next.currencyFamily]: { ...next, chain } };
+        }
+
+        return acc;
+      },
+      {} as {
+        [Key in keyof FilteredSupportedLedgerLiveFamiliesMap]: FilteredSupportedLedgerLiveFamiliesMap[Key] & {
+          chain: Chain;
+        };
+      }
+    );
+
+    const accounts = await this.getWalletApiClient().account.list({
+      currencyIds: Object.keys(
+        filteredSkSupportedChainsMap
+      ) as (keyof FilteredSupportedLedgerLiveFamiliesMap)[],
     });
+
+    const familiesSet = new Set(accounts.map((a) => a.currency));
+
+    // Filter again with supported chains from ledger
+    this.#filteredSkSupportedChainsValues = Object.values(
+      filteredSkSupportedChainsMap
+    ).reduce(
+      (acc, next) => {
+        if (familiesSet.has(next.currencyFamily)) {
+          return [...acc, next];
+        }
+
+        return acc;
+      },
+      [] as {
+        currencyFamily: NonNullable<
+          FilteredSupportedLedgerLiveFamiliesMap[keyof FilteredSupportedLedgerLiveFamiliesMap]
+        >["currencyFamily"];
+        chain: Chain;
+      }[]
+    );
+
+    // Set chains to expose for switcher
+    // @ts-expect-error
+    this.chains = this.#filteredSkSupportedChainsValues.map((val) => val.chain);
 
     this.#ledgerAccounts = accounts;
     this.#currentAccount = this.#ledgerAccounts[0];
 
     this.#currentChain =
-      LedgerLiveConnector.#skSupportedChains[
-        this.#currentAccount.currency as keyof SupportedLedgerLiveFamiliesMap
-      ].chain;
+      filteredSkSupportedChainsMap[
+        this.#currentAccount
+          .currency as keyof FilteredSupportedLedgerLiveFamiliesMap
+      ]!.chain;
 
     this.#accountsOnCurrentChain = this.#getAccountsOnCurrentChain();
-
-    const accountsCurrencies = new Set(accounts.map((val) => val.currency));
-
-    this.chains = LedgerLiveConnector.#skSupportedChainsValues
-      .filter((val) =>
-        isCosmosChain(val.chain)
-          ? accountsCurrencies.has(CosmosNetworks.Cosmos)
-          : accountsCurrencies.has(val.currencyFamily)
-      )
-      .map((val) => val.chain);
-
-    const id = await this.getChainId();
 
     this.onAccountsChanged([this.#currentAccount.address as Address]);
     this.onChainChanged(this.#currentChain.id);
 
     return {
       account: this.#currentAccount.address as Address,
-      chain: { id, unsupported: false },
+      chain: { id: await this.getChainId(), unsupported: false },
     };
   }
 
@@ -144,35 +177,15 @@ export class LedgerLiveConnector extends Connector {
 
     if (!currentChain) throw new Error("Current chain not found");
 
-    if (isCosmosChain(currentChain)) {
-      const bech32Prefix = Object.values(cosmosChainsMap).find(
-        (c) => c.wagmiChain.id === currentChain.id
-      )?.chain.bech32_prefix;
+    const supportedSkChain = this.#filteredSkSupportedChainsValues!.find(
+      (c) => c.chain.id === currentChain.id
+    );
 
-      if (!bech32Prefix) throw new Error("Bech32 prefix not found");
+    if (!supportedSkChain) throw new Error("SkSupported chain not found");
 
-      return this.#ledgerAccounts
-        .filter((a) => a.currency === CosmosNetworks.Cosmos)
-        .map((a) => {
-          const { data } = fromBech32(a.address);
-
-          return {
-            ...a,
-            address: toBech32(bech32Prefix, data),
-          };
-        });
-    } else {
-      const supportedSkChain =
-        LedgerLiveConnector.#skSupportedChainsValues.find(
-          (c) => c.chain.id === currentChain.id
-        );
-
-      if (!supportedSkChain) throw new Error("SkSupported chain not found");
-
-      return this.#ledgerAccounts.filter(
-        (a) => a.currency === supportedSkChain.currencyFamily
-      );
-    }
+    return this.#ledgerAccounts.filter(
+      (a) => a.currency === supportedSkChain.currencyFamily
+    );
   };
 
   async disconnect() {
@@ -204,12 +217,17 @@ export class LedgerLiveConnector extends Connector {
     });
   };
 
+  switchAccount = (account: Account) => {
+    this.#currentAccount = account;
+    this.onAccountsChanged([this.#currentAccount.address as Address]);
+  };
+
   switchChain = async (chainId: number): Promise<Chain> => {
     const currentChain = this.#currentChain;
 
     if (!currentChain) throw new Error("Chain not found");
 
-    const skSupportedChain = LedgerLiveConnector.#skSupportedChainsValues.find(
+    const skSupportedChain = this.#filteredSkSupportedChainsValues!.find(
       (c) => c.chain.id === chainId
     );
 
