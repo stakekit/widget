@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { apyToPercentage } from "../utils";
 import { State } from "../state/stake/types";
 import { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
@@ -20,20 +19,18 @@ export const useEstimatedRewards = ({
   });
 
   return useMemo(() => {
-    return selectedStake.map((y) => {
-      const apy = providerDetails.map((v) => v.apr).extract()!;
+    const apy = providerDetails.map((v) => v.apr).extract()!;
 
-      return {
-        percentage: apyToPercentage(apy),
-        yearly: stakeAmount.mapOrDefault(
-          (am) => am.times(apy).decimalPlaces(5).toString(),
-          ""
-        ),
-        monthly: stakeAmount.mapOrDefault(
-          (am) => am.times(apy).dividedBy(12).decimalPlaces(5).toString(),
-          ""
-        ),
-      };
+    return Maybe.of({
+      percentage: apy,
+      yearly: stakeAmount.mapOrDefault(
+        (am) => am.times(apy).decimalPlaces(5).toString(),
+        ""
+      ),
+      monthly: stakeAmount.mapOrDefault(
+        (am) => am.times(apy).dividedBy(12).decimalPlaces(5).toString(),
+        ""
+      ),
     });
-  }, [providerDetails, selectedStake, stakeAmount]);
+  }, [providerDetails, stakeAmount]);
 };

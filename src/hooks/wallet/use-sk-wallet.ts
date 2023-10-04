@@ -202,7 +202,8 @@ export const useSKWallet = (): SKWallet => {
       chain: null,
       isConnected: false,
       isConnecting,
-      isNotConnectedOrReconnecting: !isReconnecting && !isConnecting,
+      isNotConnectedOrReconnecting:
+        !wagmiConfig.isLoading && !isReconnecting && !isConnecting,
       additionalAddresses: null,
       isLedgerLive: false,
     };
@@ -217,6 +218,7 @@ export const useSKWallet = (): SKWallet => {
     chain,
     additionalAddresses,
     isReconnecting,
+    wagmiConfig,
   ]);
 
   return value;

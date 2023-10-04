@@ -1,6 +1,7 @@
 import { YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { apyToPercentage } from "../utils";
 
 export const useProviderDetails = ({
   integrationData,
@@ -13,7 +14,7 @@ export const useProviderDetails = ({
     Maybe<{
       logo: string;
       name: string;
-      apr: number;
+      apr: string;
       address?: string;
     }>
   >(
@@ -25,7 +26,7 @@ export const useProviderDetails = ({
               return Maybe.fromNullable(val.metadata.provider).map((v) => ({
                 logo: v.logoURI,
                 name: v.name,
-                apr: val.apy,
+                apr: apyToPercentage(val.apy),
               }));
             }
 
@@ -33,7 +34,7 @@ export const useProviderDetails = ({
               (v) => ({
                 logo: v.image,
                 name: v.name,
-                apr: v.apr,
+                apr: apyToPercentage(v.apr),
                 address: v.address,
               })
             );
@@ -42,7 +43,7 @@ export const useProviderDetails = ({
             Maybe.fromNullable(val.metadata.provider).map((v) => ({
               logo: v.logoURI,
               name: v.name,
-              apr: val.apy,
+              apr: apyToPercentage(val.apy),
             }))
           )
       ),

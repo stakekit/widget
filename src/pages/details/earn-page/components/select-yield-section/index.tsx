@@ -2,7 +2,6 @@ import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
-import { apyToPercentage } from "../../../../../utils";
 import { apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { useDetailsContext } from "../../hooks/details-context";
@@ -72,7 +71,7 @@ export const SelectYieldSection = () => {
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
                   <Text className={apyYield}>
                     {providerDetails
-                      .map((ss) => `${apyToPercentage(ss.apr)}%`)
+                      .map((ss) => `${ss.apr}%`)
                       .extractNullable()}
                   </Text>
                 </Box>

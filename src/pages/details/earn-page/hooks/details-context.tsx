@@ -43,6 +43,7 @@ import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
 import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { useWagmiConfig } from "../../../../providers/wagmi";
 
 type DetailsContextType = {
   availableTokens: string;
@@ -315,10 +316,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const onSelectOpportunityClose = () => setStakeSearch("");
 
+  const wagmiConfig = useWagmiConfig();
+
   const isFetching =
     multiYields.isFetching || stakeTokenAvailableAmount.isFetching;
 
   const isLoading =
+    wagmiConfig.isLoading ||
     isConnecting ||
     isReconnecting ||
     multiYields.isInitialLoading ||
