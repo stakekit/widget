@@ -8,6 +8,7 @@ import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { queryClient } from "../../services/query-client";
 import { config } from "../../config";
 import { useQuery } from "@tanstack/react-query";
+import { EitherAsync } from "purify-ts";
 
 const queryFn = async () =>
   getEvmConfig()
@@ -55,7 +56,12 @@ const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;
 
 export const getWagmiConfig = () =>
-  queryClient.fetchQuery({ staleTime, queryKey, queryFn });
+  EitherAsync(() =>
+    queryClient.fetchQuery({ staleTime, queryKey, queryFn })
+  ).mapLeft((e) => {
+    console.log(e);
+    return new Error("Could not get wagmi config");
+  });
 
 export const useWagmiConfig = () => useQuery({ staleTime, queryKey, queryFn });
 

@@ -17,35 +17,39 @@ export const useProviderDetails = ({
       apr: string;
       address?: string;
     }>
-  >(
-    () =>
-      integrationData.chain((val) =>
-        validatorAddress
-          .chain((addr) => {
-            if (addr === "default") {
-              return Maybe.fromNullable(val.metadata.provider).map((v) => ({
-                logo: v.logoURI,
-                name: v.name,
-                apr: apyToPercentage(val.apy),
-              }));
-            }
-
-            return List.find((v) => v.address === addr, val.validators).map(
-              (v) => ({
-                logo: v.image,
-                name: v.name,
-                apr: apyToPercentage(v.apr),
-                address: v.address,
-              })
-            );
+  >(() => {
+    const def = integrationData.chain((val) =>
+      Maybe.fromNullable(val.metadata.provider)
+        .map((v) => ({
+          logo: v.logoURI,
+          name: v.name,
+          apr: apyToPercentage(val.apy),
+        }))
+        .altLazy(() =>
+          Maybe.of({
+            logo: val.metadata.logoURI,
+            name: val.metadata.name,
+            apr: apyToPercentage(val.apy),
           })
-          .altLazy(() =>
-            Maybe.fromNullable(val.metadata.provider).map((v) => ({
-              logo: v.logoURI,
+        )
+    );
+
+    return integrationData.chain((val) =>
+      validatorAddress
+        .chain((addr) => {
+          if (addr === "default") {
+            return def;
+          }
+
+          return List.find((v) => v.address === addr, val.validators).map(
+            (v) => ({
+              logo: v.image,
               name: v.name,
-              apr: apyToPercentage(val.apy),
-            }))
-          )
-      ),
-    [integrationData, validatorAddress]
-  );
+              apr: apyToPercentage(v.apr),
+              address: v.address,
+            })
+          );
+        })
+        .altLazy(() => def)
+    );
+  }, [integrationData, validatorAddress]);

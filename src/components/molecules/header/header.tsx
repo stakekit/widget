@@ -49,20 +49,21 @@ export const Header = () => {
   return (
     <Box paddingTop="4" paddingBottom="1">
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        {showBack ? (
-          <Box
-            as="button"
-            hw="7"
-            onClick={onLeftIconPress}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-          >
-            <CaretLeftIcon />
-          </Box>
-        ) : (
-          <Box />
-        )}
+        <Box hw="7">
+          {showBack ? (
+            <Box
+              as="button"
+              onClick={onLeftIconPress}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <CaretLeftIcon />
+            </Box>
+          ) : (
+            <Box />
+          )}
+        </Box>
 
         {!showDisconnect && (
           <Box display="flex" alignItems="center" justifyContent="center">

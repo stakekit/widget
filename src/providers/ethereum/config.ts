@@ -36,56 +36,57 @@ export const getConfig = () =>
       queryFn: async () =>
         getEnabledNetworks().caseOf({
           Right: (networks) => {
-            const evmChainsMap: EvmChainsMap = typeSafeObjectFromEntries(
-              typeSafeObjectEntries<EvmChainsMap>({
-                [EvmNetworks.Ethereum]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Ethereum,
-                  wagmiChain: mainnet,
-                },
-                [EvmNetworks.Polygon]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Polygon,
-                  wagmiChain: polygon,
-                },
-                [EvmNetworks.Optimism]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Optimism,
-                  wagmiChain: optimism,
-                },
-                [EvmNetworks.Arbitrum]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Arbitrum,
-                  wagmiChain: arbitrum,
-                },
-                [EvmNetworks.AvalancheC]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.AvalancheC,
-                  wagmiChain: avalanche,
-                },
-                [EvmNetworks.Celo]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Celo,
-                  wagmiChain: {
-                    ...celo,
-                    iconUrl: getNetworkLogo(EvmNetworks.Celo),
+            const evmChainsMap: Partial<EvmChainsMap> =
+              typeSafeObjectFromEntries(
+                typeSafeObjectEntries<EvmChainsMap>({
+                  [EvmNetworks.Ethereum]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Ethereum,
+                    wagmiChain: mainnet,
                   },
-                },
-                [EvmNetworks.Harmony]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.Harmony,
-                  wagmiChain: {
-                    ...harmonyOne,
-                    iconUrl: getNetworkLogo(EvmNetworks.Harmony),
+                  [EvmNetworks.Polygon]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Polygon,
+                    wagmiChain: polygon,
                   },
-                },
-                [EvmNetworks.EthereumGoerli]: {
-                  type: "evm",
-                  skChainName: EvmNetworks.EthereumGoerli,
-                  wagmiChain: goerli,
-                },
-              }).filter(([_, v]) => networks.has(v.skChainName))
-            );
+                  [EvmNetworks.Optimism]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Optimism,
+                    wagmiChain: optimism,
+                  },
+                  [EvmNetworks.Arbitrum]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Arbitrum,
+                    wagmiChain: arbitrum,
+                  },
+                  [EvmNetworks.AvalancheC]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.AvalancheC,
+                    wagmiChain: avalanche,
+                  },
+                  [EvmNetworks.Celo]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Celo,
+                    wagmiChain: {
+                      ...celo,
+                      iconUrl: getNetworkLogo(EvmNetworks.Celo),
+                    },
+                  },
+                  [EvmNetworks.Harmony]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.Harmony,
+                    wagmiChain: {
+                      ...harmonyOne,
+                      iconUrl: getNetworkLogo(EvmNetworks.Harmony),
+                    },
+                  },
+                  [EvmNetworks.EthereumGoerli]: {
+                    type: "evm",
+                    skChainName: EvmNetworks.EthereumGoerli,
+                    wagmiChain: goerli,
+                  },
+                }).filter(([_, v]) => networks.has(v.skChainName))
+              );
 
             const evmChains = Object.values(evmChainsMap).map(
               (val) => val.wagmiChain

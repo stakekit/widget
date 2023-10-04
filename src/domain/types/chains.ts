@@ -97,13 +97,17 @@ export type SupportedSKChains =
   | SupportedEvmChain
   | SupportedMiscChains;
 
-export type SupportedLedgerLiveFamilies =
-  | Extract<Families, "ethereum" | "near" | "tezos" | "solana">
-  | SupportedCosmosChains;
+type SupportedLedgerLiveFamilies = Extract<
+  Families,
+  "ethereum" | "near" | "tezos" | "solana" | "cosmos" | "crypto_org" | "celo"
+>;
 
-export type SupportedLedgerLiveFamiliesMap = {
+export type AllSupportedLedgerLiveFamiliesMap = {
   [Key in SupportedLedgerLiveFamilies]: {
-    currencyFamily: SupportedLedgerLiveFamilies;
-    chain: Chain;
+    currencyFamily: Key;
+    skChainName: SupportedSKChains;
   };
 };
+
+export type FilteredSupportedLedgerLiveFamiliesMap =
+  Partial<AllSupportedLedgerLiveFamiliesMap>;

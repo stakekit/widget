@@ -16,9 +16,9 @@ export const wagmiNetworkToSKNetwork = ({
   miscChainsMap,
 }: {
   chain: Chain;
-  evmChainsMap: EvmChainsMap;
-  cosmosChainsMap: CosmosChainsMap;
-  miscChainsMap: MiscChainsMap;
+  evmChainsMap: Partial<EvmChainsMap>;
+  cosmosChainsMap: Partial<CosmosChainsMap>;
+  miscChainsMap: Partial<MiscChainsMap>;
 }): SKWallet["network"] => {
   return (
     Object.values({

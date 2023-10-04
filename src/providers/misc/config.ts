@@ -66,7 +66,7 @@ const staleTime = Infinity;
 const queryFn = async () =>
   getEnabledNetworks().caseOf({
     Right: (networks) => {
-      const miscChainsMap: MiscChainsMap = typeSafeObjectFromEntries(
+      const miscChainsMap: Partial<MiscChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<MiscChainsMap>({
           [MiscNetworks.Near]: {
             type: "misc",

@@ -1,4 +1,3 @@
-import { CosmosNetworks } from "@stakekit/common";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
@@ -42,6 +41,8 @@ export const wallets = [
   new WalletConnectWallet(walletConnectInfo),
 ];
 
+type FilteredCosmosChainsMap = Partial<CosmosChainsMap>;
+
 export class CosmosWagmiConnector extends Connector {
   readonly id: string;
   readonly name: string;
@@ -54,13 +55,13 @@ export class CosmosWagmiConnector extends Connector {
 
   readonly wallet: MainWalletBase;
 
-  readonly cosmosChainsMap: CosmosChainsMap;
+  readonly cosmosChainsMap: FilteredCosmosChainsMap;
   readonly cosmosWagmiChains: Chain[];
 
   constructor(opts: {
     wallet: MainWalletBase;
     cosmosWagmiChains: Chain[];
-    cosmosChainsMap: CosmosChainsMap;
+    cosmosChainsMap: FilteredCosmosChainsMap;
   }) {
     super({ chains: opts.cosmosWagmiChains, options: {} });
     this.cosmosChainsMap = opts.cosmosChainsMap;
@@ -79,8 +80,9 @@ export class CosmosWagmiConnector extends Connector {
         }
 
         const cw = this.wallet.chainWalletMap.get(
-          opts.cosmosChainsMap[CosmosNetworks.Cosmos].chain.chain_name
-        )!;
+          Object.values(opts.cosmosChainsMap)[0].chain.chain_name
+        );
+
         if (cw && cw.clientMutable.state === "Done") {
           res(cw);
           this.ready = true;
@@ -224,7 +226,7 @@ const createCosmosConnector = ({
 }: {
   wallet: MainWalletBase;
   cosmosWagmiChains: Chain[];
-  cosmosChainsMap: CosmosChainsMap;
+  cosmosChainsMap: FilteredCosmosChainsMap;
 }): Wallet => {
   return {
     id: wallet.walletInfo.name,
@@ -287,26 +289,27 @@ const staleTime = Infinity;
 const queryFn = async () =>
   getEnabledNetworks().caseOf({
     Right: (networks) => {
-      const cosmosChainsMap: CosmosChainsMap = typeSafeObjectFromEntries(
-        typeSafeObjectEntries<CosmosChainsMap>(
-          supportedCosmosChains.reduce((acc, next) => {
-            const chain =
-              filteredCosmosChains[sKCosmosNetworksToRegistryIds[next]];
+      const cosmosChainsMap: FilteredCosmosChainsMap =
+        typeSafeObjectFromEntries(
+          typeSafeObjectEntries<CosmosChainsMap>(
+            supportedCosmosChains.reduce((acc, next) => {
+              const chain =
+                filteredCosmosChains[sKCosmosNetworksToRegistryIds[next]];
 
-            if (!chain) throw new Error("Chain not found");
+              if (!chain) throw new Error("Chain not found");
 
-            return {
-              ...acc,
-              [next]: {
-                type: "cosmos",
-                skChainName: next,
-                chain,
-                wagmiChain: getWagmiChain(chain),
-              },
-            };
-          }, {} as CosmosChainsMap)
-        ).filter(([_, v]) => networks.has(v.skChainName))
-      );
+              return {
+                ...acc,
+                [next]: {
+                  type: "cosmos",
+                  skChainName: next,
+                  chain,
+                  wagmiChain: getWagmiChain(chain),
+                },
+              };
+            }, {} as CosmosChainsMap)
+          ).filter(([_, v]) => networks.has(v.skChainName))
+        );
 
       const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
         (val) => val.wagmiChain
