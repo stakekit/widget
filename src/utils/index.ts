@@ -106,3 +106,9 @@ export function formatAddress(address: string): string {
         address.length - trailingChars
       )}`;
 }
+
+export function assertNotError<T>(value: T | Error): asserts value is T {
+  if (value instanceof Error) {
+    throw value;
+  }
+}
