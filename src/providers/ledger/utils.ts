@@ -33,9 +33,9 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
         (acc, [k, v]) => {
           const filtered = Object.keys(v).reduce(
             (acc, key) => {
-              const item = v[
-                key as keyof typeof v
-              ] as SupportedLedgerFamiliesWithCurrency["ethereum"]["*"];
+              const item = v[key as keyof typeof v] as
+                | SupportedLedgerFamiliesWithCurrency["ethereum"]["ethereum"]
+                | SupportedLedgerFamiliesWithCurrency["ethereum"]["polygon"];
 
               const chain =
                 wagmiConfig.evmConfig.evmChainsMap[
