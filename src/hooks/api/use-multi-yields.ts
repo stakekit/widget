@@ -82,19 +82,16 @@ const skFilter = ({
   o,
   isConnected,
   network,
-  isLedgerLive,
 }: {
   o: YieldDto;
   isConnected: boolean;
   network: SKWallet["network"];
-  isLedgerLive: boolean;
 }) => {
   const defaultFilter =
     !o.args.enter.args?.nfts &&
     o.id !== "binance-bnb-native-staking" &&
     o.id !== "binance-testnet-bnb-native-staking" &&
     o.id !== "avax-native-staking" &&
-    (isLedgerLive ? o.metadata.supportsLedgerWalletApi : true) &&
     isSupportedChain(o.token.network);
 
   if (!isConnected) return defaultFilter;
@@ -105,13 +102,11 @@ const skFilter = ({
 const selectData = (val: SelectorInputData) => val.data;
 const selectConnected = (val: SelectorInputData) => val.isConnected;
 const selectNetwork = (val: SelectorInputData) => val.network;
-const selectSsLedgerLive = (val: SelectorInputData) => val.isLedgerLive;
 
 const defaultFiltered = createSelector(
   selectData,
   selectConnected,
   selectNetwork,
-  selectSsLedgerLive,
-  (data, isConnected, network, isLedgerLive) =>
-    data.filter((o) => skFilter({ o, isConnected, network, isLedgerLive }))
+  (data, isConnected, network) =>
+    data.filter((o) => skFilter({ o, isConnected, network }))
 );
