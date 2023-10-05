@@ -1,7 +1,12 @@
 import { Chain } from "@stakekit/rainbowkit";
-import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
+import {
+  CosmosNetworks,
+  EvmNetworks,
+  MiscNetworks,
+  Networks,
+} from "@stakekit/common";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
-import { Families } from "@ledgerhq/wallet-api-client";
+import { Currency, Families } from "@ledgerhq/wallet-api-client";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,
@@ -97,17 +102,131 @@ export type SupportedSKChains =
   | SupportedEvmChain
   | SupportedMiscChains;
 
-type SupportedLedgerLiveFamilies = Extract<
+/**
+ * LEDGER LIVE
+ */
+
+export type SupportedLedgerLiveFamilies = Extract<
   Families,
   "ethereum" | "near" | "tezos" | "solana" | "cosmos" | "crypto_org" | "celo"
 >;
 
-export type AllSupportedLedgerLiveFamiliesMap = {
-  [Key in SupportedLedgerLiveFamilies]: {
-    currencyFamily: Key;
-    skChainName: SupportedSKChains;
-  };
-};
+export const supportedLedgerFamiliesWithCurrency = {
+  near: {
+    "*": {
+      currencyId: "near",
+      family: "near",
+      skChainName: MiscNetworks.Near,
+    },
+  },
+  tezos: {
+    "*": {
+      currencyId: "tezos",
+      family: "tezos",
+      skChainName: MiscNetworks.Tezos,
+    },
+  },
+  solana: {
+    "*": {
+      currencyId: "solana",
+      family: "solana",
+      skChainName: MiscNetworks.Solana,
+    },
+  },
+  celo: {
+    "*": {
+      currencyId: "celo",
+      family: "celo",
+      skChainName: EvmNetworks.Celo,
+    },
+  },
+  crypto_org: {
+    "*": {
+      currencyId: "crypto_org",
+      family: "crypto_org",
+      skChainName: CosmosNetworks.Cronos,
+    },
+  },
+  ethereum: {
+    ethereum: {
+      currencyId: "ethereum",
+      family: "ethereum",
+      skChainName: EvmNetworks.Ethereum,
+    },
+    polygon: {
+      currencyId: "polygon",
+      family: "ethereum",
+      skChainName: EvmNetworks.Polygon,
+    },
+  },
+  cosmos: {
+    cosmos: {
+      currencyId: "cosmos",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Cosmos,
+    },
+    osmo: {
+      currencyId: "osmo",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Osmosis,
+    },
+    coreum: {
+      currencyId: "coreum",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Coreum,
+    },
+    axelar: {
+      currencyId: "axelar",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Axelar,
+    },
+    stargaze: {
+      currencyId: "stargaze",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Stargaze,
+    },
+    secret_network: {
+      currencyId: "secret_network",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Secret,
+    },
+    umee: {
+      currencyId: "umee",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Umee,
+    },
+    desmos: {
+      currencyId: "desmos",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Desmos,
+    },
+    onomy: {
+      currencyId: "onomy",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Onomy,
+    },
+    quicksilver: {
+      currencyId: "quicksilver",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Quicksilver,
+    },
+    persistence: {
+      currencyId: "persistence",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Persistence,
+    },
+  },
+} satisfies Record<
+  SupportedLedgerLiveFamilies,
+  Record<
+    Currency["id"],
+    {
+      family: SupportedLedgerLiveFamilies;
+      currencyId: Currency["id"];
+      skChainName: Networks;
+    }
+  >
+>;
 
-export type FilteredSupportedLedgerLiveFamiliesMap =
-  Partial<AllSupportedLedgerLiveFamiliesMap>;
+export type SupportedLedgerFamiliesWithCurrency =
+  typeof supportedLedgerFamiliesWithCurrency;
