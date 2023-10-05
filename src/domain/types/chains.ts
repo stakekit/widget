@@ -112,13 +112,6 @@ export type SupportedLedgerLiveFamilies = Extract<
 >;
 
 export const supportedLedgerFamiliesWithCurrency = {
-  ethereum: {
-    "*": {
-      currencyId: "ethereum",
-      family: "ethereum",
-      skChainName: EvmNetworks.Ethereum,
-    },
-  },
   near: {
     "*": {
       currencyId: "near",
@@ -152,6 +145,18 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "crypto_org",
       family: "crypto_org",
       skChainName: CosmosNetworks.Cronos,
+    },
+  },
+  ethereum: {
+    ethereum: {
+      currencyId: "ethereum",
+      family: "ethereum",
+      skChainName: EvmNetworks.Ethereum,
+    },
+    polygon: {
+      currencyId: "polygon",
+      family: "ethereum",
+      skChainName: EvmNetworks.Polygon,
     },
   },
   cosmos: {
