@@ -21,6 +21,7 @@ export const Footer = () => {
     withdrawnNotAvailable,
     withdrawnTime,
     compoundRewards,
+    extra,
   } = useFooterItems();
 
   const { isLoading } = useDetailsContext();
@@ -35,6 +36,8 @@ export const Footer = () => {
         { text: withdrawnNotAvailable, icon: <InfoIcon /> },
         { text: withdrawnTime, icon: <InfoIcon /> },
         { text: compoundRewards, icon: <InfoIcon /> },
+        { text: compoundRewards, icon: <InfoIcon /> },
+        { text: extra, icon: <InfoIcon /> },
       ].filter((val): val is { text: string; icon: JSX.Element } => !!val.text),
     [
       description,
@@ -44,6 +47,7 @@ export const Footer = () => {
       withdrawnNotAvailable,
       withdrawnTime,
       compoundRewards,
+      extra,
     ]
   );
 

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useStakeState } from "../../../../state/stake";
 import { yieldTypesMap } from "../../../../domain/types";
+import { MiscNetworks } from "@stakekit/common";
 
 export const useFooterItems = () => {
   const { t } = useTranslation();
@@ -28,14 +29,21 @@ export const useFooterItems = () => {
 
       const isCompound = providerName.includes("Compound");
 
+      const def = {
+        extra:
+          y.metadata.token.network === MiscNetworks.Tezos
+            ? t("details.extra_tezos")
+            : undefined,
+      };
+
       switch (y.metadata.type) {
         case yieldTypesMap.staking.type: {
           return {
             description: null,
             earnPeriod:
               warmupPeriodDays > 0
-                ? t("details.native_staking.earn_after_warmup_days", {
-                    warmupPeriodDays,
+                ? t("details.native_staking.earn_after_warmup", {
+                    count: warmupPeriodDays,
                   })
                 : null,
             earnRewards:
@@ -61,6 +69,7 @@ export const useFooterItems = () => {
                 : null,
             withdrawnNotAvailable: null,
             compoundRewards: null,
+            ...def,
           };
         }
 
@@ -68,7 +77,9 @@ export const useFooterItems = () => {
           return {
             earnPeriod:
               warmupPeriodDays > 0
-                ? t("details.lend.earn_after_warmup_days", { warmupPeriodDays })
+                ? t("details.lend.earn_after_warmup", {
+                    count: warmupPeriodDays,
+                  })
                 : null,
             earnRewards:
               rewardClaiming === "manual"
@@ -101,6 +112,7 @@ export const useFooterItems = () => {
                     stakeToken,
                   })
                 : null,
+            ...def,
           };
 
         case yieldTypesMap.vault.type:
@@ -111,8 +123,8 @@ export const useFooterItems = () => {
             }),
             earnPeriod:
               warmupPeriodDays > 0
-                ? t("details.vault.earn_after_warmup_days", {
-                    warmupPeriodDays,
+                ? t("details.vault.earn_after_warmup", {
+                    count: warmupPeriodDays,
                   })
                 : null,
             earnRewards:
@@ -132,6 +144,7 @@ export const useFooterItems = () => {
                   })
                 : null,
             compoundRewards: null,
+            ...def,
           };
 
         case yieldTypesMap["liquid-staking"].type:
@@ -142,7 +155,7 @@ export const useFooterItems = () => {
             }),
             earnPeriod:
               warmupPeriodDays > 0
-                ? t("details.liquid_stake.earn_after_warmup_days", {
+                ? t("details.liquid_stake.earn_after_warmup", {
                     warmupPeriodDays,
                   })
                 : null,
@@ -174,6 +187,7 @@ export const useFooterItems = () => {
                   })
                 : null,
             compoundRewards: null,
+            ...def,
           };
 
         default:
@@ -191,6 +205,7 @@ const ifNotFound: {
   withdrawnNotAvailable: string | null;
   minimumStakeAmount: string | null;
   compoundRewards: string | null;
+  extra?: string;
 } = {
   description: null,
   earnPeriod: null,
