@@ -43,7 +43,7 @@ const EarnPageComponent = () => {
               {selectedStakeYieldType && (
                 <HelpModal modal={{ type: selectedStakeYieldType }} />
               )}
-              <Text variant={{ size: "small" }}>{title}</Text>
+              <Text>{title}</Text>
               {(isFetching || isLoading) && (
                 <Box display="flex" marginLeft="2">
                   <Spinner />
@@ -64,7 +64,7 @@ const EarnPageComponent = () => {
             display="flex"
             alignItems="center"
             justifyContent="center"
-            marginBottom="6"
+            my="4"
           >
             <Text variant={{ type: "danger" }}>{errorMessage}</Text>
           </Box>

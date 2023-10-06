@@ -4,7 +4,7 @@ import { Box } from "../../components/atoms/box";
 import { Heading, Text } from "../../components/atoms/typography";
 import { PageContainer } from "../components";
 import { useReview } from "./use-review.hook";
-import { feeStyles, spanStyle } from "./style.css";
+import { feeStyles, pointer, spanStyle } from "./style.css";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { HelpModal } from "../../components/molecules/help-modal";
@@ -57,7 +57,7 @@ export const ReviewPage = () => {
           </Heading>
 
           <Box marginTop="2">
-            <Text variant={{ size: "small", type: "muted", weight: "normal" }}>
+            <Text variant={{ type: "muted", weight: "normal" }}>
               {t("review.estimated_reward")}
             </Text>
           </Box>
@@ -83,9 +83,7 @@ export const ReviewPage = () => {
           alignItems="center"
           marginTop="3"
         >
-          <Text variant={{ weight: "semibold", size: "small" }}>
-            {t("shared.fees")}
-          </Text>
+          <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
           <HelpModal modal={{ type: "fees" }} />
         </Box>
 
@@ -96,12 +94,12 @@ export const ReviewPage = () => {
           my="1"
           data-testid="estimated_gas_fee"
         >
-          <Text variant={{ size: "small", weight: "normal", type: "muted" }}>
+          <Text variant={{ weight: "normal", type: "muted" }}>
             {t("review.estimated_gas_fee")}
           </Text>
           <Text
             className={feeStyles}
-            variant={{ size: "small", type: "muted", weight: "normal" }}
+            variant={{ type: "muted", weight: "normal" }}
           >
             {fee}
           </Text>
@@ -124,11 +122,19 @@ export const ReviewPage = () => {
       </PageContainer>
 
       <Box background="backgroundMuted" px="6" py="6">
-        <Text variant={{ size: "small", weight: "normal", type: "muted" }}>
+        <Text variant={{ weight: "normal", type: "muted" }}>
           <Trans
             i18nKey="review.terms_of_use"
             components={{
-              underline0: <span style={{ textDecoration: "underline" }} />,
+              underline0: (
+                // eslint-disable-next-line jsx-a11y/anchor-has-content
+                <a
+                  target="_blank"
+                  href="https://docs.stakek.it/docs/terms-of-use"
+                  className={pointer}
+                  rel="noreferrer"
+                />
+              ),
             }}
           />
         </Text>

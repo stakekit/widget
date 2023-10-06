@@ -27,7 +27,6 @@ export const Tabs = ({
       >
         <Text
           variant={{
-            size: "small",
             type: selectedTab === "earn" ? "regular" : "muted",
           }}
         >
@@ -44,7 +43,6 @@ export const Tabs = ({
         <Box position="relative">
           <Text
             variant={{
-              size: "small",
               type: selectedTab === "positions" ? "regular" : "muted",
             }}
           >

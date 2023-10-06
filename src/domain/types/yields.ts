@@ -12,3 +12,10 @@ export const yieldTypesMap: {
   vault: { type: "vault", title: "Yearn", review: "Deposit" },
   lending: { type: "lending", title: "Lend", review: "Supply" },
 } as const;
+
+export const yieldTypesSortRank: { [Key in YieldType]: number } = {
+  staking: 1,
+  "liquid-staking": 2,
+  vault: 3,
+  lending: 4,
+};

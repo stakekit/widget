@@ -53,7 +53,7 @@ export const SelectYieldSection = () => {
         ) : (
           <Box>
             <Box my="2">
-              <Text variant={{ size: "small" }}>{t("details.earn")}</Text>
+              <Text>{t("details.earn")}</Text>
             </Box>
 
             <Box
@@ -71,7 +71,7 @@ export const SelectYieldSection = () => {
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
                   <Text className={apyYield}>
                     {providerDetails
-                      .map((ss) => `${ss.apr}%`)
+                      .map((ss) => `${ss.aprPercentage}%`)
                       .extractNullable()}
                   </Text>
                 </Box>
@@ -101,7 +101,6 @@ export const SelectYieldSection = () => {
                   >
                     <Text
                       variant={{
-                        size: "small",
                         type: "muted",
                         weight: "normal",
                       }}
@@ -110,7 +109,6 @@ export const SelectYieldSection = () => {
                     </Text>
                     <Text
                       variant={{
-                        size: "small",
                         type: "muted",
                         weight: "normal",
                       }}
@@ -127,7 +125,6 @@ export const SelectYieldSection = () => {
                   >
                     <Text
                       variant={{
-                        size: "small",
                         type: "muted",
                         weight: "normal",
                       }}
@@ -136,7 +133,6 @@ export const SelectYieldSection = () => {
                     </Text>
                     <Text
                       variant={{
-                        size: "small",
                         type: "muted",
                         weight: "normal",
                       }}

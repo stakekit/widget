@@ -100,7 +100,7 @@ export const textStyles = recipe({
 
   defaultVariants: {
     type: "regular",
-    size: "standard",
+    size: "medium",
     weight: "medium",
   },
 });

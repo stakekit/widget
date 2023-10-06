@@ -99,18 +99,22 @@ export const CompletePage = ({
             )}
           </Heading>
 
-          {providerDetails
-            .map((v) => (
-              <Box display="flex" marginTop="2">
-                {v.logo && <Box hw="5" as="img" src={v.logo} marginRight="1" />}
-                <Text variant={{ type: "muted", size: "small" }}>
-                  {t("complete.via", {
-                    providerName: v.name,
-                  })}
-                </Text>
-              </Box>
-            ))
-            .extractNullable()}
+          {!unstakeMatch && !pendingActionMatch
+            ? providerDetails
+                .map((v) => (
+                  <Box display="flex" marginTop="2">
+                    {v.logo && (
+                      <Box hw="5" as="img" src={v.logo} marginRight="1" />
+                    )}
+                    <Text variant={{ type: "muted" }}>
+                      {t("complete.via", {
+                        providerName: v.name,
+                      })}
+                    </Text>
+                  </Box>
+                ))
+                .extractNullable()
+            : null}
 
           {hasUrs && (
             <Box
@@ -129,7 +133,7 @@ export const CompletePage = ({
               >
                 <CheckCircleIcon width={22} height={22} />
               </Box>
-              <Text variant={{ type: "muted", size: "small" }}>
+              <Text variant={{ type: "muted" }}>
                 {t("complete.view_transaction")}
               </Text>
             </Box>

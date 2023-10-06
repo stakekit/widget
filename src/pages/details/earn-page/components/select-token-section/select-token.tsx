@@ -103,7 +103,6 @@ export const SelectToken = ({
                   display="flex"
                   flexDirection="column"
                   flex={1}
-                  marginLeft="2"
                   minWidth="0"
                 >
                   <Box
@@ -113,21 +112,13 @@ export const SelectToken = ({
                   >
                     <Text
                       className={selectItemText}
-                      variant={{
-                        size: "small",
-                        weight: "bold",
-                      }}
+                      variant={{ weight: "bold" }}
                     >
                       {item.token.name}
                     </Text>
 
                     {showTokenAmount && (
-                      <Text
-                        variant={{
-                          size: "small",
-                          weight: "normal",
-                        }}
-                      >
+                      <Text variant={{ weight: "normal" }}>
                         {formatTokenBalance(amount, 6)}
                       </Text>
                     )}
@@ -139,14 +130,7 @@ export const SelectToken = ({
                     justifyContent="space-between"
                     alignItems="center"
                   >
-                    <Text
-                      variant={{
-                        size: "small",
-                        type: "muted",
-                      }}
-                    >
-                      {item.token.symbol}
-                    </Text>
+                    <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
                   </Box>
                 </Box>
               </SelectModalItem>

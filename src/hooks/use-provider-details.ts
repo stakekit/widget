@@ -14,7 +14,8 @@ export const useProviderDetails = ({
     Maybe<{
       logo: string;
       name: string;
-      apr: string;
+      aprPercentage: string;
+      apr: number;
       address?: string;
     }>
   >(() => {
@@ -23,13 +24,15 @@ export const useProviderDetails = ({
         .map((v) => ({
           logo: v.logoURI,
           name: v.name,
-          apr: apyToPercentage(val.apy),
+          aprPercentage: apyToPercentage(val.apy),
+          apr: val.apy,
         }))
         .altLazy(() =>
           Maybe.of({
             logo: val.metadata.logoURI,
             name: val.metadata.name,
-            apr: apyToPercentage(val.apy),
+            aprPercentage: apyToPercentage(val.apy),
+            apr: val.apy,
           })
         )
     );
@@ -45,8 +48,9 @@ export const useProviderDetails = ({
             (v) => ({
               logo: v.image,
               name: v.name,
-              apr: apyToPercentage(v.apr),
+              aprPercentage: apyToPercentage(v.apr),
               address: v.address,
+              apr: val.apy,
             })
           );
         })

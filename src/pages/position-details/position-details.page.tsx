@@ -44,6 +44,7 @@ export const PositionDetails = () => {
     onPendingActionClick,
     pendingActions,
     providerDetails,
+    liquidTokensToNativeConversion,
   } = positionDetails;
 
   const { t } = useTranslation();
@@ -106,7 +107,6 @@ export const PositionDetails = () => {
                                 name={pd.name ?? pd.address ?? ""}
                                 tokenLogoHw="8"
                                 textVariant={{
-                                  size: "small",
                                   type: "white",
                                   weight: "bold",
                                 }}
@@ -114,7 +114,7 @@ export const PositionDetails = () => {
                             </Box>
                           }
                         />
-                        <Text variant={{ size: "small" }}>
+                        <Text>
                           {val.stakeType}{" "}
                           {t("position_details.via", {
                             providerName: pd.name ?? pd.address ?? "",
@@ -161,6 +161,24 @@ export const PositionDetails = () => {
                   </Text>
                 </Box>
               )}
+
+              {liquidTokensToNativeConversion
+                .map((val) => (
+                  <Box
+                    my="2"
+                    display="flex"
+                    alignItems="flex-end"
+                    flexDirection="column"
+                    gap="1"
+                  >
+                    {[...val.values()].map((v) => (
+                      <Text variant={{ type: "muted" }} key={v}>
+                        {v}
+                      </Text>
+                    ))}
+                  </Box>
+                ))
+                .extractNullable()}
 
               <Box
                 display="flex"
@@ -318,7 +336,6 @@ export const PositionDetails = () => {
                         <Box flex={1}>
                           <Text
                             variant={{
-                              size: "small",
                               type: "muted",
                               weight: "normal",
                             }}
@@ -334,7 +351,6 @@ export const PositionDetails = () => {
                         >
                           <Text
                             variant={{
-                              size: "small",
                               weight: "normal",
                             }}
                           >
@@ -358,7 +374,6 @@ export const PositionDetails = () => {
                             >
                               <Text
                                 variant={{
-                                  size: "small",
                                   weight: "semibold",
                                   type: "white",
                                 }}

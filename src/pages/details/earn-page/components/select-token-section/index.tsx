@@ -66,7 +66,6 @@ export const SelectTokenSection = () => {
         <Box flex={1}>
           <Text
             variant={{
-              size: "small",
               type: "muted",
               weight: "normal",
             }}
@@ -81,7 +80,6 @@ export const SelectTokenSection = () => {
           ) : (
             <Text
               variant={{
-                size: "small",
                 type: amountValid ? "muted" : "danger",
                 weight: "normal",
               }}
@@ -103,7 +101,6 @@ export const SelectTokenSection = () => {
           >
             <Text
               variant={{
-                size: "small",
                 weight: "semibold",
                 type: "regular",
               }}

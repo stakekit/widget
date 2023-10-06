@@ -103,17 +103,17 @@ export const fontSizesContract = {
 };
 
 export const fontSizes: typeof fontSizesContract = {
-  xs: "0.625rem",
-  sm: "0.875rem",
-  md: "1rem",
-  lg: "1.125rem",
-  lgx: "1.3125rem",
-  xl: "1.563rem",
-  "2xl": "1.953rem",
-  "3xl": "2.441rem",
-  "4xl": "3.052rem",
-  "5xl": "3.815rem",
-  "6xl": "4.768rem",
+  xs: "0.615rem",
+  sm: "0.717rem",
+  md: "0.85rem",
+  lg: "1rem",
+  lgx: "1.125rem",
+  xl: "1.3125rem",
+  "2xl": "1.563rem",
+  "3xl": "1.953rem",
+  "4xl": "2.441rem",
+  "5xl": "3.052rem",
+  "6xl": "3.815rem",
 } as const;
 
 export type FontSizes = keyof typeof fontSizes;
@@ -160,36 +160,36 @@ export const headings: typeof headingsContract = {
   },
 };
 
-export type Text = "standard" | "small" | "xsmall";
+export type Text = "large" | "medium" | "small";
 
 export const textsContract: {
   [H in Text]: { [K in Breakpoint]: { fontSize: string } };
 } = {
-  standard: {
+  large: {
+    mobile: { fontSize: "" },
+    tablet: { fontSize: "" },
+  },
+  medium: {
     mobile: { fontSize: "" },
     tablet: { fontSize: "" },
   },
   small: {
-    mobile: { fontSize: "" },
-    tablet: { fontSize: "" },
-  },
-  xsmall: {
     mobile: { fontSize: "" },
     tablet: { fontSize: "" },
   },
 };
 
 export const texts: typeof textsContract = {
-  standard: {
+  large: {
+    mobile: { fontSize: fontSizes["lg"] },
+    tablet: { fontSize: fontSizes["lg"] },
+  },
+  medium: {
     mobile: { fontSize: fontSizes["md"] },
     tablet: { fontSize: fontSizes["md"] },
   },
   small: {
     mobile: { fontSize: fontSizes["sm"] },
     tablet: { fontSize: fontSizes["sm"] },
-  },
-  xsmall: {
-    mobile: { fontSize: fontSizes["xs"] },
-    tablet: { fontSize: fontSizes["xs"] },
   },
 };
