@@ -56,13 +56,17 @@ export const useMultiYields = (yieldIds: string[]) => {
         );
       }
 
+      const queryClient = APIManager.getQueryClient();
+
       /**
        * Set the query data for each yield opportunity
        */
       results.forEach(
         (y) =>
-          APIManager.getQueryClient()?.setQueryData(
-            getYieldYieldOpportunityQueryKey(y.id),
+          queryClient?.setQueryData(
+            getYieldYieldOpportunityQueryKey(y.id, {
+              ledgerWalletAPICompatible: isLedgerLive,
+            }),
             y
           )
       );

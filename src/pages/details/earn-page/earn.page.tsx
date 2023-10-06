@@ -24,7 +24,7 @@ const EarnPageComponent = () => {
     selectedStakeYieldType,
     isFetching,
     isConnected,
-    isLoading,
+    appLoading,
     buttonCTAText,
   } = useDetailsContext();
 
@@ -44,7 +44,7 @@ const EarnPageComponent = () => {
                 <HelpModal modal={{ type: selectedStakeYieldType }} />
               )}
               <Text>{title}</Text>
-              {(isFetching || isLoading) && (
+              {(isFetching || appLoading) && (
                 <Box display="flex" marginLeft="2">
                   <Spinner />
                 </Box>

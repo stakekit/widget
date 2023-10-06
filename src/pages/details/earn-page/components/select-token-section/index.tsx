@@ -9,7 +9,8 @@ export const SelectTokenSection = () => {
   const { t } = useTranslation();
 
   const {
-    isLoading,
+    appLoading,
+    tokenBalancesScanLoading,
     amountValid,
     availableTokens,
     formattedPrice,
@@ -19,11 +20,13 @@ export const SelectTokenSection = () => {
     onTokenSearch,
     selectedTokenBalance,
     stakeAmount,
-    tokenAvailableAmountIsFetching,
     tokenBalancesData,
     onSelectOpportunityClose,
     showTokenAmount,
+    stakeTokenAvailableAmountLoading,
   } = useDetailsContext();
+
+  const isLoading = appLoading || tokenBalancesScanLoading;
 
   return isLoading ? (
     <Box marginTop="2" display="flex">
@@ -75,7 +78,7 @@ export const SelectTokenSection = () => {
         </Box>
 
         <Box display="flex" justifyContent="flex-end" alignItems="center">
-          {tokenAvailableAmountIsFetching ? (
+          {stakeTokenAvailableAmountLoading ? (
             <Spinner />
           ) : (
             <Text

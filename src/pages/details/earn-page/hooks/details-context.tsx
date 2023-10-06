@@ -42,6 +42,7 @@ import { List } from "purify-ts";
 import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 
 type DetailsContextType = {
   availableTokens: string;
@@ -77,9 +78,12 @@ type DetailsContextType = {
   onSelectOpportunityClose: () => void;
   onStakeEnterIsLoading: boolean;
   selectedStakeYieldType: YieldType | null;
-  tokenAvailableAmountIsFetching: boolean;
   isConnected: boolean;
-  isLoading: boolean;
+  appLoading: boolean;
+  multiYieldsLoading: boolean;
+  yieldOpportunityLoading: boolean;
+  stakeTokenAvailableAmountLoading: boolean;
+  tokenBalancesScanLoading: boolean;
   selectedTokenBalance: State["selectedTokenBalance"];
   tokenBalancesData: Maybe<TokenBalanceScanResponseDto[]>;
   onTokenSearch: (value: string) => void;
@@ -348,16 +352,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const wagmiConfig = useWagmiConfig();
 
-  const isFetching =
-    multiYields.isFetching || stakeTokenAvailableAmount.isFetching;
+  const yieldOpportunityLoading = useYieldOpportunity(
+    selectedStake.extract()?.id
+  ).isInitialLoading;
+  const appLoading = wagmiConfig.isLoading || isConnecting || isReconnecting;
+  const multiYieldsLoading = multiYields.isInitialLoading;
+  const stakeTokenAvailableAmountLoading =
+    stakeTokenAvailableAmount.isInitialLoading;
+  const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
 
-  const isLoading =
-    wagmiConfig.isLoading ||
-    isConnecting ||
-    isReconnecting ||
-    multiYields.isInitialLoading ||
-    stakeTokenAvailableAmount.isInitialLoading ||
-    tokenBalancesScan.isInitialLoading;
+  const isFetching =
+    multiYields.isFetching ||
+    stakeTokenAvailableAmount.isFetching ||
+    tokenBalancesScan.isFetching;
 
   const buttonDisabled =
     isConnected &&
@@ -412,9 +419,12 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onSelectOpportunityClose,
     onStakeEnterIsLoading: onStakeEnter.isLoading,
     selectedStakeYieldType,
-    tokenAvailableAmountIsFetching: stakeTokenAvailableAmount.isFetching,
     isConnected,
-    isLoading,
+    appLoading,
+    yieldOpportunityLoading,
+    multiYieldsLoading,
+    tokenBalancesScanLoading,
+    stakeTokenAvailableAmountLoading,
     selectedTokenBalance,
     tokenBalancesData,
     onTokenSearch,

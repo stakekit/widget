@@ -33,8 +33,15 @@ import { Maybe } from "purify-ts";
 export const SelectValidator = () => {
   const { t } = useTranslation();
 
-  const { isLoading, onValidatorSelect, selectedValidator, selectedStake } =
-    useDetailsContext();
+  const {
+    appLoading,
+    multiYieldsLoading,
+    onValidatorSelect,
+    selectedValidator,
+    selectedStake,
+  } = useDetailsContext();
+
+  const isLoading = appLoading || multiYieldsLoading;
 
   const [viewMore, setViewMore] = useState(false);
 

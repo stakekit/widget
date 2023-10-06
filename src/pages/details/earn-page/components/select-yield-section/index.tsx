@@ -8,7 +8,11 @@ import { useDetailsContext } from "../../hooks/details-context";
 
 export const SelectYieldSection = () => {
   const {
-    isLoading,
+    appLoading,
+    multiYieldsLoading,
+    yieldOpportunityLoading,
+    tokenBalancesScanLoading,
+    stakeTokenAvailableAmountLoading,
     selectedStake,
     onYieldSelect,
     onYieldSearch,
@@ -21,6 +25,13 @@ export const SelectYieldSection = () => {
   } = useDetailsContext();
 
   const { t } = useTranslation();
+
+  const isLoading =
+    appLoading ||
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    tokenBalancesScanLoading ||
+    stakeTokenAvailableAmountLoading;
 
   const earnYearly = estimatedRewards.mapOrDefault(
     (e) => `${e.yearly} ${symbol}`,

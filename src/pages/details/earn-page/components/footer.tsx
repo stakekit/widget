@@ -24,7 +24,10 @@ export const Footer = () => {
     extra,
   } = useFooterItems();
 
-  const { isLoading } = useDetailsContext();
+  const { appLoading, multiYieldsLoading, yieldOpportunityLoading } =
+    useDetailsContext();
+
+  const isLoading = appLoading || multiYieldsLoading || yieldOpportunityLoading;
 
   const items = useMemo(
     () =>
@@ -35,7 +38,6 @@ export const Footer = () => {
         { text: minimumStakeAmount, icon: <InfoIcon /> },
         { text: withdrawnNotAvailable, icon: <InfoIcon /> },
         { text: withdrawnTime, icon: <InfoIcon /> },
-        { text: compoundRewards, icon: <InfoIcon /> },
         { text: compoundRewards, icon: <InfoIcon /> },
         { text: extra, icon: <InfoIcon /> },
       ].filter((val): val is { text: string; icon: JSX.Element } => !!val.text),
