@@ -95,9 +95,7 @@ export const SelectOpportunity = ({
         groupContent={(index) => {
           return (
             <Box py="4" px="4" background="background">
-              <Text variant={{ weight: "bold", size: "small" }}>
-                {data.groups[index]}
-              </Text>
+              <Text variant={{ weight: "bold" }}>{data.groups[index]}</Text>
             </Box>
           );
         }}
@@ -108,9 +106,7 @@ export const SelectOpportunity = ({
             <SelectModalItemContainer>
               {typeof item === "string" ? (
                 <Box py="4">
-                  <Text variant={{ weight: "bold", size: "small" }}>
-                    {item}
-                  </Text>
+                  <Text variant={{ weight: "bold" }}>{item}</Text>
                 </Box>
               ) : (
                 <SelectModalItem
@@ -139,29 +135,19 @@ export const SelectOpportunity = ({
                       <Box>
                         <Text
                           className={selectItemText}
-                          variant={{
-                            size: "small",
-                            weight: "bold",
-                          }}
+                          variant={{ weight: "bold" }}
                         >
                           {item.metadata.name}
                         </Text>
                       </Box>
 
                       <Box>
-                        <Text variant={{ size: "small" }}>
-                          {apyToPercentage(item.apy)}%
-                        </Text>
+                        <Text>{apyToPercentage(item.apy)}%</Text>
                       </Box>
                     </Box>
 
                     <Box display="flex" marginTop="1" flexWrap="wrap" gap="1">
-                      <Text
-                        variant={{
-                          size: "small",
-                          type: "muted",
-                        }}
-                      >
+                      <Text variant={{ type: "muted" }}>
                         {Maybe.fromNullable(item.metadata.rewardTokens)
                           .map((rt) => rt.map((t) => t.symbol).join(", "))
                           .orDefault(item.token.symbol)}
@@ -174,12 +160,7 @@ export const SelectOpportunity = ({
                             borderRadius="2xl"
                             px="2"
                           >
-                            <Text
-                              variant={{
-                                size: "small",
-                                type: "muted",
-                              }}
-                            >
+                            <Text variant={{ type: "muted" }}>
                               {item.token.symbol}
                             </Text>
                           </Box>

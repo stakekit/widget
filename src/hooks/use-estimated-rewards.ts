@@ -18,19 +18,19 @@ export const useEstimatedRewards = ({
     validatorAddress: selectedValidator.map((v) => v.address),
   });
 
-  return useMemo(() => {
-    const apy = providerDetails.map((v) => v.apr).extract()!;
-
-    return Maybe.of({
-      percentage: apy,
-      yearly: stakeAmount.mapOrDefault(
-        (am) => am.times(apy).decimalPlaces(5).toString(),
-        ""
-      ),
-      monthly: stakeAmount.mapOrDefault(
-        (am) => am.times(apy).dividedBy(12).decimalPlaces(5).toString(),
-        ""
-      ),
-    });
-  }, [providerDetails, stakeAmount]);
+  return useMemo(
+    () =>
+      providerDetails.map((val) => ({
+        percentage: val.aprPercentage,
+        yearly: stakeAmount.mapOrDefault(
+          (am) => am.times(val.apr).decimalPlaces(5).toString(),
+          ""
+        ),
+        monthly: stakeAmount.mapOrDefault(
+          (am) => am.times(val.apr).dividedBy(12).decimalPlaces(5).toString(),
+          ""
+        ),
+      })),
+    [providerDetails, stakeAmount]
+  );
 };

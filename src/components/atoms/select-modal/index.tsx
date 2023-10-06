@@ -109,7 +109,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
                         {title && (
                           <Text
                             data-testid="select-modal__title"
-                            variant={{ weight: "bold" }}
+                            variant={{ weight: "bold", size: "large" }}
                           >
                             {title}
                           </Text>

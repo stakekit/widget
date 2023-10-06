@@ -1,4 +1,3 @@
-import { List } from "purify-ts";
 import { usePrices } from "./api/use-prices";
 import { usePositionData } from "./use-position-data";
 import { PriceRequestDto, YieldBalanceDto } from "@stakekit/api-hooks";
@@ -21,13 +20,20 @@ export const usePositionBalanceByType = (
   );
 
   const prices = usePrices(
-    positionsByValidatorOrDefault
-      .chain((val) => List.head(val))
-      .map<PriceRequestDto>((sb) => ({
-        currency: config.currency,
-        tokenList: [sb.token, tokenToTokenDto(getBaseToken(sb.token as Token))],
-      }))
-      .extractNullable()
+    useMemo(
+      () =>
+        positionsByValidatorOrDefault
+          .map<PriceRequestDto>((val) => ({
+            currency: config.currency,
+            tokenList: val.flatMap((v, i) =>
+              i === 0
+                ? [tokenToTokenDto(getBaseToken(v.token as Token)), v.token]
+                : [v.token]
+            ),
+          }))
+          .extractNullable(),
+      [positionsByValidatorOrDefault]
+    )
   );
 
   /**

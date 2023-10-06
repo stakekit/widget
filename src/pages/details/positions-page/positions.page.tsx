@@ -10,13 +10,6 @@ import { virtuosoContainer } from "./style.css";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { ImportValidator } from "./components/import-validator";
 
-/**
- *
- * TODO:
- * - Reduce multiple "staked" positions to single amount
- * - Token price with price per share
- */
-
 export const PositionsPage = () => {
   const { positionsData, importValidators } = usePositions();
 
@@ -48,7 +41,7 @@ export const PositionsPage = () => {
     } else if (isConnected && !positionsData.data?.length) {
       return (
         <Box my="2">
-          <Text variant={{ weight: "medium", size: "small" }}>
+          <Text variant={{ weight: "medium" }}>
             {t("positions.no_current_positions")}
           </Text>
         </Box>
@@ -67,9 +60,9 @@ export const PositionsPage = () => {
           <Virtuoso
             className={virtuosoContainer}
             style={{ height: "auto" }}
-            data={[...positionsData.data, "footer" as const]}
+            data={["header" as const, ...positionsData.data]}
             itemContent={(_index, item) =>
-              item === "footer" ? (
+              item === "header" ? (
                 <ListItem>
                   <Box
                     display="flex"

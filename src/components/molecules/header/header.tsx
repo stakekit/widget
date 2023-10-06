@@ -87,11 +87,7 @@ export const Header = () => {
               >
                 {(() => {
                   if (!isConnected || !chain || !account) {
-                    return (
-                      <Text variant={{ size: "small" }}>
-                        {t("shared.stake_kit")}
-                      </Text>
-                    );
+                    return <Text>{t("shared.stake_kit")}</Text>;
                   }
 
                   return (
@@ -114,9 +110,7 @@ export const Header = () => {
                                 as="button"
                                 onClick={openChainModal}
                               >
-                                <Text
-                                  variant={{ size: "small", type: "danger" }}
-                                >
+                                <Text variant={{ type: "danger" }}>
                                   {t("shared.unsupported_network")}
                                 </Text>
                               </Box>
@@ -138,10 +132,7 @@ export const Header = () => {
                                 )}
 
                                 <Box marginLeft="2">
-                                  <Text
-                                    className={titleStyle}
-                                    variant={{ size: "small" }}
-                                  >
+                                  <Text className={titleStyle}>
                                     {chain.name}
                                   </Text>
                                 </Box>
@@ -195,10 +186,7 @@ export const Header = () => {
                                       />
                                     </Box>
 
-                                    <Text
-                                      className={titleStyle}
-                                      variant={{ size: "small" }}
-                                    >
+                                    <Text className={titleStyle}>
                                       {account.ensName ?? account.displayName}
                                     </Text>
                                   </>

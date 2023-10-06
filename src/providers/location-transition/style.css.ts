@@ -26,10 +26,12 @@ export const fadeIn = style({
   animationDuration: "0.3s",
   animationName: fadeInAnimation,
   animationFillMode: "forwards",
+  willChange: "opacity, transform",
 });
 
 export const fadeOut = style({
   animationDuration: "0.3s",
   animationName: fadeOutAnimation,
   animationFillMode: "forwards",
+  willChange: "opacity, transform",
 });

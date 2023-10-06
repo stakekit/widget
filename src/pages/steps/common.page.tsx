@@ -85,15 +85,13 @@ export const StepsPage = ({
               alignItems="flex-start"
               gap="1"
             >
-              <Text variant={{ size: "small" }}>{t("steps.approve")}</Text>
+              <Text>{t("steps.approve")}</Text>
               {state.sign.isError ? (
-                <Text variant={{ type: "danger", size: "small" }}>
+                <Text variant={{ type: "danger" }}>
                   {t("shared.something_went_wrong")}
                 </Text>
               ) : (
-                <Text
-                  variant={{ type: "muted", size: "small", weight: "normal" }}
-                >
+                <Text variant={{ type: "muted", weight: "normal" }}>
                   {t("steps.approve_desc")}
                 </Text>
               )}
@@ -164,9 +162,9 @@ export const StepsPage = ({
               alignItems="flex-start"
               gap="1"
             >
-              <Text variant={{ size: "small" }}>{t("steps.submitting")}</Text>
+              <Text>{t("steps.submitting")}</Text>
               {state.broadcast.isError && (
-                <Text variant={{ type: "danger", size: "small" }}>
+                <Text variant={{ type: "danger" }}>
                   {t("shared.something_went_wrong")}
                 </Text>
               )}
@@ -237,9 +235,9 @@ export const StepsPage = ({
               alignItems="flex-start"
               gap="1"
             >
-              <Text variant={{ size: "small" }}>{t("steps.pending")}</Text>
+              <Text>{t("steps.pending")}</Text>
               {state.checkTxStatus.isError && (
-                <Text variant={{ type: "danger", size: "small" }}>
+                <Text variant={{ type: "danger" }}>
                   {t("shared.something_went_wrong")}
                 </Text>
               )}
@@ -287,7 +285,7 @@ export const StepsPage = ({
               alignItems="flex-start"
               gap="1"
             >
-              <Text variant={{ size: "small" }}>{t("steps.completed")}</Text>
+              <Text>{t("steps.completed")}</Text>
             </Box>
           </Box>
         </Box>

@@ -54,14 +54,6 @@ export const PositionsListItem = memo(
       validatorAddress: Maybe.of(item.defaultOrValidatorId),
     });
 
-    console.log({
-      providerDetails,
-      token,
-      integrationData,
-      validatorAddress: item.defaultOrValidatorId,
-      item,
-    });
-
     return (
       <SKLink
         relative="path"
@@ -101,14 +93,12 @@ export const PositionsListItem = memo(
                       gap="1"
                     >
                       {token
-                        .map((t) => (
-                          <Text variant={{ size: "small" }}>{t.symbol}</Text>
-                        ))
+                        .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
 
                       {hasPendingClaimRewards && (
                         <Box className={claimRewardsContainer}>
-                          <Text variant={{ size: "xsmall", type: "white" }}>
+                          <Text variant={{ type: "white" }}>
                             {t("positions.claim_rewards")}
                           </Text>
                         </Box>
@@ -119,7 +109,6 @@ export const PositionsListItem = memo(
                         <Text
                           className={viaText}
                           variant={{
-                            size: "small",
                             type: "muted",
                             weight: "normal",
                           }}
@@ -146,12 +135,11 @@ export const PositionsListItem = memo(
                       flex={2}
                       textAlign="end"
                     >
-                      <Text variant={{ size: "small", weight: "normal" }}>
-                        {val.providerDetails.apr}%
+                      <Text variant={{ weight: "normal" }}>
+                        {val.providerDetails.aprPercentage}%
                       </Text>
                       <Text
                         variant={{
-                          size: "small",
                           weight: "normal",
                           type: "muted",
                         }}

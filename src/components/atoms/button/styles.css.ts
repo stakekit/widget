@@ -22,6 +22,7 @@ export const buttonStyle = recipe({
       border: "none",
       fontSize: "md",
       fontWeight: "primaryButton",
+      borderRadius: "primaryButton",
     }),
   ],
 
@@ -92,17 +93,22 @@ export const buttonStyle = recipe({
       small: atoms({ minHeight: "12" }),
     },
     border: {
-      regular: atoms({ borderWidth: 1, borderRadius: "primaryButton" }),
-      thick: atoms({ borderWidth: 2, borderRadius: "half" }),
+      regular: atoms({ borderWidth: 1 }),
     },
     size: {
       regular: atoms({ minHeight: "buttonMinHeight" }),
-      small: atoms({
-        minHeight: "auto",
-        width: "auto",
-        px: "4",
-        py: "3",
-      }),
+      small: [
+        style({
+          padding: "9.8px 13.1px",
+          width: "auto",
+          borderRadius: "7.38px",
+        }),
+        atoms({
+          minHeight: "auto",
+          px: "6",
+          py: "3",
+        }),
+      ],
     },
   },
 

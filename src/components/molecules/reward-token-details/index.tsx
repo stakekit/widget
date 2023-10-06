@@ -24,7 +24,7 @@ export const RewardTokenDetails = ({
         <Box display="flex" alignItems="center">
           {rt.logoUri && <Image hw="5" src={rt.logoUri} marginRight="1" />}
 
-          <Text variant={{ size: "small", weight: "semibold" }}>
+          <Text variant={{ weight: "semibold" }}>
             <Trans
               i18nKey={
                 rest.type === "stake"
@@ -44,7 +44,7 @@ export const RewardTokenDetails = ({
                   <Text
                     as="span"
                     className={inlineText}
-                    variant={{ type: "muted", size: "small", weight: "medium" }}
+                    variant={{ type: "muted", weight: "medium" }}
                   />
                 ),
               }}

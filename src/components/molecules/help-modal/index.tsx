@@ -246,7 +246,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        px={{ tablet: "8", mobile: "4" }}
+        px="4"
         paddingBottom={{ mobile: "8" }}
       >
         <Box as="img" src={image} className={imageStyle} />
@@ -255,7 +255,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
 
         <Box marginTop="2" lineHeight="short">
           <Text
-            variant={{ size: "standard", type: "muted", weight: "normal" }}
+            variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
             {description}
@@ -267,9 +267,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         {button && (
           <Box marginTop="4" width="full">
             <Button variant={{ color: "secondary" }} onClick={button.onClick}>
-              <Text variant={{ size: "standard", weight: "bold" }}>
-                {button.title}
-              </Text>
+              <Text variant={{ weight: "bold" }}>{button.title}</Text>
             </Button>
           </Box>
         )}

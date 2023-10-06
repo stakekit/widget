@@ -67,9 +67,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
             alignItems="center"
             marginTop="3"
           >
-            <Text variant={{ weight: "semibold", size: "small" }}>
-              {t("shared.fees")}
-            </Text>
+            <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
             <HelpModal modal={{ type: "fees" }} />
           </Box>
 
@@ -80,19 +78,19 @@ export const UnstakeOrPendingActionReviewPage = () => {
             my="1"
             data-testid="estimated_gas_fee"
           >
-            <Text variant={{ size: "small", weight: "normal", type: "muted" }}>
+            <Text variant={{ weight: "normal", type: "muted" }}>
               {t("review.estimated_gas_fee")}
             </Text>
             <Text
               className={feeStyles}
-              variant={{ size: "small", type: "muted", weight: "normal" }}
+              variant={{ type: "muted", weight: "normal" }}
             >
               {fee}
             </Text>
           </Box>
 
           <Box marginTop="4">
-            <Text variant={{ size: "small", weight: "normal", type: "muted" }}>
+            <Text variant={{ weight: "normal", type: "muted" }}>
               <Trans
                 i18nKey="unstake_review.terms_of_use"
                 components={{

@@ -93,7 +93,7 @@ export const ImportValidator = ({
                         <Box display="flex" alignItems="center">
                           <Text
                             className={clsx([selectItemText, validatorAddress])}
-                            variant={{ size: "small", weight: "bold" }}
+                            variant={{ weight: "bold" }}
                           >
                             {item.validator.name}
                           </Text>
@@ -123,7 +123,7 @@ export const ImportValidator = ({
                       textAlign="right"
                     >
                       {item.validator.preferred ? (
-                        <Text variant={{ size: "small" }}>
+                        <Text>
                           {t("positions.import_validator_already_imported")}
                         </Text>
                       ) : (

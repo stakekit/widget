@@ -15,7 +15,6 @@ import {
   ValidatorDto,
   YieldDto,
   YieldType,
-  YieldYields200,
   getYieldYieldOpportunityQueryKey,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
@@ -30,8 +29,7 @@ import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useSelectedStakePrice } from "../../../../hooks";
 import { formatTokenBalance } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
-import { createSelector } from "reselect";
-import { yieldTypesMap } from "../../../../domain/types";
+import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { useNavigate } from "react-router-dom";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { NotEnoughGasTokenError } from "../../../../common/check-gas-amount";
@@ -217,22 +215,54 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
             .alt(Maybe.of(yieldDtos))
         )
         .map((dtos) => {
-          const groupsWithCounts = new Map<
-            YieldType,
-            { itemsLength: number; title: string }
-          >();
+          const sorted = [...dtos].sort(
+            (a, b) =>
+              yieldTypesSortRank[a.metadata.type] -
+              yieldTypesSortRank[b.metadata.type]
+          );
 
-          selector(dtos).forEach((val) =>
-            groupsWithCounts.set(val.type, {
-              title: val.title,
-              itemsLength:
-                (groupsWithCounts.get(val.type)?.itemsLength ?? 0) +
-                val.items.length,
-            })
+          const groupsWithCounts = [
+            ...sorted
+              .reduce(
+                (acc, curr) => {
+                  if (!acc.has(curr.metadata.type)) {
+                    acc.set(curr.metadata.type, {
+                      type: curr.metadata.type,
+                      title: yieldTypesMap[curr.metadata.type].title,
+                      items: [curr],
+                    });
+                  } else {
+                    acc.get(curr.metadata.type)!.items.push(curr);
+                  }
+
+                  return acc;
+                },
+                new Map<
+                  YieldType,
+                  {
+                    type: YieldType;
+                    title: (typeof yieldTypesMap)[YieldType]["title"];
+                    items: YieldDto[];
+                  }
+                >()
+              )
+              .values(),
+          ].reduce(
+            (acc, next) => {
+              acc.set(next.type, {
+                title: next.title,
+                itemsLength:
+                  (acc.get(next.type)?.itemsLength ?? 0) + next.items.length,
+              });
+
+              return acc;
+            },
+
+            new Map<YieldType, { itemsLength: number; title: string }>()
           );
 
           return {
-            all: dtos,
+            all: sorted,
             groupsWithCounts,
           };
         }),
@@ -407,36 +437,3 @@ export const useDetailsContext = () => {
 
   return context;
 };
-
-const selector = createSelector(
-  (val: YieldYields200["data"]) => val,
-  (val) => {
-    return val.reduce(
-      (acc, curr) => {
-        if (!acc.has(curr.metadata.type)) {
-          acc.set(curr.metadata.type, {
-            type: curr.metadata.type,
-            title: yieldTypesMap[curr.metadata.type].title,
-            items: [curr],
-          });
-        } else {
-          acc.get(curr.metadata.type)!.items.push(curr);
-        }
-        return acc;
-      },
-      new Map<
-        YieldType,
-        {
-          type: YieldType;
-          title: (typeof yieldTypesMap)[YieldType]["title"];
-          items: YieldDto[];
-        }
-      >()
-    );
-  },
-  {
-    memoizeOptions: {
-      maxSize: Infinity,
-    },
-  }
-);

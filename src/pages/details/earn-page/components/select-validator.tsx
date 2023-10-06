@@ -143,7 +143,6 @@ export const SelectValidator = () => {
                               }
                               tokenLogoHw="5"
                               textVariant={{
-                                size: "small",
                                 type: "white",
                                 weight: "bold",
                               }}
@@ -151,10 +150,7 @@ export const SelectValidator = () => {
                           </Box>
                         }
                       />
-                      <Text
-                        className={breakWord}
-                        variant={{ weight: "bold", size: "small" }}
-                      >
+                      <Text className={breakWord} variant={{ weight: "bold" }}>
                         {t("details.staked_via", {
                           validator:
                             val.selectedValidator.name ??
@@ -195,7 +191,7 @@ export const SelectValidator = () => {
                         justifyContent="space-between"
                         alignItems="center"
                       >
-                        <Text variant={{ weight: "medium", size: "small" }}>
+                        <Text variant={{ weight: "medium" }}>
                           {val.groupedItems[index].label}
                         </Text>
 
@@ -204,7 +200,6 @@ export const SelectValidator = () => {
                             variant={{
                               weight: "normal",
                               type: "muted",
-                              size: "small",
                             }}
                           >
                             APR
@@ -236,7 +231,6 @@ export const SelectValidator = () => {
                                 name={item.name || item.address}
                                 tokenLogoHw="9"
                                 textVariant={{
-                                  size: "small",
                                   type: "white",
                                   weight: "bold",
                                 }}
@@ -258,7 +252,6 @@ export const SelectValidator = () => {
                               <Box className={modalItemNameContainer}>
                                 <Text
                                   variant={{
-                                    size: "small",
                                     weight: "bold",
                                   }}
                                 >
@@ -274,9 +267,7 @@ export const SelectValidator = () => {
 
                               {"apr" in item && (
                                 <Box>
-                                  <Text variant={{ size: "small" }}>
-                                    {apyToPercentage(item.apr)}%
-                                  </Text>
+                                  <Text>{apyToPercentage(item.apr)}%</Text>
                                 </Box>
                               )}
                             </Box>
@@ -297,7 +288,6 @@ export const SelectValidator = () => {
                             variant={{
                               color: "secondary",
                               size: "small",
-                              border: "thick",
                             }}
                             onClick={() => setViewMore(true)}
                           >

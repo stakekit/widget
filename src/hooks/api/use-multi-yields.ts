@@ -20,16 +20,17 @@ const getMultiYieldsQueryKey = (yieldIds: string[]) => [
 export const useMultiYields = (yieldIds: string[]) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
-  return useQuery<YieldDto[], Error>(
-    getMultiYieldsQueryKey(yieldIds),
-    async ({ signal }) => {
+  return useQuery<YieldDto[], Error>({
+    queryKey: getMultiYieldsQueryKey(yieldIds),
+    enabled: yieldIds.length > 0,
+    queryFn: async ({ signal }) => {
       const results: YieldDto[] = [];
 
       // Chunk the requests into groups of 5
       for (let i = 0; i < yieldIds.length; i += 5) {
         const reqs: EitherAsync<Error, YieldDto>[] = [];
 
-        for (let j = 0; j < i + 5 && j < yieldIds.length; j++) {
+        for (let j = i; j < i + 5 && j < yieldIds.length; j++) {
           reqs.push(
             withRequestErrorRetry({
               fn: () =>
@@ -67,8 +68,8 @@ export const useMultiYields = (yieldIds: string[]) => {
       );
 
       return results;
-    }
-  );
+    },
+  });
 };
 
 type SelectorInputData = {

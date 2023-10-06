@@ -1,11 +1,12 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useMemo } from "react";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { usePrices } from "../../../hooks/api/use-prices";
 import {
   PendingActionDto,
   PriceRequestDto,
+  TokenDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
 import { config } from "../../../config";
@@ -84,13 +85,20 @@ export const usePositionDetails = () => {
   );
 
   const prices = usePrices(
-    positionsByValidatorOrDefault
-      .chain((val) => List.head(val))
-      .map<PriceRequestDto>((sb) => ({
-        currency: config.currency,
-        tokenList: [sb.token, tokenToTokenDto(getBaseToken(sb.token as Token))],
-      }))
-      .extractNullable()
+    useMemo(
+      () =>
+        positionsByValidatorOrDefault
+          .map<PriceRequestDto>((val) => ({
+            currency: config.currency,
+            tokenList: val.flatMap((v, i) =>
+              i === 0
+                ? [tokenToTokenDto(getBaseToken(v.token as Token)), v.token]
+                : [v.token]
+            ),
+          }))
+          .extractNullable(),
+      [positionsByValidatorOrDefault]
+    )
   );
 
   /**
@@ -339,6 +347,31 @@ export const usePositionDetails = () => {
     positionBalancesByType,
   ]);
 
+  const liquidTokensToNativeConversion = useMemo(
+    () =>
+      Maybe.fromRecord({ integrationData, positionBalancesByType })
+        .chain((val) =>
+          Maybe.fromPredicate(
+            () => val.integrationData.metadata.type === "liquid-staking",
+            val
+          )
+        )
+        .map((v) =>
+          [...v.positionBalancesByType.values()].reduce((acc, curr) => {
+            acc.set(
+              curr.token.symbol,
+              `1 ${curr.token.symbol} = ${formatTokenBalance(
+                new BigNumber(curr.pricePerShare),
+                6
+              )} ${v.integrationData.metadata.gasFeeToken.symbol}`
+            );
+
+            return acc;
+          }, new Map<TokenDto["symbol"], string>())
+        ),
+    [integrationData, positionBalancesByType]
+  );
+
   const isLoading =
     positionData.isLoading || prices.isLoading || yieldOpportunity.isLoading;
 
@@ -362,5 +395,6 @@ export const usePositionDetails = () => {
     onPendingActionClick,
     providerDetails,
     pendingActions,
+    liquidTokensToNativeConversion,
   };
 };

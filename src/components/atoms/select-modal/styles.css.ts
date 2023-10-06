@@ -1,23 +1,18 @@
 import { keyframes, style } from "@vanilla-extract/css";
 import { atoms, vars } from "../../../styles";
-import {
-  breakpoints,
-  maxMediaQuery,
-  minMediaQuery,
-} from "../../../styles/tokens/breakpoints";
+import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
 
-const opacityAnimation = keyframes({
+const slideUp = keyframes({
+  "0%": { transform: "translateY(100%)" },
+  "100%": { transform: "translateY(0)" },
+});
+
+const fadeIn = keyframes({
   "0%": { opacity: 0 },
   "100%": { opacity: 1 },
 });
 
 export const container = style({
-  "@media": {
-    [minMediaQuery("tablet")]: {
-      animationName: opacityAnimation,
-      animationDuration: "0.3s",
-    },
-  },
   display: "flex",
   justifyContent: "center",
   alignItems: "center",
@@ -30,31 +25,23 @@ export const container = style({
 
 export const overlay = style([
   {
-    "@media": {
-      [maxMediaQuery("tablet")]: {
-        animationName: opacityAnimation,
-        animationDuration: "0.3s",
-      },
-    },
+    animation: `${fadeIn} 150ms ease`,
+    willChange: "opacity",
     position: "absolute",
     inset: 0,
     background: vars.color.modalOverlayBackground,
   },
 ]);
 
-const transformAnimation = keyframes({
-  "0%": { transform: "translateY(100%)" },
-  "100%": { transform: "translateY(0)" },
-});
-
 export const content = style([
   {
     "@media": {
-      [maxMediaQuery("tablet")]: {
-        animationName: transformAnimation,
-        animationDuration: "0.2s",
+      [minMediaQuery("tablet")]: {
+        width: "350px",
       },
     },
+    animation: `${slideUp} 350ms cubic-bezier(.15,1.15,0.6,1.00), ${fadeIn} 150ms ease`,
+    willChange: "transform, opacity",
   },
   atoms({
     width: "full",
@@ -77,6 +64,7 @@ export const content = style([
     bottom: 0,
     "@media": {
       [minMediaQuery("tablet")]: {
+        height: "70vh",
         bottom: "auto",
         borderBottomLeftRadius: vars.borderRadius["2xl"],
         borderBottomRightRadius: vars.borderRadius["2xl"],

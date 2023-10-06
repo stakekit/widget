@@ -73,7 +73,6 @@ export const Footer = () => {
               variant={{
                 weight: "normal",
                 type: "muted",
-                size: "small",
               }}
             >
               {item.text}

@@ -30,7 +30,6 @@ export const ImageFallback = ({
       <Text
         variant={
           textVariant ?? {
-            size: "small",
             type: "white",
             weight: "bold",
           }
