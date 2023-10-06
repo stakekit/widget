@@ -98,7 +98,10 @@ const EarnPageComponent = () => {
             {buttonCTAText}
           </Button>
         ) : (
-          <ConnectButton />
+          <ConnectButton
+            disabled={appLoading}
+            variant={{ color: appLoading ? "disabled" : "primary" }}
+          />
         )}
       </Box>
     </PageContainer>

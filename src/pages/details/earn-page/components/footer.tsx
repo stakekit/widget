@@ -24,10 +24,20 @@ export const Footer = () => {
     extra,
   } = useFooterItems();
 
-  const { appLoading, multiYieldsLoading, yieldOpportunityLoading } =
-    useDetailsContext();
+  const {
+    appLoading,
+    multiYieldsLoading,
+    yieldOpportunityLoading,
+    tokenBalancesScanLoading,
+    stakeTokenAvailableAmountLoading,
+  } = useDetailsContext();
 
-  const isLoading = appLoading || multiYieldsLoading || yieldOpportunityLoading;
+  const isLoading =
+    appLoading ||
+    tokenBalancesScanLoading ||
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    stakeTokenAvailableAmountLoading;
 
   const items = useMemo(
     () =>

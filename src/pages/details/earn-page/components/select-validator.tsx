@@ -35,13 +35,21 @@ export const SelectValidator = () => {
 
   const {
     appLoading,
+    tokenBalancesScanLoading,
+    yieldOpportunityLoading,
+    stakeTokenAvailableAmountLoading,
     multiYieldsLoading,
     onValidatorSelect,
     selectedValidator,
     selectedStake,
   } = useDetailsContext();
 
-  const isLoading = appLoading || multiYieldsLoading;
+  const isLoading =
+    appLoading ||
+    tokenBalancesScanLoading ||
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    stakeTokenAvailableAmountLoading;
 
   const [viewMore, setViewMore] = useState(false);
 
