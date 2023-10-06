@@ -2,7 +2,7 @@ import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 
 export const formatTokenBalance = (amount: BigNumber, decimals: number) => {
-  return amount.decimalPlaces(decimals).toString();
+  return amount.decimalPlaces(decimals, BigNumber.ROUND_UP).toString();
 };
 
 export const apyToPercentage = (apy: number) => {

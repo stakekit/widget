@@ -29,6 +29,16 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 }) =>
   getWagmiConfig()
     .map((wagmiConfig) => {
+      const { accountsFamilies, accountsCurrencies } = accounts.reduce(
+        (acc, next) => {
+          acc.accountsFamilies.add(ledgerCurrencies.get(next.currency));
+          acc.accountsCurrencies.add(next.currency);
+
+          return acc;
+        },
+        { accountsFamilies: new Set(), accountsCurrencies: new Set() }
+      );
+
       return typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
         (acc, [k, v]) => {
           const filtered = Object.keys(v).reduce(
@@ -50,14 +60,8 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 
               if (
                 chain &&
-                accounts.some((a) => {
-                  const check1 =
-                    ledgerCurrencies.get(a.currency) === item.family;
-
-                  const check2 = key === "*" || item.currencyId === a.currency;
-
-                  return check1 && check2;
-                })
+                accountsFamilies.has(item.family) &&
+                (key === "*" || accountsCurrencies.has(item.currencyId))
               ) {
                 return { ...acc, [key]: { ...item, chain } };
               }
