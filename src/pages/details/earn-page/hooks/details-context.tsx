@@ -85,7 +85,10 @@ type DetailsContextType = {
   stakeTokenAvailableAmountLoading: boolean;
   tokenBalancesScanLoading: boolean;
   selectedTokenBalance: State["selectedTokenBalance"];
-  tokenBalancesData: Maybe<TokenBalanceScanResponseDto[]>;
+  tokenBalancesData: Maybe<{
+    all: TokenBalanceScanResponseDto[];
+    filtered: TokenBalanceScanResponseDto[];
+  }>;
   onTokenSearch: (value: string) => void;
   showTokenAmount: boolean;
   buttonCTAText: string;
@@ -182,14 +185,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           .chain((val) =>
             val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
           )
-          .map((lowerSearch) =>
-            tb.filter(
+          .map((lowerSearch) => ({
+            all: tb,
+            filtered: tb.filter(
               (t) =>
                 t.token.name.toLowerCase().includes(lowerSearch) ||
                 t.token.symbol.toLowerCase().includes(lowerSearch)
-            )
-          )
-          .alt(Maybe.of(tb))
+            ),
+          }))
+          .alt(Maybe.of({ all: tb, filtered: tb }))
       ),
     [deferredTokenSearch, tokenBalancesScan.data]
   );
@@ -203,8 +207,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
             .chain((val) =>
               val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
             )
-            .map((lowerSearch) =>
-              yieldDtos.filter(
+            .map((lowerSearch) => ({
+              all: yieldDtos,
+              filteredDtos: yieldDtos.filter(
                 (d) =>
                   d.token.name.toLowerCase().includes(lowerSearch) ||
                   d.token.symbol.toLowerCase().includes(lowerSearch) ||
@@ -214,12 +219,12 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
                       rt.name.toLowerCase().includes(lowerSearch) ||
                       rt.symbol.toLowerCase().includes(lowerSearch)
                   )
-              )
-            )
-            .alt(Maybe.of(yieldDtos))
+              ),
+            }))
+            .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
-        .map((dtos) => {
-          const sorted = [...dtos].sort(
+        .map(({ all, filteredDtos }) => {
+          const sorted = [...filteredDtos].sort(
             (a, b) =>
               yieldTypesSortRank[a.metadata.type] -
               yieldTypesSortRank[b.metadata.type]
@@ -266,7 +271,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           );
 
           return {
-            all: sorted,
+            all,
+            filtered: sorted,
             groupsWithCounts,
           };
         }),

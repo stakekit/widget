@@ -12,7 +12,6 @@ import { Trigger } from "@radix-ui/react-alert-dialog";
 import { Image } from "../../../../components/atoms/image";
 import { useTranslation } from "react-i18next";
 import { apyToPercentage } from "../../../../utils";
-import { GroupedVirtuoso } from "react-virtuoso";
 import { ValidatorDto } from "@stakekit/api-hooks";
 import { ImageFallback } from "../../../../components/atoms/image-fallback";
 import classNames from "clsx";
@@ -29,6 +28,7 @@ import {
 import { useDetailsContext } from "../hooks/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";
+import { GroupedVirtualList } from "../../../../components/atoms/virtual-list";
 
 export const SelectValidator = () => {
   const { t } = useTranslation();
@@ -103,13 +103,22 @@ export const SelectValidator = () => {
           };
         }
 
+        const canViewMore =
+          !viewMore && groupedItems[0].items.length !== ss.validators.length;
+
         return {
           tableData: groupedItems.flatMap((val) => val.items),
-          groupedItems: groupedItems.filter((val) => val.items.length),
-          groupCounts: groupedItems
-            .filter((val) => val.items.length)
-            .map((val) => val.items.length),
-          canViewMore: groupedItems[0].items.length !== ss.validators.length,
+          groupedItems: [
+            ...groupedItems.filter((val) => val.items.length),
+            ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+          ],
+          groupCounts: [
+            ...groupedItems
+              .filter((val) => val.items.length)
+              .map((val) => val.items.length),
+            ...(canViewMore ? [1] : []),
+          ],
+          canViewMore,
         };
       }),
     [selectedStake, t, viewMore]
@@ -194,9 +203,14 @@ export const SelectValidator = () => {
           >
             {data
               .map((val) => (
-                <GroupedVirtuoso
+                <GroupedVirtualList
+                  increaseViewportBy={{ bottom: 50, top: 0 }}
                   groupCounts={val.groupCounts}
                   groupContent={(index) => {
+                    if (val.groupedItems[index].label === "view_more") {
+                      return null;
+                    }
+
                     return val.groupedItems[index].items.length ? (
                       <Box
                         py="4"
@@ -227,7 +241,27 @@ export const SelectValidator = () => {
                     validatorVirtuosoContainer,
                     hideScrollbar,
                   ])}
-                  itemContent={(index) => {
+                  itemContent={(index, groupIndex) => {
+                    if (val.groupedItems[groupIndex]?.label === "view_more") {
+                      return (
+                        <Box
+                          display="flex"
+                          justifyContent="center"
+                          marginTop="6"
+                        >
+                          <Button
+                            variant={{
+                              color: "secondary",
+                              size: "small",
+                            }}
+                            onClick={() => setViewMore(true)}
+                          >
+                            <Text>{t("details.validators_view_all")}</Text>
+                          </Button>
+                        </Box>
+                      );
+                    }
+
                     const item = val.tableData[index];
 
                     const isPreferred = item.preferred;
@@ -265,11 +299,7 @@ export const SelectValidator = () => {
                               alignItems="center"
                             >
                               <Box className={modalItemNameContainer}>
-                                <Text
-                                  variant={{
-                                    weight: "bold",
-                                  }}
-                                >
+                                <Text variant={{ weight: "bold" }}>
                                   {item.name ?? item.address}
                                 </Text>
 
@@ -290,26 +320,6 @@ export const SelectValidator = () => {
                         </SelectModalItem>
                       </SelectModalItemContainer>
                     );
-                  }}
-                  components={{
-                    Footer: () =>
-                      !viewMore && val.canViewMore ? (
-                        <Box
-                          display="flex"
-                          justifyContent="center"
-                          marginTop="6"
-                        >
-                          <Button
-                            variant={{
-                              color: "secondary",
-                              size: "small",
-                            }}
-                            onClick={() => setViewMore(true)}
-                          >
-                            <Text>{t("details.validators_view_all")}</Text>
-                          </Button>
-                        </Box>
-                      ) : null,
                   }}
                 />
               ))

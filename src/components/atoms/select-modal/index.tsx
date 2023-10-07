@@ -11,7 +11,13 @@ import {
   useState,
 } from "react";
 import { Content, Overlay, Portal, Root } from "@radix-ui/react-alert-dialog";
-import { container, content, noOutline, overlay } from "./styles.css";
+import {
+  container,
+  content,
+  noOutline,
+  overlay,
+  selectModalItemContainer,
+} from "./styles.css";
 import { Box } from "../box";
 import { Text } from "../typography";
 import { SearchIcon, XIcon } from "../icons";
@@ -130,7 +136,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
                       display="flex"
                       mx="4"
                       my="2"
-                      background="backgroundMuted"
+                      background="tokenSelectBackground"
                       borderRadius="xl"
                       alignItems="center"
                       as="label"
@@ -147,7 +153,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
                         py="3"
                         borderRadius="xl"
                         color="text"
-                        background="backgroundMuted"
+                        background="tokenSelectBackground"
                         placeholder={inputPlaceholder ?? ""}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           onSearch(e.target.value)
@@ -185,7 +191,9 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
 );
 
 export const SelectModalItemContainer = ({ children }: PropsWithChildren) => (
-  <Box mx="4">{children}</Box>
+  <Box mx="4" className={selectModalItemContainer}>
+    {children}
+  </Box>
 );
 
 export const SelectModalItem = ({

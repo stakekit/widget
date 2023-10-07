@@ -20,7 +20,7 @@ export const buttonStyle = recipe({
       gap: "2",
       width: "full",
       border: "none",
-      fontSize: "md",
+      fontSize: "lg",
       fontWeight: "primaryButton",
       borderRadius: "primaryButton",
     }),
@@ -80,6 +80,29 @@ export const buttonStyle = recipe({
         {
           ":active": {
             transform: "none",
+          },
+        },
+      ],
+
+      // TODO: Fix this, button types are not clear
+      smallButton: [
+        atoms({
+          background: "secondaryButtonBackground",
+          color: "secondaryButtonColor",
+          borderColor: "secondaryButtonBackground",
+          borderRadius: "secondaryButton",
+          fontWeight: "secondaryButton",
+        }),
+        {
+          ":hover": {
+            background: vars.color.secondaryButtonBackground,
+            color: vars.color.secondaryButtonHoverColor,
+            borderColor: vars.color.secondaryButtonBackground,
+          },
+          ":active": {
+            background: vars.color.secondaryButtonBackground,
+            color: vars.color.secondaryButtonActiveColor,
+            borderColor: vars.color.secondaryButtonBackground,
           },
         },
       ],

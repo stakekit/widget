@@ -101,6 +101,7 @@ export const PositionDetails = () => {
                           hw="8"
                           marginRight="1"
                           src={pd.logo}
+                          borderRadius="full"
                           fallback={
                             <Box marginRight="1">
                               <ImageFallback
@@ -172,7 +173,10 @@ export const PositionDetails = () => {
                     gap="1"
                   >
                     {[...val.values()].map((v) => (
-                      <Text variant={{ type: "muted" }} key={v}>
+                      <Text
+                        variant={{ type: "muted", weight: "normal" }}
+                        key={v}
+                      >
                         {v}
                       </Text>
                     ))}
@@ -244,23 +248,22 @@ export const PositionDetails = () => {
                             </Box>
                           )}
                           <Button
+                            variant={{ size: "small", color: "smallButton" }}
+                            disabled={pa.isLoading}
                             onClick={() =>
                               onPendingActionClick({
                                 opportunityBalance: pa.opportunityBalance,
                                 pendingActionDto: pa.pendingActionDto,
                               })
                             }
-                            variant={{
-                              size: "small",
-                              color: pa.isLoading ? "disabled" : "primary",
-                            }}
-                            disabled={pa.isLoading}
                           >
-                            {t(
-                              `position_details.pending_action_button.${
-                                pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                              }`
-                            )}
+                            <Text>
+                              {t(
+                                `position_details.pending_action_button.${
+                                  pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                                }`
+                              )}
+                            </Text>
                           </Button>
                         </Box>
                       </Box>
@@ -306,24 +309,13 @@ export const PositionDetails = () => {
                           </Box>
                         )}
 
-                        <Box
-                          flex={1}
-                          maxWidth="24"
-                          display="flex"
-                          justifyContent="center"
-                          alignItems="center"
+                        <Button
+                          onClick={onUnstakeClick}
+                          disabled={unstakeDisabled}
+                          variant={{ size: "small", color: "smallButton" }}
                         >
-                          <Button
-                            onClick={onUnstakeClick}
-                            disabled={unstakeDisabled}
-                            variant={{
-                              size: "small",
-                              color: unstakeDisabled ? "disabled" : "primary",
-                            }}
-                          >
-                            {ut}
-                          </Button>
-                        </Box>
+                          <Text>{ut}</Text>
+                        </Button>
                       </Box>
 
                       <Box

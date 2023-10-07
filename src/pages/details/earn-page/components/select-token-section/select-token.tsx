@@ -1,20 +1,15 @@
-import { Maybe } from "purify-ts";
-import { Virtuoso } from "react-virtuoso";
 import {
   Box,
   CaretDownIcon,
   SelectModal,
   SelectModalItem,
   SelectModalItemContainer,
-  SelectModalProps,
   Text,
 } from "../../../../../components";
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { formatTokenBalance } from "../../../../../utils";
-import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
-import { State } from "../../../../../state/stake/types";
 import { useMemo } from "react";
 import BigNumber from "bignumber.js";
 import clsx from "clsx";
@@ -24,22 +19,18 @@ import {
   selectItemText,
   validatorVirtuosoContainer,
 } from "../../styles.css";
+import { VirtualList } from "../../../../../components/atoms/virtual-list";
+import { useDetailsContext } from "../../hooks/details-context";
 
-export const SelectToken = ({
-  selectedTokenBalance,
-  tokenBalances,
-  onSearch,
-  onItemSelect,
-  onSelectOpportunityClose,
-  showTokenAmount = true,
-}: {
-  showTokenAmount?: boolean;
-  selectedTokenBalance: State["selectedTokenBalance"];
-  tokenBalances: Maybe<TokenBalanceScanResponseDto[]>;
-  onSearch: SelectModalProps["onSearch"];
-  onItemSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
-  onSelectOpportunityClose: () => void;
-}) => {
+export const SelectToken = () => {
+  const {
+    onSelectOpportunityClose,
+    onTokenBalanceSelect,
+    tokenBalancesData,
+    selectedTokenBalance,
+    onTokenSearch,
+    showTokenAmount = true,
+  } = useDetailsContext();
   const { t } = useTranslation();
 
   const data = useMemo(
@@ -47,10 +38,11 @@ export const SelectToken = ({
       selectedTokenBalance
         .map((stb) => ({
           stb,
-          tokenBalances: tokenBalances.extract() ?? [],
+          tokenBalances:
+            tokenBalancesData.map((v) => v.filtered).extract() ?? [],
         }))
         .extractNullable(),
-    [selectedTokenBalance, tokenBalances]
+    [selectedTokenBalance, tokenBalancesData]
   );
 
   if (!data) return null;
@@ -58,7 +50,7 @@ export const SelectToken = ({
   return (
     <SelectModal
       title={t("select_token.title")}
-      onSearch={onSearch}
+      onSearch={onTokenSearch}
       onClose={onSelectOpportunityClose}
       trigger={
         <Trigger asChild>
@@ -88,7 +80,7 @@ export const SelectToken = ({
         </Trigger>
       }
     >
-      <Virtuoso
+      <VirtualList
         className={clsx([hideScrollbar, validatorVirtuosoContainer])}
         data={data.tokenBalances}
         itemContent={(_index, item) => {
@@ -96,7 +88,7 @@ export const SelectToken = ({
 
           return (
             <SelectModalItemContainer>
-              <SelectModalItem onItemClick={() => onItemSelect(item)}>
+              <SelectModalItem onItemClick={() => onTokenBalanceSelect(item)}>
                 <TokenIcon token={item.token} />
 
                 <Box

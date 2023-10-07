@@ -1,5 +1,4 @@
 import { Maybe } from "purify-ts";
-import { Virtuoso } from "react-virtuoso";
 import {
   Box,
   Button,
@@ -23,6 +22,7 @@ import { Image } from "../../../../components/atoms/image";
 import { ImageFallback } from "../../../../components/atoms/image-fallback";
 import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
 import { useRef } from "react";
+import { VirtualList } from "../../../../components/atoms/virtual-list";
 
 export const ImportValidator = ({
   foundValidatorsData,
@@ -59,8 +59,8 @@ export const ImportValidator = ({
       trigger={
         <Trigger asChild>
           <Box>
-            <Button variant={{ size: "small" }}>
-              {t("positions.import_button")}
+            <Button variant={{ size: "small", color: "smallButton" }}>
+              <Text>{t("positions.import_button")}</Text>
             </Button>
           </Box>
         </Trigger>
@@ -68,7 +68,7 @@ export const ImportValidator = ({
     >
       {foundValidatorsData
         .map((val) => (
-          <Virtuoso
+          <VirtualList
             className={clsx([hideScrollbar, validatorVirtuosoContainer])}
             data={val}
             itemContent={(_index, item) => {
@@ -79,6 +79,7 @@ export const ImportValidator = ({
                       <Box>
                         <Image
                           hw="9"
+                          borderRadius="full"
                           src={item.validator.image}
                           fallback={
                             <ImageFallback

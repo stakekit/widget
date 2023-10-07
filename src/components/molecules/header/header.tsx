@@ -87,7 +87,7 @@ export const Header = () => {
               >
                 {(() => {
                   if (!isConnected || !chain || !account) {
-                    return <Text>{t("shared.stake_kit")}</Text>;
+                    return null;
                   }
 
                   return (
