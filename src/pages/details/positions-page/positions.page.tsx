@@ -1,4 +1,3 @@
-import { Virtuoso } from "react-virtuoso";
 import { Box, Spinner, Text } from "../../../components";
 import { useTranslation } from "react-i18next";
 import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
@@ -9,6 +8,7 @@ import { PageContainer } from "../../components";
 import { virtuosoContainer } from "./style.css";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { ImportValidator } from "./components/import-validator";
+import { VirtualList } from "../../../components/atoms/virtual-list";
 
 export const PositionsPage = () => {
   const { positionsData, importValidators } = usePositions();
@@ -57,30 +57,36 @@ export const PositionsPage = () => {
         {getContent()}
 
         {!!positionsData.data?.length && (
-          <Virtuoso
+          <VirtualList
             className={virtuosoContainer}
             style={{ height: "auto" }}
             data={["header" as const, ...positionsData.data]}
             itemContent={(_index, item) =>
               item === "header" ? (
-                <ListItem>
+                <ListItem variant={{ hover: "disabled" }}>
                   <Box
                     display="flex"
                     justifyContent="space-between"
+                    alignItems="center"
                     gap="2"
                     marginBottom="2"
                   >
-                    <Box display="flex" flexDirection="column" gap="2">
+                    <Box display="flex" flexDirection="column" gap="2" flex={2}>
                       <Text variant={{ weight: "bold" }}>
                         {t("positions.dont_see_position")}
                       </Text>
 
-                      <Text variant={{ weight: "normal" }}>
+                      <Text variant={{ weight: "normal", type: "muted" }}>
                         {t("positions.import_validator")}
                       </Text>
                     </Box>
 
-                    <Box>
+                    <Box
+                      flex={1}
+                      display="flex"
+                      justifyContent="flex-end"
+                      alignItems="center"
+                    >
                       <ImportValidator {...importValidators} />
                     </Box>
                   </Box>

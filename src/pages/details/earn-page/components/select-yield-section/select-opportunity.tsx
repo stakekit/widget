@@ -1,5 +1,4 @@
 import { List, Maybe } from "purify-ts";
-import { GroupedVirtuoso } from "react-virtuoso";
 import { SelectedStakeData } from "../../types";
 import {
   Box,
@@ -18,6 +17,7 @@ import { useMemo } from "react";
 import { ExtraData } from "../../../../../state/stake/types";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { hideScrollbar, selectItemText } from "../../styles.css";
+import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 
 export const SelectOpportunity = ({
   selectedStake,
@@ -88,7 +88,7 @@ export const SelectOpportunity = ({
         </Trigger>
       }
     >
-      <GroupedVirtuoso
+      <GroupedVirtualList
         increaseViewportBy={{ bottom: 50, top: 0 }}
         groupCounts={data.groupCounts}
         className={hideScrollbar}

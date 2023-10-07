@@ -1,6 +1,7 @@
 import { useProviderDetails } from "../../hooks/use-provider-details";
 import { useYieldType } from "../../hooks/use-yield-type";
 import { useStakeState } from "../../state/stake";
+import { formatNumber } from "../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
@@ -11,7 +12,7 @@ export const StakeCompletePage = () => {
 
   const network = selectedStake.mapOrDefault((y) => y.token.symbol, "");
 
-  const amount = stakeAmount.mapOrDefault((a) => a.toString(), "");
+  const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 

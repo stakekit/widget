@@ -1,8 +1,27 @@
 import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 
+BigNumber.config({
+  FORMAT: {
+    prefix: "",
+    decimalSeparator: ".",
+    groupSeparator: ",",
+    groupSize: 3,
+    secondaryGroupSize: 0,
+    fractionGroupSeparator: " ",
+    fractionGroupSize: 0,
+    suffix: "",
+  },
+});
+
+export const formatNumber = (number: string | BigNumber) => {
+  return BigNumber.isBigNumber(number)
+    ? number.toFormat()
+    : new BigNumber(number).toFormat();
+};
+
 export const formatTokenBalance = (amount: BigNumber, decimals: number) => {
-  return amount.decimalPlaces(decimals, BigNumber.ROUND_UP).toString();
+  return amount.toFormat(decimals, BigNumber.ROUND_UP);
 };
 
 export const apyToPercentage = (apy: number) => {

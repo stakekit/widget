@@ -57,14 +57,12 @@ export const content = style([
       display: "none",
     },
 
-    height: "80vh",
     maxWidth: `${breakpoints.tablet}px`,
     position: "absolute",
     overflow: "scroll",
     bottom: 0,
     "@media": {
       [minMediaQuery("tablet")]: {
-        height: "70vh",
         bottom: "auto",
         borderBottomLeftRadius: vars.borderRadius["2xl"],
         borderBottomRightRadius: vars.borderRadius["2xl"],
@@ -78,3 +76,7 @@ export const stakeText = style([atoms({ color: "white" })]);
 export const noOutline = style({ outline: "none" });
 
 export const tokenLogo = style({ borderRadius: "50%" });
+
+export const selectModalItemContainer = style({
+  padding: "2.5px 0",
+});

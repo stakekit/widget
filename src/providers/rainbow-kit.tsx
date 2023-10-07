@@ -13,6 +13,9 @@ import { usePrefersColorScheme } from "../hooks";
 import { useSettings } from "./settings";
 
 const overrides: RecursivePartial<Theme> = {
+  colors: {
+    modalBackground: vars.color.background,
+  },
   radii: {
     actionButton: vars.borderRadius["2xl"],
   },

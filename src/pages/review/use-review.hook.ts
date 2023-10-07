@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
 import { useSelectedStakePrice } from "../../hooks";
 import { Maybe } from "purify-ts";
-import { formatTokenBalance } from "../../utils";
+import { formatNumber, formatTokenBalance } from "../../utils";
 import { useMemo } from "react";
 import { Token } from "@stakekit/common";
 import { useEstimatedRewards } from "../../hooks/use-estimated-rewards";
@@ -31,7 +31,7 @@ export const useReview = () => {
   );
 
   const tokenNetwork = selectedStake.mapOrDefault((y) => y.token.symbol, "");
-  const amount = stakeAmount.mapOrDefault((a) => a.toString(), "");
+  const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
   const interestRate = estimatedRewards.mapOrDefault(
     (r) => r.percentage.toString(),
     ""

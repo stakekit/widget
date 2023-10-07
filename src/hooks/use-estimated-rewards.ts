@@ -3,6 +3,7 @@ import { State } from "../state/stake/types";
 import { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useProviderDetails } from "./use-provider-details";
+import { formatNumber } from "../utils";
 
 export const useEstimatedRewards = ({
   selectedStake,
@@ -23,11 +24,12 @@ export const useEstimatedRewards = ({
       providerDetails.map((val) => ({
         percentage: val.aprPercentage,
         yearly: stakeAmount.mapOrDefault(
-          (am) => am.times(val.apr).decimalPlaces(5).toString(),
+          (am) => formatNumber(am.times(val.apr).decimalPlaces(5)),
           ""
         ),
         monthly: stakeAmount.mapOrDefault(
-          (am) => am.times(val.apr).dividedBy(12).decimalPlaces(5).toString(),
+          (am) =>
+            formatNumber(am.times(val.apr).dividedBy(12).decimalPlaces(5)),
           ""
         ),
       })),

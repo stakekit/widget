@@ -16,13 +16,7 @@ export const SelectTokenSection = () => {
     formattedPrice,
     onMaxClick,
     onStakeAmountChange,
-    onTokenBalanceSelect,
-    onTokenSearch,
-    selectedTokenBalance,
     stakeAmount,
-    tokenBalancesData,
-    onSelectOpportunityClose,
-    showTokenAmount,
     stakeTokenAvailableAmountLoading,
   } = useDetailsContext();
 
@@ -49,14 +43,7 @@ export const SelectTokenSection = () => {
         </Box>
 
         <Box display="flex" justifyContent="center" alignItems="center">
-          <SelectToken
-            showTokenAmount={showTokenAmount}
-            selectedTokenBalance={selectedTokenBalance}
-            tokenBalances={tokenBalancesData}
-            onItemSelect={onTokenBalanceSelect}
-            onSearch={onTokenSearch}
-            onSelectOpportunityClose={onSelectOpportunityClose}
-          />
+          <SelectToken />
         </Box>
       </Box>
       <Box
