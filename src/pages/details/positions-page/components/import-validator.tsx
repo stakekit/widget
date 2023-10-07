@@ -129,13 +129,13 @@ export const ImportValidator = ({
                         </Text>
                       ) : (
                         <Button
-                          variant={{ size: "small" }}
+                          variant={{ size: "small", color: "smallButton" }}
                           onClick={() => {
                             onImportValidatorImport(item);
                             modalRef.current?.close();
                           }}
                         >
-                          {t("positions.import_button")}
+                          <Text>{t("positions.import_button")}</Text>
                         </Button>
                       )}
                     </Box>
