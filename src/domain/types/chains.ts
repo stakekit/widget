@@ -158,6 +158,16 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.Polygon,
     },
+    arbitrum: {
+      currencyId: "arbitrum",
+      family: "ethereum",
+      skChainName: EvmNetworks.Arbitrum,
+    },
+    optimism: {
+      currencyId: "optimism",
+      family: "ethereum",
+      skChainName: EvmNetworks.Optimism,
+    },
   },
   cosmos: {
     cosmos: {
