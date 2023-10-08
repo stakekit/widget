@@ -106,6 +106,27 @@ export const buttonStyle = recipe({
           },
         },
       ],
+      smallButtonLight: [
+        atoms({
+          background: "stakeSectionBackground",
+          color: "secondaryButtonColor",
+          borderColor: "stakeSectionBackground",
+          borderRadius: "secondaryButton",
+          fontWeight: "secondaryButton",
+        }),
+        {
+          ":hover": {
+            background: vars.color.stakeSectionBackground,
+            color: vars.color.secondaryButtonHoverColor,
+            borderColor: vars.color.stakeSectionBackground,
+          },
+          ":active": {
+            background: vars.color.stakeSectionBackground,
+            color: vars.color.secondaryButtonActiveColor,
+            borderColor: vars.color.stakeSectionBackground,
+          },
+        },
+      ],
     },
     animation: {
       none: {},

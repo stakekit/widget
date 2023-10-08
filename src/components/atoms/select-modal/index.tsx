@@ -21,7 +21,6 @@ import {
 import { Box } from "../box";
 import { Text } from "../typography";
 import { SearchIcon, XIcon } from "../icons";
-import { Divider } from "../divider";
 import { useSavedRef } from "../../../hooks";
 import { useRootElement } from "../../../hooks/use-root-element";
 import { ListItem } from "../list/list-item";
@@ -159,12 +158,6 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
                           onSearch(e.target.value)
                         }
                       />
-                    </Box>
-                  )}
-
-                  {showTopBar && (
-                    <Box marginTop="2">
-                      <Divider />
                     </Box>
                   )}
 

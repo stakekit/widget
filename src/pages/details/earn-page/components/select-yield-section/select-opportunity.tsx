@@ -1,12 +1,10 @@
 import { List, Maybe } from "purify-ts";
-import { SelectedStakeData } from "../../types";
 import {
   Box,
   CaretDownIcon,
   SelectModal,
   SelectModalItem,
   SelectModalItemContainer,
-  SelectModalProps,
   Text,
 } from "../../../../../components";
 import { useTranslation } from "react-i18next";
@@ -14,24 +12,20 @@ import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { apyToPercentage } from "../../../../../utils";
 import { useMemo } from "react";
-import { ExtraData } from "../../../../../state/stake/types";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { hideScrollbar, selectItemText } from "../../styles.css";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
+import { useDetailsContext } from "../../hooks/details-context";
 
-export const SelectOpportunity = ({
-  selectedStake,
-  selectedStakeData,
-  onSearch,
-  onItemSelect,
-  onSelectOpportunityClose,
-}: {
-  selectedStake: ExtraData["selectedStake"];
-  selectedStakeData: Maybe<SelectedStakeData>;
-  onSearch: SelectModalProps["onSearch"];
-  onItemSelect: (yieldId: string) => void;
-  onSelectOpportunityClose: () => void;
-}) => {
+export const SelectOpportunity = () => {
+  const {
+    selectedStake,
+    selectedStakeData,
+    onSelectOpportunityClose,
+    onYieldSelect,
+    onYieldSearch,
+  } = useDetailsContext();
+
   const { t } = useTranslation();
 
   const data = useMemo(
@@ -43,7 +37,7 @@ export const SelectOpportunity = ({
 
             return {
               ss,
-              all: ssd.all,
+              all: ssd.filtered,
               groups: val.map((v) => v.title),
               groupCounts: val.map((v) => v.itemsLength),
             };
@@ -58,7 +52,7 @@ export const SelectOpportunity = ({
   return (
     <SelectModal
       title={t("details.opportunity_search_title")}
-      onSearch={onSearch}
+      onSearch={onYieldSearch}
       onClose={onSelectOpportunityClose}
       trigger={
         <Trigger asChild>
@@ -111,7 +105,7 @@ export const SelectOpportunity = ({
               ) : (
                 <SelectModalItem
                   testId={`select-opportunity__item_${item.id}-${index}`}
-                  onItemClick={() => onItemSelect(item.id)}
+                  onItemClick={() => onYieldSelect(item.id)}
                 >
                   <TokenIcon
                     metadata={item.metadata}

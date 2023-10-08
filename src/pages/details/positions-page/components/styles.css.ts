@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { atoms, vars } from "../../../../styles";
+import { vars } from "../../../../styles";
 
 export const selectItemText = style({
   color: vars.color.tokenSelect,
@@ -9,8 +9,6 @@ export const selectItemText = style({
 export const triggerStyles = style({
   width: "100%",
 });
-
-export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
 export const hideScrollbar = style({
   "::-webkit-scrollbar": {

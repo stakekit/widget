@@ -9,7 +9,7 @@ export const yieldTypesMap: {
     title: "Liquid stake",
     review: "Liquid stake",
   },
-  vault: { type: "vault", title: "Yearn", review: "Deposit" },
+  vault: { type: "vault", title: "Yield Vaults", review: "Deposit" },
   lending: { type: "lending", title: "Lend", review: "Supply" },
 } as const;
 

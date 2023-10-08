@@ -14,14 +14,18 @@ BigNumber.config({
   },
 });
 
+const onePointZero = new BigNumber(1.0);
+
 export const formatNumber = (number: string | BigNumber) => {
-  return BigNumber.isBigNumber(number)
-    ? number.toFormat()
-    : new BigNumber(number).toFormat();
+  const bn = BigNumber(number);
+
+  return bn.isEqualTo(onePointZero) ? "1" : bn.toFormat();
 };
 
 export const formatTokenBalance = (amount: BigNumber, decimals: number) => {
-  return amount.toFormat(decimals, BigNumber.ROUND_UP);
+  return amount.isEqualTo(onePointZero)
+    ? "1"
+    : amount.toFormat(decimals, BigNumber.ROUND_CEIL);
 };
 
 export const apyToPercentage = (apy: number) => {
