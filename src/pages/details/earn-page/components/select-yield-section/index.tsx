@@ -13,11 +13,7 @@ export const SelectYieldSection = () => {
     yieldOpportunityLoading,
     tokenBalancesScanLoading,
     stakeTokenAvailableAmountLoading,
-    selectedStake,
-    onYieldSelect,
-    onYieldSearch,
     selectedStakeData,
-    onSelectOpportunityClose,
     rewardToken,
     estimatedRewards,
     symbol,
@@ -88,13 +84,7 @@ export const SelectYieldSection = () => {
                 </Box>
 
                 <Box display="flex" justifyContent="center" alignItems="center">
-                  <SelectOpportunity
-                    selectedStake={selectedStake}
-                    onItemSelect={onYieldSelect}
-                    onSearch={onYieldSearch}
-                    selectedStakeData={selectedStakeData}
-                    onSelectOpportunityClose={onSelectOpportunityClose}
-                  />
+                  <SelectOpportunity />
                 </Box>
               </Box>
 

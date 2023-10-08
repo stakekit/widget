@@ -10,7 +10,7 @@ import whatIsLending from "../../../assets/images/what-is-lending.png";
 import fees from "../../../assets/images/fees.png";
 import { Heading, Text } from "../../atoms/typography";
 import { Trigger } from "@radix-ui/react-alert-dialog";
-import { imageStyle } from "./style.css";
+import { container, imageStyle } from "./style.css";
 import { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
@@ -246,8 +246,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        px="4"
         paddingBottom={{ mobile: "8" }}
+        className={container}
       >
         <Box as="img" src={image} className={imageStyle} />
 

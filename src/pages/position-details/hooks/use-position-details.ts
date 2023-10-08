@@ -363,7 +363,7 @@ export const usePositionDetails = () => {
               `1 ${curr.token.symbol} = ${formatTokenBalance(
                 new BigNumber(curr.pricePerShare),
                 6
-              )} ${v.integrationData.metadata.gasFeeToken.symbol}`
+              )} ${v.integrationData.metadata.token.symbol}`
             );
 
             return acc;

@@ -248,7 +248,10 @@ export const PositionDetails = () => {
                             </Box>
                           )}
                           <Button
-                            variant={{ size: "small", color: "smallButton" }}
+                            variant={{
+                              size: "small",
+                              color: "smallButtonLight",
+                            }}
                             disabled={pa.isLoading}
                             onClick={() =>
                               onPendingActionClick({
