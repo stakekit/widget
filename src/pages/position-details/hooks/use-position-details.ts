@@ -18,7 +18,7 @@ import {
 } from "../../../domain";
 import { Token } from "@stakekit/common";
 import BigNumber from "bignumber.js";
-import { formatTokenBalance } from "../../../utils";
+import { formatNumber } from "../../../utils";
 import { usePositionData } from "../../../hooks/use-position-data";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
@@ -222,7 +222,7 @@ export const usePositionDetails = () => {
         pricePerShare: val.sb.pricePerShare,
       })
     )
-    .mapOrDefault((v) => `$${formatTokenBalance(v, 2)}`, "");
+    .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
 
   const onMaxClick = () => {
     Maybe.fromRecord({ stakedOrLiquidBalance, integrationData }).ifJust(
@@ -360,9 +360,8 @@ export const usePositionDetails = () => {
           [...v.positionBalancesByType.values()].reduce((acc, curr) => {
             acc.set(
               curr.token.symbol,
-              `1 ${curr.token.symbol} = ${formatTokenBalance(
-                new BigNumber(curr.pricePerShare),
-                6
+              `1 ${curr.token.symbol} = ${formatNumber(
+                new BigNumber(curr.pricePerShare)
               )} ${v.integrationData.metadata.token.symbol}`
             );
 

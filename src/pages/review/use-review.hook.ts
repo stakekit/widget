@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
 import { useSelectedStakePrice } from "../../hooks";
 import { Maybe } from "purify-ts";
-import { formatNumber, formatTokenBalance } from "../../utils";
+import { formatNumber } from "../../utils";
 import { useMemo } from "react";
 import { Token } from "@stakekit/common";
 import { useEstimatedRewards } from "../../hooks/use-estimated-rewards";
@@ -63,10 +63,7 @@ export const useReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${formatTokenBalance(
-              setg,
-              6
-            )} ${tokenNetwork} ($${formatTokenBalance(gfiu, 6)})`,
+            `${formatNumber(setg)} ${tokenNetwork} ($${formatNumber(gfiu)})`,
           ""
         ),
     [gasFeeInUSD, stakeEnterTxGas, tokenNetwork]

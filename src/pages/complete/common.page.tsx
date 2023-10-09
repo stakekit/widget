@@ -11,6 +11,8 @@ import {
   YieldType,
 } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import { ImageFallback } from "../../components/atoms/image-fallback";
+import { Image } from "../../components/atoms/image";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -104,7 +106,16 @@ export const CompletePage = ({
                 .map((v) => (
                   <Box display="flex" marginTop="2">
                     {v.logo && (
-                      <Box hw="5" as="img" src={v.logo} marginRight="1" />
+                      <Box marginRight="1">
+                        <Image
+                          borderRadius="full"
+                          hw="5"
+                          src={v.logo}
+                          fallback={
+                            <ImageFallback name={v.name} tokenLogoHw="5" />
+                          }
+                        />
+                      </Box>
                     )}
                     <Text variant={{ type: "muted" }}>
                       {t("complete.via", {

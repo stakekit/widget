@@ -6,7 +6,7 @@ import { getBaseToken, getTokenPriceInUSD } from "../../domain";
 import { Token } from "@stakekit/common";
 import { tokenToTokenDto } from "../../utils/mappers";
 import { Maybe } from "purify-ts";
-import { formatTokenBalance } from "../../utils";
+import { formatNumber } from "../../utils";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
@@ -40,9 +40,9 @@ export const useUnstakeOrPendingActionReview = () => {
 
   const amount = pendingActionMatch
     ? pendingActionSession.map((val) =>
-        formatTokenBalance(new BigNumber(val.amount ?? 0), 6)
+        formatNumber(new BigNumber(val.amount ?? 0))
       )
-    : unstake.chain((u) => u.amount).map((val) => formatTokenBalance(val, 6));
+    : unstake.chain((u) => u.amount).map((val) => formatNumber(val));
 
   const title = pendingActionMatch
     ? pendingActionType.map((type) =>
@@ -105,10 +105,7 @@ export const useUnstakeOrPendingActionReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${formatTokenBalance(
-              setg,
-              6
-            )} ${tokenNetwork} ($${formatTokenBalance(gfiu, 6)})`,
+            `${formatNumber(setg)} ${tokenNetwork} ($${formatNumber(gfiu)})`,
           ""
         ),
     [gasFeeInUSD, txGas, tokenNetwork]

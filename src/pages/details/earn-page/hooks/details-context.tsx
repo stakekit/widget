@@ -27,7 +27,7 @@ import { Token } from "@stakekit/common";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useSelectedStakePrice } from "../../../../hooks";
-import { formatTokenBalance } from "../../../../utils";
+import { formatNumber } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { useNavigate } from "react-router-dom";
@@ -152,12 +152,12 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           pricePerShare: undefined,
         })
       )
-      .mapOrDefault((v) => `$${formatTokenBalance(v, 2)}`, "");
+      .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
   }, [pricesState.data, selectedTokenBalance, stakeAmount]);
 
   const formattedAmount = useMemo(() => {
     return Maybe.fromNullable(availableAmount).mapOrDefault(
-      (am) => formatTokenBalance(new BigNumber(am), 4),
+      (am) => formatNumber(new BigNumber(am), 4),
       ""
     );
   }, [availableAmount]);

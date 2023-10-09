@@ -5,6 +5,7 @@ import { inlineText } from "./style.css";
 import { Image } from "../../atoms/image";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
 import { ActionTypes } from "@stakekit/api-hooks";
+import { ImageFallback } from "../../atoms/image-fallback";
 
 export const RewardTokenDetails = ({
   rewardToken,
@@ -22,7 +23,18 @@ export const RewardTokenDetails = ({
     .map((rt) => (
       <>
         <Box display="flex" alignItems="center">
-          {rt.logoUri && <Image hw="5" src={rt.logoUri} marginRight="1" />}
+          {rt.logoUri && (
+            <Box marginRight="1">
+              <Image
+                borderRadius="full"
+                hw="5"
+                src={rt.logoUri}
+                fallback={
+                  <ImageFallback name={rt.providerName} tokenLogoHw="5" />
+                }
+              />
+            </Box>
+          )}
 
           <Text variant={{ weight: "semibold" }}>
             <Trans

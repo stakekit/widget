@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../components";
-import { formatTokenBalance } from "../../../utils";
+import { formatNumber } from "../../../utils";
 import BigNumber from "bignumber.js";
 import { YieldBalanceDto } from "@stakekit/api-hooks";
 import { useMemo } from "react";
@@ -31,9 +31,8 @@ export const PositionBalances = ({
       </Text>
       <Box textAlign="end">
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatTokenBalance(new BigNumber(val.amount ?? 0), 6)}{" "}
-          {val.token.symbol} ($
-          {formatTokenBalance(val.tokenPriceInUsd, 2)})
+          {formatNumber(new BigNumber(val.amount ?? 0))} {val.token.symbol} ($
+          {formatNumber(val.tokenPriceInUsd, 2)})
         </Text>
 
         {val.type === "unstaking" && typeof unstakingDays === "number" && (
