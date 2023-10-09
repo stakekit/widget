@@ -129,5 +129,5 @@
     "vitest": "^0.34.5",
     "wagmi": "^1.4.2"
   },
-  "packageManager": "yarn@3.6.3"
+  "packageManager": "yarn@3.6.4"
 }
