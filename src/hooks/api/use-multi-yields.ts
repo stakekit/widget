@@ -9,8 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
-import { EitherAsync } from "purify-ts";
 import { withRequestErrorRetry } from "../../common/utils";
+import { eitherAsyncPool } from "../../utils/either-async-pool";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
@@ -24,54 +24,47 @@ export const useMultiYields = (yieldIds: string[]) => {
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: yieldIds.length > 0,
     queryFn: async ({ signal }) => {
-      const results: YieldDto[] = [];
-
-      // Chunk the requests into groups of 5
-      for (let i = 0; i < yieldIds.length; i += 5) {
-        const reqs: EitherAsync<Error, YieldDto>[] = [];
-
-        for (let j = i; j < i + 5 && j < yieldIds.length; j++) {
-          reqs.push(
+      const res = eitherAsyncPool(
+        yieldIds.map(
+          (y) => () =>
             withRequestErrorRetry({
               fn: () =>
                 yieldYieldOpportunity(
-                  yieldIds[j],
+                  y,
                   { ledgerWalletAPICompatible: isLedgerLive },
                   signal
                 ),
             }).mapLeft(() => new Error("Unknown error"))
+        ),
+        5
+      )()
+        .map((data) =>
+          defaultFiltered({ data, isConnected, network, isLedgerLive })
+        )
+        .ifRight((data) => {
+          const queryClient = APIManager.getQueryClient();
+
+          /**
+           * Set the query data for each yield opportunity
+           */
+          data.forEach(
+            (y) =>
+              queryClient?.setQueryData(
+                getYieldYieldOpportunityQueryKey(y.id, {
+                  ledgerWalletAPICompatible: isLedgerLive,
+                }),
+                y
+              )
           );
-        }
+        });
 
-        const sliceRes = await EitherAsync.all(reqs);
-
-        if (sliceRes.isLeft()) {
-          return Promise.reject(sliceRes.extract());
-        }
-
-        sliceRes.ifRight((data) =>
-          results.push(
-            ...defaultFiltered({ data, isConnected, network, isLedgerLive })
-          )
-        );
-      }
-
-      const queryClient = APIManager.getQueryClient();
-
-      /**
-       * Set the query data for each yield opportunity
-       */
-      results.forEach(
-        (y) =>
-          queryClient?.setQueryData(
-            getYieldYieldOpportunityQueryKey(y.id, {
-              ledgerWalletAPICompatible: isLedgerLive,
-            }),
-            y
-          )
-      );
-
-      return results;
+      return res.caseOf({
+        Left: (e) => {
+          console.log(e);
+          return Promise.reject(e);
+        },
+        Right: (data) => Promise.resolve(data),
+      });
     },
   });
 };

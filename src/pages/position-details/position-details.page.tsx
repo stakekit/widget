@@ -14,7 +14,7 @@ import { Image } from "../../components/atoms/image";
 import { ImageFallback } from "../../components/atoms/image-fallback";
 import { Trans, useTranslation } from "react-i18next";
 import { HelpModal } from "../../components/molecules/help-modal";
-import { apyToPercentage, formatTokenBalance } from "../../utils";
+import { apyToPercentage, formatNumber } from "../../utils";
 import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
 import { ActionTypes } from "@stakekit/api-hooks";
@@ -211,9 +211,8 @@ export const PositionDetails = () => {
                             <Trans
                               i18nKey="position_details.available_to"
                               values={{
-                                amount: formatTokenBalance(
-                                  new BigNumber(pa.opportunityBalance.amount),
-                                  6
+                                amount: formatNumber(
+                                  new BigNumber(pa.opportunityBalance.amount)
                                 ),
                                 symbol: pa.opportunityBalance.token.symbol,
                                 pendingAction: t(
@@ -349,12 +348,9 @@ export const PositionDetails = () => {
                               weight: "normal",
                             }}
                           >
-                            {`${formatTokenBalance(
-                              new BigNumber(b.amount ?? 0),
-                              6
-                            )} ${b.token.symbol} ${t(
-                              "position_details.available"
-                            )}`}
+                            {`${formatNumber(new BigNumber(b.amount ?? 0))} ${
+                              b.token.symbol
+                            } ${t("position_details.available")}`}
                           </Text>
                           {cca && (
                             <Box

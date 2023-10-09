@@ -9,7 +9,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { formatTokenBalance } from "../../../../../utils";
 import { useMemo } from "react";
 import BigNumber from "bignumber.js";
 import clsx from "clsx";
@@ -21,6 +20,7 @@ import {
 } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../hooks/details-context";
+import { formatNumber } from "../../../../../utils";
 
 export const SelectToken = () => {
   const {
@@ -111,7 +111,7 @@ export const SelectToken = () => {
 
                     {showTokenAmount && (
                       <Text variant={{ weight: "normal" }}>
-                        {formatTokenBalance(amount, 6)}
+                        {formatNumber(amount)}
                       </Text>
                     )}
                   </Box>

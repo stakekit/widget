@@ -7,6 +7,7 @@ import { RewardTokenDetails } from "../../components/molecules/reward-token-deta
 import { Maybe } from "purify-ts";
 import { HelpModal } from "../../components/molecules/help-modal";
 import { feeStyles } from "../review/style.css";
+import { pointer } from "./styles.css";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {
@@ -94,7 +95,15 @@ export const UnstakeOrPendingActionReviewPage = () => {
               <Trans
                 i18nKey="unstake_review.terms_of_use"
                 components={{
-                  underline0: <span style={{ textDecoration: "underline" }} />,
+                  underline0: (
+                    // eslint-disable-next-line jsx-a11y/anchor-has-content
+                    <a
+                      target="_blank"
+                      href="https://docs.stakek.it/docs/terms-of-use"
+                      className={pointer}
+                      rel="noreferrer"
+                    />
+                  ),
                 }}
               />
             </Text>

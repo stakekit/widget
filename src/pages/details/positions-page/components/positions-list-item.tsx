@@ -4,7 +4,7 @@ import { SKLink } from "../../../../components/atoms/link";
 import { ListItem } from "../../../../components/atoms/list/list-item";
 import { usePositions } from "../hooks/use-positions";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
-import { formatTokenBalance } from "../../../../utils";
+import { formatNumber } from "../../../../utils";
 import { memo, useMemo } from "react";
 import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -144,7 +144,7 @@ export const PositionsListItem = memo(
                           type: "muted",
                         }}
                       >
-                        {formatTokenBalance(amount, 6)} {val.token.symbol}
+                        {formatNumber(amount)} {val.token.symbol}
                       </Text>
                     </Box>
                   ))

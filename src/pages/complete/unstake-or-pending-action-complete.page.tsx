@@ -1,7 +1,7 @@
 import { useMatch, useParams } from "react-router-dom";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 import { useMemo } from "react";
-import { formatTokenBalance } from "../../utils";
+import { formatNumber } from "../../utils";
 import BigNumber from "bignumber.js";
 import { CompletePage } from "./common.page";
 import { Maybe } from "purify-ts";
@@ -38,12 +38,12 @@ export const UnstakeOrPendingActionCompletePage = () => {
     () =>
       pendingActionMatch
         ? pendingActionSession.mapOrDefault(
-            (val) => formatTokenBalance(new BigNumber(val.amount ?? 0), 6),
+            (val) => formatNumber(new BigNumber(val.amount ?? 0)),
             ""
           )
         : unstake
             .chain((u) => u.amount)
-            .mapOrDefault((a) => formatTokenBalance(a, 6), ""),
+            .mapOrDefault((a) => formatNumber(a), ""),
     [pendingActionMatch, pendingActionSession, unstake]
   );
 
