@@ -10,12 +10,10 @@ import { SelectedStakeData } from "../types";
 import { Maybe } from "purify-ts";
 import { ExtraData, State } from "../../../../state/stake/types";
 import {
-  APIManager,
   TokenBalanceScanResponseDto,
   ValidatorDto,
   YieldDto,
   YieldType,
-  getYieldYieldOpportunityQueryKey,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { NumberInputProps, SelectModalProps } from "../../../../components";
@@ -42,7 +40,10 @@ import { List } from "purify-ts";
 import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
-import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import {
+  getYieldOpportunityFromCache,
+  useYieldOpportunity,
+} from "../../../../hooks/api/use-yield-opportunity";
 
 type DetailsContextType = {
   availableTokens: string;
@@ -112,6 +113,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isConnecting,
     isReconnecting,
     isNotConnectedOrReconnecting,
+    isLedgerLive,
   } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
@@ -292,9 +294,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         tokenBalance,
         initYield: List.head(tokenBalance.availableYields).chainNullable(
           (yId) =>
-            APIManager.getQueryClient()?.getQueryData(
-              getYieldYieldOpportunityQueryKey(yId)
-            )
+            getYieldOpportunityFromCache({ integrationId: yId, isLedgerLive })
         ),
       },
     });

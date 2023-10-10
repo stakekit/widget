@@ -18,7 +18,7 @@ export const eitherAsyncPool = <
     const thenCb = (res: unknown, i: number): EitherAsync<Error, null> => {
       results[i] = res;
 
-      if (current < fns.length - 1) {
+      if (current < fns.length) {
         const i = current++;
         return fns[i]().chain((res) => thenCb(res, i));
       }

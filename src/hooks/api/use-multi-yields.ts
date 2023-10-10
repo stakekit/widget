@@ -1,16 +1,12 @@
 import { useSKWallet } from "../wallet/use-sk-wallet";
-import {
-  APIManager,
-  YieldDto,
-  getYieldYieldOpportunityQueryKey,
-  yieldYieldOpportunity,
-} from "@stakekit/api-hooks";
+import { YieldDto, yieldYieldOpportunity } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
 import { withRequestErrorRetry } from "../../common/utils";
 import { eitherAsyncPool } from "../../utils/either-async-pool";
+import { setYieldOpportunityInCache } from "./use-yield-opportunity";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
@@ -34,7 +30,10 @@ export const useMultiYields = (yieldIds: string[]) => {
                   { ledgerWalletAPICompatible: isLedgerLive },
                   signal
                 ),
-            }).mapLeft(() => new Error("Unknown error"))
+            }).mapLeft((e) => {
+              console.log(e);
+              return new Error("Unknown error");
+            })
         ),
         5
       )()
@@ -42,19 +41,14 @@ export const useMultiYields = (yieldIds: string[]) => {
           defaultFiltered({ data, isConnected, network, isLedgerLive })
         )
         .ifRight((data) => {
-          const queryClient = APIManager.getQueryClient();
-
           /**
            * Set the query data for each yield opportunity
            */
-          data.forEach(
-            (y) =>
-              queryClient?.setQueryData(
-                getYieldYieldOpportunityQueryKey(y.id, {
-                  ledgerWalletAPICompatible: isLedgerLive,
-                }),
-                y
-              )
+          data.forEach((y) =>
+            setYieldOpportunityInCache({
+              isLedgerLive,
+              yieldDto: y,
+            })
           );
         });
 

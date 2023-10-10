@@ -5,7 +5,7 @@ export const config = {
   apiKey: import.meta.env.VITE_API_KEY,
   queryClient: {
     staleTime: 1000 * 5,
-    cacheTime: 1000 * 30,
+    cacheTime: 1000 * 60 * 5,
   },
   isTestMode: import.meta.env.MODE === "test",
   walletConnectV2: {
