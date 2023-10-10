@@ -5,21 +5,19 @@ import {
   Dispatch,
   ReactNode,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useReducer,
 } from "react";
 import { Actions, ExtraData, State } from "./types";
 import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
-import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import { useSavedRef } from "../../hooks";
 import {
-  APIManager,
-  getYieldYieldOpportunityQueryKey,
-} from "@stakekit/api-hooks";
+  getYieldOpportunityFromCache,
+  useYieldOpportunity,
+} from "../../hooks/api/use-yield-opportunity";
 import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
+import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -130,13 +128,20 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [selectedStakeAmount, selectedStake]
   );
 
-  const { address, network } = useSKWallet();
-
   const tokenBalances = useTokensBalances();
 
+  const initialYieldToSet = useMemo(
+    () =>
+      Maybe.fromNullable(tokenBalances.data).chain((val) =>
+        List.find((v) => !!v.availableYields.length, val)
+      ),
+    [tokenBalances.data]
+  );
+
+  const { network, isLedgerLive } = useSKWallet();
+
   /**
-   * Reset selectedStake if networks don't match.
-   * Can happen on initial load with default selected stake
+   * Reset selectedTokenBalance if we changed network
    */
   selectedTokenBalance.ifJust((ss) => {
     if (network && ss.token.network !== network) {
@@ -144,42 +149,40 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  const trySetInitialTokenBalance = useSavedRef(() => {
-    Maybe.fromNullable(tokenBalances.data)
-      .chain((val) =>
-        List.find((v) => !!v.availableYields.length, val).alt(List.head(val))
-      )
-      .ifJust((val) =>
-        dispatch({
-          type: "tokenBalance/select",
-          data: {
-            tokenBalance: val,
-            initYield: List.head(val.availableYields).chainNullable(
-              (yId) =>
-                APIManager.getQueryClient()?.getQueryData(
-                  getYieldYieldOpportunityQueryKey(yId)
-                )
-            ),
-          },
-        })
-      );
-  });
+  /**
+   * Set initial token balance
+   */
+  useLayoutEffect(() => {
+    initialYieldToSet.ifJust((val) => {
+      dispatch({
+        type: "tokenBalance/select",
+        data: {
+          tokenBalance: val,
+          initYield: List.head(val.availableYields).chainNullable((yId) =>
+            getYieldOpportunityFromCache({
+              integrationId: yId,
+              isLedgerLive,
+            })
+          ),
+        },
+      });
+    });
+  }, [initialYieldToSet, isLedgerLive]);
 
   /**
-   * Set initial token balance if:
-   * - address changed
-   * - selectedTokenBalance is nothing
-   * - tokenBalances changed
+   * Reset selectedTokenBalance if we dont have initialYieldToSet
+   * Case when we changed account, but we dont have available yields
    */
-  selectedTokenBalance.ifNothing(() => trySetInitialTokenBalance.current());
-  useEffect(() => {
-    trySetInitialTokenBalance.current();
-  }, [address, tokenBalances.data, trySetInitialTokenBalance]);
+  useLayoutEffect(() => {
+    initialYieldToSet.ifNothing(() =>
+      selectedTokenBalance.ifJust(() => dispatch({ type: "state/reset" }))
+    );
+  }, [initialYieldToSet, selectedTokenBalance]);
 
   /**
    * Set initial validator
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) =>
       selectedValidator.ifNothing(() =>
         List.head(yo.validators).ifJust((val) =>
