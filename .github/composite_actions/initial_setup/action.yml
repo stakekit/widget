@@ -2,11 +2,11 @@ name: Initial setup action
 description: Reusable action to setup node and install packages with yarn
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - uses: actions/setup-node@v3
       with:
-        node-version: 18.14
+        node-version: 18
 
     - name: Get yarn cache directory path
       id: yarn-cache-dir-path
@@ -14,7 +14,7 @@ runs:
       shell: bash
 
     - uses: actions/cache@v3
-      id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
+      id: yarn-cache
       with:
         path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
@@ -22,6 +22,5 @@ runs:
           ${{ runner.os }}-yarn-
 
     - name: Install dependencies
-      run: |
-        yarn install --immutable
+      run: yarn install --immutable
       shell: bash
