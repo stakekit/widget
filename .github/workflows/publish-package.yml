@@ -18,6 +18,12 @@ jobs:
           node-version: "18"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Set yarn config
+        run: |
+          yarn config set npmScopes.steakwallet.npmAuthToken $NPM_TOKEN
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Install dependencies
         run: yarn install --immutable
 
@@ -26,5 +32,3 @@ jobs:
 
       - name: Publish
         run: yarn npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
