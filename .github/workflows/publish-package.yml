@@ -18,9 +18,9 @@ jobs:
           node-version: "18"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Set yarn config
+      - name: Set npm auth token
         run: |
-          yarn config set npmScopes.steakwallet.npmAuthToken $NPM_TOKEN
+          echo npmAuthToken: "$NPM_TOKEN" >> ./.yarnrc.yml
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
