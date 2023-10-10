@@ -4,19 +4,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_and_publish_release:
+  build-and-publish-release:
+    if: github.ref == 'refs/heads/main'
+
     runs-on: ubuntu-latest
     environment: production
-
-    if: github.ref == 'refs/heads/main'
+    env:
+      NODE_OPTIONS: "--max_old_space_size=4096"
 
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "18"
-          registry-url: "https://registry.npmjs.org"
+      - uses: ./.github/composite_actions/initial_setup
 
       - name: Set npm auth token
         run: |
@@ -24,10 +23,7 @@ jobs:
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Install dependencies
-        run: yarn install --immutable
-
-      - name: Build package
+      - name: Build
         run: yarn build
 
       - name: Publish
