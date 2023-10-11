@@ -30,7 +30,10 @@ export const useReview = () => {
     ""
   );
 
-  const tokenNetwork = selectedStake.mapOrDefault((y) => y.token.symbol, "");
+  const tokenNetwork = selectedStake.mapOrDefault(
+    (y) => y.metadata.gasFeeToken.symbol,
+    ""
+  );
   const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
   const interestRate = estimatedRewards.mapOrDefault(
     (r) => r.percentage.toString(),
