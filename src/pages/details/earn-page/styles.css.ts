@@ -12,13 +12,6 @@ export const triggerStyles = style({
 
 export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
-export const hideScrollbar = style({
-  "::-webkit-scrollbar": {
-    height: 0,
-    width: 0,
-  },
-});
-
 export const dotContainer = style({
   width: "16px",
   height: "16px",

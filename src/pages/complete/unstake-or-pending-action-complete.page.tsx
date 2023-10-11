@@ -10,7 +10,8 @@ import { useYieldType } from "../../hooks/use-yield-type";
 import { useProviderDetails } from "../../hooks/use-provider-details";
 
 export const UnstakeOrPendingActionCompletePage = () => {
-  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
+  const { unstake, pendingActionSession, pendingAction } =
+    useUnstakeOrPendingActionState();
 
   const pendingActionMatch = useMatch(
     "pending-action/:integrationId/:defaultOrValidatorId/complete"
@@ -31,7 +32,9 @@ export const UnstakeOrPendingActionCompletePage = () => {
     ),
   });
 
-  const token = integrationData.map((d) => d.token);
+  const token = pendingActionMatch
+    ? pendingAction.map((val) => val.token)
+    : unstake.map((val) => val.integration.token);
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(

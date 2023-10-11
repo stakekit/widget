@@ -313,14 +313,16 @@ export const usePositionDetails = () => {
         })
       )
       .ifRight((pendingActionRequestDto) => {
-        onPendingAction
-          .mutateAsync({ pendingActionRequestDto })
-          .then(() =>
-            navigate(
-              `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
-              { relative: "path" }
-            )
+        onPendingAction.mutateAsync({ pendingActionRequestDto }).then(() => {
+          dispatch({
+            type: "pending-action/token/change",
+            data: { token: opportunityBalance.token },
+          });
+          navigate(
+            `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
+            { relative: "path" }
           );
+        });
       });
   };
 

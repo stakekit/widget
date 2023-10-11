@@ -12,18 +12,8 @@ const require = createRequire(import.meta.url);
 
 dotenv.config({ path: ".env.production.local" });
 
-const VITE_API_URL = process.env.VITE_API_URL;
+const VITE_API_URL = process.env.VITE_API_URL ?? "https://api.stakek.it/";
 const MODE = process.env.MODE;
-
-if (!VITE_API_URL || !MODE) {
-  const message = "Missing environment variables.";
-
-  if (process.env.CI) {
-    console.warn(message);
-  } else {
-    throw new Error(message);
-  }
-}
 
 const commonPlugins: esbuild.Plugin[] = [
   vanillaExtractPlugin({

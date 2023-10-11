@@ -11,13 +11,8 @@ import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useMemo } from "react";
 import BigNumber from "bignumber.js";
-import clsx from "clsx";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import {
-  hideScrollbar,
-  selectItemText,
-  validatorVirtuosoContainer,
-} from "../../styles.css";
+import { selectItemText, validatorVirtuosoContainer } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../hooks/details-context";
 import { formatNumber } from "../../../../../utils";
@@ -81,7 +76,7 @@ export const SelectToken = () => {
       }
     >
       <VirtualList
-        className={clsx([hideScrollbar, validatorVirtuosoContainer])}
+        className={validatorVirtuosoContainer}
         data={data.tokenBalances}
         itemContent={(_index, item) => {
           const amount = new BigNumber(item.amount);
