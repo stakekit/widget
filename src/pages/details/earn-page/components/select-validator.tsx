@@ -14,12 +14,10 @@ import { useTranslation } from "react-i18next";
 import { apyToPercentage } from "../../../../utils";
 import { ValidatorDto } from "@stakekit/api-hooks";
 import { ImageFallback } from "../../../../components/atoms/image-fallback";
-import classNames from "clsx";
 import { useMemo, useState } from "react";
 import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
 import {
   breakWord,
-  hideScrollbar,
   modalItemNameContainer,
   tokenLogo,
   triggerStyles,
@@ -204,6 +202,7 @@ export const SelectValidator = () => {
             {data
               .map((val) => (
                 <GroupedVirtualList
+                  data={val.tableData}
                   increaseViewportBy={{ bottom: 50, top: 0 }}
                   groupCounts={val.groupCounts}
                   groupContent={(index) => {
@@ -237,10 +236,7 @@ export const SelectValidator = () => {
                       </Box>
                     ) : null;
                   }}
-                  className={classNames([
-                    validatorVirtuosoContainer,
-                    hideScrollbar,
-                  ])}
+                  className={validatorVirtuosoContainer}
                   itemContent={(index, groupIndex) => {
                     if (val.groupedItems[groupIndex]?.label === "view_more") {
                       return (
@@ -250,10 +246,7 @@ export const SelectValidator = () => {
                           marginTop="6"
                         >
                           <Button
-                            variant={{
-                              color: "secondary",
-                              size: "small",
-                            }}
+                            variant={{ color: "secondary", size: "small" }}
                             onClick={() => setViewMore(true)}
                           >
                             <Text>{t("details.validators_view_all")}</Text>

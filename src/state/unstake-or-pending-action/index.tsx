@@ -10,7 +10,7 @@ import {
 } from "react";
 import { Action } from "../stake/types";
 import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
-import { ActionDto, YieldDto } from "@stakekit/api-hooks";
+import { ActionDto, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
 
 type UnstakeAmountChange = Action<
@@ -18,16 +18,25 @@ type UnstakeAmountChange = Action<
   { integration: YieldDto; amount: Maybe<BigNumber> }
 >;
 
-type Actions = UnstakeAmountChange;
+type PendingActionTokenChange = Action<
+  "pending-action/token/change",
+  { token: TokenDto }
+>;
+
+type Actions = UnstakeAmountChange | PendingActionTokenChange;
 
 const getInitialState = (): State => ({
   unstake: Maybe.empty(),
+  pendingAction: Maybe.empty(),
 });
 
 export type State = {
   unstake: Maybe<{
     integration: YieldDto;
     amount: Maybe<BigNumber>;
+  }>;
+  pendingAction: Maybe<{
+    token: TokenDto;
   }>;
 };
 
@@ -55,6 +64,13 @@ export const UnstakeOrPendingActionContextProvider = ({
         return {
           ...state,
           unstake: Maybe.of(action.data),
+        };
+      }
+
+      case "pending-action/token/change": {
+        return {
+          ...state,
+          pendingAction: Maybe.of(action.data),
         };
       }
 
@@ -104,12 +120,14 @@ export const UnstakeOrPendingActionContextProvider = ({
       pendingActionSession,
       unstake: state.unstake,
       pendingActionTxGas,
+      pendingAction: state.pendingAction,
     }),
     [
       stakeExitTxGas,
-      state.unstake,
       unstakeSession,
       pendingActionSession,
+      state.unstake,
+      state.pendingAction,
       pendingActionTxGas,
     ]
   );

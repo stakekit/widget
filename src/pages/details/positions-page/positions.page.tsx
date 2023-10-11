@@ -5,7 +5,6 @@ import { ConnectButton } from "../../../components/molecules/connect-button";
 import { usePositions } from "./hooks/use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PageContainer } from "../../components";
-import { virtuosoContainer } from "./style.css";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { ImportValidator } from "./components/import-validator";
 import { VirtualList } from "../../../components/atoms/virtual-list";
@@ -42,11 +41,10 @@ export const PositionsPage = () => {
         {getContent()}
 
         {showPositions && (
-          <Box flex={1} display="flex" width="full">
+          <Box flex={1}>
             <VirtualList
-              className={virtuosoContainer}
               data={["header" as const, ...positionsData.data]}
-              itemContent={(_index, item) =>
+              itemContent={(_, item) =>
                 item === "header" ? (
                   <ListItem variant={{ hover: "disabled" }}>
                     <Box

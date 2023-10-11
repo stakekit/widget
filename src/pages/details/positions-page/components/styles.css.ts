@@ -10,13 +10,6 @@ export const triggerStyles = style({
   width: "100%",
 });
 
-export const hideScrollbar = style({
-  "::-webkit-scrollbar": {
-    height: 0,
-    width: 0,
-  },
-});
-
 export const tab = style({
   cursor: "pointer",
   userSelect: "none",
@@ -32,4 +25,8 @@ export const validatorAddress = style({
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+});
+
+export const importValidatorContainer = style({
+  minHeight: "50px",
 });

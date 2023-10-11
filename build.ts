@@ -15,14 +15,8 @@ dotenv.config({ path: ".env.production.local" });
 const VITE_API_URL = process.env.VITE_API_URL;
 const MODE = process.env.MODE;
 
-if (!VITE_API_URL || !MODE) {
-  const message = "Missing environment variables.";
-
-  if (process.env.CI) {
-    console.warn(message);
-  } else {
-    throw new Error(message);
-  }
+if (!VITE_API_URL) {
+  throw new Error("Missing required environment variable: VITE_API_URL");
 }
 
 const commonPlugins: esbuild.Plugin[] = [

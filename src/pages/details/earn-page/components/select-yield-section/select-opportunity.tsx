@@ -13,7 +13,7 @@ import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { apyToPercentage } from "../../../../../utils";
 import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { hideScrollbar, selectItemText } from "../../styles.css";
+import { selectItemText } from "../../styles.css";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../hooks/details-context";
 
@@ -85,7 +85,7 @@ export const SelectOpportunity = () => {
       <GroupedVirtualList
         increaseViewportBy={{ bottom: 50, top: 0 }}
         groupCounts={data.groupCounts}
-        className={hideScrollbar}
+        data={data.all}
         groupContent={(index) => {
           return (
             <Box py="4" px="4" background="background">
