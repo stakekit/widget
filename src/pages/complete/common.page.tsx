@@ -104,9 +104,14 @@ export const CompletePage = ({
           {!unstakeMatch && !pendingActionMatch
             ? providerDetails
                 .map((v) => (
-                  <Box display="flex" marginTop="2">
+                  <Box
+                    display="flex"
+                    marginTop="2"
+                    justifyContent="center"
+                    alignItems="center"
+                  >
                     {v.logo && (
-                      <Box marginRight="1">
+                      <Box marginRight="1" display="flex">
                         <Image
                           borderRadius="full"
                           hw="5"

@@ -63,7 +63,6 @@ export class LedgerLiveConnector extends Connector {
   }
 
   getCurrentAccountId = () => {
-    console.log("current account:", this.#currentAccount);
     return this.#currentAccount?.id;
   };
 

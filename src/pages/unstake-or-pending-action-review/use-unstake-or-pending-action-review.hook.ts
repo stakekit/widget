@@ -97,7 +97,10 @@ export const useUnstakeOrPendingActionReview = () => {
     [integrationData, pricesState.data, txGas]
   );
 
-  const tokenNetwork = integrationData.mapOrDefault((d) => d.token.symbol, "");
+  const tokenNetwork = integrationData.mapOrDefault(
+    (d) => d.metadata.gasFeeToken.symbol,
+    ""
+  );
 
   const fee = useMemo(
     () =>
