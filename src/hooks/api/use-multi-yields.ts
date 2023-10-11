@@ -7,6 +7,7 @@ import { isSupportedChain } from "../../domain/types/chains";
 import { withRequestErrorRetry } from "../../common/utils";
 import { eitherAsyncPool } from "../../utils/either-async-pool";
 import { setYieldOpportunityInCache } from "./use-yield-opportunity";
+import { config } from "../../config";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
@@ -19,6 +20,7 @@ export const useMultiYields = (yieldIds: string[]) => {
   return useQuery<YieldDto[], Error>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: yieldIds.length > 0,
+    staleTime: config.queryClient.cacheTime,
     queryFn: async ({ signal }) => {
       const res = eitherAsyncPool(
         yieldIds.map(
