@@ -3,7 +3,7 @@ import { Box, NumberInput, Spinner, Text } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectToken } from "./select-token";
-import { useDetailsContext } from "../../hooks/details-context";
+import { useDetailsContext } from "../../state/details-context";
 
 export const SelectTokenSection = () => {
   const { t } = useTranslation();

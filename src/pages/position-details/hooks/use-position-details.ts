@@ -34,6 +34,7 @@ import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
@@ -113,6 +114,13 @@ export const usePositionDetails = () => {
     positionBalancesByType
   );
 
+  const {
+    data: { forceMax },
+  } = useForceMaxAmount({
+    type: "exit",
+    integration: integrationData,
+  });
+
   const unstakeText = integrationData.map((d) => {
     switch (d.metadata.type) {
       case "staking":
@@ -128,7 +136,7 @@ export const usePositionDetails = () => {
 
   const canUnstake = integrationData.map((d) => !!d.args.exit);
   const canChangeAmount = integrationData.map(
-    (d) => !!d.args.exit?.args?.amount?.required
+    (d) => !!(!forceMax && d.args.exit?.args?.amount?.required)
   );
 
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
@@ -164,7 +172,10 @@ export const usePositionDetails = () => {
     }).ifJust((val) => {
       const sbAmount = new BigNumber(val.stakedOrLiquidBalance.amount);
 
-      if (!val.canChangeAmount && !sbAmount.isEqualTo(val.unstakeAmount)) {
+      if (
+        (!val.canChangeAmount || forceMax) &&
+        !sbAmount.isEqualTo(val.unstakeAmount)
+      ) {
         dispatch({
           type: "unstake/amount/change",
           data: {
@@ -195,6 +206,7 @@ export const usePositionDetails = () => {
   }, [
     canChangeAmount,
     dispatch,
+    forceMax,
     integrationData,
     maxEnterOrExitAmount,
     minEnterOrExitAmount,

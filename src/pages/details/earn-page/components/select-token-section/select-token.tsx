@@ -14,7 +14,7 @@ import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { selectItemText, validatorVirtuosoContainer } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
-import { useDetailsContext } from "../../hooks/details-context";
+import { useDetailsContext } from "../../state/details-context";
 import { formatNumber } from "../../../../../utils";
 
 export const SelectToken = () => {

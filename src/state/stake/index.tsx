@@ -18,6 +18,7 @@ import {
 } from "../../hooks/api/use-yield-opportunity";
 import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
 import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
+import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -46,6 +47,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           selectedStakeId,
           stakeAmount: action.data.initYield
             .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+            .chain((val) => Maybe.fromPredicate((v) => v >= 0, val))
             .map((val) => new BigNumber(val))
             .alt(Maybe.of(new BigNumber(0))),
           selectedValidator: action.data.initYield.chain((val) =>
@@ -102,30 +104,34 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [yieldOpportunity.data]
   );
 
+  const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
+    type: "enter",
+    yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
+  });
+
+  const {
+    data: { forceMax },
+  } = useForceMaxAmount({
+    integration: selectedStake,
+    type: "enter",
+  });
+
   /**
    * If stake amount is less then min, use min
    */
   const stakeAmount = useMemo(
     () =>
-      selectedStake
-        .chainNullable((v) => v.args.enter.args?.amount?.minimum)
-        .map((v) => new BigNumber(v))
-        .chain((v) =>
-          Maybe.fromRecord({ minStakeAmount: Maybe.of(v), selectedStakeAmount })
-        )
-        .chain((v) => {
-          if (
-            !v.minStakeAmount.isNaN() &&
-            v.minStakeAmount.isGreaterThan(0) &&
-            v.selectedStakeAmount.isLessThan(v.minStakeAmount)
-          ) {
-            return Maybe.of(v.minStakeAmount);
-          }
-
-          return Maybe.of(v.selectedStakeAmount);
-        })
-        .alt(selectedStakeAmount),
-    [selectedStakeAmount, selectedStake]
+      selectedStakeAmount.map((val) => {
+        if (forceMax) {
+          return maxEnterOrExitAmount;
+        } else if (val.isLessThan(minEnterOrExitAmount)) {
+          return minEnterOrExitAmount;
+        } else if (val.isGreaterThan(maxEnterOrExitAmount)) {
+          return maxEnterOrExitAmount;
+        }
+        return val;
+      }),
+    [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
   const tokenBalances = useTokensBalances();
@@ -208,11 +214,6 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       ),
     [stakeEnterAndTxsConstruct.data]
   );
-
-  const { maxEnterOrExitAmount } = useMaxMinYieldAmount({
-    type: "enter",
-    yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
-  });
 
   const actions = useMemo(
     () => ({

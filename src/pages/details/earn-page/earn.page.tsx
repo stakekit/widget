@@ -11,7 +11,7 @@ import { SelectYieldSection } from "./components/select-yield-section";
 import {
   DetailsContextProvider,
   useDetailsContext,
-} from "./hooks/details-context";
+} from "./state/details-context";
 
 const EarnPageComponent = () => {
   const {
@@ -66,7 +66,9 @@ const EarnPageComponent = () => {
             justifyContent="center"
             my="4"
           >
-            <Text variant={{ type: "danger" }}>{errorMessage}</Text>
+            <Text variant={{ type: "danger" }} textAlign="center">
+              {errorMessage}
+            </Text>
           </Box>
         )}
 

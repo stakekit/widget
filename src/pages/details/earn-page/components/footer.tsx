@@ -8,7 +8,7 @@ import {
 import { useFooterItems } from "../hooks/use-footer-items";
 import { useMemo } from "react";
 import { dotContainer } from "../styles.css";
-import { useDetailsContext } from "../hooks/details-context";
+import { useDetailsContext } from "../state/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { InfoIcon } from "../../../../components/atoms/icons/info";
 
