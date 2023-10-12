@@ -1,4 +1,4 @@
-import { style } from "@vanilla-extract/css";
+import { globalStyle, style } from "@vanilla-extract/css";
 
 export const hideScrollbar = style({
   "::-webkit-scrollbar": {
@@ -7,6 +7,13 @@ export const hideScrollbar = style({
   },
 });
 
-export const container = style({
-  overflowY: "scroll",
+export const renderAllItems = style({});
+
+globalStyle(`${renderAllItems} > div`, {
+  position: "static !important" as "static",
+});
+
+globalStyle(`${renderAllItems} > div > div`, {
+  minHeight: "1px",
+  paddingTop: "0 !important",
 });
