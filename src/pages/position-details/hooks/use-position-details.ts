@@ -114,9 +114,7 @@ export const usePositionDetails = () => {
     positionBalancesByType
   );
 
-  const {
-    data: { forceMax },
-  } = useForceMaxAmount({
+  const forceMax = useForceMaxAmount({
     type: "exit",
     integration: integrationData,
   });

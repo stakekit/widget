@@ -109,9 +109,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
   });
 
-  const {
-    data: { forceMax },
-  } = useForceMaxAmount({
+  const forceMax = useForceMaxAmount({
     integration: selectedStake,
     type: "enter",
   });

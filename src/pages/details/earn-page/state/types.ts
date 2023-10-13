@@ -59,5 +59,4 @@ export type DetailsContextType = {
   showTokenAmount: boolean;
   buttonCTAText: string;
   providerDetails: ReturnType<typeof useProviderDetails>;
-  canStake: boolean;
 };

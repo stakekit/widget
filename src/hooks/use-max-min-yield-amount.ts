@@ -42,9 +42,7 @@ export const useMaxMinYieldAmount = ({
     [positionBalancesByType, stakeTokenAvailableAmount.data, type]
   );
 
-  const {
-    data: { forceMax },
-  } = useForceMaxAmount({
+  const forceMax = useForceMaxAmount({
     type,
     integration: yieldOpportunity,
   });

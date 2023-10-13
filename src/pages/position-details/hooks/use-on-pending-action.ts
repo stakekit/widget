@@ -53,7 +53,7 @@ export const useOnPendingAction = () => {
         ReturnType<typeof preparePendingActionRequestDto>
       >;
     }) => {
-      return await fn({ pendingActionRequestDto }).caseOf({
+      return (await fn({ pendingActionRequestDto })).caseOf({
         Left: (e) => Promise.reject(e),
         Right: (v) => Promise.resolve(v),
       });

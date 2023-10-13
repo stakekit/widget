@@ -9,7 +9,10 @@ import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
 import { useSKWallet } from "../wallet/use-sk-wallet";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
-import { withRequestErrorRetry } from "../../common/utils";
+import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
+
+export type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
+export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 
 export const useStakeEnterAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
@@ -22,7 +25,7 @@ export const useStakeEnterAndTxsConstruct = () => {
       gasModeValue: GasModeValueDto | undefined;
     }
   >(["stake-enter"], async (args) => {
-    return await fn({ ...args, isLedgerLive }).caseOf({
+    return (await fn({ ...args, isLedgerLive })).caseOf({
       Left: (e) => Promise.reject(e),
       Right: (r) => Promise.resolve(r),
     });
@@ -39,7 +42,16 @@ const fn = ({
   isLedgerLive: boolean;
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
-    .mapLeft(() => new Error("Stake enter error"))
+    .mapLeft<StakingNotAllowedError | Error>((e) => {
+      if (
+        isAxiosError(e) &&
+        StakingNotAllowedError.isStakingNotAllowedErrorDto(e.response?.data)
+      ) {
+        return new StakingNotAllowedError();
+      }
+
+      return new Error("Stake enter error");
+    })
     .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
     .chain((val) =>
       EitherAsync.sequence(
@@ -57,3 +69,15 @@ const fn = ({
         transactionConstructRes: res,
       }))
     );
+
+export class StakingNotAllowedError extends Error {
+  static isStakingNotAllowedErrorDto = (e: unknown) => {
+    const dto = e as undefined | { type: string; code: number };
+
+    return dto && dto.code === 422 && dto.type === "STAKING_ERROR";
+  };
+
+  constructor() {
+    super("Staking not allowed, needs unstaking and trying again");
+  }
+}

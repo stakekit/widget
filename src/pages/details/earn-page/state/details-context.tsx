@@ -43,8 +43,8 @@ import {
   getYieldOpportunityFromCache,
   useYieldOpportunity,
 } from "../../../../hooks/api/use-yield-opportunity";
-import { useForceMaxAmount } from "../../../../hooks/use-force-max-amount";
 import { DetailsContextType } from "./types";
+import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -314,34 +314,24 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeTokenAvailableAmount.isFetching ||
     tokenBalancesScan.isFetching;
 
-  const {
-    data: { canStake },
-  } = useForceMaxAmount({
-    integration: selectedStake,
-    type: "enter",
-  });
-
   const isError =
-    !canStake ||
-    onStakeEnter.isError ||
-    multiYields.isError ||
-    tokenBalancesScan.isError;
+    onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
 
-  const errorMessage = !canStake
-    ? t("details.unstake_before")
-    : onStakeEnter.error instanceof NotEnoughGasTokenError
-    ? t("shared.not_enough_gas_token")
-    : t("shared.something_went_wrong");
+  const errorMessage =
+    onStakeEnter.error instanceof StakingNotAllowedError
+      ? t("details.unstake_before")
+      : onStakeEnter.error instanceof NotEnoughGasTokenError
+      ? t("shared.not_enough_gas_token")
+      : t("shared.something_went_wrong");
 
   const buttonDisabled =
-    !canStake ||
-    (isConnected &&
-      (isFetching ||
-        stakeRequestDto.isNothing() ||
-        !amountValid ||
-        stakeAmount.isNothing() ||
-        stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
-        onStakeEnter.isLoading));
+    isConnected &&
+    (isFetching ||
+      stakeRequestDto.isNothing() ||
+      !amountValid ||
+      stakeAmount.isNothing() ||
+      stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
+      onStakeEnter.isLoading);
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -399,7 +389,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     showTokenAmount,
     buttonCTAText,
     providerDetails,
-    canStake,
   };
 
   return (
