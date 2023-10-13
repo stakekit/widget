@@ -64,7 +64,7 @@ export const Footer = () => {
   );
 
   return isLoading ? (
-    <ContentLoaderSquare heightPx={150} uniqueKey="earn-page/footer/loader" />
+    <ContentLoaderSquare heightPx={150} />
   ) : (
     <Box gap="3" display="flex" flexDirection="column">
       {items.map((item) => (
