@@ -1,24 +1,21 @@
-import ContentLoader from "react-content-loader";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import { ContainerVariants, container } from "./style.css";
 
 export const ContentLoaderSquare = ({
   heightPx,
-  rXY = "12",
-  uniqueKey,
+  variant,
 }: {
   heightPx: number;
-  rXY?: string;
-  uniqueKey: string;
+  variant?: ContainerVariants;
 }) => {
   return (
-    <ContentLoader
-      speed={2.5}
-      width="100%"
-      height={`${heightPx}px`}
-      backgroundColor="#363636"
-      foregroundColor="#2B2B2B"
-      uniqueKey={uniqueKey}
-    >
-      <rect x="0" y="0" rx={rXY} ry={rXY} width="100%" height="100%" />
-    </ContentLoader>
+    <Skeleton
+      className={container(variant)}
+      height={heightPx}
+      highlightColor="#2B2B2B"
+      baseColor="#363636"
+      enableAnimation
+    />
   );
 };

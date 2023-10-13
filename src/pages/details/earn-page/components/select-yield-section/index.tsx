@@ -39,11 +39,8 @@ export const SelectYieldSection = () => {
   );
 
   return isLoading ? (
-    <Box marginTop="2" display="flex">
-      <ContentLoaderSquare
-        heightPx={112.5}
-        uniqueKey="earn-page/select-yield-section/loader"
-      />
+    <Box marginTop="2">
+      <ContentLoaderSquare heightPx={112.5} />
     </Box>
   ) : (
     selectedStakeData
