@@ -22,7 +22,7 @@ export const usePendingActionAndTxsConstruct = () => {
       gasModeValue: GasModeValueDto | undefined;
     }
   >(["pending-action"], async (args) => {
-    return await fn({ ...args, isLedgerLive }).caseOf({
+    return (await fn({ ...args, isLedgerLive })).caseOf({
       Left: (e) => Promise.reject(e),
       Right: (r) => Promise.resolve(r),
     });

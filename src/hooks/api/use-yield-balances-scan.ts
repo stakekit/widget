@@ -10,7 +10,7 @@ import { useCallback, useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
 
 export const useYieldBalancesScan = () => {
-  const { network, address, additionalAddresses } = useSKWallet();
+  const { network, address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   const customValidators = useLocalStorageValue(
     "sk-widget@1//customValidators"
@@ -48,12 +48,16 @@ export const useYieldBalancesScan = () => {
     [additionalAddresses, address, customValidators, network]
   );
 
-  return useYieldYieldBalancesScan(param.dto, {
-    query: {
-      enabled: param.enabled,
-      staleTime: 1000 * 60 * 5,
-    },
-  });
+  return useYieldYieldBalancesScan(
+    param.dto,
+    { ledgerWalletAPICompatible: isLedgerLive },
+    {
+      query: {
+        enabled: param.enabled,
+        staleTime: 1000 * 60 * 5,
+      },
+    }
+  );
 };
 
 export const useInvalidateYieldBalances = () =>

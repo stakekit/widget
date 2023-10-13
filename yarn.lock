@@ -4926,14 +4926,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.37":
-  version: 0.0.37
-  resolution: "@stakekit/api-hooks@npm:0.0.37"
+"@stakekit/api-hooks@npm:^0.0.39":
+  version: 0.0.39
+  resolution: "@stakekit/api-hooks@npm:0.0.39"
   dependencies:
     "@tanstack/react-query": ^4.33.0
     axios: ^1.5.0
     lodash.merge: ^4.6.2
-  checksum: 802f6a1c9c76d75d82ec9af57cd1c94137c8b17ce8cbcb56af7ce02f6af4cfffa76098c1d4be6156367745adfebf5c50bdc12d3726cfcf777f267696cbe153f8
+  checksum: 6b557f3ffd9252bb5ac3cd6a1ebf5fdbffb5a0253c78d0a17c895d441009a46c07abc1ee8b9e8480616b17476d8661e099387435c9cde61a8324505eaa65e83b
   languageName: node
   linkType: hard
 
@@ -4977,7 +4977,7 @@ __metadata:
     "@cosmos-kit/walletconnect": 2.3.9
     "@ledgerhq/wallet-api-client": ^1.1.0
     "@radix-ui/react-alert-dialog": ^1.0.4
-    "@stakekit/api-hooks": ^0.0.37
+    "@stakekit/api-hooks": ^0.0.39
     "@stakekit/common": ^0.0.17
     "@stakekit/rainbowkit": ^1.0.12
     "@tanstack/react-query": ^4.35.3

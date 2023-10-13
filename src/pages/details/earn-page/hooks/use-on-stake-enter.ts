@@ -1,9 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import { getAverageGasMode } from "../../../../common/get-gas-mode-value";
-import { useStakeEnterAndTxsConstruct } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import {
+  ErrorType,
+  useStakeEnterAndTxsConstruct,
+} from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { checkGasAmount } from "../../../../common/check-gas-amount";
+import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../../types";
 
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
@@ -32,7 +36,7 @@ export const useOnStakeEnter = () => {
             gasModeValue: val.gas ?? undefined,
           })
         )
-          .mapLeft(() => new Error("Stake enter and txs construct failed"))
+          .mapLeft((e) => e as ErrorType)
           .map((res) => ({ ...val, ...res }))
       )
       .chain(
@@ -54,12 +58,14 @@ export const useOnStakeEnter = () => {
           }).map(() => ({ stakeEnterRes, transactionConstructRes }))
       );
 
-  return useMutation(
-    async (stakeRequestDto: ReturnType<typeof useStakeEnterRequestDto>) => {
-      return await fn({ stakeRequestDto }).caseOf({
-        Left: (e) => Promise.reject(e),
-        Right: (v) => Promise.resolve(v),
-      });
-    }
-  );
+  return useMutation<
+    GetEitherAsyncRight<ReturnType<typeof fn>>,
+    GetEitherAsyncLeft<ReturnType<typeof fn>>,
+    ReturnType<typeof useStakeEnterRequestDto>
+  >(async (stakeRequestDto) => {
+    return (await fn({ stakeRequestDto })).caseOf({
+      Left: (e) => Promise.reject(e),
+      Right: (v) => Promise.resolve(v),
+    });
+  });
 };

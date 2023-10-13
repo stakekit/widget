@@ -23,7 +23,7 @@ import {
   triggerStyles,
   validatorVirtuosoContainer,
 } from "../styles.css";
-import { useDetailsContext } from "../hooks/details-context";
+import { useDetailsContext } from "../state/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";
 import { GroupedVirtualList } from "../../../../components/atoms/virtual-list";

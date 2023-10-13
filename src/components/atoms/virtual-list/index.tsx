@@ -4,11 +4,10 @@ import {
   Virtuoso,
   VirtuosoProps,
 } from "react-virtuoso";
-import { Box } from "../box";
-import { Fragment, ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import clsx from "clsx";
-import { container, hideScrollbar } from "./style.css";
+import { hideScrollbar, renderAllItems } from "./style.css";
 
 const defaultMaxHeight = 600;
 
@@ -25,25 +24,24 @@ export const VirtualList = <ItemData = any, Context = any>({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
-  return props.data && props.data.length >= 10 ? (
+  const hasMoreThan10Items = props.data && props.data.length > 10;
+
+  return (
     <Virtuoso
       overscan={{ main: 50, reverse: 50 }}
-      style={{ ...style, height: isTabletOrBigger ? maxHeight : "65vh" }}
-      className={clsx([hideScrollbar, className])}
-      {...props}
-    />
-  ) : (
-    <Box
-      className={clsx([hideScrollbar, container, className])}
       style={{
         ...style,
-        maxHeight: maxHeight ?? defaultMaxHeight,
+        height: isTabletOrBigger
+          ? hasMoreThan10Items
+            ? maxHeight
+            : "100%"
+          : "65vh",
       }}
-    >
-      {props.data?.map((item, i) => (
-        <Fragment key={i}>{props.itemContent(i, item)}</Fragment>
-      ))}
-    </Box>
+      className={clsx([hideScrollbar, className], {
+        [renderAllItems]: !hasMoreThan10Items,
+      })}
+      {...props}
+    />
   );
 };
 
@@ -62,49 +60,24 @@ export const GroupedVirtualList = <ItemData = any, Context = any>({
 
   const isTabletOrBigger = useIsTabletOrBigger();
 
-  return data && data.length >= 10 ? (
+  const hasMoreThan10Items = data && data.length > 10;
+
+  return (
     <GroupedVirtuoso
-      style={{ ...style, height: isTabletOrBigger ? maxHeight : "65vh" }}
-      className={clsx([hideScrollbar, className])}
-      {...props}
-    />
-  ) : (
-    <Box
-      className={clsx([hideScrollbar, container, className])}
+      overscan={{ main: 50, reverse: 50 }}
       style={{
         ...style,
-        maxHeight: maxHeight ?? defaultMaxHeight,
+        height: isTabletOrBigger
+          ? hasMoreThan10Items
+            ? maxHeight
+            : "100%"
+          : "65vh",
       }}
-    >
-      {
-        props.groupCounts?.reduce(
-          (acc, next, groupIndex) => {
-            const Content = (
-              <Fragment key={`group-${groupIndex}`}>
-                {props.groupContent(groupIndex)}
-
-                {Array.from({ length: next }).map((_, i) => {
-                  return (
-                    <Fragment key={`item-${acc.currIdx}-${i}`}>
-                      {props.itemContent(acc.currIdx + i, groupIndex)}
-                    </Fragment>
-                  );
-                })}
-              </Fragment>
-            );
-
-            return {
-              items: [...acc.items, Content],
-              currIdx: acc.currIdx + next,
-            };
-          },
-          { items: [], currIdx: 0 } as {
-            items: ReactNode[];
-            currIdx: number;
-          }
-        ).items
-      }
-    </Box>
+      className={clsx([hideScrollbar, className], {
+        [renderAllItems]: !hasMoreThan10Items,
+      })}
+      {...props}
+    />
   );
 };
 

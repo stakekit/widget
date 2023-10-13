@@ -8,7 +8,6 @@ import {
 } from "react";
 import { SelectedStakeData } from "../types";
 import { Maybe } from "purify-ts";
-import { ExtraData, State } from "../../../../state/stake/types";
 import {
   TokenBalanceScanResponseDto,
   ValidatorDto,
@@ -32,8 +31,8 @@ import { useNavigate } from "react-router-dom";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { NotEnoughGasTokenError } from "../../../../common/check-gas-amount";
 import { useTranslation } from "react-i18next";
-import { useOnStakeEnter } from "./use-on-stake-enter";
-import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
+import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
+import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
@@ -44,57 +43,8 @@ import {
   getYieldOpportunityFromCache,
   useYieldOpportunity,
 } from "../../../../hooks/api/use-yield-opportunity";
-
-type DetailsContextType = {
-  availableTokens: string;
-  formattedPrice: string;
-  symbol: string;
-  selectedStakeData: Maybe<SelectedStakeData>;
-  selectedStake: ExtraData["selectedStake"];
-  onYieldSelect: (yieldId: string) => void;
-  onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
-  onStakeAmountChange: (value: Maybe<BigNumber>) => void;
-  estimatedRewards: Maybe<{
-    percentage: string;
-    yearly: string;
-    monthly: string;
-  }>;
-  yieldType: string;
-  onMaxClick: () => void;
-  stakeAmount: State["stakeAmount"];
-  isFetching: boolean;
-  amountValid: boolean;
-  buttonDisabled: boolean;
-  onClick: () => void;
-  onYieldSearch: SelectModalProps["onSearch"];
-  onValidatorSelect: (item: ValidatorDto) => void;
-  selectedValidator: State["selectedValidator"];
-  isError: boolean;
-  errorMessage: string;
-  rewardToken: Maybe<{
-    logoUri: string;
-    symbol: string;
-    providerName: string;
-  }>;
-  onSelectOpportunityClose: () => void;
-  onStakeEnterIsLoading: boolean;
-  selectedStakeYieldType: YieldType | null;
-  isConnected: boolean;
-  appLoading: boolean;
-  multiYieldsLoading: boolean;
-  yieldOpportunityLoading: boolean;
-  stakeTokenAvailableAmountLoading: boolean;
-  tokenBalancesScanLoading: boolean;
-  selectedTokenBalance: State["selectedTokenBalance"];
-  tokenBalancesData: Maybe<{
-    all: TokenBalanceScanResponseDto[];
-    filtered: TokenBalanceScanResponseDto[];
-  }>;
-  onTokenSearch: (value: string) => void;
-  showTokenAmount: boolean;
-  buttonCTAText: string;
-  providerDetails: ReturnType<typeof useProviderDetails>;
-};
+import { DetailsContextType } from "./types";
+import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -330,14 +280,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onStakeEnter = useOnStakeEnter();
   const stakeRequestDto = useStakeEnterRequestDto();
 
-  const isError =
-    onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
-
-  const errorMessage =
-    onStakeEnter.error instanceof NotEnoughGasTokenError
-      ? t("shared.not_enough_gas_token")
-      : t("shared.something_went_wrong");
-
   const { openConnectModal } = useConnectModal();
 
   const navigate = useNavigate();
@@ -371,6 +313,16 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     multiYields.isFetching ||
     stakeTokenAvailableAmount.isFetching ||
     tokenBalancesScan.isFetching;
+
+  const isError =
+    onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
+
+  const errorMessage =
+    onStakeEnter.error instanceof StakingNotAllowedError
+      ? t("details.unstake_before")
+      : onStakeEnter.error instanceof NotEnoughGasTokenError
+      ? t("shared.not_enough_gas_token")
+      : t("shared.something_went_wrong");
 
   const buttonDisabled =
     isConnected &&

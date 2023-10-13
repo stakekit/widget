@@ -31,6 +31,8 @@
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via {{validator}}",
 
+    "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
+
     "no_opportunities": "No yield opportunities for this token",
 
     "native_staking": {

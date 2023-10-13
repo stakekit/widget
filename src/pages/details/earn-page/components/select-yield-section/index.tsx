@@ -4,7 +4,7 @@ import { ContentLoaderSquare } from "../../../../../components/atoms/content-loa
 import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
 import { apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
-import { useDetailsContext } from "../../hooks/details-context";
+import { useDetailsContext } from "../../state/details-context";
 
 export const SelectYieldSection = () => {
   const {

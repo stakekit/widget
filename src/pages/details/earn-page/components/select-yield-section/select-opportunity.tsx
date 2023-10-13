@@ -15,7 +15,7 @@ import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { selectItemText } from "../../styles.css";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
-import { useDetailsContext } from "../../hooks/details-context";
+import { useDetailsContext } from "../../state/details-context";
 
 export const SelectOpportunity = () => {
   const {

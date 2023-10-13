@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import { useTokenAvailableAmount } from "./api/use-token-available-amount";
 import { PositionBalancesByType } from "../domain/types/positions";
+import { useForceMaxAmount } from "./use-force-max-amount";
 
 export const useMaxMinYieldAmount = ({
   type,
@@ -28,8 +29,8 @@ export const useMaxMinYieldAmount = ({
 
   const availableAmount = useMemo(
     () =>
-      type === "enter"
-        ? stakeTokenAvailableAmount.data ?? new BigNumber(0)
+      (type === "enter"
+        ? Maybe.fromNullable(stakeTokenAvailableAmount.data)
         : positionBalancesByType
             .chain((p) =>
               Maybe.fromNullable(p.get("staked")).altLazy(() =>
@@ -37,41 +38,47 @@ export const useMaxMinYieldAmount = ({
               )
             )
             .map((b) => new BigNumber(b.amount))
-            .orDefault(new BigNumber(0)),
+      ).alt(Maybe.of(new BigNumber(0))),
     [positionBalancesByType, stakeTokenAvailableAmount.data, type]
   );
 
-  const minIntegrationAmount = useMemo(
-    () =>
-      yieldOpportunity
-        .chainNullable(
-          (y) =>
-            (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
-              ?.minimum
-        )
-        .mapOrDefault((a) => new BigNumber(a), new BigNumber(0)),
-    [type, yieldOpportunity]
-  );
+  const forceMax = useForceMaxAmount({
+    type,
+    integration: yieldOpportunity,
+  });
 
-  const maxIntegrationAmount = useMemo(
-    () =>
-      yieldOpportunity
-        .chainNullable(
-          (y) =>
-            (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
-              ?.maximum
-        )
-        .mapOrDefault(
-          (a) => new BigNumber(a),
-          new BigNumber(Number.POSITIVE_INFINITY)
-        ),
-    [type, yieldOpportunity]
-  );
+  const minIntegrationAmount = useMemo(() => {
+    return (
+      forceMax
+        ? availableAmount
+        : yieldOpportunity
+            .chainNullable(
+              (y) =>
+                (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
+                  ?.minimum
+            )
+            .map((a) => new BigNumber(a))
+    ).orDefault(new BigNumber(0));
+  }, [availableAmount, forceMax, type, yieldOpportunity]);
+
+  const maxIntegrationAmount = useMemo(() => {
+    return (
+      forceMax
+        ? availableAmount
+        : yieldOpportunity
+            .chainNullable(
+              (y) =>
+                (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
+                  ?.maximum
+            )
+            .map((a) => new BigNumber(a))
+    ).orDefault(new BigNumber(Number.POSITIVE_INFINITY));
+  }, [availableAmount, forceMax, type, yieldOpportunity]);
 
   const maxEnterOrExitAmount = useMemo(
     () =>
       getMaxAmount({
-        availableAmount,
+        availableAmount: availableAmount.orDefault(new BigNumber(0)),
         gasEstimateTotal: new BigNumber(0),
         integrationMaxLimit: maxIntegrationAmount,
       }),
@@ -80,8 +87,11 @@ export const useMaxMinYieldAmount = ({
 
   const minEnterOrExitAmount = minIntegrationAmount;
 
-  return {
-    minEnterOrExitAmount,
-    maxEnterOrExitAmount,
-  };
+  return useMemo(
+    () => ({
+      minEnterOrExitAmount,
+      maxEnterOrExitAmount,
+    }),
+    [maxEnterOrExitAmount, minEnterOrExitAmount]
+  );
 };

@@ -50,7 +50,7 @@ export const useOnStakeExit = () => {
     }: {
       stakeRequestDto: ReturnType<typeof useStakeExitRequestDto>;
     }) => {
-      return await fn({ stakeRequestDto }).caseOf({
+      return (await fn({ stakeRequestDto })).caseOf({
         Left: (e) => Promise.reject(e),
         Right: (v) => Promise.resolve(v),
       });
