@@ -168,6 +168,11 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.Optimism,
     },
+    "avalanche-c": {
+      currencyId: "avalanche_c_chain",
+      family: "ethereum",
+      skChainName: EvmNetworks.AvalancheC,
+    },
   },
   cosmos: {
     cosmos: {
