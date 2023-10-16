@@ -62,6 +62,8 @@ const fn = ({
                 gasArgs: gasModeValue?.gasArgs,
                 ledgerWalletAPICompatible: isLedgerLive,
               }),
+            shouldRetry: (e, retryCount) =>
+              retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
           }).mapLeft(() => new Error("Transaction construct error"))
         )
       ).map((res) => ({

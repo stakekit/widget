@@ -3,41 +3,53 @@ import {
   ReactNode,
   isValidElement,
   useEffect,
+  useMemo,
   useState,
 } from "react";
-import { BoxProps } from "../box";
-import { Box } from "../box";
+import { Box, BoxProps } from "../box";
 
 const failLoadImages = new Set<string>();
 
 export type ImageProps = Omit<BoxProps, "as"> & {
-  fallback?: string | ReactNode;
-  retryOnFail?: boolean;
+  fallback: string | ReactNode;
+  src: string | undefined;
 };
 
-export const Image = ({ fallback, retryOnFail, ...props }: ImageProps) => {
-  const [isError, setIsError] = useState(false);
+export const Image = ({ fallback, ...props }: ImageProps) => {
+  const [loaded, setLoaded] = useState(false);
+  const [timeoutFallback, setTimeoutFallback] = useState(false);
 
-  useEffect(() => {
-    setIsError(false);
-  }, [props.src]);
+  const onLoad: HTMLProps<HTMLImageElement>["onLoad"] = (e) => {
+    setLoaded(true);
+    props.onLoad?.(e);
+  };
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
-    setIsError(true);
     if (props.src) {
       failLoadImages.add(props.src);
     }
     props.onError?.(e);
   };
 
-  if (
-    (isError ||
-      !props.src ||
-      (failLoadImages.has(props.src) && !retryOnFail)) &&
-    isValidElement(fallback)
-  ) {
-    return fallback;
-  }
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setTimeoutFallback(true);
+    }, 200);
 
-  return <Box {...props} as="img" onError={onError} />;
+    return () => clearTimeout(id);
+  }, []);
+
+  const showFallback = useMemo(
+    () => timeoutFallback && !loaded && isValidElement(fallback),
+    [fallback, loaded, timeoutFallback]
+  );
+
+  return (
+    <Box position="relative" display="flex">
+      {showFallback && <Box position="absolute">{fallback}</Box>}
+      {props.src && !failLoadImages.has(props.src) && (
+        <Box {...props} as="img" onLoad={onLoad} onError={onError} />
+      )}
+    </Box>
+  );
 };
