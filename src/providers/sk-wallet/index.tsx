@@ -1,15 +1,17 @@
-import { decodeSignature } from "@cosmjs/amino";
-import { fromHex, toHex } from "@cosmjs/encoding";
-import { sendTransaction as wagmiSendTransaction } from "@wagmi/core";
-import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
-import { useCallback, useMemo } from "react";
-import { useAccount, useDisconnect, useNetwork } from "wagmi";
-import { SKWallet } from "../../domain/types";
 import {
-  SendTransactionError,
-  TransactionDecodeError,
-} from "../../pages/steps/errors";
+  PropsWithChildren,
+  createContext,
+  useCallback,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+} from "react";
+import { sendTransaction as wagmiSendTransaction } from "@wagmi/core";
+import { SKWallet } from "../../domain/types";
+import { useAccount, useDisconnect, useNetwork } from "wagmi";
+import { useWagmiConfig } from "../wagmi";
+import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
+import { useLedgerAccounts } from "./use-ledger-accounts";
 import {
   getCosmosChainWallet,
   isCosmosConnector,
@@ -17,12 +19,19 @@ import {
   wagmiNetworkToSKNetwork,
 } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
-import { unsignedTransactionCodec } from "./validation";
-import { useLedgerAccounts } from "./use-ledger-accounts";
+import {
+  SendTransactionError,
+  TransactionDecodeError,
+} from "../../pages/steps/errors";
 import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
-import { useWagmiConfig } from "../../providers/wagmi";
+import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { fromHex, toHex } from "@cosmjs/encoding";
+import { decodeSignature } from "@cosmjs/amino";
+import { unsignedTransactionCodec } from "./validation";
 
-export const useSKWallet = (): SKWallet => {
+const SKWalletContext = createContext<SKWallet | undefined>(undefined);
+
+export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const {
     isReconnecting,
     isConnected: _isConnected,
@@ -31,11 +40,11 @@ export const useSKWallet = (): SKWallet => {
     connector,
   } = useAccount();
 
-  const ledgerAccounts = useLedgerAccounts(connector);
-
-  const isConnected = _isConnected && !!address && !!connector;
-
   const { chain } = useNetwork();
+
+  const { disconnectAsync: disconnect } = useDisconnect();
+
+  const ledgerAccounts = useLedgerAccounts(connector);
 
   const wagmiConfig = useWagmiConfig();
 
@@ -57,7 +66,16 @@ export const useSKWallet = (): SKWallet => {
     [chain, wagmiConfig.data]
   );
 
-  const { disconnectAsync: disconnect } = useDisconnect();
+  const isConnected = _isConnected && !!address && !!connector && !!network;
+
+  /**
+   * Network missmatch, disconnect
+   */
+  useLayoutEffect(() => {
+    if (_isConnected && !isConnected) {
+      disconnect();
+    }
+  }, [_isConnected, disconnect, isConnected]);
 
   const { data: additionalAddresses } = useAdditionalAddresses({
     address,
@@ -235,6 +253,20 @@ export const useSKWallet = (): SKWallet => {
     ledgerAccounts,
     onLedgerAccountChange,
   ]);
+
+  return (
+    <SKWalletContext.Provider value={value}>
+      {children}
+    </SKWalletContext.Provider>
+  );
+};
+
+export const useSKWallet = () => {
+  const value = useContext(SKWalletContext);
+
+  if (value === undefined) {
+    throw new Error("useSKWallet must be used within a SKWalletProvider");
+  }
 
   return value;
 };

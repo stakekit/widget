@@ -5,9 +5,9 @@ import {
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
-import { useSKWallet } from "../wallet/use-sk-wallet";
 import { useCallback, useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useYieldBalancesScan = () => {
   const { network, address, additionalAddresses, isLedgerLive } = useSKWallet();

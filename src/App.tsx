@@ -42,13 +42,13 @@ import { StakeCheck } from "./pages/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./pages/cheks/connected-check";
 import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
-import { useSKWallet } from "./hooks/wallet/use-sk-wallet";
 import { createPortal } from "react-dom";
 import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useCosmosConfig } from "./providers/cosmos/config";
+import { useSKWallet } from "./providers/sk-wallet";
 
 const Widget = () => {
   useToggleTheme();

@@ -1,14 +1,15 @@
 import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
-import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { Address } from "viem";
 import { useWagmiConfig } from "../wagmi";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
 import { PropsWithChildren } from "react";
 import { List, Maybe } from "purify-ts";
 import { formatAddress } from "../../utils";
+import { useSKWallet } from "../sk-wallet";
 
 export const RainbowProvider = ({ children }: PropsWithChildren) => {
   const wagmiConfig = useWagmiConfig();
+
   const { ledgerAccounts, address, onLedgerAccountChange } = useSKWallet();
 
   const otherAddresses = Maybe.fromNullable(ledgerAccounts)

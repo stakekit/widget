@@ -7,9 +7,9 @@ import {
 import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
-import { useSKWallet } from "../wallet/use-sk-wallet";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;

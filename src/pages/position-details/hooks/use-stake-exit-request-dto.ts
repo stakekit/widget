@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
+import { useSKWallet } from "../../../providers/sk-wallet";
 
 export const useStakeExitRequestDto = ({
   balance,

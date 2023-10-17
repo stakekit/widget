@@ -55,6 +55,8 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
       name = "IRISnet";
     } else if (val.chain_id === "gravity-bridge-3") {
       name = "Gravity Bridge";
+    } else if (val.chain_id === "cosmoshub-4") {
+      name = "Cosmos";
     }
 
     return {
@@ -77,13 +79,16 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id])
   );
 
+  const filterMissingChainName = (val) => !!val.chain_name
+
   const cosmosAssets = assets
+    .filter(filterMissingChainName)
+    .map(chainMapper)
     .filter((a) => filteredCosmosChainNames.has(a.chain_name))
     .map((val) => ({
       ...val,
       chain_id: filteredCosmosChainNames.get(val.chain_name),
     }))
-    .map(chainMapper)
     .map(assetMapper);
 
   module.exports = {

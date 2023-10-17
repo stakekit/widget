@@ -34,7 +34,6 @@ import { useTranslation } from "react-i18next";
 import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
-import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
 import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
@@ -46,6 +45,7 @@ import {
 import { DetailsContextType } from "./types";
 import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
+import { useSKWallet } from "../../../../providers/sk-wallet";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 

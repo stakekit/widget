@@ -1,4 +1,4 @@
-import { useSKWallet } from "../wallet/use-sk-wallet";
+import { useSKWallet } from "../../providers/sk-wallet";
 import { useDefaultTokens } from "./use-default-tokens";
 import { useTokenBalancesScan } from "./use-token-balances-scan";
 

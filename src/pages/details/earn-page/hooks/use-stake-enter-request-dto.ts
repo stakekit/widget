@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../../state/stake";
+import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const useStakeEnterRequestDto = () => {
   const { selectedStake, stakeAmount, selectedValidator } = useStakeState();

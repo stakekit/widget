@@ -13,7 +13,7 @@ import { validatorVirtuosoContainer } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../state/details-context";
 import { SelectTokenListItem } from "./select-token-list-item";
-import { useSKWallet } from "../../../../../hooks/wallet/use-sk-wallet";
+import { useSKWallet } from "../../../../../providers/sk-wallet";
 
 export const SelectToken = () => {
   const {

@@ -7,9 +7,9 @@ import {
 import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
 import { getValidStakeSessionTx } from "../../domain";
-import { useSKWallet } from "../wallet/use-sk-wallet";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useStakeExitAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();

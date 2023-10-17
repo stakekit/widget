@@ -26,7 +26,7 @@ import { EvmNetworks } from "@stakekit/common";
 import { EvmChainsMap } from "../../domain/types/chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { queryClient } from "../../services/query-client";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 
 export const getConfig = () =>
   EitherAsync(() =>
@@ -123,7 +123,10 @@ export const getConfig = () =>
             return Promise.resolve({
               evmChainsMap,
               evmChains,
-              connector,
+              connector: Maybe.fromPredicate(
+                () => !!evmChains.length,
+                connector
+              ),
             });
           },
           Left: (l) => Promise.reject(l),

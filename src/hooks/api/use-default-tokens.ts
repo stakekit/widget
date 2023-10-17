@@ -2,7 +2,7 @@ import {
   TokenBalanceScanResponseDto,
   useTokenGetTokens,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../wallet/use-sk-wallet";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useDefaultTokens = () =>
   useTokenGetTokens(

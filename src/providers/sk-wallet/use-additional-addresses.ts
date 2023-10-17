@@ -1,9 +1,10 @@
 import { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
 import { EitherAsync, Left, Right } from "purify-ts";
-import { Address, Connector, useQuery } from "wagmi";
+import { Address, Connector } from "wagmi";
 import { getStorageItem } from "../../services/local-storage";
 import { toBase64 } from "@cosmjs/encoding";
 import { getCosmosChainWallet, isCosmosConnector } from "./utils";
+import { useQuery } from "@tanstack/react-query";
 
 export const useAdditionalAddresses = ({
   connector,

@@ -1,6 +1,5 @@
 import { Box, Spinner, Text } from "../../../components";
 import { useTranslation } from "react-i18next";
-import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { ConnectButton } from "../../../components/molecules/connect-button";
 import { usePositions } from "./hooks/use-positions";
 import { PositionsListItem } from "./components/positions-list-item";
@@ -8,6 +7,7 @@ import { PageContainer } from "../../components";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { ImportValidator } from "./components/import-validator";
 import { VirtualList } from "../../../components/atoms/virtual-list";
+import { useSKWallet } from "../../../providers/sk-wallet";
 
 export const PositionsPage = () => {
   const { positionsData, importValidators } = usePositions();
