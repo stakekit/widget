@@ -4,7 +4,7 @@ import {
   getYieldYieldOpportunityQueryKey,
   useYieldYieldOpportunity,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../wallet/use-sk-wallet";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useYieldOpportunity = (integrationId: string | undefined) =>
   useYieldYieldOpportunity(

@@ -25,17 +25,29 @@ import { useSavedRef } from "../../../hooks";
 import { useRootElement } from "../../../hooks/use-root-element";
 import { ListItem } from "../list/list-item";
 import { Spinner } from "../spinner";
+import { ItemContainerVariants } from "../list/styles.css";
 
-export type SelectModalProps = PropsWithChildren<{
-  title?: string;
-  inputPlaceholder?: string;
-  onSearch?: (value: string) => void;
-  trigger: ReactNode;
-  onClose?: () => void;
-  forceOpen?: boolean;
-  isLoading?: boolean;
-  errorMessage?: string;
-}>;
+export type SelectModalProps = PropsWithChildren<
+  {
+    title?: string;
+    inputPlaceholder?: string;
+    trigger: ReactNode;
+    onClose?: () => void;
+    searchValue?: string;
+    forceOpen?: boolean;
+    isLoading?: boolean;
+    errorMessage?: string;
+  } & (
+    | {
+        onSearch: (value: string) => void;
+        searchValue: string;
+      }
+    | {
+        onSearch?: never;
+        searchValue?: never;
+      }
+  )
+>;
 
 export const SelectModalContext = createContext<
   { closeModal: () => void } | undefined
@@ -58,6 +70,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
       trigger,
       title,
       onSearch,
+      searchValue,
       inputPlaceholder,
       onClose,
       forceOpen,
@@ -154,6 +167,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
                         color="text"
                         background="tokenSelectBackground"
                         placeholder={inputPlaceholder ?? ""}
+                        value={searchValue}
                         onChange={(e: ChangeEvent<HTMLInputElement>) =>
                           onSearch(e.target.value)
                         }
@@ -193,7 +207,12 @@ export const SelectModalItem = ({
   children,
   onItemClick,
   testId,
-}: PropsWithChildren<{ onItemClick?: () => void; testId?: string }>) => {
+  variant,
+}: PropsWithChildren<{
+  onItemClick?: () => void;
+  testId?: string;
+  variant?: ItemContainerVariants;
+}>) => {
   const { closeModal } = useSelectModalContext();
 
   const onClick = () => {
@@ -203,5 +222,9 @@ export const SelectModalItem = ({
     }
   };
 
-  return <ListItem onClick={onClick}>{children}</ListItem>;
+  return (
+    <ListItem variant={variant} onClick={onClick}>
+      {children}
+    </ListItem>
+  );
 };

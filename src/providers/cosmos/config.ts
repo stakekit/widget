@@ -32,7 +32,7 @@ import {
 } from "./chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { queryClient } from "../../services/query-client";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 import { useQuery } from "@tanstack/react-query";
 
 export const wallets = [
@@ -159,6 +159,7 @@ export class CosmosWagmiConnector extends Connector {
     if (!newCw) throw new Error("Wallet not found");
 
     this.chainWallet = Promise.resolve(newCw);
+
     await this.connect();
 
     const chain = this.chains.find((c) => c.id === chainId);
@@ -329,7 +330,10 @@ const queryFn = async () =>
       return Promise.resolve({
         cosmosChainsMap,
         cosmosWagmiChains,
-        connector,
+        connector: Maybe.fromPredicate(
+          () => !!cosmosWagmiChains.length,
+          connector
+        ),
         cosmosWalletManager: new WalletManager(
           Object.values(cosmosChainsMap).map((c) => c.chain),
           cosmosAssets,

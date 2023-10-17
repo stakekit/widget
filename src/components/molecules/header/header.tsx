@@ -14,9 +14,9 @@ import {
 } from "./styles.css";
 import classNames from "clsx";
 import { isLedgerDappBrowserProvider } from "../../../utils";
-import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { useContext } from "react";
 import { useWagmiConfig } from "../../../providers/wagmi";
+import { useSKWallet } from "../../../providers/sk-wallet";
 
 const showDisconnect = isLedgerDappBrowserProvider();
 

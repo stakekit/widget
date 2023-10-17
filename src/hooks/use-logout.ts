@@ -1,15 +1,13 @@
 import { useCallback } from "react";
-import { useSKWallet } from "./wallet/use-sk-wallet";
 import { useStakeDispatch } from "../state/stake";
+import { useSKWallet } from "../providers/sk-wallet";
 
 export const useLogout = () => {
-  const { disconnect, isConnected } = useSKWallet();
+  const { disconnect } = useSKWallet();
   const appDispatch = useStakeDispatch();
 
   return useCallback(() => {
-    if (!isConnected) return;
-
     disconnect();
     appDispatch({ type: "state/reset" });
-  }, [appDispatch, disconnect, isConnected]);
+  }, [appDispatch, disconnect]);
 };

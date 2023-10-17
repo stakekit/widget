@@ -8,7 +8,7 @@ import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { queryClient } from "../../services/query-client";
 import { config } from "../../config";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 
 const queryFn = async () =>
   getEvmConfig()
@@ -40,8 +40,7 @@ const queryFn = async () =>
           wagmiConfig: createConfig({
             autoConnect: true,
             connectors: connectorsForWallets([
-              evmConfig.connector,
-              cosmosConfig.connector,
+              ...Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector]),
               ledgerLiveConnector,
             ]),
             publicClient,
@@ -75,5 +74,6 @@ export const defaultConfig = (() => {
     autoConnect: true,
     publicClient,
     webSocketPublicClient,
+    connectors: [],
   });
 })();

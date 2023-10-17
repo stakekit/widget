@@ -24,9 +24,14 @@ export const itemContainer = recipe({
         },
       },
     },
+    type: {
+      disabled: { opacity: 0.5 },
+      enabled: { opacity: 1 },
+    },
   },
   defaultVariants: {
     hover: "enabled",
+    type: "enabled",
   },
 });
 

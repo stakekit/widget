@@ -1,8 +1,8 @@
 import { Maybe } from "purify-ts";
 import { importValidator } from "../../common/import-validator";
-import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useStakeState } from "../../state/stake";
 import { StepsPage } from "./common.page";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const StakeStepsPage = () => {
   const { selectedStake, stakeSession, selectedValidator } = useStakeState();

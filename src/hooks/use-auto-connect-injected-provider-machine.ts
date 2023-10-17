@@ -2,10 +2,10 @@ import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useConnect } from "wagmi";
 import { InjectedConnector } from "@wagmi/connectors/injected";
-import { useSKWallet } from "./wallet/use-sk-wallet";
 import { isLedgerDappBrowserProvider } from "../utils";
 import { LedgerLiveConnector } from "../providers/ledger/ledger-connector";
 import { useMemo } from "react";
+import { useSKWallet } from "../providers/sk-wallet";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;

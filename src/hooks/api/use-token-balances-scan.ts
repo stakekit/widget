@@ -2,9 +2,9 @@ import {
   TokenBalanceScanDto,
   useTokenTokenBalancesScan,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../wallet/use-sk-wallet";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useTokenBalancesScan = () => {
   const { additionalAddresses, address, network } = useSKWallet();

@@ -19,7 +19,7 @@ import { NumberInputProps, SelectModalProps } from "../../../../components";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useStakeDispatch, useStakeState } from "../../../../state/stake";
 import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-available-amount";
-import { getTokenPriceInUSD } from "../../../../domain";
+import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { Token } from "@stakekit/common";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
@@ -34,9 +34,7 @@ import { useTranslation } from "react-i18next";
 import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
-import { useSKWallet } from "../../../../hooks/wallet/use-sk-wallet";
 import { List } from "purify-ts";
-import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import {
@@ -45,6 +43,9 @@ import {
 } from "../../../../hooks/api/use-yield-opportunity";
 import { DetailsContextType } from "./types";
 import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -62,8 +63,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isConnected,
     isConnecting,
     isReconnecting,
-    isNotConnectedOrReconnecting,
     isLedgerLive,
+    isNotConnectedOrReconnecting,
   } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
@@ -128,26 +129,59 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, [])
   );
 
-  const tokenBalancesScan = useTokensBalances();
+  const tokenBalancesScan = useTokenBalancesScan();
+  const defaultTokens = useDefaultTokens();
+
+  const tokenBalances = isNotConnectedOrReconnecting
+    ? defaultTokens
+    : tokenBalancesScan;
+
+  const restTokenBalances = useMemo(
+    () =>
+      Maybe.fromPredicate(() => !isNotConnectedOrReconnecting, defaultTokens)
+        .chainNullable((defTb) => defTb.data)
+        .chain((defTb) =>
+          Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
+            defTb,
+            tbs: val,
+          }))
+        )
+        .map(({ defTb, tbs }) => {
+          const tbsSet = new Set(
+            tbs.map((tb) => tokenString(tb.token as Token))
+          );
+
+          return defTb.filter(
+            (t) => !tbsSet.has(tokenString(t.token as Token))
+          );
+        })
+        .alt(Maybe.of([])),
+    [defaultTokens, isNotConnectedOrReconnecting, tokenBalancesScan.data]
+  );
 
   const tokenBalancesData = useMemo(
     () =>
-      Maybe.fromNullable(tokenBalancesScan.data).chain((tb) =>
-        Maybe.of(deferredTokenSearch)
-          .chain((val) =>
-            val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-          )
-          .map((lowerSearch) => ({
-            all: tb,
-            filtered: tb.filter(
-              (t) =>
-                t.token.name.toLowerCase().includes(lowerSearch) ||
-                t.token.symbol.toLowerCase().includes(lowerSearch)
-            ),
-          }))
-          .alt(Maybe.of({ all: tb, filtered: tb }))
-      ),
-    [deferredTokenSearch, tokenBalancesScan.data]
+      Maybe.fromRecord({
+        restTokenBalances,
+        tb: Maybe.fromNullable(tokenBalances.data),
+      })
+        .map((val) => [...val.tb, ...val.restTokenBalances])
+        .chain((tb) =>
+          Maybe.of(deferredTokenSearch)
+            .chain((val) =>
+              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
+            )
+            .map((lowerSearch) => ({
+              all: tb,
+              filtered: tb.filter(
+                (t) =>
+                  t.token.name.toLowerCase().includes(lowerSearch) ||
+                  t.token.symbol.toLowerCase().includes(lowerSearch)
+              ),
+            }))
+            .alt(Maybe.of({ all: tb, filtered: tb }))
+        ),
+    [deferredTokenSearch, restTokenBalances, tokenBalances.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -308,6 +342,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const stakeTokenAvailableAmountLoading =
     stakeTokenAvailableAmount.isInitialLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
+  const defaultTokensIsLoading = defaultTokens.isInitialLoading;
 
   const isFetching =
     multiYields.isFetching ||
@@ -343,8 +378,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         return t("yield_types.stake");
     }
   }, [selectedStakeYieldType, t]);
-
-  const showTokenAmount = !isNotConnectedOrReconnecting;
 
   const providerDetails = useProviderDetails({
     integrationData: selectedStake,
@@ -386,9 +419,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance,
     tokenBalancesData,
     onTokenSearch,
-    showTokenAmount,
     buttonCTAText,
     providerDetails,
+    tokenSearch,
+    stakeSearch,
+    defaultTokensIsLoading,
   };
 
   return (

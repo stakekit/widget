@@ -30,11 +30,11 @@ import {
 } from "../../../state/unstake-or-pending-action";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { preparePendingActionRequestDto } from "./utils";
-import { useSKWallet } from "../../../hooks/wallet/use-sk-wallet";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useProviderDetails } from "../../../hooks/use-provider-details";
 import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
+import { useSKWallet } from "../../../providers/sk-wallet";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();

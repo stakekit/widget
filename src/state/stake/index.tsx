@@ -4,6 +4,7 @@ import {
   createContext,
   Dispatch,
   ReactNode,
+  useCallback,
   useContext,
   useLayoutEffect,
   useMemo,
@@ -16,9 +17,11 @@ import {
   getYieldOpportunityFromCache,
   useYieldOpportunity,
 } from "../../hooks/api/use-yield-opportunity";
-import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
-import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
+import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import { useSKWallet } from "../../providers/sk-wallet";
+import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
+import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -60,7 +63,6 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           ...state,
           selectedStakeId: Maybe.of(action.data.id),
           selectedValidator: List.head(action.data.validators),
-          stakeAmount: Maybe.of(new BigNumber(0)),
         };
       case "validator/select": {
         return {
@@ -91,7 +93,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
   const {
-    selectedTokenBalance,
+    selectedTokenBalance: _selectedTokenBalance,
     selectedStakeId,
     selectedValidator,
     stakeAmount: selectedStakeAmount,
@@ -132,9 +134,16 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
-  const tokenBalances = useTokensBalances();
+  const { network, isLedgerLive, isNotConnectedOrReconnecting } = useSKWallet();
 
-  const initialYieldToSet = useMemo(
+  const tokenBalancesScan = useTokenBalancesScan();
+  const defaultTokens = useDefaultTokens();
+
+  const tokenBalances = isNotConnectedOrReconnecting
+    ? defaultTokens
+    : tokenBalancesScan;
+
+  const initialTokenBalanceToSet = useMemo(
     () =>
       Maybe.fromNullable(tokenBalances.data).chain((val) =>
         List.find((v) => !!v.availableYields.length, val)
@@ -142,46 +151,56 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [tokenBalances.data]
   );
 
-  const { network, isLedgerLive } = useSKWallet();
-
   /**
    * Reset selectedTokenBalance if we changed network
    */
-  selectedTokenBalance.ifJust((ss) => {
+  _selectedTokenBalance.ifJust((ss) => {
     if (network && ss.token.network !== network) {
       dispatch({ type: "state/reset" });
     }
   });
 
+  const setInitialTokenBalance = useCallback(
+    (tokenBalance: TokenBalanceScanResponseDto) => {
+      dispatch({
+        type: "tokenBalance/select",
+        data: {
+          tokenBalance: tokenBalance,
+          initYield: List.head(tokenBalance.availableYields).chainNullable(
+            (yId) =>
+              getYieldOpportunityFromCache({
+                integrationId: yId,
+                isLedgerLive,
+              })
+          ),
+        },
+      });
+    },
+    [isLedgerLive]
+  );
+
   /**
    * Set initial token balance
    */
   useLayoutEffect(() => {
-    initialYieldToSet.ifJust((val) => {
-      dispatch({
-        type: "tokenBalance/select",
-        data: {
-          tokenBalance: val,
-          initYield: List.head(val.availableYields).chainNullable((yId) =>
-            getYieldOpportunityFromCache({
-              integrationId: yId,
-              isLedgerLive,
-            })
-          ),
-        },
-      });
-    });
-  }, [initialYieldToSet, isLedgerLive]);
+    initialTokenBalanceToSet.ifJust(setInitialTokenBalance);
+  }, [initialTokenBalanceToSet, setInitialTokenBalance]);
+
+  useLayoutEffect(() => {
+    _selectedTokenBalance.ifNothing(() =>
+      initialTokenBalanceToSet.ifJust(setInitialTokenBalance)
+    );
+  }, [initialTokenBalanceToSet, _selectedTokenBalance, setInitialTokenBalance]);
 
   /**
-   * Reset selectedTokenBalance if we dont have initialYieldToSet
+   * Reset selectedTokenBalance if we dont have initialTokenBalanceToSet
    * Case when we changed account, but we dont have available yields
    */
   useLayoutEffect(() => {
-    initialYieldToSet.ifNothing(() =>
-      selectedTokenBalance.ifJust(() => dispatch({ type: "state/reset" }))
+    initialTokenBalanceToSet.ifNothing(() =>
+      _selectedTokenBalance.ifJust(() => dispatch({ type: "state/reset" }))
     );
-  }, [initialYieldToSet, selectedTokenBalance]);
+  }, [initialTokenBalanceToSet, _selectedTokenBalance]);
 
   /**
    * Set initial validator
@@ -223,6 +242,10 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       },
     }),
     [maxEnterOrExitAmount]
+  );
+
+  const selectedTokenBalance = _selectedTokenBalance.alt(
+    initialTokenBalanceToSet
   );
 
   const value: State & ExtraData = useMemo(

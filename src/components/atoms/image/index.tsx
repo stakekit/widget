@@ -45,7 +45,7 @@ export const Image = ({ fallback, ...props }: ImageProps) => {
   );
 
   return (
-    <Box position="relative" display="flex">
+    <Box hw={props.hw} position="relative" display="flex">
       {showFallback && <Box position="absolute">{fallback}</Box>}
       {props.src && !failLoadImages.has(props.src) && (
         <Box {...props} as="img" onLoad={onLoad} onError={onError} />

@@ -18,6 +18,7 @@ export const SelectYieldSection = () => {
     estimatedRewards,
     symbol,
     providerDetails,
+    defaultTokensIsLoading,
   } = useDetailsContext();
 
   const { t } = useTranslation();
@@ -27,7 +28,8 @@ export const SelectYieldSection = () => {
     multiYieldsLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
-    stakeTokenAvailableAmountLoading;
+    stakeTokenAvailableAmountLoading ||
+    defaultTokensIsLoading;
 
   const earnYearly = estimatedRewards.mapOrDefault(
     (e) => `${e.yearly} ${symbol}`,
@@ -44,8 +46,8 @@ export const SelectYieldSection = () => {
     </Box>
   ) : (
     selectedStakeData
-      .map((val) =>
-        val.all.length === 0 ? (
+      .map((val) => {
+        return val.all.length === 0 ? (
           <Box
             my="4"
             display="flex"
@@ -142,8 +144,8 @@ export const SelectYieldSection = () => {
               </Box>
             </Box>
           </Box>
-        )
-      )
+        );
+      })
       .extractNullable()
   );
 };

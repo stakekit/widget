@@ -4,6 +4,7 @@ import {
   Theme,
   RainbowKitProvider,
   Chain as RainbowKitChain,
+  DisclaimerComponent,
 } from "@stakekit/rainbowkit";
 import merge from "lodash.merge";
 import { PropsWithChildren } from "react";
@@ -11,6 +12,7 @@ import { id, vars } from "../styles";
 import { RecursivePartial } from "../types";
 import { usePrefersColorScheme } from "../hooks";
 import { useSettings } from "./settings";
+import { Text } from "../components";
 
 const overrides: RecursivePartial<Theme> = {
   colors: {
@@ -41,6 +43,7 @@ export const RainbowKitProviderWithTheme = ({
       id={id}
       modalSize="compact"
       chains={chains}
+      appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
       theme={
         connectKitForceTheme
           ? theme[connectKitForceTheme]
@@ -54,4 +57,8 @@ export const RainbowKitProviderWithTheme = ({
       {children}
     </RainbowKitProvider>
   );
+};
+
+const Disclamer: DisclaimerComponent = () => {
+  return <Text>Powered by StakeKit</Text>;
 };

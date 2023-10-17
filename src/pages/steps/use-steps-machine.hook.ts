@@ -18,12 +18,12 @@ import {
   transactionSubmit,
   transactionSubmitHash,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../hooks/wallet/use-sk-wallet";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../common/get-gas-mode-value";
 import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;

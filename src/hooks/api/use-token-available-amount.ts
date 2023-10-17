@@ -7,8 +7,8 @@ import {
   useStakeKitQueryClient,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../wallet/use-sk-wallet";
 import { useCallback } from "react";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useTokenAvailableAmount = ({
   tokenDto,

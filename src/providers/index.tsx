@@ -8,6 +8,8 @@ import { LocationTransitionProvider } from "./location-transition";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
 import { WagmiProvider } from "./wagmi/provider";
+import { SKWalletProvider } from "./sk-wallet";
+import { RainbowProvider } from "./rainbow";
 
 export const Providers = ({ children }: PropsWithChildren) => {
   APIManager.setApiKey(useSettings().apiKey);
@@ -17,15 +19,19 @@ export const Providers = ({ children }: PropsWithChildren) => {
       <QueryClientProvider client={queryClient}>
         <StakeKitQueryProvider>
           <WagmiProvider>
-            <MemoryRouter>
-              <StakeStateProvider>
-                <ThemeWrapper>
-                  <LocationTransitionProvider>
-                    {children}
-                  </LocationTransitionProvider>
-                </ThemeWrapper>
-              </StakeStateProvider>
-            </MemoryRouter>
+            <SKWalletProvider>
+              <RainbowProvider>
+                <MemoryRouter>
+                  <StakeStateProvider>
+                    <ThemeWrapper>
+                      <LocationTransitionProvider>
+                        {children}
+                      </LocationTransitionProvider>
+                    </ThemeWrapper>
+                  </StakeStateProvider>
+                </MemoryRouter>
+              </RainbowProvider>
+            </SKWalletProvider>
           </WagmiProvider>
         </StakeKitQueryProvider>
       </QueryClientProvider>
