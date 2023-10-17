@@ -12,6 +12,7 @@ import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { claimRewardsContainer, viaText } from "../style.css";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { ImportValidator } from "./import-validator";
 
 export const PositionsListItem = memo(
   ({
@@ -158,3 +159,42 @@ export const PositionsListItem = memo(
     );
   }
 );
+
+export const ImportValidatorListItem = ({
+  importValidators,
+}: {
+  importValidators: ReturnType<typeof usePositions>["importValidators"];
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <ListItem variant={{ hover: "disabled" }}>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        gap="2"
+        marginBottom="2"
+      >
+        <Box display="flex" flexDirection="column" gap="2" flex={2}>
+          <Text variant={{ weight: "bold" }}>
+            {t("positions.dont_see_position")}
+          </Text>
+
+          <Text variant={{ weight: "normal", type: "muted" }}>
+            {t("positions.import_validator")}
+          </Text>
+        </Box>
+
+        <Box
+          flex={1}
+          display="flex"
+          justifyContent="flex-end"
+          alignItems="center"
+        >
+          <ImportValidator {...importValidators} />
+        </Box>
+      </Box>
+    </ListItem>
+  );
+};

@@ -19,7 +19,7 @@ export const useMultiYields = (yieldIds: string[]) => {
 
   return useQuery<YieldDto[], Error>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
-    enabled: yieldIds.length > 0,
+    enabled: !!yieldIds.length,
     staleTime: config.queryClient.cacheTime,
     queryFn: async ({ signal }) => {
       const res = eitherAsyncPool(

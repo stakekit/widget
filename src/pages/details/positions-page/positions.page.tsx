@@ -1,20 +1,19 @@
-import { Box, Spinner, Text } from "../../../components";
-import { useTranslation } from "react-i18next";
-import { ConnectButton } from "../../../components/molecules/connect-button";
+import { Box } from "../../../components";
 import { usePositions } from "./hooks/use-positions";
-import { PositionsListItem } from "./components/positions-list-item";
+import {
+  ImportValidatorListItem,
+  PositionsListItem,
+} from "./components/positions-list-item";
 import { PageContainer } from "../../components";
-import { ListItem } from "../../../components/atoms/list/list-item";
-import { ImportValidator } from "./components/import-validator";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { FallbackContent } from "./components/fallback-content";
+import { useMemo } from "react";
 
 export const PositionsPage = () => {
   const { positionsData, importValidators } = usePositions();
 
   const { isConnected } = useSKWallet();
-
-  const { t } = useTranslation();
 
   const getContent = () => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
@@ -35,6 +34,11 @@ export const PositionsPage = () => {
     (positionsData.data.length ||
       (!positionsData.isLoading && !positionsData.isError));
 
+  const data = useMemo(
+    () => ["header" as const, ...positionsData.data],
+    [positionsData.data]
+  );
+
   return (
     <PageContainer>
       <Box display="flex" flex={1} flexDirection="column">
@@ -43,42 +47,12 @@ export const PositionsPage = () => {
         {showPositions && (
           <Box flex={1}>
             <VirtualList
-              data={["header" as const, ...positionsData.data]}
+              data={data}
               itemContent={(_, item) =>
                 item === "header" ? (
-                  <ListItem variant={{ hover: "disabled" }}>
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      gap="2"
-                      marginBottom="2"
-                    >
-                      <Box
-                        display="flex"
-                        flexDirection="column"
-                        gap="2"
-                        flex={2}
-                      >
-                        <Text variant={{ weight: "bold" }}>
-                          {t("positions.dont_see_position")}
-                        </Text>
-
-                        <Text variant={{ weight: "normal", type: "muted" }}>
-                          {t("positions.import_validator")}
-                        </Text>
-                      </Box>
-
-                      <Box
-                        flex={1}
-                        display="flex"
-                        justifyContent="flex-end"
-                        alignItems="center"
-                      >
-                        <ImportValidator {...importValidators} />
-                      </Box>
-                    </Box>
-                  </ListItem>
+                  <ImportValidatorListItem
+                    importValidators={importValidators}
+                  />
                 ) : (
                   <PositionsListItem item={item} />
                 )
@@ -90,49 +64,3 @@ export const PositionsPage = () => {
     </PageContainer>
   );
 };
-
-const FallbackContent = ({
-  type,
-}: {
-  type:
-    | "not_connected"
-    | "no_current_positions"
-    | "spinner"
-    | "something_wrong";
-}) => {
-  const { t } = useTranslation();
-
-  const getContent = () => {
-    if (type === "spinner") {
-      return (
-        <Box display="flex" justifyContent="center">
-          <Spinner />
-        </Box>
-      );
-    } else if (type === "not_connected") {
-      return <ConnectButton />;
-    } else if (type === "something_wrong") {
-      return (
-        <Text variant={{ type: "danger" }} textAlign="center">
-          {t("shared.something_went_wrong")}
-        </Text>
-      );
-    } else if (type === "no_current_positions") {
-      return (
-        <Text variant={{ weight: "medium" }} textAlign="center">
-          {t("positions.no_current_positions")}
-        </Text>
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <Box marginTop="2" marginBottom="4">
-      {getContent()}
-    </Box>
-  );
-};
-
-export default PositionsPage;
