@@ -7,13 +7,12 @@ export const hideScrollbar = style({
   },
 });
 
-export const renderAllItems = style({});
+export const virtualContainer = style({});
 
-globalStyle(`${renderAllItems} > div`, {
-  position: "static !important" as "static",
+globalStyle(`${virtualContainer} > div > div`, {
+  paddingBottom: "5px !important",
 });
 
-globalStyle(`${renderAllItems} > div > div`, {
-  minHeight: "1px",
-  paddingTop: "0 !important",
+export const container = style({
+  overflowY: "scroll",
 });

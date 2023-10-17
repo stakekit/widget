@@ -59,4 +59,5 @@ export type DetailsContextType = {
   providerDetails: ReturnType<typeof useProviderDetails>;
   tokenSearch: string;
   stakeSearch: string;
+  defaultTokensIsLoading: boolean;
 };

@@ -18,9 +18,11 @@ export const SelectTokenSection = () => {
     onStakeAmountChange,
     stakeAmount,
     stakeTokenAvailableAmountLoading,
+    defaultTokensIsLoading,
   } = useDetailsContext();
 
-  const isLoading = appLoading || tokenBalancesScanLoading;
+  const isLoading =
+    appLoading || tokenBalancesScanLoading || defaultTokensIsLoading;
 
   return isLoading ? (
     <Box marginTop="2">

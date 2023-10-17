@@ -35,7 +35,6 @@ import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { List } from "purify-ts";
-import { useTokensBalances } from "../../../../hooks/api/use-tokens-balances";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import {
@@ -46,6 +45,7 @@ import { DetailsContextType } from "./types";
 import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -59,8 +59,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
-  const { isConnected, isConnecting, isReconnecting, isLedgerLive } =
-    useSKWallet();
+  const {
+    isConnected,
+    isConnecting,
+    isReconnecting,
+    isLedgerLive,
+    isNotConnectedOrReconnecting,
+  } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -124,31 +129,41 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, [])
   );
 
-  const tokenBalancesScan = useTokensBalances();
+  const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
+
+  const tokenBalances = isNotConnectedOrReconnecting
+    ? defaultTokens
+    : tokenBalancesScan;
 
   const restTokenBalances = useMemo(
     () =>
-      Maybe.fromRecord({
-        tbs: Maybe.fromNullable(tokenBalancesScan.data),
-        dt: Maybe.fromNullable(defaultTokens.data),
-      })
-        .map(({ dt, tbs }) => {
+      Maybe.fromPredicate(() => !isNotConnectedOrReconnecting, defaultTokens)
+        .chainNullable((defTb) => defTb.data)
+        .chain((defTb) =>
+          Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
+            defTb,
+            tbs: val,
+          }))
+        )
+        .map(({ defTb, tbs }) => {
           const tbsSet = new Set(
             tbs.map((tb) => tokenString(tb.token as Token))
           );
 
-          return dt.filter((t) => !tbsSet.has(tokenString(t.token as Token)));
+          return defTb.filter(
+            (t) => !tbsSet.has(tokenString(t.token as Token))
+          );
         })
         .alt(Maybe.of([])),
-    [defaultTokens.data, tokenBalancesScan.data]
+    [defaultTokens, isNotConnectedOrReconnecting, tokenBalancesScan.data]
   );
 
   const tokenBalancesData = useMemo(
     () =>
       Maybe.fromRecord({
         restTokenBalances,
-        tb: Maybe.fromNullable(tokenBalancesScan.data),
+        tb: Maybe.fromNullable(tokenBalances.data),
       })
         .map((val) => [...val.tb, ...val.restTokenBalances])
         .chain((tb) =>
@@ -166,7 +181,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
             }))
             .alt(Maybe.of({ all: tb, filtered: tb }))
         ),
-    [deferredTokenSearch, restTokenBalances, tokenBalancesScan.data]
+    [deferredTokenSearch, restTokenBalances, tokenBalances.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -327,6 +342,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const stakeTokenAvailableAmountLoading =
     stakeTokenAvailableAmount.isInitialLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
+  const defaultTokensIsLoading = defaultTokens.isInitialLoading;
 
   const isFetching =
     multiYields.isFetching ||
@@ -407,6 +423,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     providerDetails,
     tokenSearch,
     stakeSearch,
+    defaultTokensIsLoading,
   };
 
   return (

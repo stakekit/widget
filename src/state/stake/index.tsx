@@ -17,10 +17,11 @@ import {
   getYieldOpportunityFromCache,
   useYieldOpportunity,
 } from "../../hooks/api/use-yield-opportunity";
-import { useTokensBalances } from "../../hooks/api/use-tokens-balances";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
 import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
+import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -133,7 +134,14 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
-  const tokenBalances = useTokensBalances();
+  const { network, isLedgerLive, isNotConnectedOrReconnecting } = useSKWallet();
+
+  const tokenBalancesScan = useTokenBalancesScan();
+  const defaultTokens = useDefaultTokens();
+
+  const tokenBalances = isNotConnectedOrReconnecting
+    ? defaultTokens
+    : tokenBalancesScan;
 
   const initialTokenBalanceToSet = useMemo(
     () =>
@@ -142,8 +150,6 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       ),
     [tokenBalances.data]
   );
-
-  const { network, isLedgerLive } = useSKWallet();
 
   /**
    * Reset selectedTokenBalance if we changed network

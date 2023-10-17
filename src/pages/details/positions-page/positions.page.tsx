@@ -45,7 +45,7 @@ export const PositionsPage = () => {
         {getContent()}
 
         {showPositions && (
-          <Box flex={1}>
+          <Box flex={1} display="flex" flexDirection="column">
             <VirtualList
               data={data}
               itemContent={(_, item) =>
