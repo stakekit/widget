@@ -62,7 +62,6 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           ...state,
           selectedStakeId: Maybe.of(action.data.id),
           selectedValidator: List.head(action.data.validators),
-          stakeAmount: Maybe.of(new BigNumber(0)),
         };
       case "validator/select": {
         return {
