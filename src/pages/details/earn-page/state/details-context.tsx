@@ -19,7 +19,7 @@ import { NumberInputProps, SelectModalProps } from "../../../../components";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useStakeDispatch, useStakeState } from "../../../../state/stake";
 import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-available-amount";
-import { getTokenPriceInUSD } from "../../../../domain";
+import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { Token } from "@stakekit/common";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
@@ -45,6 +45,7 @@ import {
 } from "../../../../hooks/api/use-yield-opportunity";
 import { DetailsContextType } from "./types";
 import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -58,13 +59,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
-  const {
-    isConnected,
-    isConnecting,
-    isReconnecting,
-    isNotConnectedOrReconnecting,
-    isLedgerLive,
-  } = useSKWallet();
+  const { isConnected, isConnecting, isReconnecting, isLedgerLive } =
+    useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -129,25 +125,48 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   const tokenBalancesScan = useTokensBalances();
+  const defaultTokens = useDefaultTokens();
+
+  const restTokenBalances = useMemo(
+    () =>
+      Maybe.fromRecord({
+        tbs: Maybe.fromNullable(tokenBalancesScan.data),
+        dt: Maybe.fromNullable(defaultTokens.data),
+      })
+        .map(({ dt, tbs }) => {
+          const tbsSet = new Set(
+            tbs.map((tb) => tokenString(tb.token as Token))
+          );
+
+          return dt.filter((t) => !tbsSet.has(tokenString(t.token as Token)));
+        })
+        .alt(Maybe.of([])),
+    [defaultTokens.data, tokenBalancesScan.data]
+  );
 
   const tokenBalancesData = useMemo(
     () =>
-      Maybe.fromNullable(tokenBalancesScan.data).chain((tb) =>
-        Maybe.of(deferredTokenSearch)
-          .chain((val) =>
-            val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-          )
-          .map((lowerSearch) => ({
-            all: tb,
-            filtered: tb.filter(
-              (t) =>
-                t.token.name.toLowerCase().includes(lowerSearch) ||
-                t.token.symbol.toLowerCase().includes(lowerSearch)
-            ),
-          }))
-          .alt(Maybe.of({ all: tb, filtered: tb }))
-      ),
-    [deferredTokenSearch, tokenBalancesScan.data]
+      Maybe.fromRecord({
+        restTokenBalances,
+        tb: Maybe.fromNullable(tokenBalancesScan.data),
+      })
+        .map((val) => [...val.tb, ...val.restTokenBalances])
+        .chain((tb) =>
+          Maybe.of(deferredTokenSearch)
+            .chain((val) =>
+              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
+            )
+            .map((lowerSearch) => ({
+              all: tb,
+              filtered: tb.filter(
+                (t) =>
+                  t.token.name.toLowerCase().includes(lowerSearch) ||
+                  t.token.symbol.toLowerCase().includes(lowerSearch)
+              ),
+            }))
+            .alt(Maybe.of({ all: tb, filtered: tb }))
+        ),
+    [deferredTokenSearch, restTokenBalances, tokenBalancesScan.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -344,8 +363,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     }
   }, [selectedStakeYieldType, t]);
 
-  const showTokenAmount = !isNotConnectedOrReconnecting;
-
   const providerDetails = useProviderDetails({
     integrationData: selectedStake,
     validatorAddress: selectedValidator.map((v) => v.address),
@@ -386,9 +403,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedTokenBalance,
     tokenBalancesData,
     onTokenSearch,
-    showTokenAmount,
     buttonCTAText,
     providerDetails,
+    tokenSearch,
+    stakeSearch,
   };
 
   return (

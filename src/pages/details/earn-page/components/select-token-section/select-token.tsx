@@ -2,20 +2,18 @@ import {
   Box,
   CaretDownIcon,
   SelectModal,
-  SelectModalItem,
-  SelectModalItemContainer,
   Text,
 } from "../../../../../components";
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useMemo } from "react";
-import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { selectItemText, validatorVirtuosoContainer } from "../../styles.css";
+import { validatorVirtuosoContainer } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../state/details-context";
-import { formatNumber } from "../../../../../utils";
+import { SelectTokenListItem } from "./select-token-list-item";
+import { useSKWallet } from "../../../../../hooks/wallet/use-sk-wallet";
 
 export const SelectToken = () => {
   const {
@@ -24,9 +22,12 @@ export const SelectToken = () => {
     tokenBalancesData,
     selectedTokenBalance,
     onTokenSearch,
-    showTokenAmount = true,
+    tokenSearch,
   } = useDetailsContext();
+
   const { t } = useTranslation();
+
+  const { isNotConnectedOrReconnecting } = useSKWallet();
 
   const data = useMemo(
     () =>
@@ -46,6 +47,7 @@ export const SelectToken = () => {
     <SelectModal
       title={t("select_token.title")}
       onSearch={onTokenSearch}
+      searchValue={tokenSearch}
       onClose={onSelectOpportunityClose}
       trigger={
         <Trigger asChild>
@@ -78,52 +80,13 @@ export const SelectToken = () => {
       <VirtualList
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
-        itemContent={(_index, item) => {
-          const amount = new BigNumber(item.amount);
-
-          return (
-            <SelectModalItemContainer>
-              <SelectModalItem onItemClick={() => onTokenBalanceSelect(item)}>
-                <TokenIcon token={item.token} />
-
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  flex={1}
-                  minWidth="0"
-                >
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Text
-                      className={selectItemText}
-                      variant={{ weight: "bold" }}
-                    >
-                      {item.token.name}
-                    </Text>
-
-                    {showTokenAmount && (
-                      <Text variant={{ weight: "normal" }}>
-                        {formatNumber(amount)}
-                      </Text>
-                    )}
-                  </Box>
-
-                  <Box
-                    display="flex"
-                    marginTop="1"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
-                  </Box>
-                </Box>
-              </SelectModalItem>
-            </SelectModalItemContainer>
-          );
-        }}
+        itemContent={(_index, item) => (
+          <SelectTokenListItem
+            item={item}
+            onTokenBalanceSelect={onTokenBalanceSelect}
+            isNotConnectedOrReconnecting={isNotConnectedOrReconnecting}
+          />
+        )}
       />
     </SelectModal>
   );

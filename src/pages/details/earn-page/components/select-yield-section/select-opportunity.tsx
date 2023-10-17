@@ -24,6 +24,7 @@ export const SelectOpportunity = () => {
     onSelectOpportunityClose,
     onYieldSelect,
     onYieldSearch,
+    stakeSearch,
   } = useDetailsContext();
 
   const { t } = useTranslation();
@@ -53,6 +54,7 @@ export const SelectOpportunity = () => {
     <SelectModal
       title={t("details.opportunity_search_title")}
       onSearch={onYieldSearch}
+      searchValue={stakeSearch}
       onClose={onSelectOpportunityClose}
       trigger={
         <Trigger asChild>

@@ -51,6 +51,7 @@ export const ImportValidator = ({
   return (
     <SelectModal
       title={t("positions.import_validator_modal_title")}
+      searchValue={searchValue}
       onSearch={(val) => {
         setSearchValue(val);
         onValidatorAddressOrNameChange(val);

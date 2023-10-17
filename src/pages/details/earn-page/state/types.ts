@@ -7,7 +7,6 @@ import {
   YieldType,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { SelectModalProps } from "../../../../components";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 
 export type DetailsContextType = {
@@ -31,7 +30,7 @@ export type DetailsContextType = {
   amountValid: boolean;
   buttonDisabled: boolean;
   onClick: () => void;
-  onYieldSearch: SelectModalProps["onSearch"];
+  onYieldSearch: (value: string) => void;
   onValidatorSelect: (item: ValidatorDto) => void;
   selectedValidator: State["selectedValidator"];
   isError: boolean;
@@ -56,7 +55,8 @@ export type DetailsContextType = {
     filtered: TokenBalanceScanResponseDto[];
   }>;
   onTokenSearch: (value: string) => void;
-  showTokenAmount: boolean;
   buttonCTAText: string;
   providerDetails: ReturnType<typeof useProviderDetails>;
+  tokenSearch: string;
+  stakeSearch: string;
 };
