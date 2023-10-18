@@ -91,8 +91,8 @@ export const ImportValidator = ({
                       <Box display="flex" gap="2" minWidth="0" marginRight="4">
                         <Box>
                           <Image
-                            hw="9"
-                            borderRadius="full"
+                            containerProps={{ hw: "9" }}
+                            imageProps={{ borderRadius: "full" }}
                             src={item.validator.image}
                             fallback={
                               <ImageFallback

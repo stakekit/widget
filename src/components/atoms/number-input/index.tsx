@@ -5,6 +5,7 @@ import { numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
 import { createPortal } from "react-dom";
 import { useRootElement } from "../../../hooks/use-root-element";
+import { formatNumber } from "../../../utils";
 
 export type NumberInputProps = {
   onChange: (value: Maybe<BigNumber>) => void;
@@ -25,8 +26,7 @@ export const NumberInput = memo(
           Just(value) {
             if (value.isEqualTo(stringToBigNumber(prevState))) return prevState;
 
-            const valStr = value.toPrecision();
-            return valStr;
+            return formatNumber(value);
           },
           Nothing() {
             return "0";

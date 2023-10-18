@@ -13,8 +13,6 @@ export const logoContainer = style({
   justifyContent: "center",
 });
 
-export const smallLogo = style([atoms({ hw: "3" })]);
-
 export const defaultColor = createVar();
 
 export const fallbackContainer = style({ background: defaultColor });

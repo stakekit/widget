@@ -25,10 +25,6 @@ export const apyYield = style([
   },
 ]);
 
-export const tokenLogo = style({
-  borderRadius: "50%",
-});
-
 export const breakWord = style({ wordBreak: "break-all" });
 
 export const modalItemNameContainer = style([

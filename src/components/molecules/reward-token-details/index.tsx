@@ -26,8 +26,8 @@ export const RewardTokenDetails = ({
           {rt.logoUri && (
             <Box marginRight="1">
               <Image
-                borderRadius="full"
-                hw="5"
+                imageProps={{ borderRadius: "full" }}
+                containerProps={{ hw: "5" }}
                 src={rt.logoUri}
                 fallback={
                   <ImageFallback name={rt.providerName} tokenLogoHw="5" />
