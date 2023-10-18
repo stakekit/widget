@@ -19,7 +19,6 @@ import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
 import {
   breakWord,
   modalItemNameContainer,
-  tokenLogo,
   triggerStyles,
   validatorVirtuosoContainer,
 } from "../styles.css";
@@ -147,27 +146,28 @@ export const SelectValidator = () => {
                       alignItems="center"
                       marginTop="3"
                     >
-                      <Image
-                        hw="5"
-                        marginRight="2"
-                        src={val.selectedValidator.image}
-                        className={tokenLogo}
-                        fallback={
-                          <Box marginRight="1">
-                            <ImageFallback
-                              name={
-                                val.selectedValidator.name ||
-                                val.selectedValidator.address
-                              }
-                              tokenLogoHw="5"
-                              textVariant={{
-                                type: "white",
-                                weight: "bold",
-                              }}
-                            />
-                          </Box>
-                        }
-                      />
+                      <Box marginRight="2">
+                        <Image
+                          containerProps={{ hw: "5" }}
+                          imageProps={{ borderRadius: "full" }}
+                          src={val.selectedValidator.image}
+                          fallback={
+                            <Box marginRight="1">
+                              <ImageFallback
+                                name={
+                                  val.selectedValidator.name ||
+                                  val.selectedValidator.address
+                                }
+                                tokenLogoHw="5"
+                                textVariant={{
+                                  type: "white",
+                                  weight: "bold",
+                                }}
+                              />
+                            </Box>
+                          }
+                        />
+                      </Box>
                       <Text className={breakWord} variant={{ weight: "bold" }}>
                         {t("details.staked_via", {
                           validator:
@@ -261,9 +261,9 @@ export const SelectValidator = () => {
                           onItemClick={() => onValidatorSelect(item)}
                         >
                           <Image
-                            hw="9"
+                            containerProps={{ hw: "9" }}
+                            imageProps={{ borderRadius: "full" }}
                             src={item.image}
-                            className={tokenLogo}
                             fallback={
                               <ImageFallback
                                 name={item.name || item.address}

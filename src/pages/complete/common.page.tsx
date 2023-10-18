@@ -109,18 +109,17 @@ export const CompletePage = ({
                     marginTop="2"
                     justifyContent="center"
                     alignItems="center"
+                    gap="1"
                   >
                     {v.logo && (
-                      <Box marginRight="1" display="flex">
-                        <Image
-                          borderRadius="full"
-                          hw="5"
-                          src={v.logo}
-                          fallback={
-                            <ImageFallback name={v.name} tokenLogoHw="5" />
-                          }
-                        />
-                      </Box>
+                      <Image
+                        imageProps={{ borderRadius: "full" }}
+                        containerProps={{ hw: "5" }}
+                        src={v.logo}
+                        fallback={
+                          <ImageFallback name={v.name} tokenLogoHw="5" />
+                        }
+                      />
                     )}
                     <Text variant={{ type: "muted" }}>
                       {t("complete.via", {

@@ -97,24 +97,26 @@ export const PositionDetails = () => {
                         justifyContent="flex-start"
                         alignItems="center"
                       >
-                        <Image
-                          hw="8"
-                          marginRight="1"
-                          src={pd.logo}
-                          borderRadius="full"
-                          fallback={
-                            <Box marginRight="1">
-                              <ImageFallback
-                                name={pd.name ?? pd.address ?? ""}
-                                tokenLogoHw="8"
-                                textVariant={{
-                                  type: "white",
-                                  weight: "bold",
-                                }}
-                              />
-                            </Box>
-                          }
-                        />
+                        <Box marginRight="2">
+                          <Image
+                            containerProps={{ hw: "8" }}
+                            imageProps={{ borderRadius: "full" }}
+                            src={pd.logo}
+                            fallback={
+                              <Box marginRight="1">
+                                <ImageFallback
+                                  name={pd.name ?? pd.address ?? ""}
+                                  tokenLogoHw="8"
+                                  textVariant={{
+                                    type: "white",
+                                    weight: "bold",
+                                  }}
+                                />
+                              </Box>
+                            }
+                          />
+                        </Box>
+
                         <Text>
                           {val.stakeType}{" "}
                           {t("position_details.via", {

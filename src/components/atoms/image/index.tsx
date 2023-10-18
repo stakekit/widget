@@ -10,25 +10,32 @@ import { Box, BoxProps } from "../box";
 
 const failLoadImages = new Set<string>();
 
-export type ImageProps = Omit<BoxProps, "as"> & {
-  fallback: string | ReactNode;
+export type ImageProps = {
   src: string | undefined;
+  fallback: string | ReactNode;
+  containerProps?: Omit<BoxProps, "as">;
+  imageProps?: Omit<BoxProps, "as" | "src">;
 };
 
-export const Image = ({ fallback, ...props }: ImageProps) => {
+export const Image = ({
+  fallback,
+  src,
+  containerProps,
+  imageProps,
+}: ImageProps) => {
   const [loaded, setLoaded] = useState(false);
   const [timeoutFallback, setTimeoutFallback] = useState(false);
 
   const onLoad: HTMLProps<HTMLImageElement>["onLoad"] = (e) => {
     setLoaded(true);
-    props.onLoad?.(e);
+    imageProps?.onLoad?.(e);
   };
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
-    if (props.src) {
-      failLoadImages.add(props.src);
+    if (src) {
+      failLoadImages.add(src);
     }
-    props.onError?.(e);
+    imageProps?.onError?.(e);
   };
 
   useEffect(() => {
@@ -45,10 +52,22 @@ export const Image = ({ fallback, ...props }: ImageProps) => {
   );
 
   return (
-    <Box hw={props.hw} position="relative" display="flex">
+    <Box
+      {...containerProps}
+      position="relative"
+      display="flex"
+      justifyContent="center"
+      // alignItems="center"
+    >
       {showFallback && <Box position="absolute">{fallback}</Box>}
-      {props.src && !failLoadImages.has(props.src) && (
-        <Box {...props} as="img" onLoad={onLoad} onError={onError} />
+      {src && !failLoadImages.has(src) && (
+        <Box
+          {...imageProps}
+          src={src}
+          as="img"
+          onLoad={onLoad}
+          onError={onError}
+        />
       )}
     </Box>
   );
