@@ -23,11 +23,31 @@ export const Image = ({
   containerProps,
   imageProps,
 }: ImageProps) => {
-  const [loaded, setLoaded] = useState(false);
-  const [timeoutFallback, setTimeoutFallback] = useState(false);
+  const [loadState, setLoadState] = useState(() => ({
+    src,
+    loaded: false,
+    timeoutFallback: false,
+  }));
+
+  /**
+   * Reset on src change
+   */
+  if (loadState.src !== src) {
+    setLoadState({ src, loaded: false, timeoutFallback: false });
+  }
+
+  useEffect(() => {
+    if (src && failLoadImages.has(src)) return;
+
+    const id = setTimeout(() => {
+      setLoadState((prev) => ({ ...prev, timeoutFallback: true }));
+    }, 500);
+
+    return () => clearTimeout(id);
+  }, [src]);
 
   const onLoad: HTMLProps<HTMLImageElement>["onLoad"] = (e) => {
-    setLoaded(true);
+    setLoadState((prev) => ({ ...prev, loaded: true }));
     imageProps?.onLoad?.(e);
   };
 
@@ -38,17 +58,12 @@ export const Image = ({
     imageProps?.onError?.(e);
   };
 
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setTimeoutFallback(true);
-    }, 200);
-
-    return () => clearTimeout(id);
-  }, []);
-
   const showFallback = useMemo(
-    () => timeoutFallback && !loaded && isValidElement(fallback),
-    [fallback, loaded, timeoutFallback]
+    () =>
+      ((src && failLoadImages.has(src)) ||
+        (loadState.timeoutFallback && !loadState.loaded)) &&
+      isValidElement(fallback),
+    [fallback, loadState.loaded, loadState.timeoutFallback, src]
   );
 
   return (
@@ -57,7 +72,6 @@ export const Image = ({
       position="relative"
       display="flex"
       justifyContent="center"
-      // alignItems="center"
     >
       {showFallback && <Box position="absolute">{fallback}</Box>}
       {src && !failLoadImages.has(src) && (
@@ -65,6 +79,7 @@ export const Image = ({
           {...imageProps}
           src={src}
           as="img"
+          style={{ visibility: loadState.loaded ? "visible" : "hidden" }}
           onLoad={onLoad}
           onError={onError}
         />
