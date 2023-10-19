@@ -97,7 +97,7 @@ export const useUnstakeOrPendingActionReview = () => {
     [integrationData, pricesState.data, txGas]
   );
 
-  const tokenNetwork = integrationData.mapOrDefault(
+  const gasFeeTokenNetwork = integrationData.mapOrDefault(
     (d) => d.metadata.gasFeeToken.symbol,
     ""
   );
@@ -108,10 +108,12 @@ export const useUnstakeOrPendingActionReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${formatNumber(setg)} ${tokenNetwork} ($${formatNumber(gfiu)})`,
+            `${formatNumber(setg)} ${gasFeeTokenNetwork} ($${formatNumber(
+              gfiu
+            )})`,
           ""
         ),
-    [gasFeeInUSD, txGas, tokenNetwork]
+    [gasFeeInUSD, txGas, gasFeeTokenNetwork]
   );
 
   const onClick = () => {

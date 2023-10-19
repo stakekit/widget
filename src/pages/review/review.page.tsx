@@ -8,13 +8,13 @@ import { feeStyles, pointer, spanStyle } from "./style.css";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { HelpModal } from "../../components/molecules/help-modal";
+import { Maybe } from "purify-ts";
 
 export const ReviewPage = () => {
   const {
     amount,
     fee,
     interestRate,
-    tokenNetwork,
     yieldType,
     token,
     onClick,
@@ -35,26 +35,32 @@ export const ReviewPage = () => {
             marginBottom="1"
           >
             <Heading variant={{ level: "h1" }}>{yieldType}</Heading>
-            {token && metadata && (
-              <TokenIcon token={token} metadata={metadata} />
-            )}
+            {Maybe.fromRecord({ token, metadata })
+              .map((val) => (
+                <TokenIcon token={val.token} metadata={val.metadata} />
+              ))
+              .extractNullable()}
           </Box>
 
-          <Heading variant={{ level: "h1" }}>
-            <Trans
-              i18nKey="review.amount_and_earn"
-              values={{
-                amount,
-                tokenNetwork,
-                interestRate,
-              }}
-              components={{
-                highlight0: <Highlight className={spanStyle} />,
-                highlight1: <Highlight className={spanStyle} />,
-                highlight3: <Highlight className={spanStyle} />,
-              }}
-            />
-          </Heading>
+          {token
+            .map((val) => (
+              <Heading variant={{ level: "h1" }}>
+                <Trans
+                  i18nKey="review.amount_and_earn"
+                  values={{
+                    amount,
+                    tokenSymbol: val.symbol,
+                    interestRate,
+                  }}
+                  components={{
+                    highlight0: <Highlight className={spanStyle} />,
+                    highlight1: <Highlight className={spanStyle} />,
+                    highlight3: <Highlight className={spanStyle} />,
+                  }}
+                />
+              </Heading>
+            ))
+            .extractNullable()}
 
           <Box marginTop="2">
             <Text variant={{ type: "muted", weight: "normal" }}>

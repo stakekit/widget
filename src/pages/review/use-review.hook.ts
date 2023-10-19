@@ -30,7 +30,7 @@ export const useReview = () => {
     ""
   );
 
-  const tokenNetwork = selectedStake.mapOrDefault(
+  const gasFeeTokenNetwork = selectedStake.mapOrDefault(
     (y) => y.metadata.gasFeeToken.symbol,
     ""
   );
@@ -66,21 +66,22 @@ export const useReview = () => {
         .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
         .mapOrDefault(
           ({ gfiu, setg }) =>
-            `${formatNumber(setg)} ${tokenNetwork} ($${formatNumber(gfiu)})`,
+            `${formatNumber(setg)} ${gasFeeTokenNetwork} ($${formatNumber(
+              gfiu
+            )})`,
           ""
         ),
-    [gasFeeInUSD, stakeEnterTxGas, tokenNetwork]
+    [gasFeeInUSD, stakeEnterTxGas, gasFeeTokenNetwork]
   );
 
-  const token = selectedStake.map((y) => y.token).extractNullable();
-  const metadata = selectedStake.map((y) => y.metadata).extractNullable();
+  const token = selectedStake.map((y) => y.token);
+  const metadata = selectedStake.map((y) => y.metadata);
 
   const navigate = useNavigate();
 
   const onClick = () => navigate("/steps");
 
   return {
-    tokenNetwork,
     amount,
     interestRate,
     fee,
