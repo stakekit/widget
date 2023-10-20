@@ -63,12 +63,7 @@ export const SelectValidator = () => {
           };
         }
 
-        const sortedValidators = ss.validators
-          .filter((val) => !!val.apr)
-          .slice()
-          .sort((a, b) => (b.apr ?? 0) - (a.apr ?? 0));
-
-        const groupedItems = sortedValidators.reduce(
+        const groupedItems = ss.validators.reduce(
           (acc, val) => {
             if (val.preferred) {
               acc[0].items.push(val);
@@ -91,13 +86,13 @@ export const SelectValidator = () => {
         );
 
         // If we do not have preferred validators, show all other
-        if (!groupedItems[0].items.length && sortedValidators.length) {
+        if (!groupedItems[0].items.length && ss.validators.length) {
           return {
             canViewMore: false,
-            tableData: sortedValidators,
-            groupCounts: [sortedValidators.length],
+            tableData: ss.validators,
+            groupCounts: [ss.validators.length],
             groupedItems: [
-              { items: sortedValidators, label: t("details.validators_other") },
+              { items: ss.validators, label: t("details.validators_other") },
             ],
           };
         }
