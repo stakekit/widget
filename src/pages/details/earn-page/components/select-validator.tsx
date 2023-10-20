@@ -39,10 +39,12 @@ export const SelectValidator = () => {
     onValidatorSelect,
     selectedValidator,
     selectedStake,
+    defaultTokensIsLoading,
   } = useDetailsContext();
 
   const isLoading =
     appLoading ||
+    defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
     multiYieldsLoading ||
     yieldOpportunityLoading ||
