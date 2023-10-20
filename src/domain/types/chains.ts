@@ -62,8 +62,8 @@ const supportedEVMChains = [
   EvmNetworks.Optimism,
   EvmNetworks.Polygon,
 ] as const;
-const supportedEVMChainsSet = new Set(supportedEVMChains);
-type SupportedEvmChain = (typeof supportedEVMChains)[number];
+export const supportedEVMChainsSet = new Set(supportedEVMChains);
+export type SupportedEvmChain = (typeof supportedEVMChains)[number];
 export type EvmChainsMap = {
   [Key in SupportedEvmChain]: {
     type: "evm";

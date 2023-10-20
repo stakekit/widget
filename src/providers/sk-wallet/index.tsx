@@ -28,6 +28,7 @@ import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
 import { unsignedTransactionCodec } from "./validation";
+import { isEVMNetwork } from "../../domain";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -91,7 +92,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       ).chain<
         TransactionDecodeError | SendTransactionError,
         { signedTx: string; broadcasted: boolean }
-      >(({ conn }) => {
+      >(({ conn, network }) => {
         if (isLedgerLiveConnector(conn)) {
           /**
            * Ledger Live connector
@@ -126,7 +127,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               EitherAsync(() => {
                 return walletApiClient.transaction.signAndBroadcast(
                   accountId,
-                  deserializedTransaction
+                  deserializedTransaction,
+                  isEVMNetwork(network) ? { hwAppId: "StakeKit" } : undefined
                 );
               }).mapLeft((e) => {
                 console.log(e);
