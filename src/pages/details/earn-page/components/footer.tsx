@@ -30,10 +30,12 @@ export const Footer = () => {
     yieldOpportunityLoading,
     tokenBalancesScanLoading,
     stakeTokenAvailableAmountLoading,
+    defaultTokensIsLoading,
   } = useDetailsContext();
 
   const isLoading =
     appLoading ||
+    defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
     multiYieldsLoading ||
     yieldOpportunityLoading ||

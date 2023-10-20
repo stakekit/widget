@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
-import { ConnectButton } from "@stakekit/rainbowkit";
+import { ConnectButton } from "../../../../components/molecules/connect-button";
 
 export const FallbackContent = ({
   type,
