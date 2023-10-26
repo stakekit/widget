@@ -14,10 +14,10 @@ import { container, imageStyle } from "./style.css";
 import { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
-import { ReactNode } from "react";
+import { ReactNode, useContext } from "react";
 import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { TrackingContext } from "../../../providers/tracking";
 
 type ModalType =
   | { type: "fees" }
@@ -227,14 +227,15 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     }
   };
 
-  const trackEvent = useTrackEvent();
+  // HelpModal can be used out of default Widget context
+  const trackEvent = useContext(TrackingContext)?.trackEvent;
 
   const { description, image, title, link, button } = getContent(modal);
 
   return (
     <SelectModal
       forceOpen={modal.type === "geoBlock"}
-      onOpen={() => trackEvent("helpModalOpened", { modal: title })}
+      onOpen={() => trackEvent?.("helpModalOpened", { modal: title })}
       trigger={
         <Trigger asChild={!!customTrigger}>
           {customTrigger ?? (
