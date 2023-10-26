@@ -1,4 +1,5 @@
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -6,6 +7,8 @@ export const useComplete = () => {
   const location = useLocation();
 
   const urls: string[] | undefined = location.state?.urls;
+
+  const trackEvent = useTrackEvent();
 
   const onClick = () => {
     navigate("/");
@@ -15,6 +18,8 @@ export const useComplete = () => {
     if (!urls) return;
 
     if (typeof window === "undefined") return;
+
+    trackEvent("viewTxClicked");
 
     urls.forEach((url) => window.open(url, "_blank"));
   };

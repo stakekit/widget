@@ -10,6 +10,7 @@ import { useSettings } from "./settings";
 import { WagmiProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
+import { TrackingContextProvider } from "./tracking";
 
 export const Providers = ({ children }: PropsWithChildren) => {
   APIManager.setApiKey(useSettings().apiKey);
@@ -19,19 +20,21 @@ export const Providers = ({ children }: PropsWithChildren) => {
       <QueryClientProvider client={queryClient}>
         <StakeKitQueryProvider>
           <WagmiProvider>
-            <SKWalletProvider>
-              <RainbowProvider>
-                <MemoryRouter>
-                  <StakeStateProvider>
-                    <ThemeWrapper>
-                      <LocationTransitionProvider>
-                        {children}
-                      </LocationTransitionProvider>
-                    </ThemeWrapper>
-                  </StakeStateProvider>
-                </MemoryRouter>
-              </RainbowProvider>
-            </SKWalletProvider>
+            <TrackingContextProvider>
+              <SKWalletProvider>
+                <RainbowProvider>
+                  <MemoryRouter>
+                    <StakeStateProvider>
+                      <ThemeWrapper>
+                        <LocationTransitionProvider>
+                          {children}
+                        </LocationTransitionProvider>
+                      </ThemeWrapper>
+                    </StakeStateProvider>
+                  </MemoryRouter>
+                </RainbowProvider>
+              </SKWalletProvider>
+            </TrackingContextProvider>
           </WagmiProvider>
         </StakeKitQueryProvider>
       </QueryClientProvider>

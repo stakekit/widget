@@ -46,12 +46,13 @@ import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-an
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
 export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const {
-    actions: { onMaxClick },
+    actions: { onMaxClick: _onMaxClick },
     selectedTokenBalance,
     selectedValidator,
     stakeAmount,
@@ -383,6 +384,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     integrationData: selectedStake,
     validatorAddress: selectedValidator.map((v) => v.address),
   });
+
+  const trackEvent = useTrackEvent();
+
+  const onMaxClick = () => {
+    trackEvent("earnPageMaxClicked");
+    _onMaxClick();
+  };
 
   const value = {
     availableTokens,

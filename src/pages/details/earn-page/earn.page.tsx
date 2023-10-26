@@ -12,8 +12,11 @@ import {
   DetailsContextProvider,
   useDetailsContext,
 } from "./state/details-context";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 
 const EarnPageComponent = () => {
+  useTrackPage("earn");
+
   const {
     yieldType,
     buttonDisabled,

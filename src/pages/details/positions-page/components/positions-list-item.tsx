@@ -13,6 +13,7 @@ import { ContentLoaderSquare } from "../../../../components/atoms/content-loader
 import { claimRewardsContainer, viaText } from "../style.css";
 import { useProviderDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
+import { checkHasPendingClaimRewards } from "../../shared";
 
 export const PositionsListItem = memo(
   ({
@@ -41,12 +42,7 @@ export const PositionsListItem = memo(
     const token = List.head(item.balances).map((v) => v.token);
 
     const hasPendingClaimRewards = useMemo(
-      () =>
-        List.find((b) => b.type === "rewards", item.balances)
-          .chain((b) =>
-            List.find((a) => a.type === "CLAIM_REWARDS", b.pendingActions)
-          )
-          .isJust(),
+      () => checkHasPendingClaimRewards(item.balances),
       [item.balances]
     );
 

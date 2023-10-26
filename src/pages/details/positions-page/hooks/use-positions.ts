@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { importValidator } from "../../../../common/import-validator";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useState } from "react";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const usePositions = () => {
   const { data, ...rest } = usePositionsData();
@@ -58,6 +59,8 @@ export const usePositions = () => {
 
   const { t } = useTranslation();
 
+  const trackEvent = useTrackEvent();
+
   const onImportValidatorImport = (val: {
     integrationId: ValidatorSearchResultDto["integrationId"];
     validator: ValidatorDto;
@@ -65,7 +68,14 @@ export const usePositions = () => {
     Maybe.fromRecord({
       network: Maybe.fromNullable(network),
       address: Maybe.fromNullable(address),
-    }).ifJust((na) => importValidator({ ...na, validatorData: val }));
+    }).ifJust((na) => {
+      importValidator({ ...na, validatorData: val });
+      trackEvent("validatorImported", {
+        yieldId: val.integrationId,
+        name: val.validator.name,
+        address: val.validator.address,
+      });
+    });
   };
 
   const importValidators = {

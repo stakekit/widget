@@ -3,6 +3,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
 } from "react";
@@ -29,6 +30,8 @@ import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
 import { unsignedTransactionCodec } from "./validation";
 import { isEVMNetwork } from "../../domain";
+import { DirectSignDoc } from "@cosmos-kit/core";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -68,6 +71,14 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const isConnected = _isConnected && !!address && !!connector && !!network;
+
+  const trackEvent = useTrackEvent();
+
+  useEffect(() => {
+    if (!isConnected) return;
+
+    trackEvent("connectedWallet", { address, network });
+  }, [address, isConnected, network, trackEvent]);
 
   /**
    * Network missmatch, disconnect
@@ -146,7 +157,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               cw.client.signDirect!(
                 cw.chainId,
                 cw.address!,
-                SignDoc.decode(fromHex(tx))
+                SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
               )
             )
               .mapLeft((e) => {

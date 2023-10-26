@@ -33,6 +33,7 @@ export type SelectModalProps = PropsWithChildren<
     inputPlaceholder?: string;
     trigger: ReactNode;
     onClose?: () => void;
+    onOpen?: () => void;
     searchValue?: string;
     forceOpen?: boolean;
     isLoading?: boolean;
@@ -73,6 +74,7 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
       searchValue,
       inputPlaceholder,
       onClose,
+      onOpen,
       forceOpen,
       isLoading,
       errorMessage,
@@ -91,12 +93,15 @@ export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
     );
 
     const onCloseRef = useSavedRef(onClose);
+    const onOpenRef = useSavedRef(onOpen);
 
     useEffect(() => {
       if (!open) {
         onCloseRef.current?.();
+      } else {
+        onOpenRef.current?.();
       }
-    }, [onCloseRef, open]);
+    }, [onCloseRef, onOpenRef, open]);
 
     const rootElement = useRootElement();
 

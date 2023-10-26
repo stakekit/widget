@@ -3,8 +3,11 @@ import { importValidator } from "../../common/import-validator";
 import { useStakeState } from "../../state/stake";
 import { StepsPage } from "./common.page";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
 
 export const StakeStepsPage = () => {
+  useTrackPage("stakingSteps");
+
   const { selectedStake, stakeSession, selectedValidator } = useStakeState();
 
   const { address, network } = useSKWallet();

@@ -14,6 +14,7 @@ import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../state/details-context";
 import { SelectTokenListItem } from "./select-token-list-item";
 import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 
 export const SelectToken = () => {
   const {
@@ -24,6 +25,8 @@ export const SelectToken = () => {
     onTokenSearch,
     tokenSearch,
   } = useDetailsContext();
+
+  const trackEvent = useTrackEvent();
 
   const { t } = useTranslation();
 
@@ -49,6 +52,7 @@ export const SelectToken = () => {
       onSearch={onTokenSearch}
       searchValue={tokenSearch}
       onClose={onSelectOpportunityClose}
+      onOpen={() => trackEvent("selectTokenModalOpened")}
       trigger={
         <Trigger asChild>
           <Box

@@ -17,6 +17,7 @@ import { Text } from "../components";
 const overrides: RecursivePartial<Theme> = {
   colors: {
     modalBackground: vars.color.background,
+    profileForeground: vars.color.background,
   },
   radii: {
     actionButton: vars.borderRadius["2xl"],

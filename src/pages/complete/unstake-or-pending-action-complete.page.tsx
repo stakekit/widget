@@ -8,6 +8,7 @@ import { Maybe } from "purify-ts";
 import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useYieldType } from "../../hooks/use-yield-type";
 import { useProviderDetails } from "../../hooks/use-provider-details";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
 
 export const UnstakeOrPendingActionCompletePage = () => {
   const { unstake, pendingActionSession, pendingAction } =
@@ -15,6 +16,10 @@ export const UnstakeOrPendingActionCompletePage = () => {
 
   const pendingActionMatch = useMatch(
     "pending-action/:integrationId/:defaultOrValidatorId/complete"
+  );
+
+  useTrackPage(
+    pendingActionMatch ? "pendingActionCompelete" : "unstakeCompelete"
   );
 
   const integrationId = useParams<{ integrationId: string }>().integrationId!;
