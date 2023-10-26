@@ -373,7 +373,7 @@ export const PositionDetails = () => {
                               <Text
                                 variant={{
                                   weight: "semibold",
-                                  type: "white",
+                                  type: "regular",
                                 }}
                               >
                                 {t("shared.max")}
