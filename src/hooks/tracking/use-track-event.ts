@@ -1,7 +1,3 @@
 import { useTracking } from "../../providers/tracking";
 
-export const useTrackEvent = () => {
-  const { trackEvent } = useTracking();
-
-  return trackEvent;
-};
+export const useTrackEvent = () => useTracking().trackEvent;

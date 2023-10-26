@@ -13,14 +13,16 @@ import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
 
 export const Providers = ({ children }: PropsWithChildren) => {
-  APIManager.setApiKey(useSettings().apiKey);
+  const { apiKey, tracking } = useSettings();
+
+  APIManager.setApiKey(apiKey);
 
   return (
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <StakeKitQueryProvider>
           <WagmiProvider>
-            <TrackingContextProvider>
+            <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
                 <RainbowProvider>
                   <MemoryRouter>

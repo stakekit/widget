@@ -5,7 +5,7 @@ import {
   useContext,
   useMemo,
 } from "react";
-import { useSettings } from "../settings";
+import { SettingsContextType } from "../settings";
 
 const trackPageMap = {
   earn: "Earn",
@@ -64,13 +64,14 @@ type TrackingContextType = {
   trackPageView: (page: TrackPageKey, properties?: Properties) => void;
 };
 
-const TrackingContext = createContext<TrackingContextType | undefined>(
+export const TrackingContext = createContext<TrackingContextType | undefined>(
   undefined
 );
 
-export const TrackingContextProvider = ({ children }: PropsWithChildren) => {
-  const { tracking } = useSettings();
-
+export const TrackingContextProvider = ({
+  children,
+  tracking,
+}: PropsWithChildren<{ tracking: SettingsContextType["tracking"] }>) => {
   const trackEvent = useCallback<TrackingContextType["trackEvent"]>(
     (event, props) =>
       tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : [])),
