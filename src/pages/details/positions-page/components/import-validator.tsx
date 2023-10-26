@@ -22,6 +22,7 @@ import { ImageFallback } from "../../../../components/atoms/image-fallback";
 import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
 import { useRef, useState } from "react";
 import { VirtualList } from "../../../../components/atoms/virtual-list";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const ImportValidator = ({
   foundValidatorsData,
@@ -48,6 +49,8 @@ export const ImportValidator = ({
   const modalRef = useRef<{ close: () => void }>(null);
   const [searchValue, setSearchValue] = useState("");
 
+  const trackEvent = useTrackEvent();
+
   return (
     <SelectModal
       title={t("positions.import_validator_modal_title")}
@@ -56,6 +59,7 @@ export const ImportValidator = ({
         setSearchValue(val);
         onValidatorAddressOrNameChange(val);
       }}
+      onOpen={() => trackEvent("importValidatorModalOpened")}
       errorMessage={errorMessage}
       isLoading={isLoading}
       onClose={() => {

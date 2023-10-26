@@ -147,5 +147,6 @@ export const useUnstakeOrPendingActionReview = () => {
     onClick,
     fee,
     rewardTokenDetailsProps,
+    pendingActionMatch,
   };
 };

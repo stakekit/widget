@@ -20,6 +20,7 @@ import { pressAnimation } from "../../components/atoms/button/styles.css";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { PositionBalances } from "./components/position-balances";
 import { Maybe } from "purify-ts";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
 
 export const PositionDetails = () => {
   const positionDetails = usePositionDetails();
@@ -46,6 +47,10 @@ export const PositionDetails = () => {
     providerDetails,
     liquidTokensToNativeConversion,
   } = positionDetails;
+
+  useTrackPage("positionDetails", {
+    yield: integrationData.map((i) => i.metadata.name).extract(),
+  });
 
   const { t } = useTranslation();
 

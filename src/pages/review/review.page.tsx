@@ -9,8 +9,14 @@ import { RewardTokenDetails } from "../../components/molecules/reward-token-deta
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { HelpModal } from "../../components/molecules/help-modal";
 import { Maybe } from "purify-ts";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
 export const ReviewPage = () => {
+  useTrackPage("stakeReview");
+
+  const trackEvent = useTrackEvent();
+
   const {
     amount,
     fee,
@@ -136,6 +142,7 @@ export const ReviewPage = () => {
                 // eslint-disable-next-line jsx-a11y/anchor-has-content
                 <a
                   target="_blank"
+                  onClick={() => trackEvent("termsClicked")}
                   href="https://docs.stakek.it/docs/terms-of-use"
                   className={pointer}
                   rel="noreferrer"

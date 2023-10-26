@@ -17,6 +17,7 @@ import { useGeoBlock } from "../../../hooks/use-geo-block";
 import { ReactNode } from "react";
 import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 
 type ModalType =
   | { type: "fees" }
@@ -226,11 +227,14 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     }
   };
 
+  const trackEvent = useTrackEvent();
+
   const { description, image, title, link, button } = getContent(modal);
 
   return (
     <SelectModal
       forceOpen={modal.type === "geoBlock"}
+      onOpen={() => trackEvent("helpModalOpened", { modal: title })}
       trigger={
         <Trigger asChild={!!customTrigger}>
           {customTrigger ?? (

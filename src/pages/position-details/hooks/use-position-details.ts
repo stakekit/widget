@@ -35,10 +35,13 @@ import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useProviderDetails } from "../../../hooks/use-provider-details";
 import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
   const dispatch = useUnstakeOrPendingActionDispatch();
+
+  const trackEvent = useTrackEvent();
 
   const params = useParams<{
     integrationId: string;
@@ -235,6 +238,10 @@ export const usePositionDetails = () => {
     .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
 
   const onMaxClick = () => {
+    trackEvent("positionDetailsPageMaxClicked", {
+      yieldId: integrationData.map((v) => v.id).extract(),
+    });
+
     Maybe.fromRecord({ stakedOrLiquidBalance, integrationData }).ifJust(
       (val) => {
         dispatch({
@@ -292,6 +299,14 @@ export const usePositionDetails = () => {
     !unstakeAvailable;
 
   const onUnstakeClick = () => {
+    trackEvent("unstakeClicked", {
+      yieldId: integrationData.map((v) => v.id).extract(),
+      amount: unstake
+        .chain((v) => v.amount)
+        .map((v) => v.toString())
+        .extract(),
+    });
+
     onStakeExit
       .mutateAsync({ stakeRequestDto: stakeExitRequestDto })
       .then(() =>
@@ -311,6 +326,11 @@ export const usePositionDetails = () => {
     pendingActionDto: PendingActionDto;
     opportunityBalance: YieldBalanceDto;
   }) => {
+    trackEvent("pendingActionClicked", {
+      yieldId: integrationData.map((v) => v.id).extract(),
+      type: pendingActionDto.type,
+    });
+
     integrationData
       .toEither(new Error("missing integration data"))
       .chain((d) =>

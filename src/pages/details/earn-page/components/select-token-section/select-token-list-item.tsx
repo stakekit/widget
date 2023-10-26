@@ -10,6 +10,7 @@ import { formatNumber } from "../../../../../utils";
 import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
 import BigNumber from "bignumber.js";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 
 export const SelectTokenListItem = memo(
   ({
@@ -30,6 +31,13 @@ export const SelectTokenListItem = memo(
       [amount]
     );
 
+    const trackEvent = useTrackEvent();
+
+    const onItemClick = (tb: TokenBalanceScanResponseDto) => {
+      trackEvent("tokenSelected", { token: tb.token.symbol });
+      onTokenBalanceSelect(item);
+    };
+
     return (
       <SelectModalItemContainer>
         <SelectModalItem
@@ -38,7 +46,7 @@ export const SelectTokenListItem = memo(
               ? { type: "enabled", hover: "enabled" }
               : { type: "disabled", hover: "enabled" }
           }
-          onItemClick={() => onTokenBalanceSelect(item)}
+          onItemClick={() => onItemClick(item)}
         >
           <TokenIcon token={item.token} />
 

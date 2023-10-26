@@ -20,17 +20,18 @@ export const useSteps = ({
 
   const [machine, send] = useStepsMachine();
 
-  const id = session.map((val) => val.id).extractNullable();
+  const sessionId = session.map((val) => val.id).extractNullable();
+  const yieldId = session.map((val) => val.integrationId).extractNullable();
 
   /**
    *
    * @summary Start sign + check tx on mount
    */
   useEffect(() => {
-    if (!id) return;
+    if (!sessionId || !yieldId) return;
 
-    send({ type: "START", id });
-  }, [id, send]);
+    send({ type: "START", sessionId, yieldId });
+  }, [sessionId, send, yieldId]);
 
   useEffect(() => {
     if (machine.event.type === "SIGN_SUCCESS") {
@@ -79,9 +80,9 @@ export const useSteps = ({
       isLoading: machine.value === "signLoading",
       isError: machine.value === "signError",
       retry: () => {
-        if (machine.value !== "signError" || !id) return;
+        if (machine.value !== "signError" || !sessionId || !yieldId) return;
 
-        send({ type: "SIGN_RETRY", id });
+        send({ type: "SIGN_RETRY", sessionId, yieldId });
       },
     },
     broadcast: {

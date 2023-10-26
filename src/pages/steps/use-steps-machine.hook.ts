@@ -24,6 +24,7 @@ import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-ava
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -35,10 +36,13 @@ export const useStepsMachine = () => {
   const invalidateBalances = useInvalidateYieldBalances();
   const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
 
+  const trackEvent = useTrackEvent();
+
   return useStateMachine({
     initial: "idle",
     schema: {
       context: tt<{
+        yieldId: string | null;
         sessionId: string | null;
         signError:
           | Error
@@ -48,15 +52,23 @@ export const useStepsMachine = () => {
           | null;
         txCheckError: GetStakeSessionError | null;
         txCheckTimeoutId: number | null;
-        txs: { signedTx: string; broadcasted: boolean; txId: string }[] | null;
+        txs:
+          | {
+              signedTx: string;
+              broadcasted: boolean;
+              network: string;
+              txId: string;
+            }[]
+          | null;
         urls: string[];
       }>(),
       events: {
-        START: tt<{ id: string }>(),
-        SIGN_RETRY: tt<{ id: string }>(),
+        START: tt<{ sessionId: string; yieldId: string }>(),
+        SIGN_RETRY: tt<{ sessionId: string; yieldId: string }>(),
       },
     },
     context: {
+      yieldId: null,
       sessionId: null,
       signError: null,
       txCheckError: null,
@@ -70,12 +82,12 @@ export const useStepsMachine = () => {
       },
       signLoading: {
         on: { SIGN_SUCCESS: "broadcastLoading", SIGN_ERROR: "signError" },
-        effect: ({ send, setContext, event }) => {
-          const id = event.id;
+        effect: ({ context, send, setContext, event }) => {
+          const sessionId = event.sessionId;
 
-          setContext((ctx) => ({ ...ctx, sessionId: id }));
+          setContext((ctx) => ({ ...ctx, sessionId, yieldId: event.yieldId }));
 
-          withRequestErrorRetry({ fn: () => actionGetAction(id) })
+          withRequestErrorRetry({ fn: () => actionGetAction(sessionId) })
             .mapLeft(() => new GetStakeSessionError())
             .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
             .chain((val) =>
@@ -111,7 +123,19 @@ export const useStepsMachine = () => {
                         return signTransaction({
                           tx: tx.unsignedTransaction,
                           index: i,
-                        }).map((val) => ({ ...val, txId: tx.id }));
+                        })
+                          .map((val) => ({
+                            ...val,
+                            network: tx.network,
+                            txId: tx.id,
+                          }))
+                          .ifRight(() => {
+                            trackEvent("txSigned", {
+                              txId: tx.id,
+                              network: tx.network,
+                              yieldId: context.yieldId,
+                            });
+                          });
                       })
                   )
               )
@@ -149,7 +173,15 @@ export const useStepsMachine = () => {
                     return withRequestErrorRetry({
                       fn: () =>
                         transactionSubmitHash(tx.txId, { hash: tx.signedTx }),
-                    }).mapLeft(() => new SubmitHashError());
+                    })
+                      .mapLeft(() => new SubmitHashError())
+                      .ifRight(() => {
+                        trackEvent("txSubmitted", {
+                          txId: tx.txId,
+                          network: tx.network,
+                          yieldId: context.yieldId,
+                        });
+                      });
                   } else {
                     return withRequestErrorRetry({
                       fn: async () => {
@@ -157,7 +189,15 @@ export const useStepsMachine = () => {
                           signedTransaction: tx.signedTx,
                         });
                       },
-                    }).mapLeft(() => new SubmitError());
+                    })
+                      .mapLeft(() => new SubmitError())
+                      .ifRight(() => {
+                        trackEvent("txSubmitted", {
+                          txId: tx.txId,
+                          network: tx.network,
+                          yieldId: context.yieldId,
+                        });
+                      });
                   }
                 })
               )
@@ -211,7 +251,12 @@ export const useStepsMachine = () => {
                         .chain((result) =>
                           EitherAsync.liftEither(
                             isTxError(result)
-                              ? Left(new SignError())
+                              ? Left(
+                                  new SignError({
+                                    txId: tx.id,
+                                    network: tx.network,
+                                  })
+                                )
                               : Right({
                                   result,
                                   isConfirmed: result.status === "CONFIRMED",
@@ -225,6 +270,12 @@ export const useStepsMachine = () => {
             .caseOf({
               Left: (l) => {
                 console.log(l);
+                if (l instanceof SignError) {
+                  trackEvent("txNotConfirmed", {
+                    txId: l.txId,
+                    yieldId: context.yieldId,
+                  });
+                }
                 setContext((ctx) => ({ ...ctx, txCheckError: l }));
                 send("TX_CHECK_ERROR");
               },

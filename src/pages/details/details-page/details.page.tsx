@@ -5,8 +5,12 @@ import { Location, Outlet, useNavigate } from "react-router-dom";
 import { useLocationTransition } from "../../../providers/location-transition";
 import { useMemo, useState } from "react";
 import { usePositions } from "../positions-page/hooks/use-positions";
+import { checkHasPendingClaimRewards } from "../shared";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 
 export const Details = () => {
+  const trackEvent = useTrackEvent();
+
   const { location, transitionClassName, onAnimationEnd } =
     useLocationTransition();
 
@@ -14,9 +18,7 @@ export const Details = () => {
 
   const hasPendingRewards = useMemo(
     () =>
-      positionsData.data.some((p) =>
-        p.balances.some((b) => b.type === "rewards")
-      ),
+      positionsData.data.some((p) => checkHasPendingClaimRewards(p.balances)),
     [positionsData.data]
   );
 
@@ -32,6 +34,8 @@ export const Details = () => {
 
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
     if (selectedTab === selected) return;
+
+    trackEvent("positionsTabClicked", { selected });
 
     selected === "earn" ? navigate("/") : navigate("/positions");
   };

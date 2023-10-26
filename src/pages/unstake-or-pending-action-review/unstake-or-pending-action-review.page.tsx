@@ -8,6 +8,8 @@ import { Maybe } from "purify-ts";
 import { HelpModal } from "../../components/molecules/help-modal";
 import { feeStyles } from "../review/style.css";
 import { pointer } from "./styles.css";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {
@@ -17,7 +19,12 @@ export const UnstakeOrPendingActionReviewPage = () => {
     onClick,
     fee,
     rewardTokenDetailsProps,
+    pendingActionMatch,
   } = useUnstakeOrPendingActionReview();
+
+  const trackEvent = useTrackEvent();
+
+  useTrackPage(pendingActionMatch ? "pendingActionReview" : "unstakeReview");
 
   const { t } = useTranslation();
 
@@ -99,6 +106,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
                     // eslint-disable-next-line jsx-a11y/anchor-has-content
                     <a
                       target="_blank"
+                      onClick={() => trackEvent("termsClicked")}
                       href="https://docs.stakek.it/docs/terms-of-use"
                       className={pointer}
                       rel="noreferrer"

@@ -9,8 +9,11 @@ import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { FallbackContent } from "./components/fallback-content";
 import { useMemo } from "react";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 
 export const PositionsPage = () => {
+  useTrackPage("positions");
+
   const { positionsData, importValidators } = usePositions();
 
   const { isConnected } = useSKWallet();

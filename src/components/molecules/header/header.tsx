@@ -17,6 +17,7 @@ import { isLedgerDappBrowserProvider } from "../../../utils";
 import { useContext } from "react";
 import { useWagmiConfig } from "../../../providers/wagmi";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 
 const showDisconnect = isLedgerDappBrowserProvider();
 
@@ -32,13 +33,19 @@ export const Header = () => {
 
   const showBack = location.pathname !== "/";
 
+  const trackEvent = useTrackEvent();
+
   const onLeftIconPress = () => {
-    showBack ? navigate(-1) : console.log("Support click");
+    if (!showBack) return;
+
+    trackEvent("backClicked");
+    navigate(-1);
   };
 
   const logout = useLogout();
 
   const onXPress = () => {
+    trackEvent("widgetDisconnectClicked");
     if (isLedgerDappBrowserProvider()) return;
 
     logout();
@@ -99,7 +106,10 @@ export const Header = () => {
                         justifyContent="space-between"
                         alignItems="center"
                         className={container}
-                        onClick={openChainModal}
+                        onClick={() => {
+                          trackEvent("chainModalOpened");
+                          openChainModal();
+                        }}
                       >
                         {(() => {
                           if (chain.unsupported) {
@@ -108,7 +118,10 @@ export const Header = () => {
                                 px="2"
                                 py="2"
                                 as="button"
-                                onClick={openChainModal}
+                                onClick={() => {
+                                  trackEvent("chainModalOpened");
+                                  openChainModal();
+                                }}
                               >
                                 <Text variant={{ type: "danger" }}>
                                   {t("shared.unsupported_network")}
@@ -153,7 +166,10 @@ export const Header = () => {
                         justifyContent="space-between"
                         alignItems="center"
                         className={container}
-                        onClick={openAccountModal}
+                        onClick={() => {
+                          trackEvent("accountModalOpened");
+                          openAccountModal();
+                        }}
                       >
                         {(() => {
                           return (

@@ -1,5 +1,4 @@
 import { createVar, style } from "@vanilla-extract/css";
-import { atoms } from "../../../styles";
 
 export const logoContainer = style({
   position: "absolute",

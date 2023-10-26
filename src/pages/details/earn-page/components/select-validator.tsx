@@ -26,6 +26,7 @@ import { useDetailsContext } from "../state/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";
 import { GroupedVirtualList } from "../../../../components/atoms/virtual-list";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const SelectValidator = () => {
   const { t } = useTranslation();
@@ -118,6 +119,21 @@ export const SelectValidator = () => {
     [selectedStake, t, viewMore]
   );
 
+  const trackEvent = useTrackEvent();
+
+  const onViewMoreClick = () => {
+    trackEvent("selectValidatorViewMoreClicked");
+    setViewMore(true);
+  };
+
+  const onItemClick = (item: ValidatorDto) => {
+    trackEvent("validatorSelected", {
+      validatorName: item.name,
+      validatorAddress: item.address,
+    });
+    onValidatorSelect(item);
+  };
+
   return isLoading ? (
     <Box marginTop="2">
       <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
@@ -129,6 +145,7 @@ export const SelectValidator = () => {
           <SelectModal
             title={t("details.validator_search_title")}
             onClose={() => setViewMore(false)}
+            onOpen={() => trackEvent("selectValidatorModalOpened")}
             trigger={
               <Trigger
                 disabled={!val.selectedStake.validators.length}
@@ -240,7 +257,7 @@ export const SelectValidator = () => {
                         >
                           <Button
                             variant={{ color: "secondary", size: "small" }}
-                            onClick={() => setViewMore(true)}
+                            onClick={onViewMoreClick}
                           >
                             <Text>{t("details.validators_view_all")}</Text>
                           </Button>
@@ -254,9 +271,7 @@ export const SelectValidator = () => {
 
                     return (
                       <SelectModalItemContainer>
-                        <SelectModalItem
-                          onItemClick={() => onValidatorSelect(item)}
-                        >
+                        <SelectModalItem onItemClick={() => onItemClick(item)}>
                           <Image
                             containerProps={{ hw: "9" }}
                             imageProps={{ borderRadius: "full" }}

@@ -1,3 +1,4 @@
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { useProviderDetails } from "../../hooks/use-provider-details";
 import { useYieldType } from "../../hooks/use-yield-type";
 import { useStakeState } from "../../state/stake";
@@ -5,6 +6,8 @@ import { formatNumber } from "../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
+  useTrackPage("stakeCompelete");
+
   const { stakeAmount, selectedStake, selectedValidator } = useStakeState();
 
   const token = selectedStake.map((y) => y.token);

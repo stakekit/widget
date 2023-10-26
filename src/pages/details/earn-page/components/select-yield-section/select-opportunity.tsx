@@ -1,31 +1,30 @@
-import { List, Maybe } from "purify-ts";
 import {
   Box,
   CaretDownIcon,
   SelectModal,
-  SelectModalItem,
   SelectModalItemContainer,
   Text,
 } from "../../../../../components";
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { apyToPercentage } from "../../../../../utils";
 import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { selectItemText } from "../../styles.css";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { useDetailsContext } from "../../state/details-context";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 
 export const SelectOpportunity = () => {
   const {
     selectedStake,
     selectedStakeData,
     onSelectOpportunityClose,
-    onYieldSelect,
     onYieldSearch,
     stakeSearch,
   } = useDetailsContext();
+
+  const trackEvent = useTrackEvent();
 
   const { t } = useTranslation();
 
@@ -56,6 +55,7 @@ export const SelectOpportunity = () => {
       onSearch={onYieldSearch}
       searchValue={stakeSearch}
       onClose={onSelectOpportunityClose}
+      onOpen={() => trackEvent("selectYieldModalOpened")}
       trigger={
         <Trigger asChild>
           <Box
@@ -105,66 +105,7 @@ export const SelectOpportunity = () => {
                   <Text variant={{ weight: "bold" }}>{item}</Text>
                 </Box>
               ) : (
-                <SelectModalItem
-                  testId={`select-opportunity__item_${item.id}-${index}`}
-                  onItemClick={() => onYieldSelect(item.id)}
-                >
-                  <TokenIcon
-                    metadata={item.metadata}
-                    token={Maybe.fromNullable(item.metadata.rewardTokens)
-                      .chain((rt) => List.head(rt))
-                      .orDefault(item.token)}
-                  />
-
-                  <Box
-                    display="flex"
-                    flexDirection="column"
-                    flex={1}
-                    marginLeft="2"
-                    minWidth="0"
-                  >
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Box>
-                        <Text
-                          className={selectItemText}
-                          variant={{ weight: "bold" }}
-                        >
-                          {item.metadata.name}
-                        </Text>
-                      </Box>
-
-                      <Box>
-                        <Text>{apyToPercentage(item.apy)}%</Text>
-                      </Box>
-                    </Box>
-
-                    <Box display="flex" marginTop="1" flexWrap="wrap" gap="1">
-                      <Text variant={{ type: "muted" }}>
-                        {Maybe.fromNullable(item.metadata.rewardTokens)
-                          .map((rt) => rt.map((t) => t.symbol).join(", "))
-                          .orDefault(item.token.symbol)}
-                      </Text>
-
-                      {Maybe.fromNullable(item.metadata.rewardTokens)
-                        .map(() => (
-                          <Box
-                            background="background"
-                            borderRadius="2xl"
-                            px="2"
-                          >
-                            <Text variant={{ type: "muted" }}>
-                              {item.token.symbol}
-                            </Text>
-                          </Box>
-                        ))
-                        .extractNullable()}
-                    </Box>
-                  </Box>
-                </SelectModalItem>
+                <SelectOpportunityListItem index={index} item={item} />
               )}
             </SelectModalItemContainer>
           );
