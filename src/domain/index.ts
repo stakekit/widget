@@ -3,6 +3,7 @@ import { Prices, TokenString } from "./types";
 import { Token } from "@stakekit/common";
 import {
   ActionDto,
+  TokenDto,
   TransactionDto,
   TransactionStatusResponseDto,
 } from "@stakekit/api-hooks";
@@ -22,12 +23,15 @@ export const isCosmosChain = (chain: Chain) =>
 export const isEVMNetwork = (network: SupportedSKChains) =>
   supportedEVMChainsSet.has(network as SupportedEvmChain);
 
-export const tokenString = (token: Token): TokenString => {
+export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
 };
 
-export const equalTokens = (a: Token, b: Token): boolean => {
-  return tokenString(a) === tokenString(b);
+export const equalTokens = (
+  a: Token | TokenDto,
+  b: Token | TokenDto
+): boolean => {
+  return tokenString(a as TokenDto) === tokenString(b as TokenDto);
 };
 
 export const getTokenPriceInUSD = ({
@@ -36,13 +40,13 @@ export const getTokenPriceInUSD = ({
   prices,
   pricePerShare,
 }: {
-  token: Token;
+  token: Token | TokenDto;
   amount: string | BigNumber;
   pricePerShare: string | undefined;
   prices: Prices;
 }): BigNumber => {
   const amountBN = BigNumber(amount);
-  const ts = tokenString(token);
+  const ts = tokenString(token as TokenDto);
   const price = prices.get(ts)?.price ?? 0;
   const pricePerShareBN = BigNumber(pricePerShare ?? 1);
 
@@ -64,7 +68,7 @@ export const getMaxAmount = ({
   );
 };
 
-export const getBaseToken = (token: Token) => {
+export const getBaseToken = (token: Token | TokenDto) => {
   const { address, ...restToken } = token;
 
   return restToken as Token;

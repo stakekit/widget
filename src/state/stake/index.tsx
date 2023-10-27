@@ -23,6 +23,7 @@ import { useSKWallet } from "../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 import { getInitParams } from "../../common/get-init-params";
+import { equalTokens } from "../../domain";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -44,31 +45,45 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
       case "tokenBalance/select": {
-        const selectedStakeId = Maybe.fromPredicate(
-          (val) => !!(val.network && val.token && val.yieldId),
-          initParams
-        )
-          .chain((val) =>
-            List.find(
-              (availableYield) =>
-                action.data.tokenBalance.token.network === val.network &&
-                val.yieldId === availableYield,
-              action.data.tokenBalance.availableYields
+        const tokenNotChanged = state.selectedTokenBalance
+          .map((tb) => equalTokens(tb.token, action.data.tokenBalance.token))
+          .orDefault(false);
+
+        const selectedStakeId = tokenNotChanged
+          ? state.selectedStakeId
+          : Maybe.fromPredicate(
+              (val) => !!(val.network && val.token && val.yieldId),
+              initParams
             )
-          )
-          .altLazy(() => List.head(action.data.tokenBalance.availableYields));
+              .chain((val) =>
+                List.find(
+                  (availableYield) =>
+                    action.data.tokenBalance.token.network === val.network &&
+                    val.yieldId === availableYield,
+                  action.data.tokenBalance.availableYields
+                )
+              )
+              .altLazy(() =>
+                List.head(action.data.tokenBalance.availableYields)
+              );
+
+        const stakeAmount = tokenNotChanged
+          ? state.stakeAmount
+          : action.data.initYield
+              .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+              .chain((val) => Maybe.fromPredicate((v) => v >= 0, val))
+              .map((val) => new BigNumber(val))
+              .altLazy(() => Maybe.of(new BigNumber(0)));
+
+        const selectedValidator = tokenNotChanged
+          ? state.selectedValidator
+          : action.data.initYield.chain((val) => List.head(val.validators));
 
         return {
           selectedTokenBalance: Maybe.of(action.data.tokenBalance),
           selectedStakeId,
-          stakeAmount: action.data.initYield
-            .chainNullable((val) => val.args.enter.args?.amount?.minimum)
-            .chain((val) => Maybe.fromPredicate((v) => v >= 0, val))
-            .map((val) => new BigNumber(val))
-            .alt(Maybe.of(new BigNumber(0))),
-          selectedValidator: action.data.initYield.chain((val) =>
-            List.head(val.validators)
-          ),
+          stakeAmount,
+          selectedValidator,
         };
       }
       case "yield/select":
@@ -190,7 +205,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       dispatch({
         type: "tokenBalance/select",
         data: {
-          tokenBalance: tokenBalance,
+          tokenBalance,
           initYield: Maybe.fromPredicate(
             (val) => !!(val.network && val.yieldId),
             initParams

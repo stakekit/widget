@@ -20,7 +20,6 @@ import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useStakeDispatch, useStakeState } from "../../../../state/stake";
 import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-available-amount";
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
-import { Token } from "@stakekit/common";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useSelectedStakePrice } from "../../../../hooks";
@@ -101,7 +100,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       .map((val) =>
         getTokenPriceInUSD({
           amount: val.stakeAmount,
-          token: val.selectedTokenBalance.token as Token,
+          token: val.selectedTokenBalance.token,
           prices: val.prices,
           pricePerShare: undefined,
         })
@@ -148,13 +147,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           }))
         )
         .map(({ defTb, tbs }) => {
-          const tbsSet = new Set(
-            tbs.map((tb) => tokenString(tb.token as Token))
-          );
+          const tbsSet = new Set(tbs.map((tb) => tokenString(tb.token)));
 
-          return defTb.filter(
-            (t) => !tbsSet.has(tokenString(t.token as Token))
-          );
+          return defTb.filter((t) => !tbsSet.has(tokenString(t.token)));
         })
         .alt(Maybe.of([])),
     [defaultTokens, isNotConnectedOrReconnecting, tokenBalancesScan.data]
