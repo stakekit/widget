@@ -14,12 +14,13 @@ import {
   SupportedSKChains,
 } from "../../domain/types/chains";
 import { getWagmiConfig } from "../wagmi";
-import { EitherAsync, List } from "purify-ts";
+import { EitherAsync, List, Maybe } from "purify-ts";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
 import { GetEitherAsyncRight } from "../../types";
+import { getInitParams } from "../../common/get-init-params";
 
 export class LedgerLiveConnector extends Connector {
   readonly id = "ledgerLive";
@@ -40,10 +41,6 @@ export class LedgerLiveConnector extends Connector {
   > | null = null;
 
   #currentChain: ChainItem | null = null;
-
-  #ledgerCurrencies: GetEitherAsyncRight<
-    ReturnType<typeof getLedgerCurrencies>
-  > | null = null;
 
   constructor() {
     super({ options: {} });
@@ -86,8 +83,6 @@ export class LedgerLiveConnector extends Connector {
     ).extract();
 
     assertNotError(ledgerCurrencies);
-
-    this.#ledgerCurrencies = ledgerCurrencies;
 
     const accounts = (
       await EitherAsync(() => this.getWalletApiClient().account.list()).mapLeft(
@@ -153,7 +148,11 @@ export class LedgerLiveConnector extends Connector {
       [] as { account: Account; chainItem: ChainItem }[]
     );
 
-    const accountWithChain = List.head(accountsWithChain)
+    const accountWithChain = Maybe.fromNullable(getInitParams().network)
+      .chain((val) =>
+        List.find((v) => v.chainItem.skChainName === val, accountsWithChain)
+      )
+      .altLazy(() => List.head(accountsWithChain))
       .toEither(new Error("Account not found"))
       .extract();
 

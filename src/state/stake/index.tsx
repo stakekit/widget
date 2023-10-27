@@ -22,6 +22,7 @@ import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
+import { getInitParams } from "../../common/get-init-params";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -37,13 +38,25 @@ const getInitialState = (): State => ({
   stakeAmount: Maybe.of(new BigNumber(0)),
 });
 
+const initParams = getInitParams();
+
 export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
       case "tokenBalance/select": {
-        const selectedStakeId = List.head(
-          action.data.tokenBalance.availableYields
-        );
+        const selectedStakeId = Maybe.fromPredicate(
+          (val) => !!(val.network && val.token && val.yieldId),
+          initParams
+        )
+          .chain((val) =>
+            List.find(
+              (availableYield) =>
+                action.data.tokenBalance.token.network === val.network &&
+                val.yieldId === availableYield,
+              action.data.tokenBalance.availableYields
+            )
+          )
+          .altLazy(() => List.head(action.data.tokenBalance.availableYields));
 
         return {
           selectedTokenBalance: Maybe.of(action.data.tokenBalance),
@@ -145,10 +158,22 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
 
   const initialTokenBalanceToSet = useMemo(
     () =>
-      Maybe.fromNullable(tokenBalances.data).chain((val) =>
-        List.find((v) => !!v.availableYields.length, val)
+      Maybe.fromNullable(tokenBalances.data).chain((tb) =>
+        Maybe.fromPredicate((val) => !!(val.network && val.token), initParams)
+          .chain((val) =>
+            List.find(
+              (t) =>
+                t.token.symbol === val.token && t.token.network === val.network,
+              tb
+            ).altLazy(() =>
+              Maybe.fromNullable(defaultTokens.data).chain((dt) =>
+                List.find((t) => t.token.symbol === val.token, dt)
+              )
+            )
+          )
+          .altLazy(() => List.find((v) => !!v.availableYields.length, tb))
       ),
-    [tokenBalances.data]
+    [defaultTokens.data, tokenBalances.data]
   );
 
   /**
@@ -166,13 +191,25 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
         type: "tokenBalance/select",
         data: {
           tokenBalance: tokenBalance,
-          initYield: List.head(tokenBalance.availableYields).chainNullable(
-            (yId) =>
+          initYield: Maybe.fromPredicate(
+            (val) => !!(val.network && val.yieldId),
+            initParams
+          )
+            .chain((val) =>
+              List.find(
+                (y) =>
+                  tokenBalance.token.network === val.network &&
+                  val.yieldId === y,
+                tokenBalance.availableYields
+              )
+            )
+            .altLazy(() => List.head(tokenBalance.availableYields))
+            .chainNullable((yId) =>
               getYieldOpportunityFromCache({
                 integrationId: yId,
                 isLedgerLive,
               })
-          ),
+            ),
         },
       });
     },
@@ -208,9 +245,15 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   useLayoutEffect(() => {
     Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) =>
       selectedValidator.ifNothing(() =>
-        List.head(yo.validators).ifJust((val) =>
-          dispatch({ type: "validator/select", data: val })
-        )
+        Maybe.fromNullable(initParams.validator)
+          .chain((initV) =>
+            List.find(
+              (val) => val.name === initV || val.address === initV,
+              yo.validators
+            )
+          )
+          .altLazy(() => List.head(yo.validators))
+          .ifJust((val) => dispatch({ type: "validator/select", data: val }))
       )
     );
   }, [selectedValidator, yieldOpportunity.data]);

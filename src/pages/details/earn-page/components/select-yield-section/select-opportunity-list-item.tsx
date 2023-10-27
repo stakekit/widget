@@ -19,7 +19,7 @@ export const SelectOpportunityListItem = ({
   const trackEvent = useTrackEvent();
 
   const onItemClick = () => {
-    trackEvent("yieldSelected", { yield: item.metadata.name });
+    trackEvent("yieldSelected", { yield: item.id });
     onYieldSelect(item.id);
   };
 

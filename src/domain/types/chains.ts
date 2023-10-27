@@ -89,7 +89,7 @@ export type MiscChainsMap = {
 
 export const isSupportedChain = (
   chain: string
-): chain is SupportedEvmChain | SupportedCosmosChains => {
+): chain is SupportedEvmChain | SupportedCosmosChains | SupportedMiscChains => {
   return (
     supportedCosmosChainsSet.has(chain as SupportedCosmosChains) ||
     supportedEVMChainsSet.has(chain as SupportedEvmChain) ||
