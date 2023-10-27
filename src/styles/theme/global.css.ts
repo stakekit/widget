@@ -98,3 +98,11 @@ globalStyle(
     overflow: "scroll",
   }
 );
+
+globalStyle(
+  '[aria-labelledby="rk_chain_modal_title"] > [role="document"] > div > div > div::-webkit-scrollbar',
+  {
+    width: 0,
+    height: 0,
+  }
+);
