@@ -3,7 +3,6 @@ import { ComponentProps, useMemo } from "react";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
-import { Token } from "@stakekit/common";
 import { tokenToTokenDto } from "../../utils/mappers";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../utils";
@@ -75,7 +74,7 @@ export const useUnstakeOrPendingActionReview = () => {
   const pricesState = usePrices({
     currency: config.currency,
     tokenList: integrationData.mapOrDefault(
-      (d) => [d.token, tokenToTokenDto(getBaseToken(d.token as Token))],
+      (d) => [d.token, tokenToTokenDto(getBaseToken(d.token))],
       []
     ),
   });
@@ -90,7 +89,7 @@ export const useUnstakeOrPendingActionReview = () => {
         getTokenPriceInUSD({
           amount: val.txGas.toString(),
           prices: val.prices,
-          token: getBaseToken(val.integrationData.token as Token),
+          token: getBaseToken(val.integrationData.token),
           pricePerShare: undefined,
         })
       ),

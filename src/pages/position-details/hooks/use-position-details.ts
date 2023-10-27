@@ -16,7 +16,6 @@ import {
   getMaxAmount,
   getTokenPriceInUSD,
 } from "../../../domain";
-import { Token } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import { usePositionData } from "../../../hooks/use-position-data";
@@ -96,7 +95,7 @@ export const usePositionDetails = () => {
             currency: config.currency,
             tokenList: val.flatMap((v, i) =>
               i === 0
-                ? [tokenToTokenDto(getBaseToken(v.token as Token)), v.token]
+                ? [tokenToTokenDto(getBaseToken(v.token)), v.token]
                 : [v.token]
             ),
           }))
@@ -230,7 +229,7 @@ export const usePositionDetails = () => {
     .map((val) =>
       getTokenPriceInUSD({
         amount: val.sa,
-        token: val.sb.token as Token,
+        token: val.sb.token,
         prices: val.prices,
         pricePerShare: val.sb.pricePerShare,
       })

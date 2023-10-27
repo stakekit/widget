@@ -1,3 +1,3 @@
-import { Token } from "@stakekit/common";
+import { TokenDto } from "@stakekit/api-hooks";
 
-export type TokenString = `${Token["network"]}-${Token["address"]}`;
+export type TokenString = `${TokenDto["network"]}-${TokenDto["address"]}`;

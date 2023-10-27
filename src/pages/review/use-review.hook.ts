@@ -4,7 +4,6 @@ import { useSelectedStakePrice } from "../../hooks";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../utils";
 import { useMemo } from "react";
-import { Token } from "@stakekit/common";
 import { useEstimatedRewards } from "../../hooks/use-estimated-rewards";
 import { useYieldType } from "../../hooks/use-yield-type";
 import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
@@ -53,7 +52,7 @@ export const useReview = () => {
           getTokenPriceInUSD({
             amount: gas.toString(),
             prices,
-            token: getBaseToken(ss.token as Token),
+            token: getBaseToken(ss.token),
             pricePerShare: undefined,
           })
         ),

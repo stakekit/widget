@@ -3,7 +3,6 @@ import { config } from "../../config";
 import { usePrices } from "./use-prices";
 import { PriceRequestDto } from "@stakekit/api-hooks";
 import { getBaseToken } from "../../domain";
-import { Token } from "@stakekit/common";
 import { tokenToTokenDto } from "../../utils/mappers";
 import { State } from "../../state/stake/types";
 
@@ -17,10 +16,7 @@ export const useSelectedStakePrice = ({
       .map((stb) => {
         return {
           currency: config.currency,
-          tokenList: [
-            stb.token,
-            tokenToTokenDto(getBaseToken(stb.token as Token)),
-          ],
+          tokenList: [stb.token, tokenToTokenDto(getBaseToken(stb.token))],
         };
       })
       .extractNullable();
