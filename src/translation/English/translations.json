@@ -131,7 +131,9 @@
     "submitted": "Submitted",
     "pending": "Pending",
     "completed": "Completed",
-    "failed": "Failed"
+    "failed": "Failed",
+    "tx_of_n": "Transaction {{count}} / {{total}} - {{type}}",
+    "skipped": "Skipped"
   },
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",

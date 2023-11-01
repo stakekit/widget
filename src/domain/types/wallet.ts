@@ -6,7 +6,7 @@ import { EitherAsync } from "purify-ts";
 import {
   SendTransactionError,
   TransactionDecodeError,
-} from "../../pages/steps/errors";
+} from "../../pages/steps/hooks/errors";
 import { GetNetworkResult } from "@wagmi/core";
 import { SupportedSKChains } from "./chains";
 import { Account } from "@ledgerhq/wallet-api-client";

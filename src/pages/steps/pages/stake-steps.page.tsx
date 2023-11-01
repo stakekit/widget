@@ -1,9 +1,9 @@
 import { Maybe } from "purify-ts";
-import { importValidator } from "../../common/import-validator";
-import { useStakeState } from "../../state/stake";
+import { importValidator } from "../../../common/import-validator";
+import { useStakeState } from "../../../state/stake";
 import { StepsPage } from "./common.page";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
@@ -12,7 +12,7 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const onSignSuccess = () => {
+  const onDone = () => {
     Maybe.fromRecord({
       selectedStake,
       selectedValidator,
@@ -30,5 +30,5 @@ export const StakeStepsPage = () => {
     });
   };
 
-  return <StepsPage session={stakeSession} onSignSuccess={onSignSuccess} />;
+  return <StepsPage session={stakeSession} onDone={onDone} />;
 };
