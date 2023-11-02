@@ -20,6 +20,7 @@ import {
 import cls from "clsx";
 import { Maybe } from "purify-ts";
 import { ActionDto } from "@stakekit/api-hooks";
+import { removeUnderscores } from "../../../utils/text";
 
 export const StepsPage = ({
   session,
@@ -73,7 +74,7 @@ export const StepsPage = ({
                         {t("steps.tx_of_n", {
                           count: i + 1,
                           total: txStates.length,
-                          type: txState.tx.type,
+                          type: removeUnderscores(txState.tx.type),
                         })}
                       </Text>
                     </Box>
