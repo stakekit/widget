@@ -107,7 +107,9 @@ export class LedgerLiveConnector extends Connector {
     this.#filteredSkSupportedChainsValues =
       filteredSupportedLedgerFamiliesWithCurrency;
 
-    const wagmiConfig = (await getWagmiConfig()).extract();
+    const wagmiConfig = (
+      await getWagmiConfig({ forceWalletConnectOnly: false })
+    ).extract();
 
     assertNotError(wagmiConfig);
 

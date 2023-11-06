@@ -9,16 +9,11 @@ import {
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
-import { Chain } from "wagmi";
-import { getConfig } from "../providers/cosmos/config";
 import {
   SupportedEvmChain,
   SupportedSKChains,
   supportedEVMChainsSet,
 } from "./types/chains";
-
-export const isCosmosChain = (chain: Chain) =>
-  getConfig().map((v) => v.cosmosWagmiChains.some((c) => c.id === chain.id));
 
 export const isEVMNetwork = (network: SupportedSKChains) =>
   supportedEVMChainsSet.has(network as SupportedEvmChain);

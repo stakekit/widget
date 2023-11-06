@@ -9,11 +9,12 @@ import { queryClient } from "../../services/query-client";
 import { config } from "../../config";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
+import { useSettings } from "../settings";
 
-const queryFn = async () =>
-  getEvmConfig()
+const queryFn = async (...opts: Parameters<typeof getEvmConfig>) =>
+  getEvmConfig(...opts)
     .chain((val) =>
-      getCosmosConfig().map((cosmosConfig) => ({
+      getCosmosConfig(...opts).map((cosmosConfig) => ({
         evmConfig: val,
         cosmosConfig,
       }))
@@ -54,15 +55,28 @@ const queryFn = async () =>
 const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;
 
-export const getWagmiConfig = () =>
+export const getWagmiConfig = (...opts: Parameters<typeof queryFn>) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({ staleTime, queryKey, queryFn })
+    queryClient.fetchQuery({
+      staleTime,
+      queryKey,
+      queryFn: () => queryFn(...opts),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get wagmi config");
   });
 
-export const useWagmiConfig = () => useQuery({ staleTime, queryKey, queryFn });
+export const useWagmiConfig = () => {
+  const { forceWalletConnectOnly } = useSettings();
+
+  return useQuery({
+    staleTime,
+    queryKey,
+    queryFn: () =>
+      queryFn({ forceWalletConnectOnly: !!forceWalletConnectOnly }),
+  });
+};
 
 export const defaultConfig = (() => {
   const { publicClient, webSocketPublicClient } = configureChains(
