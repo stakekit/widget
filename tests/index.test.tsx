@@ -24,7 +24,7 @@ describe("<SKApp />", () => {
 
   it("Should render initial page correctly", () => {
     const { queryByText, queryByTestId, unmount } = render(
-      <SKApp apiKey={config.apiKey} />
+      <SKApp apiKey={config.env.apiKey} />
     );
 
     expect(queryByText("StakeKit")).toBeInTheDocument();
@@ -37,7 +37,7 @@ describe("<SKApp />", () => {
 
   it("Selecting yield opportunity works as expected", async () => {
     const { getByTestId, getByText, unmount } = render(
-      <SKApp apiKey={config.apiKey} />
+      <SKApp apiKey={config.env.apiKey} />
     );
 
     await waitFor(() => getByTestId("select-opportunity")?.click());
@@ -119,7 +119,7 @@ describe("<SKApp />", () => {
     };
 
     const { queryByText, getByTestId, getByText } = render(
-      <SKApp apiKey={config.apiKey} />,
+      <SKApp apiKey={config.env.apiKey} />,
       {
         wrapperProps: {
           wagmiConfig: getWagmiConfig({

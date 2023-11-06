@@ -10,7 +10,7 @@ import {
 } from "@cosmos-kit/core";
 import { EthereumProvider } from "eip1193-provider";
 import { createWalletClient, custom } from "viem";
-import { Chain, Wallet } from "@stakekit/rainbowkit";
+import { Chain, Wallet, WalletList } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { config } from "../../config";
@@ -34,12 +34,7 @@ import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useQuery } from "@tanstack/react-query";
-
-export const wallets = [
-  ...keplrWallets,
-  ...leapWallets,
-  new WalletConnectWallet(walletConnectInfo),
-];
+import { useSettings } from "../settings";
 
 type FilteredCosmosChainsMap = Partial<CosmosChainsMap>;
 
@@ -287,7 +282,11 @@ const createCosmosConnector = ({
 const queryKey = [config.appPrefix, "cosmos-config"];
 const staleTime = Infinity;
 
-const queryFn = async () =>
+const queryFn = async ({
+  forceWalletConnectOnly,
+}: {
+  forceWalletConnectOnly: boolean;
+}) =>
   getEnabledNetworks().caseOf({
     Right: (networks) => {
       const cosmosChainsMap: FilteredCosmosChainsMap =
@@ -316,7 +315,15 @@ const queryFn = async () =>
         (val) => val.wagmiChain
       );
 
-      const connector = {
+      const wallets = forceWalletConnectOnly
+        ? [new WalletConnectWallet(walletConnectInfo)]
+        : [
+            ...keplrWallets,
+            ...leapWallets,
+            new WalletConnectWallet(walletConnectInfo),
+          ];
+
+      const connector: WalletList[number] = {
         groupName: "Cosmos",
         wallets: wallets.map((w) =>
           createCosmosConnector({
@@ -351,12 +358,25 @@ const queryFn = async () =>
     Left: (l) => Promise.reject(l),
   });
 
-export const getConfig = () =>
+export const getConfig = (...opts: Parameters<typeof queryFn>) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({ staleTime, queryKey, queryFn })
+    queryClient.fetchQuery({
+      staleTime,
+      queryKey,
+      queryFn: () => queryFn(...opts),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get cosmos config");
   });
 
-export const useCosmosConfig = () => useQuery({ staleTime, queryKey, queryFn });
+export const useCosmosConfig = () => {
+  const { forceWalletConnectOnly } = useSettings();
+
+  return useQuery({
+    staleTime,
+    queryKey,
+    queryFn: () =>
+      queryFn({ forceWalletConnectOnly: !!forceWalletConnectOnly }),
+  });
+};

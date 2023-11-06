@@ -1,8 +1,6 @@
 export const config = {
   appName: "SteakKit",
   currency: "USD",
-  apiUrl: import.meta.env.VITE_API_URL,
-  apiKey: import.meta.env.VITE_API_KEY,
   queryClient: {
     staleTime: 1000 * 5,
     cacheTime: 1000 * 60 * 5,
@@ -13,4 +11,11 @@ export const config = {
     projectId: "10a5257c04d1d3097ff768a139c95f50",
   },
   appPrefix: "sk-widget",
+  env: {
+    apiUrl: import.meta.env.VITE_API_URL,
+    apiKey: import.meta.env.VITE_API_KEY,
+    analyticsLogging: import.meta.env.VITE_ANALYTICS_LOGGING === "true",
+    forceWalletConnectOnly:
+      import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true",
+  },
 } as const;
