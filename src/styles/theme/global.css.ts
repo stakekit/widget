@@ -106,3 +106,11 @@ globalStyle(
     height: 0,
   }
 );
+
+globalStyle(
+  '[aria-labelledby="rk_connect_title"] > [role="document"] > div > div> div > div > div > div:nth-child(2)::-webkit-scrollbar',
+  {
+    width: 0,
+    height: 0,
+  }
+);

@@ -27,7 +27,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts: Account[];
   ledgerCurrencies: GetEitherAsyncRight<ReturnType<typeof getLedgerCurrencies>>;
 }) =>
-  getWagmiConfig()
+  getWagmiConfig({ forceWalletConnectOnly: false })
     .map((wagmiConfig) => {
       const { accountsFamilies, accountsCurrencies } = accounts.reduce(
         (acc, next) => {

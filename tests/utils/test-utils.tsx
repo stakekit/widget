@@ -17,8 +17,8 @@ import { getWagmiConfig } from "./wagmi-utils";
 import { StakeStateProvider } from "../../src/state/stake";
 
 APIManager.configure({
-  apiKey: config.apiKey,
-  baseURL: config.apiUrl,
+  apiKey: config.env.apiKey,
+  baseURL: config.env.apiUrl,
   queryClientConfig: {
     defaultOptions: {
       queries: {

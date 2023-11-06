@@ -4,7 +4,7 @@ import { defaultQueryClientConfiguration } from "./query-client";
 
 APIManager.configure({
   apiKey: "",
-  baseURL: config.apiUrl,
+  baseURL: config.env.apiUrl,
   queryClientConfig: {
     defaultOptions: defaultQueryClientConfiguration as any,
   },

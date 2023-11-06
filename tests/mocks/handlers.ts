@@ -17,14 +17,14 @@ export const handlers = [
       })
     );
   }),
-  rest.get(`${config.apiUrl}v1/stake/opportunities`, (_req, res, ctx) => {
+  rest.get(`${config.env.apiUrl}v1/stake/opportunities`, (_req, res, ctx) => {
     return res(ctx.json(opportunities));
   }),
-  rest.get(`${config.apiUrl}v1/stake/validators/*`, (_req, res, ctx) => {
+  rest.get(`${config.env.apiUrl}v1/stake/validators/*`, (_req, res, ctx) => {
     return res(ctx.json([]));
   }),
   rest.get(
-    `${config.apiUrl}v1/stake/6b7f626f-b57c-4991-904e-854be559a20e`,
+    `${config.env.apiUrl}v1/stake/6b7f626f-b57c-4991-904e-854be559a20e`,
     (_req, res, ctx) => {
       return res(
         ctx.json({
@@ -66,50 +66,53 @@ export const handlers = [
       );
     }
   ),
-  rest.get(`${config.apiUrl}v1/transaction/gas/ethereum`, (_req, res, ctx) => {
-    return res(
-      ctx.json({
-        customisable: true,
-        modes: {
-          denom: "gwei",
-          values: [
-            {
-              name: "fast",
-              value: "89.65",
-              gasArgs: {
-                denom: "gwei",
-                type: 2,
-                maxFeePerGas: "89.65",
-                maxPriorityFeePerGas: "0.98",
-              },
-            },
-            {
-              name: "average",
-              value: "88.98",
-              gasArgs: {
-                denom: "gwei",
-                type: 2,
-                maxFeePerGas: "88.98",
-                maxPriorityFeePerGas: "0.31",
-              },
-            },
-            {
-              name: "slow",
-              value: "88.84",
-              gasArgs: {
-                denom: "gwei",
-                type: 2,
-                maxFeePerGas: "88.84",
-                maxPriorityFeePerGas: "0.17",
-              },
-            },
-          ],
-        },
-      })
-    );
-  }),
   rest.get(
-    `${config.apiUrl}v1/transaction/gas/avalanche-c`,
+    `${config.env.apiUrl}v1/transaction/gas/ethereum`,
+    (_req, res, ctx) => {
+      return res(
+        ctx.json({
+          customisable: true,
+          modes: {
+            denom: "gwei",
+            values: [
+              {
+                name: "fast",
+                value: "89.65",
+                gasArgs: {
+                  denom: "gwei",
+                  type: 2,
+                  maxFeePerGas: "89.65",
+                  maxPriorityFeePerGas: "0.98",
+                },
+              },
+              {
+                name: "average",
+                value: "88.98",
+                gasArgs: {
+                  denom: "gwei",
+                  type: 2,
+                  maxFeePerGas: "88.98",
+                  maxPriorityFeePerGas: "0.31",
+                },
+              },
+              {
+                name: "slow",
+                value: "88.84",
+                gasArgs: {
+                  denom: "gwei",
+                  type: 2,
+                  maxFeePerGas: "88.84",
+                  maxPriorityFeePerGas: "0.17",
+                },
+              },
+            ],
+          },
+        })
+      );
+    }
+  ),
+  rest.get(
+    `${config.env.apiUrl}v1/transaction/gas/avalanche-c`,
     (_req, res, ctx) => {
       return res(
         ctx.json({
@@ -153,10 +156,10 @@ export const handlers = [
       );
     }
   ),
-  rest.get(`${config.apiUrl}v1/stake/validators/*`, (_req, res, ctx) => {
+  rest.get(`${config.env.apiUrl}v1/stake/validators/*`, (_req, res, ctx) => {
     return res(ctx.json([]));
   }),
-  rest.post(`${config.apiUrl}v1/token/prices`, async (req, res, ctx) => {
+  rest.post(`${config.env.apiUrl}v1/token/prices`, async (req, res, ctx) => {
     const body: PriceRequestDto = await req.json();
 
     if (body.tokenList.some((t) => t.network === "avalanche-c")) {
@@ -182,14 +185,14 @@ export const handlers = [
     return res(ctx.json({}));
   }),
   rest.post(
-    `${config.apiUrl}v1/transaction/0b8ada3e-75c2-43ea-b496-19a5604f6de9/submit_hash`,
+    `${config.env.apiUrl}v1/transaction/0b8ada3e-75c2-43ea-b496-19a5604f6de9/submit_hash`,
     async (_req, res, ctx) => {
       txSubmitted = true;
       await waitSec(1);
       return res(ctx.status(200));
     }
   ),
-  rest.post(`${config.apiUrl}v1/token/balances`, (_req, res, ctx) => {
+  rest.post(`${config.env.apiUrl}v1/token/balances`, (_req, res, ctx) => {
     return res(
       ctx.json([
         {
@@ -207,7 +210,7 @@ export const handlers = [
       ])
     );
   }),
-  rest.get(`${config.apiUrl}v1/transaction/*/status`, (_req, res, ctx) => {
+  rest.get(`${config.env.apiUrl}v1/transaction/*/status`, (_req, res, ctx) => {
     return res(
       ctx.json({
         status: "CONFIRMED",
@@ -215,7 +218,7 @@ export const handlers = [
       })
     );
   }),
-  rest.post(`${config.apiUrl}v1/stake/enter`, (_req, res, ctx) => {
+  rest.post(`${config.env.apiUrl}v1/stake/enter`, (_req, res, ctx) => {
     return res(
       ctx.json({
         id: "6b7f626f-b57c-4991-904e-854be559a20e",
@@ -243,7 +246,7 @@ export const handlers = [
     );
   }),
   rest.patch(
-    `${config.apiUrl}v1/transaction/0b8ada3e-75c2-43ea-b496-19a5604f6de9`,
+    `${config.env.apiUrl}v1/transaction/0b8ada3e-75c2-43ea-b496-19a5604f6de9`,
     (_req, res, ctx) => {
       return res(
         ctx.json({
