@@ -4,11 +4,13 @@ import { useStakeState } from "../../state/stake";
 import { StepsPage } from "./common.page";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { useSetStakeHistoryData } from "../../providers/stake-history";
 
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
 
-  const { selectedStake, stakeSession, selectedValidator } = useStakeState();
+  const { selectedStake, stakeSession, selectedValidator, stakeAmount } =
+    useStakeState();
 
   const { address, network } = useSKWallet();
 
@@ -30,5 +32,25 @@ export const StakeStepsPage = () => {
     });
   };
 
-  return <StepsPage session={stakeSession} onSignSuccess={onSignSuccess} />;
+  const setStakeHistoryData = useSetStakeHistoryData();
+
+  const onDone = () => {
+    Maybe.fromRecord({ selectedStake, stakeAmount }).ifJust((val) => {
+      setStakeHistoryData(
+        Maybe.of({
+          selectedStake: val.selectedStake,
+          stakeAmount: val.stakeAmount,
+          selectedValidator,
+        })
+      );
+    });
+  };
+
+  return (
+    <StepsPage
+      session={stakeSession}
+      onSignSuccess={onSignSuccess}
+      onDone={onDone}
+    />
+  );
 };

@@ -4,19 +4,29 @@ import { useStepsMachine } from "./use-steps-machine.hook";
 import { ActionDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useSavedRef } from "../../hooks";
+import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
+import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 
 export const useSteps = ({
   session,
+  onDone,
   onSignSuccess,
   onSubmitSuccess,
 }: {
+  onDone?: () => void;
   onSignSuccess?: () => void;
   onSubmitSuccess?: () => void;
   session: Maybe<ActionDto>;
 }) => {
   const navigate = useNavigate();
 
-  const callbacksRef = useSavedRef({ onSignSuccess, onSubmitSuccess });
+  const callbacksRef = useSavedRef({
+    onSignSuccess,
+    onSubmitSuccess,
+    onDone,
+    invalidateBalances: useInvalidateYieldBalances(),
+    invalidateTokenAvailableAmount: useInvalidateTokenAvailableAmount(),
+  });
 
   const [machine, send] = useStepsMachine();
 
@@ -54,13 +64,17 @@ export const useSteps = ({
 
   useEffect(() => {
     if (machine.value === "done") {
+      callbacksRef.current.onDone?.();
+      callbacksRef.current.invalidateBalances();
+      callbacksRef.current.invalidateTokenAvailableAmount();
+
       navigate("../complete", {
         state: { urls: machine.context.urls },
         relative: "path",
         replace: true,
       });
     }
-  }, [machine.context.urls, machine.value, navigate]);
+  }, [callbacksRef, machine.context.urls, machine.value, navigate]);
 
   const onClick = () => navigate(-1);
 
