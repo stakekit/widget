@@ -24,6 +24,7 @@ import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 import { getInitParams } from "../../common/get-init-params";
 import { equalTokens } from "../../domain";
+import { useSavedRef } from "../../hooks";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -171,6 +172,8 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     ? defaultTokens
     : tokenBalancesScan;
 
+  const currentSelectedTokenBalanceRef = useSavedRef(_selectedTokenBalance);
+
   const initialTokenBalanceToSet = useMemo(
     () =>
       Maybe.fromNullable(tokenBalances.data).chain((tb) =>
@@ -186,9 +189,14 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
               )
             )
           )
+          .altLazy(() =>
+            currentSelectedTokenBalanceRef.current.chain((val) =>
+              List.find((v) => equalTokens(val.token, v.token), tb)
+            )
+          )
           .altLazy(() => List.find((v) => !!v.availableYields.length, tb))
       ),
-    [defaultTokens.data, tokenBalances.data]
+    [currentSelectedTokenBalanceRef, defaultTokens.data, tokenBalances.data]
   );
 
   /**

@@ -16,15 +16,18 @@ import { ActionDto } from "@stakekit/api-hooks";
 
 export const StepsPage = ({
   session,
+  onDone,
   onSignSuccess,
   onSubmitSuccess,
 }: {
   session: Maybe<ActionDto>;
+  onDone?: () => void;
   onSignSuccess?: () => void;
   onSubmitSuccess?: () => void;
 }) => {
   const { state, onClick } = useSteps({
     session,
+    onDone,
     onSignSuccess,
     onSubmitSuccess,
   });

@@ -28,22 +28,18 @@ export const Tabs = ({
 
   return (
     <Box position="relative" display="flex" justifyContent="center">
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        zIndex="docked"
-      >
+      <Box className={divider}>
+        <Divider />
+      </Box>
+
+      <Box display="flex" alignItems="center" justifyContent="center">
         <Box className={tabContainer}>
           <Box
             className={clsx([pressAnimation, tab])}
             onClick={() => onTabPress("earn")}
           >
             <Text
-              variant={{
-                type: selectedTab === "earn" ? "regular" : "muted",
-                size: "large",
-              }}
+              variant={{ type: selectedTab === "earn" ? "regular" : "muted" }}
             >
               {t("details.tab_earn")}
             </Text>
@@ -66,7 +62,6 @@ export const Tabs = ({
               <Text
                 variant={{
                   type: selectedTab === "positions" ? "regular" : "muted",
-                  size: "large",
                 }}
               >
                 {t("details.tab_positions")}
@@ -91,10 +86,6 @@ export const Tabs = ({
             ])}
           />
         </Box>
-      </Box>
-
-      <Box className={divider}>
-        <Divider />
       </Box>
     </Box>
   );

@@ -6,7 +6,7 @@ export const tabContainer = style({
 });
 
 export const tab = style([
-  atoms({ px: "5", py: "3" }),
+  atoms({ px: "4", py: "3" }),
   { cursor: "pointer", userSelect: "none" },
 ]);
 

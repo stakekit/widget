@@ -20,9 +20,7 @@ import {
 } from "@stakekit/api-hooks";
 import { getValidStakeSessionTx, isTxError } from "../../domain";
 import { getAverageGasMode } from "../../common/get-gas-mode-value";
-import { useInvalidateTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
-import { useInvalidateYieldBalances } from "../../hooks/api/use-yield-balances-scan";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 
@@ -32,9 +30,6 @@ const tt = t as <T extends unknown>() => {
 
 export const useStepsMachine = () => {
   const { signTransaction, isLedgerLive } = useSKWallet();
-
-  const invalidateBalances = useInvalidateYieldBalances();
-  const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
 
   const trackEvent = useTrackEvent();
 
@@ -281,9 +276,6 @@ export const useStepsMachine = () => {
               },
               Right: (v) => {
                 if (v.every((val) => val.isConfirmed)) {
-                  invalidateBalances();
-                  invalidateTokenAvailableAmount();
-
                   setContext((ctx) => ({
                     ...ctx,
                     urls: v.map((val) => val.result.url),
