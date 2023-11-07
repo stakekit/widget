@@ -13,7 +13,7 @@ const require = createRequire(import.meta.url);
 dotenv.config({ path: ".env.production.local" });
 
 const VITE_API_URL = process.env.VITE_API_URL ?? "https://api.stakek.it/";
-const MODE = process.env.MODE;
+const MODE = process.env.MODE ?? "";
 
 const commonPlugins: esbuild.Plugin[] = [
   vanillaExtractPlugin({
@@ -76,9 +76,8 @@ const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   sourcemap: true,
   format: "esm",
   define: {
-    "import.meta.env.VITE_API_URL": JSON.stringify(VITE_API_URL ?? ""),
-    "import.meta.env.VITE_API_KEY": '""', // api key will be provided by library users
-    "import.meta.env.MODE": JSON.stringify(MODE ?? ""),
+    "import.meta.env.VITE_API_URL": JSON.stringify(VITE_API_URL),
+    "import.meta.env.MODE": JSON.stringify(MODE),
   },
   alias: {
     stream: "stream-browserify",

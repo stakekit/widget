@@ -15,7 +15,6 @@ import { server } from "./mocks/server";
 import { getWagmiConfig } from "./utils/wagmi-utils";
 import { createWalletClient, custom } from "viem";
 import { avalanche } from "viem/chains";
-import { config } from "../src/config";
 
 describe("<SKApp />", () => {
   beforeAll(() => server.listen());
@@ -24,7 +23,7 @@ describe("<SKApp />", () => {
 
   it("Should render initial page correctly", () => {
     const { queryByText, queryByTestId, unmount } = render(
-      <SKApp apiKey={config.env.apiKey} />
+      <SKApp apiKey={import.meta.env.VITE_API_KEY} />
     );
 
     expect(queryByText("StakeKit")).toBeInTheDocument();
@@ -37,7 +36,7 @@ describe("<SKApp />", () => {
 
   it("Selecting yield opportunity works as expected", async () => {
     const { getByTestId, getByText, unmount } = render(
-      <SKApp apiKey={config.env.apiKey} />
+      <SKApp apiKey={import.meta.env.VITE_API_KEY} />
     );
 
     await waitFor(() => getByTestId("select-opportunity")?.click());
@@ -119,7 +118,7 @@ describe("<SKApp />", () => {
     };
 
     const { queryByText, getByTestId, getByText } = render(
-      <SKApp apiKey={config.env.apiKey} />,
+      <SKApp apiKey={import.meta.env.VITE_API_KEY} />,
       {
         wrapperProps: {
           wagmiConfig: getWagmiConfig({
