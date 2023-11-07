@@ -17,6 +17,8 @@ export const colorsContract = {
   tokenSelectHoverBackground: "",
   tokenSelect: "",
 
+  tabBorder: "",
+
   stakeSectionBackground: "",
 
   positionsSectionBackgroundColor: "",
@@ -79,6 +81,8 @@ export const lightThemeColors: typeof colorsContract = {
   tokenSelectHoverBackground: "#EEF0F2",
   tokenSelect: "#373737",
 
+  tabBorder: "#000000",
+
   stakeSectionBackground: "#F6F7F9",
 
   positionsSectionBackgroundColor: "#FFFFFF",
@@ -138,6 +142,8 @@ export const darkThemeColors: typeof colorsContract = {
   tokenSelectBackground: "#363636",
   tokenSelectHoverBackground: "#444444",
   tokenSelect: "#FFFFFF",
+
+  tabBorder: "#FFFFFF",
 
   stakeSectionBackground: "#363636",
 

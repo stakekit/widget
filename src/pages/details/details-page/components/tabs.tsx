@@ -1,8 +1,17 @@
-import { Box, Text } from "../../../../components";
+import { Box, Divider, Text } from "../../../../components";
 import { useTranslation } from "react-i18next";
-import classNames from "clsx";
+import clsx from "clsx";
 import { pressAnimation } from "../../../../components/atoms/button/styles.css";
-import { rewardsDot, tab } from "../styles.css";
+import {
+  activeTabBorder,
+  divider,
+  leftTabBorder,
+  rewardsDot,
+  rightTabBorder,
+  tab,
+  tabBorder,
+  tabContainer,
+} from "../styles.css";
 
 export type TabsProps = {
   selectedTab: "earn" | "positions";
@@ -18,46 +27,74 @@ export const Tabs = ({
   const { t } = useTranslation();
 
   return (
-    <Box display="flex" alignItems="center" justifyContent="center">
+    <Box position="relative" display="flex" justifyContent="center">
       <Box
-        className={classNames([pressAnimation, tab])}
-        onClick={() => onTabPress("earn")}
-        px="1"
-        py="2"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        zIndex="docked"
       >
-        <Text
-          variant={{
-            type: selectedTab === "earn" ? "regular" : "muted",
-          }}
-        >
-          {t("details.tab_earn")}
-        </Text>
+        <Box className={tabContainer}>
+          <Box
+            className={clsx([pressAnimation, tab])}
+            onClick={() => onTabPress("earn")}
+          >
+            <Text
+              variant={{
+                type: selectedTab === "earn" ? "regular" : "muted",
+                size: "large",
+              }}
+            >
+              {t("details.tab_earn")}
+            </Text>
+          </Box>
+
+          <Box
+            className={clsx([
+              tabBorder,
+              selectedTab === "earn" ? activeTabBorder : leftTabBorder,
+            ])}
+          />
+        </Box>
+
+        <Box className={tabContainer}>
+          <Box
+            className={clsx([pressAnimation, tab])}
+            onClick={() => onTabPress("positions")}
+          >
+            <Box position="relative">
+              <Text
+                variant={{
+                  type: selectedTab === "positions" ? "regular" : "muted",
+                  size: "large",
+                }}
+              >
+                {t("details.tab_positions")}
+              </Text>
+
+              {hasPendingRewards && (
+                <Box
+                  borderRadius="full"
+                  width="1"
+                  height="1"
+                  background="positionsClaimRewardsBackground"
+                  className={rewardsDot}
+                />
+              )}
+            </Box>
+          </Box>
+
+          <Box
+            className={clsx([
+              tabBorder,
+              selectedTab === "positions" ? activeTabBorder : rightTabBorder,
+            ])}
+          />
+        </Box>
       </Box>
 
-      <Box
-        className={classNames([pressAnimation, tab])}
-        onClick={() => onTabPress("positions")}
-        px="1"
-        py="2"
-      >
-        <Box position="relative">
-          <Text
-            variant={{
-              type: selectedTab === "positions" ? "regular" : "muted",
-            }}
-          >
-            {t("details.tab_positions")}
-          </Text>
-          {hasPendingRewards && (
-            <Box
-              borderRadius="full"
-              width="1"
-              height="1"
-              background="positionsClaimRewardsBackground"
-              className={rewardsDot}
-            />
-          )}
-        </Box>
+      <Box className={divider}>
+        <Divider />
       </Box>
     </Box>
   );

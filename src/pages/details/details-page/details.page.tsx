@@ -1,5 +1,4 @@
 import { Box } from "../../../components/atoms/box";
-import { Divider } from "../../../components/atoms/divider";
 import { Tabs, TabsProps } from "./components/tabs";
 import { Location, Outlet, useNavigate } from "react-router-dom";
 import { useLocationTransition } from "../../../providers/location-transition";
@@ -49,8 +48,6 @@ export const Details = () => {
           hasPendingRewards={hasPendingRewards}
         />
       </Box>
-
-      <Divider />
 
       <Box
         display="flex"
