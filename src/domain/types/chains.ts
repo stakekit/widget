@@ -76,6 +76,7 @@ export const supportedMiscChains = [
   MiscNetworks.Near,
   MiscNetworks.Tezos,
   MiscNetworks.Solana,
+  MiscNetworks.Tron,
 ] as const;
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
 export type SupportedMiscChains = (typeof supportedMiscChains)[number];
@@ -108,7 +109,14 @@ export type SupportedSKChains =
 
 export type SupportedLedgerLiveFamilies = Extract<
   Families,
-  "ethereum" | "near" | "tezos" | "solana" | "cosmos" | "crypto_org" | "celo"
+  | "ethereum"
+  | "near"
+  | "tezos"
+  | "solana"
+  | "cosmos"
+  | "crypto_org"
+  | "celo"
+  | "tron"
 >;
 
 export const supportedLedgerFamiliesWithCurrency = {
@@ -131,6 +139,13 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "solana",
       family: "solana",
       skChainName: MiscNetworks.Solana,
+    },
+  },
+  tron: {
+    "*": {
+      currencyId: "tron",
+      family: "tron",
+      skChainName: MiscNetworks.Tron,
     },
   },
   celo: {
