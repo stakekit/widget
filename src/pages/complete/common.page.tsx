@@ -80,8 +80,8 @@ export const CompletePage = ({
               unstakeMatch
                 ? "complete.successfully_unstaked"
                 : pendingActionMatch
-                ? `complete.successfully_pending_action`
-                : "complete.successfully_staked",
+                  ? `complete.successfully_pending_action`
+                  : "complete.successfully_staked",
               {
                 action: yieldType.mapOrDefault(
                   (yt) =>

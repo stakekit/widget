@@ -219,7 +219,6 @@
     "import_validator_modal_title": "Import validator",
     "import_validator_already_imported": "Imported",
     "search_for_validators": "Search for validators by address or name"
-
   },
   "position_details": {
     "liquid_staked": "Liquid staked",

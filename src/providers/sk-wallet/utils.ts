@@ -39,8 +39,8 @@ export const getCosmosChainWallet = (connector: Connector | undefined) =>
     !connector
       ? Left(new Error("no connector"))
       : !isCosmosConnector(connector)
-      ? Left(new Error("not a cosmos connector"))
-      : Right(connector)
+        ? Left(new Error("not a cosmos connector"))
+        : Right(connector)
   ).chain((conn) =>
     EitherAsync(() => conn.chainWallet).mapLeft(
       () => new Error("could not get chain wallet")

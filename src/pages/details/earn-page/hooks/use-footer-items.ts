@@ -19,8 +19,8 @@ export const useFooterItems = () => {
       const providerName = sv
         ? sv.name ?? sv.address ?? ""
         : y.metadata.provider
-        ? y.metadata.provider.name
-        : y.metadata.name;
+          ? y.metadata.provider.name
+          : y.metadata.name;
       const rewardSchedule = y.metadata.rewardSchedule;
       const cooldownPeriodDays = y.metadata.cooldownPeriod?.days ?? 0;
       const warmupPeriodDays = y.metadata.warmupPeriod?.days ?? 0;
