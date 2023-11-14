@@ -1,0 +1,39 @@
+{
+  "id": "stakekit",
+  "name": "StakeKit",
+  "url": "http://localhost:5173/?embed=true",
+  "homepageUrl": "https://stakek.it/",
+  "platform": ["all"],
+  "apiVersion": "^2.0.0",
+  "manifestVersion": "2",
+  "branch": "stable",
+  "icon": "https://raw.githubusercontent.com/stakekit/assets/main/stakekit/sk-icon_320x320.png",
+  "type": "walletApp",
+  "categories": ["staking", "defi"],
+  "currencies": "*",
+  "content": {
+    "shortDescription": {
+      "en": "Start earning yield on your crypto in just 3 clicks. Enjoy staking, liquid staking, yield vaults, and lending pools covering more than 40 blockchain networks and 400+ yield opportunities all in one place."
+    },
+    "description": {
+      "en": "StakeKit is the world’s most powerful self-custodial yield platform. Covering more than 40 blockchain networks and 400+ yield opportunities, StakeKit aggregates all yields across all chains and across all major DeFi providers in one place: be it staking, liquid staking, yield vaults, or lending protocols"
+    }
+  },
+  "permissions": [
+    "account.list",
+    "account.receive",
+    "account.request",
+    "currency.list",
+    "device.close",
+    "device.exchange",
+    "device.transport",
+    "message.sign",
+    "transaction.sign",
+    "transaction.signAndBroadcast",
+    "wallet.capabilities",
+    "wallet.info",
+    "wallet.userId"
+  ],
+  "domains": ["http://*", "https://*"],
+  "visibility": "complete"
+}
