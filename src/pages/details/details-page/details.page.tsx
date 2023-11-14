@@ -35,7 +35,7 @@ export const Details = () => {
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
     if (selectedTab === selected) return;
 
-    trackEvent("positionsTabClicked", { selected });
+    trackEvent("tabClicked", { selected });
 
     selected === "earn" ? navigate("/") : navigate("/positions");
   };
