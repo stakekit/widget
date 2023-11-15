@@ -20,9 +20,7 @@ import {
 } from "@stakekit/api-hooks";
 import { isTxError } from "../../../domain";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
-import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 import { isAxiosError, withRequestErrorRetry } from "../../../common/utils";
-import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 
@@ -51,9 +49,6 @@ export type TxState = {
 
 export const useStepsMachine = () => {
   const { signTransaction, isLedgerLive } = useSKWallet();
-
-  const invalidateBalances = useInvalidateYieldBalances();
-  const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
 
   const trackEvent = useTrackEvent();
 
@@ -457,12 +452,7 @@ export const useStepsMachine = () => {
         on: { TX_CHECK_RETRY: "txCheckLoading" },
       },
 
-      done: {
-        effect: () => {
-          invalidateBalances();
-          invalidateTokenAvailableAmount();
-        },
-      },
+      done: {},
     },
   });
 

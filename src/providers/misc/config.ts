@@ -60,6 +60,22 @@ export const solana = {
   },
 } as const satisfies Chain;
 
+export const tron = {
+  id: 79,
+  name: "Tron",
+  iconUrl: getTokenLogo("trx"),
+  network: "tron",
+  nativeCurrency: {
+    decimals: 6,
+    name: "Tron",
+    symbol: "TRX",
+  },
+  rpcUrls: {
+    public: { http: ["https://api.trongrid.io"] },
+    default: { http: ["https://api.trongrid.io"] },
+  },
+} as const satisfies Chain;
+
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Infinity;
 
@@ -82,6 +98,11 @@ const queryFn = async () =>
             type: "misc",
             skChainName: MiscNetworks.Solana,
             wagmiChain: solana,
+          },
+          [MiscNetworks.Tron]: {
+            type: "misc",
+            skChainName: MiscNetworks.Tron,
+            wagmiChain: tron,
           },
         }).filter(([_, v]) => networks.has(v.skChainName))
       );

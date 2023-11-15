@@ -57,8 +57,8 @@ export const LocationTransitionProvider = ({ children }: PropsWithChildren) => {
   const value = useMemo(
     () => ({
       location,
-      displayLocation: config.isTestMode ? location : displayLocation,
-      prevLocationPathName: config.isTestMode
+      displayLocation: config.env.isTestMode ? location : displayLocation,
+      prevLocationPathName: config.env.isTestMode
         ? location.pathname
         : prevLocationPathName.current,
       onAnimationEnd,

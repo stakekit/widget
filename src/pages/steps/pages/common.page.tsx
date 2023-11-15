@@ -9,13 +9,19 @@ import { TxState } from "./tx-state";
 export const StepsPage = ({
   session,
   onDone,
+  onSignSuccess,
+  onSubmitSuccess,
 }: {
   session: Maybe<ActionDto>;
   onDone?: () => void;
+  onSignSuccess?: () => void;
+  onSubmitSuccess?: () => void;
 }) => {
   const { retry, txStates, onClick } = useSteps({
     session,
     onDone,
+    onSignSuccess,
+    onSubmitSuccess,
   });
 
   const { t } = useTranslation();

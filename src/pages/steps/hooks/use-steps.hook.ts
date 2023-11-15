@@ -4,17 +4,29 @@ import { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useSavedRef } from "../../../hooks";
 import { TxState, useStepsMachine } from "./use-steps-machine.hook";
+import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
+import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 
 export const useSteps = ({
   session,
   onDone,
+  onSignSuccess,
+  onSubmitSuccess,
 }: {
   onDone?: () => void;
+  onSignSuccess?: () => void;
+  onSubmitSuccess?: () => void;
   session: Maybe<ActionDto>;
 }) => {
   const navigate = useNavigate();
 
-  const callbacksRef = useSavedRef({ onDone });
+  const callbacksRef = useSavedRef({
+    onSignSuccess,
+    onSubmitSuccess,
+    onDone,
+    invalidateBalances: useInvalidateYieldBalances(),
+    invalidateTokenAvailableAmount: useInvalidateTokenAvailableAmount(),
+  });
 
   const [machine, send] = useStepsMachine();
 
@@ -38,8 +50,10 @@ export const useSteps = ({
    * @summary Callbacks
    */
   useEffect(() => {
-    if (machine.event.type === "DONE") {
-      callbacksRef.current.onDone?.();
+    if (machine.event.type === "SIGN_SUCCESS") {
+      callbacksRef.current.onSignSuccess?.();
+    } else if (machine.event.type === "BROADCAST_SUCCESS") {
+      callbacksRef.current.onSubmitSuccess?.();
     }
   }, [machine.event.type, callbacksRef]);
 
@@ -60,6 +74,10 @@ export const useSteps = ({
    */
   useEffect(() => {
     if (machine.value === "done") {
+      callbacksRef.current.onDone?.();
+      callbacksRef.current.invalidateBalances();
+      callbacksRef.current.invalidateTokenAvailableAmount();
+
       navigate("../complete", {
         state: {
           urls: machine.context.txStates
@@ -72,7 +90,7 @@ export const useSteps = ({
         replace: true,
       });
     }
-  }, [machine.context.txStates, machine.value, navigate]);
+  }, [callbacksRef, machine.context.txStates, machine.value, navigate]);
 
   const onClick = () => navigate(-1);
 
