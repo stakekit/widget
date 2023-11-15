@@ -1,12 +1,16 @@
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
+import { TransactionType } from "viem";
 
 export const useComplete = () => {
   const navigate = useNavigate();
 
   const location = useLocation();
 
-  const urls: string[] | undefined = location.state?.urls;
+  const urls: {
+    type: TransactionType;
+    url: string;
+  }[] = location.state?.urls ?? [];
 
   const trackEvent = useTrackEvent();
 
@@ -14,14 +18,12 @@ export const useComplete = () => {
     navigate("/");
   };
 
-  const onViewTransactionClick = () => {
-    if (!urls) return;
-
+  const onViewTransactionClick = (url: string) => {
     if (typeof window === "undefined") return;
 
     trackEvent("viewTxClicked");
 
-    urls.forEach((url) => window.open(url, "_blank"));
+    window.open(url, "_blank");
   };
 
   const unstakeMatch = useMatch(
@@ -33,9 +35,9 @@ export const useComplete = () => {
 
   return {
     onClick,
-    onViewTransactionClick,
+    urls,
     unstakeMatch,
     pendingActionMatch,
-    hasUrs: !!urls?.length,
+    onViewTransactionClick,
   };
 };

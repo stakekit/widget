@@ -4,7 +4,7 @@ import { Box } from "../../components/atoms/box";
 import { Heading, Text } from "../../components/atoms/typography";
 import { PageContainer } from "../components";
 import { useReview } from "./use-review.hook";
-import { feeStyles, pointer, spanStyle } from "./style.css";
+import { feeStyles, heading, pointer } from "./style.css";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { HelpModal } from "../../components/molecules/help-modal";
@@ -50,7 +50,7 @@ export const ReviewPage = () => {
 
           {token
             .map((val) => (
-              <Heading variant={{ level: "h1" }}>
+              <Heading variant={{ level: "h1" }} className={heading}>
                 <Trans
                   i18nKey="review.amount_and_earn"
                   values={{
@@ -59,9 +59,9 @@ export const ReviewPage = () => {
                     interestRate,
                   }}
                   components={{
-                    highlight0: <Highlight className={spanStyle} />,
-                    highlight1: <Highlight className={spanStyle} />,
-                    highlight3: <Highlight className={spanStyle} />,
+                    highlight0: <Highlight />,
+                    highlight1: <Highlight />,
+                    highlight3: <Highlight />,
                   }}
                 />
               </Heading>

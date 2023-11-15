@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ActionDto } from "@stakekit/api-hooks";
+import { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useSavedRef } from "../../../hooks";
 import { TxState, useStepsMachine } from "./use-steps-machine.hook";
@@ -18,27 +18,20 @@ export const useSteps = ({
 
   const [machine, send] = useStepsMachine();
 
-  const meta = useMemo(
-    () =>
-      session
-        .map((val) => ({ sessionId: val.id, integrationId: val.integrationId }))
-        .extractNullable(),
-    [session]
-  );
+  const sessionExtracted = useMemo(() => session.extractNullable(), [session]);
 
   /**
    *
    * @summary Start sign + check tx on mount
    */
   useEffect(() => {
-    if (!meta) return;
+    if (!sessionExtracted) return;
 
     send({
       type: "START",
-      sessionId: meta.sessionId,
-      yieldId: meta.integrationId,
+      session: sessionExtracted,
     });
-  }, [meta, send]);
+  }, [sessionExtracted, send]);
 
   /**
    *
@@ -70,8 +63,10 @@ export const useSteps = ({
       navigate("../complete", {
         state: {
           urls: machine.context.txStates
-            .map((val) => val.meta.url)
-            .filter(Boolean),
+            .map((val) => ({ type: val.tx.type, url: val.meta.url }))
+            .filter(
+              (val): val is { type: TransactionType; url: string } => !!val.url
+            ),
         },
         relative: "path",
         replace: true,

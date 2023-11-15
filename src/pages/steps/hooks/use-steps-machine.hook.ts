@@ -11,8 +11,8 @@ import {
   TransactionConstructError,
 } from "./errors";
 import {
+  ActionDto,
   TransactionDto,
-  actionGetAction,
   transactionConstruct,
   transactionGetTransactionStatusFromId,
   transactionSubmit,
@@ -67,10 +67,7 @@ export const useStepsMachine = () => {
         txCheckTimeoutId: number | null;
       }>(),
       events: {
-        START: tt<{
-          sessionId: string;
-          yieldId: string;
-        }>(),
+        START: tt<{ session: ActionDto }>(),
       },
     },
     context: {
@@ -92,56 +89,51 @@ export const useStepsMachine = () => {
         },
         effect: ({ context, send, setContext, event }) => {
           (event.type === "START"
-            ? withRequestErrorRetry({
-                fn: () => actionGetAction(event.sessionId),
+            ? EitherAsync<
+                Error,
+                { currentTx: TransactionDto; currentTxIdx: number }
+              >(async () => {
+                const txs = event.session.transactions;
+
+                const currentTxIdx = List.findIndex(
+                  (val) => val.status === "WAITING_FOR_SIGNATURE",
+                  txs
+                ).extractNullable();
+
+                if (currentTxIdx === null) {
+                  send({ type: "DONE" });
+                  throw new Error("missing currentTxIdx");
+                }
+
+                const txStates = txs.map<TxState>((dto) => ({
+                  tx: dto,
+                  meta: {
+                    broadcasted: null,
+                    signedTx: null,
+                    url: null,
+                    signError: null,
+                    txCheckError: null,
+                    done: false,
+                  },
+                }));
+
+                const currentTxMeta = {
+                  idx: currentTxIdx,
+                  id: txs[currentTxIdx].id,
+                };
+
+                setContext((ctx) => ({
+                  ...ctx,
+                  txStates,
+                  currentTxMeta,
+                  yieldId: event.session.integrationId,
+                }));
+
+                return {
+                  currentTx: txStates[currentTxIdx].tx,
+                  currentTxIdx,
+                };
               })
-                .mapLeft(() => new GetStakeSessionError())
-                .map((val) => val.transactions)
-                .chain((txs) =>
-                  EitherAsync<
-                    Error,
-                    { currentTx: TransactionDto; currentTxIdx: number }
-                  >(async () => {
-                    const currentTxIdx = List.findIndex(
-                      (val) => val.status === "WAITING_FOR_SIGNATURE",
-                      txs
-                    ).extractNullable();
-
-                    if (currentTxIdx === null) {
-                      send({ type: "DONE" });
-                      throw new Error("missing currentTxIdx");
-                    }
-
-                    const txStates = txs.map<TxState>((dto) => ({
-                      tx: dto,
-                      meta: {
-                        broadcasted: null,
-                        signedTx: null,
-                        url: null,
-                        signError: null,
-                        txCheckError: null,
-                        done: false,
-                      },
-                    }));
-
-                    const currentTxMeta = {
-                      idx: currentTxIdx,
-                      id: txs[currentTxIdx].id,
-                    };
-
-                    setContext((ctx) => ({
-                      ...ctx,
-                      txStates,
-                      currentTxMeta,
-                      yieldId: event.yieldId,
-                    }));
-
-                    return {
-                      currentTx: txStates[currentTxIdx].tx,
-                      currentTxIdx,
-                    };
-                  })
-                )
             : EitherAsync<
                 never,
                 { currentTx: TransactionDto; currentTxIdx: number }
@@ -184,7 +176,7 @@ export const useStepsMachine = () => {
                         network: tx.network,
                         yieldId:
                           event.type === "START"
-                            ? event.yieldId
+                            ? event.session.integrationId
                             : context.yieldId,
                       })
                     );
