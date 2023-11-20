@@ -23,7 +23,7 @@ import { useAdditionalAddresses } from "./use-additional-addresses";
 import {
   SendTransactionError,
   TransactionDecodeError,
-} from "../../pages/steps/errors";
+} from "../../pages/steps/hooks/errors";
 import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";

@@ -2,14 +2,12 @@ import {
   GasModeValueDto,
   PendingActionRequestDto,
   actionPending,
-  transactionConstruct,
 } from "@stakekit/api-hooks";
-import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
-import { getValidStakeSessionTx } from "../../domain";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { constructTxs } from "../../common/construct-txs";
 
 export const usePendingActionAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
@@ -42,20 +40,7 @@ const fn = ({
     fn: () => actionPending(pendingActionRequestDto),
   })
     .mapLeft(() => new Error("Pending actions error"))
-    .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
-    .chain((val) =>
-      EitherAsync.sequence(
-        val.transactions.map((tx) =>
-          withRequestErrorRetry({
-            fn: () =>
-              transactionConstruct(tx.id, {
-                gasArgs: gasModeValue?.gasArgs,
-                ledgerWalletAPICompatible: isLedgerLive,
-              }),
-          }).mapLeft(() => new Error("Transaction construct error"))
-        )
-      ).map((res) => ({
-        pendingActionRes: val,
-        transactionConstructRes: res,
-      }))
-    );
+    .chain((actionDto) =>
+      constructTxs({ actionDto, gasModeValue, isLedgerLive })
+    )
+    .map((val) => ({ ...val, pendingActionRes: val.mappedActionDto }));

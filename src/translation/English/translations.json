@@ -131,13 +131,15 @@
     "submitted": "Submitted",
     "pending": "Pending",
     "completed": "Completed",
-    "failed": "Failed"
+    "failed": "Failed",
+    "tx_of_n": "Transaction {{count}} / {{total}} - {{type}}",
+    "skipped": "Skipped"
   },
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "successfully_unstaked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
-    "view_transaction": "View transaction",
+    "view_transaction": "View {{type}} transaction",
     "via": "via {{providerName}}",
     "stake": {
       "staking": "staked",
@@ -217,7 +219,6 @@
     "import_validator_modal_title": "Import validator",
     "import_validator_already_imported": "Imported",
     "search_for_validators": "Search for validators by address or name"
-
   },
   "position_details": {
     "liquid_staked": "Liquid staked",

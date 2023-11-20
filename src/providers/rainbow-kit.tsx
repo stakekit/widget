@@ -49,10 +49,10 @@ export const RainbowKitProviderWithTheme = ({
         connectKitForceTheme
           ? theme[connectKitForceTheme]
           : scheme === "light"
-          ? theme.lightMode
-          : scheme === "dark"
-          ? theme.darkMode
-          : theme
+            ? theme.lightMode
+            : scheme === "dark"
+              ? theme.darkMode
+              : theme
       }
     >
       {children}

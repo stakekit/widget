@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { vars } from "../../styles";
+import { vars } from "../../../styles";
 
 export const stepsAfter = style({
   ":after": {
@@ -30,3 +30,16 @@ export const stepsBeforeMuted = style([
 ]);
 
 export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
+
+export const stepsContainer = style({
+  transition: "max-height 0.3s ease",
+  overflow: "hidden",
+});
+
+export const caretContainer = style({
+  transition: "transform 0.2s ease",
+});
+
+export const rotate180deg = style({
+  transform: "rotate(180deg)",
+});

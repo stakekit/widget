@@ -2,14 +2,12 @@ import {
   GasModeValueDto,
   ActionRequestDto,
   actionEnter,
-  transactionConstruct,
 } from "@stakekit/api-hooks";
-import { EitherAsync } from "purify-ts";
 import { useSharedMutation } from "../use-shared-mutation";
-import { getValidStakeSessionTx } from "../../domain";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { constructTxs } from "../../common/construct-txs";
 
 export type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -52,25 +50,10 @@ const fn = ({
 
       return new Error("Stake enter error");
     })
-    .chain((val) => EitherAsync.liftEither(getValidStakeSessionTx(val)))
-    .chain((val) =>
-      EitherAsync.sequence(
-        val.transactions.map((tx) =>
-          withRequestErrorRetry({
-            fn: () =>
-              transactionConstruct(tx.id, {
-                gasArgs: gasModeValue?.gasArgs,
-                ledgerWalletAPICompatible: isLedgerLive,
-              }),
-            shouldRetry: (e, retryCount) =>
-              retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
-          }).mapLeft(() => new Error("Transaction construct error"))
-        )
-      ).map((res) => ({
-        stakeEnterRes: val,
-        transactionConstructRes: res,
-      }))
-    );
+    .chain((actionDto) =>
+      constructTxs({ actionDto, gasModeValue, isLedgerLive })
+    )
+    .map((val) => ({ ...val, stakeEnterRes: val.mappedActionDto }));
 
 export class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {

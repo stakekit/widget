@@ -26,7 +26,7 @@ export type TrackPageKey = keyof typeof trackPageMap;
 export type TrackPageVal = (typeof trackPageMap)[TrackPageKey];
 
 const trackEventMap = {
-  positionsTabClicked: "Positions tab clicked",
+  tabClicked: "Tab clicked",
   connectWalletClicked: "Connect wallet clicked",
   selectTokenModalOpened: "Select token modal opened",
   tokenSelected: "Token selected",

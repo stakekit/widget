@@ -1,9 +1,9 @@
 import { vars } from "../../../styles";
 
-export const CaretDownIcon = () => (
+export const CaretDownIcon = ({ size = 12 }: { size?: number }) => (
   <svg
-    width="12"
-    height="12"
+    width={size}
+    height={size}
     viewBox="0 0 12 12"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"

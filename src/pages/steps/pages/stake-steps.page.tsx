@@ -1,10 +1,10 @@
 import { Maybe } from "purify-ts";
-import { importValidator } from "../../common/import-validator";
-import { useStakeState } from "../../state/stake";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useStakeState } from "../../../state/stake";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { importValidator } from "../../../common/import-validator";
+import { useSetStakeHistoryData } from "../../../providers/stake-history";
 import { StepsPage } from "./common.page";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
-import { useSetStakeHistoryData } from "../../providers/stake-history";
 
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");

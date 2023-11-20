@@ -26,8 +26,11 @@ export const VirtualList = <ItemData = any, Context = any>({
 
   return hasMoreThan10Items ? (
     <Virtuoso
-      overscan={{ main: 50, reverse: 50 }}
-      style={{ ...style, height: isTabletOrBigger ? maxHeight : "65vh" }}
+      overscan={{ main: 100, reverse: 100 }}
+      style={{
+        ...style,
+        height: isTabletOrBigger ? maxHeight : "max(65vh, 500px)",
+      }}
       className={clsx([hideScrollbar, virtualContainer, className])}
       {...props}
     />
@@ -36,7 +39,7 @@ export const VirtualList = <ItemData = any, Context = any>({
       className={clsx([hideScrollbar, container, className])}
       style={{
         ...style,
-        ...(isTabletOrBigger ? { maxHeight } : { height: "65vh" }),
+        ...(isTabletOrBigger ? { maxHeight } : { height: "max(65vh, 500px)" }),
       }}
     >
       {props.data?.map((item, i) => (
@@ -62,7 +65,7 @@ export const GroupedVirtualList = <ItemData = any, Context = any>({
 
   const hasMoreThan10Items = data && data.length > 10;
 
-  const height = isTabletOrBigger ? maxHeight : "65vh";
+  const height = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
 
   return hasMoreThan10Items ? (
     <GroupedVirtuoso
@@ -75,7 +78,7 @@ export const GroupedVirtualList = <ItemData = any, Context = any>({
       className={clsx([hideScrollbar, container, className])}
       style={{
         ...style,
-        ...(isTabletOrBigger ? { maxHeight } : { height: "65vh" }),
+        ...(isTabletOrBigger ? { maxHeight } : { height: "max(65vh, 500px)" }),
       }}
     >
       {

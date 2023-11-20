@@ -20,8 +20,8 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
       "lightMode" in theme
         ? merge(structuredClone(lightTheme), theme.lightMode)
         : theme
-        ? merge(structuredClone(lightTheme), theme)
-        : lightTheme,
+          ? merge(structuredClone(lightTheme), theme)
+          : lightTheme,
     [theme]
   );
   const finalDarkTheme = useMemo(

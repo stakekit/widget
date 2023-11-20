@@ -13,6 +13,7 @@ import {
 import { Maybe } from "purify-ts";
 import { ImageFallback } from "../../components/atoms/image-fallback";
 import { Image } from "../../components/atoms/image";
+import { capitalizeFirstLowerRest } from "../../utils/text";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -43,7 +44,7 @@ export const CompletePage = ({
     onViewTransactionClick,
     unstakeMatch,
     pendingActionMatch,
-    hasUrs,
+    urls,
   } = useComplete();
 
   return (
@@ -80,8 +81,8 @@ export const CompletePage = ({
               unstakeMatch
                 ? "complete.successfully_unstaked"
                 : pendingActionMatch
-                ? `complete.successfully_pending_action`
-                : "complete.successfully_staked",
+                  ? `complete.successfully_pending_action`
+                  : "complete.successfully_staked",
               {
                 action: yieldType.mapOrDefault(
                   (yt) =>
@@ -122,23 +123,21 @@ export const CompletePage = ({
                       />
                     )}
                     <Text variant={{ type: "muted" }}>
-                      {t("complete.via", {
-                        providerName: v.name,
-                      })}
+                      {t("complete.via", { providerName: v.name })}
                     </Text>
                   </Box>
                 ))
                 .extractNullable()
             : null}
 
-          {hasUrs && (
+          {urls.map((val) => (
             <Box
               marginTop="4"
               display="flex"
               justifyContent="center"
               alignItems="center"
               as="button"
-              onClick={onViewTransactionClick}
+              onClick={() => onViewTransactionClick(val.url)}
             >
               <Box
                 marginRight="1"
@@ -149,10 +148,12 @@ export const CompletePage = ({
                 <CheckCircleIcon width={22} height={22} />
               </Box>
               <Text variant={{ type: "muted" }}>
-                {t("complete.view_transaction")}
+                {t("complete.view_transaction", {
+                  type: capitalizeFirstLowerRest(val.type),
+                })}
               </Text>
             </Box>
-          )}
+          ))}
         </Box>
 
         <Box display="flex" alignItems="flex-end" marginTop="8">

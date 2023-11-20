@@ -71,8 +71,8 @@ export const getWagmiChain = (chain: CosmosChainsAssets) => ({
     chain.chain_id === "osmosis-1"
       ? getNetworkLogo(CosmosNetworks.Osmosis)
       : chain.chain_id === "mars-1"
-      ? getTokenLogo("mars")
-      : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
+        ? getTokenLogo("mars")
+        : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
 
   name: chain.chain_name,
   network: chain.chain_id,
