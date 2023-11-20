@@ -18,15 +18,7 @@ export const usePendingActionDeepLink = () => {
     staleTime: Infinity,
     queryKey: ["pending-action-deep-link"],
     enabled: isConnected,
-    queryFn: async () =>
-      (await fn({ isLedgerLive })).caseOf({
-        Right(value) {
-          return Promise.resolve(value);
-        },
-        Left() {
-          return Promise.reject(new Error("no pending action deep link"));
-        },
-      }),
+    queryFn: async () => (await fn({ isLedgerLive })).unsafeCoerce(),
   });
 };
 

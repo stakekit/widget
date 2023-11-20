@@ -18,10 +18,7 @@ export const useAdditionalAddresses = ({
     async () => {
       if (!connector) return Promise.resolve(null);
 
-      return (await getAdditionalAddresses(connector)).caseOf({
-        Left: (e) => Promise.reject(e),
-        Right: (val) => Promise.resolve(val),
-      });
+      return (await getAdditionalAddresses(connector)).unsafeCoerce();
     },
     { enabled: !!connector && !!address }
   );

@@ -37,10 +37,7 @@ export const useOnPendingAction = () => {
         isLedgerLive,
         yieldBalance,
       })
-    ).caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (v) => Promise.resolve(v),
-    })
+    ).unsafeCoerce()
   );
 };
 

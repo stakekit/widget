@@ -34,15 +34,7 @@ export const getInitialQueryParams = (...params: Parameters<typeof fn>) =>
   });
 
 const queryFn = async (...params: Parameters<typeof fn>) =>
-  (await fn(...params)).caseOf({
-    Left(l) {
-      console.log(l);
-      return Promise.reject(l);
-    },
-    Right(r) {
-      return Promise.resolve(r);
-    },
-  });
+  (await fn(...params)).unsafeCoerce();
 
 type Result = {
   network: string | null;

@@ -23,36 +23,30 @@ export const useMultiYields = (yieldIds: string[]) => {
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
     staleTime: config.queryClient.cacheTime,
-    queryFn: async ({ signal }) => {
-      const res = eitherAsyncPool(
-        yieldIds.map(
-          (y) => () => getYieldOpportunity({ isLedgerLive, yieldId: y, signal })
-        ),
-        5
-      )()
-        .map((data) =>
-          defaultFiltered({ data, isConnected, network, isLedgerLive })
-        )
-        .ifRight((data) => {
-          /**
-           * Set the query data for each yield opportunity
-           */
-          data.forEach((y) =>
-            setYieldOpportunityInCache({
-              isLedgerLive,
-              yieldDto: y,
-            })
-          );
-        });
-
-      return res.caseOf({
-        Left: (e) => {
-          console.log(e);
-          return Promise.reject(e);
-        },
-        Right: (data) => Promise.resolve(data),
-      });
-    },
+    queryFn: async ({ signal }) =>
+      (
+        await eitherAsyncPool(
+          yieldIds.map(
+            (y) => () =>
+              getYieldOpportunity({ isLedgerLive, yieldId: y, signal })
+          ),
+          5
+        )()
+          .map((data) =>
+            defaultFiltered({ data, isConnected, network, isLedgerLive })
+          )
+          .ifRight((data) => {
+            /**
+             * Set the query data for each yield opportunity
+             */
+            data.forEach((y) =>
+              setYieldOpportunityInCache({
+                isLedgerLive,
+                yieldDto: y,
+              })
+            );
+          })
+      ).unsafeCoerce(),
   });
 };
 

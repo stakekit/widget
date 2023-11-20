@@ -9,12 +9,10 @@ export const getEnabledNetworks = () =>
       staleTime: Infinity,
       queryKey: [config.appPrefix, "enabled-networks"],
       queryFn: async () =>
-        EitherAsync(() => yieldGetMyNetworks())
-          .map((v) => new Set(v as Networks[]))
-          .caseOf({
-            Left: () =>
-              Promise.reject(new Error("Could not get enabled networks")),
-            Right: (v) => Promise.resolve(v),
-          }),
+        (
+          await EitherAsync(() => yieldGetMyNetworks()).map(
+            (v) => new Set(v as Networks[])
+          )
+        ).unsafeCoerce(),
     })
   ).mapLeft(() => new Error("Could not get enabled networks"));

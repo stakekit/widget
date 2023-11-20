@@ -22,12 +22,9 @@ export const useStakeEnterAndTxsConstruct = () => {
       stakeRequestDto: ActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;
     }
-  >(["stake-enter"], async (args) => {
-    return (await fn({ ...args, isLedgerLive })).caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (r) => Promise.resolve(r),
-    });
-  });
+  >(["stake-enter"], async (args) =>
+    (await fn({ ...args, isLedgerLive })).unsafeCoerce()
+  );
 };
 
 const fn = ({

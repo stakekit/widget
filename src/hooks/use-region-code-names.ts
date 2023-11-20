@@ -4,11 +4,13 @@ import { EitherAsync, Maybe } from "purify-ts";
 export const useRegionCodeName = (regionCode?: string) => {
   return useQuery(
     ["region-codes"],
-    async () => {
-      return EitherAsync.liftEither(
-        Maybe.fromNullable(regionCode).toEither(new Error("missing regionCode"))
-      )
-        .chain((region) =>
+    async () =>
+      (
+        await EitherAsync.liftEither(
+          Maybe.fromNullable(regionCode).toEither(
+            new Error("missing regionCode")
+          )
+        ).chain((region) =>
           EitherAsync(() => import("../utils/region-iso-3166-codes"))
             .mapLeft(() => new Error("Failed to load region-iso-3166-codes"))
             .chain((val) =>
@@ -20,11 +22,7 @@ export const useRegionCodeName = (regionCode?: string) => {
               )
             )
         )
-        .caseOf({
-          Right: (val) => Promise.resolve(val),
-          Left: (err) => Promise.reject(err),
-        });
-    },
+      ).unsafeCoerce(),
     { enabled: !!regionCode, staleTime: Infinity }
   );
 };

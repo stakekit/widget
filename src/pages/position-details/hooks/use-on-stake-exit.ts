@@ -49,11 +49,6 @@ export const useOnStakeExit = () => {
       stakeRequestDto,
     }: {
       stakeRequestDto: ReturnType<typeof useStakeExitRequestDto>;
-    }) => {
-      return (await fn({ stakeRequestDto })).caseOf({
-        Left: (e) => Promise.reject(e),
-        Right: (v) => Promise.resolve(v),
-      });
-    }
+    }) => (await fn({ stakeRequestDto })).unsafeCoerce()
   );
 };

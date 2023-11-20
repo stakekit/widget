@@ -39,11 +39,7 @@ export const getYieldOpportunity = (params: Params) =>
     return new Error("Could not get yield opportunity");
   });
 
-const queryFn = async (params: Params) =>
-  (await fn(params)).caseOf({
-    Left: (e) => Promise.reject(e),
-    Right: (r) => Promise.resolve(r),
-  });
+const queryFn = async (params: Params) => (await fn(params)).unsafeCoerce();
 
 const fn = ({ isLedgerLive, yieldId, signal }: Params) =>
   withRequestErrorRetry({

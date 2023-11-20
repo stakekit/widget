@@ -26,10 +26,7 @@ export const usePendingActionAndTxsConstruct = () => {
       gasModeValue: GasModeValueDto | undefined;
     }
   >(mutationKey, async (args) =>
-    (await fn({ ...args, isLedgerLive })).caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (r) => Promise.resolve(r),
-    })
+    (await fn({ ...args, isLedgerLive })).unsafeCoerce()
   );
 };
 

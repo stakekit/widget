@@ -62,10 +62,5 @@ export const useOnStakeEnter = () => {
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     ReturnType<typeof useStakeEnterRequestDto>
-  >(async (stakeRequestDto) => {
-    return (await fn({ stakeRequestDto })).caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (v) => Promise.resolve(v),
-    });
-  });
+  >(async (stakeRequestDto) => (await fn({ stakeRequestDto })).unsafeCoerce());
 };
