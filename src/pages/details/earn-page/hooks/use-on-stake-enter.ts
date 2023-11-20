@@ -12,55 +12,66 @@ import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../../types";
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
-  const fn = ({
-    stakeRequestDto,
-  }: {
-    stakeRequestDto: ReturnType<typeof useStakeEnterRequestDto>;
-  }) =>
-    EitherAsync.liftEither(
-      stakeRequestDto.toEither(new Error("Stake request not ready"))
-    )
-      .chain((val) =>
-        getAverageGasMode(val.gasFeeToken.network)
-          .chainLeft(async () => Right(null))
-          .map((gas) => ({
-            stakeRequestDto: val.dto,
-            gasFeeToken: val.gasFeeToken,
-            gas,
-          }))
-      )
-      .chain((val) =>
-        EitherAsync(() =>
-          stakeEnterAndTxsConstruct.mutateAsync({
-            stakeRequestDto: val.stakeRequestDto,
-            gasModeValue: val.gas ?? undefined,
-          })
-        )
-          .mapLeft((e) => e as ErrorType)
-          .map((res) => ({ ...val, ...res }))
-      )
-      .chain(
-        ({
-          stakeRequestDto,
-          gasFeeToken,
-          stakeEnterRes,
-          transactionConstructRes,
-        }) =>
-          checkGasAmount({
-            addressWithTokenDto: {
-              address: stakeRequestDto.addresses.address,
-              additionalAddresses:
-                stakeRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes,
-          }).map(() => ({ stakeEnterRes, transactionConstructRes }))
-      );
-
   return useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     ReturnType<typeof useStakeEnterRequestDto>
-  >(async (stakeRequestDto) => (await fn({ stakeRequestDto })).unsafeCoerce());
+  >({
+    mutationFn: async (stakeRequestDto) =>
+      (
+        await fn({
+          stakeRequestDto,
+          stakeEnterAndTxsConstruct: stakeEnterAndTxsConstruct.mutateAsync,
+        })
+      ).unsafeCoerce(),
+  });
 };
+
+const fn = ({
+  stakeRequestDto,
+  stakeEnterAndTxsConstruct,
+}: {
+  stakeRequestDto: ReturnType<typeof useStakeEnterRequestDto>;
+  stakeEnterAndTxsConstruct: ReturnType<
+    typeof useStakeEnterAndTxsConstruct
+  >["mutateAsync"];
+}) =>
+  EitherAsync.liftEither(
+    stakeRequestDto.toEither(new Error("Stake request not ready"))
+  )
+    .chain((val) =>
+      getAverageGasMode(val.gasFeeToken.network)
+        .chainLeft(async () => Right(null))
+        .map((gas) => ({
+          stakeRequestDto: val.dto,
+          gasFeeToken: val.gasFeeToken,
+          gas,
+        }))
+    )
+    .chain((val) =>
+      EitherAsync(() =>
+        stakeEnterAndTxsConstruct({
+          stakeRequestDto: val.stakeRequestDto,
+          gasModeValue: val.gas ?? undefined,
+        })
+      )
+        .mapLeft((e) => e as ErrorType)
+        .map((res) => ({ ...val, ...res }))
+    )
+    .chain(
+      ({
+        stakeRequestDto,
+        gasFeeToken,
+        stakeEnterRes,
+        transactionConstructRes,
+      }) =>
+        checkGasAmount({
+          addressWithTokenDto: {
+            address: stakeRequestDto.addresses.address,
+            additionalAddresses: stakeRequestDto.addresses.additionalAddresses,
+            network: gasFeeToken.network,
+            tokenAddress: gasFeeToken.address,
+          },
+          transactionConstructRes,
+        }).map(() => ({ stakeEnterRes, transactionConstructRes }))
+    );

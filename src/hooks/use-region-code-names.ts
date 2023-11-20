@@ -2,9 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 
 export const useRegionCodeName = (regionCode?: string) => {
-  return useQuery(
-    ["region-codes"],
-    async () =>
+  return useQuery({
+    queryKey: ["region-codes"],
+    enabled: !!regionCode,
+    staleTime: Infinity,
+    queryFn: async () =>
       (
         await EitherAsync.liftEither(
           Maybe.fromNullable(regionCode).toEither(
@@ -23,6 +25,5 @@ export const useRegionCodeName = (regionCode?: string) => {
             )
         )
       ).unsafeCoerce(),
-    { enabled: !!regionCode, staleTime: Infinity }
-  );
+  });
 };

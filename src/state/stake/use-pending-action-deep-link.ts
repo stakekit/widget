@@ -5,24 +5,35 @@ import { Override } from "../../types";
 import { getWagmiConfig } from "../../providers/wagmi";
 import { getAdditionalAddresses } from "../../providers/sk-wallet/use-additional-addresses";
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
-import { onPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
 
 export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected } = useSKWallet();
+
+  const onPendingAction = useOnPendingAction();
 
   return useQuery({
     staleTime: Infinity,
     queryKey: ["pending-action-deep-link"],
     enabled: isConnected,
-    queryFn: async () => (await fn({ isLedgerLive })).unsafeCoerce(),
+    queryFn: async () =>
+      (
+        await fn({ isLedgerLive, onPendingAction: onPendingAction.mutateAsync })
+      ).unsafeCoerce(),
   });
 };
 
-const fn = ({ isLedgerLive }: { isLedgerLive: boolean }) =>
+const fn = ({
+  isLedgerLive,
+  onPendingAction,
+}: {
+  isLedgerLive: boolean;
+  onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
+}) =>
   getInitialQueryParams({ isLedgerLive })
     .chain((val) =>
       EitherAsync.liftEither(
@@ -118,11 +129,12 @@ const fn = ({ isLedgerLive }: { isLedgerLive: boolean }) =>
             })
           )
             .chain((pendingActionRequestDto) =>
-              onPendingAction({
-                isLedgerLive,
-                pendingActionRequestDto,
-                yieldBalance: val.balance,
-              })
+              EitherAsync(() =>
+                onPendingAction({
+                  pendingActionRequestDto,
+                  yieldBalance: val.balance,
+                })
+              ).mapLeft(() => new Error("on pending action failed"))
             )
             .map((res) => ({
               ...res,

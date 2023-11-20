@@ -12,7 +12,7 @@ import {
   useReducer,
 } from "react";
 import { Actions, ExtraData, State } from "./types";
-import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
+import { useStakeEnterAndTxsConstructMutationState } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import {
   getYieldOpportunityFromCache,
@@ -326,21 +326,23 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     );
   }, [initParams.data, selectedValidator, yieldOpportunity.data]);
 
-  const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
+  const stakeEnterAndTxsConstructMutationState =
+    useStakeEnterAndTxsConstructMutationState();
 
   const stakeSession = Maybe.fromNullable(
-    stakeEnterAndTxsConstruct.data?.stakeEnterRes
+    stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
   );
 
   const stakeEnterTxGas = useMemo(
     () =>
-      Maybe.fromNullable(stakeEnterAndTxsConstruct.data).map((val) =>
-        val.transactionConstructRes.reduce(
-          (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-          new BigNumber(0)
-        )
+      Maybe.fromNullable(stakeEnterAndTxsConstructMutationState?.data).map(
+        (val) =>
+          val.transactionConstructRes.reduce(
+            (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+            new BigNumber(0)
+          )
       ),
-    [stakeEnterAndTxsConstruct.data]
+    [stakeEnterAndTxsConstructMutationState?.data]
   );
 
   const actions = useMemo(

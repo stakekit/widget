@@ -334,13 +334,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
-  ).isInitialLoading;
+  ).isLoading;
   const appLoading =
-    wagmiConfig.isInitialLoading ||
-    pendingActionDeepLink.isInitialLoading ||
+    wagmiConfig.isLoading ||
+    pendingActionDeepLink.isLoading ||
     isConnecting ||
     isReconnecting;
-  const multiYieldsLoading = multiYields.isInitialLoading;
+  const multiYieldsLoading = multiYields.isLoading;
   const stakeTokenAvailableAmountLoading =
     stakeTokenAvailableAmount.isInitialLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
@@ -368,7 +368,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       !amountValid ||
       stakeAmount.isNothing() ||
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
-      onStakeEnter.isLoading);
+      onStakeEnter.isPending);
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -417,7 +417,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     errorMessage,
     rewardToken,
     onSelectOpportunityClose,
-    onStakeEnterIsLoading: onStakeEnter.isLoading,
+    onStakeEnterIsLoading: onStakeEnter.isPending,
     selectedStakeYieldType,
     isConnected,
     appLoading,

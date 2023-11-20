@@ -135,6 +135,7 @@ export const CompletePage = ({
 
           {urls.map((val) => (
             <Box
+              key={val.url}
               marginTop="4"
               display="flex"
               justifyContent="center"

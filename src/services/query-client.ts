@@ -4,7 +4,7 @@ import { isAxiosError, shouldRetryRequest } from "../common/utils";
 
 export const defaultQueryClientConfiguration: DefaultOptions = {
   queries: {
-    cacheTime: config.queryClient.cacheTime,
+    gcTime: config.queryClient.cacheTime,
     staleTime: config.queryClient.staleTime,
     retry: (failureCount, error) => {
       if (isAxiosError(error)) {

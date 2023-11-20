@@ -9,10 +9,10 @@ import {
   useReducer,
 } from "react";
 import { Action } from "../stake/types";
-import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
+import { useStakeExitAndTxsConstructMutationState } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { ActionDto, TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
-import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
+import { usePendingActionAndTxsConstructMutationState } from "../../hooks/api/use-pending-action-and-txs-construct";
+import { useOnPendingActionMutationState } from "../../pages/position-details/hooks/use-on-pending-action";
 
 type UnstakeAmountChange = Action<
   "unstake/amount/change",
@@ -67,48 +67,57 @@ export const UnstakeOrPendingActionContextProvider = ({
 
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
-  const stakeExitAndTxsConstruct = useStakeExitAndTxsConstruct();
-  const pendingActionAndTxsConstruct = usePendingActionAndTxsConstruct();
+  const stakeExitAndTxsConstructMutationState =
+    useStakeExitAndTxsConstructMutationState();
+  const pendingActionAndTxsConstructMutationState =
+    usePendingActionAndTxsConstructMutationState();
 
   const unstakeSession = useMemo(
-    () => Maybe.fromNullable(stakeExitAndTxsConstruct.data?.stakeExitRes),
-    [stakeExitAndTxsConstruct.data?.stakeExitRes]
+    () =>
+      Maybe.fromNullable(
+        stakeExitAndTxsConstructMutationState?.data?.stakeExitRes
+      ),
+    [stakeExitAndTxsConstructMutationState?.data?.stakeExitRes]
   );
 
   const pendingActionSession = useMemo(
     () =>
-      Maybe.fromNullable(pendingActionAndTxsConstruct.data?.pendingActionRes),
-    [pendingActionAndTxsConstruct.data?.pendingActionRes]
+      Maybe.fromNullable(
+        pendingActionAndTxsConstructMutationState?.data?.pendingActionRes
+      ),
+    [pendingActionAndTxsConstructMutationState?.data?.pendingActionRes]
   );
 
   const stakeExitTxGas = useMemo(() => {
-    return Maybe.fromNullable(stakeExitAndTxsConstruct.data).map((val) =>
-      val.transactionConstructRes.reduce(
-        (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-        new BigNumber(0)
-      )
-    );
-  }, [stakeExitAndTxsConstruct.data]);
-
-  const pendingActionTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(pendingActionAndTxsConstruct.data).map((val) =>
+    return Maybe.fromNullable(stakeExitAndTxsConstructMutationState?.data).map(
+      (val) =>
         val.transactionConstructRes.reduce(
           (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
           new BigNumber(0)
         )
+    );
+  }, [stakeExitAndTxsConstructMutationState]);
+
+  const pendingActionTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(pendingActionAndTxsConstructMutationState?.data).map(
+        (val) =>
+          val.transactionConstructRes.reduce(
+            (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+            new BigNumber(0)
+          )
       ),
-    [pendingActionAndTxsConstruct.data]
+    [pendingActionAndTxsConstructMutationState?.data]
   );
 
-  const onPendingAction = useOnPendingAction();
+  const onPendingActionState = useOnPendingActionMutationState();
 
   const pendingAction = useMemo<ExtraData["pendingAction"]>(
     () =>
-      Maybe.fromNullable(onPendingAction.data).map((val) => ({
+      Maybe.fromNullable(onPendingActionState?.data).map((val) => ({
         token: val.yieldBalance.token,
       })),
-    [onPendingAction]
+    [onPendingActionState?.data]
   );
 
   const value: State & ExtraData = useMemo(

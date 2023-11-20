@@ -13,15 +13,15 @@ export const useAdditionalAddresses = ({
   connector: Connector | undefined;
   address: Address | undefined;
 }) => {
-  return useQuery(
-    ["additional-addresses", connector?.id, address],
-    async () => {
+  return useQuery({
+    queryKey: ["additional-addresses", connector?.id, address],
+    enabled: !!connector && !!address,
+    queryFn: async () => {
       if (!connector) return Promise.resolve(null);
 
       return (await getAdditionalAddresses(connector)).unsafeCoerce();
     },
-    { enabled: !!connector && !!address }
-  );
+  });
 };
 
 export const getAdditionalAddresses = (

@@ -3,29 +3,41 @@ import {
   ActionRequestDto,
   actionEnter,
 } from "@stakekit/api-hooks";
-import { useSharedMutation } from "../use-shared-mutation";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
+import { useMutation } from "@tanstack/react-query";
+import { useMutationSharedState } from "../use-mutation-shared-state";
 
 export type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 
+const mutationKey = ["stake-enter"];
+
 export const useStakeEnterAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
 
-  return useSharedMutation<
+  return useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
       stakeRequestDto: ActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;
     }
-  >(["stake-enter"], async (args) =>
-    (await fn({ ...args, isLedgerLive })).unsafeCoerce()
-  );
+  >({
+    mutationKey,
+    mutationFn: async (args) =>
+      (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
+  });
 };
+
+export const useStakeEnterAndTxsConstructMutationState = (): ReturnType<
+  typeof useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>
+> =>
+  useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>({
+    mutationKey,
+  });
 
 const fn = ({
   gasModeValue,

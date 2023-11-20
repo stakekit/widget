@@ -292,8 +292,8 @@ export const usePositionDetails = () => {
 
   const unstakeDisabled =
     !unstakeAmountValid ||
-    onStakeExit.isLoading ||
-    onPendingAction.isLoading ||
+    onStakeExit.isPending ||
+    onPendingAction.isPending ||
     yieldOpportunity.isLoading ||
     !unstakeAvailable;
 
@@ -366,12 +366,12 @@ export const usePositionDetails = () => {
               pa.passthrough &&
             onPendingAction.variables?.pendingActionRequestDto.type ===
               pa.type &&
-            onPendingAction.isLoading,
+            onPendingAction.isPending,
         }))
       )
     );
   }, [
-    onPendingAction.isLoading,
+    onPendingAction.isPending,
     onPendingAction.variables?.pendingActionRequestDto,
     positionBalancesByType,
   ]);
@@ -419,7 +419,7 @@ export const usePositionDetails = () => {
     error,
     unstakeDisabled,
     isLoading,
-    onStakeExitIsLoading: onStakeExit.isLoading,
+    onStakeExitIsLoading: onStakeExit.isPending,
     onPendingActionClick,
     providerDetails,
     pendingActions,
