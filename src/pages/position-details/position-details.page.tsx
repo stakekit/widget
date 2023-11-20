@@ -219,9 +219,9 @@ export const PositionDetails = () => {
                               i18nKey="position_details.available_to"
                               values={{
                                 amount: formatNumber(
-                                  new BigNumber(pa.opportunityBalance.amount)
+                                  new BigNumber(pa.yieldBalance.amount)
                                 ),
-                                symbol: pa.opportunityBalance.token.symbol,
+                                symbol: pa.yieldBalance.token.symbol,
                                 pendingAction: t(
                                   `position_details.pending_action.${
                                     pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
@@ -261,7 +261,7 @@ export const PositionDetails = () => {
                             disabled={pa.isLoading}
                             onClick={() =>
                               onPendingActionClick({
-                                opportunityBalance: pa.opportunityBalance,
+                                yieldBalance: pa.yieldBalance,
                                 pendingActionDto: pa.pendingActionDto,
                               })
                             }

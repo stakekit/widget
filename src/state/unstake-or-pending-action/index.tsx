@@ -12,31 +12,23 @@ import { Action } from "../stake/types";
 import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { ActionDto, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
+import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
 
 type UnstakeAmountChange = Action<
   "unstake/amount/change",
   { integration: YieldDto; amount: Maybe<BigNumber> }
 >;
 
-type PendingActionTokenChange = Action<
-  "pending-action/token/change",
-  { token: TokenDto }
->;
-
-type Actions = UnstakeAmountChange | PendingActionTokenChange;
+type Actions = UnstakeAmountChange;
 
 const getInitialState = (): State => ({
   unstake: Maybe.empty(),
-  pendingAction: Maybe.empty(),
 });
 
 export type State = {
   unstake: Maybe<{
     integration: YieldDto;
     amount: Maybe<BigNumber>;
-  }>;
-  pendingAction: Maybe<{
-    token: TokenDto;
   }>;
 };
 
@@ -45,6 +37,7 @@ type ExtraData = {
   pendingActionTxGas: Maybe<BigNumber>;
   unstakeSession: Maybe<ActionDto>;
   pendingActionSession: Maybe<ActionDto>;
+  pendingAction: Maybe<{ token: TokenDto }>;
 };
 
 const UnstakeOrPendingActionContext = createContext<
@@ -64,13 +57,6 @@ export const UnstakeOrPendingActionContextProvider = ({
         return {
           ...state,
           unstake: Maybe.of(action.data),
-        };
-      }
-
-      case "pending-action/token/change": {
-        return {
-          ...state,
-          pendingAction: Maybe.of(action.data),
         };
       }
 
@@ -104,14 +90,26 @@ export const UnstakeOrPendingActionContextProvider = ({
     );
   }, [stakeExitAndTxsConstruct.data]);
 
-  const pendingActionTxGas = useMemo(() => {
-    return Maybe.fromNullable(pendingActionAndTxsConstruct.data).map((val) =>
-      val.transactionConstructRes.reduce(
-        (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-        new BigNumber(0)
-      )
-    );
-  }, [pendingActionAndTxsConstruct.data]);
+  const pendingActionTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(pendingActionAndTxsConstruct.data).map((val) =>
+        val.transactionConstructRes.reduce(
+          (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+          new BigNumber(0)
+        )
+      ),
+    [pendingActionAndTxsConstruct.data]
+  );
+
+  const onPendingAction = useOnPendingAction();
+
+  const pendingAction = useMemo<ExtraData["pendingAction"]>(
+    () =>
+      Maybe.fromNullable(onPendingAction.data).map((val) => ({
+        token: val.yieldBalance.token,
+      })),
+    [onPendingAction]
+  );
 
   const value: State & ExtraData = useMemo(
     () => ({
@@ -120,15 +118,15 @@ export const UnstakeOrPendingActionContextProvider = ({
       pendingActionSession,
       unstake: state.unstake,
       pendingActionTxGas,
-      pendingAction: state.pendingAction,
+      pendingAction,
     }),
     [
       stakeExitTxGas,
       unstakeSession,
       pendingActionSession,
       state.unstake,
-      state.pendingAction,
       pendingActionTxGas,
+      pendingAction,
     ]
   );
 

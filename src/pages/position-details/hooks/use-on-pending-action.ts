@@ -1,62 +1,93 @@
-import { EitherAsync, Right } from "purify-ts";
+import { Right } from "purify-ts";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
-import { usePendingActionAndTxsConstruct } from "../../../hooks/api/use-pending-action-and-txs-construct";
+import { pendingActionAndTxsConstruct } from "../../../hooks/api/use-pending-action-and-txs-construct";
 import { checkGasAmount } from "../../../common/check-gas-amount";
-import { useMutation } from "@tanstack/react-query";
 import { preparePendingActionRequestDto } from "./utils";
-import { GetEitherRight } from "../../../types";
+import {
+  GetEitherAsyncLeft,
+  GetEitherAsyncRight,
+  GetEitherRight,
+} from "../../../types";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import {
+  setSharedMutationData,
+  setSharedMutationError,
+  useSharedMutation,
+} from "../../../hooks/use-shared-mutation";
+import { YieldBalanceDto } from "@stakekit/api-hooks";
+
+const mutationKey = ["on-pending-action"];
 
 export const useOnPendingAction = () => {
-  const pendingActionAndTxsConstruct = usePendingActionAndTxsConstruct();
+  const { isLedgerLive } = useSKWallet();
 
-  const fn = ({
-    pendingActionRequestDto,
-  }: {
-    pendingActionRequestDto: GetEitherRight<
-      ReturnType<typeof preparePendingActionRequestDto>
-    >;
-  }) =>
-    getAverageGasMode(pendingActionRequestDto.gasFeeToken.network)
-      .chainLeft(async () => Right(null))
-      .chain((val) =>
-        EitherAsync(() =>
-          pendingActionAndTxsConstruct.mutateAsync({
-            gasModeValue: val ?? undefined,
-            pendingActionRequestDto: {
-              integrationId: pendingActionRequestDto.integrationId,
-              type: pendingActionRequestDto.type,
-              passthrough: pendingActionRequestDto.passthrough,
-              args: pendingActionRequestDto.args,
-            },
-          })
-        )
-          .mapLeft(() => new Error("Stake claim and txs construct failed"))
-          .map((res) => ({ ...val, ...res }))
-      )
-      .chain(({ pendingActionRes, transactionConstructRes }) =>
-        checkGasAmount({
-          addressWithTokenDto: {
-            address: pendingActionRequestDto.address,
-            additionalAddresses: pendingActionRequestDto.additionalAddresses,
-            network: pendingActionRequestDto.gasFeeToken.network,
-            tokenAddress: pendingActionRequestDto.gasFeeToken.address,
-          },
-          transactionConstructRes,
-        }).map(() => ({ pendingActionRes, transactionConstructRes }))
-      );
-
-  return useMutation(
-    async ({
-      pendingActionRequestDto,
-    }: {
+  return useSharedMutation<
+    GetEitherAsyncRight<ReturnType<typeof onPendingAction>>,
+    GetEitherAsyncLeft<ReturnType<typeof onPendingAction>>,
+    {
       pendingActionRequestDto: GetEitherRight<
         ReturnType<typeof preparePendingActionRequestDto>
       >;
-    }) => {
-      return (await fn({ pendingActionRequestDto })).caseOf({
-        Left: (e) => Promise.reject(e),
-        Right: (v) => Promise.resolve(v),
-      });
+      yieldBalance: YieldBalanceDto;
     }
+  >(mutationKey, async ({ pendingActionRequestDto, yieldBalance }) =>
+    (
+      await onPendingAction({
+        pendingActionRequestDto,
+        isLedgerLive,
+        yieldBalance,
+      })
+    ).caseOf({
+      Left: (e) => Promise.reject(e),
+      Right: (v) => Promise.resolve(v),
+    })
   );
 };
+
+export const onPendingAction = (...params: Parameters<typeof fn>) =>
+  fn(...params)
+    .ifRight((data) => setSharedMutationData({ data, mutationKey }))
+    .ifLeft((e) => setSharedMutationError({ mutationKey, err: e }));
+
+const fn = ({
+  isLedgerLive,
+  pendingActionRequestDto,
+  yieldBalance,
+}: {
+  isLedgerLive: boolean;
+  pendingActionRequestDto: GetEitherRight<
+    ReturnType<typeof preparePendingActionRequestDto>
+  >;
+  yieldBalance: YieldBalanceDto;
+}) =>
+  getAverageGasMode(pendingActionRequestDto.gasFeeToken.network)
+    .chainLeft(async () => Right(null))
+    .chain((val) =>
+      pendingActionAndTxsConstruct({
+        isLedgerLive,
+        gasModeValue: val ?? undefined,
+        pendingActionRequestDto: {
+          integrationId: pendingActionRequestDto.integrationId,
+          type: pendingActionRequestDto.type,
+          passthrough: pendingActionRequestDto.passthrough,
+          args: pendingActionRequestDto.args,
+        },
+      })
+        .mapLeft(() => new Error("Stake claim and txs construct failed"))
+        .map((res) => ({ ...val, ...res }))
+    )
+    .chain(({ pendingActionRes, transactionConstructRes }) =>
+      checkGasAmount({
+        addressWithTokenDto: {
+          address: pendingActionRequestDto.address,
+          additionalAddresses: pendingActionRequestDto.additionalAddresses,
+          network: pendingActionRequestDto.gasFeeToken.network,
+          tokenAddress: pendingActionRequestDto.gasFeeToken.address,
+        },
+        transactionConstructRes,
+      }).map(() => ({
+        pendingActionRes,
+        transactionConstructRes,
+        yieldBalance,
+      }))
+    );

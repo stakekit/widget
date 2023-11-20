@@ -63,3 +63,19 @@ export const useSharedMutation = <
     isError: !!queryError.data,
   } as UseMutationResult<TData, TError, TVariables, TContext>;
 };
+
+export const setSharedMutationData = <TData = unknown>({
+  mutationKey,
+  data,
+}: {
+  mutationKey: MutationKey;
+  data: TData;
+}) => queryClient.setQueryData(["CustomMutation", mutationKey], data);
+
+export const setSharedMutationError = <TError = unknown>({
+  mutationKey,
+  err,
+}: {
+  mutationKey: MutationKey;
+  err: TError;
+}) => queryClient.setQueryData(["CustomMutationError", mutationKey], err);

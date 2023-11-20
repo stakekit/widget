@@ -1,8 +1,8 @@
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
-import { useProviderDetails } from "../../hooks/use-provider-details";
-import { useYieldType } from "../../hooks/use-yield-type";
-import { useStakeHistoryData } from "../../providers/stake-history";
-import { formatNumber } from "../../utils";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useStakeHistoryData } from "../../../providers/stake-history";
+import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {

@@ -1,14 +1,14 @@
 import { useMatch, useParams } from "react-router-dom";
-import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
+import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { useMemo } from "react";
-import { formatNumber } from "../../utils";
+import { formatNumber } from "../../../utils";
 import BigNumber from "bignumber.js";
 import { CompletePage } from "./common.page";
 import { Maybe } from "purify-ts";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import { useYieldType } from "../../hooks/use-yield-type";
-import { useProviderDetails } from "../../hooks/use-provider-details";
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 
 export const UnstakeOrPendingActionCompletePage = () => {
   const { unstake, pendingActionSession, pendingAction } =

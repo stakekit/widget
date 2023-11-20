@@ -1,19 +1,22 @@
 import { useTranslation } from "react-i18next";
-import { Box, Button, Heading, Text } from "../../components";
-import { PageContainer } from "../components";
-import { CheckCircleIcon } from "../../components/atoms/icons/check-circle";
-import { useComplete } from "./use-complete.hook";
-import { TokenIcon } from "../../components/atoms/token-icon";
+import { Box, Button, Heading, Text } from "../../../components";
+import { PageContainer } from "../../components";
+import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
+import { useComplete } from "../hooks/use-complete.hook";
+import { TokenIcon } from "../../../components/atoms/token-icon";
 import {
   ActionTypes,
   TokenDto,
   YieldMetadataDto,
   YieldType,
 } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
-import { ImageFallback } from "../../components/atoms/image-fallback";
-import { Image } from "../../components/atoms/image";
-import { capitalizeFirstLowerRest } from "../../utils/text";
+import { Just, Maybe } from "purify-ts";
+import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { Image } from "../../../components/atoms/image";
+import {
+  capitalizeFirstLowerRest,
+  removeUnderscores,
+} from "../../../utils/text";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -149,7 +152,10 @@ export const CompletePage = ({
               </Box>
               <Text variant={{ type: "muted" }}>
                 {t("complete.view_transaction", {
-                  type: capitalizeFirstLowerRest(val.type),
+                  type: Just(val.type)
+                    .map(removeUnderscores)
+                    .map(capitalizeFirstLowerRest)
+                    .extract(),
                 })}
               </Text>
             </Box>

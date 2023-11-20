@@ -3,11 +3,17 @@ import {
   PendingActionRequestDto,
   actionPending,
 } from "@stakekit/api-hooks";
-import { useSharedMutation } from "../use-shared-mutation";
+import {
+  setSharedMutationData,
+  setSharedMutationError,
+  useSharedMutation,
+} from "../use-shared-mutation";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
+
+const mutationKey = ["pending-action"];
 
 export const usePendingActionAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
@@ -19,13 +25,20 @@ export const usePendingActionAndTxsConstruct = () => {
       pendingActionRequestDto: PendingActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;
     }
-  >(["pending-action"], async (args) => {
-    return (await fn({ ...args, isLedgerLive })).caseOf({
+  >(mutationKey, async (args) =>
+    (await fn({ ...args, isLedgerLive })).caseOf({
       Left: (e) => Promise.reject(e),
       Right: (r) => Promise.resolve(r),
-    });
-  });
+    })
+  );
 };
+
+export const pendingActionAndTxsConstruct = (
+  ...params: Parameters<typeof fn>
+) =>
+  fn(...params)
+    .ifRight((data) => setSharedMutationData({ data, mutationKey }))
+    .ifLeft((e) => setSharedMutationError({ mutationKey, err: e }));
 
 const fn = ({
   gasModeValue,

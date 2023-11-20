@@ -89,7 +89,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     }
   }, [_isConnected, disconnect, isConnected]);
 
-  const { data: additionalAddresses } = useAdditionalAddresses({
+  const additionalAddresses = useAdditionalAddresses({
     address,
     connector,
   });
@@ -219,7 +219,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const value = useMemo((): SKWallet => {
     const common = { disconnect, signTransaction, isReconnecting };
 
-    if (isConnected && address && network) {
+    if (
+      isConnected &&
+      address &&
+      network &&
+      !additionalAddresses.isInitialLoading
+    ) {
       const isLedgerLive = isLedgerLiveConnector(connector);
 
       return {
@@ -230,7 +235,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         isConnected: true,
         isConnecting: false,
         isNotConnectedOrReconnecting: false,
-        additionalAddresses: additionalAddresses ?? null,
+        additionalAddresses: additionalAddresses.data ?? null,
         isLedgerLive,
         ledgerAccounts,
         onLedgerAccountChange,
@@ -245,7 +250,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       isConnected: false,
       isConnecting,
       isNotConnectedOrReconnecting:
-        !wagmiConfig.isLoading && !isReconnecting && !isConnecting,
+        !wagmiConfig.isLoading &&
+        !isReconnecting &&
+        !isConnecting &&
+        !additionalAddresses.isInitialLoading,
       additionalAddresses: null,
       isLedgerLive: false,
       ledgerAccounts: null,

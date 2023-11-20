@@ -12,12 +12,12 @@ export const preparePendingActionRequestDto = ({
   address,
   pendingActionDto,
   integration,
-  opportunityBalance,
+  yieldBalance,
 }: {
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: PendingActionDto;
-  opportunityBalance: YieldBalanceDto;
+  yieldBalance: YieldBalanceDto;
   integration: YieldDto;
 }): Either<
   Error,
@@ -36,8 +36,8 @@ export const preparePendingActionRequestDto = ({
       additionalAddresses: additionalAddresses ?? undefined,
       gasFeeToken: integration.metadata.gasFeeToken,
       args: {
-        validatorAddress: opportunityBalance.validatorAddress,
-        amount: opportunityBalance.amount,
+        validatorAddress: yieldBalance.validatorAddress,
+        amount: yieldBalance.amount,
       },
       integrationId: integration.id,
       passthrough: pendingActionDto.passthrough,

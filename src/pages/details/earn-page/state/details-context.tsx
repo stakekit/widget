@@ -46,6 +46,7 @@ import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -272,9 +273,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       type: "tokenBalance/select",
       data: {
         tokenBalance,
-        initYield: List.head(tokenBalance.availableYields).chainNullable(
-          (yId) =>
-            getYieldOpportunityFromCache({ integrationId: yId, isLedgerLive })
+        initYield: List.head(tokenBalance.availableYields).chain((yId) =>
+          getYieldOpportunityFromCache({ yieldId: yId, isLedgerLive })
         ),
       },
     });
@@ -330,10 +330,16 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const wagmiConfig = useWagmiConfig();
 
+  const pendingActionDeepLink = usePendingActionDeepLink();
+
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
   ).isInitialLoading;
-  const appLoading = wagmiConfig.isLoading || isConnecting || isReconnecting;
+  const appLoading =
+    wagmiConfig.isInitialLoading ||
+    pendingActionDeepLink.isInitialLoading ||
+    isConnecting ||
+    isReconnecting;
   const multiYieldsLoading = multiYields.isInitialLoading;
   const stakeTokenAvailableAmountLoading =
     stakeTokenAvailableAmount.isInitialLoading;

@@ -13,19 +13,21 @@ export const useAdditionalAddresses = ({
   connector: Connector | undefined;
   address: Address | undefined;
 }) => {
-  return useQuery(["additionalAddresses", connector?.id, address], async () => {
-    if (!connector) return Promise.resolve(null);
+  return useQuery(
+    ["additional-addresses", connector?.id, address],
+    async () => {
+      if (!connector) return Promise.resolve(null);
 
-    const res = await getAdditionalAddresses(connector);
-
-    return res.caseOf({
-      Left: (e) => Promise.reject(e),
-      Right: (val) => Promise.resolve(val),
-    });
-  });
+      return (await getAdditionalAddresses(connector)).caseOf({
+        Left: (e) => Promise.reject(e),
+        Right: (val) => Promise.resolve(val),
+      });
+    },
+    { enabled: !!connector && !!address }
+  );
 };
 
-const getAdditionalAddresses = (
+export const getAdditionalAddresses = (
   connector: Connector
 ): EitherAsync<Error, AddressWithTokenDtoAdditionalAddresses | null> => {
   if (isCosmosConnector(connector)) {

@@ -1,11 +1,13 @@
-import { YieldDto, yieldYieldOpportunity } from "@stakekit/api-hooks";
+import { YieldDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
-import { withRequestErrorRetry } from "../../common/utils";
 import { eitherAsyncPool } from "../../utils/either-async-pool";
-import { setYieldOpportunityInCache } from "./use-yield-opportunity";
+import {
+  getYieldOpportunity,
+  setYieldOpportunityInCache,
+} from "./use-yield-opportunity";
 import { config } from "../../config";
 import { useSKWallet } from "../../providers/sk-wallet";
 
@@ -24,18 +26,7 @@ export const useMultiYields = (yieldIds: string[]) => {
     queryFn: async ({ signal }) => {
       const res = eitherAsyncPool(
         yieldIds.map(
-          (y) => () =>
-            withRequestErrorRetry({
-              fn: () =>
-                yieldYieldOpportunity(
-                  y,
-                  { ledgerWalletAPICompatible: isLedgerLive },
-                  signal
-                ),
-            }).mapLeft((e) => {
-              console.log(e);
-              return new Error("Unknown error");
-            })
+          (y) => () => getYieldOpportunity({ isLedgerLive, yieldId: y, signal })
         ),
         5
       )()
