@@ -16,5 +16,5 @@ export const useMutationSharedState = <TData>({
     select: (mutation) => mutation.state as MutationState<TData>,
   });
 
-  return useMemo(() => List.head(mutationState).extract(), [mutationState]);
+  return useMemo(() => List.last(mutationState).extract(), [mutationState]);
 };
