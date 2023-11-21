@@ -14,13 +14,13 @@ import {
   SupportedSKChains,
 } from "../../domain/types/chains";
 import { getWagmiConfig } from "../wagmi";
-import { EitherAsync, List, Maybe } from "purify-ts";
+import { EitherAsync, List } from "purify-ts";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
 import { GetEitherAsyncRight } from "../../types";
-import { getInitParams } from "../../common/get-init-params";
+import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 
 export class LedgerLiveConnector extends Connector {
   readonly id = "ledgerLive";
@@ -150,7 +150,11 @@ export class LedgerLiveConnector extends Connector {
       [] as { account: Account; chainItem: ChainItem }[]
     );
 
-    const accountWithChain = Maybe.fromNullable(getInitParams().network)
+    const initNetwork = (await getInitialQueryParams({ isLedgerLive: true }))
+      .toMaybe()
+      .chainNullable((v) => v.network);
+
+    const accountWithChain = initNetwork
       .chain((val) =>
         List.find((v) => v.chainItem.skChainName === val, accountsWithChain)
       )

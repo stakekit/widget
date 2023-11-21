@@ -292,8 +292,8 @@ export const usePositionDetails = () => {
 
   const unstakeDisabled =
     !unstakeAmountValid ||
-    onStakeExit.isLoading ||
-    onPendingAction.isLoading ||
+    onStakeExit.isPending ||
+    onPendingAction.isPending ||
     yieldOpportunity.isLoading ||
     !unstakeAvailable;
 
@@ -319,11 +319,11 @@ export const usePositionDetails = () => {
   const { additionalAddresses, address } = useSKWallet();
 
   const onPendingActionClick = ({
-    opportunityBalance,
+    yieldBalance,
     pendingActionDto,
   }: {
     pendingActionDto: PendingActionDto;
-    opportunityBalance: YieldBalanceDto;
+    yieldBalance: YieldBalanceDto;
   }) => {
     trackEvent("pendingActionClicked", {
       yieldId: integrationData.map((v) => v.id).extract(),
@@ -334,25 +334,23 @@ export const usePositionDetails = () => {
       .toEither(new Error("missing integration data"))
       .chain((d) =>
         preparePendingActionRequestDto({
-          opportunityBalance,
+          yieldBalance,
           pendingActionDto,
           additionalAddresses,
           address,
           integration: d,
         })
       )
-      .ifRight((pendingActionRequestDto) => {
-        onPendingAction.mutateAsync({ pendingActionRequestDto }).then(() => {
-          dispatch({
-            type: "pending-action/token/change",
-            data: { token: opportunityBalance.token },
-          });
-          navigate(
-            `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
-            { relative: "path" }
-          );
-        });
-      });
+      .ifRight((pendingActionRequestDto) =>
+        onPendingAction
+          .mutateAsync({ pendingActionRequestDto, yieldBalance })
+          .then(() =>
+            navigate(
+              `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
+              { relative: "path" }
+            )
+          )
+      );
   };
 
   const error = onStakeExit.isError || onPendingAction.isError;
@@ -362,18 +360,18 @@ export const usePositionDetails = () => {
       [...pbbt.values()].flatMap((val) =>
         val.pendingActions.map((pa) => ({
           pendingActionDto: pa,
-          opportunityBalance: val,
+          yieldBalance: val,
           isLoading:
             onPendingAction.variables?.pendingActionRequestDto.passthrough ===
               pa.passthrough &&
             onPendingAction.variables?.pendingActionRequestDto.type ===
               pa.type &&
-            onPendingAction.isLoading,
+            onPendingAction.isPending,
         }))
       )
     );
   }, [
-    onPendingAction.isLoading,
+    onPendingAction.isPending,
     onPendingAction.variables?.pendingActionRequestDto,
     positionBalancesByType,
   ]);
@@ -421,7 +419,7 @@ export const usePositionDetails = () => {
     error,
     unstakeDisabled,
     isLoading,
-    onStakeExitIsLoading: onStakeExit.isLoading,
+    onStakeExitIsLoading: onStakeExit.isPending,
     onPendingActionClick,
     providerDetails,
     pendingActions,

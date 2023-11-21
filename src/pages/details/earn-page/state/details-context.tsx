@@ -46,6 +46,7 @@ import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -59,13 +60,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
-  const {
-    isConnected,
-    isConnecting,
-    isReconnecting,
-    isLedgerLive,
-    isNotConnectedOrReconnecting,
-  } = useSKWallet();
+  const { isConnected, isConnecting, isLedgerLive } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -132,13 +127,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isNotConnectedOrReconnecting
-    ? defaultTokens
-    : tokenBalancesScan;
+  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
 
   const restTokenBalances = useMemo(
     () =>
-      Maybe.fromPredicate(() => !isNotConnectedOrReconnecting, defaultTokens)
+      Maybe.fromPredicate(() => !isConnected, defaultTokens)
         .chainNullable((defTb) => defTb.data)
         .chain((defTb) =>
           Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
@@ -152,7 +145,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           return defTb.filter((t) => !tbsSet.has(tokenString(t.token)));
         })
         .alt(Maybe.of([])),
-    [defaultTokens, isNotConnectedOrReconnecting, tokenBalancesScan.data]
+    [defaultTokens, isConnected, tokenBalancesScan.data]
   );
 
   const tokenBalancesData = useMemo(
@@ -272,9 +265,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       type: "tokenBalance/select",
       data: {
         tokenBalance,
-        initYield: List.head(tokenBalance.availableYields).chainNullable(
-          (yId) =>
-            getYieldOpportunityFromCache({ integrationId: yId, isLedgerLive })
+        initYield: List.head(tokenBalance.availableYields).chain((yId) =>
+          getYieldOpportunityFromCache({ yieldId: yId, isLedgerLive })
         ),
       },
     });
@@ -330,15 +322,17 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const wagmiConfig = useWagmiConfig();
 
+  const pendingActionDeepLink = usePendingActionDeepLink();
+
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
-  ).isInitialLoading;
-  const appLoading = wagmiConfig.isLoading || isConnecting || isReconnecting;
-  const multiYieldsLoading = multiYields.isInitialLoading;
-  const stakeTokenAvailableAmountLoading =
-    stakeTokenAvailableAmount.isInitialLoading;
-  const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
-  const defaultTokensIsLoading = defaultTokens.isInitialLoading;
+  ).isLoading;
+  const appLoading =
+    wagmiConfig.isLoading || pendingActionDeepLink.isLoading || isConnecting;
+  const multiYieldsLoading = multiYields.isLoading;
+  const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;
+  const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
+  const defaultTokensIsLoading = defaultTokens.isLoading;
 
   const isFetching =
     multiYields.isFetching ||
@@ -362,7 +356,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       !amountValid ||
       stakeAmount.isNothing() ||
       stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
-      onStakeEnter.isLoading);
+      onStakeEnter.isPending);
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -411,7 +405,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     errorMessage,
     rewardToken,
     onSelectOpportunityClose,
-    onStakeEnterIsLoading: onStakeEnter.isLoading,
+    onStakeEnterIsLoading: onStakeEnter.isPending,
     selectedStakeYieldType,
     isConnected,
     appLoading,

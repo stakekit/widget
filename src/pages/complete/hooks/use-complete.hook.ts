@@ -1,6 +1,6 @@
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
-import { useTrackEvent } from "../../hooks/tracking/use-track-event";
-import { TransactionType } from "viem";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { TransactionType } from "@stakekit/api-hooks";
 
 export const useComplete = () => {
   const navigate = useNavigate();

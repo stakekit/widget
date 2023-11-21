@@ -1,4 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PropsWithChildren, StrictMode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { queryClient } from "../services/query-client";
@@ -20,8 +21,10 @@ export const Providers = ({ children }: PropsWithChildren) => {
 
   return (
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <StakeKitQueryProvider>
+      <StakeKitQueryProvider>
+        <QueryClientProvider client={queryClient}>
+          <ReactQueryDevtools initialIsOpen={false} />
+
           <WagmiProvider>
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
@@ -41,8 +44,8 @@ export const Providers = ({ children }: PropsWithChildren) => {
               </SKWalletProvider>
             </TrackingContextProvider>
           </WagmiProvider>
-        </StakeKitQueryProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </StakeKitQueryProvider>
     </StrictMode>
   );
 };

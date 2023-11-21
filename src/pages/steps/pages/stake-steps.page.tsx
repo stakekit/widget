@@ -14,7 +14,7 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const onSignSuccess = () => {
+  const onSignSuccess = () =>
     Maybe.fromRecord({
       selectedStake,
       selectedValidator,
@@ -30,11 +30,10 @@ export const StakeStepsPage = () => {
         address: val.address,
       });
     });
-  };
 
   const setStakeHistoryData = useSetStakeHistoryData();
 
-  const onDone = () => {
+  const onDone = () =>
     Maybe.fromRecord({ selectedStake, stakeAmount }).ifJust((val) => {
       setStakeHistoryData(
         Maybe.of({
@@ -44,7 +43,6 @@ export const StakeStepsPage = () => {
         })
       );
     });
-  };
 
   return (
     <StepsPage

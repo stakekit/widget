@@ -30,7 +30,7 @@ export const SelectToken = () => {
 
   const { t } = useTranslation();
 
-  const { isNotConnectedOrReconnecting } = useSKWallet();
+  const { isConnected } = useSKWallet();
 
   const data = useMemo(
     () =>
@@ -88,7 +88,7 @@ export const SelectToken = () => {
           <SelectTokenListItem
             item={item}
             onTokenBalanceSelect={onTokenBalanceSelect}
-            isNotConnectedOrReconnecting={isNotConnectedOrReconnecting}
+            isConnected={isConnected}
           />
         )}
       />

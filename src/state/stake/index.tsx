@@ -6,12 +6,13 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useReducer,
 } from "react";
 import { Actions, ExtraData, State } from "./types";
-import { useStakeEnterAndTxsConstruct } from "../../hooks/api/use-stake-enter-and-txs-construct";
+import { useStakeEnterAndTxsConstructMutationState } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import {
   getYieldOpportunityFromCache,
@@ -22,9 +23,11 @@ import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
-import { getInitParams } from "../../common/get-init-params";
 import { equalTokens } from "../../domain";
 import { useSavedRef } from "../../hooks";
+import { useInitQueryParams } from "../../hooks/use-init-query-params";
+import { usePendingActionDeepLink } from "./use-pending-action-deep-link";
+import { useNavigate } from "react-router-dom";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -40,9 +43,9 @@ const getInitialState = (): State => ({
   stakeAmount: Maybe.of(new BigNumber(0)),
 });
 
-const initParams = getInitParams();
-
 export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
+  const initParams = useInitQueryParams();
+
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
       case "tokenBalance/select": {
@@ -52,10 +55,13 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
 
         const selectedStakeId = tokenNotChanged
           ? state.selectedStakeId
-          : Maybe.fromPredicate(
-              (val) => !!(val.network && val.token && val.yieldId),
-              initParams
-            )
+          : Maybe.fromNullable(initParams.data)
+              .chain((params) =>
+                Maybe.fromPredicate(
+                  (val) => !!(val.network && val.token && val.yieldId),
+                  params
+                )
+              )
               .chain((val) =>
                 List.find(
                   (availableYield) =>
@@ -128,6 +134,22 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     stakeAmount: selectedStakeAmount,
   } = state;
 
+  const navigateRef = useSavedRef(useNavigate());
+
+  const pendindActionDeepLinkCheck = usePendingActionDeepLink();
+
+  /**
+   * If we have pending action deep link, and its successfully constructed
+   * navigate to review page
+   */
+  useEffect(() => {
+    Maybe.fromNullable(pendindActionDeepLinkCheck.data).ifJust((val) => {
+      navigateRef.current(
+        `pending-action/${val.pendingActionRes.integrationId}/${val.defaultOrValidatorId}/review`
+      );
+    });
+  }, [navigateRef, pendindActionDeepLinkCheck.data]);
+
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
   const selectedStake = useMemo(
@@ -163,21 +185,22 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
-  const { network, isLedgerLive, isNotConnectedOrReconnecting } = useSKWallet();
+  const { network, isLedgerLive, isConnected } = useSKWallet();
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isNotConnectedOrReconnecting
-    ? defaultTokens
-    : tokenBalancesScan;
+  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
 
   const currentSelectedTokenBalanceRef = useSavedRef(_selectedTokenBalance);
 
   const initialTokenBalanceToSet = useMemo(
     () =>
       Maybe.fromNullable(tokenBalances.data).chain((tb) =>
-        Maybe.fromPredicate((val) => !!(val.network && val.token), initParams)
+        Maybe.fromNullable(initParams.data)
+          .chain((params) =>
+            Maybe.fromPredicate((val) => !!(val.network && val.token), params)
+          )
           .chain((val) =>
             List.find(
               (t) =>
@@ -196,7 +219,12 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           )
           .altLazy(() => List.find((v) => !!v.availableYields.length, tb))
       ),
-    [currentSelectedTokenBalanceRef, defaultTokens.data, tokenBalances.data]
+    [
+      currentSelectedTokenBalanceRef,
+      defaultTokens.data,
+      initParams.data,
+      tokenBalances.data,
+    ]
   );
 
   /**
@@ -214,10 +242,13 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
         type: "tokenBalance/select",
         data: {
           tokenBalance,
-          initYield: Maybe.fromPredicate(
-            (val) => !!(val.network && val.yieldId),
-            initParams
-          )
+          initYield: Maybe.fromNullable(initParams.data)
+            .chain((params) =>
+              Maybe.fromPredicate(
+                (val) => !!(val.network && val.yieldId),
+                params
+              )
+            )
             .chain((val) =>
               List.find(
                 (y) =>
@@ -227,40 +258,51 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
               )
             )
             .altLazy(() => List.head(tokenBalance.availableYields))
-            .chainNullable((yId) =>
+            .chain((yId) =>
               getYieldOpportunityFromCache({
-                integrationId: yId,
+                yieldId: yId,
                 isLedgerLive,
               })
             ),
         },
       });
     },
-    [isLedgerLive]
+    [initParams.data, isLedgerLive]
   );
 
   /**
    * Set initial token balance
    */
   useLayoutEffect(() => {
+    if (initParams.isLoading) return;
+
     initialTokenBalanceToSet.ifJust(setInitialTokenBalance);
-  }, [initialTokenBalanceToSet, setInitialTokenBalance]);
+  }, [initParams.isLoading, initialTokenBalanceToSet, setInitialTokenBalance]);
 
   useLayoutEffect(() => {
+    if (initParams.isLoading) return;
+
     _selectedTokenBalance.ifNothing(() =>
       initialTokenBalanceToSet.ifJust(setInitialTokenBalance)
     );
-  }, [initialTokenBalanceToSet, _selectedTokenBalance, setInitialTokenBalance]);
+  }, [
+    initialTokenBalanceToSet,
+    _selectedTokenBalance,
+    setInitialTokenBalance,
+    initParams.isLoading,
+  ]);
 
   /**
    * Reset selectedTokenBalance if we dont have initialTokenBalanceToSet
    * Case when we changed account, but we dont have available yields
    */
   useLayoutEffect(() => {
+    if (initParams.isLoading) return;
+
     initialTokenBalanceToSet.ifNothing(() =>
       _selectedTokenBalance.ifJust(() => dispatch({ type: "state/reset" }))
     );
-  }, [initialTokenBalanceToSet, _selectedTokenBalance]);
+  }, [initialTokenBalanceToSet, _selectedTokenBalance, initParams.isLoading]);
 
   /**
    * Set initial validator
@@ -268,7 +310,8 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   useLayoutEffect(() => {
     Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) =>
       selectedValidator.ifNothing(() =>
-        Maybe.fromNullable(initParams.validator)
+        Maybe.fromNullable(initParams.data)
+          .chain((params) => Maybe.fromNullable(params.validator))
           .chain((initV) =>
             List.find(
               (val) => val.name === initV || val.address === initV,
@@ -279,23 +322,25 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           .ifJust((val) => dispatch({ type: "validator/select", data: val }))
       )
     );
-  }, [selectedValidator, yieldOpportunity.data]);
+  }, [initParams.data, selectedValidator, yieldOpportunity.data]);
 
-  const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
+  const stakeEnterAndTxsConstructMutationState =
+    useStakeEnterAndTxsConstructMutationState();
 
   const stakeSession = Maybe.fromNullable(
-    stakeEnterAndTxsConstruct.data?.stakeEnterRes
+    stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
   );
 
   const stakeEnterTxGas = useMemo(
     () =>
-      Maybe.fromNullable(stakeEnterAndTxsConstruct.data).map((val) =>
-        val.transactionConstructRes.reduce(
-          (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-          new BigNumber(0)
-        )
+      Maybe.fromNullable(stakeEnterAndTxsConstructMutationState?.data).map(
+        (val) =>
+          val.transactionConstructRes.reduce(
+            (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+            new BigNumber(0)
+          )
       ),
-    [stakeEnterAndTxsConstruct.data]
+    [stakeEnterAndTxsConstructMutationState?.data]
   );
 
   const actions = useMemo(

@@ -6,17 +6,19 @@ import { Maybe } from "purify-ts";
 import { ActionDto } from "@stakekit/api-hooks";
 import { TxState } from "./tx-state";
 
+type StepsPageProps = {
+  session: Maybe<ActionDto>;
+  onDone?: () => void;
+  onSignSuccess?: () => void;
+  onSubmitSuccess?: () => void;
+};
+
 export const StepsPage = ({
   session,
   onDone,
   onSignSuccess,
   onSubmitSuccess,
-}: {
-  session: Maybe<ActionDto>;
-  onDone?: () => void;
-  onSignSuccess?: () => void;
-  onSubmitSuccess?: () => void;
-}) => {
+}: StepsPageProps) => {
   const { retry, txStates, onClick } = useSteps({
     session,
     onDone,
