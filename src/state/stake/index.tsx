@@ -185,14 +185,12 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
-  const { network, isLedgerLive, isNotConnectedOrReconnecting } = useSKWallet();
+  const { network, isLedgerLive, isConnected } = useSKWallet();
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isNotConnectedOrReconnecting
-    ? defaultTokens
-    : tokenBalancesScan;
+  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
 
   const currentSelectedTokenBalanceRef = useSavedRef(_selectedTokenBalance);
 

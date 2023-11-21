@@ -39,7 +39,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const {
     isReconnecting,
     isConnected: _isConnected,
-    isConnecting,
+    isConnecting: _isConnecting,
     address,
     connector,
   } = useAccount();
@@ -70,7 +70,17 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     [chain, wagmiConfig.data]
   );
 
+  const additionalAddresses = useAdditionalAddresses({
+    address,
+    connector,
+  });
+
   const isConnected = _isConnected && !!address && !!connector && !!network;
+  const isConnecting =
+    _isConnecting ||
+    isReconnecting ||
+    wagmiConfig.isLoading ||
+    additionalAddresses.isLoading;
 
   const trackEvent = useTrackEvent();
 
@@ -88,11 +98,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       disconnect();
     }
   }, [_isConnected, disconnect, isConnected]);
-
-  const additionalAddresses = useAdditionalAddresses({
-    address,
-    connector,
-  });
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
     ({ index, tx }) =>
@@ -217,14 +222,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const value = useMemo((): SKWallet => {
-    const common = { disconnect, signTransaction, isReconnecting };
+    const common = { disconnect, signTransaction };
 
-    if (
-      isConnected &&
-      address &&
-      network &&
-      !additionalAddresses.isInitialLoading
-    ) {
+    if (isConnected && !isConnecting) {
       const isLedgerLive = isLedgerLiveConnector(connector);
 
       return {
@@ -234,7 +234,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         chain,
         isConnected: true,
         isConnecting: false,
-        isNotConnectedOrReconnecting: false,
         additionalAddresses: additionalAddresses.data ?? null,
         isLedgerLive,
         ledgerAccounts,
@@ -249,30 +248,23 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       chain: null,
       isConnected: false,
       isConnecting,
-      isNotConnectedOrReconnecting:
-        !wagmiConfig.isLoading &&
-        !isReconnecting &&
-        !isConnecting &&
-        !additionalAddresses.isInitialLoading,
       additionalAddresses: null,
       isLedgerLive: false,
       ledgerAccounts: null,
       onLedgerAccountChange: null,
     };
   }, [
-    disconnect,
-    signTransaction,
-    isConnected,
+    additionalAddresses.data,
     address,
-    network,
-    isConnecting,
-    connector,
     chain,
-    additionalAddresses,
-    isReconnecting,
-    wagmiConfig,
+    connector,
+    disconnect,
+    isConnected,
+    isConnecting,
     ledgerAccounts,
+    network,
     onLedgerAccountChange,
+    signTransaction,
   ]);
 
   return (

@@ -17,7 +17,10 @@ const defaultChains = [mainnet, polygon, optimism, arbitrum, avalanche];
 export const getWagmiConfig = (options?: {
   getMockConnector?: (chains: typeof defaultChains) => MockConnector;
   chains?: typeof defaultChains;
-}) => {
+}): {
+  config: ReturnType<typeof createConfig>;
+  chains: typeof defaultChains;
+} => {
   const { chains, publicClient } = configureChains(
     options?.chains ?? defaultChains,
     [publicProvider()]
@@ -47,7 +50,7 @@ export const getWagmiConfig = (options?: {
       autoConnect: true,
       connectors,
       publicClient,
-    }),
+    }) as ReturnType<typeof createConfig>,
     chains,
   };
 };

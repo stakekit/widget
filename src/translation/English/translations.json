@@ -162,7 +162,9 @@
       "restake": "restaked",
       "claim_unstaked": "claimed unstaked",
       "unlock_locked": "unlocked locked",
-      "stake_locked": "staked locked"
+      "unlock_locked_legacy": "unlocked locked",
+      "stake_locked": "staked locked",
+      "vote": "voted"
     }
   },
   "help_modals": {
@@ -252,7 +254,9 @@
       "restake": "Restake",
       "claim_unstaked": "Claim unstaked",
       "unlock_locked": "Unlock locked",
-      "stake_locked": "Stake locked"
+      "unlock_locked_legacy": "Unlock locked",
+      "stake_locked": "Stake locked",
+      "vote": "Vote"
     },
     "pending_action_button": {
       "stake": "Stake",
@@ -263,7 +267,9 @@
       "restake": "Restake",
       "claim_unstaked": "Claim",
       "unlock_locked": "Unlock",
-      "stake_locked": "Stake"
+      "unlock_locked_legacy": "Unlock",
+      "stake_locked": "Stake",
+      "vote": "Vote"
     }
   },
   "unstake_review": {
@@ -280,7 +286,9 @@
       "restake": "Restake with {{providerName}}",
       "claim_unstaked": "Claim unstaked from {{providerName}}",
       "unlock_locked": "Unlock locked from {{providerName}}",
-      "stake_locked": "Stake locked with {{providerName}}"
+      "unlock_locked_legacy": "Unlock locked from {{providerName}}",
+      "stake_locked": "Stake locked with {{providerName}}",
+      "vote": "Vote with {{providerName}}"
     }
   },
   "select_token": {

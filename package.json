@@ -63,7 +63,7 @@
     "@cosmos-kit/walletconnect": "2.4.9",
     "@ledgerhq/wallet-api-client": "^1.2.1",
     "@radix-ui/react-alert-dialog": "^1.0.5",
-    "@stakekit/api-hooks": "^0.0.41",
+    "@stakekit/api-hooks": "^0.0.42",
     "@stakekit/common": "^0.0.18",
     "@stakekit/rainbowkit": "^1.0.12",
     "@tanstack/react-query": "^5.8.4",

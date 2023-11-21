@@ -5014,14 +5014,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.41":
-  version: 0.0.41
-  resolution: "@stakekit/api-hooks@npm:0.0.41"
+"@stakekit/api-hooks@npm:^0.0.42":
+  version: 0.0.42
+  resolution: "@stakekit/api-hooks@npm:0.0.42"
   dependencies:
-    "@tanstack/react-query": "npm:^4.33.0"
-    axios: "npm:^1.5.0"
+    "@tanstack/react-query": "npm:^5.8.4"
+    axios: "npm:^1.6.2"
     lodash.merge: "npm:^4.6.2"
-  checksum: 8ba71599cfdfd82dc7c1b01cca618d3bdc70bb1706ae14ff8464b7118ffdf84bc41702a0632ec231f26e8a031d221aac32a03255c59078fb7c0f414b5ce1e9b9
+  checksum: dcdc3f7eaf86fd52896d5a55d9e57a29f077d7df4e7cbf02581d3f6dc2de1dcc45527b1c80b88e24088d5b85f155525a79bf85e2d349b92285fd75bc9e62b795
   languageName: node
   linkType: hard
 
@@ -5065,7 +5065,7 @@ __metadata:
     "@cosmos-kit/walletconnect": "npm:2.4.9"
     "@ledgerhq/wallet-api-client": "npm:^1.2.1"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
-    "@stakekit/api-hooks": "npm:^0.0.41"
+    "@stakekit/api-hooks": "npm:^0.0.42"
     "@stakekit/common": "npm:^0.0.18"
     "@stakekit/rainbowkit": "npm:^1.0.12"
     "@tanstack/react-query": "npm:^5.8.4"
@@ -5335,7 +5335,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tanstack/react-query@npm:^4.28.0, @tanstack/react-query@npm:^4.33.0":
+"@tanstack/react-query@npm:^4.28.0":
   version: 4.35.0
   resolution: "@tanstack/react-query@npm:4.35.0"
   dependencies:
@@ -7513,14 +7513,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "axios@npm:1.5.0"
+"axios@npm:^1.6.2":
+  version: 1.6.2
+  resolution: "axios@npm:1.6.2"
   dependencies:
     follow-redirects: "npm:^1.15.0"
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 128433020b1fe9a460121735016f377adc6109a1f62b61795b1a80704de0a70affb0d580c8abd057e28af5f343cb4fb9a17a0b2512ea7f314578bbe492851a23
+  checksum: 612bc93f8f738a518e7c5f9de9cc782bcd36aac6bae279160ef6a10260378e21c1786520eab3336898e3d66e0839ebdf739f327fb6d0431baa4d3235703a7652
   languageName: node
   linkType: hard
 

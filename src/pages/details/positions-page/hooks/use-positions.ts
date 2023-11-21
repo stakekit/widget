@@ -81,7 +81,7 @@ export const usePositions = () => {
   const importValidators = {
     foundValidatorsData,
     onValidatorAddressOrNameChange,
-    isLoading: foundValidators.isInitialLoading,
+    isLoading: foundValidators.isLoading,
     errorMessage: foundValidators.error
       ? t("shared.something_went_wrong")
       : undefined,

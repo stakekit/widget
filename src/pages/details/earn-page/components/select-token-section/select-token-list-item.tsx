@@ -15,11 +15,11 @@ import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 export const SelectTokenListItem = memo(
   ({
     item,
-    isNotConnectedOrReconnecting,
+    isConnected,
     onTokenBalanceSelect,
   }: {
     item: TokenBalanceScanResponseDto;
-    isNotConnectedOrReconnecting: boolean;
+    isConnected: boolean;
     onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
   }) => {
     const amount = useMemo(() => new BigNumber(item.amount), [item.amount]);
@@ -42,7 +42,7 @@ export const SelectTokenListItem = memo(
       <SelectModalItemContainer>
         <SelectModalItem
           variant={
-            amountGreaterThanZero || isNotConnectedOrReconnecting
+            amountGreaterThanZero || !isConnected
               ? { type: "enabled", hover: "enabled" }
               : { type: "disabled", hover: "enabled" }
           }

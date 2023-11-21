@@ -21,10 +21,10 @@ export const Providers = ({ children }: PropsWithChildren) => {
 
   return (
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ReactQueryDevtools initialIsOpen={false} />
+      <StakeKitQueryProvider>
+        <QueryClientProvider client={queryClient}>
+          <ReactQueryDevtools initialIsOpen={false} />
 
-        <StakeKitQueryProvider>
           <WagmiProvider>
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
@@ -44,8 +44,8 @@ export const Providers = ({ children }: PropsWithChildren) => {
               </SKWalletProvider>
             </TrackingContextProvider>
           </WagmiProvider>
-        </StakeKitQueryProvider>
-      </QueryClientProvider>
+        </QueryClientProvider>
+      </StakeKitQueryProvider>
     </StrictMode>
   );
 };

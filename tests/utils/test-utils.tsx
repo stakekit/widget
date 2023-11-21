@@ -22,7 +22,7 @@ APIManager.configure({
   queryClientConfig: {
     defaultOptions: {
       queries: {
-        cacheTime: config.queryClient.cacheTime,
+        gcTime: config.queryClient.cacheTime,
         staleTime: config.queryClient.staleTime,
       },
     },

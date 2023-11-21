@@ -60,13 +60,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
-  const {
-    isConnected,
-    isConnecting,
-    isReconnecting,
-    isLedgerLive,
-    isNotConnectedOrReconnecting,
-  } = useSKWallet();
+  const { isConnected, isConnecting, isLedgerLive } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -133,13 +127,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isNotConnectedOrReconnecting
-    ? defaultTokens
-    : tokenBalancesScan;
+  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
 
   const restTokenBalances = useMemo(
     () =>
-      Maybe.fromPredicate(() => !isNotConnectedOrReconnecting, defaultTokens)
+      Maybe.fromPredicate(() => !isConnected, defaultTokens)
         .chainNullable((defTb) => defTb.data)
         .chain((defTb) =>
           Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
@@ -153,7 +145,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           return defTb.filter((t) => !tbsSet.has(tokenString(t.token)));
         })
         .alt(Maybe.of([])),
-    [defaultTokens, isNotConnectedOrReconnecting, tokenBalancesScan.data]
+    [defaultTokens, isConnected, tokenBalancesScan.data]
   );
 
   const tokenBalancesData = useMemo(
@@ -336,15 +328,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake.extract()?.id
   ).isLoading;
   const appLoading =
-    wagmiConfig.isLoading ||
-    pendingActionDeepLink.isLoading ||
-    isConnecting ||
-    isReconnecting;
+    wagmiConfig.isLoading || pendingActionDeepLink.isLoading || isConnecting;
   const multiYieldsLoading = multiYields.isLoading;
-  const stakeTokenAvailableAmountLoading =
-    stakeTokenAvailableAmount.isInitialLoading;
-  const tokenBalancesScanLoading = tokenBalancesScan.isInitialLoading;
-  const defaultTokensIsLoading = defaultTokens.isInitialLoading;
+  const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;
+  const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
+  const defaultTokensIsLoading = defaultTokens.isLoading;
 
   const isFetching =
     multiYields.isFetching ||
