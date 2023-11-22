@@ -132,7 +132,8 @@
     "pending": "Pending",
     "completed": "Completed",
     "failed": "Failed",
-    "tx_of_n": "Transaction {{count}} / {{total}} - {{type}}",
+    "tx_of_one": "Transaction - {{type}}",
+    "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
     "skipped": "Skipped"
   },
   "complete": {

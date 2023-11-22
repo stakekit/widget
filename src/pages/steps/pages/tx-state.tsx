@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
   position: "FIRST" | "LAST" | "ELSE";
-  count: { current: number; total: number } | null;
+  count: { current: number; total: number };
 };
 
 export const TxState = ({ txState, position, count }: Props) => {
@@ -45,39 +45,35 @@ export const TxState = ({ txState, position, count }: Props) => {
 
   return (
     <Box key={txState.tx.id} marginTop={position === "FIRST" ? "0" : "4"}>
-      {count && (
-        <Box
-          width="full"
-          marginBottom="4"
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          as={canCollapse ? "button" : "div"}
-          onClick={() => canCollapse && setIsCollapsed(!isCollapsed)}
-        >
-          <Text>
-            {t("steps.tx_of_n", {
-              count: count.current,
-              total: count.total,
-              type: removeUnderscores(txState.tx.type),
-            })}
-          </Text>
+      <Box
+        width="full"
+        marginBottom="4"
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
+        as={canCollapse ? "button" : "div"}
+        onClick={() => canCollapse && setIsCollapsed(!isCollapsed)}
+      >
+        <Text>
+          {t("steps.tx_of", {
+            count: count.total,
+            current: count.current,
+            type: removeUnderscores(txState.tx.type),
+          })}
+        </Text>
 
-          {canCollapse && (
-            <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              className={clsx([
-                caretContainer,
-                { [rotate180deg]: !isCollapsed },
-              ])}
-            >
-              <CaretDownIcon size={20} />
-            </Box>
-          )}
-        </Box>
-      )}
+        {canCollapse && !!count && (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            className={clsx([caretContainer, { [rotate180deg]: !isCollapsed }])}
+          >
+            <CaretDownIcon size={20} />
+          </Box>
+        )}
+      </Box>
+
       <Box
         ref={stepsContainerRef}
         className={stepsContainer}

@@ -1,5 +1,5 @@
 import { YieldDto } from "@stakekit/api-hooks";
-import { useQuery } from "@tanstack/react-query";
+import { UseQueryOptions, useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
@@ -16,13 +16,17 @@ const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   yieldIds,
 ];
 
-export const useMultiYields = (yieldIds: string[]) => {
+export const useMultiYields = (
+  yieldIds: string[],
+  opts?: { select?: UseQueryOptions<YieldDto[], Error>["select"] }
+) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
   return useQuery<YieldDto[], Error>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
     staleTime: config.queryClient.cacheTime,
+    select: opts?.select,
     queryFn: async ({ signal }) =>
       (
         await eitherAsyncPool(

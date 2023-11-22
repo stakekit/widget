@@ -121,7 +121,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const deferredTokenSearch = useDeferredValue(tokenSearch);
 
   const multiYields = useMultiYields(
-    selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, [])
+    selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, []),
+    { select: (val) => val.filter((v) => v.status.enter) }
   );
 
   const tokenBalancesScan = useTokenBalancesScan();

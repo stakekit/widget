@@ -171,9 +171,9 @@ const getState = ({
         return TxStateEnum.BROADCAST_LOADING;
       case "broadcastError":
         return TxStateEnum.BROADCAST_ERROR;
-      case "txCheckRetry":
       case "txCheckError":
         return TxStateEnum.CHECK_TX_STATUS_ERROR;
+      case "txCheckRetry":
       case "txCheckLoading":
         return TxStateEnum.CHECK_TX_STATUS_LOADING;
       case "done":
