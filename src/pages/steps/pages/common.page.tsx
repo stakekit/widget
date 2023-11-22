@@ -51,11 +51,7 @@ export const StepsPage = ({
               position={
                 i === 0 ? "FIRST" : i === txStates.length - 1 ? "LAST" : "ELSE"
               }
-              count={
-                txStates.length > 1
-                  ? { current: i + 1, total: txStates.length }
-                  : null
-              }
+              count={{ current: i + 1, total: txStates.length }}
             />
           ))}
         </Box>
