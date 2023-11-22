@@ -131,7 +131,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const restTokenBalances = useMemo(
     () =>
-      Maybe.fromPredicate(() => !isConnected, defaultTokens)
+      Maybe.fromPredicate(() => isConnected, defaultTokens)
         .chainNullable((defTb) => defTb.data)
         .chain((defTb) =>
           Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
