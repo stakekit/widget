@@ -1,4 +1,4 @@
-import { createVar, style } from "@vanilla-extract/css";
+import { style } from "@vanilla-extract/css";
 
 export const logoContainer = style({
   position: "absolute",
@@ -11,7 +11,3 @@ export const logoContainer = style({
   alignItems: "center",
   justifyContent: "center",
 });
-
-export const defaultColor = createVar();
-
-export const fallbackContainer = style({ background: defaultColor });

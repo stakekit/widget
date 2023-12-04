@@ -46,13 +46,13 @@ export class NotEnoughGasTokenError extends Error {
   }
 }
 
-export class GasTokenMissingError extends Error {
+class GasTokenMissingError extends Error {
   constructor() {
     super("Gas token missing from response");
   }
 }
 
-export class GetGasTokenError extends Error {
+class GetGasTokenError extends Error {
   constructor() {
     super("Get gas token failed");
   }

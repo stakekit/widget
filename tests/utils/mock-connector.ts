@@ -1,7 +1,7 @@
 import { Wallet } from "@stakekit/rainbowkit";
 import { MockConnector } from "wagmi/connectors/mock";
 
-export interface MyWalletOptions {
+interface MyWalletOptions {
   connector: MockConnector;
 }
 

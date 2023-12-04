@@ -42,7 +42,7 @@ export const supportedCosmosChains = [
   CosmosNetworks.Desmos,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
-export const supportedCosmosChainsSet = new Set(supportedCosmosChains);
+const supportedCosmosChainsSet = new Set(supportedCosmosChains);
 export type CosmosChainsMap = {
   [Key in SupportedCosmosChains]: {
     type: "cosmos";
@@ -72,14 +72,14 @@ export type EvmChainsMap = {
   };
 };
 
-export const supportedMiscChains = [
+const supportedMiscChains = [
   MiscNetworks.Near,
   MiscNetworks.Tezos,
   MiscNetworks.Solana,
   MiscNetworks.Tron,
 ] as const;
-export const supportedMiscChainsSet = new Set(supportedMiscChains);
-export type SupportedMiscChains = (typeof supportedMiscChains)[number];
+const supportedMiscChainsSet = new Set(supportedMiscChains);
+type SupportedMiscChains = (typeof supportedMiscChains)[number];
 export type MiscChainsMap = {
   [Key in SupportedMiscChains]: {
     type: "misc";

@@ -197,6 +197,7 @@ export const PositionDetails = () => {
                 justifyContent="flex-end"
                 flexDirection="column"
                 marginTop="10"
+                gap="2"
               >
                 {pendingActions
                   .map((val) =>
@@ -225,7 +226,7 @@ export const PositionDetails = () => {
                                 pendingAction: t(
                                   `position_details.pending_action.${
                                     pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                                  }`
+                                  }` as const
                                 ),
                               }}
                               components={{
@@ -270,7 +271,7 @@ export const PositionDetails = () => {
                               {t(
                                 `position_details.pending_action_button.${
                                   pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                                }`
+                                }` as const
                               )}
                             </Text>
                           </Button>

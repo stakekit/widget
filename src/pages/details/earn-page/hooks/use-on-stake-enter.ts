@@ -1,4 +1,3 @@
-import { useMutation } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import { getAverageGasMode } from "../../../../common/get-gas-mode-value";
 import {
@@ -8,15 +7,29 @@ import {
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { checkGasAmount } from "../../../../common/check-gas-amount";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../../types";
+import { useMutationSync } from "../../../../hooks/use-mutation-sync";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useStakeState } from "../../../../state/stake";
 
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
-  return useMutation<
+  const { address, network } = useSKWallet();
+  const { selectedTokenBalance, selectedStakeId, selectedValidator } =
+    useStakeState();
+
+  return useMutationSync<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    ReturnType<typeof useStakeEnterRequestDto>
+    Parameters<typeof fn>[0]["stakeRequestDto"]
   >({
+    syncOn: [
+      address,
+      network,
+      selectedTokenBalance,
+      selectedStakeId,
+      selectedValidator,
+    ],
     mutationFn: async (stakeRequestDto) =>
       (
         await fn({

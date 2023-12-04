@@ -71,11 +71,7 @@ export const content = style([
   },
 ]);
 
-export const stakeText = style([atoms({ color: "white" })]);
-
 export const noOutline = style({ outline: "none" });
-
-export const tokenLogo = style({ borderRadius: "50%" });
 
 export const selectModalItemContainer = style({
   padding: "2.5px 0",

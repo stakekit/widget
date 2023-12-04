@@ -102,7 +102,7 @@ export const usePositions = () => {
  *
  * @summary This selector is used to map object with all default + validator balances to a map
  */
-export const positionsTableDataSelector = createSelector(
+const positionsTableDataSelector = createSelector(
   (data: ReturnType<typeof usePositionsData>["data"]) => data,
   (data) => {
     return [...data.values()].reduce(

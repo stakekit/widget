@@ -128,7 +128,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
+  const tokenBalances =
+    isConnected && !!tokenBalancesScan.data?.length
+      ? tokenBalancesScan
+      : defaultTokens;
 
   const restTokenBalances = useMemo(
     () =>
@@ -343,13 +346,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const isError =
     onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
 
-  const errorMessage =
-    onStakeEnter.error instanceof StakingNotAllowedError
-      ? t("details.unstake_before")
-      : onStakeEnter.error instanceof NotEnoughGasTokenError
-        ? t("shared.not_enough_gas_token")
-        : t("shared.something_went_wrong");
-
+  const errorMessage = useMemo(
+    () =>
+      onStakeEnter.error instanceof StakingNotAllowedError
+        ? t("details.unstake_before")
+        : onStakeEnter.error instanceof NotEnoughGasTokenError
+          ? t("shared.not_enough_gas_token")
+          : t("shared.something_went_wrong"),
+    [onStakeEnter.error, t]
+  );
   const buttonDisabled =
     isConnected &&
     (isFetching ||

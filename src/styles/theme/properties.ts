@@ -16,8 +16,6 @@ export const unresponsiveProperties = {
   borderStyle: ["solid"],
 } as const;
 
-export type UnresponsiveProperties = keyof typeof unresponsiveProperties;
-
 export const responsiveProperties = {
   display: ["block", "inline", "inline-block", "flex", "inline-flex", "none"],
   fontSize: vars.fontSize,
@@ -40,5 +38,3 @@ export const responsiveProperties = {
   maxWidth: vars.space,
   maxHeight: vars.space,
 } as const;
-
-export type ResponsiveProperties = keyof typeof responsiveProperties;

@@ -31,5 +31,3 @@ export const radii: typeof radiiContract = {
   primaryButton: "16px",
   secondaryButton: "16px",
 };
-
-export type Radii = keyof typeof radii;

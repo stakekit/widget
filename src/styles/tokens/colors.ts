@@ -60,8 +60,6 @@ export const colorsContract = {
   disabledButtonActiveOutline: "",
 };
 
-export type Colors = keyof typeof colorsContract;
-
 export const lightThemeColors: typeof colorsContract = {
   white: "#fff",
   black: "#000",

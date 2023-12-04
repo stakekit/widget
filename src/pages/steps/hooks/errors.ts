@@ -18,8 +18,8 @@ export class GetStakeSessionError extends Error {
 export class TransactionConstructError extends Error {
   name = "TransactionConstructError";
 }
-export class MissingHashError extends Error {
-  name = "MissingHashError";
+export class TXCheckError extends Error {
+  name = "TXCheckError";
 }
 export class TransactionDecodeError extends Error {
   name = "TransactionDecodeError";

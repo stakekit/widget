@@ -54,7 +54,7 @@ const trackEventMap = {
   viewTxClicked: "View transaction clicked",
 } as const;
 
-export type TrackEventKey = keyof typeof trackEventMap;
+type TrackEventKey = keyof typeof trackEventMap;
 export type TrackEventVal = (typeof trackEventMap)[TrackEventKey];
 
 export type Properties = Record<string, any>;
