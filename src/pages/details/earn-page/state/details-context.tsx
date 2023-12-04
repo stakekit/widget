@@ -128,7 +128,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
+  const tokenBalances =
+    isConnected && !!tokenBalancesScan.data?.length
+      ? tokenBalancesScan
+      : defaultTokens;
 
   const restTokenBalances = useMemo(
     () =>

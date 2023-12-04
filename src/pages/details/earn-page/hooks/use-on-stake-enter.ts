@@ -15,14 +15,21 @@ export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
   const { address, network } = useSKWallet();
-  const { selectedTokenBalance } = useStakeState();
+  const { selectedTokenBalance, selectedStakeId, selectedValidator } =
+    useStakeState();
 
   return useMutationSync<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     Parameters<typeof fn>[0]["stakeRequestDto"]
   >({
-    syncOn: [address, network, selectedTokenBalance],
+    syncOn: [
+      address,
+      network,
+      selectedTokenBalance,
+      selectedStakeId,
+      selectedValidator,
+    ],
     mutationFn: async (stakeRequestDto) =>
       (
         await fn({

@@ -190,7 +190,10 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
+  const tokenBalances =
+    isConnected && !!tokenBalancesScan.data?.length
+      ? tokenBalancesScan
+      : defaultTokens;
 
   const currentSelectedTokenBalanceRef = useSavedRef(_selectedTokenBalance);
 
