@@ -10,7 +10,7 @@ import { constructTxs } from "../../common/construct-txs";
 import { useMutation } from "@tanstack/react-query";
 import { useMutationSharedState } from "../use-mutation-shared-state";
 
-export type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
+type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 
 const mutationKey = ["stake-enter"];
@@ -19,8 +19,8 @@ export const useStakeEnterAndTxsConstruct = () => {
   const { isLedgerLive } = useSKWallet();
 
   return useMutation<
-    GetEitherAsyncRight<ReturnType<typeof fn>>,
-    GetEitherAsyncLeft<ReturnType<typeof fn>>,
+    DataType,
+    ErrorType,
     {
       stakeRequestDto: ActionRequestDto;
       gasModeValue: GasModeValueDto | undefined;

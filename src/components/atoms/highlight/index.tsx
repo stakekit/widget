@@ -2,7 +2,7 @@ import classNames from "clsx";
 import { PropsWithChildren } from "react";
 import { Box } from "../box";
 
-export type HighlightProps = PropsWithChildren<{
+type HighlightProps = PropsWithChildren<{
   className?: Parameters<typeof classNames>[0];
 }>;
 

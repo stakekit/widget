@@ -10,7 +10,7 @@ import { Box, BoxProps } from "../box";
 
 const failLoadImages = new Set<string>();
 
-export type ImageProps = {
+type ImageProps = {
   src: string | undefined;
   fallback: string | ReactNode;
   containerProps?: Omit<BoxProps, "as">;

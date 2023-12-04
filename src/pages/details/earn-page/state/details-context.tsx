@@ -343,13 +343,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const isError =
     onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
 
-  const errorMessage =
-    onStakeEnter.error instanceof StakingNotAllowedError
-      ? t("details.unstake_before")
-      : onStakeEnter.error instanceof NotEnoughGasTokenError
-        ? t("shared.not_enough_gas_token")
-        : t("shared.something_went_wrong");
-
+  const errorMessage = useMemo(
+    () =>
+      onStakeEnter.error instanceof StakingNotAllowedError
+        ? t("details.unstake_before")
+        : onStakeEnter.error instanceof NotEnoughGasTokenError
+          ? t("shared.not_enough_gas_token")
+          : t("shared.something_went_wrong"),
+    [onStakeEnter.error, t]
+  );
   const buttonDisabled =
     isConnected &&
     (isFetching ||

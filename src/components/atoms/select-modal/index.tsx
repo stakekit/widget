@@ -50,7 +50,7 @@ export type SelectModalProps = PropsWithChildren<
   )
 >;
 
-export const SelectModalContext = createContext<
+const SelectModalContext = createContext<
   { closeModal: () => void } | undefined
 >(undefined);
 

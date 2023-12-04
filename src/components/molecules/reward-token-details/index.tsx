@@ -42,9 +42,9 @@ export const RewardTokenDetails = ({
                 rest.type === "stake"
                   ? "details.reward_token"
                   : rest.type === "pendingAction"
-                    ? `pending_action_review.pending_action_type.${
+                    ? (`pending_action_review.pending_action_type.${
                         rest.pendingAction.toLowerCase() as Lowercase<ActionTypes>
-                      }`
+                      }` as const)
                     : "unstake_review.unstake_from"
               }
               values={{

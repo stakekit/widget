@@ -6,21 +6,6 @@ export const selectItemText = style({
   fontWeight: vars.fontWeight.tokenSelect,
 });
 
-export const triggerStyles = style({
-  width: "100%",
-});
-
-export const tab = style({
-  cursor: "pointer",
-  userSelect: "none",
-});
-
-export const dotContainer = style({
-  width: "16px",
-  height: "16px",
-  textAlign: "center",
-});
-
 export const validatorAddress = style({
   overflow: "hidden",
   textOverflow: "ellipsis",

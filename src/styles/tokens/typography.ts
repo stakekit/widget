@@ -18,8 +18,6 @@ export const letterSpacings: typeof letterSpacingsContract = {
   widest: "0.1em",
 };
 
-export type LetterSpacings = keyof typeof letterSpacings;
-
 export const lineHeightsContract = {
   none: "",
   shorter: "",
@@ -58,8 +56,6 @@ export const lineHeights: typeof lineHeightsContract = {
   "6xl": "1",
 };
 
-export type LineHeights = keyof typeof lineHeights;
-
 export const fontWeightsContract = {
   normal: "",
   medium: "",
@@ -85,8 +81,6 @@ export const fontWeights: typeof fontWeightsContract = {
   primaryButton: "700",
   secondaryButton: "700",
 };
-
-export type FontWeights = keyof typeof fontWeights;
 
 export const fontSizesContract = {
   xs: "",
@@ -115,8 +109,6 @@ export const fontSizes: typeof fontSizesContract = {
   "5xl": "3.052rem",
   "6xl": "3.815rem",
 } as const;
-
-export type FontSizes = keyof typeof fontSizes;
 
 export type Heading = "h1" | "h2" | "h3" | "h4";
 

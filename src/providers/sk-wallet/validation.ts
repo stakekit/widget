@@ -1,12 +1,4 @@
-import {
-  Codec,
-  GetType,
-  Left,
-  Right,
-  number,
-  optional,
-  string,
-} from "purify-ts";
+import { Codec, Left, Right, number, optional, string } from "purify-ts";
 import { Hex } from "viem";
 
 const bigintCodec = Codec.custom<bigint>({
@@ -42,5 +34,3 @@ export const unsignedTransactionCodec = Codec.interface({
   maxPriorityFeePerGas: optional(bigintCodec),
   chainId: number,
 });
-
-export type UnsignedTransaction = GetType<typeof unsignedTransactionCodec>;

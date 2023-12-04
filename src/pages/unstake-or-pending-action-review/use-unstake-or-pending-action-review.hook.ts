@@ -48,7 +48,7 @@ export const useUnstakeOrPendingActionReview = () => {
         t(
           `position_details.pending_action_button.${
             type.toLowerCase() as Lowercase<ActionTypes>
-          }`
+          }` as const
         )
       )
     : integrationData.map((d) => {

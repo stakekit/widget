@@ -9,14 +9,14 @@ import {
 } from "purify-ts";
 import { config } from "../config";
 
-export const localStorageBuildKey = <K extends string>(key: K) =>
+const localStorageBuildKey = <K extends string>(key: K) =>
   `${config.appPrefix}@1//${key}` as const;
 
 export type LocalStorageKV = {
   [Key in keyof typeof codecs]: GetType<(typeof codecs)[Key]>;
 };
 
-export type LocalStorageValue<K extends keyof LocalStorageKV> = GetType<
+type LocalStorageValue<K extends keyof LocalStorageKV> = GetType<
   (typeof codecs)[K]
 >;
 

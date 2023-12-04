@@ -5,7 +5,7 @@ import {
   ActionDto,
   TokenDto,
   TransactionDto,
-  TransactionStatusResponseDto,
+  TransactionStatus,
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
@@ -92,10 +92,10 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
     ),
   };
 
-  return val.transactions.some((tx) => isTxError(tx))
+  return val.transactions.some((tx) => isTxError(tx.status))
     ? Left(new Error("Transaction failed"))
     : Right(val);
 };
 
-export const isTxError = (tx: TransactionDto | TransactionStatusResponseDto) =>
-  tx.status === "FAILED" || tx.status === "BLOCKED";
+export const isTxError = (txStatus: TransactionStatus) =>
+  txStatus === "FAILED" || txStatus === "BLOCKED";

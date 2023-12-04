@@ -57,5 +57,3 @@ export const spaces: typeof spacesContract = {
   px: "1px",
   buttonMinHeight: "64px",
 };
-
-export type Space = keyof typeof spaces;

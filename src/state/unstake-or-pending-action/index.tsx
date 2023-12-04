@@ -25,7 +25,7 @@ const getInitialState = (): State => ({
   unstake: Maybe.empty(),
 });
 
-export type State = {
+type State = {
   unstake: Maybe<{
     integration: YieldDto;
     amount: Maybe<BigNumber>;

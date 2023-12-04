@@ -164,8 +164,4 @@ export const buttonStyle = recipe({
   },
 });
 
-export const spinnerStyles = style({
-  position: "absolute",
-});
-
 export type ButtonVariants = RecipeVariants<typeof buttonStyle>;

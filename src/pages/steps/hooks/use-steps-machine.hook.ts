@@ -3,7 +3,7 @@ import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import {
   GetStakeSessionError,
-  MissingHashError,
+  TXCheckError,
   SendTransactionError,
   SignError,
   SubmitError,
@@ -14,6 +14,7 @@ import {
   ActionDto,
   TransactionDto,
   transactionConstruct,
+  transactionGetTransaction,
   transactionGetTransactionStatusFromId,
   transactionSubmit,
   transactionSubmitHash,
@@ -338,12 +339,21 @@ export const useStepsMachine = () => {
                 shouldRetry: (e, retryCount) =>
                   retryCount <= 3 &&
                   isAxiosError(e) &&
-                  e.response?.status === 404,
+                  (e.response?.status === 404 || e.response?.status === 503),
               })
-                .mapLeft(() => new MissingHashError())
-                .chain((result) =>
+                .map((res) => ({ url: res.url, status: res.status }))
+                .chainLeft(() =>
+                  withRequestErrorRetry({
+                    fn: () => transactionGetTransaction(currentTx.tx.id),
+                  }).map((res) => ({
+                    url: res.explorerUrl,
+                    status: res.status,
+                  }))
+                )
+                .mapLeft(() => new TXCheckError())
+                .chain((val) =>
                   EitherAsync.liftEither(
-                    isTxError(result)
+                    isTxError(val.status)
                       ? Left(
                           new SignError({
                             txId: currentTx.tx.id,
@@ -351,8 +361,8 @@ export const useStepsMachine = () => {
                           })
                         )
                       : Right({
-                          result,
-                          isConfirmed: result.status === "CONFIRMED",
+                          url: val.url,
+                          isConfirmed: val.status === "CONFIRMED",
                         })
                   )
                 )
@@ -396,7 +406,7 @@ export const useStepsMachine = () => {
                             ...val.meta,
                             signError: null,
                             txCheckError: null,
-                            url: v.result.url,
+                            url: v.url,
                             done: true,
                           },
                         }
