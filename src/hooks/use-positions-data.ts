@@ -5,19 +5,20 @@ import {
 import { createSelector } from "reselect";
 import { useMemo } from "react";
 import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
+import { Maybe } from "purify-ts";
 
 export const usePositionsData = () => {
   const yieldYieldBalancesScan = useYieldBalancesScan();
 
-  const data = useMemo<ReturnType<typeof positionsDataSelector>>(() => {
-    return yieldYieldBalancesScan.data
-      ? positionsDataSelector(yieldYieldBalancesScan.data)
-      : new Map();
-  }, [yieldYieldBalancesScan.data]);
-
   return {
     ...yieldYieldBalancesScan,
-    data,
+    data: useMemo<ReturnType<typeof positionsDataSelector>>(
+      () =>
+        Maybe.fromNullable(yieldYieldBalancesScan.data)
+          .map(positionsDataSelector)
+          .orDefault(new Map()),
+      [yieldYieldBalancesScan.data]
+    ),
   };
 };
 

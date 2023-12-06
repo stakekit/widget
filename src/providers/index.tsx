@@ -12,7 +12,7 @@ import { WagmiProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
-import { StakeHistoryContextProvider } from "./stake-history";
+import { ActionHistoryContextProvider } from "./stake-history";
 
 export const Providers = ({ children }: PropsWithChildren) => {
   const { apiKey, tracking } = useSettings();
@@ -33,9 +33,9 @@ export const Providers = ({ children }: PropsWithChildren) => {
                     <StakeStateProvider>
                       <ThemeWrapper>
                         <LocationTransitionProvider>
-                          <StakeHistoryContextProvider>
+                          <ActionHistoryContextProvider>
                             {children}
-                          </StakeHistoryContextProvider>
+                          </ActionHistoryContextProvider>
                         </LocationTransitionProvider>
                       </ThemeWrapper>
                     </StakeStateProvider>
