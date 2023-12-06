@@ -35,7 +35,7 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     "core-1",
     "bitsong-2b",
     "coreum-mainnet-1",
-    "desmos-mainnet"
+    "desmos-mainnet",
     "dydx-mainnet-1"
   ]);
 
