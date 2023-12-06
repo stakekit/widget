@@ -1,7 +1,7 @@
 import { CosmosNetworks } from "@stakekit/common";
+import { mainnet } from "wagmi";
 import { SupportedCosmosChains } from "../../../domain/types/chains";
 import { getNetworkLogo, getTokenLogo } from "../../../utils";
-import { mainnet } from "wagmi";
 import { cosmosRegistryChains } from "./chain-registry";
 
 // CosmosNetworks -> chain_id from registry
@@ -39,6 +39,7 @@ export const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Bitsong]: "bitsong-2b",
   [CosmosNetworks.Coreum]: "coreum-mainnet-1",
   [CosmosNetworks.Desmos]: "desmos-mainnet",
+  [CosmosNetworks.Dydx]: "dydx-mainnet-1",
 };
 
 // chain_id from registry -> CosmosNetworks
