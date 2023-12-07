@@ -36,7 +36,8 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     "bitsong-2b",
     "coreum-mainnet-1",
     "desmos-mainnet",
-    "dydx-mainnet-1"
+    "dydx-mainnet-1",
+    "injective-1"
   ]);
 
   const chainMapper = (val) => {

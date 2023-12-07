@@ -40,6 +40,7 @@ export const sKCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Coreum]: "coreum-mainnet-1",
   [CosmosNetworks.Desmos]: "desmos-mainnet",
   [CosmosNetworks.Dydx]: "dydx-mainnet-1",
+  [CosmosNetworks.Injective]: "injective-1",
 };
 
 // chain_id from registry -> CosmosNetworks
