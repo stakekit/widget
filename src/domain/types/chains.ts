@@ -1,12 +1,12 @@
-import { Chain } from "@stakekit/rainbowkit";
+import { Currency, Families } from "@ledgerhq/wallet-api-client";
 import {
   CosmosNetworks,
   EvmNetworks,
   MiscNetworks,
   Networks,
 } from "@stakekit/common";
+import { Chain } from "@stakekit/rainbowkit";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
-import { Currency, Families } from "@ledgerhq/wallet-api-client";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,
@@ -40,6 +40,8 @@ export const supportedCosmosChains = [
   CosmosNetworks.Umee,
   CosmosNetworks.Coreum,
   CosmosNetworks.Desmos,
+  CosmosNetworks.Dydx,
+  CosmosNetworks.Injective,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
 const supportedCosmosChainsSet = new Set(supportedCosmosChains);
@@ -244,6 +246,16 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "persistence",
       family: "cosmos",
       skChainName: CosmosNetworks.Persistence,
+    },
+    dydx: {
+      currencyId: "dydx",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Dydx,
+    },
+    injective: {
+      currencyId: "injective",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Injective,
     },
   },
 } satisfies Record<

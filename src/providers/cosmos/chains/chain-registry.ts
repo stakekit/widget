@@ -1,5 +1,5 @@
-import preval from "babel-plugin-preval/macro";
 import { AssetList, Chain } from "@chain-registry/types";
+import preval from "babel-plugin-preval/macro";
 
 export const { cosmosRegistryChains, cosmosAssets } = preval`
   const { chains, assets } = require("chain-registry");
@@ -35,7 +35,9 @@ export const { cosmosRegistryChains, cosmosAssets } = preval`
     "core-1",
     "bitsong-2b",
     "coreum-mainnet-1",
-    "desmos-mainnet"
+    "desmos-mainnet",
+    "dydx-mainnet-1",
+    "injective-1"
   ]);
 
   const chainMapper = (val) => {
