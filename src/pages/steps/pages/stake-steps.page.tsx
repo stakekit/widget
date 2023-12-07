@@ -3,7 +3,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useStakeState } from "../../../state/stake";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { importValidator } from "../../../common/import-validator";
-import { useSetStakeHistoryData } from "../../../providers/stake-history";
+import { useSetActionHistoryData } from "../../../providers/stake-history";
 import { StepsPage } from "./common.page";
 
 export const StakeStepsPage = () => {
@@ -31,17 +31,16 @@ export const StakeStepsPage = () => {
       });
     });
 
-  const setStakeHistoryData = useSetStakeHistoryData();
+  const setActionHistoryData = useSetActionHistoryData();
 
   const onDone = () =>
     Maybe.fromRecord({ selectedStake, stakeAmount }).ifJust((val) => {
-      setStakeHistoryData(
-        Maybe.of({
-          selectedStake: val.selectedStake,
-          stakeAmount: val.stakeAmount,
-          selectedValidator,
-        })
-      );
+      setActionHistoryData({
+        type: "stake",
+        selectedStake: val.selectedStake,
+        stakeAmount: val.stakeAmount,
+        selectedValidator,
+      });
     });
 
   return (

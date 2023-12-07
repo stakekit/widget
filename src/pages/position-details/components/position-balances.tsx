@@ -2,22 +2,31 @@ import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../components";
 import { formatNumber } from "../../../utils";
 import BigNumber from "bignumber.js";
-import { YieldBalanceDto } from "@stakekit/api-hooks";
+import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { daysUntilDate } from "../../../utils/date";
 
 export const PositionBalances = ({
-  val,
+  yieldBalance,
+  integrationData,
 }: {
-  val: YieldBalanceDto & { tokenPriceInUsd: BigNumber };
+  yieldBalance: YieldBalanceDto & { tokenPriceInUsd: BigNumber };
+  integrationData: YieldDto;
 }) => {
   const { t } = useTranslation();
 
   const unstakingDays = useMemo(() => {
-    return val.type === "unstaking" && val.date
-      ? daysUntilDate(new Date(val.date))
+    return yieldBalance.type === "unstaking" && yieldBalance.date
+      ? daysUntilDate(new Date(yieldBalance.date))
       : null;
-  }, [val.date, val.type]);
+  }, [yieldBalance.date, yieldBalance.type]);
+
+  const yieldType = integrationData.metadata.type;
+
+  const balanceTypeContext =
+    yieldType === "vault" || yieldType === "lending"
+      ? "yearn_or_deposit"
+      : undefined;
 
   return (
     <Box
@@ -27,21 +36,25 @@ export const PositionBalances = ({
       gap="4"
     >
       <Text variant={{ weight: "normal" }}>
-        {t(`position_details.balance_type.${val.type}`)}
+        {t(`position_details.balance_type.${yieldBalance.type}`, {
+          context: balanceTypeContext,
+        })}
       </Text>
       <Box textAlign="end">
         <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatNumber(new BigNumber(val.amount ?? 0))} {val.token.symbol} ($
-          {formatNumber(val.tokenPriceInUsd, 2)})
+          {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
+          {yieldBalance.token.symbol} ($
+          {formatNumber(yieldBalance.tokenPriceInUsd, 2)})
         </Text>
 
-        {val.type === "unstaking" && typeof unstakingDays === "number" && (
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("position_details.unstaking_days", {
-              count: unstakingDays,
-            })}
-          </Text>
-        )}
+        {yieldBalance.type === "unstaking" &&
+          typeof unstakingDays === "number" && (
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              {t("position_details.unstaking_days", {
+                count: unstakingDays,
+              })}
+            </Text>
+          )}
       </Box>
     </Box>
   );

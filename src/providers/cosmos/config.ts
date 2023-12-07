@@ -296,7 +296,9 @@ const queryFn = async ({
               const chain =
                 filteredCosmosChains[sKCosmosNetworksToRegistryIds[next]];
 
-              if (!chain) throw new Error("Chain not found");
+              if (!chain) {
+                throw new Error("Chain not found");
+              }
 
               return {
                 ...acc,
@@ -315,7 +317,7 @@ const queryFn = async ({
         (val) => val.wagmiChain
       );
 
-      const wallets = forceWalletConnectOnly
+      const wallets: MainWalletBase[] = forceWalletConnectOnly
         ? [new WalletConnectWallet(walletConnectInfo)]
         : [
             ...keplrWallets,

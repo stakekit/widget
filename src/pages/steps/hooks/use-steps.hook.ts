@@ -4,8 +4,8 @@ import { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useSavedRef } from "../../../hooks";
 import { TxState, useStepsMachine } from "./use-steps-machine.hook";
-import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
-import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
+import { invalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
+import { invalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 
 export const useSteps = ({
   session,
@@ -24,8 +24,6 @@ export const useSteps = ({
     onSignSuccess,
     onSubmitSuccess,
     onDone,
-    invalidateBalances: useInvalidateYieldBalances(),
-    invalidateTokenAvailableAmount: useInvalidateTokenAvailableAmount(),
   });
 
   const [machine, send] = useStepsMachine();
@@ -75,8 +73,8 @@ export const useSteps = ({
   useEffect(() => {
     if (machine.value === "done") {
       callbacksRef.current.onDone?.();
-      callbacksRef.current.invalidateBalances();
-      callbacksRef.current.invalidateTokenAvailableAmount();
+      invalidateYieldBalances();
+      invalidateTokenAvailableAmount();
 
       navigate("../complete", {
         state: {

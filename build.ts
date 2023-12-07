@@ -39,11 +39,10 @@ const commonPlugins: esbuild.Plugin[] = [
       build.onLoad(
         { filter: /.*/, namespace: "chain-registry" },
         async (args) => {
-          console.log("onLoad: ", args.path);
           const code = await fs.promises.readFile(args.path, "utf8");
 
           const result = await babel.transformAsync(code, {
-            filename: "chain-registry.ts",
+            filename: args.path,
             plugins: [
               require.resolve("@babel/plugin-syntax-jsx"),
               [

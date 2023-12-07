@@ -1,13 +1,12 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import {
+  APIManager,
   BalancesRequestDto,
   TokenDto,
   getTokenGetTokenBalancesQueryKey,
-  useStakeKitQueryClient,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
-import { useCallback } from "react";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useTokenAvailableAmount = ({
@@ -65,12 +64,7 @@ export const useTokenAvailableAmount = ({
   });
 };
 
-export const useInvalidateTokenAvailableAmount = () => {
-  const queryClient = useStakeKitQueryClient();
-
-  return useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
-    });
-  }, [queryClient]);
-};
+export const invalidateTokenAvailableAmount = () =>
+  APIManager.getQueryClient()!.invalidateQueries({
+    queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
+  });

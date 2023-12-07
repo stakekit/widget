@@ -1,14 +1,16 @@
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProviderDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useStakeHistoryData } from "../../../providers/stake-history";
+import { useActionHistoryData } from "../../../providers/stake-history";
 import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
   useTrackPage("stakeCompelete");
 
-  const stakeHistoryData = useStakeHistoryData();
+  const stakeHistoryData = useActionHistoryData().chainNullable((val) =>
+    val.type === "stake" ? val : null
+  );
 
   const selectedStake = stakeHistoryData.map((val) => val.selectedStake);
   const stakeAmount = stakeHistoryData.map((val) => val.stakeAmount);

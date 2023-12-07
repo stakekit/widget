@@ -2,45 +2,63 @@ import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import {
-  Dispatch,
   PropsWithChildren,
-  SetStateAction,
   createContext,
+  useCallback,
   useContext,
+  useMemo,
   useState,
 } from "react";
 
-type Data = Maybe<{
-  selectedStake: YieldDto;
-  stakeAmount: BigNumber;
-  selectedValidator: Maybe<ValidatorDto>;
-}>;
+type GenericData = { timestamp: number };
+type TypeData =
+  | {
+      type: "stake";
+      selectedStake: YieldDto;
+      stakeAmount: BigNumber;
+      selectedValidator: Maybe<ValidatorDto>;
+    }
+  | { type: "unstake" }
+  | { type: "pending_action" };
 
-const StakeHistoryContext = createContext<
-  [Data, Dispatch<SetStateAction<Data>>] | undefined
+type Data = Maybe<GenericData & TypeData>;
+
+const ActionHistoryContext = createContext<
+  readonly [Data, (data: TypeData) => void] | undefined
 >(undefined);
 
-export const StakeHistoryContextProvider = ({
+export const ActionHistoryContextProvider = ({
   children,
 }: PropsWithChildren) => {
+  const [data, setData] = useState<Data>(Maybe.empty());
+
+  const setActionHistoryData = useCallback((data: TypeData) => {
+    setData(Maybe.of({ ...data, timestamp: Date.now() }));
+  }, []);
+
+  const value = useMemo(
+    () => [data, setActionHistoryData] as const,
+    [data, setActionHistoryData]
+  );
+
   return (
-    <StakeHistoryContext.Provider value={useState<Data>(Maybe.empty())}>
+    <ActionHistoryContext.Provider value={value}>
       {children}
-    </StakeHistoryContext.Provider>
+    </ActionHistoryContext.Provider>
   );
 };
 
-const useStakeHistory = () => {
-  const context = useContext(StakeHistoryContext);
+const useActionHistory = () => {
+  const context = useContext(ActionHistoryContext);
 
   if (context === undefined) {
     throw new Error(
-      "useStakeHistory must be used within a StakeHistoryContext"
+      "useActionHistory must be used within a ActionHistoryContext"
     );
   }
 
   return context;
 };
 
-export const useStakeHistoryData = () => useStakeHistory()[0];
-export const useSetStakeHistoryData = () => useStakeHistory()[1];
+export const useActionHistoryData = () => useActionHistory()[0];
+export const useSetActionHistoryData = () => useActionHistory()[1];

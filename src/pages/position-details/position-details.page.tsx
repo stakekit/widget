@@ -152,9 +152,15 @@ export const PositionDetails = () => {
                   </Text>
                 </Box>
 
-                {[...val.positionBalancesByType.values()].map((val) => (
-                  <PositionBalances key={val.type} val={val} />
-                ))}
+                {[...val.positionBalancesByType.values()].map(
+                  (yieldBalance) => (
+                    <PositionBalances
+                      key={yieldBalance.type}
+                      integrationData={val.integrationData}
+                      yieldBalance={yieldBalance}
+                    />
+                  )
+                )}
               </Box>
 
               {error && (

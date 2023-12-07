@@ -240,8 +240,11 @@
     "balance_type": {
       "available": "Available",
       "staked": "Staked",
+      "staked_yearn_or_deposit": "Deposited",
       "unstaking": "Unstaking",
+      "unstaking_yearn_or_deposit": "Withdrawing",
       "unstaked": "Unstaked",
+      "unstaked_yearn_or_deposit": "Withdrawn",
       "preparing": "Preparing",
       "rewards": "Rewards",
       "locked": "Locked",
