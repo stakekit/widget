@@ -1,6 +1,7 @@
 import {
   APIManager,
   YieldBalanceScanRequestDto,
+  YieldBalancesWithIntegrationIdDto,
   getYieldYieldBalancesScanQueryKey,
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";
@@ -11,6 +12,7 @@ import { useLocalStorageValue } from "../use-local-storage-value";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { waitForMs } from "../../utils";
+import { createSelector } from "reselect";
 
 export const useYieldBalancesScan = () => {
   const { network, address, additionalAddresses, isLedgerLive } = useSKWallet();
@@ -65,13 +67,7 @@ export const useYieldBalancesScan = () => {
       query: {
         enabled: param.enabled,
         staleTime: 1000 * 60 * 5,
-        select: (v) =>
-          v.map((v) => ({
-            ...v,
-            balances: [...v.balances].sort((a, b) =>
-              (a.validatorAddress ?? "").localeCompare(b.validatorAddress ?? "")
-            ),
-          })),
+        select: yieldBalancesSelector,
       },
     }
   );
@@ -104,6 +100,17 @@ export const useYieldBalancesScan = () => {
 
   return res;
 };
+
+const yieldBalancesSelector = createSelector(
+  (val: YieldBalancesWithIntegrationIdDto[]) => val,
+  (val) =>
+    val.map((v) => ({
+      ...v,
+      balances: [...v.balances].sort((a, b) =>
+        (a.validatorAddress ?? "").localeCompare(b.validatorAddress ?? "")
+      ),
+    }))
+);
 
 export const invalidateYieldBalances = () =>
   APIManager.getQueryClient()!.invalidateQueries({
