@@ -31,6 +31,8 @@
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via {{validator}}",
 
+    "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
+
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
 
     "no_opportunities": "No yield opportunities for this token",
@@ -99,6 +101,8 @@
     },
 
     "extra_tezos": "You can use or send staked XTZ as normal",
+
+    "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
 
     "opportunity_search_title": "Select a yield",
     "validator_search_title": "Select validator",

@@ -29,6 +29,8 @@ export const colorsContract = {
   modalOverlayBackground: "",
   modalBodyBackground: "",
 
+  tooltipBackground: "",
+
   primaryButtonColor: "",
   primaryButtonBackground: "",
   primaryButtonOutline: "",
@@ -91,6 +93,8 @@ export const lightThemeColors: typeof colorsContract = {
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#FFFFFF",
 
+  tooltipBackground: "#000000",
+
   primaryButtonColor: "#FFFFFF",
   primaryButtonBackground: "#000000",
   primaryButtonOutline: "#000000",
@@ -152,6 +156,8 @@ export const darkThemeColors: typeof colorsContract = {
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#2B2B2B",
+
+  tooltipBackground: "#000000",
 
   primaryButtonColor: "#000000",
   primaryButtonBackground: "#FFFFFF",

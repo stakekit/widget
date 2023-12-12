@@ -22,14 +22,16 @@ export const useEstimatedRewards = ({
   return useMemo(
     () =>
       providerDetails.map((val) => ({
-        percentage: val.aprPercentage,
+        percentage: val.rewardRateFormatted,
         yearly: stakeAmount.mapOrDefault(
-          (am) => formatNumber(am.times(val.apr).decimalPlaces(5)),
+          (am) => formatNumber(am.times(val.rewardRate).decimalPlaces(5)),
           ""
         ),
         monthly: stakeAmount.mapOrDefault(
           (am) =>
-            formatNumber(am.times(val.apr).dividedBy(12).decimalPlaces(5)),
+            formatNumber(
+              am.times(val.rewardRate).dividedBy(12).decimalPlaces(5)
+            ),
           ""
         ),
       })),

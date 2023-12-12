@@ -133,7 +133,7 @@ export const PositionsListItem = memo(
                       textAlign="end"
                     >
                       <Text variant={{ weight: "normal" }}>
-                        {val.providerDetails.aprPercentage}%
+                        {val.providerDetails.rewardRateFormatted}
                       </Text>
                       <Text
                         variant={{

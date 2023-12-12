@@ -4,8 +4,8 @@ import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useDetailsContext } from "../../state/details-context";
 import { YieldDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
-import { apyToPercentage } from "../../../../../utils";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { getRewardRateFormatted } from "../../../../../utils/get-reward-rate";
 
 export const SelectOpportunityListItem = ({
   item,
@@ -50,7 +50,12 @@ export const SelectOpportunityListItem = ({
           </Box>
 
           <Box>
-            <Text>{apyToPercentage(item.apy)}%</Text>
+            <Text>
+              {getRewardRateFormatted({
+                rewardRate: item.rewardRate,
+                rewardType: item.rewardType,
+              })}
+            </Text>
           </Box>
         </Box>
 

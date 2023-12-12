@@ -25,8 +25,8 @@ export const formatNumber = (
     .toFormat();
 };
 
-export const apyToPercentage = (apy: number) => {
-  return (apy * 100).toFixed(2);
+export const APToPercentage = (ap: number) => {
+  return (ap * 100).toFixed(2);
 };
 
 const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
