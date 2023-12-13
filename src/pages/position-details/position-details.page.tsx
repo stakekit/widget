@@ -14,13 +14,14 @@ import { Image } from "../../components/atoms/image";
 import { ImageFallback } from "../../components/atoms/image-fallback";
 import { Trans, useTranslation } from "react-i18next";
 import { HelpModal } from "../../components/molecules/help-modal";
-import { apyToPercentage, formatNumber } from "../../utils";
+import { formatNumber } from "../../utils";
 import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { PositionBalances } from "./components/position-balances";
 import { Maybe } from "purify-ts";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
+import { getRewardTypeFormatted } from "../../utils/get-reward-type";
 
 export const PositionDetails = () => {
   const positionDetails = usePositionDetails();
@@ -146,10 +147,16 @@ export const PositionDetails = () => {
                   justifyContent="space-between"
                   alignItems="center"
                 >
-                  <Text variant={{ weight: "normal" }}>APR</Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {apyToPercentage(val.integrationData.apy)}%
+                  <Text variant={{ weight: "normal" }}>
+                    {getRewardTypeFormatted(val.integrationData.rewardType)}
                   </Text>
+                  {providerDetails
+                    .map((pd) => (
+                      <Text variant={{ type: "muted", weight: "normal" }}>
+                        {pd.rewardRateFormatted}
+                      </Text>
+                    ))
+                    .extractNullable()}
                 </Box>
 
                 {[...val.positionBalancesByType.values()].map(

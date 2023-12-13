@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useStakeState } from "../../../../state/stake";
 import { yieldTypesMap } from "../../../../domain/types";
 import { MiscNetworks } from "@stakekit/common";
+import { capitalizeFirstLowerRest } from "../../../../utils/text";
 
 export const useFooterItems = () => {
   const { t } = useTranslation();
@@ -31,9 +32,13 @@ export const useFooterItems = () => {
 
       const def = {
         extra:
-          y.metadata.token.network === MiscNetworks.Tezos
-            ? t("details.extra_tezos")
-            : undefined,
+          y.rewardType === "variable"
+            ? t("details.reward_type_varialbe", {
+                symbol: capitalizeFirstLowerRest(y.token.symbol),
+              })
+            : y.metadata.token.network === MiscNetworks.Tezos
+              ? t("details.extra_tezos")
+              : undefined,
       };
 
       switch (y.metadata.type) {

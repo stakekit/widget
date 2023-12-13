@@ -11,7 +11,6 @@ import {
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { Image } from "../../../../components/atoms/image";
 import { useTranslation } from "react-i18next";
-import { apyToPercentage } from "../../../../utils";
 import { ValidatorDto } from "@stakekit/api-hooks";
 import { ImageFallback } from "../../../../components/atoms/image-fallback";
 import { useMemo, useState } from "react";
@@ -27,6 +26,8 @@ import { ContentLoaderSquare } from "../../../../components/atoms/content-loader
 import { Maybe } from "purify-ts";
 import { GroupedVirtualList } from "../../../../components/atoms/virtual-list";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { getRewardRateFormatted } from "../../../../utils/get-reward-rate";
+import { getRewardTypeFormatted } from "../../../../utils/get-reward-type";
 
 export const SelectValidator = () => {
   const { t } = useTranslation();
@@ -140,7 +141,7 @@ export const SelectValidator = () => {
     </Box>
   ) : (
     Maybe.fromRecord({ selectedStake, selectedValidator })
-      .map((val) => {
+      .map(({ selectedStake, selectedValidator }) => {
         return (
           <SelectModal
             title={t("details.validator_search_title")}
@@ -148,7 +149,7 @@ export const SelectValidator = () => {
             onOpen={() => trackEvent("selectValidatorModalOpened")}
             trigger={
               <Trigger
-                disabled={!val.selectedStake.validators.length}
+                disabled={!selectedStake.validators.length}
                 className={triggerStyles}
               >
                 <Box display="flex">
@@ -164,13 +165,13 @@ export const SelectValidator = () => {
                         <Image
                           containerProps={{ hw: "5" }}
                           imageProps={{ borderRadius: "full" }}
-                          src={val.selectedValidator.image}
+                          src={selectedValidator.image}
                           fallback={
                             <Box marginRight="1">
                               <ImageFallback
                                 name={
-                                  val.selectedValidator.name ||
-                                  val.selectedValidator.address
+                                  selectedValidator.name ||
+                                  selectedValidator.address
                                 }
                                 tokenLogoHw="5"
                                 textVariant={{
@@ -185,17 +186,16 @@ export const SelectValidator = () => {
                       <Text className={breakWord} variant={{ weight: "bold" }}>
                         {t("details.staked_via", {
                           validator:
-                            val.selectedValidator.name ??
-                            val.selectedValidator.address,
+                            selectedValidator.name ?? selectedValidator.address,
                         })}
                       </Text>
 
-                      {val.selectedValidator.preferred && (
+                      {selectedValidator.preferred && (
                         <Box marginLeft="1" display="flex">
                           <PreferredIcon />
                         </Box>
                       )}
-                      {!!val.selectedStake.validators.length && (
+                      {!!selectedStake.validators.length && (
                         <Box marginLeft="2">
                           <CaretDownIcon />
                         </Box>
@@ -240,7 +240,7 @@ export const SelectValidator = () => {
                               type: "muted",
                             }}
                           >
-                            APR
+                            {getRewardTypeFormatted(selectedStake.rewardType)}
                           </Text>
                         </Box>
                       </Box>
@@ -311,11 +311,14 @@ export const SelectValidator = () => {
                                 )}
                               </Box>
 
-                              {"apr" in item && (
-                                <Box>
-                                  <Text>{apyToPercentage(item.apr)}%</Text>
-                                </Box>
-                              )}
+                              <Box>
+                                <Text>
+                                  {getRewardRateFormatted({
+                                    rewardRate: item.apr,
+                                    rewardType: selectedStake.rewardType,
+                                  })}
+                                </Text>
+                              </Box>
                             </Box>
                           </Box>
                         </SelectModalItem>

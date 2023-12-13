@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
-import { apyYield } from "../../styles.css";
+import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { useDetailsContext } from "../../state/details-context";
 
@@ -75,11 +75,26 @@ export const SelectYieldSection = () => {
                 alignItems="center"
               >
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-                  <Text className={apyYield}>
+                  <Box position="relative">
                     {providerDetails
-                      .map((ss) => `${ss.aprPercentage}%`)
+                      .filter((pd) => pd.rewardType === "variable")
+                      .map(() => (
+                        <Box className={apyVariable}>
+                          <Text variant={{ size: "large" }}>*</Text>
+
+                          <Text className={apyVariableTooltip}>
+                            {t("details.reward_rate_estimate_tooltip")}
+                          </Text>
+                        </Box>
+                      ))
                       .extractNullable()}
-                  </Text>
+
+                    <Text className={apyYield}>
+                      {providerDetails
+                        .map((pd) => pd.rewardRateFormatted)
+                        .extractNullable()}
+                    </Text>
+                  </Box>
                 </Box>
 
                 <Box display="flex" justifyContent="center" alignItems="center">

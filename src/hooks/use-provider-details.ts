@@ -1,7 +1,7 @@
-import { YieldDto } from "@stakekit/api-hooks";
+import { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { apyToPercentage } from "../utils";
+import { getRewardRateFormatted } from "../utils/get-reward-rate";
 
 export const useProviderDetails = ({
   integrationData,
@@ -14,8 +14,9 @@ export const useProviderDetails = ({
     Maybe<{
       logo: string;
       name: string;
-      aprPercentage: string;
-      apr: number;
+      rewardRateFormatted: string;
+      rewardRate: number;
+      rewardType: RewardTypes;
       address?: string;
     }>
   >(() => {
@@ -24,15 +25,23 @@ export const useProviderDetails = ({
         .map((v) => ({
           logo: v.logoURI,
           name: v.name,
-          aprPercentage: apyToPercentage(val.apy),
-          apr: val.apy,
+          rewardRateFormatted: getRewardRateFormatted({
+            rewardRate: val.rewardRate,
+            rewardType: val.rewardType,
+          }),
+          rewardType: val.rewardType,
+          rewardRate: val.rewardRate,
         }))
         .altLazy(() =>
           Maybe.of({
             logo: val.metadata.logoURI,
             name: val.metadata.name,
-            aprPercentage: apyToPercentage(val.apy),
-            apr: val.apy,
+            rewardRateFormatted: getRewardRateFormatted({
+              rewardRate: val.rewardRate,
+              rewardType: val.rewardType,
+            }),
+            rewardType: val.rewardType,
+            rewardRate: val.rewardRate,
           })
         )
     );
@@ -48,9 +57,13 @@ export const useProviderDetails = ({
             (v) => ({
               logo: v.image,
               name: v.name,
-              aprPercentage: apyToPercentage(v.apr),
+              rewardRateFormatted: getRewardRateFormatted({
+                rewardRate: v.apr,
+                rewardType: val.rewardType,
+              }),
+              rewardType: val.rewardType,
+              rewardRate: v.apr,
               address: v.address,
-              apr: val.apy,
             })
           );
         })
