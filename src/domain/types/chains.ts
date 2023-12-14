@@ -1,10 +1,5 @@
 import { Currency, Families } from "@ledgerhq/wallet-api-client";
-import {
-  CosmosNetworks,
-  EvmNetworks,
-  MiscNetworks,
-  Networks,
-} from "@stakekit/common";
+import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
 import { Chain } from "@stakekit/rainbowkit";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
@@ -258,17 +253,16 @@ export const supportedLedgerFamiliesWithCurrency = {
       skChainName: CosmosNetworks.Injective,
     },
   },
-} satisfies Record<
+} as const satisfies SupportedLedgerFamiliesWithCurrency;
+
+export type SupportedLedgerFamiliesWithCurrency = Record<
   SupportedLedgerLiveFamilies,
   Record<
     Currency["id"],
     {
       family: SupportedLedgerLiveFamilies;
       currencyId: Currency["id"];
-      skChainName: Networks;
+      skChainName: SupportedSKChains;
     }
   >
 >;
-
-export type SupportedLedgerFamiliesWithCurrency =
-  typeof supportedLedgerFamiliesWithCurrency;

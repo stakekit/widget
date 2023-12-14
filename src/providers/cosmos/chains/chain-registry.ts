@@ -2,11 +2,7 @@ import { AssetList, Chain } from "@chain-registry/types";
 import preval from "babel-plugin-preval/macro";
 
 export const { cosmosRegistryChains, cosmosAssets } = preval`
-  const { chain: dydxChain, asset: dydxAsset } = require("./dydx-chain");
-  const { chains: _chains, assets: _assets } = require("chain-registry");
-
-  const chains = _chains.concat(dydxChain);
-  const assets = _assets.concat(dydxAsset);
+  const { chains, assets } = require("chain-registry");
 
   const chainsSet = new Set([
     "cosmoshub-4",

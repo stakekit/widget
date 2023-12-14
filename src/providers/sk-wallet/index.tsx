@@ -238,6 +238,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         isLedgerLive,
         ledgerAccounts,
         onLedgerAccountChange,
+        connector,
       };
     }
 
@@ -252,6 +253,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       isLedgerLive: false,
       ledgerAccounts: null,
       onLedgerAccountChange: null,
+      connector: null,
     };
   }, [
     additionalAddresses.data,

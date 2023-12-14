@@ -17,6 +17,11 @@
     "retry": "Try Again",
     "unsupported_network": "Unsupported network"
   },
+
+  "chain_modal": {
+    "disabled_chain_info": "Add account"
+  },
+
   "init": {
     "get_started": "Connect your wallet to get started…",
     "connect_wallet": "Connect Wallet"

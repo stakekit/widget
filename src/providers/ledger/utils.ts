@@ -41,45 +41,37 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 
       return typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
         (acc, [k, v]) => {
-          const filtered = Object.keys(v).reduce(
-            (acc, key) => {
-              const item = v[key as keyof typeof v] as
-                | SupportedLedgerFamiliesWithCurrency["ethereum"]["ethereum"]
-                | SupportedLedgerFamiliesWithCurrency["ethereum"]["polygon"];
+          const filtered = Object.keys(v).reduce((acc, key) => {
+            const item = v[key as keyof typeof v] as {
+              [K in keyof SupportedLedgerFamiliesWithCurrency]: SupportedLedgerFamiliesWithCurrency[K];
+            }[keyof SupportedLedgerFamiliesWithCurrency];
 
-              const chain =
-                wagmiConfig.evmConfig.evmChainsMap[
-                  item.skChainName as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
-                ]?.wagmiChain ||
-                wagmiConfig.cosmosConfig.cosmosChainsMap[
-                  item.skChainName as unknown as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
-                ]?.wagmiChain ||
-                wagmiConfig.miscConfig.miscChainsMap[
-                  item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
-                ]?.wagmiChain;
+            const chain =
+              wagmiConfig.evmConfig.evmChainsMap[
+                item.skChainName as unknown as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
+              ]?.wagmiChain ||
+              wagmiConfig.cosmosConfig.cosmosChainsMap[
+                item.skChainName as unknown as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
+              ]?.wagmiChain ||
+              wagmiConfig.miscConfig.miscChainsMap[
+                item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
+              ]?.wagmiChain;
 
-              if (
-                chain &&
-                accountsFamilies.has(item.family) &&
-                (key === "*" || accountsCurrencies.has(item.currencyId))
-              ) {
-                return { ...acc, [key]: { ...item, chain } };
-              }
+            if (!chain) return acc;
 
-              return acc;
-            },
-            {} as typeof v & { chain: Chain }
-          );
+            if (
+              accountsFamilies.has(item.family) &&
+              (key === "*" || accountsCurrencies.has(item.currencyId))
+            ) {
+              return { ...acc, [key]: { ...item, chain, enabled: true } };
+            } else {
+              return { ...acc, [key]: { ...item, chain, enabled: false } };
+            }
+          }, {} as MappedSupportedLedgerFamiliesWithCurrency);
 
           return { ...acc, [k]: filtered };
         },
-        {} as {
-          [Key in keyof SupportedLedgerFamiliesWithCurrency]: {
-            [K in keyof SupportedLedgerFamiliesWithCurrency[Key]]: SupportedLedgerFamiliesWithCurrency[Key][K] & {
-              chain: Chain;
-            };
-          };
-        }
+        {} as MappedSupportedLedgerFamiliesWithCurrency
       );
     })
     .map((v) => {
@@ -99,7 +91,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
             );
 
             return acc;
-          }, new Map<SubItemKey, V[SubItemKey]>());
+          }, new Map<SubItemKey, V[Key][SubItemKey]>());
 
           acc.set(key as Key, subItemMap);
 
@@ -114,11 +106,21 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
               family: SupportedLedgerLiveFamilies;
               skChainName: SupportedSKChains;
               chain: Chain;
+              enabled: boolean;
             }
           >
         >()
       );
     });
+
+type MappedSupportedLedgerFamiliesWithCurrency = {
+  [Key in keyof SupportedLedgerFamiliesWithCurrency]: {
+    [K in keyof SupportedLedgerFamiliesWithCurrency[Key]]: SupportedLedgerFamiliesWithCurrency[Key][K] & {
+      chain: Chain;
+      enabled: boolean;
+    };
+  };
+};
 
 /**
  * Create Map<CryptoCurrency['id'], CryptoCurrency['family']>
