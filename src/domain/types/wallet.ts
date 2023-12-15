@@ -10,6 +10,7 @@ import {
 import { GetNetworkResult } from "@wagmi/core";
 import { SupportedSKChains } from "./chains";
 import { Account } from "@ledgerhq/wallet-api-client";
+import { Connector } from "wagmi";
 
 export type SKWallet = {
   disconnect: () => Promise<void>;
@@ -31,6 +32,7 @@ export type SKWallet = {
       isConnecting: false;
       ledgerAccounts: Account[];
       onLedgerAccountChange: (account: Account) => void;
+      connector: Connector;
     }
   | {
       network: null;
@@ -40,5 +42,6 @@ export type SKWallet = {
       isConnecting: boolean;
       ledgerAccounts: null;
       onLedgerAccountChange: null;
+      connector: null;
     }
 );

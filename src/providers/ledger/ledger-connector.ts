@@ -1,10 +1,11 @@
 import { Connector } from "wagmi";
-import { assertNotError, isLedgerDappBrowserProvider } from "../../utils";
+import { isLedgerDappBrowserProvider } from "../../utils";
 import { Address, createWalletClient, custom } from "viem";
 import { Chain, Wallet } from "@stakekit/rainbowkit";
 import { EthereumProvider } from "eip1193-provider";
 import {
   Account,
+  Currency,
   Transport,
   WalletAPIClient,
   WindowMessageTransport,
@@ -13,8 +14,7 @@ import {
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
 } from "../../domain/types/chains";
-import { getWagmiConfig } from "../wagmi";
-import { EitherAsync, List } from "purify-ts";
+import { EitherAsync, List, Maybe } from "purify-ts";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
@@ -40,7 +40,14 @@ export class LedgerLiveConnector extends Connector {
     ReturnType<typeof getFilteredSupportedLedgerFamiliesWithCurrency>
   > | null = null;
 
+  #filteredSkSupportedChainsToCurrencyIdMap: Map<
+    Chain["id"],
+    Currency["id"]
+  > | null = null;
+
   #currentChain: ChainItem | null = null;
+
+  disabledChains: Chain[] = [];
 
   constructor() {
     super({ options: {} });
@@ -80,9 +87,7 @@ export class LedgerLiveConnector extends Connector {
      */
     const ledgerCurrencies = (
       await getLedgerCurrencies(this.getWalletApiClient())
-    ).extract();
-
-    assertNotError(ledgerCurrencies);
+    ).unsafeCoerce();
 
     const accounts = (
       await EitherAsync(() => this.getWalletApiClient().account.list()).mapLeft(
@@ -91,39 +96,45 @@ export class LedgerLiveConnector extends Connector {
           return new Error("could not get accounts");
         }
       )
-    ).extract();
-
-    assertNotError(accounts);
+    ).unsafeCoerce();
 
     const filteredSupportedLedgerFamiliesWithCurrency = (
       await getFilteredSupportedLedgerFamiliesWithCurrency({
         ledgerCurrencies,
         accounts,
       })
-    ).extract();
+    ).unsafeCoerce();
 
-    assertNotError(filteredSupportedLedgerFamiliesWithCurrency);
+    this.#filteredSkSupportedChainsToCurrencyIdMap = new Map(
+      [...filteredSupportedLedgerFamiliesWithCurrency.values()].flatMap((v) =>
+        [...v.values()].map((v) => [v.chain.id, v.currencyId])
+      )
+    );
 
     this.#filteredSkSupportedChainsValues =
       filteredSupportedLedgerFamiliesWithCurrency;
 
-    const wagmiConfig = (
-      await getWagmiConfig({ forceWalletConnectOnly: false })
-    ).extract();
+    const { enabled, disabled } = [
+      ...filteredSupportedLedgerFamiliesWithCurrency.values(),
+    ].reduce(
+      (acc, next) => {
+        next.forEach((v) => {
+          if (v.enabled) {
+            acc.enabled.push(v.chain);
+          } else {
+            acc.disabled.push(v.chain);
+          }
+        });
 
-    assertNotError(wagmiConfig);
+        return acc;
+      },
+      { enabled: [] as Chain[], disabled: [] as Chain[] }
+    );
 
     // Set chains to expose for switcher
     // @ts-expect-error
-    this.chains = [
-      ...filteredSupportedLedgerFamiliesWithCurrency.values(),
-    ].reduce((acc, next) => {
-      [...next.values()].forEach((v) => {
-        acc.push(v.chain);
-      });
-
-      return acc;
-    }, [] as Chain[]);
+    this.chains = enabled;
+    this.disabledChains = disabled;
 
     this.#ledgerAccounts = accounts;
 
@@ -160,9 +171,7 @@ export class LedgerLiveConnector extends Connector {
       )
       .altLazy(() => List.head(accountsWithChain))
       .toEither(new Error("Account not found"))
-      .extract();
-
-    assertNotError(accountWithChain);
+      .unsafeCoerce();
 
     this.#currentAccount = accountWithChain.account;
     this.#currentChain = accountWithChain.chainItem;
@@ -176,6 +185,35 @@ export class LedgerLiveConnector extends Connector {
       chain: { id: await this.getChainId(), unsupported: false },
     };
   }
+
+  requestAndSwitchAccount = (chain: Chain) =>
+    EitherAsync.liftEither(
+      Maybe.fromNullable(
+        this.#filteredSkSupportedChainsToCurrencyIdMap?.get(chain.id)
+      ).toEither(new Error("Chain not found"))
+    )
+      .chain((currencyId) =>
+        EitherAsync(() =>
+          this.getWalletApiClient().account.request({
+            currencyIds: [currencyId],
+          })
+        ).mapLeft((e) => {
+          console.log(e);
+          return new Error("could not request account");
+        })
+      )
+      .chain((account) => {
+        this.#ledgerAccounts.push(account);
+        this.chains.push(chain);
+        this.disabledChains = this.disabledChains.filter(
+          (c) => c.id !== chain.id
+        );
+        return EitherAsync(() => this.switchChain(chain.id));
+      })
+      .mapLeft((e) => {
+        console.log(e);
+        return new Error("failed to switch to new chain");
+      });
 
   #getAccountsOnCurrentChain = () => {
     const currentChain = this.#currentChain;
@@ -229,8 +267,7 @@ export class LedgerLiveConnector extends Connector {
     const skSupportedChain = [
       ...this.#filteredSkSupportedChainsValues!.values(),
     ]
-      .map((v) => [...v.values()])
-      .flat()
+      .flatMap((v) => [...v.values()])
       .find((v) => v.chain.id === chainId);
 
     if (!skSupportedChain) throw new Error("Chain not found");
