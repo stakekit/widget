@@ -17,7 +17,7 @@ export const SelectYieldSection = () => {
     rewardToken,
     estimatedRewards,
     symbol,
-    providerDetails,
+    selectedStake,
     defaultTokensIsLoading,
   } = useDetailsContext();
 
@@ -76,7 +76,7 @@ export const SelectYieldSection = () => {
               >
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
                   <Box position="relative">
-                    {providerDetails
+                    {selectedStake
                       .filter((pd) => pd.rewardType === "variable")
                       .map(() => (
                         <Box className={apyVariable}>
@@ -90,8 +90,8 @@ export const SelectYieldSection = () => {
                       .extractNullable()}
 
                     <Text className={apyYield}>
-                      {providerDetails
-                        .map((pd) => pd.rewardRateFormatted)
+                      {estimatedRewards
+                        .map((val) => val.percentage)
                         .extractNullable()}
                     </Text>
                   </Box>

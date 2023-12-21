@@ -28,19 +28,20 @@ export const preparePendingActionRequestDto = ({
       | NonNullable<SKWallet["additionalAddresses"]>
       | undefined;
   }
-> => {
-  return Maybe.fromNullable(address)
+> =>
+  Maybe.fromNullable(address)
     .toEither(new Error("missing address"))
     .map((val) => ({
       address: val,
       additionalAddresses: additionalAddresses ?? undefined,
       gasFeeToken: integration.metadata.gasFeeToken,
       args: {
-        validatorAddress: yieldBalance.validatorAddress,
+        ...(integration.args.exit?.args?.validatorAddresses?.required
+          ? { validatorAddresses: yieldBalance.validatorAddresses }
+          : { validatorAddress: yieldBalance.validatorAddress }),
         amount: yieldBalance.amount,
       },
       integrationId: integration.id,
       passthrough: pendingActionDto.passthrough,
       type: pendingActionDto.type,
     }));
-};

@@ -11,9 +11,10 @@ import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { claimRewardsContainer, viaText } from "../style.css";
-import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
+import { getRewardRateFormatted } from "../../../../utils/get-reward-rate";
 
 export const PositionsListItem = memo(
   ({
@@ -46,15 +47,39 @@ export const PositionsListItem = memo(
       [item.balances]
     );
 
-    const providerDetails = useProviderDetails({
+    const providersDetails = useProvidersDetails({
       integrationData,
-      validatorAddress: Maybe.of(item.defaultOrValidatorId),
+      validatorsAddresses:
+        item.type === "validators"
+          ? Maybe.of(item.validatorsAddresses)
+          : Maybe.of([]),
     });
+
+    const rewardRateAverage = useMemo(
+      () =>
+        Maybe.fromRecord({ providersDetails, integrationData })
+          .map((val) => ({
+            ...val,
+            rewardRateAverage: val.providersDetails
+              .reduce(
+                (acc, val) => acc.plus(new BigNumber(val.rewardRate)),
+                new BigNumber(0)
+              )
+              .dividedBy(val.providersDetails.length),
+          }))
+          .map((val) =>
+            getRewardRateFormatted({
+              rewardRate: val.rewardRateAverage.toNumber(),
+              rewardType: val.integrationData.rewardType,
+            })
+          ),
+      [integrationData, providersDetails]
+    );
 
     return (
       <SKLink
         relative="path"
-        to={`../positions/${item.integrationId}/${item.defaultOrValidatorId}`}
+        to={`../positions/${item.integrationId}/${item.balanceId}`}
       >
         <Box my="2">
           {integrationData.mapOrDefault(
@@ -101,27 +126,30 @@ export const PositionsListItem = memo(
                         </Box>
                       )}
                     </Box>
-                    {providerDetails
-                      .map((val) => (
-                        <Text
-                          className={viaText}
-                          variant={{
-                            type: "muted",
-                            weight: "normal",
-                          }}
-                        >
-                          {t("positions.via", {
-                            providerName: val.name ?? val.address,
-                          })}
-                        </Text>
-                      ))
+                    {providersDetails
+                      .chain((val) =>
+                        List.head(val).map((p) => (
+                          <Text
+                            className={viaText}
+                            variant={{
+                              type: "muted",
+                              weight: "normal",
+                            }}
+                          >
+                            {t("positions.via", {
+                              providerName: p.name ?? p.address,
+                              count: val.length - 1,
+                            })}
+                          </Text>
+                        ))
+                      )
                       .extractNullable()}
                   </Box>
                 </Box>
 
                 {Maybe.fromRecord({
                   token,
-                  providerDetails,
+                  rewardRateAverage,
                 })
                   .map((val) => (
                     <Box
@@ -133,7 +161,7 @@ export const PositionsListItem = memo(
                       textAlign="end"
                     >
                       <Text variant={{ weight: "normal" }}>
-                        {val.providerDetails.rewardRateFormatted}
+                        {val.rewardRateAverage}
                       </Text>
                       <Text
                         variant={{

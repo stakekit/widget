@@ -7,22 +7,26 @@ import { CompletePage } from "./common.page";
 import { Maybe } from "purify-ts";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
 
 export const UnstakeOrPendingActionCompletePage = () => {
   const { unstake, pendingActionSession, pendingAction } =
     useUnstakeOrPendingActionState();
 
   const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:defaultOrValidatorId/complete"
+    "pending-action/:integrationId/:balanceId/complete"
   );
 
   useTrackPage(
     pendingActionMatch ? "pendingActionCompelete" : "unstakeCompelete"
   );
 
-  const integrationId = useParams<{ integrationId: string }>().integrationId!;
+  const { integrationId, balanceId } = useParams<{
+    integrationId: string;
+    balanceId: string;
+  }>();
 
   const yieldOpportunity = useYieldOpportunity(integrationId);
   const integrationData = useMemo(
@@ -30,10 +34,12 @@ export const UnstakeOrPendingActionCompletePage = () => {
     [yieldOpportunity.data]
   );
 
-  const providerDetails = useProviderDetails({
+  const positionBalances = usePositionBalances({ integrationId, balanceId });
+
+  const providerDetails = useProvidersDetails({
     integrationData,
-    validatorAddress: Maybe.fromNullable(
-      pendingActionMatch?.params.defaultOrValidatorId
+    validatorsAddresses: positionBalances.data.map((p) =>
+      p.type === "validators" ? p.validatorsAddresses : []
     ),
   });
 
@@ -63,7 +69,7 @@ export const UnstakeOrPendingActionCompletePage = () => {
 
   return (
     <CompletePage
-      providerDetails={providerDetails}
+      providersDetails={providerDetails}
       yieldType={yieldType}
       token={token}
       metadata={metadata}

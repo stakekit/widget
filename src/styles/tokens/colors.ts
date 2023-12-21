@@ -21,6 +21,9 @@ export const colorsContract = {
 
   stakeSectionBackground: "",
 
+  selectValidatorMultiSelectedBackground: "",
+  selectValidatorMultiDefaultBackground: "",
+
   positionsSectionBackgroundColor: "",
   positionsSectionBorderColor: "",
   positionsSectionDividerColor: "",
@@ -85,6 +88,9 @@ export const lightThemeColors: typeof colorsContract = {
 
   stakeSectionBackground: "#F6F7F9",
 
+  selectValidatorMultiSelectedBackground: "#2DC969",
+  selectValidatorMultiDefaultBackground: "#fff",
+
   positionsSectionBackgroundColor: "#FFFFFF",
   positionsSectionBorderColor: "#373737",
   positionsSectionDividerColor: "#F6F7F9",
@@ -148,6 +154,9 @@ export const darkThemeColors: typeof colorsContract = {
   tabBorder: "#FFFFFF",
 
   stakeSectionBackground: "#363636",
+
+  selectValidatorMultiSelectedBackground: "#2DC969",
+  selectValidatorMultiDefaultBackground: "#2B2B2B",
 
   positionsSectionBackgroundColor: "#2B2B2B",
   positionsSectionBorderColor: "#2B2B2B",

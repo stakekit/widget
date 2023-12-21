@@ -214,18 +214,13 @@ export const SelectModalItem = ({
   testId,
   variant,
 }: PropsWithChildren<{
-  onItemClick?: () => void;
+  onItemClick?: (args: { closeModal: () => void }) => void;
   testId?: string;
   variant?: ItemContainerVariants;
 }>) => {
   const { closeModal } = useSelectModalContext();
 
-  const onClick = () => {
-    if (onItemClick) {
-      closeModal();
-      onItemClick?.();
-    }
-  };
+  const onClick = () => onItemClick?.({ closeModal });
 
   return (
     <ListItem variant={variant} onClick={onClick}>

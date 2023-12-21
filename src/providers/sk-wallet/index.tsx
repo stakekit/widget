@@ -32,6 +32,7 @@ import { unsignedTransactionCodec } from "./validation";
 import { isEVMNetwork } from "../../domain";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
+import { LedgerLiveConnector } from "../ledger/ledger-connector";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -64,6 +65,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             evmChainsMap: val.wagmiConfig.evmConfig.evmChainsMap,
             cosmosChainsMap: val.wagmiConfig.cosmosConfig.cosmosChainsMap,
             miscChainsMap: val.wagmiConfig.miscConfig.miscChainsMap,
+            substrateChainsMap:
+              val.wagmiConfig.substrateConfig.substrateChainsMap,
           })
         )
         .extractNullable(),
@@ -239,6 +242,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         ledgerAccounts,
         onLedgerAccountChange,
         connector,
+        isLedgerLiveAccountPlaceholder:
+          address === LedgerLiveConnector.noAccountPlaceholder,
       };
     }
 
@@ -254,6 +259,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       ledgerAccounts: null,
       onLedgerAccountChange: null,
       connector: null,
+      isLedgerLiveAccountPlaceholder: false,
     };
   }, [
     additionalAddresses.data,

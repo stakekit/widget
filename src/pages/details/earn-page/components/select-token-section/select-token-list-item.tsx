@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { ComponentProps, memo, useMemo } from "react";
 import {
   Box,
   SelectModalItem,
@@ -33,9 +33,12 @@ export const SelectTokenListItem = memo(
 
     const trackEvent = useTrackEvent();
 
-    const onItemClick = (tb: TokenBalanceScanResponseDto) => {
-      trackEvent("tokenSelected", { token: tb.token.symbol });
+    const _onItemClick: ComponentProps<
+      typeof SelectModalItem
+    >["onItemClick"] = ({ closeModal }) => {
+      trackEvent("tokenSelected", { token: item.token.symbol });
       onTokenBalanceSelect(item);
+      closeModal();
     };
 
     return (
@@ -46,7 +49,7 @@ export const SelectTokenListItem = memo(
               ? { type: "enabled", hover: "enabled" }
               : { type: "disabled", hover: "enabled" }
           }
-          onItemClick={() => onItemClick(item)}
+          onItemClick={_onItemClick}
         >
           <TokenIcon token={item.token} />
 

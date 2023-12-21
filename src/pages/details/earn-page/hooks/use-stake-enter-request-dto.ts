@@ -1,23 +1,17 @@
 import { useMemo } from "react";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../../state/stake";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const useStakeEnterRequestDto = () => {
-  const { selectedStake, stakeAmount, selectedValidator } = useStakeState();
+  const { selectedStake, stakeAmount, selectedValidators } = useStakeState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   return useMemo(
     () =>
       selectedStake
-        .chain((stake) =>
-          stakeAmount.map((amount) => ({
-            stake,
-            amount,
-            validator: selectedValidator.extractNullable(),
-          }))
-        )
+        .chain((stake) => stakeAmount.map((amount) => ({ stake, amount })))
         .chain((v) =>
           Maybe.fromNullable(address).map((a) => ({ ...v, address: a }))
         )
@@ -35,15 +29,26 @@ export const useStakeEnterRequestDto = () => {
             args: {
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               amount: val.amount.toString(),
-              validatorAddress:
-                val.validator?.address ?? val.stake.metadata.defaultValidator,
+              ...(val.stake.args.enter.args?.validatorAddresses?.required
+                ? {
+                    validatorAddresses: [...selectedValidators.values()].map(
+                      (v) => v.address
+                    ),
+                  }
+                : {
+                    validatorAddress: List.head([
+                      ...selectedValidators.values(),
+                    ])
+                      .map((v) => v.address)
+                      .extract(),
+                  }),
             },
           },
         })),
     [
       selectedStake,
       stakeAmount,
-      selectedValidator,
+      selectedValidators,
       address,
       additionalAddresses,
       isLedgerLive,

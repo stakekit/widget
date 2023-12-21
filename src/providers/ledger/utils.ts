@@ -3,6 +3,7 @@ import {
   CosmosChainsMap,
   EvmChainsMap,
   MiscChainsMap,
+  SubstrateChainsMap,
   SupportedLedgerFamiliesWithCurrency,
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
@@ -55,6 +56,9 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
               ]?.wagmiChain ||
               wagmiConfig.miscConfig.miscChainsMap[
                 item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
+              ]?.wagmiChain ||
+              wagmiConfig.substrateConfig.substrateChainsMap[
+                item.skChainName as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["skChainName"]
               ]?.wagmiChain;
 
             if (!chain) return acc;

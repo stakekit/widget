@@ -1,5 +1,5 @@
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useActionHistoryData } from "../../../providers/stake-history";
 import { formatNumber } from "../../../utils";
@@ -14,8 +14,8 @@ export const StakeCompletePage = () => {
 
   const selectedStake = stakeHistoryData.map((val) => val.selectedStake);
   const stakeAmount = stakeHistoryData.map((val) => val.stakeAmount);
-  const selectedValidator = stakeHistoryData.chain(
-    (val) => val.selectedValidator
+  const selectedValidators = stakeHistoryData.map(
+    (val) => val.selectedValidators
   );
 
   const token = selectedStake.map((y) => y.token);
@@ -27,15 +27,15 @@ export const StakeCompletePage = () => {
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
-  const providerDetails = useProviderDetails({
+  const providerDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorAddress: selectedValidator.map((v) => v.address),
+    validatorsAddresses: selectedValidators,
   });
 
   return (
     <CompletePage
       yieldType={yieldType}
-      providerDetails={providerDetails}
+      providersDetails={providerDetails}
       token={token}
       metadata={metadata}
       network={network}

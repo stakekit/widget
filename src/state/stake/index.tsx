@@ -39,7 +39,7 @@ const StakeDispatchContext = createContext<Dispatch<Actions> | undefined>(
 const getInitialState = (): State => ({
   selectedTokenBalance: Maybe.empty(),
   selectedStakeId: Maybe.empty(),
-  selectedValidator: Maybe.empty(),
+  selectedValidators: new Map(),
   stakeAmount: Maybe.of(new BigNumber(0)),
 });
 
@@ -82,27 +82,60 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
               .map((val) => new BigNumber(val))
               .altLazy(() => Maybe.of(new BigNumber(0)));
 
-        const selectedValidator = tokenNotChanged
-          ? state.selectedValidator
-          : action.data.initYield.chain((val) => List.head(val.validators));
+        const selectedValidators = tokenNotChanged
+          ? state.selectedValidators
+          : action.data.initYield
+              .chain((val) => List.head(val.validators))
+              .map((v) => new Map([[v.address, v]]))
+              .orDefault(new Map());
 
         return {
           selectedTokenBalance: Maybe.of(action.data.tokenBalance),
           selectedStakeId,
           stakeAmount,
-          selectedValidator,
+          selectedValidators,
         };
       }
       case "yield/select":
         return {
           ...state,
           selectedStakeId: Maybe.of(action.data.id),
-          selectedValidator: List.head(action.data.validators),
+          selectedValidators: List.head(action.data.validators)
+            .map((v) => new Map([[v.address, v]]))
+            .orDefault(new Map()),
         };
       case "validator/select": {
+        const selectedValidators = new Map();
+        selectedValidators.set(action.data.address, action.data);
+
         return {
           ...state,
-          selectedValidator: Maybe.of(action.data),
+          selectedValidators,
+        };
+      }
+      case "validator/multiselect": {
+        const newMap = new Map(state.selectedValidators);
+
+        if (newMap.has(action.data.address)) {
+          newMap.delete(action.data.address);
+        } else {
+          newMap.set(action.data.address, action.data);
+        }
+
+        if (newMap.size === 0) return state;
+
+        return {
+          ...state,
+          selectedValidators: newMap,
+        };
+      }
+      case "validator/remove": {
+        const selectedValidators = new Map(state.selectedValidators);
+        selectedValidators.delete(action.data.address);
+
+        return {
+          ...state,
+          selectedValidators,
         };
       }
       case "stakeAmount/change": {
@@ -130,7 +163,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   const {
     selectedTokenBalance: _selectedTokenBalance,
     selectedStakeId,
-    selectedValidator,
+    selectedValidators,
     stakeAmount: selectedStakeAmount,
   } = state;
 
@@ -311,21 +344,21 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
    * Set initial validator
    */
   useLayoutEffect(() => {
-    Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) =>
-      selectedValidator.ifNothing(() =>
-        Maybe.fromNullable(initParams.data)
-          .chain((params) => Maybe.fromNullable(params.validator))
-          .chain((initV) =>
-            List.find(
-              (val) => val.name === initV || val.address === initV,
-              yo.validators
-            )
+    Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) => {
+      if (!!selectedValidators.size) return;
+
+      Maybe.fromNullable(initParams.data)
+        .chainNullable((params) => params.validator)
+        .chain((initV) =>
+          List.find(
+            (val) => val.name === initV || val.address === initV,
+            yo.validators
           )
-          .altLazy(() => List.head(yo.validators))
-          .ifJust((val) => dispatch({ type: "validator/select", data: val }))
-      )
-    );
-  }, [initParams.data, selectedValidator, yieldOpportunity.data]);
+        )
+        .altLazy(() => List.head(yo.validators))
+        .ifJust((val) => dispatch({ type: "validator/select", data: val }));
+    });
+  }, [initParams.data, selectedValidators, yieldOpportunity.data]);
 
   const stakeEnterAndTxsConstructMutationState =
     useStakeEnterAndTxsConstructMutationState();
@@ -367,7 +400,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       selectedStakeId,
       selectedStake,
       selectedTokenBalance,
-      selectedValidator,
+      selectedValidators,
       stakeAmount,
       stakeSession,
       actions,
@@ -378,7 +411,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       selectedStake,
       selectedStakeId,
       selectedTokenBalance,
-      selectedValidator,
+      selectedValidators,
       stakeAmount,
       stakeEnterTxGas,
       stakeSession,

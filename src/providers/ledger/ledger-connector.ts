@@ -27,6 +27,8 @@ export class LedgerLiveConnector extends Connector {
   readonly name = "Ledger Live";
   readonly ready: boolean;
 
+  static readonly noAccountPlaceholder = "N/A" as Address;
+
   #provider = new EthereumProvider({} as any);
 
   #walletApiClient?: WalletAPIClient;
@@ -66,9 +68,7 @@ export class LedgerLiveConnector extends Connector {
     this.ready = true;
   }
 
-  getCurrentAccountId = () => {
-    return this.#currentAccount?.id;
-  };
+  getCurrentAccountId = () => this.#currentAccount?.id;
 
   getAccountsOnCurrentChain = () => this.#accountsOnCurrentChain;
 
@@ -133,7 +133,7 @@ export class LedgerLiveConnector extends Connector {
 
     // Set chains to expose for switcher
     // @ts-expect-error
-    this.chains = enabled;
+    this.chains = [...enabled, ...disabled];
     this.disabledChains = disabled;
 
     this.#ledgerAccounts = accounts;
@@ -160,6 +160,29 @@ export class LedgerLiveConnector extends Connector {
       },
       [] as { account: Account; chainItem: ChainItem }[]
     );
+
+    if (!accountsWithChain.length) {
+      const defaultChain = Maybe.fromNullable(
+        filteredSupportedLedgerFamiliesWithCurrency
+          .get("ethereum")
+          ?.get("ethereum")
+      ).extractNullable();
+
+      if (!defaultChain) throw new Error("Default chain not found");
+
+      this.#accountsOnCurrentChain = [];
+      this.#currentChain = defaultChain;
+
+      this.onAccountsChanged([
+        LedgerLiveConnector.noAccountPlaceholder as Address,
+      ]);
+      this.onChainChanged(defaultChain.chain.id);
+
+      return {
+        account: LedgerLiveConnector.noAccountPlaceholder as Address,
+        chain: { id: defaultChain.chain.id, unsupported: false },
+      };
+    }
 
     const initNetwork = (await getInitialQueryParams({ isLedgerLive: true }))
       .toMaybe()
@@ -272,7 +295,10 @@ export class LedgerLiveConnector extends Connector {
 
     if (!skSupportedChain) throw new Error("Chain not found");
 
-    if (currentChain.chain.id !== skSupportedChain.chain.id) {
+    if (
+      currentChain.chain.id !== skSupportedChain.chain.id ||
+      !this.#currentAccount
+    ) {
       this.#currentChain = skSupportedChain;
       this.#accountsOnCurrentChain = this.#getAccountsOnCurrentChain();
       this.#currentAccount = this.#accountsOnCurrentChain[0];

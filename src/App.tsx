@@ -128,11 +128,11 @@ const Widget = () => {
                 }
               >
                 <Route
-                  path="positions/:integrationId/:defaultOrValidatorId"
+                  path="positions/:integrationId/:balanceId"
                   element={<PositionDetails />}
                 />
                 <Route
-                  path="unstake/:integrationId/:defaultOrValidatorId"
+                  path="unstake/:integrationId/:balanceId"
                   element={<UnstakeOrPendingActionCheck />}
                 >
                   <Route
@@ -150,7 +150,7 @@ const Widget = () => {
                 </Route>
 
                 <Route
-                  path="pending-action/:integrationId/:defaultOrValidatorId"
+                  path="pending-action/:integrationId/:balanceId"
                   element={<UnstakeOrPendingActionCheck />}
                 >
                   <Route

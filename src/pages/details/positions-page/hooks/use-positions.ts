@@ -98,17 +98,13 @@ export const usePositions = () => {
   };
 };
 
-/**
- *
- * @summary This selector is used to map object with all default + validator balances to a map
- */
 const positionsTableDataSelector = createSelector(
   (data: ReturnType<typeof usePositionsData>["data"]) => data,
   (data) => {
     return [...data.values()].reduce(
       (acc, val) => {
-        Object.entries(val.balanceData).forEach(([key, value]) => {
-          const filteredBalances = value.filter((v) => {
+        [...val.balanceData.entries()].forEach(([id, value]) => {
+          const filteredBalances = value.balances.filter((v) => {
             const amount = new BigNumber(v.amount);
 
             return !amount.isZero() && !amount.isNaN();
@@ -116,20 +112,24 @@ const positionsTableDataSelector = createSelector(
 
           if (filteredBalances.length) {
             acc.push({
+              ...value,
               integrationId: val.integrationId,
               balances: filteredBalances,
-              defaultOrValidatorId: key,
+              balanceId: id,
             });
           }
         });
 
         return acc;
       },
-      [] as {
+      [] as ({
         integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
         balances: YieldBalanceDto[];
-        defaultOrValidatorId: "default" | (string & {}); // either default balance or balance by validator
-      }[]
+        balanceId: YieldBalanceDto["groupId"];
+      } & (
+        | { type: "validators"; validatorsAddresses: string[] }
+        | { type: "default" }
+      ))[]
     );
   }
 );

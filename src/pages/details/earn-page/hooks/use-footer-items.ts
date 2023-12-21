@@ -4,24 +4,25 @@ import { useStakeState } from "../../../../state/stake";
 import { yieldTypesMap } from "../../../../domain/types";
 import { MiscNetworks } from "@stakekit/common";
 import { capitalizeFirstLowerRest } from "../../../../utils/text";
+import { useValidatorsFormatted } from "../../../../hooks/use-validators-formatted";
 
 export const useFooterItems = () => {
   const { t } = useTranslation();
 
-  const { selectedStake, selectedValidator } = useStakeState();
+  const { selectedStake, selectedValidators } = useStakeState();
+
+  const validatorsFormatted = useValidatorsFormatted(selectedValidators);
 
   return useMemo(() => {
     return selectedStake.mapOrDefault<typeof ifNotFound>((y) => {
-      const sv = selectedValidator.extractNullable();
+      const sv = validatorsFormatted.extract();
 
       const stakeToken = y.token.symbol;
       const rewardTokens =
         y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ?? "";
-      const providerName = sv
-        ? sv.name ?? sv.address ?? ""
-        : y.metadata.provider
-          ? y.metadata.provider.name
-          : y.metadata.name;
+      const providerName =
+        sv ??
+        (y.metadata.provider ? y.metadata.provider.name : y.metadata.name);
       const rewardSchedule = y.metadata.rewardSchedule;
       const cooldownPeriodDays = y.metadata.cooldownPeriod?.days ?? 0;
       const warmupPeriodDays = y.metadata.warmupPeriod?.days ?? 0;
@@ -199,7 +200,7 @@ export const useFooterItems = () => {
           return ifNotFound;
       }
     }, ifNotFound);
-  }, [selectedStake, selectedValidator, t]);
+  }, [selectedStake, t, validatorsFormatted]);
 };
 
 const ifNotFound: {

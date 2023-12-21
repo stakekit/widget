@@ -3,6 +3,7 @@ import { publicProvider } from "wagmi/providers/public";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
+import { getConfig as getSubstrateConfig } from "../substrate/config";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { queryClient } from "../../services/query-client";
@@ -18,50 +19,67 @@ const queryFn = async (
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
+  substrateConfig: GetEitherAsyncRight<ReturnType<typeof getSubstrateConfig>>;
   chains: Chain[];
   wagmiConfig: ReturnType<typeof createConfig>;
-}> =>
-  getEvmConfig(...opts)
-    .chain((val) =>
-      getCosmosConfig(...opts).map((cosmosConfig) => ({
-        evmConfig: val,
+}> => {
+  return EitherAsync.fromPromise(() =>
+    Promise.all([
+      getEvmConfig(...opts),
+      getCosmosConfig(...opts),
+      getMiscConfig(),
+      getSubstrateConfig(),
+    ]).then(([evm, cosmos, misc, substrate]) =>
+      evm.chain((e) =>
+        cosmos.chain((c) =>
+          misc.chain((m) =>
+            substrate.map((s) => ({
+              evmConfig: e,
+              cosmosConfig: c,
+              miscConfig: m,
+              substrateConfig: s,
+            }))
+          )
+        )
+      )
+    )
+  ).caseOf({
+    Right: ({ evmConfig, cosmosConfig, miscConfig, substrateConfig }) => {
+      const { chains, publicClient, webSocketPublicClient } = configureChains(
+        [
+          ...evmConfig.evmChains,
+          ...cosmosConfig.cosmosWagmiChains,
+          ...miscConfig.miscChains,
+          ...substrateConfig.substrateChains,
+        ],
+        [publicProvider()]
+      );
+
+      const wagmiConfig = createConfig({
+        autoConnect: true,
+        connectors: connectorsForWallets([
+          ...Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector]),
+          ledgerLiveConnector,
+        ]),
+        publicClient,
+        webSocketPublicClient,
+      }) as ReturnType<typeof createConfig>;
+
+      return Promise.resolve({
+        evmConfig,
         cosmosConfig,
-      }))
-    )
-    .chain((val) =>
-      getMiscConfig().map((miscConfig) => ({ ...val, miscConfig }))
-    )
-    .caseOf({
-      Right: ({ evmConfig, cosmosConfig, miscConfig }) => {
-        const { chains, publicClient, webSocketPublicClient } = configureChains(
-          [
-            ...evmConfig.evmChains,
-            ...cosmosConfig.cosmosWagmiChains,
-            ...miscConfig.miscChains,
-          ],
-          [publicProvider()]
-        );
-
-        const wagmiConfig = createConfig({
-          autoConnect: true,
-          connectors: connectorsForWallets([
-            ...Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector]),
-            ledgerLiveConnector,
-          ]),
-          publicClient,
-          webSocketPublicClient,
-        }) as ReturnType<typeof createConfig>;
-
-        return Promise.resolve({
-          evmConfig,
-          cosmosConfig,
-          miscConfig,
-          chains,
-          wagmiConfig,
-        });
-      },
-      Left: (l) => Promise.reject(l),
-    });
+        miscConfig,
+        substrateConfig,
+        chains,
+        wagmiConfig,
+      });
+    },
+    Left: (l) => {
+      console.log(l);
+      return Promise.reject(l);
+    },
+  });
+};
 
 const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;

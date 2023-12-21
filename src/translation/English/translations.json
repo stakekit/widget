@@ -24,7 +24,8 @@
 
   "init": {
     "get_started": "Connect your wallet to get started…",
-    "connect_wallet": "Connect Wallet"
+    "connect_wallet": "Connect Wallet",
+    "ledger_add_account": "Add account"
   },
   "yield_types": {
     "liquid_stake": "Liquid Stake",
@@ -34,13 +35,16 @@
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
-    "staked_via": "Staked via {{validator}}",
+    "staked_via": "Staked via",
 
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
 
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
 
     "no_opportunities": "No yield opportunities for this token",
+
+    "selected_validators_one": "{{providerName}}",
+    "selected_validators_other": "{{providerName}} + {{count}} more",
 
     "native_staking": {
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
@@ -239,13 +243,13 @@
     "liquid_staked": "Liquid staked",
     "staked": "Staked",
     "deposited": "Deposited",
-    "via": "via {{providerName}}",
+    "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
-    "available": "available",
+    "available": "{{amount}} {{symbol}} available",
     "balance_type": {
       "available": "Available",
       "staked": "Staked",

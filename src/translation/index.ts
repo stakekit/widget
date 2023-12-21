@@ -23,6 +23,6 @@ i18n
     },
   });
 
-i18n.services.formatter?.add("lowercase", (value, _, __) => {
-  return value.toLowerCase();
-});
+i18n.services.formatter?.add("lowercase", (value, _, __) =>
+  value.toLowerCase()
+);
