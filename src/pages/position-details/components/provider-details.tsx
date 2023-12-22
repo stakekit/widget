@@ -98,7 +98,6 @@ export const ProviderDetails = ({
           as="button"
         >
           <Box
-            as="button"
             display="flex"
             alignItems="center"
             justifyContent="flex-end"
