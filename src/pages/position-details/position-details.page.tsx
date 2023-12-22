@@ -84,7 +84,7 @@ export const PositionDetails = () => {
               <Box marginTop="4">
                 {providersDetails
                   .map((pd) =>
-                    [...pd, ...pd, ...pd].map((p, idx) => (
+                    pd.map((p, idx) => (
                       <ProviderDetails
                         {...p}
                         key={p.address ?? idx}

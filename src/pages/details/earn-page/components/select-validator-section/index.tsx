@@ -33,7 +33,12 @@ export const SelectValidatorSection = () => {
     yieldOpportunityLoading ||
     stakeTokenAvailableAmountLoading;
 
-  const [viewMore, setViewMore] = useState(false);
+  const [_viewMore, setViewMore] = useState(false);
+
+  const viewMore =
+    selectedStake
+      .map((ss) => !!ss.args.enter.args?.validatorAddresses?.required)
+      .orDefault(false) || _viewMore;
 
   const data = useMemo<
     Maybe<{
