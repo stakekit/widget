@@ -23,7 +23,9 @@ export const stakingFlow = async () => {
 
   await waitFor(() => getByTestId("select-opportunity").click());
 
-  const selectContainer = getByTestId("select-modal__container");
+  const selectContainer = await waitFor(() =>
+    getByTestId("select-modal__container")
+  );
 
   within(selectContainer)
     .getByTestId("select-opportunity__item_avalanche-avax-liquid-staking", {

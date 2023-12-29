@@ -2,7 +2,7 @@
   "$schema": "https://turbo.build/schema.json",
   "pipeline": {
     "turbo:build": {
-      "outputs": [".dist/**"]
+      "outputs": ["dist/**"]
     },
     "turbo:lint": {
       "inputs": ["src/**"]
@@ -12,7 +12,6 @@
     },
     "turbo:test": {
       "inputs": ["tests/**"]
-    },
-    "format": {}
+    }
   }
 }
