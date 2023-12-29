@@ -253,6 +253,14 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
               List.find((v) => equalTokens(val.token, v.token), tb)
             )
           )
+          .altLazy(() =>
+            List.find(
+              (v) =>
+                !!v.availableYields.length &&
+                new BigNumber(v.amount).isGreaterThan(0),
+              tb
+            )
+          )
           .altLazy(() => List.find((v) => !!v.availableYields.length, tb))
       ),
     [

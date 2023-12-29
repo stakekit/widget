@@ -223,7 +223,7 @@ export const SelectModalItem = ({
   const onClick = () => onItemClick?.({ closeModal });
 
   return (
-    <ListItem variant={variant} onClick={onClick}>
+    <ListItem variant={variant} onClick={onClick} testId={testId}>
       {children}
     </ListItem>
   );

@@ -93,7 +93,7 @@ export class CosmosWagmiConnector extends Connector {
   }
 
   connect = async () => {
-    setTimeout(() => this.emit("message", { type: "connecting" }), 0);
+    this.emit("message", { type: "connecting" });
 
     const cw = await this.chainWallet;
 
@@ -175,7 +175,11 @@ export class CosmosWagmiConnector extends Connector {
     return (await this.chainWallet).address as Address;
   };
   isAuthorized = async () => {
-    return !!(await this.chainWallet).address;
+    try {
+      return !!(await this.chainWallet).address;
+    } catch (error) {
+      return false;
+    }
   };
   getChainId = async () =>
     (await this.chainWallet).chainId as unknown as number;
@@ -373,12 +377,12 @@ export const getConfig = (...opts: Parameters<typeof queryFn>) =>
   });
 
 export const useCosmosConfig = () => {
-  const { forceWalletConnectOnly } = useSettings();
+  const { wagmi } = useSettings();
 
   return useQuery({
     staleTime,
     queryKey,
     queryFn: () =>
-      queryFn({ forceWalletConnectOnly: !!forceWalletConnectOnly }),
+      queryFn({ forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly }),
   });
 };

@@ -10,7 +10,6 @@ import {
   supportedLedgerFamiliesWithCurrency,
 } from "../../domain/types/chains";
 import { typeSafeObjectEntries } from "../../utils";
-import { getWagmiConfig } from "../wagmi";
 import {
   Account,
   CryptoCurrency,
@@ -24,98 +23,99 @@ import { GetEitherAsyncRight } from "../../types";
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts,
   ledgerCurrencies,
+  enabledChainsMap,
 }: {
   accounts: Account[];
   ledgerCurrencies: GetEitherAsyncRight<ReturnType<typeof getLedgerCurrencies>>;
-}) =>
-  getWagmiConfig({ forceWalletConnectOnly: false })
-    .map((wagmiConfig) => {
-      const { accountsFamilies, accountsCurrencies } = accounts.reduce(
-        (acc, next) => {
-          acc.accountsFamilies.add(ledgerCurrencies.get(next.currency));
-          acc.accountsCurrencies.add(next.currency);
+  enabledChainsMap: {
+    evm: Partial<EvmChainsMap>;
+    cosmos: Partial<CosmosChainsMap>;
+    misc: Partial<MiscChainsMap>;
+    substrate: Partial<SubstrateChainsMap>;
+  };
+}) => {
+  const { accountsFamilies, accountsCurrencies } = accounts.reduce(
+    (acc, next) => {
+      acc.accountsFamilies.add(ledgerCurrencies.get(next.currency));
+      acc.accountsCurrencies.add(next.currency);
 
-          return acc;
-        },
-        { accountsFamilies: new Set(), accountsCurrencies: new Set() }
-      );
+      return acc;
+    },
+    { accountsFamilies: new Set(), accountsCurrencies: new Set() }
+  );
 
-      return typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
-        (acc, [k, v]) => {
-          const filtered = Object.keys(v).reduce((acc, key) => {
-            const item = v[key as keyof typeof v] as {
-              [K in keyof SupportedLedgerFamiliesWithCurrency]: SupportedLedgerFamiliesWithCurrency[K];
-            }[keyof SupportedLedgerFamiliesWithCurrency];
+  const v = typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
+    (acc, [k, v]) => {
+      const filtered = Object.keys(v).reduce((acc, key) => {
+        const item = v[key as keyof typeof v] as {
+          [K in keyof SupportedLedgerFamiliesWithCurrency]: SupportedLedgerFamiliesWithCurrency[K];
+        }[keyof SupportedLedgerFamiliesWithCurrency];
 
-            const chain =
-              wagmiConfig.evmConfig.evmChainsMap[
-                item.skChainName as unknown as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
-              ]?.wagmiChain ||
-              wagmiConfig.cosmosConfig.cosmosChainsMap[
-                item.skChainName as unknown as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
-              ]?.wagmiChain ||
-              wagmiConfig.miscConfig.miscChainsMap[
-                item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
-              ]?.wagmiChain ||
-              wagmiConfig.substrateConfig.substrateChainsMap[
-                item.skChainName as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["skChainName"]
-              ]?.wagmiChain;
+        const chain =
+          enabledChainsMap.evm[
+            item.skChainName as unknown as EvmChainsMap[keyof EvmChainsMap]["skChainName"]
+          ]?.wagmiChain ||
+          enabledChainsMap.cosmos[
+            item.skChainName as unknown as CosmosChainsMap[keyof CosmosChainsMap]["skChainName"]
+          ]?.wagmiChain ||
+          enabledChainsMap.misc[
+            item.skChainName as unknown as MiscChainsMap[keyof MiscChainsMap]["skChainName"]
+          ]?.wagmiChain ||
+          enabledChainsMap.substrate[
+            item.skChainName as unknown as SubstrateChainsMap[keyof SubstrateChainsMap]["skChainName"]
+          ]?.wagmiChain;
 
-            if (!chain) return acc;
+        if (!chain) return acc;
 
-            if (
-              accountsFamilies.has(item.family) &&
-              (key === "*" || accountsCurrencies.has(item.currencyId))
-            ) {
-              return { ...acc, [key]: { ...item, chain, enabled: true } };
-            } else {
-              return { ...acc, [key]: { ...item, chain, enabled: false } };
-            }
-          }, {} as MappedSupportedLedgerFamiliesWithCurrency);
+        if (
+          accountsFamilies.has(item.family) &&
+          (key === "*" || accountsCurrencies.has(item.currencyId))
+        ) {
+          return { ...acc, [key]: { ...item, chain, enabled: true } };
+        } else {
+          return { ...acc, [key]: { ...item, chain, enabled: false } };
+        }
+      }, {} as MappedSupportedLedgerFamiliesWithCurrency);
 
-          return { ...acc, [k]: filtered };
-        },
-        {} as MappedSupportedLedgerFamiliesWithCurrency
-      );
-    })
-    .map((v) => {
-      type V = typeof v;
-      type Key = keyof V;
+      return { ...acc, [k]: filtered };
+    },
+    {} as MappedSupportedLedgerFamiliesWithCurrency
+  );
 
-      return Object.keys(v).reduce(
-        (acc, key) => {
-          const subItem = v[key as Key];
+  type V = typeof v;
+  type Key = keyof V;
 
-          type SubItemKey = keyof typeof subItem;
+  return Object.keys(v).reduce(
+    (acc, key) => {
+      const subItem = v[key as Key];
 
-          const subItemMap = Object.keys(subItem).reduce((acc, subKey) => {
-            acc.set(
-              subKey as SubItemKey,
-              subItem[subKey as keyof typeof subItem]
-            );
+      type SubItemKey = keyof typeof subItem;
 
-            return acc;
-          }, new Map<SubItemKey, V[Key][SubItemKey]>());
+      const subItemMap = Object.keys(subItem).reduce((acc, subKey) => {
+        acc.set(subKey as SubItemKey, subItem[subKey as keyof typeof subItem]);
 
-          acc.set(key as Key, subItemMap);
+        return acc;
+      }, new Map<SubItemKey, V[Key][SubItemKey]>());
 
-          return acc;
-        },
-        new Map<
-          Key,
-          Map<
-            "*" | (string & {}),
-            {
-              currencyId: string;
-              family: SupportedLedgerLiveFamilies;
-              skChainName: SupportedSKChains;
-              chain: Chain;
-              enabled: boolean;
-            }
-          >
-        >()
-      );
-    });
+      acc.set(key as Key, subItemMap);
+
+      return acc;
+    },
+    new Map<
+      Key,
+      Map<
+        "*" | (string & {}),
+        {
+          currencyId: string;
+          family: SupportedLedgerLiveFamilies;
+          skChainName: SupportedSKChains;
+          chain: Chain;
+          enabled: boolean;
+        }
+      >
+    >()
+  );
+};
 
 type MappedSupportedLedgerFamiliesWithCurrency = {
   [Key in keyof SupportedLedgerFamiliesWithCurrency]: {

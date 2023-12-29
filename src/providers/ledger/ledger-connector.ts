@@ -19,7 +19,6 @@ import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
-import { GetEitherAsyncRight } from "../../types";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 
 export class LedgerLiveConnector extends Connector {
@@ -38,8 +37,8 @@ export class LedgerLiveConnector extends Connector {
   #accountsOnCurrentChain: Account[] = [];
   #currentAccount?: Account;
 
-  #filteredSkSupportedChainsValues: GetEitherAsyncRight<
-    ReturnType<typeof getFilteredSupportedLedgerFamiliesWithCurrency>
+  #filteredSkSupportedChainsValues: ReturnType<
+    typeof getFilteredSupportedLedgerFamiliesWithCurrency
   > | null = null;
 
   #filteredSkSupportedChainsToCurrencyIdMap: Map<
@@ -51,7 +50,7 @@ export class LedgerLiveConnector extends Connector {
 
   disabledChains: Chain[] = [];
 
-  constructor() {
+  constructor(private enabledChainsMap: EnabledChainsMap) {
     super({ options: {} });
 
     if (!isLedgerDappBrowserProvider()) {
@@ -98,12 +97,12 @@ export class LedgerLiveConnector extends Connector {
       )
     ).unsafeCoerce();
 
-    const filteredSupportedLedgerFamiliesWithCurrency = (
-      await getFilteredSupportedLedgerFamiliesWithCurrency({
+    const filteredSupportedLedgerFamiliesWithCurrency =
+      getFilteredSupportedLedgerFamiliesWithCurrency({
         ledgerCurrencies,
         accounts,
-      })
-    ).unsafeCoerce();
+        enabledChainsMap: this.enabledChainsMap,
+      });
 
     this.#filteredSkSupportedChainsToCurrencyIdMap = new Map(
       [...filteredSupportedLedgerFamiliesWithCurrency.values()].flatMap((v) =>
@@ -336,7 +335,7 @@ export class LedgerLiveConnector extends Connector {
   }
 }
 
-const ledgerLive = (): Wallet => {
+const ledgerLive = (enabledChainsMap: EnabledChainsMap): Wallet => {
   return {
     id: "ledgerLive",
     name: "Ledger Live",
@@ -345,15 +344,15 @@ const ledgerLive = (): Wallet => {
     iconBackground: "#fff",
     hidden: () => !isLedgerDappBrowserProvider(),
     createConnector: () => ({
-      connector: new LedgerLiveConnector(),
+      connector: new LedgerLiveConnector(enabledChainsMap),
     }),
   };
 };
 
-export const ledgerLiveConnector = {
+export const ledgerLiveConnector = (enabledChainsMap: EnabledChainsMap) => ({
   groupName: "Ledger Live",
-  wallets: [ledgerLive()],
-};
+  wallets: [ledgerLive(enabledChainsMap)],
+});
 
 type ChainItem = {
   currencyId: string;
@@ -361,3 +360,7 @@ type ChainItem = {
   skChainName: SupportedSKChains;
   chain: Chain;
 };
+
+type EnabledChainsMap = Parameters<
+  typeof getFilteredSupportedLedgerFamiliesWithCurrency
+>[0]["enabledChainsMap"];

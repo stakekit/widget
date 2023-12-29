@@ -4,18 +4,20 @@ import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
-import { connectorsForWallets } from "@stakekit/rainbowkit";
+import { WalletList, connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
-import { queryClient } from "../../services/query-client";
 import { config } from "../../config";
 import { UseQueryResult, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 
-const queryFn = async (
-  ...opts: Parameters<typeof getEvmConfig>
-): Promise<{
+export type BuildWagmiConfig = typeof buildWagmiConfig;
+
+const buildWagmiConfig = async (opts: {
+  forceWalletConnectOnly: boolean;
+  customConnectors?: (chains: Chain[]) => WalletList;
+}): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
@@ -25,8 +27,8 @@ const queryFn = async (
 }> => {
   return EitherAsync.fromPromise(() =>
     Promise.all([
-      getEvmConfig(...opts),
-      getCosmosConfig(...opts),
+      getEvmConfig({ forceWalletConnectOnly: opts.forceWalletConnectOnly }),
+      getCosmosConfig({ forceWalletConnectOnly: opts.forceWalletConnectOnly }),
       getMiscConfig(),
       getSubstrateConfig(),
     ]).then(([evm, cosmos, misc, substrate]) =>
@@ -59,7 +61,15 @@ const queryFn = async (
         autoConnect: true,
         connectors: connectorsForWallets([
           ...Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector]),
-          ledgerLiveConnector,
+          ledgerLiveConnector({
+            evm: evmConfig.evmChainsMap,
+            cosmos: cosmosConfig.cosmosChainsMap,
+            misc: miscConfig.miscChainsMap,
+            substrate: substrateConfig.substrateChainsMap,
+          }),
+          ...(typeof opts.customConnectors === "function"
+            ? opts.customConnectors(chains)
+            : opts.customConnectors ?? []),
         ]),
         publicClient,
         webSocketPublicClient,
@@ -84,31 +94,20 @@ const queryFn = async (
 const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;
 
-export const getWagmiConfig = (
-  ...opts: Parameters<typeof queryFn>
-): EitherAsync<Error, Awaited<ReturnType<typeof queryFn>>> =>
-  EitherAsync(() =>
-    queryClient.fetchQuery({
-      staleTime,
-      queryKey,
-      queryFn: () => queryFn(...opts),
-    })
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get wagmi config");
-  });
-
 export const useWagmiConfig = (): UseQueryResult<
-  Awaited<ReturnType<typeof queryFn>>,
+  Awaited<ReturnType<BuildWagmiConfig>>,
   Error
 > => {
-  const { forceWalletConnectOnly } = useSettings();
+  const { wagmi } = useSettings();
 
   return useQuery({
     staleTime,
     queryKey,
     queryFn: () =>
-      queryFn({ forceWalletConnectOnly: !!forceWalletConnectOnly }),
+      buildWagmiConfig({
+        forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
+        customConnectors: wagmi?.__customConnectors__,
+      }),
   });
 };
 

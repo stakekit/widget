@@ -1,6 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { PropsWithChildren, StrictMode } from "react";
+import { ComponentProps, PropsWithChildren, StrictMode } from "react";
 import { queryClient } from "../services/query-client";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
@@ -14,7 +14,9 @@ import { TrackingContextProvider } from "./tracking";
 import { ActionHistoryContextProvider } from "./stake-history";
 import { ListStateContextProvider } from "./list-state";
 
-export const Providers = ({ children }: PropsWithChildren) => {
+export const Providers = ({
+  children,
+}: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
   const { apiKey, tracking } = useSettings();
 
   APIManager.setApiKey(apiKey);

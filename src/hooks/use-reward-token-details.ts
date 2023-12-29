@@ -9,14 +9,15 @@ export const useRewardTokenDetails = (
     () =>
       yieldOpportunity
         .chain((y) =>
-          Maybe.fromNullable(y.metadata.rewardTokens).chain((rt) =>
-            Maybe.fromNullable(y.metadata.provider).map((p) => ({ rt, p }))
-          )
+          Maybe.fromNullable(y.metadata.rewardTokens).map((rt) => ({
+            rt,
+            p: y.metadata.provider,
+          }))
         )
         .map(({ p, rt }) => ({
-          logoUri: p.logoURI ?? null,
+          logoUri: p?.logoURI ?? null,
           symbol: rt.map((t) => t.symbol).join(", ") ?? null,
-          providerName: p.name ?? null,
+          providerName: p?.name ?? null,
         })),
     [yieldOpportunity]
   );

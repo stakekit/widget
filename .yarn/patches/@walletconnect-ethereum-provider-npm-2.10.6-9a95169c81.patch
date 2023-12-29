@@ -1,0 +1,20 @@
+diff --git a/package.json b/package.json
+index d040fd700d3b31afc6921341a2b69c928d3338ed..c40cc0f97e402e2854ffb6eb6cde51536b5126d2 100644
+--- a/package.json
++++ b/package.json
+@@ -9,6 +9,7 @@
+     "url": "https://github.com/walletconnect/walletconnect-monorepo",
+     "directory": "packages/ethereum-provider"
+   },
++  "type": "module",
+   "license": "Apache-2.0",
+   "main": "dist/index.cjs.js",
+   "module": "dist/index.es.js",
+@@ -17,6 +18,7 @@
+   "sideEffects": false,
+   "exports": {
+     ".": {
++      "import": "./dist/index.es.js",
+       "types": "./dist/types/index.d.ts",
+       "module": "./dist/index.es.js",
+       "default": "./dist/index.cjs.js"

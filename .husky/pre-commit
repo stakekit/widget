@@ -2,4 +2,5 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 yarn turbo run lint
+yarn turbo run test
 yarn turbo run build

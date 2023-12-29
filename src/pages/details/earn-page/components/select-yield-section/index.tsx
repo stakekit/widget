@@ -75,7 +75,10 @@ export const SelectYieldSection = () => {
                 alignItems="center"
               >
                 <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-                  <Box position="relative">
+                  <Box
+                    position="relative"
+                    data-testid="estimated-reward__percent"
+                  >
                     {selectedStake
                       .filter((pd) => pd.rewardType === "variable")
                       .map(() => (

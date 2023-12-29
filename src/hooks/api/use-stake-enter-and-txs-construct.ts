@@ -62,7 +62,9 @@ const fn = ({
     .chain((actionDto) =>
       constructTxs({ actionDto, gasModeValue, isLedgerLive })
     )
-    .map((val) => ({ ...val, stakeEnterRes: val.mappedActionDto }));
+    .map((val) => {
+      return { ...val, stakeEnterRes: val.mappedActionDto };
+    });
 
 export class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {

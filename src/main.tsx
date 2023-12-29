@@ -8,9 +8,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     connectKitForceTheme="darkMode"
     theme={darkTheme}
     apiKey={import.meta.env.VITE_API_KEY}
-    forceWalletConnectOnly={
-      import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true"
-    }
+    wagmi={{
+      forceWalletConnectOnly:
+        import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true",
+    }}
     {...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
       tracking: { trackEvent: console.log, trackPageView: console.log },
     })}

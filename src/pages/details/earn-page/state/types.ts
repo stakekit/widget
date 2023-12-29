@@ -34,9 +34,9 @@ export type DetailsContextType = {
   isError: boolean;
   errorMessage: string;
   rewardToken: Maybe<{
-    logoUri: string;
+    logoUri: string | null;
     symbol: string;
-    providerName: string;
+    providerName: string | null;
   }>;
   onSelectOpportunityClose: () => void;
   onStakeEnterIsLoading: boolean;
