@@ -9,6 +9,7 @@ import {
 import BigNumber from "bignumber.js";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 
 export type DetailsContextType = {
   availableTokens: string;
@@ -33,11 +34,7 @@ export type DetailsContextType = {
   selectedValidators: State["selectedValidators"];
   isError: boolean;
   errorMessage: string;
-  rewardToken: Maybe<{
-    logoUri: string | null;
-    symbol: string;
-    providerName: string | null;
-  }>;
+  rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onStakeEnterIsLoading: boolean;
   selectedStakeYieldType: YieldType | null;

@@ -1,8 +1,7 @@
 import { Connector } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { Address, createWalletClient, custom } from "viem";
+import { Address } from "viem";
 import { Chain, Wallet } from "@stakekit/rainbowkit";
-import { EthereumProvider } from "eip1193-provider";
 import {
   Account,
   Currency,
@@ -27,8 +26,6 @@ export class LedgerLiveConnector extends Connector {
   readonly ready: boolean;
 
   static readonly noAccountPlaceholder = "N/A" as Address;
-
-  #provider = new EthereumProvider({} as any);
 
   #walletApiClient?: WalletAPIClient;
   #transport?: Transport;
@@ -265,15 +262,11 @@ export class LedgerLiveConnector extends Connector {
   }
 
   async getProvider() {
-    return this.#provider;
+    throw new Error("Not implemented");
   }
 
-  getWalletClient = async () => {
-    return createWalletClient({
-      account: this.#currentAccount?.address as Address,
-      chain: this.#currentChain?.chain,
-      transport: custom(this.#provider),
-    });
+  getWalletClient = () => {
+    throw new Error("Not implemented");
   };
 
   switchAccount = (account: Account) => {
@@ -307,7 +300,6 @@ export class LedgerLiveConnector extends Connector {
 
     if (!currentAccount) throw new Error("Account not found");
 
-    this.#provider.events.emit("chainChanged", chainId);
     this.onChainChanged(chainId);
     this.onAccountsChanged([currentAccount.address as Address]);
 

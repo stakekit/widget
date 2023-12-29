@@ -39,7 +39,7 @@ export const selectOpportunity = async () => {
       await delay();
 
       return Just(getYieldControllerYieldOpportunityMock())
-        .map<YieldDto>((mock) => {
+        .map((mock) => {
           const rewardToken = (() => {
             switch (integrationId) {
               case "ethereum-eth-reth-staking":
@@ -60,12 +60,13 @@ export const selectOpportunity = async () => {
               ...mock.metadata,
               type: "liquid-staking",
               rewardTokens: [rewardToken],
+              provider: { name: "Stakewise" },
             },
             status: {
               ...mock.status,
               enter: integrationId !== "ethereum-eth-stakewise-staking",
             },
-          };
+          } as YieldDto;
         })
         .map((val) => HttpResponse.json(val))
         .unsafeCoerce();

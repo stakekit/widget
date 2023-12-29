@@ -8,8 +8,6 @@ import {
   MainWalletBase,
   WalletManager,
 } from "@cosmos-kit/core";
-import { EthereumProvider } from "eip1193-provider";
-import { createWalletClient, custom } from "viem";
 import { Chain, Wallet, WalletList } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
@@ -45,8 +43,6 @@ export class CosmosWagmiConnector extends Connector {
   ready = true;
 
   chainWallet: Promise<ChainWalletBase>;
-
-  readonly provider = new EthereumProvider({} as any);
 
   readonly wallet: MainWalletBase;
 
@@ -161,7 +157,6 @@ export class CosmosWagmiConnector extends Connector {
 
     if (!chain) throw new Error("Chain not found");
 
-    this.provider.events.emit("chainChanged", chainId);
     this.onChainChanged(chainId);
     this.onAccountsChanged([newCw.address as Address]);
 
@@ -184,20 +179,12 @@ export class CosmosWagmiConnector extends Connector {
   getChainId = async () =>
     (await this.chainWallet).chainId as unknown as number;
 
-  getProvider = async () => this.provider;
+  getProvider = () => {
+    throw new Error("Not implemented");
+  };
 
   getWalletClient = async () => {
-    const chainId = await this.getChainId();
-    const chain = this.cosmosWagmiChains.find((c) => c.id === chainId)!;
-    const provider = await this.getProvider();
-    const account = await this.getAccount();
-
-    return createWalletClient({
-      account,
-      chain,
-      name: this.name,
-      transport: custom(provider),
-    });
+    throw new Error("Not implemented");
   };
 
   protected onAccountsChanged = (accounts: string[]) => {
