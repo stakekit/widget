@@ -11,7 +11,9 @@ import {
   Navigate,
   Outlet,
   Route,
+  RouterProvider,
   Routes,
+  createMemoryRouter,
   useLocation,
   useNavigate,
 } from "react-router-dom";
@@ -189,12 +191,20 @@ const Widget = () => {
   );
 };
 
+const Root = () => {
+  return (
+    <Providers>
+      <Widget />
+    </Providers>
+  );
+};
+
+const router = createMemoryRouter([{ path: "*", Component: Root }]);
+
 export const SKApp = (props: SettingsContextType) => {
   return (
     <SettingsContextProvider {...props}>
-      <Providers>
-        <Widget />
-      </Providers>
+      <RouterProvider router={router} />
     </SettingsContextProvider>
   );
 };

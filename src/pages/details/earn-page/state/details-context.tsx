@@ -163,7 +163,25 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         restTokenBalances,
         tb: Maybe.fromNullable(tokenBalances.data),
       })
-        .map((val) => [...val.tb, ...val.restTokenBalances])
+        .map((val) => {
+          const { tb, rest } = val.tb.reduce(
+            (acc, b) => {
+              if (new BigNumber(b.amount).isGreaterThan(0)) {
+                acc.tb.push(b);
+              } else {
+                acc.rest.push(b);
+              }
+
+              return acc;
+            },
+            {
+              rest: [] as TokenBalanceScanResponseDto[],
+              tb: [] as TokenBalanceScanResponseDto[],
+            }
+          );
+
+          return [...tb, ...rest, ...val.restTokenBalances];
+        })
         .chain((tb) =>
           Maybe.of(deferredTokenSearch)
             .chain((val) =>

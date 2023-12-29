@@ -3,6 +3,8 @@ import { rootSelector, vars } from "./contract.css";
 
 const reset = layer("reset");
 
+globalStyle("p", { margin: 0 });
+
 globalStyle(rootSelector, {
   "@layer": {
     [reset]: {

@@ -81,7 +81,7 @@ export const PositionsListItem = memo(
         relative="path"
         to={`../positions/${item.integrationId}/${item.balanceId}`}
       >
-        <Box my="2">
+        <Box py="1">
           {integrationData.mapOrDefault(
             (d) => (
               <ListItem>
@@ -192,33 +192,34 @@ export const ImportValidatorListItem = ({
   const { t } = useTranslation();
 
   return (
-    <ListItem variant={{ hover: "disabled" }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        gap="2"
-        marginBottom="2"
-      >
-        <Box display="flex" flexDirection="column" gap="2" flex={2}>
-          <Text variant={{ weight: "bold" }}>
-            {t("positions.dont_see_position")}
-          </Text>
-
-          <Text variant={{ weight: "normal", type: "muted" }}>
-            {t("positions.import_validator")}
-          </Text>
-        </Box>
-
+    <Box py="1">
+      <ListItem variant={{ hover: "disabled" }}>
         <Box
-          flex={1}
           display="flex"
-          justifyContent="flex-end"
+          justifyContent="space-between"
           alignItems="center"
+          gap="2"
         >
-          <ImportValidator {...importValidators} />
+          <Box display="flex" flexDirection="column" gap="2" flex={2}>
+            <Text variant={{ weight: "bold" }}>
+              {t("positions.dont_see_position")}
+            </Text>
+
+            <Text variant={{ weight: "normal", type: "muted" }}>
+              {t("positions.import_validator")}
+            </Text>
+          </Box>
+
+          <Box
+            flex={1}
+            display="flex"
+            justifyContent="flex-end"
+            alignItems="center"
+          >
+            <ImportValidator {...importValidators} />
+          </Box>
         </Box>
-      </Box>
-    </ListItem>
+      </ListItem>
+    </Box>
   );
 };

@@ -1,7 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { PropsWithChildren, StrictMode } from "react";
-import { MemoryRouter } from "react-router-dom";
 import { queryClient } from "../services/query-client";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
@@ -13,6 +12,7 @@ import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
 import { ActionHistoryContextProvider } from "./stake-history";
+import { ListStateContextProvider } from "./list-state";
 
 export const Providers = ({ children }: PropsWithChildren) => {
   const { apiKey, tracking } = useSettings();
@@ -29,17 +29,17 @@ export const Providers = ({ children }: PropsWithChildren) => {
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
                 <RainbowProvider>
-                  <MemoryRouter>
-                    <StakeStateProvider>
-                      <ThemeWrapper>
-                        <LocationTransitionProvider>
-                          <ActionHistoryContextProvider>
+                  <StakeStateProvider>
+                    <ThemeWrapper>
+                      <LocationTransitionProvider>
+                        <ActionHistoryContextProvider>
+                          <ListStateContextProvider>
                             {children}
-                          </ActionHistoryContextProvider>
-                        </LocationTransitionProvider>
-                      </ThemeWrapper>
-                    </StakeStateProvider>
-                  </MemoryRouter>
+                          </ListStateContextProvider>
+                        </ActionHistoryContextProvider>
+                      </LocationTransitionProvider>
+                    </ThemeWrapper>
+                  </StakeStateProvider>
                 </RainbowProvider>
               </SKWalletProvider>
             </TrackingContextProvider>
