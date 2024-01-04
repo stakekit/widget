@@ -10,11 +10,12 @@ import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
-import { claimRewardsContainer, viaText } from "../style.css";
+import { container, viaText } from "../style.css";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
 import { getRewardRateFormatted } from "../../../../utils/get-reward-rate";
+import { noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(
   ({
@@ -23,6 +24,13 @@ export const PositionsListItem = memo(
     item: ReturnType<typeof usePositions>["positionsData"]["data"][number];
   }) => {
     const { t } = useTranslation();
+
+    const actionRequired = useMemo(() => {
+      return (
+        item.type === "default" &&
+        item.balances.some((b) => b.type === "locked" || b.type === "unstaked")
+      );
+    }, [item.balances, item.type]);
 
     const yieldOpportunity = useYieldOpportunity(item.integrationId);
 
@@ -107,21 +115,32 @@ export const PositionsListItem = memo(
                     justifyContent="center"
                     alignItems="flex-start"
                     minWidth="0"
+                    gap={hasPendingClaimRewards || actionRequired ? "1" : "0"}
                   >
                     <Box
                       display="flex"
                       justifyContent="center"
                       alignItems="center"
-                      gap="1"
+                      gap="2"
                     >
                       {token
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
 
-                      {hasPendingClaimRewards && (
-                        <Box className={claimRewardsContainer}>
-                          <Text variant={{ type: "white" }}>
-                            {t("positions.claim_rewards")}
+                      {(hasPendingClaimRewards || actionRequired) && (
+                        <Box
+                          className={container({
+                            type: hasPendingClaimRewards
+                              ? "claim"
+                              : "actionRequired",
+                          })}
+                        >
+                          <Text variant={{ type: "white" }} className={noWrap}>
+                            {t(
+                              hasPendingClaimRewards
+                                ? "positions.claim_rewards"
+                                : "positions.action_required"
+                            )}
                           </Text>
                         </Box>
                       )}
@@ -160,15 +179,12 @@ export const PositionsListItem = memo(
                       flex={2}
                       textAlign="end"
                     >
-                      <Text variant={{ weight: "normal" }}>
-                        {val.rewardRateAverage}
-                      </Text>
-                      <Text
-                        variant={{
-                          weight: "normal",
-                          type: "muted",
-                        }}
-                      >
+                      {!actionRequired && (
+                        <Text variant={{ weight: "normal" }}>
+                          {val.rewardRateAverage}
+                        </Text>
+                      )}
+                      <Text variant={{ weight: "normal", type: "muted" }}>
                         {formatNumber(amount)} {val.token.symbol}
                       </Text>
                     </Box>

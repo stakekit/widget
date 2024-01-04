@@ -232,6 +232,7 @@
     "connect_wallet": "Connect wallet",
     "no_current_positions": "No current positions",
     "claim_rewards": "Claim rewards",
+    "action_required": "Action required",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
     "import_button": "Import",
