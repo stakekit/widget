@@ -1,6 +1,7 @@
 import {
   coinbaseWallet,
   injectedWallet,
+  metaMaskWallet,
   // ledgerWallet,
   omniWallet,
   rainbowWallet,
@@ -125,6 +126,10 @@ const queryFn = async ({
               coinbaseWallet({
                 chains: evmChains,
                 appName: config.appName,
+              }),
+              metaMaskWallet({
+                chains: evmChains,
+                projectId: config.walletConnectV2.projectId,
               }),
               // ledgerWallet({
               //   chains: evmChains,

@@ -16,7 +16,7 @@ export type State = {
   selectedStakeId: Maybe<
     TokenBalanceScanResponseDto["availableYields"][number]
   >;
-  selectedValidator: Maybe<ValidatorDto>;
+  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
   stakeAmount: Maybe<BigNumber>;
 };
 
@@ -27,20 +27,26 @@ export type ExtraData = {
   selectedStake: Maybe<YieldDto>;
 };
 
-type SelectedTokenAction = Action<
+type TokenBalanceSelectAction = Action<
   "tokenBalance/select",
   { tokenBalance: TokenBalanceScanResponseDto; initYield: Maybe<YieldDto> }
 >;
-type SelectedStakeAction = Action<"yield/select", YieldDto>;
-type SelectedValidatorAction = Action<"validator/select", ValidatorDto>;
+type YieldSelectAction = Action<"yield/select", YieldDto>;
+
 type StakeAmountChangeAction = Action<"stakeAmount/change", Maybe<BigNumber>>;
 type StakeAmountMaxAction = Action<"stakeAmount/max", Maybe<BigNumber>>;
 type StateResetAction = Action<"state/reset">;
 
+type ValidatorSelectAction = Action<"validator/select", ValidatorDto>;
+type ValidatorMultiSelectAction = Action<"validator/multiselect", ValidatorDto>;
+type ValidatorRemoveAction = Action<"validator/remove", ValidatorDto>;
+
 export type Actions =
-  | SelectedTokenAction
-  | SelectedStakeAction
+  | TokenBalanceSelectAction
+  | YieldSelectAction
   | StakeAmountChangeAction
   | StakeAmountMaxAction
   | StateResetAction
-  | SelectedValidatorAction;
+  | ValidatorSelectAction
+  | ValidatorMultiSelectAction
+  | ValidatorRemoveAction;

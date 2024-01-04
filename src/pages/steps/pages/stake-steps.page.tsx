@@ -9,7 +9,7 @@ import { StepsPage } from "./common.page";
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
 
-  const { selectedStake, stakeSession, selectedValidator, stakeAmount } =
+  const { selectedStake, stakeSession, selectedValidators, stakeAmount } =
     useStakeState();
 
   const { address, network } = useSKWallet();
@@ -17,19 +17,20 @@ export const StakeStepsPage = () => {
   const onSignSuccess = () =>
     Maybe.fromRecord({
       selectedStake,
-      selectedValidator,
       network: Maybe.fromNullable(network),
       address: Maybe.fromNullable(address),
-    }).ifJust((val) => {
-      importValidator({
-        validatorData: {
-          integrationId: val.selectedStake.id,
-          validator: val.selectedValidator,
-        },
-        network: val.network,
-        address: val.address,
-      });
-    });
+    }).ifJust((val) =>
+      selectedValidators.forEach((v) =>
+        importValidator({
+          validatorData: {
+            integrationId: val.selectedStake.id,
+            validator: v,
+          },
+          network: val.network,
+          address: val.address,
+        })
+      )
+    );
 
   const setActionHistoryData = useSetActionHistoryData();
 
@@ -39,7 +40,7 @@ export const StakeStepsPage = () => {
         type: "stake",
         selectedStake: val.selectedStake,
         stakeAmount: val.stakeAmount,
-        selectedValidator,
+        selectedValidators,
       });
     });
 

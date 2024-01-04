@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
@@ -33,7 +33,24 @@ export const useStakeExitRequestDto = ({
           integrationId: val.unstake.integration.id,
           args: {
             amount: val.unstakeAmount.toString(),
-            validatorAddress: val.balance.validatorAddress,
+            ...(val.unstake.integration.args.exit?.args?.validatorAddresses
+              ?.required
+              ? {
+                  validatorAddresses: List.find(
+                    (b) => !!b.validatorAddresses,
+                    val.balance
+                  )
+                    .map((b) => b.validatorAddresses)
+                    .extract(),
+                }
+              : {
+                  validatorAddress: List.find(
+                    (b) => !!b.validatorAddresses,
+                    val.balance
+                  )
+                    .map((b) => b.validatorAddress)
+                    .extract(),
+                }),
           },
         },
       })),

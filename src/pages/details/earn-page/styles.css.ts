@@ -6,10 +6,6 @@ export const selectItemText = style({
   fontWeight: vars.fontWeight.tokenSelect,
 });
 
-export const triggerStyles = style({
-  width: "100%",
-});
-
 export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
 export const dotContainer = style({
@@ -77,3 +73,37 @@ export const apyVariableTooltip = style({
     borderColor: "black transparent transparent transparent",
   },
 });
+
+export const validatorPill = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "backgroundMuted",
+    borderRadius: "full",
+  }),
+  { padding: "5px 8px" },
+]);
+
+export const addValidatorButton = style([
+  atoms({
+    borderRadius: "full",
+    background: "backgroundMuted",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  }),
+  { height: "100%", aspectRatio: "1 / 1" },
+]);
+
+export const addValidatorContainer = style([
+  atoms({
+    marginRight: "2",
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "stretch",
+    marginTop: "3",
+    flexWrap: "wrap",
+  }),
+  { rowGap: "5px", gap: "5px" },
+]);

@@ -15,3 +15,5 @@ export const validatorAddress = style({
 export const importValidatorContainer = style({
   minHeight: "50px",
 });
+
+export const noWrap = style({ whiteSpace: "nowrap" });

@@ -28,6 +28,7 @@ export type TrackPageVal = (typeof trackPageMap)[TrackPageKey];
 const trackEventMap = {
   tabClicked: "Tab clicked",
   connectWalletClicked: "Connect wallet clicked",
+  addLedgerAccountClicked: "Add ledger account clicked",
   selectTokenModalOpened: "Select token modal opened",
   tokenSelected: "Token selected",
   selectYieldModalOpened: "Select yield modal opened",
@@ -35,6 +36,7 @@ const trackEventMap = {
   selectValidatorModalOpened: "Select validator modal opened",
   selectValidatorViewMoreClicked: "Select validator view more clicked",
   validatorSelected: "Validator selected",
+  validatorRemoved: "Validator removed",
   widgetDisconnectClicked: "Widget disconnect clicked",
   backClicked: "Back clicked",
   helpModalOpened: "Help modal opened",

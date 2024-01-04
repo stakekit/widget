@@ -8,8 +8,6 @@ import {
   MainWalletBase,
   WalletManager,
 } from "@cosmos-kit/core";
-import { EthereumProvider } from "eip1193-provider";
-import { createWalletClient, custom } from "viem";
 import { Chain, Wallet, WalletList } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
@@ -45,8 +43,6 @@ export class CosmosWagmiConnector extends Connector {
   ready = true;
 
   chainWallet: Promise<ChainWalletBase>;
-
-  readonly provider = new EthereumProvider({} as any);
 
   readonly wallet: MainWalletBase;
 
@@ -93,7 +89,7 @@ export class CosmosWagmiConnector extends Connector {
   }
 
   connect = async () => {
-    setTimeout(() => this.emit("message", { type: "connecting" }), 0);
+    this.emit("message", { type: "connecting" });
 
     const cw = await this.chainWallet;
 
@@ -161,7 +157,6 @@ export class CosmosWagmiConnector extends Connector {
 
     if (!chain) throw new Error("Chain not found");
 
-    this.provider.events.emit("chainChanged", chainId);
     this.onChainChanged(chainId);
     this.onAccountsChanged([newCw.address as Address]);
 
@@ -175,25 +170,22 @@ export class CosmosWagmiConnector extends Connector {
     return (await this.chainWallet).address as Address;
   };
   isAuthorized = async () => {
-    return !!(await this.chainWallet).address;
+    try {
+      const cw = await this.chainWallet;
+      return !!cw.address;
+    } catch (error) {
+      return false;
+    }
   };
   getChainId = async () =>
     (await this.chainWallet).chainId as unknown as number;
 
-  getProvider = async () => this.provider;
+  getProvider = () => {
+    throw new Error("Not implemented");
+  };
 
   getWalletClient = async () => {
-    const chainId = await this.getChainId();
-    const chain = this.cosmosWagmiChains.find((c) => c.id === chainId)!;
-    const provider = await this.getProvider();
-    const account = await this.getAccount();
-
-    return createWalletClient({
-      account,
-      chain,
-      name: this.name,
-      transport: custom(provider),
-    });
+    throw new Error("Not implemented");
   };
 
   protected onAccountsChanged = (accounts: string[]) => {
@@ -287,8 +279,8 @@ const queryFn = async ({
 }: {
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks().caseOf({
-    Right: (networks) => {
+  getEnabledNetworks()
+    .chain((networks) => {
       const cosmosChainsMap: FilteredCosmosChainsMap =
         typeSafeObjectFromEntries(
           typeSafeObjectEntries<CosmosChainsMap>(
@@ -336,29 +328,34 @@ const queryFn = async ({
         ),
       };
 
-      return Promise.resolve({
-        cosmosChainsMap,
-        cosmosWagmiChains,
-        connector: Maybe.fromPredicate(
-          () => !!cosmosWagmiChains.length,
-          connector
-        ),
-        cosmosWalletManager: new WalletManager(
-          Object.values(cosmosChainsMap).map((c) => c.chain),
-          cosmosAssets,
-          wallets,
-          new Logger("ERROR"),
-          false,
-          true,
-          undefined,
-          undefined,
-          { signClient: { projectId: config.walletConnectV2.projectId } },
-          undefined
-        ),
-      });
-    },
-    Left: (l) => Promise.reject(l),
-  });
+      const cosmosWalletManager = new WalletManager(
+        Object.values(cosmosChainsMap).map((c) => c.chain),
+        cosmosAssets,
+        wallets,
+        new Logger("ERROR"),
+        false,
+        true,
+        undefined,
+        undefined,
+        { signClient: { projectId: config.walletConnectV2.projectId } },
+        undefined
+      );
+
+      return EitherAsync(() => cosmosWalletManager.onMounted())
+        .mapLeft(() => new Error("cosmosWalletManager onMounted failed"))
+        .map(() => ({
+          cosmosChainsMap,
+          cosmosWagmiChains,
+          connector: Maybe.fromPredicate(
+            () => !!cosmosWagmiChains.length,
+            connector
+          ),
+        }));
+    })
+    .caseOf({
+      Right: (val) => Promise.resolve(val),
+      Left: (l) => Promise.reject(l),
+    });
 
 export const getConfig = (...opts: Parameters<typeof queryFn>) =>
   EitherAsync(() =>
@@ -373,12 +370,12 @@ export const getConfig = (...opts: Parameters<typeof queryFn>) =>
   });
 
 export const useCosmosConfig = () => {
-  const { forceWalletConnectOnly } = useSettings();
+  const { wagmi } = useSettings();
 
   return useQuery({
     staleTime,
     queryKey,
     queryFn: () =>
-      queryFn({ forceWalletConnectOnly: !!forceWalletConnectOnly }),
+      queryFn({ forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly }),
   });
 };

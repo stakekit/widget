@@ -10,6 +10,7 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { FallbackContent } from "./components/fallback-content";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useHandleListState } from "../../../providers/list-state";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
@@ -34,13 +35,15 @@ export const PositionsPage = () => {
 
   const showPositions =
     isConnected &&
-    (positionsData.data.length ||
+    (!!positionsData.data.length ||
       (!positionsData.isLoading && !positionsData.isError));
 
   const data = useMemo(
     () => ["header" as const, ...positionsData.data],
     [positionsData.data]
   );
+
+  const { scrollTop, virtualListRef } = useHandleListState();
 
   return (
     <PageContainer>
@@ -50,7 +53,9 @@ export const PositionsPage = () => {
         {showPositions && (
           <Box flex={1} display="flex" flexDirection="column">
             <VirtualList
+              ref={virtualListRef}
               data={data}
+              initialScrollTop={scrollTop}
               itemContent={(_, item) =>
                 item === "header" ? (
                   <ImportValidatorListItem

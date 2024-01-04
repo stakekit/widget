@@ -7,7 +7,9 @@ import {
   YieldType,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 
 export type DetailsContextType = {
   availableTokens: string;
@@ -18,11 +20,7 @@ export type DetailsContextType = {
   onYieldSelect: (yieldId: string) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
   onStakeAmountChange: (value: Maybe<BigNumber>) => void;
-  estimatedRewards: Maybe<{
-    percentage: string;
-    yearly: string;
-    monthly: string;
-  }>;
+  estimatedRewards: ReturnType<typeof useEstimatedRewards>;
   yieldType: string;
   onMaxClick: () => void;
   stakeAmount: State["stakeAmount"];
@@ -32,18 +30,16 @@ export type DetailsContextType = {
   onClick: () => void;
   onYieldSearch: (value: string) => void;
   onValidatorSelect: (item: ValidatorDto) => void;
-  selectedValidator: State["selectedValidator"];
+  onValidatorRemove: (item: ValidatorDto) => void;
+  selectedValidators: State["selectedValidators"];
   isError: boolean;
   errorMessage: string;
-  rewardToken: Maybe<{
-    logoUri: string;
-    symbol: string;
-    providerName: string;
-  }>;
+  rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onStakeEnterIsLoading: boolean;
   selectedStakeYieldType: YieldType | null;
   isConnected: boolean;
+  isLedgerLiveAccountPlaceholder: boolean;
   appLoading: boolean;
   multiYieldsLoading: boolean;
   yieldOpportunityLoading: boolean;
@@ -56,7 +52,7 @@ export type DetailsContextType = {
   }>;
   onTokenSearch: (value: string) => void;
   buttonCTAText: string;
-  providerDetails: ReturnType<typeof useProviderDetails>;
+  providersDetails: ReturnType<typeof useProvidersDetails>;
   tokenSearch: string;
   stakeSearch: string;
   defaultTokensIsLoading: boolean;

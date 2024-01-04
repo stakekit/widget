@@ -6,6 +6,7 @@ import { YieldDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { getRewardRateFormatted } from "../../../../../utils/get-reward-rate";
+import { ComponentProps } from "react";
 
 export const SelectOpportunityListItem = ({
   item,
@@ -18,9 +19,12 @@ export const SelectOpportunityListItem = ({
 
   const trackEvent = useTrackEvent();
 
-  const onItemClick = () => {
+  const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
+    closeModal,
+  }) => {
     trackEvent("yieldSelected", { yield: item.id });
     onYieldSelect(item.id);
+    closeModal();
   };
 
   return (

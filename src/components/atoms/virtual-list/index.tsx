@@ -2,36 +2,46 @@ import {
   GroupedVirtuoso,
   GroupedVirtuosoProps,
   Virtuoso,
+  VirtuosoHandle,
   VirtuosoProps,
 } from "react-virtuoso";
-import { Fragment, ReactNode, useState } from "react";
+import { ForwardedRef, Fragment, ReactNode, forwardRef, useState } from "react";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import clsx from "clsx";
-import { container, hideScrollbar, virtualContainer } from "./style.css";
+import { container, hideScrollbar } from "./style.css";
 import { Box } from "../box";
 
-export const VirtualList = <ItemData = any, Context = any>({
-  style,
-  className,
-  maxHeight = 600,
-  ...props
-}: VirtuosoProps<ItemData, Context> & {
-  data: ItemData[] | undefined;
-  maxHeight?: number;
-  itemContent: (index: number, data: ItemData) => ReactNode;
-}) => {
+declare module "react" {
+  function forwardRef<T, P = {}>(
+    render: (props: P, ref: React.Ref<T>) => React.ReactElement | null
+  ): (props: P & React.RefAttributes<T>) => React.ReactElement | null;
+}
+
+function _VirtualList<ItemData = any, Context = any>(
+  {
+    style,
+    className,
+    maxHeight = 600,
+    ...props
+  }: VirtuosoProps<ItemData, Context> & {
+    data: ItemData[] | undefined;
+    maxHeight?: number;
+    itemContent: (index: number, data: ItemData) => ReactNode;
+  },
+  ref: ForwardedRef<VirtuosoHandle>
+) {
   const isTabletOrBigger = useIsTabletOrBigger();
 
   const hasMoreThan10Items = props.data && props.data.length > 10;
 
   return hasMoreThan10Items ? (
     <Virtuoso
-      overscan={{ main: 100, reverse: 100 }}
+      ref={ref}
       style={{
         ...style,
         height: isTabletOrBigger ? maxHeight : "max(65vh, 500px)",
       }}
-      className={clsx([hideScrollbar, virtualContainer, className])}
+      className={clsx([hideScrollbar, className])}
       {...props}
     />
   ) : (
@@ -47,7 +57,9 @@ export const VirtualList = <ItemData = any, Context = any>({
       ))}
     </Box>
   );
-};
+}
+
+export const VirtualList = forwardRef(_VirtualList);
 
 export const GroupedVirtualList = <ItemData = any, Context = any>({
   data,
@@ -70,7 +82,7 @@ export const GroupedVirtualList = <ItemData = any, Context = any>({
   return hasMoreThan10Items ? (
     <GroupedVirtuoso
       style={{ ...style, height }}
-      className={clsx([hideScrollbar, virtualContainer, className])}
+      className={clsx([hideScrollbar, className])}
       {...props}
     />
   ) : (

@@ -3,7 +3,6 @@ import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useConnect } from "wagmi";
 import { InjectedConnector } from "@wagmi/connectors/injected";
 import { isLedgerDappBrowserProvider } from "../utils";
-import { LedgerLiveConnector } from "../providers/ledger/ledger-connector";
 import { useMemo } from "react";
 import { useSKWallet } from "../providers/sk-wallet";
 
@@ -35,15 +34,7 @@ export const useAutoConnectInjectedProviderMachine = () => {
         effect: ({ send }) => {
           if (isConnected) return send("DONE");
 
-          if (isLedgerDappBrowserProvider()) {
-            const ledgerLiveConnector = connectors.find(
-              (c) => c instanceof LedgerLiveConnector
-            );
-
-            if (ledgerLiveConnector) {
-              connect({ connector: ledgerLiveConnector });
-            }
-          } else {
+          if (!isLedgerDappBrowserProvider()) {
             const injConn = connectors.find(
               (c) => c instanceof InjectedConnector
             );

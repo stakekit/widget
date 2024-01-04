@@ -10,10 +10,12 @@ import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
-import { claimRewardsContainer, viaText } from "../style.css";
-import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { container, viaText } from "../style.css";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
+import { getRewardRateFormatted } from "../../../../utils/get-reward-rate";
+import { noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(
   ({
@@ -22,6 +24,13 @@ export const PositionsListItem = memo(
     item: ReturnType<typeof usePositions>["positionsData"]["data"][number];
   }) => {
     const { t } = useTranslation();
+
+    const actionRequired = useMemo(() => {
+      return (
+        item.type === "default" &&
+        item.balances.some((b) => b.type === "locked" || b.type === "unstaked")
+      );
+    }, [item.balances, item.type]);
 
     const yieldOpportunity = useYieldOpportunity(item.integrationId);
 
@@ -46,17 +55,41 @@ export const PositionsListItem = memo(
       [item.balances]
     );
 
-    const providerDetails = useProviderDetails({
+    const providersDetails = useProvidersDetails({
       integrationData,
-      validatorAddress: Maybe.of(item.defaultOrValidatorId),
+      validatorsAddresses:
+        item.type === "validators"
+          ? Maybe.of(item.validatorsAddresses)
+          : Maybe.of([]),
     });
+
+    const rewardRateAverage = useMemo(
+      () =>
+        Maybe.fromRecord({ providersDetails, integrationData })
+          .map((val) => ({
+            ...val,
+            rewardRateAverage: val.providersDetails
+              .reduce(
+                (acc, val) => acc.plus(new BigNumber(val.rewardRate)),
+                new BigNumber(0)
+              )
+              .dividedBy(val.providersDetails.length),
+          }))
+          .map((val) =>
+            getRewardRateFormatted({
+              rewardRate: val.rewardRateAverage.toNumber(),
+              rewardType: val.integrationData.rewardType,
+            })
+          ),
+      [integrationData, providersDetails]
+    );
 
     return (
       <SKLink
         relative="path"
-        to={`../positions/${item.integrationId}/${item.defaultOrValidatorId}`}
+        to={`../positions/${item.integrationId}/${item.balanceId}`}
       >
-        <Box my="2">
+        <Box py="1">
           {integrationData.mapOrDefault(
             (d) => (
               <ListItem>
@@ -82,46 +115,60 @@ export const PositionsListItem = memo(
                     justifyContent="center"
                     alignItems="flex-start"
                     minWidth="0"
+                    gap={hasPendingClaimRewards || actionRequired ? "1" : "0"}
                   >
                     <Box
                       display="flex"
                       justifyContent="center"
                       alignItems="center"
-                      gap="1"
+                      gap="2"
                     >
                       {token
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
 
-                      {hasPendingClaimRewards && (
-                        <Box className={claimRewardsContainer}>
-                          <Text variant={{ type: "white" }}>
-                            {t("positions.claim_rewards")}
+                      {(hasPendingClaimRewards || actionRequired) && (
+                        <Box
+                          className={container({
+                            type: hasPendingClaimRewards
+                              ? "claim"
+                              : "actionRequired",
+                          })}
+                        >
+                          <Text variant={{ type: "white" }} className={noWrap}>
+                            {t(
+                              hasPendingClaimRewards
+                                ? "positions.claim_rewards"
+                                : "positions.action_required"
+                            )}
                           </Text>
                         </Box>
                       )}
                     </Box>
-                    {providerDetails
-                      .map((val) => (
-                        <Text
-                          className={viaText}
-                          variant={{
-                            type: "muted",
-                            weight: "normal",
-                          }}
-                        >
-                          {t("positions.via", {
-                            providerName: val.name ?? val.address,
-                          })}
-                        </Text>
-                      ))
+                    {providersDetails
+                      .chain((val) =>
+                        List.head(val).map((p) => (
+                          <Text
+                            className={viaText}
+                            variant={{
+                              type: "muted",
+                              weight: "normal",
+                            }}
+                          >
+                            {t("positions.via", {
+                              providerName: p.name ?? p.address,
+                              count: val.length - 1,
+                            })}
+                          </Text>
+                        ))
+                      )
                       .extractNullable()}
                   </Box>
                 </Box>
 
                 {Maybe.fromRecord({
                   token,
-                  providerDetails,
+                  rewardRateAverage,
                 })
                   .map((val) => (
                     <Box
@@ -132,15 +179,12 @@ export const PositionsListItem = memo(
                       flex={2}
                       textAlign="end"
                     >
-                      <Text variant={{ weight: "normal" }}>
-                        {val.providerDetails.rewardRateFormatted}
-                      </Text>
-                      <Text
-                        variant={{
-                          weight: "normal",
-                          type: "muted",
-                        }}
-                      >
+                      {!actionRequired && (
+                        <Text variant={{ weight: "normal" }}>
+                          {val.rewardRateAverage}
+                        </Text>
+                      )}
+                      <Text variant={{ weight: "normal", type: "muted" }}>
                         {formatNumber(amount)} {val.token.symbol}
                       </Text>
                     </Box>
@@ -164,33 +208,34 @@ export const ImportValidatorListItem = ({
   const { t } = useTranslation();
 
   return (
-    <ListItem variant={{ hover: "disabled" }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        gap="2"
-        marginBottom="2"
-      >
-        <Box display="flex" flexDirection="column" gap="2" flex={2}>
-          <Text variant={{ weight: "bold" }}>
-            {t("positions.dont_see_position")}
-          </Text>
-
-          <Text variant={{ weight: "normal", type: "muted" }}>
-            {t("positions.import_validator")}
-          </Text>
-        </Box>
-
+    <Box py="1">
+      <ListItem variant={{ hover: "disabled" }}>
         <Box
-          flex={1}
           display="flex"
-          justifyContent="flex-end"
+          justifyContent="space-between"
           alignItems="center"
+          gap="2"
         >
-          <ImportValidator {...importValidators} />
+          <Box display="flex" flexDirection="column" gap="2" flex={2}>
+            <Text variant={{ weight: "bold" }}>
+              {t("positions.dont_see_position")}
+            </Text>
+
+            <Text variant={{ weight: "normal", type: "muted" }}>
+              {t("positions.import_validator")}
+            </Text>
+          </Box>
+
+          <Box
+            flex={1}
+            display="flex"
+            justifyContent="flex-end"
+            alignItems="center"
+          >
+            <ImportValidator {...importValidators} />
+          </Box>
         </Box>
-      </Box>
-    </ListItem>
+      </ListItem>
+    </Box>
   );
 };

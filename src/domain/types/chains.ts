@@ -1,5 +1,10 @@
 import { Currency, Families } from "@ledgerhq/wallet-api-client";
-import { CosmosNetworks, EvmNetworks, MiscNetworks } from "@stakekit/common";
+import {
+  CosmosNetworks,
+  EvmNetworks,
+  MiscNetworks,
+  SubstrateNetworks,
+} from "@stakekit/common";
 import { Chain } from "@stakekit/rainbowkit";
 import { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
@@ -85,20 +90,37 @@ export type MiscChainsMap = {
   };
 };
 
+const supportedSubstrateChains = [SubstrateNetworks.Polkadot] as const;
+const supportedSubstrateChainsSet = new Set(supportedSubstrateChains);
+type SupportedSubstrateChains = (typeof supportedSubstrateChains)[number];
+export type SubstrateChainsMap = {
+  [Key in SupportedSubstrateChains]: {
+    type: "substrate";
+    skChainName: Key;
+    wagmiChain: Chain;
+  };
+};
+
 export const isSupportedChain = (
   chain: string
-): chain is SupportedEvmChain | SupportedCosmosChains | SupportedMiscChains => {
+): chain is
+  | SupportedEvmChain
+  | SupportedCosmosChains
+  | SupportedMiscChains
+  | SupportedSubstrateChains => {
   return (
     supportedCosmosChainsSet.has(chain as SupportedCosmosChains) ||
     supportedEVMChainsSet.has(chain as SupportedEvmChain) ||
-    supportedMiscChainsSet.has(chain as SupportedMiscChains)
+    supportedMiscChainsSet.has(chain as SupportedMiscChains) ||
+    supportedSubstrateChainsSet.has(chain as SupportedSubstrateChains)
   );
 };
 
 export type SupportedSKChains =
   | SupportedCosmosChains
   | SupportedEvmChain
-  | SupportedMiscChains;
+  | SupportedMiscChains
+  | SupportedSubstrateChains;
 
 /**
  * LEDGER LIVE
@@ -114,6 +136,7 @@ export type SupportedLedgerLiveFamilies = Extract<
   | "crypto_org"
   | "celo"
   | "tron"
+  | "polkadot"
 >;
 
 export const supportedLedgerFamiliesWithCurrency = {
@@ -143,6 +166,13 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "tron",
       family: "tron",
       skChainName: MiscNetworks.Tron,
+    },
+  },
+  polkadot: {
+    "*": {
+      currencyId: "polkadot",
+      family: "polkadot",
+      skChainName: SubstrateNetworks.Polkadot,
     },
   },
   celo: {

@@ -15,7 +15,7 @@ export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
   const { address, network } = useSKWallet();
-  const { selectedTokenBalance, selectedStakeId, selectedValidator } =
+  const { selectedTokenBalance, selectedStakeId, selectedValidators } =
     useStakeState();
 
   return useMutationSync<
@@ -28,7 +28,7 @@ export const useOnStakeEnter = () => {
       network,
       selectedTokenBalance,
       selectedStakeId,
-      selectedValidator,
+      selectedValidators,
     ],
     mutationFn: async (stakeRequestDto) =>
       (

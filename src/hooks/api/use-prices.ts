@@ -21,12 +21,7 @@ const pricesSelector = createSelector(
 export const usePrices = (
   priceRequestDto: PriceRequestDto | null | undefined
 ) => {
-  const pricesState = useTokenGetTokenPrices(priceRequestDto ?? defaultParam, {
-    query: {
-      enabled: !!priceRequestDto,
-      select: pricesSelector,
-    },
+  return useTokenGetTokenPrices(priceRequestDto ?? defaultParam, {
+    query: { enabled: !!priceRequestDto, select: pricesSelector },
   });
-
-  return pricesState;
 };

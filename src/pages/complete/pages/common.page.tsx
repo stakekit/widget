@@ -24,10 +24,12 @@ type Props = {
   network: string;
   amount: string;
   pendingActionType?: ActionTypes;
-  providerDetails: Maybe<{
-    logo: string;
-    name: string;
-  }>;
+  providersDetails: Maybe<
+    {
+      logo: string;
+      name: string;
+    }[]
+  >;
   yieldType: Maybe<YieldType>;
 };
 
@@ -38,7 +40,7 @@ export const CompletePage = ({
   token,
   pendingActionType,
   yieldType,
-  providerDetails,
+  providersDetails,
 }: Props) => {
   const { t } = useTranslation();
 
@@ -106,30 +108,33 @@ export const CompletePage = ({
           </Heading>
 
           {!unstakeMatch && !pendingActionMatch
-            ? providerDetails
-                .map((v) => (
-                  <Box
-                    display="flex"
-                    marginTop="2"
-                    justifyContent="center"
-                    alignItems="center"
-                    gap="1"
-                  >
-                    {v.logo && (
-                      <Image
-                        imageProps={{ borderRadius: "full" }}
-                        containerProps={{ hw: "5" }}
-                        src={v.logo}
-                        fallback={
-                          <ImageFallback name={v.name} tokenLogoHw="5" />
-                        }
-                      />
-                    )}
-                    <Text variant={{ type: "muted" }}>
-                      {t("complete.via", { providerName: v.name })}
-                    </Text>
-                  </Box>
-                ))
+            ? providersDetails
+                .map((val) =>
+                  val.map((v, i) => (
+                    <Box
+                      key={i}
+                      display="flex"
+                      marginTop="2"
+                      justifyContent="center"
+                      alignItems="center"
+                      gap="1"
+                    >
+                      {v.logo && (
+                        <Image
+                          imageProps={{ borderRadius: "full" }}
+                          containerProps={{ hw: "5" }}
+                          src={v.logo}
+                          fallback={
+                            <ImageFallback name={v.name} tokenLogoHw="5" />
+                          }
+                        />
+                      )}
+                      <Text variant={{ type: "muted" }}>
+                        {t("complete.via", { providerName: v.name })}
+                      </Text>
+                    </Box>
+                  ))
+                )
                 .extractNullable()
             : null}
 

@@ -34,7 +34,7 @@ import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { List } from "purify-ts";
-import { useProviderDetails } from "../../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import {
   getYieldOpportunityFromCache,
@@ -54,13 +54,18 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const {
     actions: { onMaxClick: _onMaxClick },
     selectedTokenBalance,
-    selectedValidator,
+    selectedValidators,
     stakeAmount,
     selectedStake,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
-  const { isConnected, isConnecting, isLedgerLive } = useSKWallet();
+  const {
+    isConnected,
+    isConnecting,
+    isLedgerLive,
+    isLedgerLiveAccountPlaceholder,
+  } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
     tokenDto: selectedTokenBalance.map((ss) => ss.token),
@@ -77,7 +82,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   );
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
-    selectedValidator,
+    selectedValidators,
     stakeAmount,
   });
   const rewardToken = useRewardTokenDetails(selectedStake);
@@ -158,7 +163,25 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         restTokenBalances,
         tb: Maybe.fromNullable(tokenBalances.data),
       })
-        .map((val) => [...val.tb, ...val.restTokenBalances])
+        .map((val) => {
+          const { tb, rest } = val.tb.reduce(
+            (acc, b) => {
+              if (new BigNumber(b.amount).isGreaterThan(0)) {
+                acc.tb.push(b);
+              } else {
+                acc.rest.push(b);
+              }
+
+              return acc;
+            },
+            {
+              rest: [] as TokenBalanceScanResponseDto[],
+              tb: [] as TokenBalanceScanResponseDto[],
+            }
+          );
+
+          return [...tb, ...rest, ...val.restTokenBalances];
+        })
         .chain((tb) =>
           Maybe.of(deferredTokenSearch)
             .chain((val) =>
@@ -282,7 +305,14 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   };
 
   const onValidatorSelect = (item: ValidatorDto) =>
-    appDispatch({ type: "validator/select", data: item });
+    selectedStake.ifJust((ss) =>
+      ss.args.enter.args?.validatorAddresses?.required
+        ? appDispatch({ type: "validator/multiselect", data: item })
+        : appDispatch({ type: "validator/select", data: item })
+    );
+
+  const onValidatorRemove = (item: ValidatorDto) =>
+    appDispatch({ type: "validator/remove", data: item });
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     appDispatch({ type: "stakeAmount/change", data: val });
@@ -375,9 +405,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     }
   }, [selectedStakeYieldType, t]);
 
-  const providerDetails = useProviderDetails({
+  const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorAddress: selectedValidator.map((v) => v.address),
+    validatorsAddresses: Maybe.of(selectedValidators),
   });
 
   const trackEvent = useTrackEvent();
@@ -406,7 +436,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onClick,
     onYieldSearch,
     onValidatorSelect,
-    selectedValidator,
+    onValidatorRemove,
+    selectedValidators,
     isError,
     errorMessage,
     rewardToken,
@@ -423,10 +454,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesData,
     onTokenSearch,
     buttonCTAText,
-    providerDetails,
+    providersDetails,
     tokenSearch,
     stakeSearch,
     defaultTokensIsLoading,
+    isLedgerLiveAccountPlaceholder,
   };
 
   return (

@@ -64,7 +64,7 @@ export const SelectToken = () => {
             borderRadius="2xl"
             px="2"
             py="1"
-            data-testid="select-opportunity"
+            data-testid="select-token"
             className={pressAnimation}
           >
             <Box
