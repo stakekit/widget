@@ -79,6 +79,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   });
 
   const isConnected = _isConnected && !!address && !!connector && !!network;
+
   const isConnecting =
     _isConnecting ||
     isReconnecting ||

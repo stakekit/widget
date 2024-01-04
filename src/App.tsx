@@ -49,7 +49,6 @@ import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
-import { useCosmosConfig } from "./providers/cosmos/config";
 import { useSKWallet } from "./providers/sk-wallet";
 
 const Widget = () => {
@@ -73,19 +72,6 @@ const Widget = () => {
       navigateRef.current("/", { replace: true });
     }
   }, [chain, pathnameRef, navigateRef]);
-
-  const cosmosConfig = useCosmosConfig();
-
-  /**
-   * On mount, initialize cosmos wallet manager
-   */
-  useEffect(() => {
-    cosmosConfig.data?.cosmosWalletManager.onMounted();
-
-    return () => {
-      cosmosConfig.data?.cosmosWalletManager.onUnmounted();
-    };
-  }, [cosmosConfig.data?.cosmosWalletManager]);
 
   useAutoConnectInjectedProviderMachine();
 

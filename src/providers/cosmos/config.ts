@@ -171,7 +171,8 @@ export class CosmosWagmiConnector extends Connector {
   };
   isAuthorized = async () => {
     try {
-      return !!(await this.chainWallet).address;
+      const cw = await this.chainWallet;
+      return !!cw.address;
     } catch (error) {
       return false;
     }
@@ -278,8 +279,8 @@ const queryFn = async ({
 }: {
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks().caseOf({
-    Right: (networks) => {
+  getEnabledNetworks()
+    .chain((networks) => {
       const cosmosChainsMap: FilteredCosmosChainsMap =
         typeSafeObjectFromEntries(
           typeSafeObjectEntries<CosmosChainsMap>(
@@ -327,29 +328,34 @@ const queryFn = async ({
         ),
       };
 
-      return Promise.resolve({
-        cosmosChainsMap,
-        cosmosWagmiChains,
-        connector: Maybe.fromPredicate(
-          () => !!cosmosWagmiChains.length,
-          connector
-        ),
-        cosmosWalletManager: new WalletManager(
-          Object.values(cosmosChainsMap).map((c) => c.chain),
-          cosmosAssets,
-          wallets,
-          new Logger("ERROR"),
-          false,
-          true,
-          undefined,
-          undefined,
-          { signClient: { projectId: config.walletConnectV2.projectId } },
-          undefined
-        ),
-      });
-    },
-    Left: (l) => Promise.reject(l),
-  });
+      const cosmosWalletManager = new WalletManager(
+        Object.values(cosmosChainsMap).map((c) => c.chain),
+        cosmosAssets,
+        wallets,
+        new Logger("ERROR"),
+        false,
+        true,
+        undefined,
+        undefined,
+        { signClient: { projectId: config.walletConnectV2.projectId } },
+        undefined
+      );
+
+      return EitherAsync(() => cosmosWalletManager.onMounted())
+        .mapLeft(() => new Error("cosmosWalletManager onMounted failed"))
+        .map(() => ({
+          cosmosChainsMap,
+          cosmosWagmiChains,
+          connector: Maybe.fromPredicate(
+            () => !!cosmosWagmiChains.length,
+            connector
+          ),
+        }));
+    })
+    .caseOf({
+      Right: (val) => Promise.resolve(val),
+      Left: (l) => Promise.reject(l),
+    });
 
 export const getConfig = (...opts: Parameters<typeof queryFn>) =>
   EitherAsync(() =>

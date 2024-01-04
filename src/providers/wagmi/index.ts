@@ -11,6 +11,7 @@ import { UseQueryResult, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
+import { isLedgerDappBrowserProvider } from "../../utils";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -60,13 +61,16 @@ const buildWagmiConfig = async (opts: {
       const wagmiConfig = createConfig({
         autoConnect: true,
         connectors: connectorsForWallets([
-          ...Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector]),
-          ledgerLiveConnector({
-            evm: evmConfig.evmChainsMap,
-            cosmos: cosmosConfig.cosmosChainsMap,
-            misc: miscConfig.miscChainsMap,
-            substrate: substrateConfig.substrateChainsMap,
-          }),
+          ...(isLedgerDappBrowserProvider()
+            ? [
+                ledgerLiveConnector({
+                  evm: evmConfig.evmChainsMap,
+                  cosmos: cosmosConfig.cosmosChainsMap,
+                  misc: miscConfig.miscChainsMap,
+                  substrate: substrateConfig.substrateChainsMap,
+                }),
+              ]
+            : Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector])),
           ...(typeof opts.customConnectors === "function"
             ? opts.customConnectors(chains)
             : opts.customConnectors ?? []),
