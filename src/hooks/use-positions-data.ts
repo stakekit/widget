@@ -3,26 +3,23 @@ import {
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
-import { useMemo } from "react";
 import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
-import { Maybe } from "purify-ts";
+import { useMemo } from "react";
 
 export const usePositionsData = () => {
-  const yieldYieldBalancesScan = useYieldBalancesScan();
+  const { data, ...rest } = useYieldBalancesScan({
+    select: positionsDataSelector,
+  });
 
-  return {
-    ...yieldYieldBalancesScan,
-    data: useMemo<ReturnType<typeof positionsDataSelector>>(
-      () =>
-        Maybe.fromNullable(yieldYieldBalancesScan.data)
-          .map(positionsDataSelector)
-          .orDefault(new Map()),
-      [yieldYieldBalancesScan.data]
-    ),
-  };
+  const val = useMemo<NonNullable<typeof data>>(
+    () => data ?? new Map(),
+    [data]
+  );
+
+  return { data: val, ...rest };
 };
 
-type ValidatorAddress = NonNullable<YieldBalanceDto["validatorAddress"]>;
+type YieldBalanceDtoID = YieldBalanceDto["groupId"];
 
 const positionsDataSelector = createSelector(
   (balancesData: YieldBalancesWithIntegrationIdDto[]) => balancesData,
@@ -31,21 +28,32 @@ const positionsDataSelector = createSelector(
       (acc, val) => {
         acc.set(val.integrationId, {
           integrationId: val.integrationId,
-          balanceData: val.balances.reduce(
-            (acc, b) => {
-              if (b.validatorAddress) {
-                if (!acc[b.validatorAddress]) acc[b.validatorAddress] = [];
-                acc[b.validatorAddress].push(b);
+          balanceData: [...val.balances]
+            .sort((a, b) => (a.groupId ?? "").localeCompare(b.groupId ?? ""))
+            .reduce((acc, b) => {
+              const prev = acc.get(b.groupId);
+
+              if (prev) {
+                prev.balances.push(b);
               } else {
-                if (!acc["default"]) acc["default"] = [];
-                acc["default"].push(b);
+                if (b.validatorAddresses || b.validatorAddress) {
+                  acc.set(b.groupId, {
+                    balances: [b],
+                    type: "validators",
+                    validatorsAddresses: b.validatorAddresses ?? [
+                      b.validatorAddress!,
+                    ],
+                  });
+                } else {
+                  acc.set(b.groupId, {
+                    balances: [b],
+                    type: "default",
+                  });
+                }
               }
+
               return acc;
-            },
-            {} as {
-              default: YieldBalanceDto[];
-            } & Record<ValidatorAddress, YieldBalanceDto[]>
-          ),
+            }, new Map<YieldBalanceDtoID, { balances: YieldBalanceDto[] } & ({ type: "validators"; validatorsAddresses: string[] } | { type: "default" })>()),
         });
 
         return acc;
@@ -54,9 +62,13 @@ const positionsDataSelector = createSelector(
         YieldBalancesWithIntegrationIdDto["integrationId"],
         {
           integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
-          balanceData: {
-            default: YieldBalanceDto[];
-          } & Record<ValidatorAddress, YieldBalanceDto[]>;
+          balanceData: Map<
+            YieldBalanceDtoID,
+            { balances: YieldBalanceDto[] } & (
+              | { type: "validators"; validatorsAddresses: string[] }
+              | { type: "default" }
+            )
+          >;
         }
       >()
     )

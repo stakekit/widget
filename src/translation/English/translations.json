@@ -24,7 +24,8 @@
 
   "init": {
     "get_started": "Connect your wallet to get started…",
-    "connect_wallet": "Connect Wallet"
+    "connect_wallet": "Connect Wallet",
+    "ledger_add_account": "Add account"
   },
   "yield_types": {
     "liquid_stake": "Liquid Stake",
@@ -34,13 +35,16 @@
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
-    "staked_via": "Staked via {{validator}}",
+    "staked_via": "Staked via",
 
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
 
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
 
     "no_opportunities": "No yield opportunities for this token",
+
+    "selected_validators_one": "{{providerName}}",
+    "selected_validators_other": "{{providerName}} + {{count}} more",
 
     "native_staking": {
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
@@ -110,7 +114,8 @@
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
 
     "opportunity_search_title": "Select a yield",
-    "validator_search_title": "Select validator",
+    "validator_search_title_one": "Select validator",
+    "validator_search_title_other": "Select validators",
     "reward_token": "You'll receive {{symbol}} <highlight0>via {{providerName}}</highlight0>",
     "tab_earn": "Earn",
     "tab_positions": "Positions",
@@ -124,7 +129,7 @@
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
     "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>%"
+    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>"
   },
   "steps": {
     "title": "Follow Steps",
@@ -228,6 +233,7 @@
     "connect_wallet": "Connect wallet",
     "no_current_positions": "No current positions",
     "claim_rewards": "Claim rewards",
+    "action_required": "Action required",
     "dont_see_position": "Don't see a position?",
     "import_validator": "Import a validator you have staked with to view your position",
     "import_button": "Import",
@@ -239,13 +245,16 @@
     "liquid_staked": "Liquid staked",
     "staked": "Staked",
     "deposited": "Deposited",
-    "via": "via {{providerName}}",
+    "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
     "claim": "Claim",
     "unstake": "Unstake",
     "withdraw": "Withdraw",
-    "available": "available",
+    "available": "{{amount}} {{symbol}} available",
+    "select_validators": {
+      "submit": "Submit"
+    },
     "balance_type": {
       "available": "Available",
       "staked": "Staked",

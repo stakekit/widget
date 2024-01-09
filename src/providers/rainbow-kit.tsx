@@ -5,7 +5,6 @@ import {
   RainbowKitProvider,
   Chain as RainbowKitChain,
   DisclaimerComponent,
-  Chain,
   useChainModal,
 } from "@stakekit/rainbowkit";
 import merge from "lodash.merge";
@@ -17,10 +16,10 @@ import { useSettings } from "./settings";
 import { Text } from "../components";
 import { useSKWallet } from "./sk-wallet";
 import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
-import { useMutation } from "@tanstack/react-query";
-import { EitherAsync, Left, Right } from "purify-ts";
-import { isLedgerLiveConnector } from "./sk-wallet/utils";
 import { useTranslation } from "react-i18next";
+import { useCloseChainModal } from "../hooks/use-close-chain-modal";
+import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
+import { useTrackEvent } from "../hooks/tracking/use-track-event";
 
 const overrides: RecursivePartial<Theme> = {
   colors: {
@@ -37,8 +36,6 @@ const theme: Theme = {
   darkMode: merge(darkTheme(), overrides),
 };
 
-let latestCloseModalFn = () => {};
-
 export const RainbowKitProviderWithTheme = ({
   children,
   chains,
@@ -53,7 +50,9 @@ export const RainbowKitProviderWithTheme = ({
 
   const disabledChains = useLedgerDisabledChain(connector);
 
-  const onDisabledChainClick = useOnDisabledChainClick();
+  const trackEvent = useTrackEvent();
+
+  const onDisabledChainClick = useAddLedgerAccount();
 
   const { t } = useTranslation();
 
@@ -70,9 +69,10 @@ export const RainbowKitProviderWithTheme = ({
           })),
         [disabledChains, t]
       )}
-      onDisabledChainClick={(disabledChain) =>
-        onDisabledChainClick.mutateAsync(disabledChain)
-      }
+      onDisabledChainClick={(disabledChain) => {
+        trackEvent("addLedgerAccountClicked");
+        onDisabledChainClick.mutateAsync(disabledChain);
+      }}
       appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
       theme={
         connectKitForceTheme
@@ -91,29 +91,9 @@ export const RainbowKitProviderWithTheme = ({
 };
 
 const DisabledChainHandling = () => {
-  latestCloseModalFn = useChainModal().closeChainModal; // haaack
+  useCloseChainModal().setCloseChainModal = useChainModal().closeChainModal; // haaack
 
   return null;
-};
-
-const useOnDisabledChainClick = () => {
-  const { connector } = useSKWallet();
-
-  return useMutation<void, Error, Chain>({
-    mutationFn: async (chain) => {
-      (
-        await EitherAsync.liftEither(
-          connector && isLedgerLiveConnector(connector)
-            ? Right(connector)
-            : Left(new Error("Only Ledger Live is supported"))
-        )
-          .chain((ledgerLiveConnector) =>
-            ledgerLiveConnector.requestAndSwitchAccount(chain)
-          )
-          .ifRight(latestCloseModalFn)
-      ).unsafeCoerce();
-    },
-  });
 };
 
 const Disclamer: DisclaimerComponent = () => {

@@ -7,7 +7,12 @@ import { useMemo } from "react";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useTokenBalancesScan = () => {
-  const { additionalAddresses, address, network } = useSKWallet();
+  const {
+    additionalAddresses,
+    address,
+    network,
+    isLedgerLiveAccountPlaceholder,
+  } = useSKWallet();
 
   const param = useMemo(
     () =>
@@ -17,7 +22,7 @@ export const useTokenBalancesScan = () => {
         network: Maybe.fromNullable(network),
       }).mapOrDefault<{ dto: TokenBalanceScanDto; enabled: boolean }>(
         (val) => ({
-          enabled: true,
+          enabled: !isLedgerLiveAccountPlaceholder,
           dto: {
             addresses: {
               address: val.address,
@@ -34,7 +39,7 @@ export const useTokenBalancesScan = () => {
           },
         }
       ),
-    [additionalAddresses, address, network]
+    [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network]
   );
 
   return useTokenTokenBalancesScan(param.dto, {

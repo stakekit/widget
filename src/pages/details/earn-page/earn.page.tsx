@@ -3,7 +3,7 @@ import { Box } from "../../../components/atoms/box";
 import { PageContainer } from "../../components";
 import { Button, Spinner } from "../../../components";
 import { Footer } from "./components/footer";
-import { SelectValidator } from "./components/select-validator";
+import { SelectValidatorSection } from "./components/select-validator-section";
 import { HelpModal } from "../../../components/molecules/help-modal";
 import { ConnectButton } from "../../../components/molecules/connect-button";
 import { SelectTokenSection } from "./components/select-token-section";
@@ -29,6 +29,7 @@ const EarnPageComponent = () => {
     isConnected,
     appLoading,
     buttonCTAText,
+    isLedgerLiveAccountPlaceholder,
   } = useDetailsContext();
 
   const title = yieldType;
@@ -59,7 +60,7 @@ const EarnPageComponent = () => {
 
           <SelectYieldSection />
 
-          <SelectValidator />
+          <SelectValidatorSection />
         </Box>
 
         {isError && (
@@ -87,7 +88,7 @@ const EarnPageComponent = () => {
         flexDirection="column"
         marginTop="8"
       >
-        {isConnected ? (
+        {isConnected && !isLedgerLiveAccountPlaceholder ? (
           <Button
             disabled={buttonDisabled}
             isLoading={onStakeEnterIsLoading}

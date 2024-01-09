@@ -11,7 +11,9 @@ import {
   Navigate,
   Outlet,
   Route,
+  RouterProvider,
   Routes,
+  createMemoryRouter,
   useLocation,
   useNavigate,
 } from "react-router-dom";
@@ -47,8 +49,8 @@ import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
-import { useCosmosConfig } from "./providers/cosmos/config";
 import { useSKWallet } from "./providers/sk-wallet";
+import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 const Widget = () => {
   useToggleTheme();
@@ -58,7 +60,7 @@ const Widget = () => {
     geoBlock ? geoBlock.regionCode : undefined
   );
 
-  const { chain } = useSKWallet();
+  const { chain, address } = useSKWallet();
 
   const pathnameRef = useSavedRef(useLocation().pathname);
   const navigateRef = useSavedRef(useNavigate());
@@ -68,22 +70,18 @@ const Widget = () => {
    */
   useEffect(() => {
     if (pathnameRef.current !== "/") {
+      const url = new URL(window.location.href);
+      const newUrl = new URL(window.location.origin);
+      if (url.searchParams.has("embed")) {
+        newUrl.searchParams.set("embed", "true");
+      }
+
+      window.history.pushState({}, document.title, newUrl.href);
       navigateRef.current("/", { replace: true });
     }
-  }, [chain, pathnameRef, navigateRef]);
+  }, [chain, address, pathnameRef, navigateRef]);
 
-  const cosmosConfig = useCosmosConfig();
-
-  /**
-   * On mount, initialize cosmos wallet manager
-   */
-  useEffect(() => {
-    cosmosConfig.data?.cosmosWalletManager.onMounted();
-
-    return () => {
-      cosmosConfig.data?.cosmosWalletManager.onUnmounted();
-    };
-  }, [cosmosConfig.data?.cosmosWalletManager]);
+  useHandleDeepLinks();
 
   useAutoConnectInjectedProviderMachine();
 
@@ -128,11 +126,15 @@ const Widget = () => {
                 }
               >
                 <Route
-                  path="positions/:integrationId/:defaultOrValidatorId"
+                  path="positions/:integrationId/:balanceId"
                   element={<PositionDetails />}
                 />
                 <Route
-                  path="unstake/:integrationId/:defaultOrValidatorId"
+                  path="positions/:integrationId/:balanceId/:pendingActionType"
+                  element={<PositionDetails />}
+                />
+                <Route
+                  path="unstake/:integrationId/:balanceId"
                   element={<UnstakeOrPendingActionCheck />}
                 >
                   <Route
@@ -150,7 +152,7 @@ const Widget = () => {
                 </Route>
 
                 <Route
-                  path="pending-action/:integrationId/:defaultOrValidatorId"
+                  path="pending-action/:integrationId/:balanceId"
                   element={<UnstakeOrPendingActionCheck />}
                 >
                   <Route
@@ -189,12 +191,20 @@ const Widget = () => {
   );
 };
 
+const Root = () => {
+  return (
+    <Providers>
+      <Widget />
+    </Providers>
+  );
+};
+
+const router = createMemoryRouter([{ path: "*", Component: Root }]);
+
 export const SKApp = (props: SettingsContextType) => {
   return (
     <SettingsContextProvider {...props}>
-      <Providers>
-        <Widget />
-      </Providers>
+      <RouterProvider router={router} />
     </SettingsContextProvider>
   );
 };

@@ -2,15 +2,20 @@ import { APIManager } from "@stakekit/api-hooks";
 import { ThemeWrapperTheme } from "./theme-wrapper";
 import { PropsWithChildren, createContext, useContext, useMemo } from "react";
 import { Properties, TrackEventVal, TrackPageVal } from "./tracking";
+import { BuildWagmiConfig } from "./wagmi";
+import { config } from "../config";
 
 export interface SettingsContextType {
   apiKey: Parameters<(typeof APIManager)["configure"]>[0]["apiKey"];
   theme?: ThemeWrapperTheme;
   connectKitForceTheme?: "lightMode" | "darkMode";
-  forceWalletConnectOnly?: boolean;
   tracking?: {
     trackEvent: (event: TrackEventVal, properties?: Properties) => void;
     trackPageView: (page: TrackPageVal, properties?: Properties) => void;
+  };
+  wagmi?: {
+    forceWalletConnectOnly?: boolean;
+    __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
   };
 }
 
@@ -22,7 +27,18 @@ export const SettingsContextProvider = ({
   children,
   ...rest
 }: PropsWithChildren<SettingsContextType>) => {
-  const value = useMemo(() => rest, [rest]);
+  const value = useMemo(
+    () => ({
+      ...rest,
+      wagmi: {
+        ...rest.wagmi,
+        __customConnectors__: config.env.isTestMode
+          ? rest.wagmi?.__customConnectors__
+          : undefined,
+      },
+    }),
+    [rest]
+  );
 
   return (
     <SettingsContext.Provider value={value}>

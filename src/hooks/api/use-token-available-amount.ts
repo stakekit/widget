@@ -14,9 +14,10 @@ export const useTokenAvailableAmount = ({
 }: {
   tokenDto: Maybe<TokenDto>;
 }) => {
-  const { address, additionalAddresses } = useSKWallet();
+  const { address, additionalAddresses, network } = useSKWallet();
 
   const balancesRequestDto = tokenDto
+    .filter((t) => t.network === network)
     .map((t) => ({
       network: t.network,
       tokenAddress: t.address,

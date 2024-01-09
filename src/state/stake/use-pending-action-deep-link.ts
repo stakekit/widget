@@ -1,8 +1,14 @@
-import { AddressesDto, yieldGetSingleYieldBalances } from "@stakekit/api-hooks";
+import {
+  AddressesDto,
+  PendingActionDto,
+  YieldBalanceDto,
+  YieldDto,
+  yieldGetSingleYieldBalances,
+} from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { Override } from "../../types";
-import { getWagmiConfig } from "../../providers/wagmi";
+import { useWagmiConfig } from "../../providers/wagmi";
 import { getAdditionalAddresses } from "../../providers/sk-wallet/use-additional-addresses";
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
@@ -10,19 +16,36 @@ import { useSKWallet } from "../../providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
+import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
+} from "../../domain";
 
 export const usePendingActionDeepLink = () => {
-  const { isLedgerLive, isConnected } = useSKWallet();
+  const { isLedgerLive, isConnected, address } = useSKWallet();
+
+  const wagmiConfig = useWagmiConfig();
 
   const onPendingAction = useOnPendingAction();
 
   return useQuery({
-    staleTime: Infinity,
-    queryKey: ["pending-action-deep-link"],
-    enabled: isConnected,
+    staleTime: 0,
+    gcTime: 0,
+    queryKey: ["pending-action-deep-link", isLedgerLive, address],
+    enabled: !!(isConnected && address && wagmiConfig.data?.wagmiConfig),
     queryFn: async () =>
       (
-        await fn({ isLedgerLive, onPendingAction: onPendingAction.mutateAsync })
+        await EitherAsync.liftEither(
+          Maybe.fromNullable(wagmiConfig.data?.wagmiConfig).toEither(
+            new Error("missing wagmi config")
+          )
+        ).chain((wagmiConfig) =>
+          fn({
+            isLedgerLive,
+            onPendingAction: onPendingAction.mutateAsync,
+            wagmiConfig,
+          })
+        )
       ).unsafeCoerce(),
   });
 };
@@ -30,9 +53,13 @@ export const usePendingActionDeepLink = () => {
 const fn = ({
   isLedgerLive,
   onPendingAction,
+  wagmiConfig,
 }: {
   isLedgerLive: boolean;
   onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
+  wagmiConfig: NonNullable<
+    ReturnType<typeof useWagmiConfig>["data"]
+  >["wagmiConfig"];
 }) =>
   getInitialQueryParams({ isLedgerLive })
     .chain((val) =>
@@ -50,32 +77,32 @@ const fn = ({
       )
     )
     .chain((initQueryParams) =>
-      getWagmiConfig({ forceWalletConnectOnly: false }).chain((config) =>
-        EitherAsync.liftEither(
-          Maybe.fromRecord({
-            connector: Maybe.fromNullable(config.wagmiConfig.connector),
-            address: Maybe.fromNullable(config.wagmiConfig.data?.account),
-          }).toEither(new Error("missing wagmi config"))
-        )
-          .chain((wagmiData) =>
-            getAdditionalAddresses(wagmiData.connector).map<AddressesDto>(
-              (additionalAddresses) => ({
-                address: wagmiData.address,
-                additionalAddresses: additionalAddresses ?? undefined,
-              })
-            )
+      EitherAsync.liftEither(
+        Maybe.fromRecord({
+          connector: Maybe.fromNullable(wagmiConfig.connector),
+          address: Maybe.fromNullable(wagmiConfig.data?.account),
+        }).toEither(new Error("missing wagmi config"))
+      )
+        .chain((wagmiData) =>
+          getAdditionalAddresses(wagmiData.connector).map<AddressesDto>(
+            (additionalAddresses) => ({
+              address: wagmiData.address,
+              additionalAddresses: additionalAddresses ?? undefined,
+            })
           )
-          .chain((data) =>
-            withRequestErrorRetry({
-              fn: () =>
-                yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-                  args: { validatorAddresses: [] },
-                  addresses: {
-                    address: data.address,
-                    additionalAddresses: data.additionalAddresses,
-                  },
-                }),
-            }).map((val) => ({
+        )
+        .chain((data) =>
+          withRequestErrorRetry({
+            fn: () =>
+              yieldGetSingleYieldBalances(initQueryParams.yieldId, {
+                addresses: {
+                  address: data.address,
+                  additionalAddresses: data.additionalAddresses,
+                },
+              }),
+          })
+            .mapLeft(() => new Error("could not get yield balances"))
+            .map((val) => ({
               yieldId: initQueryParams.yieldId,
               pendingaction: initQueryParams.pendingaction,
               validatorAddress: initQueryParams.validator,
@@ -83,13 +110,12 @@ const fn = ({
               address: data.address,
               additionalAddresses: data.additionalAddresses,
             }))
-          )
-      )
+        )
     )
     .chain((data) =>
       EitherAsync.liftEither(
-        Right(data.singleYieldBalances).chain((v) => {
-          for (const balance of v) {
+        Right(data.singleYieldBalances).chain((balances) => {
+          for (const balance of balances) {
             if (
               data.validatorAddress &&
               balance.validatorAddress !== data.validatorAddress
@@ -105,7 +131,7 @@ const fn = ({
               return Right({
                 pendingAction,
                 balance,
-                defaultOrValidatorId: balance.validatorAddress ?? "default",
+                balanceId: balance.groupId ?? "default",
               });
             }
           }
@@ -118,27 +144,49 @@ const fn = ({
             (yieldOp) => ({ ...val, yieldOp })
           )
         )
-        .chain((val) =>
-          EitherAsync.liftEither(
-            preparePendingActionRequestDto({
-              address: data.address,
-              additionalAddresses: data.additionalAddresses ?? null,
-              integration: val.yieldOp,
-              yieldBalance: val.balance,
-              pendingActionDto: val.pendingAction,
-            })
-          )
-            .chain((pendingActionRequestDto) =>
-              EitherAsync(() =>
-                onPendingAction({
-                  pendingActionRequestDto,
-                  yieldBalance: val.balance,
+        .chain<
+          Error,
+          | {
+              type: "positionDetails";
+              yieldOp: YieldDto;
+              pendingAction: PendingActionDto;
+              balance: YieldBalanceDto;
+              balanceId: string;
+            }
+          | ({ type: "review"; balanceId: string } & Awaited<
+              ReturnType<typeof onPendingAction>
+            >)
+        >((val) =>
+          PAMultiValidatorsRequired(val.pendingAction) ||
+          PASingleValidatorRequired(val.pendingAction)
+            ? EitherAsync.liftEither(
+                Right({
+                  type: "positionDetails",
+                  ...val,
                 })
-              ).mapLeft(() => new Error("on pending action failed"))
-            )
-            .map((res) => ({
-              ...res,
-              defaultOrValidatorId: val.defaultOrValidatorId,
-            }))
+              )
+            : EitherAsync.liftEither(
+                preparePendingActionRequestDto({
+                  address: data.address,
+                  additionalAddresses: data.additionalAddresses ?? null,
+                  integration: val.yieldOp,
+                  yieldBalance: val.balance,
+                  pendingActionDto: val.pendingAction,
+                  selectedValidators: [],
+                })
+              )
+                .chain((pendingActionRequestDto) =>
+                  EitherAsync(() =>
+                    onPendingAction({
+                      pendingActionRequestDto,
+                      yieldBalance: val.balance,
+                    })
+                  ).mapLeft(() => new Error("on pending action failed"))
+                )
+                .map((res) => ({
+                  ...res,
+                  type: "review",
+                  balanceId: val.balanceId,
+                }))
         )
     );

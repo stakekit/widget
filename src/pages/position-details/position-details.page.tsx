@@ -1,7 +1,6 @@
 import {
   Box,
   Button,
-  Divider,
   Heading,
   NumberInput,
   Spinner,
@@ -10,10 +9,7 @@ import {
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { PageContainer } from "../components";
 import { usePositionDetails } from "./hooks/use-position-details";
-import { Image } from "../../components/atoms/image";
-import { ImageFallback } from "../../components/atoms/image-fallback";
 import { Trans, useTranslation } from "react-i18next";
-import { HelpModal } from "../../components/molecules/help-modal";
 import { formatNumber } from "../../utils";
 import BigNumber from "bignumber.js";
 import { pressAnimation } from "../../components/atoms/button/styles.css";
@@ -21,15 +17,14 @@ import { ActionTypes } from "@stakekit/api-hooks";
 import { PositionBalances } from "./components/position-balances";
 import { Maybe } from "purify-ts";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
-import { getRewardTypeFormatted } from "../../utils/get-reward-type";
+import { ProviderDetails } from "./components/provider-details";
+import { SelectValidator } from "../../components/molecules/select-validator";
 
 export const PositionDetails = () => {
-  const positionDetails = usePositionDetails();
-
   const {
     integrationData,
     isLoading,
-    stakedOrLiquidBalance,
+    reducedStakedOrLiquidBalance,
     stakeType,
     positionBalancesByType,
     unstakeText,
@@ -45,9 +40,11 @@ export const PositionDetails = () => {
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
-    providerDetails,
+    providersDetails,
     liquidTokensToNativeConversion,
-  } = positionDetails;
+    validatorAddressesHandling,
+    onValidatorsSubmit,
+  } = usePositionDetails();
 
   useTrackPage("positionDetails", {
     yield: integrationData.map((i) => i.metadata.name).extract(),
@@ -87,86 +84,32 @@ export const PositionDetails = () => {
                 </Text>
               </Box>
 
-              {providerDetails
-                .map((pd) => (
-                  <Box display="flex" flexDirection="column" marginTop="6">
-                    <Divider my="1" />
-
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                    >
-                      <Box
-                        my="1"
-                        display="flex"
-                        justifyContent="flex-start"
-                        alignItems="center"
-                      >
-                        <Box marginRight="2">
-                          <Image
-                            containerProps={{ hw: "8" }}
-                            imageProps={{ borderRadius: "full" }}
-                            src={pd.logo}
-                            fallback={
-                              <Box marginRight="1">
-                                <ImageFallback
-                                  name={pd.name ?? pd.address ?? ""}
-                                  tokenLogoHw="8"
-                                  textVariant={{
-                                    type: "white",
-                                    weight: "bold",
-                                  }}
-                                />
-                              </Box>
-                            }
-                          />
-                        </Box>
-
-                        <Text>
-                          {val.stakeType}{" "}
-                          {t("position_details.via", {
-                            providerName: pd.name ?? pd.address ?? "",
-                          })}
-                        </Text>
-                      </Box>
-
-                      <HelpModal
-                        modal={{ type: val.integrationData.metadata.type }}
+              <Box marginTop="4">
+                {providersDetails
+                  .map((pd) =>
+                    pd.map((p, idx) => (
+                      <ProviderDetails
+                        {...p}
+                        key={p.address ?? idx}
+                        isFirst={idx === 0}
+                        stakeType={val.stakeType}
+                        integrationData={val.integrationData}
                       />
-                    </Box>
-
-                    <Divider my="1" />
-                  </Box>
-                ))
-                .extractNullable()}
+                    ))
+                  )
+                  .extractNullable()}
+              </Box>
 
               <Box py="3" gap="2" display="flex" flexDirection="column">
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Text variant={{ weight: "normal" }}>
-                    {getRewardTypeFormatted(val.integrationData.rewardType)}
-                  </Text>
-                  {providerDetails
-                    .map((pd) => (
-                      <Text variant={{ type: "muted", weight: "normal" }}>
-                        {pd.rewardRateFormatted}
-                      </Text>
+                {[...val.positionBalancesByType.values()].flatMap(
+                  (yieldBalance) =>
+                    yieldBalance.map((yb) => (
+                      <PositionBalances
+                        key={yb.type}
+                        integrationData={val.integrationData}
+                        yieldBalance={yb}
+                      />
                     ))
-                    .extractNullable()}
-                </Box>
-
-                {[...val.positionBalancesByType.values()].map(
-                  (yieldBalance) => (
-                    <PositionBalances
-                      key={yieldBalance.type}
-                      integrationData={val.integrationData}
-                      yieldBalance={yieldBalance}
-                    />
-                  )
                 )}
               </Box>
 
@@ -294,112 +237,158 @@ export const PositionDetails = () => {
                   )
                   .extractNullable()}
 
-                {canUnstake
-                  .chain(() => stakedOrLiquidBalance.map((b) => ({ b })))
-                  .chain((val) => unstakeText.map((ut) => ({ ...val, ut })))
-                  .chain((val) =>
-                    canChangeAmount.map((cca) => ({ ...val, cca }))
-                  )
-                  .map(({ b, ut, cca }) => (
-                    <Box
-                      background="stakeSectionBackground"
-                      borderRadius="xl"
-                      marginTop="2"
-                      py="4"
-                      px="4"
-                    >
+                {Maybe.fromRecord({
+                  canUnstake,
+                  reducedStakedOrLiquidBalance,
+                  unstakeText,
+                  canChangeAmount,
+                })
+                  .map(
+                    ({
+                      reducedStakedOrLiquidBalance,
+                      unstakeText,
+                      canChangeAmount,
+                    }) => (
                       <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                      >
-                        <Box
-                          minWidth="0"
-                          display="flex"
-                          marginRight="2"
-                          flex={1}
-                        >
-                          <NumberInput
-                            onChange={onUnstakeAmountChange}
-                            value={unstakeAmount}
-                            disabled={!cca}
-                          />
-                        </Box>
-
-                        {onStakeExitIsLoading && (
-                          <Box marginRight="3" display="flex">
-                            <Spinner />
-                          </Box>
-                        )}
-
-                        <Button
-                          onClick={onUnstakeClick}
-                          disabled={unstakeDisabled}
-                          variant={{ size: "small", color: "smallButton" }}
-                        >
-                          <Text>{ut}</Text>
-                        </Button>
-                      </Box>
-
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
+                        background="stakeSectionBackground"
+                        borderRadius="xl"
                         marginTop="2"
-                        flexWrap="wrap"
+                        py="4"
+                        px="4"
                       >
-                        <Box flex={1}>
-                          <Text
-                            variant={{
-                              type: "muted",
-                              weight: "normal",
-                            }}
-                          >
-                            {unstakeFormattedAmount}
-                          </Text>
-                        </Box>
-
                         <Box
                           display="flex"
-                          justifyContent="flex-end"
+                          justifyContent="space-between"
                           alignItems="center"
                         >
-                          <Text
-                            variant={{
-                              weight: "normal",
-                            }}
+                          <Box
+                            minWidth="0"
+                            display="flex"
+                            marginRight="2"
+                            flex={1}
                           >
-                            {`${formatNumber(new BigNumber(b.amount ?? 0))} ${
-                              b.token.symbol
-                            } ${t("position_details.available")}`}
-                          </Text>
-                          {cca && (
-                            <Box
-                              as="button"
-                              borderRadius="xl"
-                              background="background"
-                              px="2"
-                              py="1"
-                              marginLeft="2"
-                              onClick={onMaxClick}
-                              className={pressAnimation}
-                            >
-                              <Text
-                                variant={{
-                                  weight: "semibold",
-                                  type: "regular",
-                                }}
-                              >
-                                {t("shared.max")}
-                              </Text>
+                            <NumberInput
+                              onChange={onUnstakeAmountChange}
+                              value={unstakeAmount}
+                              disabled={!canChangeAmount}
+                            />
+                          </Box>
+
+                          {onStakeExitIsLoading && (
+                            <Box marginRight="3" display="flex">
+                              <Spinner />
                             </Box>
                           )}
+
+                          <Button
+                            onClick={onUnstakeClick}
+                            disabled={unstakeDisabled}
+                            variant={{ size: "small", color: "smallButton" }}
+                          >
+                            <Text>{unstakeText}</Text>
+                          </Button>
+                        </Box>
+
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          marginTop="2"
+                          flexWrap="wrap"
+                        >
+                          <Box flex={1}>
+                            <Text variant={{ type: "muted", weight: "normal" }}>
+                              {unstakeFormattedAmount}
+                            </Text>
+                          </Box>
+
+                          <Box
+                            display="flex"
+                            justifyContent="flex-end"
+                            alignItems="center"
+                          >
+                            <Text variant={{ weight: "normal" }}>
+                              {t("position_details.available", {
+                                amount: formatNumber(
+                                  reducedStakedOrLiquidBalance.amount
+                                ),
+                                symbol:
+                                  reducedStakedOrLiquidBalance.token?.symbol ??
+                                  "",
+                              })}
+                            </Text>
+                            {canChangeAmount && (
+                              <Box
+                                as="button"
+                                borderRadius="xl"
+                                background="background"
+                                px="2"
+                                py="1"
+                                marginLeft="2"
+                                onClick={onMaxClick}
+                                className={pressAnimation}
+                              >
+                                <Text
+                                  variant={{
+                                    weight: "semibold",
+                                    type: "regular",
+                                  }}
+                                >
+                                  {t("shared.max")}
+                                </Text>
+                              </Box>
+                            )}
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  ))
+                    )
+                  )
                   .extractNullable()}
               </Box>
+
+              {validatorAddressesHandling.showValidatorsModal && (
+                <SelectValidator
+                  selectedValidators={
+                    validatorAddressesHandling.selectedValidators
+                  }
+                  onItemClick={(val) => {
+                    validatorAddressesHandling.onItemClick(val.address);
+
+                    if (validatorAddressesHandling.multiSelect) return;
+
+                    onValidatorsSubmit([val.address]);
+                  }}
+                  selectedStake={val.integrationData}
+                  multiSelect={validatorAddressesHandling.multiSelect}
+                  state={validatorAddressesHandling.modalState}
+                >
+                  {validatorAddressesHandling.multiSelect && (
+                    <Box
+                      px="4"
+                      paddingTop="3"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Button
+                        variant={{
+                          color: validatorAddressesHandling.submitDisabled
+                            ? "disabled"
+                            : "primary",
+                        }}
+                        disabled={validatorAddressesHandling.submitDisabled}
+                        onClick={() =>
+                          onValidatorsSubmit([
+                            ...validatorAddressesHandling.selectedValidators.values(),
+                          ])
+                        }
+                      >
+                        {t("position_details.select_validators.submit")}
+                      </Button>
+                    </Box>
+                  )}
+                </SelectValidator>
+              )}
             </Box>
           ))
           .extractNullable()

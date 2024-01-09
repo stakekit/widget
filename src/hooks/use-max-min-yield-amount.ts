@@ -37,7 +37,10 @@ export const useMaxMinYieldAmount = ({
                 Maybe.fromNullable(p.get("available"))
               )
             )
-            .map((b) => new BigNumber(b.amount))
+            .map((b) =>
+              b.reduce((acc, val) => acc.plus(val.amount), new BigNumber(0))
+            )
+            .map((b) => new BigNumber(b))
       ).alt(Maybe.of(new BigNumber(0))),
     [positionBalancesByType, stakeTokenAvailableAmount.data, type]
   );

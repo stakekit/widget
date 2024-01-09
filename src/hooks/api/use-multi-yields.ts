@@ -27,12 +27,11 @@ export const useMultiYields = (
     enabled: !!yieldIds.length,
     staleTime: config.queryClient.cacheTime,
     select: opts?.select,
-    queryFn: async ({ signal }) =>
+    queryFn: async () =>
       (
         await eitherAsyncPool(
           yieldIds.map(
-            (y) => () =>
-              getYieldOpportunity({ isLedgerLive, yieldId: y, signal })
+            (y) => () => getYieldOpportunity({ isLedgerLive, yieldId: y })
           ),
           5
         )()

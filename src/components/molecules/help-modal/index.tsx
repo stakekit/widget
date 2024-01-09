@@ -1,7 +1,7 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../atoms/box";
 import { HelpIcon } from "../../atoms/icons";
-import { SelectModal } from "../../atoms/select-modal";
+import { SelectModal, SelectModalProps } from "../../atoms/select-modal";
 import poweredBy from "../../../assets/images/powered-by.png";
 import whatIsStaking from "../../../assets/images/what-is-staking.png";
 import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.png";
@@ -14,7 +14,7 @@ import { container, imageStyle } from "./style.css";
 import { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
-import { ReactNode, useContext } from "react";
+import { ReactNode, useContext, useMemo } from "react";
 import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
 import { TrackingContext } from "../../../providers/tracking";
@@ -232,20 +232,37 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
 
   const { description, image, title, link, button } = getContent(modal);
 
+  const selectModalProps = useMemo<SelectModalProps>(() => {
+    const base: SelectModalProps = {
+      onOpen: () => trackEvent?.("helpModalOpened", { modal: title }),
+    };
+
+    return modal.type === "geoBlock"
+      ? {
+          ...base,
+          hideTopBar: true,
+          disableClose: true,
+          state: {
+            isOpen: true,
+            setOpen: () => {},
+          },
+        }
+      : {
+          ...base,
+          trigger: (
+            <Trigger asChild={!!customTrigger}>
+              {customTrigger ?? (
+                <Box display="flex" alignItems="center" justifyContent="center">
+                  <HelpIcon />
+                </Box>
+              )}
+            </Trigger>
+          ),
+        };
+  }, [customTrigger, modal.type, title, trackEvent]);
+
   return (
-    <SelectModal
-      forceOpen={modal.type === "geoBlock"}
-      onOpen={() => trackEvent?.("helpModalOpened", { modal: title })}
-      trigger={
-        <Trigger asChild={!!customTrigger}>
-          {customTrigger ?? (
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <HelpIcon />
-            </Box>
-          )}
-        </Trigger>
-      }
-    >
+    <SelectModal {...selectModalProps}>
       <Box
         display="flex"
         flexDirection="column"

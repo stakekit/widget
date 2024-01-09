@@ -1,10 +1,10 @@
 import { vars } from "../../../styles";
 
-export const CheckSteps = (props: { hw?: number }) => (
+export const CheckSteps = (props: { hw?: number; color?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 448 512"
-    fill={vars.color.background}
+    fill={props.color ?? vars.color.background}
     height={props.hw ?? 24}
     width={props.hw ?? 24}
   >

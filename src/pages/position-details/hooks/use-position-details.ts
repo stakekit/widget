@@ -1,24 +1,27 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useMemo } from "react";
-import { Maybe } from "purify-ts";
+import { useEffect, useMemo, useRef } from "react";
+import { Left, Maybe, Right } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { usePrices } from "../../../hooks/api/use-prices";
 import {
   PendingActionDto,
   PriceRequestDto,
   TokenDto,
+  ValidatorDto,
   YieldBalanceDto,
+  YieldDto,
 } from "@stakekit/api-hooks";
 import { config } from "../../../config";
 import { tokenToTokenDto } from "../../../utils/mappers";
 import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
   getBaseToken,
   getMaxAmount,
   getTokenPriceInUSD,
 } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
-import { usePositionData } from "../../../hooks/use-position-data";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { useOnStakeExit } from "./use-on-stake-exit";
@@ -31,10 +34,14 @@ import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { preparePendingActionRequestDto } from "./utils";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
-import { useProviderDetails } from "../../../hooks/use-provider-details";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
+import { List } from "purify-ts";
+import { useSavedRef } from "../../../hooks";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
@@ -42,13 +49,11 @@ export const usePositionDetails = () => {
 
   const trackEvent = useTrackEvent();
 
-  const params = useParams<{
+  const { integrationId, balanceId, pendingActionType } = useParams<{
     integrationId: string;
-    defaultOrValidatorId: "default" | (string & {});
+    balanceId: string;
+    pendingActionType?: PendingActionDto["type"];
   }>();
-
-  const integrationId = params.integrationId;
-  const defaultOrValidatorId = params.defaultOrValidatorId ?? "default";
 
   const yieldOpportunity = useYieldOpportunity(integrationId);
 
@@ -59,11 +64,13 @@ export const usePositionDetails = () => {
 
   const unstakeAmount = unstake.chain((u) => u.amount);
 
-  const positionData = usePositionData(integrationId);
+  const positionBalances = usePositionBalances({ balanceId, integrationId });
 
-  const providerDetails = useProviderDetails({
+  const providersDetails = useProvidersDetails({
     integrationData,
-    validatorAddress: Maybe.of(defaultOrValidatorId),
+    validatorsAddresses: positionBalances.data.map((b) =>
+      b.type === "validators" ? b.validatorsAddresses : []
+    ),
   });
 
   const { t } = useTranslation();
@@ -83,24 +90,20 @@ export const usePositionDetails = () => {
     }
   });
 
-  const positionsByValidatorOrDefault = positionData.position.map(
-    (p) => p.balanceData[defaultOrValidatorId]
-  );
-
   const prices = usePrices(
     useMemo(
       () =>
-        positionsByValidatorOrDefault
+        positionBalances.data
           .map<PriceRequestDto>((val) => ({
             currency: config.currency,
-            tokenList: val.flatMap((v, i) =>
+            tokenList: val.balances.flatMap((v, i) =>
               i === 0
                 ? [tokenToTokenDto(getBaseToken(v.token)), v.token]
                 : [v.token]
             ),
           }))
           .extractNullable(),
-      [positionsByValidatorOrDefault]
+      [positionBalances]
     )
   );
 
@@ -108,12 +111,32 @@ export const usePositionDetails = () => {
    * @summary Position balance by type
    */
   const positionBalancesByType = usePositionBalanceByType(
-    positionData.position,
-    defaultOrValidatorId
+    positionBalances.data
   );
 
-  const stakedOrLiquidBalance = useStakedOrLiquidBalance(
+  const stakedOrLiquidBalances = useStakedOrLiquidBalance(
     positionBalancesByType
+  );
+
+  const reducedStakedOrLiquidBalance = useMemo(
+    () =>
+      stakedOrLiquidBalances.map((b) =>
+        b.reduce(
+          (acc, next) => {
+            acc.amount = acc.amount.plus(new BigNumber(next.amount));
+            acc.token = next.token;
+            acc.pricePerShare = next.pricePerShare;
+
+            return acc;
+          },
+          {
+            amount: new BigNumber(0),
+            token: b[0].token,
+            pricePerShare: b[0].pricePerShare,
+          }
+        )
+      ),
+    [stakedOrLiquidBalances]
   );
 
   const forceMax = useForceMaxAmount({
@@ -162,25 +185,22 @@ export const usePositionDetails = () => {
 
   // If changing unstake amount is not allowed, set `unstakeAmount` to staked amount
   // If `unstakeAmount` is less then min or greater than max, set in bounds
-
   useEffect(() => {
     Maybe.fromRecord({
-      stakedOrLiquidBalance,
+      reducedStakedOrLiquidBalance,
       unstakeAmount,
       canChangeAmount,
       integrationData,
     }).ifJust((val) => {
-      const sbAmount = new BigNumber(val.stakedOrLiquidBalance.amount);
-
       if (
         (!val.canChangeAmount || forceMax) &&
-        !sbAmount.isEqualTo(val.unstakeAmount)
+        !val.reducedStakedOrLiquidBalance.amount.isEqualTo(val.unstakeAmount)
       ) {
         dispatch({
           type: "unstake/amount/change",
           data: {
             integration: val.integrationData,
-            amount: Maybe.of(sbAmount),
+            amount: Maybe.of(val.reducedStakedOrLiquidBalance.amount),
           },
         });
       } else if (val.canChangeAmount) {
@@ -210,7 +230,7 @@ export const usePositionDetails = () => {
     integrationData,
     maxEnterOrExitAmount,
     minEnterOrExitAmount,
-    stakedOrLiquidBalance,
+    reducedStakedOrLiquidBalance,
     unstakeAmount,
   ]);
 
@@ -223,54 +243,59 @@ export const usePositionDetails = () => {
     );
   };
 
-  const unstakeFormattedAmount = Maybe.fromNullable(prices.data)
-    .chain((prices) => stakedOrLiquidBalance.map((sb) => ({ sb, prices })))
-    .chain((val) => unstakeAmount.map((sa) => ({ ...val, sa })))
-    .map((val) =>
-      getTokenPriceInUSD({
-        amount: val.sa,
-        token: val.sb.token,
-        prices: val.prices,
-        pricePerShare: val.sb.pricePerShare,
+  const unstakeFormattedAmount = useMemo(
+    () =>
+      Maybe.fromRecord({
+        prices: Maybe.fromNullable(prices.data),
+        reducedStakedOrLiquidBalance,
+        unstakeAmount,
       })
-    )
-    .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
+        .map((val) =>
+          getTokenPriceInUSD({
+            amount: val.unstakeAmount,
+            token: val.reducedStakedOrLiquidBalance.token,
+            prices: val.prices,
+            pricePerShare: val.reducedStakedOrLiquidBalance.pricePerShare,
+          })
+        )
+        .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
+    [prices.data, reducedStakedOrLiquidBalance, unstakeAmount]
+  );
 
   const onMaxClick = () => {
     trackEvent("positionDetailsPageMaxClicked", {
       yieldId: integrationData.map((v) => v.id).extract(),
     });
 
-    Maybe.fromRecord({ stakedOrLiquidBalance, integrationData }).ifJust(
-      (val) => {
-        dispatch({
-          type: "unstake/amount/change",
-          data: {
-            integration: val.integrationData,
-            amount: Maybe.of(
-              getMaxAmount({
-                gasEstimateTotal: new BigNumber(0),
-                availableAmount: new BigNumber(
-                  val.stakedOrLiquidBalance.amount
-                ),
-                integrationMaxLimit: Maybe.fromNullable(
-                  val.integrationData.args.exit?.args?.amount?.maximum
-                )
-                  .map((a) => new BigNumber(a))
-                  .orDefault(new BigNumber(Number.POSITIVE_INFINITY)),
-              })
-            ),
-          },
-        });
-      }
-    );
+    Maybe.fromRecord({
+      reducedStakedOrLiquidBalance,
+      integrationData,
+    }).ifJust((val) => {
+      dispatch({
+        type: "unstake/amount/change",
+        data: {
+          integration: val.integrationData,
+          amount: Maybe.of(
+            getMaxAmount({
+              gasEstimateTotal: new BigNumber(0),
+              availableAmount: val.reducedStakedOrLiquidBalance.amount,
+              integrationMaxLimit: Maybe.fromNullable(
+                val.integrationData.args.exit?.args?.amount?.maximum
+              )
+                .map((a) => new BigNumber(a))
+                .orDefault(new BigNumber(Number.POSITIVE_INFINITY)),
+            })
+          ),
+        },
+      });
+    });
   };
 
   const navigate = useNavigate();
 
   const onStakeExit = useOnStakeExit();
   const stakeExitRequestDto = useStakeExitRequestDto({
-    balance: stakedOrLiquidBalance,
+    balance: stakedOrLiquidBalances,
   });
 
   const onPendingAction = useOnPendingAction();
@@ -306,17 +331,73 @@ export const usePositionDetails = () => {
         .extract(),
     });
 
-    onStakeExit
-      .mutateAsync({ stakeRequestDto: stakeExitRequestDto })
-      .then(() =>
-        navigate(
-          `../../../unstake/${integrationId}/${defaultOrValidatorId}/review`,
-          { relative: "path" }
-        )
-      );
+    onStakeExit.mutateAsync({ stakeRequestDto: stakeExitRequestDto }).then(() =>
+      navigate(`../../../unstake/${integrationId}/${balanceId}/review`, {
+        relative: "path",
+      })
+    );
   };
 
+  const pendingActions = useMemo(
+    () =>
+      positionBalancesByType.map((pbbt) =>
+        [...pbbt.values()].flatMap((val) =>
+          val.flatMap((v) =>
+            v.pendingActions.map((pa) => ({
+              pendingActionDto: pa,
+              yieldBalance: v,
+              isLoading:
+                onPendingAction.variables?.pendingActionRequestDto
+                  .passthrough === pa.passthrough &&
+                onPendingAction.variables?.pendingActionRequestDto.type ===
+                  pa.type &&
+                onPendingAction.isPending,
+            }))
+          )
+        )
+      ),
+    [
+      onPendingAction.isPending,
+      onPendingAction.variables?.pendingActionRequestDto,
+      positionBalancesByType,
+    ]
+  );
+
   const { additionalAddresses, address } = useSKWallet();
+
+  const validatorAddressesHandling = useValidatorAddressesHandling();
+
+  const validatorAddressesHandlingRef = useSavedRef(validatorAddressesHandling);
+
+  const selectValidatorModalShown = useRef(false);
+
+  // On deep link, find pending action with validators requirement
+  // and open validator selection modal
+  useEffect(() => {
+    if (selectValidatorModalShown.current) return;
+
+    Maybe.fromNullable(pendingActionType)
+      .chain((val) =>
+        pendingActions.chain((pa) =>
+          List.find(
+            (p) =>
+              p.pendingActionDto.type === val &&
+              !!(
+                PAMultiValidatorsRequired(p.pendingActionDto) ||
+                PASingleValidatorRequired(p.pendingActionDto)
+              ),
+            pa
+          )
+        )
+      )
+      .ifJust((val) => {
+        selectValidatorModalShown.current = true;
+        validatorAddressesHandlingRef.current.openModal({
+          pendingActionDto: val.pendingActionDto,
+          yieldBalance: val.yieldBalance,
+        });
+      });
+  }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
 
   const onPendingActionClick = ({
     yieldBalance,
@@ -330,51 +411,97 @@ export const usePositionDetails = () => {
       type: pendingActionDto.type,
     });
 
+    if (
+      PAMultiValidatorsRequired(pendingActionDto) ||
+      PASingleValidatorRequired(pendingActionDto)
+    ) {
+      return validatorAddressesHandling.openModal({
+        pendingActionDto,
+        yieldBalance,
+      });
+    }
+
     integrationData
       .toEither(new Error("missing integration data"))
-      .chain((d) =>
-        preparePendingActionRequestDto({
-          yieldBalance,
+      .ifRight((val) =>
+        continuePendingActionFlow({
+          integrationData: val,
           pendingActionDto,
-          additionalAddresses,
-          address,
-          integration: d,
+          yieldBalance,
+          selectedValidators: [],
         })
-      )
-      .ifRight((pendingActionRequestDto) =>
-        onPendingAction
-          .mutateAsync({ pendingActionRequestDto, yieldBalance })
-          .then(() =>
-            navigate(
-              `../../../pending-action/${integrationId}/${defaultOrValidatorId}/review`,
-              { relative: "path" }
-            )
-          )
       );
   };
 
-  const error = onStakeExit.isError || onPendingAction.isError;
+  const onValidatorsSubmit = (selectedValidators: string[]) => {
+    return integrationData
+      .toEither(new Error("missing integration data"))
+      .chain((val) => {
+        if (!validatorAddressesHandling.showValidatorsModal) {
+          return Left(
+            new Error("missing validatorAddressesHandling.showValidatorsModal")
+          );
+        } else if (!selectedValidators.length) {
+          return Left(new Error("selectedValidators is empty"));
+        }
 
-  const pendingActions = useMemo(() => {
-    return positionBalancesByType.map((pbbt) =>
-      [...pbbt.values()].flatMap((val) =>
-        val.pendingActions.map((pa) => ({
-          pendingActionDto: pa,
-          yieldBalance: val,
-          isLoading:
-            onPendingAction.variables?.pendingActionRequestDto.passthrough ===
-              pa.passthrough &&
-            onPendingAction.variables?.pendingActionRequestDto.type ===
-              pa.type &&
-            onPendingAction.isPending,
-        }))
-      )
+        const { pendingActionDto, yieldBalance } = validatorAddressesHandling;
+
+        return Right({
+          yieldDto: val,
+          selectedValidators,
+          pendingActionDto,
+          yieldBalance,
+        });
+      })
+      .ifRight(
+        ({ selectedValidators, pendingActionDto, yieldBalance, yieldDto }) => {
+          trackEvent("validatorsSubmitted", {
+            yieldId: yieldDto.id,
+            type: pendingActionDto.type,
+            validators: selectedValidators,
+          });
+
+          validatorAddressesHandling.closeModal();
+
+          continuePendingActionFlow({
+            integrationData: yieldDto,
+            pendingActionDto,
+            yieldBalance,
+            selectedValidators,
+          });
+        }
+      );
+  };
+
+  const continuePendingActionFlow = ({
+    integrationData,
+    pendingActionDto,
+    yieldBalance,
+    selectedValidators,
+  }: {
+    integrationData: YieldDto;
+    pendingActionDto: PendingActionDto;
+    yieldBalance: YieldBalanceDto;
+    selectedValidators: ValidatorDto["address"][];
+  }) => {
+    preparePendingActionRequestDto({
+      yieldBalance,
+      pendingActionDto,
+      additionalAddresses,
+      address,
+      integration: integrationData,
+      selectedValidators,
+    }).ifRight((val) =>
+      onPendingAction
+        .mutateAsync({ pendingActionRequestDto: val, yieldBalance })
+        .then(() =>
+          navigate(`/pending-action/${integrationId}/${balanceId}/review`)
+        )
     );
-  }, [
-    onPendingAction.isPending,
-    onPendingAction.variables?.pendingActionRequestDto,
-    positionBalancesByType,
-  ]);
+  };
+
+  const error = onStakeExit.isError || onPendingAction.isError;
 
   const liquidTokensToNativeConversion = useMemo(
     () =>
@@ -387,11 +514,13 @@ export const usePositionDetails = () => {
         )
         .map((v) =>
           [...v.positionBalancesByType.values()].reduce((acc, curr) => {
-            acc.set(
-              curr.token.symbol,
-              `1 ${curr.token.symbol} = ${formatNumber(
-                new BigNumber(curr.pricePerShare)
-              )} ${v.integrationData.metadata.token.symbol}`
+            curr.forEach((yb) =>
+              acc.set(
+                yb.token.symbol,
+                `1 ${yb.token.symbol} = ${formatNumber(
+                  new BigNumber(yb.pricePerShare)
+                )} ${v.integrationData.metadata.token.symbol}`
+              )
             );
 
             return acc;
@@ -401,12 +530,14 @@ export const usePositionDetails = () => {
   );
 
   const isLoading =
-    positionData.isLoading || prices.isLoading || yieldOpportunity.isLoading;
+    positionBalances.isLoading ||
+    prices.isLoading ||
+    yieldOpportunity.isLoading;
 
   return {
     integrationData,
     stakeType,
-    stakedOrLiquidBalance,
+    reducedStakedOrLiquidBalance,
     positionBalancesByType,
     unstakeText,
     canUnstake,
@@ -421,8 +552,10 @@ export const usePositionDetails = () => {
     isLoading,
     onStakeExitIsLoading: onStakeExit.isPending,
     onPendingActionClick,
-    providerDetails,
+    providersDetails,
     pendingActions,
     liquidTokensToNativeConversion,
+    validatorAddressesHandling,
+    onValidatorsSubmit,
   };
 };

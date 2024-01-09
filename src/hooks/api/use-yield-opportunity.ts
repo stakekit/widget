@@ -41,14 +41,12 @@ export const getYieldOpportunity = (params: Params) =>
 
 const queryFn = async (params: Params) => (await fn(params)).unsafeCoerce();
 
-const fn = ({ isLedgerLive, yieldId, signal }: Params) =>
+const fn = ({ isLedgerLive, yieldId }: Params) =>
   withRequestErrorRetry({
     fn: () =>
-      yieldYieldOpportunity(
-        yieldId,
-        { ledgerWalletAPICompatible: isLedgerLive },
-        signal
-      ),
+      yieldYieldOpportunity(yieldId, {
+        ledgerWalletAPICompatible: isLedgerLive,
+      }),
   }).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunity");

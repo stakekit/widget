@@ -21,10 +21,14 @@ export const colorsContract = {
 
   stakeSectionBackground: "",
 
+  selectValidatorMultiSelectedBackground: "",
+  selectValidatorMultiDefaultBackground: "",
+
   positionsSectionBackgroundColor: "",
   positionsSectionBorderColor: "",
   positionsSectionDividerColor: "",
   positionsClaimRewardsBackground: "",
+  positionsActionRequiredBackground: "",
 
   modalOverlayBackground: "",
   modalBodyBackground: "",
@@ -85,10 +89,14 @@ export const lightThemeColors: typeof colorsContract = {
 
   stakeSectionBackground: "#F6F7F9",
 
+  selectValidatorMultiSelectedBackground: "#2DC969",
+  selectValidatorMultiDefaultBackground: "#fff",
+
   positionsSectionBackgroundColor: "#FFFFFF",
   positionsSectionBorderColor: "#373737",
   positionsSectionDividerColor: "#F6F7F9",
   positionsClaimRewardsBackground: "#45D65C",
+  positionsActionRequiredBackground: "#FA6878",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#FFFFFF",
@@ -149,10 +157,14 @@ export const darkThemeColors: typeof colorsContract = {
 
   stakeSectionBackground: "#363636",
 
+  selectValidatorMultiSelectedBackground: "#2DC969",
+  selectValidatorMultiDefaultBackground: "#2B2B2B",
+
   positionsSectionBackgroundColor: "#2B2B2B",
   positionsSectionBorderColor: "#2B2B2B",
   positionsSectionDividerColor: "#363636",
   positionsClaimRewardsBackground: "#45D65C",
+  positionsActionRequiredBackground: "#FA6878",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#2B2B2B",

@@ -14,7 +14,7 @@ export const useReview = () => {
     stakeAmount,
     selectedStake,
     stakeEnterTxGas,
-    selectedValidator,
+    selectedValidators,
     selectedTokenBalance,
   } = useStakeState();
 
@@ -22,7 +22,7 @@ export const useReview = () => {
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
     stakeAmount,
-    selectedValidator,
+    selectedValidators,
   });
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.review,

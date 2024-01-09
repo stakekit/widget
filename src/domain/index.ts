@@ -3,6 +3,7 @@ import { Prices, TokenString } from "./types";
 import { Token } from "@stakekit/common";
 import {
   ActionDto,
+  PendingActionDto,
   TokenDto,
   TransactionDto,
   TransactionStatus,
@@ -99,3 +100,9 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
 
 export const isTxError = (txStatus: TransactionStatus) =>
   txStatus === "FAILED" || txStatus === "BLOCKED";
+
+export const PAMultiValidatorsRequired = (pa: PendingActionDto) =>
+  !!pa.args?.args?.validatorAddresses?.required;
+
+export const PASingleValidatorRequired = (pa: PendingActionDto) =>
+  !!pa.args?.args?.validatorAddress?.required;

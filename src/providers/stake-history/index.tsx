@@ -16,7 +16,7 @@ type TypeData =
       type: "stake";
       selectedStake: YieldDto;
       stakeAmount: BigNumber;
-      selectedValidator: Maybe<ValidatorDto>;
+      selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
     }
   | { type: "unstake" }
   | { type: "pending_action" };

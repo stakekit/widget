@@ -1,12 +1,10 @@
 import {
   ChangeEvent,
   createContext,
-  forwardRef,
   PropsWithChildren,
   ReactNode,
   useContext,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useState,
 } from "react";
@@ -27,17 +25,18 @@ import { ListItem } from "../list/list-item";
 import { Spinner } from "../spinner";
 import { ItemContainerVariants } from "../list/styles.css";
 
-export type SelectModalProps = PropsWithChildren<
+type SelectModalWithoutStateProps = PropsWithChildren<
   {
     title?: string;
     inputPlaceholder?: string;
-    trigger: ReactNode;
+    trigger?: ReactNode;
     onClose?: () => void;
     onOpen?: () => void;
     searchValue?: string;
-    forceOpen?: boolean;
     isLoading?: boolean;
     errorMessage?: string;
+    disableClose?: boolean;
+    hideTopBar?: boolean;
   } & (
     | {
         onSearch: (value: string) => void;
@@ -50,9 +49,18 @@ export type SelectModalProps = PropsWithChildren<
   )
 >;
 
-const SelectModalContext = createContext<
-  { closeModal: () => void } | undefined
->(undefined);
+type SelectModalContextType = {
+  isOpen: boolean;
+  setOpen: (val: boolean) => void;
+};
+
+export type SelectModalProps = SelectModalWithoutStateProps & {
+  state?: SelectModalContextType;
+};
+
+const SelectModalContext = createContext<SelectModalContextType | undefined>(
+  undefined
+);
 
 const useSelectModalContext = () => {
   const value = useContext(SelectModalContext);
@@ -64,143 +72,144 @@ const useSelectModalContext = () => {
   return value;
 };
 
-export const SelectModal = forwardRef<{ close: () => void }, SelectModalProps>(
-  (
-    {
-      children,
-      trigger,
-      title,
-      onSearch,
-      searchValue,
-      inputPlaceholder,
-      onClose,
-      onOpen,
-      forceOpen,
-      isLoading,
-      errorMessage,
-    },
-    ref
-  ) => {
-    const [open, setOpen] = useState(false);
+const SelectModalWithoutState = ({
+  children,
+  trigger,
+  title,
+  onSearch,
+  searchValue,
+  inputPlaceholder,
+  onClose,
+  onOpen,
+  isLoading,
+  errorMessage,
+  disableClose,
+  hideTopBar,
+}: SelectModalProps) => {
+  const { isOpen, setOpen } = useSelectModalContext();
 
-    useImperativeHandle(ref, () => ({
-      close: () => setOpen(false),
-    }));
+  const onCloseRef = useSavedRef(onClose);
+  const onOpenRef = useSavedRef(onOpen);
 
-    const value = useMemo(
-      () => ({ closeModal: () => setOpen(false) }),
-      [setOpen]
-    );
+  useEffect(() => {
+    if (!isOpen) {
+      onCloseRef.current?.();
+    } else {
+      onOpenRef.current?.();
+    }
+  }, [isOpen, onCloseRef, onOpenRef]);
 
-    const onCloseRef = useSavedRef(onClose);
-    const onOpenRef = useSavedRef(onOpen);
+  const rootElement = useRootElement();
 
-    useEffect(() => {
-      if (!open) {
-        onCloseRef.current?.();
-      } else {
-        onOpenRef.current?.();
-      }
-    }, [onCloseRef, onOpenRef, open]);
+  const showTopBar = !!title || !hideTopBar || onSearch;
 
-    const rootElement = useRootElement();
+  return (
+    <Root open={isOpen} onOpenChange={setOpen}>
+      {trigger}
 
-    const showTopBar = !!title || !forceOpen || onSearch;
+      <Portal container={rootElement}>
+        <Box className={container}>
+          <Overlay onClick={() => setOpen(false)} className={overlay} />
 
-    return (
-      <SelectModalContext.Provider value={value}>
-        <Root open={forceOpen || open} onOpenChange={setOpen}>
-          {!forceOpen && trigger}
+          <Content data-testid="select-modal__container" className={content}>
+            <Box display="flex" flexDirection="column" height="full">
+              {showTopBar && (
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  px="4"
+                >
+                  <Box flex={1} display="flex" alignItems="center" gap="2">
+                    {title && (
+                      <Text
+                        data-testid="select-modal__title"
+                        variant={{ weight: "bold", size: "large" }}
+                      >
+                        {title}
+                      </Text>
+                    )}
 
-          <Portal container={rootElement}>
-            <Box className={container}>
-              <Overlay onClick={() => setOpen(false)} className={overlay} />
-
-              <Content
-                data-testid="select-modal__container"
-                className={content}
-              >
-                <Box display="flex" flexDirection="column" height="full">
-                  {showTopBar && (
-                    <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      px="4"
-                    >
-                      <Box flex={1} display="flex" alignItems="center" gap="2">
-                        {title && (
-                          <Text
-                            data-testid="select-modal__title"
-                            variant={{ weight: "bold", size: "large" }}
-                          >
-                            {title}
-                          </Text>
-                        )}
-
-                        {isLoading && <Spinner />}
-                      </Box>
-                      {!forceOpen && (
-                        <Box as="button" onClick={() => setOpen(false)}>
-                          <XIcon />
-                        </Box>
-                      )}
+                    {isLoading && <Spinner />}
+                  </Box>
+                  {!disableClose && (
+                    <Box as="button" onClick={() => setOpen(false)}>
+                      <XIcon />
                     </Box>
                   )}
-
-                  {onSearch && (
-                    <Box
-                      display="flex"
-                      mx="4"
-                      my="2"
-                      background="tokenSelectBackground"
-                      borderRadius="xl"
-                      alignItems="center"
-                      as="label"
-                    >
-                      <Box mx="3" display="flex" alignItems="center">
-                        <SearchIcon />
-                      </Box>
-                      <Box
-                        data-testid="select-modal__search-input"
-                        className={noOutline}
-                        as="input"
-                        border="none"
-                        flex={1}
-                        py="3"
-                        borderRadius="xl"
-                        color="text"
-                        background="tokenSelectBackground"
-                        placeholder={inputPlaceholder ?? ""}
-                        value={searchValue}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                          onSearch(e.target.value)
-                        }
-                      />
-                    </Box>
-                  )}
-
-                  {!!errorMessage && (
-                    <Box
-                      display="flex"
-                      justifyContent="center"
-                      marginTop="4"
-                      marginBottom="2"
-                    >
-                      <Text variant={{ type: "danger" }}>{errorMessage}</Text>
-                    </Box>
-                  )}
-
-                  {children}
                 </Box>
-              </Content>
+              )}
+
+              {onSearch && (
+                <Box
+                  display="flex"
+                  mx="4"
+                  my="2"
+                  background="tokenSelectBackground"
+                  borderRadius="xl"
+                  alignItems="center"
+                  as="label"
+                >
+                  <Box mx="3" display="flex" alignItems="center">
+                    <SearchIcon />
+                  </Box>
+                  <Box
+                    data-testid="select-modal__search-input"
+                    className={noOutline}
+                    as="input"
+                    border="none"
+                    flex={1}
+                    py="3"
+                    borderRadius="xl"
+                    color="text"
+                    background="tokenSelectBackground"
+                    placeholder={inputPlaceholder ?? ""}
+                    value={searchValue}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      onSearch(e.target.value)
+                    }
+                  />
+                </Box>
+              )}
+
+              {!!errorMessage && (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  marginTop="4"
+                  marginBottom="2"
+                >
+                  <Text variant={{ type: "danger" }}>{errorMessage}</Text>
+                </Box>
+              )}
+
+              {children}
             </Box>
-          </Portal>
-        </Root>
-      </SelectModalContext.Provider>
-    );
-  }
-);
+          </Content>
+        </Box>
+      </Portal>
+    </Root>
+  );
+};
+
+export const SelectModal = ({ state, ...props }: SelectModalProps) => {
+  const [isOpen, setOpen] = useState(false);
+
+  const value = useMemo<SelectModalContextType>(
+    () =>
+      state ?? {
+        isOpen,
+        setOpen: (val) => setOpen(val),
+      },
+    [isOpen, state]
+  );
+
+  return (
+    <SelectModalContext.Provider value={value}>
+      <SelectModalWithoutState {...props} />
+    </SelectModalContext.Provider>
+  );
+};
 
 export const SelectModalItemContainer = ({ children }: PropsWithChildren) => (
   <Box mx="4" className={selectModalItemContainer}>
@@ -214,21 +223,16 @@ export const SelectModalItem = ({
   testId,
   variant,
 }: PropsWithChildren<{
-  onItemClick?: () => void;
+  onItemClick?: (args: { closeModal: () => void }) => void;
   testId?: string;
   variant?: ItemContainerVariants;
 }>) => {
-  const { closeModal } = useSelectModalContext();
+  const { setOpen } = useSelectModalContext();
 
-  const onClick = () => {
-    if (onItemClick) {
-      closeModal();
-      onItemClick?.();
-    }
-  };
+  const onClick = () => onItemClick?.({ closeModal: () => setOpen(false) });
 
   return (
-    <ListItem variant={variant} onClick={onClick}>
+    <ListItem variant={variant} onClick={onClick} testId={testId}>
       {children}
     </ListItem>
   );

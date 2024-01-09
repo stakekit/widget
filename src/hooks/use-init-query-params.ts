@@ -9,7 +9,8 @@ import { queryClient } from "../services/query-client";
 import { YieldDto } from "@stakekit/api-hooks";
 
 const queryKey = ["init-params"];
-const staleTime = Infinity;
+const staleTime = 0;
+const cacheTime = 0;
 
 export const useInitQueryParams = () => {
   const { isLedgerLive } = useSKWallet();
@@ -17,6 +18,7 @@ export const useInitQueryParams = () => {
   return useQuery({
     queryKey,
     staleTime,
+    gcTime: cacheTime,
     queryFn: () => queryFn({ isLedgerLive }),
   });
 };
@@ -26,6 +28,7 @@ export const getInitialQueryParams = (...params: Parameters<typeof fn>) =>
     queryClient.fetchQuery({
       queryKey,
       staleTime,
+      gcTime: cacheTime,
       queryFn: () => queryFn(...params),
     })
   ).mapLeft((e) => {

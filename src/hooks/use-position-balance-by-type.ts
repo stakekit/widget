@@ -1,5 +1,4 @@
 import { usePrices } from "./api/use-prices";
-import { usePositionData } from "./use-position-data";
 import { PriceRequestDto, YieldBalanceDto } from "@stakekit/api-hooks";
 import { config } from "../config";
 import { tokenToTokenDto } from "../utils/mappers";
@@ -9,29 +8,25 @@ import { PositionBalancesByType } from "../domain/types/positions";
 import { createSelector } from "reselect";
 import { Prices } from "../domain/types";
 import BigNumber from "bignumber.js";
+import { usePositionBalances } from "./use-position-balances";
 
 export const usePositionBalanceByType = (
-  position: ReturnType<typeof usePositionData>["position"],
-  defaultOrValidatorId: "default" | (string & {})
+  positionBalancesData: ReturnType<typeof usePositionBalances>["data"]
 ) => {
-  const positionsByValidatorOrDefault = position.map(
-    (p) => p.balanceData[defaultOrValidatorId]
-  );
-
   const prices = usePrices(
     useMemo(
       () =>
-        positionsByValidatorOrDefault
+        positionBalancesData
           .map<PriceRequestDto>((val) => ({
             currency: config.currency,
-            tokenList: val.flatMap((v, i) =>
+            tokenList: val.balances.flatMap((v, i) =>
               i === 0
                 ? [tokenToTokenDto(getBaseToken(v.token)), v.token]
                 : [v.token]
             ),
           }))
           .extractNullable(),
-      [positionsByValidatorOrDefault]
+      [positionBalancesData]
     )
   );
 
@@ -40,10 +35,13 @@ export const usePositionBalanceByType = (
    */
   return useMemo(
     () =>
-      positionsByValidatorOrDefault.map((val) =>
-        getPositionBalanceByTypeWithPrices({ prices: prices.data, pvd: val })
+      positionBalancesData.map((val) =>
+        getPositionBalanceByTypeWithPrices({
+          prices: prices.data,
+          pvd: val.balances,
+        })
       ),
-    [positionsByValidatorOrDefault, prices.data]
+    [positionBalancesData, prices.data]
   );
 };
 
@@ -74,7 +72,9 @@ const getPositionBalanceByTypeWithPrices = createSelector(
           })
         : new BigNumber(0);
 
-      acc.set(cur.type, { ...cur, tokenPriceInUsd });
+      const prev = acc.get(cur.type);
+
+      acc.set(cur.type, [...(prev ?? []), { ...cur, tokenPriceInUsd }]);
 
       return acc;
     }, new Map() as PositionBalancesByType)
