@@ -11,7 +11,7 @@
       "inputs": ["src/**"]
     },
     "turbo:test": {
-      "inputs": ["tests/**"]
+      "inputs": ["src/**", "tests/**"]
     }
   }
 }
