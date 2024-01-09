@@ -17,3 +17,7 @@ export type GetEitherAsyncLeft<T> = T extends EitherAsync<infer E, any>
 export type GetEitherRight<T> = T extends Either<any, infer R> ? R : never;
 
 export type GetMaybeJust<T> = T extends Maybe<infer R> ? R : never;
+
+export type Action<T extends string, D = void> = D extends void
+  ? { type: T }
+  : { type: T; data: D };

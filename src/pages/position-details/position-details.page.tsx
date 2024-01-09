@@ -18,6 +18,7 @@ import { PositionBalances } from "./components/position-balances";
 import { Maybe } from "purify-ts";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { ProviderDetails } from "./components/provider-details";
+import { SelectValidator } from "../../components/molecules/select-validator";
 
 export const PositionDetails = () => {
   const {
@@ -41,6 +42,8 @@ export const PositionDetails = () => {
     pendingActions,
     providersDetails,
     liquidTokensToNativeConversion,
+    validatorAddressesHandling,
+    onValidatorsSubmit,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -342,6 +345,50 @@ export const PositionDetails = () => {
                   )
                   .extractNullable()}
               </Box>
+
+              {validatorAddressesHandling.showValidatorsModal && (
+                <SelectValidator
+                  selectedValidators={
+                    validatorAddressesHandling.selectedValidators
+                  }
+                  onItemClick={(val) => {
+                    validatorAddressesHandling.onItemClick(val.address);
+
+                    if (validatorAddressesHandling.multiSelect) return;
+
+                    onValidatorsSubmit([val.address]);
+                  }}
+                  selectedStake={val.integrationData}
+                  multiSelect={validatorAddressesHandling.multiSelect}
+                  state={validatorAddressesHandling.modalState}
+                >
+                  {validatorAddressesHandling.multiSelect && (
+                    <Box
+                      px="4"
+                      paddingTop="3"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Button
+                        variant={{
+                          color: validatorAddressesHandling.submitDisabled
+                            ? "disabled"
+                            : "primary",
+                        }}
+                        disabled={validatorAddressesHandling.submitDisabled}
+                        onClick={() =>
+                          onValidatorsSubmit([
+                            ...validatorAddressesHandling.selectedValidators.values(),
+                          ])
+                        }
+                      >
+                        {t("position_details.select_validators.submit")}
+                      </Button>
+                    </Box>
+                  )}
+                </SelectValidator>
+              )}
             </Box>
           ))
           .extractNullable()

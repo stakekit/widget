@@ -50,6 +50,7 @@ import { useGeoBlock } from "./hooks/use-geo-block";
 import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
+import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
 const Widget = () => {
   useToggleTheme();
@@ -59,7 +60,7 @@ const Widget = () => {
     geoBlock ? geoBlock.regionCode : undefined
   );
 
-  const { chain } = useSKWallet();
+  const { chain, address } = useSKWallet();
 
   const pathnameRef = useSavedRef(useLocation().pathname);
   const navigateRef = useSavedRef(useNavigate());
@@ -69,9 +70,18 @@ const Widget = () => {
    */
   useEffect(() => {
     if (pathnameRef.current !== "/") {
+      const url = new URL(window.location.href);
+      const newUrl = new URL(window.location.origin);
+      if (url.searchParams.has("embed")) {
+        newUrl.searchParams.set("embed", "true");
+      }
+
+      window.history.pushState({}, document.title, newUrl.href);
       navigateRef.current("/", { replace: true });
     }
-  }, [chain, pathnameRef, navigateRef]);
+  }, [chain, address, pathnameRef, navigateRef]);
+
+  useHandleDeepLinks();
 
   useAutoConnectInjectedProviderMachine();
 
@@ -117,6 +127,10 @@ const Widget = () => {
               >
                 <Route
                   path="positions/:integrationId/:balanceId"
+                  element={<PositionDetails />}
+                />
+                <Route
+                  path="positions/:integrationId/:balanceId/:pendingActionType"
                   element={<PositionDetails />}
                 />
                 <Route

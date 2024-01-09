@@ -21,11 +21,11 @@ import { Trigger } from "@radix-ui/react-alert-dialog";
 
 export const SelectValidatorTrigger = ({
   onRemoveValidator,
-  supportsMultiVal,
+  multiSelect,
   selectedValidatorsArr,
 }: {
   onRemoveValidator: (item: ValidatorDto) => void;
-  supportsMultiVal: boolean;
+  multiSelect: boolean;
   selectedValidatorsArr: ValidatorDto[];
 }) => {
   const { t } = useTranslation();
@@ -78,7 +78,7 @@ export const SelectValidatorTrigger = ({
                         </Box>
                       )}
 
-                      {supportsMultiVal && selectedValidatorsArr.length > 1 && (
+                      {multiSelect && selectedValidatorsArr.length > 1 && (
                         <Box
                           as="button"
                           display="flex"
@@ -93,7 +93,7 @@ export const SelectValidatorTrigger = ({
                 );
               })}
 
-              {supportsMultiVal ? (
+              {multiSelect ? (
                 <Box>
                   <Trigger asChild>
                     <Box as="button" className={addValidatorButton}>
@@ -109,7 +109,7 @@ export const SelectValidatorTrigger = ({
             </>
           );
 
-          return supportsMultiVal ? (
+          return multiSelect ? (
             element
           ) : (
             <Trigger asChild>

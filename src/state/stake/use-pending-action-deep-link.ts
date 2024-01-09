@@ -1,4 +1,10 @@
-import { AddressesDto, yieldGetSingleYieldBalances } from "@stakekit/api-hooks";
+import {
+  AddressesDto,
+  PendingActionDto,
+  YieldBalanceDto,
+  YieldDto,
+  yieldGetSingleYieldBalances,
+} from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { Override } from "../../types";
@@ -10,18 +16,23 @@ import { useSKWallet } from "../../providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
+import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
+} from "../../domain";
 
 export const usePendingActionDeepLink = () => {
-  const { isLedgerLive, isConnected } = useSKWallet();
+  const { isLedgerLive, isConnected, address } = useSKWallet();
 
   const wagmiConfig = useWagmiConfig();
 
   const onPendingAction = useOnPendingAction();
 
   return useQuery({
-    staleTime: Infinity,
-    queryKey: ["pending-action-deep-link", isLedgerLive],
-    enabled: !!(isConnected && wagmiConfig.data?.wagmiConfig),
+    staleTime: 0,
+    gcTime: 0,
+    queryKey: ["pending-action-deep-link", isLedgerLive, address],
+    enabled: !!(isConnected && address && wagmiConfig.data?.wagmiConfig),
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
@@ -84,7 +95,6 @@ const fn = ({
           withRequestErrorRetry({
             fn: () =>
               yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-                args: { validatorAddresses: [] },
                 addresses: {
                   address: data.address,
                   additionalAddresses: data.additionalAddresses,
@@ -104,8 +114,8 @@ const fn = ({
     )
     .chain((data) =>
       EitherAsync.liftEither(
-        Right(data.singleYieldBalances).chain((v) => {
-          for (const balance of v) {
+        Right(data.singleYieldBalances).chain((balances) => {
+          for (const balance of balances) {
             if (
               data.validatorAddress &&
               balance.validatorAddress !== data.validatorAddress
@@ -121,7 +131,7 @@ const fn = ({
               return Right({
                 pendingAction,
                 balance,
-                defaultOrValidatorId: balance.validatorAddress ?? "default",
+                balanceId: balance.groupId ?? "default",
               });
             }
           }
@@ -134,27 +144,49 @@ const fn = ({
             (yieldOp) => ({ ...val, yieldOp })
           )
         )
-        .chain((val) =>
-          EitherAsync.liftEither(
-            preparePendingActionRequestDto({
-              address: data.address,
-              additionalAddresses: data.additionalAddresses ?? null,
-              integration: val.yieldOp,
-              yieldBalance: val.balance,
-              pendingActionDto: val.pendingAction,
-            })
-          )
-            .chain((pendingActionRequestDto) =>
-              EitherAsync(() =>
-                onPendingAction({
-                  pendingActionRequestDto,
-                  yieldBalance: val.balance,
+        .chain<
+          Error,
+          | {
+              type: "positionDetails";
+              yieldOp: YieldDto;
+              pendingAction: PendingActionDto;
+              balance: YieldBalanceDto;
+              balanceId: string;
+            }
+          | ({ type: "review"; balanceId: string } & Awaited<
+              ReturnType<typeof onPendingAction>
+            >)
+        >((val) =>
+          PAMultiValidatorsRequired(val.pendingAction) ||
+          PASingleValidatorRequired(val.pendingAction)
+            ? EitherAsync.liftEither(
+                Right({
+                  type: "positionDetails",
+                  ...val,
                 })
-              ).mapLeft(() => new Error("on pending action failed"))
-            )
-            .map((res) => ({
-              ...res,
-              defaultOrValidatorId: val.defaultOrValidatorId,
-            }))
+              )
+            : EitherAsync.liftEither(
+                preparePendingActionRequestDto({
+                  address: data.address,
+                  additionalAddresses: data.additionalAddresses ?? null,
+                  integration: val.yieldOp,
+                  yieldBalance: val.balance,
+                  pendingActionDto: val.pendingAction,
+                  selectedValidators: [],
+                })
+              )
+                .chain((pendingActionRequestDto) =>
+                  EitherAsync(() =>
+                    onPendingAction({
+                      pendingActionRequestDto,
+                      yieldBalance: val.balance,
+                    })
+                  ).mapLeft(() => new Error("on pending action failed"))
+                )
+                .map((res) => ({
+                  ...res,
+                  type: "review",
+                  balanceId: val.balanceId,
+                }))
         )
     );

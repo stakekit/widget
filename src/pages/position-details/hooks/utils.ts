@@ -1,10 +1,11 @@
 import {
   PendingActionDto,
   PendingActionRequestDto,
+  ValidatorDto,
   YieldBalanceDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { Either, Maybe } from "purify-ts";
+import { Either, List, Maybe } from "purify-ts";
 import { SKWallet } from "../../../domain/types";
 
 export const preparePendingActionRequestDto = ({
@@ -13,12 +14,14 @@ export const preparePendingActionRequestDto = ({
   pendingActionDto,
   integration,
   yieldBalance,
+  selectedValidators,
 }: {
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: PendingActionDto;
   yieldBalance: YieldBalanceDto;
   integration: YieldDto;
+  selectedValidators: ValidatorDto["address"][];
 }): Either<
   Error,
   PendingActionRequestDto & {
@@ -31,17 +34,26 @@ export const preparePendingActionRequestDto = ({
 > =>
   Maybe.fromNullable(address)
     .toEither(new Error("missing address"))
-    .map((val) => ({
-      address: val,
-      additionalAddresses: additionalAddresses ?? undefined,
-      gasFeeToken: integration.metadata.gasFeeToken,
-      args: {
-        ...(integration.args.exit?.args?.validatorAddresses?.required
-          ? { validatorAddresses: yieldBalance.validatorAddresses }
-          : { validatorAddress: yieldBalance.validatorAddress }),
+    .map((val) => {
+      const args: PendingActionRequestDto["args"] = {
         amount: yieldBalance.amount,
-      },
-      integrationId: integration.id,
-      passthrough: pendingActionDto.passthrough,
-      type: pendingActionDto.type,
-    }));
+      };
+
+      if (selectedValidators.length) {
+        if (pendingActionDto.args?.args?.validatorAddresses?.required) {
+          args.validatorAddresses = selectedValidators;
+        } else if (pendingActionDto.args?.args?.validatorAddress?.required) {
+          args.validatorAddress = List.head(selectedValidators).orDefault("");
+        }
+      }
+
+      return {
+        address: val,
+        additionalAddresses: additionalAddresses ?? undefined,
+        gasFeeToken: integration.metadata.gasFeeToken,
+        args,
+        integrationId: integration.id,
+        passthrough: pendingActionDto.passthrough,
+        type: pendingActionDto.type,
+      };
+    });

@@ -34,6 +34,7 @@ const trackEventMap = {
   selectYieldModalOpened: "Select yield modal opened",
   yieldSelected: "Yield selected",
   selectValidatorModalOpened: "Select validator modal opened",
+  selectValidatorModalClosed: "Select validator modal closed",
   selectValidatorViewMoreClicked: "Select validator view more clicked",
   validatorSelected: "Validator selected",
   validatorRemoved: "Validator removed",
@@ -52,6 +53,7 @@ const trackEventMap = {
   positionDetailsPageMaxClicked: "Position details page max clicked",
   unstakeClicked: "Unstake clicked",
   pendingActionClicked: "Pending action clicked",
+  validatorsSubmitted: "Validators submitted",
   validatorImported: "Validator imported",
   viewTxClicked: "View transaction clicked",
 } as const;

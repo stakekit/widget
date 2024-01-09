@@ -25,7 +25,7 @@ export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { isConnected, address } = useSKWallet();
+  const { isConnected, isConnecting, address } = useSKWallet();
 
   const wagmiConfig = useWagmiConfig();
 
@@ -42,7 +42,7 @@ export const Header = () => {
     navigate(-1);
   };
 
-  const logout = useLogout();
+  const { mutateAsync: logout } = useLogout();
 
   const onXPress = () => {
     trackEvent("widgetDisconnectClicked");
@@ -93,7 +93,7 @@ export const Header = () => {
                 gap="2"
               >
                 {(() => {
-                  if (!isConnected || !chain || !account) {
+                  if ((!isConnected && !isConnecting) || !chain || !account) {
                     return null;
                   }
 

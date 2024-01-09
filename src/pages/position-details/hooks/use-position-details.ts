@@ -1,17 +1,21 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect, useMemo } from "react";
-import { Maybe } from "purify-ts";
+import { useEffect, useMemo, useRef } from "react";
+import { Left, Maybe, Right } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { usePrices } from "../../../hooks/api/use-prices";
 import {
   PendingActionDto,
   PriceRequestDto,
   TokenDto,
+  ValidatorDto,
   YieldBalanceDto,
+  YieldDto,
 } from "@stakekit/api-hooks";
 import { config } from "../../../config";
 import { tokenToTokenDto } from "../../../utils/mappers";
 import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
   getBaseToken,
   getMaxAmount,
   getTokenPriceInUSD,
@@ -35,6 +39,9 @@ import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
+import { List } from "purify-ts";
+import { useSavedRef } from "../../../hooks";
 
 export const usePositionDetails = () => {
   const { unstake } = useUnstakeOrPendingActionState();
@@ -42,9 +49,10 @@ export const usePositionDetails = () => {
 
   const trackEvent = useTrackEvent();
 
-  const { integrationId, balanceId } = useParams<{
+  const { integrationId, balanceId, pendingActionType } = useParams<{
     integrationId: string;
     balanceId: string;
+    pendingActionType?: PendingActionDto["type"];
   }>();
 
   const yieldOpportunity = useYieldOpportunity(integrationId);
@@ -177,7 +185,6 @@ export const usePositionDetails = () => {
 
   // If changing unstake amount is not allowed, set `unstakeAmount` to staked amount
   // If `unstakeAmount` is less then min or greater than max, set in bounds
-
   useEffect(() => {
     Maybe.fromRecord({
       reducedStakedOrLiquidBalance,
@@ -331,45 +338,6 @@ export const usePositionDetails = () => {
     );
   };
 
-  const { additionalAddresses, address } = useSKWallet();
-
-  const onPendingActionClick = ({
-    yieldBalance,
-    pendingActionDto,
-  }: {
-    pendingActionDto: PendingActionDto;
-    yieldBalance: YieldBalanceDto;
-  }) => {
-    trackEvent("pendingActionClicked", {
-      yieldId: integrationData.map((v) => v.id).extract(),
-      type: pendingActionDto.type,
-    });
-
-    integrationData
-      .toEither(new Error("missing integration data"))
-      .chain((d) =>
-        preparePendingActionRequestDto({
-          yieldBalance,
-          pendingActionDto,
-          additionalAddresses,
-          address,
-          integration: d,
-        })
-      )
-      .ifRight((pendingActionRequestDto) =>
-        onPendingAction
-          .mutateAsync({ pendingActionRequestDto, yieldBalance })
-          .then(() =>
-            navigate(
-              `../../../pending-action/${integrationId}/${balanceId}/review`,
-              { relative: "path" }
-            )
-          )
-      );
-  };
-
-  const error = onStakeExit.isError || onPendingAction.isError;
-
   const pendingActions = useMemo(
     () =>
       positionBalancesByType.map((pbbt) =>
@@ -394,6 +362,146 @@ export const usePositionDetails = () => {
       positionBalancesByType,
     ]
   );
+
+  const { additionalAddresses, address } = useSKWallet();
+
+  const validatorAddressesHandling = useValidatorAddressesHandling();
+
+  const validatorAddressesHandlingRef = useSavedRef(validatorAddressesHandling);
+
+  const selectValidatorModalShown = useRef(false);
+
+  // On deep link, find pending action with validators requirement
+  // and open validator selection modal
+  useEffect(() => {
+    if (selectValidatorModalShown.current) return;
+
+    Maybe.fromNullable(pendingActionType)
+      .chain((val) =>
+        pendingActions.chain((pa) =>
+          List.find(
+            (p) =>
+              p.pendingActionDto.type === val &&
+              !!(
+                PAMultiValidatorsRequired(p.pendingActionDto) ||
+                PASingleValidatorRequired(p.pendingActionDto)
+              ),
+            pa
+          )
+        )
+      )
+      .ifJust((val) => {
+        selectValidatorModalShown.current = true;
+        validatorAddressesHandlingRef.current.openModal({
+          pendingActionDto: val.pendingActionDto,
+          yieldBalance: val.yieldBalance,
+        });
+      });
+  }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
+
+  const onPendingActionClick = ({
+    yieldBalance,
+    pendingActionDto,
+  }: {
+    pendingActionDto: PendingActionDto;
+    yieldBalance: YieldBalanceDto;
+  }) => {
+    trackEvent("pendingActionClicked", {
+      yieldId: integrationData.map((v) => v.id).extract(),
+      type: pendingActionDto.type,
+    });
+
+    if (
+      PAMultiValidatorsRequired(pendingActionDto) ||
+      PASingleValidatorRequired(pendingActionDto)
+    ) {
+      return validatorAddressesHandling.openModal({
+        pendingActionDto,
+        yieldBalance,
+      });
+    }
+
+    integrationData
+      .toEither(new Error("missing integration data"))
+      .ifRight((val) =>
+        continuePendingActionFlow({
+          integrationData: val,
+          pendingActionDto,
+          yieldBalance,
+          selectedValidators: [],
+        })
+      );
+  };
+
+  const onValidatorsSubmit = (selectedValidators: string[]) => {
+    return integrationData
+      .toEither(new Error("missing integration data"))
+      .chain((val) => {
+        if (!validatorAddressesHandling.showValidatorsModal) {
+          return Left(
+            new Error("missing validatorAddressesHandling.showValidatorsModal")
+          );
+        } else if (!selectedValidators.length) {
+          return Left(new Error("selectedValidators is empty"));
+        }
+
+        const { pendingActionDto, yieldBalance } = validatorAddressesHandling;
+
+        return Right({
+          yieldDto: val,
+          selectedValidators,
+          pendingActionDto,
+          yieldBalance,
+        });
+      })
+      .ifRight(
+        ({ selectedValidators, pendingActionDto, yieldBalance, yieldDto }) => {
+          trackEvent("validatorsSubmitted", {
+            yieldId: yieldDto.id,
+            type: pendingActionDto.type,
+            validators: selectedValidators,
+          });
+
+          validatorAddressesHandling.closeModal();
+
+          continuePendingActionFlow({
+            integrationData: yieldDto,
+            pendingActionDto,
+            yieldBalance,
+            selectedValidators,
+          });
+        }
+      );
+  };
+
+  const continuePendingActionFlow = ({
+    integrationData,
+    pendingActionDto,
+    yieldBalance,
+    selectedValidators,
+  }: {
+    integrationData: YieldDto;
+    pendingActionDto: PendingActionDto;
+    yieldBalance: YieldBalanceDto;
+    selectedValidators: ValidatorDto["address"][];
+  }) => {
+    preparePendingActionRequestDto({
+      yieldBalance,
+      pendingActionDto,
+      additionalAddresses,
+      address,
+      integration: integrationData,
+      selectedValidators,
+    }).ifRight((val) =>
+      onPendingAction
+        .mutateAsync({ pendingActionRequestDto: val, yieldBalance })
+        .then(() =>
+          navigate(`/pending-action/${integrationId}/${balanceId}/review`)
+        )
+    );
+  };
+
+  const error = onStakeExit.isError || onPendingAction.isError;
 
   const liquidTokensToNativeConversion = useMemo(
     () =>
@@ -447,5 +555,7 @@ export const usePositionDetails = () => {
     providersDetails,
     pendingActions,
     liquidTokensToNativeConversion,
+    validatorAddressesHandling,
+    onValidatorsSubmit,
   };
 };

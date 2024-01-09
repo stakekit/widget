@@ -8,11 +8,11 @@ import {
   useMemo,
   useReducer,
 } from "react";
-import { Action } from "../stake/types";
 import { useStakeExitAndTxsConstructMutationState } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { ActionDto, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstructMutationState } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { useOnPendingActionMutationState } from "../../pages/position-details/hooks/use-on-pending-action";
+import { Action } from "../../types";
 
 type UnstakeAmountChange = Action<
   "unstake/amount/change",

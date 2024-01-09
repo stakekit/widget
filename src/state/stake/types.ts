@@ -6,10 +6,7 @@ import {
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-
-export type Action<T extends string, D = void> = D extends void
-  ? { type: T }
-  : { type: T; data: D };
+import { Action } from "../../types";
 
 export type State = {
   selectedTokenBalance: Maybe<TokenBalanceScanResponseDto>;

@@ -114,7 +114,8 @@
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
 
     "opportunity_search_title": "Select a yield",
-    "validator_search_title": "Select validator",
+    "validator_search_title_one": "Select validator",
+    "validator_search_title_other": "Select validators",
     "reward_token": "You'll receive {{symbol}} <highlight0>via {{providerName}}</highlight0>",
     "tab_earn": "Earn",
     "tab_positions": "Positions",
@@ -251,6 +252,9 @@
     "unstake": "Unstake",
     "withdraw": "Withdraw",
     "available": "{{amount}} {{symbol}} available",
+    "select_validators": {
+      "submit": "Submit"
+    },
     "balance_type": {
       "available": "Available",
       "staked": "Staked",

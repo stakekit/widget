@@ -1,31 +1,30 @@
 import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
+import { useTranslation } from "react-i18next";
+import { ComponentProps } from "react";
+import { GroupedVirtualList } from "../../atoms/virtual-list";
+import { Box } from "../../atoms/box";
+import { Text } from "../../atoms/typography";
+import { getRewardTypeFormatted } from "../../../utils/get-reward-type";
+import { Button } from "../../atoms/button";
 import {
-  Box,
-  Button,
   SelectModalItem,
   SelectModalItemContainer,
-  Text,
-} from "../../../../../components";
-import { getRewardTypeFormatted } from "../../../../../utils/get-reward-type";
+} from "../../atoms/select-modal";
+import { Image } from "../../atoms/image";
+import { ImageFallback } from "../../atoms/image-fallback";
+import { PreferredIcon } from "../../atoms/icons/preferred";
+import { getRewardRateFormatted } from "../../../utils/get-reward-rate";
 import {
   modalItemNameContainer,
   validatorVirtuosoContainer,
-} from "../../styles.css";
-import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
-import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
-import { getRewardRateFormatted } from "../../../../../utils/get-reward-rate";
-import { useTranslation } from "react-i18next";
-import { State } from "../../../../../state/stake/types";
-import { ComponentProps } from "react";
-import { CheckSteps } from "../../../../../components/atoms/icons/check-steps";
-import { vars } from "../../../../../styles";
+} from "./styles.css";
+import { CheckSteps } from "../../atoms/icons/check-steps";
+import { vars } from "../../../styles";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 
 export const SelectValidatorList = ({
-  supportsMultiVal,
+  multiSelect,
   selectedValidators,
   onItemClick,
   onViewMoreClick,
@@ -35,8 +34,8 @@ export const SelectValidatorList = ({
   groupedItems,
   tableData,
 }: {
-  supportsMultiVal: boolean;
-  selectedValidators: State["selectedValidators"];
+  multiSelect: boolean;
+  selectedValidators: Set<ValidatorDto["address"]>;
   onItemClick: (item: ValidatorDto) => void;
   onViewMoreClick: () => void;
   selectedStake: YieldDto;
@@ -106,13 +105,13 @@ export const SelectValidatorList = ({
           typeof SelectModalItem
         >["onItemClick"] = ({ closeModal }) => {
           onItemClick(item);
-          !supportsMultiVal && closeModal();
+          !multiSelect && closeModal();
         };
 
         return (
           <SelectModalItemContainer>
             <SelectModalItem onItemClick={_onItemClick}>
-              {supportsMultiVal && (
+              {multiSelect && (
                 <Box
                   background={
                     itemSelected

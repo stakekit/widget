@@ -1,10 +1,11 @@
 import { Chain } from "@stakekit/rainbowkit";
-import { getTokenLogo } from "../../../utils";
+import { getNetworkLogo } from "../../../utils";
+import { Networks } from "@stakekit/common";
 
 export const polkadot = {
   id: 9999,
   name: "Polkadot",
-  iconUrl: getTokenLogo("dot"),
+  iconUrl: getNetworkLogo(Networks.Polkadot),
   network: "polkadot",
   nativeCurrency: {
     decimals: 10,

@@ -6,7 +6,6 @@ import {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useReducer,
@@ -26,8 +25,6 @@ import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 import { equalTokens } from "../../domain";
 import { useSavedRef } from "../../hooks";
 import { useInitQueryParams } from "../../hooks/use-init-query-params";
-import { usePendingActionDeepLink } from "./use-pending-action-deep-link";
-import { useNavigate } from "react-router-dom";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -167,22 +164,6 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     stakeAmount: selectedStakeAmount,
   } = state;
 
-  const navigateRef = useSavedRef(useNavigate());
-
-  const pendindActionDeepLinkCheck = usePendingActionDeepLink();
-
-  /**
-   * If we have pending action deep link, and its successfully constructed
-   * navigate to review page
-   */
-  useEffect(() => {
-    Maybe.fromNullable(pendindActionDeepLinkCheck.data).ifJust((val) => {
-      navigateRef.current(
-        `pending-action/${val.pendingActionRes.integrationId}/${val.defaultOrValidatorId}/review`
-      );
-    });
-  }, [navigateRef, pendindActionDeepLinkCheck.data]);
-
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
   const selectedStake = useMemo(
@@ -218,13 +199,14 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
   );
 
-  const { network, isLedgerLive, isConnected } = useSKWallet();
+  const { network, isLedgerLive, isConnected, isConnecting } = useSKWallet();
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
   const tokenBalances =
-    isConnected && !!tokenBalancesScan.data?.length
+    (isConnected || isConnecting) &&
+    (tokenBalancesScan.isLoading || !!tokenBalancesScan.data?.length)
       ? tokenBalancesScan
       : defaultTokens;
 
