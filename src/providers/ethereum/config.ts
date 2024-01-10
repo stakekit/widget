@@ -3,7 +3,6 @@ import {
   injectedWallet,
   metaMaskWallet,
   // ledgerWallet,
-  omniWallet,
   rainbowWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
@@ -106,17 +105,22 @@ const queryFn = async ({
               }),
             ]
           : [
-              injectedWallet({ chains: evmChains, shimDisconnect: true }),
+              metaMaskWallet({
+                chains: evmChains,
+                projectId: config.walletConnectV2.projectId,
+                shimDisconnect: true,
+              }),
+              injectedWallet({
+                chains: evmChains,
+                shimDisconnect: true,
+                name: "Injected Wallet",
+              }),
               walletConnectWallet({
                 chains: evmChains,
                 options: {
                   projectId: config.walletConnectV2.projectId,
                   isNewChainsStale: true,
                 },
-                projectId: config.walletConnectV2.projectId,
-              }),
-              omniWallet({
-                chains: evmChains,
                 projectId: config.walletConnectV2.projectId,
               }),
               rainbowWallet({
@@ -126,10 +130,6 @@ const queryFn = async ({
               coinbaseWallet({
                 chains: evmChains,
                 appName: config.appName,
-              }),
-              metaMaskWallet({
-                chains: evmChains,
-                projectId: config.walletConnectV2.projectId,
               }),
               // ledgerWallet({
               //   chains: evmChains,

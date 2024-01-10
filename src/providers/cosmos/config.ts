@@ -65,16 +65,19 @@ export class CosmosWagmiConnector extends Connector {
       let retryTimes = 0;
 
       const check = async () => {
+        const cw = this.wallet.chainWalletMap.get(
+          Object.values(opts.cosmosChainsMap)[0].chain.chain_name
+        );
+
         if (retryTimes > 3) {
           this.ready = false;
           return rej();
         }
 
-        const cw = this.wallet.chainWalletMap.get(
-          Object.values(opts.cosmosChainsMap)[0].chain.chain_name
-        );
-
-        if (cw && cw.clientMutable.state === "Done") {
+        if (cw && cw.clientMutable.state === "Error") {
+          res(cw);
+          this.ready = false;
+        } else if (cw && cw.clientMutable.state === "Done") {
           res(cw);
           this.ready = true;
         } else {
@@ -341,8 +344,19 @@ const queryFn = async ({
         undefined
       );
 
-      return EitherAsync(() => cosmosWalletManager.onMounted())
-        .mapLeft(() => new Error("cosmosWalletManager onMounted failed"))
+      return EitherAsync(() => {
+        return cosmosWalletManager.onMounted();
+      })
+        .chainLeft((e) => {
+          return EitherAsync(() => {
+            // @ts-expect-error
+            return cosmosWalletManager._restoreAccounts().catch(() => {});
+          });
+        })
+        .mapLeft((e) => {
+          console.log(e);
+          return new Error("cosmosWalletManager onMounted failed");
+        })
         .map(() => ({
           cosmosChainsMap,
           cosmosWagmiChains,
