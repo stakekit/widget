@@ -9,15 +9,29 @@ import {
   GetEitherRight,
 } from "../../../types";
 import { YieldBalanceDto } from "@stakekit/api-hooks";
-import { useMutation } from "@tanstack/react-query";
-import { useMutationSharedState } from "../../../hooks/use-mutation-shared-state";
+import { UseMutationResult, useMutation } from "@tanstack/react-query";
+import { PropsWithChildren, createContext, useContext } from "react";
 
 const mutationKey = ["on-pending-action"];
 
-export const useOnPendingAction = () => {
+const OnPendingActionContext = createContext<
+  | UseMutationResult<
+      GetEitherAsyncRight<ReturnType<typeof fn>>,
+      GetEitherAsyncLeft<ReturnType<typeof fn>>,
+      {
+        pendingActionRequestDto: GetEitherRight<
+          ReturnType<typeof preparePendingActionRequestDto>
+        >;
+        yieldBalance: YieldBalanceDto;
+      }
+    >
+  | undefined
+>(undefined);
+
+export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
   const pendingActionAndTxsConstruct = usePendingActionAndTxsConstruct();
 
-  return useMutation<
+  const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
@@ -37,14 +51,25 @@ export const useOnPendingAction = () => {
         })
       ).unsafeCoerce(),
   });
+
+  return (
+    <OnPendingActionContext.Provider value={value}>
+      {children}
+    </OnPendingActionContext.Provider>
+  );
 };
 
-export const useOnPendingActionMutationState = (): ReturnType<
-  typeof useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>
-> =>
-  useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>({
-    mutationKey,
-  });
+export const useOnPendingAction = () => {
+  const value = useContext(OnPendingActionContext);
+
+  if (!value) {
+    throw new Error(
+      "useOnPendingAction must be used within a OnPendingActionProvider"
+    );
+  }
+
+  return value;
+};
 
 const fn = ({
   pendingActionRequestDto,

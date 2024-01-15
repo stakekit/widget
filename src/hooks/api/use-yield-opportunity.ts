@@ -12,7 +12,11 @@ type Params = {
 };
 
 const staleTime = 1000 * 60 * 2;
-const getKey = (params: Params) => [params.yieldId, params.isLedgerLive];
+const getKey = (params: Params) => [
+  "yield-opportunity",
+  params.yieldId,
+  params.isLedgerLive,
+];
 
 export const useYieldOpportunity = (integrationId: string | undefined) => {
   const { isLedgerLive } = useSKWallet();

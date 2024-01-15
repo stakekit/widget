@@ -167,6 +167,8 @@ const fn = ({
               )
             : EitherAsync.liftEither(
                 preparePendingActionRequestDto({
+                  // TODO: fix this
+                  pendingActionsState: new Map(),
                   address: data.address,
                   additionalAddresses: data.additionalAddresses ?? null,
                   integration: val.yieldOp,

@@ -16,6 +16,8 @@ export const useLogout = () => {
         .ifRight((dbs) =>
           dbs.forEach((db) => db.name && indexedDB.deleteDatabase(db.name))
         );
+
+      return null;
     },
   });
 };

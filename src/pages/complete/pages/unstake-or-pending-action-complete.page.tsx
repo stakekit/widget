@@ -1,40 +1,27 @@
-import { useMatch, useParams } from "react-router-dom";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { useMemo } from "react";
 import { formatNumber } from "../../../utils";
 import BigNumber from "bignumber.js";
 import { CompletePage } from "./common.page";
-import { Maybe } from "purify-ts";
-import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 
 export const UnstakeOrPendingActionCompletePage = () => {
-  const { unstake, pendingActionSession, pendingAction } =
-    useUnstakeOrPendingActionState();
+  const {
+    integrationData,
+    unstakeAmount,
+    pendingActionSession,
+    pendingActionToken,
+    positionBalances,
+  } = useUnstakeOrPendingActionState();
 
-  const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:balanceId/complete"
-  );
+  const pendingActionMatch = usePendingActionMatch();
 
   useTrackPage(
     pendingActionMatch ? "pendingActionCompelete" : "unstakeCompelete"
   );
-
-  const { integrationId, balanceId } = useParams<{
-    integrationId: string;
-    balanceId: string;
-  }>();
-
-  const yieldOpportunity = useYieldOpportunity(integrationId);
-  const integrationData = useMemo(
-    () => Maybe.fromNullable(yieldOpportunity.data),
-    [yieldOpportunity.data]
-  );
-
-  const positionBalances = usePositionBalances({ integrationId, balanceId });
 
   const providerDetails = useProvidersDetails({
     integrationData,
@@ -44,8 +31,8 @@ export const UnstakeOrPendingActionCompletePage = () => {
   });
 
   const token = pendingActionMatch
-    ? pendingAction.map((val) => val.token)
-    : unstake.map((val) => val.integration.token);
+    ? pendingActionToken
+    : integrationData.map((d) => d.token);
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
@@ -55,10 +42,8 @@ export const UnstakeOrPendingActionCompletePage = () => {
             (val) => formatNumber(new BigNumber(val.amount ?? 0)),
             ""
           )
-        : unstake
-            .chain((u) => u.amount)
-            .mapOrDefault((a) => formatNumber(a), ""),
-    [pendingActionMatch, pendingActionSession, unstake]
+        : formatNumber(unstakeAmount),
+    [pendingActionMatch, pendingActionSession, unstakeAmount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

@@ -33,7 +33,7 @@ export const useReview = () => {
     (y) => y.metadata.gasFeeToken.symbol,
     ""
   );
-  const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
+  const amount = formatNumber(stakeAmount);
   const interestRate = estimatedRewards.mapOrDefault(
     (r) => r.percentage.toString(),
     ""

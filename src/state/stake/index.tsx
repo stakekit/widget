@@ -3,7 +3,7 @@ import { List, Maybe } from "purify-ts";
 import {
   createContext,
   Dispatch,
-  ReactNode,
+  PropsWithChildren,
   useCallback,
   useContext,
   useLayoutEffect,
@@ -11,7 +11,10 @@ import {
   useReducer,
 } from "react";
 import { Actions, ExtraData, State } from "./types";
-import { useStakeEnterAndTxsConstructMutationState } from "../../hooks/api/use-stake-enter-and-txs-construct";
+import {
+  StakeEnterAndTxsConstructProvider,
+  useStakeEnterAndTxsConstruct,
+} from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import {
   getYieldOpportunityFromCache,
@@ -25,6 +28,10 @@ import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 import { equalTokens } from "../../domain";
 import { useSavedRef } from "../../hooks";
 import { useInitQueryParams } from "../../hooks/use-init-query-params";
+import { useTransactionTotalGas } from "../../hooks/use-transaction-total-gas";
+import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use-pending-action-and-txs-construct";
+import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
+import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -37,10 +44,11 @@ const getInitialState = (): State => ({
   selectedTokenBalance: Maybe.empty(),
   selectedStakeId: Maybe.empty(),
   selectedValidators: new Map(),
-  stakeAmount: Maybe.of(new BigNumber(0)),
+  stakeAmount: new BigNumber(0),
+  tronResource: Maybe.empty(),
 });
 
-export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
+const Provider = ({ children }: PropsWithChildren) => {
   const initParams = useInitQueryParams();
 
   const reducer = (state: State, action: Actions): State => {
@@ -77,7 +85,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
               .chainNullable((val) => val.args.enter.args?.amount?.minimum)
               .chain((val) => Maybe.fromPredicate((v) => v >= 0, val))
               .map((val) => new BigNumber(val))
-              .altLazy(() => Maybe.of(new BigNumber(0)));
+              .orDefault(new BigNumber(0));
 
         const selectedValidators = tokenNotChanged
           ? state.selectedValidators
@@ -91,6 +99,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           selectedStakeId,
           stakeAmount,
           selectedValidators,
+          tronResource: Maybe.empty(),
         };
       }
       case "yield/select":
@@ -147,6 +156,9 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
           stakeAmount: action.data,
         };
       }
+      case "tronResource/select": {
+        return { ...state, tronResource: Maybe.of(action.data) };
+      }
       case "state/reset": {
         return getInitialState();
       }
@@ -162,6 +174,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     selectedStakeId,
     selectedValidators,
     stakeAmount: selectedStakeAmount,
+    tronResource,
   } = state;
 
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
@@ -184,20 +197,21 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
   /**
    * If stake amount is less then min, use min
    */
-  const stakeAmount = useMemo(
-    () =>
-      selectedStakeAmount.map((val) => {
-        if (forceMax) {
-          return maxEnterOrExitAmount;
-        } else if (val.isLessThan(minEnterOrExitAmount)) {
-          return minEnterOrExitAmount;
-        } else if (val.isGreaterThan(maxEnterOrExitAmount)) {
-          return maxEnterOrExitAmount;
-        }
-        return val;
-      }),
-    [forceMax, maxEnterOrExitAmount, minEnterOrExitAmount, selectedStakeAmount]
-  );
+  const stakeAmount = useMemo(() => {
+    if (forceMax) {
+      return maxEnterOrExitAmount;
+    } else if (selectedStakeAmount.isLessThan(minEnterOrExitAmount)) {
+      return minEnterOrExitAmount;
+    } else if (selectedStakeAmount.isGreaterThan(maxEnterOrExitAmount)) {
+      return maxEnterOrExitAmount;
+    }
+    return selectedStakeAmount;
+  }, [
+    forceMax,
+    maxEnterOrExitAmount,
+    minEnterOrExitAmount,
+    selectedStakeAmount,
+  ]);
 
   const { network, isLedgerLive, isConnected, isConnecting } = useSKWallet();
 
@@ -350,23 +364,14 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
     });
   }, [initParams.data, selectedValidators, yieldOpportunity.data]);
 
-  const stakeEnterAndTxsConstructMutationState =
-    useStakeEnterAndTxsConstructMutationState();
+  const stakeEnterAndTxsConstructMutationState = useStakeEnterAndTxsConstruct();
 
   const stakeSession = Maybe.fromNullable(
     stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
   );
 
-  const stakeEnterTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(stakeEnterAndTxsConstructMutationState?.data).map(
-        (val) =>
-          val.transactionConstructRes.reduce(
-            (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
-            new BigNumber(0)
-          )
-      ),
-    [stakeEnterAndTxsConstructMutationState?.data]
+  const stakeEnterTxGas = useTransactionTotalGas(
+    stakeEnterAndTxsConstructMutationState?.data?.transactionConstructRes
   );
 
   const actions = useMemo(
@@ -374,7 +379,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       onMaxClick: () => {
         dispatch({
           type: "stakeAmount/max",
-          data: Maybe.of(maxEnterOrExitAmount),
+          data: maxEnterOrExitAmount,
         });
       },
     }),
@@ -395,6 +400,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       stakeSession,
       actions,
       stakeEnterTxGas,
+      tronResource,
     }),
     [
       actions,
@@ -405,6 +411,7 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
       stakeAmount,
       stakeEnterTxGas,
       stakeSession,
+      tronResource,
     ]
   );
 
@@ -414,6 +421,20 @@ export const StakeStateProvider = ({ children }: { children: ReactNode }) => {
         {children}
       </StakeDispatchContext.Provider>
     </StakeStateContext.Provider>
+  );
+};
+
+export const StakeStateProvider = ({ children }: PropsWithChildren) => {
+  return (
+    <StakeEnterAndTxsConstructProvider>
+      <PendingActionAndTxsConstructContextProvider>
+        <StakeExitAndTxsConstructContextProvider>
+          <OnPendingActionProvider>
+            <Provider>{children}</Provider>
+          </OnPendingActionProvider>
+        </StakeExitAndTxsConstructContextProvider>
+      </PendingActionAndTxsConstructContextProvider>
+    </StakeEnterAndTxsConstructProvider>
   );
 };
 

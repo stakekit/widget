@@ -11,29 +11,28 @@ export const useStakeExitRequestDto = ({
   balance: ReturnType<typeof useStakedOrLiquidBalance>;
 }) => {
   const { address, additionalAddresses } = useSKWallet();
-  const { unstake } = useUnstakeOrPendingActionState();
+  const { unstakeAmount, integrationData } = useUnstakeOrPendingActionState();
 
   return useMemo(
     () =>
       Maybe.fromRecord({
         address: Maybe.fromNullable(address),
-        unstake,
-        unstakeAmount: unstake.chain((val) => val.amount),
+        integrationData,
         balance,
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
       }>((val) => ({
-        gasFeeToken: val.unstake.integration.metadata.gasFeeToken,
+        gasFeeToken: val.integrationData.metadata.gasFeeToken,
         dto: {
           addresses: {
             address: val.address,
             additionalAddresses: additionalAddresses ?? undefined,
           },
-          integrationId: val.unstake.integration.id,
+          integrationId: val.integrationData.id,
           args: {
-            amount: val.unstakeAmount.toString(),
-            ...(val.unstake.integration.args.exit?.args?.validatorAddresses
+            amount: unstakeAmount.toString(),
+            ...(val.integrationData.args.exit?.args?.validatorAddresses
               ?.required
               ? {
                   validatorAddresses: List.find(
@@ -54,6 +53,6 @@ export const useStakeExitRequestDto = ({
           },
         },
       })),
-    [additionalAddresses, address, balance, unstake]
+    [additionalAddresses, address, balance, integrationData, unstakeAmount]
   );
 };

@@ -141,7 +141,12 @@ export const Header = () => {
                                 py="2"
                               >
                                 {chain?.iconUrl && (
-                                  <Box as="img" hw="6" src={chain.iconUrl} />
+                                  <Box
+                                    as="img"
+                                    borderRadius="full"
+                                    hw="6"
+                                    src={chain.iconUrl}
+                                  />
                                 )}
 
                                 <Box marginLeft="2">

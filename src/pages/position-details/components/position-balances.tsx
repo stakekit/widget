@@ -15,8 +15,10 @@ export const PositionBalances = ({
 }) => {
   const { t } = useTranslation();
 
-  const unstakingDays = useMemo(() => {
-    return yieldBalance.type === "unstaking" && yieldBalance.date
+  const daysRemaining = useMemo(() => {
+    return (yieldBalance.type === "unstaking" ||
+      yieldBalance.type === "unlocking") &&
+      yieldBalance.date
       ? daysUntilDate(new Date(yieldBalance.date))
       : null;
   }, [yieldBalance.date, yieldBalance.type]);
@@ -47,14 +49,13 @@ export const PositionBalances = ({
           {formatNumber(yieldBalance.tokenPriceInUsd, 2)})
         </Text>
 
-        {yieldBalance.type === "unstaking" &&
-          typeof unstakingDays === "number" && (
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("position_details.unstaking_days", {
-                count: unstakingDays,
-              })}
-            </Text>
-          )}
+        {typeof daysRemaining === "number" && (
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {t("position_details.unstaking_days", {
+              count: daysRemaining,
+            })}
+          </Text>
+        )}
       </Box>
     </Box>
   );

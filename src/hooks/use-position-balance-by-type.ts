@@ -1,8 +1,6 @@
 import { usePrices } from "./api/use-prices";
-import { PriceRequestDto, YieldBalanceDto } from "@stakekit/api-hooks";
-import { config } from "../config";
-import { tokenToTokenDto } from "../utils/mappers";
-import { getBaseToken, getTokenPriceInUSD } from "../domain";
+import { YieldBalanceDto } from "@stakekit/api-hooks";
+import { getTokenPriceInUSD } from "../domain";
 import { useMemo } from "react";
 import { PositionBalancesByType } from "../domain/types/positions";
 import { createSelector } from "reselect";
@@ -10,26 +8,13 @@ import { Prices } from "../domain/types";
 import BigNumber from "bignumber.js";
 import { usePositionBalances } from "./use-position-balances";
 
-export const usePositionBalanceByType = (
-  positionBalancesData: ReturnType<typeof usePositionBalances>["data"]
-) => {
-  const prices = usePrices(
-    useMemo(
-      () =>
-        positionBalancesData
-          .map<PriceRequestDto>((val) => ({
-            currency: config.currency,
-            tokenList: val.balances.flatMap((v, i) =>
-              i === 0
-                ? [tokenToTokenDto(getBaseToken(v.token)), v.token]
-                : [v.token]
-            ),
-          }))
-          .extractNullable(),
-      [positionBalancesData]
-    )
-  );
-
+export const usePositionBalanceByType = ({
+  positionBalancesData,
+  prices,
+}: {
+  positionBalancesData: ReturnType<typeof usePositionBalances>["data"];
+  prices: ReturnType<typeof usePrices>;
+}) => {
   /**
    * @summary Position balance by type
    */
