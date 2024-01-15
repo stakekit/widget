@@ -1,22 +1,19 @@
-import { Navigate, Outlet, useMatch } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
+import { usePendingActionMatch } from "../../hooks/navigation/use-pending-action-match";
+import { useUnstakeMatch } from "../../hooks/navigation/use-unstake-match";
 
 export const UnstakeOrPendingActionCheck = () => {
-  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
+  const { unstakeSession, pendingActionSession } =
+    useUnstakeOrPendingActionState();
 
-  const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:defaultOrValidatorId/*"
-  );
-  const unstakeMatch = useMatch(
-    "unstake/:integrationId/:defaultOrValidatorId/*"
-  );
+  const pendingActionMatch = usePendingActionMatch();
+  const unstakeMatch = useUnstakeMatch();
 
   const isReady = pendingActionMatch
     ? pendingActionSession.isJust()
     : unstakeMatch
-      ? unstake
-          .chain((u) => u.amount)
-          .mapOrDefault((val) => !val.isNaN() && !val.isZero(), false)
+      ? unstakeSession.isJust()
       : false;
 
   return isReady ? <Outlet /> : <Navigate to="/" replace />;

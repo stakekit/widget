@@ -71,7 +71,7 @@ export const RainbowKitProviderWithTheme = ({
       )}
       onDisabledChainClick={(disabledChain) => {
         trackEvent("addLedgerAccountClicked");
-        onDisabledChainClick.mutateAsync(disabledChain);
+        onDisabledChainClick.mutate(disabledChain);
       }}
       appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
       theme={

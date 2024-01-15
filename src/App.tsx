@@ -106,37 +106,37 @@ const Widget = () => {
       >
         <Routes location={displayLocation}>
           <Route element={<Layout />}>
+            {/* Home + Tabs */}
             <Route element={<Details />}>
               <Route index element={<EarnPage />} />
               <Route path="positions" element={<PositionsPage />} />
             </Route>
 
             <Route element={<ConnectedCheck />}>
+              {/* Stake flow */}
               <Route element={<StakeCheck />}>
                 <Route path="review" element={<ReviewPage />} />
                 <Route path="steps" element={<StakeStepsPage />} />
                 <Route path="complete" element={<StakeCompletePage />} />
               </Route>
 
+              {/* Actions flow */}
               <Route
+                path="positions/:integrationId/:balanceId"
                 element={
                   <UnstakeOrPendingActionContextProvider>
                     <Outlet />
                   </UnstakeOrPendingActionContextProvider>
                 }
               >
+                <Route index element={<PositionDetails />} />
                 <Route
-                  path="positions/:integrationId/:balanceId"
+                  path="select-validator/:pendingActionType"
                   element={<PositionDetails />}
                 />
-                <Route
-                  path="positions/:integrationId/:balanceId/:pendingActionType"
-                  element={<PositionDetails />}
-                />
-                <Route
-                  path="unstake/:integrationId/:balanceId"
-                  element={<UnstakeOrPendingActionCheck />}
-                >
+
+                {/* Unstaking */}
+                <Route path="unstake" element={<UnstakeOrPendingActionCheck />}>
                   <Route
                     path="review"
                     element={<UnstakeOrPendingActionReviewPage />}
@@ -151,8 +151,9 @@ const Widget = () => {
                   />
                 </Route>
 
+                {/* Pending Actions */}
                 <Route
-                  path="pending-action/:integrationId/:balanceId"
+                  path="pending-action"
                   element={<UnstakeOrPendingActionCheck />}
                 >
                   <Route

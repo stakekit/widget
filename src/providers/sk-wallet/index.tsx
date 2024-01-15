@@ -104,7 +104,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   }, [_isConnected, disconnect, isConnected]);
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
-    ({ index, tx }) =>
+    ({ tx }) =>
       EitherAsync.liftEither(
         !isConnected || !network || !connector
           ? Left(new Error("No wallet connected"))
@@ -199,8 +199,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             EitherAsync(() =>
               wagmiSendTransaction({
                 ...val,
-                type: "eip1559",
-                nonce: val.nonce + index,
+                type: val.maxFeePerGas ? "eip1559" : "legacy",
                 gas: val.gasLimit,
                 mode: "prepared",
               })

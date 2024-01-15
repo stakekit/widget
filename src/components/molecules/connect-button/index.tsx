@@ -20,7 +20,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   const onClick = () => {
     if (isLedgerLiveAccountPlaceholder && chain) {
       trackEvent("addLedgerAccountClicked");
-      return addLedgerAccount.mutateAsync(chain);
+      return addLedgerAccount.mutate(chain);
     }
 
     trackEvent("connectWalletClicked");

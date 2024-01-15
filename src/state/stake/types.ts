@@ -1,6 +1,7 @@
 import {
   ActionDto,
   TokenBalanceScanResponseDto,
+  TronResourceType,
   ValidatorDto,
   YieldDto,
 } from "@stakekit/api-hooks";
@@ -14,7 +15,8 @@ export type State = {
     TokenBalanceScanResponseDto["availableYields"][number]
   >;
   selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
-  stakeAmount: Maybe<BigNumber>;
+  stakeAmount: BigNumber;
+  tronResource: Maybe<TronResourceType>;
 };
 
 export type ExtraData = {
@@ -30,13 +32,15 @@ type TokenBalanceSelectAction = Action<
 >;
 type YieldSelectAction = Action<"yield/select", YieldDto>;
 
-type StakeAmountChangeAction = Action<"stakeAmount/change", Maybe<BigNumber>>;
-type StakeAmountMaxAction = Action<"stakeAmount/max", Maybe<BigNumber>>;
+type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
+type StakeAmountMaxAction = Action<"stakeAmount/max", BigNumber>;
 type StateResetAction = Action<"state/reset">;
 
 type ValidatorSelectAction = Action<"validator/select", ValidatorDto>;
 type ValidatorMultiSelectAction = Action<"validator/multiselect", ValidatorDto>;
 type ValidatorRemoveAction = Action<"validator/remove", ValidatorDto>;
+
+type SelectTronResourceAction = Action<"tronResource/select", TronResourceType>;
 
 export type Actions =
   | TokenBalanceSelectAction
@@ -46,4 +50,5 @@ export type Actions =
   | StateResetAction
   | ValidatorSelectAction
   | ValidatorMultiSelectAction
-  | ValidatorRemoveAction;
+  | ValidatorRemoveAction
+  | SelectTronResourceAction;

@@ -35,11 +35,11 @@ export const StakeStepsPage = () => {
   const setActionHistoryData = useSetActionHistoryData();
 
   const onDone = () =>
-    Maybe.fromRecord({ selectedStake, stakeAmount }).ifJust((val) => {
+    selectedStake.ifJust((val) => {
       setActionHistoryData({
         type: "stake",
-        selectedStake: val.selectedStake,
-        stakeAmount: val.stakeAmount,
+        selectedStake: val,
+        stakeAmount: stakeAmount,
         selectedValidators,
       });
     });

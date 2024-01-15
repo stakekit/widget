@@ -7,15 +7,29 @@ import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
-import { useMutation } from "@tanstack/react-query";
-import { useMutationSharedState } from "../use-mutation-shared-state";
+import { UseMutationResult, useMutation } from "@tanstack/react-query";
+import { PropsWithChildren, createContext, useContext } from "react";
 
 const mutationKey = ["stake-exit"];
 
-export const useStakeExitAndTxsConstruct = () => {
+const StakeExitAndTxsConstructContext = createContext<
+  | UseMutationResult<
+      GetEitherAsyncRight<ReturnType<typeof fn>>,
+      GetEitherAsyncLeft<ReturnType<typeof fn>>,
+      {
+        stakeRequestDto: ActionRequestDto;
+        gasModeValue: GasModeValueDto | undefined;
+      }
+    >
+  | undefined
+>(undefined);
+
+export const StakeExitAndTxsConstructContextProvider = ({
+  children,
+}: PropsWithChildren) => {
   const { isLedgerLive } = useSKWallet();
 
-  return useMutation<
+  const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
@@ -27,14 +41,25 @@ export const useStakeExitAndTxsConstruct = () => {
     mutationFn: async (args) =>
       (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
   });
+
+  return (
+    <StakeExitAndTxsConstructContext.Provider value={value}>
+      {children}
+    </StakeExitAndTxsConstructContext.Provider>
+  );
 };
 
-export const useStakeExitAndTxsConstructMutationState = (): ReturnType<
-  typeof useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>
-> =>
-  useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>({
-    mutationKey,
-  });
+export const useStakeExitAndTxsConstruct = () => {
+  const value = useContext(StakeExitAndTxsConstructContext);
+
+  if (!value) {
+    throw new Error(
+      "useStakeExitAndTxsConstruct must be used within a StakeExitAndTxsConstructContextProvider"
+    );
+  }
+
+  return value;
+};
 
 const fn = ({
   gasModeValue,

@@ -1,33 +1,24 @@
-import {
-  Box,
-  Button,
-  Heading,
-  NumberInput,
-  Spinner,
-  Text,
-} from "../../components";
+import { Box, Button, Heading, Spinner, Text } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { PageContainer } from "../components";
 import { usePositionDetails } from "./hooks/use-position-details";
-import { Trans, useTranslation } from "react-i18next";
-import { formatNumber } from "../../utils";
-import BigNumber from "bignumber.js";
-import { pressAnimation } from "../../components/atoms/button/styles.css";
-import { ActionTypes } from "@stakekit/api-hooks";
+import { useTranslation } from "react-i18next";
 import { PositionBalances } from "./components/position-balances";
 import { Maybe } from "purify-ts";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { ProviderDetails } from "./components/provider-details";
 import { SelectValidator } from "../../components/molecules/select-validator";
+import { AmountBlock } from "./components/amount-block";
+import { StaticActionBlock } from "./components/static-action-block";
+import { ActionTypes } from "@stakekit/api-hooks";
 
 export const PositionDetails = () => {
   const {
+    onPendingActionAmountChange,
     integrationData,
     isLoading,
     reducedStakedOrLiquidBalance,
-    stakeType,
     positionBalancesByType,
-    unstakeText,
     canUnstake,
     onUnstakeAmountChange,
     unstakeAmount,
@@ -59,7 +50,7 @@ export const PositionDetails = () => {
           <Spinner />
         </Box>
       ) : (
-        Maybe.fromRecord({ integrationData, stakeType, positionBalancesByType })
+        Maybe.fromRecord({ integrationData, positionBalancesByType })
           .map((val) => (
             <Box flex={1} display="flex" flexDirection="column">
               <Box display="flex" justifyContent="center" alignItems="center">
@@ -92,7 +83,9 @@ export const PositionDetails = () => {
                         {...p}
                         key={p.address ?? idx}
                         isFirst={idx === 0}
-                        stakeType={val.stakeType}
+                        stakeType={t(
+                          `position_details.stake_type.${val.integrationData.metadata.type}`
+                        )}
                         integrationData={val.integrationData}
                       />
                     ))
@@ -155,194 +148,72 @@ export const PositionDetails = () => {
                 marginTop="10"
                 gap="2"
               >
+                {/* Pending actions */}
                 {pendingActions
                   .map((val) =>
-                    val.map((pa) => (
-                      <Box
-                        key={pa.pendingActionDto.type}
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        px="4"
-                        py="4"
-                        borderRadius="2xl"
-                        borderColor="backgroundMuted"
-                        borderWidth={1}
-                        borderStyle="solid"
-                      >
-                        <Box flex={2}>
-                          <Text variant={{ weight: "normal" }}>
-                            <Trans
-                              i18nKey="position_details.available_to"
-                              values={{
-                                amount: formatNumber(
-                                  new BigNumber(pa.yieldBalance.amount)
-                                ),
-                                symbol: pa.yieldBalance.token.symbol,
-                                pendingAction: t(
-                                  `position_details.pending_action.${
-                                    pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                                  }` as const
-                                ),
-                              }}
-                              components={{
-                                bold: (
-                                  <Box
-                                    as="span"
-                                    fontWeight="bold"
-                                    display="block"
-                                  />
-                                ),
-                              }}
-                            />
-                          </Text>
-                        </Box>
-
-                        <Box
-                          flex={1}
-                          maxWidth="24"
-                          justifyContent="flex-end"
-                          display="flex"
-                          alignItems="center"
-                        >
-                          {pa.isLoading && (
-                            <Box marginRight="3" display="flex">
-                              <Spinner />
-                            </Box>
+                    val.map((pa) =>
+                      pa.amount ? (
+                        <AmountBlock
+                          key={pa.pendingActionDto.type}
+                          variant="action"
+                          isLoading={pa.isLoading}
+                          onAmountChange={(val) =>
+                            onPendingActionAmountChange(
+                              pa.pendingActionDto.type,
+                              val
+                            )
+                          }
+                          value={pa.amount}
+                          canChangeAmount
+                          onClick={() =>
+                            onPendingActionClick({
+                              pendingActionDto: pa.pendingActionDto,
+                              yieldBalance: pa.yieldBalance,
+                            })
+                          }
+                          label={t(
+                            `position_details.pending_action_button.${
+                              pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                            }`
                           )}
-                          <Button
-                            variant={{
-                              size: "small",
-                              color: "smallButtonLight",
-                            }}
-                            disabled={pa.isLoading}
-                            onClick={() =>
-                              onPendingActionClick({
-                                yieldBalance: pa.yieldBalance,
-                                pendingActionDto: pa.pendingActionDto,
-                              })
-                            }
-                          >
-                            <Text>
-                              {t(
-                                `position_details.pending_action_button.${
-                                  pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                                }` as const
-                              )}
-                            </Text>
-                          </Button>
-                        </Box>
-                      </Box>
-                    ))
+                          onMaxClick={null}
+                          formattedAmount={pa.formattedAmount}
+                          balance={null}
+                        />
+                      ) : (
+                        <StaticActionBlock
+                          {...pa}
+                          key={pa.pendingActionDto.type}
+                          onPendingActionClick={onPendingActionClick}
+                        />
+                      )
+                    )
                   )
                   .extractNullable()}
 
+                {/* Unstake  */}
                 {Maybe.fromRecord({
                   canUnstake,
                   reducedStakedOrLiquidBalance,
-                  unstakeText,
                   canChangeAmount,
                 })
-                  .map(
-                    ({
-                      reducedStakedOrLiquidBalance,
-                      unstakeText,
-                      canChangeAmount,
-                    }) => (
-                      <Box
-                        background="stakeSectionBackground"
-                        borderRadius="xl"
-                        marginTop="2"
-                        py="4"
-                        px="4"
-                      >
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                        >
-                          <Box
-                            minWidth="0"
-                            display="flex"
-                            marginRight="2"
-                            flex={1}
-                          >
-                            <NumberInput
-                              onChange={onUnstakeAmountChange}
-                              value={unstakeAmount}
-                              disabled={!canChangeAmount}
-                            />
-                          </Box>
-
-                          {onStakeExitIsLoading && (
-                            <Box marginRight="3" display="flex">
-                              <Spinner />
-                            </Box>
-                          )}
-
-                          <Button
-                            onClick={onUnstakeClick}
-                            disabled={unstakeDisabled}
-                            variant={{ size: "small", color: "smallButton" }}
-                          >
-                            <Text>{unstakeText}</Text>
-                          </Button>
-                        </Box>
-
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          marginTop="2"
-                          flexWrap="wrap"
-                        >
-                          <Box flex={1}>
-                            <Text variant={{ type: "muted", weight: "normal" }}>
-                              {unstakeFormattedAmount}
-                            </Text>
-                          </Box>
-
-                          <Box
-                            display="flex"
-                            justifyContent="flex-end"
-                            alignItems="center"
-                          >
-                            <Text variant={{ weight: "normal" }}>
-                              {t("position_details.available", {
-                                amount: formatNumber(
-                                  reducedStakedOrLiquidBalance.amount
-                                ),
-                                symbol:
-                                  reducedStakedOrLiquidBalance.token?.symbol ??
-                                  "",
-                              })}
-                            </Text>
-                            {canChangeAmount && (
-                              <Box
-                                as="button"
-                                borderRadius="xl"
-                                background="background"
-                                px="2"
-                                py="1"
-                                marginLeft="2"
-                                onClick={onMaxClick}
-                                className={pressAnimation}
-                              >
-                                <Text
-                                  variant={{
-                                    weight: "semibold",
-                                    type: "regular",
-                                  }}
-                                >
-                                  {t("shared.max")}
-                                </Text>
-                              </Box>
-                            )}
-                          </Box>
-                        </Box>
-                      </Box>
-                    )
-                  )
+                  .map(({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
+                    <AmountBlock
+                      variant="unstake"
+                      isLoading={onStakeExitIsLoading}
+                      onAmountChange={onUnstakeAmountChange}
+                      value={unstakeAmount}
+                      canChangeAmount={canChangeAmount}
+                      disabled={unstakeDisabled}
+                      onClick={onUnstakeClick}
+                      onMaxClick={onMaxClick}
+                      label={t(
+                        `position_details.unstake_label.${val.integrationData.metadata.type}`
+                      )}
+                      formattedAmount={unstakeFormattedAmount}
+                      balance={reducedStakedOrLiquidBalance}
+                    />
+                  ))
                   .extractNullable()}
               </Box>
 

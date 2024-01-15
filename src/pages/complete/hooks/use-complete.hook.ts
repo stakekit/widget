@@ -1,6 +1,8 @@
-import { useLocation, useMatch, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { TransactionType } from "@stakekit/api-hooks";
+import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -26,12 +28,8 @@ export const useComplete = () => {
     window.open(url, "_blank");
   };
 
-  const unstakeMatch = useMatch(
-    "unstake/:integrationId/:defaultOrValidatorId/complete"
-  );
-  const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:defaultOrValidatorId/complete"
-  );
+  const unstakeMatch = useUnstakeMatch();
+  const pendingActionMatch = usePendingActionMatch();
 
   return {
     onClick,

@@ -18,7 +18,7 @@ export const useHandleDeepLinks = () => {
       } else {
         // Select validator addresses before continuing pending action flow
         navigateRef.current(
-          `positions/${val.yieldOp.id}/${val.balanceId}/${val.pendingAction.type}`
+          `positions/${val.yieldOp.id}/${val.balanceId}/select-validator/${val.pendingAction.type}`
         );
       }
     });

@@ -37,6 +37,11 @@
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via",
 
+    "tron_resources": {
+      "label": "Select option",
+      "placeholder": "Select option"
+    },
+
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
 
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
@@ -182,7 +187,8 @@
       "vote": "voted",
       "revoke": "Revoke",
       "vote_locked": "Vote locked",
-      "revote": "Revote"
+      "revote": "Revote",
+      "rebond": "Rebond"
     }
   },
   "help_modals": {
@@ -229,7 +235,8 @@
 
   "positions": {
     "title": "My Positions",
-    "via": "via {{providerName}}",
+    "via_one": "via {{providerName}}",
+    "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
     "no_current_positions": "No current positions",
     "claim_rewards": "Claim rewards",
@@ -242,9 +249,6 @@
     "search_for_validators": "Search for validators by address or name"
   },
   "position_details": {
-    "liquid_staked": "Liquid staked",
-    "staked": "Staked",
-    "deposited": "Deposited",
     "via": "{{stakeType}} via {{providerName}}",
     "rewards": "Rewards",
     "available_to": "<bold>{{amount}} {{symbol}}</bold> available to {{pendingAction, lowercase}}",
@@ -254,6 +258,18 @@
     "available": "{{amount}} {{symbol}} available",
     "select_validators": {
       "submit": "Submit"
+    },
+    "stake_type": {
+      "staking": "Staked",
+      "liquid-staking": "Liquid staked",
+      "lending": "Deposited",
+      "vault": "Deposited"
+    },
+    "unstake_label": {
+      "staking": "Unstake",
+      "liquid-staking": "Unstake",
+      "lending": "Withdraw",
+      "vault": "Withdraw"
     },
     "balance_type": {
       "available": "Available",
@@ -278,13 +294,14 @@
       "withdraw": "Withdraw",
       "restake": "Restake",
       "claim_unstaked": "Claim unstaked",
-      "unlock_locked": "Unlock locked",
-      "unlock_locked_legacy": "Unlock locked",
-      "stake_locked": "Stake locked",
+      "unlock_locked": "Unlock",
+      "unlock_locked_legacy": "Unlock",
+      "stake_locked": "Stake",
       "vote": "Vote",
       "revoke": "Revoke",
-      "vote_locked": "Vote locked",
-      "revote": "Revote"
+      "vote_locked": "Vote",
+      "revote": "Revote",
+      "rebond": "Rebond"
     },
     "pending_action_button": {
       "stake": "Stake",
@@ -300,7 +317,8 @@
       "vote": "Vote",
       "revoke": "Revoke",
       "vote_locked": "Vote locked",
-      "revote": "revote"
+      "revote": "Revote",
+      "rebond": "Rebond"
     }
   },
   "unstake_review": {
@@ -322,7 +340,8 @@
       "vote": "Vote with {{providerName}}",
       "revoke": "Revoke with {{providerName}}",
       "vote_locked": "Vote locked with {{providerName}}",
-      "revote": "Revote with {{providerName}}"
+      "revote": "Revote with {{providerName}}",
+      "rebond": "Rebond with {{providerName}}"
     }
   },
   "select_token": {

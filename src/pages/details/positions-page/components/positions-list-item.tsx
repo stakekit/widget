@@ -157,7 +157,7 @@ export const PositionsListItem = memo(
                           >
                             {t("positions.via", {
                               providerName: p.name ?? p.address,
-                              count: val.length - 1,
+                              count: Math.max(val.length - 1, 1),
                             })}
                           </Text>
                         ))

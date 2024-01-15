@@ -79,7 +79,7 @@ export const useYieldBalancesScan = <
    * This is a hack to make sure that the yield balances are updated after a transaction
    */
   useQuery({
-    queryKey: [lastActionTimestamp],
+    queryKey: ["yield-balances-refetch", lastActionTimestamp],
     refetchOnMount: false,
     enabled: !!lastActionTimestamp,
     queryFn: async () => {
@@ -87,7 +87,7 @@ export const useYieldBalancesScan = <
         !lastActionTimestamp ||
         Date.now() - lastActionTimestamp > 1000 * 12
       ) {
-        return;
+        return null;
       }
 
       await EitherAsync.sequence(
@@ -98,6 +98,8 @@ export const useYieldBalancesScan = <
           }).chainLeft(async () => Right(null))
         )
       );
+
+      return null;
     },
   });
 

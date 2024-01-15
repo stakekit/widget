@@ -106,3 +106,9 @@ export const PAMultiValidatorsRequired = (pa: PendingActionDto) =>
 
 export const PASingleValidatorRequired = (pa: PendingActionDto) =>
   !!pa.args?.args?.validatorAddress?.required;
+
+export const getTransactionTotalGas = (txs: TransactionDto[]) =>
+  txs.reduce(
+    (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
+    new BigNumber(0)
+  );

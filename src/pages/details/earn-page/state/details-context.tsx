@@ -10,6 +10,7 @@ import { SelectedStakeData } from "../types";
 import { Maybe } from "purify-ts";
 import {
   TokenBalanceScanResponseDto,
+  TronResourceType,
   ValidatorDto,
   YieldDto,
   YieldType,
@@ -57,6 +58,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedValidators,
     stakeAmount,
     selectedStake,
+    tronResource,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
@@ -95,11 +97,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     return Maybe.fromRecord({
       prices: Maybe.fromNullable(pricesState.data),
       selectedTokenBalance,
-      stakeAmount,
     })
       .map((val) =>
         getTokenPriceInUSD({
-          amount: val.stakeAmount,
+          amount: stakeAmount,
           token: val.selectedTokenBalance.token,
           prices: val.prices,
           pricePerShare: undefined,
@@ -322,30 +323,38 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     yieldOpportunity: selectedStake,
   });
 
-  const amountValid = stakeAmount.mapOrDefault(
-    (sa) =>
+  const amountValid = useMemo(
+    () =>
       !isConnected ||
-      (sa.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-        sa.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-        sa.isLessThanOrEqualTo(availableAmount)),
-    false
+      (stakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(availableAmount)),
+    [
+      availableAmount,
+      isConnected,
+      maxEnterOrExitAmount,
+      minEnterOrExitAmount,
+      stakeAmount,
+    ]
   );
 
   const { t } = useTranslation();
+
+  const navigate = useNavigate();
 
   const onStakeEnter = useOnStakeEnter();
   const stakeRequestDto = useStakeEnterRequestDto();
 
   const { openConnectModal } = useConnectModal();
 
-  const navigate = useNavigate();
-
   const onClick = () => {
     if (buttonDisabled) return;
 
     if (!isConnected) return openConnectModal?.();
 
-    onStakeEnter.mutateAsync(stakeRequestDto).then(() => navigate("/review"));
+    onStakeEnter.mutate(stakeRequestDto, {
+      onSuccess: () => navigate("/review"),
+    });
   };
 
   const selectedStakeYieldType = selectedStake
@@ -390,8 +399,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     (isFetching ||
       stakeRequestDto.isNothing() ||
       !amountValid ||
-      stakeAmount.isNothing() ||
-      stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
+      stakeAmount.isZero() ||
       onStakeEnter.isPending);
 
   const buttonCTAText = useMemo(() => {
@@ -416,6 +424,12 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     trackEvent("earnPageMaxClicked");
     _onMaxClick();
   };
+
+  const onTronResourceSelect = (value: TronResourceType) =>
+    appDispatch({
+      type: "tronResource/select",
+      data: value,
+    });
 
   const value = {
     availableTokens,
@@ -459,6 +473,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeSearch,
     defaultTokensIsLoading,
     isLedgerLiveAccountPlaceholder,
+    tronResource,
+    onTronResourceSelect,
   };
 
   return (

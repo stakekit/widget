@@ -13,6 +13,7 @@ import {
   useDetailsContext,
 } from "./state/details-context";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { ExtraArgsSelection } from "./components/extra-args-selection";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -61,6 +62,8 @@ const EarnPageComponent = () => {
           <SelectYieldSection />
 
           <SelectValidatorSection />
+
+          <ExtraArgsSelection />
         </Box>
 
         {isError && (

@@ -23,7 +23,7 @@ export const useEstimatedRewards = ({
 
   return useMemo(
     () =>
-      Maybe.fromRecord({ providersDetails, stakeAmount, selectedStake })
+      Maybe.fromRecord({ providersDetails, selectedStake })
         .map((val) => ({
           ...val,
           rewardRateAverage: val.providersDetails
@@ -38,17 +38,14 @@ export const useEstimatedRewards = ({
             rewardRate: val.rewardRateAverage.toNumber(),
             rewardType: val.selectedStake.rewardType,
           }),
-          yearly: stakeAmount.mapOrDefault(
-            (am) =>
-              formatNumber(am.times(val.rewardRateAverage).decimalPlaces(5)),
-            ""
+          yearly: formatNumber(
+            stakeAmount.times(val.rewardRateAverage).decimalPlaces(5)
           ),
-          monthly: stakeAmount.mapOrDefault(
-            (am) =>
-              formatNumber(
-                am.times(val.rewardRateAverage).dividedBy(12).decimalPlaces(5)
-              ),
-            ""
+          monthly: formatNumber(
+            stakeAmount
+              .times(val.rewardRateAverage)
+              .dividedBy(12)
+              .decimalPlaces(5)
           ),
         })),
     [providersDetails, selectedStake, stakeAmount]

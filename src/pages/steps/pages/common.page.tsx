@@ -48,9 +48,7 @@ export const StepsPage = ({
             <TxState
               key={i}
               txState={txState}
-              position={
-                i === 0 ? "FIRST" : i === txStates.length - 1 ? "LAST" : "ELSE"
-              }
+              position={getPosition(txStates.length, i)}
               count={{ current: i + 1, total: txStates.length }}
             />
           ))}
@@ -71,3 +69,12 @@ export const StepsPage = ({
     </PageContainer>
   );
 };
+
+const getPosition = (txStatesLenght: number, currentIdx: number) =>
+  txStatesLenght === 1
+    ? "LAST"
+    : currentIdx === 0
+      ? "FIRST"
+      : currentIdx === txStatesLenght - 1
+        ? "LAST"
+        : "ELSE";

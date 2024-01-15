@@ -54,7 +54,7 @@ export const stakingFlow = async () => {
     useEstimatedRewards({
       selectedStake: Just(yieldOp),
       selectedValidators: new Map(),
-      stakeAmount: Just(new BigNumber(stakeAmount)),
+      stakeAmount: new BigNumber(stakeAmount),
     })
   ).result.current.unsafeCoerce();
 
