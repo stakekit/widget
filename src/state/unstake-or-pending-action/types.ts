@@ -32,8 +32,6 @@ export type State = {
 };
 
 export type ExtraData = {
-  balanceId: Maybe<string>;
-  integrationId: Maybe<string>;
   pendingActionType: Maybe<ActionTypes>;
   integrationData: Maybe<YieldDto>;
   stakeExitTxGas: Maybe<BigNumber>;

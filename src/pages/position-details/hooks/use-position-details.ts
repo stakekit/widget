@@ -16,13 +16,12 @@ import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
+import { useUpdateEffect } from "../../../hooks/use-update-effect";
 
 export const usePositionDetails = () => {
   const {
     unstakeAmount,
     integrationData,
-    integrationId,
-    balanceId,
     yieldOpportunity,
     positionBalances,
     reducedStakedOrLiquidBalance,
@@ -123,19 +122,14 @@ export const usePositionDetails = () => {
       amount: unstakeAmount.toString(),
     });
 
-    onStakeExit.mutate(
-      { stakeRequestDto: stakeExitRequestDto },
-      {
-        onSuccess: () =>
-          Maybe.fromRecord({ integrationId, balanceId }).ifJust((val) =>
-            navigate(
-              `../../../unstake/${val.integrationId}/${val.balanceId}/review`,
-              { relative: "path" }
-            )
-          ),
-      }
-    );
+    onStakeExit.mutate({ stakeRequestDto: stakeExitRequestDto });
   };
+
+  useUpdateEffect(() => {
+    if (onStakeExit.isSuccess && onStakeExit.data) {
+      navigate("unstake/review");
+    }
+  }, [onStakeExit.isSuccess, onStakeExit.data]);
 
   const liquidTokensToNativeConversion = useMemo(
     () =>

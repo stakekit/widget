@@ -48,6 +48,7 @@ import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
+import { useUpdateEffect } from "../../../../hooks/use-update-effect";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -352,10 +353,14 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
     if (!isConnected) return openConnectModal?.();
 
-    onStakeEnter.mutate(stakeRequestDto, {
-      onSuccess: () => navigate("/review"),
-    });
+    onStakeEnter.mutate(stakeRequestDto);
   };
+
+  useUpdateEffect(() => {
+    if (onStakeEnter.isSuccess && onStakeEnter.data) {
+      navigate("/review");
+    }
+  }, [onStakeEnter.data, onStakeEnter.isSuccess]);
 
   const selectedStakeYieldType = selectedStake
     .map((val) => val.metadata.type)
