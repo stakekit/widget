@@ -123,6 +123,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
           display="flex"
           justifyContent="center"
           alignItems="flex-end"
+          marginTop="5"
         >
           <Button
             onClick={onClick}

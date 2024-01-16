@@ -290,8 +290,6 @@ export const UnstakeOrPendingActionContextProvider = ({
       stakedOrLiquidBalances,
       yieldOpportunity,
       positionBalances,
-      balanceId,
-      integrationId,
       pendingActionType,
       integrationData,
       stakeExitTxGas,
@@ -301,9 +299,7 @@ export const UnstakeOrPendingActionContextProvider = ({
       pendingActionToken,
     }),
     [
-      balanceId,
       integrationData,
-      integrationId,
       pendingActions,
       pendingActionSession,
       pendingActionToken,

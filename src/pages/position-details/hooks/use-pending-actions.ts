@@ -25,6 +25,7 @@ import {
 } from "../../../state/unstake-or-pending-action";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
+import { useUpdateEffect } from "../../../hooks/use-update-effect";
 
 export const usePendingActions = () => {
   const {
@@ -245,12 +246,15 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) =>
-      onPendingAction.mutate(
-        { pendingActionRequestDto: val, yieldBalance },
-        { onSuccess: () => navigate("pending-action/review") }
-      )
+      onPendingAction.mutate({ pendingActionRequestDto: val, yieldBalance })
     );
   };
+
+  useUpdateEffect(() => {
+    if (onPendingAction.isSuccess && onPendingAction.data) {
+      navigate("pending-action/review");
+    }
+  }, [onPendingAction.isSuccess, onPendingAction.data]);
 
   return {
     onPendingActionAmountChange,
