@@ -52,7 +52,8 @@
     "clean": "rm -rf dist",
     "preview": "vite preview",
     "prepare": "husky install",
-    "check-unused": "npx knip"
+    "check-unused": "npx knip",
+    "get-errors": "npx node get-errors.js"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -71,6 +72,7 @@
     "@cosmos-kit/leap": "^2.6.1",
     "@cosmos-kit/walletconnect": "2.5.1",
     "@ledgerhq/wallet-api-client": "^1.5.0",
+    "@preact/signals-react": "^2.0.0",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@stakekit/api-hooks": "^0.0.51",
     "@stakekit/common": "^0.0.24",
