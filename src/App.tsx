@@ -7,18 +7,16 @@ import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
 import { ComponentProps, useEffect } from "react";
 import {
-  Location,
   Navigate,
   Outlet,
   Route,
   RouterProvider,
-  Routes,
   createMemoryRouter,
   useLocation,
   useNavigate,
+  Routes,
 } from "react-router-dom";
 import { useSavedRef, useToggleTheme } from "./hooks";
-import { container } from "./style.css";
 import {
   Layout,
   ReviewPage,
@@ -30,19 +28,16 @@ import {
   EarnPage,
   Details,
 } from "./pages";
-import { Box } from "./components";
 import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
 import { Providers } from "./providers";
 import {
   SettingsContextProvider,
   SettingsContextType,
 } from "./providers/settings";
-import classNames from "clsx";
 import { PositionDetails } from "./pages/position-details";
-import { useLocationTransition } from "./providers/location-transition";
-import { StakeCheck } from "./pages/cheks/stake-check";
-import { UnstakeOrPendingActionCheck } from "./pages/cheks/unstake-or-pending-action-check";
-import { ConnectedCheck } from "./pages/cheks/connected-check";
+import { StakeCheck } from "./navigation/cheks/stake-check";
+import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
+import { ConnectedCheck } from "./navigation/cheks/connected-check";
 import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
 import { createPortal } from "react-dom";
 import { HelpModal } from "./components/molecules/help-modal";
@@ -51,6 +46,12 @@ import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { Header } from "./components";
+import { headerContainer } from "./pages/components/layout/styles.css";
+import { AnimationLayout } from "./navigation/containers/animation-layout";
+import { container } from "./style.css";
+import { FooterContent } from "./pages/components/footer-outlet";
 
 const Widget = () => {
   useToggleTheme();
@@ -85,110 +86,119 @@ const Widget = () => {
 
   useAutoConnectInjectedProviderMachine();
 
-  const {
-    location,
-    displayLocation,
-    prevLocationPathName,
-    transitionClassName,
-    onAnimationEnd,
-  } = useLocationTransition();
+  const location = useLocation();
+
+  /**
+   * Dont unmount details page with tabs
+   */
+  const key =
+    location.pathname === "/" || location.pathname === "/positions"
+      ? "/"
+      : location.pathname;
 
   return (
-    <>
-      <Box
-        background="background"
-        className={classNames([
-          container,
-          shouldAnimate({ location, prevLocationPathName }) &&
-            transitionClassName,
-        ])}
-        onAnimationEnd={onAnimationEnd}
-      >
-        <Routes location={displayLocation}>
-          <Route element={<Layout />}>
-            {/* Home + Tabs */}
-            <Route element={<Details />}>
-              <Route index element={<EarnPage />} />
-              <Route path="positions" element={<PositionsPage />} />
-            </Route>
+    <AnimationLayout>
+      <LayoutGroup>
+        <motion.div layout="size" className={headerContainer}>
+          <Header />
+        </motion.div>
 
-            <Route element={<ConnectedCheck />}>
-              {/* Stake flow */}
-              <Route element={<StakeCheck />}>
-                <Route path="review" element={<ReviewPage />} />
-                <Route path="steps" element={<StakeStepsPage />} />
-                <Route path="complete" element={<StakeCompletePage />} />
-              </Route>
-
-              {/* Actions flow */}
-              <Route
-                path="positions/:integrationId/:balanceId"
-                element={
-                  <UnstakeOrPendingActionContextProvider>
-                    <Outlet />
-                  </UnstakeOrPendingActionContextProvider>
-                }
-              >
-                <Route index element={<PositionDetails />} />
-                <Route
-                  path="select-validator/:pendingActionType"
-                  element={<PositionDetails />}
-                />
-
-                {/* Unstaking */}
-                <Route path="unstake" element={<UnstakeOrPendingActionCheck />}>
-                  <Route
-                    path="review"
-                    element={<UnstakeOrPendingActionReviewPage />}
-                  />
-                  <Route
-                    path="steps"
-                    element={<UnstakeOrPendingActionStepsPage />}
-                  />
-                  <Route
-                    path="complete"
-                    element={<UnstakeOrPendingActionCompletePage />}
-                  />
+        <motion.div layout="size" className={container}>
+          <AnimatePresence>
+            <Routes location={location} key={key}>
+              <Route element={<Layout currentPathname={location.pathname} />}>
+                {/* Home + Tabs */}
+                <Route element={<Details />}>
+                  <Route index element={<EarnPage />} />
+                  <Route path="positions" element={<PositionsPage />} />
                 </Route>
 
-                {/* Pending Actions */}
-                <Route
-                  path="pending-action"
-                  element={<UnstakeOrPendingActionCheck />}
-                >
+                <Route element={<ConnectedCheck />}>
+                  {/* Stake flow */}
+                  <Route element={<StakeCheck />}>
+                    <Route path="review" element={<ReviewPage />} />
+                    <Route path="steps" element={<StakeStepsPage />} />
+                    <Route path="complete" element={<StakeCompletePage />} />
+                  </Route>
+
+                  {/* Actions flow */}
                   <Route
-                    path="review"
-                    element={<UnstakeOrPendingActionReviewPage />}
-                  />
-                  <Route
-                    path="steps"
-                    element={<UnstakeOrPendingActionStepsPage />}
-                  />
-                  <Route
-                    path="complete"
-                    element={<UnstakeOrPendingActionCompletePage />}
-                  />
+                    path="positions/:integrationId/:balanceId"
+                    element={
+                      <UnstakeOrPendingActionContextProvider>
+                        <Outlet />
+                      </UnstakeOrPendingActionContextProvider>
+                    }
+                  >
+                    <Route index element={<PositionDetails />} />
+                    <Route
+                      path="select-validator/:pendingActionType"
+                      element={<PositionDetails />}
+                    />
+
+                    {/* Unstaking */}
+                    <Route
+                      path="unstake"
+                      element={<UnstakeOrPendingActionCheck />}
+                    >
+                      <Route
+                        path="review"
+                        element={<UnstakeOrPendingActionReviewPage />}
+                      />
+                      <Route
+                        path="steps"
+                        element={<UnstakeOrPendingActionStepsPage />}
+                      />
+                      <Route
+                        path="complete"
+                        element={<UnstakeOrPendingActionCompletePage />}
+                      />
+                    </Route>
+
+                    {/* Pending Actions */}
+                    <Route
+                      path="pending-action"
+                      element={<UnstakeOrPendingActionCheck />}
+                    >
+                      <Route
+                        path="review"
+                        element={<UnstakeOrPendingActionReviewPage />}
+                      />
+                      <Route
+                        path="steps"
+                        element={<UnstakeOrPendingActionStepsPage />}
+                      />
+                      <Route
+                        path="complete"
+                        element={<UnstakeOrPendingActionCompletePage />}
+                      />
+                    </Route>
+                  </Route>
                 </Route>
+
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
-            </Route>
+            </Routes>
+          </AnimatePresence>
+        </motion.div>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </Box>
+        <FooterContent />
+      </LayoutGroup>
 
-      {geoBlock &&
-        createPortal(
-          <HelpModal
-            modal={{
-              type: "geoBlock",
-              ...geoBlock,
-              regionCodeName: regionCodeName.data,
-            }}
-          />,
-          document.body
-        )}
-    </>
+      <>
+        {geoBlock &&
+          createPortal(
+            <HelpModal
+              modal={{
+                type: "geoBlock",
+                ...geoBlock,
+                regionCodeName: regionCodeName.data,
+              }}
+            />,
+            document.body
+          )}
+      </>
+    </AnimationLayout>
   );
 };
 
@@ -220,22 +230,4 @@ export const renderSKWidget = ({
 
   const root = ReactDOM.createRoot(container);
   root.render(<SKApp {...rest} />);
-};
-
-const shouldAnimate = ({
-  location,
-  prevLocationPathName,
-}: {
-  location: Location;
-  prevLocationPathName: Location["pathname"] | null;
-}) => {
-  const routesToSkip = ["/", "/positions"];
-
-  const goingToNonSkippedRoute = !routesToSkip.includes(location.pathname);
-  const returningFromNonSkippedRoute =
-    routesToSkip.includes(location.pathname) &&
-    prevLocationPathName &&
-    !routesToSkip.includes(prevLocationPathName);
-
-  return goingToNonSkippedRoute || returningFromNonSkippedRoute;
 };

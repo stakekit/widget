@@ -29,8 +29,8 @@ export const usePendingActionDeepLink = () => {
   const onPendingAction = useOnPendingAction();
 
   return useQuery({
-    staleTime: 0,
-    gcTime: 0,
+    staleTime: Infinity,
+    gcTime: Infinity,
     queryKey: ["pending-action-deep-link", isLedgerLive, address],
     enabled: !!(isConnected && address && wagmiConfig.data?.wagmiConfig),
     queryFn: async () =>
@@ -61,134 +61,135 @@ const fn = ({
     ReturnType<typeof useWagmiConfig>["data"]
   >["wagmiConfig"];
 }) =>
-  getInitialQueryParams({ isLedgerLive })
-    .chain((val) =>
-      EitherAsync.liftEither(
-        Maybe.of(val)
-          .filter(
-            (
-              v
-            ): v is Override<
-              typeof val,
-              { yieldId: string; pendingaction: string }
-            > => !!v.yieldId && !!v.pendingaction
+  getInitialQueryParams({ isLedgerLive }).chain((val) => {
+    const initQueryParams = Maybe.of(val)
+      .filter(
+        (
+          v
+        ): v is Override<
+          typeof val,
+          { yieldId: string; pendingaction: string }
+        > => !!v.yieldId && !!v.pendingaction
+      )
+      .toEither(new Error("missing yieldId or pendingaction"));
+
+    if (initQueryParams.isLeft()) return EitherAsync.liftEither(Right(null));
+
+    return EitherAsync.liftEither(initQueryParams)
+      .chain((initQueryParams) =>
+        EitherAsync.liftEither(
+          Maybe.fromRecord({
+            connector: Maybe.fromNullable(wagmiConfig.connector),
+            address: Maybe.fromNullable(wagmiConfig.data?.account),
+          }).toEither(new Error("missing wagmi config"))
+        )
+          .chain((wagmiData) =>
+            getAdditionalAddresses(wagmiData.connector).map<AddressesDto>(
+              (additionalAddresses) => ({
+                address: wagmiData.address,
+                additionalAddresses: additionalAddresses ?? undefined,
+              })
+            )
           )
-          .toEither(new Error("missing yieldId or pendingaction"))
-      )
-    )
-    .chain((initQueryParams) =>
-      EitherAsync.liftEither(
-        Maybe.fromRecord({
-          connector: Maybe.fromNullable(wagmiConfig.connector),
-          address: Maybe.fromNullable(wagmiConfig.data?.account),
-        }).toEither(new Error("missing wagmi config"))
-      )
-        .chain((wagmiData) =>
-          getAdditionalAddresses(wagmiData.connector).map<AddressesDto>(
-            (additionalAddresses) => ({
-              address: wagmiData.address,
-              additionalAddresses: additionalAddresses ?? undefined,
+          .chain((data) =>
+            withRequestErrorRetry({
+              fn: () =>
+                yieldGetSingleYieldBalances(initQueryParams.yieldId, {
+                  addresses: {
+                    address: data.address,
+                    additionalAddresses: data.additionalAddresses,
+                  },
+                }),
             })
+              .mapLeft(() => new Error("could not get yield balances"))
+              .map((val) => ({
+                yieldId: initQueryParams.yieldId,
+                pendingaction: initQueryParams.pendingaction,
+                validatorAddress: initQueryParams.validator,
+                singleYieldBalances: val,
+                address: data.address,
+                additionalAddresses: data.additionalAddresses,
+              }))
           )
-        )
-        .chain((data) =>
-          withRequestErrorRetry({
-            fn: () =>
-              yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-                addresses: {
-                  address: data.address,
-                  additionalAddresses: data.additionalAddresses,
-                },
-              }),
-          })
-            .mapLeft(() => new Error("could not get yield balances"))
-            .map((val) => ({
-              yieldId: initQueryParams.yieldId,
-              pendingaction: initQueryParams.pendingaction,
-              validatorAddress: initQueryParams.validator,
-              singleYieldBalances: val,
-              address: data.address,
-              additionalAddresses: data.additionalAddresses,
-            }))
-        )
-    )
-    .chain((data) =>
-      EitherAsync.liftEither(
-        Right(data.singleYieldBalances).chain((balances) => {
-          for (const balance of balances) {
-            if (
-              data.validatorAddress &&
-              balance.validatorAddress !== data.validatorAddress
-            ) {
-              continue;
-            }
-
-            const pendingAction = balance.pendingActions.find(
-              (pa) => pa.type === data.pendingaction
-            );
-
-            if (pendingAction) {
-              return Right({
-                pendingAction,
-                balance,
-                balanceId: balance.groupId ?? "default",
-              });
-            }
-          }
-
-          return Left(new Error("no pending action found"));
-        })
       )
-        .chain((val) =>
-          getYieldOpportunity({ isLedgerLive, yieldId: data.yieldId }).map(
-            (yieldOp) => ({ ...val, yieldOp })
-          )
-        )
-        .chain<
-          Error,
-          | {
-              type: "positionDetails";
-              yieldOp: YieldDto;
-              pendingAction: PendingActionDto;
-              balance: YieldBalanceDto;
-              balanceId: string;
+      .chain((data) =>
+        EitherAsync.liftEither(
+          Right(data.singleYieldBalances).chain((balances) => {
+            for (const balance of balances) {
+              if (
+                data.validatorAddress &&
+                balance.validatorAddress !== data.validatorAddress
+              ) {
+                continue;
+              }
+
+              const pendingAction = balance.pendingActions.find(
+                (pa) => pa.type === data.pendingaction
+              );
+
+              if (pendingAction) {
+                return Right({
+                  pendingAction,
+                  balance,
+                  balanceId: balance.groupId ?? "default",
+                });
+              }
             }
-          | ({ type: "review"; balanceId: string } & Awaited<
-              ReturnType<typeof onPendingAction>
-            >)
-        >((val) =>
-          PAMultiValidatorsRequired(val.pendingAction) ||
-          PASingleValidatorRequired(val.pendingAction)
-            ? EitherAsync.liftEither(
-                Right({
-                  type: "positionDetails",
-                  ...val,
-                })
-              )
-            : EitherAsync.liftEither(
-                preparePendingActionRequestDto({
-                  // TODO: fix this
-                  pendingActionsState: new Map(),
-                  address: data.address,
-                  additionalAddresses: data.additionalAddresses ?? null,
-                  integration: val.yieldOp,
-                  yieldBalance: val.balance,
-                  pendingActionDto: val.pendingAction,
-                  selectedValidators: [],
-                })
-              )
-                .chain((pendingActionRequestDto) =>
-                  EitherAsync(() =>
-                    onPendingAction({
-                      pendingActionRequestDto,
-                      yieldBalance: val.balance,
-                    })
-                  ).mapLeft(() => new Error("on pending action failed"))
-                )
-                .map((res) => ({
-                  ...res,
-                  type: "review",
-                  balanceId: val.balanceId,
-                }))
+
+            return Left(new Error("no pending action found"));
+          })
         )
-    );
+          .chain((val) =>
+            getYieldOpportunity({ isLedgerLive, yieldId: data.yieldId }).map(
+              (yieldOp) => ({ ...val, yieldOp })
+            )
+          )
+          .chain<
+            Error,
+            | {
+                type: "positionDetails";
+                yieldOp: YieldDto;
+                pendingAction: PendingActionDto;
+                balance: YieldBalanceDto;
+                balanceId: string;
+              }
+            | ({ type: "review"; balanceId: string } & Awaited<
+                ReturnType<typeof onPendingAction>
+              >)
+          >((val) =>
+            PAMultiValidatorsRequired(val.pendingAction) ||
+            PASingleValidatorRequired(val.pendingAction)
+              ? EitherAsync.liftEither(
+                  Right({
+                    type: "positionDetails",
+                    ...val,
+                  })
+                )
+              : EitherAsync.liftEither(
+                  preparePendingActionRequestDto({
+                    // TODO: fix this
+                    pendingActionsState: new Map(),
+                    address: data.address,
+                    additionalAddresses: data.additionalAddresses ?? null,
+                    integration: val.yieldOp,
+                    yieldBalance: val.balance,
+                    pendingActionDto: val.pendingAction,
+                    selectedValidators: [],
+                  })
+                )
+                  .chain((pendingActionRequestDto) =>
+                    EitherAsync(() =>
+                      onPendingAction({
+                        pendingActionRequestDto,
+                        yieldBalance: val.balance,
+                      })
+                    ).mapLeft(() => new Error("on pending action failed"))
+                  )
+                  .map((res) => ({
+                    ...res,
+                    type: "review",
+                    balanceId: val.balanceId,
+                  }))
+          )
+      );
+  });

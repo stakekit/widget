@@ -21,3 +21,11 @@ export const parentButton = style({
 });
 
 export const avatarContainer = style({ overflow: "hidden" });
+
+export const animationContainer = style([
+  atoms({ gap: "2" }),
+  {
+    display: "flex",
+    justifyContent: "center",
+  },
+]);

@@ -13,6 +13,7 @@ const fadeIn = keyframes({
 });
 
 export const container = style({
+  zIndex: 2,
   display: "flex",
   justifyContent: "center",
   alignItems: "center",

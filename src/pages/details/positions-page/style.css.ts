@@ -2,7 +2,7 @@ import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../styles";
 import { RecipeVariants, recipe } from "@vanilla-extract/recipes";
 
-export const container = recipe({
+export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 6px" }],
 
   variants: {
@@ -15,11 +15,15 @@ export const container = recipe({
   },
 });
 
-export type ContainerVariants = RecipeVariants<typeof container>;
+export type ContainerVariants = RecipeVariants<typeof listItemContainer>;
 
 export const viaText = style({
   textOverflow: "ellipsis",
   overflow: "hidden",
   whiteSpace: "nowrap",
   width: "100%",
+});
+
+export const container = style({
+  minHeight: "300px",
 });

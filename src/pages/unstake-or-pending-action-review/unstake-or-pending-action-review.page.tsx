@@ -10,6 +10,7 @@ import { feeStyles } from "../review/style.css";
 import { pointer } from "./styles.css";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
+import { AnimationPage } from "../../navigation/containers/animation-page";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {
@@ -34,105 +35,107 @@ export const UnstakeOrPendingActionReviewPage = () => {
     title,
   })
     .map((val) => (
-      <PageContainer>
-        <Box>
-          <Box marginBottom="4">
+      <AnimationPage>
+        <PageContainer>
+          <Box>
+            <Box marginBottom="4">
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                marginBottom="1"
+              >
+                <Heading variant={{ level: "h1" }}>{val.title}</Heading>
+                <TokenIcon
+                  token={val.integrationData.token}
+                  metadata={val.integrationData.metadata}
+                />
+              </Box>
+
+              <Heading variant={{ level: "h1" }}>
+                {val.amount} {val.integrationData.token.symbol}
+              </Heading>
+            </Box>
+
+            <Divider />
+
+            {rewardTokenDetailsProps
+              .map((val) => (
+                <>
+                  <Box my="4">
+                    <RewardTokenDetails {...val} />
+                  </Box>
+
+                  <Divider />
+                </>
+              ))
+              .extractNullable()}
+
             <Box
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              marginBottom="1"
+              marginTop="3"
             >
-              <Heading variant={{ level: "h1" }}>{val.title}</Heading>
-              <TokenIcon
-                token={val.integrationData.token}
-                metadata={val.integrationData.metadata}
-              />
+              <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
+              <HelpModal modal={{ type: "fees" }} />
             </Box>
 
-            <Heading variant={{ level: "h1" }}>
-              {val.amount} {val.integrationData.token.symbol}
-            </Heading>
-          </Box>
-
-          <Divider />
-
-          {rewardTokenDetailsProps
-            .map((val) => (
-              <>
-                <Box my="4">
-                  <RewardTokenDetails {...val} />
-                </Box>
-
-                <Divider />
-              </>
-            ))
-            .extractNullable()}
-
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            marginTop="3"
-          >
-            <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
-            <HelpModal modal={{ type: "fees" }} />
-          </Box>
-
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            my="1"
-            data-testid="estimated_gas_fee"
-          >
-            <Text variant={{ weight: "normal", type: "muted" }}>
-              {t("review.estimated_gas_fee")}
-            </Text>
-            <Text
-              className={feeStyles}
-              variant={{ type: "muted", weight: "normal" }}
+            <Box
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+              my="1"
+              data-testid="estimated_gas_fee"
             >
-              {fee}
-            </Text>
+              <Text variant={{ weight: "normal", type: "muted" }}>
+                {t("review.estimated_gas_fee")}
+              </Text>
+              <Text
+                className={feeStyles}
+                variant={{ type: "muted", weight: "normal" }}
+              >
+                {fee}
+              </Text>
+            </Box>
+
+            <Box marginTop="4">
+              <Text variant={{ weight: "normal", type: "muted" }}>
+                <Trans
+                  i18nKey="unstake_review.terms_of_use"
+                  components={{
+                    underline0: (
+                      // eslint-disable-next-line jsx-a11y/anchor-has-content
+                      <a
+                        target="_blank"
+                        onClick={() => trackEvent("termsClicked")}
+                        href="https://docs.stakek.it/docs/terms-of-use"
+                        className={pointer}
+                        rel="noreferrer"
+                      />
+                    ),
+                  }}
+                />
+              </Text>
+            </Box>
           </Box>
 
-          <Box marginTop="4">
-            <Text variant={{ weight: "normal", type: "muted" }}>
-              <Trans
-                i18nKey="unstake_review.terms_of_use"
-                components={{
-                  underline0: (
-                    // eslint-disable-next-line jsx-a11y/anchor-has-content
-                    <a
-                      target="_blank"
-                      onClick={() => trackEvent("termsClicked")}
-                      href="https://docs.stakek.it/docs/terms-of-use"
-                      className={pointer}
-                      rel="noreferrer"
-                    />
-                  ),
-                }}
-              />
-            </Text>
-          </Box>
-        </Box>
-
-        <Box
-          flex={1}
-          display="flex"
-          justifyContent="center"
-          alignItems="flex-end"
-          marginTop="5"
-        >
-          <Button
-            onClick={onClick}
-            variant={{ color: "primary", animation: "press" }}
+          <Box
+            flex={1}
+            display="flex"
+            justifyContent="center"
+            alignItems="flex-end"
+            marginTop="5"
           >
-            {t("shared.confirm")}
-          </Button>
-        </Box>
-      </PageContainer>
+            <Button
+              onClick={onClick}
+              variant={{ color: "primary", animation: "press" }}
+            >
+              {t("shared.confirm")}
+            </Button>
+          </Box>
+        </PageContainer>
+      </AnimationPage>
     ))
     .extractNullable();
 };

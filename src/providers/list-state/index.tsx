@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { StateSnapshot, VirtuosoHandle } from "react-virtuoso";
-import { useLocationTransition } from "../location-transition";
+import { useLocation } from "react-router-dom";
 
 type ListStateContextType = { [Key in "positions"]: StateSnapshot | null };
 
@@ -41,9 +41,9 @@ export const useListState = () => {
 };
 
 export const useHandleListState = () => {
-  const { location, displayLocation } = useLocationTransition();
-
   const virtualListRef = useRef<VirtuosoHandle>(null);
+
+  const location = useLocation();
 
   const [state, setState] = useListState();
 
@@ -55,7 +55,7 @@ export const useHandleListState = () => {
         setState((prev) => ({ ...prev, positions: newState }));
       });
     };
-  }, [displayLocation.pathname, location.pathname, setState]);
+  }, [location.pathname, setState]);
 
   return { scrollTop: state.positions?.scrollTop ?? undefined, virtualListRef };
 };

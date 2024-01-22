@@ -1,19 +1,19 @@
 import { Box } from "../../../components/atoms/box";
 import { Tabs, TabsProps } from "./components/tabs";
-import { Location, Outlet, useNavigate } from "react-router-dom";
-import { useLocationTransition } from "../../../providers/location-transition";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { usePositions } from "../positions-page/hooks/use-positions";
 import { checkHasPendingClaimRewards } from "../shared";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { motion } from "framer-motion";
+import { useSKLocation } from "../../../providers/location";
 
 export const Details = () => {
   const trackEvent = useTrackEvent();
 
-  const { location, transitionClassName, onAnimationEnd } =
-    useLocationTransition();
-
   const { positionsData } = usePositions();
+
+  const { current } = useSKLocation();
 
   const hasPendingRewards = useMemo(
     () =>
@@ -25,9 +25,9 @@ export const Details = () => {
 
   const [selectedTab, setSelectedTab] = useState<"earn" | "positions">("earn");
 
-  if (location.pathname === "/" && selectedTab === "positions") {
+  if (current.pathname === "/" && selectedTab === "positions") {
     setSelectedTab("earn");
-  } else if (location.pathname === "/positions" && selectedTab === "earn") {
+  } else if (current.pathname === "/positions" && selectedTab === "earn") {
     setSelectedTab("positions");
   }
 
@@ -40,27 +40,23 @@ export const Details = () => {
   };
 
   return (
-    <Box flex={1} display="flex" flexDirection="column">
-      <Box marginBottom="1">
-        <Tabs
-          onTabPress={onTabPress}
-          selectedTab={selectedTab}
-          hasPendingRewards={hasPendingRewards}
-        />
-      </Box>
+    <motion.div
+      exit={{ opacity: 0, filter: "blur(8px)", scale: 0.8 }}
+      transition={{ exit: { duration: 0.4, ease: "linear" } }}
+    >
+      <Box flex={1} display="flex" flexDirection="column">
+        <Box marginBottom="1">
+          <Tabs
+            onTabPress={onTabPress}
+            selectedTab={selectedTab}
+            hasPendingRewards={hasPendingRewards}
+          />
+        </Box>
 
-      <Box
-        display="flex"
-        flex={1}
-        flexDirection="column"
-        className={shouldAnimate(location) && transitionClassName}
-        onAnimationEnd={onAnimationEnd}
-      >
-        <Outlet />
+        <Box display="flex" flex={1} flexDirection="column">
+          <Outlet />
+        </Box>
       </Box>
-    </Box>
+    </motion.div>
   );
 };
-
-const shouldAnimate = (nextLocation: Location) =>
-  nextLocation.pathname === "/" || nextLocation.pathname === "/positions";

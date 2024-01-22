@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useLogout } from "../../../hooks";
 import { ConnectButton, AvatarContext } from "@stakekit/rainbowkit";
 import {
+  animationContainer,
   avatarContainer,
   container,
   parentButton,
@@ -18,12 +19,16 @@ import { useContext } from "react";
 import { useWagmiConfig } from "../../../providers/wagmi";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSyncHeaderHeight } from "./use-sync-header-height";
+import { motion } from "framer-motion";
 
 const showDisconnect = isLedgerDappBrowserProvider();
 
 export const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { containerRef } = useSyncHeaderHeight();
 
   const { isConnected, isConnecting, address } = useSKWallet();
 
@@ -54,181 +59,191 @@ export const Header = () => {
   const AvatarComponent = useContext(AvatarContext);
 
   return (
-    <Box paddingTop="4" paddingBottom="1">
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box hw="7">
-          {showBack ? (
-            <Box
-              as="button"
-              onClick={onLeftIconPress}
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <CaretLeftIcon />
+    <Box ref={containerRef}>
+      <Box paddingTop="4" paddingBottom="1">
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box hw="7">
+            {showBack ? (
+              <Box
+                as="button"
+                onClick={onLeftIconPress}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <CaretLeftIcon />
+              </Box>
+            ) : (
+              <Box />
+            )}
+          </Box>
+
+          {!showDisconnect && (
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <Box as="button" hw="5" onClick={onXPress}>
+                <XIcon />
+              </Box>
             </Box>
-          ) : (
-            <Box />
           )}
         </Box>
 
-        {!showDisconnect && (
-          <Box display="flex" alignItems="center" justifyContent="center">
-            <Box as="button" hw="5" onClick={onXPress}>
-              <XIcon />
-            </Box>
-          </Box>
-        )}
-      </Box>
+        {!wagmiConfig.isLoading && wagmiConfig.data && (
+          <ConnectButton.Custom>
+            {({
+              account,
+              chain,
+              openAccountModal,
+              openChainModal,
+              mounted,
+            }) => {
+              return (
+                <Box
+                  className={classNames({ [parentButton]: !mounted })}
+                  aria-hidden={!mounted}
+                >
+                  {(() => {
+                    if ((!isConnected && !isConnecting) || !chain || !account) {
+                      return null;
+                    }
 
-      {!wagmiConfig.isLoading && wagmiConfig.data && (
-        <ConnectButton.Custom>
-          {({ account, chain, openAccountModal, openChainModal, mounted }) => {
-            return (
-              <Box
-                className={classNames({ [parentButton]: !mounted })}
-                aria-hidden={!mounted}
-                display="flex"
-                justifyContent="center"
-                gap="2"
-              >
-                {(() => {
-                  if ((!isConnected && !isConnecting) || !chain || !account) {
-                    return null;
-                  }
-
-                  return (
-                    <>
-                      <Box
-                        borderRadius="2xl"
-                        background="backgroundMuted"
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        className={container}
-                        onClick={() => {
-                          trackEvent("chainModalOpened");
-                          openChainModal();
-                        }}
+                    return (
+                      <motion.div
+                        className={animationContainer}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.2 }}
                       >
-                        {(() => {
-                          if (chain.unsupported) {
-                            return (
-                              <Box
-                                px="2"
-                                py="2"
-                                as="button"
-                                onClick={() => {
-                                  trackEvent("chainModalOpened");
-                                  openChainModal();
-                                }}
-                              >
-                                <Text variant={{ type: "danger" }}>
-                                  {t("shared.unsupported_network")}
-                                </Text>
-                              </Box>
-                            );
-                          }
-
-                          return (
-                            <>
-                              <Box
-                                as="button"
-                                display="flex"
-                                justifyContent="space-between"
-                                alignItems="center"
-                                paddingLeft="2"
-                                py="2"
-                              >
-                                {chain?.iconUrl && (
-                                  <Box
-                                    as="img"
-                                    borderRadius="full"
-                                    hw="6"
-                                    src={chain.iconUrl}
-                                  />
-                                )}
-
-                                <Box marginLeft="2">
-                                  <Text className={titleStyle}>
-                                    {chain.name}
+                        <Box
+                          borderRadius="2xl"
+                          background="backgroundMuted"
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          className={container}
+                          onClick={() => {
+                            trackEvent("chainModalOpened");
+                            openChainModal();
+                          }}
+                        >
+                          {(() => {
+                            if (chain.unsupported) {
+                              return (
+                                <Box
+                                  px="2"
+                                  py="2"
+                                  as="button"
+                                  onClick={() => {
+                                    trackEvent("chainModalOpened");
+                                    openChainModal();
+                                  }}
+                                >
+                                  <Text variant={{ type: "danger" }}>
+                                    {t("shared.unsupported_network")}
                                   </Text>
                                 </Box>
+                              );
+                            }
 
-                                <Box mx="2">
-                                  <CaretDownIcon />
-                                </Box>
-                              </Box>
-                            </>
-                          );
-                        })()}
-                      </Box>
-
-                      <Box
-                        borderRadius="2xl"
-                        background="backgroundMuted"
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        className={container}
-                        onClick={() => {
-                          trackEvent("accountModalOpened");
-                          openAccountModal();
-                        }}
-                      >
-                        {(() => {
-                          return (
-                            <>
-                              <Box
-                                as="button"
-                                display="flex"
-                                justifyContent="space-between"
-                                alignItems="center"
-                                paddingLeft="2"
-                                py="2"
-                              >
-                                {account.ensAvatar ? (
-                                  <Box
-                                    as="img"
-                                    src={account.ensAvatar}
-                                    hw="6"
-                                    borderRadius="half"
-                                  />
-                                ) : (
-                                  <>
+                            return (
+                              <>
+                                <Box
+                                  as="button"
+                                  display="flex"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                  paddingLeft="2"
+                                  py="2"
+                                >
+                                  {chain?.iconUrl && (
                                     <Box
-                                      borderRadius="half"
-                                      marginRight="2"
-                                      className={avatarContainer}
-                                    >
-                                      <AvatarComponent
-                                        address={address as Address}
-                                        size={24}
-                                      />
-                                    </Box>
+                                      as="img"
+                                      borderRadius="full"
+                                      hw="6"
+                                      src={chain.iconUrl}
+                                    />
+                                  )}
 
+                                  <Box marginLeft="2">
                                     <Text className={titleStyle}>
-                                      {account.ensName ?? account.displayName}
+                                      {chain.name}
                                     </Text>
-                                  </>
-                                )}
+                                  </Box>
 
-                                <Box mx="2">
-                                  <CaretDownIcon />
+                                  <Box mx="2">
+                                    <CaretDownIcon />
+                                  </Box>
                                 </Box>
-                              </Box>
-                            </>
-                          );
-                        })()}
-                      </Box>
-                    </>
-                  );
-                })()}
-              </Box>
-            );
-          }}
-        </ConnectButton.Custom>
-      )}
+                              </>
+                            );
+                          })()}
+                        </Box>
+
+                        <Box
+                          borderRadius="2xl"
+                          background="backgroundMuted"
+                          display="flex"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          className={container}
+                          onClick={() => {
+                            trackEvent("accountModalOpened");
+                            openAccountModal();
+                          }}
+                        >
+                          {(() => {
+                            return (
+                              <>
+                                <Box
+                                  as="button"
+                                  display="flex"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                  paddingLeft="2"
+                                  py="2"
+                                >
+                                  {account.ensAvatar ? (
+                                    <Box
+                                      as="img"
+                                      src={account.ensAvatar}
+                                      hw="6"
+                                      borderRadius="half"
+                                    />
+                                  ) : (
+                                    <>
+                                      <Box
+                                        borderRadius="half"
+                                        marginRight="2"
+                                        className={avatarContainer}
+                                      >
+                                        <AvatarComponent
+                                          address={address as Address}
+                                          size={24}
+                                        />
+                                      </Box>
+
+                                      <Text className={titleStyle}>
+                                        {account.ensName ?? account.displayName}
+                                      </Text>
+                                    </>
+                                  )}
+
+                                  <Box mx="2">
+                                    <CaretDownIcon />
+                                  </Box>
+                                </Box>
+                              </>
+                            );
+                          })()}
+                        </Box>
+                      </motion.div>
+                    );
+                  })()}
+                </Box>
+              );
+            }}
+          </ConnectButton.Custom>
+        )}
+      </Box>
     </Box>
   );
 };

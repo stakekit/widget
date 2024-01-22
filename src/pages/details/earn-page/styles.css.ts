@@ -16,6 +16,7 @@ export const dotContainer = style({
 
 export const apyYield = style([
   {
+    color: vars.color.text,
     fontSize: vars.fontSize["3xl"],
     fontWeight: vars.fontWeight.normal,
   },

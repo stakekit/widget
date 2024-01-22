@@ -12,6 +12,8 @@ import {
   tabBorder,
   tabContainer,
 } from "../styles.css";
+import { motion } from "framer-motion";
+import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
 
 export type TabsProps = {
   selectedTab: "earn" | "positions";
@@ -26,67 +28,79 @@ export const Tabs = ({
 }: TabsProps) => {
   const { t } = useTranslation();
 
+  const [mountAnimationFinished] = useMountAnimationFinished();
+
   return (
-    <Box position="relative" display="flex" justifyContent="center">
-      <Box className={divider}>
-        <Divider />
-      </Box>
+    <motion.div
+      initial={
+        mountAnimationFinished
+          ? { opacity: 1, translateY: 0 }
+          : { opacity: 0, translateY: "-40px" }
+      }
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ duration: 1, delay: 1 }}
+    >
+      <Box position="relative" display="flex" justifyContent="center">
+        <Box className={divider}>
+          <Divider />
+        </Box>
 
-      <Box display="flex" alignItems="center" justifyContent="center">
-        <Box className={tabContainer}>
-          <Box
-            className={clsx([pressAnimation, tab])}
-            onClick={() => onTabPress("earn")}
-          >
-            <Text
-              variant={{ type: selectedTab === "earn" ? "regular" : "muted" }}
+        <Box display="flex" alignItems="center" justifyContent="center">
+          <Box className={tabContainer}>
+            <Box
+              className={clsx([pressAnimation, tab])}
+              onClick={() => onTabPress("earn")}
             >
-              {t("details.tab_earn")}
-            </Text>
-          </Box>
-
-          <Box
-            className={clsx([
-              tabBorder,
-              selectedTab === "earn" ? activeTabBorder : leftTabBorder,
-            ])}
-          />
-        </Box>
-
-        <Box className={tabContainer}>
-          <Box
-            className={clsx([pressAnimation, tab])}
-            onClick={() => onTabPress("positions")}
-          >
-            <Box position="relative">
               <Text
-                variant={{
-                  type: selectedTab === "positions" ? "regular" : "muted",
-                }}
+                variant={{ type: selectedTab === "earn" ? "regular" : "muted" }}
               >
-                {t("details.tab_positions")}
+                {t("details.tab_earn")}
               </Text>
-
-              {hasPendingRewards && (
-                <Box
-                  borderRadius="full"
-                  width="1"
-                  height="1"
-                  background="positionsClaimRewardsBackground"
-                  className={rewardsDot}
-                />
-              )}
             </Box>
+
+            <Box
+              className={clsx([
+                tabBorder,
+                selectedTab === "earn" ? activeTabBorder : leftTabBorder,
+              ])}
+            />
           </Box>
 
-          <Box
-            className={clsx([
-              tabBorder,
-              selectedTab === "positions" ? activeTabBorder : rightTabBorder,
-            ])}
-          />
+          <Box className={tabContainer}>
+            <Box
+              className={clsx([pressAnimation, tab])}
+              onClick={() => onTabPress("positions")}
+            >
+              <Box position="relative">
+                <Text
+                  variant={{
+                    type: selectedTab === "positions" ? "regular" : "muted",
+                  }}
+                >
+                  {t("details.tab_positions")}
+                </Text>
+
+                {hasPendingRewards && (
+                  <Box
+                    borderRadius="full"
+                    width="1"
+                    height="1"
+                    background="positionsClaimRewardsBackground"
+                    className={rewardsDot}
+                  />
+                )}
+              </Box>
+            </Box>
+
+            <Box
+              className={clsx([
+                tabBorder,
+                selectedTab === "positions" ? activeTabBorder : rightTabBorder,
+              ])}
+            />
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </motion.div>
   );
 };

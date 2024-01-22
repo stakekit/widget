@@ -1,19 +1,27 @@
 import { Outlet, ScrollRestoration } from "react-router-dom";
-import { Box } from "../../../components/atoms/box";
-import { Header } from "../../../components/molecules/header";
-import { useLocationTransition } from "../../../providers/location-transition";
+import { absoluteContainer } from "./styles.css";
+import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
+import { useCurrentLayout } from "./layout-context";
+import { motion } from "framer-motion";
 
-export const Layout = () => {
-  const { location, displayLocation } = useLocationTransition();
+export const Layout = ({ currentPathname }: { currentPathname: string }) => {
+  const { setState } = useCurrentLayout();
+
+  const { containerRef } = useSyncElementHeight((height) => {
+    setState({ pathname: currentPathname, height });
+  });
 
   return (
     <>
-      {location === displayLocation && <ScrollRestoration />}
-      <Box px="4" marginBottom="1">
-        <Header />
-      </Box>
+      <ScrollRestoration />
 
-      <Outlet />
+      <motion.div
+        layout="position"
+        ref={containerRef}
+        className={absoluteContainer}
+      >
+        <Outlet />
+      </motion.div>
     </>
   );
 };
