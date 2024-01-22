@@ -29,19 +29,19 @@ export const ReachErrorModal = () => {
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {message && t(`${message}.title`) as string}
+            {message && (t(`${message}.title`) as string)}
           </Text>
           <Text
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {message && t(`${message}.details`, details ?? {}) as string}
+            {message && (t(`${message}.details`, details ?? {}) as string)}
           </Text>
           <Text
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {message && t(`${message}.solution`) as string}
+            {message && (t(`${message}.solution`) as string)}
           </Text>
         </Box>
       </Box>
