@@ -38,3 +38,42 @@ export const errorsSet = new Set([
 	"BinanceAccountNotFoundError",
 	"BinanceMissingAccountNumberOrSequenceError",
 ]);
+
+
+export type ErrorsSet =
+	| "MissingArgumentsError"
+	| "MinimumAmountNotReached"
+	| "YieldUnderMaintenanceError"
+	| "InsufficientFundsError"
+	| "BalanceUnavailableError"
+	| "GasPriceUnavailableError"
+	| "NotImplementedError"
+	| "TokenNotFoundError"
+	| "BroadcastTransactionError"
+	| "MissingGasPriceStrategyError"
+	| "SubstrateMalformedTransactionHashError"
+	| "SubstratePoolNotFoundError"
+	| "SubstrateBondedAmountTooLowError"
+	| "TronMissingResourceTypeArgumentError"
+	| "AaveV3PoolFrozenError"
+	| "AaveV3TokenPairNotFoundError"
+	| "YearnVaultAtMaxCapacityError"
+	| "StETHNoWithdrawalRequestsFoundError"
+	| "MorphoLendingPoolPausedError"
+	| "NonceUnavailableError"
+	| "CosmosAcccountNotFoundError"
+	| "AvalancheMissingAdditionalAddressesArgumentError"
+	| "AvalancheValidatorInfoNotFoundError"
+	| "SolanaTransactionSignatureVerificationFailureError"
+	| "SolanaUnableTocreateStakeAccountError"
+	| "SolanaStakeAmountTooLowError"
+	| "SolanaUnstakeAmountTooLowError"
+	| "SolanaStakeAccountsNotFoundError"
+	| "SolanaEligibleStakeAccountsNotFoundError"
+	| "TezosNoBalanceDelegatedError"
+	| "TezosMissingPubkeyArgumentError"
+	| "TezosEstimateRevealGasLimitError"
+	| "TezosBalanceAlreadyDelegatedError"
+	| "BinanceAccountNotFoundError"
+	| "BinanceMissingAccountNumberOrSequenceError"
+;

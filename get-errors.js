@@ -48,11 +48,23 @@ function createErrorString(errorObj) {
   return errorsArray;
 }
 
+function createErrorStringUnion(errorObj) {
+  let errorsArray = '\n\n';
+  errorsArray += 'export type ErrorsSet =\n';
+
+  Object.keys(errorObj).forEach(function (key) {
+    errorsArray += `\t| "${key}"\n`;
+  })
+
+  errorsArray += ';\n';
+  return errorsArray;
+}
+
 async function writeStringToFile(str, path) {
   return writeFile(path, str, 'utf8');
 }
 
-const token = 'GHSAT0AAAAAACEXM5ZXC5XK6UNY35QGT6L2ZNOV7SQ';
+const token = 'GHSAT0AAAAAACEXM5ZWAAWYVS5XZMOEHJ2AZNOYF5Q';
 const errorsURL = `https://raw.githubusercontent.com/stakekit/i18n/main/locales/en/errors.json?token=${token}`;
 const targetFile = './src/translation/English/errors.json';
 const targetTsFile = './src/utils/errors.ts';
@@ -62,4 +74,5 @@ const errors = await content(targetFile);
 
 const errorsJSON = JSON.parse(errors);
 const str = createErrorString(errorsJSON);
-await writeStringToFile(str, targetTsFile);
+const typeString = createErrorStringUnion(errorsJSON);
+await writeStringToFile(str + typeString, targetTsFile);

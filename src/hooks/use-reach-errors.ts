@@ -1,12 +1,12 @@
 import { APIManager } from "@stakekit/api-hooks";
 import { signal, useSignalEffect } from "@preact/signals-react";
 import { useState } from "react";
-import { errorsSet } from "../utils/errors";
+import { ErrorsSet, errorsSet } from "../utils/errors";
 
 export const reachErrorKey = signal<ReachError | undefined>(undefined);
 
 interface ReachError {
-  message: string;
+  message: ErrorsSet;
   details?: { [key: string]: any };
 }
 

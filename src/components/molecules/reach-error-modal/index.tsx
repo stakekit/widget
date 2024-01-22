@@ -8,6 +8,7 @@ import { useReachErrors } from "../../../hooks/use-reach-errors";
 export const ReachErrorModal = () => {
   const { t } = useTranslation();
   const { error, resetError } = useReachErrors();
+  const { message, details } = error ?? {};
 
   return (
     <SelectModal
@@ -28,19 +29,19 @@ export const ReachErrorModal = () => {
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {t(`${error?.message}.title`)}
+            {message && t(`${message}.title`) as string}
           </Text>
           <Text
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {t(`${error?.message}.details`, error?.details ?? {})}
+            {message && t(`${message}.details`, details ?? {}) as string}
           </Text>
           <Text
             variant={{ type: "muted", weight: "normal" }}
             textAlign="center"
           >
-            {t(`${error?.message}.solution`)}
+            {message && t(`${message}.solution`) as string}
           </Text>
         </Box>
       </Box>
