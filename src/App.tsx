@@ -51,6 +51,7 @@ import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
+import { ReachErrorModal } from "./components/molecules/reach-error-modal";
 
 const Widget = () => {
   useToggleTheme();
@@ -175,7 +176,7 @@ const Widget = () => {
           </Route>
         </Routes>
       </Box>
-
+      {createPortal(<ReachErrorModal />, document.body)}
       {geoBlock &&
         createPortal(
           <HelpModal
