@@ -2,13 +2,13 @@ import { APIManager } from "@stakekit/api-hooks";
 import { useState } from "react";
 import { ErrorsSet, errorsSet } from "../utils/errors";
 
-interface ReachError {
+interface RichError {
   message: ErrorsSet;
   details?: { [key: string]: any };
 }
 
-export const useReachErrors = () => {
-  const [error, setError] = useState<ReachError>();
+export const useRichErrors = () => {
+  const [error, setError] = useState<RichError>();
 
   APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {
     if (errorsSet.has(error.response.data.message)) {

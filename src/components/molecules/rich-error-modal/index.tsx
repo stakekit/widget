@@ -3,11 +3,11 @@ import { Box } from "../../atoms/box";
 import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
 import { container } from "./style.css";
-import { useReachErrors } from "../../../hooks/use-reach-errors";
+import { useRichErrors } from "../../../hooks/use-rich-errors";
 
-export const ReachErrorModal = () => {
+export const RichErrorModal = () => {
   const { t } = useTranslation();
-  const { error, resetError } = useReachErrors();
+  const { error, resetError } = useRichErrors();
   const { message, details } = error ?? {};
 
   return (
