@@ -5,13 +5,12 @@ import {
   getYieldYieldBalancesScanQueryKey,
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";
-import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Just, Maybe, Right } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { waitForMs } from "../../utils";
+import { useRefetchQueryNTimes } from "../use-refetch-query-n-times";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],
@@ -78,29 +77,13 @@ export const useYieldBalancesScan = <
   /**
    * This is a hack to make sure that the yield balances are updated after a transaction
    */
-  useQuery({
-    queryKey: ["yield-balances-refetch", lastActionTimestamp],
-    refetchOnMount: false,
+  useRefetchQueryNTimes({
     enabled: !!lastActionTimestamp,
-    queryFn: async () => {
-      if (
-        !lastActionTimestamp ||
-        Date.now() - lastActionTimestamp > 1000 * 12
-      ) {
-        return null;
-      }
-
-      await EitherAsync.sequence(
-        Array.from({ length: 2 }).map(() =>
-          EitherAsync(async () => {
-            await waitForMs(4000);
-            await res.refetch();
-          }).chainLeft(async () => Right(null))
-        )
-      );
-
-      return null;
-    },
+    key: ["yield-balances-refetch", lastActionTimestamp],
+    refetch: () => res.refetch(),
+    waitMs: 4000,
+    shouldRefetch: () =>
+      !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
   });
 
   return res;
