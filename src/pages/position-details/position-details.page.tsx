@@ -29,7 +29,7 @@ export const PositionDetails = () => {
     onMaxClick,
     onUnstakeClick,
     onStakeExitIsLoading,
-    error,
+    errorMessage,
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
@@ -119,16 +119,14 @@ export const PositionDetails = () => {
                   )}
                 </Box>
 
-                {error && (
+                {errorMessage && (
                   <Box
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
                     marginBottom="6"
                   >
-                    <Text variant={{ type: "danger" }}>
-                      {t("shared.something_went_wrong")}
-                    </Text>
+                    <Text variant={{ type: "danger" }}>{errorMessage}</Text>
                   </Box>
                 )}
 
