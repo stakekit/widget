@@ -42,7 +42,7 @@ export const Details = () => {
   return (
     <motion.div
       exit={{ opacity: 0, filter: "blur(8px)", scale: 0.8 }}
-      transition={{ exit: { duration: 0.4, ease: "linear" } }}
+      transition={{ exit: { duration: 0.4 } }}
     >
       <Box flex={1} display="flex" flexDirection="column">
         <Box marginBottom="1">

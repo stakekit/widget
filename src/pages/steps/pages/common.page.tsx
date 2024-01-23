@@ -72,7 +72,7 @@ export const StepsPage = ({
 
 const getPosition = (txStatesLenght: number, currentIdx: number) =>
   txStatesLenght === 1
-    ? "LAST"
+    ? "FIRST"
     : currentIdx === 0
       ? "FIRST"
       : currentIdx === txStatesLenght - 1

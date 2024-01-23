@@ -46,7 +46,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
       transition={
         mountAnimationFinished
           ? { duration: 0.25 }
-          : { duration: 0.6, delay: 0.5, ease: "easeInOut" }
+          : { duration: 0.6, delay: 0.5 }
       }
       onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
     >

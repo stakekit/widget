@@ -28,7 +28,7 @@ const FooterButton = ({
       className={footerContainer}
       layout="position"
       transition={{
-        layout: { duration: 0.2, ease: "linear" },
+        layout: { duration: 0.2 },
       }}
     >
       <motion.div

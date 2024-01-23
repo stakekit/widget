@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from "react-i18next";
-import { Box, Button, Divider, Heading, Text } from "../../components";
+import { Box, Divider, Heading, Text } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { PageContainer } from "../components";
 import { useUnstakeOrPendingActionReview } from "./use-unstake-or-pending-action-review.hook";
@@ -17,7 +17,6 @@ export const UnstakeOrPendingActionReviewPage = () => {
     integrationData,
     amount,
     title,
-    onClick,
     fee,
     rewardTokenDetailsProps,
     pendingActionMatch,
@@ -99,7 +98,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
               </Text>
             </Box>
 
-            <Box marginTop="4">
+            <Box marginTop="4" marginBottom="12">
               <Text variant={{ weight: "normal", type: "muted" }}>
                 <Trans
                   i18nKey="unstake_review.terms_of_use"
@@ -118,21 +117,6 @@ export const UnstakeOrPendingActionReviewPage = () => {
                 />
               </Text>
             </Box>
-          </Box>
-
-          <Box
-            flex={1}
-            display="flex"
-            justifyContent="center"
-            alignItems="flex-end"
-            marginTop="5"
-          >
-            <Button
-              onClick={onClick}
-              variant={{ color: "primary", animation: "press" }}
-            >
-              {t("shared.confirm")}
-            </Button>
           </Box>
         </PageContainer>
       </AnimationPage>

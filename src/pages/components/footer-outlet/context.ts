@@ -1,6 +1,7 @@
 import { useLayoutEffect } from "react";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import createStateContext from "../../../utils/create-state-context";
+import { useIsPresent } from "framer-motion";
 
 export const [useFooterHeight, FooterHeightProvider] = createStateContext(0);
 
@@ -20,6 +21,13 @@ export const useSyncFooterHeight = () =>
 
 export const useRegisterFooterButton = (val: FooterButtonVal) => {
   const [, setFooterButton] = useFooterButton();
+
+  const isPresent = useIsPresent();
+
+  useLayoutEffect(() => {
+    if (isPresent) return;
+    setFooterButton((prev) => (prev === val ? null : prev));
+  }, [isPresent, setFooterButton, val]);
 
   useLayoutEffect(() => {
     setFooterButton(val);
