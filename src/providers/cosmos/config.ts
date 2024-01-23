@@ -333,15 +333,14 @@ const queryFn = async ({
 
       const cosmosWalletManager = new WalletManager(
         Object.values(cosmosChainsMap).map((c) => c.chain),
-        cosmosAssets,
         wallets,
         new Logger("ERROR"),
         false,
         true,
         undefined,
+        cosmosAssets,
         undefined,
-        { signClient: { projectId: config.walletConnectV2.projectId } },
-        undefined
+        { signClient: { projectId: config.walletConnectV2.projectId } }
       );
 
       return EitherAsync(() => {
