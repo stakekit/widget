@@ -10,7 +10,7 @@ interface ReachError {
 export const useReachErrors = () => {
   const [error, setError] = useState<ReachError>();
 
-  APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {    
+  APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {
     if (errorsSet.has(error.response.data.message)) {
       setError(error.response.data);
     }
