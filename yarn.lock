@@ -3889,25 +3889,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@preact/signals-core@npm:^1.5.1":
-  version: 1.5.1
-  resolution: "@preact/signals-core@npm:1.5.1"
-  checksum: acb4541e5ace0b3507605cc2d4effd7220731c47c4a546ceecdf6f6c55110ac09b0ae58cdb487faf81ea3e53f60aff90faf9543dd6dbe5236483e9a51cf8a7af
-  languageName: node
-  linkType: hard
-
-"@preact/signals-react@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "@preact/signals-react@npm:2.0.0"
-  dependencies:
-    "@preact/signals-core": "npm:^1.5.1"
-    use-sync-external-store: "npm:^1.2.0"
-  peerDependencies:
-    react: ^16.14.0 || 17.x || 18.x
-  checksum: cd77b61dc12458fcde22f117581e1d9c90cdeb57c640230b26b9b904b2db2dd6541e589b56351b2abdd9a6fe21f3a3da8addcfef93a4486a77e6a5d6f67f0413
-  languageName: node
-  linkType: hard
-
 "@protobufjs/aspromise@npm:^1.1.1, @protobufjs/aspromise@npm:^1.1.2":
   version: 1.1.2
   resolution: "@protobufjs/aspromise@npm:1.1.2"
@@ -4715,7 +4696,6 @@ __metadata:
     "@cosmos-kit/leap": "npm:^2.6.1"
     "@cosmos-kit/walletconnect": "npm:2.5.1"
     "@ledgerhq/wallet-api-client": "npm:^1.5.0"
-    "@preact/signals-react": "npm:^2.0.0"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@stakekit/api-hooks": "npm:^0.0.51"
     "@stakekit/common": "npm:^0.0.24"
