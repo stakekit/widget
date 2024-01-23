@@ -57,6 +57,7 @@ export const CompletePage = ({
           display="flex"
           flexDirection="column"
           justifyContent="space-between"
+          my="4"
         >
           <Box
             flex={1}
@@ -76,7 +77,7 @@ export const CompletePage = ({
                     transition: { delay: 0.2, duration: 0.3 },
                   }}
                 >
-                  <Box marginBottom="4">
+                  <Box my="4">
                     <TokenIcon
                       metadata={v.metadata}
                       tokenLogoHw="32"

@@ -38,7 +38,7 @@ export const Tabs = ({
           : { opacity: 0, translateY: "-40px" }
       }
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ duration: 1, delay: 1 }}
+      transition={{ duration: 1, delay: 0.5 }}
     >
       <Box position="relative" display="flex" justifyContent="center">
         <Box className={divider}>

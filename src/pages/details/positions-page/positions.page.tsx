@@ -52,7 +52,7 @@ export const PositionsPage = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, translateY: "-20px" }}
+      initial={{ opacity: 0, translateY: "-10px" }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{
         duration: mountAnimationFinished ? 0.3 : 1,

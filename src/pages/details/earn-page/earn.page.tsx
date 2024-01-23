@@ -34,11 +34,14 @@ const EarnPageComponent = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, translateY: "-20px" }}
+      initial={{
+        opacity: 0,
+        translateY: mountAnimationFinished ? "-10px" : "-40px",
+      }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{
         duration: mountAnimationFinished ? 0.3 : 1,
-        delay: mountAnimationFinished ? 0 : 1.5,
+        delay: mountAnimationFinished ? 0 : 0.8,
       }}
     >
       <PageContainer>

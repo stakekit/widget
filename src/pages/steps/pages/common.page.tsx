@@ -32,7 +32,7 @@ export const StepsPage = ({
 
   return (
     <AnimationPage>
-      <motion.div layout="size">
+      <motion.div layout="position">
         <PageContainer>
           <Box marginBottom="2">
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>

@@ -99,11 +99,11 @@ const Widget = () => {
   return (
     <AnimationLayout>
       <LayoutGroup>
-        <motion.div layout="size" className={headerContainer}>
+        <motion.div layout="position" className={headerContainer}>
           <Header />
         </motion.div>
 
-        <motion.div layout="size" className={container}>
+        <motion.div layout="position" className={container}>
           <AnimatePresence>
             <Routes location={location} key={key}>
               <Route element={<Layout currentPathname={location.pathname} />}>

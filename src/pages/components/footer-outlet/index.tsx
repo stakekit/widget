@@ -20,7 +20,9 @@ const FooterButton = ({
   const { containerRef } = useSyncFooterHeight();
 
   const [mountAnimationFinished] = useMountAnimationFinished();
-  const [initAnimation, setInitAnimation] = useState(mountAnimationFinished);
+  const [initAnimationFinished, setInitAnimationFinished] = useState(
+    mountAnimationFinished
+  );
 
   return (
     <motion.div
@@ -32,15 +34,18 @@ const FooterButton = ({
       }}
     >
       <motion.div
-        initial={{ translateY: "-40px", opacity: 0 }}
+        initial={{
+          translateY: initAnimationFinished ? "-20px" : "-40px",
+          opacity: 0,
+        }}
         animate={{
           translateY: 0,
           opacity: 1,
-          transition: initAnimation
-            ? { duration: 0.3, delay: 0.3 }
-            : { duration: 0.6, delay: 2 },
+          transition: initAnimationFinished
+            ? { duration: 0.3, delay: 0.2 }
+            : { duration: 0.6, delay: 1.1 },
         }}
-        onAnimationComplete={() => setInitAnimation(true)}
+        onAnimationComplete={() => setInitAnimationFinished(true)}
       >
         <Box px="4" marginBottom="4" marginTop="2" zIndex="modal">
           <Box

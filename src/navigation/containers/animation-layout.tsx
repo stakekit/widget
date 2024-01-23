@@ -6,9 +6,10 @@ import { useHeaderHeight } from "../../components/molecules/header/use-sync-head
 import createStateContext from "../../utils/create-state-context";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { useSKLocation } from "../../providers/location";
+import { config } from "../../config";
 
 export const [useMountAnimationFinished, MountAnimationFinishedProvider] =
-  createStateContext(false);
+  createStateContext(config.env.isTestMode);
 
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const currentLayout = useCurrentLayout();
@@ -22,8 +23,6 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     currentLayout.state?.height && headerHeight
       ? currentLayout.state.height + headerHeight + footerHeight
       : 0;
-
-  const finalContainerHeight = containerHeight;
 
   const { current } = useSKLocation();
 
@@ -41,12 +40,12 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
         borderTopLeftRadius: "20px",
         borderTopRightRadius: "20px",
         position: "relative",
-        height: finalContainerHeight,
+        height: containerHeight,
       }}
       transition={
         mountAnimationFinished
           ? { duration: 0.25 }
-          : { duration: 0.6, delay: 0.5 }
+          : { duration: 0.6, delay: 0.3 }
       }
       onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
     >
