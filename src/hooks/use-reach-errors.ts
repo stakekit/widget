@@ -1,35 +1,25 @@
 import { APIManager } from "@stakekit/api-hooks";
-import { signal, useSignalEffect } from "@preact/signals-react";
 import { useState } from "react";
 import { ErrorsSet, errorsSet } from "../utils/errors";
-
-export const reachErrorKey = signal<ReachError | undefined>(undefined);
 
 interface ReachError {
   message: ErrorsSet;
   details?: { [key: string]: any };
 }
 
-APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {
-  reachErrorKey.value = error.response.data as ReachError;
-  return Promise.reject(error);
-});
-
 export const useReachErrors = () => {
   const [error, setError] = useState<ReachError>();
 
-  useSignalEffect(() => {
-    if (reachErrorKey.value === undefined) {
-      return setError(undefined);
+  APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {    
+    if (errorsSet.has(error.response.data.message)) {
+      setError(error.response.data);
     }
 
-    if (errorsSet.has(reachErrorKey.value.message)) {
-      setError(reachErrorKey.value);
-    }
+    return Promise.reject(error);
   });
 
   const resetError = () => {
-    reachErrorKey.value = undefined;
+    setError(undefined);
   };
 
   return { error, resetError };
