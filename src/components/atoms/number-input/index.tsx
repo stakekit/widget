@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
 import { ChangeEvent, memo, useEffect, useRef, useState } from "react";
 import { numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
@@ -8,8 +7,8 @@ import { useRootElement } from "../../../hooks/use-root-element";
 import { formatNumber } from "../../../utils";
 
 export type NumberInputProps = {
-  onChange: (value: Maybe<BigNumber>) => void;
-  value: Maybe<BigNumber>;
+  onChange: (value: BigNumber) => void;
+  value: BigNumber;
   disabled?: boolean;
 };
 
@@ -22,16 +21,9 @@ export const NumberInput = memo(
       if (isFocused) return;
 
       setLocalState((prevState) => {
-        return value.caseOf({
-          Just(value) {
-            if (value.isEqualTo(stringToBigNumber(prevState))) return prevState;
+        if (value.isEqualTo(stringToBigNumber(prevState))) return prevState;
 
-            return formatNumber(value);
-          },
-          Nothing() {
-            return "0";
-          },
-        });
+        return formatNumber(value);
       });
     }, [value, isFocused]);
 
@@ -42,13 +34,13 @@ export const NumberInput = memo(
 
       setLocalState(val);
 
-      if (!val) return onChange(Maybe.of(new BigNumber(0)));
+      if (!val) return onChange(new BigNumber(0));
 
       const value = stringToBigNumber(val);
 
       if (value.isNaN()) return;
 
-      onChange(Maybe.of(value));
+      onChange(value);
     };
 
     const isZero = localState === "0" || localState === "";

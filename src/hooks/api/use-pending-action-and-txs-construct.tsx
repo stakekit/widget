@@ -7,15 +7,29 @@ import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
-import { useMutation } from "@tanstack/react-query";
-import { useMutationSharedState } from "../use-mutation-shared-state";
+import { UseMutationResult, useMutation } from "@tanstack/react-query";
+import { PropsWithChildren, createContext, useContext } from "react";
 
 const mutationKey = ["pending-action"];
 
-export const usePendingActionAndTxsConstruct = () => {
+const PendingActionAndTxsConstructContext = createContext<
+  | UseMutationResult<
+      GetEitherAsyncRight<ReturnType<typeof fn>>,
+      GetEitherAsyncLeft<ReturnType<typeof fn>>,
+      {
+        pendingActionRequestDto: PendingActionRequestDto;
+        gasModeValue: GasModeValueDto | undefined;
+      }
+    >
+  | undefined
+>(undefined);
+
+export const PendingActionAndTxsConstructContextProvider = ({
+  children,
+}: PropsWithChildren) => {
   const { isLedgerLive } = useSKWallet();
 
-  return useMutation<
+  const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
     {
@@ -27,14 +41,25 @@ export const usePendingActionAndTxsConstruct = () => {
     mutationFn: async (args) =>
       (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
   });
+
+  return (
+    <PendingActionAndTxsConstructContext.Provider value={value}>
+      {children}
+    </PendingActionAndTxsConstructContext.Provider>
+  );
 };
 
-export const usePendingActionAndTxsConstructMutationState = (): ReturnType<
-  typeof useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>
-> =>
-  useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>({
-    mutationKey,
-  });
+export const usePendingActionAndTxsConstruct = () => {
+  const value = useContext(PendingActionAndTxsConstructContext);
+
+  if (!value) {
+    throw new Error(
+      "usePendingActionAndTxsConstruct must be used within a PendingActionAndTxsConstructContextProvider"
+    );
+  }
+
+  return value;
+};
 
 const fn = ({
   gasModeValue,

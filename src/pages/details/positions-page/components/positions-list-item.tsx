@@ -10,7 +10,7 @@ import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
-import { container, viaText } from "../style.css";
+import { listItemContainer, viaText } from "../style.css";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
@@ -129,7 +129,7 @@ export const PositionsListItem = memo(
 
                       {(hasPendingClaimRewards || actionRequired) && (
                         <Box
-                          className={container({
+                          className={listItemContainer({
                             type: hasPendingClaimRewards
                               ? "claim"
                               : "actionRequired",
@@ -157,7 +157,7 @@ export const PositionsListItem = memo(
                           >
                             {t("positions.via", {
                               providerName: p.name ?? p.address,
-                              count: val.length - 1,
+                              count: Math.max(val.length - 1, 1),
                             })}
                           </Text>
                         ))

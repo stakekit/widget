@@ -1,4 +1,4 @@
-import { useMatch, useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ComponentProps, useMemo } from "react";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
@@ -10,28 +10,18 @@ import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
 import { ActionTypes } from "@stakekit/api-hooks";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
+import { usePendingActionMatch } from "../../hooks/navigation/use-pending-action-match";
+import { useRegisterFooterButton } from "../components/footer-outlet/context";
+import { useSavedRef } from "../../hooks";
 
 export const useUnstakeOrPendingActionReview = () => {
-  const params = useParams<{
-    integrationId: string;
-    defaultOrValidatorId: "default" | (string & {});
-  }>();
+  const { integrationData } = useUnstakeOrPendingActionState();
 
-  const integrationId = params.integrationId;
+  const pendingActionMatch = usePendingActionMatch();
 
-  const yieldOpportunity = useYieldOpportunity(integrationId);
-  const integrationData = useMemo(
-    () => Maybe.fromNullable(yieldOpportunity.data),
-    [yieldOpportunity.data]
-  );
-
-  const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:defaultOrValidatorId/review"
-  );
-
-  const { unstake, pendingActionSession } = useUnstakeOrPendingActionState();
+  const { unstakeAmount, pendingActionSession } =
+    useUnstakeOrPendingActionState();
 
   const pendingActionType = pendingActionSession.map((val) => val.type);
 
@@ -41,9 +31,9 @@ export const useUnstakeOrPendingActionReview = () => {
     ? pendingActionSession.map((val) =>
         formatNumber(new BigNumber(val.amount ?? 0))
       )
-    : unstake.chain((u) => u.amount).map((val) => formatNumber(val));
+    : Maybe.of(formatNumber(unstakeAmount));
 
-  const title = pendingActionMatch
+  const title: Maybe<string> = pendingActionMatch
     ? pendingActionType.map((type) =>
         t(
           `position_details.pending_action_button.${
@@ -139,11 +129,24 @@ export const useUnstakeOrPendingActionReview = () => {
         : { type: "unstake", rewardToken };
     });
 
+  const onClickRef = useSavedRef(onClick);
+
+  useRegisterFooterButton(
+    useMemo(
+      () => ({
+        label: t("shared.confirm"),
+        onClick: () => onClickRef.current(),
+        disabled: false,
+        isLoading: false,
+      }),
+      [onClickRef, t]
+    )
+  );
+
   return {
     integrationData,
     title,
     amount,
-    onClick,
     fee,
     rewardTokenDetailsProps,
     pendingActionMatch,

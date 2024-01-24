@@ -53,7 +53,7 @@ const useActionHistory = () => {
 
   if (context === undefined) {
     throw new Error(
-      "useActionHistory must be used within a ActionHistoryContext"
+      "useActionHistory must be used within a ActionHistoryContextProvider"
     );
   }
 

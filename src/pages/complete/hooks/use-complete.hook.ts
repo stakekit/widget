@@ -1,6 +1,12 @@
-import { useLocation, useMatch, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { TransactionType } from "@stakekit/api-hooks";
+import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import { useMemo } from "react";
+import { useSavedRef } from "../../../hooks";
+import { useTranslation } from "react-i18next";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -26,15 +32,26 @@ export const useComplete = () => {
     window.open(url, "_blank");
   };
 
-  const unstakeMatch = useMatch(
-    "unstake/:integrationId/:defaultOrValidatorId/complete"
-  );
-  const pendingActionMatch = useMatch(
-    "pending-action/:integrationId/:defaultOrValidatorId/complete"
+  const unstakeMatch = useUnstakeMatch();
+  const pendingActionMatch = usePendingActionMatch();
+
+  const onClickRef = useSavedRef(onClick);
+
+  const { t } = useTranslation();
+
+  useRegisterFooterButton(
+    useMemo(
+      () => ({
+        disabled: false,
+        isLoading: false,
+        label: t("shared.ok"),
+        onClick: () => onClickRef.current(),
+      }),
+      [onClickRef, t]
+    )
   );
 
   return {
-    onClick,
     urls,
     unstakeMatch,
     pendingActionMatch,

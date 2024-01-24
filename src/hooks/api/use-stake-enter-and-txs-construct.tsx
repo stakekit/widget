@@ -7,18 +7,32 @@ import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
-import { useMutation } from "@tanstack/react-query";
-import { useMutationSharedState } from "../use-mutation-shared-state";
+import { UseMutationResult, useMutation } from "@tanstack/react-query";
+import { PropsWithChildren, createContext, useContext } from "react";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 
 const mutationKey = ["stake-enter"];
 
-export const useStakeEnterAndTxsConstruct = () => {
+const StakeEnterAndTxsConstructContext = createContext<
+  | UseMutationResult<
+      DataType,
+      ErrorType,
+      {
+        stakeRequestDto: ActionRequestDto;
+        gasModeValue: GasModeValueDto | undefined;
+      }
+    >
+  | undefined
+>(undefined);
+
+export const StakeEnterAndTxsConstructProvider = ({
+  children,
+}: PropsWithChildren) => {
   const { isLedgerLive } = useSKWallet();
 
-  return useMutation<
+  const value = useMutation<
     DataType,
     ErrorType,
     {
@@ -30,14 +44,25 @@ export const useStakeEnterAndTxsConstruct = () => {
     mutationFn: async (args) =>
       (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
   });
+
+  return (
+    <StakeEnterAndTxsConstructContext.Provider value={value}>
+      {children}
+    </StakeEnterAndTxsConstructContext.Provider>
+  );
 };
 
-export const useStakeEnterAndTxsConstructMutationState = (): ReturnType<
-  typeof useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>
-> =>
-  useMutationSharedState<GetEitherAsyncRight<ReturnType<typeof fn>>>({
-    mutationKey,
-  });
+export const useStakeEnterAndTxsConstruct = () => {
+  const value = useContext(StakeEnterAndTxsConstructContext);
+
+  if (value === undefined) {
+    throw new Error(
+      "useStakeEnterAndTxsConstruct must be used within a StakeEnterAndTxsConstructProvider"
+    );
+  }
+
+  return value;
+};
 
 const fn = ({
   gasModeValue,

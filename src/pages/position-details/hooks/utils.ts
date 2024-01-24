@@ -7,8 +7,10 @@ import {
 } from "@stakekit/api-hooks";
 import { Either, List, Maybe } from "purify-ts";
 import { SKWallet } from "../../../domain/types";
+import { State } from "../../../state/unstake-or-pending-action/types";
 
 export const preparePendingActionRequestDto = ({
+  pendingActionsState,
   additionalAddresses,
   address,
   pendingActionDto,
@@ -16,6 +18,7 @@ export const preparePendingActionRequestDto = ({
   yieldBalance,
   selectedValidators,
 }: {
+  pendingActionsState: State["pendingActions"];
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: PendingActionDto;
@@ -36,7 +39,14 @@ export const preparePendingActionRequestDto = ({
     .toEither(new Error("missing address"))
     .map((val) => {
       const args: PendingActionRequestDto["args"] = {
-        amount: yieldBalance.amount,
+        amount: Maybe.fromPredicate(
+          Boolean,
+          pendingActionDto.args?.args?.amount?.required
+        )
+          .chainNullable(() => pendingActionsState.get(pendingActionDto.type))
+          .map((v) => v.toString())
+          .alt(Maybe.of(yieldBalance.amount))
+          .extract(),
       };
 
       if (selectedValidators.length) {

@@ -1,7 +1,7 @@
 import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Box } from "../box";
 import { Image } from "../image";
-import { logoContainer } from "./style.css";
+import { logoContainer, logoImage } from "./style.css";
 import { Atoms } from "../../../styles";
 import { ImageFallback } from "../image-fallback";
 import { getNetworkLogo } from "../../../utils";
@@ -35,6 +35,7 @@ export const TokenIcon = ({
           src={getNetworkLogo(token.network as Networks)}
           fallback={<></>}
           containerProps={{ hw: tokenNetworkLogoHw }}
+          imageProps={{ className: logoImage }}
         />
       </Box>
     </Box>

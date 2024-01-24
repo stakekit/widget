@@ -10,6 +10,7 @@ import { SelectedStakeData } from "../types";
 import { Maybe } from "purify-ts";
 import {
   TokenBalanceScanResponseDto,
+  TronResourceType,
   ValidatorDto,
   YieldDto,
   YieldType,
@@ -22,7 +23,7 @@ import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-availab
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useSelectedStakePrice } from "../../../../hooks";
+import { useSavedRef, useSelectedStakePrice } from "../../../../hooks";
 import { formatNumber } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
@@ -47,6 +48,10 @@ import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
+import { useUpdateEffect } from "../../../../hooks/use-update-effect";
+import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
+import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
+import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -57,6 +62,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedValidators,
     stakeAmount,
     selectedStake,
+    tronResource,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
@@ -65,6 +71,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isConnecting,
     isLedgerLive,
     isLedgerLiveAccountPlaceholder,
+    chain,
   } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
@@ -95,11 +102,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     return Maybe.fromRecord({
       prices: Maybe.fromNullable(pricesState.data),
       selectedTokenBalance,
-      stakeAmount,
     })
       .map((val) =>
         getTokenPriceInUSD({
-          amount: val.stakeAmount,
+          amount: stakeAmount,
           token: val.selectedTokenBalance.token,
           prices: val.prices,
           pricePerShare: undefined,
@@ -322,31 +328,43 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     yieldOpportunity: selectedStake,
   });
 
-  const amountValid = stakeAmount.mapOrDefault(
-    (sa) =>
+  const amountValid = useMemo(
+    () =>
       !isConnected ||
-      (sa.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-        sa.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-        sa.isLessThanOrEqualTo(availableAmount)),
-    false
+      (stakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(availableAmount)),
+    [
+      availableAmount,
+      isConnected,
+      maxEnterOrExitAmount,
+      minEnterOrExitAmount,
+      stakeAmount,
+    ]
   );
 
   const { t } = useTranslation();
+
+  const navigate = useNavigate();
 
   const onStakeEnter = useOnStakeEnter();
   const stakeRequestDto = useStakeEnterRequestDto();
 
   const { openConnectModal } = useConnectModal();
 
-  const navigate = useNavigate();
-
   const onClick = () => {
     if (buttonDisabled) return;
 
     if (!isConnected) return openConnectModal?.();
 
-    onStakeEnter.mutateAsync(stakeRequestDto).then(() => navigate("/review"));
+    onStakeEnter.mutate(stakeRequestDto);
   };
+
+  useUpdateEffect(() => {
+    if (onStakeEnter.isSuccess && onStakeEnter.data) {
+      navigate("/review");
+    }
+  }, [onStakeEnter.data, onStakeEnter.isSuccess]);
 
   const selectedStakeYieldType = selectedStake
     .map((val) => val.metadata.type)
@@ -358,11 +376,18 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const pendingActionDeepLink = usePendingActionDeepLink();
 
+  const [mountAnimationFinished] = useMountAnimationFinished();
+
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
   ).isLoading;
+
   const appLoading =
-    wagmiConfig.isLoading || pendingActionDeepLink.isLoading || isConnecting;
+    wagmiConfig.isLoading ||
+    pendingActionDeepLink.isLoading ||
+    isConnecting ||
+    !mountAnimationFinished;
+
   const multiYieldsLoading = multiYields.isLoading;
   const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
@@ -390,8 +415,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     (isFetching ||
       stakeRequestDto.isNothing() ||
       !amountValid ||
-      stakeAmount.isNothing() ||
-      stakeAmount.map((sa) => sa.isZero()).orDefault(true) ||
+      stakeAmount.isZero() ||
       onStakeEnter.isPending);
 
   const buttonCTAText = useMemo(() => {
@@ -416,6 +440,60 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     trackEvent("earnPageMaxClicked");
     _onMaxClick();
   };
+
+  const onTronResourceSelect = (value: TronResourceType) =>
+    appDispatch({
+      type: "tronResource/select",
+      data: value,
+    });
+
+  const onClickRef = useSavedRef(onClick);
+
+  const addLedgerAccount = useAddLedgerAccount();
+
+  const connectClickRef = useSavedRef(() => {
+    if (isLedgerLiveAccountPlaceholder && chain) {
+      trackEvent("addLedgerAccountClicked");
+      return addLedgerAccount.mutate(chain);
+    }
+
+    trackEvent("connectWalletClicked");
+    openConnectModal?.();
+  });
+
+  useRegisterFooterButton(
+    useMemo(
+      () =>
+        isConnected && !isLedgerLiveAccountPlaceholder
+          ? {
+              disabled: buttonDisabled,
+              isLoading: onStakeEnter.isPending,
+              onClick: () => onClickRef.current(),
+              label: buttonCTAText,
+            }
+          : {
+              disabled: appLoading,
+              isLoading: appLoading,
+              label: t(
+                isLedgerLiveAccountPlaceholder
+                  ? "init.ledger_add_account"
+                  : "init.connect_wallet"
+              ),
+              onClick: () => connectClickRef.current(),
+            },
+      [
+        appLoading,
+        buttonCTAText,
+        buttonDisabled,
+        connectClickRef,
+        isConnected,
+        isLedgerLiveAccountPlaceholder,
+        onClickRef,
+        onStakeEnter.isPending,
+        t,
+      ]
+    )
+  );
 
   const value = {
     availableTokens,
@@ -459,6 +537,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeSearch,
     defaultTokensIsLoading,
     isLedgerLiveAccountPlaceholder,
+    tronResource,
+    onTronResourceSelect,
   };
 
   return (

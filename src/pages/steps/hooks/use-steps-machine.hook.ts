@@ -85,10 +85,7 @@ export const useStepsMachine = () => {
         },
         effect: ({ context, send, setContext, event }) => {
           (event.type === "START"
-            ? EitherAsync<
-                Error,
-                { currentTx: TransactionDto; currentTxIdx: number }
-              >(async () => {
+            ? EitherAsync<Error, { currentTx: TransactionDto }>(async () => {
                 const txs = event.session.transactions;
 
                 const currentTxIdx = List.findIndex(
@@ -125,20 +122,13 @@ export const useStepsMachine = () => {
                   yieldId: event.session.integrationId,
                 }));
 
-                return {
-                  currentTx: txStates[currentTxIdx].tx,
-                  currentTxIdx,
-                };
+                return { currentTx: txStates[currentTxIdx].tx };
               })
-            : EitherAsync<
-                never,
-                { currentTx: TransactionDto; currentTxIdx: number }
-              >(async () => ({
+            : EitherAsync<never, { currentTx: TransactionDto }>(async () => ({
                 currentTx: context.txStates[context.currentTxMeta?.idx!].tx,
-                currentTxIdx: context.currentTxMeta?.idx!,
               }))
           )
-            .chain(({ currentTx, currentTxIdx }) =>
+            .chain(({ currentTx }) =>
               getAverageGasMode(currentTx.network)
                 .chainLeft(async () => Right(null))
                 .chain((gas) =>
@@ -157,10 +147,7 @@ export const useStepsMachine = () => {
                     );
                   }
 
-                  return signTransaction({
-                    tx: tx.unsignedTransaction,
-                    index: currentTxIdx,
-                  })
+                  return signTransaction({ tx: tx.unsignedTransaction })
                     .map((val) => ({
                       ...val,
                       network: tx.network,

@@ -3,6 +3,7 @@ import { SelectedStakeData } from "../types";
 import { ExtraData, State } from "../../../../state/stake/types";
 import {
   TokenBalanceScanResponseDto,
+  TronResourceType,
   ValidatorDto,
   YieldType,
 } from "@stakekit/api-hooks";
@@ -19,7 +20,7 @@ export type DetailsContextType = {
   selectedStake: ExtraData["selectedStake"];
   onYieldSelect: (yieldId: string) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
-  onStakeAmountChange: (value: Maybe<BigNumber>) => void;
+  onStakeAmountChange: (value: BigNumber) => void;
   estimatedRewards: ReturnType<typeof useEstimatedRewards>;
   yieldType: string;
   onMaxClick: () => void;
@@ -56,4 +57,6 @@ export type DetailsContextType = {
   tokenSearch: string;
   stakeSearch: string;
   defaultTokensIsLoading: boolean;
+  tronResource: State["tronResource"];
+  onTronResourceSelect: (value: TronResourceType) => void;
 };

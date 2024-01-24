@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { getBaseToken, getTokenPriceInUSD } from "../../domain";
-import { useSelectedStakePrice } from "../../hooks";
+import { useSavedRef, useSelectedStakePrice } from "../../hooks";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../utils";
 import { useMemo } from "react";
@@ -8,6 +8,8 @@ import { useEstimatedRewards } from "../../hooks/use-estimated-rewards";
 import { useYieldType } from "../../hooks/use-yield-type";
 import { useRewardTokenDetails } from "../../hooks/use-reward-token-details";
 import { useStakeState } from "../../state/stake";
+import { useRegisterFooterButton } from "../components/footer-outlet/context";
+import { useTranslation } from "react-i18next";
 
 export const useReview = () => {
   const {
@@ -33,7 +35,7 @@ export const useReview = () => {
     (y) => y.metadata.gasFeeToken.symbol,
     ""
   );
-  const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
+  const amount = formatNumber(stakeAmount);
   const interestRate = estimatedRewards.mapOrDefault(
     (r) => r.percentage.toString(),
     ""
@@ -80,13 +82,28 @@ export const useReview = () => {
 
   const onClick = () => navigate("/steps");
 
+  const onClickRef = useSavedRef(onClick);
+
+  const { t } = useTranslation();
+
+  useRegisterFooterButton(
+    useMemo(
+      () => ({
+        disabled: false,
+        isLoading: false,
+        label: t("shared.confirm"),
+        onClick: () => onClickRef.current(),
+      }),
+      [onClickRef, t]
+    )
+  );
+
   return {
     amount,
     interestRate,
     fee,
     token,
     yieldType,
-    onClick,
     rewardToken,
     metadata,
   };

@@ -5,6 +5,8 @@ import { RewardTokenDetails } from "../../../../../components/molecules/reward-t
 import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { useDetailsContext } from "../../state/details-context";
+import { motion } from "framer-motion";
+import { useAnimateYieldPercent } from "./use-animate-yield-percent";
 
 export const SelectYieldSection = () => {
   const {
@@ -39,6 +41,8 @@ export const SelectYieldSection = () => {
     (e) => `${e.monthly} ${symbol}`,
     ""
   );
+
+  const yieldPerc = useAnimateYieldPercent(estimatedRewards);
 
   return isLoading ? (
     <Box marginTop="2">
@@ -92,11 +96,7 @@ export const SelectYieldSection = () => {
                       ))
                       .extractNullable()}
 
-                    <Text className={apyYield}>
-                      {estimatedRewards
-                        .map((val) => val.percentage)
-                        .extractNullable()}
-                    </Text>
+                    <motion.div className={apyYield}>{yieldPerc}</motion.div>
                   </Box>
                 </Box>
 
