@@ -46,6 +46,7 @@ import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
+import { RichErrorModal } from "./components/molecules/rich-error-modal";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { Header } from "./components";
 import { headerContainer } from "./pages/components/layout/styles.css";
@@ -186,6 +187,8 @@ const Widget = () => {
       </LayoutGroup>
 
       <>
+        {createPortal(<RichErrorModal />, document.body)}
+
         {geoBlock &&
           createPortal(
             <HelpModal
