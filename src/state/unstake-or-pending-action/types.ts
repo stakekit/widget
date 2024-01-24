@@ -21,10 +21,13 @@ export type PendingActionAmountChange = Action<
   { actionType: ActionTypes; amount: BigNumber }
 >;
 
+export type Reset = Action<"reset">;
+
 export type Actions =
   | UnstakeAmountChange
   | UnstakeAmountMax
-  | PendingActionAmountChange;
+  | PendingActionAmountChange
+  | Reset;
 
 export type State = {
   unstakeAmount: BigNumber;

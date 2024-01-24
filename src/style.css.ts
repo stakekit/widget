@@ -16,6 +16,7 @@ export const animationContainer = style([
       [minMediaQuery("tablet")]: {
         width: "400px",
         borderRadius: "20px",
+        marginBottom: "50px",
       },
     },
   },

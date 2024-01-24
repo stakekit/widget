@@ -8,11 +8,9 @@ import ReactDOM from "react-dom/client";
 import { ComponentProps, useEffect } from "react";
 import {
   Navigate,
-  Outlet,
   Route,
   RouterProvider,
   createMemoryRouter,
-  useLocation,
   useNavigate,
   Routes,
 } from "react-router-dom";
@@ -38,7 +36,7 @@ import { PositionDetails } from "./pages/position-details";
 import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { UnstakeOrPendingActionContextProvider } from "./state/unstake-or-pending-action";
+import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-action/";
 import { createPortal } from "react-dom";
 import { HelpModal } from "./components/molecules/help-modal";
 import { useGeoBlock } from "./hooks/use-geo-block";
@@ -53,6 +51,8 @@ import { headerContainer } from "./pages/components/layout/styles.css";
 import { AnimationLayout } from "./navigation/containers/animation-layout";
 import { container } from "./style.css";
 import { FooterContent } from "./pages/components/footer-outlet";
+import { useDetailsMatch } from "./hooks/navigation/use-details-match";
+import { useSKLocation } from "./providers/location";
 
 const Widget = () => {
   useToggleTheme();
@@ -64,7 +64,9 @@ const Widget = () => {
 
   const { chain, address } = useSKWallet();
 
-  const pathnameRef = useSavedRef(useLocation().pathname);
+  const { current } = useSKLocation();
+
+  const pathnameRef = useSavedRef(current.pathname);
   const navigateRef = useSavedRef(useNavigate());
 
   /**
@@ -87,15 +89,13 @@ const Widget = () => {
 
   useAutoConnectInjectedProviderMachine();
 
-  const location = useLocation();
+  const detailsMatch = useDetailsMatch();
 
   /**
    * Dont unmount details page with tabs
+   * Handle position details pages in their own Routes
    */
-  const key =
-    location.pathname === "/" || location.pathname === "/positions"
-      ? "/"
-      : location.pathname;
+  const key = detailsMatch ? "/" : current.pathname;
 
   return (
     <AnimationLayout>
@@ -105,82 +105,77 @@ const Widget = () => {
         </motion.div>
 
         <motion.div layout="position" className={container}>
-          <AnimatePresence>
-            <Routes location={location} key={key}>
-              <Route element={<Layout currentPathname={location.pathname} />}>
-                {/* Home + Tabs */}
-                <Route element={<Details />}>
-                  <Route index element={<EarnPage />} />
-                  <Route path="positions" element={<PositionsPage />} />
-                </Route>
-
-                <Route element={<ConnectedCheck />}>
-                  {/* Stake flow */}
-                  <Route element={<StakeCheck />}>
-                    <Route path="review" element={<ReviewPage />} />
-                    <Route path="steps" element={<StakeStepsPage />} />
-                    <Route path="complete" element={<StakeCompletePage />} />
+          <UnstakeOrPendingActionProvider>
+            <AnimatePresence>
+              <Routes location={current} key={key}>
+                <Route element={<Layout currentPathname={current.pathname} />}>
+                  {/* Home + Tabs */}
+                  <Route element={<Details />}>
+                    <Route index element={<EarnPage />} />
+                    <Route path="positions" element={<PositionsPage />} />
                   </Route>
 
-                  {/* Actions flow */}
-                  <Route
-                    path="positions/:integrationId/:balanceId"
-                    element={
-                      <UnstakeOrPendingActionContextProvider>
-                        <Outlet />
-                      </UnstakeOrPendingActionContextProvider>
-                    }
-                  >
-                    <Route index element={<PositionDetails />} />
-                    <Route
-                      path="select-validator/:pendingActionType"
-                      element={<PositionDetails />}
-                    />
-
-                    {/* Unstaking */}
-                    <Route
-                      path="unstake"
-                      element={<UnstakeOrPendingActionCheck />}
-                    >
-                      <Route
-                        path="review"
-                        element={<UnstakeOrPendingActionReviewPage />}
-                      />
-                      <Route
-                        path="steps"
-                        element={<UnstakeOrPendingActionStepsPage />}
-                      />
-                      <Route
-                        path="complete"
-                        element={<UnstakeOrPendingActionCompletePage />}
-                      />
+                  <Route element={<ConnectedCheck />}>
+                    {/* Stake flow */}
+                    <Route element={<StakeCheck />}>
+                      <Route path="review" element={<ReviewPage />} />
+                      <Route path="steps" element={<StakeStepsPage />} />
+                      <Route path="complete" element={<StakeCompletePage />} />
                     </Route>
 
-                    {/* Pending Actions */}
-                    <Route
-                      path="pending-action"
-                      element={<UnstakeOrPendingActionCheck />}
-                    >
+                    {/* Unstake or pending actions flow */}
+                    <Route path="positions/:integrationId/:balanceId">
+                      <Route index element={<PositionDetails />} />
                       <Route
-                        path="review"
-                        element={<UnstakeOrPendingActionReviewPage />}
+                        path="select-validator/:pendingActionType"
+                        element={<PositionDetails />}
                       />
+
+                      {/* Unstaking */}
                       <Route
-                        path="steps"
-                        element={<UnstakeOrPendingActionStepsPage />}
-                      />
+                        path="unstake"
+                        element={<UnstakeOrPendingActionCheck />}
+                      >
+                        <Route
+                          path="review"
+                          element={<UnstakeOrPendingActionReviewPage />}
+                        />
+                        <Route
+                          path="steps"
+                          element={<UnstakeOrPendingActionStepsPage />}
+                        />
+                        <Route
+                          path="complete"
+                          element={<UnstakeOrPendingActionCompletePage />}
+                        />
+                      </Route>
+
+                      {/* Pending Actions */}
                       <Route
-                        path="complete"
-                        element={<UnstakeOrPendingActionCompletePage />}
-                      />
+                        path="pending-action"
+                        element={<UnstakeOrPendingActionCheck />}
+                      >
+                        <Route
+                          path="review"
+                          element={<UnstakeOrPendingActionReviewPage />}
+                        />
+                        <Route
+                          path="steps"
+                          element={<UnstakeOrPendingActionStepsPage />}
+                        />
+                        <Route
+                          path="complete"
+                          element={<UnstakeOrPendingActionCompletePage />}
+                        />
+                      </Route>
                     </Route>
                   </Route>
-                </Route>
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Route>
-            </Routes>
-          </AnimatePresence>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </AnimatePresence>
+          </UnstakeOrPendingActionProvider>
         </motion.div>
 
         <FooterContent />
