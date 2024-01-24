@@ -11,6 +11,9 @@ import { FallbackContent } from "./components/fallback-content";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useHandleListState } from "../../../providers/list-state";
+import { container } from "./style.css";
+import { motion } from "framer-motion";
+import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
@@ -45,30 +48,46 @@ export const PositionsPage = () => {
 
   const { scrollTop, virtualListRef } = useHandleListState();
 
-  return (
-    <PageContainer>
-      <Box display="flex" flex={1} flexDirection="column">
-        {getContent()}
+  const [mountAnimationFinished] = useMountAnimationFinished();
 
-        {showPositions && (
-          <Box flex={1} display="flex" flexDirection="column">
-            <VirtualList
-              ref={virtualListRef}
-              data={data}
-              initialScrollTop={scrollTop}
-              itemContent={(_, item) =>
-                item === "header" ? (
-                  <ImportValidatorListItem
-                    importValidators={importValidators}
-                  />
-                ) : (
-                  <PositionsListItem item={item} />
-                )
-              }
-            />
-          </Box>
-        )}
-      </Box>
-    </PageContainer>
+  return (
+    <motion.div
+      initial={{ opacity: 0, translateY: "-10px" }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{
+        duration: mountAnimationFinished ? 0.3 : 1,
+        delay: mountAnimationFinished ? 0 : 1.5,
+      }}
+    >
+      <PageContainer>
+        <Box
+          className={container}
+          display="flex"
+          flex={1}
+          flexDirection="column"
+        >
+          {getContent()}
+
+          {showPositions && (
+            <Box flex={1} display="flex" flexDirection="column">
+              <VirtualList
+                ref={virtualListRef}
+                data={data}
+                initialScrollTop={scrollTop}
+                itemContent={(_, item) =>
+                  item === "header" ? (
+                    <ImportValidatorListItem
+                      importValidators={importValidators}
+                    />
+                  ) : (
+                    <PositionsListItem item={item} />
+                  )
+                }
+              />
+            </Box>
+          )}
+        </Box>
+      </PageContainer>
+    </motion.div>
   );
 };

@@ -8,6 +8,9 @@ import {
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useRefetchQueryNTimes } from "../use-refetch-query-n-times";
+import { useActionHistoryData } from "../../providers/stake-history";
+import { useMemo } from "react";
 
 export const useTokenAvailableAmount = ({
   tokenDto,
@@ -53,7 +56,7 @@ export const useTokenAvailableAmount = ({
       }
     );
 
-  return useTokenGetTokenBalances(balancesRequestDto.dto, {
+  const res = useTokenGetTokenBalances(balancesRequestDto.dto, {
     query: {
       enabled: balancesRequestDto.enabled,
       select: (data) =>
@@ -63,6 +66,24 @@ export const useTokenAvailableAmount = ({
         ),
     },
   });
+
+  const actionHistoryData = useActionHistoryData();
+
+  const lastActionTimestamp = useMemo(
+    () => actionHistoryData.map((v) => v.timestamp).extractNullable(),
+    [actionHistoryData]
+  );
+
+  useRefetchQueryNTimes({
+    enabled: !!lastActionTimestamp,
+    key: ["token-available-amount", lastActionTimestamp],
+    refetch: () => res.refetch(),
+    waitMs: 4000,
+    shouldRefetch: () =>
+      !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
+  });
+
+  return res;
 };
 
 export const invalidateTokenAvailableAmount = () =>

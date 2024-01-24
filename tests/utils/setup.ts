@@ -1,6 +1,12 @@
 import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { configure } from "@testing-library/react";
+import ResizeObserver from "resize-observer-polyfill";
+import { MotionGlobalConfig } from "framer-motion";
+
+MotionGlobalConfig.skipAnimations = true;
+
+global.ResizeObserver = ResizeObserver;
 
 vi.setConfig({ testTimeout: 10000 });
 configure({ asyncUtilTimeout: 10000 });

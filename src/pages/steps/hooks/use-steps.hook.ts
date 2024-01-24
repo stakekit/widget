@@ -6,6 +6,8 @@ import { useSavedRef } from "../../../hooks";
 import { TxState, useStepsMachine } from "./use-steps-machine.hook";
 import { invalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
 import { invalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import { useTranslation } from "react-i18next";
 
 export const useSteps = ({
   session,
@@ -119,8 +121,24 @@ export const useSteps = ({
     [machine.context.currentTxMeta, machine.context.txStates, machine.value]
   );
 
+  const { t } = useTranslation();
+
+  const onClickRef = useSavedRef(onClick);
+
+  useRegisterFooterButton(
+    useMemo(
+      () => ({
+        disabled: false,
+        isLoading: false,
+        label: t("shared.cancel"),
+        onClick: () => onClickRef.current(),
+        variant: "secondary",
+      }),
+      [t, onClickRef]
+    )
+  );
+
   return {
-    onClick,
     retry,
     txStates,
   };

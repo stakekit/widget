@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Box, Button, Heading, Text } from "../../../components";
+import { Box, Heading, Text } from "../../../components";
 import { PageContainer } from "../../components";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { useComplete } from "../hooks/use-complete.hook";
@@ -17,6 +17,8 @@ import {
   capitalizeFirstLowerRest,
   removeUnderscores,
 } from "../../../utils/text";
+import { AnimationPage } from "../../../navigation/containers/animation-page";
+import { motion } from "framer-motion";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -44,134 +46,146 @@ export const CompletePage = ({
 }: Props) => {
   const { t } = useTranslation();
 
-  const {
-    onClick,
-    onViewTransactionClick,
-    unstakeMatch,
-    pendingActionMatch,
-    urls,
-  } = useComplete();
+  const { onViewTransactionClick, unstakeMatch, pendingActionMatch, urls } =
+    useComplete();
 
   return (
-    <PageContainer>
-      <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        justifyContent="space-between"
-      >
+    <AnimationPage>
+      <PageContainer>
         <Box
           flex={1}
           display="flex"
           flexDirection="column"
-          justifyContent="center"
-          alignItems="center"
-          textAlign="center"
+          justifyContent="space-between"
+          my="4"
         >
-          {Maybe.fromRecord({ token, metadata })
-            .map((v) => (
-              <Box marginBottom="4">
-                <TokenIcon
-                  metadata={v.metadata}
-                  tokenLogoHw="32"
-                  tokenNetworkLogoHw="8"
-                  token={v.token}
-                />
-              </Box>
-            ))
-            .extractNullable()}
+          <Box
+            flex={1}
+            display="flex"
+            flexDirection="column"
+            justifyContent="center"
+            alignItems="center"
+            textAlign="center"
+          >
+            {Maybe.fromRecord({ token, metadata })
+              .map((v) => (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.1 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    transition: { delay: 0.2, duration: 0.3 },
+                  }}
+                >
+                  <Box my="4">
+                    <TokenIcon
+                      metadata={v.metadata}
+                      tokenLogoHw="32"
+                      tokenNetworkLogoHw="8"
+                      token={v.token}
+                    />
+                  </Box>
+                </motion.div>
+              ))
+              .extractNullable()}
 
-          <Heading variant={{ level: "h3" }}>
-            {t(
-              unstakeMatch
-                ? "complete.successfully_unstaked"
-                : pendingActionMatch
-                  ? `complete.successfully_pending_action`
-                  : "complete.successfully_staked",
-              {
-                action: yieldType.mapOrDefault(
-                  (yt) =>
-                    unstakeMatch
-                      ? t(`complete.unstake.${yt}`)
-                      : t(`complete.stake.${yt}`),
-                  ""
-                ),
-                amount,
-                tokenNetwork: network,
-                pendingAction: t(
-                  `complete.pending_action.${
-                    pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
-                  }` as const
-                ),
-              }
-            )}
-          </Heading>
-
-          {!unstakeMatch && !pendingActionMatch
-            ? providersDetails
-                .map((val) =>
-                  val.map((v, i) => (
-                    <Box
-                      key={i}
-                      display="flex"
-                      marginTop="2"
-                      justifyContent="center"
-                      alignItems="center"
-                      gap="1"
-                    >
-                      {v.logo && (
-                        <Image
-                          imageProps={{ borderRadius: "full" }}
-                          containerProps={{ hw: "5" }}
-                          src={v.logo}
-                          fallback={
-                            <ImageFallback name={v.name} tokenLogoHw="5" />
-                          }
-                        />
-                      )}
-                      <Text variant={{ type: "muted" }}>
-                        {t("complete.via", { providerName: v.name })}
-                      </Text>
-                    </Box>
-                  ))
-                )
-                .extractNullable()
-            : null}
-
-          {urls.map((val) => (
-            <Box
-              key={val.url}
-              marginTop="4"
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              as="button"
-              onClick={() => onViewTransactionClick(val.url)}
+            <motion.div
+              initial={{ opacity: 0, translateX: "-40px" }}
+              animate={{
+                opacity: 1,
+                translateX: 0,
+                transition: { delay: 0.2, duration: 0.8 },
+              }}
             >
+              <Heading variant={{ level: "h3" }}>
+                {t(
+                  unstakeMatch
+                    ? "complete.successfully_unstaked"
+                    : pendingActionMatch
+                      ? `complete.successfully_pending_action`
+                      : "complete.successfully_staked",
+                  {
+                    action: yieldType.mapOrDefault(
+                      (yt) =>
+                        unstakeMatch
+                          ? t(`complete.unstake.${yt}`)
+                          : t(`complete.stake.${yt}`),
+                      ""
+                    ),
+                    amount,
+                    tokenNetwork: network,
+                    pendingAction: t(
+                      `complete.pending_action.${
+                        pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
+                      }` as const
+                    ),
+                  }
+                )}
+              </Heading>
+            </motion.div>
+
+            {!unstakeMatch && !pendingActionMatch
+              ? providersDetails
+                  .map((val) =>
+                    val.map((v, i) => (
+                      <Box
+                        key={i}
+                        display="flex"
+                        marginTop="2"
+                        justifyContent="center"
+                        alignItems="center"
+                        gap="1"
+                      >
+                        {v.logo && (
+                          <Image
+                            imageProps={{ borderRadius: "full" }}
+                            containerProps={{ hw: "5" }}
+                            src={v.logo}
+                            fallback={
+                              <ImageFallback name={v.name} tokenLogoHw="5" />
+                            }
+                          />
+                        )}
+                        <Text variant={{ type: "muted" }}>
+                          {t("complete.via", { providerName: v.name })}
+                        </Text>
+                      </Box>
+                    ))
+                  )
+                  .extractNullable()
+              : null}
+
+            {urls.map((val) => (
               <Box
-                marginRight="1"
+                key={val.url}
+                marginTop="4"
                 display="flex"
                 justifyContent="center"
                 alignItems="center"
+                as="button"
+                onClick={() => onViewTransactionClick(val.url)}
               >
-                <CheckCircleIcon width={22} height={22} />
+                <Box
+                  marginRight="1"
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <CheckCircleIcon width={22} height={22} />
+                </Box>
+                <Text variant={{ type: "muted" }}>
+                  {t("complete.view_transaction", {
+                    type: Just(val.type)
+                      .map(removeUnderscores)
+                      .map(capitalizeFirstLowerRest)
+                      .extract(),
+                  })}
+                </Text>
               </Box>
-              <Text variant={{ type: "muted" }}>
-                {t("complete.view_transaction", {
-                  type: Just(val.type)
-                    .map(removeUnderscores)
-                    .map(capitalizeFirstLowerRest)
-                    .extract(),
-                })}
-              </Text>
-            </Box>
-          ))}
+            ))}
+          </Box>
         </Box>
-
-        <Box display="flex" alignItems="flex-end" marginTop="8">
-          <Button onClick={onClick}>{t("shared.ok")}</Button>
-        </Box>
-      </Box>
-    </PageContainer>
+      </PageContainer>
+    </AnimationPage>
   );
 };

@@ -12,6 +12,8 @@ import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-a
 import { ActionTypes } from "@stakekit/api-hooks";
 import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
 import { usePendingActionMatch } from "../../hooks/navigation/use-pending-action-match";
+import { useRegisterFooterButton } from "../components/footer-outlet/context";
+import { useSavedRef } from "../../hooks";
 
 export const useUnstakeOrPendingActionReview = () => {
   const { integrationData } = useUnstakeOrPendingActionState();
@@ -127,11 +129,24 @@ export const useUnstakeOrPendingActionReview = () => {
         : { type: "unstake", rewardToken };
     });
 
+  const onClickRef = useSavedRef(onClick);
+
+  useRegisterFooterButton(
+    useMemo(
+      () => ({
+        label: t("shared.confirm"),
+        onClick: () => onClickRef.current(),
+        disabled: false,
+        isLoading: false,
+      }),
+      [onClickRef, t]
+    )
+  );
+
   return {
     integrationData,
     title,
     amount,
-    onClick,
     fee,
     rewardTokenDetailsProps,
     pendingActionMatch,

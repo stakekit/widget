@@ -12,3 +12,5 @@ export const providerContainer = style({
   transition: "max-height 0.3s ease",
   overflow: "hidden",
 });
+
+export const container = style({ minHeight: "400px" });

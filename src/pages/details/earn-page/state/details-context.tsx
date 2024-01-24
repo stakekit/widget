@@ -23,7 +23,7 @@ import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-availab
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useSelectedStakePrice } from "../../../../hooks";
+import { useSavedRef, useSelectedStakePrice } from "../../../../hooks";
 import { formatNumber } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
@@ -49,6 +49,9 @@ import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-s
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
 import { useUpdateEffect } from "../../../../hooks/use-update-effect";
+import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
+import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
+import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -68,6 +71,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isConnecting,
     isLedgerLive,
     isLedgerLiveAccountPlaceholder,
+    chain,
   } = useSKWallet();
 
   const stakeTokenAvailableAmount = useTokenAvailableAmount({
@@ -372,11 +376,18 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const pendingActionDeepLink = usePendingActionDeepLink();
 
+  const [mountAnimationFinished] = useMountAnimationFinished();
+
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
   ).isLoading;
+
   const appLoading =
-    wagmiConfig.isLoading || pendingActionDeepLink.isLoading || isConnecting;
+    wagmiConfig.isLoading ||
+    pendingActionDeepLink.isLoading ||
+    isConnecting ||
+    !mountAnimationFinished;
+
   const multiYieldsLoading = multiYields.isLoading;
   const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
@@ -435,6 +446,54 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       type: "tronResource/select",
       data: value,
     });
+
+  const onClickRef = useSavedRef(onClick);
+
+  const addLedgerAccount = useAddLedgerAccount();
+
+  const connectClickRef = useSavedRef(() => {
+    if (isLedgerLiveAccountPlaceholder && chain) {
+      trackEvent("addLedgerAccountClicked");
+      return addLedgerAccount.mutate(chain);
+    }
+
+    trackEvent("connectWalletClicked");
+    openConnectModal?.();
+  });
+
+  useRegisterFooterButton(
+    useMemo(
+      () =>
+        isConnected && !isLedgerLiveAccountPlaceholder
+          ? {
+              disabled: buttonDisabled,
+              isLoading: onStakeEnter.isPending,
+              onClick: () => onClickRef.current(),
+              label: buttonCTAText,
+            }
+          : {
+              disabled: appLoading,
+              isLoading: appLoading,
+              label: t(
+                isLedgerLiveAccountPlaceholder
+                  ? "init.ledger_add_account"
+                  : "init.connect_wallet"
+              ),
+              onClick: () => connectClickRef.current(),
+            },
+      [
+        appLoading,
+        buttonCTAText,
+        buttonDisabled,
+        connectClickRef,
+        isConnected,
+        isLedgerLiveAccountPlaceholder,
+        onClickRef,
+        onStakeEnter.isPending,
+        t,
+      ]
+    )
+  );
 
   const value = {
     availableTokens,
