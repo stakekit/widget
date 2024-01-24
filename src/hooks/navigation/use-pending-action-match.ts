@@ -1,4 +1,4 @@
-import { useMatch } from "react-router-dom";
+import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
 
 export const usePendingActionMatch = (path?: string) =>
-  useMatch(`positions/:integrationId/:balanceId/pending-action/${path ?? "*"}`);
+  useUnstakeOrPendingActionMatch(`pending-action/${path ?? "*"}`);

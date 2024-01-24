@@ -8,6 +8,7 @@ globalStyle("p", { margin: 0 });
 globalStyle(rootSelector, {
   "@layer": {
     [reset]: {
+      paddingLeft: "calc(100vw - 100%)", // trick to prevent scrollbar layout shift
       fontFamily: vars.font.body,
     },
   },

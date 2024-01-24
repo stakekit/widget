@@ -7,12 +7,16 @@ import {
   useContext,
   useMemo,
   useReducer,
+  useState,
 } from "react";
 import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
-import { PendingActionDto, PriceRequestDto } from "@stakekit/api-hooks";
+import {
+  ActionTypes,
+  PendingActionDto,
+  PriceRequestDto,
+} from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
-import { useParams } from "react-router-dom";
 import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { usePositionBalances } from "../../hooks/use-position-balances";
 import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
@@ -25,6 +29,8 @@ import { getBaseToken } from "../../domain";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
 import { useTransactionTotalGas } from "../../hooks/use-transaction-total-gas";
+import { useUnstakeOrPendingActionMatch } from "../../hooks/navigation/use-unstake-or-pending-action-match";
+import { usePendingActionSelectValidatorMatch } from "../../hooks/navigation/use-pending-action-select-validator-match";
 
 const getInitialState = (): State => ({
   unstakeAmount: new BigNumber(0),
@@ -39,25 +45,50 @@ const UnstakeOrPendingActionDispatchContext = createContext<
   Dispatch<Actions> | undefined
 >(undefined);
 
-export const UnstakeOrPendingActionContextProvider = ({
+export const UnstakeOrPendingActionProvider = ({
   children,
-}: PropsWithChildren) => {
-  const params = useParams<{
-    integrationId: string;
-    balanceId: string;
-    pendingActionType?: PendingActionDto["type"];
-  }>();
+}: PropsWithChildren<{}>) => {
+  const unstakeOrPendingActionFlowMatch = useUnstakeOrPendingActionMatch();
+  const pendingActionSelectValidatorMatch =
+    usePendingActionSelectValidatorMatch();
 
-  const { balanceId, integrationId, pendingActionType } = useMemo(
-    () => ({
-      integrationId: Maybe.fromNullable(params.integrationId),
-      balanceId: Maybe.fromNullable(params.balanceId),
-      pendingActionType: Maybe.fromNullable(params.pendingActionType),
-    }),
-    [params.balanceId, params.integrationId, params.pendingActionType]
-  );
+  const currentParams = useMemo(() => {
+    const { balanceId, integrationId } =
+      unstakeOrPendingActionFlowMatch?.params ??
+      pendingActionSelectValidatorMatch?.params ??
+      {};
 
-  const yieldOpportunity = useYieldOpportunity(integrationId.extract());
+    const pendingActionType = pendingActionSelectValidatorMatch?.params
+      .pendingActionType as ActionTypes | undefined;
+
+    return {
+      balanceId: Maybe.fromNullable(balanceId),
+      integrationId: Maybe.fromNullable(integrationId),
+      pendingActionType: Maybe.fromNullable(pendingActionType),
+      plain: {
+        balanceId,
+        integrationId,
+        pendingActionType,
+      },
+    };
+  }, [
+    pendingActionSelectValidatorMatch?.params,
+    unstakeOrPendingActionFlowMatch?.params,
+  ]);
+
+  /**
+   * On navigating away from unstake or pending action flow, keep last params
+   * to be able to finish animation with correct params.
+   * On next navigation to unstake or pending action flow, use new params
+   * and reset state
+   */
+  const [lastStateParams, setLastStateParams] = useState(currentParams.plain);
+
+  const balanceId = currentParams.plain.balanceId ?? lastStateParams.balanceId;
+  const integrationId =
+    currentParams.plain.integrationId ?? lastStateParams.integrationId;
+
+  const yieldOpportunity = useYieldOpportunity(integrationId);
 
   const integrationData = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
@@ -65,8 +96,8 @@ export const UnstakeOrPendingActionContextProvider = ({
   );
 
   const positionBalances = usePositionBalances({
-    balanceId: balanceId.extract(),
-    integrationId: integrationId.extract(),
+    balanceId: balanceId,
+    integrationId: integrationId,
   });
 
   const positionBalancePrices = usePrices(
@@ -233,12 +264,35 @@ export const UnstakeOrPendingActionContextProvider = ({
         };
       }
 
+      case "reset": {
+        return { ...getInitialState() };
+      }
+
       default:
         return state;
     }
   };
 
   const [state, dispatch] = useReducer(reducer, getInitialState());
+
+  /**
+   * Reset state and set new last params on navigation
+   */
+  Maybe.fromRecord({
+    integrationId: currentParams.integrationId,
+    balanceId: currentParams.balanceId,
+  })
+    .filter(
+      (val) =>
+        lastStateParams.balanceId !== val.balanceId ||
+        lastStateParams.integrationId !== val.integrationId ||
+        lastStateParams.pendingActionType !==
+          currentParams.plain.pendingActionType
+    )
+    .ifJust(() => {
+      setLastStateParams(currentParams.plain);
+      dispatch({ type: "reset" });
+    });
 
   const { pendingActions, unstakeAmount } = state;
 
@@ -290,7 +344,7 @@ export const UnstakeOrPendingActionContextProvider = ({
       stakedOrLiquidBalances,
       yieldOpportunity,
       positionBalances,
-      pendingActionType,
+      pendingActionType: currentParams.pendingActionType,
       integrationData,
       stakeExitTxGas,
       unstakeSession,
@@ -299,21 +353,21 @@ export const UnstakeOrPendingActionContextProvider = ({
       pendingActionToken,
     }),
     [
-      integrationData,
-      pendingActions,
-      pendingActionSession,
-      pendingActionToken,
-      pendingActionTxGas,
-      pendingActionType,
-      positionBalancePrices,
-      positionBalances,
-      positionBalancesByType,
-      reducedStakedOrLiquidBalance,
-      stakeExitTxGas,
-      stakedOrLiquidBalances,
       unstakeAmount,
-      unstakeSession,
+      pendingActions,
+      positionBalancePrices,
+      reducedStakedOrLiquidBalance,
+      positionBalancesByType,
+      stakedOrLiquidBalances,
       yieldOpportunity,
+      positionBalances,
+      currentParams.pendingActionType,
+      integrationData,
+      stakeExitTxGas,
+      unstakeSession,
+      pendingActionSession,
+      pendingActionTxGas,
+      pendingActionToken,
     ]
   );
 
