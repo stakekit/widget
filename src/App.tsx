@@ -53,6 +53,8 @@ import { container } from "./style.css";
 import { FooterContent } from "./pages/components/footer-outlet";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useSKLocation } from "./providers/location";
+import { MaybeDocument } from "./utils/maybe-document";
+import { MaybeWindow } from "./utils/maybe-window";
 
 const Widget = () => {
   useToggleTheme();
@@ -74,14 +76,16 @@ const Widget = () => {
    */
   useEffect(() => {
     if (pathnameRef.current !== "/") {
-      const url = new URL(window.location.href);
-      const newUrl = new URL(window.location.origin);
-      if (url.searchParams.has("embed")) {
-        newUrl.searchParams.set("embed", "true");
-      }
+      MaybeWindow.ifJust((w) => {
+        const url = new URL(w.location.href);
+        const newUrl = new URL(w.location.origin);
+        if (url.searchParams.has("embed")) {
+          newUrl.searchParams.set("embed", "true");
+        }
 
-      window.history.pushState({}, document.title, newUrl.href);
-      navigateRef.current("/", { replace: true });
+        w.history.pushState({}, w.document.title, newUrl.href);
+        navigateRef.current("/", { replace: true });
+      });
     }
   }, [chain, address, pathnameRef, navigateRef]);
 
@@ -182,19 +186,26 @@ const Widget = () => {
       </LayoutGroup>
 
       <>
-        {createPortal(<RichErrorModal />, document.body)}
+        {MaybeDocument.map((doc) =>
+          createPortal(<RichErrorModal />, doc.body)
+        ).extractNullable()}
 
-        {geoBlock &&
-          createPortal(
-            <HelpModal
-              modal={{
-                type: "geoBlock",
-                ...geoBlock,
-                regionCodeName: regionCodeName.data,
-              }}
-            />,
-            document.body
-          )}
+        {MaybeDocument.chainNullable((doc) =>
+          geoBlock ? { doc, geoBlock } : null
+        )
+          .map((val) =>
+            createPortal(
+              <HelpModal
+                modal={{
+                  type: "geoBlock",
+                  ...val.geoBlock,
+                  regionCodeName: regionCodeName.data,
+                }}
+              />,
+              val.doc.body
+            )
+          )
+          .extractNullable()}
       </>
     </AnimationLayout>
   );

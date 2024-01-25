@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../styles";
-import { RecipeVariants, recipe } from "@vanilla-extract/recipes";
+import { recipe } from "@vanilla-extract/recipes";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 6px" }],
@@ -14,8 +14,6 @@ export const listItemContainer = recipe({
     },
   },
 });
-
-export type ContainerVariants = RecipeVariants<typeof listItemContainer>;
 
 export const viaText = style({
   textOverflow: "ellipsis",

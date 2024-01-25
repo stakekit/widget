@@ -8,6 +8,7 @@ import {
   string,
 } from "purify-ts";
 import { config } from "../config";
+import { MaybeWindow } from "../utils/maybe-window";
 
 const localStorageBuildKey = <K extends string>(key: K) =>
   `${config.appPrefix}@1//${key}` as const;
@@ -39,9 +40,11 @@ const codecs = {
 export const getStorageItem = <K extends keyof LocalStorageKV>(
   key: K
 ): Either<Error, LocalStorageValue<K> | null> => {
-  if (typeof window === "undefined") return Right(null);
+  const w = MaybeWindow.extractNullable();
 
-  const val = localStorage.getItem(key);
+  if (!w) return Right(null);
+
+  const val = w.localStorage.getItem(key);
 
   if (!val) return Right(null);
 
@@ -57,10 +60,10 @@ export const setStorageItem = <K extends keyof LocalStorageKV>(
   key: K,
   value: GetType<(typeof codecs)[K]>
 ) => {
-  return Either.encase(
-    () =>
-      typeof window !== "undefined" &&
-      localStorage.setItem(key, JSON.stringify(value))
+  const w = MaybeWindow.extractNullable();
+
+  return Either.encase(() =>
+    w?.localStorage.setItem(key, JSON.stringify(value))
   ).ifRight(() => notify(key));
 };
 

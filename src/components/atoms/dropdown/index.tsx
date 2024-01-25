@@ -11,7 +11,7 @@ import {
 import { CaretDownIcon } from "../icons";
 import { Fragment } from "react";
 
-export interface DropdownProps<T extends { label: string; value: string }> {
+interface DropdownProps<T extends { label: string; value: string }> {
   options: T[];
   onSelect: (option: T["value"]) => void;
   selectedOption: T | undefined;

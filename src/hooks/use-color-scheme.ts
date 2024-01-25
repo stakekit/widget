@@ -1,13 +1,17 @@
 import { useLayoutEffect, useState } from "react";
+import { MaybeWindow } from "../utils/maybe-window";
 
-const getCurrentColorScheme = () => {
-  if (typeof window === "undefined") return "no-preference";
+const getCurrentColorScheme = () =>
+  MaybeWindow.map((w) => {
+    const isDark = w.matchMedia("(prefers-color-scheme: dark)");
+    const isLight = w.matchMedia("(prefers-color-scheme: light)");
 
-  const isDark = window.matchMedia("(prefers-color-scheme: dark)");
-  const isLight = window.matchMedia("(prefers-color-scheme: light)");
-
-  return isDark.matches ? "dark" : isLight.matches ? "light" : "no-preference";
-};
+    return isDark.matches
+      ? "dark"
+      : isLight.matches
+        ? "light"
+        : "no-preference";
+  }).orDefault("no-preference");
 
 export const usePrefersColorScheme = () => {
   const [preferredColorSchema, setPreferredColorSchema] = useState<{
@@ -22,10 +26,12 @@ export const usePrefersColorScheme = () => {
   useLayoutEffect(() => {
     if (preferredColorSchema.force) return;
 
-    if (typeof window === "undefined") return;
+    const w = MaybeWindow.extractNullable();
 
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)");
-    const isLight = window.matchMedia("(prefers-color-scheme: light)");
+    if (!w) return;
+
+    const isDark = w.matchMedia("(prefers-color-scheme: dark)");
+    const isLight = w.matchMedia("(prefers-color-scheme: light)");
 
     if (typeof isLight.addEventListener !== "function") return;
 

@@ -18,6 +18,7 @@ import { ReactNode, useContext, useMemo } from "react";
 import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
 import { TrackingContext } from "../../../providers/tracking";
+import { MaybeWindow } from "../../../utils/maybe-window";
 
 type ModalType =
   | { type: "fees" }
@@ -201,7 +202,9 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
           button: {
             title: t("help_modals.get_in_touch.button"),
             onClick: () =>
-              window.open("https://twitter.com/stakekit", "_blank"),
+              MaybeWindow.ifJust((w) =>
+                w.open("https://twitter.com/stakekit", "_blank")
+              ),
           },
           description: "",
           image: whatIsStaking,

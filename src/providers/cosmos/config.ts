@@ -31,8 +31,6 @@ import {
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
-import { useQuery } from "@tanstack/react-query";
-import { useSettings } from "../settings";
 
 type FilteredCosmosChainsMap = Partial<CosmosChainsMap>;
 
@@ -124,8 +122,6 @@ export class CosmosWagmiConnector extends Connector {
   };
 
   getAndSavePubKeyToStorage = async () => {
-    if (typeof window === "undefined") return;
-
     const cw = await this.chainWallet;
 
     const result = await cw.client?.getAccount?.(cw.chainId);
@@ -381,14 +377,3 @@ export const getConfig = (...opts: Parameters<typeof queryFn>) =>
     console.log(e);
     return new Error("Could not get cosmos config");
   });
-
-export const useCosmosConfig = () => {
-  const { wagmi } = useSettings();
-
-  return useQuery({
-    staleTime,
-    queryKey,
-    queryFn: () =>
-      queryFn({ forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly }),
-  });
-};

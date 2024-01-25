@@ -28,7 +28,7 @@ export const ListStateContextProvider = ({ children }: PropsWithChildren) => {
   );
 };
 
-export const useListState = () => {
+const useListState = () => {
   const context = useContext(ListStateContext);
 
   if (!context) {
