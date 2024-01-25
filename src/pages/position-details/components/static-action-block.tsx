@@ -9,7 +9,7 @@ import {
 } from "@stakekit/api-hooks";
 import { usePositionDetails } from "../hooks/use-position-details";
 
-export type StaticActionBlockProps = {
+type StaticActionBlockProps = {
   pendingActionDto: PendingActionDto;
   yieldBalance: YieldBalanceDto & {
     tokenPriceInUsd: BigNumber;

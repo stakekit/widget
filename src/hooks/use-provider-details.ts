@@ -13,7 +13,7 @@ type Res = Maybe<{
   address?: string;
 }>;
 
-export const getProviderDetails = ({
+const getProviderDetails = ({
   integrationData,
   validatorAddress,
 }: {

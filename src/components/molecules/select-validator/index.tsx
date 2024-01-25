@@ -4,7 +4,7 @@ import { GroupedItem, SelectValidatorList } from "./select-validator-list";
 import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { PropsWithChildren, useMemo, useState } from "react";
 
-export type SelectValidatorProps = PropsWithChildren<
+type SelectValidatorProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;

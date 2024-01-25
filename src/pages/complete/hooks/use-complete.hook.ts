@@ -7,6 +7,7 @@ import { useRegisterFooterButton } from "../../components/footer-outlet/context"
 import { useMemo } from "react";
 import { useSavedRef } from "../../../hooks";
 import { useTranslation } from "react-i18next";
+import { MaybeWindow } from "../../../utils/maybe-window";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -24,13 +25,12 @@ export const useComplete = () => {
     navigate("/");
   };
 
-  const onViewTransactionClick = (url: string) => {
-    if (typeof window === "undefined") return;
+  const onViewTransactionClick = (url: string) =>
+    MaybeWindow.ifJust((w) => {
+      trackEvent("viewTxClicked");
 
-    trackEvent("viewTxClicked");
-
-    window.open(url, "_blank");
-  };
+      w.open(url, "_blank");
+    });
 
   const unstakeMatch = useUnstakeMatch();
   const pendingActionMatch = usePendingActionMatch();

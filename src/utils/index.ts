@@ -1,5 +1,6 @@
 import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
+import { MaybeWindow } from "./maybe-window";
 
 BigNumber.config({
   FORMAT: {
@@ -42,17 +43,18 @@ export const isLedgerDappBrowserProvider = (() => {
 
   return (): boolean => {
     if (typeof state === "boolean") return state;
-    if (typeof window === "undefined") return false;
 
-    try {
-      const params = new URLSearchParams(window.self.location.search);
+    return MaybeWindow.map((w) => {
+      try {
+        const params = new URLSearchParams(w.self.location.search);
 
-      state = !!params.get("embed");
-    } catch (error) {
-      state = false;
-    } finally {
-      return !!state;
-    }
+        state = !!params.get("embed");
+      } catch (error) {
+        state = false;
+      } finally {
+        return !!state;
+      }
+    }).orDefault(false);
   };
 })();
 

@@ -2,6 +2,8 @@ import { RefObject, useEffect } from "react";
 import { usePrevious } from "../../../hooks/use-previous";
 import { vars } from "../../../styles";
 import { initialFontSizeVar } from "./styles.css";
+import { MaybeDocument } from "../../../utils/maybe-document";
+import { MaybeWindow } from "../../../utils/maybe-window";
 
 export const useAutoResizeText = ({
   inputVal,
@@ -40,47 +42,48 @@ const scale = ({
 }: {
   inputEl: HTMLInputElement;
   spanEl: HTMLSpanElement;
-}) => {
-  if (typeof window === "undefined") return null;
+}) =>
+  MaybeWindow.map((w) => {
+    const currentInputWidth = inputEl.offsetWidth;
 
-  const currentInputWidth = inputEl.offsetWidth;
+    const descendingFontSizes = getDescendingFontSizes(inputEl);
 
-  const descendingFontSizes = getDescendingFontSizes(inputEl);
+    let currentFontSize = parseFloat(w.getComputedStyle(spanEl).fontSize);
 
-  let currentFontSize = parseFloat(window.getComputedStyle(spanEl).fontSize);
-
-  for (const fs of descendingFontSizes) {
-    spanEl.style.fontSize = `${fs}px`;
-    if (spanEl.offsetWidth < currentInputWidth) {
-      currentFontSize = fs;
-      break;
+    for (const fs of descendingFontSizes) {
+      spanEl.style.fontSize = `${fs}px`;
+      if (spanEl.offsetWidth < currentInputWidth) {
+        currentFontSize = fs;
+        break;
+      }
     }
-  }
 
-  return currentFontSize;
-};
+    return currentFontSize;
+  }).extractNullable();
 
 const convertRemToPixels = (rem: number) =>
   rem *
   parseFloat(
-    typeof window === "undefined"
-      ? "0"
-      : getComputedStyle(document.documentElement).fontSize
+    MaybeDocument.map(
+      (doc) => getComputedStyle(doc.documentElement).fontSize
+    ).orDefault("0")
   );
 
 const getDescendingFontSizes = (el: HTMLElement) =>
-  [
-    initialFontSizeVar,
-    vars.fontSize["2xl"],
-    vars.fontSize.xl,
-    vars.fontSize.lgx,
-    vars.fontSize.lg,
-  ].map((fs) =>
-    convertRemToPixels(
-      parseFloat(
-        window
-          .getComputedStyle(el)
-          .getPropertyValue(fs.replace(/(var\()|(\))/g, ""))
+  MaybeWindow.map((w) =>
+    [
+      initialFontSizeVar,
+      vars.fontSize["2xl"],
+      vars.fontSize.xl,
+      vars.fontSize.lgx,
+      vars.fontSize.lg,
+    ].map((fs) =>
+      convertRemToPixels(
+        parseFloat(
+          w
+            .getComputedStyle(el)
+            .getPropertyValue(fs.replace(/(var\()|(\))/g, ""))
+        )
       )
     )
-  );
+  ).orDefault([]);

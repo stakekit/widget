@@ -13,7 +13,7 @@ import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import BigNumber from "bignumber.js";
 import { TokenDto } from "@stakekit/api-hooks";
 
-export type AmountBlockProps = {
+type AmountBlockProps = {
   variant: "unstake" | "action";
   isLoading: boolean;
   onAmountChange: NumberInputProps["onChange"];

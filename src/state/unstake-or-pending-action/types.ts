@@ -13,15 +13,15 @@ import { PositionBalancesByType } from "../../domain/types/positions";
 import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
 import { usePrices } from "../../hooks/api/use-prices";
 
-export type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
-export type UnstakeAmountMax = Action<"unstake/amount/max">;
+type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
+type UnstakeAmountMax = Action<"unstake/amount/max">;
 
-export type PendingActionAmountChange = Action<
+type PendingActionAmountChange = Action<
   "pendingAction/amount/change",
   { actionType: ActionTypes; amount: BigNumber }
 >;
 
-export type Reset = Action<"reset">;
+type Reset = Action<"reset">;
 
 export type Actions =
   | UnstakeAmountChange

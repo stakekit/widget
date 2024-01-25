@@ -10,6 +10,7 @@ import { breakpoints } from "../../../styles/tokens/breakpoints";
 import clsx from "clsx";
 import { container, hideScrollbar } from "./style.css";
 import { Box } from "../box";
+import { MaybeWindow } from "../../../utils/maybe-window";
 
 declare module "react" {
   function forwardRef<T, P = {}>(
@@ -127,7 +128,7 @@ export const GroupedVirtualList = <ItemData = any, Context = any>({
 
 const useIsTabletOrBigger = () => {
   const [windowWidth] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 0
+    MaybeWindow.map((w) => w.innerWidth).orDefault(0)
   );
 
   return windowWidth >= breakpoints.tablet;

@@ -7,6 +7,8 @@ import createStateContext from "../../utils/create-state-context";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { useSKLocation } from "../../providers/location";
 import { config } from "../../config";
+import { Box } from "../../components";
+import { container } from "./styles.css";
 
 export const [useMountAnimationFinished, MountAnimationFinishedProvider] =
   createStateContext(config.env.isTestMode);
@@ -33,23 +35,25 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
   }, [current.pathname, setMountAnimationFinished]);
 
   return (
-    <motion.div
-      layout="size"
-      className={animationContainer}
-      style={{
-        borderTopLeftRadius: "20px",
-        borderTopRightRadius: "20px",
-        position: "relative",
-        height: containerHeight,
-      }}
-      transition={
-        mountAnimationFinished
-          ? { duration: 0.25 }
-          : { duration: 0.6, delay: 0.3 }
-      }
-      onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
-    >
-      {children}
-    </motion.div>
+    <Box className={container}>
+      <motion.div
+        layout="size"
+        className={animationContainer}
+        style={{
+          borderTopLeftRadius: "20px",
+          borderTopRightRadius: "20px",
+          position: "relative",
+          height: containerHeight,
+        }}
+        transition={
+          mountAnimationFinished
+            ? { duration: 0.25 }
+            : { duration: 0.6, delay: 0.3 }
+        }
+        onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
+      >
+        {children}
+      </motion.div>
+    </Box>
   );
 };
