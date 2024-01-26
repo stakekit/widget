@@ -13,6 +13,7 @@ export const handlers = [
 
   http.get("*/v1/yields/enabled/networks", async () => {
     await delay();
+
     return HttpResponse.json([
       "ethereum",
       "ethereum-goerli",
@@ -63,27 +64,7 @@ export const handlers = [
     ]);
   }),
 
-  http.post("https://cloudflare-eth.com", async () => {
-    await delay();
-    return passthrough();
-  }),
-  http.post(`https://api.avax.network/ext/bc/C/rpc`, async () => {
-    await delay();
-    return passthrough();
-  }),
-  http.get("https://explorer-api.walletconnect.com/*", async () => {
-    await delay();
-    return passthrough();
-  }),
-  http.get("https://relay.walletconnect.com/", async () => {
-    await delay();
-    return passthrough();
-  }),
-  http.get("https://relay.walletconnect.org/", async () => {
-    await delay();
-    return passthrough();
-  }),
-  http.get("https://www.walletlink.org/rpc", async () => {
+  http.all("*", async () => {
     await delay();
     return passthrough();
   }),

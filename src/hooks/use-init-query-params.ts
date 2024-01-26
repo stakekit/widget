@@ -46,6 +46,7 @@ type Result = {
   validator: string | null;
   pendingaction: string | null;
   yieldData: YieldDto | null;
+  referralCode: string | null;
 };
 
 const fn = ({
@@ -63,6 +64,7 @@ const fn = ({
             ["yieldId", url.searchParams.get("yieldId")],
             ["validator", url.searchParams.get("validator")],
             ["pendingaction", url.searchParams.get("pendingaction")],
+            ["referralCode", url.searchParams.get("referral-code")],
           ] as const
       )
       .map((val) =>

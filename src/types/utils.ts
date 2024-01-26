@@ -19,3 +19,5 @@ export type GetMaybeJust<T> = T extends Maybe<infer R> ? R : never;
 export type Action<T extends string, D = void> = D extends void
   ? { type: T }
   : { type: T; data: D };
+
+export type Nullable<T> = T | undefined | null;

@@ -5,6 +5,7 @@ import { selectOpportunity } from "./use-cases/select-opportunity";
 import { queryClient } from "../src/services/query-client";
 import { APIManager } from "@stakekit/api-hooks";
 import { stakingFlow } from "./use-cases/staking-flow";
+import { referralFlow } from "./use-cases/referral-flow";
 
 describe("<SKApp />", () => {
   beforeAll(() => server.listen());
@@ -16,6 +17,7 @@ describe("<SKApp />", () => {
   afterAll(() => server.close());
 
   it("Should render initial page correctly", rendersInitialPage);
+  describe("Referral flow works correctly", referralFlow);
   it("Selecting yield opportunity works as expected", selectOpportunity);
-  it("Staking flow should work correctly", stakingFlow);
+  it("Staking flow works correctly", stakingFlow);
 });

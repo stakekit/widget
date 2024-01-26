@@ -37,14 +37,9 @@ import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
 import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-action/";
-import { createPortal } from "react-dom";
-import { HelpModal } from "./components/molecules/help-modal";
-import { useGeoBlock } from "./hooks/use-geo-block";
-import { useRegionCodeName } from "./hooks/use-region-code-names";
 import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
-import { RichErrorModal } from "./components/molecules/rich-error-modal";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { Header } from "./components";
 import { headerContainer } from "./pages/components/layout/styles.css";
@@ -53,16 +48,11 @@ import { container } from "./style.css";
 import { FooterContent } from "./pages/components/footer-outlet";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useSKLocation } from "./providers/location";
-import { MaybeDocument } from "./utils/maybe-document";
 import { MaybeWindow } from "./utils/maybe-window";
+import { GlobalModals } from "./components/molecules/global-modals";
 
 const Widget = () => {
   useToggleTheme();
-
-  const geoBlock = useGeoBlock();
-  const regionCodeName = useRegionCodeName(
-    geoBlock ? geoBlock.regionCode : undefined
-  );
 
   const { chain, address } = useSKWallet();
 
@@ -102,112 +92,98 @@ const Widget = () => {
   const key = detailsMatch ? "/" : current.pathname;
 
   return (
-    <AnimationLayout>
-      <LayoutGroup>
-        <motion.div layout="position" className={headerContainer}>
-          <Header />
-        </motion.div>
+    <>
+      <AnimationLayout>
+        <LayoutGroup>
+          <motion.div layout="position" className={headerContainer}>
+            <Header />
+          </motion.div>
 
-        <motion.div layout="position" className={container}>
-          <UnstakeOrPendingActionProvider>
-            <AnimatePresence>
-              <Routes location={current} key={key}>
-                <Route element={<Layout currentPathname={current.pathname} />}>
-                  {/* Home + Tabs */}
-                  <Route element={<Details />}>
-                    <Route index element={<EarnPage />} />
-                    <Route path="positions" element={<PositionsPage />} />
-                  </Route>
-
-                  <Route element={<ConnectedCheck />}>
-                    {/* Stake flow */}
-                    <Route element={<StakeCheck />}>
-                      <Route path="review" element={<ReviewPage />} />
-                      <Route path="steps" element={<StakeStepsPage />} />
-                      <Route path="complete" element={<StakeCompletePage />} />
+          <motion.div layout="position" className={container}>
+            <UnstakeOrPendingActionProvider>
+              <AnimatePresence>
+                <Routes location={current} key={key}>
+                  <Route
+                    element={<Layout currentPathname={current.pathname} />}
+                  >
+                    {/* Home + Tabs */}
+                    <Route element={<Details />}>
+                      <Route index element={<EarnPage />} />
+                      <Route path="positions" element={<PositionsPage />} />
                     </Route>
 
-                    {/* Unstake or pending actions flow */}
-                    <Route path="positions/:integrationId/:balanceId">
-                      <Route index element={<PositionDetails />} />
-                      <Route
-                        path="select-validator/:pendingActionType"
-                        element={<PositionDetails />}
-                      />
-
-                      {/* Unstaking */}
-                      <Route
-                        path="unstake"
-                        element={<UnstakeOrPendingActionCheck />}
-                      >
-                        <Route
-                          path="review"
-                          element={<UnstakeOrPendingActionReviewPage />}
-                        />
-                        <Route
-                          path="steps"
-                          element={<UnstakeOrPendingActionStepsPage />}
-                        />
+                    <Route element={<ConnectedCheck />}>
+                      {/* Stake flow */}
+                      <Route element={<StakeCheck />}>
+                        <Route path="review" element={<ReviewPage />} />
+                        <Route path="steps" element={<StakeStepsPage />} />
                         <Route
                           path="complete"
-                          element={<UnstakeOrPendingActionCompletePage />}
+                          element={<StakeCompletePage />}
                         />
                       </Route>
 
-                      {/* Pending Actions */}
-                      <Route
-                        path="pending-action"
-                        element={<UnstakeOrPendingActionCheck />}
-                      >
+                      {/* Unstake or pending actions flow */}
+                      <Route path="positions/:integrationId/:balanceId">
+                        <Route index element={<PositionDetails />} />
                         <Route
-                          path="review"
-                          element={<UnstakeOrPendingActionReviewPage />}
+                          path="select-validator/:pendingActionType"
+                          element={<PositionDetails />}
                         />
+
+                        {/* Unstaking */}
                         <Route
-                          path="steps"
-                          element={<UnstakeOrPendingActionStepsPage />}
-                        />
+                          path="unstake"
+                          element={<UnstakeOrPendingActionCheck />}
+                        >
+                          <Route
+                            path="review"
+                            element={<UnstakeOrPendingActionReviewPage />}
+                          />
+                          <Route
+                            path="steps"
+                            element={<UnstakeOrPendingActionStepsPage />}
+                          />
+                          <Route
+                            path="complete"
+                            element={<UnstakeOrPendingActionCompletePage />}
+                          />
+                        </Route>
+
+                        {/* Pending Actions */}
                         <Route
-                          path="complete"
-                          element={<UnstakeOrPendingActionCompletePage />}
-                        />
+                          path="pending-action"
+                          element={<UnstakeOrPendingActionCheck />}
+                        >
+                          <Route
+                            path="review"
+                            element={<UnstakeOrPendingActionReviewPage />}
+                          />
+                          <Route
+                            path="steps"
+                            element={<UnstakeOrPendingActionStepsPage />}
+                          />
+                          <Route
+                            path="complete"
+                            element={<UnstakeOrPendingActionCompletePage />}
+                          />
+                        </Route>
                       </Route>
                     </Route>
+
+                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Route>
+                </Routes>
+              </AnimatePresence>
+            </UnstakeOrPendingActionProvider>
+          </motion.div>
 
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Route>
-              </Routes>
-            </AnimatePresence>
-          </UnstakeOrPendingActionProvider>
-        </motion.div>
+          <FooterContent />
+        </LayoutGroup>
+      </AnimationLayout>
 
-        <FooterContent />
-      </LayoutGroup>
-
-      <>
-        {MaybeDocument.map((doc) =>
-          createPortal(<RichErrorModal />, doc.body)
-        ).extractNullable()}
-
-        {MaybeDocument.chainNullable((doc) =>
-          geoBlock ? { doc, geoBlock } : null
-        )
-          .map((val) =>
-            createPortal(
-              <HelpModal
-                modal={{
-                  type: "geoBlock",
-                  ...val.geoBlock,
-                  regionCodeName: regionCodeName.data,
-                }}
-              />,
-              val.doc.body
-            )
-          )
-          .extractNullable()}
-      </>
-    </AnimationLayout>
+      <GlobalModals />
+    </>
   );
 };
 

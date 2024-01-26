@@ -29,22 +29,25 @@ const FooterButton = ({
       ref={containerRef}
       className={footerContainer}
       layout="position"
-      transition={{
-        layout: { duration: 0.2 },
-      }}
+      transition={{ layout: { duration: 0.3 } }}
     >
       <motion.div
         initial={{
-          translateY: initAnimationFinished ? "-20px" : "-40px",
+          translateY: mountAnimationFinished ? "-20px" : "-40px",
           opacity: 0,
         }}
-        animate={{
-          translateY: 0,
-          opacity: 1,
-          transition: initAnimationFinished
-            ? { duration: 0.3, delay: 0.2 }
-            : { duration: 0.6, delay: 1.1 },
-        }}
+        {...(mountAnimationFinished
+          ? {
+              animate: {
+                translateY: 0,
+                opacity: 1,
+                transition: {
+                  duration: initAnimationFinished ? 0.3 : 0.6,
+                  delay: 0.2,
+                },
+              },
+            }
+          : {})}
         onAnimationComplete={() => setInitAnimationFinished(true)}
       >
         <Box px="4" marginBottom="4" marginTop="2" zIndex="modal">

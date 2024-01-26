@@ -7,8 +7,10 @@ import createStateContext from "../../utils/create-state-context";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { useSKLocation } from "../../providers/location";
 import { config } from "../../config";
-import { Box } from "../../components";
+import { Box, Spinner } from "../../components";
 import { container } from "./styles.css";
+import { useRefereeCode } from "../../hooks/api/referral/use-referee-code";
+import { useSettings } from "../../providers/settings";
 
 export const [useMountAnimationFinished, MountAnimationFinishedProvider] =
   createStateContext(config.env.isTestMode);
@@ -20,6 +22,9 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const [mountAnimationFinished, setMountAnimationFinished] =
     useMountAnimationFinished();
+
+  const { referralCheck } = useSettings();
+  const refereeCode = useRefereeCode();
 
   const containerHeight =
     currentLayout.state?.height && headerHeight
@@ -34,7 +39,9 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     }
   }, [current.pathname, setMountAnimationFinished]);
 
-  return (
+  const showApp = !referralCheck || !!refereeCode.data;
+
+  return showApp ? (
     <Box className={container}>
       <motion.div
         layout="size"
@@ -47,7 +54,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
         }}
         transition={
           mountAnimationFinished
-            ? { duration: 0.25 }
+            ? { duration: 0.3 }
             : { duration: 0.6, delay: 0.3 }
         }
         onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
@@ -55,5 +62,9 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
         {children}
       </motion.div>
     </Box>
-  );
+  ) : refereeCode.isLoading ? (
+    <Box display="flex" justifyContent="center" alignItems="center">
+      <Spinner />
+    </Box>
+  ) : null;
 };

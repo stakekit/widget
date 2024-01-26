@@ -15,11 +15,13 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { motion } from "framer-motion";
 import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
+import { ReferralCode } from "./components/referral-code";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
 
   const {
+    referralCheck,
     yieldType,
     isError,
     errorMessage,
@@ -90,6 +92,12 @@ const EarnPageComponent = () => {
           <Box marginTop="4">
             <Footer />
           </Box>
+
+          {referralCheck && (
+            <Box marginTop="4">
+              <ReferralCode />
+            </Box>
+          )}
         </Box>
       </PageContainer>
     </motion.div>

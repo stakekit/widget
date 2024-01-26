@@ -21,9 +21,10 @@ import {
 } from "@stakekit/api-hooks";
 import { isTxError } from "../../../domain";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
-import { isAxiosError, withRequestErrorRetry } from "../../../common/utils";
+import { withRequestErrorRetry } from "../../../common/utils";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { isAxiosError } from "axios";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { List, Maybe } from "purify-ts";
+import { Just, List, Maybe } from "purify-ts";
 import {
   ActionRequestDto,
   TronResourceArgumentOptionsDto,
@@ -7,26 +7,26 @@ import {
 } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../../state/stake";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useRefereeCode } from "../../../../hooks/api/referral/use-referee-code";
 
 export const useStakeEnterRequestDto = () => {
   const { selectedStake, stakeAmount, selectedValidators, tronResource } =
     useStakeState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
+  const refereeCode = useRefereeCode();
+
   return useMemo(
     () =>
-      selectedStake
-        .chain((v) =>
-          Maybe.fromNullable(address).map((a) => ({
-            stake: v,
-            address: a,
-            tronResource: tronResource.extract(),
-          }))
-        )
+      Maybe.fromRecord({
+        address: Maybe.fromNullable(address),
+        selectedStake,
+        tronResource: Just(tronResource.extract()),
+      })
         .filter(
           (val) =>
             !(
-              val.stake.args.enter.args?.tronResource as
+              val.selectedStake.args.enter.args?.tronResource as
                 | TronResourceArgumentOptionsDto
                 | undefined
             )?.required || !!val.tronResource
@@ -36,18 +36,20 @@ export const useStakeEnterRequestDto = () => {
           dto: ActionRequestDto;
         }>((val) => {
           return {
-            gasFeeToken: val.stake.metadata.gasFeeToken,
+            gasFeeToken: val.selectedStake.metadata.gasFeeToken,
             dto: {
               addresses: {
                 address: val.address,
                 additionalAddresses: additionalAddresses ?? undefined,
               },
-              integrationId: val.stake.id,
+              integrationId: val.selectedStake.id,
+              referralCode: refereeCode.data?.code,
               args: {
                 ledgerWalletAPICompatible: isLedgerLive ?? undefined,
                 tronResource: val.tronResource,
                 amount: stakeAmount.toString(),
-                ...(val.stake.args.enter.args?.validatorAddresses?.required
+                ...(val.selectedStake.args.enter.args?.validatorAddresses
+                  ?.required
                   ? {
                       validatorAddresses: [...selectedValidators.values()].map(
                         (v) => v.address
@@ -65,13 +67,14 @@ export const useStakeEnterRequestDto = () => {
           };
         }),
     [
-      selectedStake,
-      stakeAmount,
-      address,
       additionalAddresses,
+      address,
       isLedgerLive,
-      tronResource,
+      refereeCode.data?.code,
+      selectedStake,
       selectedValidators,
+      stakeAmount,
+      tronResource,
     ]
   );
 };
