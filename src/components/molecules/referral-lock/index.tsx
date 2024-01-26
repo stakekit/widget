@@ -14,6 +14,7 @@ import { Button } from "../../atoms/button";
 import { Divider } from "../../atoms/divider";
 import { input, inputContainer } from "./style.css";
 import { flushSync } from "react-dom";
+import { MaybeDocument } from "../../../utils/maybe-document";
 
 const pinSize = 6;
 
@@ -76,6 +77,20 @@ export const ReferralLock = () => {
     inputsRef.current[index - 1]?.focus();
   };
 
+  const onPaste = (text: string) => {
+    setUserEnteredCode(text.slice(0, pinSize).split(""));
+    MaybeDocument.ifJust((d) => {
+      const activeElement = d.activeElement;
+      if (
+        activeElement &&
+        "blur" in activeElement &&
+        typeof activeElement.blur === "function"
+      ) {
+        activeElement.blur();
+      }
+    });
+  };
+
   return (
     <SelectModal state={{ isOpen, setOpen: () => {} }} disableClose>
       <Box
@@ -118,6 +133,7 @@ export const ReferralLock = () => {
                   }}
                   autoFocus={i === 0}
                   value={userEnteredCode[i]}
+                  onPaste={(e) => onPaste(e.clipboardData.getData("text"))}
                   onFocus={() => onInputFocus(i)}
                   onChange={(e) => onInputChange(e.target.value, i)}
                   onKeyDown={(e) => onKeyDown(e.key, i)}
