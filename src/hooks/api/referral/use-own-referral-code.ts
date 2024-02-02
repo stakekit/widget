@@ -11,14 +11,14 @@ const url = ({ address, network }: { network: string; address: string }) =>
 
 type ResponseData = { id: string; code: string };
 
-export const useReferrerCode = () => {
+export const useOwnReferralCode = () => {
   const { address, network } = useSKWallet();
 
   const { referralCheck } = useSettings();
 
   return useQuery({
-    enabled: !!(address && network && !referralCheck),
-    queryKey: ["referral-code"],
+    enabled: !!(address && network && !!referralCheck),
+    queryKey: [`own-referral-code-${network}`],
     staleTime: Infinity,
     queryFn: async () =>
       (

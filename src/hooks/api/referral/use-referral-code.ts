@@ -6,7 +6,7 @@ import { queryClient } from "../../../services/query-client";
 import { isAxiosError } from "axios";
 import { useSettings } from "../../../providers/settings";
 
-const queryKey = ["ref"];
+const queryKey = ["referral-code"];
 
 export const useReferralCode = () => {
   const initQueryParams = useInitQueryParams();

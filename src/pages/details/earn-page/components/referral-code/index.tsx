@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { useReferrerCode } from "../../../../../hooks/api/referral/use-referrer-code";
+import { useOwnReferralCode } from "../../../../../hooks/api/referral/use-own-referral-code";
 import { useDetailsContext } from "../../state/details-context";
 import { Maybe } from "purify-ts";
 import { useEffect, useMemo, useState } from "react";
@@ -13,18 +13,17 @@ import { Check } from "../../../../../components/atoms/icons/check";
 export const ReferralCode = () => {
   const { appLoading } = useDetailsContext();
 
-  const referrerCode = useReferrerCode();
-
-  const isLoading = appLoading || referrerCode.isLoading;
+  const referralCode = useOwnReferralCode();
+  const isLoading = appLoading || referralCode.isLoading;
 
   const url = useMemo(
     () =>
       MaybeWindow.chain((w) =>
-        Maybe.fromNullable(referrerCode.data).map((data) => ({ data, w }))
+        Maybe.fromNullable(referralCode.data).map((data) => ({ data, w }))
       )
         .map((val) => `${val.w.location.origin}/?ref=${val.data.code}`)
         .extractNullable(),
-    [referrerCode.data]
+    [referralCode.data]
   );
 
   const { t } = useTranslation();
