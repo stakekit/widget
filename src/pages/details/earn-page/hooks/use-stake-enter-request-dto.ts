@@ -7,14 +7,14 @@ import {
 } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../../state/stake";
 import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useRefereeCode } from "../../../../hooks/api/referral/use-referee-code";
+import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 
 export const useStakeEnterRequestDto = () => {
   const { selectedStake, stakeAmount, selectedValidators, tronResource } =
     useStakeState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
-  const refereeCode = useRefereeCode();
+  const referralcode = useReferralCode();
 
   return useMemo(
     () =>
@@ -43,7 +43,7 @@ export const useStakeEnterRequestDto = () => {
                 additionalAddresses: additionalAddresses ?? undefined,
               },
               integrationId: val.selectedStake.id,
-              referralCode: refereeCode.data?.code,
+              referralCode: referralcode.data?.code,
               args: {
                 ledgerWalletAPICompatible: isLedgerLive ?? undefined,
                 tronResource: val.tronResource,
@@ -70,7 +70,7 @@ export const useStakeEnterRequestDto = () => {
       additionalAddresses,
       address,
       isLedgerLive,
-      refereeCode.data?.code,
+      referralcode.data?.code,
       selectedStake,
       selectedValidators,
       stakeAmount,

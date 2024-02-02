@@ -14,7 +14,7 @@ export const worker = setupWorker(
     { referralCode: string },
     never,
     { message: string } | typeof referralCodeRes
-  >("*/v1/referral-code/:referralCode", async (info) => {
+  >("*/v1/referrals/:referralCode", async (info) => {
     await delay(3000);
 
     if (info.params.referralCode !== validReferral) {
@@ -29,7 +29,7 @@ export const worker = setupWorker(
 
   // Get referral code for address
   http.get(
-    "*/v1/network/:networkSlug/address/:address/referral-code",
+    "*/v1/networks/:networkSlug/addresses/:address/referrals",
     async (info) => {
       await delay();
 
@@ -49,7 +49,7 @@ export const worker = setupWorker(
 
   // ...If we couldn't get one, generate referral code for address
   http.post(
-    "*/v1/network/:networkSlug/address/:address/referral-code",
+    "*/v1/networks/:networkSlug/addresses/:address/referrals",
     async () => {
       await delay();
 

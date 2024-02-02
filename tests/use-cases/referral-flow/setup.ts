@@ -159,7 +159,7 @@ export const setup = () => {
       { referralCode: string },
       never,
       { message: string } | typeof referralCodeRes
-    >("*/v1/referral-code/:referralCode", async (info) => {
+    >("*/v1/referrals/:referralCode", async (info) => {
       await delay(3000);
 
       if (info.params.referralCode !== validReferral) {
@@ -174,7 +174,7 @@ export const setup = () => {
 
     // Get referral code for address
     http.get(
-      "*/v1/network/:networkSlug/address/:address/referral-code",
+      "*/v1/networks/:networkSlug/addresses/:address/referrals",
       async (info) => {
         await delay();
 
@@ -194,7 +194,7 @@ export const setup = () => {
 
     // ...If we couldn't get one, generate referral code for address
     http.post(
-      "*/v1/network/:networkSlug/address/:address/referral-code",
+      "*/v1/networks/:networkSlug/addresses/:address/referrals",
       async () => {
         await delay();
 
@@ -206,7 +206,7 @@ export const setup = () => {
   const setUrl = (referralCode?: string) => {
     const url = new URL(
       referralCode
-        ? `http://localhost:5173/?referral-code=${referralCode}`
+        ? `http://localhost:5173/?ref=${referralCode}`
         : "http://localhost:5173/"
     );
 

@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import {
-  useRefereeCode,
-  useValidateRefereeCode,
-} from "../../../hooks/api/referral/use-referee-code";
+  useReferralCode,
+  useValidateReferralCode,
+} from "../../../hooks/api/referral/use-referral-code";
 import {
   SelectModal,
   SelectModalItemContainer,
@@ -19,9 +19,9 @@ import { MaybeDocument } from "../../../utils/maybe-document";
 const pinSize = 6;
 
 export const ReferralLock = () => {
-  const refereeCode = useRefereeCode();
+  const referralCode = useReferralCode();
 
-  const validateRefereeCode = useValidateRefereeCode();
+  const validateReferralCode = useValidateReferralCode();
 
   const [userEnteredCode, setUserEnteredCode] = useState(() =>
     Array.from<string>({ length: 6 }).fill("")
@@ -34,17 +34,17 @@ export const ReferralLock = () => {
   );
 
   const isOpen =
-    !refereeCode.data && !refereeCode.isLoading && refereeCode.isError;
+    !referralCode.data && !referralCode.isLoading && referralCode.isError;
 
   const disabled = useMemo(
-    () => validateRefereeCode.isPending || userEnteredCode.some((c) => !c),
-    [userEnteredCode, validateRefereeCode.isPending]
+    () => validateReferralCode.isPending || userEnteredCode.some((c) => !c),
+    [userEnteredCode, validateReferralCode.isPending]
   );
 
   const onSubmit = () => {
     if (disabled) return;
 
-    validateRefereeCode.mutate(userEnteredCode.join(""));
+    validateReferralCode.mutate(userEnteredCode.join(""));
   };
 
   const onInputChange = (value: string, index: number) => {
@@ -151,7 +151,7 @@ export const ReferralLock = () => {
               variant={{ color: disabled ? "disabled" : "primary" }}
               disabled={disabled}
               onClick={onSubmit}
-              isLoading={validateRefereeCode.isPending}
+              isLoading={validateReferralCode.isPending}
             >
               {t("referral_lock.submit")}
             </Button>

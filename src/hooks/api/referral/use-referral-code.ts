@@ -6,9 +6,9 @@ import { queryClient } from "../../../services/query-client";
 import { isAxiosError } from "axios";
 import { useSettings } from "../../../providers/settings";
 
-const queryKey = ["referee-code"];
+const queryKey = ["ref"];
 
-export const useRefereeCode = () => {
+export const useReferralCode = () => {
   const initQueryParams = useInitQueryParams();
 
   const { referralCheck } = useSettings();
@@ -28,7 +28,7 @@ export const useRefereeCode = () => {
   });
 };
 
-export const useValidateRefereeCode = () =>
+export const useValidateReferralCode = () =>
   useMutation({
     mutationFn: async (referralCode: string) =>
       (await fn(referralCode!)).unsafeCoerce(),
@@ -42,9 +42,7 @@ const fn = (referralCode: string) =>
     )
   ).chain((client) =>
     EitherAsync(() =>
-      client.get<{ id: string; code: string }>(
-        `/v1/referral-code/${referralCode}`
-      )
+      client.get<{ id: string; code: string }>(`/v1/referrals/${referralCode}`)
     )
       .map((res) => res.data)
       .mapLeft((err) => (isAxiosError(err) ? err : new Error("unknown error")))

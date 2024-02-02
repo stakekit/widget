@@ -7,7 +7,7 @@ import { isAxios4xxError } from "../../../common/utils";
 import { useSettings } from "../../../providers/settings";
 
 const url = ({ address, network }: { network: string; address: string }) =>
-  `/v1/network/${network}/address/${address}/referral-code`;
+  `/v1/networks/${network}/addresses/${address}/referrals`;
 
 type ResponseData = { id: string; code: string };
 
@@ -17,8 +17,8 @@ export const useReferrerCode = () => {
   const { referralCheck } = useSettings();
 
   return useQuery({
-    enabled: !!(address && network && !!referralCheck),
-    queryKey: ["referrer-code"],
+    enabled: !!(address && network && !referralCheck),
+    queryKey: ["referral-code"],
     staleTime: Infinity,
     queryFn: async () =>
       (

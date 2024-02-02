@@ -64,7 +64,7 @@ const fn = ({
             ["yieldId", url.searchParams.get("yieldId")],
             ["validator", url.searchParams.get("validator")],
             ["pendingaction", url.searchParams.get("pendingaction")],
-            ["referralCode", url.searchParams.get("referral-code")],
+            ["referralCode", url.searchParams.get("ref")],
           ] as const
       )
       .map((val) =>

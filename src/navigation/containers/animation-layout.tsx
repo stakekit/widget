@@ -9,7 +9,7 @@ import { useSKLocation } from "../../providers/location";
 import { config } from "../../config";
 import { Box, Spinner } from "../../components";
 import { container } from "./styles.css";
-import { useRefereeCode } from "../../hooks/api/referral/use-referee-code";
+import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../providers/settings";
 
 export const [useMountAnimationFinished, MountAnimationFinishedProvider] =
@@ -24,7 +24,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     useMountAnimationFinished();
 
   const { referralCheck } = useSettings();
-  const refereeCode = useRefereeCode();
+  const referralCode = useReferralCode();
 
   const containerHeight =
     currentLayout.state?.height && headerHeight
@@ -39,7 +39,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     }
   }, [current.pathname, setMountAnimationFinished]);
 
-  const showApp = !referralCheck || !!refereeCode.data;
+  const showApp = !referralCheck || !!referralCode.data;
 
   return showApp ? (
     <Box className={container}>
@@ -62,7 +62,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
         {children}
       </motion.div>
     </Box>
-  ) : refereeCode.isLoading ? (
+  ) : referralCode.isLoading ? (
     <Box display="flex" justifyContent="center" alignItems="center">
       <Spinner />
     </Box>
