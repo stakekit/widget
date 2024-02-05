@@ -52,6 +52,8 @@ import { useUpdateEffect } from "../../../../hooks/use-update-effect";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
+import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
+import { useSettings } from "../../../../providers/settings";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -382,7 +384,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake.extract()?.id
   ).isLoading;
 
+  const referralCode = useReferralCode();
+
   const appLoading =
+    referralCode.isLoading ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
     isConnecting ||
@@ -495,7 +500,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     )
   );
 
+  const { referralCheck } = useSettings();
+
   const value = {
+    referralCheck,
     availableTokens,
     formattedPrice,
     symbol,

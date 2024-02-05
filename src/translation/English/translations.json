@@ -37,6 +37,10 @@
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via",
 
+    "referral_code": {
+      "title": "Your referral link:"
+    },
+
     "tron_resources": {
       "label": "Select option",
       "placeholder": "Select option"
@@ -347,5 +351,10 @@
   "select_token": {
     "title": "Select token",
     "n_available_opps": "{{count}} available opportunities"
+  },
+  "referral_lock": {
+    "title": "Referral check",
+    "body": "Enter your referral code to continue",
+    "submit": "Submit"
   }
 }

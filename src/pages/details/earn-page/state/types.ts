@@ -11,8 +11,10 @@ import BigNumber from "bignumber.js";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import { SettingsContextType } from "../../../../providers/settings";
 
 export type DetailsContextType = {
+  referralCheck: SettingsContextType["referralCheck"];
   availableTokens: string;
   formattedPrice: string;
   symbol: string;

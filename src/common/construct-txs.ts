@@ -5,7 +5,8 @@ import {
 } from "@stakekit/api-hooks";
 import { getValidStakeSessionTx } from "../domain";
 import { EitherAsync } from "purify-ts";
-import { isAxiosError, withRequestErrorRetry } from "./utils";
+import { withRequestErrorRetry } from "./utils";
+import { isAxiosError } from "axios";
 
 export const constructTxs = ({
   actionDto,

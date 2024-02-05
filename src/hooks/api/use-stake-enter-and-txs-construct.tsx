@@ -4,11 +4,12 @@ import {
   actionEnter,
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
-import { isAxiosError, withRequestErrorRetry } from "../../common/utils";
+import { withRequestErrorRetry } from "../../common/utils";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
+import { isAxiosError } from "axios";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;

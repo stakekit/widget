@@ -9,6 +9,7 @@ export interface SettingsContextType {
   apiKey: Parameters<(typeof APIManager)["configure"]>[0]["apiKey"];
   theme?: ThemeWrapperTheme;
   connectKitForceTheme?: "lightMode" | "darkMode";
+  referralCheck?: boolean;
   tracking?: {
     trackEvent: (event: TrackEventVal, properties?: Properties) => void;
     trackPageView: (page: TrackPageVal, properties?: Properties) => void;

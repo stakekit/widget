@@ -18,7 +18,7 @@ if (typeof window !== "undefined") {
   console.error = (message, ...optionalParams) => {
     // JSDOM warning about CSS parsing @layer rules
     if (
-      message.name === "CanceledError" ||
+      message?.name === "CanceledError" ||
       message.constructor?.name === "CancelledError" ||
       (typeof message === "string" &&
         message.includes("Could not parse CSS stylesheet"))
@@ -31,7 +31,7 @@ if (typeof window !== "undefined") {
   console.log = (message, ...optionalParams) => {
     // JSDOM warning about CSS parsing @layer rules
     if (
-      message.name === "CanceledError" ||
+      message?.name === "CanceledError" ||
       message.constructor?.name === "CancelledError" ||
       (typeof message === "string" && message.includes("CancelledError"))
     ) {

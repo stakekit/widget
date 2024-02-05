@@ -12,7 +12,9 @@ const queryKey = ["init-params"];
 const staleTime = 0;
 const cacheTime = 0;
 
-export const useInitQueryParams = () => {
+export const useInitQueryParams = <T = Result>(opts?: {
+  select: (val: Result) => T;
+}) => {
   const { isLedgerLive } = useSKWallet();
 
   return useQuery({
@@ -20,6 +22,7 @@ export const useInitQueryParams = () => {
     staleTime,
     gcTime: cacheTime,
     queryFn: () => queryFn({ isLedgerLive }),
+    select: opts?.select,
   });
 };
 
@@ -46,6 +49,7 @@ type Result = {
   validator: string | null;
   pendingaction: string | null;
   yieldData: YieldDto | null;
+  referralCode: string | null;
 };
 
 const fn = ({
@@ -63,6 +67,7 @@ const fn = ({
             ["yieldId", url.searchParams.get("yieldId")],
             ["validator", url.searchParams.get("validator")],
             ["pendingaction", url.searchParams.get("pendingaction")],
+            ["referralCode", url.searchParams.get("ref")],
           ] as const
       )
       .map((val) =>
