@@ -14,5 +14,4 @@ export const config = {
     apiUrl: import.meta.env.VITE_API_URL,
     isTestMode: import.meta.env.MODE === "test",
   },
-  mswEnabled: import.meta.env.VITE_ENABLE_MSW_MOCK === "true",
 } as const;
