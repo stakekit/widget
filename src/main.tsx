@@ -2,10 +2,9 @@ import ReactDOM from "react-dom/client";
 import { SKApp } from "./App";
 import { darkTheme } from "./styles";
 import "./standalone.styles.css";
-import { config } from "./config";
 
 const enableMocking = async () => {
-  if (!config.mswEnabled) return;
+  if (import.meta.env.VITE_ENABLE_MSW_MOCK !== "true") return;
 
   const { worker } = await import("./worker");
 
