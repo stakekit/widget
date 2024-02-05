@@ -35,6 +35,7 @@ const codecs = {
       )
     )
   ),
+  [localStorageBuildKey("referralCode")]: string,
 };
 
 export const getStorageItem = <K extends keyof LocalStorageKV>(
@@ -48,12 +49,14 @@ export const getStorageItem = <K extends keyof LocalStorageKV>(
 
   if (!val) return Right(null);
 
-  return Either.encase(() => JSON.parse(val)).chain((parsedVal) =>
-    codecs[key]
-      .decode(parsedVal)
-      .map((val) => val as LocalStorageValue<K>)
-      .mapLeft((e) => new Error(e))
-  );
+  return Either.encase(() => JSON.parse(val) as Record<any, unknown>)
+    .chainLeft(() => Right(val))
+    .chain((parsedVal) =>
+      codecs[key]
+        .decode(parsedVal)
+        .map((val) => val as LocalStorageValue<K>)
+        .mapLeft((e) => new Error(e))
+    );
 };
 
 export const setStorageItem = <K extends keyof LocalStorageKV>(
@@ -74,6 +77,7 @@ type Listener<K extends keyof LocalStorageKV = keyof LocalStorageKV> = (
 const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
   [localStorageBuildKey("customValidators")]: new Map(),
   [localStorageBuildKey("skPubKeys")]: new Map(),
+  [localStorageBuildKey("referralCode")]: new Map(),
 };
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(

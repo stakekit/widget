@@ -12,7 +12,9 @@ const queryKey = ["init-params"];
 const staleTime = 0;
 const cacheTime = 0;
 
-export const useInitQueryParams = () => {
+export const useInitQueryParams = <T = Result>(opts?: {
+  select: (val: Result) => T;
+}) => {
   const { isLedgerLive } = useSKWallet();
 
   return useQuery({
@@ -20,6 +22,7 @@ export const useInitQueryParams = () => {
     staleTime,
     gcTime: cacheTime,
     queryFn: () => queryFn({ isLedgerLive }),
+    select: opts?.select,
   });
 };
 

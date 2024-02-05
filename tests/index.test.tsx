@@ -13,6 +13,7 @@ describe("<SKApp />", () => {
     APIManager.getQueryClient()?.clear();
     queryClient.clear();
     server.resetHandlers();
+    localStorage.clear();
   });
   afterAll(() => server.close());
 

@@ -5,9 +5,18 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { isAxiosError } from "axios";
 import { isAxios4xxError } from "../../../common/utils";
 import { useSettings } from "../../../providers/settings";
+import { Nullable } from "../../../types";
 
 const url = ({ address, network }: { network: string; address: string }) =>
   `/v1/networks/${network}/addresses/${address}/referrals`;
+
+const getQueryKey = ({
+  address,
+  network,
+}: {
+  network: Nullable<string>;
+  address: Nullable<string>;
+}) => ["own-referral-code", network, address];
 
 type ResponseData = { id: string; code: string };
 
@@ -18,7 +27,7 @@ export const useOwnReferralCode = () => {
 
   return useQuery({
     enabled: !!(address && network && !!referralCheck),
-    queryKey: [`own-referral-code-${network}`],
+    queryKey: getQueryKey({ address, network }),
     staleTime: Infinity,
     queryFn: async () =>
       (

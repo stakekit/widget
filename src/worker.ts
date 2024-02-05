@@ -1,12 +1,12 @@
 import { HttpResponse, delay, http, passthrough } from "msw";
 import { setupWorker } from "msw/browser";
 
-const validReferral = "bgdCZB";
+const validReferrals = ["bgdCZB", "bgdCZC"];
 const validAddressAndNetwork = {
   address: "akash12z0hpqxj3txaf85zlla7zqffp7n9sl8wc3hlzh",
   network: "akash",
 };
-const referralCodeRes = { id: "aaa-bbb", code: "czBG45" };
+const referralCodeRes = { id: "aaa-bbb", code: validReferrals[0] };
 
 export const worker = setupWorker(
   // Validate referral code
@@ -17,7 +17,7 @@ export const worker = setupWorker(
   >("*/v1/referrals/:referralCode", async (info) => {
     await delay(3000);
 
-    if (info.params.referralCode !== validReferral) {
+    if (info.params.referralCode !== validReferrals[0]) {
       return HttpResponse.json(
         { message: "MissingArgumentsError" },
         { status: 400, statusText: "Not valid" }
@@ -53,7 +53,7 @@ export const worker = setupWorker(
     async () => {
       await delay();
 
-      return HttpResponse.json(referralCodeRes);
+      return HttpResponse.json({ ...referralCodeRes, code: validReferrals[1] });
     }
   ),
 

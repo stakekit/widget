@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import { fireEvent, renderApp, waitFor } from "../../utils/test-utils";
 import { setup } from "./setup";
+import { setStorageItem } from "../../../src/services/local-storage";
 
 export const referralFlow = () => {
   it("On valid referral, shows app and url with referral code", async () => {
@@ -8,6 +9,38 @@ export const referralFlow = () => {
       setup();
 
     const { origin } = setUrl(validReferral);
+
+    const { queryByText, unmount, queryByTestId } = renderApp({
+      referralCheck: true,
+      wagmi: {
+        __customConnectors__: customConnectors,
+        forceWalletConnectOnly: false,
+      },
+    });
+
+    await waitFor(() => expect(queryByText("Earn")).toBeInTheDocument());
+    expect(queryByText("Positions")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(queryByTestId("number-input")).toBeInTheDocument()
+    );
+
+    await waitFor(() => expect(queryByText("0xB6…B2F7")).toBeInTheDocument());
+
+    await waitFor(() =>
+      expect(
+        queryByText(`${origin}/?ref=${referralCodeRes.code}`)
+      ).toBeInTheDocument()
+    );
+
+    unmount();
+  });
+
+  it("On app load without referral query param, gets previous from local storage", async () => {
+    const { validReferral, referralCodeRes, setUrl, customConnectors } =
+      setup();
+
+    setStorageItem("sk-widget@1//referralCode", validReferral);
+    const { origin } = setUrl();
 
     const { queryByText, unmount, queryByTestId } = renderApp({
       referralCheck: true,
