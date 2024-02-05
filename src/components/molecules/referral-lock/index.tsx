@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { Text } from "../../atoms/typography";
 import { Button } from "../../atoms/button";
 import { Divider } from "../../atoms/divider";
-import { input, inputContainer } from "./style.css";
+import { input, inputContainer, inputsContainer } from "./style.css";
 import { flushSync } from "react-dom";
 import { MaybeDocument } from "../../../utils/maybe-document";
 
@@ -114,15 +114,7 @@ export const ReferralLock = () => {
             <Divider />
           </Box>
 
-          <Box
-            display="flex"
-            gap="1"
-            justifyContent="space-between"
-            py="7"
-            px="3"
-            background="black"
-            borderRadius="xl"
-          >
+          <Box className={inputsContainer}>
             {Array.from({ length: pinSize }).map((_, i) => (
               <Box className={inputContainer} key={i}>
                 <input
