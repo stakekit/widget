@@ -17,6 +17,9 @@ export const colorsContract = {
   tokenSelectHoverBackground: "",
   tokenSelect: "",
 
+  skeletonLoaderBase: "",
+  skeletonLoaderHighlight: "",
+
   tabBorder: "",
 
   stakeSectionBackground: "",
@@ -87,6 +90,9 @@ export const lightThemeColors: typeof colorsContract = {
 
   tabBorder: "#000000",
 
+  skeletonLoaderBase: "#F6F7F9",
+  skeletonLoaderHighlight: "#fff",
+
   stakeSectionBackground: "#F6F7F9",
 
   selectValidatorMultiSelectedBackground: "#2DC969",
@@ -154,6 +160,9 @@ export const darkThemeColors: typeof colorsContract = {
   tokenSelect: "#FFFFFF",
 
   tabBorder: "#FFFFFF",
+
+  skeletonLoaderBase: "#363636",
+  skeletonLoaderHighlight: "#2B2B2B",
 
   stakeSectionBackground: "#363636",
 

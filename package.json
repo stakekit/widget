@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.92",
+  "version": "0.0.93",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/package/types/src/index.package.d.ts",
@@ -71,7 +71,7 @@
     "@cosmos-kit/keplr": "^2.6.8",
     "@cosmos-kit/leap": "^2.6.8",
     "@cosmos-kit/walletconnect": "2.5.8",
-    "@ledgerhq/wallet-api-client": "^1.5.2",
+    "@ledgerhq/wallet-api-client": "^1.5.3",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@stakekit/api-hooks": "^0.0.53",

@@ -162,7 +162,6 @@ const SelectModalWithoutState = ({
                     py="3"
                     borderRadius="xl"
                     color="text"
-                    background="tokenSelectBackground"
                     placeholder={inputPlaceholder ?? ""}
                     value={searchValue}
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>

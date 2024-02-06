@@ -3524,26 +3524,26 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ledgerhq/wallet-api-client@npm:^1.5.2":
-  version: 1.5.2
-  resolution: "@ledgerhq/wallet-api-client@npm:1.5.2"
+"@ledgerhq/wallet-api-client@npm:^1.5.3":
+  version: 1.5.3
+  resolution: "@ledgerhq/wallet-api-client@npm:1.5.3"
   dependencies:
     "@ledgerhq/hw-transport": "npm:^6.28.8"
-    "@ledgerhq/wallet-api-core": "npm:1.6.2"
+    "@ledgerhq/wallet-api-core": "npm:1.7.0"
     bignumber.js: "npm:^9.1.2"
-  checksum: 10/139d6d757c7b47e855116be99057d5e3223b633e76ac044265f79c04d07e7a3070990ea6cf0ebe8219001e32fca605ba22f98452adb9516eb1e98cfd7cf08a57
+  checksum: 10/335d4bf891cf0e7e26d0c5fb9c591028b90b958307a83830c20678733b6ace16deff1a7384be9d86435428a2a30159ef51189a9e37da1888e3af2e0f8111107b
   languageName: node
   linkType: hard
 
-"@ledgerhq/wallet-api-core@npm:1.6.2":
-  version: 1.6.2
-  resolution: "@ledgerhq/wallet-api-core@npm:1.6.2"
+"@ledgerhq/wallet-api-core@npm:1.7.0":
+  version: 1.7.0
+  resolution: "@ledgerhq/wallet-api-core@npm:1.7.0"
   dependencies:
     "@ledgerhq/errors": "npm:^6.14.0"
     bignumber.js: "npm:^9.1.2"
     uuid: "npm:^9.0.0"
     zod: "npm:^3.22.2"
-  checksum: 10/83743efd802605c18661879fab57fec19977a6e3f35fd972f88fdfb0d03bc358063d97ba4711868f9ebe7fc6c20097639a184d6ec3639ac149a125743733a42d
+  checksum: 10/10d612d5df82b65b709f663c244f6a19140d63a1b47b5586d3c295622e8a5976db06ed004ee5fedfdc93a9c26d7181ce3d2be93a426e2c805bdf6d4ca90196fa
   languageName: node
   linkType: hard
 
@@ -5235,7 +5235,7 @@ __metadata:
     "@cosmos-kit/keplr": "npm:^2.6.8"
     "@cosmos-kit/leap": "npm:^2.6.8"
     "@cosmos-kit/walletconnect": "npm:2.5.8"
-    "@ledgerhq/wallet-api-client": "npm:^1.5.2"
+    "@ledgerhq/wallet-api-client": "npm:^1.5.3"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
     "@stakekit/api-hooks": "npm:^0.0.53"

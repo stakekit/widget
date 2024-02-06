@@ -90,7 +90,7 @@ export const SelectOpportunity = () => {
         data={data.all}
         groupContent={(index) => {
           return (
-            <Box py="4" px="4" background="background">
+            <Box py="4" px="4" background="modalBodyBackground">
               <Text variant={{ weight: "bold" }}>{data.groups[index]}</Text>
             </Box>
           );
