@@ -26,6 +26,8 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const { referralCheck } = useSettings();
   const referralCode = useReferralCode();
 
+  const showApp = !referralCheck || !!referralCode.data;
+
   const containerHeight =
     currentLayout.state?.height && headerHeight
       ? currentLayout.state.height + headerHeight + footerHeight
@@ -39,32 +41,32 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     }
   }, [current.pathname, setMountAnimationFinished]);
 
-  const showApp = !referralCheck || !!referralCode.data;
-
-  return showApp ? (
+  return (
     <Box className={container}>
-      <motion.div
-        layout="size"
-        className={animationContainer}
-        style={{
-          borderTopLeftRadius: "20px",
-          borderTopRightRadius: "20px",
-          position: "relative",
-          height: containerHeight,
-        }}
-        transition={
-          mountAnimationFinished
-            ? { duration: 0.3 }
-            : { duration: 0.6, delay: 0.3 }
-        }
-        onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
-      >
-        {children}
-      </motion.div>
+      {showApp ? (
+        <motion.div
+          layout="size"
+          className={animationContainer}
+          style={{
+            borderTopLeftRadius: "20px",
+            borderTopRightRadius: "20px",
+            position: "relative",
+            height: containerHeight,
+          }}
+          transition={
+            mountAnimationFinished
+              ? { duration: 0.3 }
+              : { duration: 0.6, delay: 0.3 }
+          }
+          onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
+        >
+          {children}
+        </motion.div>
+      ) : referralCode.isLoading ? (
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Spinner />
+        </Box>
+      ) : null}
     </Box>
-  ) : referralCode.isLoading ? (
-    <Box display="flex" justifyContent="center" alignItems="center">
-      <Spinner />
-    </Box>
-  ) : null;
+  );
 };

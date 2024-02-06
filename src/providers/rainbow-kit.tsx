@@ -23,8 +23,8 @@ import { useTrackEvent } from "../hooks/tracking/use-track-event";
 
 const overrides: RecursivePartial<Theme> = {
   colors: {
-    modalBackground: vars.color.background,
-    profileForeground: vars.color.background,
+    modalBackground: vars.color.modalBodyBackground,
+    profileForeground: vars.color.modalBodyBackground,
   },
   radii: {
     actionButton: vars.borderRadius["2xl"],

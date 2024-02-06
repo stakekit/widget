@@ -14,8 +14,8 @@ export const ContentLoaderSquare = ({
     <Skeleton
       className={container(variant)}
       height={heightPx}
-      highlightColor={vars.color.primary}
-      baseColor={vars.color.backgroundMuted}
+      baseColor={vars.color.skeletonLoaderBase}
+      highlightColor={vars.color.skeletonLoaderHighlight}
       enableAnimation
     />
   );

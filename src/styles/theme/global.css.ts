@@ -3,7 +3,7 @@ import { rootSelector, vars } from "./contract.css";
 
 const reset = layer("reset");
 
-globalStyle("p", { margin: 0 });
+globalStyle("html body", { marginRight: "0px !important" });
 
 globalStyle(rootSelector, {
   "@layer": {
@@ -30,6 +30,14 @@ globalStyle(`${rootSelector} button, input, select, textarea`, {
     [reset]: {
       fontFamily: "inherit",
       fontSize: "100%",
+    },
+  },
+});
+
+globalStyle(`${rootSelector} input`, {
+  "@layer": {
+    [reset]: {
+      background: "transparent",
     },
   },
 });
