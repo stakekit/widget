@@ -13,6 +13,7 @@ const fadeIn = keyframes({
 });
 
 export const container = style({
+  marginRight: "var(--removed-body-scroll-bar-size)",
   zIndex: 2,
   display: "flex",
   justifyContent: "center",
