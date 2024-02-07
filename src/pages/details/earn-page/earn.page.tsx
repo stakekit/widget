@@ -16,6 +16,9 @@ import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { motion } from "framer-motion";
 import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
 import { ReferralCode } from "./components/referral-code";
+import { delayAPIRequests } from "../../../common/delay-api-requests";
+
+const removeDelay = delayAPIRequests();
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -45,6 +48,7 @@ const EarnPageComponent = () => {
         duration: mountAnimationFinished ? 0.3 : 1,
         delay: mountAnimationFinished ? 0 : 0.8,
       }}
+      onAnimationComplete={removeDelay}
     >
       <PageContainer>
         <Box>

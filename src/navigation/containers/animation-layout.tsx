@@ -11,6 +11,9 @@ import { Box, Spinner } from "../../components";
 import { container } from "./styles.css";
 import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../providers/settings";
+import { delayAPIRequests } from "../../common/delay-api-requests";
+
+const removeDelay = delayAPIRequests();
 
 export const [useMountAnimationFinished, MountAnimationFinishedProvider] =
   createStateContext(config.env.isTestMode);
@@ -58,7 +61,10 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
               ? { duration: 0.3 }
               : { duration: 0.6, delay: 0.3 }
           }
-          onLayoutAnimationComplete={() => setMountAnimationFinished(true)}
+          onLayoutAnimationComplete={() => {
+            removeDelay();
+            setMountAnimationFinished(true);
+          }}
         >
           {children}
         </motion.div>
