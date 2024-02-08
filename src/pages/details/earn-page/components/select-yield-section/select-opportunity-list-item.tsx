@@ -1,4 +1,4 @@
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { Box, SelectModalItem, Text } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useDetailsContext } from "../../state/details-context";
@@ -32,12 +32,7 @@ export const SelectOpportunityListItem = ({
       testId={`select-opportunity__item_${item.id}-${index}`}
       onItemClick={onItemClick}
     >
-      <TokenIcon
-        metadata={item.metadata}
-        token={Maybe.fromNullable(item.metadata.rewardTokens)
-          .chain((rt) => List.head(rt))
-          .orDefault(item.token)}
-      />
+      <TokenIcon metadata={item.metadata} token={item.token} />
 
       <Box
         display="flex"
