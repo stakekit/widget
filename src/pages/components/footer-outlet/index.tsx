@@ -1,7 +1,6 @@
 import { useLayoutEffect, useState } from "react";
 import { Box, Button } from "../../../components";
 import { motion } from "framer-motion";
-import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
 import { footerContainer } from "./styles.css";
 import {
   FooterButtonVal,
@@ -9,6 +8,7 @@ import {
   useFooterHeight,
   useSyncFooterHeight,
 } from "./context";
+import { useMountAnimation } from "../../../providers/mount-animation";
 
 const FooterButton = ({
   disabled,
@@ -19,59 +19,54 @@ const FooterButton = ({
 }: NonNullable<FooterButtonVal>) => {
   const { containerRef } = useSyncFooterHeight();
 
-  const [mountAnimationFinished] = useMountAnimationFinished();
+  const { state } = useMountAnimation();
   const [initAnimationFinished, setInitAnimationFinished] = useState(
-    mountAnimationFinished
+    state.layout
   );
 
   return (
     <motion.div
       ref={containerRef}
       className={footerContainer}
-      layout="position"
-      transition={{ layout: { duration: 0.3 } }}
-    >
-      <motion.div
-        initial={{
-          translateY: mountAnimationFinished ? "-20px" : "-40px",
-          opacity: 0,
-        }}
-        {...(mountAnimationFinished
-          ? {
-              animate: {
-                translateY: 0,
-                opacity: 1,
-                transition: {
-                  duration: initAnimationFinished ? 0.3 : 0.6,
-                  delay: 0.2,
-                },
+      initial={{
+        translateY: state.layout ? "-20px" : "-40px",
+        opacity: 0,
+      }}
+      {...(state.layout
+        ? {
+            animate: {
+              translateY: 0,
+              opacity: 1,
+              transition: {
+                duration: initAnimationFinished ? 0.3 : 0.6,
+                delay: 0.2,
               },
-            }
-          : {})}
-        onAnimationComplete={() => setInitAnimationFinished(true)}
-      >
-        <Box px="4" marginBottom="4" marginTop="2" zIndex="modal">
-          <Box
-            flex={1}
-            display="flex"
-            justifyContent="flex-end"
-            flexDirection="column"
+            },
+          }
+        : {})}
+      onAnimationComplete={() => setInitAnimationFinished(true)}
+    >
+      <Box px="4" marginBottom="4" marginTop="2" zIndex="modal">
+        <Box
+          flex={1}
+          display="flex"
+          justifyContent="flex-end"
+          flexDirection="column"
+        >
+          <Button
+            disabled={disabled}
+            isLoading={isLoading}
+            onClick={onClick}
+            variant={{
+              color:
+                variant ?? (disabled || isLoading ? "disabled" : "primary"),
+              animation: "press",
+            }}
           >
-            <Button
-              disabled={disabled}
-              isLoading={isLoading}
-              onClick={onClick}
-              variant={{
-                color:
-                  variant ?? (disabled || isLoading ? "disabled" : "primary"),
-                animation: "press",
-              }}
-            >
-              {label}
-            </Button>
-          </Box>
+            {label}
+          </Button>
         </Box>
-      </motion.div>
+      </Box>
     </motion.div>
   );
 };

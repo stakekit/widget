@@ -5,7 +5,7 @@ import "./translation";
 import "./services/install-api-manager";
 import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
-import { ComponentProps, useEffect } from "react";
+import { ComponentProps, useLayoutEffect } from "react";
 import {
   Navigate,
   Route,
@@ -50,11 +50,15 @@ import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useSKLocation } from "./providers/location";
 import { MaybeWindow } from "./utils/maybe-window";
 import { GlobalModals } from "./components/molecules/global-modals";
+import { usePrevious } from "./hooks/use-previous";
 
 const Widget = () => {
   useToggleTheme();
 
   const { chain, address } = useSKWallet();
+
+  const prevChain = usePrevious(chain);
+  const prevAddress = usePrevious(address);
 
   const { current } = useSKLocation();
 
@@ -64,8 +68,13 @@ const Widget = () => {
   /**
    * On chain change, navigate to home page
    */
-  useEffect(() => {
-    if (pathnameRef.current !== "/") {
+  useLayoutEffect(() => {
+    if (
+      pathnameRef.current !== "/" &&
+      prevChain &&
+      prevAddress &&
+      (chain !== prevChain || address !== prevAddress)
+    ) {
       MaybeWindow.ifJust((w) => {
         const url = new URL(w.location.href);
         const newUrl = new URL(w.location.origin);
@@ -77,7 +86,7 @@ const Widget = () => {
         navigateRef.current("/", { replace: true });
       });
     }
-  }, [chain, address, pathnameRef, navigateRef]);
+  }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
 
   useHandleDeepLinks();
 

@@ -13,7 +13,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useHandleListState } from "../../../providers/list-state";
 import { container } from "./style.css";
 import { motion } from "framer-motion";
-import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
+import { useMountAnimation } from "../../../providers/mount-animation";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
@@ -48,7 +48,7 @@ export const PositionsPage = () => {
 
   const { scrollTop, virtualListRef } = useHandleListState();
 
-  const [mountAnimationFinished] = useMountAnimationFinished();
+  const { mountAnimationFinished } = useMountAnimation();
 
   return (
     <motion.div

@@ -14,11 +14,8 @@ import {
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { motion } from "framer-motion";
-import { useMountAnimationFinished } from "../../../navigation/containers/animation-layout";
 import { ReferralCode } from "./components/referral-code";
-import { delayAPIRequests } from "../../../common/delay-api-requests";
-
-const removeDelay = delayAPIRequests();
+import { useMountAnimation } from "../../../providers/mount-animation";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -35,7 +32,7 @@ const EarnPageComponent = () => {
 
   const title = yieldType;
 
-  const [mountAnimationFinished] = useMountAnimationFinished();
+  const { mountAnimationFinished, dispatch } = useMountAnimation();
 
   return (
     <motion.div
@@ -48,7 +45,7 @@ const EarnPageComponent = () => {
         duration: mountAnimationFinished ? 0.3 : 1,
         delay: mountAnimationFinished ? 0 : 0.8,
       }}
-      onAnimationComplete={removeDelay}
+      onAnimationComplete={() => dispatch({ type: "earnPage" })}
     >
       <PageContainer>
         <Box>

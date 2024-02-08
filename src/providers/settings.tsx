@@ -14,6 +14,7 @@ export interface SettingsContextType {
     trackEvent: (event: TrackEventVal, properties?: Properties) => void;
     trackPageView: (page: TrackPageVal, properties?: Properties) => void;
   };
+  onMountAnimationComplete?: () => void;
   wagmi?: {
     forceWalletConnectOnly?: boolean;
     __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
