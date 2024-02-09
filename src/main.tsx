@@ -19,6 +19,9 @@ enableMocking()
         theme={darkTheme}
         apiKey={import.meta.env.VITE_API_KEY}
         referralCheck={import.meta.env.VITE_ENABLE_REFERRAL_CHECK === "true"}
+        onMountAnimationComplete={() =>
+          console.log("mount animation complete!")
+        }
         wagmi={{
           forceWalletConnectOnly:
             import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true",

@@ -14,12 +14,12 @@ import { ActionHistoryContextProvider } from "./stake-history";
 import { ListStateContextProvider } from "./list-state";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
-import { MountAnimationFinishedProvider } from "../navigation/containers/animation-layout";
 import { SKLocationProvider } from "./location";
 import {
   FooterButtonProvider,
   FooterHeightProvider,
 } from "../pages/components/footer-outlet/context";
+import { MountAnimationProvider } from "./mount-animation";
 
 export const Providers = ({
   children,
@@ -45,13 +45,13 @@ export const Providers = ({
                           <CurrentLayoutProvider>
                             <HeaderHeightProvider>
                               <FooterHeightProvider>
-                                <MountAnimationFinishedProvider>
-                                  <FooterButtonProvider>
-                                    <SKLocationProvider>
+                                <FooterButtonProvider>
+                                  <SKLocationProvider>
+                                    <MountAnimationProvider>
                                       {children}
-                                    </SKLocationProvider>
-                                  </FooterButtonProvider>
-                                </MountAnimationFinishedProvider>
+                                    </MountAnimationProvider>
+                                  </SKLocationProvider>
+                                </FooterButtonProvider>
                               </FooterHeightProvider>
                             </HeaderHeightProvider>
                           </CurrentLayoutProvider>

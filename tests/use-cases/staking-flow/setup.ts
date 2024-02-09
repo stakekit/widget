@@ -62,6 +62,7 @@ export const setup = async () => {
     },
     id: "avalanche-avax-liquid-staking",
     token,
+    tokens: [token],
     metadata: {
       cooldownPeriod: {
         days: 15,

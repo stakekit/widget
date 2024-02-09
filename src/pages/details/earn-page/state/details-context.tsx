@@ -51,9 +51,9 @@ import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-ac
 import { useUpdateEffect } from "../../../../hooks/use-update-effect";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
-import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
+import { useMountAnimation } from "../../../../providers/mount-animation";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -378,7 +378,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const pendingActionDeepLink = usePendingActionDeepLink();
 
-  const [mountAnimationFinished] = useMountAnimationFinished();
+  const { state } = useMountAnimation();
 
   const yieldOpportunityLoading = useYieldOpportunity(
     selectedStake.extract()?.id
@@ -391,7 +391,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
     isConnecting ||
-    !mountAnimationFinished;
+    !state.layout;
 
   const multiYieldsLoading = multiYields.isLoading;
   const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;

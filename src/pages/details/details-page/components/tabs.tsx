@@ -13,7 +13,7 @@ import {
   tabContainer,
 } from "../styles.css";
 import { motion } from "framer-motion";
-import { useMountAnimationFinished } from "../../../../navigation/containers/animation-layout";
+import { useMountAnimation } from "../../../../providers/mount-animation";
 
 export type TabsProps = {
   selectedTab: "earn" | "positions";
@@ -28,12 +28,12 @@ export const Tabs = ({
 }: TabsProps) => {
   const { t } = useTranslation();
 
-  const [mountAnimationFinished] = useMountAnimationFinished();
+  const { state } = useMountAnimation();
 
   return (
     <motion.div
       initial={
-        mountAnimationFinished
+        state.layout
           ? { opacity: 1, translateY: 0 }
           : { opacity: 0, translateY: "-40px" }
       }
