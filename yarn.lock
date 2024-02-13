@@ -5179,16 +5179,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.54":
-  version: 0.0.54
-  resolution: "@stakekit/api-hooks@npm:0.0.54"
+"@stakekit/api-hooks@npm:^0.0.56":
+  version: 0.0.56
+  resolution: "@stakekit/api-hooks@npm:0.0.56"
   dependencies:
     "@faker-js/faker": "npm:^8.3.1"
     "@tanstack/react-query": "npm:^5.17.19"
     axios: "npm:^1.6.5"
     lodash.merge: "npm:^4.6.2"
     msw: "npm:^2.1.4"
-  checksum: 10/22c4b27d8648f3d307a74586954d02ea2d9d580322ec6eb852f884728f2a92d85a75afd37e69a7ca67b4b298bbbb5539071726124439e57ab2337d387422f3cd
+  checksum: 10/9120237a057904a081f288f1833ea672ebcae6a4c530bc14f14d8afcb966d7de0ceac7a98c59983f5758911fe826317baa7868227ccf6e2e2d2b6269042e730e
   languageName: node
   linkType: hard
 
@@ -5238,7 +5238,7 @@ __metadata:
     "@ledgerhq/wallet-api-client": "npm:^1.5.3"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
-    "@stakekit/api-hooks": "npm:^0.0.54"
+    "@stakekit/api-hooks": "npm:^0.0.56"
     "@stakekit/common": "npm:^0.0.24"
     "@stakekit/rainbowkit": "npm:^1.3.8"
     "@tanstack/react-query": "npm:^5.17.19"

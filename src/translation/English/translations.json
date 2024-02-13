@@ -169,13 +169,15 @@
       "staking": "staked",
       "liquid-staking": "staked",
       "vault": "deposited",
-      "lending": "supplied"
+      "lending": "supplied",
+      "restaking": "staked"
     },
     "unstake": {
       "staking": "unstaked",
       "liquid-staking": "unstaked",
       "vault": "withdrawn",
-      "lending": "withdrawn"
+      "lending": "withdrawn",
+      "restaking": "staked"
     },
     "pending_action": {
       "stake": "staked",
@@ -211,6 +213,10 @@
     "lending": {
       "title": "What is lending?",
       "description": "Crypto lending platforms, such as Aave and Compound, allow you to lend your digital assets and earn interest on them. By supplying your crypto into lending pools, you become a lender, and borrowers can access your funds in exchange for paying interest. It's a way to put your idle crypto to work and earn passive income while helping others access the funds they need."
+    },
+    "restaking": {
+      "title": "What is Restaking?",
+      "description": "Restaking is a way to earn passive income by holding and \"staking\" your cryptocurrency. It helps secure the network and validate transactions, while rewarding you with additional tokens for your contribution to the network."
     },
     "fees": {
       "title": "About fees",
@@ -267,13 +273,15 @@
       "staking": "Staked",
       "liquid-staking": "Liquid staked",
       "lending": "Deposited",
-      "vault": "Deposited"
+      "vault": "Deposited",
+      "restaking": "Staked"
     },
     "unstake_label": {
       "staking": "Unstake",
       "liquid-staking": "Unstake",
       "lending": "Withdraw",
-      "vault": "Withdraw"
+      "vault": "Withdraw",
+      "restaking": "Unstake"
     },
     "balance_type": {
       "available": "Available",
