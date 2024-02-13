@@ -1,15 +1,13 @@
-import {
-  isLedgerDappBrowserProvider,
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../utils";
+import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { MiscChainsMap } from "../../domain/types/chains";
 import { MiscNetworks } from "@stakekit/common";
 import { queryClient } from "../../services/query-client";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { config } from "../../config";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 import { near, solana, tezos, tron } from "./chains";
+import { WalletList } from "@stakekit/rainbowkit";
+import { tronConnector } from "./tron-connector";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Infinity;
@@ -42,11 +40,15 @@ const queryFn = async () =>
         }).filter(([_, v]) => networks.has(v.skChainName))
       );
 
-      const miscChains = isLedgerDappBrowserProvider()
-        ? Object.values(miscChainsMap).map((val) => val.wagmiChain)
-        : [];
+      const miscChains = Object.values(miscChainsMap).map(
+        (val) => val.wagmiChain
+      );
 
-      return Promise.resolve({ miscChainsMap, miscChains });
+      const connectors: Maybe<WalletList[number]>[] = [
+        Maybe.fromPredicate(() => !!miscChainsMap.tron, tronConnector),
+      ];
+
+      return Promise.resolve({ miscChainsMap, miscChains, connectors });
     },
     Left: (l) => Promise.reject(l),
   });

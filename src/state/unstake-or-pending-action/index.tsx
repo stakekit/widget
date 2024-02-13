@@ -275,25 +275,6 @@ export const UnstakeOrPendingActionProvider = ({
 
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
-  /**
-   * Reset state and set new last params on navigation
-   */
-  Maybe.fromRecord({
-    integrationId: currentParams.integrationId,
-    balanceId: currentParams.balanceId,
-  })
-    .filter(
-      (val) =>
-        lastStateParams.balanceId !== val.balanceId ||
-        lastStateParams.integrationId !== val.integrationId ||
-        lastStateParams.pendingActionType !==
-          currentParams.plain.pendingActionType
-    )
-    .ifJust(() => {
-      setLastStateParams(currentParams.plain);
-      dispatch({ type: "reset" });
-    });
-
   const { pendingActions, unstakeAmount } = state;
 
   const stakeExitAndTxsConstructMutationState = useStakeExitAndTxsConstruct();
@@ -333,6 +314,28 @@ export const UnstakeOrPendingActionProvider = ({
       ),
     [onPendingActionState?.data]
   );
+
+  /**
+   * Reset state and set new last params on navigation
+   */
+  Maybe.fromRecord({
+    integrationId: currentParams.integrationId,
+    balanceId: currentParams.balanceId,
+  })
+    .filter(
+      (val) =>
+        lastStateParams.balanceId !== val.balanceId ||
+        lastStateParams.integrationId !== val.integrationId ||
+        lastStateParams.pendingActionType !==
+          currentParams.plain.pendingActionType
+    )
+    .ifJust(() => {
+      setLastStateParams(currentParams.plain);
+      dispatch({ type: "reset" });
+      stakeExitAndTxsConstructMutationState.reset();
+      pendingActionAndTxsConstructMutationState.reset();
+      onPendingActionState.reset();
+    });
 
   const value: State & ExtraData = useMemo(
     () => ({

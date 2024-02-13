@@ -181,11 +181,12 @@ export const usePositionDetails = () => {
       error
         ? onStakeExit.error instanceof StakingNotAllowedError
           ? t("details.unstake_before")
-          : onStakeExit.error instanceof NotEnoughGasTokenError
+          : onStakeExit.error instanceof NotEnoughGasTokenError ||
+              onPendingAction.error instanceof NotEnoughGasTokenError
             ? t("shared.not_enough_gas_token")
             : t("shared.something_went_wrong")
         : null,
-    [error, onStakeExit.error, t]
+    [error, onPendingAction.error, onStakeExit.error, t]
   );
 
   return {

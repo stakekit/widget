@@ -17,6 +17,7 @@ import {
   getCosmosChainWallet,
   isCosmosConnector,
   isLedgerLiveConnector,
+  isTronConnector,
   wagmiNetworkToSKNetwork,
 } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
@@ -28,7 +29,10 @@ import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
-import { unsignedTransactionCodec } from "./validation";
+import {
+  unsignedEVMTransactionCodec,
+  unsignedTronTransactionCodec,
+} from "./validation";
 import { isEVMNetwork } from "../../domain";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
@@ -184,13 +188,39 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 ),
               }))
           );
+        } else if (isTronConnector(conn)) {
+          /**
+           * Tron connector
+           */
+          return EitherAsync.liftEither(
+            Either.encase(() => JSON.parse(tx))
+              .chain((val) => unsignedTronTransactionCodec.decode(val))
+              .mapLeft((e) => {
+                console.log(e);
+                return new TransactionDecodeError();
+              })
+          )
+            .chain((val) =>
+              EitherAsync(() => conn.adapter.signTransaction(val))
+                .mapLeft((e) => {
+                  console.log(e);
+                  return new Error("sign failed");
+                })
+                .ifRight((val) => {
+                  console.log(val);
+                })
+            )
+            .map((val) => ({
+              signedTx: JSON.stringify(val),
+              broadcasted: false,
+            }));
         } else {
           /**
            * EVM connector
            */
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
-              .chain((val) => unsignedTransactionCodec.decode(val))
+              .chain((val) => unsignedEVMTransactionCodec.decode(val))
               .mapLeft((e) => {
                 console.log(e);
                 return new TransactionDecodeError();

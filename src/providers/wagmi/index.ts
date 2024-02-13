@@ -70,7 +70,11 @@ const buildWagmiConfig = async (opts: {
                   substrate: substrateConfig.substrateChainsMap,
                 }),
               ]
-            : Maybe.catMaybes([evmConfig.connector, cosmosConfig.connector])),
+            : Maybe.catMaybes([
+                evmConfig.connector,
+                cosmosConfig.connector,
+                ...miscConfig.connectors,
+              ])),
           ...(typeof opts.customConnectors === "function"
             ? opts.customConnectors(chains)
             : opts.customConnectors ?? []),
