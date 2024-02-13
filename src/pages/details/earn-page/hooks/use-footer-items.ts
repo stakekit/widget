@@ -196,6 +196,49 @@ export const useFooterItems = () => {
             ...def,
           };
 
+        case yieldTypesMap["restaking"].type:
+          return {
+            description: t("details.restake.description", {
+              stakeToken,
+              rewardTokens,
+            }),
+            earnPeriod:
+              warmupPeriodDays > 0
+                ? t("details.restake.earn_after_warmup", {
+                    warmupPeriodDays,
+                  })
+                : null,
+            earnRewards:
+              rewardClaiming === "manual"
+                ? t("details.restake.earn_rewards_manual", {
+                    rewardSchedule,
+                  })
+                : t("details.restake.earn_rewards_auto", {
+                    rewardSchedule,
+                  }),
+            withdrawnTime: y.status.exit
+              ? cooldownPeriodDays > 0
+                ? t("details.restake.unstake_time_days", {
+                    cooldownPeriodDays,
+                  })
+                : t("details.restake.unstake_time_immediately")
+              : null,
+            withdrawnNotAvailable: !y.status.exit
+              ? t("details.restake.withdrawn_not_available", {
+                  rewardTokens,
+                })
+              : null,
+            minimumStakeAmount:
+              minimumStakeAmount > 0
+                ? t("details.restake.minimum_stake_amount", {
+                    minimumStakeAmount,
+                    stakeToken,
+                  })
+                : null,
+            compoundRewards: null,
+            ...def,
+          };
+
         default:
           return ifNotFound;
       }
