@@ -79,6 +79,14 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         };
       }
 
+      case "restaking": {
+        return {
+          title: t("help_modals.restaking.title"),
+          description: t("help_modals.restaking.description"),
+          image: whatIsStaking,
+        };
+      }
+
       case "fees": {
         return {
           title: t("help_modals.fees.title"),
