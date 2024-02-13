@@ -9,6 +9,7 @@ import {
   MiscChainsMap,
   SubstrateChainsMap,
 } from "../../domain/types/chains";
+import { TronConnector } from "../misc/tron-connector";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,
@@ -54,3 +55,7 @@ export const getCosmosChainWallet = (connector: Connector | undefined) =>
 export const isLedgerLiveConnector = (
   connector: Connector
 ): connector is LedgerLiveConnector => connector instanceof LedgerLiveConnector;
+
+export const isTronConnector = (
+  connector: Connector
+): connector is TronConnector => connector instanceof TronConnector;
