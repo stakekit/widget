@@ -118,6 +118,18 @@
       "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}"
     },
 
+    "restake": {
+      "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
+      "earn_after_warmup_one": "You’ll start earning {{count}} day after you stake",
+      "earn_after_warmup_other": "You’ll start earning {{count}} days after you stake",
+      "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
+      "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
+      "unstake_time_immediately": "When unstaking, your assets will be available immediately",
+      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
+      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}"
+    },
+
     "extra_tezos": "You can use or send staked XTZ as normal",
 
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
