@@ -6,20 +6,13 @@ import {
   array,
   record,
   string,
+  boolean,
 } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
 
 const localStorageBuildKey = <K extends string>(key: K) =>
   `${config.appPrefix}@1//${key}` as const;
-
-export type LocalStorageKV = {
-  [Key in keyof typeof codecs]: GetType<(typeof codecs)[Key]>;
-};
-
-type LocalStorageValue<K extends keyof LocalStorageKV> = GetType<
-  (typeof codecs)[K]
->;
 
 const codecs = {
   [localStorageBuildKey("skPubKeys")]: record(string, string),
@@ -36,7 +29,16 @@ const codecs = {
     )
   ),
   [localStorageBuildKey("referralCode")]: string,
+  [localStorageBuildKey("shimDisconnect/tron")]: boolean,
 };
+
+export type LocalStorageKV = {
+  [Key in keyof typeof codecs]: GetType<(typeof codecs)[Key]>;
+};
+
+type LocalStorageValue<K extends keyof LocalStorageKV> = GetType<
+  (typeof codecs)[K]
+>;
 
 export const getStorageItem = <K extends keyof LocalStorageKV>(
   key: K
@@ -78,6 +80,7 @@ const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
   [localStorageBuildKey("customValidators")]: new Map(),
   [localStorageBuildKey("skPubKeys")]: new Map(),
   [localStorageBuildKey("referralCode")]: new Map(),
+  [localStorageBuildKey("shimDisconnect/tron")]: new Map(),
 };
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(

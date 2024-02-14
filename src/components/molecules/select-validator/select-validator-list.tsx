@@ -63,7 +63,7 @@ export const SelectValidatorList = ({
           <Box
             py="4"
             px="4"
-            background="background"
+            background="modalBodyBackground"
             display="flex"
             justifyContent="space-between"
             alignItems="center"

@@ -42,8 +42,8 @@
     },
 
     "tron_resources": {
-      "label": "Select option",
-      "placeholder": "Select option"
+      "label": "Resource",
+      "placeholder": "Select resource"
     },
 
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",

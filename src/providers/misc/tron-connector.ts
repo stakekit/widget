@@ -1,22 +1,35 @@
 import { Address, Connector } from "wagmi";
+import { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
+import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
+import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
+import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
 import { EitherAsync, Maybe } from "purify-ts";
 import { tron } from "./chains";
 import { getTokenLogo } from "../../utils";
-import { MaybeWindow } from "../../utils/maybe-window";
+import { getStorageItem, setStorageItem } from "../../services/local-storage";
+import { config } from "../../config";
+import { WalletList } from "@stakekit/rainbowkit";
+import { wcLogo } from "../../assets/images/wc-logo";
+import bitget from "../../assets/images/bitget.png";
+import { ledger } from "../../assets/images/ledger";
 
 export class TronConnector extends Connector {
   id = "tron";
   name = "Tron";
 
-  adapter = new TronLinkAdapter();
+  constructor(public adapter: Adapter) {
+    super({ options: {}, chains: [tron] }); // only mainnet for now
+  }
 
-  ready = MaybeWindow.mapOrDefault((w) => !!w.tronWeb?.ready, false);
+  ready = true;
 
   async connect() {
     this.emit("message", { type: "connecting" });
 
     await this.adapter.connect();
+
+    setStorageItem("sk-widget@1//shimDisconnect/tron", true);
 
     return {
       account: this.adapter.address as Address,
@@ -28,6 +41,7 @@ export class TronConnector extends Connector {
   }
 
   async disconnect() {
+    setStorageItem("sk-widget@1//shimDisconnect/tron", false);
     await this.adapter.disconnect();
   }
 
@@ -58,7 +72,9 @@ export class TronConnector extends Connector {
   };
 
   async isAuthorized() {
-    return !!(this.adapter.connected && this.adapter.address);
+    return getStorageItem("sk-widget@1//shimDisconnect/tron")
+      .map((val) => !!(val && this.adapter.connected && this.adapter.address))
+      .orDefault(false);
   }
 
   protected onAccountsChanged = (accounts: string[]) => {
@@ -80,25 +96,54 @@ export class TronConnector extends Connector {
   }
 }
 
-export const tronConnector = {
+export const tronConnector: WalletList[number] = {
   groupName: "Tron",
   wallets: [
     {
       id: "tron-link",
-      name: "Tron Link",
-      iconUrl: async () => getTokenLogo("trx"),
+      name: "TronLink",
+      iconUrl: getTokenLogo("trx"),
       iconBackground: "#fff",
       createConnector: () => ({
-        connector: new TronConnector({ options: {}, chains: [tron] }), // only mainnet for now
+        connector: new TronConnector(new TronLinkAdapter()),
       }),
-      downloadUrls: {
-        chrome:
-          "https://chromewebstore.google.com/detail/tronlink/ibnejdfjmmkpcnlpebklmnkoeoihofec",
-        firefox:
-          "https://chromewebstore.google.com/detail/tronlink/ibnejdfjmmkpcnlpebklmnkoeoihofec",
-        browserExtension:
-          "https://chromewebstore.google.com/detail/tronlink/ibnejdfjmmkpcnlpebklmnkoeoihofec",
-      },
+    },
+    {
+      id: "tron-wc",
+      name: "Wallet Connect",
+      iconUrl: wcLogo,
+      iconBackground: "#fff",
+      createConnector: () => ({
+        connector: new TronConnector(
+          new WalletConnectAdapter({
+            network: "Mainnet",
+            options: { projectId: config.walletConnectV2.projectId },
+            web3ModalConfig: {
+              themeVariables: {
+                "--w3m-z-index": "99999999999",
+              },
+            },
+          })
+        ),
+      }),
+    },
+    {
+      id: "tron-bg",
+      name: "Bitget",
+      iconUrl: bitget,
+      iconBackground: "#fff",
+      createConnector: () => ({
+        connector: new TronConnector(new BitKeepAdapter()),
+      }),
+    },
+    {
+      id: "tron-ledger",
+      name: "Ledger",
+      iconUrl: ledger,
+      iconBackground: "#fff",
+      createConnector: () => ({
+        connector: new TronConnector(new LedgerAdapter()),
+      }),
     },
   ],
 };
