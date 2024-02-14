@@ -3,6 +3,7 @@ import {
   createContext,
   useContext,
   useDeferredValue,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -33,7 +34,6 @@ import { NotEnoughGasTokenError } from "../../../../common/check-gas-amount";
 import { useTranslation } from "react-i18next";
 import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
-import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { List } from "purify-ts";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
@@ -54,6 +54,7 @@ import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
+import { useMutation } from "wagmi";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -325,26 +326,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     appDispatch({ type: "stakeAmount/change", data: val });
 
-  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
-    type: "enter",
-    yieldOpportunity: selectedStake,
-  });
-
-  const amountValid = useMemo(
-    () =>
-      !isConnected ||
-      (stakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-        stakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-        stakeAmount.isLessThanOrEqualTo(availableAmount)),
-    [
-      availableAmount,
-      isConnected,
-      maxEnterOrExitAmount,
-      minEnterOrExitAmount,
-      stakeAmount,
-    ]
-  );
-
   const { t } = useTranslation();
 
   const navigate = useNavigate();
@@ -354,13 +335,58 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const { openConnectModal } = useConnectModal();
 
-  const onClick = () => {
-    if (buttonDisabled) return;
+  const onClickHandler = useMutation({
+    mutationFn: async () => {
+      if (validation.hasErrors) return;
 
-    if (!isConnected) return openConnectModal?.();
+      if (!isConnected) return openConnectModal?.();
 
-    onStakeEnter.mutate(stakeRequestDto);
-  };
+      return onStakeEnter.mutate(stakeRequestDto);
+    },
+  });
+
+  const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
+
+  useEffect(() => {
+    if (!isConnected) onClickHandlerResetRef.current();
+  }, [isConnected, onClickHandlerResetRef]);
+
+  const validation = useMemo(() => {
+    const val = {
+      submitted: false,
+      hasErrors: false,
+      errors: {
+        tronResource: false,
+        amount: false,
+      },
+    };
+
+    if (!isConnected) return val;
+
+    selectedStake.ifJust((ss) => {
+      if (
+        ss.args.enter.args?.tronResource?.required &&
+        tronResource.isNothing()
+      ) {
+        val.errors.tronResource = true;
+      }
+
+      if (stakeAmount.isZero()) {
+        val.errors.amount = true;
+      }
+    });
+
+    val.submitted = onClickHandler.status !== "idle";
+    val.hasErrors = Object.values(val.errors).some(Boolean);
+
+    return val;
+  }, [
+    isConnected,
+    onClickHandler.status,
+    selectedStake,
+    stakeAmount,
+    tronResource,
+  ]);
 
   useUpdateEffect(() => {
     if (onStakeEnter.isSuccess && onStakeEnter.data) {
@@ -415,13 +441,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           : t("shared.something_went_wrong"),
     [onStakeEnter.error, t]
   );
+
   const buttonDisabled =
-    isConnected &&
-    (isFetching ||
-      stakeRequestDto.isNothing() ||
-      !amountValid ||
-      stakeAmount.isZero() ||
-      onStakeEnter.isPending);
+    isConnected && (isFetching || stakeRequestDto.isNothing());
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -452,7 +474,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       data: value,
     });
 
-  const onClickRef = useSavedRef(onClick);
+  const onClickRef = useSavedRef(onClickHandler.mutate);
 
   const addLedgerAccount = useAddLedgerAccount();
 
@@ -517,9 +539,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onMaxClick,
     stakeAmount,
     isFetching,
-    amountValid,
     buttonDisabled,
-    onClick,
+    onClick: onClickHandler.mutate,
     onYieldSearch,
     onValidatorSelect,
     onValidatorRemove,
@@ -547,6 +568,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isLedgerLiveAccountPlaceholder,
     tronResource,
     onTronResourceSelect,
+    validation,
   };
 
   return (

@@ -11,7 +11,6 @@ export const SelectTokenSection = () => {
   const {
     appLoading,
     tokenBalancesScanLoading,
-    amountValid,
     availableTokens,
     formattedPrice,
     onMaxClick,
@@ -19,6 +18,7 @@ export const SelectTokenSection = () => {
     stakeAmount,
     stakeTokenAvailableAmountLoading,
     defaultTokensIsLoading,
+    validation,
   } = useDetailsContext();
 
   const isLoading =
@@ -35,6 +35,13 @@ export const SelectTokenSection = () => {
       marginTop="2"
       py="4"
       px="4"
+      borderStyle="solid"
+      borderWidth={1}
+      borderColor={
+        validation.submitted && validation.errors.amount
+          ? "textDanger"
+          : "stakeSectionBackground"
+      }
     >
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box minWidth="0" display="flex" marginRight="2" flex={1}>
@@ -67,12 +74,7 @@ export const SelectTokenSection = () => {
           {stakeTokenAvailableAmountLoading ? (
             <Spinner />
           ) : (
-            <Text
-              variant={{
-                type: amountValid ? "muted" : "danger",
-                weight: "normal",
-              }}
-            >
+            <Text variant={{ weight: "normal" }}>
               {availableTokens
                 ? `${availableTokens} ${t("shared.available")}`
                 : ""}

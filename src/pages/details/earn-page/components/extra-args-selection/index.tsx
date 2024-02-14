@@ -2,24 +2,16 @@ import { useTranslation } from "react-i18next";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
 import { useDetailsContext } from "../../state/details-context";
 import { Box, Divider, Text } from "../../../../../components";
-import {
-  TronResourceArgumentOptionsDto,
-  TronResourceType,
-} from "@stakekit/api-hooks";
+import { TronResourceType } from "@stakekit/api-hooks";
 
 export const ExtraArgsSelection = () => {
-  const { selectedStake, tronResource, onTronResourceSelect } =
+  const { selectedStake, tronResource, onTronResourceSelect, validation } =
     useDetailsContext();
 
   const { t } = useTranslation();
 
   return selectedStake
-    .chainNullable(
-      (ss) =>
-        ss.args.enter.args?.tronResource as
-          | TronResourceArgumentOptionsDto
-          | undefined
-    )
+    .chainNullable((ss) => ss.args.enter.args?.tronResource)
     .map((tronResources) => {
       const options = tronResources.options.map((v) => ({
         label: v,
@@ -30,10 +22,18 @@ export const ExtraArgsSelection = () => {
         .map((v) => ({ value: v, label: v }))
         .extract();
 
+      const isError = validation.submitted && validation.errors.tronResource;
+
       return (
         <Box>
           <Box my="2">
-            <Text>{t("details.tron_resources.label")}</Text>
+            <Text
+              variant={{
+                type: isError ? "danger" : "regular",
+              }}
+            >
+              {t("details.tron_resources.label")}
+            </Text>
           </Box>
 
           <Dropdown
@@ -41,6 +41,7 @@ export const ExtraArgsSelection = () => {
             onSelect={(val) => onTronResourceSelect(val)}
             selectedOption={selectedOption}
             placeholder={t("details.tron_resources.placeholder")}
+            isError={isError}
           />
 
           <Box marginTop="3">

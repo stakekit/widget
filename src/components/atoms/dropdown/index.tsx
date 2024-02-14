@@ -16,6 +16,7 @@ interface DropdownProps<T extends { label: string; value: string }> {
   onSelect: (option: T["value"]) => void;
   selectedOption: T | undefined;
   placeholder: string;
+  isError?: boolean;
 }
 
 export function Dropdown<T extends { label: string; value: string }>({
@@ -23,6 +24,7 @@ export function Dropdown<T extends { label: string; value: string }>({
   onSelect,
   selectedOption,
   placeholder,
+  isError,
 }: DropdownProps<T>) {
   return (
     <DropdownMenu.Root>
@@ -33,6 +35,9 @@ export function Dropdown<T extends { label: string; value: string }>({
           justifyContent="space-between"
           alignItems="center"
           gap="2"
+          borderStyle="solid"
+          borderColor={isError ? "textDanger" : "background"}
+          borderWidth={1}
         >
           <Text>{selectedOption?.label ?? placeholder}</Text>
 

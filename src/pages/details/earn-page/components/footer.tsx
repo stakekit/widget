@@ -68,7 +68,7 @@ export const Footer = () => {
   return isLoading ? (
     <ContentLoaderSquare heightPx={150} />
   ) : (
-    <Box gap="3" display="flex" flexDirection="column">
+    <Box as="footer" gap="3" display="flex" flexDirection="column">
       {items.map((item) => (
         <Box key={item.text} display="flex" alignItems="center" gap="4">
           <Box alignItems="center" justifyContent="center" display="flex">

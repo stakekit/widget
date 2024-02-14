@@ -17,6 +17,11 @@ export default defineConfig({
     environment: "jsdom", // fails with jsdom, https://github.com/vitest-dev/vitest/issues/4043
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: [path.resolve(__dirname, "tests/utils/setup.ts")],
+    server: {
+      deps: {
+        inline: ["@tronweb3/tronwallet-adapter-bitkeep"],
+      },
+    },
   },
   plugins: [react(), vanillaExtractPlugin(), macrosPlugin()],
   optimizeDeps: { include: ["@stakekit/common"] },

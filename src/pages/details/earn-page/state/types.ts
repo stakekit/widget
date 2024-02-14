@@ -28,7 +28,6 @@ export type DetailsContextType = {
   onMaxClick: () => void;
   stakeAmount: State["stakeAmount"];
   isFetching: boolean;
-  amountValid: boolean;
   buttonDisabled: boolean;
   onClick: () => void;
   onYieldSearch: (value: string) => void;
@@ -61,4 +60,12 @@ export type DetailsContextType = {
   defaultTokensIsLoading: boolean;
   tronResource: State["tronResource"];
   onTronResourceSelect: (value: TronResourceType) => void;
+  validation: {
+    submitted: boolean;
+    hasErrors: boolean;
+    errors: {
+      tronResource: boolean;
+      amount: boolean;
+    };
+  };
 };
