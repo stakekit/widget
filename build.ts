@@ -116,10 +116,11 @@ const buildAsPackage = async () => {
         name: "make-all-packages-external",
         setup(build) {
           // Must not start with "/" or "./" or "../"
-          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) => ({
-            external: true,
-            path: args.path,
-          }));
+          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
+            args.path === "@cassiozen/usestatemachine" // needs to be inlined because it causes issue for nextjs@13
+              ? { external: false, namespace: "usestatemachine" }
+              : { external: true, path: args.path }
+          );
         },
       },
     ],
