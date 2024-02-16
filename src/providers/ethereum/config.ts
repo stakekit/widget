@@ -28,6 +28,7 @@ import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
 import { WalletList } from "@stakekit/rainbowkit";
+import { viction } from "./chains";
 
 const queryFn = async ({
   forceWalletConnectOnly,
@@ -78,6 +79,11 @@ const queryFn = async ({
               ...harmonyOne,
               iconUrl: getNetworkLogo(EvmNetworks.Harmony),
             },
+          },
+          [EvmNetworks.Viction]: {
+            type: "evm",
+            skChainName: EvmNetworks.Viction,
+            wagmiChain: viction,
           },
           [EvmNetworks.EthereumGoerli]: {
             type: "evm",

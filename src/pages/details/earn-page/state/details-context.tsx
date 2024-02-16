@@ -55,6 +55,7 @@ import { useReferralCode } from "../../../../hooks/api/referral/use-referral-cod
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMutation } from "wagmi";
+import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -326,6 +327,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     appDispatch({ type: "stakeAmount/change", data: val });
 
+  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
+    type: "enter",
+    yieldOpportunity: selectedStake,
+  });
+
   const { t } = useTranslation();
 
   const navigate = useNavigate();
@@ -357,7 +363,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       hasErrors: false,
       errors: {
         tronResource: false,
-        amount: false,
+        amountZero: false,
+        amountInvalid: false,
       },
     };
 
@@ -372,7 +379,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       }
 
       if (stakeAmount.isZero()) {
-        val.errors.amount = true;
+        val.errors.amountZero = true;
+      }
+
+      if (
+        stakeAmount.isLessThan(minEnterOrExitAmount) ||
+        stakeAmount.isGreaterThan(maxEnterOrExitAmount) ||
+        stakeAmount.isGreaterThan(availableAmount)
+      ) {
+        val.errors.amountInvalid = true;
       }
     });
 
@@ -381,7 +396,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
     return val;
   }, [
+    availableAmount,
     isConnected,
+    maxEnterOrExitAmount,
+    minEnterOrExitAmount,
     onClickHandler.status,
     selectedStake,
     stakeAmount,
