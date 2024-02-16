@@ -78,6 +78,7 @@ const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
     "import.meta.env.VITE_API_URL": JSON.stringify(VITE_API_URL),
     "import.meta.env.MODE": JSON.stringify(MODE),
   },
+  bundle: true,
   alias: {
     stream: "stream-browserify",
   },
@@ -93,7 +94,6 @@ const buildAsStandaloneApp = async () => {
     minify: true,
     external: ["crypto"],
     platform: "browser",
-    bundle: true,
     plugins: commonPlugins,
     loader: {
       ".png": "file",
@@ -104,12 +104,14 @@ const buildAsStandaloneApp = async () => {
 const buildAsPackage = async () => {
   await esbuild.build({
     ...commonConfig,
+    banner: {
+      js: '"use client";',
+    },
     entryPoints: ["src/index.package.ts", "src/polyfills.ts"],
     assetNames: "bundle/assets/[name]",
     splitting: true,
     outdir: "dist/package",
     platform: "browser",
-    bundle: true,
     plugins: [
       ...commonPlugins,
       {
@@ -117,10 +119,20 @@ const buildAsPackage = async () => {
         setup(build) {
           // Must not start with "/" or "./" or "../"
           build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
-            args.path === "@cassiozen/usestatemachine" // needs to be inlined because it causes issue for nextjs@13
-              ? { external: false, namespace: "usestatemachine" }
-              : { external: true, path: args.path }
+            /\.css$/.test(args.path)
+              ? { external: false }
+              : args.path === "@cassiozen/usestatemachine" // needs to be inlined because it causes issue for nextjs@13
+                ? { external: false, namespace: "usestatemachine" }
+                : { external: true, path: args.path }
           );
+
+          build.onLoad({ filter: /\.css$/ }, async (args) => {
+            const css = await fs.promises.readFile(args.path, {
+              encoding: "utf-8",
+            });
+
+            return { contents: css, loader: "css" };
+          });
         },
       },
     ],
