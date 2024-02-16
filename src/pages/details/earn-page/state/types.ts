@@ -65,7 +65,8 @@ export type DetailsContextType = {
     hasErrors: boolean;
     errors: {
       tronResource: boolean;
-      amount: boolean;
+      amountZero: boolean;
+      amountInvalid: boolean;
     };
   };
 };

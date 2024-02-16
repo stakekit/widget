@@ -38,7 +38,7 @@ export const SelectTokenSection = () => {
       borderStyle="solid"
       borderWidth={1}
       borderColor={
-        validation.submitted && validation.errors.amount
+        validation.submitted && validation.errors.amountZero
           ? "textDanger"
           : "stakeSectionBackground"
       }
@@ -74,7 +74,12 @@ export const SelectTokenSection = () => {
           {stakeTokenAvailableAmountLoading ? (
             <Spinner />
           ) : (
-            <Text variant={{ weight: "normal" }}>
+            <Text
+              variant={{
+                weight: "normal",
+                type: validation.errors.amountInvalid ? "danger" : "muted",
+              }}
+            >
               {availableTokens
                 ? `${availableTokens} ${t("shared.available")}`
                 : ""}
