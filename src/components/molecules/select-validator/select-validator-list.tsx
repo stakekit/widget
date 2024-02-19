@@ -175,7 +175,7 @@ export const SelectValidatorList = ({
                       </Box>
                     )}
 
-                    {status === "inactive" && (
+                    {status !== "active" && (
                       <Box marginLeft="1" className={inactiveContainer}>
                         <Text
                           variant={{
@@ -185,7 +185,11 @@ export const SelectValidatorList = ({
                           }}
                           className={noWrap}
                         >
-                          {t("details.validators_inactive")}
+                          {t(
+                            status === "jailed"
+                              ? "details.validators_jailed"
+                              : "details.validators_inactive"
+                          )}
                         </Text>
                       </Box>
                     )}

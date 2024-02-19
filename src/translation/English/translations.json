@@ -143,7 +143,8 @@
     "validators_preferred": "Preferred",
     "validators_other": "All validators",
     "validators_view_all": "View all",
-    "validators_inactive": "Inactive"
+    "validators_inactive": "Inactive",
+    "validators_jailed": "Jailed"
   },
   "review": {
     "estimated_reward": "Estimated rewards",

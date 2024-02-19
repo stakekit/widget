@@ -80,7 +80,7 @@ export const SelectValidatorTrigger = ({
                         </Box>
                       )}
 
-                      {sv.status === "inactive" && (
+                      {sv.status !== "active" && (
                         <Box marginLeft="1" className={inactiveContainer}>
                           <Text
                             variant={{
@@ -90,7 +90,11 @@ export const SelectValidatorTrigger = ({
                             }}
                             className={noWrap}
                           >
-                            {t("details.validators_inactive")}
+                            {t(
+                              sv.status === "jailed"
+                                ? "details.validators_jailed"
+                                : "details.validators_inactive"
+                            )}
                           </Text>
                         </Box>
                       )}
