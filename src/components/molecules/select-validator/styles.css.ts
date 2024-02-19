@@ -14,3 +14,11 @@ export const modalItemNameContainer = style([
     justifyContent: "center",
   },
 ]);
+
+export const inactiveContainer = style([
+  atoms({
+    borderRadius: "base",
+    background: "positionsActionRequiredBackground",
+  }),
+  { padding: "2px 6px" },
+]);
