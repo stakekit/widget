@@ -2,7 +2,7 @@ import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { GetMaybeJust } from "../types";
-import { getRewardRateFormatted } from "../utils/get-reward-rate";
+import { getRewardRateFormatted } from "../utils/formatters";
 
 type Res = Maybe<{
   logo: string;
@@ -51,7 +51,7 @@ const getProviderDetails = ({
       .chain<GetMaybeJust<Res>>((addr) =>
         List.find((v) => v.address === addr, val.validators).map((v) => ({
           logo: v.image,
-          name: v.name,
+          name: v.name ?? v.address,
           rewardRateFormatted: getRewardRateFormatted({
             rewardRate: v.apr,
             rewardType: val.rewardType,

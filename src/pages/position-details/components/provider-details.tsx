@@ -6,7 +6,7 @@ import { HelpModal } from "../../../index.package";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { caretContainer, providerContainer, rotate180deg } from "../styles.css";
-import { getRewardTypeFormatted } from "../../../utils/get-reward-type";
+import { getRewardTypeFormatted } from "../../../utils/formatters";
 import { useEffect, useRef, useState } from "react";
 
 export const ProviderDetails = ({

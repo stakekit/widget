@@ -17,7 +17,6 @@ import {
 import { useSavedRef, useToggleTheme } from "./hooks";
 import {
   Layout,
-  ReviewPage,
   StakeStepsPage,
   UnstakeOrPendingActionStepsPage,
   StakeCompletePage,
@@ -37,7 +36,6 @@ import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
 import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-action/";
-import { UnstakeOrPendingActionReviewPage } from "./pages/unstake-or-pending-action-review";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
@@ -51,6 +49,10 @@ import { useSKLocation } from "./providers/location";
 import { MaybeWindow } from "./utils/maybe-window";
 import { GlobalModals } from "./components/molecules/global-modals";
 import { usePrevious } from "./hooks/use-previous";
+import {
+  StakeReviewPage,
+  UnstakeOrPendingActionReviewPage,
+} from "./pages/review";
 
 const Widget = () => {
   useToggleTheme();
@@ -124,7 +126,7 @@ const Widget = () => {
                     <Route element={<ConnectedCheck />}>
                       {/* Stake flow */}
                       <Route element={<StakeCheck />}>
-                        <Route path="review" element={<ReviewPage />} />
+                        <Route path="review" element={<StakeReviewPage />} />
                         <Route path="steps" element={<StakeStepsPage />} />
                         <Route
                           path="complete"

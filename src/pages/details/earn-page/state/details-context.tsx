@@ -354,8 +354,13 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
 
   useEffect(() => {
-    if (!isConnected) onClickHandlerResetRef.current();
-  }, [isConnected, onClickHandlerResetRef]);
+    onClickHandlerResetRef.current();
+  }, [
+    isConnected,
+    selectedStake,
+    selectedTokenBalance,
+    onClickHandlerResetRef,
+  ]);
 
   const validation = useMemo(() => {
     const val = {

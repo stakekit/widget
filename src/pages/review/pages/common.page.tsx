@@ -1,26 +1,40 @@
 import { Trans, useTranslation } from "react-i18next";
-import { Divider, Highlight } from "../../components";
-import { Box } from "../../components/atoms/box";
-import { Heading, Text } from "../../components/atoms/typography";
-import { PageContainer } from "../components";
-import { useReview } from "./use-review.hook";
-import { feeStyles, heading, pointer } from "./style.css";
-import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
-import { TokenIcon } from "../../components/atoms/token-icon";
-import { HelpModal } from "../../components/molecules/help-modal";
-import { Maybe } from "purify-ts";
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
-import { useTrackEvent } from "../../hooks/tracking/use-track-event";
-import { AnimationPage } from "../../navigation/containers/animation-page";
+import { Divider } from "../../../components";
+import { Box } from "../../../components/atoms/box";
+import { Heading, Text } from "../../../components/atoms/typography";
+import { PageContainer } from "../../components";
+import { feeStyles, headingStyles, pointerStyles } from "./style.css";
+import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { TokenIcon } from "../../../components/atoms/token-icon";
+import { HelpModal } from "../../../components/molecules/help-modal";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { motion } from "framer-motion";
+import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import { ComponentProps, ReactNode } from "react";
+import { Maybe } from "purify-ts";
 
-export const ReviewPage = () => {
+type ReviewPageProps = {
+  fee: string;
+  title: string;
+  token: Maybe<TokenDto>;
+  metadata: Maybe<YieldMetadataDto>;
+  info: ReactNode;
+  rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
+};
+
+export const ReviewPage = ({
+  fee,
+  title,
+  token,
+  metadata,
+  info,
+  rewardTokenDetailsProps,
+}: ReviewPageProps) => {
   useTrackPage("stakeReview");
 
   const trackEvent = useTrackEvent();
-
-  const { amount, fee, interestRate, yieldType, token, rewardToken, metadata } =
-    useReview();
 
   const { t } = useTranslation();
 
@@ -39,7 +53,7 @@ export const ReviewPage = () => {
               alignItems="center"
               marginBottom="1"
             >
-              <Heading variant={{ level: "h1" }}>{yieldType}</Heading>
+              <Heading variant={{ level: "h1" }}>{title}</Heading>
               {Maybe.fromRecord({ token, metadata })
                 .map((val) => (
                   <TokenIcon token={val.token} metadata={val.metadata} />
@@ -48,51 +62,42 @@ export const ReviewPage = () => {
             </Box>
           </motion.div>
 
-          {token
-            .map((val) => (
-              <motion.div
-                initial={{ opacity: 0, translateY: "-20px" }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ duration: 1, delay: 0.3 }}
-              >
-                <Heading variant={{ level: "h1" }} className={heading}>
-                  <Trans
-                    i18nKey="review.amount_and_earn"
-                    values={{
-                      amount,
-                      tokenSymbol: val.symbol,
-                      interestRate,
-                    }}
-                    components={{
-                      highlight0: <Highlight />,
-                      highlight1: <Highlight />,
-                      highlight3: <Highlight />,
-                    }}
-                  />
-                </Heading>
-              </motion.div>
+          <motion.div
+            initial={{ opacity: 0, translateY: "-20px" }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ duration: 1, delay: 0.3 }}
+          >
+            <Heading variant={{ level: "h2" }} className={headingStyles}>
+              {info}
+            </Heading>
+          </motion.div>
+
+          {rewardTokenDetailsProps
+            .filter((v) => v.type === "stake")
+            .map(() => (
+              <Box marginTop="2">
+                <Text variant={{ type: "muted", weight: "normal" }}>
+                  {t("review.estimated_reward")}
+                </Text>
+              </Box>
             ))
             .extractNullable()}
-
-          <Box marginTop="2">
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("review.estimated_reward")}
-            </Text>
-          </Box>
         </Box>
 
         <Divider />
 
-        {rewardToken
-          .map(() => (
-            <>
-              <Box my="4">
-                <RewardTokenDetails rewardToken={rewardToken} type="stake" />
-              </Box>
+        {rewardTokenDetailsProps
+          .chain((val) =>
+            val.rewardToken.map((v) => (
+              <>
+                <Box my="4">
+                  <RewardTokenDetails {...val} rewardToken={val.rewardToken} />
+                </Box>
 
-              <Divider />
-            </>
-          ))
+                <Divider />
+              </>
+            ))
+          )
           .extractNullable()}
 
         <Box
@@ -137,7 +142,7 @@ export const ReviewPage = () => {
                     target="_blank"
                     onClick={() => trackEvent("termsClicked")}
                     href="https://docs.stakek.it/docs/terms-of-use"
-                    className={pointer}
+                    className={pointerStyles}
                     rel="noreferrer"
                   />
                 ),

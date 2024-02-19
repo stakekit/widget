@@ -4,7 +4,10 @@ import { ComponentProps } from "react";
 import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { Box } from "../../atoms/box";
 import { Text } from "../../atoms/typography";
-import { getRewardTypeFormatted } from "../../../utils/get-reward-type";
+import {
+  getRewardTypeFormatted,
+  getRewardRateFormatted,
+} from "../../../utils/formatters";
 import { Button } from "../../atoms/button";
 import {
   SelectModalItem,
@@ -13,7 +16,6 @@ import {
 import { Image } from "../../atoms/image";
 import { ImageFallback } from "../../atoms/image-fallback";
 import { PreferredIcon } from "../../atoms/icons/preferred";
-import { getRewardRateFormatted } from "../../../utils/get-reward-rate";
 import {
   modalItemNameContainer,
   validatorVirtuosoContainer,
