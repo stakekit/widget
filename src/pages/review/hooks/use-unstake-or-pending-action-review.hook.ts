@@ -1,19 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { ComponentProps, useMemo } from "react";
-import { usePrices } from "../../hooks/api/use-prices";
-import { config } from "../../config";
-import { getBaseToken, getTokenPriceInUSD } from "../../domain";
-import { tokenToTokenDto } from "../../utils/mappers";
+import { usePrices } from "../../../hooks/api/use-prices";
+import { config } from "../../../config";
+import { getBaseToken } from "../../../domain";
+import { tokenToTokenDto } from "../../../utils/mappers";
 import { Maybe } from "purify-ts";
-import { formatNumber } from "../../utils";
+import { formatNumber } from "../../../utils";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
-import { useUnstakeOrPendingActionState } from "../../state/unstake-or-pending-action";
+import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { ActionTypes } from "@stakekit/api-hooks";
-import { RewardTokenDetails } from "../../components/molecules/reward-token-details";
-import { usePendingActionMatch } from "../../hooks/navigation/use-pending-action-match";
-import { useRegisterFooterButton } from "../components/footer-outlet/context";
-import { useSavedRef } from "../../hooks";
+import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import { useSavedRef } from "../../../hooks";
+import { getGasFeeInUSD } from "../../../utils/formatters";
 
 export const useUnstakeOrPendingActionReview = () => {
   const { integrationData } = useUnstakeOrPendingActionState();
@@ -59,8 +60,6 @@ export const useUnstakeOrPendingActionReview = () => {
   const { stakeExitTxGas, pendingActionTxGas } =
     useUnstakeOrPendingActionState();
 
-  const txGas = pendingActionMatch ? pendingActionTxGas : stakeExitTxGas;
-
   const pricesState = usePrices({
     currency: config.currency,
     tokenList: integrationData.mapOrDefault(
@@ -69,40 +68,20 @@ export const useUnstakeOrPendingActionReview = () => {
     ),
   });
 
-  const gasFeeInUSD = useMemo(
-    () =>
-      Maybe.fromRecord({
-        integrationData,
-        prices: Maybe.fromNullable(pricesState.data),
-        txGas,
-      }).map((val) =>
-        getTokenPriceInUSD({
-          amount: val.txGas.toString(),
-          prices: val.prices,
-          token: getBaseToken(val.integrationData.token),
-          pricePerShare: undefined,
-        })
-      ),
-    [integrationData, pricesState.data, txGas]
-  );
-
-  const gasFeeTokenNetwork = integrationData.mapOrDefault(
-    (d) => d.metadata.gasFeeToken.symbol,
-    ""
-  );
-
   const fee = useMemo(
     () =>
-      txGas
-        .chain((setg) => gasFeeInUSD.map((gfiu) => ({ setg, gfiu })))
-        .mapOrDefault(
-          ({ gfiu, setg }) =>
-            `${formatNumber(setg)} ${gasFeeTokenNetwork} ($${formatNumber(
-              gfiu
-            )})`,
-          ""
-        ),
-    [gasFeeInUSD, txGas, gasFeeTokenNetwork]
+      getGasFeeInUSD({
+        gas: pendingActionMatch ? pendingActionTxGas : stakeExitTxGas,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [
+      integrationData,
+      pendingActionMatch,
+      pendingActionTxGas,
+      pricesState.data,
+      stakeExitTxGas,
+    ]
   );
 
   const onClick = () => {

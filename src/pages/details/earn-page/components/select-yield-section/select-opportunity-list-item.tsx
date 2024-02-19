@@ -5,7 +5,7 @@ import { useDetailsContext } from "../../state/details-context";
 import { YieldDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { getRewardRateFormatted } from "../../../../../utils/get-reward-rate";
+import { getRewardRateFormatted } from "../../../../../utils/formatters";
 import { ComponentProps } from "react";
 
 export const SelectOpportunityListItem = ({

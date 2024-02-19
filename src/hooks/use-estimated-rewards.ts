@@ -5,7 +5,7 @@ import { Maybe } from "purify-ts";
 import { useProvidersDetails } from "./use-provider-details";
 import { formatNumber } from "../utils";
 import BigNumber from "bignumber.js";
-import { getRewardRateFormatted } from "../utils/get-reward-rate";
+import { getRewardRateFormatted } from "../utils/formatters";
 
 export const useEstimatedRewards = ({
   selectedStake,
@@ -28,7 +28,7 @@ export const useEstimatedRewards = ({
           ...val,
           rewardRateAverage: val.providersDetails
             .reduce(
-              (acc, val) => acc.plus(new BigNumber(val.rewardRate)),
+              (acc, val) => acc.plus(new BigNumber(val.rewardRate ?? 0)),
               new BigNumber(0)
             )
             .dividedBy(val.providersDetails.length),
@@ -38,15 +38,19 @@ export const useEstimatedRewards = ({
             rewardRate: val.rewardRateAverage.toNumber(),
             rewardType: val.selectedStake.rewardType,
           }),
-          yearly: formatNumber(
-            stakeAmount.times(val.rewardRateAverage).decimalPlaces(5)
-          ),
-          monthly: formatNumber(
-            stakeAmount
-              .times(val.rewardRateAverage)
-              .dividedBy(12)
-              .decimalPlaces(5)
-          ),
+          yearly: val.rewardRateAverage.isGreaterThan(0)
+            ? formatNumber(
+                stakeAmount.times(val.rewardRateAverage).decimalPlaces(5)
+              )
+            : "-",
+          monthly: val.rewardRateAverage.isGreaterThan(0)
+            ? formatNumber(
+                stakeAmount
+                  .times(val.rewardRateAverage)
+                  .dividedBy(12)
+                  .decimalPlaces(5)
+              )
+            : "-",
         })),
     [providersDetails, selectedStake, stakeAmount]
   );

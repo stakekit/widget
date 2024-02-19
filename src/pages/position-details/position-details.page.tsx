@@ -109,9 +109,9 @@ export const PositionDetails = () => {
                 <Box py="3" gap="2" display="flex" flexDirection="column">
                   {[...val.positionBalancesByType.values()].flatMap(
                     (yieldBalance) =>
-                      yieldBalance.map((yb) => (
+                      yieldBalance.map((yb, i) => (
                         <PositionBalances
-                          key={yb.type}
+                          key={`${yb.type}-${i}`}
                           integrationData={val.integrationData}
                           yieldBalance={yb}
                         />
@@ -165,7 +165,7 @@ export const PositionDetails = () => {
                       val.map((pa) =>
                         pa.amount ? (
                           <AmountBlock
-                            key={pa.pendingActionDto.type}
+                            key={`${pa.pendingActionDto.type}-${pa.pendingActionDto.passthrough}`}
                             variant="action"
                             isLoading={pa.isLoading}
                             onAmountChange={(val) =>
@@ -194,7 +194,7 @@ export const PositionDetails = () => {
                         ) : (
                           <StaticActionBlock
                             {...pa}
-                            key={pa.pendingActionDto.type}
+                            key={`${pa.pendingActionDto.type}-${pa.pendingActionDto.passthrough}`}
                             onPendingActionClick={onPendingActionClick}
                           />
                         )

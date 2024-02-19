@@ -14,7 +14,7 @@ import { listItemContainer, viaText } from "../style.css";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
-import { getRewardRateFormatted } from "../../../../utils/get-reward-rate";
+import { getRewardRateFormatted } from "../../../../utils/formatters";
 import { noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(

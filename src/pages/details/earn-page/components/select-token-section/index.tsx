@@ -40,7 +40,7 @@ export const SelectTokenSection = () => {
       borderColor={
         validation.submitted && validation.errors.amountZero
           ? "textDanger"
-          : "stakeSectionBackground"
+          : "transparent"
       }
     >
       <Box display="flex" justifyContent="space-between" alignItems="center">
