@@ -18,6 +18,8 @@ import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { PlusIcon } from "../../../../../components/atoms/icons/plus";
 import { Trigger } from "@radix-ui/react-alert-dialog";
+import { noWrap } from "../../../../details/positions-page/components/styles.css";
+import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
 
 export const SelectValidatorTrigger = ({
   onRemoveValidator,
@@ -75,6 +77,25 @@ export const SelectValidatorTrigger = ({
                       {sv.preferred && (
                         <Box marginLeft="1" display="flex">
                           <PreferredIcon />
+                        </Box>
+                      )}
+
+                      {sv.status !== "active" && (
+                        <Box marginLeft="1" className={inactiveContainer}>
+                          <Text
+                            variant={{
+                              type: "white",
+                              weight: "medium",
+                              size: "small",
+                            }}
+                            className={noWrap}
+                          >
+                            {t(
+                              sv.status === "jailed"
+                                ? "details.validators_jailed"
+                                : "details.validators_inactive"
+                            )}
+                          </Text>
                         </Box>
                       )}
 

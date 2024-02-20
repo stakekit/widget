@@ -17,11 +17,13 @@ import { Image } from "../../atoms/image";
 import { ImageFallback } from "../../atoms/image-fallback";
 import { PreferredIcon } from "../../atoms/icons/preferred";
 import {
+  inactiveContainer,
   modalItemNameContainer,
   validatorVirtuosoContainer,
 } from "./styles.css";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { vars } from "../../../styles";
+import { noWrap } from "../../../pages/details/positions-page/components/styles.css";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 
@@ -101,6 +103,8 @@ export const SelectValidatorList = ({
 
         const isPreferred = item.preferred;
 
+        const status = item.status;
+
         const itemSelected = selectedValidators.has(item.address);
 
         const _onItemClick: ComponentProps<
@@ -168,6 +172,25 @@ export const SelectValidatorList = ({
                     {isPreferred && (
                       <Box marginLeft="1" display="flex">
                         <PreferredIcon />
+                      </Box>
+                    )}
+
+                    {status !== "active" && (
+                      <Box marginLeft="1" className={inactiveContainer}>
+                        <Text
+                          variant={{
+                            type: "white",
+                            weight: "medium",
+                            size: "small",
+                          }}
+                          className={noWrap}
+                        >
+                          {t(
+                            status === "jailed"
+                              ? "details.validators_jailed"
+                              : "details.validators_inactive"
+                          )}
+                        </Text>
                       </Box>
                     )}
                   </Box>
