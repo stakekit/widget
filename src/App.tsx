@@ -5,7 +5,7 @@ import "./translation";
 import "./services/install-api-manager";
 import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
-import { ComponentProps, useLayoutEffect } from "react";
+import { ComponentProps, useState } from "react";
 import {
   Navigate,
   Route,
@@ -53,6 +53,7 @@ import {
   StakeReviewPage,
   UnstakeOrPendingActionReviewPage,
 } from "./pages/review";
+import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 
 const Widget = () => {
   useToggleTheme();
@@ -70,7 +71,7 @@ const Widget = () => {
   /**
    * On chain change, navigate to home page
    */
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (
       pathnameRef.current !== "/" &&
       prevChain &&
@@ -209,9 +210,13 @@ const Root = () => {
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
 
 export const SKApp = (props: SettingsContextType) => {
+  const [showChild, setShowChild] = useState(false);
+
+  useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
+
   return (
     <SettingsContextProvider {...props}>
-      <RouterProvider router={router} />
+      {showChild && <RouterProvider router={router} />}
     </SettingsContextProvider>
   );
 };

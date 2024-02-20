@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useState } from "react";
 import { Box, Button } from "../../../components";
 import { motion } from "framer-motion";
 import { footerContainer } from "./styles.css";
@@ -9,6 +9,7 @@ import {
   useSyncFooterHeight,
 } from "./context";
 import { useMountAnimation } from "../../../providers/mount-animation";
+import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
 
 const FooterButton = ({
   disabled,
@@ -76,7 +77,7 @@ export const FooterContent = () => {
 
   const [, setFooterHeight] = useFooterHeight();
 
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     !val && setFooterHeight(0);
   }, [setFooterHeight, val]);
 

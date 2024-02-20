@@ -24,7 +24,7 @@ import { MountAnimationProvider } from "./mount-animation";
 export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
-  const { apiKey, tracking } = useSettings();
+  const { apiKey, tracking, showQueryDevtools } = useSettings();
 
   APIManager.setApiKey(apiKey);
 
@@ -32,7 +32,7 @@ export const Providers = ({
     <StrictMode>
       <StakeKitQueryProvider>
         <QueryClientProvider client={queryClient}>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
           <WagmiProvider>
             <TrackingContextProvider tracking={tracking}>
