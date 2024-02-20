@@ -324,10 +324,9 @@ export const UnstakeOrPendingActionProvider = ({
   })
     .filter(
       (val) =>
-        lastStateParams.balanceId !== val.balanceId ||
-        lastStateParams.integrationId !== val.integrationId ||
-        lastStateParams.pendingActionType !==
-          currentParams.plain.pendingActionType
+        !!(lastStateParams.balanceId && lastStateParams.integrationId) &&
+        (lastStateParams.balanceId !== val.balanceId ||
+          lastStateParams.integrationId !== val.integrationId)
     )
     .ifJust(() => {
       setLastStateParams(currentParams.plain);
