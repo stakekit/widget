@@ -29,6 +29,7 @@ enableMocking()
         {...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
           tracking: { trackEvent: console.log, trackPageView: console.log },
         })}
+        showQueryDevtools={import.meta.env.VITE_SHOW_QUERY_DEVTOOLS === "true"}
       />
     );
   })

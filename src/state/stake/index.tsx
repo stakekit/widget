@@ -6,7 +6,6 @@ import {
   PropsWithChildren,
   useCallback,
   useContext,
-  useLayoutEffect,
   useMemo,
   useReducer,
 } from "react";
@@ -32,6 +31,7 @@ import { useTransactionTotalGas } from "../../hooks/use-transaction-total-gas";
 import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
+import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -313,13 +313,13 @@ const Provider = ({ children }: PropsWithChildren) => {
   /**
    * Set initial token balance
    */
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (initParams.isLoading) return;
 
     initialTokenBalanceToSet.ifJust(setInitialTokenBalance);
   }, [initParams.isLoading, initialTokenBalanceToSet, setInitialTokenBalance]);
 
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (initParams.isLoading) return;
 
     _selectedTokenBalance.ifNothing(() =>
@@ -336,7 +336,7 @@ const Provider = ({ children }: PropsWithChildren) => {
    * Reset selectedTokenBalance if we dont have initialTokenBalanceToSet
    * Case when we changed account, but we dont have available yields
    */
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (initParams.isLoading) return;
 
     initialTokenBalanceToSet.ifNothing(() =>
@@ -347,7 +347,7 @@ const Provider = ({ children }: PropsWithChildren) => {
   /**
    * Set initial validator
    */
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) => {
       if (!!selectedValidators.size) return;
 

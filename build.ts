@@ -119,11 +119,16 @@ const buildAsPackage = async () => {
         setup(build) {
           // Must not start with "/" or "./" or "../"
           build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
-            /\.css$/.test(args.path)
+            // needs to be inlined because it causes issue for nextjs page router
+            /\.css$/.test(args.path) ||
+            args.path === "@cassiozen/usestatemachine" ||
+            args.path === "cosmjs-types/cosmos/tx/v1beta1/tx" ||
+            args.path.startsWith("@stakekit") ||
+            args.path.startsWith("@bitget-wallet") ||
+            args.path.startsWith("@ledgerhq") ||
+            args.path.startsWith("@tronweb3")
               ? { external: false }
-              : args.path === "@cassiozen/usestatemachine" // needs to be inlined because it causes issue for nextjs@13
-                ? { external: false, namespace: "usestatemachine" }
-                : { external: true, path: args.path }
+              : { external: true, path: args.path }
           );
 
           build.onLoad({ filter: /\.css$/ }, async (args) => {

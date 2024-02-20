@@ -1,12 +1,12 @@
-import { useLayoutEffect } from "react";
 import { themes } from "../styles";
 import { usePrefersColorScheme } from "./use-color-scheme";
 import { MaybeDocument } from "../utils/maybe-document";
+import { useIsomorphicEffect } from "./use-isomorphic-effect";
 
 export const useToggleTheme = () => {
   const scheme = usePrefersColorScheme();
 
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (scheme === "dark") {
       MaybeDocument.ifJust((doc) => {
         doc.body.classList.remove(themes.light);

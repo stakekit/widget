@@ -19,6 +19,7 @@ export interface SettingsContextType {
     forceWalletConnectOnly?: boolean;
     __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
   };
+  showQueryDevtools?: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

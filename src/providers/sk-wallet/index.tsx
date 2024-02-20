@@ -4,7 +4,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useMemo,
 } from "react";
 import { sendTransaction as wagmiSendTransaction } from "@wagmi/core";
@@ -37,6 +36,7 @@ import { isEVMNetwork } from "../../domain";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { LedgerLiveConnector } from "../ledger/ledger-connector";
+import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -101,7 +101,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   /**
    * Network missmatch, disconnect
    */
-  useLayoutEffect(() => {
+  useIsomorphicEffect(() => {
     if (_isConnected && !isConnected) {
       disconnect();
     }
