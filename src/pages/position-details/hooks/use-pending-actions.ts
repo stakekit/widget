@@ -26,6 +26,7 @@ import {
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
+import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 
 export const usePendingActions = () => {
   const {
@@ -36,6 +37,10 @@ export const usePendingActions = () => {
     integrationData,
     positionBalancePrices,
   } = useUnstakeOrPendingActionState();
+
+  const pendingActionSelectValidatorMatchRef = useSavedRef(
+    usePendingActionSelectValidatorMatch()
+  );
 
   const pendingActionDispatch = useUnstakeOrPendingActionDispatch();
 
@@ -252,7 +257,9 @@ export const usePendingActions = () => {
 
   useUpdateEffect(() => {
     if (onPendingAction.isSuccess && onPendingAction.data) {
-      navigate("pending-action/review");
+      !!pendingActionSelectValidatorMatchRef.current
+        ? navigate("../pending-action/review", { relative: "route" })
+        : navigate("pending-action/review");
     }
   }, [onPendingAction.isSuccess, onPendingAction.data]);
 
