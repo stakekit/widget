@@ -39,10 +39,10 @@ import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-actio
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { Header } from "./components";
+import { Box, Header } from "./components";
 import { headerContainer } from "./pages/components/layout/styles.css";
 import { AnimationLayout } from "./navigation/containers/animation-layout";
-import { container } from "./style.css";
+import { appContainer, container } from "./style.css";
 import { FooterContent } from "./pages/components/footer-outlet";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useSKLocation } from "./providers/location";
@@ -216,7 +216,9 @@ export const SKApp = (props: SettingsContextType) => {
 
   return (
     <SettingsContextProvider {...props}>
-      {showChild && <RouterProvider router={router} />}
+      <Box className={appContainer}>
+        {showChild && <RouterProvider router={router} />}
+      </Box>
     </SettingsContextProvider>
   );
 };
