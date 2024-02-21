@@ -5,7 +5,6 @@ import { useCurrentLayout } from "../../pages/components/layout/layout-context";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { Box, Spinner } from "../../components";
-import { container } from "./styles.css";
 import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../providers/settings";
 import { useMountAnimation } from "../../providers/mount-animation";
@@ -28,7 +27,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
       : 0;
 
   return (
-    <Box className={container}>
+    <>
       {showApp ? (
         <motion.div
           layout="size"
@@ -51,6 +50,6 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           <Spinner />
         </Box>
       ) : null}
-    </Box>
+    </>
   );
 };
