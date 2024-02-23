@@ -1,6 +1,10 @@
 import { vars } from "../../../styles";
 
-export const Check = ({ color }: { color?: keyof (typeof vars)["color"] }) => (
+export const Check = ({
+  color,
+}: {
+  color?: Exclude<keyof (typeof vars)["color"], "connectKit">;
+}) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width={24}

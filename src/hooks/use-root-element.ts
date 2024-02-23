@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { rootSelector } from "../styles";
 import { MaybeDocument } from "../utils/maybe-document";
+import { rootSelector } from "../styles";
 
 export const useRootElement = () => {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(() =>

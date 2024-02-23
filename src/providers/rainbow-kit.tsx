@@ -1,18 +1,11 @@
 import {
-  darkTheme,
-  lightTheme,
-  Theme,
   RainbowKitProvider,
   Chain as RainbowKitChain,
   DisclaimerComponent,
   useChainModal,
 } from "@stakekit/rainbowkit";
-import merge from "lodash.merge";
 import { PropsWithChildren, useMemo } from "react";
 import { id, vars } from "../styles";
-import { RecursivePartial } from "../types";
-import { usePrefersColorScheme } from "../hooks";
-import { useSettings } from "./settings";
 import { Text } from "../components";
 import { useSKWallet } from "./sk-wallet";
 import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
@@ -20,20 +13,13 @@ import { useTranslation } from "react-i18next";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
+import { ConnectKitTheme, connectKitTheme } from "../styles/tokens/connect-kit";
+import { useRootElement } from "../hooks/use-root-element";
 
-const overrides: RecursivePartial<Theme> = {
-  colors: {
-    modalBackground: vars.color.modalBodyBackground,
-    profileForeground: vars.color.modalBodyBackground,
-  },
-  radii: {
-    actionButton: vars.borderRadius["2xl"],
-  },
-};
-
-const theme: Theme = {
-  lightMode: merge(lightTheme(), overrides),
-  darkMode: merge(darkTheme(), overrides),
+const finalTheme: ConnectKitTheme = {
+  ...connectKitTheme.lightMode,
+  colors: vars.color.connectKit, // ThemeWrapper applies final light/dark colors
+  radii: vars.borderRadius.connectKit,
 };
 
 export const RainbowKitProviderWithTheme = ({
@@ -42,10 +28,7 @@ export const RainbowKitProviderWithTheme = ({
 }: PropsWithChildren<{
   chains: RainbowKitChain[];
 }>) => {
-  const { connectKitForceTheme } = useSettings();
-
-  const scheme = usePrefersColorScheme();
-
+  const rootElement = useRootElement();
   const { connector } = useSKWallet();
 
   const disabledChains = useLedgerDisabledChain(connector);
@@ -59,6 +42,7 @@ export const RainbowKitProviderWithTheme = ({
   return (
     <RainbowKitProvider
       id={id}
+      dialogRoot={rootElement as Element}
       modalSize="compact"
       chains={chains}
       disabledChains={useMemo(
@@ -74,15 +58,7 @@ export const RainbowKitProviderWithTheme = ({
         onDisabledChainClick.mutate(disabledChain);
       }}
       appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
-      theme={
-        connectKitForceTheme
-          ? theme[connectKitForceTheme]
-          : scheme === "light"
-            ? theme.lightMode
-            : scheme === "dark"
-              ? theme.darkMode
-              : theme
-      }
+      theme={finalTheme}
     >
       <DisabledChainHandling />
       {children}

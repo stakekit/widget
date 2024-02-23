@@ -1,7 +1,7 @@
 import { vars } from "../../../styles";
 
 export const XIcon = (props: {
-  color?: keyof (typeof vars)["color"];
+  color?: Exclude<keyof (typeof vars)["color"], "connectKit">;
   hw?: number;
   strokeWidth?: number;
 }) => (

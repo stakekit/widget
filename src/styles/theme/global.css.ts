@@ -6,7 +6,6 @@ const reset = layer("reset");
 globalStyle(rootSelector, {
   "@layer": {
     [reset]: {
-      paddingLeft: "calc(100vw - 100%)", // trick to prevent scrollbar layout shift
       fontFamily: vars.font.body,
     },
   },

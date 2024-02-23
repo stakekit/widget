@@ -12,10 +12,13 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
+import { SKExternalProviders } from "../../domain/types/external-providers";
+import { createExternalProviderConnector } from "../external-provider";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
 const buildWagmiConfig = async (opts: {
+  externalProviders?: SKExternalProviders;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
 }): Promise<{
@@ -61,20 +64,27 @@ const buildWagmiConfig = async (opts: {
       const wagmiConfig = createConfig({
         autoConnect: true,
         connectors: connectorsForWallets([
-          ...(isLedgerDappBrowserProvider()
+          ...(opts.externalProviders
             ? [
-                ledgerLiveConnector({
-                  evm: evmConfig.evmChainsMap,
-                  cosmos: cosmosConfig.cosmosChainsMap,
-                  misc: miscConfig.miscChainsMap,
-                  substrate: substrateConfig.substrateChainsMap,
-                }),
+                createExternalProviderConnector(
+                  evmConfig.evmChains, // currently only EVM chains
+                  opts.externalProviders
+                ),
               ]
-            : Maybe.catMaybes([
-                evmConfig.connector,
-                cosmosConfig.connector,
-                ...miscConfig.connectors,
-              ])),
+            : isLedgerDappBrowserProvider()
+              ? [
+                  ledgerLiveConnector({
+                    evm: evmConfig.evmChainsMap,
+                    cosmos: cosmosConfig.cosmosChainsMap,
+                    misc: miscConfig.miscChainsMap,
+                    substrate: substrateConfig.substrateChainsMap,
+                  }),
+                ]
+              : Maybe.catMaybes([
+                  evmConfig.connector,
+                  cosmosConfig.connector,
+                  ...miscConfig.connectors,
+                ])),
           ...(typeof opts.customConnectors === "function"
             ? opts.customConnectors(chains)
             : opts.customConnectors ?? []),
@@ -106,7 +116,7 @@ export const useWagmiConfig = (): UseQueryResult<
   Awaited<ReturnType<BuildWagmiConfig>>,
   Error
 > => {
-  const { wagmi } = useSettings();
+  const { wagmi, externalProviders } = useSettings();
 
   return useQuery({
     staleTime,
@@ -115,6 +125,7 @@ export const useWagmiConfig = (): UseQueryResult<
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
+        externalProviders,
       }),
   });
 };

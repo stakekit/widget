@@ -5401,9 +5401,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/rainbowkit@npm:^1.3.9":
-  version: 1.3.9
-  resolution: "@stakekit/rainbowkit@npm:1.3.9"
+"@stakekit/rainbowkit@npm:^1.3.10":
+  version: 1.3.10
+  resolution: "@stakekit/rainbowkit@npm:1.3.10"
   dependencies:
     "@vanilla-extract/css": "npm:1.9.1"
     "@vanilla-extract/dynamic": "npm:2.0.2"
@@ -5418,7 +5418,7 @@ __metadata:
     react-dom: ">=17"
     viem: ~0.3.19 || ^1.0.0
     wagmi: ~1.0.1 || ~1.1.0 || ~1.2.0 || ~1.3.0 || ~1.4.0
-  checksum: 10/2d77aad15a6c42944057448a70fd07c484e3d4c964a4328f577a60381727cb722084385c4f9a6bad32fe2e17064e968ac78ebc86ff2226975cef8a4a90cc884a
+  checksum: 10/bb3b50851536eb87ee69ca948d988281be4d8ba7028b5c86c4b887bd178cbe2d591544813e8608bc35ca036835d59f7767a6c8e9b0ec2fc4a2a359bcf60da5ca
   languageName: node
   linkType: hard
 
@@ -5442,7 +5442,7 @@ __metadata:
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
     "@stakekit/api-hooks": "npm:^0.0.56"
     "@stakekit/common": "npm:^0.0.24"
-    "@stakekit/rainbowkit": "npm:^1.3.9"
+    "@stakekit/rainbowkit": "npm:^1.3.10"
     "@tanstack/react-query": "npm:^5.17.19"
     "@tanstack/react-query-devtools": "npm:^5.20.5"
     "@testing-library/jest-dom": "npm:^6.4.2"

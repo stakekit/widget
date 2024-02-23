@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { SKApp } from "./App";
-import { darkTheme } from "./styles";
+import { darkTheme } from "./styles/theme/themes";
 import "./standalone.styles.css";
 
 const enableMocking = async () => {
@@ -13,9 +13,8 @@ const enableMocking = async () => {
 
 enableMocking()
   .then(() => {
-    ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    ReactDOM.createRoot(document.getElementById("root")!).render(
       <SKApp
-        connectKitForceTheme="darkMode"
         theme={darkTheme}
         apiKey={import.meta.env.VITE_API_KEY}
         referralCheck={import.meta.env.VITE_ENABLE_REFERRAL_CHECK === "true"}

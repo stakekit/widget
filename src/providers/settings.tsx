@@ -4,11 +4,11 @@ import { PropsWithChildren, createContext, useContext, useMemo } from "react";
 import { Properties, TrackEventVal, TrackPageVal } from "./tracking";
 import { BuildWagmiConfig } from "./wagmi";
 import { config } from "../config";
+import { SKExternalProviders } from "../domain/types/external-providers";
 
 export interface SettingsContextType {
   apiKey: Parameters<(typeof APIManager)["configure"]>[0]["apiKey"];
   theme?: ThemeWrapperTheme;
-  connectKitForceTheme?: "lightMode" | "darkMode";
   referralCheck?: boolean;
   tracking?: {
     trackEvent: (event: TrackEventVal, properties?: Properties) => void;
@@ -20,6 +20,7 @@ export interface SettingsContextType {
     __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
   };
   showQueryDevtools?: boolean;
+  externalProviders?: SKExternalProviders;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

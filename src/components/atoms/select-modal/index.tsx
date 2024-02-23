@@ -108,7 +108,7 @@ const SelectModalWithoutState = ({
       {trigger}
 
       <Portal container={rootElement}>
-        <Box className={container}>
+        <Box className={container} data-select-modal>
           <Overlay onClick={() => setOpen(false)} className={overlay} />
 
           <Content data-testid="select-modal__container" className={content}>

@@ -15,6 +15,7 @@ import { useLedgerAccounts } from "./use-ledger-accounts";
 import {
   getCosmosChainWallet,
   isCosmosConnector,
+  isExternalProviderConnector,
   isLedgerLiveConnector,
   isTronConnector,
   wagmiNetworkToSKNetwork,
@@ -29,6 +30,7 @@ import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
 import {
+  externalProviderEVMTransactionCodec,
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
@@ -37,6 +39,7 @@ import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { LedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
+import { Hash } from "viem";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -214,6 +217,24 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               signedTx: JSON.stringify(val),
               broadcasted: false,
             }));
+        } else if (isExternalProviderConnector(conn)) {
+          return EitherAsync.liftEither(
+            Either.encase(() => JSON.parse(tx))
+              .chain((val) => externalProviderEVMTransactionCodec.decode(val))
+              .mapLeft((e) => {
+                console.log(e);
+                return new TransactionDecodeError();
+              })
+          ).chain((val) =>
+            conn.provider
+              .sendTransaction({
+                data: val.data,
+                gas: val.gasLimit,
+                to: val.to,
+                value: val.value ?? "0",
+              })
+              .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
+          );
         } else {
           /**
            * EVM connector

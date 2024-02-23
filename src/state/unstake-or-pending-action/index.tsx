@@ -315,6 +315,13 @@ export const UnstakeOrPendingActionProvider = ({
     [onPendingActionState?.data]
   );
 
+  Maybe.fromRecord({
+    integrationId: currentParams.integrationId,
+    balanceId: currentParams.balanceId,
+  })
+    .filter(() => !lastStateParams.balanceId || !lastStateParams.integrationId)
+    .ifJust(() => setLastStateParams(currentParams.plain));
+
   /**
    * Reset state and set new last params on navigation
    */
