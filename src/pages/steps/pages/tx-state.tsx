@@ -14,7 +14,7 @@ import {
   stepsContainer,
 } from "./styles.css";
 import { CheckSteps } from "../../../components/atoms/icons/check-steps";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
@@ -35,11 +35,11 @@ export const TxState = ({ txState, position, count }: Props) => {
   const stepsContainerRef = useRef<HTMLDivElement>();
   const stepsContainerHeight = useRef<number>();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setIsCollapsed(canCollapse);
   }, [canCollapse]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     stepsContainerHeight.current = stepsContainerRef.current?.scrollHeight;
   }, []);
 
@@ -77,9 +77,7 @@ export const TxState = ({ txState, position, count }: Props) => {
       <Box
         ref={stepsContainerRef}
         className={stepsContainer}
-        {...(stepsContainerHeight.current && {
-          style: { maxHeight: isCollapsed ? 0 : stepsContainerHeight.current },
-        })}
+        style={{ maxHeight: isCollapsed ? 0 : stepsContainerHeight.current }}
       >
         {txState.tx.status === "WAITING_FOR_SIGNATURE" ? (
           <>

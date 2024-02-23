@@ -127,14 +127,17 @@ export const useSteps = ({
 
   useRegisterFooterButton(
     useMemo(
-      () => ({
-        disabled: false,
-        isLoading: false,
-        label: t("shared.cancel"),
-        onClick: () => onClickRef.current(),
-        variant: "secondary",
-      }),
-      [t, onClickRef]
+      () =>
+        txStates.length
+          ? {
+              disabled: false,
+              isLoading: false,
+              label: t("shared.cancel"),
+              onClick: () => onClickRef.current(),
+              variant: "secondary",
+            }
+          : null,
+      [txStates.length, t, onClickRef]
     )
   );
 
