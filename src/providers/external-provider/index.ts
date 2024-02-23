@@ -41,9 +41,7 @@ export class ExternalProviderConnector extends Connector {
     };
   }
 
-  async disconnect() {
-    throw new Error("Not implemented");
-  }
+  async disconnect() {}
 
   async getAccount() {
     return (
@@ -69,9 +67,7 @@ export class ExternalProviderConnector extends Connector {
     return (await this.provider.getChainId()).unsafeCoerce();
   }
 
-  async getProvider() {
-    throw new Error("Not implemented");
-  }
+  async getProvider() {}
 
   getWalletClient = () => {
     throw new Error("Not implemented");
