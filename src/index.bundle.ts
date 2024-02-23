@@ -1,2 +1,2 @@
 export { renderSKWidget } from "./App";
-export { darkTheme, lightTheme } from "./styles";
+export { darkTheme, lightTheme } from "./styles/theme/themes";

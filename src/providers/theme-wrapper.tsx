@@ -1,9 +1,10 @@
 import { PropsWithChildren, useMemo } from "react";
-import { darkTheme, lightTheme, rootSelector, vars } from "../styles";
+import { rootSelector, vars } from "../styles";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
 import { RecursivePartial } from "../types";
 import { useSettings } from "./settings";
+import { darkTheme, lightTheme } from "../styles/theme/themes";
 
 export type ThemeWrapperTheme =
   | RecursivePartial<typeof lightTheme>

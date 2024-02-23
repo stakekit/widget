@@ -10,6 +10,7 @@ import {
   SubstrateChainsMap,
 } from "../../domain/types/chains";
 import { TronConnector } from "../misc/tron-connector";
+import { ExternalProviderConnector } from "../external-provider";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,
@@ -59,3 +60,8 @@ export const isLedgerLiveConnector = (
 export const isTronConnector = (
   connector: Connector
 ): connector is TronConnector => connector instanceof TronConnector;
+
+export const isExternalProviderConnector = (
+  connector: Connector
+): connector is ExternalProviderConnector =>
+  connector instanceof ExternalProviderConnector;

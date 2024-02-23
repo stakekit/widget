@@ -64,6 +64,9 @@ export const getNetworkLogo = (network: Networks) =>
 export const getTokenLogo = (tokenName: string) =>
   `https://assets.stakek.it/tokens/${tokenName}.svg`;
 
+export const getSKIcon = (iconName: string) =>
+  `https://assets.stakek.it/stakekit/${iconName}`;
+
 export const waitForMs = (ms: number) =>
   new Promise((res) => setTimeout(res, ms));
 

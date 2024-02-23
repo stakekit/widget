@@ -1,73 +1,5 @@
-export const colorsContract = {
-  white: "",
-  black: "",
-  transparent: "",
-  primary: "",
-  accent: "",
-  disabled: "",
-
-  text: "",
-  textMuted: "",
-  textDanger: "",
-
-  background: "",
-  backgroundMuted: "",
-
-  tokenSelectBackground: "",
-  tokenSelectHoverBackground: "",
-  tokenSelect: "",
-
-  skeletonLoaderBase: "",
-  skeletonLoaderHighlight: "",
-
-  tabBorder: "",
-
-  stakeSectionBackground: "",
-
-  selectValidatorMultiSelectedBackground: "",
-  selectValidatorMultiDefaultBackground: "",
-
-  positionsSectionBackgroundColor: "",
-  positionsSectionBorderColor: "",
-  positionsSectionDividerColor: "",
-  positionsClaimRewardsBackground: "",
-  positionsActionRequiredBackground: "",
-
-  modalOverlayBackground: "",
-  modalBodyBackground: "",
-
-  tooltipBackground: "",
-
-  primaryButtonColor: "",
-  primaryButtonBackground: "",
-  primaryButtonOutline: "",
-  primaryButtonHoverColor: "",
-  primaryButtonHoverBackground: "",
-  primaryButtonHoverOutline: "",
-  primaryButtonActiveColor: "",
-  primaryButtonActiveBackground: "",
-  primaryButtonActiveOutline: "",
-
-  secondaryButtonColor: "",
-  secondaryButtonBackground: "",
-  secondaryButtonOutline: "",
-  secondaryButtonHoverColor: "",
-  secondaryButtonHoverBackground: "",
-  secondaryButtonHoverOutline: "",
-  secondaryButtonActiveColor: "",
-  secondaryButtonActiveBackground: "",
-  secondaryButtonActiveOutline: "",
-
-  disabledButtonColor: "",
-  disabledButtonBackground: "",
-  disabledButtonOutline: "",
-  disabledButtonHoverColor: "",
-  disabledButtonHoverBackground: "",
-  disabledButtonHoverOutline: "",
-  disabledButtonActiveColor: "",
-  disabledButtonActiveBackground: "",
-  disabledButtonActiveOutline: "",
-};
+import { connectKitTheme } from "../connect-kit";
+import { colorsContract } from "./contract";
 
 export const lightThemeColors: typeof colorsContract = {
   white: "#fff",
@@ -94,6 +26,8 @@ export const lightThemeColors: typeof colorsContract = {
   skeletonLoaderHighlight: "#fff",
 
   stakeSectionBackground: "#F6F7F9",
+
+  dropdownBackground: "#F6F7F9",
 
   selectValidatorMultiSelectedBackground: "#2DC969",
   selectValidatorMultiDefaultBackground: "#fff",
@@ -138,6 +72,15 @@ export const lightThemeColors: typeof colorsContract = {
   disabledButtonActiveColor: "#FFFFFF",
   disabledButtonActiveBackground: "#E0E0E0",
   disabledButtonActiveOutline: "#E0E0E0",
+
+  connectKit: {
+    ...connectKitTheme.lightMode.colors,
+    modalBackground: "#FFFFFF",
+    profileForeground: "#FFFFFF",
+    profileAction: "#F6F7F9",
+    profileActionHover: "#E0E0E0",
+    modalBackdrop: "rgba(0, 0, 0, 0.5)",
+  },
 };
 
 export const darkThemeColors: typeof colorsContract = {
@@ -165,6 +108,8 @@ export const darkThemeColors: typeof colorsContract = {
   skeletonLoaderHighlight: "#2B2B2B",
 
   stakeSectionBackground: "#363636",
+
+  dropdownBackground: "#363636",
 
   selectValidatorMultiSelectedBackground: "#2DC969",
   selectValidatorMultiDefaultBackground: "#2B2B2B",
@@ -209,4 +154,13 @@ export const darkThemeColors: typeof colorsContract = {
   disabledButtonActiveColor: "#000000",
   disabledButtonActiveBackground: "#E0E0E0",
   disabledButtonActiveOutline: "#FFFFFF",
+
+  connectKit: {
+    ...connectKitTheme.darkMode.colors,
+    modalBackground: "#2B2B2B",
+    profileForeground: "#2B2B2B",
+    profileAction: "#363636",
+    profileActionHover: "#444444",
+    modalBackdrop: "rgba(0, 0, 0, 0.5)",
+  },
 };

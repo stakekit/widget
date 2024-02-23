@@ -6,9 +6,11 @@ import postcss from "postcss";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
-
 import { createRequire } from "module";
+
 const require = createRequire(import.meta.url);
+
+const isWatching = process.argv.includes("--watch");
 
 dotenv.config({ path: ".env.production.local" });
 
@@ -82,69 +84,74 @@ const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   alias: {
     stream: "stream-browserify",
   },
+  logLevel: "info",
 };
 
-const buildAsStandaloneApp = async () => {
-  await esbuild.build({
-    ...commonConfig,
-    target: "es2021",
-    entryPoints: ["src/index.bundle.ts"],
-    outdir: "dist/package/bundle",
-    assetNames: "assets/[name]",
-    minify: true,
-    external: ["crypto"],
-    platform: "browser",
-    plugins: commonPlugins,
-    loader: {
-      ".png": "file",
-    },
-  });
+const standaloneAppConfig: Parameters<(typeof esbuild)["build"]>[0] = {
+  ...commonConfig,
+  target: "es2021",
+  entryPoints: ["src/index.bundle.ts"],
+  outdir: "dist/package/bundle",
+  assetNames: "assets/[name]",
+  minify: true,
+  external: ["crypto"],
+  platform: "browser",
+  plugins: commonPlugins,
+  loader: {
+    ".png": "file",
+  },
 };
+
+const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
+  ...commonConfig,
+  banner: {
+    js: '"use client";',
+  },
+  entryPoints: ["src/index.package.ts", "src/polyfills.ts"],
+  assetNames: "bundle/assets/[name]",
+  splitting: true,
+  outdir: "dist/package",
+  platform: "browser",
+  plugins: [
+    ...commonPlugins,
+    {
+      name: "make-all-packages-external",
+      setup(build) {
+        // Must not start with "/" or "./" or "../"
+        build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
+          // needs to be inlined because it causes issue for nextjs page router
+          /\.css$/.test(args.path) ||
+          args.path === "@cassiozen/usestatemachine" ||
+          args.path === "cosmjs-types/cosmos/tx/v1beta1/tx" ||
+          args.path.startsWith("@stakekit") ||
+          args.path.startsWith("@bitget-wallet") ||
+          args.path.startsWith("@ledgerhq") ||
+          args.path.startsWith("@tronweb3")
+            ? { external: false }
+            : { external: true, path: args.path }
+        );
+
+        build.onLoad({ filter: /\.css$/ }, async (args) => {
+          const css = await fs.promises.readFile(args.path, {
+            encoding: "utf-8",
+          });
+
+          return { contents: css, loader: "css" };
+        });
+      },
+    },
+  ],
+  loader: {
+    ".png": "dataurl",
+  },
+};
+
+const buildAsStandaloneApp = () => esbuild.build(standaloneAppConfig);
 
 const buildAsPackage = async () => {
-  await esbuild.build({
-    ...commonConfig,
-    banner: {
-      js: '"use client";',
-    },
-    entryPoints: ["src/index.package.ts", "src/polyfills.ts"],
-    assetNames: "bundle/assets/[name]",
-    splitting: true,
-    outdir: "dist/package",
-    platform: "browser",
-    plugins: [
-      ...commonPlugins,
-      {
-        name: "make-all-packages-external",
-        setup(build) {
-          // Must not start with "/" or "./" or "../"
-          build.onResolve({ filter: /^[^./]|^\.[^./]|^\.\.[^/]/ }, (args) =>
-            // needs to be inlined because it causes issue for nextjs page router
-            /\.css$/.test(args.path) ||
-            args.path === "@cassiozen/usestatemachine" ||
-            args.path === "cosmjs-types/cosmos/tx/v1beta1/tx" ||
-            args.path.startsWith("@stakekit") ||
-            args.path.startsWith("@bitget-wallet") ||
-            args.path.startsWith("@ledgerhq") ||
-            args.path.startsWith("@tronweb3")
-              ? { external: false }
-              : { external: true, path: args.path }
-          );
-
-          build.onLoad({ filter: /\.css$/ }, async (args) => {
-            const css = await fs.promises.readFile(args.path, {
-              encoding: "utf-8",
-            });
-
-            return { contents: css, loader: "css" };
-          });
-        },
-      },
-    ],
-    loader: {
-      ".png": "dataurl",
-    },
-  });
+  return isWatching
+    ? (await esbuild.context(packageConfig)).watch()
+    : esbuild.build(packageConfig);
 };
 
 const main = async () => {

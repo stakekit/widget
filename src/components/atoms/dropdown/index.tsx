@@ -36,7 +36,7 @@ export function Dropdown<T extends { label: string; value: string }>({
           alignItems="center"
           gap="2"
           borderStyle="solid"
-          borderColor={isError ? "textDanger" : "background"}
+          borderColor={isError ? "textDanger" : "transparent"}
           borderWidth={1}
         >
           <Text>{selectedOption?.label ?? placeholder}</Text>

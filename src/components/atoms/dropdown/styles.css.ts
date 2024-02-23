@@ -3,7 +3,7 @@ import { atoms, vars } from "../../../styles";
 
 export const trigger = style([
   atoms({
-    background: "backgroundMuted",
+    background: "dropdownBackground",
     px: "3",
     py: "2",
   }),
@@ -13,7 +13,7 @@ export const trigger = style([
 export const dropdownContent = style([
   { borderRadius: "6px", overflow: "hidden" },
   atoms({
-    background: "backgroundMuted",
+    background: "dropdownBackground",
   }),
 ]);
 

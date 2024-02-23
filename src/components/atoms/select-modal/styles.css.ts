@@ -50,8 +50,8 @@ export const content = style([
     background: "modalBodyBackground",
   }),
   {
-    borderTopLeftRadius: vars.borderRadius["2xl"],
-    borderTopRightRadius: vars.borderRadius["2xl"],
+    borderTopLeftRadius: vars.borderRadius.baseContract["2xl"],
+    borderTopRightRadius: vars.borderRadius.baseContract["2xl"],
 
     scrollbarWidth: "none",
     "::-webkit-scrollbar": {
@@ -65,8 +65,8 @@ export const content = style([
     "@media": {
       [minMediaQuery("tablet")]: {
         bottom: "auto",
-        borderBottomLeftRadius: vars.borderRadius["2xl"],
-        borderBottomRightRadius: vars.borderRadius["2xl"],
+        borderBottomLeftRadius: vars.borderRadius.baseContract["2xl"],
+        borderBottomRightRadius: vars.borderRadius.baseContract["2xl"],
       },
     },
   },

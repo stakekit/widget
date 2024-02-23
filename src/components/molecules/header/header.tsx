@@ -15,14 +15,16 @@ import {
 } from "./styles.css";
 import classNames from "clsx";
 import { isLedgerDappBrowserProvider } from "../../../utils";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { useWagmiConfig } from "../../../providers/wagmi";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 import { motion } from "framer-motion";
-
-const showDisconnect = isLedgerDappBrowserProvider();
+import {
+  isExternalProviderConnector,
+  isLedgerLiveConnector,
+} from "../../../providers/sk-wallet/utils";
 
 export const Header = () => {
   const location = useLocation();
@@ -30,7 +32,15 @@ export const Header = () => {
 
   const { containerRef } = useSyncHeaderHeight();
 
-  const { isConnected, isConnecting, address } = useSKWallet();
+  const { isConnected, isConnecting, address, connector } = useSKWallet();
+
+  const showDisconnect = useMemo(
+    () =>
+      connector &&
+      !isExternalProviderConnector(connector) &&
+      !isLedgerLiveConnector(connector),
+    [connector]
+  );
 
   const wagmiConfig = useWagmiConfig();
 
@@ -62,7 +72,12 @@ export const Header = () => {
     <Box ref={containerRef}>
       <Box paddingTop="4" paddingBottom="1">
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box hw="7">
+          <Box
+            hw="7"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
             {showBack ? (
               <Box
                 as="button"
@@ -78,11 +93,15 @@ export const Header = () => {
             )}
           </Box>
 
-          {!showDisconnect && (
-            <Box display="flex" alignItems="center" justifyContent="center">
-              <Box as="button" hw="5" onClick={onXPress}>
-                <XIcon />
-              </Box>
+          {showDisconnect && (
+            <Box
+              as="button"
+              onClick={onXPress}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <XIcon hw={24} />
             </Box>
           )}
         </Box>
