@@ -1,6 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { ComponentProps, PropsWithChildren, StrictMode } from "react";
+import {
+  ComponentProps,
+  PropsWithChildren,
+  StrictMode,
+  useLayoutEffect,
+} from "react";
 import { queryClient } from "../services/query-client";
 import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
@@ -27,6 +32,10 @@ export const Providers = ({
   const { apiKey, tracking, showQueryDevtools } = useSettings();
 
   APIManager.setApiKey(apiKey);
+
+  useLayoutEffect(() => {
+    queryClient.resetQueries();
+  }, []);
 
   return (
     <StrictMode>
