@@ -76,6 +76,7 @@ export class ExternalProvider {
                 return res.transactionHash;
               },
               shouldRetry: (_, retryCount) => retryCount < 8,
+              retryWaitForMs: () => 7000,
             })
           )
           .mapLeft((e) => {
