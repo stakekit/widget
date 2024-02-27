@@ -7,13 +7,15 @@ import { getConfig as getSubstrateConfig } from "../substrate/config";
 import { WalletList, connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { config } from "../../config";
-import { UseQueryResult, useQuery } from "@tanstack/react-query";
+import { QueryClient, UseQueryResult, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { SKExternalProviders } from "../../domain/types/external-providers";
 import { createExternalProviderConnector } from "../external-provider";
+import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import { useSKQueryClient } from "../query-client";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -21,6 +23,8 @@ const buildWagmiConfig = async (opts: {
   externalProviders?: SKExternalProviders;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
+  queryClient: QueryClient;
+  isLedgerLive: boolean;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -31,26 +35,45 @@ const buildWagmiConfig = async (opts: {
 }> => {
   return EitherAsync.fromPromise(() =>
     Promise.all([
-      getEvmConfig({ forceWalletConnectOnly: opts.forceWalletConnectOnly }),
-      getCosmosConfig({ forceWalletConnectOnly: opts.forceWalletConnectOnly }),
-      getMiscConfig(),
-      getSubstrateConfig(),
-    ]).then(([evm, cosmos, misc, substrate]) =>
+      getEvmConfig({
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+        queryClient: opts.queryClient,
+      }),
+      getCosmosConfig({
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+        queryClient: opts.queryClient,
+      }),
+      getMiscConfig({ queryClient: opts.queryClient }),
+      getSubstrateConfig({ queryClient: opts.queryClient }),
+      getInitialQueryParams({
+        isLedgerLive: opts.isLedgerLive,
+        queryClient: opts.queryClient,
+      }),
+    ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
       evm.chain((e) =>
         cosmos.chain((c) =>
           misc.chain((m) =>
-            substrate.map((s) => ({
-              evmConfig: e,
-              cosmosConfig: c,
-              miscConfig: m,
-              substrateConfig: s,
-            }))
+            substrate.chain((s) =>
+              queryParams.map((qp) => ({
+                evmConfig: e,
+                cosmosConfig: c,
+                miscConfig: m,
+                substrateConfig: s,
+                queryParams: qp,
+              }))
+            )
           )
         )
       )
     )
   ).caseOf({
-    Right: ({ evmConfig, cosmosConfig, miscConfig, substrateConfig }) => {
+    Right: ({
+      evmConfig,
+      cosmosConfig,
+      miscConfig,
+      substrateConfig,
+      queryParams,
+    }) => {
       const { chains, publicClient, webSocketPublicClient } = configureChains(
         [
           ...evmConfig.evmChains,
@@ -74,10 +97,13 @@ const buildWagmiConfig = async (opts: {
             : isLedgerDappBrowserProvider()
               ? [
                   ledgerLiveConnector({
-                    evm: evmConfig.evmChainsMap,
-                    cosmos: cosmosConfig.cosmosChainsMap,
-                    misc: miscConfig.miscChainsMap,
-                    substrate: substrateConfig.substrateChainsMap,
+                    queryParams,
+                    enabledChainsMap: {
+                      evm: evmConfig.evmChainsMap,
+                      cosmos: cosmosConfig.cosmosChainsMap,
+                      misc: miscConfig.miscChainsMap,
+                      substrate: substrateConfig.substrateChainsMap,
+                    },
                   }),
                 ]
               : Maybe.catMaybes([
@@ -118,6 +144,8 @@ export const useWagmiConfig = (): UseQueryResult<
 > => {
   const { wagmi, externalProviders } = useSettings();
 
+  const queryClient = useSKQueryClient();
+
   return useQuery({
     staleTime,
     queryKey,
@@ -126,6 +154,8 @@ export const useWagmiConfig = (): UseQueryResult<
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
         externalProviders,
+        queryClient,
+        isLedgerLive: isLedgerDappBrowserProvider(),
       }),
   });
 };

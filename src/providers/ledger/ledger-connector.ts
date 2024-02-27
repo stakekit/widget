@@ -1,7 +1,7 @@
 import { Connector } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { Address } from "viem";
-import { Chain, Wallet } from "@stakekit/rainbowkit";
+import { Chain } from "@stakekit/rainbowkit";
 import {
   Account,
   Currency,
@@ -18,7 +18,7 @@ import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
-import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import { QueryParamsResult } from "../../hooks/use-init-query-params";
 import { ledger } from "../../assets/images/ledger";
 
 export class LedgerLiveConnector extends Connector {
@@ -48,7 +48,10 @@ export class LedgerLiveConnector extends Connector {
 
   disabledChains: Chain[] = [];
 
-  constructor(private enabledChainsMap: EnabledChainsMap) {
+  constructor(
+    private enabledChainsMap: EnabledChainsMap,
+    private queryParams: QueryParamsResult
+  ) {
     super({ options: {} });
 
     if (!isLedgerDappBrowserProvider()) {
@@ -181,14 +184,13 @@ export class LedgerLiveConnector extends Connector {
       };
     }
 
-    const initNetwork = (await getInitialQueryParams({ isLedgerLive: true }))
-      .toMaybe()
-      .chainNullable((v) => v.network);
-
-    const accountWithChain = initNetwork
-      .chain((val) =>
-        List.find((v) => v.chainItem.skChainName === val, accountsWithChain)
-      )
+    const accountWithChain = List.find(
+      (v) =>
+        (!this.queryParams.accountId ||
+          v.account.id === this.queryParams.accountId) &&
+        v.chainItem.skChainName === this.queryParams.network,
+      accountsWithChain
+    )
       .altLazy(() => List.head(accountsWithChain))
       .toEither(new Error("Account not found"))
       .unsafeCoerce();
@@ -328,22 +330,26 @@ export class LedgerLiveConnector extends Connector {
   }
 }
 
-const ledgerLive = (enabledChainsMap: EnabledChainsMap): Wallet => {
-  return {
-    id: "ledgerLive",
-    name: "Ledger Live",
-    iconUrl: ledger,
-    iconBackground: "#fff",
-    hidden: () => !isLedgerDappBrowserProvider(),
-    createConnector: () => ({
-      connector: new LedgerLiveConnector(enabledChainsMap),
-    }),
-  };
-};
-
-export const ledgerLiveConnector = (enabledChainsMap: EnabledChainsMap) => ({
+export const ledgerLiveConnector = ({
+  enabledChainsMap,
+  queryParams,
+}: {
+  enabledChainsMap: EnabledChainsMap;
+  queryParams: QueryParamsResult;
+}) => ({
   groupName: "Ledger Live",
-  wallets: [ledgerLive(enabledChainsMap)],
+  wallets: [
+    {
+      id: "ledgerLive",
+      name: "Ledger Live",
+      iconUrl: ledger,
+      iconBackground: "#fff",
+      hidden: () => !isLedgerDappBrowserProvider(),
+      createConnector: () => ({
+        connector: new LedgerLiveConnector(enabledChainsMap, queryParams),
+      }),
+    },
+  ],
 });
 
 type ChainItem = {

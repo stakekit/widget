@@ -10,6 +10,7 @@ import {
 } from "./use-yield-opportunity";
 import { config } from "../../config";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useSKQueryClient } from "../../providers/query-client";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
@@ -22,6 +23,8 @@ export const useMultiYields = (
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
+  const queryClient = useSKQueryClient();
+
   return useQuery<YieldDto[], Error>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
@@ -31,7 +34,8 @@ export const useMultiYields = (
       (
         await eitherAsyncPool(
           yieldIds.map(
-            (y) => () => getYieldOpportunity({ isLedgerLive, yieldId: y })
+            (y) => () =>
+              getYieldOpportunity({ isLedgerLive, yieldId: y, queryClient })
           ),
           5
         )()
@@ -46,6 +50,7 @@ export const useMultiYields = (
               setYieldOpportunityInCache({
                 isLedgerLive,
                 yieldDto: y,
+                queryClient,
               })
             );
           })

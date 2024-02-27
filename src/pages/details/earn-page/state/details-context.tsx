@@ -56,6 +56,7 @@ import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMutation } from "wagmi";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { useSKQueryClient } from "../../../../providers/query-client";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -297,13 +298,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onTokenSearch: SelectModalProps["onSearch"] = (val) =>
     setTokenSearch(val);
 
+  const queryClient = useSKQueryClient();
+
   const onTokenBalanceSelect = (tokenBalance: TokenBalanceScanResponseDto) =>
     appDispatch({
       type: "tokenBalance/select",
       data: {
         tokenBalance,
         initYield: List.head(tokenBalance.availableYields).chain((yId) =>
-          getYieldOpportunityFromCache({ yieldId: yId, isLedgerLive })
+          getYieldOpportunityFromCache({
+            yieldId: yId,
+            isLedgerLive,
+            queryClient,
+          })
         ),
       },
     });

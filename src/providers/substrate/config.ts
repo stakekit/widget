@@ -5,17 +5,17 @@ import {
 } from "../../utils";
 import { SubstrateChainsMap } from "../../domain/types/chains";
 import { SubstrateNetworks } from "@stakekit/common";
-import { queryClient } from "../../services/query-client";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { config } from "../../config";
 import { EitherAsync } from "purify-ts";
 import { polkadot } from "./chains";
+import { QueryClient } from "@tanstack/react-query";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Infinity;
 
-const queryFn = async () =>
-  getEnabledNetworks().caseOf({
+const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
+  getEnabledNetworks(queryClient).caseOf({
     Right: (networks) => {
       const substrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(
@@ -37,9 +37,13 @@ const queryFn = async () =>
     Left: (l) => Promise.reject(l),
   });
 
-export const getConfig = () =>
+export const getConfig = ({ queryClient }: { queryClient: QueryClient }) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({ staleTime, queryKey, queryFn })
+    queryClient.fetchQuery({
+      staleTime,
+      queryKey,
+      queryFn: () => queryFn({ queryClient }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get substrate config");

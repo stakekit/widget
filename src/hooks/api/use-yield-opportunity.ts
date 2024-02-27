@@ -1,8 +1,7 @@
 import { YieldDto, yieldYieldOpportunity } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import { withRequestErrorRetry } from "../../common/utils";
 
 type Params = {
@@ -31,9 +30,11 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
   });
 };
 
-export const getYieldOpportunity = (params: Params) =>
+export const getYieldOpportunity = (
+  params: Params & { queryClient: QueryClient }
+) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({
+    params.queryClient.fetchQuery({
       queryKey: getKey(params),
       staleTime,
       queryFn: () => queryFn(params),
@@ -56,17 +57,21 @@ const fn = ({ isLedgerLive, yieldId }: Params) =>
     return new Error("Could not get yield opportunity");
   });
 
-export const getYieldOpportunityFromCache = (params: Params) =>
+export const getYieldOpportunityFromCache = (
+  params: Params & { queryClient: QueryClient }
+) =>
   Maybe.fromNullable(
-    queryClient.getQueryData<YieldDto | undefined>(getKey(params))
+    params.queryClient.getQueryData<YieldDto | undefined>(getKey(params))
   );
 
 export const setYieldOpportunityInCache = ({
   yieldDto,
   isLedgerLive,
+  queryClient,
 }: {
   yieldDto: YieldDto;
   isLedgerLive: boolean;
+  queryClient: QueryClient;
 }) => {
   queryClient.setQueryData(
     getKey({ isLedgerLive, yieldId: yieldDto.id }),
