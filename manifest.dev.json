@@ -1,7 +1,7 @@
 {
   "id": "stakekit",
   "name": "StakeKit",
-  "url": "http://192.168.1.80:5173/?embed=true&theme=dark&lang=en&name=StakeKit&accountId=js%3A2%3Atron%3ATSZ1Ak9ZV3NjmVwsTz3q2snc7XGQEJVSED%3A&yieldId=tron-native-staking&account=%5Bobject+Object%5D",
+  "url": "http://localhost:5173/?embed=true",
   "homepageUrl": "https://stakek.it/",
   "platform": ["all"],
   "apiVersion": "^2.0.0",
