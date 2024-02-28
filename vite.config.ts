@@ -14,7 +14,7 @@ declare module "vite" {
 // https://vitejs.dev/config/
 export default defineConfig({
   test: {
-    environment: "jsdom", // fails with jsdom, https://github.com/vitest-dev/vitest/issues/4043
+    environment: "jsdom",
     include: ["tests/**/*.test.{ts,tsx}"],
     setupFiles: [path.resolve(__dirname, "tests/utils/setup.ts")],
     server: {

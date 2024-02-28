@@ -58,4 +58,26 @@ if (typeof window !== "undefined") {
     writable: false,
     value: vi.fn(),
   });
+
+  class JSDOMCompatibleTextEncoder extends TextEncoder {
+    encode(input: string) {
+      if (typeof input !== "string") {
+        throw new TypeError("`input` must be a string");
+      }
+
+      const decodedURI = decodeURIComponent(encodeURIComponent(input));
+      const arr = new Uint8Array(decodedURI.length);
+      const chars = decodedURI.split("");
+      for (let i = 0; i < chars.length; i++) {
+        arr[i] = decodedURI[i].charCodeAt(0);
+      }
+      return arr;
+    }
+  }
+
+  // https://github.com/vitest-dev/vitest/issues/4043
+  Object.defineProperty(global, "TextEncoder", {
+    value: JSDOMCompatibleTextEncoder,
+    writable: true,
+  });
 }
