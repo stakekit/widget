@@ -25,17 +25,19 @@ import {
 import { EvmNetworks } from "@stakekit/common";
 import { EvmChainsMap } from "../../domain/types/chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
 import { WalletList } from "@stakekit/rainbowkit";
 import { viction } from "./chains";
+import { QueryClient } from "@tanstack/react-query";
 
 const queryFn = async ({
+  queryClient,
   forceWalletConnectOnly,
 }: {
+  queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks().caseOf({
+  getEnabledNetworks(queryClient).caseOf({
     Right: (networks) => {
       const evmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<EvmChainsMap>({
@@ -153,12 +155,12 @@ const queryFn = async ({
     Left: (l) => Promise.reject(l),
   });
 
-export const getConfig = (...opts: Parameters<typeof queryFn>) =>
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({
+    opts.queryClient.fetchQuery({
       staleTime: Infinity,
       queryKey: [config.appPrefix, "evm-config"],
-      queryFn: () => queryFn(...opts),
+      queryFn: () => queryFn(opts),
     })
   ).mapLeft((e) => {
     console.log(e);

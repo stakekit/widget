@@ -29,8 +29,8 @@ import {
   sKCosmosNetworksToRegistryIds,
 } from "./chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { queryClient } from "../../services/query-client";
 import { EitherAsync, Maybe } from "purify-ts";
+import { QueryClient } from "@tanstack/react-query";
 
 type FilteredCosmosChainsMap = Partial<CosmosChainsMap>;
 
@@ -274,11 +274,13 @@ const queryKey = [config.appPrefix, "cosmos-config"];
 const staleTime = Infinity;
 
 const queryFn = async ({
+  queryClient,
   forceWalletConnectOnly,
 }: {
+  queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks()
+  getEnabledNetworks(queryClient)
     .chain((networks) => {
       const cosmosChainsMap: FilteredCosmosChainsMap =
         typeSafeObjectFromEntries(
@@ -366,12 +368,12 @@ const queryFn = async ({
       Left: (l) => Promise.reject(l),
     });
 
-export const getConfig = (...opts: Parameters<typeof queryFn>) =>
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({
+    opts.queryClient.fetchQuery({
       staleTime,
       queryKey,
-      queryFn: () => queryFn(...opts),
+      queryFn: () => queryFn(opts),
     })
   ).mapLeft((e) => {
     console.log(e);

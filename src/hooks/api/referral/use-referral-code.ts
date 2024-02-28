@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { APIManager } from "@stakekit/api-hooks";
-import { queryClient } from "../../../services/query-client";
 import { isAxiosError } from "axios";
 import { useSettings } from "../../../providers/settings";
 import { useGetLatestReferralCode } from "./use-get-latest-referral-code";
 import { setStorageItem } from "../../../services/local-storage";
+import { useSKQueryClient } from "../../../providers/query-client";
 
 const queryKey = ["referral-code"];
 
@@ -29,8 +29,10 @@ export const useReferralCode = () => {
   });
 };
 
-export const useValidateReferralCode = () =>
-  useMutation({
+export const useValidateReferralCode = () => {
+  const queryClient = useSKQueryClient();
+
+  return useMutation({
     mutationFn: async (referralCode: string) =>
       (await fn(referralCode)).unsafeCoerce(),
     onSuccess: (data) => {
@@ -38,6 +40,7 @@ export const useValidateReferralCode = () =>
       queryClient.setQueryData(queryKey, data);
     },
   });
+};
 
 const fn = (referralCode: string) =>
   EitherAsync.liftEither(

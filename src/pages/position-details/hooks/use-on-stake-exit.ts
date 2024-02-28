@@ -5,9 +5,12 @@ import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-a
 import { checkGasAmount } from "../../../common/check-gas-amount";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../types";
+import { useSettings } from "../../../providers/settings";
 
 export const useOnStakeExit = () => {
   const stakeExitAndTxsConstruct = useStakeExitAndTxsConstruct();
+
+  const { disableGasCheck = false } = useSettings();
 
   return useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
@@ -21,6 +24,7 @@ export const useOnStakeExit = () => {
         await fn({
           stakeRequestDto,
           stakeExitAndTxsConstruct: stakeExitAndTxsConstruct.mutateAsync,
+          disableGasCheck,
         })
       ).unsafeCoerce(),
   });
@@ -29,11 +33,13 @@ export const useOnStakeExit = () => {
 const fn = ({
   stakeRequestDto,
   stakeExitAndTxsConstruct,
+  disableGasCheck,
 }: {
   stakeRequestDto: ReturnType<typeof useStakeExitRequestDto>;
   stakeExitAndTxsConstruct: ReturnType<
     typeof useStakeExitAndTxsConstruct
   >["mutateAsync"];
+  disableGasCheck: boolean;
 }) =>
   EitherAsync.liftEither(
     stakeRequestDto.toEither(new Error("Stake request not ready"))
@@ -54,14 +60,17 @@ const fn = ({
         .mapLeft(() => new Error("Stake exit and txs construct failed"))
     )
     .chain(({ stakeRequestDto, stakeExitRes, transactionConstructRes }) =>
-      checkGasAmount({
-        addressWithTokenDto: {
-          address: stakeRequestDto.dto.addresses.address,
-          additionalAddresses:
-            stakeRequestDto.dto.addresses.additionalAddresses,
-          network: stakeRequestDto.gasFeeToken.network,
-          tokenAddress: stakeRequestDto.gasFeeToken.address,
-        },
-        transactionConstructRes,
-      }).map(() => ({ stakeExitRes, transactionConstructRes }))
+      (disableGasCheck
+        ? EitherAsync.liftEither(Right(null))
+        : checkGasAmount({
+            addressWithTokenDto: {
+              address: stakeRequestDto.dto.addresses.address,
+              additionalAddresses:
+                stakeRequestDto.dto.addresses.additionalAddresses,
+              network: stakeRequestDto.gasFeeToken.network,
+              tokenAddress: stakeRequestDto.gasFeeToken.address,
+            },
+            transactionConstructRes,
+          })
+      ).map(() => ({ stakeExitRes, transactionConstructRes }))
     );

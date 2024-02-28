@@ -11,6 +11,7 @@ import {
 import { YieldBalanceDto } from "@stakekit/api-hooks";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
+import { useSettings } from "../../../providers/settings";
 
 const mutationKey = ["on-pending-action"];
 
@@ -31,6 +32,8 @@ const OnPendingActionContext = createContext<
 export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
   const pendingActionAndTxsConstruct = usePendingActionAndTxsConstruct();
 
+  const { disableGasCheck = false } = useSettings();
+
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
@@ -48,6 +51,7 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
           ...args,
           pendingActionAndTxsConstruct:
             pendingActionAndTxsConstruct.mutateAsync,
+          disableGasCheck,
         })
       ).unsafeCoerce(),
   });
@@ -75,6 +79,7 @@ const fn = ({
   pendingActionRequestDto,
   yieldBalance,
   pendingActionAndTxsConstruct,
+  disableGasCheck,
 }: {
   pendingActionRequestDto: GetEitherRight<
     ReturnType<typeof preparePendingActionRequestDto>
@@ -83,6 +88,7 @@ const fn = ({
   pendingActionAndTxsConstruct: ReturnType<
     typeof usePendingActionAndTxsConstruct
   >["mutateAsync"];
+  disableGasCheck: boolean;
 }) =>
   getAverageGasMode(pendingActionRequestDto.gasFeeToken.network)
     .chainLeft(async () => Right(null))
@@ -102,15 +108,18 @@ const fn = ({
         .map((res) => ({ ...val, ...res }))
     )
     .chain(({ pendingActionRes, transactionConstructRes }) =>
-      checkGasAmount({
-        addressWithTokenDto: {
-          address: pendingActionRequestDto.address,
-          additionalAddresses: pendingActionRequestDto.additionalAddresses,
-          network: pendingActionRequestDto.gasFeeToken.network,
-          tokenAddress: pendingActionRequestDto.gasFeeToken.address,
-        },
-        transactionConstructRes,
-      }).map(() => ({
+      (disableGasCheck
+        ? EitherAsync.liftEither(Right(null))
+        : checkGasAmount({
+            addressWithTokenDto: {
+              address: pendingActionRequestDto.address,
+              additionalAddresses: pendingActionRequestDto.additionalAddresses,
+              network: pendingActionRequestDto.gasFeeToken.network,
+              tokenAddress: pendingActionRequestDto.gasFeeToken.address,
+            },
+            transactionConstructRes,
+          })
+      ).map(() => ({
         pendingActionRes,
         transactionConstructRes,
         yieldBalance,

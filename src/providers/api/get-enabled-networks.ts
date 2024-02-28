@@ -1,9 +1,8 @@
-import { Networks, yieldGetMyNetworks } from "@stakekit/api-hooks";
+import { Networks, QueryClient, yieldGetMyNetworks } from "@stakekit/api-hooks";
 import { EitherAsync } from "purify-ts";
-import { queryClient } from "../../services/query-client";
 import { config } from "../../config";
 
-export const getEnabledNetworks = () =>
+export const getEnabledNetworks = (queryClient: QueryClient) =>
   EitherAsync(() =>
     queryClient.fetchQuery({
       staleTime: Infinity,

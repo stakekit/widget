@@ -1,19 +1,19 @@
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { MiscChainsMap } from "../../domain/types/chains";
 import { MiscNetworks } from "@stakekit/common";
-import { queryClient } from "../../services/query-client";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { config } from "../../config";
 import { EitherAsync, Maybe } from "purify-ts";
 import { near, solana, tezos, tron } from "./chains";
 import { WalletList } from "@stakekit/rainbowkit";
 import { tronConnector } from "./tron-connector";
+import { QueryClient } from "@tanstack/react-query";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Infinity;
 
-const queryFn = async () =>
-  getEnabledNetworks().caseOf({
+const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
+  getEnabledNetworks(queryClient).caseOf({
     Right: (networks) => {
       const miscChainsMap: Partial<MiscChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<MiscChainsMap>({
@@ -53,9 +53,13 @@ const queryFn = async () =>
     Left: (l) => Promise.reject(l),
   });
 
-export const getConfig = () =>
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({ staleTime, queryKey, queryFn })
+    opts.queryClient.fetchQuery({
+      staleTime,
+      queryKey,
+      queryFn: () => queryFn(opts),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get misc config");

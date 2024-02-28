@@ -35,10 +35,12 @@ export const withRequestErrorRetry = <
   fn,
   retryTimes = 2,
   shouldRetry,
+  retryWaitForMs,
 }: {
   fn: T;
   retryTimes?: number;
   shouldRetry?: (error: unknown, retryCount: number) => boolean;
+  retryWaitForMs?: () => number;
 }) => {
   let retryCount = 0;
 
@@ -54,7 +56,7 @@ export const withRequestErrorRetry = <
           _shouldRetry({ error: err, retryCount, retryTimes })
         ) {
           try {
-            await waitForMs(2 ** (retryCount + 1) * 1000);
+            await waitForMs(retryWaitForMs?.() ?? 2 ** (retryCount + 1) * 1000);
 
             return await fn();
           } catch (newError) {

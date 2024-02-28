@@ -1,13 +1,6 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import {
-  ComponentProps,
-  PropsWithChildren,
-  StrictMode,
-  useLayoutEffect,
-} from "react";
-import { queryClient } from "../services/query-client";
-import { APIManager, StakeKitQueryProvider } from "@stakekit/api-hooks";
+import { ComponentProps, PropsWithChildren, StrictMode } from "react";
+import { StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
@@ -25,22 +18,17 @@ import {
   FooterHeightProvider,
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
+import { SKQueryClientContextProvider } from "./query-client";
 
 export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
-  const { apiKey, tracking, showQueryDevtools } = useSettings();
-
-  APIManager.setApiKey(apiKey);
-
-  useLayoutEffect(() => {
-    queryClient.resetQueries();
-  }, []);
+  const { tracking, showQueryDevtools } = useSettings();
 
   return (
     <StrictMode>
       <StakeKitQueryProvider>
-        <QueryClientProvider client={queryClient}>
+        <SKQueryClientContextProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
           <WagmiProvider>
@@ -72,7 +60,7 @@ export const Providers = ({
               </SKWalletProvider>
             </TrackingContextProvider>
           </WagmiProvider>
-        </QueryClientProvider>
+        </SKQueryClientContextProvider>
       </StakeKitQueryProvider>
     </StrictMode>
   );

@@ -2,7 +2,6 @@ import { describe, it, beforeAll, afterEach, afterAll } from "vitest";
 import { server } from "./mocks/server";
 import { rendersInitialPage } from "./use-cases/renders-initial-page";
 import { selectOpportunity } from "./use-cases/select-opportunity";
-import { queryClient } from "../src/services/query-client";
 import { APIManager } from "@stakekit/api-hooks";
 import { stakingFlow } from "./use-cases/staking-flow";
 import { referralFlow } from "./use-cases/referral-flow";
@@ -11,7 +10,6 @@ describe("<SKApp />", () => {
   beforeAll(() => server.listen());
   afterEach(() => {
     APIManager.getQueryClient()?.clear();
-    queryClient.clear();
     server.resetHandlers();
     localStorage.clear();
   });

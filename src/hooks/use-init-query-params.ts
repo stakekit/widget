@@ -1,48 +1,52 @@
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import { useSKWallet } from "../providers/sk-wallet";
 import { EitherAsync, Maybe, Right } from "purify-ts";
 import { isSupportedChain } from "../domain/types/chains";
 import { MaybeWindow } from "../utils/maybe-window";
 import { typeSafeObjectFromEntries } from "../utils";
 import { getYieldOpportunity } from "../hooks/api/use-yield-opportunity";
-import { queryClient } from "../services/query-client";
 import { YieldDto } from "@stakekit/api-hooks";
+import { useSKQueryClient } from "../providers/query-client";
 
 const queryKey = ["init-params"];
 const staleTime = 0;
 const cacheTime = 0;
 
-export const useInitQueryParams = <T = Result>(opts?: {
-  select: (val: Result) => T;
+export const useInitQueryParams = <T = QueryParamsResult>(opts?: {
+  select: (val: QueryParamsResult) => T;
 }) => {
   const { isLedgerLive } = useSKWallet();
+
+  const queryClient = useSKQueryClient();
 
   return useQuery({
     queryKey,
     staleTime,
     gcTime: cacheTime,
-    queryFn: () => queryFn({ isLedgerLive }),
+    queryFn: () => queryFn({ isLedgerLive, queryClient }),
     select: opts?.select,
   });
 };
 
-export const getInitialQueryParams = (...params: Parameters<typeof fn>) =>
+export const getInitialQueryParams = (
+  params: Parameters<typeof fn>[0] & { queryClient: QueryClient }
+) =>
   EitherAsync(() =>
-    queryClient.fetchQuery({
+    params.queryClient.fetchQuery({
       queryKey,
       staleTime,
       gcTime: cacheTime,
-      queryFn: () => queryFn(...params),
+      queryFn: () => queryFn(params),
     })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get init query params");
   });
 
-const queryFn = async (...params: Parameters<typeof fn>) =>
-  (await fn(...params)).unsafeCoerce();
+const queryFn = async (params: Parameters<typeof fn>[0]) =>
+  (await fn(params)).unsafeCoerce();
 
-type Result = {
+export type QueryParamsResult = {
   network: string | null;
   token: string | null;
   yieldId: string | null;
@@ -50,13 +54,16 @@ type Result = {
   pendingaction: string | null;
   yieldData: YieldDto | null;
   referralCode: string | null;
+  accountId: string | null;
 };
 
 const fn = ({
   isLedgerLive,
+  queryClient,
 }: {
   isLedgerLive: boolean;
-}): EitherAsync<Error, Result> =>
+  queryClient: QueryClient;
+}): EitherAsync<Error, QueryParamsResult> =>
   EitherAsync.liftEither(
     MaybeWindow.map((w) => new URL(w.location.href))
       .map(
@@ -68,6 +75,7 @@ const fn = ({
             ["validator", url.searchParams.get("validator")],
             ["pendingaction", url.searchParams.get("pendingaction")],
             ["referralCode", url.searchParams.get("ref")],
+            ["accountId", url.searchParams.get("accountId")],
           ] as const
       )
       .map((val) =>
@@ -85,18 +93,20 @@ const fn = ({
         )
       )
       .toEither(new Error("missing window"))
-  ).chain<Error, Result>((val) => {
+  ).chain<Error, QueryParamsResult>((val) => {
     const yId = val.yieldId;
 
     if (yId && (!val.network || !val.token)) {
-      return getYieldOpportunity({ isLedgerLive, yieldId: yId }).map(
-        (yieldData) => ({
-          ...val,
-          network: yieldData.token.network,
-          token: yieldData.token.symbol,
-          yieldData,
-        })
-      );
+      return getYieldOpportunity({
+        isLedgerLive,
+        yieldId: yId,
+        queryClient,
+      }).map((yieldData) => ({
+        ...val,
+        network: yieldData.token.network,
+        token: yieldData.token.symbol,
+        yieldData,
+      }));
     }
 
     return EitherAsync.liftEither(Right({ ...val, yieldData: null }));

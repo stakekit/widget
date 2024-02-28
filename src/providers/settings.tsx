@@ -21,6 +21,7 @@ export interface SettingsContextType {
   };
   showQueryDevtools?: boolean;
   externalProviders?: SKExternalProviders;
+  disableGasCheck?: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

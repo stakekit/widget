@@ -54,6 +54,7 @@ import {
   UnstakeOrPendingActionReviewPage,
 } from "./pages/review";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
+import { APIManager } from "@stakekit/api-hooks";
 
 const Widget = () => {
   useToggleTheme();
@@ -213,6 +214,8 @@ export const SKApp = (props: SettingsContextType) => {
   const [showChild, setShowChild] = useState(false);
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
+
+  APIManager.setApiKey(props.apiKey);
 
   return (
     <SettingsContextProvider {...props}>

@@ -13,13 +13,14 @@ import { getAdditionalAddresses } from "../../providers/sk-wallet/use-additional
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { useQuery } from "@tanstack/react-query";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
 import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../domain";
+import { useSKQueryClient } from "../../providers/query-client";
 
 export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected, address } = useSKWallet();
@@ -27,6 +28,8 @@ export const usePendingActionDeepLink = () => {
   const wagmiConfig = useWagmiConfig();
 
   const onPendingAction = useOnPendingAction();
+
+  const queryClient = useSKQueryClient();
 
   return useQuery({
     staleTime: Infinity,
@@ -44,6 +47,7 @@ export const usePendingActionDeepLink = () => {
             isLedgerLive,
             onPendingAction: onPendingAction.mutateAsync,
             wagmiConfig,
+            queryClient,
           })
         )
       ).unsafeCoerce(),
@@ -54,14 +58,16 @@ const fn = ({
   isLedgerLive,
   onPendingAction,
   wagmiConfig,
+  queryClient,
 }: {
   isLedgerLive: boolean;
   onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
   wagmiConfig: NonNullable<
     ReturnType<typeof useWagmiConfig>["data"]
   >["wagmiConfig"];
+  queryClient: QueryClient;
 }) =>
-  getInitialQueryParams({ isLedgerLive }).chain((val) => {
+  getInitialQueryParams({ isLedgerLive, queryClient }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
         (
@@ -140,9 +146,11 @@ const fn = ({
           })
         )
           .chain((val) =>
-            getYieldOpportunity({ isLedgerLive, yieldId: data.yieldId }).map(
-              (yieldOp) => ({ ...val, yieldOp })
-            )
+            getYieldOpportunity({
+              isLedgerLive,
+              yieldId: data.yieldId,
+              queryClient,
+            }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<
             Error,

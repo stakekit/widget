@@ -1,7 +1,7 @@
 import {
   TokenDto,
   YieldDto,
-  getYieldControllerYieldOpportunityMock,
+  getYieldControllerYieldOpportunityResponseMock,
 } from "@stakekit/api-hooks";
 import { server } from "../mocks/server";
 import { HttpResponse, delay, http } from "msw";
@@ -38,7 +38,7 @@ export const selectOpportunity = async () => {
       const integrationId = info.params.integrationId as string;
       await delay();
 
-      return Just(getYieldControllerYieldOpportunityMock())
+      return Just(getYieldControllerYieldOpportunityResponseMock())
         .map((mock) => {
           const rewardToken = (() => {
             switch (integrationId) {

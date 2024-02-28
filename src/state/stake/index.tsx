@@ -32,6 +32,7 @@ import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use
 import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
+import { useSKQueryClient } from "../../providers/query-client";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -276,6 +277,8 @@ const Provider = ({ children }: PropsWithChildren) => {
     }
   });
 
+  const queryClient = useSKQueryClient();
+
   const setInitialTokenBalance = useCallback(
     (tokenBalance: TokenBalanceScanResponseDto) => {
       dispatch({
@@ -302,12 +305,13 @@ const Provider = ({ children }: PropsWithChildren) => {
               getYieldOpportunityFromCache({
                 yieldId: yId,
                 isLedgerLive,
+                queryClient,
               })
             ),
         },
       });
     },
-    [initParams.data, isLedgerLive]
+    [initParams.data, isLedgerLive, queryClient]
   );
 
   /**
