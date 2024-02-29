@@ -69,13 +69,13 @@ export class ExternalProvider {
               fn: async () => {
                 const res = await this.#provider.eth_getTransactionReceipt(val);
 
-                if (!res.blockHash || !res.transactionHash) {
+                if (!res || !res.blockHash || !res.transactionHash) {
                   throw new Error("Transaction not found");
                 }
 
                 return res.transactionHash;
               },
-              shouldRetry: (_, retryCount) => retryCount < 8,
+              shouldRetry: (_, retryCount) => retryCount < 120,
               retryWaitForMs: () => 7000,
             })
           )
@@ -145,7 +145,7 @@ interface SafeWalletProvider {
   ): Promise<null>;
   eth_getTransactionReceipt(
     txHash: string
-  ): Promise<SafeWalletTransactionReceipt>;
+  ): Promise<SafeWalletTransactionReceipt | null>;
 }
 
 export type SKExternalProviders = {

@@ -22,3 +22,5 @@ export const inactiveContainer = style([
   }),
   { padding: "2px 6px" },
 ]);
+
+export const noWrap = style({ whiteSpace: "nowrap" });
