@@ -68,3 +68,14 @@ export const getGasFeeInUSD = ({
         `${formatNumber(val.gas)} ${val.yieldDto.metadata.gasFeeToken.symbol} ($${formatNumber(val.gasFeeInUSD)})`,
       ""
     );
+
+export const dollarFormatter = (
+  language: string,
+  opts?: Intl.NumberFormatOptions
+) =>
+  new Intl.NumberFormat(language, {
+    style: "currency",
+    currency: "USD",
+    currencyDisplay: "narrowSymbol",
+    ...opts,
+  });

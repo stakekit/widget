@@ -144,7 +144,11 @@
     "validators_other": "All validators",
     "validators_view_all": "View all",
     "validators_inactive": "Inactive",
-    "validators_jailed": "Jailed"
+    "validators_jailed": "Jailed",
+    "validators_staked_balance": "Validator stake",
+    "validators_voting_power": "Voting power",
+    "validators_address": "Address",
+    "validators_comission": "Comission"
   },
   "review": {
     "estimated_reward": "Estimated rewards",

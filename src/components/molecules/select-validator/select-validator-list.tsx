@@ -19,11 +19,17 @@ import { PreferredIcon } from "../../atoms/icons/preferred";
 import {
   inactiveContainer,
   modalItemNameContainer,
+  noWrap,
   validatorVirtuosoContainer,
 } from "./styles.css";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { vars } from "../../../styles";
-import { noWrap } from "../../../pages/details/positions-page/components/styles.css";
+import {
+  ValidatorAddress,
+  ValidatorComission,
+  ValidatorStakedBalance,
+  ValidatorVotingPower,
+} from "./meta-info";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 
@@ -117,92 +123,103 @@ export const SelectValidatorList = ({
         return (
           <SelectModalItemContainer>
             <SelectModalItem onItemClick={_onItemClick}>
-              {multiSelect && (
-                <Box
-                  background={
-                    itemSelected
-                      ? "selectValidatorMultiSelectedBackground"
-                      : "selectValidatorMultiDefaultBackground"
-                  }
-                  hw="8"
-                  as="button"
-                  borderRadius="full"
-                  marginRight="2"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  {selectedValidators.has(item.address) ? (
-                    <CheckSteps hw={16} color={vars.color.white} />
-                  ) : (
-                    <></>
+              <Box flex={1} display="flex" flexDirection="column" gap="3">
+                <Box display="flex" justifyContent="center" alignItems="center">
+                  {multiSelect && (
+                    <Box
+                      background={
+                        itemSelected
+                          ? "selectValidatorMultiSelectedBackground"
+                          : "selectValidatorMultiDefaultBackground"
+                      }
+                      hw="8"
+                      as="button"
+                      borderRadius="full"
+                      marginRight="2"
+                      display="flex"
+                      justifyContent="center"
+                      alignItems="center"
+                    >
+                      {selectedValidators.has(item.address) ? (
+                        <CheckSteps hw={16} color={vars.color.white} />
+                      ) : (
+                        <></>
+                      )}
+                    </Box>
                   )}
-                </Box>
-              )}
 
-              <Image
-                containerProps={{ hw: "9" }}
-                imageProps={{ borderRadius: "full" }}
-                src={item.image}
-                fallback={
-                  <ImageFallback
-                    name={item.name || item.address}
-                    tokenLogoHw="9"
-                    textVariant={{ type: "white", weight: "bold" }}
+                  <Image
+                    containerProps={{ hw: "9" }}
+                    imageProps={{ borderRadius: "full" }}
+                    src={item.image}
+                    fallback={
+                      <ImageFallback
+                        name={item.name || item.address}
+                        tokenLogoHw="9"
+                        textVariant={{ type: "white", weight: "bold" }}
+                      />
+                    }
                   />
-                }
-              />
 
-              <Box
-                display="flex"
-                flexDirection="column"
-                flex={1}
-                marginLeft="2"
-              >
-                <Box
-                  display="flex"
-                  justifyContent="space-between"
-                  alignItems="center"
-                >
-                  <Box className={modalItemNameContainer}>
-                    <Text variant={{ weight: "bold" }}>
-                      {item.name ?? item.address}
-                    </Text>
+                  <Box
+                    display="flex"
+                    flexDirection="column"
+                    flex={1}
+                    marginLeft="2"
+                  >
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                    >
+                      <Box className={modalItemNameContainer}>
+                        <Text variant={{ weight: "bold" }}>
+                          {item.name ?? item.address}
+                        </Text>
 
-                    {isPreferred && (
-                      <Box marginLeft="1" display="flex">
-                        <PreferredIcon />
+                        {isPreferred && (
+                          <Box marginLeft="1" display="flex">
+                            <PreferredIcon />
+                          </Box>
+                        )}
+
+                        {status !== "active" && (
+                          <Box marginLeft="1" className={inactiveContainer}>
+                            <Text
+                              variant={{
+                                type: "white",
+                                weight: "medium",
+                                size: "small",
+                              }}
+                              className={noWrap}
+                            >
+                              {t(
+                                status === "jailed"
+                                  ? "details.validators_jailed"
+                                  : "details.validators_inactive"
+                              )}
+                            </Text>
+                          </Box>
+                        )}
                       </Box>
-                    )}
 
-                    {status !== "active" && (
-                      <Box marginLeft="1" className={inactiveContainer}>
-                        <Text
-                          variant={{
-                            type: "white",
-                            weight: "medium",
-                            size: "small",
-                          }}
-                          className={noWrap}
-                        >
-                          {t(
-                            status === "jailed"
-                              ? "details.validators_jailed"
-                              : "details.validators_inactive"
-                          )}
+                      <Box>
+                        <Text variant={{ size: "large" }}>
+                          {getRewardRateFormatted({
+                            rewardRate: item.apr,
+                            rewardType: selectedStake.rewardType,
+                          })}
                         </Text>
                       </Box>
-                    )}
+                    </Box>
                   </Box>
+                </Box>
 
-                  <Box>
-                    <Text>
-                      {getRewardRateFormatted({
-                        rewardRate: item.apr,
-                        rewardType: selectedStake.rewardType,
-                      })}
-                    </Text>
-                  </Box>
+                <Box display="flex" flexDirection="column" gap="1">
+                  <ValidatorStakedBalance stakedBalance={item.stakedBalance} />
+                  <ValidatorVotingPower votingPower={item.votingPower} />
+                  <ValidatorComission comisssion={item.commission} />
+                  <ValidatorAddress address={item.address} />
                 </Box>
               </Box>
             </SelectModalItem>

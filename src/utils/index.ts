@@ -84,9 +84,12 @@ export const typeSafeObjectEntries = <T extends Record<PropertyKey, unknown>>(
   return Object.entries(obj) as { [K in keyof T]: [K, T[K]] }[keyof T][];
 };
 
-export function formatAddress(address: string): string {
-  const leadingChars = 4;
-  const trailingChars = 4;
+export function formatAddress(
+  address: string,
+  opts?: { leadingChars: number; trailingChars: number }
+): string {
+  const leadingChars = opts?.leadingChars ?? 4;
+  const trailingChars = opts?.trailingChars ?? 4;
 
   return address.length < leadingChars + trailingChars
     ? address
