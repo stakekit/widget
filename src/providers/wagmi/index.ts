@@ -12,10 +12,10 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { SKExternalProviders } from "../../domain/types/external-providers";
 import { createExternalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
+import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 

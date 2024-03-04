@@ -52,10 +52,3 @@ export const unsignedTronTransactionCodec = Codec.custom<TronTx>({
     return value;
   },
 });
-
-export const externalProviderEVMTransactionCodec = Codec.interface({
-  data: string,
-  gasLimit: string,
-  to: string,
-  value: optional(string),
-});

@@ -1,11 +1,9 @@
 import { WalletList } from "@stakekit/rainbowkit";
 import { Address, Chain, Connector } from "wagmi";
-import {
-  ExternalProvider,
-  SKExternalProviders,
-} from "../../domain/types/external-providers";
+import { ExternalProvider } from "../../domain/types/external-providers";
 import { EitherAsync, List } from "purify-ts";
 import { getSKIcon } from "../../utils";
+import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
 
 export class ExternalProviderConnector extends Connector {
   id = "external-provider-connector";

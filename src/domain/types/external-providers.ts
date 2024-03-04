@@ -1,9 +1,12 @@
 import { EitherAsync, Left } from "purify-ts";
 import { getSKIcon } from "../../utils";
 import { withRequestErrorRetry } from "../../common/utils";
+import { transactionGetTransactionStatusByNetworkAndHash } from "@stakekit/api-hooks";
+import { SupportedSKChains } from "./chains";
+import { SKExternalProviders, SafeWalletAppInfo } from "./wallets/safe-wallet";
 
 export class ExternalProvider {
-  safeWalletAppInfo: SafeWalletAppInfo = {
+  #safeWalletAppInfo: SafeWalletAppInfo = {
     description: "StakeKit",
     iconUrl: getSKIcon("sk-icon_320x320.png"),
     id: 0,
@@ -11,12 +14,14 @@ export class ExternalProvider {
     url: "https://stakek.it",
   };
 
-  #provider: SKExternalProviders["provider"];
-  #type: SKExternalProviders["type"];
+  variant: SKExternalProviders;
+
+  get shouldMultiSend() {
+    return this.variant.type === "safe_wallet";
+  }
 
   constructor(variant: SKExternalProviders) {
-    this.#provider = variant.provider;
-    this.#type = variant.type;
+    this.variant = variant;
   }
 
   private invalidProviderType() {
@@ -24,9 +29,9 @@ export class ExternalProvider {
   }
 
   getAccount(): EitherAsync<Error, string> {
-    switch (this.#type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.#provider.eth_accounts())
+        return EitherAsync(() => this.variant.provider.eth_accounts())
           .map((accounts) => accounts[0])
           .mapLeft((e) => {
             console.error(e);
@@ -39,9 +44,9 @@ export class ExternalProvider {
   }
 
   getChainId(): EitherAsync<Error, number> {
-    switch (this.#type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.#provider.eth_chainId())
+        return EitherAsync(() => this.variant.provider.eth_chainId())
           .mapLeft((e) => {
             console.error(e);
             return new Error("Failed to get chain id");
@@ -53,36 +58,68 @@ export class ExternalProvider {
     }
   }
 
-  sendTransaction(tx: {
-    gas: string | number;
-    to: string;
-    value: string;
-    data: string;
+  sendMultipleTransactions({
+    network,
+    txs,
+  }: {
+    network: SupportedSKChains;
+    txs: {
+      gas: string | number;
+      to: string;
+      value: string;
+      data: string;
+    }[];
   }): EitherAsync<Error, string> {
-    switch (this.#type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.#provider.eth_sendTransaction(tx, this.safeWalletAppInfo)
-        )
-          .chain((val) =>
-            withRequestErrorRetry({
-              fn: async () => {
-                const res = await this.#provider.eth_getTransactionReceipt(val);
-
-                if (!res || !res.blockHash || !res.transactionHash) {
-                  throw new Error("Transaction not found");
-                }
-
-                return res.transactionHash;
-              },
-              shouldRetry: (_, retryCount) => retryCount < 120,
-              retryWaitForMs: () => 7000,
-            })
+          this.variant.createTransactionBatch(
+            txs.map((tx) => ({ ...tx, operation: 0 }))
           )
+        )
           .mapLeft((e) => {
-            console.log(e);
-            return new Error("Failed to send transaction");
-          });
+            console.error(e);
+            return new Error("Failed to create transaction batch");
+          })
+          .chain((tx) =>
+            EitherAsync(() =>
+              this.variant.provider.eth_sendTransaction(
+                { ...tx, gas: 0 },
+                this.#safeWalletAppInfo
+              )
+            )
+              .chain((val) =>
+                withRequestErrorRetry({
+                  fn: async () => {
+                    const [safeRes, skRes] = await Promise.all([
+                      this.variant.provider.eth_getTransactionReceipt(val),
+                      transactionGetTransactionStatusByNetworkAndHash(
+                        network,
+                        val
+                      ),
+                    ]);
+
+                    console.log({ safeRes, skRes });
+
+                    if (
+                      safeRes?.transactionHash ||
+                      (skRes.status === "CONFIRMED" && skRes.hash)
+                    ) {
+                      return safeRes?.transactionHash || skRes.hash;
+                    }
+
+                    throw new Error("Transaction not found");
+                  },
+                  // TODO: add cancelation!!!
+                  shouldRetry: (_, retryCount) => retryCount < 120,
+                  retryWaitForMs: () => 7000,
+                })
+              )
+              .mapLeft((e) => {
+                console.log(e);
+                return new Error("Failed to send transaction");
+              })
+          );
       }
       default:
         return this.invalidProviderType();
@@ -90,12 +127,12 @@ export class ExternalProvider {
   }
 
   switchChain({ chainId }: { chainId: string }): EitherAsync<Error, void> {
-    switch (this.#type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.#provider.wallet_switchEthereumChain(
+          this.variant.provider.wallet_switchEthereumChain(
             { chainId },
-            this.safeWalletAppInfo
+            this.#safeWalletAppInfo
           )
         )
           .mapLeft((e) => {
@@ -109,46 +146,3 @@ export class ExternalProvider {
     }
   }
 }
-
-/**
- * Safe Wallet provider
- */
-type SafeWalletAppInfo = {
-  id: number;
-  name: string;
-  description: string;
-  url: string;
-  iconUrl: string;
-};
-
-export type SafeWalletTransactionReceipt = {
-  hash?: string;
-  transactionHash?: string;
-  blockHash?: string;
-};
-
-interface SafeWalletProvider {
-  eth_accounts(): Promise<string[]>;
-  eth_chainId(): Promise<string>;
-  eth_sendTransaction(
-    tx: {
-      gas: string | number;
-      to: string;
-      value: string;
-      data: string;
-    },
-    appInfo: SafeWalletAppInfo
-  ): Promise<string>;
-  wallet_switchEthereumChain(
-    { chainId }: { chainId: string },
-    appInfo: SafeWalletAppInfo
-  ): Promise<null>;
-  eth_getTransactionReceipt(
-    txHash: string
-  ): Promise<SafeWalletTransactionReceipt | null>;
-}
-
-export type SKExternalProviders = {
-  type: "safe_wallet";
-  provider: SafeWalletProvider;
-};
