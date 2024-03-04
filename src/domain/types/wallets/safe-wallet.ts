@@ -69,8 +69,8 @@ type Transaction = TransactionBase & TransactionOptions;
 export type SKExternalProviders = {
   type: "safe_wallet";
   provider: SafeWalletProvider;
-  createTransactionBatch(
-    transactions: MetaTransactionData[],
-    transactionOptions?: TransactionOptions
-  ): Promise<Transaction>;
+  batchTransactions(args: {
+    transactions: MetaTransactionData[];
+    onlyCalls?: boolean;
+  }): Promise<Transaction>;
 };
