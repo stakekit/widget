@@ -73,9 +73,10 @@ export class ExternalProvider {
     switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.variant.createTransactionBatch(
-            txs.map((tx) => ({ ...tx, operation: 0 }))
-          )
+          this.variant.batchTransactions({
+            transactions: txs.map((tx) => ({ ...tx, operation: 0 })),
+            onlyCalls: true, // execute only
+          })
         )
           .mapLeft((e) => {
             console.error(e);
