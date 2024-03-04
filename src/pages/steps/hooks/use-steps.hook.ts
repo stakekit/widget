@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
@@ -28,21 +28,18 @@ export const useSteps = ({
     onDone,
   });
 
-  const [machine, send] = useStepsMachine();
-
   const sessionExtracted = useMemo(() => session.extractNullable(), [session]);
+
+  const [machine, send] = useStepsMachine(sessionExtracted);
 
   /**
    *
    * @summary Start sign + check tx on mount
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!sessionExtracted) return;
 
-    send({
-      type: "START",
-      session: sessionExtracted,
-    });
+    send({ type: "START" });
   }, [sessionExtracted, send]);
 
   /**
@@ -181,7 +178,6 @@ const getState = ({
 
     switch (machineState) {
       case "idle":
-        return TxStateEnum.SIGN_IDLE;
       case "signLoading":
         return TxStateEnum.SIGN_LOADING;
       case "signError":
@@ -197,6 +193,8 @@ const getState = ({
         return TxStateEnum.CHECK_TX_STATUS_LOADING;
       case "done":
         return TxStateEnum.CHECK_TX_STATUS_SUCCESS;
+      case "disabled":
+        return TxStateEnum.SIGN_IDLE;
     }
   })();
 

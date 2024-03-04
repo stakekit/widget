@@ -20,6 +20,12 @@ export type SKWallet = {
     TransactionDecodeError | SendTransactionError,
     { signedTx: string; broadcasted: boolean }
   >;
+  signMultipleTransactions: (args: {
+    txs: NonNullable<TransactionDto["unsignedTransaction"]>[];
+  }) => EitherAsync<
+    TransactionDecodeError | SendTransactionError,
+    { signedTx: string; broadcasted: boolean }
+  >;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;

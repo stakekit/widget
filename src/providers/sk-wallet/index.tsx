@@ -22,6 +22,7 @@ import {
 } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import {
+  NotSupportedFlowError,
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
@@ -30,7 +31,6 @@ import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
 import {
-  externalProviderEVMTransactionCodec,
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
@@ -110,14 +110,20 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     }
   }, [_isConnected, disconnect, isConnected]);
 
-  const signTransaction = useCallback<SKWallet["signTransaction"]>(
-    ({ tx }) =>
+  const safeConnectorWithNetwork = useMemo(
+    () =>
       EitherAsync.liftEither(
         !isConnected || !network || !connector
           ? Left(new Error("No wallet connected"))
           : Right({ conn: connector, network })
-      ).chain<
-        TransactionDecodeError | SendTransactionError,
+      ),
+    [connector, isConnected, network]
+  );
+
+  const signTransaction = useCallback<SKWallet["signTransaction"]>(
+    ({ tx }) =>
+      safeConnectorWithNetwork.chain<
+        TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn, network }) => {
         if (isLedgerLiveConnector(conn)) {
@@ -218,23 +224,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               broadcasted: false,
             }));
         } else if (isExternalProviderConnector(conn)) {
-          return EitherAsync.liftEither(
-            Either.encase(() => JSON.parse(tx))
-              .chain((val) => externalProviderEVMTransactionCodec.decode(val))
-              .mapLeft((e) => {
-                console.log(e);
-                return new TransactionDecodeError();
-              })
-          ).chain((val) =>
-            conn.provider
-              .sendTransaction({
-                data: val.data,
-                gas: val.gasLimit,
-                to: val.to,
-                value: val.value ?? "0",
-              })
-              .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
-          );
+          /**
+           * Use multisend flow for now
+           */
+          return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
         } else {
           /**
            * EVM connector
@@ -263,7 +256,46 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           );
         }
       }),
-    [isConnected, network, connector]
+    [safeConnectorWithNetwork]
+  );
+
+  const signMultipleTransactions = useCallback<
+    SKWallet["signMultipleTransactions"]
+  >(
+    ({ txs }) =>
+      safeConnectorWithNetwork.chain<
+        TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
+        { signedTx: string; broadcasted: boolean }
+      >(({ conn, network }) => {
+        if (isExternalProviderConnector(conn)) {
+          return EitherAsync.liftEither(
+            Either.sequence(
+              txs.map((tx) =>
+                Either.encase(() => JSON.parse(tx))
+                  .chain((val) => unsignedEVMTransactionCodec.decode(val))
+                  .mapLeft((e) => {
+                    console.log(e);
+                    return new TransactionDecodeError();
+                  })
+              )
+            ).map((val) =>
+              val.map((v) => ({
+                data: v.data,
+                gas: 0,
+                to: v.to,
+                value: v.value?.toString() ?? "0",
+              }))
+            )
+          ).chain((val) =>
+            conn.provider
+              .sendMultipleTransactions({ network, txs: val })
+              .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
+          );
+        } else {
+          return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
+        }
+      }),
+    [safeConnectorWithNetwork]
   );
 
   const onLedgerAccountChange = useCallback(
@@ -276,7 +308,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const value = useMemo((): SKWallet => {
-    const common = { disconnect, signTransaction };
+    const common = { disconnect, signTransaction, signMultipleTransactions };
 
     if (isConnected && !isConnecting) {
       const isLedgerLive = isLedgerLiveConnector(connector);
@@ -324,6 +356,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     network,
     onLedgerAccountChange,
     signTransaction,
+    signMultipleTransactions,
   ]);
 
   return (

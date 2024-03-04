@@ -1,6 +1,9 @@
 export class SendTransactionError extends Error {
   name = "SendTransactionError";
 }
+export class NotSupportedFlowError extends Error {
+  name = "NotSupportedFlowError";
+}
 export class SignError extends Error {
   txId: string;
   network: string;

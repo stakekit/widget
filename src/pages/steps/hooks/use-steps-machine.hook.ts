@@ -13,18 +13,18 @@ import {
 import {
   ActionDto,
   TransactionDto,
-  transactionConstruct,
   transactionGetTransaction,
   transactionGetTransactionStatusFromId,
   transactionSubmit,
   transactionSubmitHash,
 } from "@stakekit/api-hooks";
 import { isTxError } from "../../../domain";
-import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { withRequestErrorRetry } from "../../../common/utils";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { isAxiosError } from "axios";
+import { useMemo } from "react";
+import { isExternalProviderConnector } from "../../../providers/sk-wallet/utils";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -49,13 +49,68 @@ export type TxState = {
   meta: TxMeta;
 };
 
-export const useStepsMachine = () => {
-  const { signTransaction, isLedgerLive } = useSKWallet();
+export const useStepsMachine = (session: ActionDto | null) => {
+  const { signTransaction, signMultipleTransactions, connector } =
+    useSKWallet();
 
   const trackEvent = useTrackEvent();
 
+  const shouldMultiSend = useMemo(
+    () =>
+      connector &&
+      isExternalProviderConnector(connector) &&
+      connector.provider.shouldMultiSend,
+    [connector]
+  );
+
+  const initContext = useMemo(() => {
+    const def = {
+      enabled: false,
+      txStates: null,
+      currentTxMeta: null,
+      yieldId: null,
+    };
+
+    if (!session?.transactions) return def;
+
+    const txs = session.transactions;
+
+    const currentTxIdx = List.findIndex(
+      (val) => val.status === "WAITING_FOR_SIGNATURE",
+      txs
+    ).extractNullable();
+
+    if (currentTxIdx === null) {
+      return def;
+    }
+
+    const txStates = txs.map<TxState>((dto) => ({
+      tx: dto,
+      meta: {
+        broadcasted: null,
+        signedTx: null,
+        url: null,
+        signError: null,
+        txCheckError: null,
+        done: false,
+      },
+    }));
+
+    const currentTxMeta = {
+      idx: shouldMultiSend ? 0 : currentTxIdx,
+      id: txs[currentTxIdx].id,
+    };
+
+    return {
+      enabled: true,
+      txStates: shouldMultiSend ? [txStates[currentTxIdx]] : txStates,
+      currentTxMeta,
+      yieldId: session.integrationId,
+    };
+  }, [session?.integrationId, session?.transactions, shouldMultiSend]);
+
   const stateMachine = useStateMachine({
-    initial: "idle",
+    initial: initContext ? "idle" : "disabled",
     schema: {
       context: tt<{
         yieldId: string | null;
@@ -63,108 +118,73 @@ export const useStepsMachine = () => {
         currentTxMeta: { idx: number; id: string } | null;
         txCheckTimeoutId: number | null;
       }>(),
-      events: {
-        START: tt<{ session: ActionDto }>(),
-      },
     },
     context: {
-      yieldId: null,
-      txStates: [],
-      currentTxMeta: null,
+      yieldId: initContext?.yieldId ?? null,
+      txStates: initContext?.txStates ?? [],
+      currentTxMeta: initContext?.currentTxMeta ?? null,
       txCheckTimeoutId: null,
     },
     states: {
       idle: {
         on: { START: "signLoading" },
       },
-
+      disabled: {},
       signLoading: {
         on: {
           SIGN_SUCCESS: "broadcastLoading",
           SIGN_ERROR: "signError",
           DONE: "done",
         },
-        effect: ({ context, send, setContext, event }) => {
-          (event.type === "START"
-            ? EitherAsync<Error, { currentTx: TransactionDto }>(async () => {
-                const txs = event.session.transactions;
+        effect: ({ context, send, setContext }) => {
+          EitherAsync.liftEither(Right(!!shouldMultiSend))
+            .chain((val) =>
+              val
+                ? EitherAsync.liftEither(
+                    Maybe.fromNullable(session?.transactions)
+                      .toEither(new Error("missing session"))
+                      .map((txs) =>
+                        txs
+                          .map((tx) => tx.unsignedTransaction)
+                          .filter((tx): tx is NonNullable<typeof tx> => !!tx)
+                      )
+                  ).chain((txs) => {
+                    if (!txs.length) {
+                      return EitherAsync.liftEither(
+                        Left(new TransactionConstructError())
+                      );
+                    }
 
-                const currentTxIdx = List.findIndex(
-                  (val) => val.status === "WAITING_FOR_SIGNATURE",
-                  txs
-                ).extractNullable();
+                    return signMultipleTransactions({ txs });
+                  })
+                : EitherAsync.liftEither(
+                    Right({
+                      currentTx:
+                        context.txStates[context.currentTxMeta?.idx!].tx,
+                    })
+                  ).chain(({ currentTx }) => {
+                    if (!currentTx.unsignedTransaction) {
+                      return EitherAsync.liftEither(
+                        Left(new TransactionConstructError())
+                      );
+                    }
 
-                if (currentTxIdx === null) {
-                  send({ type: "DONE" });
-                  throw new Error("missing currentTxIdx");
-                }
-
-                const txStates = txs.map<TxState>((dto) => ({
-                  tx: dto,
-                  meta: {
-                    broadcasted: null,
-                    signedTx: null,
-                    url: null,
-                    signError: null,
-                    txCheckError: null,
-                    done: false,
-                  },
-                }));
-
-                const currentTxMeta = {
-                  idx: currentTxIdx,
-                  id: txs[currentTxIdx].id,
-                };
-
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates,
-                  currentTxMeta,
-                  yieldId: event.session.integrationId,
-                }));
-
-                return { currentTx: txStates[currentTxIdx].tx };
-              })
-            : EitherAsync<never, { currentTx: TransactionDto }>(async () => ({
-                currentTx: context.txStates[context.currentTxMeta?.idx!].tx,
-              }))
-          )
-            .chain(({ currentTx }) =>
-              getAverageGasMode(currentTx.network)
-                .chainLeft(async () => Right(null))
-                .chain((gas) =>
-                  withRequestErrorRetry({
-                    fn: () =>
-                      transactionConstruct(currentTx.id, {
-                        gasArgs: gas?.gasArgs,
-                        ledgerWalletAPICompatible: isLedgerLive,
-                      }),
-                  }).mapLeft(() => new TransactionConstructError())
-                )
-                .chain((tx) => {
-                  if (!tx.unsignedTransaction) {
-                    return EitherAsync.liftEither(
-                      Left(new TransactionConstructError())
-                    );
-                  }
-
-                  return signTransaction({ tx: tx.unsignedTransaction })
-                    .map((val) => ({
-                      ...val,
-                      network: tx.network,
-                      txId: tx.id,
-                    }))
-                    .ifRight(() =>
-                      trackEvent("txSigned", {
-                        txId: tx.id,
-                        network: tx.network,
-                        yieldId:
-                          event.type === "START"
-                            ? event.session.integrationId
-                            : context.yieldId,
-                      })
-                    );
-                })
+                    return signTransaction({
+                      tx: currentTx.unsignedTransaction,
+                    })
+                      .map((val) => ({
+                        ...val,
+                        network: currentTx.network,
+                        txId: currentTx.id,
+                      }))
+                      .ifRight(() =>
+                        trackEvent("txSigned", {
+                          txId: currentTx.id,
+                          network: currentTx.network,
+                          yieldId: context.yieldId,
+                        })
+                      );
+                  })
             )
             .caseOf({
               Left: (l) => {
