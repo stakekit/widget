@@ -54,6 +54,11 @@
     "details": "The provided Substrate transaction hash is invalid",
     "solution": "Try again later or contact Stakekit support"
   },
+  "TronMaximumAmountOfValidatorsExceededError": {
+    "title": "Too Many Validators",
+    "details": "You can only select a maximum 6 validators while using Ledger Live",
+    "solution": "Try again with less validators"
+  },
   "SubstratePoolNotFoundError": {
     "title": "Pool Not Found",
     "details": "The specified Substrate pool was not found",
