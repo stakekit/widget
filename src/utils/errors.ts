@@ -13,6 +13,7 @@ export const errorsSet = new Set([
   "BroadcastTransactionError",
   "MissingGasPriceStrategyError",
   "SubstrateMalformedTransactionHashError",
+  "TronMaximumAmountOfValidatorsExceededError",
   "SubstratePoolNotFoundError",
   "SubstrateBondedAmountTooLowError",
   "TronMissingResourceTypeArgumentError",
@@ -51,6 +52,7 @@ export type ErrorsSet =
   | "BroadcastTransactionError"
   | "MissingGasPriceStrategyError"
   | "SubstrateMalformedTransactionHashError"
+  | "TronMaximumAmountOfValidatorsExceededError"
   | "SubstratePoolNotFoundError"
   | "SubstrateBondedAmountTooLowError"
   | "TronMissingResourceTypeArgumentError"
