@@ -281,14 +281,17 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             ).map((val) =>
               val.map((v) => ({
                 data: v.data,
-                gas: 0,
+                gas: v.gasLimit.toString(),
                 to: v.to,
                 value: v.value?.toString() ?? "0",
               }))
             )
           ).chain((val) =>
             conn.provider
-              .sendMultipleTransactions({ network, txs: val })
+              .sendMultipleTransactions({
+                network,
+                txs: val,
+              })
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
           );
         } else {

@@ -93,21 +93,26 @@ const fn = ({
         )
       )
       .toEither(new Error("missing window"))
-  ).chain<Error, QueryParamsResult>((val) => {
-    const yId = val.yieldId;
+  )
+    .map((val) => ({
+      ...val,
+      accountId: val.accountId ? decodeURIComponent(val.accountId) : null,
+    }))
+    .chain<Error, QueryParamsResult>((val) => {
+      const yId = val.yieldId;
 
-    if (yId && (!val.network || !val.token)) {
-      return getYieldOpportunity({
-        isLedgerLive,
-        yieldId: yId,
-        queryClient,
-      }).map((yieldData) => ({
-        ...val,
-        network: yieldData.token.network,
-        token: yieldData.token.symbol,
-        yieldData,
-      }));
-    }
+      if (yId && (!val.network || !val.token)) {
+        return getYieldOpportunity({
+          isLedgerLive,
+          yieldId: yId,
+          queryClient,
+        }).map((yieldData) => ({
+          ...val,
+          network: yieldData.token.network,
+          token: yieldData.token.symbol,
+          yieldData,
+        }));
+      }
 
-    return EitherAsync.liftEither(Right({ ...val, yieldData: null }));
-  });
+      return EitherAsync.liftEither(Right({ ...val, yieldData: null }));
+    });
