@@ -31,7 +31,7 @@ export class ExternalProvider {
   getAccount(): EitherAsync<Error, string> {
     switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.variant.provider.eth_accounts())
+        return EitherAsync(() => this.variant.provider.getAccounts())
           .map((accounts) => accounts[0])
           .mapLeft((e) => {
             console.error(e);
@@ -46,7 +46,7 @@ export class ExternalProvider {
   getChainId(): EitherAsync<Error, number> {
     switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.variant.provider.eth_chainId())
+        return EitherAsync(() => this.variant.provider.getChainId())
           .mapLeft((e) => {
             console.error(e);
             return new Error("Failed to get chain id");
@@ -73,54 +73,42 @@ export class ExternalProvider {
     switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.variant.batchTransactions({
-            transactions: txs.map((tx) => ({ ...tx, operation: 0 })),
-            onlyCalls: true, // execute only
+          this.variant.provider.sendTransactions({
+            txs,
+            appInfo: this.#safeWalletAppInfo,
           })
         )
+          .chain(({ hash }) =>
+            withRequestErrorRetry({
+              fn: async () => {
+                const [safeRes, skRes] = await Promise.all([
+                  this.variant.provider.getTransactionReceipt(hash),
+                  transactionGetTransactionStatusByNetworkAndHash(
+                    network,
+                    hash
+                  ),
+                ]);
+
+                console.log({ safeRes, skRes });
+
+                if (
+                  safeRes?.transactionHash ||
+                  (skRes.status === "CONFIRMED" && skRes.hash)
+                ) {
+                  return safeRes?.transactionHash || skRes.hash;
+                }
+
+                throw new Error("Transaction not found");
+              },
+              // TODO: add cancelation!!!
+              shouldRetry: (_, retryCount) => retryCount < 120,
+              retryWaitForMs: () => 7000,
+            })
+          )
           .mapLeft((e) => {
-            console.error(e);
-            return new Error("Failed to create transaction batch");
-          })
-          .chain((tx) =>
-            EitherAsync(() =>
-              this.variant.provider.eth_sendTransaction(
-                { ...tx, gas: 0 },
-                this.#safeWalletAppInfo
-              )
-            )
-              .chain((val) =>
-                withRequestErrorRetry({
-                  fn: async () => {
-                    const [safeRes, skRes] = await Promise.all([
-                      this.variant.provider.eth_getTransactionReceipt(val),
-                      transactionGetTransactionStatusByNetworkAndHash(
-                        network,
-                        val
-                      ),
-                    ]);
-
-                    console.log({ safeRes, skRes });
-
-                    if (
-                      safeRes?.transactionHash ||
-                      (skRes.status === "CONFIRMED" && skRes.hash)
-                    ) {
-                      return safeRes?.transactionHash || skRes.hash;
-                    }
-
-                    throw new Error("Transaction not found");
-                  },
-                  // TODO: add cancelation!!!
-                  shouldRetry: (_, retryCount) => retryCount < 120,
-                  retryWaitForMs: () => 7000,
-                })
-              )
-              .mapLeft((e) => {
-                console.log(e);
-                return new Error("Failed to send transaction");
-              })
-          );
+            console.log(e);
+            return new Error("Failed to send transaction");
+          });
       }
       default:
         return this.invalidProviderType();
@@ -131,7 +119,7 @@ export class ExternalProvider {
     switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.variant.provider.wallet_switchEthereumChain(
+          this.variant.provider.switchEthereumChain(
             { chainId },
             this.#safeWalletAppInfo
           )

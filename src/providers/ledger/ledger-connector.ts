@@ -184,10 +184,19 @@ export class LedgerLiveConnector extends Connector {
       };
     }
 
+    const preferredAccount = Maybe.fromNullable(this.queryParams.accountId)
+      .chain((accId) =>
+        Maybe.encase(() => {
+          const [, , , address] = accId.split(":");
+
+          return address;
+        })
+      )
+      .extractNullable();
+
     const accountWithChain = List.find(
       (v) =>
-        (!this.queryParams.accountId ||
-          v.account.id === this.queryParams.accountId) &&
+        (!preferredAccount || v.account.address === preferredAccount) &&
         v.chainItem.skChainName === this.queryParams.network,
       accountsWithChain
     )
