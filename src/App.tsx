@@ -75,9 +75,8 @@ const Widget = () => {
   useIsomorphicEffect(() => {
     if (
       pathnameRef.current !== "/" &&
-      prevChain &&
-      prevAddress &&
-      (chain !== prevChain || address !== prevAddress)
+      ((prevChain && chain !== prevChain) ||
+        (prevAddress && address !== prevAddress))
     ) {
       MaybeWindow.ifJust((w) => {
         const url = new URL(w.location.href);
