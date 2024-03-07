@@ -34,7 +34,7 @@ import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
-import { isEVMNetwork } from "../../domain";
+import { shouldUseLLSKPlugin } from "../../domain";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { LedgerLiveConnector } from "../ledger/ledger-connector";
@@ -161,7 +161,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 return walletApiClient.transaction.signAndBroadcast(
                   accountId,
                   deserializedTransaction,
-                  isEVMNetwork(network) ? { hwAppId: "StakeKit" } : undefined
+                  shouldUseLLSKPlugin(network)
+                    ? { hwAppId: "StakeKit" }
+                    : undefined
                 );
               }).mapLeft((e) => {
                 console.log(e);
