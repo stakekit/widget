@@ -11,6 +11,9 @@ type Res = Maybe<{
   rewardRate: number;
   rewardType: RewardTypes;
   address?: string;
+  stakedBalance?: ValidatorDto["stakedBalance"];
+  votingPower?: ValidatorDto["votingPower"];
+  commission?: ValidatorDto["commission"];
 }>;
 
 const getProviderDetails = ({
@@ -59,6 +62,9 @@ const getProviderDetails = ({
           rewardRate: v.apr,
           rewardType: val.rewardType,
           address: v.address,
+          stakedBalance: v.stakedBalance,
+          votingPower: v.votingPower,
+          commission: v.commission,
         }))
       )
       .altLazy(() => def)

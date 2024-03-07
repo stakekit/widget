@@ -9,7 +9,7 @@ export const rotate180deg = style({
 });
 
 export const providerContainer = style({
-  transition: "max-height 0.3s ease",
+  transition: "max-height 0.5s ease",
   overflow: "hidden",
 });
 

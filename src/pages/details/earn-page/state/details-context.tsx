@@ -196,12 +196,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     [defaultTokens.data, deferredTokenSearch, tokenBalances.data]
   );
 
-  console.log({
-    tokenBalances: tokenBalances.data,
-    defaultTokens: defaultTokens.data,
-    tokenBalancesData,
-  });
-
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.fromNullable(multiYields.data)

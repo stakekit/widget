@@ -1,4 +1,4 @@
-import { RewardTypes, YieldDto } from "@stakekit/api-hooks";
+import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { Box, CaretDownIcon, Divider, Text } from "../../../components";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
@@ -6,8 +6,8 @@ import { HelpModal } from "../../../index.package";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { caretContainer, providerContainer, rotate180deg } from "../styles.css";
-import { getRewardTypeFormatted } from "../../../utils/formatters";
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
 
 export const ProviderDetails = ({
   stakeType,
@@ -19,6 +19,9 @@ export const ProviderDetails = ({
   rewardRateFormatted,
   rewardType,
   address,
+  stakedBalance,
+  votingPower,
+  commission,
 }: {
   isFirst: boolean;
   stakeType: string;
@@ -28,7 +31,11 @@ export const ProviderDetails = ({
   rewardRateFormatted: string;
   rewardRate: number;
   rewardType: RewardTypes;
-  address?: string | undefined;
+
+  stakedBalance?: ValidatorDto["stakedBalance"];
+  votingPower?: ValidatorDto["votingPower"];
+  commission?: ValidatorDto["commission"];
+  address?: ValidatorDto["address"];
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -115,24 +122,41 @@ export const ProviderDetails = ({
           style: { maxHeight: isCollapsed ? 0 : containerHeight.current },
         })}
       >
-        <Box
-          marginTop="1"
-          marginBottom="3"
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <Text variant={{ weight: "normal" }}>
-            {getRewardTypeFormatted(integrationData.rewardType)}
-          </Text>
-
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {rewardRateFormatted}
-          </Text>
-        </Box>
+        <ValidatorMeta
+          address={address}
+          commission={commission}
+          rewardRate={rewardRate}
+          stakedBalance={stakedBalance}
+          votingPower={votingPower}
+          rewardType={rewardType}
+        />
       </Box>
 
       <Divider />
     </Box>
   );
 };
+
+const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
+  const metaInfo = useMetaInfo(props);
+
+  return (
+    <Box marginTop="2">
+      {Object.values(metaInfo)
+        .filter((val): val is NonNullable<typeof val> => !!val)
+        .map((val) => (
+          <Box
+            marginTop="1"
+            marginBottom="3"
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Text variant={{ weight: "normal" }}>{val.title}</Text>
+
+            <Text variant={{ type: "muted", weight: "normal" }}>{val.val}</Text>
+          </Box>
+        ))}
+    </Box>
+  );
+});
