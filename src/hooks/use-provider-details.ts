@@ -1,4 +1,9 @@
-import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import {
+  RewardTypes,
+  ValidatorDto,
+  ValidatorStatusTypes,
+  YieldDto,
+} from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { GetMaybeJust } from "../types";
@@ -14,6 +19,7 @@ type Res = Maybe<{
   stakedBalance?: ValidatorDto["stakedBalance"];
   votingPower?: ValidatorDto["votingPower"];
   commission?: ValidatorDto["commission"];
+  status?: ValidatorStatusTypes;
 }>;
 
 const getProviderDetails = ({
@@ -65,6 +71,7 @@ const getProviderDetails = ({
           stakedBalance: v.stakedBalance,
           votingPower: v.votingPower,
           commission: v.commission,
+          status: v.status,
         }))
       )
       .altLazy(() => def)

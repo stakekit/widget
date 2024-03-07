@@ -5,7 +5,13 @@ import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { HelpModal } from "../../../index.package";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
-import { caretContainer, providerContainer, rotate180deg } from "../styles.css";
+import {
+  caretContainer,
+  inactiveContainer,
+  noWrap,
+  providerContainer,
+  rotate180deg,
+} from "../styles.css";
 import { memo, useEffect, useRef, useState } from "react";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
 
@@ -22,6 +28,7 @@ export const ProviderDetails = ({
   stakedBalance,
   votingPower,
   commission,
+  status,
 }: {
   isFirst: boolean;
   stakeType: string;
@@ -36,6 +43,7 @@ export const ProviderDetails = ({
   votingPower?: ValidatorDto["votingPower"];
   commission?: ValidatorDto["commission"];
   address?: ValidatorDto["address"];
+  status?: ValidatorDto["status"];
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -93,6 +101,25 @@ export const ProviderDetails = ({
               type: integrationData.metadata.type,
             }}
           />
+
+          {status !== "active" && (
+            <Box marginLeft="1" className={inactiveContainer}>
+              <Text
+                variant={{
+                  type: "white",
+                  weight: "medium",
+                  size: "small",
+                }}
+                className={noWrap}
+              >
+                {t(
+                  status === "jailed"
+                    ? "details.validators_jailed"
+                    : "details.validators_inactive"
+                )}
+              </Text>
+            </Box>
+          )}
         </Box>
 
         <Box
@@ -146,6 +173,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
         .filter((val): val is NonNullable<typeof val> => !!val)
         .map((val) => (
           <Box
+            key={val.title}
             marginTop="1"
             marginBottom="3"
             display="flex"
