@@ -144,54 +144,39 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances =
-    isConnected && !!tokenBalancesScan.data?.length
-      ? tokenBalancesScan
-      : defaultTokens;
-
-  const restTokenBalances = useMemo(
-    () =>
-      Maybe.fromPredicate(() => isConnected, defaultTokens)
-        .chainNullable((defTb) => defTb.data)
-        .chain((defTb) =>
-          Maybe.fromNullable(tokenBalancesScan.data).map((val) => ({
-            defTb,
-            tbs: val,
-          }))
-        )
-        .map(({ defTb, tbs }) => {
-          const tbsSet = new Set(tbs.map((tb) => tokenString(tb.token)));
-
-          return defTb.filter((t) => !tbsSet.has(tokenString(t.token)));
-        })
-        .alt(Maybe.of([])),
-    [defaultTokens, isConnected, tokenBalancesScan.data]
-  );
+  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
 
   const tokenBalancesData = useMemo(
     () =>
       Maybe.fromRecord({
-        restTokenBalances,
-        tb: Maybe.fromNullable(tokenBalances.data),
+        defTb: Maybe.fromNullable(defaultTokens.data).alt(Maybe.of([])),
+        tb: Maybe.fromNullable(tokenBalances.data).alt(Maybe.of([])),
       })
         .map((val) => {
-          const { tb, rest } = val.tb.reduce(
+          const { tbWithAmount, tbWithoutAmount, tbSet } = val.tb.reduce(
             (acc, b) => {
+              acc.tbSet.add(tokenString(b.token));
+
               if (new BigNumber(b.amount).isGreaterThan(0)) {
-                acc.tb.push(b);
+                acc.tbWithAmount.push(b);
               } else {
-                acc.rest.push(b);
+                acc.tbWithoutAmount.push(b);
               }
 
               return acc;
             },
             {
-              rest: [] as TokenBalanceScanResponseDto[],
-              tb: [] as TokenBalanceScanResponseDto[],
+              tbSet: new Set<string>(),
+              tbWithAmount: [] as TokenBalanceScanResponseDto[],
+              tbWithoutAmount: [] as TokenBalanceScanResponseDto[],
             }
           );
 
-          return [...tb, ...rest, ...val.restTokenBalances];
+          return [
+            ...tbWithAmount,
+            ...tbWithoutAmount,
+            ...val.defTb.filter((t) => !tbSet.has(tokenString(t.token))),
+          ];
         })
         .chain((tb) =>
           Maybe.of(deferredTokenSearch)
@@ -208,7 +193,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
             }))
             .alt(Maybe.of({ all: tb, filtered: tb }))
         ),
-    [deferredTokenSearch, restTokenBalances, tokenBalances.data]
+    [defaultTokens.data, deferredTokenSearch, tokenBalances.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(

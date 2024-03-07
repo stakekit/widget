@@ -165,30 +165,6 @@ export const UnstakeOrPendingActionProvider = ({
     (d) => !!(!forceMaxUnstakeAmount && d.args.exit?.args?.amount?.required)
   );
 
-  const getCorrectUnstakeAmount = (amount: BigNumber) =>
-    Maybe.fromRecord({
-      reducedStakedOrLiquidBalance,
-      canChangeUnstakeAmount,
-      integrationData,
-    })
-      .map((val) => {
-        if (
-          (!val.canChangeUnstakeAmount || forceMaxUnstakeAmount) &&
-          !val.reducedStakedOrLiquidBalance.amount.isEqualTo(amount)
-        ) {
-          return val.reducedStakedOrLiquidBalance.amount;
-        } else if (val.canChangeUnstakeAmount) {
-          if (amount.isGreaterThan(maxEnterOrExitAmount)) {
-            return maxEnterOrExitAmount;
-          } else if (amount.isLessThan(minEnterOrExitAmount)) {
-            return minEnterOrExitAmount;
-          }
-        }
-
-        return amount;
-      })
-      .orDefault(amount);
-
   const positionBalancesByTypePendingActions = useMemo(
     () =>
       new Map<PendingActionDto["type"], PendingActionDto>(
@@ -239,14 +215,14 @@ export const UnstakeOrPendingActionProvider = ({
       case "unstake/amount/change": {
         return {
           ...state,
-          unstakeAmount: getCorrectUnstakeAmount(action.data),
+          unstakeAmount: action.data,
         };
       }
 
       case "unstake/amount/max": {
         return {
           ...state,
-          unstakeAmount: getCorrectUnstakeAmount(maxEnterOrExitAmount),
+          unstakeAmount: maxEnterOrExitAmount,
         };
       }
 
@@ -275,7 +251,42 @@ export const UnstakeOrPendingActionProvider = ({
 
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
-  const { pendingActions, unstakeAmount } = state;
+  const { pendingActions, unstakeAmount: _ustankeAmount } = state;
+
+  const unstakeAmount = useMemo(
+    () =>
+      Maybe.fromRecord({
+        reducedStakedOrLiquidBalance,
+        canChangeUnstakeAmount,
+        integrationData,
+      })
+        .map((val) => {
+          if (
+            (!val.canChangeUnstakeAmount || forceMaxUnstakeAmount) &&
+            !val.reducedStakedOrLiquidBalance.amount.isEqualTo(_ustankeAmount)
+          ) {
+            return val.reducedStakedOrLiquidBalance.amount;
+          } else if (val.canChangeUnstakeAmount) {
+            if (_ustankeAmount.isGreaterThan(maxEnterOrExitAmount)) {
+              return maxEnterOrExitAmount;
+            } else if (_ustankeAmount.isLessThan(minEnterOrExitAmount)) {
+              return minEnterOrExitAmount;
+            }
+          }
+
+          return _ustankeAmount;
+        })
+        .orDefault(_ustankeAmount),
+    [
+      _ustankeAmount,
+      canChangeUnstakeAmount,
+      forceMaxUnstakeAmount,
+      integrationData,
+      maxEnterOrExitAmount,
+      minEnterOrExitAmount,
+      reducedStakedOrLiquidBalance,
+    ]
+  );
 
   const stakeExitAndTxsConstructMutationState = useStakeExitAndTxsConstruct();
   const pendingActionAndTxsConstructMutationState =

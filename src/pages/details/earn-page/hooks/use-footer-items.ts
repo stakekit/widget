@@ -177,6 +177,11 @@ export const useFooterItems = () => {
               ? cooldownPeriodDays > 0
                 ? t("details.liquid_stake.unstake_time_days", {
                     cooldownPeriodDays,
+                    claimDays: y.metadata.withdrawPeriod?.days ?? 0,
+                    context:
+                      (y.metadata.withdrawPeriod?.days ?? 0) > 0
+                        ? "with_claim_days"
+                        : undefined,
                   })
                 : t("details.liquid_stake.unstake_time_immediately")
               : null,

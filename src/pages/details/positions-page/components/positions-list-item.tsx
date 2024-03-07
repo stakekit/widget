@@ -84,6 +84,16 @@ export const PositionsListItem = memo(
       [integrationData, providersDetails]
     );
 
+    const inactiveValidator = useMemo(
+      () =>
+        providersDetails
+          .chain((val) => List.find((v) => v.status !== "active", val))
+          .chain((val) => Maybe.fromNullable(val.status))
+          .map((v) => v as Exclude<typeof v, "active">)
+          .extractNullable(),
+      [providersDetails]
+    );
+
     return (
       <SKLink
         relative="path"
@@ -115,7 +125,13 @@ export const PositionsListItem = memo(
                     justifyContent="center"
                     alignItems="flex-start"
                     minWidth="0"
-                    gap={hasPendingClaimRewards || actionRequired ? "1" : "0"}
+                    gap={
+                      hasPendingClaimRewards ||
+                      actionRequired ||
+                      inactiveValidator
+                        ? "1"
+                        : "0"
+                    }
                   >
                     <Box
                       display="flex"
@@ -127,7 +143,9 @@ export const PositionsListItem = memo(
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
 
-                      {(hasPendingClaimRewards || actionRequired) && (
+                      {(hasPendingClaimRewards ||
+                        actionRequired ||
+                        inactiveValidator) && (
                         <Box
                           className={listItemContainer({
                             type: hasPendingClaimRewards
@@ -139,7 +157,11 @@ export const PositionsListItem = memo(
                             {t(
                               hasPendingClaimRewards
                                 ? "positions.claim_rewards"
-                                : "positions.action_required"
+                                : inactiveValidator
+                                  ? inactiveValidator === "jailed"
+                                    ? "details.validators_jailed"
+                                    : "details.validators_inactive"
+                                  : "positions.action_required"
                             )}
                           </Text>
                         </Box>

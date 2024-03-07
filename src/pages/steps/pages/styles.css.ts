@@ -32,7 +32,7 @@ export const stepsBeforeMuted = style([
 export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
 
 export const stepsContainer = style({
-  transition: "max-height 0.3s ease",
+  transition: "max-height 0.5s ease",
   overflow: "hidden",
 });
 

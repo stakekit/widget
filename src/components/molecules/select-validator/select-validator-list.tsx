@@ -1,6 +1,6 @@
 import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
-import { ComponentProps } from "react";
+import { ComponentProps, memo } from "react";
 import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { Box } from "../../atoms/box";
 import { Text } from "../../atoms/typography";
@@ -24,12 +24,7 @@ import {
 } from "./styles.css";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { vars } from "../../../styles";
-import {
-  ValidatorAddress,
-  ValidatorComission,
-  ValidatorStakedBalance,
-  ValidatorVotingPower,
-} from "./meta-info";
+import { MetaInfo, useMetaInfo } from "./meta-info";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 
@@ -215,12 +210,14 @@ export const SelectValidatorList = ({
                   </Box>
                 </Box>
 
-                <Box display="flex" flexDirection="column" gap="1">
-                  <ValidatorStakedBalance stakedBalance={item.stakedBalance} />
-                  <ValidatorVotingPower votingPower={item.votingPower} />
-                  <ValidatorComission comisssion={item.commission} />
-                  <ValidatorAddress address={item.address} />
-                </Box>
+                <ValidatorMeta
+                  address={item.address}
+                  commission={item.commission}
+                  stakedBalance={item.stakedBalance}
+                  votingPower={item.votingPower}
+                  rewardRate={undefined}
+                  rewardType={undefined}
+                />
               </Box>
             </SelectModalItem>
           </SelectModalItemContainer>
@@ -229,3 +226,33 @@ export const SelectValidatorList = ({
     />
   );
 };
+
+const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
+  const metaInfo = useMetaInfo(props);
+
+  return (
+    <Box display="flex" flexDirection="column" gap="1">
+      {metaInfo.stakedBalance && (
+        <MetaInfo
+          title={metaInfo.stakedBalance.title}
+          val={metaInfo.stakedBalance.val}
+        />
+      )}
+      {metaInfo.votingPower && (
+        <MetaInfo
+          title={metaInfo.votingPower.title}
+          val={metaInfo.votingPower.val}
+        />
+      )}
+      {metaInfo.commission && (
+        <MetaInfo
+          title={metaInfo.commission.title}
+          val={metaInfo.commission.val}
+        />
+      )}
+      {metaInfo.address && (
+        <MetaInfo title={metaInfo.address.title} val={metaInfo.address.val} />
+      )}
+    </Box>
+  );
+});

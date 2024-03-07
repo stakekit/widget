@@ -13,11 +13,11 @@ import { Left, Right } from "purify-ts";
 import {
   SupportedEvmChain,
   SupportedSKChains,
-  supportedEVMChainsSet,
+  ledgerSKPluginNetworksSet,
 } from "./types/chains";
 
-export const isEVMNetwork = (network: SupportedSKChains) =>
-  supportedEVMChainsSet.has(network as SupportedEvmChain);
+export const shouldUseLLSKPlugin = (network: SupportedSKChains) =>
+  ledgerSKPluginNetworksSet.has(network as SupportedEvmChain);
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
