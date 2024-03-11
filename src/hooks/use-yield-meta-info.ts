@@ -1,17 +1,34 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useStakeState } from "../../../../state/stake";
-import { yieldTypesMap } from "../../../../domain/types";
+import { yieldTypesMap } from "../domain/types";
 import { MiscNetworks } from "@stakekit/common";
-import { capitalizeFirstLowerRest } from "../../../../utils/text";
-import { useValidatorsFormatted } from "../../../../hooks/use-validators-formatted";
+import { capitalizeFirstLowerRest } from "../utils/text";
+import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import { List, Maybe } from "purify-ts";
 
-export const useFooterItems = () => {
+export const useYieldMetaInfo = ({
+  selectedStake,
+  validators,
+}: {
+  selectedStake: Maybe<YieldDto>;
+  validators: {
+    [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
+  }[];
+}) => {
   const { t } = useTranslation();
 
-  const { selectedStake, selectedValidators } = useStakeState();
-
-  const validatorsFormatted = useValidatorsFormatted(selectedValidators);
+  const validatorsFormatted = useMemo(
+    () =>
+      List.find((v) => !!(v.name ?? v.address), validators)
+        .alt(List.head(validators))
+        .map((v) =>
+          t("details.selected_validators", {
+            providerName: v.name ?? v.address,
+            count: validators.length - 1,
+          })
+        ),
+    [validators, t]
+  );
 
   return useMemo(() => {
     return selectedStake.mapOrDefault<typeof ifNotFound>((y) => {

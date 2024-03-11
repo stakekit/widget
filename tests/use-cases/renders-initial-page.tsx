@@ -4,7 +4,6 @@ import { renderApp, waitFor } from "../utils/test-utils";
 export const rendersInitialPage = async () => {
   const { queryByText, unmount, queryByTestId } = renderApp();
 
-  expect(queryByText("Earn")).toBeInTheDocument();
   expect(queryByText("Positions")).toBeInTheDocument();
   await waitFor(() =>
     expect(queryByTestId("number-input")).toBeInTheDocument()

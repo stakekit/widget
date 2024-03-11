@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { atoms } from "../../styles";
+import { atoms, vars } from "../../styles";
 
 export const caretContainer = style({
   transition: "transform 0.2s ease",
@@ -25,3 +25,11 @@ export const inactiveContainer = style([
 ]);
 
 export const noWrap = style({ whiteSpace: "nowrap" });
+
+export const addressParent = style({});
+
+export const addressHover = style({
+  selectors: {
+    [`${addressParent}:hover &`]: { color: vars.color.text },
+  },
+});

@@ -224,6 +224,8 @@ export const PositionDetails = () => {
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}
+                          yieldDto={val.integrationData}
+                          validators={providersDetails.orDefault([])}
                         />
                       )
                     )

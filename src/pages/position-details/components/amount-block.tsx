@@ -11,10 +11,12 @@ import {
 import { formatNumber } from "../../../utils";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import BigNumber from "bignumber.js";
-import { TokenDto } from "@stakekit/api-hooks";
+import { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
+import { Just } from "purify-ts";
+import { InfoIcon } from "../../../components/atoms/icons/info";
 
 type AmountBlockProps = {
-  variant: "unstake" | "action";
   isLoading: boolean;
   onAmountChange: NumberInputProps["onChange"];
   value: NumberInputProps["value"];
@@ -25,7 +27,19 @@ type AmountBlockProps = {
   label: string;
   formattedAmount: string;
   balance: { amount: BigNumber; token: TokenDto } | null;
-};
+} & (
+  | {
+      variant: "unstake";
+      yieldDto: YieldDto;
+      validators: {
+        [Key in keyof Pick<
+          ValidatorDto,
+          "name" | "address"
+        >]?: ValidatorDto[Key];
+      }[];
+    }
+  | { variant: "action" }
+);
 
 export const AmountBlock = ({
   isLoading,
@@ -38,12 +52,12 @@ export const AmountBlock = ({
   formattedAmount,
   onMaxClick,
   balance,
-  variant,
+  ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
 
   const variantProps: BoxProps =
-    variant === "action"
+    rest.variant === "action"
       ? {
           background: "background",
           borderWidth: 1,
@@ -74,7 +88,8 @@ export const AmountBlock = ({
           disabled={disabled}
           variant={{
             size: "small",
-            color: variant === "unstake" ? "smallButton" : "smallButtonLight",
+            color:
+              rest.variant === "unstake" ? "smallButton" : "smallButtonLight",
           }}
         >
           <Text>{label}</Text>
@@ -108,7 +123,7 @@ export const AmountBlock = ({
               as="button"
               borderRadius="xl"
               background={
-                variant === "unstake" ? "background" : "backgroundMuted"
+                rest.variant === "unstake" ? "background" : "backgroundMuted"
               }
               px="2"
               py="1"
@@ -128,6 +143,36 @@ export const AmountBlock = ({
           )}
         </Box>
       </Box>
+
+      {rest.variant === "unstake" && (
+        <Box marginTop="2">
+          <UnstakeInfo validators={rest.validators} yieldDto={rest.yieldDto} />
+        </Box>
+      )}
     </Box>
   );
+};
+
+const UnstakeInfo = ({
+  validators,
+  yieldDto,
+}: {
+  yieldDto: YieldDto;
+  validators: {
+    [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
+  }[];
+}) => {
+  const { withdrawnTime } = useYieldMetaInfo({
+    validators,
+    selectedStake: Just(yieldDto),
+  });
+
+  return withdrawnTime ? (
+    <Box display="flex" alignItems="flex-start" justifyContent="center" gap="1">
+      <Text variant={{ type: "muted", size: "small" }}>
+        <InfoIcon />
+      </Text>
+      <Text variant={{ type: "muted", size: "small" }}> {withdrawnTime}</Text>
+    </Box>
+  ) : null;
 };

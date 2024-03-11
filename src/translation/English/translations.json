@@ -148,7 +148,8 @@
     "validators_staked_balance": "Validator stake",
     "validators_voting_power": "Voting power",
     "validators_address": "Address",
-    "validators_comission": "Comission"
+    "validators_comission": "Commission",
+    "validators_website": "Website"
   },
   "review": {
     "estimated_reward": "Estimated rewards",
