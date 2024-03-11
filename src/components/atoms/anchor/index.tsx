@@ -10,7 +10,7 @@ export const SKAnchor = (props: PropsWithChildren<{ href?: string }>) => {
       href={props.href ?? (props.children as string) ?? ""}
       target="_blank"
     >
-      {props.children}
+      {props.children ?? props.href}
     </Box>
   );
 };

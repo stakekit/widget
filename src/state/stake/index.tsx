@@ -33,6 +33,7 @@ import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-sta
 import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { useSKQueryClient } from "../../providers/query-client";
+import { useMultiYields } from "../../hooks/api/use-multi-yields";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -393,6 +394,22 @@ const Provider = ({ children }: PropsWithChildren) => {
   const selectedTokenBalance = _selectedTokenBalance.alt(
     initialTokenBalanceToSet
   );
+
+  const enterEnabledMultiYields = useMultiYields(
+    selectedTokenBalance.mapOrDefault((val) => val.availableYields, []),
+    { select: (val) => val.filter((v) => v.status.enter) }
+  );
+
+  /**
+   * If selected stake has "enter" disabled, find next one with "enter" enabled
+   */
+  useIsomorphicEffect(() => {
+    Maybe.fromNullable(yieldOpportunity.data)
+      .filter((val) => !val.status.enter)
+      .chainNullable(() => enterEnabledMultiYields.data)
+      .chain((val) => List.head(val))
+      .ifJust((val) => dispatch({ type: "yield/select", data: val }));
+  }, [enterEnabledMultiYields.data, yieldOpportunity.data]);
 
   const value: State & ExtraData = useMemo(
     () => ({
