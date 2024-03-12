@@ -5,7 +5,6 @@ import {
   useStakeEnterAndTxsConstruct,
 } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
-import { checkGasAmount } from "../../../../common/check-gas-amount";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../../types";
 import { useMutationSync } from "../../../../hooks/use-mutation-sync";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -15,7 +14,7 @@ import { useSettings } from "../../../../providers/settings";
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
-  const { address, network } = useSKWallet();
+  const { address, network, isLedgerLive } = useSKWallet();
   const { selectedTokenBalance, selectedStakeId, selectedValidators } =
     useStakeState();
 
@@ -39,6 +38,7 @@ export const useOnStakeEnter = () => {
           stakeRequestDto,
           stakeEnterAndTxsConstruct: stakeEnterAndTxsConstruct.mutateAsync,
           disableGasCheck,
+          isLedgerLive,
         })
       ).unsafeCoerce(),
   });
@@ -48,12 +48,14 @@ const fn = ({
   stakeRequestDto,
   stakeEnterAndTxsConstruct,
   disableGasCheck,
+  isLedgerLive,
 }: {
   stakeRequestDto: ReturnType<typeof useStakeEnterRequestDto>;
   stakeEnterAndTxsConstruct: ReturnType<
     typeof useStakeEnterAndTxsConstruct
   >["mutateAsync"];
   disableGasCheck: boolean;
+  isLedgerLive: boolean;
 }) =>
   EitherAsync.liftEither(
     stakeRequestDto.toEither(new Error("Stake request not ready"))
@@ -72,29 +74,11 @@ const fn = ({
         stakeEnterAndTxsConstruct({
           stakeRequestDto: val.stakeRequestDto,
           gasModeValue: val.gas ?? undefined,
+          disableGasCheck,
+          gasFeeToken: val.gasFeeToken,
+          isLedgerLive,
         })
       )
         .mapLeft((e) => e as ErrorType)
         .map((res) => ({ ...val, ...res }))
-    )
-    .chain(
-      ({
-        stakeRequestDto,
-        gasFeeToken,
-        stakeEnterRes,
-        transactionConstructRes,
-      }) =>
-        (disableGasCheck
-          ? EitherAsync.liftEither(Right(null))
-          : checkGasAmount({
-              addressWithTokenDto: {
-                address: stakeRequestDto.addresses.address,
-                additionalAddresses:
-                  stakeRequestDto.addresses.additionalAddresses,
-                network: gasFeeToken.network,
-                tokenAddress: gasFeeToken.address,
-              },
-              transactionConstructRes,
-            })
-        ).map(() => ({ stakeEnterRes, transactionConstructRes }))
     );

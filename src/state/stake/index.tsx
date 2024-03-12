@@ -371,8 +371,20 @@ const Provider = ({ children }: PropsWithChildren) => {
 
   const stakeEnterAndTxsConstructMutationState = useStakeEnterAndTxsConstruct();
 
-  const stakeSession = Maybe.fromNullable(
-    stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
+  const stakeSession = useMemo(
+    () =>
+      Maybe.fromNullable(
+        stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
+      ),
+    [stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes]
+  );
+
+  const isGasCheckError = useMemo(
+    () =>
+      Maybe.fromNullable(stakeEnterAndTxsConstructMutationState.data)
+        .chainNullable((val) => val.gasCheckErr)
+        .isJust(),
+    [stakeEnterAndTxsConstructMutationState.data]
   );
 
   const stakeEnterTxGas = useTransactionTotalGas(
@@ -422,6 +434,7 @@ const Provider = ({ children }: PropsWithChildren) => {
       actions,
       stakeEnterTxGas,
       tronResource,
+      isGasCheckError,
     }),
     [
       actions,
@@ -433,6 +446,7 @@ const Provider = ({ children }: PropsWithChildren) => {
       stakeEnterTxGas,
       stakeSession,
       tronResource,
+      isGasCheckError,
     ]
   );
 

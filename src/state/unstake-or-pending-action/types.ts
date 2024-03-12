@@ -52,4 +52,5 @@ export type ExtraData = {
     pricePerShare: string;
   }>;
   positionBalancePrices: ReturnType<typeof usePrices>;
+  isGasCheckError: boolean;
 };

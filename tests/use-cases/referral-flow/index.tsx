@@ -97,7 +97,9 @@ export const referralFlow = () => {
 
     fireEvent.click(submitButton);
 
-    await waitFor(() => expect(queryByText("Error")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(queryByText("Missing Arguments")).toBeInTheDocument()
+    );
 
     Array.from({ length: 6 }).forEach((_, i) => {
       fireEvent.change(inputs[i], { target: { value: validReferral[i] } });

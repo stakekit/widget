@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
 
-export const container = style({
-  paddingLeft: "45px",
-  paddingRight: "45px",
+export const imageStyle = style({
+  height: "240px",
+  width: "240px",
 });

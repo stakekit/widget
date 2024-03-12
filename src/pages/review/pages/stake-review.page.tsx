@@ -9,8 +9,16 @@ import { Maybe } from "purify-ts";
 export const StakeReviewPage = () => {
   useTrackPage("stakeReview");
 
-  const { fee, yieldType, amount, interestRate, metadata, rewardToken, token } =
-    useStakeReview();
+  const {
+    fee,
+    yieldType,
+    amount,
+    interestRate,
+    metadata,
+    rewardToken,
+    token,
+    isGasCheckError,
+  } = useStakeReview();
 
   const info = useMemo(
     () =>
@@ -47,6 +55,7 @@ export const StakeReviewPage = () => {
       token={token}
       info={info}
       rewardTokenDetailsProps={rewardTokenDetailsProps}
+      isGasCheckError={isGasCheckError}
     />
   );
 };

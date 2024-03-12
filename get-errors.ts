@@ -1,6 +1,7 @@
 import https from "https";
 import { readFile, writeFile } from "fs/promises";
 import fs from "fs";
+import prettier from "prettier";
 
 async function content(path) {
   return await readFile(path, "utf8");
@@ -23,7 +24,7 @@ async function downloadFile(url, targetFile) {
 
         // save the file to disk
         const fileWriter = fs.createWriteStream(targetFile).on("finish", () => {
-          resolve();
+          resolve(null);
         });
 
         response.pipe(fileWriter);
@@ -74,3 +75,14 @@ const errorsJSON = JSON.parse(errors);
 const str = createErrorString(errorsJSON);
 const typeString = createErrorStringUnion(errorsJSON);
 await writeStringToFile(str + typeString, targetTsFile);
+
+await prettier.resolveConfig(".prettierrc").then((config) =>
+  Promise.all(
+    [targetFile, targetTsFile].map((file) =>
+      fs.promises
+        .readFile(file, { encoding: "utf-8" })
+        .then((code) => prettier.format(code, { ...config, filepath: file }))
+        .then((formatted) => fs.promises.writeFile(file, formatted))
+    )
+  )
+);

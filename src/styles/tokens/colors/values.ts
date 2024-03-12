@@ -25,6 +25,8 @@ export const lightThemeColors: typeof colorsContract = {
   skeletonLoaderBase: "#F6F7F9",
   skeletonLoaderHighlight: "#fff",
 
+  warningBoxBackground: "#F6F7F9",
+
   stakeSectionBackground: "#F6F7F9",
 
   dropdownBackground: "#F6F7F9",
@@ -106,6 +108,8 @@ export const darkThemeColors: typeof colorsContract = {
 
   skeletonLoaderBase: "#363636",
   skeletonLoaderHighlight: "#2B2B2B",
+
+  warningBoxBackground: "#363636",
 
   stakeSectionBackground: "#363636",
 
