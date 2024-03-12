@@ -33,7 +33,7 @@ export const useStakeEnterRequestDto = () => {
             args: {
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
-              amount: stakeAmount.toString(),
+              amount: stakeAmount.toString(10),
               ...(val.selectedStake.args.enter.args?.validatorAddresses
                 ?.required
                 ? {

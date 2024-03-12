@@ -12,6 +12,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
     integrationData,
     rewardTokenDetailsProps,
     title,
+    isGasCheckError,
   } = useUnstakeOrPendingActionReview();
 
   useTrackPage(pendingActionMatch ? "pendingActionReview" : "unstakeReview");
@@ -32,6 +33,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
       info={info}
       metadata={integrationData.map((d) => d.metadata)}
       token={integrationData.map((d) => d.token)}
+      isGasCheckError={isGasCheckError}
     />
   );
 };

@@ -300,6 +300,23 @@ export const UnstakeOrPendingActionProvider = ({
     [stakeExitAndTxsConstructMutationState?.data?.stakeExitRes]
   );
 
+  const isGasCheckError = useMemo(
+    () =>
+      Maybe.fromNullable(
+        stakeExitAndTxsConstructMutationState.data?.gasCheckErr
+      )
+        .altLazy(() =>
+          Maybe.fromNullable(
+            pendingActionAndTxsConstructMutationState.data?.gasCheckErr
+          )
+        )
+        .isJust(),
+    [
+      pendingActionAndTxsConstructMutationState.data?.gasCheckErr,
+      stakeExitAndTxsConstructMutationState.data?.gasCheckErr,
+    ]
+  );
+
   const pendingActionSession = useMemo(
     () =>
       Maybe.fromNullable(
@@ -371,6 +388,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionSession,
       pendingActionTxGas,
       pendingActionToken,
+      isGasCheckError,
     }),
     [
       unstakeAmount,
@@ -388,6 +406,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionSession,
       pendingActionTxGas,
       pendingActionToken,
+      isGasCheckError,
     ]
   );
 

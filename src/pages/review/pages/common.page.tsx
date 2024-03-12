@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { ComponentProps, ReactNode } from "react";
 import { Maybe } from "purify-ts";
+import { WarningBox } from "../../../components/atoms/warning-box";
 
 type ReviewPageProps = {
   fee: string;
@@ -22,6 +23,7 @@ type ReviewPageProps = {
   metadata: Maybe<YieldMetadataDto>;
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
+  isGasCheckError: boolean;
 };
 
 export const ReviewPage = ({
@@ -31,6 +33,7 @@ export const ReviewPage = ({
   metadata,
   info,
   rewardTokenDetailsProps,
+  isGasCheckError,
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
 
@@ -128,6 +131,12 @@ export const ReviewPage = ({
             {fee}
           </Text>
         </Box>
+
+        {isGasCheckError && (
+          <Box marginBottom="2">
+            <WarningBox text="This action is unlikely to succeed due to insufficient funds to cover gas fees" />
+          </Box>
+        )}
 
         <Divider />
 
