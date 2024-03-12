@@ -9,6 +9,16 @@ const validAddressAndNetwork = {
 const referralCodeRes = { id: "aaa-bbb", code: validReferrals[0] };
 
 export const worker = setupWorker(
+  // http.post("*/v1/actions/enter", async () => {
+  //   await delay();
+  //   return HttpResponse.json(
+  //     {
+  //       message: "YieldUnderMaintenanceError",
+  //       details: { yieldId: "optimism-op-aave-v3-lending" },
+  //     },
+  //     { status: 400 }
+  //   );
+  // }),
   // Validate referral code
   http.get<
     { referralCode: string },

@@ -2,8 +2,9 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../atoms/box";
 import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
-import { container } from "./style.css";
+import { imageStyle } from "./style.css";
 import { useRichErrors } from "../../../hooks/use-rich-errors";
+import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.png";
 
 export const RichErrorModal = () => {
   const { t } = useTranslation();
@@ -21,29 +22,51 @@ export const RichErrorModal = () => {
         alignItems="center"
         justifyContent="center"
         paddingBottom={{ mobile: "8" }}
-        className={container}
+        px="6"
+        lineHeight="sm"
       >
-        <Heading variant={{ level: "h4" }}>Error</Heading>
-        <Box marginTop="2" lineHeight="short">
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-          >
-            {message && (t(`${message}.title`) as string)}
-          </Text>
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-          >
-            {message && (t(`${message}.details`, details ?? {}) as string)}
-          </Text>
-          <Text
-            variant={{ type: "muted", weight: "normal" }}
-            textAlign="center"
-          >
-            {message && (t(`${message}.solution`) as string)}
-          </Text>
-        </Box>
+        <Box as="img" src={whatIsLiquidStaking} className={imageStyle} />
+        {!message && (
+          <Box marginBottom="6">
+            <Heading variant={{ level: "h4" }}>
+              {t("shared.something_went_wrong")}
+            </Heading>
+          </Box>
+        )}
+
+        {message && (
+          <>
+            <Box textAlign="center">
+              <Heading variant={{ level: "h4" }}>
+                {t(`${message}.title`)}
+              </Heading>
+              <Text
+                variant={{ type: "muted", weight: "normal" }}
+                textAlign="center"
+              >
+                {t(`${message}.details`, details)}
+              </Text>
+            </Box>
+
+            <Box marginTop="4" textAlign="center">
+              <Text variant={{ size: "large" }}>
+                {t("error_modal.solution")}
+              </Text>
+
+              <Box
+                borderRadius="md"
+                background="backgroundMuted"
+                px="4"
+                py="1"
+                marginTop="2"
+              >
+                <Text variant={{ size: "medium" }} textAlign="center">
+                  {t(`${message}.solution`)}
+                </Text>
+              </Box>
+            </Box>
+          </>
+        )}
       </Box>
     </SelectModal>
   );

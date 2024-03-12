@@ -29,7 +29,6 @@ export const PositionDetails = () => {
     onMaxClick,
     onUnstakeClick,
     onStakeExitIsLoading,
-    errorMessage,
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
@@ -118,17 +117,6 @@ export const PositionDetails = () => {
                       ))
                   )}
                 </Box>
-
-                {errorMessage && (
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    marginBottom="6"
-                  >
-                    <Text variant={{ type: "danger" }}>{errorMessage}</Text>
-                  </Box>
-                )}
 
                 {liquidTokensToNativeConversion
                   .map((val) => (

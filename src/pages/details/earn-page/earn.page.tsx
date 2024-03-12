@@ -16,15 +16,17 @@ import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { motion } from "framer-motion";
 import { ReferralCode } from "./components/referral-code";
 import { useMountAnimation } from "../../../providers/mount-animation";
+import { useTranslation } from "react-i18next";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
+
+  const { t } = useTranslation();
 
   const {
     referralCheck,
     yieldType,
     isError,
-    errorMessage,
     selectedStakeYieldType,
     isFetching,
     appLoading,
@@ -85,7 +87,7 @@ const EarnPageComponent = () => {
               my="4"
             >
               <Text variant={{ type: "danger" }} textAlign="center">
-                {errorMessage}
+                {t("shared.something_went_wrong")}
               </Text>
             </Box>
           )}
