@@ -97,7 +97,7 @@ export const ProviderDetails = ({
             }}
           />
 
-          {providerDetails.status !== "active" && (
+          {providerDetails.status && providerDetails.status !== "active" && (
             <Box marginLeft="1" className={inactiveContainer}>
               <Text
                 variant={{
