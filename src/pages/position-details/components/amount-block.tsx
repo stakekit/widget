@@ -13,7 +13,7 @@ import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import BigNumber from "bignumber.js";
 import { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import { Just } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 
 type AmountBlockProps = {
@@ -167,12 +167,17 @@ const UnstakeInfo = ({
     selectedStake: Just(yieldDto),
   });
 
-  return withdrawnTime ? (
-    <Box display="flex" alignItems="flex-start" justifyContent="center" gap="1">
-      <Text variant={{ type: "muted", size: "small" }}>
+  return Maybe.fromNullable(withdrawnTime)
+    .map((time) => (
+      <Box
+        display="flex"
+        alignItems="flex-start"
+        justifyContent="center"
+        gap="1"
+      >
         <InfoIcon />
-      </Text>
-      <Text variant={{ type: "muted", size: "small" }}> {withdrawnTime}</Text>
-    </Box>
-  ) : null;
+        <Text variant={{ type: "muted", size: "small" }}>{time}</Text>
+      </Box>
+    ))
+    .extractNullable();
 };
