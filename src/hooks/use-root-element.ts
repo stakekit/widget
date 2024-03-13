@@ -10,10 +10,29 @@ export const useRootElement = () => {
   );
 
   useEffect(() => {
-    MaybeDocument.ifJust((doc) => {
-      setRootElement(doc.querySelector(rootSelector) as HTMLElement);
+    if (rootElement) return;
+
+    const observer = new MutationObserver((mutationList, observer) => {
+      mutationList.forEach((mutation) => {
+        if (mutation.type !== "childList") return;
+
+        MaybeDocument.chainNullable(
+          (doc) => doc.querySelector(rootSelector) as HTMLElement
+        ).ifJust((el) => {
+          setRootElement(el);
+          observer.disconnect();
+        });
+      });
     });
-  }, []);
+
+    MaybeDocument.ifJust((doc) =>
+      observer.observe(doc.body, { childList: true })
+    );
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [rootElement]);
 
   return rootElement;
 };
