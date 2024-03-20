@@ -15,6 +15,7 @@ import {
   ValidatorDto,
   YieldDto,
   YieldType,
+  useMutation,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { NumberInputProps, SelectModalProps } from "../../../../components";
@@ -52,7 +53,6 @@ import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
-import { useMutation } from "wagmi";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKQueryClient } from "../../../../providers/query-client";
 

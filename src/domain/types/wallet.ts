@@ -7,10 +7,10 @@ import {
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
-import { GetNetworkResult } from "@wagmi/core";
 import { SupportedSKChains } from "./chains";
 import { Account } from "@ledgerhq/wallet-api-client";
 import { Connector } from "wagmi";
+import { Chain } from "viem";
 
 export type SKWallet = {
   disconnect: () => Promise<void>;
@@ -29,11 +29,12 @@ export type SKWallet = {
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
+  connectorChains: Chain[];
 } & (
   | {
       network: SupportedSKChains;
       address: string;
-      chain: GetNetworkResult["chain"];
+      chain: Chain;
       isConnected: true;
       isConnecting: false;
       ledgerAccounts: Account[];

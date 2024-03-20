@@ -10,7 +10,7 @@ import { useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { useRefetchQueryNTimes } from "../use-refetch-query-n-times";
+import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],
@@ -77,10 +77,10 @@ export const useYieldBalancesScan = <
   /**
    * This is a hack to make sure that the yield balances are updated after a transaction
    */
-  useRefetchQueryNTimes({
+  useInvalidateQueryNTimes({
     enabled: !!lastActionTimestamp,
     key: ["yield-balances-refetch", lastActionTimestamp],
-    refetch: () => res.refetch(),
+    queryKey: [getYieldYieldBalancesScanQueryKey(param.dto)[0]],
     waitMs: 4000,
     shouldRefetch: () =>
       !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,

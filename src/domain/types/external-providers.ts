@@ -16,12 +16,11 @@ export class ExternalProvider {
 
   variant: SKExternalProviders;
 
-  get shouldMultiSend() {
-    return this.variant.type === "safe_wallet";
-  }
+  shouldMultiSend: boolean;
 
   constructor(variant: SKExternalProviders) {
     this.variant = variant;
+    this.shouldMultiSend = this.variant.type === "safe_wallet";
   }
 
   private invalidProviderType() {

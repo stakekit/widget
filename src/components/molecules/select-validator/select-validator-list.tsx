@@ -117,7 +117,7 @@ export const SelectValidatorList = ({
 
         return (
           <SelectModalItemContainer>
-            <SelectModalItem onItemClick={_onItemClick}>
+            <SelectModalItem onItemClick={_onItemClick} testId={item.address}>
               <Box flex={1} display="flex" flexDirection="column" gap="3">
                 <Box display="flex" justifyContent="center" alignItems="center">
                   {multiSelect && (

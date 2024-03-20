@@ -1,4 +1,4 @@
-import { Address, Connector } from "wagmi";
+import { Connector, createConnector, normalizeChainId } from "wagmi";
 import { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
@@ -9,141 +9,170 @@ import { tron } from "./chains";
 import { getTokenLogo } from "../../utils";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { config } from "../../config";
-import { WalletList } from "@stakekit/rainbowkit";
+import { Chain, WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { wcLogo } from "../../assets/images/wc-logo";
 import bitget from "../../assets/images/bitget.png";
 import { ledger } from "../../assets/images/ledger";
+import { Address } from "viem";
+import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
+import { Observable } from "../../utils/observable";
 
-export class TronConnector extends Connector {
-  id = "tron";
-  name = "Tron";
+const configMeta = {
+  tronLink: {
+    id: "tronLink",
+    name: "TronLink",
+    type: "tronLinkProvider",
+  },
+  tronWc: {
+    id: "tronWc",
+    name: "Wallet Connect",
+    type: "tronWcProvider",
+  },
+  tronBg: {
+    id: "tronBg",
+    name: "Bitget",
+    type: "tronBgProvider",
+  },
+  tronLedger: {
+    id: "tronLedger",
+    name: "Ledger",
+    type: "tronLedgerProvider",
+  },
+} as const;
 
-  constructor(public adapter: Adapter) {
-    super({ options: {}, chains: [tron] }); // only mainnet for now
-  }
+type ExtraProps = ConnectorWithFilteredChains &
+  Pick<Adapter, "signTransaction">;
 
-  ready = true;
+type TronConnector = Connector & ExtraProps;
 
-  async connect() {
-    this.emit("message", { type: "connecting" });
+export const isTronConnector = (
+  connector: Connector
+): connector is TronConnector =>
+  Object.values(configMeta).some((val) => val.id === connector.id);
 
-    await this.adapter.connect();
+const createTronConnector = ({
+  adapter,
+  metaConfig,
+  walletDetailsParams,
+}: {
+  metaConfig: keyof typeof configMeta;
+  adapter: Adapter;
+  walletDetailsParams: WalletDetailsParams;
+}) =>
+  createConnector<unknown, ExtraProps>((config) => ({
+    ...walletDetailsParams,
+    id: configMeta[metaConfig].id,
+    name: configMeta[metaConfig].name,
+    type: configMeta[metaConfig].type,
+    signTransaction: adapter.signTransaction.bind(adapter),
+    connect: async () => {
+      config.emitter.emit("message", { type: "connecting" });
 
-    setStorageItem("sk-widget@1//shimDisconnect/tron", true);
+      await adapter.connect();
 
-    return {
-      account: this.adapter.address as Address,
-      chain: {
-        id: tron.id,
-        unsupported: false,
-      },
-    };
-  }
+      setStorageItem("sk-widget@1//shimDisconnect/tron", true);
 
-  async disconnect() {
-    setStorageItem("sk-widget@1//shimDisconnect/tron", false);
-    await this.adapter.disconnect();
-  }
-
-  async getAccount() {
-    return (
-      await EitherAsync.liftEither(
-        Maybe.fromNullable(this.adapter.address as Address).toEither(
-          new Error("No account found")
+      return {
+        accounts: [adapter.address as Address],
+        chainId: tron.id,
+      };
+    },
+    disconnect: () => {
+      setStorageItem("sk-widget@1//shimDisconnect/tron", false);
+      return adapter.disconnect();
+    },
+    getAccounts: async () => {
+      return (
+        await EitherAsync.liftEither(
+          Maybe.fromNullable([adapter.address as Address]).toEither(
+            new Error("No account found")
+          )
         )
-      )
-    ).unsafeCoerce();
-  }
-
-  async switchChain() {
-    return tron;
-  }
-
-  async getChainId() {
-    return tron.id;
-  }
-
-  async getProvider() {
-    throw new Error("Not implemented");
-  }
-
-  getWalletClient = () => {
-    throw new Error("Not implemented");
-  };
-
-  async isAuthorized() {
-    return getStorageItem("sk-widget@1//shimDisconnect/tron")
-      .map((val) => !!(val && this.adapter.connected && this.adapter.address))
-      .orDefault(false);
-  }
-
-  protected onAccountsChanged = (accounts: string[]) => {
-    if (accounts.length === 0) {
-      this.emit("disconnect");
-    } else {
-      this.emit("change", { account: accounts[0] as Address });
-    }
-  };
-
-  protected onChainChanged = (chainId: number | string) => {
-    this.emit("change", {
-      chain: { id: chainId as number, unsupported: false },
-    });
-  };
-
-  protected onDisconnect(error: Error): void {
-    this.emit("disconnect");
-  }
-}
+      ).unsafeCoerce();
+    },
+    switchChain: async () => tron,
+    getChainId: async () => tron.id,
+    isAuthorized: async () =>
+      getStorageItem("sk-widget@1//shimDisconnect/tron")
+        .map((val) => !!(val && adapter.connected && adapter.address))
+        .orDefault(false),
+    onAccountsChanged: (accounts: string[]) => {
+      if (accounts.length === 0) {
+        config.emitter.emit("disconnect");
+      } else {
+        config.emitter.emit("change", { accounts: accounts as Address[] });
+      }
+    },
+    onChainChanged: (chainId) => {
+      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
+    },
+    onDisconnect: () => {
+      config.emitter.emit("disconnect");
+    },
+    getProvider: async () => ({}),
+    $filteredChains: new Observable<Chain[]>([tron]),
+  }));
 
 export const tronConnector: WalletList[number] = {
   groupName: "Tron",
   wallets: [
-    {
-      id: "tron-link",
-      name: "TronLink",
+    () => ({
+      id: configMeta.tronLink.id,
+      name: configMeta.tronLink.name,
       iconUrl: getTokenLogo("trx"),
       iconBackground: "#fff",
-      createConnector: () => ({
-        connector: new TronConnector(new TronLinkAdapter()),
-      }),
-    },
-    {
-      id: "tron-wc",
-      name: "Wallet Connect",
+      createConnector: (walletDetailsParams) =>
+        createTronConnector({
+          walletDetailsParams,
+          metaConfig: "tronLink",
+          adapter: new TronLinkAdapter(),
+        }),
+    }),
+    () => ({
+      id: configMeta.tronWc.id,
+      name: configMeta.tronWc.name,
       iconUrl: wcLogo,
       iconBackground: "#fff",
-      createConnector: () => ({
-        connector: new TronConnector(
-          new WalletConnectAdapter({
+      installed: true,
+      createConnector: (walletDetailsParams) =>
+        createTronConnector({
+          walletDetailsParams,
+          metaConfig: "tronWc",
+          adapter: new WalletConnectAdapter({
             network: "Mainnet",
-            options: { projectId: config.walletConnectV2.projectId },
-            web3ModalConfig: {
-              themeVariables: {
-                "--w3m-z-index": "99999999999",
-              },
+            options: {
+              customStoragePrefix: "tronwalletconnect_",
+              projectId: config.walletConnectV2.projectId,
             },
-          })
-        ),
-      }),
-    },
-    {
-      id: "tron-bg",
-      name: "Bitget",
+            web3ModalConfig: {
+              themeVariables: { "--w3m-z-index": "99999999999" },
+            },
+          }),
+        }),
+    }),
+    () => ({
+      id: configMeta.tronBg.id,
+      name: configMeta.tronBg.name,
       iconUrl: bitget,
       iconBackground: "#fff",
-      createConnector: () => ({
-        connector: new TronConnector(new BitKeepAdapter()),
-      }),
-    },
-    {
-      id: "tron-ledger",
-      name: "Ledger",
+      createConnector: (walletDetailsParams) =>
+        createTronConnector({
+          walletDetailsParams,
+          adapter: new BitKeepAdapter(),
+          metaConfig: "tronBg",
+        }),
+    }),
+    () => ({
+      id: configMeta.tronLedger.id,
+      name: configMeta.tronLedger.name,
       iconUrl: ledger,
       iconBackground: "#fff",
-      createConnector: () => ({
-        connector: new TronConnector(new LedgerAdapter()),
-      }),
-    },
+      createConnector: (walletDetailsParams) =>
+        createTronConnector({
+          walletDetailsParams,
+          metaConfig: "tronLedger",
+          adapter: new LedgerAdapter(),
+        }),
+    }),
   ],
 };

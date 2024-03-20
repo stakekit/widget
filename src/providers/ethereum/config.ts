@@ -102,47 +102,13 @@ const queryFn = async ({
       const connector: WalletList[number] = {
         groupName: "Ethereum",
         wallets: forceWalletConnectOnly
-          ? [
-              walletConnectWallet({
-                chains: evmChains,
-                options: {
-                  projectId: config.walletConnectV2.projectId,
-                  isNewChainsStale: true,
-                },
-                projectId: config.walletConnectV2.projectId,
-              }),
-            ]
+          ? [walletConnectWallet]
           : [
-              metaMaskWallet({
-                chains: evmChains,
-                projectId: config.walletConnectV2.projectId,
-                shimDisconnect: true,
-              }),
-              injectedWallet({
-                chains: evmChains,
-                shimDisconnect: true,
-                name: "Injected Wallet",
-              }),
-              walletConnectWallet({
-                chains: evmChains,
-                options: {
-                  projectId: config.walletConnectV2.projectId,
-                  isNewChainsStale: true,
-                },
-                projectId: config.walletConnectV2.projectId,
-              }),
-              rainbowWallet({
-                chains: evmChains,
-                projectId: config.walletConnectV2.projectId,
-              }),
-              coinbaseWallet({
-                chains: evmChains,
-                appName: config.appName,
-              }),
-              // ledgerWallet({
-              //   chains: evmChains,
-              //   projectId: config.walletConnectV2.projectId,
-              // }),
+              metaMaskWallet,
+              injectedWallet,
+              walletConnectWallet,
+              rainbowWallet,
+              coinbaseWallet,
             ],
       };
 

@@ -7,12 +7,9 @@ import {
 } from "@stakekit/api-hooks";
 import { server } from "../../mocks/server";
 import { HttpResponse, delay, http } from "msw";
-import { MockConnector } from "wagmi/connectors/mock";
 import { rkMockWallet } from "../../utils/mock-connector";
-import { BuildWagmiConfig } from "../../../src/providers/wagmi";
-import { avalanche } from "viem/chains";
-import { createWalletClient, custom } from "viem";
 import { vitest } from "vitest";
+import { waitForMs } from "../../../src/utils";
 
 export const setup = async () => {
   const token: TokenDto = {
@@ -264,6 +261,7 @@ export const setup = async () => {
       return HttpResponse.json({ ...transactionConstruct, id: transactionId });
     }),
     http.post("*/v1/transactions/:transactionId/submit_hash", async () => {
+      await delay(1000);
       return new HttpResponse(null, { status: 201 });
     }),
     http.get("*/v1/transactions/:transactionId/status", async () => {
@@ -278,58 +276,30 @@ export const setup = async () => {
 
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
-  const requestFn = vitest.fn(async ({ method }: any) => {
+  const requestFn = vitest.fn(async ({ method }: { method: string }) => {
+    await waitForMs(500);
+
     switch (method) {
       case "eth_sendTransaction":
         return "transaction_hash";
       case "eth_chainId":
         return 43114;
+      case "eth_requestAccounts":
+        return [account];
 
       default:
-        break;
+        throw new Error("unhandled method");
     }
-
-    throw new Error("unhandled method");
   });
 
-  const provider = {
-    on: (message: string, listener: (...args: any[]) => null) => {
-      if (message === "accountsChanged") {
-        listener([account]);
-      }
-    },
-    removeListener: () => null,
-    request: requestFn,
-  };
-
-  const customConnectors: Parameters<BuildWagmiConfig>[0]["customConnectors"] =
-    (chains) => [
-      {
-        groupName: "Mock Wallet",
-        wallets: [
-          rkMockWallet({
-            connector: new MockConnector({
-              chains,
-              options: {
-                chainId: avalanche.id,
-                walletClient: createWalletClient({
-                  account,
-                  chain: avalanche,
-                  transport: custom(provider),
-                }),
-                flags: { isAuthorized: true },
-              },
-            }),
-          }),
-        ],
-      },
-    ];
+  const customConnectors = rkMockWallet({ accounts: [account], requestFn });
 
   return {
     customConnectors,
-    requestFn,
     yieldOp,
     enterAction,
     transactionConstruct,
+    account,
+    requestFn,
   };
 };

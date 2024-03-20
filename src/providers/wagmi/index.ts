@@ -1,5 +1,5 @@
-import { Chain, configureChains, createConfig, mainnet } from "wagmi";
-import { publicProvider } from "wagmi/providers/public";
+import { createConfig, http } from "wagmi";
+import { Chain, mainnet } from "wagmi/chains";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -12,10 +12,11 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { createExternalProviderConnector } from "../external-provider";
+import { externalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
 import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
+import { createClient } from "viem";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -30,7 +31,6 @@ const buildWagmiConfig = async (opts: {
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
   substrateConfig: GetEitherAsyncRight<ReturnType<typeof getSubstrateConfig>>;
-  chains: Chain[];
   wagmiConfig: ReturnType<typeof createConfig>;
 }> => {
   return EitherAsync.fromPromise(() =>
@@ -74,57 +74,55 @@ const buildWagmiConfig = async (opts: {
       substrateConfig,
       queryParams,
     }) => {
-      const { chains, publicClient, webSocketPublicClient } = configureChains(
-        [
-          ...evmConfig.evmChains,
-          ...cosmosConfig.cosmosWagmiChains,
-          ...miscConfig.miscChains,
-          ...substrateConfig.substrateChains,
-        ],
-        [publicProvider()]
-      );
+      const chains = [
+        ...evmConfig.evmChains,
+        ...cosmosConfig.cosmosWagmiChains,
+        ...miscConfig.miscChains,
+        ...substrateConfig.substrateChains,
+      ] as [Chain, ...Chain[]];
 
       const wagmiConfig = createConfig({
-        autoConnect: true,
-        connectors: connectorsForWallets([
-          ...(opts.externalProviders
-            ? [
-                createExternalProviderConnector(
-                  evmConfig.evmChains, // currently only EVM chains
-                  opts.externalProviders
-                ),
-              ]
-            : isLedgerDappBrowserProvider()
-              ? [
-                  ledgerLiveConnector({
-                    queryParams,
-                    enabledChainsMap: {
-                      evm: evmConfig.evmChainsMap,
-                      cosmos: cosmosConfig.cosmosChainsMap,
-                      misc: miscConfig.miscChainsMap,
-                      substrate: substrateConfig.substrateChainsMap,
-                    },
-                  }),
-                ]
-              : Maybe.catMaybes([
-                  evmConfig.connector,
-                  cosmosConfig.connector,
-                  ...miscConfig.connectors,
-                ])),
-          ...(typeof opts.customConnectors === "function"
-            ? opts.customConnectors(chains)
-            : opts.customConnectors ?? []),
-        ]),
-        publicClient,
-        webSocketPublicClient,
-      }) as ReturnType<typeof createConfig>;
+        chains,
+        client: ({ chain }) => createClient({ chain, transport: http() }),
+        connectors: connectorsForWallets(
+          [
+            ...(opts.customConnectors
+              ? typeof opts.customConnectors === "function"
+                ? opts.customConnectors(chains)
+                : opts.customConnectors ?? []
+              : opts.externalProviders
+                ? [externalProviderConnector(opts.externalProviders)]
+                : isLedgerDappBrowserProvider()
+                  ? [
+                      ledgerLiveConnector({
+                        queryParams,
+                        enabledChainsMap: {
+                          evm: evmConfig.evmChainsMap,
+                          cosmos: cosmosConfig.cosmosChainsMap,
+                          misc: miscConfig.miscChainsMap,
+                          substrate: substrateConfig.substrateChainsMap,
+                        },
+                      }),
+                    ]
+                  : Maybe.catMaybes([
+                      evmConfig.connector,
+                      cosmosConfig.connector,
+                      ...miscConfig.connectors,
+                    ])),
+          ],
+          {
+            appName: config.appName,
+            appIcon: config.appIcon,
+            projectId: config.walletConnectV2.projectId,
+          }
+        ),
+      });
 
       return Promise.resolve({
         evmConfig,
         cosmosConfig,
         miscConfig,
         substrateConfig,
-        chains,
         wagmiConfig,
       });
     },
@@ -161,15 +159,12 @@ export const useWagmiConfig = (): UseQueryResult<
 };
 
 export const defaultConfig: ReturnType<typeof createConfig> = (() => {
-  const { publicClient, webSocketPublicClient } = configureChains(
-    [mainnet], // must use at least one chain
-    [publicProvider()]
-  );
-
   return createConfig({
-    autoConnect: true,
-    publicClient,
-    webSocketPublicClient,
-    connectors: [],
+    chains: [mainnet],
+    client: ({ chain }) =>
+      createClient({
+        chain,
+        transport: http(chain.rpcUrls.default.http.find((url) => !!url)),
+      }),
   }) as ReturnType<typeof createConfig>;
 })();

@@ -4,7 +4,7 @@ import { StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
-import { WagmiProvider } from "./wagmi/provider";
+import { WagmiConfigProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
@@ -22,7 +22,7 @@ import { SKQueryClientContextProvider } from "./query-client";
 
 export const Providers = ({
   children,
-}: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
+}: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
   const { tracking, showQueryDevtools } = useSettings();
 
   return (
@@ -31,7 +31,7 @@ export const Providers = ({
         <SKQueryClientContextProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
-          <WagmiProvider>
+          <WagmiConfigProvider>
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
                 <RainbowProvider>
@@ -59,7 +59,7 @@ export const Providers = ({
                 </RainbowProvider>
               </SKWalletProvider>
             </TrackingContextProvider>
-          </WagmiProvider>
+          </WagmiConfigProvider>
         </SKQueryClientContextProvider>
       </StakeKitQueryProvider>
     </StrictMode>

@@ -6,7 +6,6 @@ export const polkadot = {
   id: 9999,
   name: "Polkadot",
   iconUrl: getNetworkLogo(Networks.Polkadot),
-  network: "polkadot",
   nativeCurrency: {
     decimals: 10,
     name: "Polkadot",

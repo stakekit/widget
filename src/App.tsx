@@ -25,7 +25,6 @@ import {
   EarnPage,
   Details,
 } from "./pages";
-import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
 import { Providers } from "./providers";
 import {
   SettingsContextProvider,
@@ -92,8 +91,6 @@ const Widget = () => {
   }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
 
   useHandleDeepLinks();
-
-  useAutoConnectInjectedProviderMachine();
 
   const detailsMatch = useDetailsMatch();
 

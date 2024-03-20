@@ -1,9 +1,9 @@
-import { InlineConfig } from "vitest/";
+import { InlineConfig } from "vitest";
 import { defineConfig } from "vite";
 import path from "path";
 import react from "@vitejs/plugin-react-swc";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import macrosPlugin from "vite-plugin-babel-macros";
+import macros from "unplugin-parcel-macros";
 
 declare module "vite" {
   interface UserConfig {
@@ -19,12 +19,12 @@ export default defineConfig({
     setupFiles: [path.resolve(__dirname, "tests/utils/setup.ts")],
     server: {
       deps: {
+        external: ["wagmi"],
         inline: ["@tronweb3/tronwallet-adapter-bitkeep"],
       },
     },
   },
-  plugins: [react(), vanillaExtractPlugin(), macrosPlugin()],
-  optimizeDeps: { include: ["@stakekit/common"] },
+  plugins: [macros.vite(), react(), vanillaExtractPlugin()],
   build: {
     outDir: "dist/website",
     sourcemap: true,

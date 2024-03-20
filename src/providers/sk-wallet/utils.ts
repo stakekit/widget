@@ -1,16 +1,14 @@
-import { Chain, Connector } from "wagmi";
+import { Connector } from "wagmi";
+import { Chain } from "wagmi/chains";
 import { SKWallet } from "../../domain/types";
-import { CosmosWagmiConnector } from "../../providers/cosmos/config";
 import { EitherAsync, Left, Right } from "purify-ts";
-import { LedgerLiveConnector } from "../../providers/ledger/ledger-connector";
 import {
   CosmosChainsMap,
   EvmChainsMap,
   MiscChainsMap,
   SubstrateChainsMap,
 } from "../../domain/types/chains";
-import { TronConnector } from "../misc/tron-connector";
-import { ExternalProviderConnector } from "../external-provider";
+import { isCosmosConnector } from "../cosmos/cosmos-connector";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,
@@ -35,11 +33,6 @@ export const wagmiNetworkToSKNetwork = ({
   );
 };
 
-export const isCosmosConnector = (
-  connector: Connector
-): connector is CosmosWagmiConnector =>
-  connector instanceof CosmosWagmiConnector;
-
 export const getCosmosChainWallet = (connector: Connector | undefined) =>
   EitherAsync.liftEither(
     !connector
@@ -52,16 +45,3 @@ export const getCosmosChainWallet = (connector: Connector | undefined) =>
       () => new Error("could not get chain wallet")
     )
   );
-
-export const isLedgerLiveConnector = (
-  connector: Connector
-): connector is LedgerLiveConnector => connector instanceof LedgerLiveConnector;
-
-export const isTronConnector = (
-  connector: Connector
-): connector is TronConnector => connector instanceof TronConnector;
-
-export const isExternalProviderConnector = (
-  connector: Connector
-): connector is ExternalProviderConnector =>
-  connector instanceof ExternalProviderConnector;

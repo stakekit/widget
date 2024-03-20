@@ -1,5 +1,8 @@
+import { getSKIcon } from "../utils";
+
 export const config = {
   appName: "SteakKit",
+  appIcon: getSKIcon("sk-icon_320x320.png"),
   currency: "USD",
   queryClient: {
     staleTime: 1000 * 5,

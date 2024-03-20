@@ -24,7 +24,7 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { isAxiosError } from "axios";
 import { useMemo } from "react";
-import { isExternalProviderConnector } from "../../../providers/sk-wallet/utils";
+import { isExternalProviderConnector } from "../../../providers/external-provider";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -59,7 +59,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
     () =>
       connector &&
       isExternalProviderConnector(connector) &&
-      connector.provider.shouldMultiSend,
+      connector.shouldMultiSend,
     [connector]
   );
 
