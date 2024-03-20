@@ -178,5 +178,15 @@
     "title": "Missing Account Number or Sequence",
     "details": "Binance account number or sequence could not be located",
     "solution": "Try again later or contact Stakekit support"
+  },
+  "GRTStakingDisabledError": {
+    "title": "The Graph staking is moving to Arbitrum",
+    "details": "Staking for The Graph is set to transition to Arbitrum, and it's possible to stake there via StakeKit",
+    "solution": "Bridge your funds and try again on Arbitrum"
+  },
+  "GRTStakingDisabledLedgerLiveError": {
+    "title": "The Graph staking is moving to Arbitrum",
+    "details": "Staking for The Graph is set to transition to Arbitrum and will soon be accessible via StakeKit in Ledger Live",
+    "solution": "Once available you can bridge your funds and stake on Arbitrum"
   }
 }

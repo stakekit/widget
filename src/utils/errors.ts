@@ -38,6 +38,8 @@ export const errorsSet = new Set([
   "TezosBalanceAlreadyDelegatedError",
   "BinanceAccountNotFoundError",
   "BinanceMissingAccountNumberOrSequenceError",
+  "GRTStakingDisabledError",
+  "GRTStakingDisabledLedgerLiveError",
 ]);
 
 export type ErrorsSet =
@@ -76,4 +78,6 @@ export type ErrorsSet =
   | "TezosEstimateRevealGasLimitError"
   | "TezosBalanceAlreadyDelegatedError"
   | "BinanceAccountNotFoundError"
-  | "BinanceMissingAccountNumberOrSequenceError";
+  | "BinanceMissingAccountNumberOrSequenceError"
+  | "GRTStakingDisabledError"
+  | "GRTStakingDisabledLedgerLiveError";
