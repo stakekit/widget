@@ -12,13 +12,13 @@ export const StakeCompletePage = () => {
     val.type === "stake" ? val : null
   );
 
-  const selectedStake = stakeHistoryData.map((val) => val.selectedStake);
-  const stakeAmount = stakeHistoryData.map((val) => val.stakeAmount);
+  const selectedStake = stakeHistoryData.map((val) => val.integrationData);
+  const stakeAmount = stakeHistoryData.map((val) => val.amount);
   const selectedValidators = stakeHistoryData.map(
     (val) => val.selectedValidators
   );
 
-  const token = selectedStake.map((y) => y.token);
+  const token = stakeHistoryData.map((y) => y.interactedToken);
   const metadata = selectedStake.map((y) => y.metadata);
 
   const network = selectedStake.mapOrDefault((y) => y.token.symbol, "");
