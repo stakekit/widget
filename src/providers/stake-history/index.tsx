@@ -1,4 +1,9 @@
-import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import {
+  ActionTypes,
+  TokenDto,
+  ValidatorDto,
+  YieldDto,
+} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import {
@@ -11,15 +16,18 @@ import {
 } from "react";
 
 type GenericData = { timestamp: number };
-type TypeData =
+type TypeData = {
+  integrationData: YieldDto;
+  amount: BigNumber;
+  interactedToken: TokenDto;
+} & (
   | {
       type: "stake";
-      selectedStake: YieldDto;
-      stakeAmount: BigNumber;
       selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
     }
   | { type: "unstake" }
-  | { type: "pending_action" };
+  | { type: "pending_action"; pendingActionType: ActionTypes }
+);
 
 type Data = Maybe<GenericData & TypeData>;
 
