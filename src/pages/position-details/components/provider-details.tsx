@@ -183,8 +183,8 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
             >
               <Text variant={{ weight: "normal" }}>{val.title}</Text>
 
-              {key === "address" ? (
-                <CopyText.Provider text={val.val as string}>
+              {key === "address" && props.address ? (
+                <CopyText.Provider text={props.address}>
                   <CopyText.Root>
                     <Box display="flex" gap="1" className={addressParent}>
                       <Text
