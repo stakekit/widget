@@ -112,7 +112,7 @@ const fn = ({
         }))
     );
 
-export class StakingNotAllowedError extends Error {
+class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {
     const dto = e as undefined | { type: string; code: number };
 

@@ -37,7 +37,7 @@ export const checkGasAmount = ({
       })
     );
 
-export class NotEnoughGasTokenError extends Error {
+class NotEnoughGasTokenError extends Error {
   constructor() {
     super("Not enough gas token");
   }

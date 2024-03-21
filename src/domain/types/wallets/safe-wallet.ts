@@ -9,7 +9,7 @@ export type SafeWalletAppInfo = {
   iconUrl: string;
 };
 
-export type SafeWalletTransactionReceipt = {
+type SafeWalletTransactionReceipt = {
   hash?: string;
   transactionHash?: string;
   blockHash?: string;

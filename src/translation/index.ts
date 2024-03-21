@@ -10,8 +10,6 @@ export const localResources = {
   en: { translation: translationEN },
 } as const;
 
-export type SupportedLocales = keyof typeof localResources;
-
 i18n
   .use(initReactI18next)
   .use(LanguageDetector)
