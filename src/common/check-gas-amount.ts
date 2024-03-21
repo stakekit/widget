@@ -1,7 +1,7 @@
 import {
   AddressWithTokenDto,
   TransactionDto,
-  tokenGetTokenBalances,
+  useTokenGetTokenBalancesHook,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
@@ -11,15 +11,14 @@ import { getTransactionTotalGas } from "../domain";
 export const checkGasAmount = ({
   addressWithTokenDto,
   transactionConstructRes,
+  tokenGetTokenBalances,
 }: {
   addressWithTokenDto: AddressWithTokenDto;
   transactionConstructRes: TransactionDto[];
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 }) =>
   withRequestErrorRetry({
-    fn: () =>
-      tokenGetTokenBalances({
-        addresses: [addressWithTokenDto],
-      }),
+    fn: () => tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),
   })
     .mapLeft(() => new GetGasTokenError())
     .chain((res) =>

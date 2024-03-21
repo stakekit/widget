@@ -196,7 +196,19 @@ export const setup = () => {
 
         return HttpResponse.json(referralCodeRes);
       }
-    )
+    ),
+    http.get("https://i18n.stakek.it/locales/en/errors.json", async () => {
+      await delay();
+
+      return HttpResponse.json({
+        MissingArgumentsError: {
+          title: "Missing Arguments",
+          details:
+            "The following required arguments are missing to perform this operation: {{arguments}}",
+          solution: "Try again later or contact Stakekit support",
+        },
+      });
+    })
   );
 
   const setUrl = (referralCode?: string) => {

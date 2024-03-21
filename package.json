@@ -53,8 +53,7 @@
     "clean": "rm -rf dist",
     "preview": "vite preview",
     "prepare": "husky install",
-    "check-unused": "npx knip",
-    "get-errors": "tsx get-errors.ts"
+    "check-unused": "npx knip"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -75,7 +74,7 @@
     "@ledgerhq/wallet-api-client": "^1.5.5",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
-    "@stakekit/api-hooks": "^0.0.60",
+    "@stakekit/api-hooks": "^0.0.61",
     "@stakekit/common": "^0.0.28",
     "@stakekit/rainbowkit": "^2.0.0",
     "@tanstack/react-query": "^5.28.4",

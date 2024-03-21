@@ -15,7 +15,6 @@ import {
   ValidatorDto,
   YieldDto,
   YieldType,
-  useMutation,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { NumberInputProps, SelectModalProps } from "../../../../components";
@@ -55,6 +54,7 @@ import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKQueryClient } from "../../../../providers/query-client";
+import { useMutation } from "@tanstack/react-query";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 

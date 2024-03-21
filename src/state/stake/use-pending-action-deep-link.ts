@@ -3,7 +3,8 @@ import {
   PendingActionDto,
   YieldBalanceDto,
   YieldDto,
-  yieldGetSingleYieldBalances,
+  useYieldGetSingleYieldBalancesHook,
+  useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
@@ -29,6 +30,9 @@ export const usePendingActionDeepLink = () => {
 
   const queryClient = useSKQueryClient();
 
+  const yieldGetSingleYieldBalances = useYieldGetSingleYieldBalancesHook();
+  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
+
   return useQuery({
     staleTime: Infinity,
     gcTime: Infinity,
@@ -52,6 +56,8 @@ export const usePendingActionDeepLink = () => {
             address: data.address,
             connector: data.connector,
             queryClient,
+            yieldGetSingleYieldBalances,
+            yieldYieldOpportunity,
           })
         )
       ).unsafeCoerce(),
@@ -64,14 +70,24 @@ const fn = ({
   address,
   connector,
   queryClient,
+  yieldGetSingleYieldBalances,
+  yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
   onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
   address: string;
   connector: Connector;
   queryClient: QueryClient;
+  yieldGetSingleYieldBalances: ReturnType<
+    typeof useYieldGetSingleYieldBalancesHook
+  >;
+  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }) =>
-  getInitialQueryParams({ isLedgerLive, queryClient }).chain((val) => {
+  getInitialQueryParams({
+    isLedgerLive,
+    queryClient,
+    yieldYieldOpportunity,
+  }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
         (
@@ -145,6 +161,7 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
+              yieldYieldOpportunity,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<

@@ -13,6 +13,7 @@ import { Chain } from "wagmi/chains";
 import { Address } from "viem";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import { Observable } from "../../utils/observable";
+import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -30,7 +31,10 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: SKExternalProviders
+  variant: SKExternalProviders,
+  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
+    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
+  >
 ): WalletList[number] => ({
   groupName: "External Providers",
   wallets: [
@@ -42,7 +46,10 @@ export const externalProviderConnector = (
       createConnector: () =>
         createConnector<unknown, ExtraProps>((config) => {
           const $filteredChains = new Observable<Chain[]>([]);
-          const provider = new ExternalProvider(variant);
+          const provider = new ExternalProvider(
+            variant,
+            transactionGetTransactionStatusByNetworkAndHash
+          );
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
             async () =>

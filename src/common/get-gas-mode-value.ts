@@ -1,8 +1,19 @@
-import { Networks, transactionGetGasForNetwork } from "@stakekit/api-hooks";
+import {
+  Networks,
+  useTransactionGetGasForNetworkHook,
+} from "@stakekit/api-hooks";
 import { EitherAsync, List } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
 
-export const getAverageGasMode = (network: Networks) =>
+export const getAverageGasMode = ({
+  network,
+  transactionGetGasForNetwork,
+}: {
+  network: Networks;
+  transactionGetGasForNetwork: ReturnType<
+    typeof useTransactionGetGasForNetworkHook
+  >;
+}) =>
   withRequestErrorRetry({ fn: () => transactionGetGasForNetwork(network) })
     .mapLeft(() => new Error("Get gas for network error"))
     .chain((gas) =>

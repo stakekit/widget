@@ -1,6 +1,5 @@
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ComponentProps, PropsWithChildren, StrictMode } from "react";
-import { StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
@@ -19,6 +18,7 @@ import {
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
 import { SKQueryClientContextProvider } from "./query-client";
+import { SKApiClientProvider } from "./api/api-client-provider";
 
 export const Providers = ({
   children,
@@ -27,7 +27,7 @@ export const Providers = ({
 
   return (
     <StrictMode>
-      <StakeKitQueryProvider>
+      <SKApiClientProvider>
         <SKQueryClientContextProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
@@ -61,7 +61,7 @@ export const Providers = ({
             </TrackingContextProvider>
           </WagmiConfigProvider>
         </SKQueryClientContextProvider>
-      </StakeKitQueryProvider>
+      </SKApiClientProvider>
     </StrictMode>
   );
 };

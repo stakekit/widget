@@ -2,7 +2,6 @@ import "./polyfills";
 import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
-import "./services/install-api-manager";
 import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
 import { ComponentProps, useState } from "react";
@@ -53,10 +52,12 @@ import {
   UnstakeOrPendingActionReviewPage,
 } from "./pages/review";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
-import { APIManager } from "@stakekit/api-hooks";
+import { useLoadErrorTranslations } from "./translation";
 
 const Widget = () => {
   useToggleTheme();
+
+  useLoadErrorTranslations();
 
   const { chain, address } = useSKWallet();
 
@@ -210,8 +211,6 @@ export const SKApp = (props: SettingsContextType) => {
   const [showChild, setShowChild] = useState(false);
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
-
-  APIManager.setApiKey(props.apiKey);
 
   return (
     <SettingsContextProvider {...props}>

@@ -3,6 +3,11 @@ import { getStakeKitMock } from "@stakekit/api-hooks";
 
 export const handlers = [
   ...getStakeKitMock(),
+  http.get("https://i18n.stakek.it/locales/en/errors.json", async () => {
+    await delay();
+
+    return HttpResponse.json({});
+  }),
   http.options("*", async () => {
     await delay();
     return HttpResponse.json({

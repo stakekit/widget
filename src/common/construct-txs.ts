@@ -1,7 +1,7 @@
 import {
   ActionDto,
   GasModeValueDto,
-  transactionConstruct,
+  useTransactionConstructHook,
 } from "@stakekit/api-hooks";
 import { getValidStakeSessionTx } from "../domain";
 import { EitherAsync } from "purify-ts";
@@ -12,10 +12,12 @@ export const constructTxs = ({
   actionDto,
   gasModeValue,
   isLedgerLive,
+  transactionConstruct,
 }: {
   actionDto: ActionDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
 }) =>
   EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
     .chain((actionWithValidTxs) =>

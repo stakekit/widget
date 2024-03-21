@@ -13,10 +13,10 @@ import {
 import {
   ActionDto,
   TransactionDto,
-  transactionGetTransaction,
-  transactionGetTransactionStatusFromId,
-  transactionSubmit,
-  transactionSubmitHash,
+  useTransactionGetTransactionHook,
+  useTransactionGetTransactionStatusFromIdHook,
+  useTransactionSubmitHashHook,
+  useTransactionSubmitHook,
 } from "@stakekit/api-hooks";
 import { isTxError } from "../../../domain";
 import { withRequestErrorRetry } from "../../../common/utils";
@@ -54,6 +54,12 @@ export const useStepsMachine = (session: ActionDto | null) => {
     useSKWallet();
 
   const trackEvent = useTrackEvent();
+
+  const transactionSubmit = useTransactionSubmitHook();
+  const transactionGetTransactionStatusFromId =
+    useTransactionGetTransactionStatusFromIdHook();
+  const transactionGetTransaction = useTransactionGetTransactionHook();
+  const transactionSubmitHash = useTransactionSubmitHashHook();
 
   const shouldMultiSend = useMemo(
     () =>

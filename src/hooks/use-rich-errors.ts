@@ -1,33 +1,41 @@
-import { APIManager } from "@stakekit/api-hooks";
-import { useEffect, useState } from "react";
-import { ErrorsSet, errorsSet } from "../utils/errors";
+import { AxiosInstance } from "axios";
+import { i18n } from "i18next";
+import { useCallback, useSyncExternalStore } from "react";
+import { Observable } from "../utils/observable";
 
 interface RichError {
-  message: ErrorsSet;
+  message: string;
   details?: { [key: string]: any };
 }
 
+const $richError = new Observable<RichError | null>(null);
+
+export const attachRichErrorsInterceptor = (
+  apiClient: AxiosInstance,
+  i18n: i18n
+) =>
+  apiClient.interceptors.response.use(undefined, (error) => {
+    if (i18n.exists(`errors.${error.response.data.message}`)) {
+      $richError.next(error.response.data);
+    }
+
+    return Promise.reject(error);
+  });
+
 export const useRichErrors = () => {
-  const [error, setError] = useState<RichError>();
+  const error = useSyncExternalStore(
+    useCallback((onChange) => {
+      const unsub = $richError.subscribe(onChange);
 
-  useEffect(() => {
-    const id = APIManager.getInstance()!.interceptors.response.use(
-      undefined,
-      (error) => {
-        if (errorsSet.has(error.response.data.message)) {
-          setError(error.response.data);
-        }
+      return () => {
+        unsub();
+      };
+    }, []),
+    useCallback(() => $richError.value, []),
+    useCallback(() => $richError.value, [])
+  );
 
-        return Promise.reject(error);
-      }
-    );
-
-    return () => APIManager.getInstance()!.interceptors.response.eject(id);
-  }, []);
-
-  const resetError = () => {
-    setError(undefined);
-  };
+  const resetError = () => $richError.next(null);
 
   return { error, resetError };
 };

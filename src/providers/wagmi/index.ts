@@ -17,6 +17,11 @@ import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
 import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
 import { createClient } from "viem";
+import {
+  useTransactionGetTransactionStatusByNetworkAndHashHook,
+  useYieldGetMyNetworksHook,
+  useYieldYieldOpportunityHook,
+} from "@stakekit/api-hooks";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -26,6 +31,11 @@ const buildWagmiConfig = async (opts: {
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
   isLedgerLive: boolean;
+  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
+  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
+    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
+  >;
+  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -38,16 +48,25 @@ const buildWagmiConfig = async (opts: {
       getEvmConfig({
         forceWalletConnectOnly: opts.forceWalletConnectOnly,
         queryClient: opts.queryClient,
+        yieldGetMyNetworks: opts.yieldGetMyNetworks,
       }),
       getCosmosConfig({
         forceWalletConnectOnly: opts.forceWalletConnectOnly,
         queryClient: opts.queryClient,
+        yieldGetMyNetworks: opts.yieldGetMyNetworks,
       }),
-      getMiscConfig({ queryClient: opts.queryClient }),
-      getSubstrateConfig({ queryClient: opts.queryClient }),
+      getMiscConfig({
+        queryClient: opts.queryClient,
+        yieldGetMyNetworks: opts.yieldGetMyNetworks,
+      }),
+      getSubstrateConfig({
+        queryClient: opts.queryClient,
+        yieldGetMyNetworks: opts.yieldGetMyNetworks,
+      }),
       getInitialQueryParams({
         isLedgerLive: opts.isLedgerLive,
         queryClient: opts.queryClient,
+        yieldYieldOpportunity: opts.yieldYieldOpportunity,
       }),
     ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
       evm.chain((e) =>
@@ -91,7 +110,12 @@ const buildWagmiConfig = async (opts: {
                 ? opts.customConnectors(chains)
                 : opts.customConnectors ?? []
               : opts.externalProviders
-                ? [externalProviderConnector(opts.externalProviders)]
+                ? [
+                    externalProviderConnector(
+                      opts.externalProviders,
+                      opts.transactionGetTransactionStatusByNetworkAndHash
+                    ),
+                  ]
                 : isLedgerDappBrowserProvider()
                   ? [
                       ledgerLiveConnector({
@@ -144,6 +168,11 @@ export const useWagmiConfig = (): UseQueryResult<
 
   const queryClient = useSKQueryClient();
 
+  const yieldGetMyNetworks = useYieldGetMyNetworksHook();
+  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
+  const transactionGetTransactionStatusByNetworkAndHash =
+    useTransactionGetTransactionStatusByNetworkAndHashHook();
+
   return useQuery({
     staleTime,
     queryKey,
@@ -154,6 +183,9 @@ export const useWagmiConfig = (): UseQueryResult<
         externalProviders,
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
+        yieldGetMyNetworks,
+        transactionGetTransactionStatusByNetworkAndHash,
+        yieldYieldOpportunity,
       }),
   });
 };

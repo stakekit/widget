@@ -1,7 +1,6 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import {
-  APIManager,
   BalancesRequestDto,
   TokenDto,
   getTokenGetTokenBalancesQueryKey,
@@ -10,7 +9,8 @@ import {
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { useSKQueryClient } from "../../providers/query-client";
 
 export const useTokenAvailableAmount = ({
   tokenDto,
@@ -86,7 +86,14 @@ export const useTokenAvailableAmount = ({
   return res;
 };
 
-export const invalidateTokenAvailableAmount = () =>
-  APIManager.getQueryClient()!.invalidateQueries({
-    queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
-  });
+export const useInvalidateTokenAvailableAmount = () => {
+  const queryClient = useSKQueryClient();
+
+  return useCallback(
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
+      }),
+    [queryClient]
+  );
+};

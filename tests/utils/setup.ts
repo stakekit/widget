@@ -5,7 +5,6 @@ import ResizeObserver from "resize-observer-polyfill";
 import { MotionGlobalConfig } from "framer-motion";
 import { cleanup } from "@testing-library/react";
 import { server } from "../mocks/server";
-import { APIManager } from "@stakekit/api-hooks";
 
 MotionGlobalConfig.skipAnimations = true;
 
@@ -87,7 +86,6 @@ if (typeof window !== "undefined") {
 
 beforeAll(() => server.listen());
 afterEach(() => {
-  APIManager.getQueryClient()?.clear();
   server.resetHandlers();
   localStorage.clear();
   cleanup();

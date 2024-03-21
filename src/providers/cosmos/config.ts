@@ -17,6 +17,7 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { QueryClient } from "@tanstack/react-query";
 import { createCosmosConnector, wallets } from "./cosmos-connector";
 import { WalletList } from "@stakekit/rainbowkit";
+import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryKey = [config.appPrefix, "cosmos-config"];
 const staleTime = Infinity;
@@ -24,11 +25,13 @@ const staleTime = Infinity;
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
+  yieldGetMyNetworks,
 }: {
   queryClient: QueryClient;
+  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks(queryClient)
+  getEnabledNetworks({ queryClient, yieldGetMyNetworks })
     .chain((networks) => {
       const cosmosChainsMap: Partial<CosmosChainsMap> =
         typeSafeObjectFromEntries(

@@ -8,12 +8,19 @@ import { near, solana, tezos, tron } from "./chains";
 import { WalletList } from "@stakekit/rainbowkit";
 import { tronConnector } from "./tron-connector";
 import { QueryClient } from "@tanstack/react-query";
+import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Infinity;
 
-const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
-  getEnabledNetworks(queryClient).caseOf({
+const queryFn = async ({
+  queryClient,
+  yieldGetMyNetworks,
+}: {
+  queryClient: QueryClient;
+  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
+}) =>
+  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
     Right: (networks) => {
       const miscChainsMap: Partial<MiscChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<MiscChainsMap>({

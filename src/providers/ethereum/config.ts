@@ -29,15 +29,18 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { WalletList } from "@stakekit/rainbowkit";
 import { viction } from "./chains";
 import { QueryClient } from "@tanstack/react-query";
+import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
+  yieldGetMyNetworks,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
+  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
 }) =>
-  getEnabledNetworks(queryClient).caseOf({
+  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
     Right: (networks) => {
       const evmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<EvmChainsMap>({

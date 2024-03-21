@@ -1,7 +1,7 @@
 import { EitherAsync, Left } from "purify-ts";
 import { getSKIcon } from "../../utils";
 import { withRequestErrorRetry } from "../../common/utils";
-import { transactionGetTransactionStatusByNetworkAndHash } from "@stakekit/api-hooks";
+import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import { SupportedSKChains } from "./chains";
 import { SKExternalProviders, SafeWalletAppInfo } from "./wallets/safe-wallet";
 
@@ -14,12 +14,14 @@ export class ExternalProvider {
     url: "https://stakek.it",
   };
 
-  variant: SKExternalProviders;
-
   shouldMultiSend: boolean;
 
-  constructor(variant: SKExternalProviders) {
-    this.variant = variant;
+  constructor(
+    private variant: SKExternalProviders,
+    private transactionGetTransactionStatusByNetworkAndHash: ReturnType<
+      typeof useTransactionGetTransactionStatusByNetworkAndHashHook
+    >
+  ) {
     this.shouldMultiSend = this.variant.type === "safe_wallet";
   }
 
@@ -82,7 +84,7 @@ export class ExternalProvider {
               fn: async () => {
                 const [safeRes, skRes] = await Promise.all([
                   this.variant.provider.getTransactionReceipt(hash),
-                  transactionGetTransactionStatusByNetworkAndHash(
+                  this.transactionGetTransactionStatusByNetworkAndHash(
                     network,
                     hash
                   ),

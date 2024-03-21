@@ -1,16 +1,16 @@
 import {
-  APIManager,
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
   getYieldYieldBalancesScanQueryKey,
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
+import { useSKQueryClient } from "../../providers/query-client";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],
@@ -89,9 +89,18 @@ export const useYieldBalancesScan = <
   return res;
 };
 
-export const invalidateYieldBalances = () =>
-  APIManager.getQueryClient()!.invalidateQueries({
-    queryKey: [
-      getYieldYieldBalancesScanQueryKey({} as YieldBalanceScanRequestDto)[0],
-    ],
-  });
+export const useInvalidateYieldBalances = () => {
+  const queryClient = useSKQueryClient();
+
+  return useCallback(
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: [
+          getYieldYieldBalancesScanQueryKey(
+            {} as YieldBalanceScanRequestDto
+          )[0],
+        ],
+      }),
+    [queryClient]
+  );
+};

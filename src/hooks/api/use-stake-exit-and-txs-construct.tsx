@@ -1,8 +1,10 @@
 import {
   GasModeValueDto,
   ActionRequestDto,
-  actionExit,
+  useActionExitHook,
   TokenDto,
+  useTransactionConstructHook,
+  useTokenGetTokenBalancesHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -60,22 +62,34 @@ const fn = ({
   isLedgerLive,
   disableGasCheck,
   gasFeeToken,
+  actionExit,
+  transactionConstruct,
+  tokenGetTokenBalances,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
   disableGasCheck: boolean;
   gasFeeToken: TokenDto;
+  actionExit: ReturnType<typeof useActionExitHook>;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 }) =>
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
     .chain((actionDto) =>
-      constructTxs({ actionDto, gasModeValue, isLedgerLive })
+      constructTxs({
+        actionDto,
+        gasModeValue,
+        isLedgerLive,
+        transactionConstruct,
+      })
     )
     .chain((val) =>
       (disableGasCheck
         ? EitherAsync.liftEither(Right(null))
         : checkGasAmount({
+            tokenGetTokenBalances,
             addressWithTokenDto: {
               address: stakeRequestDto.addresses.address,
               additionalAddresses:

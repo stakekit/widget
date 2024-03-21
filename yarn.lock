@@ -6234,17 +6234,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.60":
-  version: 0.0.60
-  resolution: "@stakekit/api-hooks@npm:0.0.60"
+"@stakekit/api-hooks@npm:^0.0.61":
+  version: 0.0.61
+  resolution: "@stakekit/api-hooks@npm:0.0.61"
   dependencies:
     "@faker-js/faker": "npm:^8.4.1"
-    axios: "npm:^1.6.7"
-    lodash.merge: "npm:^4.6.2"
+    axios: "npm:^1.6.8"
   peerDependencies:
     "@tanstack/react-query": ^5
     msw: ^2
-  checksum: 10/f9e064b6ec4e5d7caf055a03a35836f92b25accbd39eb6e2650f875e47477a757d5304850d2faaa9a1180c8304ea3c49641c025719fe090119886455dcc0010e
+    react: ">=18"
+  checksum: 10/9a9d6a55e06e1dfc11d2f203fc350e8c69cbf987d652c3427b4016ea80b0a25ff7371e2bb3fb0c9fce1e828b5d3e18719f4026f072a09bce8b7e59cbdbfdbff5
   languageName: node
   linkType: hard
 
@@ -6293,7 +6293,7 @@ __metadata:
     "@ledgerhq/wallet-api-client": "npm:^1.5.5"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
-    "@stakekit/api-hooks": "npm:^0.0.60"
+    "@stakekit/api-hooks": "npm:^0.0.61"
     "@stakekit/common": "npm:^0.0.28"
     "@stakekit/rainbowkit": "npm:^2.0.0"
     "@tanstack/react-query": "npm:^5.28.4"
@@ -8868,17 +8868,6 @@ __metadata:
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
   checksum: 10/612bc93f8f738a518e7c5f9de9cc782bcd36aac6bae279160ef6a10260378e21c1786520eab3336898e3d66e0839ebdf739f327fb6d0431baa4d3235703a7652
-  languageName: node
-  linkType: hard
-
-"axios@npm:^1.6.7":
-  version: 1.6.7
-  resolution: "axios@npm:1.6.7"
-  dependencies:
-    follow-redirects: "npm:^1.15.4"
-    form-data: "npm:^4.0.0"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10/a1932b089ece759cd261f175d9ebf4d41c8994cf0c0767cda86055c7a19bcfdade8ae3464bf4cec4c8b142f4a657dc664fb77a41855e8376cf38b86d7a86518f
   languageName: node
   linkType: hard
 
@@ -11774,16 +11763,6 @@ __metadata:
     debug:
       optional: true
   checksum: 10/8be0d39919770054812537d376850ccde0b4762b0501c440bd08724971a078123b55f57704f2984e0664fecc0c86adea85add63295804d9dce401cd9604c91d3
-  languageName: node
-  linkType: hard
-
-"follow-redirects@npm:^1.15.4":
-  version: 1.15.4
-  resolution: "follow-redirects@npm:1.15.4"
-  peerDependenciesMeta:
-    debug:
-      optional: true
-  checksum: 10/2e8f5f259a6b02dfa8dc199e08431848a7c3beed32eb4c19945966164a52c89f07b86c3afcc32ebe4279cf0a960520e45a63013d6350309c5ec90133c5d9351a
   languageName: node
   linkType: hard
 

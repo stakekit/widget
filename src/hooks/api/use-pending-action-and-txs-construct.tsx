@@ -3,7 +3,9 @@ import {
   GasModeValueDto,
   PendingActionRequestDto,
   TokenDto,
-  actionPending,
+  useActionPendingHook,
+  useTokenGetTokenBalancesHook,
+  useTransactionConstructHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -61,6 +63,9 @@ const fn = ({
   isLedgerLive,
   disableGasCheck,
   gasFeeToken,
+  actionPending,
+  tokenGetTokenBalances,
+  transactionConstruct,
 }: {
   pendingActionRequestDto: PendingActionRequestDto & {
     addresses: AddressesDto;
@@ -69,18 +74,27 @@ const fn = ({
   isLedgerLive: boolean;
   disableGasCheck: boolean;
   gasFeeToken: TokenDto;
+  actionPending: ReturnType<typeof useActionPendingHook>;
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
   })
     .mapLeft(() => new Error("Pending actions error"))
     .chain((actionDto) =>
-      constructTxs({ actionDto, gasModeValue, isLedgerLive })
+      constructTxs({
+        actionDto,
+        gasModeValue,
+        isLedgerLive,
+        transactionConstruct,
+      })
     )
     .chain((val) =>
       (disableGasCheck
         ? EitherAsync.liftEither(Right(null))
         : checkGasAmount({
+            tokenGetTokenBalances,
             addressWithTokenDto: {
               address: pendingActionRequestDto.addresses.address,
               additionalAddresses:
