@@ -14,36 +14,32 @@ To install StakeKit Widget:
 
 ```bash
 npm install @stakekit/widget
-```
 
-or
-
-```bash
 yarn add @stakekit/widget
-```
 
-or
-
-```bash
 pnpm add @stakekit/widget
 ```
 
 If you are going to use StakeKit Widget as a React component, you'll need to install some additional peer dependencies:
 
 ```bash
-npm install wagmi viem
+npm install wagmi@1 viem@1
+
+yarn add wagmi@1 viem@1
+
+pnpm add wagmi@1 viem@1
 ```
 
-or
+If you're using Next.js, add this to your webpack configuration in `next.config.js`:
 
-```bash
-yarn add wagmi viem
-```
+```js
+const nextConfig = {
+  webpack: (config) => {
+    config.externals.push("pino-pretty", "lokijs", "encoding");
 
-or
-
-```bash
-pnpm add wagmi viem
+    return config;
+  },
+};
 ```
 
 ## Usage
@@ -55,18 +51,12 @@ To use StakeKit Widget, first you'll need API key from StakeKit.
 After you get the API key, you can import styles and widget component:
 
 ```tsx
-  import "@stakekit/widget/package/css";
-  import { SKApp, darkTheme } from "@stakekit/widget";
+import "@stakekit/widget/package/css";
+import { SKApp, darkTheme } from "@stakekit/widget";
 
-  const App = () => {
-    return (
-      <SKApp
-        apiKey="your-api-key"
-        theme={darkTheme}****
-        connectKitForceTheme="darkMode"
-      />
-    )
-  }
+const App = () => {
+  return <SKApp apiKey="your-api-key" theme={darkTheme} />;
+};
 ```
 
 ## Bundled component usage
@@ -79,8 +69,28 @@ renderSKWidget({
   container: document.getElementById("sk_widget_container")!,
   apiKey: "your-api-key",
   theme: lightTheme,
-  connectKitForceTheme: false,
 });
+```
+
+## Params
+
+To open the widget on a specific yield opportunity you need to pass the parameter yieldId as a prop to the component. Below is are examples that will open the widget on theethereum-eth-lido-staking. All possible yieldIds can be retrieved from the /v1/stake/opportunities endpoint
+
+### React component
+
+```tsx
+import "@stakekit/widget/package/css";
+import { SKApp, darkTheme } from "@stakekit/widget";
+
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      theme={darkTheme}
+      yieldId="ethereum-eth-lido-staking"
+    />
+  );
+};
 ```
 
 After this is done, you can start using the widget.
@@ -108,7 +118,6 @@ const App = () => {
           borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
         },
       }}
-      connectKitForceTheme="lightMode"
     />
   );
 };
@@ -126,7 +135,6 @@ const App = () => {
         ...darkTheme,
         borderRadius: { ...darkTheme.borderRadius, widgetBorderRadius: "10px" },
       }}
-      connectKitForceTheme="darkMode"
     />
   );
 };
@@ -146,7 +154,6 @@ const App = () => {
         lightMode: lightTheme,
         darkMode: darkTheme,
       }}
-      connectKitForceTheme="darkMode"
     />
   );
 };
@@ -156,97 +163,200 @@ const App = () => {
 
 ```ts
 {
-  {
-    borderRadius: {
-        2xl: string;
-        3xl: string;
-        base: string;
-        full: string;
-        half: string;
-        lg: string;
-        md: string;
-        none: string;
-        primaryButton: string;
-        secondaryButton: string;
-        sm: string;
-        widgetBorderRadius: string;
-        xl: string;
-    };
     color: {
+        white: string;
+        black: string;
+        transparent: string;
+        primary: string;
         accent: string;
+        disabled: string;
+        text: string;
+        textMuted: string;
+        textDanger: string;
         background: string;
         backgroundMuted: string;
-        black: string;
-        disabled: string;
-        disabledButtonActiveBackground: string;
-        disabledButtonActiveColor: string;
-        disabledButtonActiveOutline: string;
-        disabledButtonBackground: string;
-        disabledButtonColor: string;
-        disabledButtonHoverBackground: string;
-        disabledButtonHoverColor: string;
-        disabledButtonHoverOutline: string;
-        disabledButtonOutline: string;
-        modalBodyBackground: string;
-        modalOverlayBackground: string;
+        tokenSelectBackground: string;
+        tokenSelectHoverBackground: string;
+        tokenSelect: string;
+        skeletonLoaderBase: string;
+        skeletonLoaderHighlight: string;
+        tabBorder: string;
+        stakeSectionBackground: string;
+        dropdownBackground: string;
+        selectValidatorMultiSelectedBackground: string;
+        selectValidatorMultiDefaultBackground: string;
+        warningBoxBackground: string;
         positionsSectionBackgroundColor: string;
         positionsSectionBorderColor: string;
         positionsSectionDividerColor: string;
-        primary: string;
-        primaryButtonActiveBackground: string;
-        primaryButtonActiveColor: string;
-        primaryButtonActiveOutline: string;
-        primaryButtonBackground: string;
+        positionsClaimRewardsBackground: string;
+        positionsActionRequiredBackground: string;
+        modalOverlayBackground: string;
+        modalBodyBackground: string;
+        tooltipBackground: string;
         primaryButtonColor: string;
-        primaryButtonHoverBackground: string;
-        primaryButtonHoverColor: string;
-        primaryButtonHoverOutline: string;
+        primaryButtonBackground: string;
         primaryButtonOutline: string;
-        secondaryButtonActiveBackground: string;
-        secondaryButtonActiveColor: string;
-        secondaryButtonActiveOutline: string;
-        secondaryButtonBackground: string;
+        primaryButtonHoverColor: string;
+        primaryButtonHoverBackground: string;
+        primaryButtonHoverOutline: string;
+        primaryButtonActiveColor: string;
+        primaryButtonActiveBackground: string;
+        primaryButtonActiveOutline: string;
         secondaryButtonColor: string;
-        secondaryButtonHoverBackground: string;
-        secondaryButtonHoverColor: string;
-        secondaryButtonHoverOutline: string;
+        secondaryButtonBackground: string;
         secondaryButtonOutline: string;
-        stakeSectionBackground: string;
-        text: string;
-        textDanger: string;
-        textMuted: string;
-        tokenSelect: string;
-        tokenSelectBackground: string;
-        tokenSelectHoverBackground: string;
-        transparent: string;
-        white: string;
-    };
-    font: {
-        body: string;
+        secondaryButtonHoverColor: string;
+        secondaryButtonHoverBackground: string;
+        secondaryButtonHoverOutline: string;
+        secondaryButtonActiveColor: string;
+        secondaryButtonActiveBackground: string;
+        secondaryButtonActiveOutline: string;
+        disabledButtonColor: string;
+        disabledButtonBackground: string;
+        disabledButtonOutline: string;
+        disabledButtonHoverColor: string;
+        disabledButtonHoverBackground: string;
+        disabledButtonHoverOutline: string;
+        disabledButtonActiveColor: string;
+        disabledButtonActiveBackground: string;
+        disabledButtonActiveOutline: string;
+    } & {
+        connectKit: {
+            accentColor: string;
+            accentColorForeground: string;
+            actionButtonBorder: string;
+            actionButtonBorderMobile: string;
+            actionButtonSecondaryBackground: string;
+            closeButton: string;
+            closeButtonBackground: string;
+            connectButtonBackground: string;
+            connectButtonBackgroundError: string;
+            connectButtonInnerBackground: string;
+            connectButtonText: string;
+            connectButtonTextError: string;
+            connectionIndicator: string;
+            downloadBottomCardBackground: string;
+            downloadTopCardBackground: string;
+            error: string;
+            generalBorder: string;
+            generalBorderDim: string;
+            menuItemBackground: string;
+            modalBackdrop: string;
+            modalBackground: string;
+            modalBorder: string;
+            modalText: string;
+            modalTextDim: string;
+            modalTextSecondary: string;
+            profileAction: string;
+            profileActionHover: string;
+            profileForeground: string;
+            selectedOptionBorder: string;
+            standby: string;
+        };
     };
     fontSize: {
-        2xl: string;
-        3xl: string;
-        4xl: string;
-        5xl: string;
-        6xl: string;
+        xs: string;
+        sm: string;
+        md: string;
         lg: string;
         lgx: string;
-        md: string;
-        sm: string;
         xl: string;
+        "2xl": string;
+        "3xl": string;
+        "4xl": string;
+        "5xl": string;
+        "6xl": string;
+    };
+    letterSpacing: {
+        tighter: string;
+        tight: string;
+        normal: string;
+        wide: string;
+        wider: string;
+        widest: string;
+    };
+    lineHeight: {
+        none: string;
+        shorter: string;
+        short: string;
+        base: string;
+        tall: string;
+        taller: string;
         xs: string;
+        sm: string;
+        md: string;
+        lg: string;
+        xl: string;
+        "2xl": string;
+        "3xl": string;
+        "4xl": string;
+        "5xl": string;
+        "6xl": string;
     };
     fontWeight: {
+        normal: string;
+        medium: string;
+        semibold: string;
         bold: string;
         extrabold: string;
-        medium: string;
         modalHeading: string;
-        normal: string;
+        tokenSelect: string;
         primaryButton: string;
         secondaryButton: string;
-        semibold: string;
-        tokenSelect: string;
+    };
+    borderRadius: {
+        baseContract: {
+            none: string;
+            sm: string;
+            base: string;
+            md: string;
+            lg: string;
+            xl: string;
+            "2xl": string;
+            "3xl": string;
+            full: string;
+            half: string;
+            widgetBorderRadius: string;
+            primaryButton: string;
+            secondaryButton: string;
+        };
+        connectKit: {
+            actionButton: string;
+            connectButton: string;
+            menuButton: string;
+            modal: string;
+            modalMobile: string;
+        };
+    };
+    space: {
+        full: string;
+        unset: string;
+        auto: string;
+        "0": string;
+        "1": string;
+        "2": string;
+        "3": string;
+        "4": string;
+        "5": string;
+        "6": string;
+        "7": string;
+        "8": string;
+        "9": string;
+        "10": string;
+        "12": string;
+        "14": string;
+        "16": string;
+        "20": string;
+        "24": string;
+        "28": string;
+        "32": string;
+        "36": string;
+        "40": string;
+        "44": string;
+        "48": string;
+        px: string;
+        buttonMinHeight: string;
     };
     heading: {
         h1: {
@@ -282,79 +392,24 @@ const App = () => {
             };
         };
     };
-    letterSpacing: {
-        normal: string;
-        tight: string;
-        tighter: string;
-        wide: string;
-        wider: string;
-        widest: string;
-    };
-    lineHeight: {
-        2xl: string;
-        3xl: string;
-        4xl: string;
-        5xl: string;
-        6xl: string;
-        base: string;
-        lg: string;
-        md: string;
-        none: string;
-        short: string;
-        shorter: string;
-        sm: string;
-        tall: string;
-        taller: string;
-        xl: string;
-        xs: string;
-    };
-    space: {
-        0: string;
-        1: string;
-        10: string;
-        12: string;
-        14: string;
-        16: string;
-        2: string;
-        20: string;
-        24: string;
-        28: string;
-        3: string;
-        32: string;
-        36: string;
-        4: string;
-        40: string;
-        44: string;
-        48: string;
-        5: string;
-        6: string;
-        7: string;
-        8: string;
-        9: string;
-        auto: string;
-        buttonMinHeight: string;
-        full: string;
-        px: string;
-        unset: string;
-    };
     text: {
+        large: {
+            mobile: {
+                fontSize: string;
+            };
+            tablet: {
+                fontSize: string;
+            };
+        };
+        medium: {
+            mobile: {
+                fontSize: string;
+            };
+            tablet: {
+                fontSize: string;
+            };
+        };
         small: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        standard: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        xsmall: {
             mobile: {
                 fontSize: string;
             };
@@ -364,19 +419,47 @@ const App = () => {
         };
     };
     zIndices: {
+        hide: string;
         auto: string;
-        banner: string;
         base: string;
         docked: string;
         dropdown: string;
-        hide: string;
-        modal: string;
-        overlay: string;
-        skipLink: string;
         sticky: string;
+        banner: string;
+        overlay: string;
+        modal: string;
+        skipLink: string;
     };
-  }
+    font: {
+        body: string;
+    };
 }
+```
+
+### Tracking
+
+StakeKit component provides `tracking` prop for analytics to track user actions and page views
+
+```tsx
+import "@stakekit/widget/package/css";
+import { SKApp, darkTheme, lightTheme } from "@stakekit/widget";
+
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      theme={{ darkMode: darkTheme }}
+      tracking={{
+        trackEvent: (event, props) => {
+          console.log(event, props);
+        },
+        trackPageView: (event, props) => {
+          console.log(event, props);
+        },
+      }}
+    />
+  );
+};
 ```
 
 ## React Native wallets usage
