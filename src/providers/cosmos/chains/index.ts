@@ -68,7 +68,9 @@ export const filteredCosmosChains = Object.fromEntries(
 
 export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 
-export const getWagmiChain = (chain: CosmosChainsAssets): Chain => ({
+export const getWagmiChain = (
+  chain: CosmosChainsAssets
+): Chain & { cosmosChainName: string } => ({
   id: chain.chain_id as unknown as number,
   iconUrl:
     chain.chain_id === "osmosis-1"
@@ -77,7 +79,8 @@ export const getWagmiChain = (chain: CosmosChainsAssets): Chain => ({
         ? getTokenLogo("mars")
         : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
 
-  name: chain.chain_name,
+  name: chain.wagmiName,
+  cosmosChainName: chain.chain_name,
   // TODO: change this
   nativeCurrency: mainnet.nativeCurrency,
   rpcUrls: {

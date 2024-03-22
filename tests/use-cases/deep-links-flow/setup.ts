@@ -1,11 +1,9 @@
+import { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import {
-  TokenDto,
-  YieldBalanceDto,
-  YieldDto,
   getActionControllerPendingResponseMock,
   getTransactionControllerGetGasForNetworkResponseMock,
   getYieldControllerYieldOpportunityResponseMock,
-} from "@stakekit/api-hooks";
+} from "@stakekit/api-hooks/msw";
 import { rkMockWallet } from "../../utils/mock-connector";
 import { server } from "../../mocks/server";
 import { HttpResponse, delay, http } from "msw";

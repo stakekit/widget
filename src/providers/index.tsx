@@ -17,7 +17,7 @@ import {
   FooterHeightProvider,
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
-import { SKQueryClientContextProvider } from "./query-client";
+import { SKQueryClientProvider } from "./query-client";
 import { SKApiClientProvider } from "./api/api-client-provider";
 
 export const Providers = ({
@@ -28,7 +28,7 @@ export const Providers = ({
   return (
     <StrictMode>
       <SKApiClientProvider>
-        <SKQueryClientContextProvider>
+        <SKQueryClientProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
           <WagmiConfigProvider>
@@ -60,7 +60,7 @@ export const Providers = ({
               </SKWalletProvider>
             </TrackingContextProvider>
           </WagmiConfigProvider>
-        </SKQueryClientContextProvider>
+        </SKQueryClientProvider>
       </SKApiClientProvider>
     </StrictMode>
   );

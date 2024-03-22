@@ -37,7 +37,9 @@ const chainsSet = new Set([
   "injective-1",
 ]);
 
-const chainMapper = <T extends AssetList | Chain>(val: T) => {
+type WithWagmiName<T> = T & { wagmiName: string };
+
+const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
   let name = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
   if ("chain_id" in val) {
@@ -62,11 +64,13 @@ const chainMapper = <T extends AssetList | Chain>(val: T) => {
 
   return {
     ...val,
-    chain_name: name,
+    wagmiName: name,
   };
 };
 
-const assetMapper = (val: AssetList & Pick<Chain, "chain_id">) => {
+const assetMapper = (
+  val: WithWagmiName<AssetList & Pick<Chain, "chain_id">>
+) => {
   if (val.chain_id === "comdex-1") {
     val.assets[1].coingecko_id = "harbor-2";
   }
@@ -74,11 +78,12 @@ const assetMapper = (val: AssetList & Pick<Chain, "chain_id">) => {
   return val;
 };
 
-const cosmosRegistryChains: Chain[] = chains
+const cosmosRegistryChains: WithWagmiName<Chain>[] = chains
   .filter((c) => chainsSet.has(c.chain_id))
   .map(chainMapper);
 
-export const getCosmosRegistryChains = (): Chain[] => cosmosRegistryChains;
+export const getCosmosRegistryChains = (): WithWagmiName<Chain>[] =>
+  cosmosRegistryChains;
 
 const filteredCosmosChainNames = new Map(
   cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id])
@@ -86,7 +91,9 @@ const filteredCosmosChainNames = new Map(
 
 const filterMissingChainName = (val: AssetList) => !!val.chain_name;
 
-export const getCosmosAssets = (): (AssetList & Pick<Chain, "chain_id">)[] =>
+export const getCosmosAssets = (): WithWagmiName<
+  AssetList & Pick<Chain, "chain_id">
+>[] =>
   assets
     .filter(filterMissingChainName)
     .map(chainMapper)

@@ -94,15 +94,13 @@ const queryFn = async ({
         }
       );
 
-      return EitherAsync(() => {
-        return cosmosWalletManager.onMounted();
-      })
-        .chainLeft((e) => {
-          return EitherAsync(() => {
+      return EitherAsync(() => cosmosWalletManager.onMounted())
+        .chainLeft(() =>
+          EitherAsync(() => {
             // @ts-expect-error
             return cosmosWalletManager._restoreAccounts().catch(() => {});
-          });
-        })
+          })
+        )
         .mapLeft((e) => {
           console.log(e);
           return new Error("cosmosWalletManager onMounted failed");

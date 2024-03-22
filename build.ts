@@ -14,7 +14,6 @@ const VITE_API_URL = process.env.VITE_API_URL ?? "https://api.stakek.it/";
 const MODE = process.env.MODE ?? "";
 
 const commonPlugins: esbuild.Plugin[] = [
-  macros.esbuild(),
   vanillaExtractPlugin({
     outputCss: true,
     processCss: async (css) => {
@@ -24,7 +23,8 @@ const commonPlugins: esbuild.Plugin[] = [
 
       return result.css;
     },
-  }) as esbuild.Plugin,
+  }),
+  macros.esbuild(),
 ];
 
 const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
@@ -110,7 +110,7 @@ const buildAsPackage = async () => {
 };
 
 const main = async () => {
-  await buildAsStandaloneApp();
+  // await buildAsStandaloneApp();
   await buildAsPackage();
 };
 

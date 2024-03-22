@@ -7,7 +7,7 @@ import { getConfig as getSubstrateConfig } from "../substrate/config";
 import { WalletList, connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { config } from "../../config";
-import { QueryClient, UseQueryResult, useQuery } from "@tanstack/react-query";
+import { QueryClient, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
@@ -22,6 +22,7 @@ import {
   useYieldGetMyNetworksHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
+import { useUpdateEffect } from "../../hooks/use-update-effect";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -100,9 +101,13 @@ const buildWagmiConfig = async (opts: {
         ...substrateConfig.substrateChains,
       ] as [Chain, ...Chain[]];
 
+      const multiInjectedProviderDiscovery =
+        !opts.externalProviders && !isLedgerDappBrowserProvider();
+
       const wagmiConfig = createConfig({
         chains,
         client: ({ chain }) => createClient({ chain, transport: http() }),
+        multiInjectedProviderDiscovery,
         connectors: connectorsForWallets(
           [
             ...(opts.customConnectors
@@ -160,10 +165,7 @@ const buildWagmiConfig = async (opts: {
 const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;
 
-export const useWagmiConfig = (): UseQueryResult<
-  Awaited<ReturnType<BuildWagmiConfig>>,
-  Error
-> => {
+export const useWagmiConfig = () => {
   const { wagmi, externalProviders } = useSettings();
 
   const queryClient = useSKQueryClient();
@@ -172,6 +174,14 @@ export const useWagmiConfig = (): UseQueryResult<
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
   const transactionGetTransactionStatusByNetworkAndHash =
     useTransactionGetTransactionStatusByNetworkAndHashHook();
+
+  useUpdateEffect(() => {
+    queryClient.invalidateQueries({ queryKey });
+  }, [
+    wagmi?.forceWalletConnectOnly,
+    wagmi?.__customConnectors__,
+    externalProviders,
+  ]);
 
   return useQuery({
     staleTime,
@@ -190,13 +200,11 @@ export const useWagmiConfig = (): UseQueryResult<
   });
 };
 
-export const defaultConfig: ReturnType<typeof createConfig> = (() => {
-  return createConfig({
-    chains: [mainnet],
-    client: ({ chain }) =>
-      createClient({
-        chain,
-        transport: http(chain.rpcUrls.default.http.find((url) => !!url)),
-      }),
-  }) as ReturnType<typeof createConfig>;
-})();
+export const defaultConfig = createConfig({
+  chains: [mainnet],
+  client: ({ chain }) =>
+    createClient({
+      chain,
+      transport: http(chain.rpcUrls.default.http.find((url) => !!url)),
+    }),
+});

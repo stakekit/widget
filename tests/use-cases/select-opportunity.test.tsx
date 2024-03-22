@@ -1,8 +1,5 @@
-import {
-  TokenDto,
-  YieldDto,
-  getYieldControllerYieldOpportunityResponseMock,
-} from "@stakekit/api-hooks";
+import { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import { server } from "../mocks/server";
 import { HttpResponse, delay, http } from "msw";
 import { Just } from "purify-ts";

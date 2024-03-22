@@ -3,21 +3,21 @@
   "version": "0.0.121",
   "type": "module",
   "main": "./dist/package/index.package.js",
-  "types": "./dist/package/types/src/index.package.d.ts",
+  "types": "./dist/package/types/index.package.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/package/index.package.js",
-      "types": "./dist/package/types/src/index.package.d.ts"
+      "types": "./dist/package/types/index.package.d.ts",
+      "default": "./dist/package/index.package.js"
     },
     "./bundle": {
-      "import": "./dist/package/bundle/index.bundle.js",
-      "types": "./dist/package/types/src/index.bundle.d.ts"
+      "types": "./dist/package/types/index.bundle.d.ts",
+      "default": "./dist/package/bundle/index.bundle.js"
     },
     "./package/css": {
-      "import": "./dist/package/index.package.css"
+      "default": "./dist/package/index.package.css"
     },
     "./bundle/css": {
-      "import": "./dist/package/bundle/index.bundle.css"
+      "default": "./dist/package/bundle/index.bundle.css"
     }
   },
   "files": [
@@ -49,7 +49,7 @@
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "build:package": "tsx build.ts && yarn build:types",
     "build:package:watch": "tsx build.ts --watch && yarn build:types",
-    "build:types": "tsc --emitDeclarationOnly --declaration --project tsconfig.json && rm -rf dist/package/types/tests",
+    "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite preview",
     "prepare": "husky install",
@@ -72,7 +72,7 @@
     "@ledgerhq/wallet-api-client": "^1.5.5",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
-    "@stakekit/api-hooks": "^0.0.61",
+    "@stakekit/api-hooks": "^0.0.63",
     "@stakekit/common": "^0.0.28",
     "@stakekit/rainbowkit": "^2.0.0",
     "@tanstack/react-query": "^5.28.6",
@@ -92,7 +92,7 @@
     "clsx": "^2.1.0",
     "cosmjs-types": "^0.9.0",
     "eventemitter3": "^5.0.1",
-    "framer-motion": "^11.0.18",
+    "framer-motion": "^11.0.20",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.0",
     "lodash.merge": "^4.6.2",
@@ -104,9 +104,11 @@
     "reselect": "^5.1.0"
   },
   "devDependencies": {
-    "@chain-registry/types": "^0.18.3",
+    "@chain-registry/types": "^0.18.5",
     "@commitlint/cli": "^19.2.1",
     "@commitlint/config-conventional": "^19.1.0",
+    "@tanstack/react-query": "^5.28.6",
+    "@tanstack/react-query-devtools": "^5.28.6",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.2",
     "@testing-library/user-event": "^14.5.2",
@@ -117,7 +119,7 @@
     "@vanilla-extract/esbuild-plugin": "^2.3.5",
     "@vanilla-extract/vite-plugin": "^4.0.6",
     "autoprefixer": "^10.4.19",
-    "chain-registry": "1.33.2",
+    "chain-registry": "1.33.8",
     "dotenv": "^16.4.5",
     "esbuild": "^0.20.2",
     "eslint": "^8.57.0",
@@ -125,8 +127,8 @@
     "eslint-config-react-app": "^7.0.1",
     "husky": "^9.0.11",
     "jsdom": "^24.0.0",
-    "knip": "^5.2.1",
-    "msw": "^2.2.9",
+    "knip": "^5.2.2",
+    "msw": "^2.2.10",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "react": "^18.2.0",
@@ -134,10 +136,10 @@
     "resize-observer-polyfill": "^1.5.1",
     "stream-browserify": "^3.0.0",
     "tsx": "^4.7.1",
-    "turbo": "^1.12.5",
+    "turbo": "^1.13.0",
     "typescript": "5.3.3",
     "unplugin-parcel-macros": "^0.0.3",
-    "viem": "^2.8.16",
+    "viem": "^2.8.18",
     "vite": "^5.2.2",
     "vitest": "^1.4.0",
     "wagmi": "^2.5.12"

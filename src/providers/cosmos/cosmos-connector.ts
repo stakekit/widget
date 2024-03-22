@@ -1,12 +1,7 @@
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
-import {
-  Connector,
-  CreateConnectorFn,
-  createConnector,
-  normalizeChainId,
-} from "wagmi";
+import { Connector, CreateConnectorFn, createConnector } from "wagmi";
 import { Wallet } from "@stakekit/rainbowkit";
 import { toBase64 } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
@@ -172,11 +167,17 @@ export const createCosmosConnector = ({
 
         const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =
           async ({ chainId }) => {
-            const chainName = config.chains.find((c) => c.id === chainId)?.name;
+            const wagmiChain = config.chains.find((c) => c.id === chainId);
 
-            if (!chainName) throw new Error("Chain not found");
+            if (!wagmiChain) throw new Error("Chain not found");
 
-            const newCw = wallet.getChainWallet(chainName) as ChainWalletBase;
+            const cosmosChain = wagmiChain as Chain & {
+              cosmosChainName: string;
+            };
+
+            const newCw = wallet.getChainWallet(
+              cosmosChain.cosmosChainName
+            ) as ChainWalletBase;
 
             if (!newCw) throw new Error("Wallet not found");
 
@@ -208,7 +209,7 @@ export const createCosmosConnector = ({
         const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
           (chainId) => {
             config.emitter.emit("change", {
-              chainId: normalizeChainId(chainId),
+              chainId: chainId as unknown as number,
             });
           };
 

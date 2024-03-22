@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse, passthrough } from "msw";
-import { getStakeKitMock } from "@stakekit/api-hooks";
+import { getStakeKitMock } from "@stakekit/api-hooks/msw";
 
 export const handlers = [
   ...getStakeKitMock(),

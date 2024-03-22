@@ -11,15 +11,12 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": "dist/package/types"
+    "noEmit": true
   },
-  "include": ["src", "scripts", "tests"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src", "scripts", "tests", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }
