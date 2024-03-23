@@ -8,11 +8,13 @@ import { Box, Spinner } from "../../components";
 import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../providers/settings";
 import { useMountAnimation } from "../../providers/mount-animation";
+import { usePoweredByHeight } from "../../pages/components/powered-by";
 
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const currentLayout = useCurrentLayout();
   const [headerHeight] = useHeaderHeight();
   const [footerHeight] = useFooterHeight();
+  const [poweredByHeight] = usePoweredByHeight();
 
   const { state, dispatch } = useMountAnimation();
 
@@ -23,7 +25,10 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const containerHeight =
     currentLayout.state?.height && headerHeight
-      ? currentLayout.state.height + headerHeight + footerHeight
+      ? currentLayout.state.height +
+        headerHeight +
+        footerHeight +
+        poweredByHeight
       : 0;
 
   return (

@@ -51,57 +51,55 @@ const EarnPageComponent = () => {
     >
       <PageContainer>
         <Box>
-          <Box>
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Box display="flex" alignItems="center" minHeight="8">
-                <Text>{title}</Text>
-                {selectedStakeYieldType && (
-                  <HelpModal modal={{ type: selectedStakeYieldType }} />
-                )}
-                {(isFetching || appLoading) && (
-                  <Box display="flex" marginLeft="2">
-                    <Spinner />
-                  </Box>
-                )}
-              </Box>
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Box display="flex" alignItems="center" minHeight="8">
+              <Text>{title}</Text>
+              {selectedStakeYieldType && (
+                <HelpModal modal={{ type: selectedStakeYieldType }} />
+              )}
+              {(isFetching || appLoading) && (
+                <Box display="flex" marginLeft="2">
+                  <Spinner />
+                </Box>
+              )}
             </Box>
-
-            <SelectTokenSection />
-
-            <SelectYieldSection />
-
-            <SelectValidatorSection />
-
-            <ExtraArgsSelection />
           </Box>
 
-          {isError && (
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
-              my="4"
-            >
-              <Text variant={{ type: "danger" }} textAlign="center">
-                {t("shared.something_went_wrong")}
-              </Text>
-            </Box>
-          )}
+          <SelectTokenSection />
 
-          <Box marginTop="4">
-            <Footer />
-          </Box>
+          <SelectYieldSection />
 
-          {referralCheck && (
-            <Box marginTop="4">
-              <ReferralCode />
-            </Box>
-          )}
+          <SelectValidatorSection />
+
+          <ExtraArgsSelection />
         </Box>
+
+        {isError && (
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            my="4"
+          >
+            <Text variant={{ type: "danger" }} textAlign="center">
+              {t("shared.something_went_wrong")}
+            </Text>
+          </Box>
+        )}
+
+        <Box marginTop="4">
+          <Footer />
+        </Box>
+
+        {referralCheck && (
+          <Box marginTop="4">
+            <ReferralCode />
+          </Box>
+        )}
       </PageContainer>
     </motion.div>
   );
