@@ -110,7 +110,7 @@ const buildAsPackage = async () => {
 };
 
 const main = async () => {
-  // await buildAsStandaloneApp();
+  await buildAsStandaloneApp();
   await buildAsPackage();
 };
 

@@ -53,6 +53,7 @@ import {
 } from "./pages/review";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useLoadErrorTranslations } from "./translation";
+import { PoweredBy } from "./pages/components/powered-by";
 
 const Widget = () => {
   useToggleTheme();
@@ -189,6 +190,8 @@ const Widget = () => {
           </motion.div>
 
           <FooterContent />
+
+          <PoweredBy />
         </LayoutGroup>
       </AnimationLayout>
 

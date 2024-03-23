@@ -19,6 +19,7 @@ import {
 import { MountAnimationProvider } from "./mount-animation";
 import { SKQueryClientProvider } from "./query-client";
 import { SKApiClientProvider } from "./api/api-client-provider";
+import { PoweredByHeightProvider } from "../pages/components/powered-by";
 
 export const Providers = ({
   children,
@@ -43,11 +44,13 @@ export const Providers = ({
                             <HeaderHeightProvider>
                               <FooterHeightProvider>
                                 <FooterButtonProvider>
-                                  <SKLocationProvider>
-                                    <MountAnimationProvider>
-                                      {children}
-                                    </MountAnimationProvider>
-                                  </SKLocationProvider>
+                                  <PoweredByHeightProvider>
+                                    <SKLocationProvider>
+                                      <MountAnimationProvider>
+                                        {children}
+                                      </MountAnimationProvider>
+                                    </SKLocationProvider>
+                                  </PoweredByHeightProvider>
                                 </FooterButtonProvider>
                               </FooterHeightProvider>
                             </HeaderHeightProvider>
