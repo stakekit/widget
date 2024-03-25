@@ -5,6 +5,7 @@ import BigNumber from "bignumber.js";
 import { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { daysUntilDate } from "../../../utils/date";
+import { TokenIcon } from "../../../components/atoms/token-icon";
 
 export const PositionBalances = ({
   yieldBalance,
@@ -42,12 +43,27 @@ export const PositionBalances = ({
           context: balanceTypeContext,
         })}
       </Text>
+
       <Box textAlign="end">
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
-          {yieldBalance.token.symbol} ($
-          {formatNumber(yieldBalance.tokenPriceInUsd, 2)})
-        </Text>
+        <Box display="flex" gap="1" alignItems="center">
+          {/* @ts-expect-error */}
+          {yieldBalance.token.isPoints && (
+            <Box as="span" display="inline-flex">
+              <TokenIcon
+                token={yieldBalance.token}
+                hideNetwork
+                tokenLogoHw="5"
+              />
+            </Box>
+          )}
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
+            {yieldBalance.token.symbol}
+            {/* @ts-expect-error */}
+            {!yieldBalance.token.isPoints &&
+              ` ($${formatNumber(yieldBalance.tokenPriceInUsd, 2)})`}
+          </Text>
+        </Box>
 
         {typeof daysRemaining === "number" && (
           <Text variant={{ type: "muted", weight: "normal" }}>

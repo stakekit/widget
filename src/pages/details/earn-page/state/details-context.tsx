@@ -97,6 +97,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   });
   const rewardToken = useRewardTokenDetails(selectedStake);
 
+  const pointsRewardTokens = useMemo(
+    () =>
+      selectedStake
+        .chainNullable((val) => val.metadata.rewardTokens)
+        //@ts-expect-error
+        .map((val) => val.filter((rt) => rt.isPoints)),
+    [selectedStake]
+  );
+
   const pricesState = useSelectedStakePrice({ selectedTokenBalance });
 
   const symbol = selectedStake.mapOrDefault((y) => y.token.symbol, "");
@@ -571,6 +580,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tronResource,
     onTronResourceSelect,
     validation,
+    pointsRewardTokens,
   };
 
   return (
