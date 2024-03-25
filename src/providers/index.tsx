@@ -19,6 +19,7 @@ import {
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
 import { SKQueryClientContextProvider } from "./query-client";
+import { PoweredByHeightProvider } from "../pages/components/powered-by";
 
 export const Providers = ({
   children,
@@ -43,11 +44,13 @@ export const Providers = ({
                             <HeaderHeightProvider>
                               <FooterHeightProvider>
                                 <FooterButtonProvider>
-                                  <SKLocationProvider>
-                                    <MountAnimationProvider>
-                                      {children}
-                                    </MountAnimationProvider>
-                                  </SKLocationProvider>
+                                  <PoweredByHeightProvider>
+                                    <SKLocationProvider>
+                                      <MountAnimationProvider>
+                                        {children}
+                                      </MountAnimationProvider>
+                                    </SKLocationProvider>
+                                  </PoweredByHeightProvider>
                                 </FooterButtonProvider>
                               </FooterHeightProvider>
                             </HeaderHeightProvider>

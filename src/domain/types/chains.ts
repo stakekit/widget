@@ -64,6 +64,7 @@ const supportedEVMChains = [
   EvmNetworks.Optimism,
   EvmNetworks.Polygon,
   EvmNetworks.Viction,
+  EvmNetworks.EthereumHolesky,
 ] as const;
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
 export type SupportedEvmChain = (typeof supportedEVMChains)[number];
