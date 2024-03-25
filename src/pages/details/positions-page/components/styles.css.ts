@@ -17,3 +17,7 @@ export const importValidatorContainer = style({
 });
 
 export const noWrap = style({ whiteSpace: "nowrap" });
+
+export const listItem = style({
+  alignItems: "flex-start",
+});

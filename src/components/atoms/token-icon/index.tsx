@@ -12,14 +12,20 @@ export const TokenIcon = ({
   metadata,
   tokenLogoHw = "9",
   tokenNetworkLogoHw = "3",
+  hideNetwork,
 }: {
   token: TokenDto;
   metadata?: YieldMetadataDto;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];
+  hideNetwork?: boolean;
 }) => {
   return (
-    <Box position="relative" marginRight="2" display="flex">
+    <Box
+      position="relative"
+      marginRight={hideNetwork ? "0" : "2"}
+      display="flex"
+    >
       <Image
         containerProps={{ hw: tokenLogoHw }}
         src={metadata?.logoURI ?? token.logoURI}
@@ -30,14 +36,16 @@ export const TokenIcon = ({
           />
         }
       />
-      <Box className={logoContainer}>
-        <Image
-          src={getNetworkLogo(token.network as Networks)}
-          fallback={<></>}
-          containerProps={{ hw: tokenNetworkLogoHw }}
-          imageProps={{ className: logoImage }}
-        />
-      </Box>
+      {!hideNetwork && (
+        <Box className={logoContainer}>
+          <Image
+            src={getNetworkLogo(token.network as Networks)}
+            fallback={<></>}
+            containerProps={{ hw: tokenNetworkLogoHw }}
+            imageProps={{ className: logoImage }}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

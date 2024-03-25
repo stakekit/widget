@@ -15,7 +15,7 @@ import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
 import { getRewardRateFormatted } from "../../../../utils/formatters";
-import { noWrap } from "./styles.css";
+import { listItem, noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(
   ({
@@ -45,6 +45,13 @@ export const PositionsListItem = memo(
           (acc, b) => new BigNumber(b.amount).plus(acc),
           new BigNumber(0)
         ),
+      [item.balances]
+    );
+
+    const pointsRewardTokenBalance = useMemo(
+      () =>
+        // @ts-expect-error
+        List.find((v) => v.token.isPoints, item.balances),
       [item.balances]
     );
 
@@ -102,7 +109,7 @@ export const PositionsListItem = memo(
         <Box py="1">
           {integrationData.mapOrDefault(
             (d) => (
-              <ListItem>
+              <ListItem className={listItem}>
                 <Box
                   display="flex"
                   justifyContent="flex-start"
@@ -200,15 +207,40 @@ export const PositionsListItem = memo(
                       flexDirection="column"
                       flex={2}
                       textAlign="end"
+                      gap="1"
                     >
-                      {!actionRequired && (
-                        <Text variant={{ weight: "normal" }}>
-                          {val.rewardRateAverage}
-                        </Text>
-                      )}
+                      <Text variant={{ weight: "normal" }}>
+                        {actionRequired ? " " : val.rewardRateAverage}
+                      </Text>
+
                       <Text variant={{ weight: "normal", type: "muted" }}>
                         {formatNumber(amount)} {val.token.symbol}
                       </Text>
+
+                      {pointsRewardTokenBalance
+                        .map((val) => (
+                          <Box
+                            background="background"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            borderRadius="lg"
+                            px="2"
+                            py="1"
+                            gap="1"
+                          >
+                            <TokenIcon
+                              token={val.token}
+                              hideNetwork
+                              tokenLogoHw="5"
+                            />
+
+                            <Text variant={{ type: "muted", weight: "normal" }}>
+                              {formatNumber(val.amount)}
+                            </Text>
+                          </Box>
+                        ))
+                        .extractNullable()}
                     </Box>
                   ))
                   .extractNullable()}
