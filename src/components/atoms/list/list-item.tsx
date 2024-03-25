@@ -1,22 +1,28 @@
 import { PropsWithChildren } from "react";
 import { ItemContainerVariants, itemContainer } from "./styles.css";
-import { Box } from "../box";
+import { Box, BoxProps } from "../box";
+import clsx from "clsx";
 
 export const ListItem = ({
   children,
   onClick,
   testId,
   variant,
-}: PropsWithChildren<{
-  onClick?: () => void;
-  testId?: string;
-  variant?: ItemContainerVariants;
-}>) => {
+  className,
+  ...rest
+}: PropsWithChildren<
+  {
+    onClick?: () => void;
+    testId?: string;
+    variant?: ItemContainerVariants;
+  } & BoxProps
+>) => {
   return (
     <Box
-      className={itemContainer(variant)}
+      className={clsx(itemContainer(variant), className)}
       onClick={onClick}
       data-testid={testId}
+      {...rest}
     >
       {children}
     </Box>

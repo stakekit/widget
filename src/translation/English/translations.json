@@ -15,7 +15,8 @@
     "something_went_wrong": "Something went wrong",
     "not_enough_gas_token": "Not enough gas token",
     "retry": "Try Again",
-    "unsupported_network": "Unsupported network"
+    "unsupported_network": "Unsupported network",
+    "points": "Points"
   },
 
   "chain_modal": {
