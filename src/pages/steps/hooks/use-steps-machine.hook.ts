@@ -13,6 +13,7 @@ import {
 import {
   ActionDto,
   TransactionDto,
+  transactionConstruct,
   transactionGetTransaction,
   transactionGetTransactionStatusFromId,
   transactionSubmit,
@@ -25,6 +26,7 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { isAxiosError } from "axios";
 import { useMemo } from "react";
 import { isExternalProviderConnector } from "../../../providers/sk-wallet/utils";
+import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 
 const tt = t as <T extends unknown>() => {
   [$$t]: T;
@@ -50,7 +52,7 @@ export type TxState = {
 };
 
 export const useStepsMachine = (session: ActionDto | null) => {
-  const { signTransaction, signMultipleTransactions, connector } =
+  const { signTransaction, signMultipleTransactions, connector, isLedgerLive } =
     useSKWallet();
 
   const trackEvent = useTrackEvent();
@@ -158,33 +160,44 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     return signMultipleTransactions({ txs });
                   })
                 : EitherAsync.liftEither(
-                    Right({
-                      currentTx:
-                        context.txStates[context.currentTxMeta?.idx!].tx,
-                    })
-                  ).chain(({ currentTx }) => {
-                    if (!currentTx.unsignedTransaction) {
-                      return EitherAsync.liftEither(
-                        Left(new TransactionConstructError())
-                      );
-                    }
+                    Right(context.txStates[context.currentTxMeta?.idx!].tx)
+                  )
+                    .chain((tx) =>
+                      getAverageGasMode(tx.network)
+                        .chainLeft(async () => Right(null))
+                        .chain((gas) =>
+                          withRequestErrorRetry({
+                            fn: () =>
+                              transactionConstruct(tx.id, {
+                                gasArgs: gas?.gasArgs,
+                                ledgerWalletAPICompatible: isLedgerLive,
+                              }),
+                          }).mapLeft(() => new TransactionConstructError())
+                        )
+                    )
+                    .chain((constructedTx) => {
+                      if (!constructedTx.unsignedTransaction) {
+                        return EitherAsync.liftEither(
+                          Left(new TransactionConstructError())
+                        );
+                      }
 
-                    return signTransaction({
-                      tx: currentTx.unsignedTransaction,
+                      return signTransaction({
+                        tx: constructedTx.unsignedTransaction,
+                      })
+                        .map((val) => ({
+                          ...val,
+                          network: constructedTx.network,
+                          txId: constructedTx.id,
+                        }))
+                        .ifRight(() =>
+                          trackEvent("txSigned", {
+                            txId: constructedTx.id,
+                            network: constructedTx.network,
+                            yieldId: context.yieldId,
+                          })
+                        );
                     })
-                      .map((val) => ({
-                        ...val,
-                        network: currentTx.network,
-                        txId: currentTx.id,
-                      }))
-                      .ifRight(() =>
-                        trackEvent("txSigned", {
-                          txId: currentTx.id,
-                          network: currentTx.network,
-                          yieldId: context.yieldId,
-                        })
-                      );
-                  })
             )
             .caseOf({
               Left: (l) => {
