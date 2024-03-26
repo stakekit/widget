@@ -3,7 +3,11 @@ import { useMutation } from "@tanstack/react-query";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-and-txs-construct";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../types";
+import {
+  GetEitherAsyncLeft,
+  GetEitherAsyncRight,
+  GetMaybeJust,
+} from "../../../types";
 import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import {
@@ -28,9 +32,7 @@ export const useOnStakeExit = () => {
   return useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    {
-      stakeRequestDto: ReturnType<typeof useStakeExitRequestDto>;
-    }
+    { stakeRequestDto: GetMaybeJust<ReturnType<typeof useStakeExitRequestDto>> }
   >({
     mutationFn: async ({ stakeRequestDto }) =>
       (
@@ -58,7 +60,7 @@ const fn = ({
   transactionConstruct,
   tokenGetTokenBalances,
 }: {
-  stakeRequestDto: ReturnType<typeof useStakeExitRequestDto>;
+  stakeRequestDto: GetMaybeJust<ReturnType<typeof useStakeExitRequestDto>>;
   stakeExitAndTxsConstruct: ReturnType<
     typeof useStakeExitAndTxsConstruct
   >["mutateAsync"];
@@ -71,28 +73,22 @@ const fn = ({
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 }) =>
-  EitherAsync.liftEither(
-    stakeRequestDto.toEither(new Error("Stake request not ready"))
-  )
-    .chain((val) =>
-      getAverageGasMode({
-        network: val.gasFeeToken.network,
-        transactionGetGasForNetwork,
-      })
-        .chainLeft(async () => Right(null))
-        .map((gas) => ({ stakeRequestDto: val, gas }))
-    )
+  getAverageGasMode({
+    network: stakeRequestDto.gasFeeToken.network,
+    transactionGetGasForNetwork,
+  })
+    .chainLeft(async () => Right(null))
     .chain((val) =>
       EitherAsync(() =>
         stakeExitAndTxsConstruct({
           transactionConstruct,
           tokenGetTokenBalances,
           actionExit,
-          gasModeValue: val.gas ?? undefined,
-          stakeRequestDto: val.stakeRequestDto.dto,
+          gasModeValue: val ?? undefined,
+          stakeRequestDto: stakeRequestDto.dto,
           disableGasCheck,
           isLedgerLive,
-          gasFeeToken: val.stakeRequestDto.gasFeeToken,
+          gasFeeToken: stakeRequestDto.gasFeeToken,
         })
       )
         .map((res) => ({ ...val, ...res }))

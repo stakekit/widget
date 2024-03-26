@@ -28,7 +28,7 @@ export const PositionDetails = () => {
     canChangeAmount,
     onMaxClick,
     onUnstakeClick,
-    onStakeExitIsLoading,
+    unstakeIsLoading,
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
@@ -190,7 +190,7 @@ export const PositionDetails = () => {
                     )
                     .extractNullable()}
 
-                  {/* Unstake  */}
+                  {/* Unstake */}
                   {Maybe.fromRecord({
                     canUnstake,
                     reducedStakedOrLiquidBalance,
@@ -200,7 +200,7 @@ export const PositionDetails = () => {
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock
                           variant="unstake"
-                          isLoading={onStakeExitIsLoading}
+                          isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}
                           value={unstakeAmount}
                           canChangeAmount={canChangeAmount}

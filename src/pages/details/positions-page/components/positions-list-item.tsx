@@ -49,9 +49,7 @@ export const PositionsListItem = memo(
     );
 
     const pointsRewardTokenBalance = useMemo(
-      () =>
-        // @ts-expect-error
-        List.find((v) => v.token.isPoints, item.balances),
+      () => List.find((v) => !!v.token.isPoints, item.balances),
       [item.balances]
     );
 

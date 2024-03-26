@@ -12,20 +12,23 @@ import { Account } from "@ledgerhq/wallet-api-client";
 import { Connector } from "wagmi";
 import { Chain } from "viem";
 
+type SignedTxOrMessage = string;
+
 export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { signedTx: string; broadcasted: boolean }
+    { signedTx: SignedTxOrMessage; broadcasted: boolean }
   >;
   signMultipleTransactions: (args: {
     txs: NonNullable<TransactionDto["unsignedTransaction"]>[];
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { signedTx: string; broadcasted: boolean }
+    { signedTx: SignedTxOrMessage; broadcasted: boolean }
   >;
+  signMessage: (message: string) => EitherAsync<Error, SignedTxOrMessage>;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;

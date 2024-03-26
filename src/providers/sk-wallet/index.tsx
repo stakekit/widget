@@ -7,7 +7,12 @@ import {
   useMemo,
 } from "react";
 import { SKWallet } from "../../domain/types";
-import { useAccount, useDisconnect, useSendTransaction } from "wagmi";
+import {
+  useAccount,
+  useDisconnect,
+  useSendTransaction,
+  useSignMessage,
+} from "wagmi";
 import { useWagmiConfig } from "../wagmi";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { useLedgerAccounts } from "./use-ledger-accounts";
@@ -56,6 +61,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const { disconnectAsync: disconnect } = useDisconnect();
 
   const { sendTransactionAsync } = useSendTransaction();
+  const { signMessageAsync } = useSignMessage();
 
   const ledgerAccounts = useLedgerAccounts(connector);
 
@@ -302,6 +308,17 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     [safeConnectorWithNetwork]
   );
 
+  const signMessage = useCallback<SKWallet["signMessage"]>(
+    (message) =>
+      EitherAsync(() => signMessageAsync({ message }))
+        .map((val) => val as string)
+        .mapLeft((e) => {
+          console.log(e);
+          return new Error("sign failed");
+        }),
+    [signMessageAsync]
+  );
+
   const onLedgerAccountChange = useCallback(
     (account: Account) => {
       if (connector && isLedgerLiveConnector(connector)) {
@@ -316,6 +333,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       disconnect,
       signTransaction,
       signMultipleTransactions,
+      signMessage,
       connectorChains,
       isLedgerLive:
         (connector && isLedgerLiveConnector(connector)) ||
@@ -368,6 +386,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     onLedgerAccountChange,
     signTransaction,
     signMultipleTransactions,
+    signMessage,
   ]);
 
   return (

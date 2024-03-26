@@ -101,7 +101,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       selectedStake
         .chainNullable((val) => val.metadata.rewardTokens)
-        //@ts-expect-error
         .map((val) => val.filter((rt) => rt.isPoints)),
     [selectedStake]
   );
