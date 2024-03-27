@@ -151,105 +151,148 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   };
                 }
             >((tx) => {
-              // @ts-expect-error
-              if (tx.type === "P2P_NODE_REQUEST") {
-                return getAverageGasMode(tx.network)
-                  .chainLeft(async () => Right(null))
-                  .chain((gas) =>
-                    withRequestErrorRetry({
-                      fn: () =>
-                        transactionConstruct(tx.id, {
-                          gasArgs: gas?.gasArgs,
-                          ledgerWalletAPICompatible: isLedgerLive,
-                        }),
-                    }).mapLeft(() => new TransactionConstructError())
+              /**
+               * Multi sign transactions
+               */
+              if (shouldMultiSend) {
+                return EitherAsync.liftEither(
+                  Maybe.fromNullable(session?.transactions).toEither(
+                    new Error("missing session")
                   )
-                  .map(() => ({ type: "p2pNode" }));
-              }
+                )
+                  .chain((txs) => {
+                    const p2pNodeTx = txs.find(
+                      // @ts-expect-error
+                      (tx) => tx.type === "P2P_NODE_REQUEST"
+                    );
 
-              return EitherAsync.liftEither(Right(!!shouldMultiSend))
-                .chain((val) => {
-                  return val
-                    ? EitherAsync.liftEither(
-                        Maybe.fromNullable(session?.transactions).toEither(
-                          new Error("missing session")
+                    if (p2pNodeTx) {
+                      return getAverageGasMode(p2pNodeTx.network)
+                        .chainLeft(async () => Right(null))
+                        .chain((gas) =>
+                          withRequestErrorRetry({
+                            fn: () =>
+                              transactionConstruct(p2pNodeTx.id, {
+                                gasArgs: gas?.gasArgs,
+                                ledgerWalletAPICompatible: isLedgerLive,
+                              }),
+                          }).mapLeft(() => new TransactionConstructError())
                         )
-                      )
-                        .map(getTransactionsForMultiSign)
-                        .chain((txs) =>
-                          getAverageGasMode(tx.network).chain((gas) =>
-                            EitherAsync.sequence(
-                              txs.map((tx) =>
-                                withRequestErrorRetry({
-                                  fn: () =>
-                                    transactionConstruct(tx.id, {
-                                      gasArgs: gas?.gasArgs,
-                                      ledgerWalletAPICompatible: isLedgerLive,
-                                    }),
-                                }).mapLeft(
-                                  () => new TransactionConstructError()
-                                )
-                              )
-                            )
+                        .chain(() =>
+                          withRequestErrorRetry({
+                            fn: () =>
+                              transactionGetTransactionStatusFromId(
+                                p2pNodeTx.id
+                              ),
+                            retryTimes: 10,
+                            retryWaitForMs() {
+                              return 5000;
+                            },
+                          }).mapLeft(
+                            () => new Error("failed to get p2p tx status")
                           )
                         )
-                        .map((txs) =>
-                          txs
-                            .map((tx) => tx.unsignedTransaction)
-                            .filter((tx): tx is NonNullable<typeof tx> => !!tx)
-                        )
-                        .chain((txs) => {
-                          if (!txs.length) {
-                            return EitherAsync.liftEither(
-                              Left(new TransactionConstructError())
-                            );
-                          }
+                        .map(() => getTransactionsForMultiSign(txs));
+                    }
 
-                          return signMultipleTransactions({ txs });
-                        })
-                    : EitherAsync.liftEither(
-                        Right(context.txStates[context.currentTxMeta?.idx!].tx)
+                    return EitherAsync.liftEither(
+                      Right(getTransactionsForMultiSign(txs))
+                    );
+                  })
+                  .chain((txs) =>
+                    getAverageGasMode(tx.network).chain((gas) =>
+                      EitherAsync.sequence(
+                        txs.map((tx) =>
+                          withRequestErrorRetry({
+                            fn: () =>
+                              transactionConstruct(tx.id, {
+                                gasArgs: gas?.gasArgs,
+                                ledgerWalletAPICompatible: isLedgerLive,
+                              }),
+                          }).mapLeft(() => new TransactionConstructError())
+                        )
                       )
-                        .chain((tx) =>
-                          getAverageGasMode(tx.network)
-                            .chainLeft(async () => Right(null))
-                            .chain((gas) =>
-                              withRequestErrorRetry({
-                                fn: () =>
-                                  transactionConstruct(tx.id, {
-                                    gasArgs: gas?.gasArgs,
-                                    ledgerWalletAPICompatible: isLedgerLive,
-                                  }),
-                              }).mapLeft(() => new TransactionConstructError())
-                            )
-                        )
-                        .chain((constructedTx) => {
-                          if (!constructedTx.unsignedTransaction) {
-                            return EitherAsync.liftEither(
-                              Left(new TransactionConstructError())
-                            );
-                          }
+                    )
+                  )
+                  .map((txs) =>
+                    txs
+                      .map((tx) => tx.unsignedTransaction)
+                      .filter((tx): tx is NonNullable<typeof tx> => !!tx)
+                  )
+                  .chain((txs) => {
+                    if (!txs.length) {
+                      return EitherAsync.liftEither(
+                        Left(new TransactionConstructError())
+                      );
+                    }
 
-                          return signTransaction({
-                            tx: constructedTx.unsignedTransaction,
-                            // @ts-expect-error
-                            ledgerHwAppId: constructedTx.ledgerHwAppId,
-                          })
-                            .map((val) => ({
-                              ...val,
-                              network: constructedTx.network,
-                              txId: constructedTx.id,
-                            }))
-                            .ifRight(() =>
-                              trackEvent("txSigned", {
-                                txId: constructedTx.id,
-                                network: constructedTx.network,
-                                yieldId: context.yieldId,
-                              })
-                            );
-                        });
-                })
-                .map((val) => ({ type: "regular", data: val }));
+                    return signMultipleTransactions({ txs });
+                  })
+                  .map((val) => ({ type: "regular", data: val }));
+              } else {
+                /**
+                 * Single sign transactions
+                 */
+
+                // @ts-expect-error
+                if (tx.type === "P2P_NODE_REQUEST") {
+                  return getAverageGasMode(tx.network)
+                    .chainLeft(async () => Right(null))
+                    .chain((gas) =>
+                      withRequestErrorRetry({
+                        fn: () =>
+                          transactionConstruct(tx.id, {
+                            gasArgs: gas?.gasArgs,
+                            ledgerWalletAPICompatible: isLedgerLive,
+                          }),
+                      }).mapLeft(() => new TransactionConstructError())
+                    )
+                    .map(() => ({ type: "p2pNode" }));
+                }
+
+                return EitherAsync.liftEither(
+                  Right(context.txStates[context.currentTxMeta?.idx!].tx)
+                )
+                  .chain((tx) =>
+                    getAverageGasMode(tx.network)
+                      .chainLeft(async () => Right(null))
+                      .chain((gas) =>
+                        withRequestErrorRetry({
+                          fn: () =>
+                            transactionConstruct(tx.id, {
+                              gasArgs: gas?.gasArgs,
+                              ledgerWalletAPICompatible: isLedgerLive,
+                            }),
+                        }).mapLeft(() => new TransactionConstructError())
+                      )
+                  )
+                  .chain((constructedTx) => {
+                    if (!constructedTx.unsignedTransaction) {
+                      return EitherAsync.liftEither(
+                        Left(new TransactionConstructError())
+                      );
+                    }
+
+                    return signTransaction({
+                      tx: constructedTx.unsignedTransaction,
+                      // @ts-expect-error
+                      ledgerHwAppId: constructedTx.ledgerHwAppId,
+                    })
+                      .map((val) => ({
+                        ...val,
+                        network: constructedTx.network,
+                        txId: constructedTx.id,
+                      }))
+                      .ifRight(() =>
+                        trackEvent("txSigned", {
+                          txId: constructedTx.id,
+                          network: constructedTx.network,
+                          yieldId: context.yieldId,
+                        })
+                      );
+                  })
+                  .map((val) => ({ type: "regular", data: val }));
+              }
             })
             .caseOf({
               Left: (l) => {
