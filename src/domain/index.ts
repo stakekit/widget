@@ -10,14 +10,6 @@ import {
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
-import {
-  SupportedEvmChain,
-  SupportedSKChains,
-  ledgerSKPluginNetworksSet,
-} from "./types/chains";
-
-export const shouldUseLLSKPlugin = (network: SupportedSKChains) =>
-  ledgerSKPluginNetworksSet.has(network as SupportedEvmChain);
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;

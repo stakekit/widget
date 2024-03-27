@@ -184,6 +184,8 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
                       return signTransaction({
                         tx: constructedTx.unsignedTransaction,
+                        // @ts-expect-error
+                        ledgerHwAppId: constructedTx.ledgerHwAppId,
                       })
                         .map((val) => ({
                           ...val,
