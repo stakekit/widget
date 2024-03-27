@@ -33,16 +33,11 @@ export const constructTxs = ({
         )
       )
     )
-    .map((constructedTxs) => {
+    .map<ActionDto>((constructedTxs) => {
       const mapped = new Map(constructedTxs.map((val) => [val.id, val]));
 
       return {
-        mappedActionDto: {
-          ...actionDto,
-          transactions: actionDto.transactions.map(
-            (v) => mapped.get(v.id) ?? v
-          ),
-        } satisfies ActionDto,
-        transactionConstructRes: constructedTxs,
+        ...actionDto,
+        transactions: actionDto.transactions.map((v) => mapped.get(v.id) ?? v),
       };
     });

@@ -374,9 +374,9 @@ const Provider = ({ children }: PropsWithChildren) => {
   const stakeSession = useMemo(
     () =>
       Maybe.fromNullable(
-        stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
+        stakeEnterAndTxsConstructMutationState.data?.actionDto
       ),
-    [stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes]
+    [stakeEnterAndTxsConstructMutationState.data?.actionDto]
   );
 
   const isGasCheckError = useMemo(
@@ -388,7 +388,7 @@ const Provider = ({ children }: PropsWithChildren) => {
   );
 
   const stakeEnterTxGas = useTransactionTotalGas(
-    stakeEnterAndTxsConstructMutationState?.data?.transactionConstructRes
+    stakeEnterAndTxsConstructMutationState.data?.actionDto.transactions
   );
 
   const actions = useMemo(

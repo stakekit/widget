@@ -6,11 +6,9 @@ import {
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
-import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
-import { EitherAsync, Right } from "purify-ts";
-import { checkGasAmount } from "../../common/check-gas-amount";
+import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
 
 const mutationKey = ["stake-exit"];
 
@@ -70,26 +68,16 @@ const fn = ({
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
     .chain((actionDto) =>
-      constructTxs({ actionDto, gasModeValue, isLedgerLive })
-    )
-    .chain((val) =>
-      (disableGasCheck
-        ? EitherAsync.liftEither(Right(null))
-        : checkGasAmount({
-            addressWithTokenDto: {
-              address: stakeRequestDto.addresses.address,
-              additionalAddresses:
-                stakeRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes: val.transactionConstructRes,
-          })
-      )
-        .chainLeft(async (e) => Right(e))
-        .map((gasCheckErr) => ({
-          ...val,
-          stakeExitRes: val.mappedActionDto,
-          gasCheckErr: gasCheckErr ?? null,
-        }))
+      actionWithGasEstimateAndCheck({
+        actionDto,
+        disableGasCheck,
+        isLedgerLive,
+        gasModeValue,
+        addressWithTokenDto: {
+          address: stakeRequestDto.addresses.address,
+          additionalAddresses: stakeRequestDto.addresses.additionalAddresses,
+          network: gasFeeToken.network,
+          tokenAddress: gasFeeToken.address,
+        },
+      })
     );

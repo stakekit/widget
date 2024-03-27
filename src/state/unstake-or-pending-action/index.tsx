@@ -294,10 +294,8 @@ export const UnstakeOrPendingActionProvider = ({
 
   const unstakeSession = useMemo(
     () =>
-      Maybe.fromNullable(
-        stakeExitAndTxsConstructMutationState?.data?.stakeExitRes
-      ),
-    [stakeExitAndTxsConstructMutationState?.data?.stakeExitRes]
+      Maybe.fromNullable(stakeExitAndTxsConstructMutationState.data?.actionDto),
+    [stakeExitAndTxsConstructMutationState.data?.actionDto]
   );
 
   const isGasCheckError = useMemo(
@@ -320,17 +318,17 @@ export const UnstakeOrPendingActionProvider = ({
   const pendingActionSession = useMemo(
     () =>
       Maybe.fromNullable(
-        pendingActionAndTxsConstructMutationState?.data?.pendingActionRes
+        pendingActionAndTxsConstructMutationState.data?.actionDto
       ),
-    [pendingActionAndTxsConstructMutationState?.data?.pendingActionRes]
+    [pendingActionAndTxsConstructMutationState.data?.actionDto]
   );
 
   const stakeExitTxGas = useTransactionTotalGas(
-    stakeExitAndTxsConstructMutationState?.data?.transactionConstructRes
+    stakeExitAndTxsConstructMutationState.data?.actionDto.transactions
   );
 
   const pendingActionTxGas = useTransactionTotalGas(
-    pendingActionAndTxsConstructMutationState?.data?.transactionConstructRes
+    pendingActionAndTxsConstructMutationState.data?.actionDto.transactions
   );
 
   const onPendingActionState = useOnPendingAction();
@@ -338,7 +336,7 @@ export const UnstakeOrPendingActionProvider = ({
   const pendingActionToken = useMemo<ExtraData["pendingActionToken"]>(
     () =>
       Maybe.fromNullable(onPendingActionState?.data).map(
-        (val) => val.yieldBalance.token
+        (val) => val.pendingActionToken
       ),
     [onPendingActionState?.data]
   );

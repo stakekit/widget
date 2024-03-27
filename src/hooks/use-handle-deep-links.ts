@@ -13,7 +13,7 @@ export const useHandleDeepLinks = () => {
       // Pending action constructed, navigate to review
       if (val.type === "review") {
         navigateRef.current(
-          `positions/${val.pendingActionRes.integrationId}/${val.balanceId}/pending-action/review`
+          `positions/${val.actionDto.integrationId}/${val.balanceId}/pending-action/review`
         );
       } else {
         // Select validator addresses before continuing pending action flow
