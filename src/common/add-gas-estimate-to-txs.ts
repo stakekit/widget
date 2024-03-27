@@ -1,45 +1,28 @@
-import {
-  APIManager,
-  ActionDto,
-  GasEstimateDto,
-  TransactionDto,
-} from "@stakekit/api-hooks";
-import { getValidStakeSessionTx } from "../domain";
+import { APIManager, ActionDto, GasEstimateDto } from "@stakekit/api-hooks";
 import { EitherAsync, Maybe } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
+import { ActionDtoWithGasEstimate } from "../domain/types/action";
+import BigNumber from "bignumber.js";
 
 export const addGasEstimateToTxs = (actionDto: ActionDto) =>
   EitherAsync.liftEither(
     Maybe.fromNullable(APIManager.getInstance()).toEither(
       new Error("APIManager is null")
     )
-  )
-    .chain((apiClient) =>
-      EitherAsync.liftEither(getValidStakeSessionTx(actionDto)).chain(
-        (actionWithValidTxs) =>
-          EitherAsync.sequence(
-            actionWithValidTxs.transactions.map((tx) =>
-              withRequestErrorRetry({
-                fn: () =>
-                  apiClient
-                    .get<GasEstimateDto>(`/v1/actions/${tx.id}/gas-estimate`)
-                    .then<TransactionDto>(
-                      (res) =>
-                        ({
-                          ...tx,
-                          gasEstimate: res.data,
-                        }) satisfies TransactionDto
-                    ),
-              }).mapLeft(() => new Error("Gas estimate error"))
-            )
-          )
-      )
-    )
-    .map<ActionDto>((constructedTxs) => {
-      const mapped = new Map(constructedTxs.map((val) => [val.id, val]));
-
-      return {
-        ...actionDto,
-        transactions: actionDto.transactions.map((v) => mapped.get(v.id) ?? v),
-      };
-    });
+  ).chain((apiClient) =>
+    withRequestErrorRetry({
+      fn: () =>
+        apiClient
+          .get<GasEstimateDto>(`/v1/actions/${actionDto.id}/gas-estimate`)
+          .then<ActionDtoWithGasEstimate>(
+            (res) =>
+              ({
+                ...actionDto,
+                gasEstimate: {
+                  ...res.data,
+                  amount: new BigNumber(res.data.amount ?? 0),
+                },
+              }) satisfies ActionDtoWithGasEstimate
+          ),
+    }).mapLeft(() => new Error("Gas estimate error"))
+  );

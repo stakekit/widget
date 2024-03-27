@@ -77,14 +77,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
     const txs = session.transactions;
 
-    const currentTxIdx = List.findIndex(
-      (val) => val.status === "WAITING_FOR_SIGNATURE",
-      txs
-    ).extractNullable();
-
-    if (currentTxIdx === null) {
-      return def;
-    }
+    if (!txs.length) return def;
 
     const txStates = txs.map<TxState>((dto) => ({
       tx: dto,
@@ -98,8 +91,10 @@ export const useStepsMachine = (session: ActionDto | null) => {
       },
     }));
 
+    const currentTxIdx = 0;
+
     const currentTxMeta = {
-      idx: shouldMultiSend ? 0 : currentTxIdx,
+      idx: currentTxIdx,
       id: txs[currentTxIdx].id,
     };
 
@@ -109,7 +104,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
       currentTxMeta,
       yieldId: session.integrationId,
     };
-  }, [session?.integrationId, session?.transactions, shouldMultiSend]);
+  }, [session, shouldMultiSend]);
 
   const stateMachine = useStateMachine({
     initial: initContext ? "idle" : "disabled",
@@ -437,9 +432,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   );
 
                   const newCurrentTxIdx = List.findIndex(
-                    (val) =>
-                      val.tx.status === "WAITING_FOR_SIGNATURE" &&
-                      !val.meta.done,
+                    (val) => !val.meta.done,
                     newTxStates
                   ).extractNullable();
 

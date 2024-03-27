@@ -10,6 +10,8 @@ import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
+import { EitherAsync } from "purify-ts";
+import { getValidStakeSessionTx } from "../../domain";
 
 const mutationKey = ["pending-action"];
 
@@ -73,7 +75,11 @@ const fn = ({
   })
     .mapLeft(() => new Error("Pending actions error"))
     .chain((actionDto) =>
+      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+    )
+    .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
+        gasFeeToken,
         actionDto,
         disableGasCheck,
         isLedgerLive,

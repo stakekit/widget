@@ -9,6 +9,8 @@ import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
+import { getValidStakeSessionTx } from "../../domain";
+import { EitherAsync } from "purify-ts";
 
 const mutationKey = ["stake-exit"];
 
@@ -68,7 +70,11 @@ const fn = ({
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
     .chain((actionDto) =>
+      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+    )
+    .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
+        gasFeeToken,
         actionDto,
         disableGasCheck,
         isLedgerLive,

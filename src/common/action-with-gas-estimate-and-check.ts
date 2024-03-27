@@ -2,6 +2,7 @@ import {
   ActionDto,
   AddressWithTokenDto,
   GasModeValueDto,
+  TokenDto,
 } from "@stakekit/api-hooks";
 import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
 import { constructTxs } from "./construct-txs";
@@ -14,7 +15,9 @@ export const actionWithGasEstimateAndCheck = ({
   disableGasCheck,
   gasModeValue,
   isLedgerLive,
+  gasFeeToken,
 }: {
+  gasFeeToken: TokenDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
   disableGasCheck: boolean;
@@ -22,7 +25,9 @@ export const actionWithGasEstimateAndCheck = ({
   actionDto: ActionDto;
 }) =>
   addGasEstimateToTxs(actionDto)
-    .chainLeft(() => constructTxs({ actionDto, gasModeValue, isLedgerLive }))
+    .chainLeft(() =>
+      constructTxs({ actionDto, gasModeValue, isLedgerLive, gasFeeToken })
+    )
     .chain((actionDto) =>
       EitherAsync.liftEither(
         Maybe.fromFalsy(disableGasCheck)

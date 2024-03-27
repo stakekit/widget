@@ -28,7 +28,6 @@ import { tokenToTokenDto } from "../../utils/mappers";
 import { getBaseToken } from "../../domain";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
-import { useTransactionTotalGas } from "../../hooks/use-transaction-total-gas";
 import { useUnstakeOrPendingActionMatch } from "../../hooks/navigation/use-unstake-or-pending-action-match";
 import { usePendingActionSelectValidatorMatch } from "../../hooks/navigation/use-pending-action-select-validator-match";
 
@@ -323,12 +322,21 @@ export const UnstakeOrPendingActionProvider = ({
     [pendingActionAndTxsConstructMutationState.data?.actionDto]
   );
 
-  const stakeExitTxGas = useTransactionTotalGas(
-    stakeExitAndTxsConstructMutationState.data?.actionDto.transactions
+  const stakeExitTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(
+        stakeExitAndTxsConstructMutationState.data?.actionDto.gasEstimate.amount
+      ),
+    [stakeExitAndTxsConstructMutationState.data?.actionDto]
   );
 
-  const pendingActionTxGas = useTransactionTotalGas(
-    pendingActionAndTxsConstructMutationState.data?.actionDto.transactions
+  const pendingActionTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(
+        pendingActionAndTxsConstructMutationState.data?.actionDto.gasEstimate
+          .amount
+      ),
+    [pendingActionAndTxsConstructMutationState.data?.actionDto]
   );
 
   const onPendingActionState = useOnPendingAction();

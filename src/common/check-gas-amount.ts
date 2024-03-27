@@ -6,7 +6,7 @@ import {
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
-import { getTransactionTotalGas } from "../domain";
+import { getTransactionsTotalGasAmount } from "../domain";
 
 export const checkGasAmount = ({
   addressWithTokenDto,
@@ -25,7 +25,7 @@ export const checkGasAmount = ({
           .map((gt) => new BigNumber(gt.amount ?? 0))
           .toEither(new GasTokenMissingError())
       ).chain(async (gasTokenAmount) => {
-        const gasEstimate = getTransactionTotalGas(txs);
+        const gasEstimate = getTransactionsTotalGasAmount(txs);
 
         if (gasEstimate.isGreaterThan(gasTokenAmount)) {
           return Left(new NotEnoughGasTokenError());

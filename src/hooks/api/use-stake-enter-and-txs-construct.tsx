@@ -10,6 +10,8 @@ import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { isAxiosError } from "axios";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
+import { getValidStakeSessionTx } from "../../domain";
+import { EitherAsync } from "purify-ts";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -72,7 +74,11 @@ const fn = ({
       return new Error("Stake enter error");
     })
     .chain((actionDto) =>
+      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+    )
+    .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
+        gasFeeToken,
         actionDto,
         disableGasCheck,
         isLedgerLive,
