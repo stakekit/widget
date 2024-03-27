@@ -120,7 +120,6 @@ const fn = ({
         .map((res) => ({ ...val, ...res }))
     )
     .map((val) => ({
-      pendingActionRes: val.pendingActionRes,
-      transactionConstructRes: val.transactionConstructRes,
-      yieldBalance,
+      ...val,
+      pendingActionToken: yieldBalance.token,
     }));

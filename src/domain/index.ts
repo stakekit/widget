@@ -10,14 +10,6 @@ import {
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
-import {
-  SupportedEvmChain,
-  SupportedSKChains,
-  ledgerSKPluginNetworksSet,
-} from "./types/chains";
-
-export const shouldUseLLSKPlugin = (network: SupportedSKChains) =>
-  ledgerSKPluginNetworksSet.has(network as SupportedEvmChain);
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
@@ -107,8 +99,13 @@ export const PAMultiValidatorsRequired = (pa: PendingActionDto) =>
 export const PASingleValidatorRequired = (pa: PendingActionDto) =>
   !!pa.args?.args?.validatorAddress?.required;
 
-export const getTransactionTotalGas = (txs: TransactionDto[]) =>
+export const getTransactionsTotalGasAmount = (txs: TransactionDto[]) =>
   txs.reduce(
     (acc, val) => acc.plus(new BigNumber(val.gasEstimate?.amount ?? 0)),
     new BigNumber(0)
   );
+
+export const getTransactionsForMultiSign = (txs: TransactionDto[]) => {
+  // @ts-expect-error
+  return txs.filter((tx) => tx.type !== "P2P_NODE_REQUEST");
+};

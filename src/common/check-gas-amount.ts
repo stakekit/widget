@@ -6,20 +6,17 @@ import {
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
-import { getTransactionTotalGas } from "../domain";
+import { getTransactionsTotalGasAmount } from "../domain";
 
 export const checkGasAmount = ({
   addressWithTokenDto,
-  transactionConstructRes,
+  txs,
 }: {
   addressWithTokenDto: AddressWithTokenDto;
-  transactionConstructRes: TransactionDto[];
+  txs: TransactionDto[];
 }) =>
   withRequestErrorRetry({
-    fn: () =>
-      tokenGetTokenBalances({
-        addresses: [addressWithTokenDto],
-      }),
+    fn: () => tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),
   })
     .mapLeft(() => new GetGasTokenError())
     .chain((res) =>
@@ -28,15 +25,16 @@ export const checkGasAmount = ({
           .map((gt) => new BigNumber(gt.amount ?? 0))
           .toEither(new GasTokenMissingError())
       ).chain(async (gasTokenAmount) => {
-        const gasEstimate = getTransactionTotalGas(transactionConstructRes);
+        const gasEstimate = getTransactionsTotalGasAmount(txs);
 
         if (gasEstimate.isGreaterThan(gasTokenAmount)) {
           return Left(new NotEnoughGasTokenError());
         }
 
-        return Right(undefined);
+        return Right(null);
       })
-    );
+    )
+    .chainLeft(async (e) => Right(e));
 
 export class NotEnoughGasTokenError extends Error {
   constructor() {
