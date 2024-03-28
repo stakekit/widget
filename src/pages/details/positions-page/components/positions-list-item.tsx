@@ -41,10 +41,11 @@ export const PositionsListItem = memo(
 
     const amount = useMemo(
       () =>
-        item.balances.reduce(
-          (acc, b) => new BigNumber(b.amount).plus(acc),
-          new BigNumber(0)
-        ),
+        item.balances.reduce((acc, b) => {
+          if (b.token.isPoints) return acc;
+
+          return new BigNumber(b.amount).plus(acc);
+        }, new BigNumber(0)),
       [item.balances]
     );
 

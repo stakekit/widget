@@ -15,7 +15,10 @@ export const attachRichErrorsInterceptor = (
   i18n: i18n
 ) =>
   apiClient.interceptors.response.use(undefined, (error) => {
-    if (i18n.exists(`errors.${error.response.data.message}`)) {
+    if (
+      i18n.exists(`errors.${error.response.data.message}`) &&
+      !error?.config?.url.includes("gas-estimate") // temp ignore gas estimate errors
+    ) {
       $richError.next(error.response.data);
     }
 

@@ -8,12 +8,13 @@ import {
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { withRequestErrorRetry } from "../../common/utils";
-import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { isAxiosError } from "axios";
-import { EitherAsync, Right } from "purify-ts";
-import { checkGasAmount } from "../../common/check-gas-amount";
+import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
+import { getValidStakeSessionTx } from "../../domain";
+import { EitherAsync } from "purify-ts";
+import { useApiClient } from "../../providers/api/api-client-provider";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -21,15 +22,27 @@ export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 const mutationKey = ["stake-enter"];
 
 const StakeEnterAndTxsConstructContext = createContext<
-  UseMutationResult<DataType, ErrorType, Parameters<typeof fn>[0]> | undefined
+  | UseMutationResult<
+      DataType,
+      ErrorType,
+      Omit<Parameters<typeof fn>[0], "apiClient">
+    >
+  | undefined
 >(undefined);
 
 export const StakeEnterAndTxsConstructProvider = ({
   children,
 }: PropsWithChildren) => {
-  const value = useMutation<DataType, ErrorType, Parameters<typeof fn>[0]>({
+  const apiClient = useApiClient();
+
+  const value = useMutation<
+    DataType,
+    ErrorType,
+    Omit<Parameters<typeof fn>[0], "apiClient">
+  >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, apiClient })).unsafeCoerce(),
   });
 
   return (
@@ -60,6 +73,7 @@ const fn = ({
   actionEnter,
   transactionConstruct,
   tokenGetTokenBalances,
+  apiClient,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -69,6 +83,7 @@ const fn = ({
   actionEnter: ReturnType<typeof useActionEnterHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
+  apiClient: ReturnType<typeof useApiClient>;
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft<StakingNotAllowedError | Error>((e) => {
@@ -82,34 +97,25 @@ const fn = ({
       return new Error("Stake enter error");
     })
     .chain((actionDto) =>
-      constructTxs({
-        actionDto,
-        gasModeValue,
-        isLedgerLive,
-        transactionConstruct,
-      })
+      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
     )
-    .chain((val) =>
-      (disableGasCheck
-        ? EitherAsync.liftEither(Right(null))
-        : checkGasAmount({
-            addressWithTokenDto: {
-              address: stakeRequestDto.addresses.address,
-              additionalAddresses:
-                stakeRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes: val.transactionConstructRes,
-            tokenGetTokenBalances,
-          })
-      )
-        .chainLeft(async (e) => Right(e))
-        .map((gasCheckErr) => ({
-          ...val,
-          stakeEnterRes: val.mappedActionDto,
-          gasCheckErr: gasCheckErr ?? null,
-        }))
+    .chain((actionDto) =>
+      actionWithGasEstimateAndCheck({
+        apiClient,
+        gasFeeToken,
+        actionDto,
+        disableGasCheck,
+        isLedgerLive,
+        gasModeValue,
+        addressWithTokenDto: {
+          address: stakeRequestDto.addresses.address,
+          additionalAddresses: stakeRequestDto.addresses.additionalAddresses,
+          network: gasFeeToken.network,
+          tokenAddress: gasFeeToken.address,
+        },
+        transactionConstruct,
+        tokenGetTokenBalances,
+      })
     );
 
 class StakingNotAllowedError extends Error {

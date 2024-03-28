@@ -9,11 +9,12 @@ import {
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
-import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
-import { EitherAsync, Right } from "purify-ts";
-import { checkGasAmount } from "../../common/check-gas-amount";
+import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
+import { EitherAsync } from "purify-ts";
+import { getValidStakeSessionTx } from "../../domain";
+import { useApiClient } from "../../providers/api/api-client-provider";
 
 const mutationKey = ["pending-action"];
 
@@ -21,7 +22,7 @@ const PendingActionAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Parameters<typeof fn>[0]
+      Omit<Parameters<typeof fn>[0], "apiClient">
     >
   | undefined
 >(undefined);
@@ -29,13 +30,16 @@ const PendingActionAndTxsConstructContext = createContext<
 export const PendingActionAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
+  const apiClient = useApiClient();
+
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Parameters<typeof fn>[0]
+    Omit<Parameters<typeof fn>[0], "apiClient">
   >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, apiClient })).unsafeCoerce(),
   });
 
   return (
@@ -66,6 +70,7 @@ const fn = ({
   actionPending,
   tokenGetTokenBalances,
   transactionConstruct,
+  apiClient,
 }: {
   pendingActionRequestDto: PendingActionRequestDto & {
     addresses: AddressesDto;
@@ -77,38 +82,31 @@ const fn = ({
   actionPending: ReturnType<typeof useActionPendingHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+  apiClient: ReturnType<typeof useApiClient>;
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
   })
     .mapLeft(() => new Error("Pending actions error"))
     .chain((actionDto) =>
-      constructTxs({
-        actionDto,
-        gasModeValue,
-        isLedgerLive,
-        transactionConstruct,
-      })
+      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
     )
-    .chain((val) =>
-      (disableGasCheck
-        ? EitherAsync.liftEither(Right(null))
-        : checkGasAmount({
-            tokenGetTokenBalances,
-            addressWithTokenDto: {
-              address: pendingActionRequestDto.addresses.address,
-              additionalAddresses:
-                pendingActionRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes: val.transactionConstructRes,
-          })
-      )
-        .chainLeft(async (e) => Right(e))
-        .map((gasCheckErr) => ({
-          ...val,
-          pendingActionRes: val.mappedActionDto,
-          gasCheckErr: gasCheckErr ?? null,
-        }))
+    .chain((actionDto) =>
+      actionWithGasEstimateAndCheck({
+        apiClient,
+        gasFeeToken,
+        actionDto,
+        disableGasCheck,
+        isLedgerLive,
+        gasModeValue,
+        addressWithTokenDto: {
+          address: pendingActionRequestDto.addresses.address,
+          additionalAddresses:
+            pendingActionRequestDto.addresses.additionalAddresses,
+          network: gasFeeToken.network,
+          tokenAddress: gasFeeToken.address,
+        },
+        transactionConstruct,
+        tokenGetTokenBalances,
+      })
     );

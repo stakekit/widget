@@ -11,6 +11,7 @@ import { SupportedSKChains } from "./chains";
 import { Account } from "@ledgerhq/wallet-api-client";
 import { Connector } from "wagmi";
 import { Chain } from "viem";
+import { Nullable } from "../../types";
 
 type SignedTxOrMessage = string;
 
@@ -18,6 +19,7 @@ export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
+    ledgerHwAppId: Nullable<string>;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
     { signedTx: SignedTxOrMessage; broadcasted: boolean }
