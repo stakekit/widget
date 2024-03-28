@@ -6,20 +6,17 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import { sendTransaction as wagmiSendTransaction } from "@wagmi/core";
 import { SKWallet } from "../../domain/types";
-import { useAccount, useDisconnect, useNetwork } from "wagmi";
+import {
+  useAccount,
+  useDisconnect,
+  useSendTransaction,
+  useSignMessage,
+} from "wagmi";
 import { useWagmiConfig } from "../wagmi";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { useLedgerAccounts } from "./use-ledger-accounts";
-import {
-  getCosmosChainWallet,
-  isCosmosConnector,
-  isExternalProviderConnector,
-  isLedgerLiveConnector,
-  isTronConnector,
-  wagmiNetworkToSKNetwork,
-} from "./utils";
+import { getCosmosChainWallet, wagmiNetworkToSKNetwork } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import {
   NotSupportedFlowError,
@@ -36,9 +33,13 @@ import {
 } from "./validation";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
-import { LedgerLiveConnector } from "../ledger/ledger-connector";
+import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { Hash } from "viem";
+import { isExternalProviderConnector } from "../external-provider";
+import { isTronConnector } from "../misc/tron-connector";
+import { isCosmosConnector } from "../cosmos/cosmos-connector";
+import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
@@ -49,16 +50,26 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     isConnected: _isConnected,
     isConnecting: _isConnecting,
     address,
-    connector,
+    connector: _connector,
+    chain,
   } = useAccount();
 
-  const { chain } = useNetwork();
+  const connector =
+    _connector?.connect && _connector.emitter ? _connector : undefined;
 
   const { disconnectAsync: disconnect } = useDisconnect();
+
+  const { sendTransactionAsync } = useSendTransaction();
+  const { signMessageAsync } = useSignMessage();
 
   const ledgerAccounts = useLedgerAccounts(connector);
 
   const wagmiConfig = useWagmiConfig();
+
+  const connectorChains = useConnectorChains({
+    wagmiConfig: wagmiConfig.data,
+    connector,
+  });
 
   const network = useMemo(
     () =>
@@ -80,12 +91,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     [chain, wagmiConfig.data]
   );
 
+  const isConnected = _isConnected && !!address && !!connector && !!network;
+
   const additionalAddresses = useAdditionalAddresses({
     address,
     connector,
+    isConnected,
   });
-
-  const isConnected = _isConnected && !!address && !!connector && !!network;
 
   const isConnecting =
     _isConnecting ||
@@ -105,24 +117,24 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
    * Network missmatch, disconnect
    */
   useIsomorphicEffect(() => {
-    if (_isConnected && !isConnected) {
+    if (!isConnecting && _isConnected && !isConnected) {
       disconnect();
     }
   }, [_isConnected, disconnect, isConnected]);
 
-  const safeConnectorWithNetwork = useMemo(
+  const connectorDetails = useMemo(
     () =>
       EitherAsync.liftEither(
-        !isConnected || !network || !connector
+        !isConnected || !network || !connector || !address
           ? Left(new Error("No wallet connected"))
-          : Right({ conn: connector, network })
+          : Right({ conn: connector, network, address })
       ),
-    [connector, isConnected, network]
+    [connector, isConnected, network, address]
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
     ({ tx, ledgerHwAppId }) =>
-      safeConnectorWithNetwork.chain<
+      connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn }) => {
@@ -131,17 +143,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
            * Ledger Live connector
            */
           return EitherAsync.liftEither(
-            Either.encase(() => conn.getWalletApiClient()).mapLeft(
-              () => new Error("getWalletApiClient failed")
+            Maybe.fromNullable(conn.$currentAccountId.value).toEither(
+              new Error("currentAccountId missing")
             )
           )
-            .chain((walletApiClient) =>
-              EitherAsync.liftEither(
-                Maybe.fromNullable(conn.getCurrentAccountId()).toEither(
-                  new Error("getCurrentAccountId failed")
-                )
-              ).map((val) => ({ walletApiClient, accountId: val }))
-            )
             .chain((val) =>
               EitherAsync.liftEither(
                 Either.encase(() => JSON.parse(tx))
@@ -152,13 +157,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                     ).mapLeft(() => new Error("deserializeTransaction failed"))
                   )
               ).map((deserializedTransaction) => ({
-                ...val,
+                accountId: val,
                 deserializedTransaction,
               }))
             )
-            .chain(({ walletApiClient, accountId, deserializedTransaction }) =>
+            .chain(({ accountId, deserializedTransaction }) =>
               EitherAsync(() => {
-                return walletApiClient.transaction.signAndBroadcast(
+                return conn.walletApiClient.transaction.signAndBroadcast(
                   accountId,
                   deserializedTransaction,
                   Maybe.fromNullable(ledgerHwAppId)
@@ -212,7 +217,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           )
             .chain((val) =>
-              EitherAsync(() => conn.adapter.signTransaction(val))
+              EitherAsync(() => conn.signTransaction(val))
                 .mapLeft((e) => {
                   console.log(e);
                   return new Error("sign failed");
@@ -243,29 +248,37 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           ).chain((val) =>
             EitherAsync(() =>
-              wagmiSendTransaction({
-                ...val,
-                type: val.maxFeePerGas ? "eip1559" : "legacy",
+              /**
+               * Params need to be in strict format, don't spread the object(val)!
+               */
+              sendTransactionAsync({
+                data: val.data,
+                to: val.to,
+                value: val.value,
+                nonce: val.nonce,
+                maxFeePerGas: val.maxFeePerGas,
+                maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+                chainId: val.chainId,
                 gas: val.gasLimit,
-                mode: "prepared",
+                type: val.maxFeePerGas ? "eip1559" : "legacy",
               })
             )
               .mapLeft((e) => {
                 console.log(e);
                 return new SendTransactionError();
               })
-              .map((val) => ({ signedTx: val.hash, broadcasted: true }))
+              .map((val) => ({ signedTx: val, broadcasted: true }))
           );
         }
       }),
-    [safeConnectorWithNetwork]
+    [connectorDetails, sendTransactionAsync]
   );
 
   const signMultipleTransactions = useCallback<
     SKWallet["signMultipleTransactions"]
   >(
     ({ txs }) =>
-      safeConnectorWithNetwork.chain<
+      connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn, network }) => {
@@ -289,15 +302,35 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               }))
             )
           ).chain((val) =>
-            conn.provider
-              .sendMultipleTransactions({ network, txs: val })
+            conn
+              .sendMultipleTransactions({
+                network,
+                txs: val,
+              })
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
           );
         } else {
           return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
         }
       }),
-    [safeConnectorWithNetwork]
+    [connectorDetails]
+  );
+
+  const signMessage = useCallback<SKWallet["signMessage"]>(
+    (message) =>
+      connectorDetails
+        .chain(({ conn, address }) => {
+          if (isExternalProviderConnector(conn)) {
+            return conn.signMessage(address, message);
+          }
+
+          return EitherAsync(() => signMessageAsync({ message }));
+        })
+        .mapLeft((e) => {
+          console.log(e);
+          return new Error("sign failed");
+        }),
+    [connectorDetails, signMessageAsync]
   );
 
   const onLedgerAccountChange = useCallback(
@@ -318,10 +351,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       disconnect,
       signTransaction,
       signMultipleTransactions,
+      signMessage,
+      connectorChains,
       isLedgerLive,
     };
 
-    if (isConnected && !isConnecting) {
+    if (isConnected && chain && !isConnecting) {
       return {
         ...common,
         network,
@@ -330,12 +365,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         isConnected: true,
         isConnecting: false,
         additionalAddresses: additionalAddresses.data ?? null,
-        isLedgerLive,
         ledgerAccounts,
         onLedgerAccountChange,
         connector,
         isLedgerLiveAccountPlaceholder:
-          address === LedgerLiveConnector.noAccountPlaceholder,
+          connector &&
+          isLedgerLiveConnector(connector) &&
+          address === connector.noAccountPlaceholder,
       };
     }
 
@@ -347,13 +383,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       isConnected: false,
       isConnecting,
       additionalAddresses: null,
-      isLedgerLive,
       ledgerAccounts: null,
       onLedgerAccountChange: null,
       connector: null,
       isLedgerLiveAccountPlaceholder: false,
     };
   }, [
+    connectorChains,
     additionalAddresses.data,
     address,
     chain,
@@ -366,6 +402,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     onLedgerAccountChange,
     signTransaction,
     signMultipleTransactions,
+    signMessage,
   ]);
 
   return (

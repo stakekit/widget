@@ -1,13 +1,35 @@
 import { PropsWithChildren } from "react";
-import { WagmiConfig } from "wagmi";
+import { WagmiContext } from "wagmi";
+import { hydrate } from "@wagmi/core";
 import { defaultConfig, useWagmiConfig } from "../wagmi";
+import { useQuery } from "@tanstack/react-query";
+import { EitherAsync } from "purify-ts";
 
-export const WagmiProvider = ({ children }: PropsWithChildren) => {
+const queryKey = ["wagmi-config", "on-mount"];
+
+export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
   const wagmiConfig = useWagmiConfig();
 
+  const config = wagmiConfig.data?.wagmiConfig;
+
+  useQuery({
+    queryKey,
+    staleTime: Infinity,
+    enabled: !!config,
+    queryFn: async () => {
+      if (config) {
+        const { onMount } = hydrate(config, { reconnectOnMount: true });
+
+        await EitherAsync(onMount);
+      }
+
+      return null;
+    },
+  });
+
   return (
-    <WagmiConfig config={wagmiConfig.data?.wagmiConfig ?? defaultConfig}>
+    <WagmiContext.Provider value={config ?? defaultConfig}>
       {children}
-    </WagmiConfig>
+    </WagmiContext.Provider>
   );
 };

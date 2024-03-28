@@ -105,7 +105,5 @@ export const getTransactionsTotalGasAmount = (txs: TransactionDto[]) =>
     new BigNumber(0)
   );
 
-export const getTransactionsForMultiSign = (txs: TransactionDto[]) => {
-  // @ts-expect-error
-  return txs.filter((tx) => tx.type !== "P2P_NODE_REQUEST");
-};
+export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
+  txs.filter((tx) => tx.type !== "P2P_NODE_REQUEST");

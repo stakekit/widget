@@ -1,4 +1,3 @@
-import { APIManager } from "@stakekit/api-hooks";
 import { ThemeWrapperTheme } from "./theme-wrapper";
 import { PropsWithChildren, createContext, useContext, useMemo } from "react";
 import { Properties, TrackEventVal, TrackPageVal } from "./tracking";
@@ -7,7 +6,7 @@ import { config } from "../config";
 import { SKExternalProviders } from "../domain/types/wallets/safe-wallet";
 
 export interface SettingsContextType {
-  apiKey: Parameters<(typeof APIManager)["configure"]>[0]["apiKey"];
+  apiKey: string;
   theme?: ThemeWrapperTheme;
   referralCheck?: boolean;
   tracking?: {

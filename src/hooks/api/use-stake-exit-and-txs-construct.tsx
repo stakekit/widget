@@ -1,8 +1,11 @@
 import {
   GasModeValueDto,
   ActionRequestDto,
-  actionExit,
+  useActionExitHook,
   TokenDto,
+  useTransactionConstructHook,
+  useTokenGetTokenBalancesHook,
+  useActionGetGasEstimateHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -18,7 +21,7 @@ const StakeExitAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Parameters<typeof fn>[0]
+      Omit<Parameters<typeof fn>[0], "gasEstimate">
     >
   | undefined
 >(undefined);
@@ -26,13 +29,16 @@ const StakeExitAndTxsConstructContext = createContext<
 export const StakeExitAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
+  const gasEstimate = useActionGetGasEstimateHook();
+
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Parameters<typeof fn>[0]
+    Omit<Parameters<typeof fn>[0], "gasEstimate">
   >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
   });
 
   return (
@@ -60,12 +66,20 @@ const fn = ({
   isLedgerLive,
   disableGasCheck,
   gasFeeToken,
+  actionExit,
+  transactionConstruct,
+  tokenGetTokenBalances,
+  gasEstimate,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
   disableGasCheck: boolean;
   gasFeeToken: TokenDto;
+  actionExit: ReturnType<typeof useActionExitHook>;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
@@ -74,6 +88,7 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
+        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,
@@ -85,5 +100,7 @@ const fn = ({
           network: gasFeeToken.network,
           tokenAddress: gasFeeToken.address,
         },
+        transactionConstruct,
+        tokenGetTokenBalances,
       })
     );

@@ -64,7 +64,7 @@ export const textStyles = recipe({
       accent: atoms({ color: "accent" }),
       regular: atoms({ color: "text" }),
       muted: atoms({ color: "textMuted" }),
-      inverted: atoms({ color: "accent" }),
+      inverted: atoms({ color: "primary" }),
       white: atoms({ color: "white" }),
       danger: atoms({ color: "textDanger" }),
     },

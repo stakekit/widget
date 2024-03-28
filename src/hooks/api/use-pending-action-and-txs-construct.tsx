@@ -3,7 +3,10 @@ import {
   GasModeValueDto,
   PendingActionRequestDto,
   TokenDto,
-  actionPending,
+  useActionGetGasEstimateHook,
+  useActionPendingHook,
+  useTokenGetTokenBalancesHook,
+  useTransactionConstructHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -19,7 +22,7 @@ const PendingActionAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Parameters<typeof fn>[0]
+      Omit<Parameters<typeof fn>[0], "gasEstimate">
     >
   | undefined
 >(undefined);
@@ -27,13 +30,16 @@ const PendingActionAndTxsConstructContext = createContext<
 export const PendingActionAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
+  const gasEstimate = useActionGetGasEstimateHook();
+
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Parameters<typeof fn>[0]
+    Omit<Parameters<typeof fn>[0], "gasEstimate">
   >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
   });
 
   return (
@@ -61,6 +67,10 @@ const fn = ({
   isLedgerLive,
   disableGasCheck,
   gasFeeToken,
+  actionPending,
+  tokenGetTokenBalances,
+  transactionConstruct,
+  gasEstimate,
 }: {
   pendingActionRequestDto: PendingActionRequestDto & {
     addresses: AddressesDto;
@@ -69,6 +79,10 @@ const fn = ({
   isLedgerLive: boolean;
   disableGasCheck: boolean;
   gasFeeToken: TokenDto;
+  actionPending: ReturnType<typeof useActionPendingHook>;
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
@@ -79,6 +93,7 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
+        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,
@@ -91,5 +106,7 @@ const fn = ({
           network: gasFeeToken.network,
           tokenAddress: gasFeeToken.address,
         },
+        transactionConstruct,
+        tokenGetTokenBalances,
       })
     );

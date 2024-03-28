@@ -228,7 +228,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               components={{
                 br0: <br />,
                 link0: <SKAnchor href="https://www.stakek.it/" />,
-                link1: <SKAnchor href="https://www.stakek.it/" />,
+                link1: <SKAnchor href="https://docs.stakek.it/docs/faqs" />,
               }}
             />
           ),

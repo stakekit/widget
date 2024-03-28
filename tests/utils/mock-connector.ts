@@ -1,39 +1,49 @@
-import { Wallet } from "@stakekit/rainbowkit";
-import { MockConnector } from "wagmi/connectors/mock";
+import { CreateConnectorFn, custom } from "wagmi";
+import { MockParameters, mock as mockConnector } from "wagmi/connectors";
+import { BuildWagmiConfig } from "../../src/providers/wagmi";
 
 interface MyWalletOptions {
-  connector: MockConnector;
+  accounts: MockParameters["accounts"];
+  requestFn?: Parameters<typeof custom>[0]["request"];
+  connectorParams?: Partial<ReturnType<CreateConnectorFn>>;
 }
 
-export const rkMockWallet = ({ connector }: MyWalletOptions): Wallet => ({
-  id: "mock-wallet",
-  name: "Mock Wallet",
-  iconUrl: "https://my-image.xyz",
-  iconBackground: "#0c2f78",
-  downloadUrls: {
-    android: "https://fake-uri.com/android",
-    ios: "https://fake-uri.com/ios",
-    qrCode: "https://fake-uri.com/qr",
-  },
-  createConnector: () => {
-    return {
-      connector,
-      mobile: {
-        getUri: async () => "https://fake-uri.com",
-      },
-      qrCode: {
-        getUri: async () => "https://fake-uri.com",
-        instructions: {
-          learnMoreUrl: "https://my-wallet/learn-more",
-          steps: [
-            {
-              description: "Mock wallet for testing",
-              step: "install",
-              title: "Mock Wallet",
+export const rkMockWallet =
+  ({
+    connectorParams,
+    accounts,
+    requestFn,
+  }: MyWalletOptions): Parameters<BuildWagmiConfig>[0]["customConnectors"] =>
+  () => [
+    {
+      groupName: "Mock Wallet",
+      wallets: [
+        () => ({
+          id: "mock-wallet",
+          name: "Mock Wallet",
+          iconUrl: "https://my-image.xyz",
+          iconBackground: "#0c2f78",
+          downloadUrls: {
+            android: "https://fake-uri.com/android",
+            ios: "https://fake-uri.com/ios",
+            qrCode: "https://fake-uri.com/qr",
+          },
+          createConnector: () => (config) => ({
+            ...mockConnector({
+              accounts,
+              features: { reconnect: true },
+            })(config),
+            async isAuthorized() {
+              return true;
             },
-          ],
-        },
-      },
-    };
-  },
-});
+            ...(requestFn && {
+              async getProvider() {
+                return custom({ request: requestFn })({ retryCount: 0 });
+              },
+            }),
+            ...connectorParams,
+          }),
+        }),
+      ],
+    },
+  ];

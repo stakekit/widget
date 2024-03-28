@@ -1,11 +1,6 @@
 import { HttpResponse, delay, http } from "msw";
 import { server } from "../../mocks/server";
-import { vitest } from "vitest";
 import { rkMockWallet } from "../../utils/mock-connector";
-import { MockConnector } from "wagmi/connectors/mock";
-import { avalanche } from "viem/chains";
-import { createWalletClient, custom } from "viem";
-import { BuildWagmiConfig } from "../../../src/providers/wagmi";
 import { Networks, TokenDto, YieldDto } from "@stakekit/api-hooks";
 
 export const setup = () => {
@@ -201,7 +196,19 @@ export const setup = () => {
 
         return HttpResponse.json(referralCodeRes);
       }
-    )
+    ),
+    http.get("https://i18n.stakek.it/locales/en/errors.json", async () => {
+      await delay();
+
+      return HttpResponse.json({
+        MissingArgumentsError: {
+          title: "Missing Arguments",
+          details:
+            "The following required arguments are missing to perform this operation: {{arguments}}",
+          solution: "Try again later or contact Stakekit support",
+        },
+      });
+    })
   );
 
   const setUrl = (referralCode?: string) => {
@@ -225,52 +232,7 @@ export const setup = () => {
     };
   };
 
-  const requestFn = vitest.fn(async ({ method }: any) => {
-    switch (method) {
-      case "eth_sendTransaction":
-        return "transaction_hash";
-      case "eth_chainId":
-        return 43114;
-
-      default:
-        break;
-    }
-
-    throw new Error("unhandled method");
-  });
-
-  const provider = {
-    on: (message: string, listener: (...args: any[]) => null) => {
-      if (message === "accountsChanged") {
-        listener([account]);
-      }
-    },
-    removeListener: () => null,
-    request: requestFn,
-  };
-
-  const customConnectors: Parameters<BuildWagmiConfig>[0]["customConnectors"] =
-    (chains) => [
-      {
-        groupName: "Mock Wallet",
-        wallets: [
-          rkMockWallet({
-            connector: new MockConnector({
-              chains,
-              options: {
-                chainId: avalanche.id,
-                walletClient: createWalletClient({
-                  account,
-                  chain: avalanche,
-                  transport: custom(provider),
-                }),
-                flags: { isAuthorized: true },
-              },
-            }),
-          }),
-        ],
-      },
-    ];
+  const customConnectors = rkMockWallet({ accounts: [account] });
 
   return {
     customConnectors,
@@ -279,5 +241,6 @@ export const setup = () => {
     validAddressAndNetwork,
     referralCodeRes,
     setUrl,
+    account,
   };
 };

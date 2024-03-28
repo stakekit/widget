@@ -1,22 +1,25 @@
 import { EitherAsync, Right } from "purify-ts";
 import { waitForMs } from "../utils";
 import { QueryKey, useQuery } from "@tanstack/react-query";
+import { useSKQueryClient } from "../providers/query-client";
 
-export const useRefetchQueryNTimes = ({
+export const useInvalidateQueryNTimes = ({
   key,
   shouldRefetch,
   enabled,
-  refetch,
+  queryKey,
   waitMs = 4000,
   times = 2,
 }: {
   key: QueryKey;
   enabled: boolean;
   shouldRefetch: () => boolean;
-  refetch: () => Promise<unknown>;
+  queryKey: QueryKey;
   waitMs?: number;
   times?: number;
 }) => {
+  const queryClient = useSKQueryClient();
+
   useQuery({
     queryKey: ["refetch-n-times", ...key],
     refetchOnMount: false,
@@ -30,7 +33,7 @@ export const useRefetchQueryNTimes = ({
         Array.from({ length: 2 }).map(() =>
           EitherAsync(async () => {
             await waitForMs(waitMs);
-            await refetch();
+            await queryClient.invalidateQueries({ queryKey });
           }).chainLeft(async () => Right(null))
         )
       );

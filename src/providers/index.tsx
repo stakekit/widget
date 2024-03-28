@@ -1,10 +1,9 @@
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ComponentProps, PropsWithChildren, StrictMode } from "react";
-import { StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
-import { WagmiProvider } from "./wagmi/provider";
+import { WagmiConfigProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
@@ -18,21 +17,22 @@ import {
   FooterHeightProvider,
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
-import { SKQueryClientContextProvider } from "./query-client";
+import { SKQueryClientProvider } from "./query-client";
+import { SKApiClientProvider } from "./api/api-client-provider";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 
 export const Providers = ({
   children,
-}: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
+}: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
   const { tracking, showQueryDevtools } = useSettings();
 
   return (
     <StrictMode>
-      <StakeKitQueryProvider>
-        <SKQueryClientContextProvider>
+      <SKApiClientProvider>
+        <SKQueryClientProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
-          <WagmiProvider>
+          <WagmiConfigProvider>
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
                 <RainbowProvider>
@@ -62,9 +62,9 @@ export const Providers = ({
                 </RainbowProvider>
               </SKWalletProvider>
             </TrackingContextProvider>
-          </WagmiProvider>
-        </SKQueryClientContextProvider>
-      </StakeKitQueryProvider>
+          </WagmiConfigProvider>
+        </SKQueryClientProvider>
+      </SKApiClientProvider>
     </StrictMode>
   );
 };

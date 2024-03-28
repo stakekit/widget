@@ -1,14 +1,10 @@
 import { vanillaExtractPlugin } from "@vanilla-extract/esbuild-plugin";
 import autoprefixer from "autoprefixer";
 import * as esbuild from "esbuild";
-import * as babel from "@babel/core";
 import postcss from "postcss";
 import dotenv from "dotenv";
 import fs from "node:fs";
-import path from "node:path";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
+import macros from "unplugin-parcel-macros";
 
 const isWatching = process.argv.includes("--watch");
 
@@ -27,49 +23,8 @@ const commonPlugins: esbuild.Plugin[] = [
 
       return result.css;
     },
-  }) as esbuild.Plugin,
-  {
-    name: "chain-registry-transform",
-    setup(build) {
-      build.onResolve({ filter: /^\.\/.*chain-registry/ }, (args) => {
-        return {
-          path: path.resolve(args.resolveDir, `${args.path}.ts`),
-          namespace: "chain-registry",
-        };
-      });
-
-      build.onLoad(
-        { filter: /.*/, namespace: "chain-registry" },
-        async (args) => {
-          const code = await fs.promises.readFile(args.path, "utf8");
-
-          const result = await babel.transformAsync(code, {
-            filename: args.path,
-            plugins: [
-              require.resolve("@babel/plugin-syntax-jsx"),
-              [
-                require.resolve("@babel/plugin-syntax-typescript"),
-                { isTSX: false },
-              ],
-              require.resolve("babel-plugin-macros"),
-            ],
-            babelrc: false,
-            configFile: false,
-            sourceMaps: true,
-          });
-
-          if (!result?.code) {
-            throw new Error("Failed to transform chain-registry.ts");
-          }
-
-          return {
-            contents: result.code,
-            loader: "ts",
-          };
-        }
-      );
-    },
-  },
+  }),
+  macros.esbuild(),
 ];
 
 const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
@@ -92,13 +47,12 @@ const standaloneAppConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   target: "es2021",
   entryPoints: ["src/index.bundle.ts"],
   outdir: "dist/package/bundle",
-  assetNames: "assets/[name]",
   minify: true,
   external: ["crypto"],
   platform: "browser",
   plugins: commonPlugins,
   loader: {
-    ".png": "file",
+    ".png": "dataurl",
   },
 };
 
@@ -126,7 +80,8 @@ const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
           args.path.startsWith("@stakekit") ||
           args.path.startsWith("@bitget-wallet") ||
           args.path.startsWith("@ledgerhq") ||
-          args.path.startsWith("@tronweb3")
+          args.path.startsWith("@tronweb3") ||
+          args.path.startsWith("@cosmos-kit/walletconnect")
             ? { external: false }
             : { external: true, path: args.path }
         );

@@ -23,7 +23,7 @@ const CopyTextContext = createContext<CopyTextContextType | undefined>(
   undefined
 );
 
-export const useCopyText = () => {
+const useCopyText = () => {
   const context = useContext(CopyTextContext);
 
   if (!context) {

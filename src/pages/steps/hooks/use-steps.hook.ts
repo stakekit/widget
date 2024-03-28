@@ -4,8 +4,8 @@ import { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useSavedRef } from "../../../hooks";
 import { TxState, useStepsMachine } from "./use-steps-machine.hook";
-import { invalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
-import { invalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
+import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
+import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useTranslation } from "react-i18next";
 
@@ -65,6 +65,9 @@ export const useSteps = ({
     };
   }, [machine.context.txCheckTimeoutId]);
 
+  const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
+  const invalidateYieldBalances = useInvalidateYieldBalances();
+
   /**
    *
    * @summary Navigate to next page
@@ -87,7 +90,14 @@ export const useSteps = ({
         replace: true,
       });
     }
-  }, [callbacksRef, machine.context.txStates, machine.value, navigate]);
+  }, [
+    callbacksRef,
+    machine.context.txStates,
+    machine.value,
+    navigate,
+    invalidateTokenAvailableAmount,
+    invalidateYieldBalances,
+  ]);
 
   const onClick = () => navigate(-1);
 

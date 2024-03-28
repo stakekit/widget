@@ -1,8 +1,15 @@
-import { Networks, QueryClient, yieldGetMyNetworks } from "@stakekit/api-hooks";
+import { Networks, useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 import { EitherAsync } from "purify-ts";
 import { config } from "../../config";
+import { QueryClient } from "@tanstack/react-query";
 
-export const getEnabledNetworks = (queryClient: QueryClient) =>
+export const getEnabledNetworks = ({
+  queryClient,
+  yieldGetMyNetworks,
+}: {
+  queryClient: QueryClient;
+  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
+}) =>
   EitherAsync(() =>
     queryClient.fetchQuery({
       staleTime: Infinity,

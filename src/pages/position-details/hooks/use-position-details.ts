@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
 import { TokenDto } from "@stakekit/api-hooks";
@@ -6,17 +5,15 @@ import { getTokenPriceInUSD } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
-import { useOnStakeExit } from "./use-on-stake-exit";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
 } from "../../../state/unstake-or-pending-action";
-import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
-import { useUpdateEffect } from "../../../hooks/use-update-effect";
+import { useUnstakeMachine } from "./use-unstake-machine";
 
 export const usePositionDetails = () => {
   const {
@@ -25,7 +22,6 @@ export const usePositionDetails = () => {
     yieldOpportunity,
     positionBalances,
     reducedStakedOrLiquidBalance,
-    stakedOrLiquidBalances,
     positionBalancesByType,
     positionBalancePrices,
   } = useUnstakeOrPendingActionState();
@@ -86,14 +82,6 @@ export const usePositionDetails = () => {
     dispatch({ type: "unstake/amount/max" });
   };
 
-  const navigate = useNavigate();
-
-  const onStakeExit = useOnStakeExit();
-
-  const stakeExitRequestDto = useStakeExitRequestDto({
-    balance: stakedOrLiquidBalances,
-  });
-
   const unstakeAmountValid = useMemo(
     () =>
       unstakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
@@ -116,20 +104,24 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
   } = usePendingActions();
 
-  const onUnstakeClick = () => {
-    trackEvent("unstakeClicked", {
-      yieldId: integrationData.map((v) => v.id).extract(),
-      amount: unstakeAmount.toString(),
-    });
+  const [machine, send] = useUnstakeMachine();
 
-    onStakeExit.mutate({ stakeRequestDto: stakeExitRequestDto });
+  const unstakeIsLoading =
+    machine.value === "unstakeCheck" ||
+    machine.value === "unstakeGetVerificationMessageLoading" ||
+    machine.value === "unstakeSignMessageLoading" ||
+    machine.value === "unstakeLoading";
+
+  const onUnstakeClick = () => {
+    if (unstakeIsLoading) return;
+
+    send("UNSTAKE");
   };
 
-  useUpdateEffect(() => {
-    if (onStakeExit.isSuccess && onStakeExit.data) {
-      navigate("unstake/review");
-    }
-  }, [onStakeExit.isSuccess, onStakeExit.data]);
+  const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
+  const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
+
+  const showUnstakeSignMessagePopup = machine.value === "unstakeShowPopup";
 
   const liquidTokensToNativeConversion = useMemo(
     () =>
@@ -159,7 +151,7 @@ export const usePositionDetails = () => {
 
   const unstakeDisabled =
     !unstakeAmountValid ||
-    onStakeExit.isPending ||
+    unstakeIsLoading ||
     onPendingAction.isPending ||
     yieldOpportunity.isLoading ||
     !unstakeAvailable;
@@ -180,9 +172,12 @@ export const usePositionDetails = () => {
     onMaxClick,
     canChangeAmount,
     onUnstakeClick,
+    onContinueUnstakeSignMessage,
+    onCloseUnstakeSignMessage,
+    showUnstakeSignMessagePopup,
     unstakeDisabled,
     isLoading,
-    onStakeExitIsLoading: onStakeExit.isPending,
+    unstakeIsLoading,
     onPendingActionClick,
     providersDetails,
     pendingActions,

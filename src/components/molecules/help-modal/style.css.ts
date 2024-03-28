@@ -6,6 +6,6 @@ export const imageStyle = style({
 });
 
 export const container = style({
-  paddingLeft: "45px",
-  paddingRight: "45px",
+  paddingLeft: "25px",
+  paddingRight: "25px",
 });

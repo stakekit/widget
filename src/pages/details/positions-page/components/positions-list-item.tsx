@@ -42,7 +42,6 @@ export const PositionsListItem = memo(
     const amount = useMemo(
       () =>
         item.balances.reduce((acc, b) => {
-          // @ts-expect-error
           if (b.token.isPoints) return acc;
 
           return new BigNumber(b.amount).plus(acc);
@@ -51,9 +50,7 @@ export const PositionsListItem = memo(
     );
 
     const pointsRewardTokenBalance = useMemo(
-      () =>
-        // @ts-expect-error
-        List.find((v) => v.token.isPoints, item.balances),
+      () => List.find((v) => !!v.token.isPoints, item.balances),
       [item.balances]
     );
 

@@ -1,8 +1,8 @@
 import {
   ActionDto,
   GasModeValueDto,
+  useTransactionConstructHook,
   TokenDto,
-  transactionConstruct,
 } from "@stakekit/api-hooks";
 import {
   getTransactionsTotalGasAmount,
@@ -17,12 +17,14 @@ export const constructTxs = ({
   actionDto,
   gasModeValue,
   isLedgerLive,
+  transactionConstruct,
   gasFeeToken,
 }: {
   gasFeeToken: TokenDto;
   actionDto: ActionDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
 }) =>
   EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
     .chain((actionWithValidTxs) =>

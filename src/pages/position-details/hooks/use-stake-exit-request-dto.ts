@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { List, Maybe } from "purify-ts";
-import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import {
   ActionArgumentsDto,
@@ -9,20 +8,17 @@ import {
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../providers/sk-wallet";
 
-export const useStakeExitRequestDto = ({
-  balance,
-}: {
-  balance: ReturnType<typeof useStakedOrLiquidBalance>;
-}) => {
+export const useStakeExitRequestDto = () => {
   const { address, additionalAddresses } = useSKWallet();
-  const { unstakeAmount, integrationData } = useUnstakeOrPendingActionState();
+  const { unstakeAmount, integrationData, stakedOrLiquidBalances } =
+    useUnstakeOrPendingActionState();
 
   return useMemo(
     () =>
       Maybe.fromRecord({
         address: Maybe.fromNullable(address),
         integrationData,
-        balance,
+        stakedOrLiquidBalances,
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
@@ -34,7 +30,7 @@ export const useStakeExitRequestDto = ({
         if (val.integrationData.args.exit?.args?.validatorAddresses?.required) {
           args.validatorAddresses = List.find(
             (b) => !!b.validatorAddresses,
-            val.balance
+            val.stakedOrLiquidBalances
           )
             .map((b) => b.validatorAddresses)
             .extract();
@@ -43,7 +39,7 @@ export const useStakeExitRequestDto = ({
         if (val.integrationData.args.exit?.args?.validatorAddress?.required) {
           args.validatorAddress = List.find(
             (b) => !!b.validatorAddress,
-            val.balance
+            val.stakedOrLiquidBalances
           )
             .map((b) => b.validatorAddress)
             .extract();
@@ -61,6 +57,12 @@ export const useStakeExitRequestDto = ({
           },
         };
       }),
-    [additionalAddresses, address, balance, integrationData, unstakeAmount]
+    [
+      additionalAddresses,
+      address,
+      stakedOrLiquidBalances,
+      integrationData,
+      unstakeAmount,
+    ]
   );
 };

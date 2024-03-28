@@ -2,7 +2,6 @@ import "./polyfills";
 import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
-import "./services/install-api-manager";
 import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
 import { ComponentProps, useState } from "react";
@@ -25,7 +24,6 @@ import {
   EarnPage,
   Details,
 } from "./pages";
-import { useAutoConnectInjectedProviderMachine } from "./hooks/use-auto-connect-injected-provider-machine";
 import { Providers } from "./providers";
 import {
   SettingsContextProvider,
@@ -54,11 +52,13 @@ import {
   UnstakeOrPendingActionReviewPage,
 } from "./pages/review";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
-import { APIManager } from "@stakekit/api-hooks";
+import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
 
 const Widget = () => {
   useToggleTheme();
+
+  useLoadErrorTranslations();
 
   const { chain, address } = useSKWallet();
 
@@ -93,8 +93,6 @@ const Widget = () => {
   }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
 
   useHandleDeepLinks();
-
-  useAutoConnectInjectedProviderMachine();
 
   const detailsMatch = useDetailsMatch();
 
@@ -216,8 +214,6 @@ export const SKApp = (props: SettingsContextType) => {
   const [showChild, setShowChild] = useState(false);
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
-
-  APIManager.setApiKey(props.apiKey);
 
   return (
     <SettingsContextProvider {...props}>

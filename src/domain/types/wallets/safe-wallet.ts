@@ -9,7 +9,7 @@ export type SafeWalletAppInfo = {
   iconUrl: string;
 };
 
-export type SafeWalletTransactionReceipt = {
+type SafeWalletTransactionReceipt = {
   hash?: string;
   transactionHash?: string;
   blockHash?: string;
@@ -36,6 +36,11 @@ interface SafeWalletProvider {
     }[];
     appInfo: SafeWalletAppInfo;
   }) => Promise<{ hash: string }>;
+  eth_sign(
+    address: string,
+    messageHash: string,
+    appInfo: SafeWalletAppInfo
+  ): Promise<string>;
 }
 
 export type SKExternalProviders = {

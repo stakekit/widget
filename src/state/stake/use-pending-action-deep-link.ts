@@ -3,12 +3,12 @@ import {
   PendingActionDto,
   YieldBalanceDto,
   YieldDto,
-  yieldGetSingleYieldBalances,
+  useYieldGetSingleYieldBalancesHook,
+  useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { Override } from "../../types";
-import { useWagmiConfig } from "../../providers/wagmi";
 import { getAdditionalAddresses } from "../../providers/sk-wallet/use-additional-addresses";
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
@@ -21,33 +21,43 @@ import {
   PASingleValidatorRequired,
 } from "../../domain";
 import { useSKQueryClient } from "../../providers/query-client";
+import { Connector } from "wagmi";
 
 export const usePendingActionDeepLink = () => {
-  const { isLedgerLive, isConnected, address } = useSKWallet();
-
-  const wagmiConfig = useWagmiConfig();
+  const { isLedgerLive, isConnected, address, connector } = useSKWallet();
 
   const onPendingAction = useOnPendingAction();
 
   const queryClient = useSKQueryClient();
 
+  const yieldGetSingleYieldBalances = useYieldGetSingleYieldBalancesHook();
+  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
+
   return useQuery({
     staleTime: Infinity,
     gcTime: Infinity,
     queryKey: ["pending-action-deep-link", isLedgerLive, address],
-    enabled: !!(isConnected && address && wagmiConfig.data?.wagmiConfig),
+    enabled: !!(isConnected && address && connector),
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
-          Maybe.fromNullable(wagmiConfig.data?.wagmiConfig).toEither(
-            new Error("missing wagmi config")
-          )
-        ).chain((wagmiConfig) =>
+          Maybe.fromNullable(address)
+            .chain((add) =>
+              Maybe.fromNullable(connector).map((conn) => ({
+                connector: conn,
+                address: add,
+              }))
+            )
+            .toEither(new Error("missing wagmi config"))
+        ).chain((data) =>
           fn({
             isLedgerLive,
             onPendingAction: onPendingAction.mutateAsync,
-            wagmiConfig,
+            address: data.address,
+            connector: data.connector,
             queryClient,
+            yieldGetSingleYieldBalances,
+            yieldYieldOpportunity,
           })
         )
       ).unsafeCoerce(),
@@ -57,17 +67,27 @@ export const usePendingActionDeepLink = () => {
 const fn = ({
   isLedgerLive,
   onPendingAction,
-  wagmiConfig,
+  address,
+  connector,
   queryClient,
+  yieldGetSingleYieldBalances,
+  yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
   onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
-  wagmiConfig: NonNullable<
-    ReturnType<typeof useWagmiConfig>["data"]
-  >["wagmiConfig"];
+  address: string;
+  connector: Connector;
   queryClient: QueryClient;
+  yieldGetSingleYieldBalances: ReturnType<
+    typeof useYieldGetSingleYieldBalancesHook
+  >;
+  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }) =>
-  getInitialQueryParams({ isLedgerLive, queryClient }).chain((val) => {
+  getInitialQueryParams({
+    isLedgerLive,
+    queryClient,
+    yieldYieldOpportunity,
+  }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
         (
@@ -83,20 +103,11 @@ const fn = ({
 
     return EitherAsync.liftEither(initQueryParams)
       .chain((initQueryParams) =>
-        EitherAsync.liftEither(
-          Maybe.fromRecord({
-            connector: Maybe.fromNullable(wagmiConfig.connector),
-            address: Maybe.fromNullable(wagmiConfig.data?.account),
-          }).toEither(new Error("missing wagmi config"))
-        )
-          .chain((wagmiData) =>
-            getAdditionalAddresses(wagmiData.connector).map<AddressesDto>(
-              (additionalAddresses) => ({
-                address: wagmiData.address,
-                additionalAddresses: additionalAddresses ?? undefined,
-              })
-            )
-          )
+        getAdditionalAddresses(connector)
+          .map<AddressesDto>((additionalAddresses) => ({
+            address,
+            additionalAddresses: additionalAddresses ?? undefined,
+          }))
           .chain((data) =>
             withRequestErrorRetry({
               fn: () =>
@@ -150,6 +161,7 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
+              yieldYieldOpportunity,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<
@@ -191,7 +203,9 @@ const fn = ({
                         pendingActionRequestDto,
                         yieldBalance: val.balance,
                       })
-                    ).mapLeft(() => new Error("on pending action failed"))
+                    ).mapLeft((e) => {
+                      return new Error("on pending action failed");
+                    })
                   )
                   .map((res) => ({
                     ...res,

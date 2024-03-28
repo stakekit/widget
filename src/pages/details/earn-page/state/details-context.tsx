@@ -52,9 +52,9 @@ import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
-import { useMutation } from "wagmi";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKQueryClient } from "../../../../providers/query-client";
+import { useMutation } from "@tanstack/react-query";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -101,7 +101,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       selectedStake
         .chainNullable((val) => val.metadata.rewardTokens)
-        //@ts-expect-error
         .map((val) => val.filter((rt) => rt.isPoints)),
     [selectedStake]
   );

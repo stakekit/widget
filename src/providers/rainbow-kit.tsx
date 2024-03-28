@@ -1,6 +1,5 @@
 import {
   RainbowKitProvider,
-  Chain as RainbowKitChain,
   DisclaimerComponent,
   useChainModal,
 } from "@stakekit/rainbowkit";
@@ -24,14 +23,11 @@ const finalTheme: ConnectKitTheme = {
 
 export const RainbowKitProviderWithTheme = ({
   children,
-  chains,
-}: PropsWithChildren<{
-  chains: RainbowKitChain[];
-}>) => {
+}: PropsWithChildren) => {
   const rootElement = useRootElement();
-  const { connector } = useSKWallet();
+  const { connector, connectorChains } = useSKWallet();
 
-  const disabledChains = useLedgerDisabledChain(connector);
+  const ledgerDisabledChains = useLedgerDisabledChain(connector);
 
   const trackEvent = useTrackEvent();
 
@@ -39,20 +35,27 @@ export const RainbowKitProviderWithTheme = ({
 
   const { t } = useTranslation();
 
+  const chainIdsToUse = useMemo(
+    () => new Set(connectorChains.map((c) => c.id)),
+    [connectorChains]
+  );
+
+  const disabledChains = useMemo(
+    () =>
+      ledgerDisabledChains.map((c) => ({
+        ...c,
+        info: t("chain_modal.disabled_chain_info"),
+      })),
+    [ledgerDisabledChains, t]
+  );
+
   return (
     <RainbowKitProvider
+      chainIdsToUse={chainIdsToUse}
       id={id}
       dialogRoot={rootElement as Element}
       modalSize="compact"
-      chains={chains}
-      disabledChains={useMemo(
-        () =>
-          disabledChains.map((c) => ({
-            ...c,
-            info: t("chain_modal.disabled_chain_info"),
-          })),
-        [disabledChains, t]
-      )}
+      disabledChains={disabledChains}
       onDisabledChainClick={(disabledChain) => {
         trackEvent("addLedgerAccountClicked");
         onDisabledChainClick.mutate(disabledChain);

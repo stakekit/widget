@@ -13,6 +13,7 @@ import { StaticActionBlock } from "./components/static-action-block";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { container } from "./styles.css";
+import { UnstakeSignPopup } from "./components/unstake-sign-popup";
 
 export const PositionDetails = () => {
   const {
@@ -28,7 +29,10 @@ export const PositionDetails = () => {
     canChangeAmount,
     onMaxClick,
     onUnstakeClick,
-    onStakeExitIsLoading,
+    onContinueUnstakeSignMessage,
+    onCloseUnstakeSignMessage,
+    showUnstakeSignMessagePopup,
+    unstakeIsLoading,
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
@@ -190,7 +194,7 @@ export const PositionDetails = () => {
                     )
                     .extractNullable()}
 
-                  {/* Unstake  */}
+                  {/* Unstake */}
                   {Maybe.fromRecord({
                     canUnstake,
                     reducedStakedOrLiquidBalance,
@@ -200,7 +204,7 @@ export const PositionDetails = () => {
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock
                           variant="unstake"
-                          isLoading={onStakeExitIsLoading}
+                          isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}
                           value={unstakeAmount}
                           canChangeAmount={canChangeAmount}
@@ -267,6 +271,12 @@ export const PositionDetails = () => {
             ))
             .extractNullable()
         )}
+
+        <UnstakeSignPopup
+          isOpen={showUnstakeSignMessagePopup}
+          onClick={onContinueUnstakeSignMessage}
+          onCancel={onCloseUnstakeSignMessage}
+        />
       </PageContainer>
     </AnimationPage>
   );

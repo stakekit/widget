@@ -10,6 +10,12 @@ import { useMutationSync } from "../../../../hooks/use-mutation-sync";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useStakeState } from "../../../../state/stake";
 import { useSettings } from "../../../../providers/settings";
+import {
+  useActionEnterHook,
+  useTokenGetTokenBalancesHook,
+  useTransactionConstructHook,
+  useTransactionGetGasForNetworkHook,
+} from "@stakekit/api-hooks";
 
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
@@ -19,6 +25,12 @@ export const useOnStakeEnter = () => {
     useStakeState();
 
   const { disableGasCheck = false } = useSettings();
+
+  const actionEnter = useActionEnterHook();
+  const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
+
+  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
+  const transactionConstruct = useTransactionConstructHook();
 
   return useMutationSync<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
@@ -39,6 +51,10 @@ export const useOnStakeEnter = () => {
           stakeEnterAndTxsConstruct: stakeEnterAndTxsConstruct.mutateAsync,
           disableGasCheck,
           isLedgerLive,
+          actionEnter,
+          transactionGetGasForNetwork,
+          tokenGetTokenBalances,
+          transactionConstruct,
         })
       ).unsafeCoerce(),
   });
@@ -49,6 +65,10 @@ const fn = ({
   stakeEnterAndTxsConstruct,
   disableGasCheck,
   isLedgerLive,
+  transactionGetGasForNetwork,
+  actionEnter,
+  tokenGetTokenBalances,
+  transactionConstruct,
 }: {
   stakeRequestDto: ReturnType<typeof useStakeEnterRequestDto>;
   stakeEnterAndTxsConstruct: ReturnType<
@@ -56,12 +76,21 @@ const fn = ({
   >["mutateAsync"];
   disableGasCheck: boolean;
   isLedgerLive: boolean;
+  transactionGetGasForNetwork: ReturnType<
+    typeof useTransactionGetGasForNetworkHook
+  >;
+  actionEnter: ReturnType<typeof useActionEnterHook>;
+  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 }) =>
   EitherAsync.liftEither(
     stakeRequestDto.toEither(new Error("Stake request not ready"))
   )
     .chain((val) =>
-      getAverageGasMode(val.gasFeeToken.network)
+      getAverageGasMode({
+        network: val.gasFeeToken.network,
+        transactionGetGasForNetwork,
+      })
         .chainLeft(async () => Right(null))
         .map((gas) => ({
           stakeRequestDto: val.dto,
@@ -77,6 +106,9 @@ const fn = ({
           disableGasCheck,
           gasFeeToken: val.gasFeeToken,
           isLedgerLive,
+          actionEnter,
+          tokenGetTokenBalances,
+          transactionConstruct,
         })
       )
         .mapLeft((e) => e as ErrorType)

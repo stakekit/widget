@@ -33,3 +33,13 @@ export const addressHover = style({
     [`${addressParent}:hover &`]: { color: vars.color.text },
   },
 });
+
+export const unstakeSignImageStyle = style({
+  height: "320px",
+  width: "320px",
+});
+
+export const unstakeSignContainer = style({
+  paddingLeft: "25px",
+  paddingRight: "25px",
+});
