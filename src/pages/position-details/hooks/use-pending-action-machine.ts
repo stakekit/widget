@@ -1,4 +1,5 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
+import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import {
   PendingActionDto,
@@ -11,6 +12,10 @@ import {
   PASingleValidatorRequired,
 } from "../../../domain";
 
+const tt = t as <T extends unknown>() => {
+  [$$t]: T;
+};
+
 export const usePendingActionMachine = () => {
   const trackEvent = useTrackEvent();
   const { integrationData } = useUnstakeOrPendingActionState();
@@ -18,13 +23,13 @@ export const usePendingActionMachine = () => {
   return useStateMachine({
     schema: {
       events: {
-        PA_CLICK: t<{
+        PA_CLICK: tt<{
           pendingActionDto: PendingActionDto;
           yieldBalance: YieldBalanceDto;
         }>(),
-        MULTI_SELECT: t<{ validator: ValidatorDto["address"] }>(),
+        MULTI_SELECT: tt<{ validator: ValidatorDto["address"] }>(),
       },
-      context: t<{
+      context: tt<{
         pendingActionDto: PendingActionDto | null;
         yieldBalance: YieldBalanceDto | null;
         selectedValidators: Set<ValidatorDto["address"]>;

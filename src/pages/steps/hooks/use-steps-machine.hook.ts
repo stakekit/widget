@@ -1,5 +1,6 @@
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
+import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import {
   GetStakeSessionError,
   TXCheckError,
@@ -27,6 +28,10 @@ import { isAxiosError } from "axios";
 import { useMemo } from "react";
 import { isExternalProviderConnector } from "../../../providers/external-provider";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
+
+const tt = t as <T extends unknown>() => {
+  [$$t]: T;
+};
 
 type TxMeta = {
   url: string | null;
@@ -113,7 +118,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
   const stateMachine = useStateMachine({
     initial: initContext ? "idle" : "disabled",
     schema: {
-      context: t<{
+      context: tt<{
         yieldId: string | null;
         txStates: TxState[];
         currentTxMeta: { idx: number; id: string } | null;

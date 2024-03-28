@@ -1,4 +1,5 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
+import { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import {
@@ -12,6 +13,10 @@ import { useNavigate } from "react-router";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useMemo } from "react";
 import merge from "lodash.merge";
+
+const tt = t as <T extends unknown>() => {
+  [$$t]: T;
+};
 
 export const useUnstakeMachine = () => {
   const trackEvent = useTrackEvent();
@@ -38,7 +43,7 @@ export const useUnstakeMachine = () => {
 
   return useStateMachine({
     schema: {
-      context: t<{
+      context: tt<{
         error: Error | null;
         transactionVerificationMessageDto: TransactionVerificationMessageDto | null;
         signedMessage: string | null;
@@ -66,8 +71,11 @@ export const useUnstakeMachine = () => {
               amount: unstakeAmount.toString(),
             });
 
-            // @ts-expect-error
-            if (val.args.exit?.args.signatureVerification.required) {
+            if (
+              // @ts-expect-error
+              val.integrationData.args.exit?.args?.signatureVerification
+                .required
+            ) {
               send("__UNSTAKE_GET_VERIFICATION_MESSAGE__");
             } else {
               send("__UNSTAKE__");

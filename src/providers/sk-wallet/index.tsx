@@ -248,10 +248,19 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           ).chain((val) =>
             EitherAsync(() =>
+              /**
+               * Params need to be in strict format, don't spread the object(val)!
+               */
               sendTransactionAsync({
-                ...val,
-                type: val.maxFeePerGas ? "eip1559" : "legacy",
+                data: val.data,
+                to: val.to,
+                value: val.value,
+                nonce: val.nonce,
+                maxFeePerGas: val.maxFeePerGas,
+                maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+                chainId: val.chainId,
                 gas: val.gasLimit,
+                type: val.maxFeePerGas ? "eip1559" : "legacy",
               })
             )
               .mapLeft((e) => {
