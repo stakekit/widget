@@ -5,6 +5,7 @@ import {
   TokenDto,
   useTransactionConstructHook,
   useTokenGetTokenBalancesHook,
+  useActionGetGasEstimateHook,
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { withRequestErrorRetry } from "../../common/utils";
@@ -14,7 +15,6 @@ import { isAxiosError } from "axios";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
 import { getValidStakeSessionTx } from "../../domain";
 import { EitherAsync } from "purify-ts";
-import { useApiClient } from "../../providers/api/api-client-provider";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -25,7 +25,7 @@ const StakeEnterAndTxsConstructContext = createContext<
   | UseMutationResult<
       DataType,
       ErrorType,
-      Omit<Parameters<typeof fn>[0], "apiClient">
+      Omit<Parameters<typeof fn>[0], "gasEstimate">
     >
   | undefined
 >(undefined);
@@ -33,16 +33,16 @@ const StakeEnterAndTxsConstructContext = createContext<
 export const StakeEnterAndTxsConstructProvider = ({
   children,
 }: PropsWithChildren) => {
-  const apiClient = useApiClient();
+  const gasEstimate = useActionGetGasEstimateHook();
 
   const value = useMutation<
     DataType,
     ErrorType,
-    Omit<Parameters<typeof fn>[0], "apiClient">
+    Omit<Parameters<typeof fn>[0], "gasEstimate">
   >({
     mutationKey,
     mutationFn: async (args) =>
-      (await fn({ ...args, apiClient })).unsafeCoerce(),
+      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
   });
 
   return (
@@ -73,7 +73,7 @@ const fn = ({
   actionEnter,
   transactionConstruct,
   tokenGetTokenBalances,
-  apiClient,
+  gasEstimate,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -83,7 +83,7 @@ const fn = ({
   actionEnter: ReturnType<typeof useActionEnterHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  apiClient: ReturnType<typeof useApiClient>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft<StakingNotAllowedError | Error>((e) => {
@@ -101,7 +101,7 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
-        apiClient,
+        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,

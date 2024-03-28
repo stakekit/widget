@@ -3,6 +3,7 @@ import {
   GasModeValueDto,
   PendingActionRequestDto,
   TokenDto,
+  useActionGetGasEstimateHook,
   useActionPendingHook,
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
@@ -14,7 +15,6 @@ import { PropsWithChildren, createContext, useContext } from "react";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
 import { EitherAsync } from "purify-ts";
 import { getValidStakeSessionTx } from "../../domain";
-import { useApiClient } from "../../providers/api/api-client-provider";
 
 const mutationKey = ["pending-action"];
 
@@ -22,7 +22,7 @@ const PendingActionAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Omit<Parameters<typeof fn>[0], "apiClient">
+      Omit<Parameters<typeof fn>[0], "gasEstimate">
     >
   | undefined
 >(undefined);
@@ -30,16 +30,16 @@ const PendingActionAndTxsConstructContext = createContext<
 export const PendingActionAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
-  const apiClient = useApiClient();
+  const gasEstimate = useActionGetGasEstimateHook();
 
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Omit<Parameters<typeof fn>[0], "apiClient">
+    Omit<Parameters<typeof fn>[0], "gasEstimate">
   >({
     mutationKey,
     mutationFn: async (args) =>
-      (await fn({ ...args, apiClient })).unsafeCoerce(),
+      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
   });
 
   return (
@@ -70,7 +70,7 @@ const fn = ({
   actionPending,
   tokenGetTokenBalances,
   transactionConstruct,
-  apiClient,
+  gasEstimate,
 }: {
   pendingActionRequestDto: PendingActionRequestDto & {
     addresses: AddressesDto;
@@ -82,7 +82,7 @@ const fn = ({
   actionPending: ReturnType<typeof useActionPendingHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
-  apiClient: ReturnType<typeof useApiClient>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
@@ -93,7 +93,7 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
-        apiClient,
+        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,

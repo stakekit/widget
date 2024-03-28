@@ -17,7 +17,7 @@ export const useYieldBalancesScan = <
 >(opts?: {
   select?: (data: YieldBalancesWithIntegrationIdDto[]) => T;
 }) => {
-  const { network, address, additionalAddresses, isLedgerLive } = useSKWallet();
+  const { network, address, additionalAddresses } = useSKWallet();
 
   const actionHistoryData = useActionHistoryData();
 
@@ -62,17 +62,13 @@ export const useYieldBalancesScan = <
     [additionalAddresses, address, customValidators, network]
   );
 
-  const res = useYieldYieldBalancesScan(
-    param.dto,
-    { ledgerWalletAPICompatible: isLedgerLive },
-    {
-      query: {
-        enabled: param.enabled,
-        select: opts?.select,
-        refetchInterval: 1000 * 60,
-      },
-    }
-  );
+  const res = useYieldYieldBalancesScan(param.dto, {
+    query: {
+      enabled: param.enabled,
+      select: opts?.select,
+      refetchInterval: 1000 * 60,
+    },
+  });
 
   /**
    * This is a hack to make sure that the yield balances are updated after a transaction

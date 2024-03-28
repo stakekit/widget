@@ -14,6 +14,7 @@ import { Address } from "viem";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import { Observable } from "../../utils/observable";
 import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
+import { MutableRefObject } from "react";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -22,7 +23,10 @@ const configMeta = {
 } as const;
 
 type ExtraProps = ConnectorWithFilteredChains &
-  Pick<ExternalProvider, "sendMultipleTransactions" | "shouldMultiSend">;
+  Pick<
+    ExternalProvider,
+    "sendMultipleTransactions" | "shouldMultiSend" | "signMessage"
+  >;
 
 type ExternalConnector = Connector & ExtraProps;
 
@@ -31,7 +35,7 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: SKExternalProviders,
+  variant: MutableRefObject<SKExternalProviders>,
   transactionGetTransactionStatusByNetworkAndHash: ReturnType<
     typeof useTransactionGetTransactionStatusByNetworkAndHashHook
   >
@@ -132,6 +136,7 @@ export const externalProviderConnector = (
             switchChain,
             sendMultipleTransactions:
               provider.sendMultipleTransactions.bind(provider),
+            signMessage: provider.signMessage.bind(provider),
             shouldMultiSend: provider.shouldMultiSend,
             $filteredChains,
           };

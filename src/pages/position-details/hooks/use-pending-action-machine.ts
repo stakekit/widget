@@ -16,7 +16,7 @@ const tt = t as <T extends unknown>() => {
   [$$t]: T;
 };
 
-export const usePendingActionMachine = () => {
+const usePendingActionMachine = () => {
   const trackEvent = useTrackEvent();
   const { integrationData } = useUnstakeOrPendingActionState();
 

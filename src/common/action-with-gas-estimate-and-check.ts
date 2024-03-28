@@ -3,6 +3,7 @@ import {
   AddressWithTokenDto,
   GasModeValueDto,
   TokenDto,
+  useActionGetGasEstimateHook,
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
 } from "@stakekit/api-hooks";
@@ -10,7 +11,6 @@ import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
 import { constructTxs } from "./construct-txs";
 import { EitherAsync, Maybe } from "purify-ts";
 import { checkGasAmount } from "./check-gas-amount";
-import { useApiClient } from "../providers/api/api-client-provider";
 
 export const actionWithGasEstimateAndCheck = ({
   actionDto,
@@ -21,7 +21,7 @@ export const actionWithGasEstimateAndCheck = ({
   gasFeeToken,
   transactionConstruct,
   tokenGetTokenBalances,
-  apiClient,
+  gasEstimate,
 }: {
   gasFeeToken: TokenDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -31,9 +31,9 @@ export const actionWithGasEstimateAndCheck = ({
   actionDto: ActionDto;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  apiClient: ReturnType<typeof useApiClient>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
-  addGasEstimateToTxs({ actionDto, apiClient })
+  addGasEstimateToTxs({ actionDto, gasEstimate })
     .chainLeft(() =>
       constructTxs({
         actionDto,

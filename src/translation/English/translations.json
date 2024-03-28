@@ -16,7 +16,8 @@
     "not_enough_gas_token": "Not enough gas token",
     "retry": "Try Again",
     "unsupported_network": "Unsupported network",
-    "points": "Points"
+    "points": "Points",
+    "continue": "Continue"
   },
 
   "chain_modal": {
@@ -351,6 +352,10 @@
       "vote_locked": "Vote locked",
       "revote": "Revote",
       "rebond": "Rebond"
+    },
+    "unstake_sign": {
+      "title": "Verify Ownership",
+      "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
     }
   },
   "unstake_review": {

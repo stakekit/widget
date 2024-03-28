@@ -36,6 +36,11 @@ interface SafeWalletProvider {
     }[];
     appInfo: SafeWalletAppInfo;
   }) => Promise<{ hash: string }>;
+  eth_sign(
+    address: string,
+    messageHash: string,
+    appInfo: SafeWalletAppInfo
+  ): Promise<string>;
 }
 
 export type SKExternalProviders = {

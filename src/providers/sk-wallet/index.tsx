@@ -122,19 +122,19 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     }
   }, [_isConnected, disconnect, isConnected]);
 
-  const safeConnectorWithNetwork = useMemo(
+  const connectorDetails = useMemo(
     () =>
       EitherAsync.liftEither(
-        !isConnected || !network || !connector
+        !isConnected || !network || !connector || !address
           ? Left(new Error("No wallet connected"))
-          : Right({ conn: connector, network })
+          : Right({ conn: connector, network, address })
       ),
-    [connector, isConnected, network]
+    [connector, isConnected, network, address]
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
     ({ tx, ledgerHwAppId }) =>
-      safeConnectorWithNetwork.chain<
+      connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn }) => {
@@ -271,14 +271,14 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           );
         }
       }),
-    [safeConnectorWithNetwork, sendTransactionAsync]
+    [connectorDetails, sendTransactionAsync]
   );
 
   const signMultipleTransactions = useCallback<
     SKWallet["signMultipleTransactions"]
   >(
     ({ txs }) =>
-      safeConnectorWithNetwork.chain<
+      connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn, network }) => {
@@ -313,18 +313,24 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
         }
       }),
-    [safeConnectorWithNetwork]
+    [connectorDetails]
   );
 
   const signMessage = useCallback<SKWallet["signMessage"]>(
     (message) =>
-      EitherAsync(() => signMessageAsync({ message }))
-        .map((val) => val as string)
+      connectorDetails
+        .chain(({ conn, address }) => {
+          if (isExternalProviderConnector(conn)) {
+            return conn.signMessage(address, message);
+          }
+
+          return EitherAsync(() => signMessageAsync({ message }));
+        })
         .mapLeft((e) => {
           console.log(e);
           return new Error("sign failed");
         }),
-    [signMessageAsync]
+    [connectorDetails, signMessageAsync]
   );
 
   const onLedgerAccountChange = useCallback(

@@ -13,6 +13,7 @@ import { StaticActionBlock } from "./components/static-action-block";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { container } from "./styles.css";
+import { UnstakeSignPopup } from "./components/unstake-sign-popup";
 
 export const PositionDetails = () => {
   const {
@@ -28,6 +29,9 @@ export const PositionDetails = () => {
     canChangeAmount,
     onMaxClick,
     onUnstakeClick,
+    onContinueUnstakeSignMessage,
+    onCloseUnstakeSignMessage,
+    showUnstakeSignMessagePopup,
     unstakeIsLoading,
     unstakeDisabled,
     onPendingActionClick,
@@ -267,6 +271,12 @@ export const PositionDetails = () => {
             ))
             .extractNullable()
         )}
+
+        <UnstakeSignPopup
+          isOpen={showUnstakeSignMessagePopup}
+          onClick={onContinueUnstakeSignMessage}
+          onCancel={onCloseUnstakeSignMessage}
+        />
       </PageContainer>
     </AnimationPage>
   );

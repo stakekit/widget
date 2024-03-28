@@ -118,6 +118,11 @@ export const usePositionDetails = () => {
     send("UNSTAKE");
   };
 
+  const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
+  const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
+
+  const showUnstakeSignMessagePopup = machine.value === "unstakeShowPopup";
+
   const liquidTokensToNativeConversion = useMemo(
     () =>
       Maybe.fromRecord({ integrationData, positionBalancesByType })
@@ -167,6 +172,9 @@ export const usePositionDetails = () => {
     onMaxClick,
     canChangeAmount,
     onUnstakeClick,
+    onContinueUnstakeSignMessage,
+    onCloseUnstakeSignMessage,
+    showUnstakeSignMessagePopup,
     unstakeDisabled,
     isLoading,
     unstakeIsLoading,

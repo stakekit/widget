@@ -1696,21 +1696,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@chain-registry/types@npm:0.18.5, @chain-registry/types@npm:^0.18.5":
+  version: 0.18.5
+  resolution: "@chain-registry/types@npm:0.18.5"
+  dependencies:
+    "@babel/runtime": "npm:^7.21.0"
+  checksum: 10/a29f1eda2bf962b3d8f2b89f2435418f347072f490d30614a194b4d4373b5f3b9ce31b6423f2c560cc8056d30cba8d7b50cbc163b8ba28b47ed48e4e8a1e7cfe
+  languageName: node
+  linkType: hard
+
 "@chain-registry/types@npm:^0.17.0, @chain-registry/types@npm:^0.17.1":
   version: 0.17.1
   resolution: "@chain-registry/types@npm:0.17.1"
   dependencies:
     "@babel/runtime": "npm:^7.21.0"
   checksum: 10/6df663ff73b2069e135e4bf95d4b23ae64a230a79068a8faa2563f1166316d12942cf4c05fdee8d5af5f1661ec577862e3441df0bc0944f5cce5bb6baf4b1122
-  languageName: node
-  linkType: hard
-
-"@chain-registry/types@npm:^0.18.5":
-  version: 0.18.5
-  resolution: "@chain-registry/types@npm:0.18.5"
-  dependencies:
-    "@babel/runtime": "npm:^7.21.0"
-  checksum: 10/a29f1eda2bf962b3d8f2b89f2435418f347072f490d30614a194b4d4373b5f3b9ce31b6423f2c560cc8056d30cba8d7b50cbc163b8ba28b47ed48e4e8a1e7cfe
   languageName: node
   linkType: hard
 
@@ -5550,9 +5550,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.64":
-  version: 0.0.64
-  resolution: "@stakekit/api-hooks@npm:0.0.64"
+"@stakekit/api-hooks@npm:^0.0.65":
+  version: 0.0.65
+  resolution: "@stakekit/api-hooks@npm:0.0.65"
   dependencies:
     "@faker-js/faker": "npm:^8.4.1"
     axios: "npm:^1.6.8"
@@ -5563,7 +5563,7 @@ __metadata:
   peerDependenciesMeta:
     msw:
       optional: true
-  checksum: 10/3acb36988da980d0deec4c78ece3e514ab9ccb57d123826a196c0f8661ba831c22f76c3551d4f69816394882e4c134a00673702c34e87bb2e881f4f64882a413
+  checksum: 10/b13849eef6f32b9b5c39930d07da1dcc7b95baa61ee0252adb3a3962dd231058907db8b2011fe61690c94c308db687560307e118ffc31010bb79c05d317ca5b7
   languageName: node
   linkType: hard
 
@@ -5599,7 +5599,7 @@ __metadata:
   resolution: "@stakekit/widget@workspace:."
   dependencies:
     "@cassiozen/usestatemachine": "npm:^1.0.1"
-    "@chain-registry/types": "npm:^0.18.5"
+    "@chain-registry/types": "npm:0.18.5"
     "@commitlint/cli": "npm:^19.2.1"
     "@commitlint/config-conventional": "npm:^19.1.0"
     "@cosmjs/amino": "npm:^0.32.3"
@@ -5611,7 +5611,7 @@ __metadata:
     "@ledgerhq/wallet-api-client": "npm:^1.5.5"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
-    "@stakekit/api-hooks": "npm:^0.0.64"
+    "@stakekit/api-hooks": "npm:^0.0.65"
     "@stakekit/common": "npm:^0.0.28"
     "@stakekit/rainbowkit": "npm:^2.0.0"
     "@tanstack/react-query": "npm:^5.28.9"
@@ -5647,12 +5647,12 @@ __metadata:
     eslint-config-prettier: "npm:^9.1.0"
     eslint-config-react-app: "npm:^7.0.1"
     eventemitter3: "npm:^5.0.1"
-    framer-motion: "npm:^11.0.22"
+    framer-motion: "npm:^11.0.23"
     husky: "npm:^9.0.11"
     i18next: "npm:^23.10.1"
     i18next-browser-languagedetector: "npm:^7.2.0"
     jsdom: "npm:^24.0.0"
-    knip: "npm:^5.6.1"
+    knip: "npm:^5.7.0"
     lodash.merge: "npm:^4.6.2"
     msw: "npm:^2.2.13"
     postcss: "npm:^8.4.38"
@@ -10249,9 +10249,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"framer-motion@npm:^11.0.22":
-  version: 11.0.22
-  resolution: "framer-motion@npm:11.0.22"
+"framer-motion@npm:^11.0.23":
+  version: 11.0.23
+  resolution: "framer-motion@npm:11.0.23"
   dependencies:
     tslib: "npm:^2.4.0"
   peerDependencies:
@@ -10265,7 +10265,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10/1945a3324952689585e38938929203e4e2523b869bdb29f3e0943fd6bd9023d65c20670ddbf69f4ab9690e5d54a805c8def0a777d08e1647d6254e4e674189f5
+  checksum: 10/6e6b3a46f0914f6a2fe0a71feb6b12433bc4815fc7ef0402525f0621eb6f2cfc9594c0d8cd2f32d74748ef82541b3eca53c0672d0f4c205305883061a898946a
   languageName: node
   linkType: hard
 
@@ -11737,9 +11737,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"knip@npm:^5.6.1":
-  version: 5.6.1
-  resolution: "knip@npm:5.6.1"
+"knip@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "knip@npm:5.7.0"
   dependencies:
     "@ericcornelissen/bash-parser": "npm:0.5.2"
     "@nodelib/fs.walk": "npm:2.0.0"
@@ -11758,6 +11758,7 @@ __metadata:
     picocolors: "npm:1.0.0"
     picomatch: "npm:4.0.1"
     pretty-ms: "npm:9.0.0"
+    resolve: "npm:1.22.8"
     smol-toml: "npm:1.1.4"
     strip-json-comments: "npm:5.0.1"
     summary: "npm:2.1.0"
@@ -11768,7 +11769,7 @@ __metadata:
     typescript: ">=5.0.4"
   bin:
     knip: bin/knip.js
-  checksum: 10/df45b40737b62e12409fa848bf4e566a3b5d90525e19026c793029c40a0d30a2d9be3125f9ff2b06537b6f324fe0eba51e7f56f6ae6102575429cdf4f5774eff
+  checksum: 10/d91984f26dbfefd5c6196822f0c2af6e3270ec71c7f587e942e17dee384581e75e1385ed700aa78a44bd8ec5f68006dee73755406799718e15de3953928216ad
   languageName: node
   linkType: hard
 
@@ -14290,6 +14291,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resolve@npm:1.22.8":
+  version: 1.22.8
+  resolution: "resolve@npm:1.22.8"
+  dependencies:
+    is-core-module: "npm:^2.13.0"
+    path-parse: "npm:^1.0.7"
+    supports-preserve-symlinks-flag: "npm:^1.0.0"
+  bin:
+    resolve: bin/resolve
+  checksum: 10/c473506ee01eb45cbcfefb68652ae5759e092e6b0fb64547feadf9736a6394f258fbc6f88e00c5ca36d5477fbb65388b272432a3600fa223062e54333c156753
+  languageName: node
+  linkType: hard
+
 "resolve@npm:^1.14.2, resolve@npm:^1.19.0, resolve@npm:^1.22.1":
   version: 1.22.3
   resolution: "resolve@npm:1.22.3"
@@ -14313,6 +14327,19 @@ __metadata:
   bin:
     resolve: bin/resolve
   checksum: 10/20d5293f5015aa0b65c488ee365f9dfc30b954b04f9074425a6fb738d78fa63825a82ba8574b7ee200af7ebd5e98c41786831d1d4c1612da3cd063980dfa06a3
+  languageName: node
+  linkType: hard
+
+"resolve@patch:resolve@npm%3A1.22.8#optional!builtin<compat/resolve>":
+  version: 1.22.8
+  resolution: "resolve@patch:resolve@npm%3A1.22.8#optional!builtin<compat/resolve>::version=1.22.8&hash=c3c19d"
+  dependencies:
+    is-core-module: "npm:^2.13.0"
+    path-parse: "npm:^1.0.7"
+    supports-preserve-symlinks-flag: "npm:^1.0.0"
+  bin:
+    resolve: bin/resolve
+  checksum: 10/f345cd37f56a2c0275e3fe062517c650bb673815d885e7507566df589375d165bbbf4bdb6aa95600a9bc55f4744b81f452b5a63f95b9f10a72787dba3c90890a
   languageName: node
   linkType: hard
 

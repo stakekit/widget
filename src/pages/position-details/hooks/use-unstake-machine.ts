@@ -72,9 +72,8 @@ export const useUnstakeMachine = () => {
             });
 
             if (
-              // @ts-expect-error
               val.integrationData.args.exit?.args?.signatureVerification
-                .required
+                ?.required
             ) {
               send("__UNSTAKE_GET_VERIFICATION_MESSAGE__");
             } else {
@@ -86,8 +85,7 @@ export const useUnstakeMachine = () => {
 
       unstakeGetVerificationMessageLoading: {
         on: {
-          __UNSTAKE_GET_VERIFICATION_MESSAGE_SUCCESS__:
-            "unstakeSignMessageLoading",
+          __UNSTAKE_GET_VERIFICATION_MESSAGE_SUCCESS__: "unstakeShowPopup",
           __UNSTAKE_GET_VERIFICATION_MESSAGE_ERROR__:
             "unstakeGetVerificationMessageError",
         },
@@ -126,7 +124,10 @@ export const useUnstakeMachine = () => {
       unstakeGetVerificationMessageError: {},
 
       unstakeShowPopup: {
-        on: { CONTINUE: "unstakeSignMessageLoading" },
+        on: {
+          CONTINUE_MESSAGE_SIGN: "unstakeSignMessageLoading",
+          CANCEL_MESSAGE_SIGN: "initial",
+        },
       },
 
       unstakeSignMessageLoading: {

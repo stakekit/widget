@@ -22,12 +22,13 @@ import {
   useYieldGetMyNetworksHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { useUpdateEffect } from "../../hooks/use-update-effect";
+import { useSavedRef } from "../../hooks";
+import { MutableRefObject } from "react";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
 const buildWagmiConfig = async (opts: {
-  externalProviders?: SKExternalProviders;
+  externalProviders?: MutableRefObject<SKExternalProviders>;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
@@ -175,13 +176,7 @@ export const useWagmiConfig = () => {
   const transactionGetTransactionStatusByNetworkAndHash =
     useTransactionGetTransactionStatusByNetworkAndHashHook();
 
-  useUpdateEffect(() => {
-    queryClient.invalidateQueries({ queryKey });
-  }, [
-    wagmi?.forceWalletConnectOnly,
-    wagmi?.__customConnectors__,
-    externalProviders,
-  ]);
+  const externalProvidersRef = useSavedRef(externalProviders);
 
   return useQuery({
     staleTime,
@@ -190,7 +185,9 @@ export const useWagmiConfig = () => {
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
-        externalProviders,
+        externalProviders: externalProvidersRef.current
+          ? (externalProvidersRef as MutableRefObject<SKExternalProviders>)
+          : undefined,
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         yieldGetMyNetworks,

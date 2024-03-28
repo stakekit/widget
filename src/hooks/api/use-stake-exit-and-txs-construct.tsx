@@ -5,6 +5,7 @@ import {
   TokenDto,
   useTransactionConstructHook,
   useTokenGetTokenBalancesHook,
+  useActionGetGasEstimateHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -13,7 +14,6 @@ import { PropsWithChildren, createContext, useContext } from "react";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
 import { getValidStakeSessionTx } from "../../domain";
 import { EitherAsync } from "purify-ts";
-import { useApiClient } from "../../providers/api/api-client-provider";
 
 const mutationKey = ["stake-exit"];
 
@@ -21,7 +21,7 @@ const StakeExitAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Omit<Parameters<typeof fn>[0], "apiClient">
+      Omit<Parameters<typeof fn>[0], "gasEstimate">
     >
   | undefined
 >(undefined);
@@ -29,16 +29,16 @@ const StakeExitAndTxsConstructContext = createContext<
 export const StakeExitAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
-  const apiClient = useApiClient();
+  const gasEstimate = useActionGetGasEstimateHook();
 
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Omit<Parameters<typeof fn>[0], "apiClient">
+    Omit<Parameters<typeof fn>[0], "gasEstimate">
   >({
     mutationKey,
     mutationFn: async (args) =>
-      (await fn({ ...args, apiClient })).unsafeCoerce(),
+      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
   });
 
   return (
@@ -69,7 +69,7 @@ const fn = ({
   actionExit,
   transactionConstruct,
   tokenGetTokenBalances,
-  apiClient,
+  gasEstimate,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -79,7 +79,7 @@ const fn = ({
   actionExit: ReturnType<typeof useActionExitHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  apiClient: ReturnType<typeof useApiClient>;
+  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
@@ -88,7 +88,7 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
-        apiClient,
+        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,
