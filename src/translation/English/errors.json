@@ -12,7 +12,7 @@
   "YieldUnderMaintenanceError": {
     "title": "Yield Under Maintenance",
     "details": "{{yieldId}} is currently undergoing maintenance",
-    "solution": "Try again later or contact Stakekit support"
+    "solution": "Transfer more funds to your account or contact Stakekit support"
   },
   "InsufficientFundsError": {
     "title": "Insufficient Funds",

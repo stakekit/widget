@@ -18,7 +18,6 @@ export const useStakeReview = () => {
     stakeEnterTxGas,
     selectedValidators,
     selectedTokenBalance,
-    isGasCheckError,
   } = useStakeState();
 
   const rewardToken = useRewardTokenDetails(selectedStake);
@@ -81,6 +80,5 @@ export const useStakeReview = () => {
     yieldType,
     rewardToken,
     metadata,
-    isGasCheckError,
   };
 };

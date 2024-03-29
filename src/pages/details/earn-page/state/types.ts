@@ -35,6 +35,7 @@ export type DetailsContextType = {
   onValidatorRemove: (item: ValidatorDto) => void;
   selectedValidators: State["selectedValidators"];
   isError: boolean;
+  errorMessage: string;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onStakeEnterIsLoading: boolean;

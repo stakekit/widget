@@ -1,17 +1,14 @@
 import {
-  AddressesDto,
   GasModeValueDto,
   PendingActionRequestDto,
-  TokenDto,
   actionPending,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
+import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
-import { EitherAsync, Right } from "purify-ts";
-import { checkGasAmount } from "../../common/check-gas-amount";
 
 const mutationKey = ["pending-action"];
 
@@ -19,7 +16,10 @@ const PendingActionAndTxsConstructContext = createContext<
   | UseMutationResult<
       GetEitherAsyncRight<ReturnType<typeof fn>>,
       GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      Parameters<typeof fn>[0]
+      {
+        pendingActionRequestDto: PendingActionRequestDto;
+        gasModeValue: GasModeValueDto | undefined;
+      }
     >
   | undefined
 >(undefined);
@@ -27,13 +27,19 @@ const PendingActionAndTxsConstructContext = createContext<
 export const PendingActionAndTxsConstructContextProvider = ({
   children,
 }: PropsWithChildren) => {
+  const { isLedgerLive } = useSKWallet();
+
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    Parameters<typeof fn>[0]
+    {
+      pendingActionRequestDto: PendingActionRequestDto;
+      gasModeValue: GasModeValueDto | undefined;
+    }
   >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
   });
 
   return (
@@ -59,16 +65,10 @@ const fn = ({
   gasModeValue,
   pendingActionRequestDto,
   isLedgerLive,
-  disableGasCheck,
-  gasFeeToken,
 }: {
-  pendingActionRequestDto: PendingActionRequestDto & {
-    addresses: AddressesDto;
-  };
+  pendingActionRequestDto: PendingActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
-  disableGasCheck: boolean;
-  gasFeeToken: TokenDto;
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
@@ -77,24 +77,4 @@ const fn = ({
     .chain((actionDto) =>
       constructTxs({ actionDto, gasModeValue, isLedgerLive })
     )
-    .chain((val) =>
-      (disableGasCheck
-        ? EitherAsync.liftEither(Right(null))
-        : checkGasAmount({
-            addressWithTokenDto: {
-              address: pendingActionRequestDto.addresses.address,
-              additionalAddresses:
-                pendingActionRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes: val.transactionConstructRes,
-          })
-      )
-        .chainLeft(async (e) => Right(e))
-        .map((gasCheckErr) => ({
-          ...val,
-          pendingActionRes: val.mappedActionDto,
-          gasCheckErr: gasCheckErr ?? null,
-        }))
-    );
+    .map((val) => ({ ...val, pendingActionRes: val.mappedActionDto }));

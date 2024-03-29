@@ -1,6 +1,7 @@
 import { EitherAsync, Right } from "purify-ts";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { usePendingActionAndTxsConstruct } from "../../../hooks/api/use-pending-action-and-txs-construct";
+import { checkGasAmount } from "../../../common/check-gas-amount";
 import { preparePendingActionRequestDto } from "./utils";
 import {
   GetEitherAsyncLeft,
@@ -11,7 +12,6 @@ import { YieldBalanceDto } from "@stakekit/api-hooks";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
 
 const mutationKey = ["on-pending-action"];
 
@@ -34,8 +34,6 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
 
   const { disableGasCheck = false } = useSettings();
 
-  const { isLedgerLive } = useSKWallet();
-
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
@@ -54,7 +52,6 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
           pendingActionAndTxsConstruct:
             pendingActionAndTxsConstruct.mutateAsync,
           disableGasCheck,
-          isLedgerLive,
         })
       ).unsafeCoerce(),
   });
@@ -83,7 +80,6 @@ const fn = ({
   yieldBalance,
   pendingActionAndTxsConstruct,
   disableGasCheck,
-  isLedgerLive,
 }: {
   pendingActionRequestDto: GetEitherRight<
     ReturnType<typeof preparePendingActionRequestDto>
@@ -93,7 +89,6 @@ const fn = ({
     typeof usePendingActionAndTxsConstruct
   >["mutateAsync"];
   disableGasCheck: boolean;
-  isLedgerLive: boolean;
 }) =>
   getAverageGasMode(pendingActionRequestDto.gasFeeToken.network)
     .chainLeft(async () => Right(null))
@@ -106,21 +101,27 @@ const fn = ({
             type: pendingActionRequestDto.type,
             passthrough: pendingActionRequestDto.passthrough,
             args: pendingActionRequestDto.args,
-            addresses: {
-              address: pendingActionRequestDto.address,
-              additionalAddresses: pendingActionRequestDto.additionalAddresses,
-            },
           },
-          isLedgerLive,
-          disableGasCheck,
-          gasFeeToken: pendingActionRequestDto.gasFeeToken,
         })
       )
         .mapLeft(() => new Error("Stake claim and txs construct failed"))
         .map((res) => ({ ...val, ...res }))
     )
-    .map((val) => ({
-      pendingActionRes: val.pendingActionRes,
-      transactionConstructRes: val.transactionConstructRes,
-      yieldBalance,
-    }));
+    .chain(({ pendingActionRes, transactionConstructRes }) =>
+      (disableGasCheck
+        ? EitherAsync.liftEither(Right(null))
+        : checkGasAmount({
+            addressWithTokenDto: {
+              address: pendingActionRequestDto.address,
+              additionalAddresses: pendingActionRequestDto.additionalAddresses,
+              network: pendingActionRequestDto.gasFeeToken.network,
+              tokenAddress: pendingActionRequestDto.gasFeeToken.address,
+            },
+            transactionConstructRes,
+          })
+      ).map(() => ({
+        pendingActionRes,
+        transactionConstructRes,
+        yieldBalance,
+      }))
+    );

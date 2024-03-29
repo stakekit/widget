@@ -383,8 +383,5 @@
     "title": "Referral check",
     "body": "Enter your referral code to continue",
     "submit": "Submit"
-  },
-  "error_modal": {
-    "solution": "Potential solution:"
   }
 }

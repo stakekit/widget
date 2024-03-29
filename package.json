@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.116",
+  "version": "0.0.115",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/package/types/src/index.package.d.ts",
@@ -54,7 +54,7 @@
     "preview": "vite preview",
     "prepare": "husky install",
     "check-unused": "npx knip",
-    "get-errors": "tsx get-errors.ts"
+    "get-errors": "npx node get-errors.js"
   },
   "peerDependencies": {
     "react": ">=18",

@@ -17,6 +17,9 @@ import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
+import { useTranslation } from "react-i18next";
+import { StakingNotAllowedError } from "../../../hooks/api/use-stake-enter-and-txs-construct";
+import { NotEnoughGasTokenError } from "../../../common/check-gas-amount";
 
 export const usePositionDetails = () => {
   const {
@@ -169,6 +172,23 @@ export const usePositionDetails = () => {
     positionBalancePrices.isLoading ||
     yieldOpportunity.isLoading;
 
+  const error = onStakeExit.isError || onPendingAction.isError;
+
+  const { t } = useTranslation();
+
+  const errorMessage = useMemo(
+    () =>
+      error
+        ? onStakeExit.error instanceof StakingNotAllowedError
+          ? t("details.unstake_before")
+          : onStakeExit.error instanceof NotEnoughGasTokenError ||
+              onPendingAction.error instanceof NotEnoughGasTokenError
+            ? t("shared.not_enough_gas_token")
+            : t("shared.something_went_wrong")
+        : null,
+    [error, onPendingAction.error, onStakeExit.error, t]
+  );
+
   return {
     integrationData,
     reducedStakedOrLiquidBalance,
@@ -180,6 +200,7 @@ export const usePositionDetails = () => {
     onMaxClick,
     canChangeAmount,
     onUnstakeClick,
+    errorMessage,
     unstakeDisabled,
     isLoading,
     onStakeExitIsLoading: onStakeExit.isPending,

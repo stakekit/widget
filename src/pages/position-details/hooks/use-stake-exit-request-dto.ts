@@ -28,7 +28,7 @@ export const useStakeExitRequestDto = ({
         dto: ActionRequestDto;
       }>((val) => {
         const args: ActionArgumentsDto = {
-          amount: unstakeAmount.toString(10),
+          amount: unstakeAmount.toString(),
         };
 
         if (val.integrationData.args.exit?.args?.validatorAddresses?.required) {

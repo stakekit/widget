@@ -17,7 +17,7 @@ import { useSavedRef } from "../../../hooks";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 
 export const useUnstakeOrPendingActionReview = () => {
-  const { integrationData, isGasCheckError } = useUnstakeOrPendingActionState();
+  const { integrationData } = useUnstakeOrPendingActionState();
 
   const pendingActionMatch = usePendingActionMatch();
 
@@ -129,6 +129,5 @@ export const useUnstakeOrPendingActionReview = () => {
     fee,
     rewardTokenDetailsProps,
     pendingActionMatch,
-    isGasCheckError,
   };
 };

@@ -71,7 +71,10 @@ export const ProviderDetails = ({
                   <ImageFallback
                     name={nameOrAddress}
                     tokenLogoHw="8"
-                    textVariant={{ type: "white", weight: "bold" }}
+                    textVariant={{
+                      type: "white",
+                      weight: "bold",
+                    }}
                   />
                 </Box>
               }
@@ -97,7 +100,7 @@ export const ProviderDetails = ({
             }}
           />
 
-          {providerDetails.status && providerDetails.status !== "active" && (
+          {providerDetails.status !== "active" && (
             <Box marginLeft="1" className={inactiveContainer}>
               <Text
                 variant={{

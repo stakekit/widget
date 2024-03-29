@@ -30,6 +30,7 @@ import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { useNavigate } from "react-router-dom";
 import { useConnectModal } from "@stakekit/rainbowkit";
+import { NotEnoughGasTokenError } from "../../../../common/check-gas-amount";
 import { useTranslation } from "react-i18next";
 import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
 import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
@@ -41,6 +42,7 @@ import {
   useYieldOpportunity,
 } from "../../../../hooks/api/use-yield-opportunity";
 import { DetailsContextType } from "./types";
+import { StakingNotAllowedError } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
@@ -445,6 +447,16 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const isError =
     onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
 
+  const errorMessage = useMemo(
+    () =>
+      onStakeEnter.error instanceof StakingNotAllowedError
+        ? t("details.unstake_before")
+        : onStakeEnter.error instanceof NotEnoughGasTokenError
+          ? t("shared.not_enough_gas_token")
+          : t("shared.something_went_wrong"),
+    [onStakeEnter.error, t]
+  );
+
   const buttonDisabled =
     isConnected && (isFetching || stakeRequestDto.isNothing());
 
@@ -549,6 +561,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onValidatorRemove,
     selectedValidators,
     isError,
+    errorMessage,
     rewardToken,
     onSelectOpportunityClose,
     onStakeEnterIsLoading: onStakeEnter.isPending,

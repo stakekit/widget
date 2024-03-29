@@ -2,16 +2,14 @@ import {
   GasModeValueDto,
   ActionRequestDto,
   actionEnter,
-  TokenDto,
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { withRequestErrorRetry } from "../../common/utils";
+import { useSKWallet } from "../../providers/sk-wallet";
 import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { isAxiosError } from "axios";
-import { EitherAsync, Right } from "purify-ts";
-import { checkGasAmount } from "../../common/check-gas-amount";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -19,15 +17,33 @@ export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 const mutationKey = ["stake-enter"];
 
 const StakeEnterAndTxsConstructContext = createContext<
-  UseMutationResult<DataType, ErrorType, Parameters<typeof fn>[0]> | undefined
+  | UseMutationResult<
+      DataType,
+      ErrorType,
+      {
+        stakeRequestDto: ActionRequestDto;
+        gasModeValue: GasModeValueDto | undefined;
+      }
+    >
+  | undefined
 >(undefined);
 
 export const StakeEnterAndTxsConstructProvider = ({
   children,
 }: PropsWithChildren) => {
-  const value = useMutation<DataType, ErrorType, Parameters<typeof fn>[0]>({
+  const { isLedgerLive } = useSKWallet();
+
+  const value = useMutation<
+    DataType,
+    ErrorType,
+    {
+      stakeRequestDto: ActionRequestDto;
+      gasModeValue: GasModeValueDto | undefined;
+    }
+  >({
     mutationKey,
-    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
+    mutationFn: async (args) =>
+      (await fn({ ...args, isLedgerLive })).unsafeCoerce(),
   });
 
   return (
@@ -53,14 +69,10 @@ const fn = ({
   gasModeValue,
   stakeRequestDto,
   isLedgerLive,
-  disableGasCheck,
-  gasFeeToken,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
-  disableGasCheck: boolean;
-  gasFeeToken: TokenDto;
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft<StakingNotAllowedError | Error>((e) => {
@@ -76,27 +88,9 @@ const fn = ({
     .chain((actionDto) =>
       constructTxs({ actionDto, gasModeValue, isLedgerLive })
     )
-    .chain((val) =>
-      (disableGasCheck
-        ? EitherAsync.liftEither(Right(null))
-        : checkGasAmount({
-            addressWithTokenDto: {
-              address: stakeRequestDto.addresses.address,
-              additionalAddresses:
-                stakeRequestDto.addresses.additionalAddresses,
-              network: gasFeeToken.network,
-              tokenAddress: gasFeeToken.address,
-            },
-            transactionConstructRes: val.transactionConstructRes,
-          })
-      )
-        .chainLeft(async (e) => Right(e))
-        .map((gasCheckErr) => ({
-          ...val,
-          stakeEnterRes: val.mappedActionDto,
-          gasCheckErr: gasCheckErr ?? null,
-        }))
-    );
+    .map((val) => {
+      return { ...val, stakeEnterRes: val.mappedActionDto };
+    });
 
 export class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {
