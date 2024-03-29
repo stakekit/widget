@@ -63,7 +63,9 @@ export const SelectTokenListItem = memo(
                 {item.token.name}
               </Text>
 
-              {amountGreaterThanZero && <Text>{formattedAmount}</Text>}
+              {amountGreaterThanZero && (
+                <Text variant={{ weight: "normal" }}>{formattedAmount}</Text>
+              )}
             </Box>
 
             <Box
