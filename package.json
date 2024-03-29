@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.122",
+  "version": "0.0.121",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/package/types/src/index.package.d.ts",
@@ -150,7 +150,7 @@
     "vitest": "1.3.1",
     "wagmi": "^1.4.13"
   },
-  "packageManager": "yarn@4.1.1",
+  "packageManager": "yarn@4.1.0",
   "resolutions": {
     "@walletconnect/ethereum-provider@npm:2.11.0": "patch:@walletconnect/ethereum-provider@npm%3A2.11.0#~/.yarn/patches/@walletconnect-ethereum-provider-npm-2.11.0-f89f9e67ee.patch"
   },
