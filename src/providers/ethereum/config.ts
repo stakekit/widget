@@ -15,7 +15,6 @@ import {
   harmonyOne,
   optimism,
   polygon,
-  holesky,
 } from "wagmi/chains";
 import { config } from "../../config";
 import {
@@ -87,11 +86,6 @@ const queryFn = async ({
             type: "evm",
             skChainName: EvmNetworks.Viction,
             wagmiChain: viction,
-          },
-          [EvmNetworks.EthereumHolesky]: {
-            type: "evm",
-            skChainName: EvmNetworks.EthereumHolesky,
-            wagmiChain: holesky,
           },
           [EvmNetworks.EthereumGoerli]: {
             type: "evm",

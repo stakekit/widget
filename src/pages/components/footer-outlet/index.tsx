@@ -47,7 +47,7 @@ const FooterButton = ({
         : {})}
       onAnimationComplete={() => setInitAnimationFinished(true)}
     >
-      <Box px="4" marginTop="2" marginBottom="4" zIndex="modal">
+      <Box px="4" marginBottom="4" marginTop="2" zIndex="modal">
         <Box
           flex={1}
           display="flex"

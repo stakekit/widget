@@ -55,7 +55,6 @@ import {
 } from "./pages/review";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { APIManager } from "@stakekit/api-hooks";
-import { PoweredBy } from "./pages/components/powered-by";
 
 const Widget = () => {
   useToggleTheme();
@@ -192,8 +191,6 @@ const Widget = () => {
           </motion.div>
 
           <FooterContent />
-
-          <PoweredBy />
         </LayoutGroup>
       </AnimationLayout>
 

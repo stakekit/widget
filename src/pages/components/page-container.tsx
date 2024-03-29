@@ -1,19 +1,15 @@
 import { PropsWithChildren } from "react";
-import { Box, BoxProps } from "../../components/atoms/box";
+import { Box } from "../../components/atoms/box";
 
-export const PageContainer = ({
-  children,
-  ...rest
-}: PropsWithChildren<BoxProps>) => {
+export const PageContainer = ({ children }: PropsWithChildren) => {
   return (
     <Box
       display="flex"
       flexDirection="column"
       px="4"
-      marginBottom="4"
+      marginBottom="6"
       flex={1}
       paddingTop="2"
-      {...rest}
     >
       {children}
     </Box>

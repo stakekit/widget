@@ -51,55 +51,57 @@ const EarnPageComponent = () => {
     >
       <PageContainer>
         <Box>
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Box display="flex" alignItems="center" minHeight="8">
-              <Text>{title}</Text>
-              {selectedStakeYieldType && (
-                <HelpModal modal={{ type: selectedStakeYieldType }} />
-              )}
-              {(isFetching || appLoading) && (
-                <Box display="flex" marginLeft="2">
-                  <Spinner />
-                </Box>
-              )}
+          <Box>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+            >
+              <Box display="flex" alignItems="center" minHeight="8">
+                <Text>{title}</Text>
+                {selectedStakeYieldType && (
+                  <HelpModal modal={{ type: selectedStakeYieldType }} />
+                )}
+                {(isFetching || appLoading) && (
+                  <Box display="flex" marginLeft="2">
+                    <Spinner />
+                  </Box>
+                )}
+              </Box>
             </Box>
+
+            <SelectTokenSection />
+
+            <SelectYieldSection />
+
+            <SelectValidatorSection />
+
+            <ExtraArgsSelection />
           </Box>
 
-          <SelectTokenSection />
+          {isError && (
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              my="4"
+            >
+              <Text variant={{ type: "danger" }} textAlign="center">
+                {t("shared.something_went_wrong")}
+              </Text>
+            </Box>
+          )}
 
-          <SelectYieldSection />
-
-          <SelectValidatorSection />
-
-          <ExtraArgsSelection />
-        </Box>
-
-        {isError && (
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            my="4"
-          >
-            <Text variant={{ type: "danger" }} textAlign="center">
-              {t("shared.something_went_wrong")}
-            </Text>
-          </Box>
-        )}
-
-        <Box marginTop="4">
-          <Footer />
-        </Box>
-
-        {referralCheck && (
           <Box marginTop="4">
-            <ReferralCode />
+            <Footer />
           </Box>
-        )}
+
+          {referralCheck && (
+            <Box marginTop="4">
+              <ReferralCode />
+            </Box>
+          )}
+        </Box>
       </PageContainer>
     </motion.div>
   );
