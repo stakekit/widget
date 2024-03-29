@@ -27,7 +27,8 @@ export const TxState = ({ txState, position, count }: Props) => {
 
   const canCollapse =
     (txState.meta.done && position !== "LAST") ||
-    txState.state === TxStateEnum.SIGN_IDLE;
+    (txState.tx.status === "WAITING_FOR_SIGNATURE" &&
+      txState.state === TxStateEnum.SIGN_IDLE);
 
   const [isCollapsed, setIsCollapsed] = useState(canCollapse);
 
@@ -78,250 +79,256 @@ export const TxState = ({ txState, position, count }: Props) => {
         className={stepsContainer}
         style={{ maxHeight: isCollapsed ? 0 : stepsContainerHeight.current }}
       >
-        <>
-          <Box
-            display="flex"
-            opacity={txState.state > TxStateEnum.SIGN_IDLE ? 1 : 0.5}
-          >
+        {txState.tx.status === "WAITING_FOR_SIGNATURE" ? (
+          <>
             <Box
               display="flex"
-              flexDirection="column"
-              alignItems="center"
-              marginRight="3"
-              className={clsx({
-                [stepsAfter]: true,
-                [halfOpacityAfter]: txState.state < TxStateEnum.SIGN_SUCCESS,
-                [stepsAfterMuted]:
-                  txState.state > TxStateEnum.SIGN_IDLE &&
-                  txState.state < TxStateEnum.SIGN_SUCCESS,
-              })}
+              opacity={txState.state > TxStateEnum.SIGN_IDLE ? 1 : 0.5}
             >
               <Box
-                background={
-                  txState.state > TxStateEnum.SIGN_IDLE ? "text" : "white"
-                }
-                borderColor={
-                  txState.state > TxStateEnum.SIGN_IDLE ? "text" : "textMuted"
-                }
-                borderRadius="half"
-                hw="10"
-                borderWidth={3}
-                borderStyle="solid"
                 display="flex"
+                flexDirection="column"
                 alignItems="center"
-                justifyContent="center"
+                marginRight="3"
+                className={clsx({
+                  [stepsAfter]: true,
+                  [halfOpacityAfter]: txState.state < TxStateEnum.SIGN_SUCCESS,
+                  [stepsAfterMuted]:
+                    txState.state > TxStateEnum.SIGN_IDLE &&
+                    txState.state < TxStateEnum.SIGN_SUCCESS,
+                })}
               >
-                {txState.state === TxStateEnum.SIGN_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state === TxStateEnum.SIGN_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >= TxStateEnum.SIGN_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
+                <Box
+                  background={
+                    txState.state > TxStateEnum.SIGN_IDLE ? "text" : "white"
+                  }
+                  borderColor={
+                    txState.state > TxStateEnum.SIGN_IDLE ? "text" : "textMuted"
+                  }
+                  borderRadius="half"
+                  hw="10"
+                  borderWidth={3}
+                  borderStyle="solid"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {txState.state === TxStateEnum.SIGN_LOADING ? (
+                    <Spinner variant={{ color: "inverted" }} />
+                  ) : txState.state === TxStateEnum.SIGN_ERROR ? (
+                    <XIcon color="background" />
+                  ) : txState.state >= TxStateEnum.SIGN_SUCCESS ? (
+                    <CheckSteps hw={18} />
+                  ) : null}
+                </Box>
               </Box>
-            </Box>
-            <Box
-              flexDirection="column"
-              display="flex"
-              alignItems="flex-start"
-              gap="1"
-            >
-              <Text>{t("steps.approve")}</Text>
-              {txState.state === TxStateEnum.SIGN_ERROR ? (
-                <Text variant={{ type: "danger" }}>
-                  {t("shared.something_went_wrong")}
-                </Text>
-              ) : (
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {t("steps.approve_desc")}
-                </Text>
-              )}
-            </Box>
-          </Box>
-
-          <Box
-            display="flex"
-            alignItems="center"
-            opacity={txState.state >= TxStateEnum.SIGN_SUCCESS ? 1 : 0.5}
-          >
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              marginRight="3"
-              className={clsx({
-                [stepsAfter]: true,
-                [stepsBefore]: true,
-                [stepsAfterMuted]:
-                  txState.state < TxStateEnum.BROADCAST_SUCCESS,
-                [halfOpacityAfter]:
-                  txState.state === TxStateEnum.BROADCAST_LOADING ||
-                  txState.state === TxStateEnum.BROADCAST_ERROR,
-                [stepsBeforeMuted]: txState.state < TxStateEnum.SIGN_SUCCESS,
-              })}
-            >
               <Box
-                background={
-                  txState.state >= TxStateEnum.SIGN_SUCCESS ? "text" : "white"
-                }
-                borderColor={
-                  txState.state >= TxStateEnum.SIGN_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderRadius="half"
-                borderWidth={3}
-                borderStyle="solid"
-                hw="10"
+                flexDirection="column"
                 display="flex"
-                alignItems="center"
-                justifyContent="center"
+                alignItems="flex-start"
+                gap="1"
               >
-                {txState.state === TxStateEnum.BROADCAST_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state === TxStateEnum.BROADCAST_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >= TxStateEnum.BROADCAST_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
-              </Box>
-            </Box>
-
-            <Box
-              flexDirection="column"
-              display="flex"
-              alignItems="flex-start"
-              gap="1"
-            >
-              <Text>{t("steps.submitting")}</Text>
-              {txState.state === TxStateEnum.BROADCAST_ERROR && (
-                <Text variant={{ type: "danger" }}>
-                  {t("shared.something_went_wrong")}
-                </Text>
-              )}
-            </Box>
-          </Box>
-
-          <Box
-            display="flex"
-            alignItems="center"
-            opacity={txState.state >= TxStateEnum.BROADCAST_SUCCESS ? 1 : 0.5}
-          >
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              marginRight="3"
-              className={clsx({
-                [stepsAfter]: true,
-                [stepsBefore]: true,
-                [stepsAfterMuted]:
-                  txState.state < TxStateEnum.CHECK_TX_STATUS_SUCCESS,
-                [halfOpacityAfter]:
-                  txState.state === TxStateEnum.CHECK_TX_STATUS_LOADING ||
-                  txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR,
-                [stepsBeforeMuted]:
-                  txState.state < TxStateEnum.BROADCAST_SUCCESS,
-              })}
-            >
-              <Box
-                background={
-                  txState.state >= TxStateEnum.BROADCAST_SUCCESS
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state >= TxStateEnum.BROADCAST_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderRadius="half"
-                borderWidth={3}
-                borderStyle="solid"
-                hw="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                {txState.state === TxStateEnum.CHECK_TX_STATUS_LOADING ? (
-                  <Spinner variant={{ color: "inverted" }} />
-                ) : txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR ? (
-                  <XIcon color="background" />
-                ) : txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS ? (
-                  <CheckSteps hw={18} />
-                ) : null}
-              </Box>
-            </Box>
-
-            <Box
-              flexDirection="column"
-              display="flex"
-              alignItems="flex-start"
-              gap="1"
-            >
-              <Text>{t("steps.pending")}</Text>
-              {txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR && (
-                <Text variant={{ type: "danger" }}>
-                  {t("shared.something_went_wrong")}
-                </Text>
-              )}
-            </Box>
-          </Box>
-
-          <Box
-            display="flex"
-            alignItems="center"
-            opacity={
-              txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS ? 1 : 0.5
-            }
-          >
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              marginRight="3"
-              paddingBottom="2"
-              className={clsx({
-                [stepsBefore]: true,
-                [stepsBeforeMuted]:
-                  txState.state < TxStateEnum.CHECK_TX_STATUS_SUCCESS,
-              })}
-            >
-              <Box
-                background={
-                  txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS
-                    ? "text"
-                    : "white"
-                }
-                borderColor={
-                  txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS
-                    ? "text"
-                    : "textMuted"
-                }
-                borderWidth={3}
-                borderStyle="solid"
-                borderRadius="half"
-                hw="10"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                {txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS && (
-                  <CheckSteps hw={18} />
+                <Text>{t("steps.approve")}</Text>
+                {txState.state === TxStateEnum.SIGN_ERROR ? (
+                  <Text variant={{ type: "danger" }}>
+                    {t("shared.something_went_wrong")}
+                  </Text>
+                ) : (
+                  <Text variant={{ type: "muted", weight: "normal" }}>
+                    {t("steps.approve_desc")}
+                  </Text>
                 )}
               </Box>
             </Box>
 
             <Box
-              flexDirection="column"
               display="flex"
-              alignItems="flex-start"
-              gap="1"
+              alignItems="center"
+              opacity={txState.state >= TxStateEnum.SIGN_SUCCESS ? 1 : 0.5}
             >
-              <Text>{t("steps.completed")}</Text>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                marginRight="3"
+                className={clsx({
+                  [stepsAfter]: true,
+                  [stepsBefore]: true,
+                  [stepsAfterMuted]:
+                    txState.state < TxStateEnum.BROADCAST_SUCCESS,
+                  [halfOpacityAfter]:
+                    txState.state === TxStateEnum.BROADCAST_LOADING ||
+                    txState.state === TxStateEnum.BROADCAST_ERROR,
+                  [stepsBeforeMuted]: txState.state < TxStateEnum.SIGN_SUCCESS,
+                })}
+              >
+                <Box
+                  background={
+                    txState.state >= TxStateEnum.SIGN_SUCCESS ? "text" : "white"
+                  }
+                  borderColor={
+                    txState.state >= TxStateEnum.SIGN_SUCCESS
+                      ? "text"
+                      : "textMuted"
+                  }
+                  borderRadius="half"
+                  borderWidth={3}
+                  borderStyle="solid"
+                  hw="10"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {txState.state === TxStateEnum.BROADCAST_LOADING ? (
+                    <Spinner variant={{ color: "inverted" }} />
+                  ) : txState.state === TxStateEnum.BROADCAST_ERROR ? (
+                    <XIcon color="background" />
+                  ) : txState.state >= TxStateEnum.BROADCAST_SUCCESS ? (
+                    <CheckSteps hw={18} />
+                  ) : null}
+                </Box>
+              </Box>
+
+              <Box
+                flexDirection="column"
+                display="flex"
+                alignItems="flex-start"
+                gap="1"
+              >
+                <Text>{t("steps.submitting")}</Text>
+                {txState.state === TxStateEnum.BROADCAST_ERROR && (
+                  <Text variant={{ type: "danger" }}>
+                    {t("shared.something_went_wrong")}
+                  </Text>
+                )}
+              </Box>
             </Box>
+
+            <Box
+              display="flex"
+              alignItems="center"
+              opacity={txState.state >= TxStateEnum.BROADCAST_SUCCESS ? 1 : 0.5}
+            >
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                marginRight="3"
+                className={clsx({
+                  [stepsAfter]: true,
+                  [stepsBefore]: true,
+                  [stepsAfterMuted]:
+                    txState.state < TxStateEnum.CHECK_TX_STATUS_SUCCESS,
+                  [halfOpacityAfter]:
+                    txState.state === TxStateEnum.CHECK_TX_STATUS_LOADING ||
+                    txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR,
+                  [stepsBeforeMuted]:
+                    txState.state < TxStateEnum.BROADCAST_SUCCESS,
+                })}
+              >
+                <Box
+                  background={
+                    txState.state >= TxStateEnum.BROADCAST_SUCCESS
+                      ? "text"
+                      : "white"
+                  }
+                  borderColor={
+                    txState.state >= TxStateEnum.BROADCAST_SUCCESS
+                      ? "text"
+                      : "textMuted"
+                  }
+                  borderRadius="half"
+                  borderWidth={3}
+                  borderStyle="solid"
+                  hw="10"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {txState.state === TxStateEnum.CHECK_TX_STATUS_LOADING ? (
+                    <Spinner variant={{ color: "inverted" }} />
+                  ) : txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR ? (
+                    <XIcon color="background" />
+                  ) : txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS ? (
+                    <CheckSteps hw={18} />
+                  ) : null}
+                </Box>
+              </Box>
+
+              <Box
+                flexDirection="column"
+                display="flex"
+                alignItems="flex-start"
+                gap="1"
+              >
+                <Text>{t("steps.pending")}</Text>
+                {txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR && (
+                  <Text variant={{ type: "danger" }}>
+                    {t("shared.something_went_wrong")}
+                  </Text>
+                )}
+              </Box>
+            </Box>
+
+            <Box
+              display="flex"
+              alignItems="center"
+              opacity={
+                txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS ? 1 : 0.5
+              }
+            >
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                marginRight="3"
+                paddingBottom="2"
+                className={clsx({
+                  [stepsBefore]: true,
+                  [stepsBeforeMuted]:
+                    txState.state < TxStateEnum.CHECK_TX_STATUS_SUCCESS,
+                })}
+              >
+                <Box
+                  background={
+                    txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS
+                      ? "text"
+                      : "white"
+                  }
+                  borderColor={
+                    txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS
+                      ? "text"
+                      : "textMuted"
+                  }
+                  borderWidth={3}
+                  borderStyle="solid"
+                  borderRadius="half"
+                  hw="10"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  {txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS && (
+                    <CheckSteps hw={18} />
+                  )}
+                </Box>
+              </Box>
+
+              <Box
+                flexDirection="column"
+                display="flex"
+                alignItems="flex-start"
+                gap="1"
+              >
+                <Text>{t("steps.completed")}</Text>
+              </Box>
+            </Box>
+          </>
+        ) : (
+          <Box>
+            <Text>{t("steps.skipped")}</Text>
           </Box>
-        </>
+        )}
       </Box>
     </Box>
   );

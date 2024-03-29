@@ -298,3 +298,14 @@ export type SupportedLedgerFamiliesWithCurrency = Record<
     }
   >
 >;
+
+export const ledgerSKPluginNetworksSet = new Set([
+  EvmNetworks.AvalancheC,
+  EvmNetworks.Arbitrum,
+  EvmNetworks.Ethereum,
+  EvmNetworks.EthereumGoerli,
+  EvmNetworks.Harmony,
+  EvmNetworks.Optimism,
+  EvmNetworks.Polygon,
+  EvmNetworks.Viction,
+]);

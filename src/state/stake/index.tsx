@@ -27,6 +27,7 @@ import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
 import { equalTokens } from "../../domain";
 import { useSavedRef } from "../../hooks";
 import { useInitQueryParams } from "../../hooks/use-init-query-params";
+import { useTransactionTotalGas } from "../../hooks/use-transaction-total-gas";
 import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
@@ -373,9 +374,9 @@ const Provider = ({ children }: PropsWithChildren) => {
   const stakeSession = useMemo(
     () =>
       Maybe.fromNullable(
-        stakeEnterAndTxsConstructMutationState.data?.actionDto
+        stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes
       ),
-    [stakeEnterAndTxsConstructMutationState.data?.actionDto]
+    [stakeEnterAndTxsConstructMutationState?.data?.stakeEnterRes]
   );
 
   const isGasCheckError = useMemo(
@@ -386,13 +387,8 @@ const Provider = ({ children }: PropsWithChildren) => {
     [stakeEnterAndTxsConstructMutationState.data]
   );
 
-  const stakeEnterTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(
-        stakeEnterAndTxsConstructMutationState.data?.actionDto.gasEstimate
-          .amount
-      ),
-    [stakeEnterAndTxsConstructMutationState.data?.actionDto.gasEstimate.amount]
+  const stakeEnterTxGas = useTransactionTotalGas(
+    stakeEnterAndTxsConstructMutationState?.data?.transactionConstructRes
   );
 
   const actions = useMemo(

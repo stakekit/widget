@@ -14,10 +14,7 @@ export const useRichErrors = () => {
     const id = APIManager.getInstance()!.interceptors.response.use(
       undefined,
       (error) => {
-        if (
-          errorsSet.has(error.response.data.message) &&
-          !error?.config?.url.includes("gas-estimate")
-        ) {
+        if (errorsSet.has(error.response.data.message)) {
           setError(error.response.data);
         }
 

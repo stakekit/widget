@@ -34,12 +34,12 @@ import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
+import { shouldUseLLSKPlugin } from "../../domain";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { LedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { Hash } from "viem";
-import { isLedgerDappBrowserProvider } from "../../utils";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -121,11 +121,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
-    ({ tx, ledgerHwAppId }) =>
+    ({ tx }) =>
       safeConnectorWithNetwork.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
-      >(({ conn }) => {
+      >(({ conn, network }) => {
         if (isLedgerLiveConnector(conn)) {
           /**
            * Ledger Live connector
@@ -161,9 +161,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 return walletApiClient.transaction.signAndBroadcast(
                   accountId,
                   deserializedTransaction,
-                  Maybe.fromNullable(ledgerHwAppId)
-                    .map((v) => ({ hwAppId: v }))
-                    .extract()
+                  shouldUseLLSKPlugin(network)
+                    ? { hwAppId: "StakeKit" }
+                    : undefined
                 );
               }).mapLeft((e) => {
                 console.log(e);
@@ -290,7 +290,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             )
           ).chain((val) =>
             conn.provider
-              .sendMultipleTransactions({ network, txs: val })
+              .sendMultipleTransactions({
+                network,
+                txs: val,
+              })
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
           );
         } else {
@@ -310,18 +313,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const value = useMemo((): SKWallet => {
-    const isLedgerLive =
-      isLedgerDappBrowserProvider() ||
-      !!(connector && isLedgerLiveConnector(connector));
-
-    const common = {
-      disconnect,
-      signTransaction,
-      signMultipleTransactions,
-      isLedgerLive,
-    };
+    const common = { disconnect, signTransaction, signMultipleTransactions };
 
     if (isConnected && !isConnecting) {
+      const isLedgerLive = isLedgerLiveConnector(connector);
+
       return {
         ...common,
         network,
@@ -347,7 +343,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       isConnected: false,
       isConnecting,
       additionalAddresses: null,
-      isLedgerLive,
+      isLedgerLive: false,
       ledgerAccounts: null,
       onLedgerAccountChange: null,
       connector: null,

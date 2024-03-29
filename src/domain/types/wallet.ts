@@ -16,7 +16,6 @@ export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
-    ledgerHwAppId: string | undefined;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
     { signedTx: string; broadcasted: boolean }

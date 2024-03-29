@@ -6,12 +6,12 @@ import {
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { withRequestErrorRetry } from "../../common/utils";
+import { constructTxs } from "../../common/construct-txs";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { isAxiosError } from "axios";
-import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
-import { getValidStakeSessionTx } from "../../domain";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Right } from "purify-ts";
+import { checkGasAmount } from "../../common/check-gas-amount";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -74,22 +74,28 @@ const fn = ({
       return new Error("Stake enter error");
     })
     .chain((actionDto) =>
-      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+      constructTxs({ actionDto, gasModeValue, isLedgerLive })
     )
-    .chain((actionDto) =>
-      actionWithGasEstimateAndCheck({
-        gasFeeToken,
-        actionDto,
-        disableGasCheck,
-        isLedgerLive,
-        gasModeValue,
-        addressWithTokenDto: {
-          address: stakeRequestDto.addresses.address,
-          additionalAddresses: stakeRequestDto.addresses.additionalAddresses,
-          network: gasFeeToken.network,
-          tokenAddress: gasFeeToken.address,
-        },
-      })
+    .chain((val) =>
+      (disableGasCheck
+        ? EitherAsync.liftEither(Right(null))
+        : checkGasAmount({
+            addressWithTokenDto: {
+              address: stakeRequestDto.addresses.address,
+              additionalAddresses:
+                stakeRequestDto.addresses.additionalAddresses,
+              network: gasFeeToken.network,
+              tokenAddress: gasFeeToken.address,
+            },
+            transactionConstructRes: val.transactionConstructRes,
+          })
+      )
+        .chainLeft(async (e) => Right(e))
+        .map((gasCheckErr) => ({
+          ...val,
+          stakeEnterRes: val.mappedActionDto,
+          gasCheckErr: gasCheckErr ?? null,
+        }))
     );
 
 export class StakingNotAllowedError extends Error {

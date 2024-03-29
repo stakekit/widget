@@ -1,25 +1,18 @@
 import {
   ActionDto,
   GasModeValueDto,
-  TokenDto,
   transactionConstruct,
 } from "@stakekit/api-hooks";
-import {
-  getTransactionsTotalGasAmount,
-  getValidStakeSessionTx,
-} from "../domain";
+import { getValidStakeSessionTx } from "../domain";
 import { EitherAsync } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
 import { isAxiosError } from "axios";
-import { ActionDtoWithGasEstimate } from "../domain/types/action";
 
 export const constructTxs = ({
   actionDto,
   gasModeValue,
   isLedgerLive,
-  gasFeeToken,
 }: {
-  gasFeeToken: TokenDto;
   actionDto: ActionDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
@@ -40,10 +33,16 @@ export const constructTxs = ({
         )
       )
     )
-    .map<ActionDtoWithGasEstimate>((constructedTxs) => ({
-      ...actionDto,
-      gasEstimate: {
-        token: gasFeeToken,
-        amount: getTransactionsTotalGasAmount(constructedTxs),
-      },
-    }));
+    .map((constructedTxs) => {
+      const mapped = new Map(constructedTxs.map((val) => [val.id, val]));
+
+      return {
+        mappedActionDto: {
+          ...actionDto,
+          transactions: actionDto.transactions.map(
+            (v) => mapped.get(v.id) ?? v
+          ),
+        } satisfies ActionDto,
+        transactionConstructRes: constructedTxs,
+      };
+    });
