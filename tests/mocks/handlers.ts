@@ -2,7 +2,6 @@ import { delay, http, HttpResponse, passthrough } from "msw";
 import { getStakeKitMock } from "@stakekit/api-hooks/msw";
 
 export const handlers = [
-  ...getStakeKitMock(),
   http.get("*/v1/actions/:actionId/gas-estimate", async () => {
     await delay();
 
@@ -12,13 +11,6 @@ export const handlers = [
     await delay();
 
     return HttpResponse.json({});
-  }),
-  http.options("*", async () => {
-    await delay();
-    return HttpResponse.json({
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "*",
-    });
   }),
 
   http.get("*/v1/yields/enabled/networks", async () => {
@@ -78,4 +70,5 @@ export const handlers = [
     await delay();
     return passthrough();
   }),
+  ...getStakeKitMock(),
 ];

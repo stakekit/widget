@@ -12,9 +12,9 @@ import {
 import { Chain } from "wagmi/chains";
 import { Address } from "viem";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { Observable } from "../../utils/observable";
 import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import { MutableRefObject } from "react";
+import { BehaviorSubject } from "rxjs";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -49,7 +49,7 @@ export const externalProviderConnector = (
       iconBackground: "#fff",
       createConnector: () =>
         createConnector<unknown, ExtraProps>((config) => {
-          const $filteredChains = new Observable<Chain[]>([]);
+          const $filteredChains = new BehaviorSubject<Chain[]>([]);
           const provider = new ExternalProvider(
             variant,
             transactionGetTransactionStatusByNetworkAndHash
@@ -138,7 +138,7 @@ export const externalProviderConnector = (
               provider.sendMultipleTransactions.bind(provider),
             signMessage: provider.signMessage.bind(provider),
             shouldMultiSend: provider.shouldMultiSend,
-            $filteredChains,
+            $filteredChains: $filteredChains.asObservable(),
           };
         }),
     }),

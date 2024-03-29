@@ -1,33 +1,30 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { Connector } from "wagmi";
 import { Account } from "@ledgerhq/wallet-api-client";
 import { isLedgerLiveConnector } from "../ledger/ledger-connector";
+import { BehaviorSubject } from "rxjs";
 
 export const useLedgerAccounts = (connector?: Connector) => {
+  const [subject] = useState(() => new BehaviorSubject<Account[]>([]));
+
   const subscribe = useCallback(
     (onChange: () => void) => {
       if (!connector || !isLedgerLiveConnector(connector)) {
         return () => {};
       }
 
-      return connector.$accountsOnCurrentChain.subscribe(onChange);
+      const sub = connector.$accountsOnCurrentChain.subscribe((val) => {
+        subject.next(val);
+        onChange();
+      });
+
+      return () => sub.unsubscribe();
     },
-    [connector]
+    [connector, subject]
   );
 
-  const getSnapshot = useCallback(() => {
-    if (!connector || !isLedgerLiveConnector(connector)) {
-      return defaultValue;
-    }
-
-    return connector.$accountsOnCurrentChain.value;
-  }, [connector]);
-
-  const getServerSnapshot = useCallback(() => {
-    return defaultValue;
-  }, []);
+  const getSnapshot = useCallback(() => subject.value, [subject]);
+  const getServerSnapshot = useCallback(() => subject.value, [subject.value]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 };
-
-const defaultValue: Account[] = [];

@@ -5666,6 +5666,7 @@ __metadata:
     react-virtuoso: "npm:^4.7.5"
     reselect: "npm:^5.1.0"
     resize-observer-polyfill: "npm:^1.5.1"
+    rxjs: "npm:^7.8.1"
     stream-browserify: "npm:^3.0.0"
     tsx: "npm:^4.7.1"
     turbo: "npm:^1.13.0"

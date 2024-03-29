@@ -208,9 +208,13 @@ export const setup = async (opts?: {
         );
       }
     ),
-    http.post("*/v1/actions/pending", async () => {
+    http.post("*/v1/actions/pending", async (info) => {
+      const data = (await info.request.json()) as { integrationId: string };
       await delay();
-      return HttpResponse.json(pendingAction);
+      return HttpResponse.json({
+        ...pendingAction,
+        integrationId: data.integrationId,
+      } satisfies typeof pendingAction);
     }),
     http.patch(`*/v1/transactions/:transactionId`, async (info) => {
       await delay();

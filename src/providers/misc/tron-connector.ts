@@ -15,7 +15,7 @@ import bitget from "../../assets/images/bitget.png";
 import { ledger } from "../../assets/images/ledger";
 import { Address } from "viem";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { Observable } from "../../utils/observable";
+import { BehaviorSubject } from "rxjs";
 
 const configMeta = {
   tronLink: {
@@ -110,7 +110,7 @@ const createTronConnector = ({
       config.emitter.emit("disconnect");
     },
     getProvider: async () => ({}),
-    $filteredChains: new Observable<Chain[]>([tron]),
+    $filteredChains: new BehaviorSubject<Chain[]>([tron]).asObservable(),
   }));
 
 export const tronConnector: WalletList[number] = {
