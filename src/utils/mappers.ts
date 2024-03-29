@@ -25,6 +25,10 @@ const networksToNetworksDto = (networks: Networks): NetworksDto => {
   return networks as NetworksDto;
 };
 
+export const networksDtoToNetworks = (networks: NetworksDto): Networks => {
+  return networks as Networks;
+};
+
 export const tokenToTokenDto = (token: Token): TokenDto => ({
   ...token,
   network: networksToNetworksDto(token.network),

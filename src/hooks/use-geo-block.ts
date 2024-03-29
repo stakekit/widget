@@ -1,6 +1,9 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { GeolocationError, GeolocationErrorType } from "@stakekit/api-hooks";
-import { AxiosInstance } from "axios";
+import {
+  APIManager,
+  GeolocationError,
+  GeolocationErrorType,
+} from "@stakekit/api-hooks";
 
 let _isGeoBlocked:
   | false
@@ -18,29 +21,28 @@ const subscribe = (callback: (val: typeof _isGeoBlocked) => void) => {
   return () => subs.delete(callback);
 };
 
-export const attachGeoBlockInterceptor = (apiClient: AxiosInstance) =>
-  apiClient.interceptors.response.use(undefined, (error) => {
-    if (
-      error?.response?.status === 403 &&
-      error.response.data?.type === GeolocationErrorType.GEO_LOCATION
-    ) {
-      const geoLocationErr = error.response.data as GeolocationError;
+APIManager.getInstance()!.interceptors.response.use(undefined, (error) => {
+  if (
+    error?.response?.status === 403 &&
+    error.response.data?.type === GeolocationErrorType.GEO_LOCATION
+  ) {
+    const geoLocationErr = error.response.data as GeolocationError;
 
-      const regionCode = (geoLocationErr.regionCode as unknown as string) ?? ""; // wrong type in API
+    const regionCode = (geoLocationErr.regionCode as unknown as string) ?? ""; // wrong type in API
 
-      _isGeoBlocked = {
-        tags: new Set(geoLocationErr.tags ?? []),
-        countryCode: geoLocationErr.countryCode ?? "",
-        regionCode,
-      };
-      notify();
-    }
+    _isGeoBlocked = {
+      tags: new Set(geoLocationErr.tags ?? []),
+      countryCode: geoLocationErr.countryCode ?? "",
+      regionCode,
+    };
+    notify();
+  }
 
-    return Promise.reject(error);
-  });
+  return Promise.reject(error);
+});
 
-export const useGeoBlock = () =>
-  useSyncExternalStore(
+export const useGeoBlock = () => {
+  return useSyncExternalStore(
     useCallback((onChange) => {
       const unsub = subscribe(onChange);
 
@@ -51,3 +53,4 @@ export const useGeoBlock = () =>
     useCallback(() => _isGeoBlocked, []),
     useCallback(() => _isGeoBlocked, [])
   );
+};

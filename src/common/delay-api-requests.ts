@@ -1,4 +1,4 @@
-import { AxiosInstance } from "axios";
+import { APIManager } from "@stakekit/api-hooks";
 import { config } from "../config";
 
 const delayMap = new Map<{}, {}>();
@@ -26,12 +26,11 @@ const checkDelay = () => {
   }).then(() => unsub());
 };
 
-export const attachDelayInterceptor = (apiClient: AxiosInstance) =>
-  apiClient.interceptors.request.use(async (config) => {
-    await checkDelay();
+APIManager.getInstance()!.interceptors.request.use(async (config) => {
+  await checkDelay();
 
-    return config;
-  });
+  return config;
+});
 
 /**
  *

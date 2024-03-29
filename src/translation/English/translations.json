@@ -16,8 +16,7 @@
     "not_enough_gas_token": "Not enough gas token",
     "retry": "Try Again",
     "unsupported_network": "Unsupported network",
-    "points": "Points",
-    "continue": "Continue"
+    "points": "Points"
   },
 
   "chain_modal": {
@@ -158,7 +157,7 @@
     "estimated_gas_fee": "Estimated gas fee",
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
-    "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
+    "terms_of_use": "By clicking confirm your agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
     "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>"
   },
   "steps": {
@@ -352,10 +351,6 @@
       "vote_locked": "Vote locked",
       "revote": "Revote",
       "rebond": "Rebond"
-    },
-    "unstake_sign": {
-      "title": "Verify Ownership",
-      "description": "You need to verify ownership of this address to proceed with this action. You will be prompted to sign a message that will be used to verify that you own this address."
     }
   },
   "unstake_review": {

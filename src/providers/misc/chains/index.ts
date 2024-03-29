@@ -5,6 +5,7 @@ export const near = {
   id: 397,
   name: "NEAR Protocol",
   iconUrl: getTokenLogo("near"),
+  network: "near",
   nativeCurrency: {
     decimals: 24,
     name: "Near",
@@ -20,6 +21,7 @@ export const tezos = {
   id: 1729,
   name: "Tezos",
   iconUrl: getTokenLogo("xtz"),
+  network: "NetXdQprcVkpaWU",
   nativeCurrency: {
     decimals: 6,
     name: "Tezos",
@@ -35,6 +37,7 @@ export const solana = {
   id: 501,
   name: "Solana",
   iconUrl: getTokenLogo("sol"),
+  network: "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZ",
   nativeCurrency: {
     decimals: 9,
     name: "Solana",
@@ -50,6 +53,7 @@ export const tron = {
   id: 79,
   name: "Tron",
   iconUrl: getTokenLogo("trx"),
+  network: "tron",
   nativeCurrency: {
     decimals: 6,
     name: "Tron",

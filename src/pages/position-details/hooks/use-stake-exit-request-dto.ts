@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { List, Maybe } from "purify-ts";
+import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import {
   ActionArgumentsDto,
@@ -8,17 +9,20 @@ import {
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../providers/sk-wallet";
 
-export const useStakeExitRequestDto = () => {
+export const useStakeExitRequestDto = ({
+  balance,
+}: {
+  balance: ReturnType<typeof useStakedOrLiquidBalance>;
+}) => {
   const { address, additionalAddresses } = useSKWallet();
-  const { unstakeAmount, integrationData, stakedOrLiquidBalances } =
-    useUnstakeOrPendingActionState();
+  const { unstakeAmount, integrationData } = useUnstakeOrPendingActionState();
 
   return useMemo(
     () =>
       Maybe.fromRecord({
         address: Maybe.fromNullable(address),
         integrationData,
-        stakedOrLiquidBalances,
+        balance,
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
@@ -30,7 +34,7 @@ export const useStakeExitRequestDto = () => {
         if (val.integrationData.args.exit?.args?.validatorAddresses?.required) {
           args.validatorAddresses = List.find(
             (b) => !!b.validatorAddresses,
-            val.stakedOrLiquidBalances
+            val.balance
           )
             .map((b) => b.validatorAddresses)
             .extract();
@@ -39,7 +43,7 @@ export const useStakeExitRequestDto = () => {
         if (val.integrationData.args.exit?.args?.validatorAddress?.required) {
           args.validatorAddress = List.find(
             (b) => !!b.validatorAddress,
-            val.stakedOrLiquidBalances
+            val.balance
           )
             .map((b) => b.validatorAddress)
             .extract();
@@ -57,12 +61,6 @@ export const useStakeExitRequestDto = () => {
           },
         };
       }),
-    [
-      additionalAddresses,
-      address,
-      stakedOrLiquidBalances,
-      integrationData,
-      unstakeAmount,
-    ]
+    [additionalAddresses, address, balance, integrationData, unstakeAmount]
   );
 };

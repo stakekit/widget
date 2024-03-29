@@ -1,9 +1,10 @@
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ComponentProps, PropsWithChildren, StrictMode } from "react";
+import { StakeKitQueryProvider } from "@stakekit/api-hooks";
 import { ThemeWrapper } from "./theme-wrapper";
 import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
-import { WagmiConfigProvider } from "./wagmi/provider";
+import { WagmiProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
 import { TrackingContextProvider } from "./tracking";
@@ -17,22 +18,21 @@ import {
   FooterHeightProvider,
 } from "../pages/components/footer-outlet/context";
 import { MountAnimationProvider } from "./mount-animation";
-import { SKQueryClientProvider } from "./query-client";
-import { SKApiClientProvider } from "./api/api-client-provider";
+import { SKQueryClientContextProvider } from "./query-client";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 
 export const Providers = ({
   children,
-}: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
+}: PropsWithChildren & ComponentProps<typeof WagmiProvider>) => {
   const { tracking, showQueryDevtools } = useSettings();
 
   return (
     <StrictMode>
-      <SKApiClientProvider>
-        <SKQueryClientProvider>
+      <StakeKitQueryProvider>
+        <SKQueryClientContextProvider>
           {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
-          <WagmiConfigProvider>
+          <WagmiProvider>
             <TrackingContextProvider tracking={tracking}>
               <SKWalletProvider>
                 <RainbowProvider>
@@ -62,9 +62,9 @@ export const Providers = ({
                 </RainbowProvider>
               </SKWalletProvider>
             </TrackingContextProvider>
-          </WagmiConfigProvider>
-        </SKQueryClientProvider>
-      </SKApiClientProvider>
+          </WagmiProvider>
+        </SKQueryClientContextProvider>
+      </StakeKitQueryProvider>
     </StrictMode>
   );
 };

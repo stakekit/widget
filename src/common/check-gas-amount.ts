@@ -1,7 +1,7 @@
 import {
   AddressWithTokenDto,
   TransactionDto,
-  useTokenGetTokenBalancesHook,
+  tokenGetTokenBalances,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
@@ -11,11 +11,9 @@ import { getTransactionsTotalGasAmount } from "../domain";
 export const checkGasAmount = ({
   addressWithTokenDto,
   txs,
-  tokenGetTokenBalances,
 }: {
   addressWithTokenDto: AddressWithTokenDto;
   txs: TransactionDto[];
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 }) =>
   withRequestErrorRetry({
     fn: () => tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),
@@ -38,7 +36,7 @@ export const checkGasAmount = ({
     )
     .chainLeft(async (e) => Right(e));
 
-class NotEnoughGasTokenError extends Error {
+export class NotEnoughGasTokenError extends Error {
   constructor() {
     super("Not enough gas token");
   }

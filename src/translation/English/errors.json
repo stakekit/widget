@@ -1,0 +1,192 @@
+{
+  "MissingArgumentsError": {
+    "title": "Missing Arguments",
+    "details": "The following required arguments are missing to perform this operation: {{arguments}}",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "MinimumAmountNotReached": {
+    "title": "Minimum Stake Amount Not Reached",
+    "details": "Stake amount is less than the minimum required amount: {{amount}}",
+    "solution": "Try again with an amount equal to or greater than the minimum"
+  },
+  "YieldUnderMaintenanceError": {
+    "title": "Yield Under Maintenance",
+    "details": "{{yieldId}} is currently undergoing maintenance",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "InsufficientFundsError": {
+    "title": "Insufficient Funds",
+    "details": "Your don't have enough balance to perform this operation",
+    "solution": "Transfer more funds to your account or contact Stakekit support"
+  },
+  "BalanceUnavailableError": {
+    "title": "Balance Unavailable",
+    "details": "Account balance is temporarily unavailable",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "GasPriceUnavailableError": {
+    "title": "Gas Price Unavailable",
+    "details": "Gas price information is not currently accessible",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "NotImplementedError": {
+    "title": "Feature Not Implemented",
+    "details": "This feature is not yet implemented",
+    "solution": "Contact Stakekit support"
+  },
+  "TokenNotFoundError": {
+    "title": "Token Not Found",
+    "details": "The specified token could not be located",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "BroadcastTransactionError": {
+    "title": "Transaction Broadcast Error",
+    "details": "An error occurred while broadcasting the transaction",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "MissingGasPriceStrategyError": {
+    "title": "Missing Gas Price Strategy",
+    "details": "A gas price strategy is required but not provided",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "SubstrateMalformedTransactionHashError": {
+    "title": "Invalid Transaction Hash",
+    "details": "The provided Substrate transaction hash is invalid",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TronMaximumAmountOfValidatorsExceededError": {
+    "title": "Too Many Validators",
+    "details": "You can only select a maximum 6 validators while using Ledger Live",
+    "solution": "Try again with less validators"
+  },
+  "SubstratePoolNotFoundError": {
+    "title": "Pool Not Found",
+    "details": "The specified Substrate pool was not found",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "SubstrateBondedAmountTooLowError": {
+    "title": "Bonded Amount Too Low",
+    "details": "The bonded amount is insufficient for this operation",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TronMissingResourceTypeArgumentError": {
+    "title": "Missing Resource Type",
+    "details": "A resource type argument is missing in the Tron request",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "AaveV3PoolFrozenError": {
+    "title": "Aave V3 Pool Frozen",
+    "details": "The Aave V3 pool is currently frozen and unavailable",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "AaveV3TokenPairNotFoundError": {
+    "title": "Aave V3 Token Pair Not Found",
+    "details": "The specified Aave V3 token pair was not found",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "YearnVaultAtMaxCapacityError": {
+    "title": "Yearn Vault at Max Capacity",
+    "details": "The Yearn vault is at maximum capacity and cannot accept more deposits",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "StETHNoWithdrawalRequestsFoundError": {
+    "title": "No StETH Withdrawal Requests Found",
+    "details": "No withdrawal requests were found while quering StETH contract",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "MorphoLendingPoolPausedError": {
+    "title": "Morpho Lending Pool Paused",
+    "details": "The Morpho lending pool is currently paused and unavailable",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "NonceUnavailableError": {
+    "title": "Nonce Unavailable",
+    "details": "Nonce information is not currently accessible",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "CosmosAcccountNotFoundError": {
+    "title": "Cosmos Account Not Found",
+    "details": "The specified Cosmos account could not be located",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "AvalancheMissingAdditionalAddressesArgumentError": {
+    "title": "Missing Avalanche Additional Addresses Argument",
+    "details": "Additional addresses argument is missing in the Avalanche request",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "AvalancheValidatorInfoNotFoundError": {
+    "title": "Validator Info Not Found",
+    "details": "The requested Avalanche validator information was not found",
+    "solution": " Try again later or contact Stakekit support"
+  },
+  "SolanaTransactionSignatureVerificationFailureError": {
+    "title": "Transaction Signature Verification Failure",
+    "details": "Transaction signature verification failed",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "SolanaUnableTocreateStakeAccountError": {
+    "title": "Unable to Create Stake Account",
+    "details": "Unable to create a Solana stake account",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "SolanaStakeAmountTooLowError": {
+    "title": "Stake Amount Too Low",
+    "details": "The stake amount is too low for this operation",
+    "solution": "Try again with a higher amount or contact Stakekit support"
+  },
+  "SolanaUnstakeAmountTooLowError": {
+    "title": "Unstake Amount Too Low",
+    "details": "The unstake amount in Solana is too low for this operation",
+    "solution": " Try again with a higher amount or contact Stakekit support"
+  },
+  "SolanaStakeAccountsNotFoundError": {
+    "title": "Stake Accounts Not Found",
+    "details": "Solana Stake accounts were not found",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "SolanaEligibleStakeAccountsNotFoundError": {
+    "title": "Eligible Stake Accounts Not Found",
+    "details": "Eligible Solana stake accounts were not found",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TezosNoBalanceDelegatedError": {
+    "title": "No Balance Delegated",
+    "details": "No delegated Tezos balance found",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TezosMissingPubkeyArgumentError": {
+    "title": "Missing Pubkey",
+    "details": "The Tezos pubkey is missing",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TezosEstimateRevealGasLimitError": {
+    "title": "Unable To Estimate Reveal Gas Limit",
+    "details": "An error occurred while estimating the Tezos reveal gas limit",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "TezosBalanceAlreadyDelegatedError": {
+    "title": "Tezos Balance Already Delegated",
+    "details": "The balance in Tezos is already delegated",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "BinanceAccountNotFoundError": {
+    "title": "Account Not Found",
+    "details": "The specified Binance account could not be located",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "BinanceMissingAccountNumberOrSequenceError": {
+    "title": "Missing Account Number or Sequence",
+    "details": "Binance account number or sequence could not be located",
+    "solution": "Try again later or contact Stakekit support"
+  },
+  "GRTStakingDisabledError": {
+    "title": "The Graph staking is moving to Arbitrum",
+    "details": "Staking for The Graph is set to transition to Arbitrum, and it's possible to stake there via StakeKit",
+    "solution": "Bridge your funds and try again on Arbitrum"
+  },
+  "GRTStakingDisabledLedgerLiveError": {
+    "title": "The Graph staking is moving to Arbitrum",
+    "details": "Staking for The Graph is set to transition to Arbitrum and will soon be accessible via StakeKit in Ledger Live",
+    "solution": "Once available you can bridge your funds and stake on Arbitrum"
+  }
+}

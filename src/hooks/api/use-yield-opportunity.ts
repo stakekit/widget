@@ -1,4 +1,4 @@
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import { YieldDto, yieldYieldOpportunity } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { EitherAsync, Maybe } from "purify-ts";
 import { QueryClient, useQuery } from "@tanstack/react-query";
@@ -22,21 +22,16 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
 
   const yieldId = integrationId ?? "";
 
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   return useQuery({
     queryKey: getKey({ yieldId, isLedgerLive }),
     enabled: !!integrationId,
     staleTime,
-    queryFn: () => queryFn({ yieldId, isLedgerLive, yieldYieldOpportunity }),
+    queryFn: () => queryFn({ yieldId, isLedgerLive }),
   });
 };
 
 export const getYieldOpportunity = (
-  params: Params & {
-    queryClient: QueryClient;
-    yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
-  }
+  params: Params & { queryClient: QueryClient }
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
@@ -49,19 +44,9 @@ export const getYieldOpportunity = (
     return new Error("Could not get yield opportunity");
   });
 
-const queryFn = async (
-  params: Params & {
-    yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
-  }
-) => (await fn(params)).unsafeCoerce();
+const queryFn = async (params: Params) => (await fn(params)).unsafeCoerce();
 
-const fn = ({
-  isLedgerLive,
-  yieldId,
-  yieldYieldOpportunity,
-}: Params & {
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
-}) =>
+const fn = ({ isLedgerLive, yieldId }: Params) =>
   withRequestErrorRetry({
     fn: () =>
       yieldYieldOpportunity(yieldId, {

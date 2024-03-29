@@ -1,10 +1,8 @@
-import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { configure } from "@testing-library/react";
 import ResizeObserver from "resize-observer-polyfill";
 import { MotionGlobalConfig } from "framer-motion";
-import { cleanup } from "@testing-library/react";
-import { server } from "../mocks/server";
 
 MotionGlobalConfig.skipAnimations = true;
 
@@ -83,11 +81,3 @@ if (typeof window !== "undefined") {
     writable: true,
   });
 }
-
-beforeAll(() => server.listen());
-afterEach(() => {
-  server.resetHandlers();
-  localStorage.clear();
-  cleanup();
-});
-afterAll(() => server.close());

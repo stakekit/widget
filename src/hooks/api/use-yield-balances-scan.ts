@@ -1,23 +1,23 @@
 import {
+  APIManager,
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
   getYieldYieldBalancesScanQueryKey,
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
 import { useLocalStorageValue } from "../use-local-storage-value";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useRefetchQueryNTimes } from "../use-refetch-query-n-times";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],
 >(opts?: {
   select?: (data: YieldBalancesWithIntegrationIdDto[]) => T;
 }) => {
-  const { network, address, additionalAddresses } = useSKWallet();
+  const { network, address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   const actionHistoryData = useActionHistoryData();
 
@@ -62,21 +62,25 @@ export const useYieldBalancesScan = <
     [additionalAddresses, address, customValidators, network]
   );
 
-  const res = useYieldYieldBalancesScan(param.dto, {
-    query: {
-      enabled: param.enabled,
-      select: opts?.select,
-      refetchInterval: 1000 * 60,
-    },
-  });
+  const res = useYieldYieldBalancesScan(
+    param.dto,
+    { ledgerWalletAPICompatible: isLedgerLive },
+    {
+      query: {
+        enabled: param.enabled,
+        select: opts?.select,
+        refetchInterval: 1000 * 60,
+      },
+    }
+  );
 
   /**
    * This is a hack to make sure that the yield balances are updated after a transaction
    */
-  useInvalidateQueryNTimes({
+  useRefetchQueryNTimes({
     enabled: !!lastActionTimestamp,
     key: ["yield-balances-refetch", lastActionTimestamp],
-    queryKey: [getYieldYieldBalancesScanQueryKey(param.dto)[0]],
+    refetch: () => res.refetch(),
     waitMs: 4000,
     shouldRefetch: () =>
       !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
@@ -85,18 +89,9 @@ export const useYieldBalancesScan = <
   return res;
 };
 
-export const useInvalidateYieldBalances = () => {
-  const queryClient = useSKQueryClient();
-
-  return useCallback(
-    () =>
-      queryClient.invalidateQueries({
-        queryKey: [
-          getYieldYieldBalancesScanQueryKey(
-            {} as YieldBalanceScanRequestDto
-          )[0],
-        ],
-      }),
-    [queryClient]
-  );
-};
+export const invalidateYieldBalances = () =>
+  APIManager.getQueryClient()!.invalidateQueries({
+    queryKey: [
+      getYieldYieldBalancesScanQueryKey({} as YieldBalanceScanRequestDto)[0],
+    ],
+  });

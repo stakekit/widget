@@ -3,9 +3,6 @@ import {
   AddressWithTokenDto,
   GasModeValueDto,
   TokenDto,
-  useActionGetGasEstimateHook,
-  useTokenGetTokenBalancesHook,
-  useTransactionConstructHook,
 } from "@stakekit/api-hooks";
 import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
 import { constructTxs } from "./construct-txs";
@@ -19,9 +16,6 @@ export const actionWithGasEstimateAndCheck = ({
   gasModeValue,
   isLedgerLive,
   gasFeeToken,
-  transactionConstruct,
-  tokenGetTokenBalances,
-  gasEstimate,
 }: {
   gasFeeToken: TokenDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -29,19 +23,10 @@ export const actionWithGasEstimateAndCheck = ({
   disableGasCheck: boolean;
   addressWithTokenDto: AddressWithTokenDto;
   actionDto: ActionDto;
-  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
-  addGasEstimateToTxs({ actionDto, gasEstimate })
+  addGasEstimateToTxs(actionDto)
     .chainLeft(() =>
-      constructTxs({
-        actionDto,
-        gasModeValue,
-        isLedgerLive,
-        gasFeeToken,
-        transactionConstruct,
-      })
+      constructTxs({ actionDto, gasModeValue, isLedgerLive, gasFeeToken })
     )
     .chain((actionDto) =>
       EitherAsync.liftEither(
@@ -53,7 +38,6 @@ export const actionWithGasEstimateAndCheck = ({
           checkGasAmount({
             addressWithTokenDto: addressWithTokenDto,
             txs: actionDto.transactions,
-            tokenGetTokenBalances,
           })
         )
         .map((gasCheckErr) => ({ actionDto, gasCheckErr }))

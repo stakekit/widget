@@ -7,39 +7,34 @@ import {
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
+import { GetNetworkResult } from "@wagmi/core";
 import { SupportedSKChains } from "./chains";
 import { Account } from "@ledgerhq/wallet-api-client";
 import { Connector } from "wagmi";
-import { Chain } from "viem";
-import { Nullable } from "../../types";
-
-type SignedTxOrMessage = string;
 
 export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
-    ledgerHwAppId: Nullable<string>;
+    ledgerHwAppId: string | undefined;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { signedTx: SignedTxOrMessage; broadcasted: boolean }
+    { signedTx: string; broadcasted: boolean }
   >;
   signMultipleTransactions: (args: {
     txs: NonNullable<TransactionDto["unsignedTransaction"]>[];
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
-    { signedTx: SignedTxOrMessage; broadcasted: boolean }
+    { signedTx: string; broadcasted: boolean }
   >;
-  signMessage: (message: string) => EitherAsync<Error, SignedTxOrMessage>;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
-  connectorChains: Chain[];
 } & (
   | {
       network: SupportedSKChains;
       address: string;
-      chain: Chain;
+      chain: GetNetworkResult["chain"];
       isConnected: true;
       isConnecting: false;
       ledgerAccounts: Account[];

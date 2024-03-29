@@ -1,4 +1,4 @@
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import { YieldDto } from "@stakekit/api-hooks";
 import { UseQueryOptions, useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import { SKWallet } from "../../domain/types";
@@ -25,8 +25,6 @@ export const useMultiYields = (
 
   const queryClient = useSKQueryClient();
 
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   return useQuery<YieldDto[], Error>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
@@ -37,12 +35,7 @@ export const useMultiYields = (
         await eitherAsyncPool(
           yieldIds.map(
             (y) => () =>
-              getYieldOpportunity({
-                isLedgerLive,
-                yieldId: y,
-                queryClient,
-                yieldYieldOpportunity,
-              })
+              getYieldOpportunity({ isLedgerLive, yieldId: y, queryClient })
           ),
           5
         )()

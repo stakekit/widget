@@ -23,11 +23,11 @@ pnpm add @stakekit/widget
 If you are going to use StakeKit Widget as a React component, you'll need to install some additional peer dependencies:
 
 ```bash
-npm install wagmi@2 viem@2
+npm install wagmi@1 viem@1
 
-yarn add wagmi@2 viem@2
+yarn add wagmi@1 viem@1
 
-pnpm add wagmi@2 viem@2
+pnpm add wagmi@1 viem@1
 ```
 
 If you're using Next.js, add this to your webpack configuration in `next.config.js`:

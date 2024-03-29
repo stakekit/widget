@@ -1,10 +1,9 @@
 import { EitherAsync, Left } from "purify-ts";
 import { getSKIcon } from "../../utils";
 import { withRequestErrorRetry } from "../../common/utils";
-import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
+import { transactionGetTransactionStatusByNetworkAndHash } from "@stakekit/api-hooks";
 import { SupportedSKChains } from "./chains";
 import { SKExternalProviders, SafeWalletAppInfo } from "./wallets/safe-wallet";
-import { MutableRefObject } from "react";
 
 export class ExternalProvider {
   #safeWalletAppInfo: SafeWalletAppInfo = {
@@ -15,15 +14,14 @@ export class ExternalProvider {
     url: "https://stakek.it",
   };
 
-  shouldMultiSend: boolean;
+  variant: SKExternalProviders;
 
-  constructor(
-    private variant: MutableRefObject<SKExternalProviders>,
-    private transactionGetTransactionStatusByNetworkAndHash: ReturnType<
-      typeof useTransactionGetTransactionStatusByNetworkAndHashHook
-    >
-  ) {
-    this.shouldMultiSend = this.variant.current.type === "safe_wallet";
+  get shouldMultiSend() {
+    return this.variant.type === "safe_wallet";
+  }
+
+  constructor(variant: SKExternalProviders) {
+    this.variant = variant;
   }
 
   private invalidProviderType() {
@@ -31,9 +29,9 @@ export class ExternalProvider {
   }
 
   getAccount(): EitherAsync<Error, string> {
-    switch (this.variant.current.type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.variant.current.provider.getAccounts())
+        return EitherAsync(() => this.variant.provider.getAccounts())
           .map((accounts) => accounts[0])
           .mapLeft((e) => {
             console.error(e);
@@ -46,9 +44,9 @@ export class ExternalProvider {
   }
 
   getChainId(): EitherAsync<Error, number> {
-    switch (this.variant.current.type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
-        return EitherAsync(() => this.variant.current.provider.getChainId())
+        return EitherAsync(() => this.variant.provider.getChainId())
           .mapLeft((e) => {
             console.error(e);
             return new Error("Failed to get chain id");
@@ -72,10 +70,10 @@ export class ExternalProvider {
       data: string;
     }[];
   }): EitherAsync<Error, string> {
-    switch (this.variant.current.type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.variant.current.provider.sendTransactions({
+          this.variant.provider.sendTransactions({
             txs,
             appInfo: this.#safeWalletAppInfo,
           })
@@ -84,8 +82,8 @@ export class ExternalProvider {
             withRequestErrorRetry({
               fn: async () => {
                 const [safeRes, skRes] = await Promise.all([
-                  this.variant.current.provider.getTransactionReceipt(hash),
-                  this.transactionGetTransactionStatusByNetworkAndHash(
+                  this.variant.provider.getTransactionReceipt(hash),
+                  transactionGetTransactionStatusByNetworkAndHash(
                     network,
                     hash
                   ),
@@ -118,10 +116,10 @@ export class ExternalProvider {
   }
 
   switchChain({ chainId }: { chainId: string }): EitherAsync<Error, void> {
-    switch (this.variant.current.type) {
+    switch (this.variant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          this.variant.current.provider.switchEthereumChain(
+          this.variant.provider.switchEthereumChain(
             { chainId },
             this.#safeWalletAppInfo
           )
@@ -132,26 +130,6 @@ export class ExternalProvider {
           })
           .void();
       }
-      default:
-        return this.invalidProviderType();
-    }
-  }
-
-  signMessage(address: string, messageHash: string) {
-    switch (this.variant.current.type) {
-      case "safe_wallet": {
-        return EitherAsync(() =>
-          this.variant.current.provider.eth_sign(
-            address,
-            messageHash,
-            this.#safeWalletAppInfo
-          )
-        ).mapLeft((e) => {
-          console.error(e);
-          return new Error("Failed to sign message");
-        });
-      }
-
       default:
         return this.invalidProviderType();
     }

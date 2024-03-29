@@ -1,6 +1,6 @@
-import { Codec, Left, Right, number, optional } from "purify-ts";
+import { Codec, Left, Right, number, optional, string } from "purify-ts";
+import { Hex } from "viem";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
-import { Address, Hex } from "viem";
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {
@@ -23,19 +23,11 @@ const hexStringCodec = Codec.custom<Hex>({
   encode: (input) => input,
 });
 
-const addressCodec = Codec.custom<Address>({
-  decode: (input) =>
-    typeof input === "string" && input.startsWith("0x")
-      ? Right(input as Address)
-      : Left("Invalid address"),
-  encode: (input) => input,
-});
-
 export const unsignedEVMTransactionCodec = Codec.interface({
   data: hexStringCodec,
-  to: addressCodec,
+  to: string,
   gasLimit: bigintCodec,
-  from: addressCodec,
+  from: string,
   value: optional(bigintCodec),
   nonce: number,
   type: number,

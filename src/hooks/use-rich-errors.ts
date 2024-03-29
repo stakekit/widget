@@ -1,44 +1,36 @@
-import { AxiosInstance } from "axios";
-import { i18n } from "i18next";
-import { useCallback, useSyncExternalStore } from "react";
-import { Observable } from "../utils/observable";
+import { APIManager } from "@stakekit/api-hooks";
+import { useEffect, useState } from "react";
+import { ErrorsSet, errorsSet } from "../utils/errors";
 
 interface RichError {
-  message: string;
+  message: ErrorsSet;
   details?: { [key: string]: any };
 }
 
-const $richError = new Observable<RichError | null>(null);
-
-export const attachRichErrorsInterceptor = (
-  apiClient: AxiosInstance,
-  i18n: i18n
-) =>
-  apiClient.interceptors.response.use(undefined, (error) => {
-    if (
-      i18n.exists(`errors.${error.response.data.message}`) &&
-      !error?.config?.url.includes("gas-estimate") // temp ignore gas estimate errors
-    ) {
-      $richError.next(error.response.data);
-    }
-
-    return Promise.reject(error);
-  });
-
 export const useRichErrors = () => {
-  const error = useSyncExternalStore(
-    useCallback((onChange) => {
-      const unsub = $richError.subscribe(onChange);
+  const [error, setError] = useState<RichError>();
 
-      return () => {
-        unsub();
-      };
-    }, []),
-    useCallback(() => $richError.value, []),
-    useCallback(() => $richError.value, [])
-  );
+  useEffect(() => {
+    const id = APIManager.getInstance()!.interceptors.response.use(
+      undefined,
+      (error) => {
+        if (
+          errorsSet.has(error.response.data.message) &&
+          !error?.config?.url.includes("gas-estimate")
+        ) {
+          setError(error.response.data);
+        }
 
-  const resetError = () => $richError.next(null);
+        return Promise.reject(error);
+      }
+    );
+
+    return () => APIManager.getInstance()!.interceptors.response.eject(id);
+  }, []);
+
+  const resetError = () => {
+    setError(undefined);
+  };
 
   return { error, resetError };
 };

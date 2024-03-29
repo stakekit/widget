@@ -13,12 +13,11 @@ import {
 import {
   ActionDto,
   TransactionDto,
-  useTransactionConstructHook,
-  useTransactionGetGasForNetworkHook,
-  useTransactionGetTransactionHook,
-  useTransactionGetTransactionStatusFromIdHook,
-  useTransactionSubmitHashHook,
-  useTransactionSubmitHook,
+  transactionConstruct,
+  transactionGetTransaction,
+  transactionGetTransactionStatusFromId,
+  transactionSubmit,
+  transactionSubmitHash,
 } from "@stakekit/api-hooks";
 import { getTransactionsForMultiSign, isTxError } from "../../../domain";
 import { withRequestErrorRetry } from "../../../common/utils";
@@ -26,7 +25,7 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { isAxiosError } from "axios";
 import { useMemo } from "react";
-import { isExternalProviderConnector } from "../../../providers/external-provider";
+import { isExternalProviderConnector } from "../../../providers/sk-wallet/utils";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 
 const tt = t as <T extends unknown>() => {
@@ -58,19 +57,11 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
   const trackEvent = useTrackEvent();
 
-  const transactionSubmit = useTransactionSubmitHook();
-  const transactionGetTransactionStatusFromId =
-    useTransactionGetTransactionStatusFromIdHook();
-  const transactionGetTransaction = useTransactionGetTransactionHook();
-  const transactionSubmitHash = useTransactionSubmitHashHook();
-  const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
-  const transactionConstruct = useTransactionConstructHook();
-
   const shouldMultiSend = useMemo(
     () =>
       connector &&
       isExternalProviderConnector(connector) &&
-      connector.shouldMultiSend,
+      connector.provider.shouldMultiSend,
     [connector]
   );
 
@@ -171,14 +162,12 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 )
                   .chain((txs) => {
                     const p2pNodeTx = txs.find(
+                      // @ts-expect-error
                       (tx) => tx.type === "P2P_NODE_REQUEST"
                     );
 
                     if (p2pNodeTx) {
-                      return getAverageGasMode({
-                        network: tx.network,
-                        transactionGetGasForNetwork,
-                      })
+                      return getAverageGasMode(p2pNodeTx.network)
                         .chainLeft(async () => Right(null))
                         .chain((gas) =>
                           withRequestErrorRetry({
@@ -211,10 +200,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     );
                   })
                   .chain((txs) =>
-                    getAverageGasMode({
-                      network: tx.network,
-                      transactionGetGasForNetwork,
-                    }).chain((gas) =>
+                    getAverageGasMode(tx.network).chain((gas) =>
                       EitherAsync.sequence(
                         txs.map((tx) =>
                           withRequestErrorRetry({
@@ -248,11 +234,9 @@ export const useStepsMachine = (session: ActionDto | null) => {
                  * Single sign transactions
                  */
 
+                // @ts-expect-error
                 if (tx.type === "P2P_NODE_REQUEST") {
-                  return getAverageGasMode({
-                    network: tx.network,
-                    transactionGetGasForNetwork,
-                  })
+                  return getAverageGasMode(tx.network)
                     .chainLeft(async () => Right(null))
                     .chain((gas) =>
                       withRequestErrorRetry({
@@ -270,10 +254,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   Right(context.txStates[context.currentTxMeta?.idx!].tx)
                 )
                   .chain((tx) =>
-                    getAverageGasMode({
-                      network: tx.network,
-                      transactionGetGasForNetwork,
-                    })
+                    getAverageGasMode(tx.network)
                       .chainLeft(async () => Right(null))
                       .chain((gas) =>
                         withRequestErrorRetry({
@@ -294,6 +275,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
                     return signTransaction({
                       tx: constructedTx.unsignedTransaction,
+                      // @ts-expect-error
                       ledgerHwAppId: constructedTx.ledgerHwAppId,
                     })
                       .map((val) => ({

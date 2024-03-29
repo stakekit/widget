@@ -1,5 +1,6 @@
 import { Text } from "../../atoms/typography";
 import { Box } from "../../atoms/box";
+import { Address } from "wagmi";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CaretDownIcon, CaretLeftIcon, XIcon } from "../../atoms/icons";
 import { useTranslation } from "react-i18next";
@@ -20,9 +21,10 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 import { motion } from "framer-motion";
-import { isExternalProviderConnector } from "../../../providers/external-provider";
-import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-connector";
-import { Address } from "viem";
+import {
+  isExternalProviderConnector,
+  isLedgerLiveConnector,
+} from "../../../providers/sk-wallet/utils";
 
 export const Header = () => {
   const location = useLocation();

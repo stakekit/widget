@@ -1,22 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { expect, it } from "vitest";
 import { fireEvent, renderApp, waitFor } from "../../utils/test-utils";
 import { setup } from "./setup";
 import { setStorageItem } from "../../../src/services/local-storage";
-import { formatAddress } from "../../../src/utils";
 
-describe("Referral flow", () => {
+export const referralFlow = () => {
   it("On valid referral, shows app and url with referral code", async () => {
-    const {
-      validReferral,
-      referralCodeRes,
-      setUrl,
-      customConnectors,
-      account,
-    } = setup();
+    const { validReferral, referralCodeRes, setUrl, customConnectors } =
+      setup();
 
     const { origin } = setUrl(validReferral);
 
-    const { queryByText, queryByTestId } = renderApp({
+    const { queryByText, unmount, queryByTestId } = renderApp({
       referralCheck: true,
       wagmi: {
         __customConnectors__: customConnectors,
@@ -29,30 +23,25 @@ describe("Referral flow", () => {
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
 
-    await waitFor(() =>
-      expect(queryByText(formatAddress(account))).toBeInTheDocument()
-    );
+    await waitFor(() => expect(queryByText("0xB6…B2F7")).toBeInTheDocument());
 
     await waitFor(() =>
       expect(
         queryByText(`${origin}/?ref=${referralCodeRes.code}`)
       ).toBeInTheDocument()
     );
+
+    unmount();
   });
 
   it("On app load without referral query param, gets previous from local storage", async () => {
-    const {
-      validReferral,
-      referralCodeRes,
-      setUrl,
-      customConnectors,
-      account,
-    } = setup();
+    const { validReferral, referralCodeRes, setUrl, customConnectors } =
+      setup();
 
     setStorageItem("sk-widget@1//referralCode", validReferral);
     const { origin } = setUrl();
 
-    const { queryByText, queryByTestId } = renderApp({
+    const { queryByText, unmount, queryByTestId } = renderApp({
       referralCheck: true,
       wagmi: {
         __customConnectors__: customConnectors,
@@ -65,15 +54,15 @@ describe("Referral flow", () => {
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
 
-    await waitFor(() =>
-      expect(queryByText(formatAddress(account))).toBeInTheDocument()
-    );
+    await waitFor(() => expect(queryByText("0xB6…B2F7")).toBeInTheDocument());
 
     await waitFor(() =>
       expect(
         queryByText(`${origin}/?ref=${referralCodeRes.code}`)
       ).toBeInTheDocument()
     );
+
+    unmount();
   });
 
   it("On non-valid referral, shows manual referral flow", async () => {
@@ -81,9 +70,8 @@ describe("Referral flow", () => {
 
     setUrl();
 
-    const { queryByText, queryAllByRole, queryByTestId, getByRole } = renderApp(
-      { referralCheck: true }
-    );
+    const { queryByText, unmount, queryAllByRole, queryByTestId, getByRole } =
+      renderApp({ referralCheck: true });
 
     await waitFor(() =>
       expect(queryByText("Referral check")).toBeInTheDocument()
@@ -121,5 +109,7 @@ describe("Referral flow", () => {
 
     await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
     expect(queryByText("Positions")).toBeInTheDocument();
+
+    unmount();
   });
-});
+};

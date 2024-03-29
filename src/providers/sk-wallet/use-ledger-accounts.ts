@@ -1,7 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { Connector } from "wagmi";
+import { isLedgerLiveConnector } from "./utils";
 import { Account } from "@ledgerhq/wallet-api-client";
-import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 
 export const useLedgerAccounts = (connector?: Connector) => {
   const subscribe = useCallback(
@@ -10,7 +10,9 @@ export const useLedgerAccounts = (connector?: Connector) => {
         return () => {};
       }
 
-      return connector.$accountsOnCurrentChain.subscribe(onChange);
+      connector.addListener("change", onChange);
+
+      return () => connector.removeListener("change", onChange);
     },
     [connector]
   );
@@ -20,7 +22,7 @@ export const useLedgerAccounts = (connector?: Connector) => {
       return defaultValue;
     }
 
-    return connector.$accountsOnCurrentChain.value;
+    return connector.getAccountsOnCurrentChain();
   }, [connector]);
 
   const getServerSnapshot = useCallback(() => {

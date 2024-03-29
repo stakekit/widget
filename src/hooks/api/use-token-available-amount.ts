@@ -1,16 +1,16 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import {
+  APIManager,
   BalancesRequestDto,
   TokenDto,
   getTokenGetTokenBalancesQueryKey,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
+import { useRefetchQueryNTimes } from "../use-refetch-query-n-times";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { useCallback, useMemo } from "react";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useMemo } from "react";
 
 export const useTokenAvailableAmount = ({
   tokenDto,
@@ -74,10 +74,10 @@ export const useTokenAvailableAmount = ({
     [actionHistoryData]
   );
 
-  useInvalidateQueryNTimes({
+  useRefetchQueryNTimes({
     enabled: !!lastActionTimestamp,
     key: ["token-available-amount", lastActionTimestamp],
-    queryKey: [getTokenGetTokenBalancesQueryKey(balancesRequestDto.dto)[0]],
+    refetch: () => res.refetch(),
     waitMs: 4000,
     shouldRefetch: () =>
       !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
@@ -86,14 +86,7 @@ export const useTokenAvailableAmount = ({
   return res;
 };
 
-export const useInvalidateTokenAvailableAmount = () => {
-  const queryClient = useSKQueryClient();
-
-  return useCallback(
-    () =>
-      queryClient.invalidateQueries({
-        queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
-      }),
-    [queryClient]
-  );
-};
+export const invalidateTokenAvailableAmount = () =>
+  APIManager.getQueryClient()!.invalidateQueries({
+    queryKey: [getTokenGetTokenBalancesQueryKey({} as any)[0]],
+  });

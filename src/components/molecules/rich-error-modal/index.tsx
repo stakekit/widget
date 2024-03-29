@@ -38,13 +38,13 @@ export const RichErrorModal = () => {
           <>
             <Box textAlign="center">
               <Heading variant={{ level: "h4" }}>
-                {t(`errors.${message}.title`)}
+                {t(`${message}.title`)}
               </Heading>
               <Text
                 variant={{ type: "muted", weight: "normal" }}
                 textAlign="center"
               >
-                {t(`errors.${message}.details`, details)}
+                {t(`${message}.details`, details)}
               </Text>
             </Box>
 
@@ -61,7 +61,7 @@ export const RichErrorModal = () => {
                 marginTop="2"
               >
                 <Text variant={{ size: "medium" }} textAlign="center">
-                  {t(`errors.${message}.solution`)}
+                  {t(`${message}.solution`)}
                 </Text>
               </Box>
             </Box>

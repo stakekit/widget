@@ -1,9 +1,8 @@
 import { CosmosNetworks } from "@stakekit/common";
+import { mainnet } from "wagmi";
 import { SupportedCosmosChains } from "../../../domain/types/chains";
 import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import { cosmosRegistryChains } from "./chain-registry";
-import { Chain } from "@stakekit/rainbowkit";
-import { mainnet } from "viem/chains";
 
 // CosmosNetworks -> chain_id from registry
 export const sKCosmosNetworksToRegistryIds: {
@@ -68,9 +67,7 @@ export const filteredCosmosChains = Object.fromEntries(
 
 export type CosmosChainsAssets = (typeof cosmosRegistryChains)[number];
 
-export const getWagmiChain = (
-  chain: CosmosChainsAssets
-): Chain & { cosmosChainName: string } => ({
+export const getWagmiChain = (chain: CosmosChainsAssets) => ({
   id: chain.chain_id as unknown as number,
   iconUrl:
     chain.chain_id === "osmosis-1"
@@ -79,8 +76,8 @@ export const getWagmiChain = (
         ? getTokenLogo("mars")
         : chain.logo_URIs?.png ?? chain.logo_URIs?.svg ?? "",
 
-  name: chain.wagmiName,
-  cosmosChainName: chain.chain_name,
+  name: chain.chain_name,
+  network: chain.chain_id,
   // TODO: change this
   nativeCurrency: mainnet.nativeCurrency,
   rpcUrls: {

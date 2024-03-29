@@ -1,11 +1,8 @@
 import {
   GasModeValueDto,
   ActionRequestDto,
-  useActionEnterHook,
+  actionEnter,
   TokenDto,
-  useTransactionConstructHook,
-  useTokenGetTokenBalancesHook,
-  useActionGetGasEstimateHook,
 } from "@stakekit/api-hooks";
 import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
 import { withRequestErrorRetry } from "../../common/utils";
@@ -22,27 +19,15 @@ export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
 const mutationKey = ["stake-enter"];
 
 const StakeEnterAndTxsConstructContext = createContext<
-  | UseMutationResult<
-      DataType,
-      ErrorType,
-      Omit<Parameters<typeof fn>[0], "gasEstimate">
-    >
-  | undefined
+  UseMutationResult<DataType, ErrorType, Parameters<typeof fn>[0]> | undefined
 >(undefined);
 
 export const StakeEnterAndTxsConstructProvider = ({
   children,
 }: PropsWithChildren) => {
-  const gasEstimate = useActionGetGasEstimateHook();
-
-  const value = useMutation<
-    DataType,
-    ErrorType,
-    Omit<Parameters<typeof fn>[0], "gasEstimate">
-  >({
+  const value = useMutation<DataType, ErrorType, Parameters<typeof fn>[0]>({
     mutationKey,
-    mutationFn: async (args) =>
-      (await fn({ ...args, gasEstimate })).unsafeCoerce(),
+    mutationFn: async (args) => (await fn(args)).unsafeCoerce(),
   });
 
   return (
@@ -70,20 +55,12 @@ const fn = ({
   isLedgerLive,
   disableGasCheck,
   gasFeeToken,
-  actionEnter,
-  transactionConstruct,
-  tokenGetTokenBalances,
-  gasEstimate,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
   isLedgerLive: boolean;
   disableGasCheck: boolean;
   gasFeeToken: TokenDto;
-  actionEnter: ReturnType<typeof useActionEnterHook>;
-  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft<StakingNotAllowedError | Error>((e) => {
@@ -101,7 +78,6 @@ const fn = ({
     )
     .chain((actionDto) =>
       actionWithGasEstimateAndCheck({
-        gasEstimate,
         gasFeeToken,
         actionDto,
         disableGasCheck,
@@ -113,12 +89,10 @@ const fn = ({
           network: gasFeeToken.network,
           tokenAddress: gasFeeToken.address,
         },
-        transactionConstruct,
-        tokenGetTokenBalances,
       })
     );
 
-class StakingNotAllowedError extends Error {
+export class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {
     const dto = e as undefined | { type: string; code: number };
 

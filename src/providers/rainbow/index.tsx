@@ -1,12 +1,15 @@
+import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
 import { Address } from "viem";
+import { useWagmiConfig } from "../wagmi";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
 import { PropsWithChildren } from "react";
 import { List, Maybe } from "purify-ts";
 import { formatAddress } from "../../utils";
 import { useSKWallet } from "../sk-wallet";
-import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
 
 export const RainbowProvider = ({ children }: PropsWithChildren) => {
+  const wagmiConfig = useWagmiConfig();
+
   const { ledgerAccounts, address, onLedgerAccountChange } = useSKWallet();
 
   const otherAddresses = Maybe.fromNullable(ledgerAccounts)
@@ -31,7 +34,9 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
         },
       }}
     >
-      <RainbowKitProviderWithTheme>{children}</RainbowKitProviderWithTheme>
+      <RainbowKitProviderWithTheme chains={wagmiConfig.data?.chains ?? []}>
+        {children}
+      </RainbowKitProviderWithTheme>
     </AccountExtraInfoContext.Provider>
   );
 };

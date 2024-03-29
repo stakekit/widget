@@ -3,7 +3,7 @@ import { config } from "../config";
 import { shouldRetryRequest } from "../common/utils";
 import { isAxiosError } from "axios";
 
-const defaultQueryClientConfiguration: DefaultOptions = {
+export const defaultQueryClientConfiguration: DefaultOptions = {
   queries: {
     gcTime: config.queryClient.cacheTime,
     staleTime: config.queryClient.staleTime,

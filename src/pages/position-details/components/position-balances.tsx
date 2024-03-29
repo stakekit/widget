@@ -46,6 +46,7 @@ export const PositionBalances = ({
 
       <Box textAlign="end">
         <Box display="flex" gap="1" alignItems="center">
+          {/* @ts-expect-error */}
           {yieldBalance.token.isPoints && (
             <Box as="span" display="inline-flex">
               <TokenIcon
@@ -58,6 +59,7 @@ export const PositionBalances = ({
           <Text variant={{ type: "muted", weight: "normal" }}>
             {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
             {yieldBalance.token.symbol}
+            {/* @ts-expect-error */}
             {!yieldBalance.token.isPoints &&
               ` ($${formatNumber(yieldBalance.tokenPriceInUsd, 2)})`}
           </Text>

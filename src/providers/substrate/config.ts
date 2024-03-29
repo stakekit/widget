@@ -10,19 +10,12 @@ import { config } from "../../config";
 import { EitherAsync } from "purify-ts";
 import { polkadot } from "./chains";
 import { QueryClient } from "@tanstack/react-query";
-import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Infinity;
 
-const queryFn = async ({
-  queryClient,
-  yieldGetMyNetworks,
-}: {
-  queryClient: QueryClient;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-}) =>
-  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
+const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
+  getEnabledNetworks(queryClient).caseOf({
     Right: (networks) => {
       const substrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(
@@ -44,12 +37,12 @@ const queryFn = async ({
     Left: (l) => Promise.reject(l),
   });
 
-export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
+export const getConfig = ({ queryClient }: { queryClient: QueryClient }) =>
   EitherAsync(() =>
-    opts.queryClient.fetchQuery({
+    queryClient.fetchQuery({
       staleTime,
       queryKey,
-      queryFn: () => queryFn(opts),
+      queryFn: () => queryFn({ queryClient }),
     })
   ).mapLeft((e) => {
     console.log(e);

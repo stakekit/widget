@@ -1,5 +1,5 @@
-import { createConfig, http } from "wagmi";
-import { Chain, mainnet } from "wagmi/chains";
+import { Chain, configureChains, createConfig, mainnet } from "wagmi";
+import { publicProvider } from "wagmi/providers/public";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -7,42 +7,30 @@ import { getConfig as getSubstrateConfig } from "../substrate/config";
 import { WalletList, connectorsForWallets } from "@stakekit/rainbowkit";
 import { ledgerLiveConnector } from "../ledger/ledger-connector";
 import { config } from "../../config";
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import { QueryClient, UseQueryResult, useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useSettings } from "../settings";
 import { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { externalProviderConnector } from "../external-provider";
+import { createExternalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
 import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
-import { createClient } from "viem";
-import {
-  useTransactionGetTransactionStatusByNetworkAndHashHook,
-  useYieldGetMyNetworksHook,
-  useYieldYieldOpportunityHook,
-} from "@stakekit/api-hooks";
-import { useSavedRef } from "../../hooks";
-import { MutableRefObject } from "react";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
 const buildWagmiConfig = async (opts: {
-  externalProviders?: MutableRefObject<SKExternalProviders>;
+  externalProviders?: SKExternalProviders;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
   isLedgerLive: boolean;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
-    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
-  >;
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
   substrateConfig: GetEitherAsyncRight<ReturnType<typeof getSubstrateConfig>>;
+  chains: Chain[];
   wagmiConfig: ReturnType<typeof createConfig>;
 }> => {
   return EitherAsync.fromPromise(() =>
@@ -50,25 +38,16 @@ const buildWagmiConfig = async (opts: {
       getEvmConfig({
         forceWalletConnectOnly: opts.forceWalletConnectOnly,
         queryClient: opts.queryClient,
-        yieldGetMyNetworks: opts.yieldGetMyNetworks,
       }),
       getCosmosConfig({
         forceWalletConnectOnly: opts.forceWalletConnectOnly,
         queryClient: opts.queryClient,
-        yieldGetMyNetworks: opts.yieldGetMyNetworks,
       }),
-      getMiscConfig({
-        queryClient: opts.queryClient,
-        yieldGetMyNetworks: opts.yieldGetMyNetworks,
-      }),
-      getSubstrateConfig({
-        queryClient: opts.queryClient,
-        yieldGetMyNetworks: opts.yieldGetMyNetworks,
-      }),
+      getMiscConfig({ queryClient: opts.queryClient }),
+      getSubstrateConfig({ queryClient: opts.queryClient }),
       getInitialQueryParams({
         isLedgerLive: opts.isLedgerLive,
         queryClient: opts.queryClient,
-        yieldYieldOpportunity: opts.yieldYieldOpportunity,
       }),
     ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
       evm.chain((e) =>
@@ -95,64 +74,57 @@ const buildWagmiConfig = async (opts: {
       substrateConfig,
       queryParams,
     }) => {
-      const chains = [
-        ...evmConfig.evmChains,
-        ...cosmosConfig.cosmosWagmiChains,
-        ...miscConfig.miscChains,
-        ...substrateConfig.substrateChains,
-      ] as [Chain, ...Chain[]];
-
-      const multiInjectedProviderDiscovery =
-        !opts.externalProviders && !isLedgerDappBrowserProvider();
+      const { chains, publicClient, webSocketPublicClient } = configureChains(
+        [
+          ...evmConfig.evmChains,
+          ...cosmosConfig.cosmosWagmiChains,
+          ...miscConfig.miscChains,
+          ...substrateConfig.substrateChains,
+        ],
+        [publicProvider()]
+      );
 
       const wagmiConfig = createConfig({
-        chains,
-        client: ({ chain }) => createClient({ chain, transport: http() }),
-        multiInjectedProviderDiscovery,
-        connectors: connectorsForWallets(
-          [
-            ...(opts.customConnectors
-              ? typeof opts.customConnectors === "function"
-                ? opts.customConnectors(chains)
-                : opts.customConnectors ?? []
-              : opts.externalProviders
-                ? [
-                    externalProviderConnector(
-                      opts.externalProviders,
-                      opts.transactionGetTransactionStatusByNetworkAndHash
-                    ),
-                  ]
-                : isLedgerDappBrowserProvider()
-                  ? [
-                      ledgerLiveConnector({
-                        queryParams,
-                        enabledChainsMap: {
-                          evm: evmConfig.evmChainsMap,
-                          cosmos: cosmosConfig.cosmosChainsMap,
-                          misc: miscConfig.miscChainsMap,
-                          substrate: substrateConfig.substrateChainsMap,
-                        },
-                      }),
-                    ]
-                  : Maybe.catMaybes([
-                      evmConfig.connector,
-                      cosmosConfig.connector,
-                      ...miscConfig.connectors,
-                    ])),
-          ],
-          {
-            appName: config.appName,
-            appIcon: config.appIcon,
-            projectId: config.walletConnectV2.projectId,
-          }
-        ),
-      });
+        autoConnect: true,
+        connectors: connectorsForWallets([
+          ...(opts.externalProviders
+            ? [
+                createExternalProviderConnector(
+                  evmConfig.evmChains, // currently only EVM chains
+                  opts.externalProviders
+                ),
+              ]
+            : isLedgerDappBrowserProvider()
+              ? [
+                  ledgerLiveConnector({
+                    queryParams,
+                    enabledChainsMap: {
+                      evm: evmConfig.evmChainsMap,
+                      cosmos: cosmosConfig.cosmosChainsMap,
+                      misc: miscConfig.miscChainsMap,
+                      substrate: substrateConfig.substrateChainsMap,
+                    },
+                  }),
+                ]
+              : Maybe.catMaybes([
+                  evmConfig.connector,
+                  cosmosConfig.connector,
+                  ...miscConfig.connectors,
+                ])),
+          ...(typeof opts.customConnectors === "function"
+            ? opts.customConnectors(chains)
+            : opts.customConnectors ?? []),
+        ]),
+        publicClient,
+        webSocketPublicClient,
+      }) as ReturnType<typeof createConfig>;
 
       return Promise.resolve({
         evmConfig,
         cosmosConfig,
         miscConfig,
         substrateConfig,
+        chains,
         wagmiConfig,
       });
     },
@@ -166,17 +138,13 @@ const buildWagmiConfig = async (opts: {
 const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Infinity;
 
-export const useWagmiConfig = () => {
+export const useWagmiConfig = (): UseQueryResult<
+  Awaited<ReturnType<BuildWagmiConfig>>,
+  Error
+> => {
   const { wagmi, externalProviders } = useSettings();
 
   const queryClient = useSKQueryClient();
-
-  const yieldGetMyNetworks = useYieldGetMyNetworksHook();
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-  const transactionGetTransactionStatusByNetworkAndHash =
-    useTransactionGetTransactionStatusByNetworkAndHashHook();
-
-  const externalProvidersRef = useSavedRef(externalProviders);
 
   return useQuery({
     staleTime,
@@ -185,23 +153,23 @@ export const useWagmiConfig = () => {
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
-        externalProviders: externalProvidersRef.current
-          ? (externalProvidersRef as MutableRefObject<SKExternalProviders>)
-          : undefined,
+        externalProviders,
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
-        yieldGetMyNetworks,
-        transactionGetTransactionStatusByNetworkAndHash,
-        yieldYieldOpportunity,
       }),
   });
 };
 
-export const defaultConfig = createConfig({
-  chains: [mainnet],
-  client: ({ chain }) =>
-    createClient({
-      chain,
-      transport: http(chain.rpcUrls.default.http.find((url) => !!url)),
-    }),
-});
+export const defaultConfig: ReturnType<typeof createConfig> = (() => {
+  const { publicClient, webSocketPublicClient } = configureChains(
+    [mainnet], // must use at least one chain
+    [publicProvider()]
+  );
+
+  return createConfig({
+    autoConnect: true,
+    publicClient,
+    webSocketPublicClient,
+    connectors: [],
+  }) as ReturnType<typeof createConfig>;
+})();

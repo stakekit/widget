@@ -7,13 +7,7 @@ import {
   GetEitherAsyncRight,
   GetEitherRight,
 } from "../../../types";
-import {
-  YieldBalanceDto,
-  useActionPendingHook,
-  useTokenGetTokenBalancesHook,
-  useTransactionConstructHook,
-  useTransactionGetGasForNetworkHook,
-} from "@stakekit/api-hooks";
+import { YieldBalanceDto } from "@stakekit/api-hooks";
 import { UseMutationResult, useMutation } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext } from "react";
 import { useSettings } from "../../../providers/settings";
@@ -42,11 +36,6 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
 
   const { isLedgerLive } = useSKWallet();
 
-  const actionPending = useActionPendingHook();
-  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
-  const transactionConstruct = useTransactionConstructHook();
-  const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
-
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
@@ -66,10 +55,6 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
             pendingActionAndTxsConstruct.mutateAsync,
           disableGasCheck,
           isLedgerLive,
-          actionPending,
-          tokenGetTokenBalances,
-          transactionConstruct,
-          transactionGetGasForNetwork,
         })
       ).unsafeCoerce(),
   });
@@ -99,10 +84,6 @@ const fn = ({
   pendingActionAndTxsConstruct,
   disableGasCheck,
   isLedgerLive,
-  transactionGetGasForNetwork,
-  actionPending,
-  tokenGetTokenBalances,
-  transactionConstruct,
 }: {
   pendingActionRequestDto: GetEitherRight<
     ReturnType<typeof preparePendingActionRequestDto>
@@ -113,24 +94,12 @@ const fn = ({
   >["mutateAsync"];
   disableGasCheck: boolean;
   isLedgerLive: boolean;
-  transactionGetGasForNetwork: ReturnType<
-    typeof useTransactionGetGasForNetworkHook
-  >;
-  actionPending: ReturnType<typeof useActionPendingHook>;
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
 }) =>
-  getAverageGasMode({
-    network: pendingActionRequestDto.gasFeeToken.network,
-    transactionGetGasForNetwork,
-  })
+  getAverageGasMode(pendingActionRequestDto.gasFeeToken.network)
     .chainLeft(async () => Right(null))
     .chain((val) =>
       EitherAsync(() =>
         pendingActionAndTxsConstruct({
-          actionPending,
-          tokenGetTokenBalances,
-          transactionConstruct,
           gasModeValue: val ?? undefined,
           pendingActionRequestDto: {
             integrationId: pendingActionRequestDto.integrationId,

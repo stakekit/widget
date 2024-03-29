@@ -1,8 +1,8 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { Connector } from "wagmi";
+import { isLedgerLiveConnector } from "./utils";
 import { Chain } from "@stakekit/rainbowkit";
 import { Nullable } from "vitest";
-import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 
 export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
   const subscribe = useCallback(
@@ -11,7 +11,9 @@ export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
         return () => {};
       }
 
-      return connector.$disabledChains.subscribe(onChange);
+      connector.addListener("change", onChange);
+
+      return () => connector.removeListener("change", onChange);
     },
     [connector]
   );
@@ -21,7 +23,7 @@ export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
       return defaultValue;
     }
 
-    return connector.$disabledChains.value;
+    return connector.disabledChains;
   }, [connector]);
 
   const getServerSnapshot = useCallback(() => {

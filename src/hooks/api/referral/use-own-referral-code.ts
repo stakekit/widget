@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe } from "purify-ts";
+import { APIManager } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { isAxiosError } from "axios";
 import { isAxios4xxError } from "../../../common/utils";
 import { useSettings } from "../../../providers/settings";
 import { Nullable } from "../../../types";
-import { useApiClient } from "../../../providers/api/api-client-provider";
 
 const url = ({ address, network }: { network: string; address: string }) =>
   `/v1/networks/${network}/addresses/${address}/referrals`;
@@ -23,8 +23,6 @@ type ResponseData = { id: string; code: string };
 export const useOwnReferralCode = () => {
   const { address, network } = useSKWallet();
 
-  const apiClient = useApiClient();
-
   const { referralCheck } = useSettings();
 
   return useQuery({
@@ -34,16 +32,20 @@ export const useOwnReferralCode = () => {
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
-          Maybe.fromNullable(
-            address && network ? { address, network } : null
-          ).toEither(new Error("missing args"))
+          Maybe.fromNullable(APIManager.getInstance())
+            .chain((client) =>
+              Maybe.fromNullable(
+                address && network ? { client, address, network } : null
+              )
+            )
+            .toEither(new Error("missing args"))
         )
           .chain((val) =>
-            EitherAsync(() => apiClient.get<ResponseData>(url(val)))
+            EitherAsync(() => val.client.get<ResponseData>(url(val)))
               .chainLeft((err) => {
                 if (isAxios4xxError(err)) {
                   return EitherAsync(() =>
-                    apiClient.post<ResponseData>(url(val))
+                    val.client.post<ResponseData>(url(val))
                   );
                 }
 

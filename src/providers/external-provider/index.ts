@@ -1,146 +1,115 @@
 import { WalletList } from "@stakekit/rainbowkit";
+import { Address, Chain, Connector } from "wagmi";
 import { ExternalProvider } from "../../domain/types/external-providers";
 import { EitherAsync, List } from "purify-ts";
 import { getSKIcon } from "../../utils";
 import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
-import {
-  Connector,
-  CreateConnectorFn,
-  createConnector,
-  normalizeChainId,
-} from "wagmi";
-import { Chain } from "wagmi/chains";
-import { Address } from "viem";
-import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { Observable } from "../../utils/observable";
-import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
-import { MutableRefObject } from "react";
 
-const configMeta = {
-  id: "externalProviderConnector",
-  name: "External Provider",
-  type: "externalProvider",
-} as const;
+export class ExternalProviderConnector extends Connector {
+  id = "external-provider-connector";
+  name = "External Provider";
 
-type ExtraProps = ConnectorWithFilteredChains &
-  Pick<
-    ExternalProvider,
-    "sendMultipleTransactions" | "shouldMultiSend" | "signMessage"
-  >;
+  provider: ExternalProvider;
 
-type ExternalConnector = Connector & ExtraProps;
+  constructor(chains: Chain[], variant: SKExternalProviders) {
+    super({ options: {}, chains });
+    this.provider = new ExternalProvider(variant);
+  }
 
-export const isExternalProviderConnector = (
-  connector: Connector
-): connector is ExternalConnector => connector.id === configMeta.id;
+  ready = true;
 
-export const externalProviderConnector = (
-  variant: MutableRefObject<SKExternalProviders>,
-  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
-    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
-  >
-): WalletList[number] => ({
-  groupName: "External Providers",
-  wallets: [
-    () => ({
-      id: configMeta.id,
-      name: configMeta.name,
-      iconUrl: getSKIcon("sk-icon_320x320.png"),
-      iconBackground: "#fff",
-      createConnector: () =>
-        createConnector<unknown, ExtraProps>((config) => {
-          const $filteredChains = new Observable<Chain[]>([]);
-          const provider = new ExternalProvider(
-            variant,
-            transactionGetTransactionStatusByNetworkAndHash
-          );
+  async connect() {
+    this.emit("message", { type: "connecting" });
 
-          const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-            async () =>
-              (
-                await provider.getAccount().map((val) => [val as Address])
-              ).unsafeCoerce();
+    const [account, chainId] = await Promise.all([
+      this.getAccount(),
+      this.getChainId(),
+    ]);
 
-          const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-            async () => (await provider.getChainId()).unsafeCoerce();
+    // Set chains to expose for switcher
+    // @ts-expect-error
+    this.chains = this.chains.filter((c) => c.id === chainId);
 
-          const connect: ReturnType<CreateConnectorFn>["connect"] =
-            async () => {
-              config.emitter.emit("message", { type: "connecting" });
+    return {
+      account,
+      chain: {
+        id: chainId,
+        unsupported: false,
+      },
+    };
+  }
 
-              const [accounts, chainId] = await Promise.all([
-                getAccounts(),
-                getChainId(),
-              ]);
+  async disconnect() {}
 
-              $filteredChains.next(
-                config.chains.filter((c) => c.id === chainId)
-              );
+  async getAccount() {
+    return (
+      await this.provider.getAccount().map((val) => val as Address)
+    ).unsafeCoerce();
+  }
 
-              return { accounts, chainId };
-            };
+  async switchChain(chainId: number): Promise<Chain> {
+    return (
+      await EitherAsync.liftEither(
+        List.find((c) => c.id === chainId, this.chains).toEither(
+          new Error("Chain not found")
+        )
+      ).chain((chain) =>
+        this.provider
+          .switchChain({ chainId: `0x${chainId.toString(16)}` })
+          .map(() => chain)
+      )
+    ).unsafeCoerce();
+  }
 
-          const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =
-            async ({ chainId }) => {
-              return (
-                await EitherAsync.liftEither(
-                  List.find(
-                    (c) => c.id === chainId,
-                    config.chains as unknown as Array<Chain>
-                  ).toEither(new Error("Chain not found"))
-                ).chain((chain) =>
-                  provider
-                    .switchChain({ chainId: `0x${chainId.toString(16)}` })
-                    .map(() => chain)
-                )
-              ).unsafeCoerce();
-            };
+  async getChainId(): Promise<number> {
+    return (await this.provider.getChainId()).unsafeCoerce();
+  }
 
-          const disconnect: ReturnType<CreateConnectorFn>["disconnect"] =
-            async () => {};
+  async getProvider() {}
 
-          const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
-            async () => ({});
+  getWalletClient = () => {
+    throw new Error("Not implemented");
+  };
 
-          const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
-            async () => true;
+  async isAuthorized() {
+    return true;
+  }
 
-          const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
-            () => {
-              config.emitter.emit("disconnect");
-            };
+  protected onAccountsChanged = (accounts: string[]) => {
+    if (accounts.length === 0) {
+      this.emit("disconnect");
+    } else {
+      this.emit("change", { account: accounts[0] as Address });
+    }
+  };
 
-          const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
-            (chainId) => {
-              config.emitter.emit("change", {
-                chainId: normalizeChainId(chainId),
-              });
-            };
+  protected onChainChanged = (chainId: number | string) => {
+    this.emit("change", {
+      chain: { id: chainId as number, unsupported: false },
+    });
+  };
 
-          const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-            () => {};
+  protected onDisconnect(error: Error): void {
+    this.emit("disconnect");
+  }
+}
 
-          return {
-            id: configMeta.id,
-            name: configMeta.name,
-            type: configMeta.type,
-            getAccounts,
-            getChainId,
-            connect,
-            disconnect,
-            getProvider,
-            isAuthorized,
-            onDisconnect,
-            onChainChanged,
-            onAccountsChanged,
-            switchChain,
-            sendMultipleTransactions:
-              provider.sendMultipleTransactions.bind(provider),
-            signMessage: provider.signMessage.bind(provider),
-            shouldMultiSend: provider.shouldMultiSend,
-            $filteredChains,
-          };
-        }),
-    }),
-  ],
-});
+export const createExternalProviderConnector = (
+  chains: Chain[],
+  variant: SKExternalProviders
+): WalletList[number] => {
+  const connector = new ExternalProviderConnector(chains, variant);
+
+  return {
+    groupName: "External Providers",
+    wallets: [
+      {
+        id: connector.id,
+        name: connector.name,
+        iconUrl: getSKIcon("sk-icon_320x320.png"),
+        iconBackground: "#fff",
+        createConnector: () => ({ connector }),
+      },
+    ],
+  };
+};

@@ -5,7 +5,7 @@ import { isSupportedChain } from "../domain/types/chains";
 import { MaybeWindow } from "../utils/maybe-window";
 import { typeSafeObjectFromEntries } from "../utils";
 import { getYieldOpportunity } from "../hooks/api/use-yield-opportunity";
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import { YieldDto } from "@stakekit/api-hooks";
 import { useSKQueryClient } from "../providers/query-client";
 
 const queryKey = ["init-params"];
@@ -19,14 +19,11 @@ export const useInitQueryParams = <T = QueryParamsResult>(opts?: {
 
   const queryClient = useSKQueryClient();
 
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   return useQuery({
     queryKey,
     staleTime,
     gcTime: cacheTime,
-    queryFn: () =>
-      queryFn({ isLedgerLive, queryClient, yieldYieldOpportunity }),
+    queryFn: () => queryFn({ isLedgerLive, queryClient }),
     select: opts?.select,
   });
 };
@@ -63,11 +60,9 @@ export type QueryParamsResult = {
 const fn = ({
   isLedgerLive,
   queryClient,
-  yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }): EitherAsync<Error, QueryParamsResult> =>
   EitherAsync.liftEither(
     MaybeWindow.map((w) => new URL(w.location.href))
@@ -111,7 +106,6 @@ const fn = ({
           isLedgerLive,
           yieldId: yId,
           queryClient,
-          yieldYieldOpportunity,
         }).map((yieldData) => ({
           ...val,
           network: yieldData.token.network,

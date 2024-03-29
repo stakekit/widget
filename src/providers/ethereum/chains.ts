@@ -5,6 +5,7 @@ export const viction = {
   id: 88,
   name: "Viction",
   iconUrl: getTokenLogo("vic"),
+  network: "tron",
   nativeCurrency: {
     decimals: 18,
     name: "Viction",
