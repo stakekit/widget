@@ -43,6 +43,6 @@ export const useTokenBalancesScan = () => {
   );
 
   return useTokenTokenBalancesScan(param.dto, {
-    query: { enabled: param.enabled, refetchInterval: 1000 * 60 },
+    query: { enabled: param.enabled },
   });
 };

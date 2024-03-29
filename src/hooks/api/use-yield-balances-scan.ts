@@ -68,8 +68,8 @@ export const useYieldBalancesScan = <
     {
       query: {
         enabled: param.enabled,
+        staleTime: 1000 * 60 * 5,
         select: opts?.select,
-        refetchInterval: 1000 * 60,
       },
     }
   );

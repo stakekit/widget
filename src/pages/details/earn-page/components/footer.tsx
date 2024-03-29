@@ -5,25 +5,14 @@ import {
   GifIcon,
   Text,
 } from "../../../../components";
+import { useFooterItems } from "../hooks/use-footer-items";
 import { useMemo } from "react";
 import { dotContainer } from "../styles.css";
 import { useDetailsContext } from "../state/details-context";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { InfoIcon } from "../../../../components/atoms/icons/info";
-import { useYieldMetaInfo } from "../../../../hooks/use-yield-meta-info";
 
 export const Footer = () => {
-  const {
-    appLoading,
-    multiYieldsLoading,
-    yieldOpportunityLoading,
-    tokenBalancesScanLoading,
-    stakeTokenAvailableAmountLoading,
-    defaultTokensIsLoading,
-    selectedStake,
-    selectedValidators,
-  } = useDetailsContext();
-
   const {
     description,
     earnPeriod,
@@ -33,10 +22,16 @@ export const Footer = () => {
     withdrawnTime,
     compoundRewards,
     extra,
-  } = useYieldMetaInfo({
-    selectedStake,
-    validators: [...selectedValidators.values()],
-  });
+  } = useFooterItems();
+
+  const {
+    appLoading,
+    multiYieldsLoading,
+    yieldOpportunityLoading,
+    tokenBalancesScanLoading,
+    stakeTokenAvailableAmountLoading,
+    defaultTokensIsLoading,
+  } = useDetailsContext();
 
   const isLoading =
     appLoading ||

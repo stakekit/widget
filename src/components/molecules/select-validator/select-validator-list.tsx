@@ -24,7 +24,7 @@ import {
 } from "./styles.css";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { vars } from "../../../styles";
-import { useMetaInfo } from "./meta-info";
+import { MetaInfo, useMetaInfo } from "./meta-info";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 
@@ -217,8 +217,6 @@ export const SelectValidatorList = ({
                   votingPower={item.votingPower}
                   rewardRate={undefined}
                   rewardType={undefined}
-                  stakedBalanceToken={selectedStake.token}
-                  website={undefined}
                 />
               </Box>
             </SelectModalItem>
@@ -234,27 +232,27 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
 
   return (
     <Box display="flex" flexDirection="column" gap="1">
-      {Object.entries(metaInfo)
-        .filter(
-          (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1]
-        )
-        .map(([key, val]) => {
-          return (
-            <Box
-              key={key}
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Text variant={{ type: "muted" }}>{val.title}</Text>
-
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {val.val}
-              </Text>
-            </Box>
-          );
-        })}
+      {metaInfo.stakedBalance && (
+        <MetaInfo
+          title={metaInfo.stakedBalance.title}
+          val={metaInfo.stakedBalance.val}
+        />
+      )}
+      {metaInfo.votingPower && (
+        <MetaInfo
+          title={metaInfo.votingPower.title}
+          val={metaInfo.votingPower.val}
+        />
+      )}
+      {metaInfo.commission && (
+        <MetaInfo
+          title={metaInfo.commission.title}
+          val={metaInfo.commission.val}
+        />
+      )}
+      {metaInfo.address && (
+        <MetaInfo title={metaInfo.address.title} val={metaInfo.address.val} />
+      )}
     </Box>
   );
 });

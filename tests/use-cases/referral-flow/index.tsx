@@ -18,7 +18,8 @@ export const referralFlow = () => {
       },
     });
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
+    await waitFor(() => expect(queryByText("Earn")).toBeInTheDocument());
+    expect(queryByText("Positions")).toBeInTheDocument();
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
@@ -49,7 +50,8 @@ export const referralFlow = () => {
       },
     });
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
+    await waitFor(() => expect(queryByText("Earn")).toBeInTheDocument());
+    expect(queryByText("Positions")).toBeInTheDocument();
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
@@ -105,7 +107,7 @@ export const referralFlow = () => {
 
     fireEvent.click(submitButton);
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
+    await waitFor(() => expect(queryByText("Earn")).toBeInTheDocument());
     expect(queryByText("Positions")).toBeInTheDocument();
 
     unmount();

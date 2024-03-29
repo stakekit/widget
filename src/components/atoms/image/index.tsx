@@ -74,7 +74,7 @@ export const Image = ({
       justifyContent="center"
     >
       {showFallback && <Box position="absolute">{fallback}</Box>}
-      {!!(src && !failLoadImages.has(src)) && (
+      {src && !failLoadImages.has(src) && (
         <Box
           {...imageProps}
           src={src}

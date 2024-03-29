@@ -1,4 +1,4 @@
-import { RewardTypes, YieldDto } from "@stakekit/api-hooks";
+import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { Box, CaretDownIcon, Divider, Text } from "../../../components";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
@@ -6,8 +6,6 @@ import { HelpModal } from "../../../index.package";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import {
-  addressHover,
-  addressParent,
   caretContainer,
   inactiveContainer,
   noWrap,
@@ -16,17 +14,21 @@ import {
 } from "../styles.css";
 import { memo, useEffect, useRef, useState } from "react";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
-import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { GetMaybeJust } from "../../../types";
-import * as CopyText from "../../../components/atoms/copy-text";
-import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 
 export const ProviderDetails = ({
   stakeType,
   isFirst,
   integrationData,
   logo,
-  ...providerDetails
+  name,
+  rewardRate,
+  rewardRateFormatted,
+  rewardType,
+  address,
+  stakedBalance,
+  votingPower,
+  commission,
+  status,
 }: {
   isFirst: boolean;
   stakeType: string;
@@ -36,7 +38,13 @@ export const ProviderDetails = ({
   rewardRateFormatted: string;
   rewardRate: number;
   rewardType: RewardTypes;
-} & GetMaybeJust<ReturnType<typeof useProvidersDetails>>[0]) => {
+
+  stakedBalance?: ValidatorDto["stakedBalance"];
+  votingPower?: ValidatorDto["votingPower"];
+  commission?: ValidatorDto["commission"];
+  address?: ValidatorDto["address"];
+  status?: ValidatorDto["status"];
+}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>();
@@ -48,7 +56,7 @@ export const ProviderDetails = ({
 
   const { t } = useTranslation();
 
-  const nameOrAddress = providerDetails.name ?? providerDetails ?? "";
+  const nameOrAddress = name ?? address ?? "";
 
   return (
     <Box display="flex" flexDirection="column">
@@ -88,19 +96,13 @@ export const ProviderDetails = ({
             })}
           </Text>
 
-          {providerDetails.preferred && (
-            <Box marginLeft="1" display="flex">
-              <PreferredIcon />
-            </Box>
-          )}
-
           <HelpModal
             modal={{
               type: integrationData.metadata.type,
             }}
           />
 
-          {providerDetails.status !== "active" && (
+          {status !== "active" && (
             <Box marginLeft="1" className={inactiveContainer}>
               <Text
                 variant={{
@@ -111,7 +113,7 @@ export const ProviderDetails = ({
                 className={noWrap}
               >
                 {t(
-                  providerDetails.status === "jailed"
+                  status === "jailed"
                     ? "details.validators_jailed"
                     : "details.validators_inactive"
                 )}
@@ -148,14 +150,12 @@ export const ProviderDetails = ({
         })}
       >
         <ValidatorMeta
-          address={providerDetails.address}
-          commission={providerDetails.commission}
-          rewardRate={providerDetails.rewardRate}
-          stakedBalance={providerDetails.stakedBalance}
-          votingPower={providerDetails.votingPower}
-          rewardType={providerDetails.rewardType}
-          website={providerDetails.website}
-          stakedBalanceToken={integrationData.token}
+          address={address}
+          commission={commission}
+          rewardRate={rewardRate}
+          stakedBalance={stakedBalance}
+          votingPower={votingPower}
+          rewardType={rewardType}
         />
       </Box>
 
@@ -169,54 +169,22 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
 
   return (
     <Box marginTop="2">
-      {Object.entries(metaInfo)
-        .filter(
-          (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1]
-        )
-        .map(([key, val]) => {
-          return (
-            <Box
-              key={key}
-              marginTop="1"
-              marginBottom="3"
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Text variant={{ weight: "normal" }}>{val.title}</Text>
+      {Object.values(metaInfo)
+        .filter((val): val is NonNullable<typeof val> => !!val)
+        .map((val) => (
+          <Box
+            key={val.title}
+            marginTop="1"
+            marginBottom="3"
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Text variant={{ weight: "normal" }}>{val.title}</Text>
 
-              {key === "address" ? (
-                <CopyText.Provider text={val.val as string}>
-                  <CopyText.Root>
-                    <Box display="flex" gap="1" className={addressParent}>
-                      <Text
-                        variant={{ type: "muted", weight: "normal" }}
-                        className={addressHover}
-                      >
-                        {val.val}
-                      </Text>
-
-                      <CopyText.AnimatedContent>
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <CopyText.Icons hw={16} />
-                        </Box>
-                      </CopyText.AnimatedContent>
-                    </Box>
-                  </CopyText.Root>
-                </CopyText.Provider>
-              ) : (
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  {val.val}
-                </Text>
-              )}
-            </Box>
-          );
-        })}
+            <Text variant={{ type: "muted", weight: "normal" }}>{val.val}</Text>
+          </Box>
+        ))}
     </Box>
   );
 });

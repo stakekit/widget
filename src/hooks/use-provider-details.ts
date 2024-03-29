@@ -1,4 +1,9 @@
-import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import {
+  RewardTypes,
+  ValidatorDto,
+  ValidatorStatusTypes,
+  YieldDto,
+} from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { GetMaybeJust } from "../types";
@@ -14,9 +19,7 @@ type Res = Maybe<{
   stakedBalance?: ValidatorDto["stakedBalance"];
   votingPower?: ValidatorDto["votingPower"];
   commission?: ValidatorDto["commission"];
-  website?: ValidatorDto["website"];
-  status?: ValidatorDto["status"];
-  preferred?: ValidatorDto["preferred"];
+  status?: ValidatorStatusTypes;
 }>;
 
 const getProviderDetails = ({
@@ -28,7 +31,7 @@ const getProviderDetails = ({
 }): Res => {
   const def = integrationData.chain((val) =>
     Maybe.fromNullable(val.metadata.provider)
-      .map<GetMaybeJust<Res>>((v) => ({
+      .map((v) => ({
         logo: v.logoURI,
         name: v.name,
         rewardRateFormatted: getRewardRateFormatted({
@@ -37,7 +40,6 @@ const getProviderDetails = ({
         }),
         rewardRate: val.rewardRate,
         rewardType: val.rewardType,
-        website: v.externalLink,
       }))
       .altLazy(() =>
         Maybe.of({
@@ -70,8 +72,6 @@ const getProviderDetails = ({
           votingPower: v.votingPower,
           commission: v.commission,
           status: v.status,
-          website: v.website,
-          preferred: v.preferred,
         }))
       )
       .altLazy(() => def)

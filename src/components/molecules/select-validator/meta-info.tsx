@@ -1,41 +1,40 @@
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
-import { ReactNode, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  dollarFormatter,
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
-import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import { Box } from "../../atoms/box";
+import { Text } from "../../atoms/typography";
+import { RewardTypes, ValidatorDto } from "@stakekit/api-hooks";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
-import { SKAnchor } from "../../atoms/anchor";
 
 export const useMetaInfo = ({
   commission,
   stakedBalance,
-  stakedBalanceToken,
   votingPower,
   address,
   rewardRate,
   rewardType,
-  website,
 }: {
   [Key in keyof Pick<
     ValidatorDto,
-    "stakedBalance" | "votingPower" | "commission" | "address" | "website"
+    "stakedBalance" | "votingPower" | "commission" | "address"
   >]: ValidatorDto[Key] | undefined;
 } & {
-  stakedBalanceToken: YieldDto["token"] | undefined;
   rewardRate: number | undefined;
   rewardType: RewardTypes | undefined;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return useMemo<{
     [Key in keyof Pick<
       ValidatorDto,
-      "stakedBalance" | "votingPower" | "commission" | "address" | "website"
-    >]: { title: string; val: ReactNode } | null;
+      "stakedBalance" | "votingPower" | "commission" | "address"
+    >]: { title: string; val: string } | null;
   }>(
     () => ({
       rewardRate:
@@ -48,18 +47,15 @@ export const useMetaInfo = ({
               }),
             }
           : null,
-      stakedBalance:
-        stakedBalance && stakedBalanceToken
-          ? {
-              title: t("details.validators_staked_balance"),
-              val: Just(new BigNumber(stakedBalance))
-                .filter((v) => !v.isNaN())
-                .map(
-                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`
-                )
-                .orDefault("-"),
-            }
-          : null,
+      stakedBalance: stakedBalance
+        ? {
+            title: t("details.validators_staked_balance"),
+            val: Just(new BigNumber(stakedBalance))
+              .filter((v) => !v.isNaN())
+              .map((v) => dollarFormatter(i18n.language).format(v.toNumber()))
+              .orDefault("-"),
+          }
+        : null,
       votingPower: votingPower
         ? {
             title: t("details.validators_voting_power"),
@@ -84,23 +80,25 @@ export const useMetaInfo = ({
             val: formatAddress(address, { leadingChars: 6, trailingChars: 6 }),
           }
         : null,
-      website: website
-        ? {
-            title: t("details.validators_website"),
-            val: <SKAnchor href={website} />,
-          }
-        : null,
     }),
     [
+      address,
+      commission,
+      i18n.language,
       rewardRate,
       rewardType,
       stakedBalance,
-      stakedBalanceToken,
       t,
       votingPower,
-      commission,
-      address,
-      website,
     ]
+  );
+};
+
+export const MetaInfo = ({ title, val }: { title: string; val: string }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center">
+      <Text variant={{ type: "muted" }}>{title}</Text>
+      <Text variant={{ type: "muted" }}>{val}</Text>
+    </Box>
   );
 };
