@@ -38,10 +38,9 @@ export const StakeStepsPage = () => {
     selectedStake.ifJust((val) => {
       setActionHistoryData({
         type: "stake",
-        integrationData: val,
-        amount: stakeAmount,
+        selectedStake: val,
+        stakeAmount: stakeAmount,
         selectedValidators,
-        interactedToken: val.token,
       });
     });
 
