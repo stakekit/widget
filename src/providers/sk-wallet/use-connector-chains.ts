@@ -1,10 +1,9 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { Connector } from "wagmi";
-import {
-  ConnectorWithFilteredChains,
-  isConnectorWithFilteredChains,
-} from "../../domain/types/connectors";
+import { isConnectorWithFilteredChains } from "../../domain/types/connectors";
 import { useWagmiConfig } from "../wagmi";
+import { BehaviorSubject } from "rxjs";
+import { Chain } from "viem";
 
 export const useConnectorChains = ({
   wagmiConfig,
@@ -13,31 +12,28 @@ export const useConnectorChains = ({
   wagmiConfig: ReturnType<typeof useWagmiConfig>["data"];
   connector?: Connector;
 }) => {
+  const [subject] = useState(
+    () => new BehaviorSubject<Chain[]>(wagmiConfig?.evmConfig.evmChains ?? [])
+  );
+
   const subscribe = useCallback(
     (onChange: () => void) => {
       if (!connector || !isConnectorWithFilteredChains(connector)) {
         return () => {};
       }
 
-      return connector.$filteredChains.subscribe(onChange);
+      const sub = connector.$filteredChains.subscribe((val) => {
+        subject.next(val);
+        onChange();
+      });
+
+      return () => sub.unsubscribe();
     },
-    [connector]
+    [connector, subject]
   );
 
-  const getSnapshot = useCallback(() => {
-    if (!connector || !isConnectorWithFilteredChains(connector)) {
-      return wagmiConfig?.evmConfig.evmChains ?? defaultValue;
-    }
-
-    return connector.$filteredChains.value;
-  }, [connector, wagmiConfig?.evmConfig.evmChains]);
-
-  const getServerSnapshot = useCallback(() => {
-    return defaultValue;
-  }, []);
+  const getSnapshot = useCallback(() => subject.value, [subject.value]);
+  const getServerSnapshot = useCallback(() => subject.value, [subject.value]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 };
-
-const defaultValue: ConnectorWithFilteredChains["$filteredChains"]["value"] =
-  [];

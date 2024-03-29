@@ -11,8 +11,8 @@ import { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
 import { CosmosChainsMap } from "../../domain/types/chains";
 import { waitForMs } from "../../utils";
 import { WCClient } from "@cosmos-kit/walletconnect";
-import { Observable } from "../../utils/observable";
 import EventEmitter from "eventemitter3";
+import { BehaviorSubject } from "rxjs";
 
 export const wallets: MainWalletBase[] = [
   ...keplrWallets,
@@ -78,7 +78,7 @@ export const createCosmosConnector = ({
     createConnector: (walletDetailsParams) =>
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
-        const $filteredChains = new Observable(cosmosWagmiChains);
+        const $filteredChains = new BehaviorSubject(cosmosWagmiChains);
         let chainWallet: ExtraProps["chainWallet"] = new Promise((res, rej) => {
           let retryTimes = 0;
 
@@ -247,7 +247,7 @@ export const createCosmosConnector = ({
           id: wallet.walletInfo.name,
           name: wallet.walletInfo.name,
           type: configMeta.type,
-          $filteredChains,
+          $filteredChains: $filteredChains.asObservable(),
           chainWallet,
           connect,
           switchChain,

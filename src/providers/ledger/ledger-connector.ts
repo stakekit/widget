@@ -25,7 +25,7 @@ import {
 import { QueryParamsResult } from "../../hooks/use-init-query-params";
 import { ledger } from "../../assets/images/ledger";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { Observable } from "../../utils/observable";
+import { BehaviorSubject, Observable, map } from "rxjs";
 
 const configMeta = {
   id: "ledgerLive",
@@ -60,12 +60,13 @@ const createLedgerLiveConnector = ({
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
     const noAccountPlaceholder = "N/A" as Address;
-    const $filteredChains = new Observable<Chain[]>([]);
-    const $disabledChains = new Observable<Chain[]>([]);
-    const $currentAccount = new Observable<Account | undefined>(undefined);
-    const $currentAccountId = $currentAccount.map((v) => v?.id);
+    const $filteredChains = new BehaviorSubject<Chain[]>([]);
+    const $disabledChains = new BehaviorSubject<Chain[]>([]);
+    const $currentAccount = new BehaviorSubject<Account | undefined>(undefined);
+
+    const $currentAccountId = $currentAccount.pipe(map((v) => v?.id));
     let ledgerAccounts: Account[] = [];
-    const $accountsOnCurrentChain = new Observable<Account[]>([]);
+    const $accountsOnCurrentChain = new BehaviorSubject<Account[]>([]);
     let currentChain: ChainItem | null = null;
     let filteredSkSupportedChainsToCurrencyIdMap: Map<
       Chain["id"],
@@ -346,9 +347,9 @@ const createLedgerLiveConnector = ({
       requestAndSwitchAccount,
       walletApiClient,
       $accountsOnCurrentChain,
-      $filteredChains,
+      $filteredChains: $filteredChains.asObservable(),
       $currentAccountId,
-      $disabledChains,
+      $disabledChains: $disabledChains.asObservable(),
       noAccountPlaceholder,
     };
   });

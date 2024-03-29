@@ -1,12 +1,12 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { Connector } from "wagmi";
-import { Chain } from "@stakekit/rainbowkit";
-import { Nullable } from "vitest";
 import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 import { BehaviorSubject } from "rxjs";
 
-export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
-  const [subject] = useState(() => new BehaviorSubject<Chain[]>([]));
+export const useLedgerCurrentAccountId = (connector?: Connector) => {
+  const [subject] = useState(
+    () => new BehaviorSubject<string | undefined>(undefined)
+  );
 
   const subscribe = useCallback(
     (onChange: () => void) => {
@@ -14,7 +14,7 @@ export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
         return () => {};
       }
 
-      const sub = connector.$disabledChains.subscribe((val) => {
+      const sub = connector.$currentAccountId.subscribe((val) => {
         subject.next(val);
         onChange();
       });

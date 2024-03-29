@@ -41,6 +41,7 @@ import { isTronConnector } from "../misc/tron-connector";
 import { isCosmosConnector } from "../cosmos/cosmos-connector";
 import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
+import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -63,6 +64,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const { signMessageAsync } = useSignMessage();
 
   const ledgerAccounts = useLedgerAccounts(connector);
+  const ledgerCurrentAccountId = useLedgerCurrentAccountId(connector);
 
   const wagmiConfig = useWagmiConfig();
 
@@ -143,7 +145,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
            * Ledger Live connector
            */
           return EitherAsync.liftEither(
-            Maybe.fromNullable(conn.$currentAccountId.value).toEither(
+            Maybe.fromNullable(ledgerCurrentAccountId).toEither(
               new Error("currentAccountId missing")
             )
           )
@@ -271,7 +273,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           );
         }
       }),
-    [connectorDetails, sendTransactionAsync]
+    [connectorDetails, sendTransactionAsync, ledgerCurrentAccountId]
   );
 
   const signMultipleTransactions = useCallback<

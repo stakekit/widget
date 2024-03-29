@@ -1,14 +1,14 @@
 import { AxiosInstance } from "axios";
 import { i18n } from "i18next";
 import { useCallback, useSyncExternalStore } from "react";
-import { Observable } from "../utils/observable";
+import { BehaviorSubject } from "rxjs";
 
 interface RichError {
   message: string;
   details?: { [key: string]: any };
 }
 
-const $richError = new Observable<RichError | null>(null);
+const $richError = new BehaviorSubject<RichError | null>(null);
 
 export const attachRichErrorsInterceptor = (
   apiClient: AxiosInstance,
@@ -16,7 +16,7 @@ export const attachRichErrorsInterceptor = (
 ) =>
   apiClient.interceptors.response.use(undefined, (error) => {
     if (
-      i18n.exists(`errors.${error.response.data.message}`) &&
+      i18n.exists(`errors.${error?.response?.data?.message}`) &&
       !error?.config?.url.includes("gas-estimate") // temp ignore gas estimate errors
     ) {
       $richError.next(error.response.data);
@@ -28,10 +28,10 @@ export const attachRichErrorsInterceptor = (
 export const useRichErrors = () => {
   const error = useSyncExternalStore(
     useCallback((onChange) => {
-      const unsub = $richError.subscribe(onChange);
+      const sub = $richError.subscribe(onChange);
 
       return () => {
-        unsub();
+        sub.unsubscribe();
       };
     }, []),
     useCallback(() => $richError.value, []),
