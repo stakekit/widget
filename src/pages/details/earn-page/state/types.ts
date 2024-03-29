@@ -3,7 +3,6 @@ import { SelectedStakeData } from "../types";
 import { ExtraData, State } from "../../../../state/stake/types";
 import {
   TokenBalanceScanResponseDto,
-  TokenDto,
   TronResourceType,
   ValidatorDto,
   YieldType,
@@ -69,5 +68,4 @@ export type DetailsContextType = {
       amountInvalid: boolean;
     };
   };
-  pointsRewardTokens: Maybe<TokenDto[]>;
 };

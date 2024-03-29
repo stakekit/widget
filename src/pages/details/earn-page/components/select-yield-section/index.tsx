@@ -7,7 +7,6 @@ import { SelectOpportunity } from "./select-opportunity";
 import { useDetailsContext } from "../../state/details-context";
 import { motion } from "framer-motion";
 import { useAnimateYieldPercent } from "./use-animate-yield-percent";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
 
 export const SelectYieldSection = () => {
   const {
@@ -22,7 +21,6 @@ export const SelectYieldSection = () => {
     symbol,
     selectedStake,
     defaultTokensIsLoading,
-    pointsRewardTokens,
   } = useDetailsContext();
 
   const { t } = useTranslation();
@@ -119,10 +117,20 @@ export const SelectYieldSection = () => {
                     alignItems="center"
                     data-testid="estimated-reward__yearly"
                   >
-                    <Text variant={{ type: "muted", weight: "normal" }}>
+                    <Text
+                      variant={{
+                        type: "muted",
+                        weight: "normal",
+                      }}
+                    >
                       {t("shared.yearly")}
                     </Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
+                    <Text
+                      variant={{
+                        type: "muted",
+                        weight: "normal",
+                      }}
+                    >
                       {earnYearly}
                     </Text>
                   </Box>
@@ -133,58 +141,23 @@ export const SelectYieldSection = () => {
                     alignItems="center"
                     data-testid="estimated-reward__monthly"
                   >
-                    <Text variant={{ type: "muted", weight: "normal" }}>
+                    <Text
+                      variant={{
+                        type: "muted",
+                        weight: "normal",
+                      }}
+                    >
                       {t("shared.monthly")}
                     </Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
+                    <Text
+                      variant={{
+                        type: "muted",
+                        weight: "normal",
+                      }}
+                    >
                       {earnMonthly}
                     </Text>
                   </Box>
-
-                  {pointsRewardTokens
-                    .filter((val) => !!val.length)
-                    .map((val) => (
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        data-testid="estimated-reward__points"
-                        gap="2"
-                      >
-                        <Text variant={{ type: "muted", weight: "normal" }}>
-                          {t("shared.points")}
-                        </Text>
-
-                        <Box display="flex" gap="1">
-                          {val.map((v, i) => (
-                            <Box
-                              key={i}
-                              background="background"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              borderRadius="lg"
-                              px="2"
-                              py="1"
-                              gap="2"
-                            >
-                              <TokenIcon
-                                token={v}
-                                hideNetwork
-                                tokenLogoHw="5"
-                              />
-
-                              <Text
-                                variant={{ type: "muted", weight: "normal" }}
-                              >
-                                {v.name.replace(/points/i, "")}
-                              </Text>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-                    ))
-                    .extractNullable()}
                 </Box>
               </Box>
             </Box>
