@@ -12,9 +12,7 @@ export const useConnectorChains = ({
   wagmiConfig: ReturnType<typeof useWagmiConfig>["data"];
   connector?: Connector;
 }) => {
-  const [subject] = useState(
-    () => new BehaviorSubject<Chain[]>(wagmiConfig?.evmConfig.evmChains ?? [])
-  );
+  const [subject] = useState(() => new BehaviorSubject<Chain[]>([]));
 
   const subscribe = useCallback(
     (onChange: () => void) => {
@@ -32,8 +30,17 @@ export const useConnectorChains = ({
     [connector, subject]
   );
 
-  const getSnapshot = useCallback(() => subject.value, [subject.value]);
+  const getSnapshot = useCallback(() => {
+    if (!connector || !isConnectorWithFilteredChains(connector)) {
+      return wagmiConfig?.evmConfig.evmChains ?? defaultValue;
+    }
+
+    return subject.value;
+  }, [connector, subject.value, wagmiConfig?.evmConfig.evmChains]);
+
   const getServerSnapshot = useCallback(() => subject.value, [subject.value]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 };
+
+const defaultValue: Chain[] = [];

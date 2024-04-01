@@ -1,18 +1,18 @@
 import { EitherAsync, Left } from "purify-ts";
-import { getSKIcon } from "../../utils";
 import { withRequestErrorRetry } from "../../common/utils";
 import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import { SupportedSKChains } from "./chains";
 import { SKExternalProviders, SafeWalletAppInfo } from "./wallets/safe-wallet";
 import { MutableRefObject } from "react";
+import { config } from "../../config";
 
 export class ExternalProvider {
   #safeWalletAppInfo: SafeWalletAppInfo = {
-    description: "StakeKit",
-    iconUrl: getSKIcon("sk-icon_320x320.png"),
+    description: config.appName,
+    iconUrl: config.appIcon,
     id: 0,
-    name: "StakeKit",
-    url: "https://stakek.it",
+    name: config.appName,
+    url: config.appUrl,
   };
 
   shouldMultiSend: boolean;
