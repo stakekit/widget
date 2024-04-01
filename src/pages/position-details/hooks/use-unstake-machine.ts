@@ -165,30 +165,29 @@ export const useUnstakeMachine = () => {
         on: { __UNSTAKE_ERROR__: "unstakeError" },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
-            Maybe.fromRecord({
-              stakeExitRequestDto,
-              signedMessage: Maybe.fromNullable(context.signedMessage),
-              transactionVerificationMessageDto: Maybe.fromNullable(
-                context.transactionVerificationMessageDto
-              ),
-            }).toEither(new Error("Missing params"))
+            stakeExitRequestDto.toEither(new Error("Missing params"))
           )
             .chain((val) =>
-              EitherAsync(() =>
-                onStakeExit.mutateAsync({
-                  stakeRequestDto: merge(val.stakeExitRequestDto, {
-                    dto: {
-                      args: {
-                        signatureVerification: {
-                          message:
-                            val.transactionVerificationMessageDto.message,
-                          signed: val.signedMessage,
+              EitherAsync(() => {
+                const stakeRequestDto =
+                  context.transactionVerificationMessageDto &&
+                  context.signedMessage
+                    ? merge(val, {
+                        dto: {
+                          args: {
+                            signatureVerification: {
+                              message:
+                                context.transactionVerificationMessageDto
+                                  .message,
+                              signed: context.signedMessage,
+                            },
+                          },
                         },
-                      },
-                    },
-                  } as Partial<typeof val>),
-                })
-              ).mapLeft((e) => {
+                      } as Partial<typeof val>)
+                    : val;
+
+                return onStakeExit.mutateAsync({ stakeRequestDto });
+              }).mapLeft((e) => {
                 console.log(e);
                 return new Error("Failed to unstake");
               })
