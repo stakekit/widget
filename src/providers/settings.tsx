@@ -3,7 +3,7 @@ import { PropsWithChildren, createContext, useContext, useMemo } from "react";
 import { Properties, TrackEventVal, TrackPageVal } from "./tracking";
 import { BuildWagmiConfig } from "./wagmi";
 import { config } from "../config";
-import { SKExternalProviders } from "../domain/types/wallets/safe-wallet";
+import { SKExternalProviders } from "../domain/types/wallets";
 
 export interface SettingsContextType {
   apiKey: string;

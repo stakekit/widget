@@ -15,7 +15,6 @@ import { isLedgerDappBrowserProvider } from "../../utils";
 import { externalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
-import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
 import { createClient } from "viem";
 import {
   useTransactionGetTransactionStatusByNetworkAndHashHook,
@@ -24,6 +23,7 @@ import {
 } from "@stakekit/api-hooks";
 import { useSavedRef } from "../../hooks";
 import { MutableRefObject } from "react";
+import { SKExternalProviders } from "../../domain/types/wallets";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 

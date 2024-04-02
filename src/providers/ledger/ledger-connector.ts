@@ -1,9 +1,4 @@
-import {
-  Connector,
-  CreateConnectorFn,
-  createConnector,
-  normalizeChainId,
-} from "wagmi";
+import { Connector, CreateConnectorFn, createConnector } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { Address } from "viem";
 import { Chain, WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
@@ -234,7 +229,7 @@ const createLedgerLiveConnector = ({
     const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
       chainId
     ) => {
-      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
+      config.emitter.emit("change", { chainId: chainId as unknown as number });
     };
 
     const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] = () => {

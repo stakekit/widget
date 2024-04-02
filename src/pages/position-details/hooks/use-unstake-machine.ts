@@ -165,29 +165,33 @@ export const useUnstakeMachine = () => {
         on: { __UNSTAKE_ERROR__: "unstakeError" },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
-            stakeExitRequestDto.toEither(new Error("Missing params"))
-          )
-            .chain((val) =>
-              EitherAsync(() => {
-                const stakeRequestDto =
+            stakeExitRequestDto
+              .map((val) => {
+                if (
                   context.transactionVerificationMessageDto &&
                   context.signedMessage
-                    ? merge(val, {
-                        dto: {
-                          args: {
-                            signatureVerification: {
-                              message:
-                                context.transactionVerificationMessageDto
-                                  .message,
-                              signed: context.signedMessage,
-                            },
-                          },
+                ) {
+                  return merge(val, {
+                    dto: {
+                      args: {
+                        signatureVerification: {
+                          message:
+                            context.transactionVerificationMessageDto.message,
+                          signed: context.signedMessage,
                         },
-                      } as Partial<typeof val>)
-                    : val;
+                      },
+                    },
+                  } as Partial<typeof val>);
+                }
 
-                return onStakeExit.mutateAsync({ stakeRequestDto });
-              }).mapLeft((e) => {
+                return val;
+              })
+              .toEither(new Error("Missing params"))
+          )
+            .chain((val) =>
+              EitherAsync(() =>
+                onStakeExit.mutateAsync({ stakeRequestDto: val })
+              ).mapLeft((e) => {
                 console.log(e);
                 return new Error("Failed to unstake");
               })
