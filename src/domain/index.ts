@@ -10,6 +10,7 @@ import {
 } from "@stakekit/api-hooks";
 import { Override } from "../types";
 import { Left, Right } from "purify-ts";
+import { normalizeChainId } from "wagmi";
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
@@ -107,3 +108,9 @@ export const getTransactionsTotalGasAmount = (txs: TransactionDto[]) =>
 
 export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
   txs.filter((tx) => tx.type !== "P2P_NODE_REQUEST");
+
+export const skNormalizeChainId = (chainId: string) => {
+  const cId = normalizeChainId(chainId);
+
+  return isNaN(cId) ? (chainId as unknown as number) : cId;
+};

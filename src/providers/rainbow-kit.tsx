@@ -14,6 +14,7 @@ import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { ConnectKitTheme, connectKitTheme } from "../styles/tokens/connect-kit";
 import { useRootElement } from "../hooks/use-root-element";
+import { isExternalProviderConnector } from "./external-provider";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,
@@ -49,6 +50,11 @@ export const RainbowKitProviderWithTheme = ({
     [ledgerDisabledChains, t]
   );
 
+  const hideDisconnect = useMemo(
+    () => !!(connector && isExternalProviderConnector(connector)),
+    [connector]
+  );
+
   return (
     <RainbowKitProvider
       chainIdsToUse={chainIdsToUse}
@@ -62,6 +68,7 @@ export const RainbowKitProviderWithTheme = ({
       }}
       appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
       theme={finalTheme}
+      hideDisconnect={hideDisconnect}
     >
       <DisabledChainHandling />
       {children}
