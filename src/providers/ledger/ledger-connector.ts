@@ -21,6 +21,7 @@ import { QueryParamsResult } from "../../hooks/use-init-query-params";
 import { ledger } from "../../assets/images/ledger";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import { BehaviorSubject, Observable, map } from "rxjs";
+import { skNormalizeChainId } from "../../domain";
 
 const configMeta = {
   id: "ledgerLive",
@@ -229,7 +230,7 @@ const createLedgerLiveConnector = ({
     const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
       chainId
     ) => {
-      config.emitter.emit("change", { chainId: chainId as unknown as number });
+      config.emitter.emit("change", { chainId: skNormalizeChainId(chainId) });
     };
 
     const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] = () => {
