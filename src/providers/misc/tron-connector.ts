@@ -1,4 +1,4 @@
-import { Connector, createConnector, normalizeChainId } from "wagmi";
+import { Connector, createConnector } from "wagmi";
 import { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
@@ -104,7 +104,7 @@ const createTronConnector = ({
       }
     },
     onChainChanged: (chainId) => {
-      config.emitter.emit("change", { chainId: normalizeChainId(chainId) });
+      config.emitter.emit("change", { chainId: chainId as unknown as number });
     },
     onDisconnect: () => {
       config.emitter.emit("disconnect");

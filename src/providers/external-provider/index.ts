@@ -1,20 +1,15 @@
 import { WalletList } from "@stakekit/rainbowkit";
 import { ExternalProvider } from "../../domain/types/external-providers";
-import { EitherAsync, List } from "purify-ts";
+import { EitherAsync, List, Maybe } from "purify-ts";
 import { getSKIcon } from "../../utils";
-import { SKExternalProviders } from "../../domain/types/wallets/safe-wallet";
-import {
-  Connector,
-  CreateConnectorFn,
-  createConnector,
-  normalizeChainId,
-} from "wagmi";
+import { Connector, CreateConnectorFn, createConnector } from "wagmi";
 import { Chain } from "wagmi/chains";
 import { Address } from "viem";
 import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import { MutableRefObject } from "react";
 import { BehaviorSubject } from "rxjs";
+import { SKExternalProviders } from "../../domain/types/wallets";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -73,9 +68,14 @@ export const externalProviderConnector = (
                 getChainId(),
               ]);
 
-              $filteredChains.next(
-                config.chains.filter((c) => c.id === chainId)
-              );
+              Maybe.fromNullable(variant.current.supportedChainIds)
+                .alt(Maybe.of([chainId]))
+                .map((val) => new Set(val))
+                .map((val) =>
+                  $filteredChains.next(
+                    config.chains.filter((c) => val.has(c.id))
+                  )
+                );
 
               return { accounts, chainId };
             };
@@ -113,7 +113,7 @@ export const externalProviderConnector = (
           const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
             (chainId) => {
               config.emitter.emit("change", {
-                chainId: normalizeChainId(chainId),
+                chainId: chainId as unknown as number,
               });
             };
 

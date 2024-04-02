@@ -15,7 +15,7 @@ type SafeWalletTransactionReceipt = {
   blockHash?: string;
 };
 
-interface SafeWalletProvider {
+export interface SafeWalletProvider {
   getAccounts(): Promise<string[]>;
   getChainId(): Promise<string>;
   switchEthereumChain(
@@ -42,8 +42,3 @@ interface SafeWalletProvider {
     appInfo: SafeWalletAppInfo
   ): Promise<string>;
 }
-
-export type SKExternalProviders = {
-  type: "safe_wallet";
-  provider: SafeWalletProvider;
-};
