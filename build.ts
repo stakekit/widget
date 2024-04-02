@@ -82,7 +82,8 @@ const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
           args.path.startsWith("@ledgerhq") ||
           args.path.startsWith("@tronweb3") ||
           args.path.startsWith("@cosmos-kit/walletconnect") ||
-          args.path.startsWith("rxjs")
+          args.path.startsWith("rxjs") ||
+          args.path.startsWith("tslib")
             ? { external: false }
             : { external: true, path: args.path }
         );
