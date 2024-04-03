@@ -176,7 +176,9 @@ export const useWagmiConfig = () => {
   const transactionGetTransactionStatusByNetworkAndHash =
     useTransactionGetTransactionStatusByNetworkAndHashHook();
 
-  const externalProvidersRef = useSavedRef(externalProviders);
+  const externalProvidersRef = useSavedRef(externalProviders) as
+    | MutableRefObject<SKExternalProviders>
+    | MutableRefObject<undefined>;
 
   return useQuery({
     staleTime,
@@ -185,14 +187,14 @@ export const useWagmiConfig = () => {
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
-        externalProviders: externalProvidersRef.current
-          ? (externalProvidersRef as MutableRefObject<SKExternalProviders>)
-          : undefined,
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         yieldGetMyNetworks,
         transactionGetTransactionStatusByNetworkAndHash,
         yieldYieldOpportunity,
+        ...(externalProvidersRef.current && {
+          externalProviders: externalProvidersRef,
+        }),
       }),
   });
 };

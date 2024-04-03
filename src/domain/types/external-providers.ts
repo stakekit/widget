@@ -154,7 +154,7 @@ export class ExternalProvider {
     switch (currentVariant.type) {
       case "safe_wallet": {
         return EitherAsync(() =>
-          currentVariant.provider.eth_sign(
+          currentVariant.provider.signMessage(
             address,
             messageHash,
             this.#safeWalletAppInfo

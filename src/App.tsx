@@ -54,6 +54,7 @@ import {
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
+import { useUpdateEffect } from "./hooks/use-update-effect";
 
 const Widget = () => {
   useToggleTheme();
@@ -210,13 +211,23 @@ const Root = () => {
 
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
 
+export type SKAppProps = SettingsContextType;
+
 export const SKApp = (props: SettingsContextType) => {
   const [showChild, setShowChild] = useState(false);
+  const [key, reloadApp] = useState(() => Date.now());
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
 
+  useUpdateEffect(() => {
+    reloadApp(Date.now());
+  }, [
+    props.externalProviders?.currentAddress,
+    props.externalProviders?.currentChain,
+  ]);
+
   return (
-    <SettingsContextProvider {...props}>
+    <SettingsContextProvider key={key} {...props}>
       <Box className={appContainer}>
         {showChild && <RouterProvider router={router} />}
       </Box>

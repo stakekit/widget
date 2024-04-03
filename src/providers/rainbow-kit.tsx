@@ -15,6 +15,7 @@ import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { ConnectKitTheme, connectKitTheme } from "../styles/tokens/connect-kit";
 import { useRootElement } from "../hooks/use-root-element";
 import { isExternalProviderConnector } from "./external-provider";
+import { isLedgerLiveConnector } from "./ledger/ledger-connector";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,
@@ -51,7 +52,12 @@ export const RainbowKitProviderWithTheme = ({
   );
 
   const hideDisconnect = useMemo(
-    () => !!(connector && isExternalProviderConnector(connector)),
+    () =>
+      !!(
+        connector &&
+        (isExternalProviderConnector(connector) ||
+          isLedgerLiveConnector(connector))
+      ),
     [connector]
   );
 

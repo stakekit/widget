@@ -1,7 +1,36 @@
 import { QueryClient } from "@tanstack/react-query";
 import { PropsWithChildren, createContext, useContext, useState } from "react";
-import { getQueryClient } from "../../services/query-client";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { config } from "../../config";
+import { shouldRetryRequest } from "../../common/utils";
+import { isAxiosError } from "axios";
+
+const getQueryClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        gcTime: config.queryClient.cacheTime,
+        staleTime: config.queryClient.staleTime,
+        retry: (failureCount, error) => {
+          if (isAxiosError(error)) {
+            return !!(shouldRetryRequest(error) && failureCount < 2);
+          }
+
+          return false;
+        },
+        refetchOnWindowFocus: false,
+      },
+      mutations: {
+        retry: (failureCount, error) => {
+          if (isAxiosError(error)) {
+            return !!(shouldRetryRequest(error) && failureCount < 2);
+          }
+
+          return false;
+        },
+      },
+    },
+  });
 
 const Context = createContext<QueryClient | undefined>(undefined);
 
