@@ -36,7 +36,7 @@ export interface SafeWalletProvider {
     }[];
     appInfo: SafeWalletAppInfo;
   }) => Promise<{ hash: string }>;
-  eth_sign(
+  signMessage(
     address: string,
     messageHash: string,
     appInfo: SafeWalletAppInfo
