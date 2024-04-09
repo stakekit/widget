@@ -1,5 +1,5 @@
 import {
-  AddressesDto,
+  AddressWithTokenDtoAdditionalAddresses,
   PendingActionDto,
   YieldBalanceDto,
   YieldDto,
@@ -9,7 +9,6 @@ import {
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { Override } from "../../types";
-import { getAdditionalAddresses } from "../../providers/sk-wallet/use-additional-addresses";
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useSKWallet } from "../../providers/sk-wallet";
@@ -21,10 +20,10 @@ import {
   PASingleValidatorRequired,
 } from "../../domain";
 import { useSKQueryClient } from "../../providers/query-client";
-import { Connector } from "wagmi";
 
 export const usePendingActionDeepLink = () => {
-  const { isLedgerLive, isConnected, address, connector } = useSKWallet();
+  const { isLedgerLive, isConnected, address, connector, additionalAddresses } =
+    useSKWallet();
 
   const onPendingAction = useOnPendingAction();
 
@@ -41,20 +40,15 @@ export const usePendingActionDeepLink = () => {
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
-          Maybe.fromNullable(address)
-            .chain((add) =>
-              Maybe.fromNullable(connector).map((conn) => ({
-                connector: conn,
-                address: add,
-              }))
-            )
-            .toEither(new Error("missing wagmi config"))
-        ).chain((data) =>
+          Maybe.fromNullable(address).toEither(
+            new Error("missing wagmi config")
+          )
+        ).chain((addr) =>
           fn({
             isLedgerLive,
             onPendingAction: onPendingAction.mutateAsync,
-            address: data.address,
-            connector: data.connector,
+            additionalAddresses,
+            address: addr,
             queryClient,
             yieldGetSingleYieldBalances,
             yieldYieldOpportunity,
@@ -67,8 +61,8 @@ export const usePendingActionDeepLink = () => {
 const fn = ({
   isLedgerLive,
   onPendingAction,
+  additionalAddresses,
   address,
-  connector,
   queryClient,
   yieldGetSingleYieldBalances,
   yieldYieldOpportunity,
@@ -76,7 +70,7 @@ const fn = ({
   isLedgerLive: boolean;
   onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
   address: string;
-  connector: Connector;
+  additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
   yieldGetSingleYieldBalances: ReturnType<
     typeof useYieldGetSingleYieldBalancesHook
@@ -103,31 +97,24 @@ const fn = ({
 
     return EitherAsync.liftEither(initQueryParams)
       .chain((initQueryParams) =>
-        getAdditionalAddresses(connector)
-          .map<AddressesDto>((additionalAddresses) => ({
-            address,
+        withRequestErrorRetry({
+          fn: () =>
+            yieldGetSingleYieldBalances(initQueryParams.yieldId, {
+              addresses: {
+                address,
+                additionalAddresses: additionalAddresses ?? undefined,
+              },
+            }),
+        })
+          .mapLeft(() => new Error("could not get yield balances"))
+          .map((val) => ({
+            yieldId: initQueryParams.yieldId,
+            pendingaction: initQueryParams.pendingaction,
+            validatorAddress: initQueryParams.validator,
+            singleYieldBalances: val,
+            address: address,
             additionalAddresses: additionalAddresses ?? undefined,
           }))
-          .chain((data) =>
-            withRequestErrorRetry({
-              fn: () =>
-                yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-                  addresses: {
-                    address: data.address,
-                    additionalAddresses: data.additionalAddresses,
-                  },
-                }),
-            })
-              .mapLeft(() => new Error("could not get yield balances"))
-              .map((val) => ({
-                yieldId: initQueryParams.yieldId,
-                pendingaction: initQueryParams.pendingaction,
-                validatorAddress: initQueryParams.validator,
-                singleYieldBalances: val,
-                address: data.address,
-                additionalAddresses: data.additionalAddresses,
-              }))
-          )
       )
       .chain((data) =>
         EitherAsync.liftEither(
