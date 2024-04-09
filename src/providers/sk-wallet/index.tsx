@@ -16,7 +16,7 @@ import {
 import { useWagmiConfig } from "../wagmi";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { useLedgerAccounts } from "./use-ledger-accounts";
-import { getCosmosChainWallet, wagmiNetworkToSKNetwork } from "./utils";
+import { wagmiNetworkToSKNetwork } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import {
   NotSupportedFlowError,
@@ -42,6 +42,7 @@ import { isCosmosConnector } from "../cosmos/cosmos-connector";
 import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
+import { useCosmosCW } from "./use-cosmos-cw";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -65,6 +66,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
 
   const ledgerAccounts = useLedgerAccounts(connector);
   const ledgerCurrentAccountId = useLedgerCurrentAccountId(connector);
+  const cosmosCW = useCosmosCW(connector);
 
   const wagmiConfig = useWagmiConfig();
 
@@ -182,7 +184,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           /**
            * Cosmos connector
            */
-          return getCosmosChainWallet(conn).chain((cw) =>
+          return EitherAsync.liftEither(
+            Maybe.fromNullable(cosmosCW).toEither(new Error("cosmosCW missing"))
+          ).chain((cw) =>
             // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
             EitherAsync(() =>
               cw.client.signDirect!(
@@ -273,7 +277,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           );
         }
       }),
-    [connectorDetails, sendTransactionAsync, ledgerCurrentAccountId]
+    [connectorDetails, cosmosCW, ledgerCurrentAccountId, sendTransactionAsync]
   );
 
   const signMultipleTransactions = useCallback<

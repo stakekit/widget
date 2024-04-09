@@ -12,7 +12,7 @@ import { CosmosChainsMap } from "../../domain/types/chains";
 import { waitForMs } from "../../utils";
 import { WCClient } from "@cosmos-kit/walletconnect";
 import EventEmitter from "eventemitter3";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 
 export const wallets: MainWalletBase[] = [
   ...keplrWallets,
@@ -40,10 +40,10 @@ const configMeta = wallets.reduce(
 );
 
 type ExtraProps = ConnectorWithFilteredChains & {
-  chainWallet: Promise<ChainWalletBase>;
+  $chainWallet: Observable<ChainWalletBase>;
 };
 
-type CosmosConnector = Connector & ExtraProps;
+export type CosmosConnector = Connector & ExtraProps;
 
 export const isCosmosConnector = (
   connector: Connector
@@ -79,36 +79,42 @@ export const createCosmosConnector = ({
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
         const $filteredChains = new BehaviorSubject(cosmosWagmiChains);
-        let chainWallet: ExtraProps["chainWallet"] = new Promise((res, rej) => {
-          let retryTimes = 0;
+        const initCw = wallet.chainWalletMap.get(
+          Object.values(cosmosChainsMap)[0].chain.chain_name
+        );
 
-          const check = async () => {
-            const cw = wallet.chainWalletMap.get(
-              Object.values(cosmosChainsMap)[0].chain.chain_name
-            );
+        if (!initCw) throw new Error("Chain wallet not found");
 
-            if (retryTimes > 3) {
-              return rej();
-            }
+        const $chainWallet = new BehaviorSubject<ChainWalletBase>(initCw);
 
-            if (cw && cw.clientMutable.state === "Error") {
-              res(cw);
-            } else if (cw && cw.clientMutable.state === "Done") {
-              res(cw);
-            } else {
-              await waitForMs(1000);
-              retryTimes++;
-              check();
-            }
-          };
+        const setup: ReturnType<CreateConnectorFn>["setup"] = () =>
+          new Promise((res, rej) => {
+            let retryTimes = 0;
 
-          check();
-        });
+            const check = async () => {
+              if (retryTimes > 3) {
+                return rej();
+              }
+
+              if (
+                initCw.clientMutable.state === "Done" ||
+                initCw.clientMutable.state === "Error"
+              ) {
+                res();
+              } else {
+                await waitForMs(1000);
+                retryTimes++;
+                check();
+              }
+            };
+
+            check();
+          });
 
         const connect: ReturnType<CreateConnectorFn>["connect"] = async () => {
           config.emitter.emit("message", { type: "connecting" });
 
-          const cw = await chainWallet;
+          const cw = $chainWallet.getValue();
 
           if (cw.address && cw.chainId) {
             if (cw.walletInfo.mode === "wallet-connect") {
@@ -148,7 +154,7 @@ export const createCosmosConnector = ({
         };
 
         const getAndSavePubKeyToStorage = async () => {
-          const cw = await chainWallet;
+          const cw = await $chainWallet.getValue();
 
           const result = await cw.client?.getAccount?.(cw.chainId);
 
@@ -179,9 +185,9 @@ export const createCosmosConnector = ({
               cosmosChain.cosmosChainName
             ) as ChainWalletBase;
 
-            if (!newCw) throw new Error("Wallet not found");
+            if (!newCw) throw new Error("Chain wallet not found");
 
-            chainWallet = Promise.resolve(newCw);
+            $chainWallet.next(newCw);
 
             await connect();
 
@@ -220,35 +226,35 @@ export const createCosmosConnector = ({
 
         const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
           async () => {
-            return [(await chainWallet).address as Address];
+            return [$chainWallet.getValue().address as Address];
           };
 
         const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
           async () => {
             try {
-              const cw = await chainWallet;
-              return !!cw.address;
+              return !!$chainWallet.getValue().address;
             } catch (error) {
               return false;
             }
           };
 
         const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-          async () => (await chainWallet).chainId as unknown as number;
+          async () => $chainWallet.getValue().chainId as unknown as number;
 
         const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
           async () => provider;
 
         const disconnect: ReturnType<CreateConnectorFn>["disconnect"] =
-          async () => (await chainWallet).disconnect();
+          async () => $chainWallet.getValue().disconnect();
 
         return {
           ...walletDetailsParams,
+          setup,
           id: wallet.walletInfo.name,
           name: wallet.walletInfo.name,
           type: configMeta.type,
           $filteredChains: $filteredChains.asObservable(),
-          chainWallet,
+          $chainWallet: $chainWallet.asObservable(),
           connect,
           switchChain,
           onAccountsChanged,
