@@ -132,7 +132,21 @@ type MappedSupportedLedgerFamiliesWithCurrency = {
  * and add to map TokenCurrency['id'] => CryptoCurrency['family']
  */
 export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
-  EitherAsync(() => walletAPIClient.currency.list())
+  EitherAsync(() =>
+    walletAPIClient.currency.list({
+      currencyIds: [
+        "ethereum",
+        "near",
+        "tezos",
+        "solana",
+        "cosmos",
+        "crypto_org",
+        "celo",
+        "tron",
+        "polkadot",
+      ],
+    })
+  )
     .map((val) => {
       return val.reduce(
         (acc, next) => {
