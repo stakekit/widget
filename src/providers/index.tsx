@@ -20,6 +20,7 @@ import { MountAnimationProvider } from "./mount-animation";
 import { SKQueryClientProvider } from "./query-client";
 import { SKApiClientProvider } from "./api/api-client-provider";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
+import { RootElementProvider } from "./root-element";
 
 export const Providers = ({
   children,
@@ -28,43 +29,45 @@ export const Providers = ({
 
   return (
     <StrictMode>
-      <SKApiClientProvider>
-        <SKQueryClientProvider>
-          {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
+      <RootElementProvider>
+        <SKApiClientProvider>
+          <SKQueryClientProvider>
+            {showQueryDevtools && <ReactQueryDevtools initialIsOpen={false} />}
 
-          <WagmiConfigProvider>
-            <TrackingContextProvider tracking={tracking}>
-              <SKWalletProvider>
-                <RainbowProvider>
-                  <ActionHistoryContextProvider>
-                    <StakeStateProvider>
-                      <ThemeWrapper>
-                        <ListStateContextProvider>
-                          <CurrentLayoutProvider>
-                            <HeaderHeightProvider>
-                              <FooterHeightProvider>
-                                <FooterButtonProvider>
-                                  <PoweredByHeightProvider>
-                                    <SKLocationProvider>
-                                      <MountAnimationProvider>
-                                        {children}
-                                      </MountAnimationProvider>
-                                    </SKLocationProvider>
-                                  </PoweredByHeightProvider>
-                                </FooterButtonProvider>
-                              </FooterHeightProvider>
-                            </HeaderHeightProvider>
-                          </CurrentLayoutProvider>
-                        </ListStateContextProvider>
-                      </ThemeWrapper>
-                    </StakeStateProvider>
-                  </ActionHistoryContextProvider>
-                </RainbowProvider>
-              </SKWalletProvider>
-            </TrackingContextProvider>
-          </WagmiConfigProvider>
-        </SKQueryClientProvider>
-      </SKApiClientProvider>
+            <WagmiConfigProvider>
+              <TrackingContextProvider tracking={tracking}>
+                <SKWalletProvider>
+                  <RainbowProvider>
+                    <ActionHistoryContextProvider>
+                      <StakeStateProvider>
+                        <ThemeWrapper>
+                          <ListStateContextProvider>
+                            <CurrentLayoutProvider>
+                              <HeaderHeightProvider>
+                                <FooterHeightProvider>
+                                  <FooterButtonProvider>
+                                    <PoweredByHeightProvider>
+                                      <SKLocationProvider>
+                                        <MountAnimationProvider>
+                                          {children}
+                                        </MountAnimationProvider>
+                                      </SKLocationProvider>
+                                    </PoweredByHeightProvider>
+                                  </FooterButtonProvider>
+                                </FooterHeightProvider>
+                              </HeaderHeightProvider>
+                            </CurrentLayoutProvider>
+                          </ListStateContextProvider>
+                        </ThemeWrapper>
+                      </StakeStateProvider>
+                    </ActionHistoryContextProvider>
+                  </RainbowProvider>
+                </SKWalletProvider>
+              </TrackingContextProvider>
+            </WagmiConfigProvider>
+          </SKQueryClientProvider>
+        </SKApiClientProvider>
+      </RootElementProvider>
     </StrictMode>
   );
 };

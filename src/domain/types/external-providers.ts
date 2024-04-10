@@ -6,6 +6,7 @@ import { MutableRefObject } from "react";
 import { config } from "../../config";
 import { SKExternalProviders } from "./wallets";
 import { SafeWalletAppInfo } from "./wallets/safe-wallet";
+import { EVMTx } from "./wallets/generic-wallet";
 
 export class ExternalProvider {
   #safeWalletAppInfo: SafeWalletAppInfo = {
@@ -16,16 +17,16 @@ export class ExternalProvider {
     url: config.appUrl,
   };
 
-  shouldMultiSend: boolean;
+  get shouldMultiSend() {
+    return this.variant.current.type === "safe_wallet";
+  }
 
   constructor(
     private variant: MutableRefObject<SKExternalProviders>,
     private transactionGetTransactionStatusByNetworkAndHash: ReturnType<
       typeof useTransactionGetTransactionStatusByNetworkAndHashHook
     >
-  ) {
-    this.shouldMultiSend = this.variant.current.type === "safe_wallet";
-  }
+  ) {}
 
   private invalidProviderType() {
     return EitherAsync.liftEither(Left(new Error("Invalid provider type")));
@@ -57,6 +58,24 @@ export class ExternalProvider {
         return new Error("Failed to get chain id");
       })
       .map((val) => (typeof val === "string" ? parseInt(val, 16) : val));
+  }
+
+  sendTransaction(tx: EVMTx) {
+    const currentVariant = this.variant.current;
+
+    switch (currentVariant.type) {
+      case "generic": {
+        return EitherAsync(() =>
+          currentVariant.provider.sendTransaction(tx)
+        ).mapLeft((e) => {
+          console.log(e);
+          return new Error("Failed to send transaction");
+        });
+      }
+
+      default:
+        return this.invalidProviderType();
+    }
   }
 
   sendMultipleTransactions({

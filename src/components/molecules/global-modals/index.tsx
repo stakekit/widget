@@ -5,9 +5,9 @@ import { useRegionCodeName } from "../../../hooks/use-region-code-names";
 import { HelpModal } from "../help-modal";
 import { ReactPortal } from "react";
 import { ReferralLock } from "../referral-lock";
-import { useRootElement } from "../../../hooks/use-root-element";
 import { Maybe } from "purify-ts";
 import { useSettings } from "../../../providers/settings";
+import { useRootElement } from "../../../providers/root-element";
 
 export const GlobalModals = () => {
   const geoBlock = useGeoBlock();

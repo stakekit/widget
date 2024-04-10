@@ -3,8 +3,8 @@ import { ChangeEvent, memo, useEffect, useRef, useState } from "react";
 import { numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
 import { createPortal } from "react-dom";
-import { useRootElement } from "../../../hooks/use-root-element";
 import { formatNumber } from "../../../utils";
+import { useRootElement } from "../../../providers/root-element";
 
 export type NumberInputProps = {
   onChange: (value: BigNumber) => void;

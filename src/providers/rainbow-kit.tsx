@@ -13,9 +13,9 @@ import { useCloseChainModal } from "../hooks/use-close-chain-modal";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { ConnectKitTheme, connectKitTheme } from "../styles/tokens/connect-kit";
-import { useRootElement } from "../hooks/use-root-element";
 import { isExternalProviderConnector } from "./external-provider";
 import { isLedgerLiveConnector } from "./ledger/ledger-connector";
+import { useRootElement } from "./root-element";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

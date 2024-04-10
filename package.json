@@ -57,9 +57,7 @@
   },
   "peerDependencies": {
     "react": ">=18",
-    "react-dom": ">=18",
-    "viem": ">=2",
-    "wagmi": ">=2"
+    "react-dom": ">=18"
   },
   "dependencies": {
     "@cassiozen/usestatemachine": "^1.0.1",

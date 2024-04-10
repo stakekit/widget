@@ -27,15 +27,11 @@ import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { fromHex, toHex } from "@cosmjs/encoding";
 import { decodeSignature } from "@cosmjs/amino";
-import {
-  unsignedEVMTransactionCodec,
-  unsignedTronTransactionCodec,
-} from "./validation";
 import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import { Hash } from "viem";
+import { Hash, numberToHex } from "viem";
 import { isExternalProviderConnector } from "../external-provider";
 import { isTronConnector } from "../misc/tron-connector";
 import { isCosmosConnector } from "../cosmos/cosmos-connector";
@@ -43,6 +39,11 @@ import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 import { useCosmosCW } from "./use-cosmos-cw";
+import {
+  unsignedEVMTransactionCodec,
+  unsignedTronTransactionCodec,
+} from "./validation";
+import { TxType } from "../../domain/types/wallets/generic-wallet";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -131,7 +132,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       EitherAsync.liftEither(
         !isConnected || !network || !connector || !address
           ? Left(new Error("No wallet connected"))
-          : Right({ conn: connector, network, address })
+          : Right({
+              conn: connector,
+              network,
+              address,
+            })
       ),
     [connector, isConnected, network, address]
   );
@@ -141,7 +146,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
-      >(({ conn }) => {
+      >(({ conn, address }) => {
         if (isLedgerLiveConnector(conn)) {
           /**
            * Ledger Live connector
@@ -223,24 +228,45 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           )
             .chain((val) =>
-              EitherAsync(() => conn.signTransaction(val))
-                .mapLeft((e) => {
-                  console.log(e);
-                  return new Error("sign failed");
-                })
-                .ifRight((val) => {
-                  console.log(val);
-                })
+              EitherAsync(() => conn.signTransaction(val)).mapLeft((e) => {
+                console.log(e);
+                return new Error("sign failed");
+              })
             )
             .map((val) => ({
               signedTx: JSON.stringify(val),
               broadcasted: false,
             }));
         } else if (isExternalProviderConnector(conn)) {
-          /**
-           * Use multisend flow for now
-           */
-          return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
+          return EitherAsync.liftEither(
+            Either.encase(() => JSON.parse(tx))
+              .chain((val) => unsignedEVMTransactionCodec.decode(val))
+              .mapLeft((e) => {
+                console.log(e);
+                return new TransactionDecodeError();
+              })
+          )
+            .chain((val) =>
+              conn.sendTransaction({
+                to: val.to,
+                from: address,
+                data: val.data,
+                value: val.value ? numberToHex(val.value) : undefined,
+                nonce: numberToHex(val.nonce),
+                gas: numberToHex(val.gasLimit),
+                chainId: numberToHex(val.chainId),
+                ...(val.maxFeePerGas
+                  ? {
+                      type: TxType.EIP1559,
+                      maxFeePerGas: numberToHex(val.maxFeePerGas),
+                      maxPriorityFeePerGas: val.maxPriorityFeePerGas
+                        ? numberToHex(val.maxPriorityFeePerGas)
+                        : undefined,
+                    }
+                  : { type: TxType.Legacy }),
+              })
+            )
+            .map((val) => ({ signedTx: val, broadcasted: true }));
         } else {
           /**
            * EVM connector
