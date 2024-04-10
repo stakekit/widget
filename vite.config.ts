@@ -32,6 +32,16 @@ export default defineConfig({
       include: [/types/, /node_modules/], // `/types/` is for @stakekit/common
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      external: ["crypto", "stream"],
+      onwarn(warning, defaultHandler) {
+        if (warning.code === "SOURCEMAP_ERROR") {
+          return;
+        }
+
+        defaultHandler(warning);
+      },
+    },
   },
   esbuild: { drop: ["console"] },
   server: { host: true },

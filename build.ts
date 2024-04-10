@@ -37,7 +37,6 @@ const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
     "process.env.NODE_ENV": '"production"',
   },
   bundle: true,
-  alias: { stream: "stream-browserify" },
   logLevel: "info",
   loader: { ".png": "dataurl" },
   plugins: commonPlugins,
@@ -50,7 +49,7 @@ const standaloneAppConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   entryPoints: ["src/index.bundle.ts"],
   outdir: "dist/package/bundle",
   minify: true,
-  external: ["crypto"],
+  external: ["crypto", "stream"],
 };
 
 const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
