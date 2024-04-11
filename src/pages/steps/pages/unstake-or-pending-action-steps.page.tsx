@@ -4,7 +4,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useSetActionHistoryData } from "../../../providers/stake-history";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 
 export const UnstakeOrPendingActionStepsPage = () => {
   const {
@@ -44,7 +44,13 @@ export const UnstakeOrPendingActionStepsPage = () => {
             amount: new BigNumber(
               unstakeSession.map((v) => v.amount).extract() ?? 0
             ),
-            interactedToken: val.token,
+            interactedToken: Maybe.fromPredicate(
+              (t) => t === "liquid-staking",
+              val.metadata.type
+            )
+              .chain(() => Maybe.fromNullable(val.metadata.rewardTokens))
+              .chain((v) => List.head(v)) // TODO: Handle multiple reward tokens
+              .orDefault(val.token),
           })
         );
 

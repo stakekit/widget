@@ -1,4 +1,4 @@
-import { HttpResponse, delay, http, passthrough } from "msw";
+import { HttpResponse, delay, http } from "msw";
 import { setupWorker } from "msw/browser";
 
 // const validReferrals = ["bgdCZB", "bgdCZC"];

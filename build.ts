@@ -34,38 +34,29 @@ const commonConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   define: {
     "import.meta.env.VITE_API_URL": JSON.stringify(VITE_API_URL),
     "import.meta.env.MODE": JSON.stringify(MODE),
+    "process.env.NODE_ENV": '"production"',
   },
   bundle: true,
-  alias: {
-    stream: "stream-browserify",
-  },
   logLevel: "info",
+  loader: { ".png": "dataurl" },
+  plugins: commonPlugins,
+  platform: "browser",
+  target: "es2021",
 };
 
 const standaloneAppConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   ...commonConfig,
-  target: "es2021",
   entryPoints: ["src/index.bundle.ts"],
   outdir: "dist/package/bundle",
   minify: true,
-  external: ["crypto"],
-  platform: "browser",
-  plugins: commonPlugins,
-  loader: {
-    ".png": "dataurl",
-  },
+  external: ["crypto", "stream"],
 };
 
 const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
   ...commonConfig,
-  banner: {
-    js: '"use client";',
-  },
+  banner: { js: '"use client";' },
   entryPoints: ["src/index.package.ts", "src/polyfills.ts"],
-  assetNames: "bundle/assets/[name]",
-  splitting: true,
   outdir: "dist/package",
-  platform: "browser",
   plugins: [
     ...commonPlugins,
     {
@@ -98,22 +89,15 @@ const packageConfig: Parameters<(typeof esbuild)["build"]>[0] = {
       },
     },
   ],
-  loader: {
-    ".png": "dataurl",
-  },
 };
 
 const buildAsStandaloneApp = () => esbuild.build(standaloneAppConfig);
-
 const buildAsPackage = async () => {
-  return isWatching
-    ? (await esbuild.context(packageConfig)).watch()
-    : esbuild.build(packageConfig);
+  if (isWatching) {
+    return (await esbuild.context(packageConfig)).watch();
+  }
+
+  return esbuild.build(packageConfig);
 };
 
-const main = async () => {
-  await buildAsStandaloneApp();
-  await buildAsPackage();
-};
-
-main();
+await Promise.all([buildAsStandaloneApp(), buildAsPackage()]);

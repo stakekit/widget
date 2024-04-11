@@ -69,6 +69,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
+  const { externalProviders } = useSettings();
+
   const {
     isConnected,
     isConnecting,
@@ -509,16 +511,18 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
               onClick: () => onClickRef.current(),
               label: buttonCTAText,
             }
-          : {
-              disabled: appLoading,
-              isLoading: appLoading,
-              label: t(
-                isLedgerLiveAccountPlaceholder
-                  ? "init.ledger_add_account"
-                  : "init.connect_wallet"
-              ),
-              onClick: () => connectClickRef.current(),
-            },
+          : externalProviders
+            ? null
+            : {
+                disabled: appLoading,
+                isLoading: appLoading,
+                label: t(
+                  isLedgerLiveAccountPlaceholder
+                    ? "init.ledger_add_account"
+                    : "init.connect_wallet"
+                ),
+                onClick: () => connectClickRef.current(),
+              },
       [
         appLoading,
         buttonCTAText,
@@ -528,6 +532,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         isLedgerLiveAccountPlaceholder,
         onClickRef,
         onStakeEnter.isPending,
+        externalProviders,
         t,
       ]
     )

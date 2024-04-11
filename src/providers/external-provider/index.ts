@@ -10,6 +10,7 @@ import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakeki
 import { MutableRefObject } from "react";
 import { BehaviorSubject } from "rxjs";
 import { SKExternalProviders } from "../../domain/types/wallets";
+import { skNormalizeChainId } from "../../domain";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -20,7 +21,10 @@ const configMeta = {
 type ExtraProps = ConnectorWithFilteredChains &
   Pick<
     ExternalProvider,
-    "sendMultipleTransactions" | "shouldMultiSend" | "signMessage"
+    | "sendTransaction"
+    | "sendMultipleTransactions"
+    | "shouldMultiSend"
+    | "signMessage"
   >;
 
 type ExternalConnector = Connector & ExtraProps;
@@ -88,11 +92,13 @@ export const externalProviderConnector = (
                     (c) => c.id === chainId,
                     config.chains as unknown as Array<Chain>
                   ).toEither(new Error("Chain not found"))
-                ).chain((chain) =>
-                  provider
-                    .switchChain({ chainId: `0x${chainId.toString(16)}` })
-                    .map(() => chain)
                 )
+                  .chain((chain) =>
+                    provider
+                      .switchChain({ chainId: `0x${chainId.toString(16)}` })
+                      .map(() => chain)
+                  )
+                  .ifRight((chain) => onChainChanged(chain.id.toString()))
               ).unsafeCoerce();
             };
 
@@ -113,7 +119,7 @@ export const externalProviderConnector = (
           const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
             (chainId) => {
               config.emitter.emit("change", {
-                chainId: chainId as unknown as number,
+                chainId: skNormalizeChainId(chainId),
               });
             };
 
@@ -134,6 +140,7 @@ export const externalProviderConnector = (
             onChainChanged,
             onAccountsChanged,
             switchChain,
+            sendTransaction: provider.sendTransaction.bind(provider),
             sendMultipleTransactions:
               provider.sendMultipleTransactions.bind(provider),
             signMessage: provider.signMessage.bind(provider),

@@ -43,6 +43,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
             position: "relative",
             height: containerHeight,
           }}
+          data-rk="widget-container"
           transition={
             state.layout ? { duration: 0.3 } : { duration: 0.6, delay: 0.3 }
           }

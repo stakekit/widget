@@ -20,10 +20,10 @@ import { Box } from "../box";
 import { Text } from "../typography";
 import { SearchIcon, XIcon } from "../icons";
 import { useSavedRef } from "../../../hooks";
-import { useRootElement } from "../../../hooks/use-root-element";
 import { ListItem } from "../list/list-item";
 import { Spinner } from "../spinner";
 import { ItemContainerVariants } from "../list/styles.css";
+import { useRootElement } from "../../../providers/root-element";
 
 type SelectModalWithoutStateProps = PropsWithChildren<
   {
