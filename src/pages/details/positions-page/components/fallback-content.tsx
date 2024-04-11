@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
 import { ConnectButton } from "../../../../components/molecules/connect-button";
+import { useSettings } from "../../../../providers/settings";
 
 export const FallbackContent = ({
   type,
@@ -13,6 +14,8 @@ export const FallbackContent = ({
 }) => {
   const { t } = useTranslation();
 
+  const { externalProviders } = useSettings();
+
   const getContent = () => {
     if (type === "spinner") {
       return (
@@ -20,7 +23,7 @@ export const FallbackContent = ({
           <Spinner />
         </Box>
       );
-    } else if (type === "not_connected") {
+    } else if (type === "not_connected" && !externalProviders) {
       return <ConnectButton />;
     } else if (type === "something_wrong") {
       return (
