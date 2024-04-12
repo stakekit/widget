@@ -5,8 +5,8 @@ export const stepsAfter = style({
   ":after": {
     content: "''",
     background: vars.color.text,
-    height: vars.space[3],
     width: vars.space[1],
+    flex: 1,
   },
 });
 

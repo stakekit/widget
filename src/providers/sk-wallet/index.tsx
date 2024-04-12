@@ -16,7 +16,7 @@ import {
 import { useWagmiConfig } from "../wagmi";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { useLedgerAccounts } from "./use-ledger-accounts";
-import { wagmiNetworkToSKNetwork } from "./utils";
+import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import {
   NotSupportedFlowError,
@@ -31,7 +31,7 @@ import { DirectSignDoc } from "@cosmos-kit/core";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import { Hash, numberToHex } from "viem";
+import { Hash } from "viem";
 import { isExternalProviderConnector } from "../external-provider";
 import { isTronConnector } from "../misc/tron-connector";
 import { isCosmosConnector } from "../cosmos/cosmos-connector";
@@ -43,7 +43,6 @@ import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
-import { TxType } from "../../domain/types/wallets/generic-wallet";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -238,6 +237,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               broadcasted: false,
             }));
         } else if (isExternalProviderConnector(conn)) {
+          /**
+           * External provider connector
+           */
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
               .chain((val) => unsignedEVMTransactionCodec.decode(val))
@@ -247,24 +249,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           )
             .chain((val) =>
-              conn.sendTransaction({
-                to: val.to,
-                from: address,
-                data: val.data,
-                value: val.value ? numberToHex(val.value) : undefined,
-                nonce: numberToHex(val.nonce),
-                gas: numberToHex(val.gasLimit),
-                chainId: numberToHex(val.chainId),
-                ...(val.maxFeePerGas
-                  ? {
-                      type: TxType.EIP1559,
-                      maxFeePerGas: numberToHex(val.maxFeePerGas),
-                      maxPriorityFeePerGas: val.maxPriorityFeePerGas
-                        ? numberToHex(val.maxPriorityFeePerGas)
-                        : undefined,
-                    }
-                  : { type: TxType.Legacy }),
-              })
+              conn.sendTransaction(prepareEVMTx({ address, decodedTx: val }))
             )
             .map((val) => ({ signedTx: val, broadcasted: true }));
         } else {
@@ -313,25 +298,19 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
-      >(({ conn, network }) => {
+      >(({ conn, network, address }) => {
         if (isExternalProviderConnector(conn)) {
           return EitherAsync.liftEither(
             Either.sequence(
               txs.map((tx) =>
                 Either.encase(() => JSON.parse(tx))
                   .chain((val) => unsignedEVMTransactionCodec.decode(val))
+                  .map((val) => prepareEVMTx({ address, decodedTx: val }))
                   .mapLeft((e) => {
                     console.log(e);
                     return new TransactionDecodeError();
                   })
               )
-            ).map((val) =>
-              val.map((v) => ({
-                data: v.data,
-                gas: v.gasLimit.toString(),
-                to: v.to,
-                value: v.value?.toString() ?? "0",
-              }))
             )
           ).chain((val) =>
             conn
@@ -351,9 +330,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const signMessage = useCallback<SKWallet["signMessage"]>(
     (message) =>
       connectorDetails
-        .chain(({ conn, address }) => {
+        .chain(({ conn }) => {
           if (isExternalProviderConnector(conn)) {
-            return conn.signMessage(address, message);
+            return conn.signMessage(message);
           }
 
           return EitherAsync(() => signMessageAsync({ message }));

@@ -179,7 +179,7 @@ export const useYieldMetaInfo = ({
             earnPeriod:
               warmupPeriodDays > 0
                 ? t("details.liquid_stake.earn_after_warmup", {
-                    warmupPeriodDays,
+                    count: warmupPeriodDays,
                   })
                 : null,
             earnRewards:
@@ -227,7 +227,7 @@ export const useYieldMetaInfo = ({
             earnPeriod:
               warmupPeriodDays > 0
                 ? t("details.restake.earn_after_warmup", {
-                    warmupPeriodDays,
+                    count: warmupPeriodDays,
                   })
                 : null,
             earnRewards:
