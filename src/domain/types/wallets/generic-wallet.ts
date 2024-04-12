@@ -23,10 +23,16 @@ export type EVMTx = {
   | { type: TxType.Legacy } // Legacy
 );
 
-export interface GenericWallet {
+export type EVMWallet = {
   getAccounts(): Promise<string[]>;
   getChainId(): Promise<number>;
-  sendTransaction(tx: EVMTx): Promise<string>;
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: string) => Promise<void>;
-}
+  getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
+} & (
+  | { sendTransaction(tx: EVMTx): Promise<string>; sendTransactions?: never }
+  | {
+      sendTransaction?: never;
+      sendTransactions(tx: EVMTx[]): Promise<string>;
+    }
+);

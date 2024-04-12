@@ -6,6 +6,9 @@ import {
   MiscChainsMap,
   SubstrateChainsMap,
 } from "../../domain/types/chains";
+import { DecodedEVMTransaction } from "./validation";
+import { EVMTx, TxType } from "../../domain/types/wallets/generic-wallet";
+import { Hex, numberToHex } from "viem";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,
@@ -29,3 +32,28 @@ export const wagmiNetworkToSKNetwork = ({
     }).find((c) => c.wagmiChain.id === chain.id)?.skChainName ?? null
   );
 };
+
+export const prepareEVMTx = ({
+  address,
+  decodedTx,
+}: {
+  address: Hex;
+  decodedTx: DecodedEVMTransaction;
+}): EVMTx => ({
+  to: decodedTx.to,
+  from: address,
+  data: decodedTx.data,
+  value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
+  nonce: numberToHex(decodedTx.nonce),
+  gas: numberToHex(decodedTx.gasLimit),
+  chainId: numberToHex(decodedTx.chainId),
+  ...(decodedTx.maxFeePerGas
+    ? {
+        type: TxType.EIP1559,
+        maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
+        maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
+          ? numberToHex(decodedTx.maxPriorityFeePerGas)
+          : undefined,
+      }
+    : { type: TxType.Legacy }),
+});

@@ -1,14 +1,7 @@
-import { GenericWallet } from "./generic-wallet";
-import { SafeWalletProvider } from "./safe-wallet";
+import { EVMWallet } from "./generic-wallet";
 
 export type SKExternalProviders = {
   currentChain: string;
   currentAddress: string;
   supportedChainIds?: number[];
-} & (
-  | {
-      type: "safe_wallet";
-      provider: SafeWalletProvider;
-    }
-  | { type: "generic"; provider: GenericWallet }
-);
+} & { type: "generic"; provider: EVMWallet };
