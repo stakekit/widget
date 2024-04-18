@@ -57,9 +57,13 @@ const EarnPageComponent = () => {
             justifyContent="space-between"
           >
             <Box display="flex" alignItems="center" minHeight="8">
-              <Text>{title}</Text>
-              {selectedStakeYieldType && (
-                <HelpModal modal={{ type: selectedStakeYieldType }} />
+              {!appLoading && (
+                <>
+                  <Text>{title}</Text>
+                  {selectedStakeYieldType && (
+                    <HelpModal modal={{ type: selectedStakeYieldType }} />
+                  )}
+                </>
               )}
               {(isFetching || appLoading) && (
                 <Box display="flex" marginLeft="2">

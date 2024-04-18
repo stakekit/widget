@@ -79,6 +79,7 @@ const Widget = () => {
   useIsomorphicEffect(() => {
     if (
       pathnameRef.current !== "/" &&
+      pathnameRef.current !== "/positions" &&
       ((prevChain && chain !== prevChain) ||
         (prevAddress && address !== prevAddress))
     ) {

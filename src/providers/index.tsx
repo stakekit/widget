@@ -32,37 +32,37 @@ export const Providers = ({
       <RootElementProvider>
         <SKApiClientProvider>
           <SKQueryClientProvider>
-            <WagmiConfigProvider>
-              <TrackingContextProvider tracking={tracking}>
-                <SKWalletProvider>
-                  <RainbowProvider>
-                    <ActionHistoryContextProvider>
-                      <StakeStateProvider>
-                        <ThemeWrapper>
-                          <ListStateContextProvider>
-                            <CurrentLayoutProvider>
-                              <HeaderHeightProvider>
-                                <FooterHeightProvider>
-                                  <FooterButtonProvider>
-                                    <PoweredByHeightProvider>
-                                      <SKLocationProvider>
-                                        <MountAnimationProvider>
+            <SKLocationProvider>
+              <MountAnimationProvider>
+                <WagmiConfigProvider>
+                  <TrackingContextProvider tracking={tracking}>
+                    <SKWalletProvider>
+                      <RainbowProvider>
+                        <ActionHistoryContextProvider>
+                          <StakeStateProvider>
+                            <ThemeWrapper>
+                              <ListStateContextProvider>
+                                <CurrentLayoutProvider>
+                                  <HeaderHeightProvider>
+                                    <FooterHeightProvider>
+                                      <FooterButtonProvider>
+                                        <PoweredByHeightProvider>
                                           {children}
-                                        </MountAnimationProvider>
-                                      </SKLocationProvider>
-                                    </PoweredByHeightProvider>
-                                  </FooterButtonProvider>
-                                </FooterHeightProvider>
-                              </HeaderHeightProvider>
-                            </CurrentLayoutProvider>
-                          </ListStateContextProvider>
-                        </ThemeWrapper>
-                      </StakeStateProvider>
-                    </ActionHistoryContextProvider>
-                  </RainbowProvider>
-                </SKWalletProvider>
-              </TrackingContextProvider>
-            </WagmiConfigProvider>
+                                        </PoweredByHeightProvider>
+                                      </FooterButtonProvider>
+                                    </FooterHeightProvider>
+                                  </HeaderHeightProvider>
+                                </CurrentLayoutProvider>
+                              </ListStateContextProvider>
+                            </ThemeWrapper>
+                          </StakeStateProvider>
+                        </ActionHistoryContextProvider>
+                      </RainbowProvider>
+                    </SKWalletProvider>
+                  </TrackingContextProvider>
+                </WagmiConfigProvider>
+              </MountAnimationProvider>
+            </SKLocationProvider>
           </SKQueryClientProvider>
         </SKApiClientProvider>
       </RootElementProvider>

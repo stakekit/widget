@@ -439,6 +439,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const referralCode = useReferralCode();
 
   const appLoading =
+    !wagmiConfig.data ||
     referralCode.isLoading ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
