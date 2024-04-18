@@ -9,10 +9,6 @@
       "types": "./dist/types/index.package.d.ts",
       "default": "./dist/package/index.package.js"
     },
-    "./bundle": {
-      "types": "./dist/types/index.bundle.d.ts",
-      "default": "./dist/bundle/index.bundle.js"
-    },
     "./style.css": {
       "default": "./dist/package/style.css"
     }
@@ -44,7 +40,7 @@
     "turbo:test": "vitest -c vite/vite.config.dev.ts run",
     "turbo:format": "prettier --write ./src",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",
-    "build:package": "vite -c vite/vite.config.package.ts build && vite -c vite/vite.config.bundle.ts build && yarn build:types",
+    "build:package": "vite -c vite/vite.config.package.ts build && yarn build:types",
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
