@@ -19,7 +19,7 @@ export const stepsBefore = style({
   ":before": {
     content: "''",
     background: vars.color.text,
-    height: vars.space[3],
+    height: vars.space[7],
     width: vars.space[1],
   },
 });

@@ -121,6 +121,7 @@ export const TxState = ({ txState, position, count }: Props) => {
                 ) : null}
               </Box>
             </Box>
+
             <Box
               flexDirection="column"
               display="flex"
@@ -193,6 +194,8 @@ export const TxState = ({ txState, position, count }: Props) => {
               display="flex"
               alignItems="flex-start"
               gap="1"
+              // TODO: CHANGE THIS!
+              marginTop="6"
             >
               <Text>{t("steps.submitting")}</Text>
               {txState.state === TxStateEnum.BROADCAST_ERROR && (
@@ -259,6 +262,8 @@ export const TxState = ({ txState, position, count }: Props) => {
               display="flex"
               alignItems="flex-start"
               gap="1"
+              // TODO: CHANGE THIS!
+              marginTop="6"
             >
               <Text>{t("steps.pending")}</Text>
               {txState.state === TxStateEnum.CHECK_TX_STATUS_ERROR && (
@@ -318,6 +323,8 @@ export const TxState = ({ txState, position, count }: Props) => {
               display="flex"
               alignItems="flex-start"
               gap="1"
+              // TODO: CHANGE THIS!
+              marginTop="4"
             >
               <Text>{t("steps.completed")}</Text>
             </Box>
