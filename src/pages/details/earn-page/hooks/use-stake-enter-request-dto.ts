@@ -6,8 +6,13 @@ import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 
 export const useStakeEnterRequestDto = () => {
-  const { selectedStake, stakeAmount, selectedValidators, tronResource } =
-    useStakeState();
+  const {
+    selectedStake,
+    stakeAmount,
+    selectedValidators,
+    tronResource,
+    selectedTokenBalance,
+  } = useStakeState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   const referralcode = useReferralCode();
@@ -17,6 +22,7 @@ export const useStakeEnterRequestDto = () => {
       Maybe.fromRecord({
         address: Maybe.fromNullable(address),
         selectedStake,
+        selectedTokenBalance,
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
@@ -31,6 +37,7 @@ export const useStakeEnterRequestDto = () => {
             integrationId: val.selectedStake.id,
             referralCode: referralcode.data?.code,
             args: {
+              inputToken: val.selectedStake.metadata.token,
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
@@ -58,6 +65,7 @@ export const useStakeEnterRequestDto = () => {
       isLedgerLive,
       referralcode.data?.code,
       selectedStake,
+      selectedTokenBalance,
       selectedValidators,
       stakeAmount,
       tronResource,

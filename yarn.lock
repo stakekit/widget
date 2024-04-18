@@ -5698,9 +5698,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.66":
-  version: 0.0.66
-  resolution: "@stakekit/api-hooks@npm:0.0.66"
+"@stakekit/api-hooks@npm:^0.0.67":
+  version: 0.0.67
+  resolution: "@stakekit/api-hooks@npm:0.0.67"
   dependencies:
     axios: "npm:^1.6.8"
   peerDependencies:
@@ -5713,7 +5713,7 @@ __metadata:
       optional: true
     msw:
       optional: true
-  checksum: 10/8761c18e06cbcd04d1244777239eb226dfd96aec2f3ecd59c126c8dfa0fa009eff5aacd46efa3e09c15cd6d58809f044543770d0c0a07f9d9f432b17882fc6f8
+  checksum: 10/af6845504a3393ffa42e5bcb452cc4edb949be408a49bdf01ef72d295f45cb8b5072618be2f60e83625d2ac899bdc05c305439caba40d2e95c36beb0849e6a41
   languageName: node
   linkType: hard
 
@@ -5762,7 +5762,7 @@ __metadata:
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
     "@rollup/plugin-node-resolve": "npm:^15.2.3"
-    "@stakekit/api-hooks": "npm:^0.0.66"
+    "@stakekit/api-hooks": "npm:^0.0.67"
     "@stakekit/common": "npm:^0.0.28"
     "@stakekit/rainbowkit": "npm:^2.0.1"
     "@tanstack/react-query": "npm:^5.29.2"
