@@ -1,54 +1,24 @@
-import { wallets as keplrWallets } from "@cosmos-kit/keplr";
-import { wallets as leapWallets } from "@cosmos-kit/leap";
-import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
-import { Connector, CreateConnectorFn, createConnector } from "wagmi";
-import { Wallet } from "@stakekit/rainbowkit";
-import { toBase64 } from "@cosmjs/encoding";
+import type { CreateConnectorFn } from "wagmi";
+import { createConnector } from "wagmi";
+import type { Wallet } from "@stakekit/rainbowkit";
+import { fromHex, toBase64, toHex } from "@cosmjs/encoding";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { Address, Chain } from "viem";
-import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { ChainWalletBase, MainWalletBase } from "@cosmos-kit/core";
-import { CosmosChainsMap } from "../../domain/types/chains";
+import type { Address, Chain } from "viem";
+import type {
+  ChainWalletBase,
+  DirectSignDoc,
+  MainWalletBase,
+} from "@cosmos-kit/core";
+import type { CosmosChainsMap } from "../../domain/types/chains";
 import { waitForMs } from "../../utils";
-import { WCClient } from "@cosmos-kit/walletconnect";
+import type { WCClient } from "@cosmos-kit/walletconnect";
 import EventEmitter from "eventemitter3";
-import { BehaviorSubject, Observable } from "rxjs";
-
-export const wallets: MainWalletBase[] = [
-  ...keplrWallets,
-  ...leapWallets,
-  new WalletConnectWallet(walletConnectInfo),
-];
-
-const configMeta = wallets.reduce(
-  (acc, next) => {
-    return {
-      ...acc,
-      wallets: {
-        ...acc.wallets,
-        [next.walletInfo.name]: {
-          id: next.walletInfo.name,
-          name: next.walletInfo.prettyName,
-        },
-      },
-    };
-  },
-  { type: "cosmosProvider", wallets: {} } as {
-    type: "cosmosProvider";
-    wallets: Record<string, { id: string; name: string }>;
-  }
-);
-
-type ExtraProps = ConnectorWithFilteredChains & {
-  $chainWallet: Observable<ChainWalletBase>;
-};
-
-export type CosmosConnector = Connector & ExtraProps;
-
-export const isCosmosConnector = (
-  connector: Connector
-): connector is CosmosConnector =>
-  Object.values(configMeta.wallets).some((val) => val.id === connector.id);
+import { BehaviorSubject } from "rxjs";
+import type { ExtraProps } from "./cosmos-connector-meta";
+import { configMeta } from "./cosmos-connector-meta";
+import { EitherAsync } from "purify-ts";
+import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { decodeSignature } from "@cosmjs/amino";
 
 export const createCosmosConnector = ({
   wallet,
@@ -79,8 +49,10 @@ export const createCosmosConnector = ({
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
         const $filteredChains = new BehaviorSubject(cosmosWagmiChains);
+
         const initCw = wallet.chainWalletMap.get(
-          Object.values(cosmosChainsMap)[0].chain.chain_name
+          cosmosChainsMap.cosmos?.chain.chain_name ??
+            Object.values(cosmosChainsMap)[0].chain.chain_name
         );
 
         if (!initCw) throw new Error("Chain wallet not found");
@@ -238,6 +210,34 @@ export const createCosmosConnector = ({
             }
           };
 
+        const signTransaction = ({
+          cw,
+          tx,
+        }: {
+          cw: ChainWalletBase;
+          tx: string;
+        }) =>
+          EitherAsync(() =>
+            cw.client.signDirect!(
+              cw.chainId,
+              cw.address!,
+              SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
+            )
+          )
+            .mapLeft((e) => {
+              console.log(e);
+              return new Error("signDirect failed");
+            })
+            .map((val) =>
+              toHex(
+                TxRaw.encode({
+                  authInfoBytes: val.signed.authInfoBytes,
+                  bodyBytes: val.signed.bodyBytes,
+                  signatures: [decodeSignature(val.signature).signature],
+                }).finish()
+              )
+            );
+
         const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
           async () => $chainWallet.getValue().chainId as unknown as number;
 
@@ -265,6 +265,8 @@ export const createCosmosConnector = ({
           getChainId,
           getProvider,
           disconnect,
+          signTransaction,
+          toBase64,
         };
       }),
   };

@@ -1,5 +1,5 @@
-import { YieldDto } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
+import type { YieldDto } from "@stakekit/api-hooks";
+import type { Maybe } from "purify-ts";
 
 /**
  * Check if we need to use max amount for staking/unstaking

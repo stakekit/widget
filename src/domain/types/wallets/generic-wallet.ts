@@ -1,4 +1,4 @@
-import { Hex } from "viem";
+import type { Hex } from "viem";
 
 export enum TxType {
   Legacy = "0x1",

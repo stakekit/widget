@@ -1,12 +1,12 @@
+import type { PropsWithChildren } from "react";
 import {
-  PropsWithChildren,
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
 } from "react";
-import { SKWallet } from "../../domain/types";
+import type { SKWallet } from "../../domain/types";
 import {
   useAccount,
   useDisconnect,
@@ -23,18 +23,11 @@ import {
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
-import { Account, deserializeTransaction } from "@ledgerhq/wallet-api-client";
-import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { fromHex, toHex } from "@cosmjs/encoding";
-import { decodeSignature } from "@cosmjs/amino";
-import { DirectSignDoc } from "@cosmos-kit/core";
+import type { Account } from "@ledgerhq/wallet-api-client";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
-import { isLedgerLiveConnector } from "../ledger/ledger-connector";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import { Hash } from "viem";
+import type { Hash } from "viem";
 import { isExternalProviderConnector } from "../external-provider";
-import { isTronConnector } from "../misc/tron-connector";
-import { isCosmosConnector } from "../cosmos/cosmos-connector";
 import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
@@ -43,6 +36,9 @@ import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
+import { isTronConnector } from "../misc/tron-connector-meta";
+import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
+import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -161,7 +157,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   .mapLeft(() => new Error("JSON.parse failed"))
                   .chain((parsedTx) =>
                     Either.encase(() =>
-                      deserializeTransaction(parsedTx)
+                      conn.deserializeTransaction(parsedTx)
                     ).mapLeft(() => new Error("deserializeTransaction failed"))
                   )
               ).map((deserializedTransaction) => ({
@@ -192,27 +188,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             Maybe.fromNullable(cosmosCW).toEither(new Error("cosmosCW missing"))
           ).chain((cw) =>
             // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
-            EitherAsync(() =>
-              cw.client.signDirect!(
-                cw.chainId,
-                cw.address!,
-                SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
-              )
-            )
-              .mapLeft((e) => {
-                console.log(e);
-                return new Error("signDirect failed");
-              })
-              .map((val) => ({
-                broadcasted: false,
-                signedTx: toHex(
-                  TxRaw.encode({
-                    authInfoBytes: val.signed.authInfoBytes,
-                    bodyBytes: val.signed.bodyBytes,
-                    signatures: [decodeSignature(val.signature).signature],
-                  }).finish()
-                ),
-              }))
+            conn
+              .signTransaction({ cw, tx })
+              .map((val) => ({ signedTx: val, broadcasted: false }))
           );
         } else if (isTronConnector(conn)) {
           /**

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { animationContainer } from "../../style.css";
-import { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
 import { useCurrentLayout } from "../../pages/components/layout/layout-context";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";

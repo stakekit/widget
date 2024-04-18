@@ -1,6 +1,7 @@
 import { keyframes } from "@vanilla-extract/css";
 import { atoms } from "../../../styles";
-import { RecipeVariants, recipe } from "@vanilla-extract/recipes";
+import type { RecipeVariants } from "@vanilla-extract/recipes";
+import { recipe } from "@vanilla-extract/recipes";
 
 const rotate = keyframes({
   "100%": { transform: "rotate(360deg)" },

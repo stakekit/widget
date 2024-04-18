@@ -1,5 +1,5 @@
-import { YieldDto } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
+import type { YieldDto } from "@stakekit/api-hooks";
+import type { Maybe } from "purify-ts";
 import { yieldTypesMap } from "../domain/types";
 
 export const useYieldType = (yieldOpportunity: Maybe<YieldDto>) => {

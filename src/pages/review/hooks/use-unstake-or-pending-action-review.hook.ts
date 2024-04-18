@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { ComponentProps, useMemo } from "react";
+import type { ComponentProps } from "react";
+import { useMemo } from "react";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { config } from "../../../config";
 import { getBaseToken } from "../../../domain";
@@ -9,8 +10,8 @@ import { formatNumber } from "../../../utils";
 import { useTranslation } from "react-i18next";
 import BigNumber from "bignumber.js";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
-import { ActionTypes } from "@stakekit/api-hooks";
-import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import type { ActionTypes } from "@stakekit/api-hooks";
+import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useSavedRef } from "../../../hooks";

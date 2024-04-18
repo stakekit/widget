@@ -3,14 +3,14 @@ import {
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
-import { SubstrateChainsMap } from "../../domain/types/chains";
+import type { SubstrateChainsMap } from "../../domain/types/chains";
 import { SubstrateNetworks } from "@stakekit/common";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { config } from "../../config";
 import { EitherAsync } from "purify-ts";
 import { polkadot } from "./chains";
-import { QueryClient } from "@tanstack/react-query";
-import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
+import type { QueryClient } from "@tanstack/react-query";
+import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Infinity;

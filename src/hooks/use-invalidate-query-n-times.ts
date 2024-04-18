@@ -1,6 +1,7 @@
 import { EitherAsync, Right } from "purify-ts";
 import { waitForMs } from "../utils";
-import { QueryKey, useQuery } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSKQueryClient } from "../providers/query-client";
 
 export const useInvalidateQueryNTimes = ({

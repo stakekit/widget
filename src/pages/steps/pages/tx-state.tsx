@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Box, CaretDownIcon, Spinner, Text, XIcon } from "../../../components";
-import { TxStateEnum, useSteps } from "../hooks/use-steps.hook";
+import type { useSteps } from "../hooks/use-steps.hook";
+import { TxStateEnum } from "../hooks/use-steps.hook";
 import { removeUnderscores } from "../../../utils/text";
 import clsx from "clsx";
 import {

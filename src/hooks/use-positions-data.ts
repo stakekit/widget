@@ -1,4 +1,4 @@
-import {
+import type {
   YieldBalanceDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";

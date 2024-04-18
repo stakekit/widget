@@ -1,5 +1,5 @@
-import classNames from "clsx";
-import { PropsWithChildren } from "react";
+import type classNames from "clsx";
+import type { PropsWithChildren } from "react";
 import { Box } from "../box";
 
 type HighlightProps = PropsWithChildren<{

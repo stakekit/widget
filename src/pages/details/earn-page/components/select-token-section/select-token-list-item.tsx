@@ -1,4 +1,5 @@
-import { ComponentProps, memo, useMemo } from "react";
+import type { ComponentProps } from "react";
+import { memo, useMemo } from "react";
 import {
   Box,
   SelectModalItem,
@@ -7,7 +8,7 @@ import {
 } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { formatNumber } from "../../../../../utils";
-import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
 import BigNumber from "bignumber.js";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";

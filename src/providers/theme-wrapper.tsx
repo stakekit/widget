@@ -1,8 +1,9 @@
-import { PropsWithChildren, useMemo } from "react";
+import type { PropsWithChildren } from "react";
+import { useMemo } from "react";
 import { rootSelector, vars } from "../styles";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
-import { RecursivePartial } from "../types";
+import type { RecursivePartial } from "../types";
 import { useSettings } from "./settings";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
 

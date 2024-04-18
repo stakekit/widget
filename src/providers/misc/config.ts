@@ -1,66 +1,62 @@
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { MiscChainsMap } from "../../domain/types/chains";
+import type { MiscChainsMap } from "../../domain/types/chains";
+import type { Networks } from "@stakekit/common";
 import { MiscNetworks } from "@stakekit/common";
-import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { config } from "../../config";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { near, solana, tezos, tron } from "./chains";
-import { WalletList } from "@stakekit/rainbowkit";
-import { tronConnector } from "./tron-connector";
-import { QueryClient } from "@tanstack/react-query";
-import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
+import type { QueryClient } from "@tanstack/react-query";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Infinity;
 
 const queryFn = async ({
-  queryClient,
-  yieldGetMyNetworks,
+  enabledNetworks,
 }: {
-  queryClient: QueryClient;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-}) =>
-  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
-    Right: (networks) => {
-      const miscChainsMap: Partial<MiscChainsMap> = typeSafeObjectFromEntries(
-        typeSafeObjectEntries<MiscChainsMap>({
-          [MiscNetworks.Near]: {
-            type: "misc",
-            skChainName: MiscNetworks.Near,
-            wagmiChain: near,
-          },
-          [MiscNetworks.Tezos]: {
-            type: "misc",
-            skChainName: MiscNetworks.Tezos,
-            wagmiChain: tezos,
-          },
-          [MiscNetworks.Solana]: {
-            type: "misc",
-            skChainName: MiscNetworks.Solana,
-            wagmiChain: solana,
-          },
-          [MiscNetworks.Tron]: {
-            type: "misc",
-            skChainName: MiscNetworks.Tron,
-            wagmiChain: tron,
-          },
-        }).filter(([_, v]) => networks.has(v.skChainName))
-      );
-
-      const miscChains = Object.values(miscChainsMap).map(
-        (val) => val.wagmiChain
-      );
-
-      const connectors: Maybe<WalletList[number]>[] = [
-        Maybe.fromPredicate(() => !!miscChainsMap.tron, tronConnector),
-      ];
-
-      return Promise.resolve({ miscChainsMap, miscChains, connectors });
+  enabledNetworks: Set<Networks>;
+}) => {
+  const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>({
+    [MiscNetworks.Near]: {
+      type: "misc",
+      skChainName: MiscNetworks.Near,
+      wagmiChain: near,
     },
-    Left: (l) => Promise.reject(l),
-  });
+    [MiscNetworks.Tezos]: {
+      type: "misc",
+      skChainName: MiscNetworks.Tezos,
+      wagmiChain: tezos,
+    },
+    [MiscNetworks.Solana]: {
+      type: "misc",
+      skChainName: MiscNetworks.Solana,
+      wagmiChain: solana,
+    },
+    [MiscNetworks.Tron]: {
+      type: "misc",
+      skChainName: MiscNetworks.Tron,
+      wagmiChain: tron,
+    },
+  }).filter(([_, v]) => enabledNetworks.has(v.skChainName));
 
-export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
+  const miscChainsMap: Partial<MiscChainsMap> =
+    typeSafeObjectFromEntries(miscChainsEntries);
+
+  const miscChains = Object.values(miscChainsMap).map((val) => val.wagmiChain);
+
+  return Promise.all([
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(miscChainsMap.tron)).chain(() =>
+      MaybeAsync(() => import("./tron-connector")).map((v) => v.tronConnector)
+    ),
+  ]).then((connectors) => ({
+    miscChainsMap,
+    miscChains,
+    connectors,
+  }));
+};
+
+export const getConfig = (
+  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+) =>
   EitherAsync(() =>
     opts.queryClient.fetchQuery({
       staleTime,

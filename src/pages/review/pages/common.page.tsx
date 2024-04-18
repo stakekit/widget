@@ -11,8 +11,8 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { motion } from "framer-motion";
-import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
-import { ComponentProps, ReactNode } from "react";
+import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import type { ComponentProps, ReactNode } from "react";
 import { Maybe } from "purify-ts";
 import { WarningBox } from "../../../components/atoms/warning-box";
 

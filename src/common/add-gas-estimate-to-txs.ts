@@ -1,6 +1,9 @@
-import { ActionDto, useActionGetGasEstimateHook } from "@stakekit/api-hooks";
+import type {
+  ActionDto,
+  useActionGetGasEstimateHook,
+} from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "./utils";
-import { ActionDtoWithGasEstimate } from "../domain/types/action";
+import type { ActionDtoWithGasEstimate } from "../domain/types/action";
 import BigNumber from "bignumber.js";
 
 export const addGasEstimateToTxs = ({

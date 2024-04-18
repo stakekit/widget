@@ -1,4 +1,4 @@
-import { ConnectKitTheme } from "../connect-kit";
+import type { ConnectKitTheme } from "../connect-kit";
 
 const baseColorsContract = {
   white: "",

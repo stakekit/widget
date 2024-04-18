@@ -1,13 +1,5 @@
-import {
-  ChangeEvent,
-  createContext,
-  PropsWithChildren,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Content, Overlay, Portal, Root } from "@radix-ui/react-alert-dialog";
 import {
   container,
@@ -22,7 +14,7 @@ import { SearchIcon, XIcon } from "../icons";
 import { useSavedRef } from "../../../hooks";
 import { ListItem } from "../list/list-item";
 import { Spinner } from "../spinner";
-import { ItemContainerVariants } from "../list/styles.css";
+import type { ItemContainerVariants } from "../list/styles.css";
 import { useRootElement } from "../../../providers/root-element";
 
 type SelectModalWithoutStateProps = PropsWithChildren<

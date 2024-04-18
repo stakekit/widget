@@ -1,4 +1,4 @@
-import { Either, EitherAsync, Maybe } from "purify-ts";
+import type { Either, EitherAsync, Maybe } from "purify-ts";
 
 export type RecursivePartial<T> = {
   [P in keyof T]?: RecursivePartial<T[P]>;

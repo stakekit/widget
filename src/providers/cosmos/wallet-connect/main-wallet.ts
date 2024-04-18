@@ -1,4 +1,4 @@
-import { EndpointOptions, Wallet } from "@cosmos-kit/core";
+import type { EndpointOptions, Wallet } from "@cosmos-kit/core";
 import { WCWallet } from "@cosmos-kit/walletconnect";
 
 import { ChainWalletConnect } from "./chain-wallet";

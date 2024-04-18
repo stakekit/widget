@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ActionDto, TransactionType } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
+import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
+import type { Maybe } from "purify-ts";
 import { useSavedRef } from "../../../hooks";
-import { TxState, useStepsMachine } from "./use-steps-machine.hook";
+import type { TxState } from "./use-steps-machine.hook";
+import { useStepsMachine } from "./use-steps-machine.hook";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
 import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";

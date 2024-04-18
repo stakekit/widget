@@ -1,5 +1,6 @@
 import { Box } from "../../../components/atoms/box";
-import { Tabs, TabsProps } from "./components/tabs";
+import type { TabsProps } from "./components/tabs";
+import { Tabs } from "./components/tabs";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { usePositions } from "../positions-page/hooks/use-positions";

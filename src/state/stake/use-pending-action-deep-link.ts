@@ -1,18 +1,21 @@
-import {
+import type {
   AddressWithTokenDtoAdditionalAddresses,
   PendingActionDto,
   YieldBalanceDto,
   YieldDto,
+} from "@stakekit/api-hooks";
+import {
   useYieldGetSingleYieldBalancesHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
-import { Override } from "../../types";
+import type { Override } from "../../types";
 import { preparePendingActionRequestDto } from "../../pages/position-details/hooks/utils";
 import { getYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
 import {

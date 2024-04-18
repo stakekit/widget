@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { List, Maybe } from "purify-ts";
-import { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
+import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useStakeState } from "../../../../state/stake";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";

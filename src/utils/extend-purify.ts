@@ -1,5 +1,5 @@
 import { Just, Maybe, Nothing } from "purify-ts";
-import { GetMaybeJust } from "../types";
+import type { GetMaybeJust } from "../types";
 
 Maybe.fromRecord = <T extends Record<string, Maybe<unknown>>>(
   val: T

@@ -3,7 +3,7 @@ import { RichErrorModal } from "../rich-error-modal";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
 import { useRegionCodeName } from "../../../hooks/use-region-code-names";
 import { HelpModal } from "../help-modal";
-import { ReactPortal } from "react";
+import type { ReactPortal } from "react";
 import { ReferralLock } from "../referral-lock";
 import { Maybe } from "purify-ts";
 import { useSettings } from "../../../providers/settings";

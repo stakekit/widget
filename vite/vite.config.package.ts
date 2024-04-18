@@ -1,0 +1,29 @@
+import type { InlineConfig } from "vitest";
+import { defineConfig } from "vite";
+import path from "path";
+import { baseConfig } from "./vite.config.base";
+
+declare module "vite" {
+  interface UserConfig {
+    test?: InlineConfig;
+  }
+}
+
+export default defineConfig({
+  ...baseConfig,
+  build: {
+    lib: {
+      entry: path.resolve(__dirname, "..", "src/index.package.ts"),
+      name: "StakeKit",
+      fileName: "index.package",
+      formats: ["es"],
+    },
+    rollupOptions: {
+      external: ["crypto", "stream", "react", "react-dom"],
+      output: { banner: '"use client";\n' },
+    },
+    copyPublicDir: false,
+    outDir: "dist/package",
+    sourcemap: true,
+  },
+});

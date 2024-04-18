@@ -1,4 +1,4 @@
-import { YieldDto, YieldType } from "@stakekit/api-hooks";
+import type { YieldDto, YieldType } from "@stakekit/api-hooks";
 
 export type SelectedStakeData = {
   all: YieldDto[];

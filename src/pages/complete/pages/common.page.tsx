@@ -4,7 +4,7 @@ import { PageContainer } from "../../components";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { useComplete } from "../hooks/use-complete.hook";
 import { TokenIcon } from "../../../components/atoms/token-icon";
-import {
+import type {
   ActionTypes,
   TokenDto,
   YieldMetadataDto,

@@ -1,8 +1,7 @@
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
+import type { Dispatch, PropsWithChildren } from "react";
 import {
-  Dispatch,
-  PropsWithChildren,
   createContext,
   useContext,
   useMemo,
@@ -10,7 +9,7 @@ import {
   useState,
 } from "react";
 import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
-import {
+import type {
   ActionTypes,
   PendingActionDto,
   PriceRequestDto,
@@ -21,7 +20,7 @@ import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { usePositionBalances } from "../../hooks/use-position-balances";
 import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
 import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
-import { Actions, ExtraData, State } from "./types";
+import type { Actions, ExtraData, State } from "./types";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
 import { tokenToTokenDto } from "../../utils/mappers";

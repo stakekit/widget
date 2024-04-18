@@ -1,6 +1,6 @@
-import { Observable } from "rxjs";
-import { Chain } from "viem";
-import { Connector } from "wagmi";
+import type { Observable } from "rxjs";
+import type { Chain } from "viem";
+import type { Connector } from "wagmi";
 
 export type ConnectorWithFilteredChains = {
   $filteredChains: Observable<Chain[]>;

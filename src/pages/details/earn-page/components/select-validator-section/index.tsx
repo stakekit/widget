@@ -1,5 +1,5 @@
 import { Box } from "../../../../../components";
-import { ValidatorDto } from "@stakekit/api-hooks";
+import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useDetailsContext } from "../../state/details-context";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";

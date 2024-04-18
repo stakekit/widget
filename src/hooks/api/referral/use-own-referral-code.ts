@@ -4,7 +4,7 @@ import { useSKWallet } from "../../../providers/sk-wallet";
 import { isAxiosError } from "axios";
 import { isAxios4xxError } from "../../../common/utils";
 import { useSettings } from "../../../providers/settings";
-import { Nullable } from "../../../types";
+import type { Nullable } from "../../../types";
 import { useApiClient } from "../../../providers/api/api-client-provider";
 
 const url = ({ address, network }: { network: string; address: string }) =>

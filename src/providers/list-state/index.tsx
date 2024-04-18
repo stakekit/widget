@@ -1,14 +1,6 @@
-import {
-  Dispatch,
-  PropsWithChildren,
-  SetStateAction,
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { StateSnapshot, VirtuosoHandle } from "react-virtuoso";
+import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import type { StateSnapshot, VirtuosoHandle } from "react-virtuoso";
 import { useLocation } from "react-router-dom";
 
 type ListStateContextType = { [Key in "positions"]: StateSnapshot | null };

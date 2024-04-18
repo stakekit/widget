@@ -1,13 +1,13 @@
-import {
+import type {
   ActionDto,
   TokenBalanceScanResponseDto,
   TronResourceType,
   ValidatorDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import { Action } from "../../types";
+import type BigNumber from "bignumber.js";
+import type { Maybe } from "purify-ts";
+import type { Action } from "../../types";
 
 export type State = {
   selectedTokenBalance: Maybe<TokenBalanceScanResponseDto>;

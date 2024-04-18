@@ -1,4 +1,4 @@
-import { Chain } from "@stakekit/rainbowkit";
+import type { Chain } from "@stakekit/rainbowkit";
 import { getNetworkLogo } from "../../../utils";
 import { Networks } from "@stakekit/common";
 

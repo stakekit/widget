@@ -1,6 +1,6 @@
 import { vars } from "../../theme";
 import { connectKitTheme } from "../connect-kit";
-import { radiiContract } from "./contract";
+import type { radiiContract } from "./contract";
 
 export const radii: typeof radiiContract = {
   baseContract: {

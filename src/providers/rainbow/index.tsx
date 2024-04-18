@@ -1,6 +1,6 @@
-import { Address } from "viem";
+import type { Address } from "viem";
 import { RainbowKitProviderWithTheme } from "../rainbow-kit";
-import { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
 import { List, Maybe } from "purify-ts";
 import { formatAddress } from "../../utils";
 import { useSKWallet } from "../sk-wallet";

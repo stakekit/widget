@@ -1,14 +1,19 @@
-import { Connector, CreateConnectorFn, createConnector } from "wagmi";
+import type { CreateConnectorFn } from "wagmi";
+import { createConnector } from "wagmi";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { Address } from "viem";
-import { Chain, WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
+import type { Address } from "viem";
+import type {
+  Chain,
+  WalletDetailsParams,
+  WalletList,
+} from "@stakekit/rainbowkit";
+import type { Account, Currency } from "@ledgerhq/wallet-api-client";
 import {
-  Account,
-  Currency,
   WalletAPIClient,
   WindowMessageTransport,
+  deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
-import {
+import type {
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
 } from "../../domain/types/chains";
@@ -17,33 +22,11 @@ import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
-import { QueryParamsResult } from "../../hooks/use-init-query-params";
-import { ledger } from "../../assets/images/ledger";
-import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { BehaviorSubject, Observable, map } from "rxjs";
+import type { QueryParamsResult } from "../../hooks/use-init-query-params";
+import { BehaviorSubject, map } from "rxjs";
 import { skNormalizeChainId } from "../../domain";
-
-const configMeta = {
-  id: "ledgerLive",
-  name: "Ledger Live",
-  type: "ledgerLive",
-};
-
-type ExtraProps = ConnectorWithFilteredChains & {
-  $disabledChains: Observable<Chain[]>;
-  $currentAccountId: Observable<string | undefined>;
-  $accountsOnCurrentChain: Observable<Account[]>;
-  walletApiClient: WalletAPIClient;
-  requestAndSwitchAccount: (chain: Chain) => EitherAsync<Error, Chain>;
-  switchAccount: (account: Account) => void;
-  noAccountPlaceholder: Address;
-};
-
-type LedgerLiveConnector = Connector & ExtraProps;
-
-export const isLedgerLiveConnector = (
-  connector: Connector
-): connector is LedgerLiveConnector => connector.id === configMeta.id;
+import { images } from "../../assets/images";
+import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
 
 const createLedgerLiveConnector = ({
   walletDetailsParams,
@@ -347,6 +330,7 @@ const createLedgerLiveConnector = ({
       $currentAccountId,
       $disabledChains: $disabledChains.asObservable(),
       noAccountPlaceholder,
+      deserializeTransaction,
     };
   });
 
@@ -362,7 +346,7 @@ export const ledgerLiveConnector = ({
     () => ({
       id: configMeta.id,
       name: configMeta.name,
-      iconUrl: ledger,
+      iconUrl: images.ledgerLogo,
       iconBackground: "#fff",
       hidden: () => !isLedgerDappBrowserProvider(),
       createConnector: (walletDetailsParams) =>
@@ -382,6 +366,6 @@ type ChainItem = {
   chain: Chain;
 };
 
-type EnabledChainsMap = Parameters<
+export type EnabledChainsMap = Parameters<
   typeof getFilteredSupportedLedgerFamiliesWithCurrency
 >[0]["enabledChainsMap"];

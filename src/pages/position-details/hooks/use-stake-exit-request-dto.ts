@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { List, Maybe } from "purify-ts";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
-import {
+import type {
   ActionArgumentsDto,
   ActionRequestDto,
   YieldDto,

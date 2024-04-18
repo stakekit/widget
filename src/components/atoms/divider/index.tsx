@@ -1,4 +1,5 @@
-import { Box, BoxProps } from "../box";
+import type { BoxProps } from "../box";
+import { Box } from "../box";
 
 type Props = BoxProps;
 

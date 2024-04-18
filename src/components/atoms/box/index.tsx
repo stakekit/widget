@@ -1,13 +1,9 @@
 import classNames from "clsx";
 
-import {
-  AllHTMLAttributes,
-  createElement,
-  ElementType,
-  forwardRef,
-  PropsWithChildren,
-} from "react";
-import { atoms, Atoms } from "../../../styles";
+import type { AllHTMLAttributes, ElementType, PropsWithChildren } from "react";
+import { createElement, forwardRef } from "react";
+import type { Atoms } from "../../../styles";
+import { atoms } from "../../../styles";
 
 export type BoxProps = PropsWithChildren<
   Omit<

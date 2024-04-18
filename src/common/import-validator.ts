@@ -1,6 +1,9 @@
-import { Networks } from "@stakekit/common";
+import type { Networks } from "@stakekit/common";
 import { getStorageItem, setStorageItem } from "../services/local-storage";
-import { ValidatorDto, ValidatorSearchResultDto } from "@stakekit/api-hooks";
+import type {
+  ValidatorDto,
+  ValidatorSearchResultDto,
+} from "@stakekit/api-hooks";
 import { Left, Maybe, Right } from "purify-ts";
 
 export const importValidator = ({

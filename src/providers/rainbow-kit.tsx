@@ -1,9 +1,7 @@
-import {
-  RainbowKitProvider,
-  DisclaimerComponent,
-  useChainModal,
-} from "@stakekit/rainbowkit";
-import { PropsWithChildren, useMemo } from "react";
+import type { DisclaimerComponent } from "@stakekit/rainbowkit";
+import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
+import type { PropsWithChildren } from "react";
+import { useMemo } from "react";
 import { id, vars } from "../styles";
 import { Text } from "../components";
 import { useSKWallet } from "./sk-wallet";
@@ -12,10 +10,11 @@ import { useTranslation } from "react-i18next";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
-import { ConnectKitTheme, connectKitTheme } from "../styles/tokens/connect-kit";
+import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
+import { connectKitTheme } from "../styles/tokens/connect-kit";
 import { isExternalProviderConnector } from "./external-provider";
-import { isLedgerLiveConnector } from "./ledger/ledger-connector";
 import { useRootElement } from "./root-element";
+import { isLedgerLiveConnector } from "./ledger/ledger-live-connector-meta";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

@@ -1,8 +1,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Box } from "../box";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import type { ReactNode } from "react";
 import {
-  ReactNode,
   createContext,
   useCallback,
   useContext,

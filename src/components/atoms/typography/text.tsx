@@ -1,8 +1,9 @@
 import classNames from "clsx";
-import { PropsWithChildren } from "react";
-import { textStyles, TextVariants } from "./styles.css";
+import type { PropsWithChildren } from "react";
+import type { TextVariants } from "./styles.css";
+import { textStyles } from "./styles.css";
 import { Box } from "../box";
-import { BoxProps } from "../box";
+import type { BoxProps } from "../box";
 
 type Props = PropsWithChildren<{ variant?: TextVariants }> & BoxProps;
 

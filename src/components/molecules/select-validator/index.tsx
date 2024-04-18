@@ -1,8 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { SelectModal, SelectModalProps } from "../../atoms/select-modal";
-import { GroupedItem, SelectValidatorList } from "./select-validator-list";
-import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { PropsWithChildren, useMemo, useState } from "react";
+import type { SelectModalProps } from "../../atoms/select-modal";
+import { SelectModal } from "../../atoms/select-modal";
+import type { GroupedItem } from "./select-validator-list";
+import { SelectValidatorList } from "./select-validator-list";
+import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type { PropsWithChildren } from "react";
+import { useMemo, useState } from "react";
 
 type SelectValidatorProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {

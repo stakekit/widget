@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { config } from "../../config";
 import { usePrices } from "./use-prices";
-import { PriceRequestDto } from "@stakekit/api-hooks";
+import type { PriceRequestDto } from "@stakekit/api-hooks";
 import { getBaseToken } from "../../domain";
 import { tokenToTokenDto } from "../../utils/mappers";
-import { State } from "../../state/stake/types";
+import type { State } from "../../state/stake/types";
 
 export const useSelectedStakePrice = ({
   selectedTokenBalance,

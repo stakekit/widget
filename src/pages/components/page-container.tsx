@@ -1,5 +1,6 @@
-import { PropsWithChildren } from "react";
-import { Box, BoxProps } from "../../components/atoms/box";
+import type { PropsWithChildren } from "react";
+import type { BoxProps } from "../../components/atoms/box";
+import { Box } from "../../components/atoms/box";
 
 export const PageContainer = ({
   children,

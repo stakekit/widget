@@ -21,8 +21,8 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 import { motion } from "framer-motion";
 import { isExternalProviderConnector } from "../../../providers/external-provider";
-import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-connector";
-import { Address } from "viem";
+import type { Address } from "viem";
+import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-live-connector-meta";
 
 export const Header = () => {
   const location = useLocation();

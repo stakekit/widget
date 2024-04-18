@@ -1,4 +1,4 @@
-import {
+import type {
   Networks,
   useTransactionGetGasForNetworkHook,
 } from "@stakekit/api-hooks";

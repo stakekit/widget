@@ -1,6 +1,6 @@
-import { Networks, Token } from "@stakekit/common";
-import { Price, Prices, TokenString } from "../domain/types";
-import {
+import type { Networks, Token } from "@stakekit/common";
+import type { Price, Prices, TokenString } from "../domain/types";
+import type {
   PriceResponseDto,
   TokenDto,
   Networks as NetworksDto,

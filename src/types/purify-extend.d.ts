@@ -1,5 +1,5 @@
-import { Maybe as OriginalMaybe } from "purify-ts/Maybe";
-import { GetMaybeJust } from "./utils";
+import type { Maybe as OriginalMaybe } from "purify-ts/Maybe";
+import type { GetMaybeJust } from "./utils";
 
 module "purify-ts" {
   type OriginalMaybeTypeRef = typeof OriginalMaybe;

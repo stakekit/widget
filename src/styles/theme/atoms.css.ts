@@ -1,5 +1,6 @@
 import { defineProperties, createSprinkles } from "@vanilla-extract/sprinkles";
-import { Breakpoint, breakpoints, minMediaQuery } from "../tokens/breakpoints";
+import type { Breakpoint } from "../tokens/breakpoints";
+import { breakpoints, minMediaQuery } from "../tokens/breakpoints";
 import { vars } from "./contract.css";
 import { responsiveProperties, unresponsiveProperties } from "./properties";
 

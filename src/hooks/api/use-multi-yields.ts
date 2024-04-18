@@ -1,7 +1,9 @@
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
-import { UseQueryOptions, useQuery } from "@tanstack/react-query";
+import type { YieldDto } from "@stakekit/api-hooks";
+import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import type { UseQueryOptions } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
-import { SKWallet } from "../../domain/types";
+import type { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
 import { eitherAsyncPool } from "../../utils/either-async-pool";
 import {

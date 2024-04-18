@@ -1,12 +1,13 @@
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
-import { ReactNode, useMemo } from "react";
+import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
-import { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import { SKAnchor } from "../../atoms/anchor";
 

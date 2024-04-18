@@ -1,6 +1,6 @@
 import { animate, useMotionValue, useTransform } from "framer-motion";
 import { useEffect } from "react";
-import { DetailsContextType } from "../../state/types";
+import type { DetailsContextType } from "../../state/types";
 
 export const useAnimateYieldPercent = (
   estimatedRewards: DetailsContextType["estimatedRewards"]

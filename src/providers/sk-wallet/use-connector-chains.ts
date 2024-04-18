@@ -1,9 +1,9 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
-import { Connector } from "wagmi";
+import type { Connector } from "wagmi";
 import { isConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { useWagmiConfig } from "../wagmi";
+import type { useWagmiConfig } from "../wagmi";
 import { BehaviorSubject } from "rxjs";
-import { Chain } from "viem";
+import type { Chain } from "viem";
 
 export const useConnectorChains = ({
   wagmiConfig,

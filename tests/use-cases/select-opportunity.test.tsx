@@ -1,4 +1,4 @@
-import { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import { server } from "../mocks/server";
 import { HttpResponse, delay, http } from "msw";
@@ -74,17 +74,25 @@ describe("Select opportunity", () => {
     const { getByTestId, getByText } = renderApp();
 
     await waitFor(() => getByTestId("select-opportunity").click());
-    await waitFor(() =>
-      expect(getByTestId("select-modal__search-input")).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(getByTestId("select-modal__title")).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(getByTestId("select-modal__container")).toBeInTheDocument()
-    );
+
+    await waitFor(() => getByTestId("select-opportunity").click());
 
     let selectContainer = await waitFor(() =>
+      getByTestId("select-modal__container")
+    );
+
+    await waitFor(() =>
+      expect(
+        within(selectContainer).getByTestId("select-modal__search-input")
+      ).toBeInTheDocument()
+    );
+    await waitFor(() =>
+      expect(
+        within(selectContainer).getByTestId("select-modal__title")
+      ).toBeInTheDocument()
+    );
+
+    selectContainer = await waitFor(() =>
       getByTestId("select-modal__container")
     );
 

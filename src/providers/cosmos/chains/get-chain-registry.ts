@@ -1,71 +1,87 @@
 import { chains, assets } from "chain-registry";
-import { AssetList, Chain } from "@chain-registry/types";
+import type { WithWagmiName } from "../types";
+import {
+  supportedCosmosChains,
+  type SupportedCosmosChains,
+} from "../../../domain/types/chains";
+import { CosmosNetworks } from "@stakekit/common";
 
-const chainsSet = new Set([
-  "cosmoshub-4",
-  "akashnet-2",
-  "osmosis-1",
-  "juno-1",
-  "kava_2222-10",
-  "stargaze-1",
-  "agoric-3",
-  "regen-1",
-  "axelar-dojo-1",
-  "laozi-mainnet",
-  "chihuahua-1",
-  "comdex-1",
-  "crescent-1",
-  "crypto-org-chain-mainnet-1",
-  "cudos-1",
-  "fetchhub-4",
-  "gravity-bridge-3",
-  "irishub-1",
-  "kichain-2",
-  "mars-1",
-  "onomy-mainnet-1",
-  "quicksilver-2",
-  "secret-4",
-  "sentinelhub-2",
-  "sommelier-3",
-  "teritori-1",
-  "umee-1",
-  "core-1",
-  "bitsong-2b",
-  "coreum-mainnet-1",
-  "desmos-mainnet",
-  "dydx-mainnet-1",
-  "injective-1",
-]);
+export type AssetList = (typeof assets)[number];
+export type Chain = (typeof chains)[number];
 
-type WithWagmiName<T> = T & { wagmiName: string };
+// CosmosNetworks -> chain_id from registry
+const skCosmosNetworksToRegistryIds: {
+  [Key in SupportedCosmosChains]: Chain["chain_id"];
+} = {
+  [CosmosNetworks.Cosmos]: "cosmoshub-4",
+  [CosmosNetworks.Akash]: "akashnet-2",
+  [CosmosNetworks.Osmosis]: "osmosis-1",
+  [CosmosNetworks.Juno]: "juno-1",
+  [CosmosNetworks.Kava]: "kava_2222-10",
+  [CosmosNetworks.Stargaze]: "stargaze-1",
+  [CosmosNetworks.Agoric]: "agoric-3",
+  [CosmosNetworks.Regen]: "regen-1",
+  [CosmosNetworks.Axelar]: "axelar-dojo-1",
+  [CosmosNetworks.BandProtocol]: "laozi-mainnet",
+  [CosmosNetworks.Chihuahua]: "chihuahua-1",
+  [CosmosNetworks.Comdex]: "comdex-1",
+  [CosmosNetworks.Crescent]: "crescent-1",
+  [CosmosNetworks.Cronos]: "crypto-org-chain-mainnet-1",
+  [CosmosNetworks.Cudos]: "cudos-1",
+  [CosmosNetworks.FetchAi]: "fetchhub-4",
+  [CosmosNetworks.GravityBridge]: "gravity-bridge-3",
+  [CosmosNetworks.IRISnet]: "irishub-1",
+  [CosmosNetworks.KiNetwork]: "kichain-2",
+  [CosmosNetworks.MarsProtocol]: "mars-1",
+  [CosmosNetworks.Onomy]: "onomy-mainnet-1",
+  [CosmosNetworks.Quicksilver]: "quicksilver-2",
+  [CosmosNetworks.Secret]: "secret-4",
+  [CosmosNetworks.Sentinel]: "sentinelhub-2",
+  [CosmosNetworks.Sommelier]: "sommelier-3",
+  [CosmosNetworks.Teritori]: "teritori-1",
+  [CosmosNetworks.Umee]: "umee-1",
+  [CosmosNetworks.Persistence]: "core-1",
+  [CosmosNetworks.Bitsong]: "bitsong-2b",
+  [CosmosNetworks.Coreum]: "coreum-mainnet-1",
+  [CosmosNetworks.Desmos]: "desmos-mainnet",
+  [CosmosNetworks.Dydx]: "dydx-mainnet-1",
+  [CosmosNetworks.Injective]: "injective-1",
+};
+
+const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
+  Object.fromEntries(
+    supportedCosmosChains.map((key) => [
+      skCosmosNetworksToRegistryIds[key],
+      key,
+    ])
+  );
+
+const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
 
 const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
-  let name = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
+  let wagmiName = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
   if ("chain_id" in val) {
     if (val.chain_id === "crypto-org-chain-mainnet-1") {
-      name = "Crypto.org Chain";
+      wagmiName = "Crypto.org Chain";
     } else if (val.chain_id === "laozi-mainnet") {
-      name = "Band Chain";
+      wagmiName = "Band Chain";
     } else if (val.chain_id === "secret-4") {
-      name = "Secret Network";
+      wagmiName = "Secret Network";
     } else if (val.chain_id === "fetchhub-4") {
-      name = "Fetch.AI";
+      wagmiName = "Fetch.AI";
     } else if (val.chain_id === "kichain-2") {
-      name = "Ki Chain";
+      wagmiName = "Ki Chain";
     } else if (val.chain_id === "irishub-1") {
-      name = "IRISnet";
+      wagmiName = "IRISnet";
     } else if (val.chain_id === "gravity-bridge-3") {
-      name = "Gravity Bridge";
+      wagmiName = "Gravity Bridge";
     } else if (val.chain_id === "cosmoshub-4") {
-      name = "Cosmos";
+      wagmiName = "Cosmos";
     }
   }
 
-  return {
-    ...val,
-    wagmiName: name,
-  };
+  return { ...val, wagmiName };
 };
 
 const assetMapper = (
@@ -79,11 +95,14 @@ const assetMapper = (
 };
 
 const cosmosRegistryChains: WithWagmiName<Chain>[] = chains
-  .filter((c) => chainsSet.has(c.chain_id))
+  .filter((c) => registryIdsSet.has(c.chain_id))
   .map(chainMapper);
 
 export const getCosmosRegistryChains = (): WithWagmiName<Chain>[] =>
   cosmosRegistryChains;
+
+export const getRegistryIdsToSKCosmosNetworks =
+  (): typeof registryIdsToSKCosmosNetworks => registryIdsToSKCosmosNetworks;
 
 const filteredCosmosChainNames = new Map(
   cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id])

@@ -1,8 +1,8 @@
-import { getSKIcon } from "../utils";
+const assetsUrl = "https://assets.stakek.it";
 
 export const config = {
   appName: "StakeKit",
-  appIcon: getSKIcon("sk-icon_320x320.png"),
+  appIcon: `${assetsUrl}/stakekit/sk-icon_320x320.png`,
   appUrl: "https://stakek.it",
   currency: "USD",
   queryClient: {
@@ -15,7 +15,8 @@ export const config = {
   },
   appPrefix: "sk-widget",
   env: {
-    apiUrl: import.meta.env.VITE_API_URL,
+    apiUrl: import.meta.env.VITE_API_URL ?? "https://api.stakek.it/",
     isTestMode: import.meta.env.MODE === "test",
   },
+  assetsUrl,
 } as const;

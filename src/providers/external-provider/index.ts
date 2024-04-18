@@ -1,16 +1,17 @@
-import { WalletList } from "@stakekit/rainbowkit";
+import type { WalletList } from "@stakekit/rainbowkit";
 import { ExternalProvider } from "../../domain/types/external-providers";
 import { EitherAsync, List, Maybe } from "purify-ts";
-import { getSKIcon } from "../../utils";
-import { Connector, CreateConnectorFn, createConnector } from "wagmi";
-import { Chain } from "wagmi/chains";
-import { Address } from "viem";
-import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
-import { MutableRefObject } from "react";
+import type { Connector, CreateConnectorFn } from "wagmi";
+import { createConnector } from "wagmi";
+import type { Chain } from "wagmi/chains";
+import type { Address } from "viem";
+import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
+import type { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
+import type { MutableRefObject } from "react";
 import { BehaviorSubject } from "rxjs";
-import { SKExternalProviders } from "../../domain/types/wallets";
+import type { SKExternalProviders } from "../../domain/types/wallets";
 import { skNormalizeChainId } from "../../domain";
+import { config } from "../../config";
 
 const configMeta = {
   id: "externalProviderConnector",
@@ -44,7 +45,7 @@ export const externalProviderConnector = (
     () => ({
       id: configMeta.id,
       name: configMeta.name,
-      iconUrl: getSKIcon("sk-icon_320x320.png"),
+      iconUrl: config.appIcon,
       iconBackground: "#fff",
       createConnector: () =>
         createConnector<unknown, ExtraProps>((config) => {

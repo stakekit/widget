@@ -1,4 +1,4 @@
-import { YieldType } from "@stakekit/api-hooks";
+import type { YieldType } from "@stakekit/api-hooks";
 
 export const yieldTypesMap: {
   [key in YieldType]: { type: key; title: string; review: string };

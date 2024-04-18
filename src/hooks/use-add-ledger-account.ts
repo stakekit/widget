@@ -1,9 +1,9 @@
-import { Chain } from "@stakekit/rainbowkit";
+import type { Chain } from "@stakekit/rainbowkit";
 import { useSKWallet } from "../providers/sk-wallet";
 import { EitherAsync, Left, Right } from "purify-ts";
 import { useMutation } from "@tanstack/react-query";
 import { useCloseChainModal } from "./use-close-chain-modal";
-import { isLedgerLiveConnector } from "../providers/ledger/ledger-connector";
+import { isLedgerLiveConnector } from "../providers/ledger/ledger-live-connector-meta";
 
 export const useAddLedgerAccount = () => {
   const { connector } = useSKWallet();

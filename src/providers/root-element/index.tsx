@@ -1,10 +1,5 @@
-import {
-  PropsWithChildren,
-  createContext,
-  useContext,
-  useLayoutEffect,
-  useState,
-} from "react";
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useLayoutEffect, useState } from "react";
 import { MaybeDocument } from "../../utils/maybe-document";
 import { rootSelector } from "../../styles";
 

@@ -10,7 +10,7 @@ import { ProviderDetails } from "./components/provider-details";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { AmountBlock } from "./components/amount-block";
 import { StaticActionBlock } from "./components/static-action-block";
-import { ActionTypes } from "@stakekit/api-hooks";
+import type { ActionTypes } from "@stakekit/api-hooks";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { container } from "./styles.css";
 import { UnstakeSignPopup } from "./components/unstake-sign-popup";
@@ -195,11 +195,14 @@ export const PositionDetails = () => {
                     .extractNullable()}
 
                   {/* Unstake */}
-                  {Maybe.fromRecord({
-                    canUnstake,
-                    reducedStakedOrLiquidBalance,
-                    canChangeAmount,
-                  })
+                  {canUnstake
+                    .filter(Boolean)
+                    .chain(() =>
+                      Maybe.fromRecord({
+                        reducedStakedOrLiquidBalance,
+                        canChangeAmount,
+                      })
+                    )
                     .map(
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock

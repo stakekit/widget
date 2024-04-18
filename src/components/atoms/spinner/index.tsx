@@ -1,5 +1,6 @@
-import { PropsWithChildren } from "react";
-import { SpinnerVariants, spinnerStyles } from "./style.css";
+import type { PropsWithChildren } from "react";
+import type { SpinnerVariants } from "./style.css";
+import { spinnerStyles } from "./style.css";
 
 export const Spinner = ({
   variant,

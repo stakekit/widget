@@ -1,18 +1,18 @@
-import { Maybe } from "purify-ts";
-import { SelectedStakeData } from "../types";
-import { ExtraData, State } from "../../../../state/stake/types";
-import {
+import type { Maybe } from "purify-ts";
+import type { SelectedStakeData } from "../types";
+import type { ExtraData, State } from "../../../../state/stake/types";
+import type {
   TokenBalanceScanResponseDto,
   TokenDto,
   TronResourceType,
   ValidatorDto,
   YieldType,
 } from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
-import { useProvidersDetails } from "../../../../hooks/use-provider-details";
-import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
-import { SettingsContextType } from "../../../../providers/settings";
+import type BigNumber from "bignumber.js";
+import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import type { SettingsContextType } from "../../../../providers/settings";
 
 export type DetailsContextType = {
   referralCheck: SettingsContextType["referralCheck"];

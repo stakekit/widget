@@ -1,11 +1,12 @@
 import { EitherAsync, Right } from "purify-ts";
 import { getAverageGasMode } from "../../../../common/get-gas-mode-value";
-import {
-  ErrorType,
-  useStakeEnterAndTxsConstruct,
-} from "../../../../hooks/api/use-stake-enter-and-txs-construct";
-import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
-import { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../../../types";
+import type { ErrorType } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import { useStakeEnterAndTxsConstruct } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import type { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
+import type {
+  GetEitherAsyncLeft,
+  GetEitherAsyncRight,
+} from "../../../../types";
 import { useMutationSync } from "../../../../hooks/use-mutation-sync";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useStakeState } from "../../../../state/stake";

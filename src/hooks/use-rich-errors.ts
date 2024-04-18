@@ -1,5 +1,5 @@
-import { AxiosInstance } from "axios";
-import { i18n } from "i18next";
+import type { AxiosInstance } from "axios";
+import type { i18n } from "i18next";
 import { useCallback, useSyncExternalStore } from "react";
 import { BehaviorSubject } from "rxjs";
 

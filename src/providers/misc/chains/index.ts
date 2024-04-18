@@ -1,4 +1,4 @@
-import { Chain } from "@stakekit/rainbowkit";
+import type { Chain } from "@stakekit/rainbowkit";
 import { getTokenLogo } from "../../../utils";
 
 export const near = {

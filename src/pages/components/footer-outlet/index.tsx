@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Box, Button } from "../../../components";
 import { motion } from "framer-motion";
 import { footerContainer } from "./styles.css";
+import type { FooterButtonVal } from "./context";
 import {
-  FooterButtonVal,
   useFooterButton,
   useFooterHeight,
   useSyncFooterHeight,

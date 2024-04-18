@@ -1,7 +1,7 @@
 import { useCallback, useState, useSyncExternalStore } from "react";
-import { Connector } from "wagmi";
-import { isLedgerLiveConnector } from "../ledger/ledger-connector";
+import type { Connector } from "wagmi";
 import { BehaviorSubject } from "rxjs";
+import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 
 export const useLedgerCurrentAccountId = (connector?: Connector) => {
   const [subject] = useState(

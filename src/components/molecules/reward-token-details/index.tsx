@@ -3,8 +3,8 @@ import { Text } from "../../atoms/typography";
 import { Trans } from "react-i18next";
 import { inlineText } from "./style.css";
 import { Image } from "../../atoms/image";
-import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
-import { ActionTypes } from "@stakekit/api-hooks";
+import type { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import type { ActionTypes } from "@stakekit/api-hooks";
 import { ImageFallback } from "../../atoms/image-fallback";
 
 export const RewardTokenDetails = ({

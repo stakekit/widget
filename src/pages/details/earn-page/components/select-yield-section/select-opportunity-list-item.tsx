@@ -2,11 +2,11 @@ import { Maybe } from "purify-ts";
 import { Box, SelectModalItem, Text } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useDetailsContext } from "../../state/details-context";
-import { YieldDto } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
 import { selectItemText } from "../../styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { getRewardRateFormatted } from "../../../../../utils/formatters";
-import { ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
 export const SelectOpportunityListItem = ({
   item,

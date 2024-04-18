@@ -1,4 +1,4 @@
-import { ChainRecord, Wallet } from "@cosmos-kit/core";
+import type { ChainRecord, Wallet } from "@cosmos-kit/core";
 import { ChainWC } from "@cosmos-kit/walletconnect";
 import { WalletConnectClient } from "./client";
 

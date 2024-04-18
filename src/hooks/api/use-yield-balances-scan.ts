@@ -1,6 +1,8 @@
-import {
+import type {
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
+} from "@stakekit/api-hooks";
+import {
   getYieldYieldBalancesScanQueryKey,
   useYieldYieldBalancesScan,
 } from "@stakekit/api-hooks";

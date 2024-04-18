@@ -1,8 +1,8 @@
-import { YieldDto } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
 import { APToPercentage, formatNumber } from ".";
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { Prices } from "../domain/types";
+import type { Prices } from "../domain/types";
 import { getBaseToken, getTokenPriceInUSD } from "../domain";
 
 export const formatCountryCode = ({

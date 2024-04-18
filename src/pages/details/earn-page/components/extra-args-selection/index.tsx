@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
 import { useDetailsContext } from "../../state/details-context";
 import { Box, Divider, Text } from "../../../../../components";
-import { TronResourceType } from "@stakekit/api-hooks";
+import type { TronResourceType } from "@stakekit/api-hooks";
 
 export const ExtraArgsSelection = () => {
   const { selectedStake, tronResource, onTronResourceSelect, validation } =

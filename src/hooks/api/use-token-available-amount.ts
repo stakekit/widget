@@ -1,8 +1,7 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
+import type { BalancesRequestDto, TokenDto } from "@stakekit/api-hooks";
 import {
-  BalancesRequestDto,
-  TokenDto,
   getTokenGetTokenBalancesQueryKey,
   useTokenGetTokenBalances,
 } from "@stakekit/api-hooks";
