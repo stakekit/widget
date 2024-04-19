@@ -1,9 +1,5 @@
 import { config } from "../../config";
-import {
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-  waitForMs,
-} from "../../utils";
+import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import type { CosmosChainsMap } from "../../domain/types/chains";
 import { supportedCosmosChains } from "../../domain/types/chains";
 import { getWagmiChain } from "./chains";
@@ -94,7 +90,6 @@ const queryFn = async ({
         )
         .chain((v) =>
           EitherAsync(() => v.walletManager.onMounted())
-            .chain(() => EitherAsync(() => waitForMs(500)))
             .chainLeft(() =>
               EitherAsync(() => {
                 // @ts-expect-error
