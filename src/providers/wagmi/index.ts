@@ -28,7 +28,6 @@ import { useSavedRef } from "../../hooks";
 import type { MutableRefObject } from "react";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { useMountAnimation } from "../mount-animation";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -182,8 +181,6 @@ const staleTime = Infinity;
 export const useWagmiConfig = () => {
   const { wagmi, externalProviders } = useSettings();
 
-  const { state } = useMountAnimation();
-
   const queryClient = useSKQueryClient();
 
   const yieldGetMyNetworks = useYieldGetMyNetworksHook();
@@ -198,7 +195,6 @@ export const useWagmiConfig = () => {
   return useQuery({
     staleTime,
     queryKey,
-    enabled: state.layout,
     queryFn: () =>
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
