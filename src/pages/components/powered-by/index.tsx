@@ -19,6 +19,7 @@ export const PoweredBy = () => {
   return (
     <motion.div
       ref={containerRef}
+      initial={{ opacity: 0 }}
       animate={{
         opacity: state.layout ? 1 : 0,
         transition: { duration: 0.3, delay: 0.2 },
