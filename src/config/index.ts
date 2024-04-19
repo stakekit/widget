@@ -10,7 +10,6 @@ export const config = {
     cacheTime: 1000 * 60 * 5,
   },
   walletConnectV2: {
-    relayUrl: "wss://relay.walletconnect.com",
     projectId: "10a5257c04d1d3097ff768a139c95f50",
   },
   appPrefix: "sk-widget",
