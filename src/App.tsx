@@ -1,4 +1,3 @@
-import "./polyfills";
 import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";

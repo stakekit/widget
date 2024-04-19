@@ -18,9 +18,6 @@ export default defineConfig(
         fileName: "index.bundle",
         formats: ["es"],
       },
-      rollupOptions: {
-        external: ["crypto", "stream"],
-      },
       copyPublicDir: false,
       outDir: "dist/bundle",
       sourcemap: true,

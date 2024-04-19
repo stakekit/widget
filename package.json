@@ -130,7 +130,6 @@
     "unplugin-parcel-macros": "^0.0.3",
     "viem": "^2.9.16",
     "vite": "^5.2.8",
-    "vite-plugin-externalize-deps": "^0.8.0",
     "vitest": "^1.4.0",
     "wagmi": "^2.5.19"
   },

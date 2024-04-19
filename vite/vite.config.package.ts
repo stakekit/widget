@@ -19,7 +19,7 @@ export default defineConfig(
         formats: ["es"],
       },
       rollupOptions: {
-        external: ["crypto", "stream", "react", "react-dom"],
+        external: ["react", "react-dom"],
         output: { banner: '"use client";\n' },
       },
       copyPublicDir: false,
