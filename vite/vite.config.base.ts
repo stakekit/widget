@@ -5,6 +5,7 @@ import path from "path";
 import macros from "unplugin-parcel-macros";
 import type { InlineConfig } from "vitest";
 import merge from "lodash.merge";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 declare module "vite" {
   interface UserConfig {
@@ -26,7 +27,12 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
         },
       },
     },
-    plugins: [macros.vite(), react(), vanillaExtractPlugin()],
+    plugins: [
+      macros.vite(),
+      react(),
+      vanillaExtractPlugin(),
+      nodePolyfills({ include: ["buffer"] }),
+    ],
     esbuild: { drop: ["console"] },
     server: { host: true },
     resolve: {
