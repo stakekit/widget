@@ -29,9 +29,15 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
     plugins: [macros.vite(), react(), vanillaExtractPlugin()],
     esbuild: { drop: ["console"] },
     server: { host: true },
+    resolve: {
+      alias: {
+        crypto: path.resolve(__dirname, "..", "polyfills", "empty.js"),
+        stream: path.resolve(__dirname, "..", "polyfills", "empty.js"),
+      },
+    },
     build: {
       commonjsOptions: {
         transformMixedEsModules: true,
       },
     },
-  });
+  } satisfies UserConfig);

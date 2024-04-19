@@ -4,7 +4,6 @@ import type { TokenDto } from "@stakekit/api-hooks";
 import { getTokenPriceInUSD } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
-import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
@@ -24,6 +23,7 @@ export const usePositionDetails = () => {
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     positionBalancePrices,
+    unstakeAmountValid,
   } = useUnstakeOrPendingActionState();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
@@ -46,12 +46,6 @@ export const usePositionDetails = () => {
   const canChangeAmount = integrationData.map(
     (d) => !!(!forceMax && d.args.exit?.args?.amount?.required)
   );
-
-  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
-    yieldOpportunity: integrationData,
-    type: "exit",
-    positionBalancesByType,
-  });
 
   const onUnstakeAmountChange = (value: BigNumber) =>
     dispatch({ type: "unstake/amount/change", data: value });
@@ -81,14 +75,6 @@ export const usePositionDetails = () => {
 
     dispatch({ type: "unstake/amount/max" });
   };
-
-  const unstakeAmountValid = useMemo(
-    () =>
-      unstakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-      unstakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-      !unstakeAmount.isZero(),
-    [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
-  );
 
   const unstakeAvailable = integrationData.mapOrDefault(
     (d) => d.status.exit,

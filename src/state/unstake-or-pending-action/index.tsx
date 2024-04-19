@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
@@ -152,6 +152,9 @@ export const UnstakeOrPendingActionProvider = ({
     yieldOpportunity: integrationData,
     type: "exit",
     positionBalancesByType,
+    tokenDto: stakedOrLiquidBalances
+      .chain((balances) => List.head(balances))
+      .map((v) => v.token),
   });
 
   const forceMaxUnstakeAmount = useForceMaxAmount({
@@ -286,6 +289,14 @@ export const UnstakeOrPendingActionProvider = ({
     ]
   );
 
+  const unstakeAmountValid = useMemo(
+    () =>
+      unstakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+      unstakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+      !unstakeAmount.isZero(),
+    [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
+  );
+
   const stakeExitAndTxsConstructMutationState = useStakeExitAndTxsConstruct();
   const pendingActionAndTxsConstructMutationState =
     usePendingActionAndTxsConstruct();
@@ -394,6 +405,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionTxGas,
       pendingActionToken,
       isGasCheckError,
+      unstakeAmountValid,
     }),
     [
       unstakeAmount,
@@ -412,6 +424,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionTxGas,
       pendingActionToken,
       isGasCheckError,
+      unstakeAmountValid,
     ]
   );
 

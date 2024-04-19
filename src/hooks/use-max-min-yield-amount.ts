@@ -1,4 +1,4 @@
-import type { YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -11,8 +11,10 @@ export const useMaxMinYieldAmount = ({
   type,
   yieldOpportunity,
   positionBalancesByType,
+  tokenDto,
 }: {
   yieldOpportunity: Maybe<YieldDto>;
+  tokenDto: Maybe<TokenDto>;
 } & (
   | {
       type: "enter";
@@ -23,9 +25,7 @@ export const useMaxMinYieldAmount = ({
       positionBalancesByType: Maybe<PositionBalancesByType>;
     }
 )) => {
-  const stakeTokenAvailableAmount = useTokenAvailableAmount({
-    tokenDto: yieldOpportunity.map((y) => y.token),
-  });
+  const stakeTokenAvailableAmount = useTokenAvailableAmount({ tokenDto });
 
   const availableAmount = useMemo(
     () =>

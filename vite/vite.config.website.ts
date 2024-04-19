@@ -13,9 +13,6 @@ export default defineConfig(
     build: {
       outDir: "dist/website",
       sourcemap: true,
-      rollupOptions: {
-        external: ["crypto", "stream"],
-      },
     },
   })
 );
