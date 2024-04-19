@@ -1,13 +1,14 @@
-import {
+import type {
   PendingActionDto,
   PendingActionRequestDto,
   ValidatorDto,
   YieldBalanceDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { Either, List, Maybe } from "purify-ts";
-import { SKWallet } from "../../../domain/types";
-import { State } from "../../../state/unstake-or-pending-action/types";
+import type { Either } from "purify-ts";
+import { List, Maybe } from "purify-ts";
+import type { SKWallet } from "../../../domain/types";
+import type { State } from "../../../state/unstake-or-pending-action/types";
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,

@@ -24,13 +24,13 @@ import {
   typeSafeObjectFromEntries,
 } from "../../utils";
 import { EvmNetworks } from "@stakekit/common";
-import { EvmChainsMap } from "../../domain/types/chains";
+import type { EvmChainsMap } from "../../domain/types/chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { EitherAsync, Maybe } from "purify-ts";
-import { WalletList } from "@stakekit/rainbowkit";
+import type { WalletList } from "@stakekit/rainbowkit";
 import { viction } from "./chains";
-import { QueryClient } from "@tanstack/react-query";
-import { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
+import type { QueryClient } from "@tanstack/react-query";
+import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryFn = async ({
   queryClient,

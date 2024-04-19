@@ -1,5 +1,5 @@
 import { connectKitTheme } from "../connect-kit";
-import { colorsContract } from "./contract";
+import type { colorsContract } from "./contract";
 
 export const lightThemeColors: typeof colorsContract = {
   white: "#fff",

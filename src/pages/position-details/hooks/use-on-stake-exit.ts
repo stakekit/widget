@@ -2,8 +2,8 @@ import { EitherAsync, Right } from "purify-ts";
 import { useMutation } from "@tanstack/react-query";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-and-txs-construct";
-import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-import {
+import type { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
+import type {
   GetEitherAsyncLeft,
   GetEitherAsyncRight,
   GetMaybeJust,

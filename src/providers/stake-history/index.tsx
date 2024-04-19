@@ -1,13 +1,13 @@
-import {
+import type {
   ActionTypes,
   TokenDto,
   ValidatorDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
+import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
+import type { PropsWithChildren } from "react";
 import {
-  PropsWithChildren,
   createContext,
   useCallback,
   useContext,

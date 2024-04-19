@@ -1,6 +1,7 @@
-import { Codec, GetType, Left, Right, number, optional } from "purify-ts";
-import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
-import { Address, Hex } from "viem";
+import type { GetType } from "purify-ts";
+import { Codec, Left, Right, number, optional } from "purify-ts";
+import type { Transaction as TronTx } from "@tronweb3/tronwallet-abstract-adapter";
+import type { Address, Hex } from "viem";
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {
@@ -45,8 +46,6 @@ export const unsignedEVMTransactionCodec = Codec.interface({
 });
 
 export type DecodedEVMTransaction = GetType<typeof unsignedEVMTransactionCodec>;
-
-type TronTx = Parameters<TronLinkAdapter["signTransaction"]>[0];
 
 export const unsignedTronTransactionCodec = Codec.custom<TronTx>({
   decode(value) {

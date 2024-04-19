@@ -1,5 +1,7 @@
-import axios, { AxiosInstance } from "axios";
-import { PropsWithChildren, createContext, useContext, useState } from "react";
+import type { AxiosInstance } from "axios";
+import axios from "axios";
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useState } from "react";
 import { useSettings } from "../settings";
 import { ApiClientProvider } from "@stakekit/api-hooks";
 import { attachDelayInterceptor } from "../../common/delay-api-requests";

@@ -4,7 +4,7 @@ import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
 import { imageStyle } from "./style.css";
 import { useRichErrors } from "../../../hooks/use-rich-errors";
-import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.png";
+import { images } from "../../../assets/images";
 
 export const RichErrorModal = () => {
   const { t } = useTranslation();
@@ -25,7 +25,7 @@ export const RichErrorModal = () => {
         px="6"
         lineHeight="sm"
       >
-        <Box as="img" src={whatIsLiquidStaking} className={imageStyle} />
+        <Box as="img" src={images.whatIsLiquidStaking} className={imageStyle} />
         {!message && (
           <Box marginBottom="6">
             <Heading variant={{ level: "h4" }}>

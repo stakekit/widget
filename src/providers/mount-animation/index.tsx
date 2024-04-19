@@ -1,13 +1,12 @@
+import type { Dispatch, PropsWithChildren } from "react";
 import {
-  Dispatch,
-  PropsWithChildren,
   createContext,
   useContext,
   useEffect,
   useMemo,
   useReducer,
 } from "react";
-import { Action } from "../../types";
+import type { Action } from "../../types";
 import { useSettings } from "../settings";
 import { useSavedRef } from "../../hooks";
 import { delayAPIRequests } from "../../common/delay-api-requests";

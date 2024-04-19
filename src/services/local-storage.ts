@@ -1,7 +1,7 @@
+import type { GetType } from "purify-ts";
 import {
   Codec,
   Either,
-  GetType,
   Right,
   array,
   record,

@@ -1,4 +1,4 @@
-import { YieldBalanceDto } from "@stakekit/api-hooks";
+import type { YieldBalanceDto } from "@stakekit/api-hooks";
 import { List } from "purify-ts";
 
 export const checkHasPendingClaimRewards = (balances: YieldBalanceDto[]) =>

@@ -1,17 +1,17 @@
-import BigNumber from "bignumber.js";
-import { Action } from "../../types";
-import { Maybe } from "purify-ts";
-import {
+import type BigNumber from "bignumber.js";
+import type { Action } from "../../types";
+import type { Maybe } from "purify-ts";
+import type {
   ActionDto,
   ActionTypes,
   TokenDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { usePositionBalances } from "../../hooks/use-position-balances";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import { PositionBalancesByType } from "../../domain/types/positions";
-import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
-import { usePrices } from "../../hooks/api/use-prices";
+import type { usePositionBalances } from "../../hooks/use-position-balances";
+import type { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import type { PositionBalancesByType } from "../../domain/types/positions";
+import type { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
+import type { usePrices } from "../../hooks/api/use-prices";
 
 type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
 type UnstakeAmountMax = Action<"unstake/amount/max">;

@@ -1,12 +1,7 @@
-import {
-  HTMLProps,
-  ReactNode,
-  isValidElement,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { Box, BoxProps } from "../box";
+import type { HTMLProps, ReactNode } from "react";
+import { isValidElement, useEffect, useMemo, useState } from "react";
+import type { BoxProps } from "../box";
+import { Box } from "../box";
 
 const failLoadImages = new Set<string>();
 

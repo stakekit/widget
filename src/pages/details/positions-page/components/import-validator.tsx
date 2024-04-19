@@ -1,16 +1,19 @@
-import { Maybe } from "purify-ts";
+import type { Maybe } from "purify-ts";
+import type { SelectModalProps } from "../../../../components";
 import {
   Box,
   Button,
   SelectModal,
   SelectModalItem,
   SelectModalItemContainer,
-  SelectModalProps,
   Text,
 } from "../../../../components";
 import { useTranslation } from "react-i18next";
 import { Trigger } from "@radix-ui/react-alert-dialog";
-import { ValidatorDto, ValidatorSearchResultDto } from "@stakekit/api-hooks";
+import type {
+  ValidatorDto,
+  ValidatorSearchResultDto,
+} from "@stakekit/api-hooks";
 import clsx from "clsx";
 import {
   importValidatorContainer,

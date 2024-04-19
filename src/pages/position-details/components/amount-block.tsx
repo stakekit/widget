@@ -1,17 +1,10 @@
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  BoxProps,
-  Button,
-  NumberInput,
-  NumberInputProps,
-  Spinner,
-  Text,
-} from "../../../components";
+import type { BoxProps, NumberInputProps } from "../../../components";
+import { Box, Button, NumberInput, Spinner, Text } from "../../../components";
 import { formatNumber } from "../../../utils";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
-import BigNumber from "bignumber.js";
-import { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type BigNumber from "bignumber.js";
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { Just, Maybe } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";

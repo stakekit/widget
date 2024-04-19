@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { PositionBalancesByType } from "../domain/types/positions";
+import type { PositionBalancesByType } from "../domain/types/positions";
 
 export const useStakedOrLiquidBalance = (
   positionBalancesByType: Maybe<PositionBalancesByType>

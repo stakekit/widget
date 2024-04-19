@@ -1,11 +1,13 @@
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSKWallet } from "../providers/sk-wallet";
 import { EitherAsync, Maybe, Right } from "purify-ts";
 import { isSupportedChain } from "../domain/types/chains";
 import { MaybeWindow } from "../utils/maybe-window";
 import { typeSafeObjectFromEntries } from "../utils";
 import { getYieldOpportunity } from "../hooks/api/use-yield-opportunity";
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
+import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import { useSKQueryClient } from "../providers/query-client";
 
 const queryKey = ["init-params"];

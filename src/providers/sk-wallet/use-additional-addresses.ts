@@ -1,12 +1,12 @@
-import { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
+import type { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
 import { EitherAsync, Left, List, Right } from "purify-ts";
-import { Connector } from "wagmi";
+import type { Connector } from "wagmi";
 import { getStorageItem } from "../../services/local-storage";
-import { toBase64 } from "@cosmjs/encoding";
 import { useQuery } from "@tanstack/react-query";
-import { CosmosConnector, isCosmosConnector } from "../cosmos/cosmos-connector";
-import { ChainWalletBase } from "@cosmos-kit/core";
+import type { ChainWalletBase } from "@cosmos-kit/core";
 import { useCosmosCW } from "./use-cosmos-cw";
+import type { CosmosConnector } from "../cosmos/cosmos-connector-meta";
+import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 
 export const useAdditionalAddresses = ({
   connector,
@@ -89,6 +89,6 @@ const getCosmosPubKey = (args: {
           return new Error("missing account");
         })
         .map((account) => {
-          return toBase64(account.pubkey);
+          return args.connector.toBase64(account.pubkey);
         })
     );

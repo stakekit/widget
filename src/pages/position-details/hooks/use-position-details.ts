@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { TokenDto } from "@stakekit/api-hooks";
+import type { TokenDto } from "@stakekit/api-hooks";
 import { getTokenPriceInUSD } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";

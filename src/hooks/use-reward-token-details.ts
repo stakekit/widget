@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { ExtraData } from "../state/stake/types";
+import type { ExtraData } from "../state/stake/types";
 
 export const useRewardTokenDetails = (
   yieldOpportunity: ExtraData["selectedStake"]

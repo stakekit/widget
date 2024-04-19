@@ -1,5 +1,5 @@
+import type { PropsWithChildren } from "react";
 import {
-  PropsWithChildren,
   createContext,
   useCallback,
   useContext,

@@ -1,11 +1,9 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
-import { $$t } from "@cassiozen/usestatemachine/dist/types";
+import type { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
-import {
-  TransactionVerificationMessageDto,
-  useTransactionGetTransactionVerificationMessageForNetworkHook,
-} from "@stakekit/api-hooks";
+import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
+import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@stakekit/api-hooks";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { useOnStakeExit } from "./use-on-stake-exit";
 import { EitherAsync, Maybe } from "purify-ts";

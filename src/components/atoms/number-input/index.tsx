@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
-import { ChangeEvent, memo, useEffect, useRef, useState } from "react";
+import type { ChangeEvent } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
 import { createPortal } from "react-dom";

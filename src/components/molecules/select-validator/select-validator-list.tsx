@@ -1,6 +1,7 @@
-import { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
-import { ComponentProps, memo } from "react";
+import type { ComponentProps } from "react";
+import { memo } from "react";
 import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { Box } from "../../atoms/box";
 import { Text } from "../../atoms/typography";

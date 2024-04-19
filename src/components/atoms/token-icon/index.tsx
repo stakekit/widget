@@ -1,11 +1,11 @@
-import { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Box } from "../box";
 import { Image } from "../image";
 import { logoContainer, logoImage } from "./style.css";
-import { Atoms } from "../../../styles";
+import type { Atoms } from "../../../styles";
 import { ImageFallback } from "../image-fallback";
 import { getNetworkLogo } from "../../../utils";
-import { Networks } from "@stakekit/common";
+import type { Networks } from "@stakekit/common";
 
 export const TokenIcon = ({
   token,

@@ -1,11 +1,11 @@
-import {
-  GroupedVirtuoso,
+import type {
   GroupedVirtuosoProps,
-  Virtuoso,
   VirtuosoHandle,
   VirtuosoProps,
 } from "react-virtuoso";
-import { ForwardedRef, Fragment, ReactNode, forwardRef, useState } from "react";
+import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
+import type { ForwardedRef, ReactNode } from "react";
+import { Fragment, forwardRef, useState } from "react";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import clsx from "clsx";
 import { container, hideScrollbar } from "./style.css";

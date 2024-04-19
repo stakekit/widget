@@ -1,5 +1,5 @@
+import type { PropsWithChildren } from "react";
 import {
-  PropsWithChildren,
   createContext,
   useContext,
   useDeferredValue,
@@ -7,9 +7,9 @@ import {
   useMemo,
   useState,
 } from "react";
-import { SelectedStakeData } from "../types";
+import type { SelectedStakeData } from "../types";
 import { Maybe } from "purify-ts";
-import {
+import type {
   TokenBalanceScanResponseDto,
   TronResourceType,
   ValidatorDto,
@@ -17,7 +17,10 @@ import {
   YieldType,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { NumberInputProps, SelectModalProps } from "../../../../components";
+import type {
+  NumberInputProps,
+  SelectModalProps,
+} from "../../../../components";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useStakeDispatch, useStakeState } from "../../../../state/stake";
 import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-available-amount";
@@ -40,7 +43,7 @@ import {
   getYieldOpportunityFromCache,
   useYieldOpportunity,
 } from "../../../../hooks/api/use-yield-opportunity";
-import { DetailsContextType } from "./types";
+import type { DetailsContextType } from "./types";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
@@ -436,6 +439,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const referralCode = useReferralCode();
 
   const appLoading =
+    !wagmiConfig.data ||
     referralCode.isLoading ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||

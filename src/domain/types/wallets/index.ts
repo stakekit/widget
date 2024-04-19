@@ -1,4 +1,4 @@
-import { EVMWallet } from "./generic-wallet";
+import type { EVMWallet } from "./generic-wallet";
 
 export type SKExternalProviders = {
   currentChain: string;

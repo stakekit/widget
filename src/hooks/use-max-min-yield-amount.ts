@@ -1,10 +1,10 @@
-import { YieldDto } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import { useTokenAvailableAmount } from "./api/use-token-available-amount";
-import { PositionBalancesByType } from "../domain/types/positions";
+import type { PositionBalancesByType } from "../domain/types/positions";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
 export const useMaxMinYieldAmount = ({

@@ -1,24 +1,21 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../atoms/box";
 import { HelpIcon } from "../../atoms/icons";
-import { SelectModal, SelectModalProps } from "../../atoms/select-modal";
-import poweredBy from "../../../assets/images/powered-by.png";
-import whatIsStaking from "../../../assets/images/what-is-staking.png";
-import whatIsLiquidStaking from "../../../assets/images/what-is-liquid-staking.png";
-import whatIsDeposit from "../../../assets/images/what-is-deposit.png";
-import whatIsLending from "../../../assets/images/what-is-lending.png";
-import fees from "../../../assets/images/fees.png";
+import type { SelectModalProps } from "../../atoms/select-modal";
+import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { container, imageStyle } from "./style.css";
-import { YieldType } from "@stakekit/api-hooks";
+import type { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
-import { useGeoBlock } from "../../../hooks/use-geo-block";
-import { ReactNode, useContext, useMemo } from "react";
+import type { useGeoBlock } from "../../../hooks/use-geo-block";
+import type { ReactNode } from "react";
+import { useContext, useMemo } from "react";
 import { SKAnchor } from "../../atoms/anchor";
 import { Button } from "../../atoms/button";
 import { TrackingContext } from "../../../providers/tracking";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import { images } from "../../../assets/images";
 
 type ModalType =
   | { type: "fees" }
@@ -51,7 +48,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.staking.title"),
           description: t("help_modals.staking.description"),
-          image: whatIsStaking,
+          image: images.whatIsStaking,
         };
       }
 
@@ -59,7 +56,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.liquid_staking.title"),
           description: t("help_modals.liquid_staking.description"),
-          image: whatIsLiquidStaking,
+          image: images.whatIsLiquidStaking,
         };
       }
 
@@ -67,7 +64,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.deposit.title"),
           description: t("help_modals.deposit.description"),
-          image: whatIsDeposit,
+          image: images.whatIsDeposit,
         };
       }
 
@@ -75,7 +72,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.lending.title"),
           description: t("help_modals.lending.description"),
-          image: whatIsLending,
+          image: images.whatIsLending,
         };
       }
 
@@ -83,7 +80,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.restaking.title"),
           description: t("help_modals.restaking.description"),
-          image: whatIsStaking,
+          image: images.whatIsStaking,
         };
       }
 
@@ -91,7 +88,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
         return {
           title: t("help_modals.fees.title"),
           description: t("help_modals.fees.description"),
-          image: fees,
+          image: images.fees,
         };
       }
 
@@ -112,7 +109,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
           return {
@@ -124,7 +121,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("Crypto Ban")) {
           return {
@@ -136,7 +133,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("OFAC")) {
           return {
@@ -148,7 +145,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("OFSI")) {
           return {
@@ -160,7 +157,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("Pending Litigation")) {
           return {
@@ -175,7 +172,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         } else if (modal.tags.has("Staking Ban")) {
           return {
@@ -187,7 +184,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
                 components={{ link0: <SKAnchor /> }}
               />
             ),
-            image: fees,
+            image: images.fees,
           };
         }
 
@@ -200,7 +197,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               components={{ link0: <SKAnchor /> }}
             />
           ),
-          image: fees,
+          image: images.fees,
         };
       }
 
@@ -215,7 +212,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               ),
           },
           description: "",
-          image: whatIsStaking,
+          image: images.whatIsStaking,
         };
       }
 
@@ -232,7 +229,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               }}
             />
           ),
-          image: poweredBy,
+          image: images.poweredBy,
         };
       }
     }

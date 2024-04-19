@@ -1,4 +1,4 @@
-import { TokenString } from "./tokens";
+import type { TokenString } from "./tokens";
 
 export type Price = {
   price: number | undefined;

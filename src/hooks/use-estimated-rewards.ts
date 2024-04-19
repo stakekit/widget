@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { State } from "../state/stake/types";
-import { YieldDto } from "@stakekit/api-hooks";
+import type { State } from "../state/stake/types";
+import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useProvidersDetails } from "./use-provider-details";
 import { formatNumber } from "../utils";

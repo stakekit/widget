@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
-import { Nullable } from "../types";
+import type { Nullable } from "../types";
 
 export const useRegionCodeName = (regionCode: Nullable<string>) => {
   return useQuery({

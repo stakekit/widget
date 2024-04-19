@@ -1,8 +1,8 @@
-import {
+import type {
   TokenBalanceScanResponseDto,
   TokenWithAvailableYieldsDto,
-  useTokenGetTokens,
 } from "@stakekit/api-hooks";
+import { useTokenGetTokens } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { createSelector } from "reselect";
 

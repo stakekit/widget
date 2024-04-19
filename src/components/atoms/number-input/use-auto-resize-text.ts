@@ -1,4 +1,5 @@
-import { RefObject, useEffect } from "react";
+import type { RefObject } from "react";
+import { useEffect } from "react";
 import { usePrevious } from "../../../hooks/use-previous";
 import { vars } from "../../../styles";
 import { initialFontSizeVar } from "./styles.css";

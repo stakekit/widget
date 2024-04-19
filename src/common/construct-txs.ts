@@ -1,4 +1,4 @@
-import {
+import type {
   ActionDto,
   GasModeValueDto,
   useTransactionConstructHook,
@@ -11,7 +11,7 @@ import {
 import { EitherAsync } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
 import { isAxiosError } from "axios";
-import { ActionDtoWithGasEstimate } from "../domain/types/action";
+import type { ActionDtoWithGasEstimate } from "../domain/types/action";
 
 export const constructTxs = ({
   actionDto,

@@ -1,5 +1,5 @@
+import { images } from "../../../assets/images";
 import { Box, Button, Heading, SelectModal, Text } from "../../../components";
-import poweredBy from "../../../assets/images/powered-by.png";
 import { unstakeSignContainer, unstakeSignImageStyle } from "../styles.css";
 import { useTranslation } from "react-i18next";
 
@@ -24,7 +24,11 @@ export const UnstakeSignPopup = ({
         paddingBottom={{ mobile: "8" }}
         className={unstakeSignContainer}
       >
-        <Box as="img" src={poweredBy} className={unstakeSignImageStyle} />
+        <Box
+          as="img"
+          src={images.poweredBy}
+          className={unstakeSignImageStyle}
+        />
 
         <Heading variant={{ level: "h4" }}>
           {t("position_details.unstake_sign.title")}

@@ -1,9 +1,10 @@
-import { ThemeWrapperTheme } from "./theme-wrapper";
-import { PropsWithChildren, createContext, useContext, useMemo } from "react";
-import { Properties, TrackEventVal, TrackPageVal } from "./tracking";
-import { BuildWagmiConfig } from "./wagmi";
+import type { ThemeWrapperTheme } from "./theme-wrapper";
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useMemo } from "react";
+import type { Properties, TrackEventVal, TrackPageVal } from "./tracking";
+import type { BuildWagmiConfig } from "./wagmi";
 import { config } from "../config";
-import { SKExternalProviders } from "../domain/types/wallets";
+import type { SKExternalProviders } from "../domain/types/wallets";
 
 export interface SettingsContextType {
   apiKey: string;

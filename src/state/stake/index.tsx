@@ -1,15 +1,14 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
+import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
-  Dispatch,
-  PropsWithChildren,
   useCallback,
   useContext,
   useMemo,
   useReducer,
 } from "react";
-import { Actions, ExtraData, State } from "./types";
+import type { Actions, ExtraData, State } from "./types";
 import {
   StakeEnterAndTxsConstructProvider,
   useStakeEnterAndTxsConstruct,
@@ -20,7 +19,7 @@ import {
   useYieldOpportunity,
 } from "../../hooks/api/use-yield-opportunity";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
-import { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";

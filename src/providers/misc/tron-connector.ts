@@ -1,5 +1,5 @@
-import { Connector, createConnector } from "wagmi";
-import { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
+import { createConnector } from "wagmi";
+import type { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
 import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
@@ -9,46 +9,16 @@ import { tron } from "./chains";
 import { getTokenLogo } from "../../utils";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { config } from "../../config";
-import { Chain, WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
-import { wcLogo } from "../../assets/images/wc-logo";
-import bitget from "../../assets/images/bitget.png";
-import { ledger } from "../../assets/images/ledger";
-import { Address } from "viem";
-import { ConnectorWithFilteredChains } from "../../domain/types/connectors";
+import type {
+  Chain,
+  WalletDetailsParams,
+  WalletList,
+} from "@stakekit/rainbowkit";
+import type { Address } from "viem";
 import { BehaviorSubject } from "rxjs";
-
-const configMeta = {
-  tronLink: {
-    id: "tronLink",
-    name: "TronLink",
-    type: "tronLinkProvider",
-  },
-  tronWc: {
-    id: "tronWc",
-    name: "Wallet Connect",
-    type: "tronWcProvider",
-  },
-  tronBg: {
-    id: "tronBg",
-    name: "Bitget",
-    type: "tronBgProvider",
-  },
-  tronLedger: {
-    id: "tronLedger",
-    name: "Ledger",
-    type: "tronLedgerProvider",
-  },
-} as const;
-
-type ExtraProps = ConnectorWithFilteredChains &
-  Pick<Adapter, "signTransaction">;
-
-type TronConnector = Connector & ExtraProps;
-
-export const isTronConnector = (
-  connector: Connector
-): connector is TronConnector =>
-  Object.values(configMeta).some((val) => val.id === connector.id);
+import type { ExtraProps } from "./tron-connector-meta";
+import { configMeta } from "./tron-connector-meta";
+import { images } from "../../assets/images";
 
 const createTronConnector = ({
   adapter,
@@ -131,7 +101,7 @@ export const tronConnector: WalletList[number] = {
     () => ({
       id: configMeta.tronWc.id,
       name: configMeta.tronWc.name,
-      iconUrl: wcLogo,
+      iconUrl: images.wcLogo,
       iconBackground: "#fff",
       installed: true,
       createConnector: (walletDetailsParams) =>
@@ -153,7 +123,7 @@ export const tronConnector: WalletList[number] = {
     () => ({
       id: configMeta.tronBg.id,
       name: configMeta.tronBg.name,
-      iconUrl: bitget,
+      iconUrl: images.bitget,
       iconBackground: "#fff",
       createConnector: (walletDetailsParams) =>
         createTronConnector({
@@ -165,7 +135,7 @@ export const tronConnector: WalletList[number] = {
     () => ({
       id: configMeta.tronLedger.id,
       name: configMeta.tronLedger.name,
-      iconUrl: ledger,
+      iconUrl: images.ledgerLogo,
       iconBackground: "#fff",
       createConnector: (walletDetailsParams) =>
         createTronConnector({

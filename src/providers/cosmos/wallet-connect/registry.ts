@@ -1,11 +1,11 @@
-import { OS, Wallet } from "@cosmos-kit/core";
+import type { OS, Wallet } from "@cosmos-kit/core";
 import { config } from "../../../config";
-import { wcLogo } from "../../../assets/images/wc-logo";
+import { images } from "../../../assets/images";
 
 export const walletConnectInfo: Wallet = {
   name: "wallet-connect",
   prettyName: "WalletConnect",
-  logo: wcLogo,
+  logo: images.wcLogo,
   mode: "wallet-connect",
   mobileDisabled: false,
   rejectMessage: {

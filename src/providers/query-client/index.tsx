@@ -1,5 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
-import { PropsWithChildren, createContext, useContext, useState } from "react";
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useState } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { config } from "../../config";
 import { shouldRetryRequest } from "../../common/utils";

@@ -1,13 +1,13 @@
 import { EitherAsync, Left } from "purify-ts";
 import { withRequestErrorRetry } from "../../common/utils";
-import {
+import type {
   TransactionStatus,
   useTransactionGetTransactionStatusByNetworkAndHashHook,
 } from "@stakekit/api-hooks";
-import { SupportedSKChains } from "./chains";
-import { MutableRefObject } from "react";
-import { SKExternalProviders } from "./wallets";
-import { EVMTx } from "./wallets/generic-wallet";
+import type { SupportedSKChains } from "./chains";
+import type { MutableRefObject } from "react";
+import type { SKExternalProviders } from "./wallets";
+import type { EVMTx } from "./wallets/generic-wallet";
 
 export class ExternalProvider {
   get shouldMultiSend() {

@@ -2,12 +2,12 @@ import { Trans, useTranslation } from "react-i18next";
 import { Box, Button, Spinner, Text } from "../../../components";
 import { formatNumber } from "../../../utils";
 import BigNumber from "bignumber.js";
-import {
+import type {
   ActionTypes,
   PendingActionDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
-import { usePositionDetails } from "../hooks/use-position-details";
+import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
   pendingActionDto: PendingActionDto;

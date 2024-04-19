@@ -1,4 +1,4 @@
-import { RewardTypes, YieldDto } from "@stakekit/api-hooks";
+import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { Box, CaretDownIcon, Divider, Text } from "../../../components";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
@@ -16,8 +16,8 @@ import {
 } from "../styles.css";
 import { memo, useEffect, useRef, useState } from "react";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
-import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { GetMaybeJust } from "../../../types";
+import type { useProvidersDetails } from "../../../hooks/use-provider-details";
+import type { GetMaybeJust } from "../../../types";
 import * as CopyText from "../../../components/atoms/copy-text";
 import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 

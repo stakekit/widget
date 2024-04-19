@@ -8,7 +8,7 @@ import {
 } from "../../../domain";
 import { useSavedRef } from "../../../hooks";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
-import {
+import type {
   ActionTypes,
   PendingActionDto,
   ValidatorDto,

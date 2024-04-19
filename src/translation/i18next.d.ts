@@ -1,6 +1,6 @@
 import "i18next";
 
-import { localResources } from ".";
+import type { localResources } from ".";
 
 declare module "i18next" {
   interface CustomTypeOptions {

@@ -1,5 +1,5 @@
-import { Chain } from "@stakekit/rainbowkit";
-import {
+import type { Chain } from "@stakekit/rainbowkit";
+import type {
   CosmosChainsMap,
   EvmChainsMap,
   MiscChainsMap,
@@ -7,10 +7,10 @@ import {
   SupportedLedgerFamiliesWithCurrency,
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
-  supportedLedgerFamiliesWithCurrency,
 } from "../../domain/types/chains";
+import { supportedLedgerFamiliesWithCurrency } from "../../domain/types/chains";
 import { typeSafeObjectEntries } from "../../utils";
-import {
+import type {
   Account,
   CryptoCurrency,
   Currency,
@@ -18,7 +18,7 @@ import {
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import { EitherAsync } from "purify-ts";
-import { GetEitherAsyncRight } from "../../types";
+import type { GetEitherAsyncRight } from "../../types";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts,

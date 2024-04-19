@@ -1,4 +1,4 @@
-import { Breakpoint } from "./breakpoints";
+import type { Breakpoint } from "./breakpoints";
 
 export const letterSpacingsContract = {
   tighter: "",

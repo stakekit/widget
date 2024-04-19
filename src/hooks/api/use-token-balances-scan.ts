@@ -1,7 +1,5 @@
-import {
-  TokenBalanceScanDto,
-  useTokenTokenBalancesScan,
-} from "@stakekit/api-hooks";
+import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
+import { useTokenTokenBalancesScan } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useSKWallet } from "../../providers/sk-wallet";

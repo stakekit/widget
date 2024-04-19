@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { TransactionType } from "@stakekit/api-hooks";
+import type { TransactionType } from "@stakekit/api-hooks";
 import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";

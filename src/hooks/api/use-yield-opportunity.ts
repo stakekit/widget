@@ -1,7 +1,9 @@
-import { YieldDto, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
+import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { EitherAsync, Maybe } from "purify-ts";
-import { QueryClient, useQuery } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { withRequestErrorRetry } from "../../common/utils";
 
 type Params = {

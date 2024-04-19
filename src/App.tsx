@@ -4,7 +4,8 @@ import "./styles/theme/global.css";
 import "./translation";
 import "./utils/extend-purify";
 import ReactDOM from "react-dom/client";
-import { ComponentProps, useState } from "react";
+import type { ComponentProps } from "react";
+import { useState } from "react";
 import {
   Navigate,
   Route,
@@ -25,10 +26,8 @@ import {
   Details,
 } from "./pages";
 import { Providers } from "./providers";
-import {
-  SettingsContextProvider,
-  SettingsContextType,
-} from "./providers/settings";
+import type { SettingsContextType } from "./providers/settings";
+import { SettingsContextProvider } from "./providers/settings";
 import { PositionDetails } from "./pages/position-details";
 import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
@@ -55,6 +54,9 @@ import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
 import { useUpdateEffect } from "./hooks/use-update-effect";
+import { preloadImages } from "./assets/images";
+
+preloadImages();
 
 const Widget = () => {
   useToggleTheme();
@@ -77,6 +79,7 @@ const Widget = () => {
   useIsomorphicEffect(() => {
     if (
       pathnameRef.current !== "/" &&
+      pathnameRef.current !== "/positions" &&
       ((prevChain && chain !== prevChain) ||
         (prevAddress && address !== prevAddress))
     ) {

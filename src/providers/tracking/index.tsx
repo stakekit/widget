@@ -1,11 +1,6 @@
-import {
-  PropsWithChildren,
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
-import { SettingsContextType } from "../settings";
+import type { PropsWithChildren } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
+import type { SettingsContextType } from "../settings";
 
 const trackPageMap = {
   earn: "Earn",

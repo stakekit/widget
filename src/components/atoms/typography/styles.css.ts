@@ -1,7 +1,8 @@
-import { recipe, RecipeVariants } from "@vanilla-extract/recipes";
+import type { RecipeVariants } from "@vanilla-extract/recipes";
+import { recipe } from "@vanilla-extract/recipes";
 import { atoms, vars } from "../../../styles";
 import { minMediaQuery } from "../../../styles/tokens/breakpoints";
-import { Heading, Text } from "../../../styles/tokens/typography";
+import type { Heading, Text } from "../../../styles/tokens/typography";
 
 export const heading = recipe({
   base: atoms({ color: "text" }),

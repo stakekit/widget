@@ -1,5 +1,5 @@
-import { BalanceTypes, YieldBalanceDto } from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
+import type { BalanceTypes, YieldBalanceDto } from "@stakekit/api-hooks";
+import type BigNumber from "bignumber.js";
 
 export type PositionBalancesByType = Map<
   BalanceTypes,

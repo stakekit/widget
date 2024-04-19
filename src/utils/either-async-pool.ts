@@ -1,5 +1,5 @@
 import { EitherAsync, Right } from "purify-ts";
-import { GetEitherAsyncRight } from "../types";
+import type { GetEitherAsyncRight } from "../types";
 
 type TupleRightVals<T extends readonly (() => EitherAsync<Error, unknown>)[]> =
   { [Key in keyof T]: GetEitherAsyncRight<ReturnType<T[Key]>> };

@@ -1,6 +1,8 @@
 import classNames from "clsx";
-import { createElement, PropsWithChildren } from "react";
-import { heading, HeadingVariants } from "./styles.css";
+import type { PropsWithChildren } from "react";
+import { createElement } from "react";
+import type { HeadingVariants } from "./styles.css";
+import { heading } from "./styles.css";
 
 type Props = PropsWithChildren<{ variant?: HeadingVariants }> &
   JSX.IntrinsicElements["h1"];

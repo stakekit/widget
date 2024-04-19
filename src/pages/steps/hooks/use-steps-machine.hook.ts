@@ -1,18 +1,16 @@
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
-import { $$t } from "@cassiozen/usestatemachine/dist/types";
+import type { $$t } from "@cassiozen/usestatemachine/dist/types";
+import type { GetStakeSessionError, SendTransactionError } from "./errors";
 import {
-  GetStakeSessionError,
   TXCheckError,
-  SendTransactionError,
   SignError,
   SubmitError,
   SubmitHashError,
   TransactionConstructError,
 } from "./errors";
+import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
-  ActionDto,
-  TransactionDto,
   useTransactionConstructHook,
   useTransactionGetGasForNetworkHook,
   useTransactionGetTransactionHook,

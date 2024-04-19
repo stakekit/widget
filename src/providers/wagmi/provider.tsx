@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import type { PropsWithChildren } from "react";
 import { WagmiContext } from "wagmi";
 import { hydrate } from "@wagmi/core";
 import { defaultConfig, useWagmiConfig } from "../wagmi";

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import type { LocalStorageKV } from "../services/local-storage";
 import {
-  LocalStorageKV,
   addLocalStorageListener,
   getStorageItem,
 } from "../services/local-storage";

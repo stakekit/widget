@@ -12,7 +12,7 @@ import {
   breakWord,
   validatorPill,
 } from "../../styles.css";
-import { ValidatorDto } from "@stakekit/api-hooks";
+import type { ValidatorDto } from "@stakekit/api-hooks";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";

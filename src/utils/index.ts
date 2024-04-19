@@ -1,6 +1,7 @@
-import { Networks } from "@stakekit/common";
+import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { MaybeWindow } from "./maybe-window";
+import { config } from "../config";
 
 BigNumber.config({
   FORMAT: {
@@ -59,13 +60,13 @@ export const isLedgerDappBrowserProvider = (() => {
 })();
 
 export const getNetworkLogo = (network: Networks) =>
-  `https://assets.stakek.it/networks/${network}.svg`;
+  `${config.assetsUrl}/networks/${network}.svg`;
 
 export const getTokenLogo = (tokenName: string) =>
-  `https://assets.stakek.it/tokens/${tokenName}.svg`;
+  `${config.assetsUrl}/tokens/${tokenName}.svg`;
 
 export const getSKIcon = (iconName: string) =>
-  `https://assets.stakek.it/stakekit/${iconName}`;
+  `${config.assetsUrl}/stakekit/${iconName}`;
 
 export const waitForMs = (ms: number) =>
   new Promise((res) => setTimeout(res, ms));

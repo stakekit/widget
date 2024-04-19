@@ -3,8 +3,8 @@ import { Box } from "../box";
 import { defaultColor, fallbackContainer } from "./styles.css";
 import { getBackgroundColor } from "../../../utils";
 import { Text } from "../typography";
-import { Atoms } from "../../../styles";
-import { TextVariants } from "../typography/styles.css";
+import type { Atoms } from "../../../styles";
+import type { TextVariants } from "../typography/styles.css";
 
 export const ImageFallback = ({
   name,

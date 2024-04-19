@@ -1,14 +1,14 @@
 import BigNumber from "bignumber.js";
-import { Prices, TokenString } from "./types";
-import { Token } from "@stakekit/common";
-import {
+import type { Prices, TokenString } from "./types";
+import type { Token } from "@stakekit/common";
+import type {
   ActionDto,
   PendingActionDto,
   TokenDto,
   TransactionDto,
   TransactionStatus,
 } from "@stakekit/api-hooks";
-import { Override } from "../types";
+import type { Override } from "../types";
 import { Left, Right } from "purify-ts";
 import { normalizeChainId } from "wagmi";
 
