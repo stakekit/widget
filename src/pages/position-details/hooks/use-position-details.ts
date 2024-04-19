@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Maybe } from "purify-ts";
 import type { TokenDto } from "@stakekit/api-hooks";
 import { getTokenPriceInUSD } from "../../../domain";
@@ -13,6 +13,7 @@ import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUnstakeMachine } from "./use-unstake-machine";
+import { useNavigate } from "react-router-dom";
 
 export const usePositionDetails = () => {
   const {
@@ -92,6 +93,8 @@ export const usePositionDetails = () => {
 
   const [machine, send] = useUnstakeMachine();
 
+  const navigate = useNavigate();
+
   const unstakeIsLoading =
     machine.value === "unstakeCheck" ||
     machine.value === "unstakeGetVerificationMessageLoading" ||
@@ -103,6 +106,12 @@ export const usePositionDetails = () => {
 
     send("UNSTAKE");
   };
+
+  useEffect(() => {
+    if (machine.value === "unstakeDone") {
+      navigate("unstake/review");
+    }
+  }, [machine.value, navigate]);
 
   const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
   const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
