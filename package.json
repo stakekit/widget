@@ -9,6 +9,10 @@
       "types": "./dist/types/index.package.d.ts",
       "default": "./dist/package/index.package.js"
     },
+    "./bundle": {
+      "types": "./dist/types/index.bundle.d.ts",
+      "default": "./dist/bundle/index.bundle.js"
+    },
     "./style.css": {
       "default": "./dist/package/style.css"
     }
@@ -35,12 +39,13 @@
     "lint": "yarn turbo run turbo:lint",
     "test": "yarn turbo run turbo:test",
     "format": "yarn turbo run turbo:format",
-    "turbo:build": "yarn lint && yarn clean && yarn build:package && yarn build:website",
+    "turbo:build": "yarn lint && yarn clean && yarn build:package && yarn build:bundle && yarn build:website && yarn build:types",
     "turbo:lint": "tsc && eslint src && prettier --check ./src",
     "turbo:test": "vitest -c vite/vite.config.dev.ts run",
     "turbo:format": "prettier --write ./src",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",
-    "build:package": "vite -c vite/vite.config.package.ts build && yarn build:types",
+    "build:package": "vite -c vite/vite.config.package.ts build",
+    "build:bundle": "vite -c vite/vite.config.bundle.ts build",
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",

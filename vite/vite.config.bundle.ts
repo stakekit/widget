@@ -1,5 +1,6 @@
 import type { InlineConfig } from "vitest";
 import { defineConfig } from "vite";
+import path from "path";
 import { getConfig } from "./vite.config.base";
 
 declare module "vite" {
@@ -11,11 +12,18 @@ declare module "vite" {
 export default defineConfig(
   getConfig({
     build: {
-      outDir: "dist/website",
-      sourcemap: true,
+      lib: {
+        entry: path.resolve(__dirname, "..", "src/index.bundle.ts"),
+        name: "StakeKit",
+        fileName: "index.bundle",
+        formats: ["es"],
+      },
       rollupOptions: {
         external: ["crypto", "stream"],
       },
+      copyPublicDir: false,
+      outDir: "dist/bundle",
+      sourcemap: true,
     },
   })
 );
