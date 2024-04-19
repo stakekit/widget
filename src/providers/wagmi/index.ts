@@ -198,7 +198,7 @@ export const useWagmiConfig = () => {
   return useQuery({
     staleTime,
     queryKey,
-    enabled: state.earnPage && state.layout,
+    enabled: state.layout,
     queryFn: () =>
       buildWagmiConfig({
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
