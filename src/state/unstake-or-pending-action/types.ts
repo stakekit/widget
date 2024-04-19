@@ -53,4 +53,5 @@ export type ExtraData = {
   }>;
   positionBalancePrices: ReturnType<typeof usePrices>;
   isGasCheckError: boolean;
+  unstakeAmountValid: boolean;
 };

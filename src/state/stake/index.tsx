@@ -187,6 +187,7 @@ const Provider = ({ children }: PropsWithChildren) => {
   const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
     type: "enter",
     yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
+    tokenDto: _selectedTokenBalance.map((v) => v.token),
   });
 
   const forceMax = useForceMaxAmount({

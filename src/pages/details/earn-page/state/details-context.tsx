@@ -333,6 +333,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
     type: "enter",
     yieldOpportunity: selectedStake,
+    tokenDto: selectedTokenBalance.map((v) => v.token),
   });
 
   const { t } = useTranslation();
