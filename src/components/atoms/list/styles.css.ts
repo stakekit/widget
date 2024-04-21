@@ -8,7 +8,7 @@ export const itemContainer = recipe({
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      px: "4",
+      px: { tablet: "4", mobile: "3" },
       py: "3",
       borderRadius: "xl",
       flex: 1,

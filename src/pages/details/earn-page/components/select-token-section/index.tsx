@@ -84,6 +84,7 @@ export const SelectTokenSection = () => {
                   weight: "normal",
                   type: validation.errors.amountInvalid ? "danger" : "muted",
                 }}
+                data-state={validation.errors.amountInvalid ? "error" : "valid"}
               >
                 {Maybe.fromNullable(availableTokens)
                   .map((v) =>
