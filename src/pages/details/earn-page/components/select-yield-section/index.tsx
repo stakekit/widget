@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { Box, Text } from "../../../../../components";
+import { Box, Divider, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
 import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { useDetailsContext } from "../../state/details-context";
 import { motion } from "framer-motion";
 import { useAnimateYieldPercent } from "./use-animate-yield-percent";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { useSettings } from "../../../../../providers/settings";
+import { SelectYieldRewardDetails } from "./select-yield-reward-details";
 
 export const SelectYieldSection = () => {
   const {
@@ -17,13 +17,12 @@ export const SelectYieldSection = () => {
     tokenBalancesScanLoading,
     stakeTokenAvailableAmountLoading,
     selectedStakeData,
-    rewardToken,
     estimatedRewards,
-    symbol,
     selectedStake,
     defaultTokensIsLoading,
-    pointsRewardTokens,
   } = useDetailsContext();
+
+  const { variant } = useSettings();
 
   const { t } = useTranslation();
 
@@ -34,15 +33,6 @@ export const SelectYieldSection = () => {
     tokenBalancesScanLoading ||
     stakeTokenAvailableAmountLoading ||
     defaultTokensIsLoading;
-
-  const earnYearly = estimatedRewards.mapOrDefault(
-    (e) => `${e.yearly} ${symbol}`,
-    ""
-  );
-  const earnMonthly = estimatedRewards.mapOrDefault(
-    (e) => `${e.monthly} ${symbol}`,
-    ""
-  );
 
   const yieldPerc = useAnimateYieldPercent(estimatedRewards);
 
@@ -64,17 +54,25 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            <Box my="2">
-              <Text>{t("details.earn")}</Text>
-            </Box>
+            {variant === "default" && (
+              <Box my="2">
+                <Text>{t("details.earn")}</Text>
+              </Box>
+            )}
 
             <Box
+              data-rk="stake-yield-section"
               background="stakeSectionBackground"
               borderRadius="xl"
               marginTop="2"
               py="4"
               px="4"
             >
+              {variant === "zerion" && (
+                <Box my="2">
+                  <Text>{t("details.earn")}</Text>
+                </Box>
+              )}
               <Box
                 display="flex"
                 justifyContent="space-between"
@@ -107,87 +105,16 @@ export const SelectYieldSection = () => {
                 </Box>
               </Box>
 
-              <Box>
-                <Box my="4">
-                  <RewardTokenDetails rewardToken={rewardToken} type="stake" />
-                </Box>
-
-                <Box display="flex" flexDirection="column" gap="2">
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    data-testid="estimated-reward__yearly"
-                  >
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {t("shared.yearly")}
-                    </Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {earnYearly}
-                    </Text>
-                  </Box>
-
-                  <Box
-                    display="flex"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    data-testid="estimated-reward__monthly"
-                  >
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {t("shared.monthly")}
-                    </Text>
-                    <Text variant={{ type: "muted", weight: "normal" }}>
-                      {earnMonthly}
-                    </Text>
-                  </Box>
-
-                  {pointsRewardTokens
-                    .filter((val) => !!val.length)
-                    .map((val) => (
-                      <Box
-                        display="flex"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        data-testid="estimated-reward__points"
-                        gap="2"
-                      >
-                        <Text variant={{ type: "muted", weight: "normal" }}>
-                          {t("shared.points")}
-                        </Text>
-
-                        <Box display="flex" gap="1">
-                          {val.map((v, i) => (
-                            <Box
-                              key={i}
-                              background="background"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              borderRadius="lg"
-                              px="2"
-                              py="1"
-                              gap="2"
-                            >
-                              <TokenIcon
-                                token={v}
-                                hideNetwork
-                                tokenLogoHw="5"
-                              />
-
-                              <Text
-                                variant={{ type: "muted", weight: "normal" }}
-                              >
-                                {v.name.replace(/points/i, "")}
-                              </Text>
-                            </Box>
-                          ))}
-                        </Box>
-                      </Box>
-                    ))
-                    .extractNullable()}
-                </Box>
-              </Box>
+              {variant === "default" && <SelectYieldRewardDetails />}
             </Box>
+
+            {variant === "zerion" && (
+              <Box display="flex" flexDirection="column" gap="5">
+                <SelectYieldRewardDetails />
+
+                <Divider />
+              </Box>
+            )}
           </Box>
         );
       })

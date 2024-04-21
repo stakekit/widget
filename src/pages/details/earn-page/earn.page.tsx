@@ -1,10 +1,8 @@
 import { Text } from "../../../components/atoms/typography";
 import { Box } from "../../../components/atoms/box";
 import { PageContainer } from "../../components";
-import { Spinner } from "../../../components";
 import { Footer } from "./components/footer";
 import { SelectValidatorSection } from "./components/select-validator-section";
-import { HelpModal } from "../../../components/molecules/help-modal";
 import { SelectTokenSection } from "./components/select-token-section";
 import { SelectYieldSection } from "./components/select-yield-section";
 import {
@@ -17,22 +15,18 @@ import { motion } from "framer-motion";
 import { ReferralCode } from "./components/referral-code";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useTranslation } from "react-i18next";
+import { useSettings } from "../../../providers/settings";
+import { SelectTokenTitle } from "./components/select-token-section/title";
+import { ChainModal } from "../../../components/molecules/chain-modal";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
 
   const { t } = useTranslation();
 
-  const {
-    referralCheck,
-    yieldType,
-    isError,
-    selectedStakeYieldType,
-    isFetching,
-    appLoading,
-  } = useDetailsContext();
+  const { variant } = useSettings();
 
-  const title = yieldType;
+  const { referralCheck, isError } = useDetailsContext();
 
   const { mountAnimationFinished, dispatch } = useMountAnimation();
 
@@ -51,27 +45,9 @@ const EarnPageComponent = () => {
     >
       <PageContainer>
         <Box>
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Box display="flex" alignItems="center" minHeight="8">
-              {!appLoading && (
-                <>
-                  <Text>{title}</Text>
-                  {selectedStakeYieldType && (
-                    <HelpModal modal={{ type: selectedStakeYieldType }} />
-                  )}
-                </>
-              )}
-              {(isFetching || appLoading) && (
-                <Box display="flex" marginLeft="2">
-                  <Spinner />
-                </Box>
-              )}
-            </Box>
-          </Box>
+          {variant === "default" && <SelectTokenTitle />}
+
+          {variant === "zerion" && <ChainModal />}
 
           <SelectTokenSection />
 

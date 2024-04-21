@@ -19,9 +19,9 @@ export interface SettingsContextType {
     forceWalletConnectOnly?: boolean;
     __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
   };
-  showQueryDevtools?: boolean;
   externalProviders?: SKExternalProviders;
   disableGasCheck?: boolean;
+  variant: "zerion" | "default";
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

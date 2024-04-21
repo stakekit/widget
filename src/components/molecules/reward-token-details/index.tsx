@@ -51,10 +51,7 @@ export const RewardTokenDetails = ({
                         }` as const)
                       : "unstake_review.unstake_from"
                 }
-                values={{
-                  symbol: rt.symbol,
-                  providerName: rt.providerName,
-                }}
+                values={{ symbol: rt.symbol, providerName: rt.providerName }}
                 components={{
                   highlight0: (
                     <Text

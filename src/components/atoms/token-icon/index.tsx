@@ -27,7 +27,8 @@ export const TokenIcon = ({
       display="flex"
     >
       <Image
-        containerProps={{ hw: tokenLogoHw }}
+        data-rk="token-logo"
+        containerProps={{ hw: tokenLogoHw, "data-rk": "token-logo" }}
         src={metadata?.logoURI ?? token.logoURI}
         fallback={
           <ImageFallback
@@ -37,7 +38,7 @@ export const TokenIcon = ({
         }
       />
       {!hideNetwork && (
-        <Box className={logoContainer}>
+        <Box className={logoContainer} data-rk="token-network-logo">
           <Image
             src={getNetworkLogo(token.network as Networks)}
             fallback={<></>}

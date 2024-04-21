@@ -15,8 +15,10 @@ export type BoxProps = PropsWithChildren<
     | "color"
     | "width"
     | "cursor"
-  > &
-    Atoms & { as?: ElementType; className?: Parameters<typeof classNames>[0] }
+  > & { [dataAttibute: `data-${string}`]: string } & Atoms & {
+      as?: ElementType;
+      className?: Parameters<typeof classNames>[0];
+    }
 >;
 
 export const Box = forwardRef<unknown, BoxProps>(

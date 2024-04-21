@@ -27,6 +27,7 @@ const FooterButton = ({
 
   return (
     <motion.div
+      data-rk="footer-outlet"
       ref={containerRef}
       className={footerContainer}
       initial={{
@@ -55,6 +56,7 @@ const FooterButton = ({
           flexDirection="column"
         >
           <Button
+            data-rk="footer-button"
             disabled={disabled}
             isLoading={isLoading}
             onClick={onClick}

@@ -18,6 +18,7 @@ export const PoweredBy = () => {
 
   return (
     <motion.div
+      data-rk="powered-by"
       ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{
