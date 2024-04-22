@@ -50,8 +50,9 @@ export const useStakeReview = () => {
     [pricesState.data, selectedStake, stakeEnterTxGas]
   );
 
-  const token = selectedStake.map((y) => y.token);
   const metadata = selectedStake.map((y) => y.metadata);
+
+  const token = selectedTokenBalance.map((y) => y.token);
 
   const navigate = useNavigate();
 
