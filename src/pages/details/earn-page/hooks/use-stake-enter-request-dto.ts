@@ -37,7 +37,7 @@ export const useStakeEnterRequestDto = () => {
             integrationId: val.selectedStake.id,
             referralCode: referralcode.data?.code,
             args: {
-              inputToken: val.selectedStake.metadata.token,
+              inputToken: val.selectedTokenBalance.token,
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
