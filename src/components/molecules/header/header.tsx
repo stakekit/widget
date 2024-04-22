@@ -16,7 +16,6 @@ import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-live-con
 import { ChainModal } from "../chain-modal";
 import { AccountModal } from "../account-modal";
 import { Maybe } from "purify-ts";
-import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useSettings } from "../../../providers/settings";
 
@@ -110,10 +109,9 @@ export const Header = () => {
                     aria-hidden={!mounted}
                   >
                     {Maybe.fromFalsy(
-                      (!isConnected && !isConnecting) || !chain || !account
+                      (isConnected || isConnecting) && chain && account
                     )
-                      .map(() => null as ReactNode)
-                      .orDefaultLazy(() => (
+                      .map(() => (
                         <motion.div
                           className={animationContainer}
                           initial={{ opacity: 0 }}
@@ -124,7 +122,8 @@ export const Header = () => {
 
                           <AccountModal />
                         </motion.div>
-                      ))}
+                      ))
+                      .extractNullable()}
                   </Box>
                 );
               }}
