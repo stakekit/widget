@@ -1,9 +1,10 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../styles";
 import { recipe } from "@vanilla-extract/recipes";
+import { minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
-  base: [atoms({ borderRadius: "base" }), { padding: "2px 6px" }],
+  base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],
 
   variants: {
     type: {
@@ -14,6 +15,23 @@ export const listItemContainer = recipe({
     },
   },
 });
+
+export const positionDetailsContainer = style([
+  atoms({ gap: { mobile: "1", tablet: "2" } }),
+  {
+    display: "flex",
+    alignItems: "flex-start",
+    flexDirection: "column-reverse",
+    justifyContent: "center",
+
+    "@media": {
+      [minMediaQuery("tablet")]: {
+        alignItems: "center",
+        flexDirection: "row",
+      },
+    },
+  },
+]);
 
 export const viaText = style({
   textOverflow: "ellipsis",

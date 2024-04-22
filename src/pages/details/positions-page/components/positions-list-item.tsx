@@ -10,7 +10,11 @@ import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
-import { listItemContainer, viaText } from "../style.css";
+import {
+  listItemContainer,
+  positionDetailsContainer,
+  viaText,
+} from "../style.css";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
 import { checkHasPendingClaimRewards } from "../../shared";
@@ -139,12 +143,7 @@ export const PositionsListItem = memo(
                         : "0"
                     }
                   >
-                    <Box
-                      display="flex"
-                      justifyContent="center"
-                      alignItems="center"
-                      gap="2"
-                    >
+                    <Box className={positionDetailsContainer}>
                       {token
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}

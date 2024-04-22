@@ -61,7 +61,7 @@ export const Header = () => {
   };
 
   return (
-    <Box ref={containerRef}>
+    <Box ref={containerRef} data-rk="header">
       <Box paddingTop="4" paddingBottom="1">
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box

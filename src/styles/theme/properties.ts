@@ -6,7 +6,6 @@ export const unresponsiveProperties = {
   zIndex: vars.zIndices,
   fontWeight: vars.fontWeight,
   border: ["none"],
-  gap: vars.space,
   borderRadius: vars.borderRadius.baseContract,
   textAlign: ["left", "center", "right", "end"],
   flex: [1, 2, 3, 4, 5],
@@ -37,4 +36,5 @@ export const responsiveProperties = {
   minHeight: vars.space,
   maxWidth: vars.space,
   maxHeight: vars.space,
+  gap: vars.space,
 } as const;
