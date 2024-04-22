@@ -4,11 +4,14 @@ import { container, titleStyle } from "./styles.css";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
+import { useSettings } from "../../../providers/settings";
 
 export const ChainModal = () => {
   const trackEvent = useTrackEvent();
 
   const { t } = useTranslation();
+
+  const { variant } = useSettings();
 
   return (
     <ConnectButton.Custom>
@@ -28,7 +31,7 @@ export const ChainModal = () => {
                 openChainModal();
               }}
             >
-              {Maybe.fromFalsy(c.unsupported)
+              {Maybe.fromFalsy(c.unsupported && variant !== "zerion")
                 .map(() => (
                   <Box
                     px="2"
