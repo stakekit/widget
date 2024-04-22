@@ -17,7 +17,7 @@ import { useMountAnimation } from "../../../providers/mount-animation";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../providers/settings";
 import { SelectTokenTitle } from "./components/select-token-section/title";
-import { ChainModal } from "../../../components/molecules/chain-modal";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -47,7 +47,7 @@ const EarnPageComponent = () => {
         <Box>
           {variant === "default" && <SelectTokenTitle />}
 
-          {variant === "zerion" && <ChainModal />}
+          <ZerionChainModal />
 
           <SelectTokenSection />
 

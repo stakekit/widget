@@ -14,16 +14,13 @@ import { container } from "./style.css";
 import { motion } from "framer-motion";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useMemo } from "react";
-import { useSettings } from "../../../providers/settings";
-import { ChainModal } from "../../../components/molecules/chain-modal";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
   const { positionsData, listData, importValidators, showPositions } =
     usePositions();
-
-  const { variant } = useSettings();
 
   const { isConnected, isConnecting } = useSKWallet();
 
@@ -68,8 +65,6 @@ export const PositionsPage = () => {
           flex={1}
           flexDirection="column"
         >
-          {variant === "zerion" && <ChainModal />}
-
           {content}
 
           {showPositions && (
@@ -80,9 +75,13 @@ export const PositionsPage = () => {
                 initialScrollTop={scrollTop}
                 itemContent={(_, item) =>
                   item === "header" ? (
-                    <ImportValidatorListItem
-                      importValidators={importValidators}
-                    />
+                    <>
+                      <ZerionChainModal />
+
+                      <ImportValidatorListItem
+                        importValidators={importValidators}
+                      />
+                    </>
                   ) : (
                     <PositionsListItem item={item} />
                   )
