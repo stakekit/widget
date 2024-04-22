@@ -148,13 +148,19 @@ export const UnstakeOrPendingActionProvider = ({
     [stakedOrLiquidBalances]
   );
 
+  const unstakeToken = useMemo(
+    () =>
+      stakedOrLiquidBalances
+        .chain((balances) => List.head(balances))
+        .map((v) => v.token),
+    [stakedOrLiquidBalances]
+  );
+
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
     yieldOpportunity: integrationData,
     type: "exit",
     positionBalancesByType,
-    tokenDto: stakedOrLiquidBalances
-      .chain((balances) => List.head(balances))
-      .map((v) => v.token),
+    tokenDto: unstakeToken,
   });
 
   const forceMaxUnstakeAmount = useForceMaxAmount({
@@ -389,6 +395,7 @@ export const UnstakeOrPendingActionProvider = ({
 
   const value: State & ExtraData = useMemo(
     () => ({
+      unstakeToken,
       unstakeAmount,
       pendingActions,
       positionBalancePrices,
@@ -408,6 +415,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountValid,
     }),
     [
+      unstakeToken,
       unstakeAmount,
       pendingActions,
       positionBalancePrices,

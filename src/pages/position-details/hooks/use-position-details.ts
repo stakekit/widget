@@ -26,6 +26,7 @@ export const usePositionDetails = () => {
     positionBalancePrices,
     unstakeAmountValid,
     unstakeSession,
+    unstakeToken,
   } = useUnstakeOrPendingActionState();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
@@ -181,5 +182,6 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
     onValidatorsSubmit,
     onPendingActionAmountChange,
+    unstakeToken,
   };
 };

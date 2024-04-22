@@ -40,6 +40,7 @@ export const PositionDetails = () => {
     liquidTokensToNativeConversion,
     validatorAddressesHandling,
     onValidatorsSubmit,
+    unstakeToken,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -207,6 +208,7 @@ export const PositionDetails = () => {
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock
                           variant="unstake"
+                          unstakeToken={unstakeToken}
                           isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}
                           value={unstakeAmount}
