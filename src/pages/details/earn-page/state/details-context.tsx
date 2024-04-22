@@ -512,7 +512,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         isConnected && !isLedgerLiveAccountPlaceholder
           ? {
               disabled: buttonDisabled,
-              isLoading: onStakeEnter.isPending,
+              isLoading: onStakeEnter.isPending || isFetching,
               onClick: () => onClickRef.current(),
               label: buttonCTAText,
             }
@@ -538,6 +538,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         onClickRef,
         onStakeEnter.isPending,
         externalProviders,
+        isFetching,
         t,
       ]
     )

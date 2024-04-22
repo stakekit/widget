@@ -13,13 +13,13 @@ import { useDebounce } from "../../../../hooks/use-debounce";
 import { useTranslation } from "react-i18next";
 import { importValidator } from "../../../../common/import-validator";
 import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const usePositions = () => {
   const { data, ...rest } = usePositionsData();
 
-  const { network, address } = useSKWallet();
+  const { network, address, isConnected } = useSKWallet();
 
   const [validatorAddressOrName, setValidatorAddressOrName] = useState("");
   const debouncedValidatorAddressOrName = useDebounce(
@@ -89,13 +89,22 @@ export const usePositions = () => {
     onImportValidatorImport,
   };
 
-  return {
-    positionsData: {
-      ...rest,
-      data: positionsTableDataSelector(data),
-    },
-    importValidators,
-  };
+  const positionsData = useMemo(
+    () => ({ ...rest, data: positionsTableDataSelector(data) }),
+    [data, rest]
+  );
+
+  const showPositions =
+    isConnected &&
+    (!!positionsData.data.length ||
+      (!positionsData.isLoading && !positionsData.isError));
+
+  const listData = useMemo(
+    () => ["header" as const, ...positionsData.data],
+    [positionsData.data]
+  );
+
+  return { positionsData, listData, importValidators, showPositions };
 };
 
 const positionsTableDataSelector = createSelector(

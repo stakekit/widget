@@ -14,7 +14,7 @@ export const useSyncElementHeight = (
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
 
-      setCurrentHeightRef.current(entry.contentRect.height);
+      setCurrentHeightRef.current(entry.target.clientHeight);
     });
 
     observer.observe(containerRef.current);

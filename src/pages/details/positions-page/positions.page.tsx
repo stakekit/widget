@@ -8,43 +8,41 @@ import { PageContainer } from "../../components";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { FallbackContent } from "./components/fallback-content";
-import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useHandleListState } from "../../../providers/list-state";
 import { container } from "./style.css";
 import { motion } from "framer-motion";
 import { useMountAnimation } from "../../../providers/mount-animation";
+import { useMemo } from "react";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, importValidators } = usePositions();
+  const { positionsData, listData, importValidators, showPositions } =
+    usePositions();
 
-  const { isConnected } = useSKWallet();
+  const { isConnected, isConnecting } = useSKWallet();
 
-  const getContent = () => {
+  const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
       return <FallbackContent type="spinner" />;
-    } else if (!isConnected) {
+    } else if (!isConnected && !isConnecting) {
       return <FallbackContent type="not_connected" />;
-    } else if (positionsData.isError) {
+    } else if (positionsData.isError && !positionsData.data.length) {
       return <FallbackContent type="something_wrong" />;
-    } else if (isConnected && !positionsData.data?.length) {
+    } else if (isConnected && !positionsData.data.length) {
       return <FallbackContent type="no_current_positions" />;
     }
 
     return null;
-  };
-
-  const showPositions =
-    isConnected &&
-    (!!positionsData.data.length ||
-      (!positionsData.isLoading && !positionsData.isError));
-
-  const data = useMemo(
-    () => ["header" as const, ...positionsData.data],
-    [positionsData.data]
-  );
+  }, [
+    isConnected,
+    isConnecting,
+    positionsData.data.length,
+    positionsData.isError,
+    positionsData.isFetching,
+    positionsData.isLoading,
+  ]);
 
   const { scrollTop, virtualListRef } = useHandleListState();
 
@@ -66,13 +64,13 @@ export const PositionsPage = () => {
           flex={1}
           flexDirection="column"
         >
-          {getContent()}
+          {content}
 
           {showPositions && (
             <Box flex={1} display="flex" flexDirection="column">
               <VirtualList
                 ref={virtualListRef}
-                data={data}
+                data={listData}
                 initialScrollTop={scrollTop}
                 itemContent={(_, item) =>
                   item === "header" ? (

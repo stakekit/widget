@@ -38,8 +38,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           layout="size"
           className={animationContainer}
           style={{
-            borderTopLeftRadius: "20px",
-            borderTopRightRadius: "20px",
+            borderRadius: "20px",
             position: "relative",
             height: containerHeight,
           }}

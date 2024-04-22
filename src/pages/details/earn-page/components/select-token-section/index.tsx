@@ -4,9 +4,14 @@ import { pressAnimation } from "../../../../../components/atoms/button/styles.cs
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectToken } from "./select-token";
 import { useDetailsContext } from "../../state/details-context";
+import { useSettings } from "../../../../../providers/settings";
+import { SelectTokenTitle } from "./title";
+import { Maybe } from "purify-ts";
 
 export const SelectTokenSection = () => {
   const { t } = useTranslation();
+
+  const { variant } = useSettings();
 
   const {
     appLoading,
@@ -30,6 +35,7 @@ export const SelectTokenSection = () => {
     </Box>
   ) : (
     <Box
+      data-rk="stake-token-section"
       background="stakeSectionBackground"
       borderRadius="xl"
       marginTop="2"
@@ -43,8 +49,10 @@ export const SelectTokenSection = () => {
           : "transparent"
       }
     >
+      {variant === "zerion" && <SelectTokenTitle />}
+
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box minWidth="0" display="flex" marginRight="2" flex={1}>
+        <Box minWidth="0" display="flex" flex={1}>
           <NumberInput onChange={onStakeAmountChange} value={stakeAmount} />
         </Box>
 
@@ -52,6 +60,7 @@ export const SelectTokenSection = () => {
           <SelectToken />
         </Box>
       </Box>
+
       <Box
         display="flex"
         justifyContent="space-between"
@@ -59,32 +68,40 @@ export const SelectTokenSection = () => {
         marginTop="2"
         flexWrap="wrap"
       >
-        <Box flex={1}>
-          <Text
-            variant={{
-              type: "muted",
-              weight: "normal",
-            }}
-          >
+        <Box flex={1} display="flex">
+          <Text variant={{ type: "muted", weight: "normal" }}>
             {formattedPrice}
           </Text>
         </Box>
 
         <Box display="flex" justifyContent="flex-end" alignItems="center">
-          {stakeTokenAvailableAmountLoading ? (
-            <Spinner />
-          ) : (
-            <Text
-              variant={{
-                weight: "normal",
-                type: validation.errors.amountInvalid ? "danger" : "muted",
-              }}
-            >
-              {availableTokens
-                ? `${availableTokens} ${t("shared.available")}`
-                : ""}
-            </Text>
-          )}
+          <Box display="flex">
+            {stakeTokenAvailableAmountLoading ? (
+              <Spinner />
+            ) : (
+              <Text
+                variant={{
+                  weight: "normal",
+                  type: validation.errors.amountInvalid ? "danger" : "muted",
+                }}
+              >
+                {Maybe.fromNullable(availableTokens)
+                  .map((v) =>
+                    variant === "zerion" ? (
+                      <>
+                        <span>{t("shared.balance")}</span> <span>{v}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{v}</span> <span>{t("shared.available")}</span>
+                      </>
+                    )
+                  )
+                  .extractNullable()}
+              </Text>
+            )}
+          </Box>
+
           <Box
             as="button"
             borderRadius="xl"
@@ -95,12 +112,7 @@ export const SelectTokenSection = () => {
             onClick={onMaxClick}
             className={pressAnimation}
           >
-            <Text
-              variant={{
-                weight: "semibold",
-                type: "regular",
-              }}
-            >
+            <Text variant={{ weight: "semibold", type: "regular" }}>
               {t("shared.max")}
             </Text>
           </Box>

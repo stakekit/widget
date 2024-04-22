@@ -213,9 +213,10 @@ const Root = () => {
 
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
 
-export type SKAppProps = SettingsContextType;
+export type SKAppProps = Omit<SettingsContextType, "variant"> &
+  Partial<Pick<SettingsContextType, "variant">>;
 
-export const SKApp = (props: SettingsContextType) => {
+export const SKApp = (props: SKAppProps) => {
   const [showChild, setShowChild] = useState(false);
   const [key, reloadApp] = useState(() => Date.now());
 
@@ -229,7 +230,11 @@ export const SKApp = (props: SettingsContextType) => {
   ]);
 
   return (
-    <SettingsContextProvider key={key} {...props}>
+    <SettingsContextProvider
+      key={key}
+      variant={props.variant ?? "default"}
+      {...props}
+    >
       <Box className={appContainer}>
         {showChild && <RouterProvider router={router} />}
       </Box>

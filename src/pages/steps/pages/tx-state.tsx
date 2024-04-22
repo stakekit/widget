@@ -111,6 +111,10 @@ export const TxState = ({ txState, position, count }: Props) => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                data-rk="tx-state-step-circle"
+                data-state={
+                  txState.state > TxStateEnum.SIGN_IDLE ? "success" : "pending"
+                }
               >
                 {txState.state === TxStateEnum.SIGN_LOADING ? (
                   <Spinner variant={{ color: "inverted" }} />
@@ -178,6 +182,12 @@ export const TxState = ({ txState, position, count }: Props) => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                data-rk="tx-state-step-circle"
+                data-state={
+                  txState.state >= TxStateEnum.SIGN_SUCCESS
+                    ? "success"
+                    : "pending"
+                }
               >
                 {txState.state === TxStateEnum.BROADCAST_LOADING ? (
                   <Spinner variant={{ color: "inverted" }} />
@@ -246,6 +256,12 @@ export const TxState = ({ txState, position, count }: Props) => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                data-rk="tx-state-step-circle"
+                data-state={
+                  txState.state >= TxStateEnum.BROADCAST_SUCCESS
+                    ? "success"
+                    : "pending"
+                }
               >
                 {txState.state === TxStateEnum.CHECK_TX_STATUS_LOADING ? (
                   <Spinner variant={{ color: "inverted" }} />
@@ -311,6 +327,12 @@ export const TxState = ({ txState, position, count }: Props) => {
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
+                data-rk="tx-state-step-circle"
+                data-state={
+                  txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS
+                    ? "success"
+                    : "pending"
+                }
               >
                 {txState.state >= TxStateEnum.CHECK_TX_STATUS_SUCCESS && (
                   <CheckSteps hw={18} />

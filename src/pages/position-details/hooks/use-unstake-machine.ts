@@ -7,7 +7,6 @@ import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 import { useOnStakeExit } from "./use-on-stake-exit";
 import { EitherAsync, Maybe } from "purify-ts";
-import { useNavigate } from "react-router";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useMemo } from "react";
 import merge from "lodash.merge";
@@ -20,7 +19,6 @@ export const useUnstakeMachine = () => {
   const trackEvent = useTrackEvent();
   const stakeExitRequestDto = useStakeExitRequestDto();
   const onStakeExit = useOnStakeExit();
-  const navigate = useNavigate();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
@@ -142,10 +140,7 @@ export const useUnstakeMachine = () => {
             .chain((val) => signMessage(val.message))
             .caseOf({
               Right(v) {
-                setContext((ctx) => ({
-                  ...ctx,
-                  signedMessage: v,
-                }));
+                setContext((ctx) => ({ ...ctx, signedMessage: v }));
 
                 send("__UNSTAKE_SIGN_MESSAGE_SUCCESS__");
               },
@@ -160,7 +155,10 @@ export const useUnstakeMachine = () => {
       unstakeSignMessageError: {},
 
       unstakeLoading: {
-        on: { __UNSTAKE_ERROR__: "unstakeError" },
+        on: {
+          __UNSTAKE_ERROR__: "unstakeError",
+          __UNSTAKE_DONE__: "unstakeDone",
+        },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
             stakeExitRequestDto
@@ -196,7 +194,7 @@ export const useUnstakeMachine = () => {
             )
             .caseOf({
               Right() {
-                navigate("unstake/review");
+                send("__UNSTAKE_DONE__");
               },
               Left(error) {
                 setContext((ctx) => ({ ...ctx, error }));
@@ -205,6 +203,7 @@ export const useUnstakeMachine = () => {
             });
         },
       },
+      unstakeDone: {},
       unstakeError: {},
     },
   });
