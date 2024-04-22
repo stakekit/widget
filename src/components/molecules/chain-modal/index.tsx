@@ -19,7 +19,6 @@ export const ChainModal = () => {
         Maybe.fromNullable(chain)
           .map((c) => (
             <Box
-              data-rk="chain-modal"
               borderRadius="2xl"
               background="backgroundMuted"
               display="flex"
@@ -65,13 +64,17 @@ export const ChainModal = () => {
                       />
                     )}
 
-                    <Box marginLeft="2">
-                      <Text className={titleStyle}>{c.name}</Text>
-                    </Box>
+                    {c.name && (
+                      <>
+                        <Box marginLeft="2">
+                          <Text className={titleStyle}>{c.name}</Text>
+                        </Box>
 
-                    <Box mx="2">
-                      <CaretDownIcon />
-                    </Box>
+                        <Box mx="2">
+                          <CaretDownIcon />
+                        </Box>
+                      </>
+                    )}
                   </Box>
                 ))}
             </Box>

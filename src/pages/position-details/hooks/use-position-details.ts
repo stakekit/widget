@@ -25,6 +25,7 @@ export const usePositionDetails = () => {
     positionBalancesByType,
     positionBalancePrices,
     unstakeAmountValid,
+    unstakeSession,
   } = useUnstakeOrPendingActionState();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
@@ -108,10 +109,10 @@ export const usePositionDetails = () => {
   };
 
   useEffect(() => {
-    if (machine.value === "unstakeDone") {
+    if (machine.value === "unstakeDone" && unstakeSession.isJust()) {
       navigate("unstake/review");
     }
-  }, [machine.value, navigate]);
+  }, [machine.value, navigate, unstakeSession]);
 
   const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
   const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
