@@ -3,18 +3,20 @@ import { useTranslation } from "react-i18next";
 import { yieldTypesMap } from "../domain/types";
 import { MiscNetworks } from "@stakekit/common";
 import { capitalizeFirstLowerRest } from "../utils/text";
-import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import type { Maybe } from "purify-ts";
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 import { List } from "purify-ts";
 
 export const useYieldMetaInfo = ({
   selectedStake,
   validators,
+  tokenDto,
 }: {
   selectedStake: Maybe<YieldDto>;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
+  tokenDto: Maybe<TokenDto>;
 }) => {
   const { t } = useTranslation();
 
@@ -32,12 +34,17 @@ export const useYieldMetaInfo = ({
   );
 
   return useMemo(() => {
-    return selectedStake.mapOrDefault<typeof ifNotFound>((y) => {
+    return Maybe.fromRecord({ selectedStake, tokenDto }).mapOrDefault<
+      typeof ifNotFound
+    >(({ selectedStake: y, tokenDto }) => {
       const sv = validatorsFormatted.extract();
 
-      const stakeToken = y.token.symbol;
+      const stakeToken = tokenDto.symbol;
       const rewardTokens =
-        y.metadata.rewardTokens?.map((t) => t.symbol).join(", ") ?? "";
+        y.metadata.rewardTokens
+          ?.filter((t) => !t.isPoints)
+          .map((t) => t.symbol)
+          .join(", ") ?? "";
       const providerName =
         sv ??
         (y.metadata.provider ? y.metadata.provider.name : y.metadata.name);
@@ -266,7 +273,7 @@ export const useYieldMetaInfo = ({
           return ifNotFound;
       }
     }, ifNotFound);
-  }, [selectedStake, t, validatorsFormatted]);
+  }, [selectedStake, t, tokenDto, validatorsFormatted]);
 };
 
 const ifNotFound: {

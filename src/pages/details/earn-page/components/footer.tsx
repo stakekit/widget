@@ -22,6 +22,7 @@ export const Footer = () => {
     defaultTokensIsLoading,
     selectedStake,
     selectedValidators,
+    selectedTokenBalance,
   } = useDetailsContext();
 
   const {
@@ -36,6 +37,7 @@ export const Footer = () => {
   } = useYieldMetaInfo({
     selectedStake,
     validators: [...selectedValidators.values()],
+    tokenDto: selectedTokenBalance.map((v) => v.token),
   });
 
   const isLoading =

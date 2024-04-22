@@ -8,6 +8,7 @@ import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { Just, Maybe } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";
+import type { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 
 type AmountBlockProps = {
   isLoading: boolean;
@@ -23,6 +24,9 @@ type AmountBlockProps = {
 } & (
   | {
       variant: "unstake";
+      unstakeToken: ReturnType<
+        typeof useUnstakeOrPendingActionState
+      >["unstakeToken"];
       yieldDto: YieldDto;
       validators: {
         [Key in keyof Pick<
@@ -139,7 +143,11 @@ export const AmountBlock = ({
 
       {rest.variant === "unstake" && (
         <Box marginTop="2">
-          <UnstakeInfo validators={rest.validators} yieldDto={rest.yieldDto} />
+          <UnstakeInfo
+            validators={rest.validators}
+            yieldDto={rest.yieldDto}
+            unstakeToken={rest.unstakeToken}
+          />
         </Box>
       )}
     </Box>
@@ -149,15 +157,20 @@ export const AmountBlock = ({
 const UnstakeInfo = ({
   validators,
   yieldDto,
+  unstakeToken,
 }: {
   yieldDto: YieldDto;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
+  unstakeToken: ReturnType<
+    typeof useUnstakeOrPendingActionState
+  >["unstakeToken"];
 }) => {
   const { withdrawnTime } = useYieldMetaInfo({
     validators,
     selectedStake: Just(yieldDto),
+    tokenDto: unstakeToken,
   });
 
   return Maybe.fromNullable(withdrawnTime)
