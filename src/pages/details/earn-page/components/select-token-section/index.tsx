@@ -15,19 +15,17 @@ export const SelectTokenSection = () => {
 
   const {
     appLoading,
-    tokenBalancesScanLoading,
     availableTokens,
     formattedPrice,
     onMaxClick,
     onStakeAmountChange,
     stakeAmount,
     stakeTokenAvailableAmountLoading,
-    defaultTokensIsLoading,
     validation,
+    selectTokenIsLoading,
   } = useDetailsContext();
 
-  const isLoading =
-    appLoading || tokenBalancesScanLoading || defaultTokensIsLoading;
+  const isLoading = appLoading || selectTokenIsLoading;
 
   return isLoading ? (
     <Box marginTop="2">

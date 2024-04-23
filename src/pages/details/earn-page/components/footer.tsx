@@ -15,14 +15,10 @@ import { useYieldMetaInfo } from "../../../../hooks/use-yield-meta-info";
 export const Footer = () => {
   const {
     appLoading,
-    multiYieldsLoading,
-    yieldOpportunityLoading,
-    tokenBalancesScanLoading,
-    stakeTokenAvailableAmountLoading,
-    defaultTokensIsLoading,
     selectedStake,
     selectedValidators,
     selectedTokenBalance,
+    footerIsLoading,
   } = useDetailsContext();
 
   const {
@@ -40,13 +36,7 @@ export const Footer = () => {
     tokenDto: selectedTokenBalance.map((v) => v.token),
   });
 
-  const isLoading =
-    appLoading ||
-    defaultTokensIsLoading ||
-    tokenBalancesScanLoading ||
-    multiYieldsLoading ||
-    yieldOpportunityLoading ||
-    stakeTokenAvailableAmountLoading;
+  const isLoading = appLoading || footerIsLoading;
 
   const items = useMemo(
     () =>

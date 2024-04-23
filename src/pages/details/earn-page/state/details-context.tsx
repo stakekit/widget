@@ -544,6 +544,30 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     )
   );
 
+  const selectTokenIsLoading =
+    tokenBalancesScanLoading || defaultTokensIsLoading;
+
+  const selectYieldIsLoading =
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    tokenBalancesScanLoading ||
+    stakeTokenAvailableAmountLoading ||
+    defaultTokensIsLoading;
+
+  const selectValidatorIsLoading =
+    defaultTokensIsLoading ||
+    tokenBalancesScanLoading ||
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    stakeTokenAvailableAmountLoading;
+
+  const footerIsLoading =
+    defaultTokensIsLoading ||
+    tokenBalancesScanLoading ||
+    multiYieldsLoading ||
+    yieldOpportunityLoading ||
+    stakeTokenAvailableAmountLoading;
+
   const { referralCheck } = useSettings();
 
   const value = {
@@ -591,6 +615,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     onTronResourceSelect,
     validation,
     pointsRewardTokens,
+    selectTokenIsLoading,
+    selectYieldIsLoading,
+    selectValidatorIsLoading,
+    footerIsLoading,
   };
 
   return (

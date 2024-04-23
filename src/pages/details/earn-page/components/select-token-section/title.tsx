@@ -3,11 +3,26 @@ import { Box, Spinner, Text } from "../../../../../components";
 import { HelpModal } from "../../../../../index.package";
 
 export const SelectTokenTitle = () => {
-  const { appLoading, yieldType, selectedStakeYieldType } = useDetailsContext();
+  const {
+    appLoading,
+    yieldType,
+    selectedStakeYieldType,
+    selectTokenIsLoading,
+    selectYieldIsLoading,
+    selectValidatorIsLoading,
+    footerIsLoading,
+  } = useDetailsContext();
+
+  const isLoading =
+    appLoading ||
+    selectTokenIsLoading ||
+    selectYieldIsLoading ||
+    selectValidatorIsLoading ||
+    footerIsLoading;
 
   return (
     <Box display="flex" alignItems="center" minHeight="8">
-      {appLoading ? (
+      {isLoading ? (
         <Box display="flex" marginLeft="2">
           <Spinner />
         </Box>

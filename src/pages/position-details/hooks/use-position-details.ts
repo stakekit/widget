@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Maybe } from "purify-ts";
 import type { TokenDto } from "@stakekit/api-hooks";
-import { getTokenPriceInUSD } from "../../../domain";
+import { getTokenPriceInUSD, tokenString } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import {
@@ -125,7 +125,13 @@ export const usePositionDetails = () => {
       Maybe.fromRecord({ integrationData, positionBalancesByType }).map((v) =>
         [...v.positionBalancesByType.values()].reduce((acc, curr) => {
           curr
-            .filter((yb) => !yb.token.isPoints && yb.pricePerShare)
+            .filter(
+              (yb) =>
+                !yb.token.isPoints &&
+                yb.pricePerShare &&
+                tokenString(yb.token) !==
+                  tokenString(v.integrationData.metadata.token)
+            )
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,

@@ -12,27 +12,17 @@ import { SelectYieldRewardDetails } from "./select-yield-reward-details";
 export const SelectYieldSection = () => {
   const {
     appLoading,
-    multiYieldsLoading,
-    yieldOpportunityLoading,
-    tokenBalancesScanLoading,
-    stakeTokenAvailableAmountLoading,
     selectedStakeData,
     estimatedRewards,
     selectedStake,
-    defaultTokensIsLoading,
+    selectYieldIsLoading,
   } = useDetailsContext();
 
   const { variant } = useSettings();
 
   const { t } = useTranslation();
 
-  const isLoading =
-    appLoading ||
-    multiYieldsLoading ||
-    yieldOpportunityLoading ||
-    tokenBalancesScanLoading ||
-    stakeTokenAvailableAmountLoading ||
-    defaultTokensIsLoading;
+  const isLoading = appLoading || selectYieldIsLoading;
 
   const yieldPerc = useAnimateYieldPercent(estimatedRewards);
 

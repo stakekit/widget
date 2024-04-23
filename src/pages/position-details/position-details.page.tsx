@@ -22,7 +22,6 @@ export const PositionDetails = () => {
     isLoading,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
-    canUnstake,
     onUnstakeAmountChange,
     unstakeAmount,
     unstakeFormattedAmount,
@@ -205,14 +204,10 @@ export const PositionDetails = () => {
                     .extractNullable()}
 
                   {/* Unstake */}
-                  {canUnstake
-                    .filter(Boolean)
-                    .chain(() =>
-                      Maybe.fromRecord({
-                        reducedStakedOrLiquidBalance,
-                        canChangeAmount,
-                      })
-                    )
+                  {Maybe.fromRecord({
+                    reducedStakedOrLiquidBalance,
+                    canChangeAmount,
+                  })
                     .map(
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock
