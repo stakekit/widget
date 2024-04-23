@@ -6,9 +6,10 @@ import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import type BigNumber from "bignumber.js";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import { Just, Maybe } from "purify-ts";
+import { Just } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import type { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
+import { useMemo } from "react";
 
 type AmountBlockProps = {
   isLoading: boolean;
@@ -128,12 +129,7 @@ export const AmountBlock = ({
               onClick={onMaxClick}
               className={pressAnimation}
             >
-              <Text
-                variant={{
-                  weight: "semibold",
-                  type: "regular",
-                }}
-              >
+              <Text variant={{ weight: "semibold", type: "regular" }}>
                 {t("shared.max")}
               </Text>
             </Box>
@@ -167,23 +163,34 @@ const UnstakeInfo = ({
     typeof useUnstakeOrPendingActionState
   >["unstakeToken"];
 }) => {
-  const { withdrawnTime } = useYieldMetaInfo({
+  const { withdrawnTime, withdrawnNotAvailable } = useYieldMetaInfo({
     validators,
     selectedStake: Just(yieldDto),
     tokenDto: unstakeToken,
   });
 
-  return Maybe.fromNullable(withdrawnTime)
-    .map((time) => (
-      <Box
-        display="flex"
-        alignItems="flex-start"
-        justifyContent="center"
-        gap="1"
-      >
-        <InfoIcon />
-        <Text variant={{ type: "muted", size: "small" }}>{time}</Text>
-      </Box>
-    ))
-    .extractNullable();
+  return useMemo(
+    () =>
+      Just([withdrawnTime, withdrawnNotAvailable])
+        .map((val) => val.filter((v): v is NonNullable<typeof v> => !!v))
+        .filter((val) => !!val.length)
+        .map((val) => (
+          <Box marginTop="3">
+            {val.map((v, i) => (
+              <Box
+                display="flex"
+                alignItems="flex-start"
+                justifyContent="center"
+                gap="1"
+                key={i}
+              >
+                <InfoIcon />
+                <Text variant={{ type: "muted", size: "small" }}>{val}</Text>
+              </Box>
+            ))}
+          </Box>
+        ))
+        .extractNullable(),
+    [withdrawnTime, withdrawnNotAvailable]
+  );
 };

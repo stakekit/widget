@@ -303,7 +303,7 @@
       "liquid-staking": "Unstake",
       "lending": "Withdraw",
       "vault": "Withdraw",
-      "restaking": "Restaked"
+      "restaking": "Restake"
     },
     "balance_type": {
       "available": "Available",
