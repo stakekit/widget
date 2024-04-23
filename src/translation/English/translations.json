@@ -115,6 +115,7 @@
 
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
+      "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they’ll need to be staked again.",
 
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
 

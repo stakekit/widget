@@ -184,8 +184,10 @@ const UnstakeInfo = ({
                 gap="1"
                 key={i}
               >
-                <InfoIcon />
-                <Text variant={{ type: "muted", size: "small" }}>{val}</Text>
+                <Box>
+                  <InfoIcon />
+                </Box>
+                <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
               </Box>
             ))}
           </Box>
