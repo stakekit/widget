@@ -112,7 +112,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const pricesState = useSelectedStakePrice({ selectedTokenBalance });
 
-  const symbol = selectedStake.mapOrDefault((y) => y.token.symbol, "");
+  const symbol = selectedTokenBalance.mapOrDefault((y) => y.token.symbol, "");
 
   const formattedPrice = useMemo(() => {
     return Maybe.fromRecord({

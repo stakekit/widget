@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useUnstakeOrPendingActionReview } from "../hooks/use-unstake-or-pending-action-review.hook";
 import { ReviewPage } from "./common.page";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {
@@ -13,23 +13,10 @@ export const UnstakeOrPendingActionReviewPage = () => {
     rewardTokenDetailsProps,
     title,
     isGasCheckError,
+    token,
   } = useUnstakeOrPendingActionReview();
 
   useTrackPage(pendingActionMatch ? "pendingActionReview" : "unstakeReview");
-
-  const token = useMemo(
-    () =>
-      integrationData.chain((val) =>
-        Maybe.fromPredicate(
-          (v) => v.metadata.type === "liquid-staking" && !pendingActionMatch,
-          val
-        )
-          .chainNullable((val) => val.metadata.rewardTokens)
-          .chain(List.head)
-          .alt(Maybe.of(val.token))
-      ),
-    [integrationData, pendingActionMatch]
-  );
 
   const info = useMemo(
     () =>
