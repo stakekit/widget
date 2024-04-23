@@ -192,14 +192,14 @@
       "liquid-staking": "staked",
       "vault": "deposited",
       "lending": "supplied",
-      "restaking": "staked"
+      "restaking": "restaked"
     },
     "unstake": {
       "staking": "unstaked",
       "liquid-staking": "unstaked",
       "vault": "withdrawn",
       "lending": "withdrawn",
-      "restaking": "staked"
+      "restaking": "restaked"
     },
     "pending_action": {
       "stake": "staked",
@@ -296,14 +296,14 @@
       "liquid-staking": "Liquid staked",
       "lending": "Deposited",
       "vault": "Deposited",
-      "restaking": "Staked"
+      "restaking": "Restaked"
     },
     "unstake_label": {
       "staking": "Unstake",
       "liquid-staking": "Unstake",
       "lending": "Withdraw",
       "vault": "Withdraw",
-      "restaking": "Unstake"
+      "restaking": "Restaked"
     },
     "balance_type": {
       "available": "Available",
