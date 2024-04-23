@@ -65,9 +65,6 @@ export const getNetworkLogo = (network: Networks) =>
 export const getTokenLogo = (tokenName: string) =>
   `${config.assetsUrl}/tokens/${tokenName}.svg`;
 
-export const getSKIcon = (iconName: string) =>
-  `${config.assetsUrl}/stakekit/${iconName}`;
-
 export const waitForMs = (ms: number) =>
   new Promise((res) => setTimeout(res, ms));
 

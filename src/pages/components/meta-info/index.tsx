@@ -1,25 +1,24 @@
+import { useMemo } from "react";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import {
   ArrowsLeftRightIcon,
   Box,
   ClockClockWiseIcon,
   GifIcon,
   Text,
-} from "../../../../components";
-import { useMemo } from "react";
-import { dotContainer } from "../styles.css";
-import { useDetailsContext } from "../state/details-context";
-import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
-import { InfoIcon } from "../../../../components/atoms/icons/info";
-import { useYieldMetaInfo } from "../../../../hooks/use-yield-meta-info";
+} from "../../../components";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { dotContainer } from "./styles.css";
+import { useStakeState } from "../../../state/stake";
 
-export const Footer = () => {
-  const {
-    appLoading,
-    selectedStake,
-    selectedValidators,
-    selectedTokenBalance,
-    footerIsLoading,
-  } = useDetailsContext();
+type Props = {
+  isLoading?: boolean;
+};
+
+export const MetaInfo = ({ isLoading }: Props) => {
+  const { selectedStake, selectedValidators, selectedTokenBalance } =
+    useStakeState();
 
   const {
     description,
@@ -35,8 +34,6 @@ export const Footer = () => {
     validators: [...selectedValidators.values()],
     tokenDto: selectedTokenBalance.map((v) => v.token),
   });
-
-  const isLoading = appLoading || footerIsLoading;
 
   const items = useMemo(
     () =>
@@ -84,12 +81,7 @@ export const Footer = () => {
           </Box>
 
           <Box>
-            <Text
-              variant={{
-                weight: "normal",
-                type: "muted",
-              }}
-            >
+            <Text variant={{ weight: "normal", type: "muted" }}>
               {item.text}
             </Text>
           </Box>

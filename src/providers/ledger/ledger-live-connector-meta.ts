@@ -1,7 +1,7 @@
 import type { Observable } from "rxjs";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import type { Chain } from "@stakekit/rainbowkit";
-import type { Account } from "@ledgerhq/wallet-api-core";
+import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
   WalletAPIClient,
   deserializeTransaction,

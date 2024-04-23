@@ -6,7 +6,6 @@ import { PageContainer } from "../../components";
 import { feeStyles, headingStyles, pointerStyles } from "./style.css";
 import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../../components/atoms/token-icon";
-import { HelpModal } from "../../../components/molecules/help-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
@@ -15,6 +14,7 @@ import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { ComponentProps, ReactNode } from "react";
 import { Maybe } from "purify-ts";
 import { WarningBox } from "../../../components/atoms/warning-box";
+import { MetaInfo } from "../../components/meta-info";
 
 type ReviewPageProps = {
   fee: string;
@@ -24,6 +24,7 @@ type ReviewPageProps = {
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
+  showMetaInfo?: boolean;
 };
 
 export const ReviewPage = ({
@@ -34,6 +35,7 @@ export const ReviewPage = ({
   info,
   rewardTokenDetailsProps,
   isGasCheckError,
+  showMetaInfo,
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
 
@@ -107,10 +109,9 @@ export const ReviewPage = ({
           display="flex"
           justifyContent="space-between"
           alignItems="center"
-          marginTop="2"
+          marginTop="4"
         >
           <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
-          <HelpModal modal={{ type: "fees" }} />
         </Box>
 
         <Box
@@ -140,7 +141,23 @@ export const ReviewPage = ({
 
         <Divider />
 
-        <Box marginTop="3" marginBottom="16">
+        {showMetaInfo && (
+          <>
+            <Box marginBottom="4">
+              <Box my="4">
+                <Text variant={{ weight: "semibold" }}>
+                  {t("review.additional_info")}
+                </Text>
+              </Box>
+
+              <MetaInfo />
+            </Box>
+
+            <Divider />
+          </>
+        )}
+
+        <Box marginTop="4" marginBottom="16">
           <Text variant={{ weight: "normal", type: "muted" }}>
             <Trans
               i18nKey="review.terms_of_use"

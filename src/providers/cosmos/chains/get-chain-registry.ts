@@ -6,7 +6,7 @@ import {
 } from "../../../domain/types/chains";
 import { CosmosNetworks } from "@stakekit/common";
 
-export type AssetList = (typeof assets)[number];
+type AssetList = (typeof assets)[number];
 export type Chain = (typeof chains)[number];
 
 // CosmosNetworks -> chain_id from registry

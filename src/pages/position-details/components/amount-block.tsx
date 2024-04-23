@@ -179,14 +179,15 @@ const UnstakeInfo = ({
             {val.map((v, i) => (
               <Box
                 display="flex"
-                alignItems="flex-start"
-                justifyContent="center"
+                alignItems="center"
+                justifyContent="flex-start"
                 gap="1"
                 key={i}
               >
-                <Box>
+                <Box display="flex" alignItems="center" justifyContent="center">
                   <InfoIcon />
                 </Box>
+
                 <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
               </Box>
             ))}

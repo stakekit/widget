@@ -9,6 +9,10 @@ import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../providers/settings";
 import { useMountAnimation } from "../../providers/mount-animation";
 import { usePoweredByHeight } from "../../pages/components/powered-by";
+import createStateContext from "../../utils/create-state-context";
+
+export const [useDisableTransitionDuration, DisableTransitionDurationProvider] =
+  createStateContext(false);
 
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const currentLayout = useCurrentLayout();
@@ -31,6 +35,8 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
         poweredByHeight
       : 0;
 
+  const [disableTransitionDuration] = useDisableTransitionDuration();
+
   return (
     <>
       {showApp ? (
@@ -44,7 +50,9 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           }}
           data-rk="widget-container"
           transition={
-            state.layout ? { duration: 0.3 } : { duration: 0.6, delay: 0.3 }
+            state.layout
+              ? { duration: disableTransitionDuration ? 0 : 0.3 }
+              : { duration: 0.6, delay: 0.3 }
           }
           onLayoutAnimationComplete={() => dispatch({ type: "layout" })}
         >

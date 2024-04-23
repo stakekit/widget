@@ -8,12 +8,6 @@ export const selectItemText = style({
 
 export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
-export const dotContainer = style({
-  width: "16px",
-  height: "16px",
-  textAlign: "center",
-});
-
 export const apyYield = style([
   {
     color: vars.color.text,

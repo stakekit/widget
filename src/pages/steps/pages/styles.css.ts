@@ -30,16 +30,3 @@ export const stepsBeforeMuted = style([
 ]);
 
 export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
-
-export const stepsContainer = style({
-  transition: "max-height 0.5s ease",
-  overflow: "hidden",
-});
-
-export const caretContainer = style({
-  transition: "transform 0.2s ease",
-});
-
-export const rotate180deg = style({
-  transform: "rotate(180deg)",
-});
