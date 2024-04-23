@@ -122,27 +122,22 @@ export const usePositionDetails = () => {
 
   const liquidTokensToNativeConversion = useMemo(
     () =>
-      Maybe.fromRecord({ integrationData, positionBalancesByType })
-        .chain((val) =>
-          Maybe.fromPredicate(
-            () => val.integrationData.metadata.type === "liquid-staking",
-            val
-          )
-        )
-        .map((v) =>
-          [...v.positionBalancesByType.values()].reduce((acc, curr) => {
-            curr.forEach((yb) =>
+      Maybe.fromRecord({ integrationData, positionBalancesByType }).map((v) =>
+        [...v.positionBalancesByType.values()].reduce((acc, curr) => {
+          curr
+            .filter((yb) => !yb.token.isPoints && yb.pricePerShare)
+            .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${formatNumber(
                   new BigNumber(yb.pricePerShare)
                 )} ${v.integrationData.metadata.token.symbol}`
-              )
-            );
+              );
+            });
 
-            return acc;
-          }, new Map<TokenDto["symbol"], string>())
-        ),
+          return acc;
+        }, new Map<TokenDto["symbol"], string>())
+      ),
     [integrationData, positionBalancesByType]
   );
 
