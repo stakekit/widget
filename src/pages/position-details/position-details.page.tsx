@@ -4,7 +4,7 @@ import { PageContainer } from "../components";
 import { usePositionDetails } from "./hooks/use-position-details";
 import { useTranslation } from "react-i18next";
 import { PositionBalances } from "./components/position-balances";
-import { Maybe } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { ProviderDetails } from "./components/provider-details";
 import { SelectValidator } from "../../components/molecules/select-validator";
@@ -70,27 +70,36 @@ export const PositionDetails = () => {
                 display="flex"
                 flexDirection="column"
               >
-                <Box display="flex" justifyContent="center" alignItems="center">
-                  <TokenIcon
-                    metadata={val.integrationData.metadata}
-                    token={val.integrationData.token}
-                    tokenLogoHw="14"
-                  />
-                </Box>
-                <Box
-                  marginTop="3"
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  flexDirection="column"
-                >
-                  <Heading variant={{ level: "h4" }}>
-                    {val.integrationData.metadata.name}
-                  </Heading>
-                  <Text variant={{ type: "muted" }}>
-                    {val.integrationData.token.symbol}
-                  </Text>
-                </Box>
+                {unstakeToken
+                  .altLazy(() => Just(val.integrationData.token))
+                  .map((t) => (
+                    <>
+                      <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                      >
+                        <TokenIcon
+                          metadata={val.integrationData.metadata}
+                          token={t}
+                          tokenLogoHw="14"
+                        />
+                      </Box>
+                      <Box
+                        marginTop="3"
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                        flexDirection="column"
+                      >
+                        <Heading variant={{ level: "h4" }}>
+                          {val.integrationData.metadata.name}
+                        </Heading>
+                        <Text variant={{ type: "muted" }}>{t.symbol}</Text>
+                      </Box>
+                    </>
+                  ))
+                  .extractNullable()}
 
                 <Box marginTop="4">
                   {providersDetails

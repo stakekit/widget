@@ -18,7 +18,8 @@ import { useSavedRef } from "../../../hooks";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 
 export const useUnstakeOrPendingActionReview = () => {
-  const { integrationData, isGasCheckError } = useUnstakeOrPendingActionState();
+  const { integrationData, isGasCheckError, unstakeToken, pendingActionToken } =
+    useUnstakeOrPendingActionState();
 
   const pendingActionMatch = usePendingActionMatch();
 
@@ -123,6 +124,8 @@ export const useUnstakeOrPendingActionReview = () => {
     )
   );
 
+  const token = pendingActionMatch ? pendingActionToken : unstakeToken;
+
   return {
     integrationData,
     title,
@@ -131,5 +134,6 @@ export const useUnstakeOrPendingActionReview = () => {
     rewardTokenDetailsProps,
     pendingActionMatch,
     isGasCheckError,
+    token,
   };
 };

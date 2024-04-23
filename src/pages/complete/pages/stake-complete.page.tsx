@@ -21,7 +21,7 @@ export const StakeCompletePage = () => {
   const token = stakeHistoryData.map((y) => y.interactedToken);
   const metadata = selectedStake.map((y) => y.metadata);
 
-  const network = selectedStake.mapOrDefault((y) => y.token.symbol, "");
+  const network = token.mapOrDefault((y) => y.symbol, "");
 
   const amount = stakeAmount.mapOrDefault((a) => formatNumber(a), "");
 

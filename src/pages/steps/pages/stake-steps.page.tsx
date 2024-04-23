@@ -9,8 +9,13 @@ import { StepsPage } from "./common.page";
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
 
-  const { selectedStake, stakeSession, selectedValidators, stakeAmount } =
-    useStakeState();
+  const {
+    selectedStake,
+    selectedTokenBalance,
+    stakeSession,
+    selectedValidators,
+    stakeAmount,
+  } = useStakeState();
 
   const { address, network } = useSKWallet();
 
@@ -35,13 +40,13 @@ export const StakeStepsPage = () => {
   const setActionHistoryData = useSetActionHistoryData();
 
   const onDone = () =>
-    selectedStake.ifJust((val) => {
+    Maybe.fromRecord({ selectedStake, selectedTokenBalance }).ifJust((val) => {
       setActionHistoryData({
         type: "stake",
-        integrationData: val,
+        integrationData: val.selectedStake,
         amount: stakeAmount,
         selectedValidators,
-        interactedToken: val.token,
+        interactedToken: val.selectedTokenBalance.token,
       });
     });
 
