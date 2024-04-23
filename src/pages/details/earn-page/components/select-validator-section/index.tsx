@@ -10,24 +10,14 @@ import { SelectValidator } from "../../../../../components/molecules/select-vali
 export const SelectValidatorSection = () => {
   const {
     appLoading,
-    tokenBalancesScanLoading,
-    yieldOpportunityLoading,
-    stakeTokenAvailableAmountLoading,
-    multiYieldsLoading,
     onValidatorSelect,
     onValidatorRemove,
     selectedValidators,
     selectedStake,
-    defaultTokensIsLoading,
+    selectValidatorIsLoading,
   } = useDetailsContext();
 
-  const isLoading =
-    appLoading ||
-    defaultTokensIsLoading ||
-    tokenBalancesScanLoading ||
-    multiYieldsLoading ||
-    yieldOpportunityLoading ||
-    stakeTokenAvailableAmountLoading;
+  const isLoading = appLoading || selectValidatorIsLoading;
 
   const trackEvent = useTrackEvent();
 

@@ -70,4 +70,8 @@ export type DetailsContextType = {
     };
   };
   pointsRewardTokens: Maybe<TokenDto[]>;
+  selectTokenIsLoading: boolean;
+  selectYieldIsLoading: boolean;
+  selectValidatorIsLoading: boolean;
+  footerIsLoading: boolean;
 };
