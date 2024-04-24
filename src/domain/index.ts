@@ -7,6 +7,7 @@ import type {
   TokenDto,
   TransactionDto,
   TransactionStatus,
+  TransactionType,
 } from "@stakekit/api-hooks";
 import type { Override } from "../types";
 import { Left, Right } from "purify-ts";
@@ -114,8 +115,13 @@ export const getTransactionsTotalGasAmount = (txs: TransactionDto[]) =>
     new BigNumber(0)
   );
 
+export const transactionsForConstructOnlySet = new Set<TransactionType>([
+  "P2P_NODE_REQUEST",
+  "LUGANODES_PROVISION",
+]);
+
 export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
-  txs.filter((tx) => tx.type !== "P2P_NODE_REQUEST");
+  txs.filter((tx) => !transactionsForConstructOnlySet.has(tx.type));
 
 export const skNormalizeChainId = (chainId: string) => {
   const cId = normalizeChainId(chainId);

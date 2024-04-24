@@ -1,4 +1,4 @@
-import {
+import type {
   ActionDto,
   ActionRequestDto,
   TokenDto,
@@ -139,6 +139,7 @@ export const setup = async () => {
         explorerUrl: null,
         stakeId: "",
         ledgerHwAppId: null,
+        isMessage: false,
       },
     ],
     createdAt: "2023-12-28T14:36:21.700Z",
@@ -170,6 +171,7 @@ export const setup = async () => {
     stakeId: "b920e4ea-4f85-434a-a2ee-b70176e15b67",
     explorerUrl: null,
     ledgerHwAppId: null,
+    isMessage: false,
   };
 
   server.use(

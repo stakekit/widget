@@ -218,7 +218,8 @@
       "revoke": "Revoke",
       "vote_locked": "Vote locked",
       "revote": "Revote",
-      "rebond": "Rebond"
+      "rebond": "Rebond",
+      "migrate": "Migrate"
     }
   },
   "help_modals": {
@@ -337,7 +338,8 @@
       "revoke": "Revoke",
       "vote_locked": "Vote",
       "revote": "Revote",
-      "rebond": "Rebond"
+      "rebond": "Rebond",
+      "migrate": "Migrate"
     },
     "pending_action_button": {
       "stake": "Stake",
@@ -354,7 +356,8 @@
       "revoke": "Revoke",
       "vote_locked": "Vote locked",
       "revote": "Revote",
-      "rebond": "Rebond"
+      "rebond": "Rebond",
+      "migrate": "Migrate"
     },
     "unstake_sign": {
       "title": "Verify Ownership",
@@ -381,7 +384,8 @@
       "revoke": "Revoke with {{providerName}}",
       "vote_locked": "Vote locked with {{providerName}}",
       "revote": "Revote with {{providerName}}",
-      "rebond": "Rebond with {{providerName}}"
+      "rebond": "Rebond with {{providerName}}",
+      "migrate": "Migrate from {{providerName}}"
     }
   },
   "select_token": {
