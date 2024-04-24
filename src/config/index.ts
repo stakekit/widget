@@ -18,4 +18,5 @@ export const config = {
     isTestMode: import.meta.env.MODE === "test",
   },
   assetsUrl,
+  intercom: { apiBase: "https://api-iam.intercom.io", appId: "b2he0jzb" },
 } as const;

@@ -54,6 +54,7 @@ import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
 import { useUpdateEffect } from "./hooks/use-update-effect";
 import { preloadImages } from "./assets/images";
+import { useChat } from "./hooks/use-chat";
 
 preloadImages();
 
@@ -61,6 +62,8 @@ const Widget = () => {
   useToggleTheme();
 
   useLoadErrorTranslations();
+
+  useChat();
 
   const { chain, address } = useSKWallet();
 
