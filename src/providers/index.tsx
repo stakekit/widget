@@ -21,6 +21,7 @@ import { SKQueryClientProvider } from "./query-client";
 import { SKApiClientProvider } from "./api/api-client-provider";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { RootElementProvider } from "./root-element";
+import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
 
 export const Providers = ({
   children,
@@ -47,7 +48,9 @@ export const Providers = ({
                                     <FooterHeightProvider>
                                       <FooterButtonProvider>
                                         <PoweredByHeightProvider>
-                                          {children}
+                                          <DisableTransitionDurationProvider>
+                                            {children}
+                                          </DisableTransitionDurationProvider>
                                         </PoweredByHeightProvider>
                                       </FooterButtonProvider>
                                     </FooterHeightProvider>

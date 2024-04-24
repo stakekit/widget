@@ -35,11 +35,19 @@ export const getTokenPriceInUSD = ({
   prices: Prices;
 }): BigNumber => {
   const amountBN = BigNumber(amount);
-  const ts = tokenString(token as TokenDto);
-  const price = prices.get(ts)?.price ?? 0;
+
+  const tokenKey = tokenString(token as TokenDto);
+  const tokenPrice = prices.get(tokenKey)?.price;
+
+  if (tokenPrice) {
+    return amountBN.times(tokenPrice);
+  }
+
+  const baseTokenPrice =
+    prices.get(tokenString(getBaseToken(token) as TokenDto))?.price ?? 0;
   const pricePerShareBN = BigNumber(pricePerShare ?? 1);
 
-  return amountBN.times(price).times(pricePerShareBN);
+  return amountBN.times(baseTokenPrice).times(pricePerShareBN);
 };
 
 export const getMaxAmount = ({

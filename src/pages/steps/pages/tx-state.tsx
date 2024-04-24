@@ -1,21 +1,24 @@
 import { useTranslation } from "react-i18next";
-import { Box, CaretDownIcon, Spinner, Text, XIcon } from "../../../components";
+import { Box, Spinner, Text, XIcon } from "../../../components";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
 import { removeUnderscores } from "../../../utils/text";
 import clsx from "clsx";
 import {
-  caretContainer,
   halfOpacityAfter,
-  rotate180deg,
   stepsAfter,
   stepsAfterMuted,
   stepsBefore,
   stepsBeforeMuted,
-  stepsContainer,
 } from "./styles.css";
 import { CheckSteps } from "../../../components/atoms/icons/check-steps";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useState } from "react";
+import {
+  CollapsibleArrow,
+  CollapsibleContent,
+  CollapsibleRoot,
+  CollapsibleTrigger,
+} from "../../../components/atoms/collapsible";
 
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
@@ -32,54 +35,33 @@ export const TxState = ({ txState, position, count }: Props) => {
 
   const [isCollapsed, setIsCollapsed] = useState(canCollapse);
 
-  const stepsContainerRef = useRef<HTMLDivElement>();
-  const stepsContainerHeight = useRef<number>();
-
   useLayoutEffect(() => {
     setIsCollapsed(canCollapse);
   }, [canCollapse]);
 
-  useLayoutEffect(() => {
-    stepsContainerHeight.current = stepsContainerRef.current?.scrollHeight;
-  }, []);
-
   return (
     <Box key={txState.tx.id} marginTop={position === "FIRST" ? "0" : "4"}>
-      <Box
-        width="full"
-        marginBottom="4"
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        as={canCollapse ? "button" : "div"}
-        onClick={() => canCollapse && setIsCollapsed(!isCollapsed)}
+      <CollapsibleRoot
+        onClick={() => canCollapse && setIsCollapsed((prev) => !prev)}
+        collapsed={isCollapsed}
       >
-        <Text>
-          {t("steps.tx_of", {
-            count: count.total,
-            current: count.current,
-            type: removeUnderscores(txState.tx.type),
-          })}
-        </Text>
+        <CollapsibleTrigger
+          width="full"
+          marginBottom="4"
+          as={canCollapse ? "button" : "div"}
+        >
+          <Text>
+            {t("steps.tx_of", {
+              count: count.total,
+              current: count.current,
+              type: removeUnderscores(txState.tx.type),
+            })}
+          </Text>
 
-        {canCollapse && !!count && (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            className={clsx([caretContainer, { [rotate180deg]: !isCollapsed }])}
-          >
-            <CaretDownIcon size={20} />
-          </Box>
-        )}
-      </Box>
+          {canCollapse && !!count && <CollapsibleArrow />}
+        </CollapsibleTrigger>
 
-      <Box
-        ref={stepsContainerRef}
-        className={stepsContainer}
-        style={{ maxHeight: isCollapsed ? 0 : stepsContainerHeight.current }}
-      >
-        <>
+        <CollapsibleContent>
           <Box
             display="flex"
             opacity={txState.state > TxStateEnum.SIGN_IDLE ? 1 : 0.5}
@@ -351,8 +333,8 @@ export const TxState = ({ txState, position, count }: Props) => {
               <Text>{t("steps.completed")}</Text>
             </Box>
           </Box>
-        </>
-      </Box>
+        </CollapsibleContent>
+      </CollapsibleRoot>
     </Box>
   );
 };

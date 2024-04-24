@@ -18,7 +18,6 @@ import { MaybeWindow } from "../../../utils/maybe-window";
 import { images } from "../../../assets/images";
 
 type ModalType =
-  | { type: "fees" }
   | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false> & {
         regionCodeName: string | undefined;
       })
@@ -81,14 +80,6 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
           title: t("help_modals.restaking.title"),
           description: t("help_modals.restaking.description"),
           image: images.whatIsStaking,
-        };
-      }
-
-      case "fees": {
-        return {
-          title: t("help_modals.fees.title"),
-          description: t("help_modals.fees.description"),
-          image: images.fees,
         };
       }
 

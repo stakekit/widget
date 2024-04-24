@@ -21,6 +21,7 @@ export interface SettingsContextType {
   };
   externalProviders?: SKExternalProviders;
   disableGasCheck?: boolean;
+  hideNetworkLogo?: boolean;
   variant: "zerion" | "default";
 }
 

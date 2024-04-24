@@ -40,6 +40,8 @@
     "estimated_reward": "Estimated rewards",
     "staked_via": "Staked via",
 
+    "additional_info": "Additional info",
+
     "referral_code": {
       "title": "Your referral link:"
     },
@@ -161,7 +163,8 @@
     "wallet_fee": "{{wallet}} fee",
     "claim": "Claim",
     "terms_of_use": "By clicking confirm you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
-    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>"
+    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "additional_info": "Additional info"
   },
   "steps": {
     "title": "Follow Steps",
