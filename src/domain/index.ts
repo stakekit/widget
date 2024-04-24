@@ -8,6 +8,7 @@ import type {
   TransactionDto,
   TransactionStatus,
   TransactionType,
+  YieldDto,
 } from "@stakekit/api-hooks";
 import type { Override } from "../types";
 import { Left, Right } from "purify-ts";
@@ -26,13 +27,15 @@ export const equalTokens = (
 
 export const getTokenPriceInUSD = ({
   token,
+  baseToken,
   amount,
   prices,
   pricePerShare,
 }: {
   token: Token | TokenDto;
+  baseToken: Token | TokenDto | null;
   amount: string | BigNumber;
-  pricePerShare: string | undefined;
+  pricePerShare: string | null;
   prices: Prices;
 }): BigNumber => {
   const amountBN = BigNumber(amount);
@@ -44,8 +47,9 @@ export const getTokenPriceInUSD = ({
     return amountBN.times(tokenPrice);
   }
 
-  const baseTokenPrice =
-    prices.get(tokenString(getBaseToken(token) as TokenDto))?.price ?? 0;
+  if (!baseToken) return new BigNumber(0);
+
+  const baseTokenPrice = prices.get(tokenString(baseToken))?.price ?? 0;
   const pricePerShareBN = BigNumber(pricePerShare ?? 1);
 
   return amountBN.times(baseTokenPrice).times(pricePerShareBN);
@@ -66,11 +70,9 @@ export const getMaxAmount = ({
   );
 };
 
-export const getBaseToken = (token: Token | TokenDto) => {
-  const { address, ...restToken } = token;
-
-  return restToken as Token;
-};
+export const getBaseToken = (yieldDto: YieldDto) => yieldDto.metadata.token;
+export const getGasFeeToken = (yieldDto: YieldDto) =>
+  yieldDto.metadata.gasFeeToken;
 
 /**
  *
