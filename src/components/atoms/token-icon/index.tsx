@@ -6,6 +6,7 @@ import type { Atoms } from "../../../styles";
 import { ImageFallback } from "../image-fallback";
 import { getNetworkLogo } from "../../../utils";
 import type { Networks } from "@stakekit/common";
+import { useSettings } from "../../../providers/settings";
 
 export const TokenIcon = ({
   token,
@@ -20,6 +21,8 @@ export const TokenIcon = ({
   tokenNetworkLogoHw?: Atoms["hw"];
   hideNetwork?: boolean;
 }) => {
+  const { hideNetworkLogo } = useSettings();
+
   return (
     <Box
       position="relative"
@@ -37,7 +40,7 @@ export const TokenIcon = ({
           />
         }
       />
-      {!hideNetwork && (
+      {!hideNetwork && !hideNetworkLogo && (
         <Box className={logoContainer} data-rk="token-network-logo">
           <Image
             src={getNetworkLogo(token.network as Networks)}
