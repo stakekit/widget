@@ -101,8 +101,6 @@
       "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
       "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days",
 
-      "compound_rewards": "{{rewardTokens}} rewards you are earning need to be claimed manually",
-
       "minimum_lend_amount": "The minimum supply requirement is {{minimumStakeAmount}} {{stakeToken}}"
     },
 

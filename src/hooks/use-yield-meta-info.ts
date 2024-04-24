@@ -99,7 +99,6 @@ export const useYieldMetaInfo = ({
                   })
                 : null,
             withdrawnNotAvailable: null,
-            compoundRewards: null,
             ...def,
           };
         }
@@ -132,9 +131,6 @@ export const useYieldMetaInfo = ({
                   rewardTokens,
                   providerName,
                 }),
-            compoundRewards: isCompound
-              ? t("details.lend.compound_rewards", { rewardTokens })
-              : null,
             withdrawnNotAvailable: null,
             minimumStakeAmount:
               minimumStakeAmount > 0
@@ -174,7 +170,6 @@ export const useYieldMetaInfo = ({
                     stakeToken,
                   })
                 : null,
-            compoundRewards: null,
             ...def,
           };
 
@@ -222,7 +217,6 @@ export const useYieldMetaInfo = ({
                     stakeToken,
                   })
                 : null,
-            compoundRewards: null,
             ...def,
           };
 
@@ -265,7 +259,6 @@ export const useYieldMetaInfo = ({
                     stakeToken,
                   })
                 : null,
-            compoundRewards: null,
             ...def,
           };
 
@@ -283,7 +276,6 @@ const ifNotFound: {
   withdrawnTime: string | null;
   withdrawnNotAvailable: string | null;
   minimumStakeAmount: string | null;
-  compoundRewards: string | null;
   extra?: string;
 } = {
   description: null,
@@ -292,5 +284,4 @@ const ifNotFound: {
   withdrawnTime: null,
   withdrawnNotAvailable: null,
   minimumStakeAmount: null,
-  compoundRewards: null,
 };

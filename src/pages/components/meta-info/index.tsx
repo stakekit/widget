@@ -27,7 +27,6 @@ export const MetaInfo = ({ isLoading }: Props) => {
     minimumStakeAmount,
     withdrawnNotAvailable,
     withdrawnTime,
-    compoundRewards,
     extra,
   } = useYieldMetaInfo({
     selectedStake,
@@ -44,7 +43,6 @@ export const MetaInfo = ({ isLoading }: Props) => {
         { text: minimumStakeAmount, icon: <InfoIcon /> },
         { text: withdrawnNotAvailable, icon: <InfoIcon /> },
         { text: withdrawnTime, icon: <InfoIcon /> },
-        { text: compoundRewards, icon: <InfoIcon /> },
         { text: extra, icon: <InfoIcon /> },
       ].filter((val): val is { text: string; icon: JSX.Element } => !!val.text),
     [
@@ -54,7 +52,6 @@ export const MetaInfo = ({ isLoading }: Props) => {
       minimumStakeAmount,
       withdrawnNotAvailable,
       withdrawnTime,
-      compoundRewards,
       extra,
     ]
   );
