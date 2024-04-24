@@ -75,8 +75,7 @@ export const usePendingActions = () => {
                     amount: val.amount,
                     token: val.reducedStakedOrLiquidBalance.token,
                     prices: val.prices,
-                    pricePerShare:
-                      val.reducedStakedOrLiquidBalance.pricePerShare,
+                    pricePerShare: balance.pricePerShare,
                   })
                 )
                 .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
