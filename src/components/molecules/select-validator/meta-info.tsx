@@ -89,12 +89,12 @@ export const useMetaInfo = ({
         ? {
             title: t("details.validators_website"),
             val: (
-              <SKAnchor
-                href={formatAddress(website, {
+              <SKAnchor href={website}>
+                {formatAddress(website, {
                   leadingChars: 16,
                   trailingChars: 8,
                 })}
-              />
+              </SKAnchor>
             ),
           }
         : null,

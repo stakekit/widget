@@ -40,6 +40,7 @@ export const PositionDetails = () => {
     validatorAddressesHandling,
     onValidatorsSubmit,
     unstakeToken,
+    canUnstake,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -212,6 +213,7 @@ export const PositionDetails = () => {
                       ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
                         <AmountBlock
                           variant="unstake"
+                          canUnstake={canUnstake}
                           unstakeToken={unstakeToken}
                           isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}

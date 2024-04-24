@@ -45,7 +45,7 @@ export const usePositionDetails = () => {
     integration: integrationData,
   });
 
-  const canUnstake = integrationData.map((d) => !!d.args.exit);
+  const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
   const canChangeAmount = integrationData.map(
     (d) => !!(!forceMax && d.args.exit?.args?.amount?.required)
   );
