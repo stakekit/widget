@@ -23,12 +23,11 @@ import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balan
 import type { Actions, ExtraData, State } from "./types";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
-import { tokenToTokenDto } from "../../utils/mappers";
-import { getBaseToken } from "../../domain";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
 import { useUnstakeOrPendingActionMatch } from "../../hooks/navigation/use-unstake-or-pending-action-match";
 import { usePendingActionSelectValidatorMatch } from "../../hooks/navigation/use-pending-action-select-validator-match";
+import { useBaseToken } from "../../hooks/use-base-token";
 
 const getInitialState = (): State => ({
   unstakeAmount: new BigNumber(0),
@@ -93,6 +92,8 @@ export const UnstakeOrPendingActionProvider = ({
     [yieldOpportunity.data]
   );
 
+  const baseToken = useBaseToken(integrationData);
+
   const positionBalances = usePositionBalances({
     balanceId: balanceId,
     integrationId: integrationId,
@@ -101,17 +102,19 @@ export const UnstakeOrPendingActionProvider = ({
   const positionBalancePrices = usePrices(
     useMemo(
       () =>
-        positionBalances.data
+        Maybe.fromRecord({
+          positionBalances: positionBalances.data,
+          baseToken,
+        })
           .map<PriceRequestDto>((val) => ({
             currency: config.currency,
-            tokenList: val.balances.flatMap((v, i) =>
-              i === 0
-                ? [tokenToTokenDto(getBaseToken(v.token)), v.token]
-                : [v.token]
-            ),
+            tokenList: [
+              val.baseToken,
+              ...val.positionBalances.balances.map((v) => v.token),
+            ],
           }))
           .extractNullable(),
-      [positionBalances]
+      [positionBalances, baseToken]
     )
   );
 
@@ -119,6 +122,7 @@ export const UnstakeOrPendingActionProvider = ({
    * @summary Position balance by type
    */
   const positionBalancesByType = usePositionBalanceByType({
+    baseToken,
     positionBalancesData: positionBalances.data,
     prices: positionBalancePrices,
   });

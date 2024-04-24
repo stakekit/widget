@@ -1,10 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
-import { usePrices } from "../../../hooks/api/use-prices";
-import { config } from "../../../config";
-import { getBaseToken } from "../../../domain";
-import { tokenToTokenDto } from "../../../utils/mappers";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../../utils";
 import { useTranslation } from "react-i18next";
@@ -14,7 +10,7 @@ import type { ActionTypes } from "@stakekit/api-hooks";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
-import { useSavedRef } from "../../../hooks";
+import { useSavedRef, useTokensPrices } from "../../../hooks";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 
 export const useUnstakeOrPendingActionReview = () => {
@@ -62,12 +58,9 @@ export const useUnstakeOrPendingActionReview = () => {
   const { stakeExitTxGas, pendingActionTxGas } =
     useUnstakeOrPendingActionState();
 
-  const pricesState = usePrices({
-    currency: config.currency,
-    tokenList: integrationData.mapOrDefault(
-      (d) => [d.token, tokenToTokenDto(getBaseToken(d.token))],
-      []
-    ),
+  const pricesState = useTokensPrices({
+    token: unstakeToken,
+    yieldDto: integrationData,
   });
 
   const fee = useMemo(

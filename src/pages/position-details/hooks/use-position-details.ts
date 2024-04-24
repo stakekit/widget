@@ -14,6 +14,7 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUnstakeMachine } from "./use-unstake-machine";
 import { useNavigate } from "react-router-dom";
+import { useBaseToken } from "../../../hooks/use-base-token";
 
 export const usePositionDetails = () => {
   const {
@@ -32,6 +33,8 @@ export const usePositionDetails = () => {
   const dispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
+
+  const baseToken = useBaseToken(integrationData);
 
   const providersDetails = useProvidersDetails({
     integrationData,
@@ -58,6 +61,7 @@ export const usePositionDetails = () => {
       Maybe.fromRecord({
         prices: Maybe.fromNullable(positionBalancePrices.data),
         reducedStakedOrLiquidBalance,
+        baseToken,
       })
         .map((val) =>
           getTokenPriceInUSD({
@@ -65,10 +69,16 @@ export const usePositionDetails = () => {
             token: val.reducedStakedOrLiquidBalance.token,
             prices: val.prices,
             pricePerShare: val.reducedStakedOrLiquidBalance.pricePerShare,
+            baseToken: val.baseToken,
           })
         )
         .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
-    [positionBalancePrices.data, reducedStakedOrLiquidBalance, unstakeAmount]
+    [
+      positionBalancePrices.data,
+      reducedStakedOrLiquidBalance,
+      unstakeAmount,
+      baseToken,
+    ]
   );
 
   const onMaxClick = () => {

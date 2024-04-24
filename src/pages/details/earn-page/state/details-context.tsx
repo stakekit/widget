@@ -27,7 +27,7 @@ import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-availab
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useSavedRef, useSelectedStakePrice } from "../../../../hooks";
+import { useSavedRef, useTokensPrices } from "../../../../hooks";
 import { formatNumber } from "../../../../utils";
 import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
@@ -58,6 +58,7 @@ import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useMutation } from "@tanstack/react-query";
+import { useBaseToken } from "../../../../hooks/use-base-token";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -71,6 +72,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tronResource,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
+
+  const baseToken = useBaseToken(selectedStake);
 
   const { externalProviders } = useSettings();
 
@@ -110,25 +113,32 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     [selectedStake]
   );
 
-  const pricesState = useSelectedStakePrice({ selectedTokenBalance });
+  const pricesState = useTokensPrices({
+    token: selectedTokenBalance.map((y) => y.token),
+    yieldDto: selectedStake,
+  });
 
   const symbol = selectedTokenBalance.mapOrDefault((y) => y.token.symbol, "");
 
-  const formattedPrice = useMemo(() => {
-    return Maybe.fromRecord({
-      prices: Maybe.fromNullable(pricesState.data),
-      selectedTokenBalance,
-    })
-      .map((val) =>
-        getTokenPriceInUSD({
-          amount: stakeAmount,
-          token: val.selectedTokenBalance.token,
-          prices: val.prices,
-          pricePerShare: undefined,
-        })
-      )
-      .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
-  }, [pricesState.data, selectedTokenBalance, stakeAmount]);
+  const formattedPrice = useMemo(
+    () =>
+      Maybe.fromRecord({
+        prices: Maybe.fromNullable(pricesState.data),
+        selectedTokenBalance,
+        baseToken,
+      })
+        .map((val) =>
+          getTokenPriceInUSD({
+            baseToken: val.baseToken,
+            amount: stakeAmount,
+            token: val.selectedTokenBalance.token,
+            prices: val.prices,
+            pricePerShare: null,
+          })
+        )
+        .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
+    [baseToken, pricesState.data, selectedTokenBalance, stakeAmount]
+  );
 
   const formattedAmount = useMemo(() => {
     return Maybe.fromNullable(availableAmount).mapOrDefault(

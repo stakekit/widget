@@ -3,7 +3,7 @@ import { APToPercentage, formatNumber } from ".";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { Prices } from "../domain/types";
-import { getBaseToken, getTokenPriceInUSD } from "../domain";
+import { getTokenPriceInUSD } from "../domain";
 
 export const formatCountryCode = ({
   language,
@@ -59,8 +59,9 @@ export const getGasFeeInUSD = ({
       gasFeeInUSD: getTokenPriceInUSD({
         amount: val.gas.toString(),
         prices: val.prices,
-        token: getBaseToken(val.yieldDto.token),
-        pricePerShare: undefined,
+        token: val.yieldDto.metadata.gasFeeToken,
+        pricePerShare: null,
+        baseToken: null,
       }),
     }))
     .mapOrDefault(

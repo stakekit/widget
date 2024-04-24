@@ -27,6 +27,7 @@ import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
+import { useBaseToken } from "../../../hooks/use-base-token";
 
 export const usePendingActions = () => {
   const {
@@ -37,6 +38,8 @@ export const usePendingActions = () => {
     integrationData,
     positionBalancePrices,
   } = useUnstakeOrPendingActionState();
+
+  const baseToken = useBaseToken(integrationData);
 
   const pendingActionSelectValidatorMatchRef = useSavedRef(
     usePendingActionSelectValidatorMatch()
@@ -69,6 +72,7 @@ export const usePendingActions = () => {
                 prices: Maybe.fromNullable(positionBalancePrices.data),
                 amount,
                 reducedStakedOrLiquidBalance,
+                baseToken,
               })
                 .map((val) =>
                   getTokenPriceInUSD({
@@ -76,6 +80,7 @@ export const usePendingActions = () => {
                     token: val.reducedStakedOrLiquidBalance.token,
                     prices: val.prices,
                     pricePerShare: balance.pricePerShare,
+                    baseToken: val.baseToken,
                   })
                 )
                 .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
@@ -104,6 +109,7 @@ export const usePendingActions = () => {
       positionBalancePrices.data,
       positionBalancesByType,
       reducedStakedOrLiquidBalance,
+      baseToken,
     ]
   );
 

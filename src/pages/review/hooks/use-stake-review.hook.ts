@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useSavedRef, useSelectedStakePrice } from "../../../hooks";
+import { useSavedRef, useTokensPrices } from "../../../hooks";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../../utils";
 import { useMemo } from "react";
@@ -38,7 +38,10 @@ export const useStakeReview = () => {
     ""
   );
 
-  const pricesState = useSelectedStakePrice({ selectedTokenBalance });
+  const pricesState = useTokensPrices({
+    token: selectedTokenBalance.map((y) => y.token),
+    yieldDto: selectedStake,
+  });
 
   const fee = useMemo(
     () =>
