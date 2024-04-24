@@ -42,7 +42,11 @@ export const SelectYieldRewardDetails = () => {
                 alignItems="center"
               >
                 <Text variant={{ type: "muted", weight: "normal" }}>
-                  You'll receive {rt.symbol} via
+                  You'll receive{" "}
+                  <Box as="span" fontWeight="bold">
+                    {rt.symbol}
+                  </Box>{" "}
+                  via
                 </Text>
 
                 <Box display="flex" justifyContent="center" alignItems="center">
