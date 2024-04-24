@@ -35,6 +35,7 @@ type AmountBlockProps = {
           "name" | "address"
         >]?: ValidatorDto[Key];
       }[];
+      canUnstake: boolean;
     }
   | { variant: "action" }
 );
@@ -66,79 +67,91 @@ export const AmountBlock = ({
 
   return (
     <Box {...variantProps} borderRadius="xl" marginTop="2" py="4" px="4">
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-          <NumberInput
-            onChange={onAmountChange}
-            value={value}
-            disabled={!canChangeAmount}
-          />
-        </Box>
+      {(rest.variant === "action" || rest.canUnstake) && (
+        <Box marginBottom="3">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box minWidth="0" display="flex" marginRight="2" flex={1}>
+              <NumberInput
+                onChange={onAmountChange}
+                value={value}
+                disabled={!canChangeAmount}
+              />
+            </Box>
 
-        {isLoading && (
-          <Box marginRight="3" display="flex">
-            <Spinner />
-          </Box>
-        )}
+            {isLoading && (
+              <Box marginRight="3" display="flex">
+                <Spinner />
+              </Box>
+            )}
 
-        <Button
-          onClick={onClick}
-          disabled={disabled}
-          variant={{
-            size: "small",
-            color:
-              rest.variant === "unstake" ? "smallButton" : "smallButtonLight",
-          }}
-        >
-          <Text>{label}</Text>
-        </Button>
-      </Box>
-
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        marginTop="2"
-        flexWrap="wrap"
-      >
-        <Box flex={1}>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {formattedAmount}
-          </Text>
-        </Box>
-
-        <Box display="flex" justifyContent="flex-end" alignItems="center">
-          {balance && (
-            <Text variant={{ weight: "normal" }}>
-              {t("position_details.available", {
-                amount: formatNumber(balance.amount),
-                symbol: balance.token?.symbol ?? "",
-              })}
-            </Text>
-          )}
-          {canChangeAmount && onMaxClick && (
-            <Box
-              as="button"
-              borderRadius="xl"
-              background={
-                rest.variant === "unstake" ? "background" : "backgroundMuted"
-              }
-              px="2"
-              py="1"
-              marginLeft="2"
-              onClick={onMaxClick}
-              className={pressAnimation}
+            <Button
+              onClick={onClick}
+              disabled={disabled}
+              variant={{
+                size: "small",
+                color:
+                  rest.variant === "unstake"
+                    ? "smallButton"
+                    : "smallButtonLight",
+              }}
             >
-              <Text variant={{ weight: "semibold", type: "regular" }}>
-                {t("shared.max")}
+              <Text>{label}</Text>
+            </Button>
+          </Box>
+
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            marginTop="2"
+            flexWrap="wrap"
+          >
+            <Box flex={1}>
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {formattedAmount}
               </Text>
             </Box>
-          )}
+
+            <Box display="flex" justifyContent="flex-end" alignItems="center">
+              {balance && (
+                <Text variant={{ weight: "normal" }}>
+                  {t("position_details.available", {
+                    amount: formatNumber(balance.amount),
+                    symbol: balance.token?.symbol ?? "",
+                  })}
+                </Text>
+              )}
+              {canChangeAmount && onMaxClick && (
+                <Box
+                  as="button"
+                  borderRadius="xl"
+                  background={
+                    rest.variant === "unstake"
+                      ? "background"
+                      : "backgroundMuted"
+                  }
+                  px="2"
+                  py="1"
+                  marginLeft="2"
+                  onClick={onMaxClick}
+                  className={pressAnimation}
+                >
+                  <Text variant={{ weight: "semibold", type: "regular" }}>
+                    {t("shared.max")}
+                  </Text>
+                </Box>
+              )}
+            </Box>
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {rest.variant === "unstake" && (
-        <Box marginTop="2">
+        <Box>
           <UnstakeInfo
             validators={rest.validators}
             yieldDto={rest.yieldDto}
@@ -175,7 +188,7 @@ const UnstakeInfo = ({
         .map((val) => val.filter((v): v is NonNullable<typeof v> => !!v))
         .filter((val) => !!val.length)
         .map((val) => (
-          <Box marginTop="3">
+          <Box display="flex" flexDirection="column" gap="2">
             {val.map((v, i) => (
               <Box
                 display="flex"
