@@ -157,7 +157,7 @@ export const ReviewPage = ({
           </>
         )}
 
-        <Box marginTop="4" marginBottom="16">
+        <Box marginTop="4" marginBottom={showMetaInfo ? "4" : "16"}>
           <Text variant={{ weight: "normal", type: "muted" }}>
             <Trans
               i18nKey="review.terms_of_use"
