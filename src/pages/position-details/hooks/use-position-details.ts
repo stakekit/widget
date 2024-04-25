@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Maybe } from "purify-ts";
 import type { TokenDto } from "@stakekit/api-hooks";
-import { getTokenPriceInUSD, tokenString } from "../../../domain";
+import { equalTokens, getTokenPriceInUSD } from "../../../domain";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import {
@@ -132,29 +132,32 @@ export const usePositionDetails = () => {
 
   const liquidTokensToNativeConversion = useMemo(
     () =>
-      Maybe.fromRecord({ integrationData, positionBalancesByType }).map((v) =>
+      Maybe.fromRecord({
+        integrationData,
+        positionBalancesByType,
+        baseToken,
+      }).map((v) =>
         [...v.positionBalancesByType.values()].reduce((acc, curr) => {
           curr
             .filter(
               (yb) =>
                 !yb.token.isPoints &&
                 yb.pricePerShare &&
-                tokenString(yb.token) !==
-                  tokenString(v.integrationData.metadata.token)
+                !equalTokens(yb.token, v.baseToken)
             )
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${formatNumber(
                   new BigNumber(yb.pricePerShare)
-                )} ${v.integrationData.metadata.token.symbol}`
+                )} ${v.baseToken.symbol}`
               );
             });
 
           return acc;
         }, new Map<TokenDto["symbol"], string>())
       ),
-    [integrationData, positionBalancesByType]
+    [integrationData, positionBalancesByType, baseToken]
   );
 
   const unstakeDisabled =

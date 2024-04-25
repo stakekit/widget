@@ -99,7 +99,7 @@ export const SelectYieldSection = () => {
             </Box>
 
             {variant === "zerion" && (
-              <Box display="flex" flexDirection="column" gap="5">
+              <Box display="flex" flexDirection="column" gap="3">
                 <SelectYieldRewardDetails />
 
                 <Divider />

@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../providers/settings";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
+import { StakedVia } from "./components/select-yield-section/staked-via";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -52,6 +53,8 @@ const EarnPageComponent = () => {
           <SelectTokenSection />
 
           <SelectYieldSection />
+
+          <StakedVia />
 
           <SelectValidatorSection />
 

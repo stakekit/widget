@@ -18,12 +18,8 @@ export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
 };
 
-export const equalTokens = (
-  a: Token | TokenDto,
-  b: Token | TokenDto
-): boolean => {
-  return tokenString(a as TokenDto) === tokenString(b as TokenDto);
-};
+export const equalTokens = (a: Token | TokenDto, b: Token | TokenDto) =>
+  tokenString(a) === tokenString(b);
 
 export const getTokenPriceInUSD = ({
   token,
