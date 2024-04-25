@@ -3,6 +3,9 @@ import { atoms } from "../../../styles";
 
 export const tabContainer = style({
   overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+  position: "relative",
 });
 
 export const tab = style([
@@ -11,8 +14,13 @@ export const tab = style([
 ]);
 
 export const tabBorder = style([
-  atoms({ background: "tabBorder", borderRadius: "full" }),
+  atoms({
+    background: "tabBorder",
+    borderRadius: "full",
+    position: "absolute",
+  }),
   {
+    bottom: 0,
     height: "2.5px",
     width: "100%",
     transition: "all .2s ease",

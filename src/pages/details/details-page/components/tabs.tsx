@@ -28,15 +28,12 @@ export const Tabs = ({
       transition={{ duration: 1, delay: 0.5 }}
     >
       <Box position="relative" display="flex" justifyContent="center">
-        <Box className={divider}>
-          <Divider />
-        </Box>
-
         <Box
           display="flex"
           alignItems="center"
           justifyContent="center"
           data-rk="tabs-section"
+          zIndex="simple"
         >
           <Tab
             isSelected={selectedTab === "earn"}
@@ -50,6 +47,10 @@ export const Tabs = ({
             variant="positions"
             hasPendingRewards={hasPendingRewards}
           />
+        </Box>
+
+        <Box className={divider}>
+          <Divider />
         </Box>
       </Box>
     </motion.div>
