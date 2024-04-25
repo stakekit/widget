@@ -1,6 +1,5 @@
 import BigNumber from "bignumber.js";
 import type { Prices, TokenString } from "./types";
-import type { Token } from "@stakekit/common";
 import type {
   ActionDto,
   PendingActionDto,
@@ -18,7 +17,7 @@ export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
 };
 
-export const equalTokens = (a: Token | TokenDto, b: Token | TokenDto) =>
+export const equalTokens = (a: TokenDto, b: TokenDto) =>
   tokenString(a) === tokenString(b);
 
 export const getTokenPriceInUSD = ({
@@ -28,27 +27,34 @@ export const getTokenPriceInUSD = ({
   prices,
   pricePerShare,
 }: {
-  token: Token | TokenDto;
-  baseToken: Token | TokenDto | null;
+  token: TokenDto;
+  baseToken: TokenDto | null;
   amount: string | BigNumber;
   pricePerShare: string | null;
   prices: Prices;
 }): BigNumber => {
   const amountBN = BigNumber(amount);
 
-  const tokenKey = tokenString(token as TokenDto);
-  const tokenPrice = prices.get(tokenKey)?.price;
+  if (pricePerShare && baseToken) {
+    const baseTokenPrice = new BigNumber(
+      prices
+        .getByToken(baseToken)
+        .chainNullable((v) => v.price)
+        .orDefault(0)
+    );
+    const pricePerShareBN = BigNumber(pricePerShare);
 
-  if (tokenPrice) {
-    return amountBN.times(tokenPrice);
+    return amountBN.times(baseTokenPrice).times(pricePerShareBN);
   }
 
-  if (!baseToken) return new BigNumber(0);
+  const tokenPrice = new BigNumber(
+    prices
+      .getByToken(token)
+      .chainNullable((v) => v.price)
+      .orDefault(0)
+  );
 
-  const baseTokenPrice = prices.get(tokenString(baseToken))?.price ?? 0;
-  const pricePerShareBN = BigNumber(pricePerShare ?? 1);
-
-  return amountBN.times(baseTokenPrice).times(pricePerShareBN);
+  return amountBN.times(tokenPrice);
 };
 
 export const getMaxAmount = ({
