@@ -6,6 +6,7 @@ import macros from "unplugin-parcel-macros";
 import type { InlineConfig } from "vitest";
 import merge from "lodash.merge";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
+import autoprefixer from "autoprefixer";
 
 declare module "vite" {
   interface UserConfig {
@@ -33,6 +34,11 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
       vanillaExtractPlugin(),
       nodePolyfills({ include: ["buffer"] }),
     ],
+    css: {
+      postcss: {
+        plugins: [autoprefixer()],
+      },
+    },
     esbuild: { drop: ["console"] },
     server: { host: true },
     resolve: {
