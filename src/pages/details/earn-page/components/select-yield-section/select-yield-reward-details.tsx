@@ -26,13 +26,13 @@ export const SelectYieldRewardDetails = () => {
 
   return (
     <Box data-rk="yield-rewards">
-      <Box my="4">
-        {variant === "default" && (
+      {variant === "default" && (
+        <Box marginTop="3">
           <RewardTokenDetails rewardToken={rewardToken} type="stake" />
-        )}
-      </Box>
+        </Box>
+      )}
 
-      <Box display="flex" flexDirection="column" gap="2">
+      <Box display="flex" flexDirection="column" gap="2" marginTop="3">
         {variant === "zerion" &&
           rewardToken
             .map((rt) => (

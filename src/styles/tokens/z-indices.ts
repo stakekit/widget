@@ -1,6 +1,7 @@
 export const zIndicesContract = {
   hide: "",
   auto: "",
+  simple: "",
   base: "",
   docked: "",
   dropdown: "",
@@ -14,6 +15,7 @@ export const zIndicesContract = {
 export const zIndices: typeof zIndicesContract = {
   hide: "-1",
   auto: "auto",
+  simple: "1",
   base: "0",
   docked: "10",
   dropdown: "1000",

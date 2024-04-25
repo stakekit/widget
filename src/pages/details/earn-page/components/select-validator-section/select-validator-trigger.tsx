@@ -142,7 +142,7 @@ export const SelectValidatorTrigger = ({
         })()}
       </Box>
 
-      <Box marginTop="4">
+      <Box marginTop="3">
         <Divider />
       </Box>
     </>
