@@ -25,6 +25,7 @@ export type ExtraData = {
   actions: { onMaxClick: () => void };
   selectedStake: Maybe<YieldDto>;
   isGasCheckError: boolean;
+  stakeAmountValid: boolean;
 };
 
 type TokenBalanceSelectAction = Action<

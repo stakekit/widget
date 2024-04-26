@@ -1,8 +1,11 @@
 import { Box, Divider } from "../../../../components";
 import { divider } from "../styles.css";
+import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { Tab } from "./tab";
+import { useSettings } from "../../../../providers/settings";
+import { Just } from "purify-ts";
 
 export type TabsProps = {
   selectedTab: "earn" | "positions";
@@ -17,16 +20,37 @@ export const Tabs = ({
 }: TabsProps) => {
   const { state } = useMountAnimation();
 
+  const { disableInitLayoutAnimation } = useSettings();
+
+  const { animate, initial } = Just({ opacity: 1, translateY: 0 })
+    .chain<{ animate: TargetAndTransition; initial: MotionProps["initial"] }>(
+      (animateTo) =>
+        Just(null)
+          .map<{
+            transition: MotionProps["transition"];
+            initial: MotionProps["initial"];
+          }>(() => {
+            if (state.layout || disableInitLayoutAnimation) {
+              return {
+                transition: { duration: 0 },
+                initial: { opacity: 1, translateY: 0 },
+              };
+            }
+
+            return {
+              transition: { duration: 1, delay: 0.5 },
+              initial: { opacity: 0, translateY: "-40px" },
+            };
+          })
+          .map((val) => ({
+            animate: { ...animateTo, transition: val.transition },
+            initial: val.initial,
+          }))
+    )
+    .unsafeCoerce();
+
   return (
-    <motion.div
-      initial={
-        state.layout
-          ? { opacity: 1, translateY: 0 }
-          : { opacity: 0, translateY: "-40px" }
-      }
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ duration: 1, delay: 0.5 }}
-    >
+    <motion.div initial={initial} animate={animate}>
       <Box position="relative" display="flex" justifyContent="center">
         <Box
           display="flex"

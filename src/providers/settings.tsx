@@ -23,6 +23,7 @@ export interface SettingsContextType {
   disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
   variant: "zerion" | "default";
+  disableInitLayoutAnimation?: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(

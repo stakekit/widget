@@ -41,6 +41,7 @@ export const PositionDetails = () => {
     onValidatorsSubmit,
     unstakeToken,
     canUnstake,
+    unstakeAmountError,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -221,6 +222,7 @@ export const PositionDetails = () => {
                           canChangeAmount={canChangeAmount}
                           disabled={unstakeDisabled}
                           onClick={onUnstakeClick}
+                          unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
                             `position_details.unstake_label.${val.integrationData.metadata.type}`

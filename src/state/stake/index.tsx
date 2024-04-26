@@ -32,6 +32,7 @@ import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useMultiYields } from "../../hooks/api/use-multi-yields";
+import { useTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -201,18 +202,9 @@ const Provider = ({ children }: PropsWithChildren) => {
   const stakeAmount = useMemo(() => {
     if (forceMax) {
       return maxEnterOrExitAmount;
-    } else if (selectedStakeAmount.isLessThan(minEnterOrExitAmount)) {
-      return minEnterOrExitAmount;
-    } else if (selectedStakeAmount.isGreaterThan(maxEnterOrExitAmount)) {
-      return maxEnterOrExitAmount;
     }
     return selectedStakeAmount;
-  }, [
-    forceMax,
-    maxEnterOrExitAmount,
-    minEnterOrExitAmount,
-    selectedStakeAmount,
-  ]);
+  }, [forceMax, maxEnterOrExitAmount, selectedStakeAmount]);
 
   const { network, isLedgerLive, isConnected, isConnecting } = useSKWallet();
 
@@ -397,12 +389,8 @@ const Provider = ({ children }: PropsWithChildren) => {
 
   const actions = useMemo(
     () => ({
-      onMaxClick: () => {
-        dispatch({
-          type: "stakeAmount/max",
-          data: maxEnterOrExitAmount,
-        });
-      },
+      onMaxClick: () =>
+        dispatch({ type: "stakeAmount/max", data: maxEnterOrExitAmount }),
     }),
     [maxEnterOrExitAmount]
   );
@@ -427,6 +415,24 @@ const Provider = ({ children }: PropsWithChildren) => {
       .ifJust((val) => dispatch({ type: "yield/select", data: val }));
   }, [enterEnabledMultiYields.data, yieldOpportunity.data]);
 
+  const stakeTokenAvailableAmount = useTokenAvailableAmount({
+    tokenDto: selectedTokenBalance.map((ss) => ss.token),
+  });
+
+  const stakeAmountValid = useMemo(
+    () =>
+      !stakeTokenAvailableAmount.data ||
+      (stakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
+        stakeAmount.isLessThanOrEqualTo(stakeTokenAvailableAmount.data)),
+    [
+      maxEnterOrExitAmount,
+      minEnterOrExitAmount,
+      stakeAmount,
+      stakeTokenAvailableAmount.data,
+    ]
+  );
+
   const value: State & ExtraData = useMemo(
     () => ({
       selectedStakeId,
@@ -439,6 +445,7 @@ const Provider = ({ children }: PropsWithChildren) => {
       stakeEnterTxGas,
       tronResource,
       isGasCheckError,
+      stakeAmountValid,
     }),
     [
       actions,
@@ -451,6 +458,7 @@ const Provider = ({ children }: PropsWithChildren) => {
       stakeSession,
       tronResource,
       isGasCheckError,
+      stakeAmountValid,
     ]
   );
 

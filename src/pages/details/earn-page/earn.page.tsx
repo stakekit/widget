@@ -11,6 +11,7 @@ import {
 } from "./state/details-context";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
+import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
 import { ReferralCode } from "./components/referral-code";
 import { useMountAnimation } from "../../../providers/mount-animation";
@@ -19,6 +20,7 @@ import { useSettings } from "../../../providers/settings";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { StakedVia } from "./components/select-yield-section/staked-via";
+import { Just } from "purify-ts";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -31,18 +33,52 @@ const EarnPageComponent = () => {
 
   const { mountAnimationFinished, dispatch } = useMountAnimation();
 
+  const { disableInitLayoutAnimation } = useSettings();
+
+  const { animate, initial } = Just({
+    opacity: 1,
+    translateY: 0,
+  })
+    .chain<{ animate: TargetAndTransition; initial: MotionProps["initial"] }>(
+      (animateTo) =>
+        Just(null)
+          .map<{
+            transition: MotionProps["transition"];
+            initial: MotionProps["initial"];
+          }>(() => {
+            if (mountAnimationFinished) {
+              return {
+                transition: { duration: 0.3, delay: 0 },
+                initial: { opacity: 0, translateY: "-10px" },
+              };
+            } else if (disableInitLayoutAnimation) {
+              return {
+                transition: { duration: 0 },
+                initial: { opacity: 1, translateY: 0 },
+              };
+            }
+
+            return {
+              transition: { duration: 1, delay: 0.8 },
+              initial: { opacity: 0, translateY: "-40px" },
+            };
+          })
+          .map((val) => ({
+            animate: { ...animateTo, transition: val.transition },
+            initial: val.initial,
+          }))
+    )
+    .unsafeCoerce();
+
   return (
     <motion.div
-      initial={{
-        opacity: 0,
-        translateY: mountAnimationFinished ? "-10px" : "-40px",
+      initial={initial}
+      animate={animate}
+      onAnimationComplete={(def: typeof animate) => {
+        if (def.translateY !== 0 || mountAnimationFinished) return;
+
+        dispatch({ type: "earnPage" });
       }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{
-        duration: mountAnimationFinished ? 0.3 : 1,
-        delay: mountAnimationFinished ? 0 : 0.8,
-      }}
-      onAnimationComplete={() => dispatch({ type: "earnPage" })}
     >
       <PageContainer>
         <Box>

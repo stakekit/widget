@@ -1,20 +1,32 @@
 import BigNumber from "bignumber.js";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
-import { numberInput, spanStyle } from "./styles.css";
+import { container, numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
 import { createPortal } from "react-dom";
 import { formatNumber } from "../../../utils";
 import { useRootElement } from "../../../providers/root-element";
+import { motion, useAnimation } from "framer-motion";
+import { Box } from "../box";
 
 export type NumberInputProps = {
   onChange: (value: BigNumber) => void;
+  onBlur?: () => void;
   value: BigNumber;
   disabled?: boolean;
+  isValid?: boolean;
+  shakeOnInvalid?: boolean;
 };
 
 export const NumberInput = memo(
-  ({ onChange, value, disabled }: NumberInputProps) => {
+  ({
+    onChange,
+    value,
+    disabled,
+    onBlur,
+    isValid,
+    shakeOnInvalid,
+  }: NumberInputProps) => {
     const [localState, setLocalState] = useState("0");
     const [isFocused, setIsFocused] = useState(false);
 
@@ -57,9 +69,28 @@ export const NumberInput = memo(
 
     const rootElement = useRootElement();
 
+    const animate = useAnimation();
+
+    useEffect(() => {
+      if (!shakeOnInvalid || isValid) return;
+
+      animate.start("shake");
+    }, [animate, isValid, shakeOnInvalid]);
+
     return (
-      <>
-        <input
+      <motion.div
+        animate={animate}
+        variants={{
+          shake: {
+            rotate: [-1.5, 1.5, 0],
+            transition: { repeat: 3, duration: 0.12, ease: "easeInOut" },
+          },
+        }}
+        className={container}
+      >
+        <Box
+          as="input"
+          color={shakeOnInvalid && !isValid ? "textDanger" : "text"}
           disabled={disabled}
           name="stake-amount"
           ref={inputRef}
@@ -78,6 +109,7 @@ export const NumberInput = memo(
           onBlur={() => {
             setIsFocused(false);
             if (isZero) setLocalState("0");
+            onBlur?.();
           }}
           onFocus={() => {
             setIsFocused(true);
@@ -91,7 +123,7 @@ export const NumberInput = memo(
             </span>,
             rootElement
           )}
-      </>
+      </motion.div>
     );
   }
 );

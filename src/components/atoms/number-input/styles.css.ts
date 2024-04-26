@@ -31,3 +31,8 @@ export const spanStyle = style([
     right: "100%",
   },
 ]);
+
+export const container = style({
+  display: "flex",
+  minWidth: 0,
+});
