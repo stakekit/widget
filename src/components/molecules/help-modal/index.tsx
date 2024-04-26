@@ -18,7 +18,10 @@ import { MaybeWindow } from "../../../utils/maybe-window";
 import { images } from "../../../assets/images";
 
 type ModalType =
-  | ({ type: "geoBlock" } & Exclude<ReturnType<typeof useGeoBlock>, false> & {
+  | ({ type: "geoBlock"; onClose: () => void } & Exclude<
+      ReturnType<typeof useGeoBlock>,
+      false
+    > & {
         regionCodeName: string | undefined;
       })
   | { type: YieldType }
@@ -239,11 +242,9 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     return modal.type === "geoBlock"
       ? {
           ...base,
-          hideTopBar: true,
-          disableClose: true,
           state: {
             isOpen: true,
-            setOpen: () => {},
+            setOpen: modal.onClose,
           },
         }
       : {
@@ -258,7 +259,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             </Trigger>
           ),
         };
-  }, [customTrigger, modal.type, title, trackEvent]);
+  }, [customTrigger, modal, title, trackEvent]);
 
   return (
     <SelectModal {...selectModalProps}>

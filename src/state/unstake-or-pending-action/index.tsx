@@ -269,7 +269,6 @@ export const UnstakeOrPendingActionProvider = ({
       Maybe.fromRecord({
         reducedStakedOrLiquidBalance,
         canChangeUnstakeAmount,
-        integrationData,
       })
         .map((val) => {
           if (
@@ -277,12 +276,6 @@ export const UnstakeOrPendingActionProvider = ({
             !val.reducedStakedOrLiquidBalance.amount.isEqualTo(_ustankeAmount)
           ) {
             return val.reducedStakedOrLiquidBalance.amount;
-          } else if (val.canChangeUnstakeAmount) {
-            if (_ustankeAmount.isGreaterThan(maxEnterOrExitAmount)) {
-              return maxEnterOrExitAmount;
-            } else if (_ustankeAmount.isLessThan(minEnterOrExitAmount)) {
-              return minEnterOrExitAmount;
-            }
           }
 
           return _ustankeAmount;
@@ -292,9 +285,6 @@ export const UnstakeOrPendingActionProvider = ({
       _ustankeAmount,
       canChangeUnstakeAmount,
       forceMaxUnstakeAmount,
-      integrationData,
-      maxEnterOrExitAmount,
-      minEnterOrExitAmount,
       reducedStakedOrLiquidBalance,
     ]
   );
@@ -304,6 +294,14 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
       unstakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
       !unstakeAmount.isZero(),
+    [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
+  );
+
+  const unstakeAmountError = useMemo(
+    () =>
+      (!unstakeAmount.isZero() &&
+        unstakeAmount.isLessThan(minEnterOrExitAmount)) ||
+      unstakeAmount.isGreaterThan(maxEnterOrExitAmount),
     [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
   );
 
@@ -399,6 +397,7 @@ export const UnstakeOrPendingActionProvider = ({
 
   const value: State & ExtraData = useMemo(
     () => ({
+      unstakeAmountError,
       unstakeToken,
       unstakeAmount,
       pendingActions,
@@ -419,6 +418,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountValid,
     }),
     [
+      unstakeAmountError,
       unstakeToken,
       unstakeAmount,
       pendingActions,

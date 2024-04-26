@@ -55,7 +55,6 @@ import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
-import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useMutation } from "@tanstack/react-query";
 import { useBaseToken } from "../../../../hooks/use-base-token";
@@ -70,6 +69,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeAmount,
     selectedStake,
     tronResource,
+    stakeAmountValid,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
@@ -340,12 +340,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     appDispatch({ type: "stakeAmount/change", data: val });
 
-  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
-    type: "enter",
-    yieldOpportunity: selectedStake,
-    tokenDto: selectedTokenBalance.map((v) => v.token),
-  });
-
   const { t } = useTranslation();
 
   const navigate = useNavigate();
@@ -401,11 +395,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
         val.errors.amountZero = true;
       }
 
-      if (
-        stakeAmount.isLessThan(minEnterOrExitAmount) ||
-        stakeAmount.isGreaterThan(maxEnterOrExitAmount) ||
-        stakeAmount.isGreaterThan(availableAmount)
-      ) {
+      if (!stakeAmountValid) {
         val.errors.amountInvalid = true;
       }
     });
@@ -415,13 +405,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
     return val;
   }, [
-    availableAmount,
     isConnected,
-    maxEnterOrExitAmount,
-    minEnterOrExitAmount,
     onClickHandler.status,
     selectedStake,
     stakeAmount,
+    stakeAmountValid,
     tronResource,
   ]);
 

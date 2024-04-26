@@ -18,6 +18,7 @@ type AmountBlockProps = {
   canChangeAmount: boolean;
   disabled?: boolean;
   onClick: () => void;
+  unstakeAmountError?: boolean;
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
@@ -51,6 +52,7 @@ export const AmountBlock = ({
   formattedAmount,
   onMaxClick,
   balance,
+  unstakeAmountError,
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
@@ -79,6 +81,8 @@ export const AmountBlock = ({
                 onChange={onAmountChange}
                 value={value}
                 disabled={!canChangeAmount}
+                shakeOnInvalid
+                isValid={!unstakeAmountError}
               />
             </Box>
 

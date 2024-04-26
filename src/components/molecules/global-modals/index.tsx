@@ -3,7 +3,7 @@ import { RichErrorModal } from "../rich-error-modal";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
 import { useRegionCodeName } from "../../../hooks/use-region-code-names";
 import { HelpModal } from "../help-modal";
-import type { ReactPortal } from "react";
+import { useState, type ReactPortal } from "react";
 import { ReferralLock } from "../referral-lock";
 import { Maybe } from "purify-ts";
 import { useSettings } from "../../../providers/settings";
@@ -15,19 +15,22 @@ export const GlobalModals = () => {
     geoBlock ? geoBlock.regionCode : undefined
   );
 
+  const [hideGeoBlock, setHideGeoBlock] = useState(false);
+
   const { referralCheck } = useSettings();
 
   const rootElement = useRootElement();
 
   return Maybe.fromNullable(rootElement)
     .map((root) => {
-      if (geoBlock) {
+      if (geoBlock && !hideGeoBlock) {
         return createPortal(
           <HelpModal
             modal={{
               type: "geoBlock",
               ...geoBlock,
               regionCodeName: regionCodeName.data,
+              onClose: () => setHideGeoBlock(true),
             }}
           />,
           root

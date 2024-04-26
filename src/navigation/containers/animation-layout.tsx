@@ -1,6 +1,7 @@
+import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
 import { animationContainer } from "../../style.css";
-import type { PropsWithChildren } from "react";
+import { type PropsWithChildren } from "react";
 import { useCurrentLayout } from "../../pages/components/layout/layout-context";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
@@ -10,6 +11,7 @@ import { useSettings } from "../../providers/settings";
 import { useMountAnimation } from "../../providers/mount-animation";
 import { usePoweredByHeight } from "../../pages/components/powered-by";
 import createStateContext from "../../utils/create-state-context";
+import { Just } from "purify-ts";
 
 export const [useDisableTransitionDuration, DisableTransitionDurationProvider] =
   createStateContext(false);
@@ -22,7 +24,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const { state, dispatch } = useMountAnimation();
 
-  const { referralCheck } = useSettings();
+  const { referralCheck, disableInitLayoutAnimation } = useSettings();
   const referralCode = useReferralCode();
 
   const showApp = !referralCheck || !!referralCode.data;
@@ -37,24 +39,40 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const [disableTransitionDuration] = useDisableTransitionDuration();
 
+  const animate = Just(containerHeight)
+    .chain<TargetAndTransition>((height) =>
+      Just(null)
+        .map<MotionProps["transition"]>(() => {
+          if (disableTransitionDuration) {
+            return { duration: 0 };
+          } else if (state.layout) {
+            return { duration: 0.3 };
+          } else if (disableInitLayoutAnimation) {
+            return { duration: 0 };
+          }
+          return { duration: 0.6, delay: 0.3 };
+        })
+        .map((transition) => ({ height, transition }))
+    )
+    .unsafeCoerce();
+
   return (
     <>
       {showApp ? (
         <motion.div
+          data-rk="widget-container"
           layout="size"
           className={animationContainer}
-          style={{
-            borderRadius: "20px",
-            position: "relative",
-            height: containerHeight,
+          initial={{ height: 0 }}
+          style={{ borderRadius: "20px", position: "relative" }}
+          animate={animate}
+          onAnimationComplete={(def: typeof animate) => {
+            if (!def.height || state.layout) {
+              return;
+            }
+
+            dispatch({ type: "layout" });
           }}
-          data-rk="widget-container"
-          transition={
-            state.layout
-              ? { duration: disableTransitionDuration ? 0 : 0.3 }
-              : { duration: 0.6, delay: 0.3 }
-          }
-          onLayoutAnimationComplete={() => dispatch({ type: "layout" })}
         >
           {children}
         </motion.div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Box, Button } from "../../../components";
+import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
 import { footerContainer } from "./styles.css";
 import type { FooterButtonVal } from "./context";
@@ -10,6 +11,8 @@ import {
 } from "./context";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
+import { Just } from "purify-ts";
+import { useSettings } from "../../../providers/settings";
 
 const FooterButton = ({
   disabled,
@@ -25,28 +28,53 @@ const FooterButton = ({
     state.layout
   );
 
+  const { disableInitLayoutAnimation } = useSettings();
+
+  const { animate, initial } = Just({ translateY: 0, opacity: 1 })
+    .chain<{ animate: TargetAndTransition; initial: MotionProps["initial"] }>(
+      (animateTo) =>
+        Just(null).map<{
+          animate: TargetAndTransition;
+          initial: MotionProps["initial"];
+        }>(() => {
+          if (disableInitLayoutAnimation && !state.layout) {
+            return {
+              animate: {},
+              initial: { opacity: 1, translateY: 0 },
+            };
+          } else if (state.layout) {
+            return {
+              animate: {
+                ...animateTo,
+                transition: {
+                  duration: initAnimationFinished ? 0.3 : 0.6,
+                  delay: 0.2,
+                },
+              },
+              initial: { opacity: 0, translateY: "-20px" },
+            };
+          }
+
+          return {
+            animate: {},
+            initial: { opacity: 0, translateY: "-40px" },
+          };
+        })
+    )
+    .unsafeCoerce();
+
   return (
     <motion.div
       data-rk="footer-outlet"
       ref={containerRef}
       className={footerContainer}
-      initial={{
-        translateY: state.layout ? "-20px" : "-40px",
-        opacity: 0,
+      initial={initial}
+      animate={animate}
+      onAnimationComplete={(def: typeof animate) => {
+        if (def.translateY !== 0 || initAnimationFinished) return;
+
+        setInitAnimationFinished(true);
       }}
-      {...(state.layout
-        ? {
-            animate: {
-              translateY: 0,
-              opacity: 1,
-              transition: {
-                duration: initAnimationFinished ? 0.3 : 0.6,
-                delay: 0.2,
-              },
-            },
-          }
-        : {})}
-      onAnimationComplete={() => setInitAnimationFinished(true)}
     >
       <Box px="4" marginTop="2" marginBottom="4" zIndex="modal">
         <Box

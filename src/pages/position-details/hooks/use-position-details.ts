@@ -28,6 +28,7 @@ export const usePositionDetails = () => {
     unstakeAmountValid,
     unstakeSession,
     unstakeToken,
+    unstakeAmountError,
   } = useUnstakeOrPendingActionState();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
@@ -197,5 +198,6 @@ export const usePositionDetails = () => {
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
+    unstakeAmountError,
   };
 };

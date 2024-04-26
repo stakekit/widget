@@ -55,4 +55,5 @@ export type ExtraData = {
   isGasCheckError: boolean;
   unstakeAmountValid: boolean;
   unstakeToken: Maybe<TokenDto>;
+  unstakeAmountError: boolean;
 };

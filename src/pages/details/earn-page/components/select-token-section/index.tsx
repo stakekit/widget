@@ -51,7 +51,12 @@ export const SelectTokenSection = () => {
 
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box minWidth="0" display="flex" flex={1}>
-          <NumberInput onChange={onStakeAmountChange} value={stakeAmount} />
+          <NumberInput
+            shakeOnInvalid
+            isValid={!validation.errors.amountInvalid}
+            onChange={onStakeAmountChange}
+            value={stakeAmount}
+          />
         </Box>
 
         <Box display="flex" justifyContent="center" alignItems="center">
