@@ -88,6 +88,7 @@ const skFilter = ({
     o.id !== "binance-bnb-native-staking" &&
     o.id !== "binance-testnet-bnb-native-staking" &&
     o.id !== "avax-native-staking" &&
+    o.status.enter &&
     isSupportedChain(o.token.network);
 
   if (!isConnected) return defaultFilter;

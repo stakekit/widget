@@ -1,8 +1,12 @@
 import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
-import { useTokenTokenBalancesScan } from "@stakekit/api-hooks";
+import {
+  getTokenTokenBalancesScanQueryKey,
+  useTokenTokenBalancesScan,
+} from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useSKQueryClient } from "../../providers/query-client";
 
 export const useTokenBalancesScan = () => {
   const {
@@ -43,4 +47,18 @@ export const useTokenBalancesScan = () => {
   return useTokenTokenBalancesScan(param.dto, {
     query: { enabled: param.enabled, refetchInterval: 1000 * 60 },
   });
+};
+
+export const useInvalidateTokenBalances = () => {
+  const queryClient = useSKQueryClient();
+
+  return useCallback(
+    () =>
+      queryClient.invalidateQueries({
+        queryKey: [
+          getTokenTokenBalancesScanQueryKey({} as TokenBalanceScanDto)[0],
+        ],
+      }),
+    [queryClient]
+  );
 };

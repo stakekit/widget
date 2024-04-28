@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { Box, NumberInput, Spinner, Text } from "../../../../../components";
+import { Box, NumberInput, Text } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectToken } from "./select-token";
 import { useDetailsContext } from "../../state/details-context";
 import { useSettings } from "../../../../../providers/settings";
 import { SelectTokenTitle } from "./title";
-import { Maybe } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 
 export const SelectTokenSection = () => {
   const { t } = useTranslation();
@@ -20,12 +20,32 @@ export const SelectTokenSection = () => {
     onMaxClick,
     onStakeAmountChange,
     stakeAmount,
-    stakeTokenAvailableAmountLoading,
     validation,
     selectTokenIsLoading,
+    stakeMaxAmount,
+    stakeMinAmount,
+    symbol,
   } = useDetailsContext();
 
   const isLoading = appLoading || selectTokenIsLoading;
+
+  const {
+    submitted,
+    errors: {
+      stakeAmountGreaterThanAvailableAmount,
+      stakeAmountGreaterThanMax,
+      stakeAmountLessThanMin,
+      stakeAmountIsZero,
+    },
+  } = validation;
+
+  const errorInput =
+    (submitted && stakeAmountIsZero) ||
+    stakeAmountGreaterThanAvailableAmount ||
+    stakeAmountGreaterThanMax ||
+    stakeAmountLessThanMin;
+
+  const errorBalance = stakeAmountGreaterThanAvailableAmount;
 
   return isLoading ? (
     <Box marginTop="2">
@@ -42,9 +62,7 @@ export const SelectTokenSection = () => {
       borderStyle="solid"
       borderWidth={1}
       borderColor={
-        validation.submitted && validation.errors.amountZero
-          ? "textDanger"
-          : "transparent"
+        submitted && stakeAmountIsZero ? "textDanger" : "transparent"
       }
     >
       {variant === "zerion" && <SelectTokenTitle />}
@@ -53,7 +71,7 @@ export const SelectTokenSection = () => {
         <Box minWidth="0" display="flex" flex={1}>
           <NumberInput
             shakeOnInvalid
-            isValid={!validation.errors.amountInvalid}
+            isInvalid={errorInput}
             onChange={onStakeAmountChange}
             value={stakeAmount}
           />
@@ -64,12 +82,48 @@ export const SelectTokenSection = () => {
         </Box>
       </Box>
 
+      {Just(
+        Maybe.catMaybes([
+          stakeMaxAmount.map((v) => (
+            <Text
+              key="max"
+              variant={{
+                type: stakeAmountGreaterThanMax ? "danger" : "regular",
+              }}
+            >{`${t("shared.max")} ${v} ${symbol}`}</Text>
+          )),
+          stakeMinAmount.map((v) => (
+            <Text
+              key="min"
+              variant={{
+                type: stakeAmountLessThanMin ? "danger" : "regular",
+              }}
+            >{`${t("shared.min")} ${v} ${symbol}`}</Text>
+          )),
+        ])
+      )
+        .filter((val) => !!val.length)
+        .map((val) => (
+          <Box
+            display="flex"
+            justifyContent="flex-end"
+            alignItems="center"
+            marginRight="2"
+            marginTop="2"
+            data-rk="stake-token-section-min-max"
+          >
+            {val}
+          </Box>
+        ))
+        .extractNullable()}
+
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
         marginTop="2"
         flexWrap="wrap"
+        data-rk="stake-token-section-balance"
       >
         <Box flex={1} display="flex">
           <Text variant={{ type: "muted", weight: "normal" }}>
@@ -79,31 +133,27 @@ export const SelectTokenSection = () => {
 
         <Box display="flex" justifyContent="flex-end" alignItems="center">
           <Box display="flex">
-            {stakeTokenAvailableAmountLoading ? (
-              <Spinner />
-            ) : (
-              <Text
-                variant={{
-                  weight: "normal",
-                  type: validation.errors.amountInvalid ? "danger" : "muted",
-                }}
-                data-state={validation.errors.amountInvalid ? "error" : "valid"}
-              >
-                {Maybe.fromNullable(availableTokens)
-                  .map((v) =>
-                    variant === "zerion" ? (
-                      <>
-                        <span>{t("shared.balance")}</span> <span>{v}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>{v}</span> <span>{t("shared.available")}</span>
-                      </>
-                    )
+            <Text
+              variant={{
+                weight: "normal",
+                type: errorBalance ? "danger" : "muted",
+              }}
+              data-state={errorBalance ? "error" : "valid"}
+            >
+              {Maybe.fromNullable(availableTokens)
+                .map((v) =>
+                  variant === "zerion" ? (
+                    <>
+                      <span>{t("shared.balance")}</span> <span>{v}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{v}</span> <span>{t("shared.available")}</span>
+                    </>
                   )
-                  .extractNullable()}
-              </Text>
-            )}
+                )
+                .extractNullable()}
+            </Text>
           </Box>
 
           <Box

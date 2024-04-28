@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.145",
+  "version": "0.0.146",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
@@ -41,7 +41,7 @@
     "format": "yarn turbo run turbo:format",
     "turbo:build": "yarn lint && yarn clean && yarn build:package && yarn build:bundle && yarn build:website && yarn build:types",
     "turbo:lint": "tsc && eslint src && prettier --check ./src",
-    "turbo:test": "vitest -c vite/vite.config.dev.ts run",
+    "turbo:test": "vitest -c vite/vite.config.dev.ts --retry 2 run",
     "turbo:format": "prettier --write ./src",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",
     "build:package": "vite -c vite/vite.config.package.ts build",

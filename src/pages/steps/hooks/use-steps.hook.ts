@@ -6,9 +6,9 @@ import { useSavedRef } from "../../../hooks";
 import type { TxState } from "./use-steps-machine.hook";
 import { useStepsMachine } from "./use-steps-machine.hook";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
-import { useInvalidateTokenAvailableAmount } from "../../../hooks/api/use-token-available-amount";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useTranslation } from "react-i18next";
+import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
 
 export const useSteps = ({
   session,
@@ -66,8 +66,8 @@ export const useSteps = ({
     };
   }, [machine.context.txCheckTimeoutId]);
 
-  const invalidateTokenAvailableAmount = useInvalidateTokenAvailableAmount();
   const invalidateYieldBalances = useInvalidateYieldBalances();
+  const invalidateTokenBalances = useInvalidateTokenBalances();
 
   /**
    *
@@ -77,7 +77,7 @@ export const useSteps = ({
     if (machine.value === "done") {
       callbacksRef.current.onDone?.();
       invalidateYieldBalances();
-      invalidateTokenAvailableAmount();
+      invalidateTokenBalances();
 
       navigate("../complete", {
         state: {
@@ -96,8 +96,8 @@ export const useSteps = ({
     machine.context.txStates,
     machine.value,
     navigate,
-    invalidateTokenAvailableAmount,
     invalidateYieldBalances,
+    invalidateTokenBalances,
   ]);
 
   const onClick = () => navigate(-1);

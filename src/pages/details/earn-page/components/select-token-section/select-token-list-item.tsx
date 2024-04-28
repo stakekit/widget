@@ -13,16 +13,14 @@ import { selectItemText } from "../../styles.css";
 import BigNumber from "bignumber.js";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 
+type Props = {
+  item: TokenBalanceScanResponseDto;
+  isConnected: boolean;
+  onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
+};
+
 export const SelectTokenListItem = memo(
-  ({
-    item,
-    isConnected,
-    onTokenBalanceSelect,
-  }: {
-    item: TokenBalanceScanResponseDto;
-    isConnected: boolean;
-    onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
-  }) => {
+  ({ item, isConnected, onTokenBalanceSelect }: Props) => {
     const amount = useMemo(() => new BigNumber(item.amount), [item.amount]);
 
     const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
@@ -59,6 +57,7 @@ export const SelectTokenListItem = memo(
               display="flex"
               justifyContent="space-between"
               alignItems="center"
+              gap="2"
             >
               <Text className={selectItemText} variant={{ weight: "bold" }}>
                 {item.token.name}

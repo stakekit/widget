@@ -1,6 +1,7 @@
 import type {
   ActionDto,
   TokenBalanceScanResponseDto,
+  TokenDto,
   TronResourceType,
   ValidatorDto,
   YieldDto,
@@ -10,7 +11,7 @@ import type { Maybe } from "purify-ts";
 import type { Action } from "../../types";
 
 export type State = {
-  selectedTokenBalance: Maybe<TokenBalanceScanResponseDto>;
+  selectedToken: Maybe<TokenBalanceScanResponseDto["token"]>;
   selectedStakeId: Maybe<
     TokenBalanceScanResponseDto["availableYields"][number]
   >;
@@ -25,13 +26,15 @@ export type ExtraData = {
   actions: { onMaxClick: () => void };
   selectedStake: Maybe<YieldDto>;
   isGasCheckError: boolean;
-  stakeAmountValid: boolean;
+  stakeAmountLessThanMin: boolean;
+  stakeAmountGreaterThanMax: boolean;
+  stakeAmountGreaterThanAvailableAmount: boolean;
+  stakeAmountIsZero: boolean;
+  availableAmount: Maybe<BigNumber>;
+  availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
 };
 
-type TokenBalanceSelectAction = Action<
-  "tokenBalance/select",
-  { tokenBalance: TokenBalanceScanResponseDto; initYield: Maybe<YieldDto> }
->;
+type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
 type YieldSelectAction = Action<"yield/select", YieldDto>;
 
 type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;

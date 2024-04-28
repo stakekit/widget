@@ -22,7 +22,7 @@ export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();
 
   const { address, network, isLedgerLive } = useSKWallet();
-  const { selectedTokenBalance, selectedStakeId, selectedValidators } =
+  const { selectedToken, selectedStakeId, selectedValidators } =
     useStakeState();
 
   const { disableGasCheck = false } = useSettings();
@@ -41,7 +41,7 @@ export const useOnStakeEnter = () => {
     syncOn: [
       address,
       network,
-      selectedTokenBalance,
+      selectedToken,
       selectedStakeId,
       selectedValidators,
     ],

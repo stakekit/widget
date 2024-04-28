@@ -82,7 +82,7 @@ export const AmountBlock = ({
                 value={value}
                 disabled={!canChangeAmount}
                 shakeOnInvalid
-                isValid={!unstakeAmountError}
+                isInvalid={unstakeAmountError}
               />
             </Box>
 

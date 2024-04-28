@@ -22,11 +22,11 @@ import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
-import type { QueryParamsResult } from "../../hooks/use-init-query-params";
 import { BehaviorSubject, map } from "rxjs";
 import { skNormalizeChainId } from "../../domain";
 import { images } from "../../assets/images";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
+import type { QueryParams } from "../../domain/types/query-params";
 
 const createLedgerLiveConnector = ({
   walletDetailsParams,
@@ -34,7 +34,7 @@ const createLedgerLiveConnector = ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParamsResult;
+  queryParams: QueryParams;
   walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
@@ -339,7 +339,7 @@ export const ledgerLiveConnector = ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParamsResult;
+  queryParams: QueryParams;
 }): WalletList[number] => ({
   groupName: "Ledger Live",
   wallets: [

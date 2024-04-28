@@ -6,16 +6,16 @@ import { isSupportedChain } from "../domain/types/chains";
 import { MaybeWindow } from "../utils/maybe-window";
 import { typeSafeObjectFromEntries } from "../utils";
 import { getYieldOpportunity } from "../hooks/api/use-yield-opportunity";
-import type { YieldDto } from "@stakekit/api-hooks";
 import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import { useSKQueryClient } from "../providers/query-client";
+import type { QueryParams } from "../domain/types/query-params";
 
 const queryKey = ["init-params"];
 const staleTime = 0;
 const cacheTime = 0;
 
-export const useInitQueryParams = <T = QueryParamsResult>(opts?: {
-  select: (val: QueryParamsResult) => T;
+export const useInitQueryParams = <T = QueryParams>(opts?: {
+  select: (val: QueryParams) => T;
 }) => {
   const { isLedgerLive } = useSKWallet();
 
@@ -51,17 +51,6 @@ export const getInitialQueryParams = (
 const queryFn = async (params: Parameters<typeof fn>[0]) =>
   (await fn(params)).unsafeCoerce();
 
-export type QueryParamsResult = {
-  network: string | null;
-  token: string | null;
-  yieldId: string | null;
-  validator: string | null;
-  pendingaction: string | null;
-  yieldData: YieldDto | null;
-  referralCode: string | null;
-  accountId: string | null;
-};
-
 const fn = ({
   isLedgerLive,
   queryClient,
@@ -70,7 +59,7 @@ const fn = ({
   isLedgerLive: boolean;
   queryClient: QueryClient;
   yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
-}): EitherAsync<Error, QueryParamsResult> =>
+}): EitherAsync<Error, QueryParams> =>
   EitherAsync.liftEither(
     MaybeWindow.map((w) => new URL(w.location.href))
       .map(
@@ -105,7 +94,7 @@ const fn = ({
       ...val,
       accountId: val.accountId ? decodeURIComponent(val.accountId) : null,
     }))
-    .chain<Error, QueryParamsResult>((val) => {
+    .chain<Error, QueryParams>((val) => {
       const yId = val.yieldId;
 
       if (yId && (!val.network || !val.token)) {

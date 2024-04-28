@@ -1,7 +1,7 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync } from "purify-ts";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { withRequestErrorRetry } from "../../common/utils";
@@ -73,13 +73,6 @@ const fn = ({
     console.log(e);
     return new Error("Could not get yield opportunity");
   });
-
-export const getYieldOpportunityFromCache = (
-  params: Params & { queryClient: QueryClient }
-) =>
-  Maybe.fromNullable(
-    params.queryClient.getQueryData<YieldDto | undefined>(getKey(params))
-  );
 
 export const setYieldOpportunityInCache = ({
   yieldDto,

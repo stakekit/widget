@@ -17,7 +17,7 @@ export const useStakeReview = () => {
     selectedStake,
     stakeEnterTxGas,
     selectedValidators,
-    selectedTokenBalance,
+    selectedToken,
     isGasCheckError,
   } = useStakeState();
 
@@ -39,7 +39,7 @@ export const useStakeReview = () => {
   );
 
   const pricesState = useTokensPrices({
-    token: selectedTokenBalance.map((y) => y.token),
+    token: selectedToken,
     yieldDto: selectedStake,
   });
 
@@ -54,8 +54,6 @@ export const useStakeReview = () => {
   );
 
   const metadata = selectedStake.map((y) => y.metadata);
-
-  const token = selectedTokenBalance.map((y) => y.token);
 
   const navigate = useNavigate();
 
@@ -81,7 +79,7 @@ export const useStakeReview = () => {
     amount,
     interestRate,
     fee,
-    token,
+    token: selectedToken,
     yieldType,
     rewardToken,
     metadata,
