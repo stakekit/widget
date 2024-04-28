@@ -23,7 +23,7 @@ export const SelectTokenTitle = () => {
   return (
     <Box display="flex" alignItems="center" minHeight="8">
       {isLoading ? (
-        <Box display="flex" marginLeft="2">
+        <Box display="flex">
           <Spinner />
         </Box>
       ) : (

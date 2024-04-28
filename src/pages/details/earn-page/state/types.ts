@@ -45,9 +45,8 @@ export type DetailsContextType = {
   appLoading: boolean;
   multiYieldsLoading: boolean;
   yieldOpportunityLoading: boolean;
-  stakeTokenAvailableAmountLoading: boolean;
   tokenBalancesScanLoading: boolean;
-  selectedTokenBalance: State["selectedTokenBalance"];
+  selectedToken: State["selectedToken"];
   tokenBalancesData: Maybe<{
     all: TokenBalanceScanResponseDto[];
     filtered: TokenBalanceScanResponseDto[];
@@ -65,8 +64,10 @@ export type DetailsContextType = {
     hasErrors: boolean;
     errors: {
       tronResource: boolean;
-      amountZero: boolean;
-      amountInvalid: boolean;
+      stakeAmountGreaterThanAvailableAmount: boolean;
+      stakeAmountGreaterThanMax: boolean;
+      stakeAmountLessThanMin: boolean;
+      stakeAmountIsZero: boolean;
     };
   };
   pointsRewardTokens: Maybe<TokenDto[]>;
@@ -74,4 +75,6 @@ export type DetailsContextType = {
   selectYieldIsLoading: boolean;
   selectValidatorIsLoading: boolean;
   footerIsLoading: boolean;
+  stakeMaxAmount: Maybe<number>;
+  stakeMinAmount: Maybe<number>;
 };

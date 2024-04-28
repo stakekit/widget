@@ -11,7 +11,7 @@ export const StakeStepsPage = () => {
 
   const {
     selectedStake,
-    selectedTokenBalance,
+    selectedToken,
     stakeSession,
     selectedValidators,
     stakeAmount,
@@ -40,13 +40,13 @@ export const StakeStepsPage = () => {
   const setActionHistoryData = useSetActionHistoryData();
 
   const onDone = () =>
-    Maybe.fromRecord({ selectedStake, selectedTokenBalance }).ifJust((val) => {
+    Maybe.fromRecord({ selectedStake, selectedToken }).ifJust((val) => {
       setActionHistoryData({
         type: "stake",
         integrationData: val.selectedStake,
         amount: stakeAmount,
         selectedValidators,
-        interactedToken: val.selectedTokenBalance.token,
+        interactedToken: val.selectedToken,
       });
     });
 

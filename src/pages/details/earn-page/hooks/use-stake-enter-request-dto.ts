@@ -11,7 +11,7 @@ export const useStakeEnterRequestDto = () => {
     stakeAmount,
     selectedValidators,
     tronResource,
-    selectedTokenBalance,
+    selectedToken,
   } = useStakeState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
@@ -22,7 +22,7 @@ export const useStakeEnterRequestDto = () => {
       Maybe.fromRecord({
         address: Maybe.fromNullable(address),
         selectedStake,
-        selectedTokenBalance,
+        selectedToken,
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
@@ -37,7 +37,7 @@ export const useStakeEnterRequestDto = () => {
             integrationId: val.selectedStake.id,
             referralCode: referralcode.data?.code,
             args: {
-              inputToken: val.selectedTokenBalance.token,
+              inputToken: val.selectedToken,
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
@@ -65,7 +65,7 @@ export const useStakeEnterRequestDto = () => {
       isLedgerLive,
       referralcode.data?.code,
       selectedStake,
-      selectedTokenBalance,
+      selectedToken,
       selectedValidators,
       stakeAmount,
       tronResource,

@@ -41,7 +41,12 @@ export const SelectOpportunityListItem = ({
         marginLeft="2"
         minWidth="0"
       >
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          gap="2"
+        >
           <Box>
             <Text className={selectItemText} variant={{ weight: "bold" }}>
               {item.metadata.name}

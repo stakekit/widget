@@ -2,8 +2,8 @@ import { config } from "../../config";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { QueryClient } from "@tanstack/react-query";
 import type { EnabledChainsMap } from "./ledger-connector";
-import type { QueryParamsResult } from "../../hooks/use-init-query-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
+import type { QueryParams } from "../../domain/types/query-params";
 
 const queryKey = [config.appPrefix, "ledger-live-config"];
 const staleTime = Infinity;
@@ -13,7 +13,7 @@ const queryFn = async ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParamsResult;
+  queryParams: QueryParams;
 }) => {
   return EitherAsync.liftEither(
     Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null)

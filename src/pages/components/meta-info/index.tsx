@@ -17,8 +17,7 @@ type Props = {
 };
 
 export const MetaInfo = ({ isLoading }: Props) => {
-  const { selectedStake, selectedValidators, selectedTokenBalance } =
-    useStakeState();
+  const { selectedStake, selectedValidators, selectedToken } = useStakeState();
 
   const {
     description,
@@ -31,7 +30,7 @@ export const MetaInfo = ({ isLoading }: Props) => {
   } = useYieldMetaInfo({
     selectedStake,
     validators: [...selectedValidators.values()],
-    tokenDto: selectedTokenBalance.map((v) => v.token),
+    tokenDto: selectedToken,
   });
 
   const items = useMemo(

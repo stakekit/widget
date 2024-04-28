@@ -2,6 +2,7 @@
   "shared": {
     "stake_kit": "StakeKit",
     "max": "Max",
+    "min": "Min",
     "available": "available",
     "balance": "Balance",
     "yearly": "Yearly",

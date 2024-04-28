@@ -1,10 +1,11 @@
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
 } from "react";
@@ -14,25 +15,30 @@ import {
   useStakeEnterAndTxsConstruct,
 } from "../../hooks/api/use-stake-enter-and-txs-construct";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import {
-  getYieldOpportunityFromCache,
-  useYieldOpportunity,
-} from "../../hooks/api/use-yield-opportunity";
+import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import type {
+  TokenBalanceScanResponseDto,
+  TokenDto,
+  YieldDto,
+} from "@stakekit/api-hooks";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
 import { useDefaultTokens } from "../../hooks/api/use-default-tokens";
-import { equalTokens } from "../../domain";
-import { useSavedRef } from "../../hooks";
 import { useInitQueryParams } from "../../hooks/use-init-query-params";
 import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
 import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
-import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import { useSKQueryClient } from "../../providers/query-client";
 import { useMultiYields } from "../../hooks/api/use-multi-yields";
-import { useTokenAvailableAmount } from "../../hooks/api/use-token-available-amount";
+import {
+  getInitMinStakeAmount,
+  getInitSelectedValidators,
+  getInitialToken,
+  getInitialYieldId,
+} from "../../domain/types/stake";
+import { useAmountValidation } from "./use-amount-validation";
+import { equalTokens, tokenString } from "../../domain";
+import type { TokenString } from "../../domain/types";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -42,7 +48,7 @@ const StakeDispatchContext = createContext<Dispatch<Actions> | undefined>(
 );
 
 const getInitialState = (): State => ({
-  selectedTokenBalance: Maybe.empty(),
+  selectedToken: Maybe.empty(),
   selectedStakeId: Maybe.empty(),
   selectedValidators: new Map(),
   stakeAmount: new BigNumber(0),
@@ -51,66 +57,58 @@ const getInitialState = (): State => ({
 
 const Provider = ({ children }: PropsWithChildren) => {
   const initParams = useInitQueryParams();
+  const { network } = useSKWallet();
+
+  const tokenBalancesScan = useTokenBalancesScan();
+  const defaultTokens = useDefaultTokens();
+
+  const tokenBalancesMap = useMemo(
+    () =>
+      new Map<TokenString, TokenBalanceScanResponseDto>([
+        ...(defaultTokens.data ?? []).map(
+          (v) => [tokenString(v.token), v] as const
+        ),
+        ...(tokenBalancesScan.data ?? []).map(
+          (v) => [tokenString(v.token), v] as const
+        ),
+      ]),
+    [defaultTokens.data, tokenBalancesScan.data]
+  );
 
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
-      case "tokenBalance/select": {
-        const tokenNotChanged = state.selectedTokenBalance
-          .map((tb) => equalTokens(tb.token, action.data.tokenBalance.token))
+      case "token/select": {
+        const sameToken = state.selectedToken
+          .map((v) => equalTokens(v, action.data))
           .orDefault(false);
 
-        const selectedStakeId = tokenNotChanged
-          ? state.selectedStakeId
-          : Maybe.fromNullable(initParams.data)
-              .chain((params) =>
-                Maybe.fromPredicate(
-                  (val) => !!(val.network && val.token && val.yieldId),
-                  params
-                )
-              )
-              .chain((val) =>
-                List.find(
-                  (availableYield) =>
-                    action.data.tokenBalance.token.network === val.network &&
-                    val.yieldId === availableYield,
-                  action.data.tokenBalance.availableYields
-                )
-              )
-              .altLazy(() =>
-                List.head(action.data.tokenBalance.availableYields)
-              );
-
-        const stakeAmount = tokenNotChanged
-          ? state.stakeAmount
-          : action.data.initYield
-              .chainNullable((val) => val.args.enter.args?.amount?.minimum)
-              .chain((val) => Maybe.fromPredicate((v) => v >= 0, val))
-              .map((val) => new BigNumber(val))
-              .orDefault(new BigNumber(0));
-
-        const selectedValidators = tokenNotChanged
-          ? state.selectedValidators
-          : action.data.initYield
-              .chain((val) => List.head(val.validators))
-              .map((v) => new Map([[v.address, v]]))
-              .orDefault(new Map());
-
-        return {
-          selectedTokenBalance: Maybe.of(action.data.tokenBalance),
-          selectedStakeId,
-          stakeAmount,
-          selectedValidators,
-          tronResource: Maybe.empty(),
-        };
+        return Maybe.fromFalsy(!sameToken)
+          .map(() => ({
+            ...getInitialState(),
+            selectedToken: Maybe.of(action.data),
+          }))
+          .orDefault(state);
       }
-      case "yield/select":
-        return {
-          ...state,
-          selectedStakeId: Maybe.of(action.data.id),
-          selectedValidators: List.head(action.data.validators)
-            .map((v) => new Map([[v.address, v]]))
-            .orDefault(new Map()),
-        };
+
+      case "yield/select": {
+        const sameYield = state.selectedStakeId
+          .map((v) => v === action.data.id)
+          .orDefault(false);
+
+        return Maybe.fromFalsy(!sameYield)
+          .map(() => ({
+            ...getInitialState(),
+            selectedToken: state.selectedToken,
+            selectedStakeId: Maybe.of(action.data.id),
+            stakeAmount: getInitMinStakeAmount(action.data),
+            selectedValidators: getInitSelectedValidators({
+              initQueryParams: Maybe.fromNullable(initParams.data),
+              yieldDto: action.data,
+            }),
+          }))
+          .orDefault(state);
+      }
+
       case "validator/select": {
         const selectedValidators = new Map();
         selectedValidators.set(action.data.address, action.data);
@@ -120,6 +118,7 @@ const Provider = ({ children }: PropsWithChildren) => {
           selectedValidators,
         };
       }
+
       case "validator/multiselect": {
         const newMap = new Map(state.selectedValidators);
 
@@ -136,6 +135,7 @@ const Provider = ({ children }: PropsWithChildren) => {
           selectedValidators: newMap,
         };
       }
+
       case "validator/remove": {
         const selectedValidators = new Map(state.selectedValidators);
         selectedValidators.delete(action.data.address);
@@ -145,24 +145,29 @@ const Provider = ({ children }: PropsWithChildren) => {
           selectedValidators,
         };
       }
+
       case "stakeAmount/change": {
         return {
           ...state,
           stakeAmount: action.data,
         };
       }
+
       case "stakeAmount/max": {
         return {
           ...state,
           stakeAmount: action.data,
         };
       }
+
       case "tronResource/select": {
         return { ...state, tronResource: Maybe.of(action.data) };
       }
+
       case "state/reset": {
         return getInitialState();
       }
+
       default:
         return state;
     }
@@ -171,24 +176,54 @@ const Provider = ({ children }: PropsWithChildren) => {
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
   const {
-    selectedTokenBalance: _selectedTokenBalance,
-    selectedStakeId,
+    selectedToken: _selectedToken,
+    selectedStakeId: _selectedStakeId,
     selectedValidators,
     stakeAmount: selectedStakeAmount,
     tronResource,
   } = state;
 
-  const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
+  const yieldOpportunity = useYieldOpportunity(_selectedStakeId.extract());
 
   const selectedStake = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
     [yieldOpportunity.data]
   );
 
+  const initToken = useMemo(
+    () =>
+      getInitialToken({
+        defaultTokens: defaultTokens.data ?? [],
+        tokenBalances: tokenBalancesScan.data ?? [],
+        initQueryParams: Maybe.fromNullable(initParams.data),
+      }),
+    [defaultTokens.data, initParams.data, tokenBalancesScan.data]
+  );
+
+  const selectedToken = _selectedToken.alt(initToken);
+
+  const tokenBalance = useMemo(
+    () =>
+      selectedToken.chainNullable((val) =>
+        tokenBalancesMap.get(tokenString(val))
+      ),
+    [selectedToken, tokenBalancesMap]
+  );
+
+  const availableAmount = useMemo(
+    () => tokenBalance.map((v) => new BigNumber(v.amount)),
+    [tokenBalance]
+  );
+
+  const availableYields = useMemo(
+    () => tokenBalance.map((v) => v.availableYields),
+    [tokenBalance]
+  );
+
   const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
     type: "enter",
     yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
-    tokenDto: _selectedTokenBalance.map((v) => v.token),
+    availableAmount,
   });
 
   const forceMax = useForceMaxAmount({
@@ -199,166 +234,80 @@ const Provider = ({ children }: PropsWithChildren) => {
   /**
    * If stake amount is less then min, use min
    */
-  const stakeAmount = useMemo(() => {
-    if (forceMax) {
-      return maxEnterOrExitAmount;
-    }
-    return selectedStakeAmount;
-  }, [forceMax, maxEnterOrExitAmount, selectedStakeAmount]);
+  const stakeAmount = useMemo(
+    () => (forceMax ? maxEnterOrExitAmount : selectedStakeAmount),
+    [forceMax, maxEnterOrExitAmount, selectedStakeAmount]
+  );
 
-  const { network, isLedgerLive, isConnected, isConnecting } = useSKWallet();
+  const multipleYields = useMultiYields(availableYields.orDefault([]));
 
-  const tokenBalancesScan = useTokenBalancesScan();
-  const defaultTokens = useDefaultTokens();
-
-  const tokenBalances =
-    (isConnected || isConnecting) &&
-    (tokenBalancesScan.isLoading || !!tokenBalancesScan.data?.length)
-      ? tokenBalancesScan
-      : defaultTokens;
-
-  const currentSelectedTokenBalanceRef = useSavedRef(_selectedTokenBalance);
-
-  const initialTokenBalanceToSet = useMemo(
+  const initYield = useMemo(
     () =>
-      Maybe.fromNullable(tokenBalances.data).chain((tb) =>
-        Maybe.fromNullable(initParams.data)
-          .chain((params) =>
-            Maybe.fromPredicate((val) => !!(val.network && val.token), params)
-          )
-          .chain((val) =>
-            List.find(
-              (t) =>
-                t.token.symbol === val.token && t.token.network === val.network,
-              tb
-            ).altLazy(() =>
-              Maybe.fromNullable(defaultTokens.data).chain((dt) =>
-                List.find((t) => t.token.symbol === val.token, dt)
-              )
-            )
-          )
-          .altLazy(() =>
-            currentSelectedTokenBalanceRef.current.chain((val) =>
-              List.find((v) => equalTokens(val.token, v.token), tb)
-            )
-          )
-          .altLazy(() =>
-            List.find(
-              (v) =>
-                !!v.availableYields.length &&
-                new BigNumber(v.amount).isGreaterThan(0),
-              tb
-            )
-          )
-          .altLazy(() => List.find((v) => !!v.availableYields.length, tb))
+      Maybe.fromRecord({
+        multipleYieldsData: Maybe.fromNullable(multipleYields.data),
+        availableAmount,
+      }).chain((val) =>
+        getInitialYieldId({
+          initQueryParams: Maybe.fromNullable(initParams.data),
+          yieldDtos: val.multipleYieldsData,
+          tokenBalanceAmount: val.availableAmount,
+        })
       ),
-    [
-      currentSelectedTokenBalanceRef,
-      defaultTokens.data,
-      initParams.data,
-      tokenBalances.data,
-    ]
+    [availableAmount, initParams.data, multipleYields.data]
+  );
+
+  const selectedStakeId = _selectedStakeId.alt(initYield.map((v) => v.id));
+
+  const setToken = useCallback(
+    (token: TokenDto) => dispatch({ type: "token/select", data: token }),
+    []
+  );
+
+  const setYield = useCallback(
+    (yieldDto: YieldDto) => dispatch({ type: "yield/select", data: yieldDto }),
+    []
   );
 
   /**
-   * Reset selectedTokenBalance if we changed network
+   * Reset selectedToken if we changed network
    */
-  _selectedTokenBalance.ifJust((ss) => {
-    if (network && ss.token.network !== network) {
+  _selectedToken.ifJust((ss) => {
+    if (network && ss.network !== network) {
       dispatch({ type: "state/reset" });
     }
   });
 
-  const queryClient = useSKQueryClient();
-
-  const setInitialTokenBalance = useCallback(
-    (tokenBalance: TokenBalanceScanResponseDto) => {
-      dispatch({
-        type: "tokenBalance/select",
-        data: {
-          tokenBalance,
-          initYield: Maybe.fromNullable(initParams.data)
-            .chain((params) =>
-              Maybe.fromPredicate(
-                (val) => !!(val.network && val.yieldId),
-                params
-              )
-            )
-            .chain((val) =>
-              List.find(
-                (y) =>
-                  tokenBalance.token.network === val.network &&
-                  val.yieldId === y,
-                tokenBalance.availableYields
-              )
-            )
-            .altLazy(() => List.head(tokenBalance.availableYields))
-            .chain((yId) =>
-              getYieldOpportunityFromCache({
-                yieldId: yId,
-                isLedgerLive,
-                queryClient,
-              })
-            ),
-        },
-      });
-    },
-    [initParams.data, isLedgerLive, queryClient]
-  );
-
   /**
-   * Set initial token balance
+   * Set initial token
    */
-  useIsomorphicEffect(() => {
-    if (initParams.isLoading) return;
+  useEffect(() => {
+    initToken.ifJust(setToken);
+  }, [initToken, setToken]);
 
-    initialTokenBalanceToSet.ifJust(setInitialTokenBalance);
-  }, [initParams.isLoading, initialTokenBalanceToSet, setInitialTokenBalance]);
-
-  useIsomorphicEffect(() => {
-    if (initParams.isLoading) return;
-
-    _selectedTokenBalance.ifNothing(() =>
-      initialTokenBalanceToSet.ifJust(setInitialTokenBalance)
-    );
-  }, [
-    initialTokenBalanceToSet,
-    _selectedTokenBalance,
-    setInitialTokenBalance,
-    initParams.isLoading,
-  ]);
+  useEffect(() => {
+    _selectedToken.ifNothing(() => initToken.ifJust(setToken));
+  }, [initToken, _selectedToken, setToken]);
 
   /**
-   * Reset selectedTokenBalance if we dont have initialTokenBalanceToSet
+   * Set initial yield
+   */
+  useEffect(() => {
+    initYield.ifJust(setYield);
+  }, [initYield, setYield]);
+
+  useEffect(() => {
+    _selectedStakeId.ifNothing(() => initYield.ifJust(setYield));
+  }, [initYield, _selectedStakeId, setYield]);
+
+  /**
+   * Reset selectedToken if we dont have initToken
    * Case when we changed account, but we dont have available yields
    */
-  useIsomorphicEffect(() => {
-    if (initParams.isLoading) return;
-
-    initialTokenBalanceToSet.ifNothing(() =>
-      _selectedTokenBalance.ifJust(() => dispatch({ type: "state/reset" }))
+  useEffect(() => {
+    initToken.ifNothing(() =>
+      _selectedToken.ifJust(() => dispatch({ type: "state/reset" }))
     );
-  }, [initialTokenBalanceToSet, _selectedTokenBalance, initParams.isLoading]);
-
-  /**
-   * Set initial validator
-   */
-  useIsomorphicEffect(() => {
-    Maybe.fromNullable(yieldOpportunity.data).ifJust((yo) => {
-      if (!!selectedValidators.size) return;
-
-      Maybe.fromNullable(initParams.data)
-        .chainNullable((params) => params.validator)
-        .chain((initV) =>
-          List.find(
-            (val) => val.name === initV || val.address === initV,
-            yo.validators
-          )
-        )
-        .altLazy(() => List.head(yo.validators))
-        .ifJust((val) => dispatch({ type: "validator/select", data: val }));
-    });
-  }, [initParams.data, selectedValidators, yieldOpportunity.data]);
+  }, [initToken, _selectedToken]);
 
   const stakeEnterAndTxsConstructMutationState = useStakeEnterAndTxsConstruct();
 
@@ -395,49 +344,22 @@ const Provider = ({ children }: PropsWithChildren) => {
     [maxEnterOrExitAmount]
   );
 
-  const selectedTokenBalance = _selectedTokenBalance.alt(
-    initialTokenBalanceToSet
-  );
-
-  const enterEnabledMultiYields = useMultiYields(
-    selectedTokenBalance.mapOrDefault((val) => val.availableYields, []),
-    { select: (val) => val.filter((v) => v.status.enter) }
-  );
-
-  /**
-   * If selected stake has "enter" disabled, find next one with "enter" enabled
-   */
-  useIsomorphicEffect(() => {
-    Maybe.fromNullable(yieldOpportunity.data)
-      .filter((val) => !val.status.enter)
-      .chainNullable(() => enterEnabledMultiYields.data)
-      .chain((val) => List.head(val))
-      .ifJust((val) => dispatch({ type: "yield/select", data: val }));
-  }, [enterEnabledMultiYields.data, yieldOpportunity.data]);
-
-  const stakeTokenAvailableAmount = useTokenAvailableAmount({
-    tokenDto: selectedTokenBalance.map((ss) => ss.token),
+  const {
+    stakeAmountGreaterThanAvailableAmount,
+    stakeAmountGreaterThanMax,
+    stakeAmountLessThanMin,
+    stakeAmountIsZero,
+  } = useAmountValidation({
+    availableAmount,
+    stakeAmount,
+    maxEnterOrExitAmount,
+    minEnterOrExitAmount,
   });
-
-  const stakeAmountValid = useMemo(
-    () =>
-      !stakeTokenAvailableAmount.data ||
-      (stakeAmount.isGreaterThanOrEqualTo(minEnterOrExitAmount) &&
-        stakeAmount.isLessThanOrEqualTo(maxEnterOrExitAmount) &&
-        stakeAmount.isLessThanOrEqualTo(stakeTokenAvailableAmount.data)),
-    [
-      maxEnterOrExitAmount,
-      minEnterOrExitAmount,
-      stakeAmount,
-      stakeTokenAvailableAmount.data,
-    ]
-  );
 
   const value: State & ExtraData = useMemo(
     () => ({
       selectedStakeId,
       selectedStake,
-      selectedTokenBalance,
       selectedValidators,
       stakeAmount,
       stakeSession,
@@ -445,20 +367,31 @@ const Provider = ({ children }: PropsWithChildren) => {
       stakeEnterTxGas,
       tronResource,
       isGasCheckError,
-      stakeAmountValid,
+      stakeAmountGreaterThanAvailableAmount,
+      stakeAmountGreaterThanMax,
+      stakeAmountLessThanMin,
+      stakeAmountIsZero,
+      availableAmount,
+      availableYields,
+      selectedToken,
     }),
     [
-      actions,
-      selectedStake,
       selectedStakeId,
-      selectedTokenBalance,
+      selectedStake,
+      selectedToken,
       selectedValidators,
       stakeAmount,
-      stakeEnterTxGas,
       stakeSession,
+      actions,
+      stakeEnterTxGas,
       tronResource,
       isGasCheckError,
-      stakeAmountValid,
+      stakeAmountGreaterThanAvailableAmount,
+      stakeAmountGreaterThanMax,
+      stakeAmountLessThanMin,
+      stakeAmountIsZero,
+      availableAmount,
+      availableYields,
     ]
   );
 

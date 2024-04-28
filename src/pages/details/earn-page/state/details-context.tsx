@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import {
   createContext,
+  useCallback,
   useContext,
   useDeferredValue,
   useEffect,
@@ -23,7 +24,6 @@ import type {
 } from "../../../../components";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useStakeDispatch, useStakeState } from "../../../../state/stake";
-import { useTokenAvailableAmount } from "../../../../hooks/api/use-token-available-amount";
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
@@ -39,10 +39,7 @@ import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
 import { List } from "purify-ts";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
-import {
-  getYieldOpportunityFromCache,
-  useYieldOpportunity,
-} from "../../../../hooks/api/use-yield-opportunity";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import type { DetailsContextType } from "./types";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -55,7 +52,6 @@ import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
-import { useSKQueryClient } from "../../../../providers/query-client";
 import { useMutation } from "@tanstack/react-query";
 import { useBaseToken } from "../../../../hooks/use-base-token";
 
@@ -64,12 +60,17 @@ const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const {
     actions: { onMaxClick: _onMaxClick },
-    selectedTokenBalance,
+    selectedToken,
     selectedValidators,
     stakeAmount,
     selectedStake,
     tronResource,
-    stakeAmountValid,
+    stakeAmountGreaterThanAvailableAmount,
+    stakeAmountGreaterThanMax,
+    stakeAmountLessThanMin,
+    stakeAmountIsZero,
+    availableAmount,
+    availableYields,
   } = useStakeState();
   const appDispatch = useStakeDispatch();
 
@@ -77,22 +78,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const { externalProviders } = useSettings();
 
-  const {
-    isConnected,
-    isConnecting,
-    isLedgerLive,
-    isLedgerLiveAccountPlaceholder,
-    chain,
-  } = useSKWallet();
-
-  const stakeTokenAvailableAmount = useTokenAvailableAmount({
-    tokenDto: selectedTokenBalance.map((ss) => ss.token),
-  });
-
-  const availableAmount = useMemo(
-    () => stakeTokenAvailableAmount.data ?? new BigNumber(0),
-    [stakeTokenAvailableAmount.data]
-  );
+  const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
+    useSKWallet();
 
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.title,
@@ -114,38 +101,40 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   const pricesState = useTokensPrices({
-    token: selectedTokenBalance.map((y) => y.token),
+    token: selectedToken,
     yieldDto: selectedStake,
   });
 
-  const symbol = selectedTokenBalance.mapOrDefault((y) => y.token.symbol, "");
+  const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
 
   const formattedPrice = useMemo(
     () =>
       Maybe.fromRecord({
         prices: Maybe.fromNullable(pricesState.data),
-        selectedTokenBalance,
+        selectedToken,
         baseToken,
       })
         .map((val) =>
           getTokenPriceInUSD({
             baseToken: val.baseToken,
             amount: stakeAmount,
-            token: val.selectedTokenBalance.token,
+            token: val.selectedToken,
             prices: val.prices,
             pricePerShare: null,
           })
         )
         .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
-    [baseToken, pricesState.data, selectedTokenBalance, stakeAmount]
+    [baseToken, pricesState.data, selectedToken, stakeAmount]
   );
 
-  const formattedAmount = useMemo(() => {
-    return Maybe.fromNullable(availableAmount).mapOrDefault(
-      (am) => formatNumber(new BigNumber(am), 4),
-      ""
-    );
-  }, [availableAmount]);
+  const formattedAmount = useMemo(
+    () =>
+      availableAmount.mapOrDefault(
+        (am) => formatNumber(new BigNumber(am), 4),
+        ""
+      ),
+    [availableAmount]
+  );
 
   const availableTokens = useMemo(
     () => `${formattedAmount} ${symbol}`.trim(),
@@ -157,10 +146,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const [tokenSearch, setTokenSearch] = useState("");
   const deferredTokenSearch = useDeferredValue(tokenSearch);
 
-  const multiYields = useMultiYields(
-    selectedTokenBalance.mapOrDefault((stb) => stb.availableYields, []),
-    { select: (val) => val.filter((v) => v.status.enter) }
-  );
+  const multiYields = useMultiYields(availableYields.orDefault([]));
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
@@ -304,22 +290,11 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const onTokenSearch: SelectModalProps["onSearch"] = (val) =>
     setTokenSearch(val);
 
-  const queryClient = useSKQueryClient();
-
-  const onTokenBalanceSelect = (tokenBalance: TokenBalanceScanResponseDto) =>
-    appDispatch({
-      type: "tokenBalance/select",
-      data: {
-        tokenBalance,
-        initYield: List.head(tokenBalance.availableYields).chain((yId) =>
-          getYieldOpportunityFromCache({
-            yieldId: yId,
-            isLedgerLive,
-            queryClient,
-          })
-        ),
-      },
-    });
+  const onTokenBalanceSelect = useCallback(
+    (tokenBalance: TokenBalanceScanResponseDto) =>
+      appDispatch({ type: "token/select", data: tokenBalance.token }),
+    [appDispatch]
+  );
 
   const onYieldSelect = (yieldId: string) => {
     Maybe.fromNullable(multiYields.data)
@@ -363,12 +338,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   useEffect(() => {
     onClickHandlerResetRef.current();
-  }, [
-    isConnected,
-    selectedStake,
-    selectedTokenBalance,
-    onClickHandlerResetRef,
-  ]);
+  }, [isConnected, selectedStake, onClickHandlerResetRef]);
 
   const validation = useMemo(() => {
     const val = {
@@ -376,8 +346,10 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       hasErrors: false,
       errors: {
         tronResource: false,
-        amountZero: false,
-        amountInvalid: false,
+        stakeAmountGreaterThanAvailableAmount: false,
+        stakeAmountGreaterThanMax: false,
+        stakeAmountLessThanMin: false,
+        stakeAmountIsZero: false,
       },
     };
 
@@ -390,15 +362,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
       ) {
         val.errors.tronResource = true;
       }
-
-      if (stakeAmount.isZero()) {
-        val.errors.amountZero = true;
-      }
-
-      if (!stakeAmountValid) {
-        val.errors.amountInvalid = true;
-      }
     });
+
+    val.errors = {
+      ...val.errors,
+      stakeAmountGreaterThanAvailableAmount,
+      stakeAmountGreaterThanMax,
+      stakeAmountLessThanMin,
+      stakeAmountIsZero,
+    };
 
     val.submitted = onClickHandler.status !== "idle";
     val.hasErrors = Object.values(val.errors).some(Boolean);
@@ -408,10 +380,28 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isConnected,
     onClickHandler.status,
     selectedStake,
-    stakeAmount,
-    stakeAmountValid,
+    stakeAmountGreaterThanAvailableAmount,
+    stakeAmountGreaterThanMax,
+    stakeAmountIsZero,
+    stakeAmountLessThanMin,
     tronResource,
   ]);
+
+  const stakeMaxAmount = useMemo(
+    () =>
+      selectedStake.chainNullable(
+        (val) => val.args.enter.args?.amount?.maximum
+      ),
+    [selectedStake]
+  );
+
+  const stakeMinAmount = useMemo(
+    () =>
+      selectedStake
+        .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+        .filter((val) => new BigNumber(val).isGreaterThan(0)),
+    [selectedStake]
+  );
 
   useUpdateEffect(() => {
     if (onStakeEnter.isSuccess && onStakeEnter.data) {
@@ -446,17 +436,15 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     !state.layout;
 
   const multiYieldsLoading = multiYields.isLoading;
-  const stakeTokenAvailableAmountLoading = stakeTokenAvailableAmount.isLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
   const defaultTokensIsLoading = defaultTokens.isLoading;
 
-  const isFetching =
-    multiYields.isFetching ||
-    stakeTokenAvailableAmount.isFetching ||
-    tokenBalancesScan.isFetching;
+  const isFetching = multiYields.isFetching || tokenBalancesScan.isFetching;
 
   const isError =
-    onStakeEnter.isError || multiYields.isError || tokenBalancesScan.isError;
+    onStakeEnter.isError ||
+    (!multiYields.data && multiYields.isError) ||
+    (!tokenBalancesScan.data && tokenBalancesScan.isError);
 
   const buttonDisabled =
     isConnected && (isFetching || stakeRequestDto.isNothing());
@@ -549,22 +537,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     multiYieldsLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
-    stakeTokenAvailableAmountLoading ||
     defaultTokensIsLoading;
 
   const selectValidatorIsLoading =
     defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
     multiYieldsLoading ||
-    yieldOpportunityLoading ||
-    stakeTokenAvailableAmountLoading;
+    yieldOpportunityLoading;
 
   const footerIsLoading =
     defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
     multiYieldsLoading ||
-    yieldOpportunityLoading ||
-    stakeTokenAvailableAmountLoading;
+    yieldOpportunityLoading;
 
   const { referralCheck } = useSettings();
 
@@ -599,8 +584,6 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     yieldOpportunityLoading,
     multiYieldsLoading,
     tokenBalancesScanLoading,
-    stakeTokenAvailableAmountLoading,
-    selectedTokenBalance,
     tokenBalancesData,
     onTokenSearch,
     buttonCTAText,
@@ -617,6 +600,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectYieldIsLoading,
     selectValidatorIsLoading,
     footerIsLoading,
+    stakeMaxAmount,
+    stakeMinAmount,
+    selectedToken,
   };
 
   return (

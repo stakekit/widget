@@ -163,8 +163,7 @@ export const UnstakeOrPendingActionProvider = ({
   const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
     yieldOpportunity: integrationData,
     type: "exit",
-    positionBalancesByType,
-    tokenDto: unstakeToken,
+    availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
   });
 
   const forceMaxUnstakeAmount = useForceMaxAmount({

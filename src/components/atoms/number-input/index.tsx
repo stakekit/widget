@@ -14,7 +14,7 @@ export type NumberInputProps = {
   onBlur?: () => void;
   value: BigNumber;
   disabled?: boolean;
-  isValid?: boolean;
+  isInvalid?: boolean;
   shakeOnInvalid?: boolean;
 };
 
@@ -24,7 +24,7 @@ export const NumberInput = memo(
     value,
     disabled,
     onBlur,
-    isValid,
+    isInvalid,
     shakeOnInvalid,
   }: NumberInputProps) => {
     const [localState, setLocalState] = useState("0");
@@ -72,10 +72,10 @@ export const NumberInput = memo(
     const animate = useAnimation();
 
     useEffect(() => {
-      if (!shakeOnInvalid || isValid) return;
+      if (!shakeOnInvalid || !isInvalid) return;
 
       animate.start("shake");
-    }, [animate, isValid, shakeOnInvalid]);
+    }, [animate, isInvalid, shakeOnInvalid]);
 
     return (
       <motion.div
@@ -90,7 +90,7 @@ export const NumberInput = memo(
       >
         <Box
           as="input"
-          color={shakeOnInvalid && !isValid ? "textDanger" : "text"}
+          color={shakeOnInvalid && isInvalid ? "textDanger" : "text"}
           disabled={disabled}
           name="stake-amount"
           ref={inputRef}

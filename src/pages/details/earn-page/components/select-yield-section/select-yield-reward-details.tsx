@@ -40,6 +40,7 @@ export const SelectYieldRewardDetails = () => {
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
+                gap="2"
               >
                 <Text variant={{ type: "muted", weight: "normal" }}>
                   You'll receive{" "}
@@ -78,6 +79,7 @@ export const SelectYieldRewardDetails = () => {
           justifyContent="space-between"
           alignItems="center"
           data-testid="estimated-reward__yearly"
+          gap="2"
         >
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t("shared.yearly")}
@@ -92,6 +94,7 @@ export const SelectYieldRewardDetails = () => {
           justifyContent="space-between"
           alignItems="center"
           data-testid="estimated-reward__monthly"
+          gap="2"
         >
           <Text variant={{ type: "muted", weight: "normal" }}>
             {t("shared.monthly")}

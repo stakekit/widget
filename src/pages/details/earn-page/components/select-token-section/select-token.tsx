@@ -21,7 +21,7 @@ export const SelectToken = () => {
     onSelectOpportunityClose,
     onTokenBalanceSelect,
     tokenBalancesData,
-    selectedTokenBalance,
+    selectedToken,
     onTokenSearch,
     tokenSearch,
   } = useDetailsContext();
@@ -34,14 +34,14 @@ export const SelectToken = () => {
 
   const data = useMemo(
     () =>
-      selectedTokenBalance
-        .map((stb) => ({
-          stb,
+      selectedToken
+        .map((st) => ({
+          st,
           tokenBalances:
             tokenBalancesData.map((v) => v.filtered).extract() ?? [],
         }))
         .extractNullable(),
-    [selectedTokenBalance, tokenBalancesData]
+    [selectedToken, tokenBalancesData]
   );
 
   if (!data) return null;
@@ -73,8 +73,8 @@ export const SelectToken = () => {
               justifyContent="center"
               alignItems="center"
             >
-              <TokenIcon token={data.stb.token} />
-              <Text variant={{ weight: "bold" }}>{data.stb.token.symbol}</Text>
+              <TokenIcon token={data.st} />
+              <Text variant={{ weight: "bold" }}>{data.st.symbol}</Text>
             </Box>
             <CaretDownIcon />
           </Box>
