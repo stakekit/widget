@@ -166,15 +166,15 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               }))
             )
             .chain(({ accountId, deserializedTransaction }) =>
-              EitherAsync(() => {
-                return conn.walletApiClient.transaction.signAndBroadcast(
+              EitherAsync(() =>
+                conn.walletApiClient.transaction.signAndBroadcast(
                   accountId,
                   deserializedTransaction,
                   Maybe.fromNullable(ledgerHwAppId)
                     .map((v) => ({ hwAppId: v }))
                     .extract()
-                );
-              }).mapLeft((e) => {
+                )
+              ).mapLeft((e) => {
                 console.log(e);
                 return new Error("sign failed");
               })

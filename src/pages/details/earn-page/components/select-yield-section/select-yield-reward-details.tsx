@@ -79,6 +79,7 @@ export const SelectYieldRewardDetails = () => {
           justifyContent="space-between"
           alignItems="center"
           data-testid="estimated-reward__yearly"
+          data-rk="estimated-reward__yearly"
           gap="2"
         >
           <Text variant={{ type: "muted", weight: "normal" }}>
@@ -94,6 +95,7 @@ export const SelectYieldRewardDetails = () => {
           justifyContent="space-between"
           alignItems="center"
           data-testid="estimated-reward__monthly"
+          data-rk="estimated-reward__monthly"
           gap="2"
         >
           <Text variant={{ type: "muted", weight: "normal" }}>
