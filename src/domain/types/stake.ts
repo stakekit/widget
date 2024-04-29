@@ -75,7 +75,8 @@ export const getInitialYieldId = (args: {
           ),
         sortedYields
       )
-    );
+    )
+    .altLazy(() => List.head(sortedYields));
 };
 
 export const getInitMinStakeAmount = (yieldDto: YieldDto) =>
