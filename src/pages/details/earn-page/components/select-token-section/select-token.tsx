@@ -18,7 +18,7 @@ import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 
 export const SelectToken = () => {
   const {
-    onSelectOpportunityClose,
+    onSelectTokenClose,
     onTokenBalanceSelect,
     tokenBalancesData,
     selectedToken,
@@ -51,7 +51,7 @@ export const SelectToken = () => {
       title={t("select_token.title")}
       onSearch={onTokenSearch}
       searchValue={tokenSearch}
-      onClose={onSelectOpportunityClose}
+      onClose={onSelectTokenClose}
       onOpen={() => trackEvent("selectTokenModalOpened")}
       trigger={
         <Trigger asChild>

@@ -192,12 +192,22 @@ const Provider = ({ children }: PropsWithChildren) => {
 
   const initToken = useMemo(
     () =>
-      getInitialToken({
-        defaultTokens: defaultTokens.data ?? [],
-        tokenBalances: tokenBalancesScan.data ?? [],
-        initQueryParams: Maybe.fromNullable(initParams.data),
-      }),
-    [defaultTokens.data, initParams.data, tokenBalancesScan.data]
+      Maybe.fromFalsy(
+        !defaultTokens.isLoading && !tokenBalancesScan.isLoading
+      ).chain(() =>
+        getInitialToken({
+          defaultTokens: defaultTokens.data ?? [],
+          tokenBalances: tokenBalancesScan.data ?? [],
+          initQueryParams: Maybe.fromNullable(initParams.data),
+        })
+      ),
+    [
+      defaultTokens.data,
+      defaultTokens.isLoading,
+      initParams.data,
+      tokenBalancesScan.data,
+      tokenBalancesScan.isLoading,
+    ]
   );
 
   const selectedToken = _selectedToken.alt(initToken);

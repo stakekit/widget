@@ -15,6 +15,9 @@ export const SelectValidatorSection = () => {
     selectedValidators,
     selectedStake,
     selectValidatorIsLoading,
+    onValidatorSearch,
+    validatorsData,
+    validatorSearch,
   } = useDetailsContext();
 
   const isLoading = appLoading || selectValidatorIsLoading;
@@ -46,13 +49,13 @@ export const SelectValidatorSection = () => {
       <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
     </Box>
   ) : (
-    Maybe.fromRecord({ selectedStake })
+    Maybe.fromRecord({ selectedStake, validatorsData })
       .filter((val) => !!val.selectedStake.validators.length)
-      .map(({ selectedStake }) => {
+      .map((val) => {
         const selectedValidatorsArr = [...selectedValidators.values()];
 
         const multiSelect =
-          !!selectedStake.args.enter.args?.validatorAddresses?.required;
+          !!val.selectedStake.args.enter.args?.validatorAddresses?.required;
 
         return (
           <SelectValidator
@@ -67,11 +70,14 @@ export const SelectValidatorSection = () => {
               new Set(selectedValidatorsArr.map((v) => v.address))
             }
             multiSelect={multiSelect}
-            selectedStake={selectedStake}
+            selectedStake={val.selectedStake}
             onItemClick={onItemClick}
             onViewMoreClick={onViewMoreClick}
             onClose={onClose}
             onOpen={onOpen}
+            onSearch={onValidatorSearch}
+            searchValue={validatorSearch}
+            validators={val.validatorsData}
           />
         );
       })

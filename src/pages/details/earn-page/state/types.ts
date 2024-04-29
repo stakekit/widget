@@ -38,6 +38,7 @@ export type DetailsContextType = {
   isError: boolean;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
+  onSelectTokenClose: () => void;
   onStakeEnterIsLoading: boolean;
   selectedStakeYieldType: YieldType | null;
   isConnected: boolean;
@@ -52,6 +53,8 @@ export type DetailsContextType = {
     filtered: TokenBalanceScanResponseDto[];
   }>;
   onTokenSearch: (value: string) => void;
+  onValidatorSearch: (value: string) => void;
+  validatorSearch: string;
   buttonCTAText: string;
   providersDetails: ReturnType<typeof useProvidersDetails>;
   tokenSearch: string;
@@ -77,4 +80,5 @@ export type DetailsContextType = {
   footerIsLoading: boolean;
   stakeMaxAmount: Maybe<number>;
   stakeMinAmount: Maybe<number>;
+  validatorsData: Maybe<ValidatorDto[]>;
 };

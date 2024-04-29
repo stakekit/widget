@@ -250,6 +250,7 @@ export const PositionDetails = () => {
                       onValidatorsSubmit([val.address]);
                     }}
                     selectedStake={val.integrationData}
+                    validators={val.integrationData.validators}
                     multiSelect={validatorAddressesHandling.multiSelect}
                     state={validatorAddressesHandling.modalState}
                   >

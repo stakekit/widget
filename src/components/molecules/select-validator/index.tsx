@@ -12,9 +12,16 @@ type SelectValidatorProps = PropsWithChildren<
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;
     onViewMoreClick?: () => void;
+    validators: YieldDto["validators"];
     selectedStake: YieldDto;
     multiSelect: boolean;
-  }
+  } & (
+      | { onSearch: (value: string) => void; searchValue: string }
+      | {
+          onSearch?: never;
+          searchValue?: never;
+        }
+    )
 >;
 
 export const SelectValidator = ({
@@ -25,9 +32,11 @@ export const SelectValidator = ({
   selectedValidators,
   onItemClick,
   onViewMoreClick,
-  selectedStake,
+  validators,
   multiSelect,
+  selectedStake,
   children,
+  ...rest
 }: SelectValidatorProps) => {
   const { t } = useTranslation();
 
@@ -46,7 +55,7 @@ export const SelectValidator = ({
     groupCounts: number[];
     canViewMore: boolean;
   }>(() => {
-    if (!selectedStake.validators.length) {
+    if (!validators.length) {
       return {
         tableData: [],
         groupedItems: [],
@@ -55,7 +64,7 @@ export const SelectValidator = ({
       };
     }
 
-    const groupedItems = selectedStake.validators.reduce<{
+    const groupedItems = validators.reduce<{
       preferred: GroupedItem;
       other: GroupedItem;
     }>(
@@ -81,26 +90,22 @@ export const SelectValidator = ({
     );
 
     // If we do not have preferred validators, show all other
-    if (
-      !groupedItems.preferred.items.length &&
-      selectedStake.validators.length
-    ) {
+    if (!groupedItems.preferred.items.length && validators.length) {
       return {
-        tableData: selectedStake.validators,
+        tableData: validators,
         groupedItems: [
           {
-            items: selectedStake.validators,
+            items: validators,
             label: t("details.validators_other"),
           },
         ],
-        groupCounts: [selectedStake.validators.length],
+        groupCounts: [validators.length],
         canViewMore: false,
       };
     }
 
     const canViewMore =
-      !viewMore &&
-      groupedItems.preferred.items.length !== selectedStake.validators.length;
+      !viewMore && groupedItems.preferred.items.length !== validators.length;
 
     const groupedItemsValues = Object.values(groupedItems);
 
@@ -118,7 +123,14 @@ export const SelectValidator = ({
       ],
       canViewMore,
     };
-  }, [selectedStake, t, viewMore]);
+  }, [validators, t, viewMore]);
+
+  const searchProps = rest.onSearch
+    ? {
+        onSearch: rest.onSearch,
+        searchValue: rest.searchValue,
+      }
+    : {};
 
   return (
     <SelectModal
@@ -129,6 +141,7 @@ export const SelectValidator = ({
       onOpen={onOpen}
       trigger={trigger}
       state={state}
+      {...searchProps}
     >
       <SelectValidatorList
         {...data}

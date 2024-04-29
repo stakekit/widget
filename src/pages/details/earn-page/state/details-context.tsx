@@ -145,19 +145,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const deferredStakeSearch = useDeferredValue(stakeSearch);
   const [tokenSearch, setTokenSearch] = useState("");
   const deferredTokenSearch = useDeferredValue(tokenSearch);
+  const [validatorSearch, setValidatorSearch] = useState("");
+  const deferredValidatorSearch = useDeferredValue(validatorSearch);
 
   const multiYields = useMultiYields(availableYields.orDefault([]));
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
 
-  const tokenBalances = isConnected ? tokenBalancesScan : defaultTokens;
-
   const tokenBalancesData = useMemo(
     () =>
       Maybe.fromRecord({
         defTb: Maybe.fromNullable(defaultTokens.data).alt(Maybe.of([])),
-        tb: Maybe.fromNullable(tokenBalances.data).alt(Maybe.of([])),
+        tb: Maybe.fromNullable(tokenBalancesScan.data).alt(Maybe.of([])),
       })
         .map((val) => {
           const { tbWithAmount, tbWithoutAmount, tbSet } = val.tb.reduce(
@@ -200,7 +200,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
             }))
             .alt(Maybe.of({ all: tb, filtered: tb }))
         ),
-    [defaultTokens.data, deferredTokenSearch, tokenBalances.data]
+    [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -284,11 +284,31 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     [deferredStakeSearch, multiYields.data]
   );
 
+  const validatorsData = useMemo(
+    () =>
+      selectedStake.chain((ss) =>
+        Maybe.fromNullable(deferredValidatorSearch)
+          .map((val) => val.toLowerCase())
+          .map((searchInput) =>
+            ss.validators.filter(
+              (validator) =>
+                validator.name.toLowerCase().includes(searchInput) ||
+                validator.address.toLowerCase().includes(searchInput)
+            )
+          )
+          .alt(Maybe.of(ss.validators))
+      ),
+    [deferredValidatorSearch, selectedStake]
+  );
+
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>
     setStakeSearch(val);
 
   const onTokenSearch: SelectModalProps["onSearch"] = (val) =>
     setTokenSearch(val);
+
+  const onValidatorSearch: SelectModalProps["onSearch"] = (val) =>
+    setValidatorSearch(val);
 
   const onTokenBalanceSelect = useCallback(
     (tokenBalance: TokenBalanceScanResponseDto) =>
@@ -414,6 +434,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     .extractNullable();
 
   const onSelectOpportunityClose = () => setStakeSearch("");
+  const onSelectTokenClose = () => setTokenSearch("");
 
   const wagmiConfig = useWagmiConfig();
 
@@ -577,6 +598,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     isError,
     rewardToken,
     onSelectOpportunityClose,
+    onSelectTokenClose,
     onStakeEnterIsLoading: onStakeEnter.isPending,
     selectedStakeYieldType,
     isConnected,
@@ -586,6 +608,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading,
     tokenBalancesData,
     onTokenSearch,
+    onValidatorSearch,
     buttonCTAText,
     providersDetails,
     tokenSearch,
@@ -603,6 +626,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeMaxAmount,
     stakeMinAmount,
     selectedToken,
+    validatorsData,
+    validatorSearch,
   };
 
   return (
