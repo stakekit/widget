@@ -1,4 +1,4 @@
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
@@ -43,11 +43,11 @@ export const SelectYieldRewardDetails = () => {
                 gap="2"
               >
                 <Text variant={{ type: "muted", weight: "normal" }}>
-                  You'll receive{" "}
-                  <Box as="span" fontWeight="bold">
-                    {rt.symbol}
-                  </Box>{" "}
-                  via
+                  <Trans
+                    i18nKey="details.rewards.receive"
+                    values={{ symbol: rt.symbol }}
+                    components={{ span0: <Box as="span" fontWeight="bold" /> }}
+                  />
                 </Text>
 
                 <Box display="flex" justifyContent="center" alignItems="center">
@@ -83,7 +83,9 @@ export const SelectYieldRewardDetails = () => {
           gap="2"
         >
           <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("shared.yearly")}
+            {t(
+              variant === "zerion" ? "details.rewards.yearly" : "shared.yearly"
+            )}
           </Text>
           <Text variant={{ type: "muted", weight: "normal" }}>
             {earnYearly}

@@ -1,12 +1,10 @@
 import { useDetailsContext } from "../../state/details-context";
 import { Box, Spinner, Text } from "../../../../../components";
-import { HelpModal } from "../../../../../index.package";
 
 export const SelectTokenTitle = () => {
   const {
     appLoading,
     yieldType,
-    selectedStakeYieldType,
     selectTokenIsLoading,
     selectYieldIsLoading,
     selectValidatorIsLoading,
@@ -21,18 +19,13 @@ export const SelectTokenTitle = () => {
     footerIsLoading;
 
   return (
-    <Box display="flex" alignItems="center" minHeight="8">
+    <Box display="flex" alignItems="center" my="1">
       {isLoading ? (
         <Box display="flex">
           <Spinner />
         </Box>
       ) : (
-        <>
-          <Text>{yieldType}</Text>
-          {selectedStakeYieldType && (
-            <HelpModal modal={{ type: selectedStakeYieldType }} />
-          )}
-        </>
+        <Text>{yieldType}</Text>
       )}
     </Box>
   );

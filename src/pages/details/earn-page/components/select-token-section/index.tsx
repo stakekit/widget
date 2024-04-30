@@ -5,8 +5,8 @@ import { ContentLoaderSquare } from "../../../../../components/atoms/content-loa
 import { SelectToken } from "./select-token";
 import { useDetailsContext } from "../../state/details-context";
 import { useSettings } from "../../../../../providers/settings";
-import { SelectTokenTitle } from "./title";
 import { Just, Maybe } from "purify-ts";
+import { SelectTokenTitle } from "./title";
 
 export const SelectTokenSection = () => {
   const { t } = useTranslation();
@@ -82,28 +82,16 @@ export const SelectTokenSection = () => {
         </Box>
       </Box>
 
-      {Just(
-        Maybe.catMaybes([
-          stakeMaxAmount.map((v) => (
-            <Text
-              key="max"
-              variant={{
-                type: stakeAmountGreaterThanMax ? "danger" : "regular",
-              }}
-            >{`${t("shared.max")} ${v} ${symbol}`}</Text>
-          )),
-          stakeMinAmount.map((v) => (
-            <Text
-              key="min"
-              variant={{
-                type: stakeAmountLessThanMin ? "danger" : "regular",
-              }}
-            >{`${t("shared.min")} ${v} ${symbol}`}</Text>
-          )),
-        ])
-      )
-        .filter((val) => !!val.length)
-        .map((val) => (
+      {Just([
+        stakeMinAmount
+          .map((v) => `${t("shared.min")} ${v} ${symbol}`)
+          .extractNullable(),
+        stakeMaxAmount
+          .map((v) => `${t("shared.max")} ${v} ${symbol}`)
+          .extractNullable(),
+      ] as const)
+        .filter((val) => val.some(Boolean))
+        .map(([min, max]) => (
           <Box
             display="flex"
             justifyContent="flex-end"
@@ -112,7 +100,12 @@ export const SelectTokenSection = () => {
             marginTop="2"
             data-rk="stake-token-section-min-max"
           >
-            {val}
+            <Text
+              key="min"
+              variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
+            >
+              {!!(min && max) ? `${min} / ${max}` : min ?? max}
+            </Text>
           </Box>
         ))
         .extractNullable()}

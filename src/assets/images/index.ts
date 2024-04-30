@@ -9,10 +9,7 @@ export const images = {
   ledgerLogo: getImage("ledger-logo.svg"),
   poweredBy: getImage("powered-by.png"),
   wcLogo: getImage("wc-logo.svg"),
-  whatIsDeposit: getImage("what-is-deposit.png"),
-  whatIsLending: getImage("what-is-lending.png"),
   whatIsLiquidStaking: getImage("what-is-liquid-staking.png"),
-  whatIsStaking: getImage("what-is-staking.png"),
 };
 
 export const preloadImages = () =>
