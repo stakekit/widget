@@ -1,7 +1,8 @@
 import { HttpResponse, delay, http } from "msw";
 import { server } from "../../mocks/server";
 import { rkMockWallet } from "../../utils/mock-connector";
-import { Networks, TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import { Networks } from "@stakekit/api-hooks";
 
 export const setup = () => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";

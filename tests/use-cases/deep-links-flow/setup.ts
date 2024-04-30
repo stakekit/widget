@@ -1,4 +1,4 @@
-import { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import {
   getActionControllerPendingResponseMock,
   getTransactionControllerGetGasForNetworkResponseMock,

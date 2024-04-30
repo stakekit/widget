@@ -1,6 +1,8 @@
-import { CreateConnectorFn, custom } from "wagmi";
-import { MockParameters, mock as mockConnector } from "wagmi/connectors";
-import { BuildWagmiConfig } from "../../src/providers/wagmi";
+import type { CreateConnectorFn } from "wagmi";
+import { custom } from "wagmi";
+import type { MockParameters } from "wagmi/connectors";
+import { mock as mockConnector } from "wagmi/connectors";
+import type { BuildWagmiConfig } from "../../src/providers/wagmi";
 
 interface MyWalletOptions {
   accounts: MockParameters["accounts"];

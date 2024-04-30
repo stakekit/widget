@@ -5,10 +5,10 @@
       "outputs": ["dist/**"]
     },
     "turbo:lint": {
-      "inputs": ["src/**"]
+      "inputs": ["src/**", "tests/**"]
     },
     "turbo:format": {
-      "inputs": ["src/**"]
+      "inputs": ["src/**", "tests/**"]
     },
     "turbo:test": {
       "inputs": ["src/**", "tests/**"]
