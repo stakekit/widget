@@ -2,7 +2,6 @@ import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { Box, Divider, Text } from "../../../components";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
-import { HelpModal } from "../../../index.package";
 import { useTranslation } from "react-i18next";
 import {
   addressHover,
@@ -85,8 +84,6 @@ export const ProviderDetails = ({
                   <PreferredIcon />
                 </Box>
               )}
-
-              <HelpModal modal={{ type: integrationData.metadata.type }} />
 
               {providerDetails.status &&
                 providerDetails.status !== "active" && (

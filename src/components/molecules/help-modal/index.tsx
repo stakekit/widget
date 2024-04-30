@@ -6,7 +6,6 @@ import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
 import { Trigger } from "@radix-ui/react-alert-dialog";
 import { container, imageStyle } from "./style.css";
-import type { YieldType } from "@stakekit/api-hooks";
 import { formatCountryCode } from "../../../utils/formatters";
 import type { useGeoBlock } from "../../../hooks/use-geo-block";
 import type { ReactNode } from "react";
@@ -24,7 +23,6 @@ type ModalType =
     > & {
         regionCodeName: string | undefined;
       })
-  | { type: YieldType }
   | { type: "getInTouch" }
   | { type: "whatIsStakeKit" };
 
@@ -46,46 +44,6 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
-      case "staking": {
-        return {
-          title: t("help_modals.staking.title"),
-          description: t("help_modals.staking.description"),
-          image: images.whatIsStaking,
-        };
-      }
-
-      case "liquid-staking": {
-        return {
-          title: t("help_modals.liquid_staking.title"),
-          description: t("help_modals.liquid_staking.description"),
-          image: images.whatIsLiquidStaking,
-        };
-      }
-
-      case "vault": {
-        return {
-          title: t("help_modals.deposit.title"),
-          description: t("help_modals.deposit.description"),
-          image: images.whatIsDeposit,
-        };
-      }
-
-      case "lending": {
-        return {
-          title: t("help_modals.lending.title"),
-          description: t("help_modals.lending.description"),
-          image: images.whatIsLending,
-        };
-      }
-
-      case "restaking": {
-        return {
-          title: t("help_modals.restaking.title"),
-          description: t("help_modals.restaking.description"),
-          image: images.whatIsStaking,
-        };
-      }
-
       case "geoBlock": {
         const title = t("help_modals.geo_block.title");
         const countryName = formatCountryCode({
@@ -206,7 +164,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               ),
           },
           description: "",
-          image: images.whatIsStaking,
+          image: images.whatIsLiquidStaking,
         };
       }
 
