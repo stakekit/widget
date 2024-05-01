@@ -65,8 +65,13 @@ type SignRes =
     };
 
 export const useStepsMachine = (session: ActionDto | null) => {
-  const { signTransaction, signMultipleTransactions, connector, isLedgerLive } =
-    useSKWallet();
+  const {
+    signTransaction,
+    signMultipleTransactions,
+    signMessage,
+    connector,
+    isLedgerLive,
+  } = useSKWallet();
 
   const trackEvent = useTrackEvent();
 
@@ -280,6 +285,15 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     if (!constructedTx.unsignedTransaction) {
                       return EitherAsync.liftEither(
                         Left(new TransactionConstructError())
+                      );
+                    }
+
+                    if (constructedTx.isMessage) {
+                      return signMessage(constructedTx.unsignedTransaction).map(
+                        (val) => ({
+                          type: "regular",
+                          data: { signedTx: val, broadcasted: true },
+                        })
                       );
                     }
 

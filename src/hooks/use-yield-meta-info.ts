@@ -52,7 +52,6 @@ export const useYieldMetaInfo = ({
       const cooldownPeriodDays = y.metadata.cooldownPeriod?.days ?? 0;
       const warmupPeriodDays = y.metadata.warmupPeriod?.days ?? 0;
       const rewardClaiming = y.metadata.rewardClaiming;
-      const minimumStakeAmount = y.args.enter.args?.amount?.minimum ?? 0;
 
       const isCompound = providerName.includes("Compound");
 
@@ -91,13 +90,6 @@ export const useYieldMetaInfo = ({
                     cooldownPeriodDays,
                   })
                 : t("details.native_staking.unstake_time_immediately"),
-            minimumStakeAmount:
-              minimumStakeAmount > 0
-                ? t("details.native_staking.minimum_stake_amount", {
-                    minimumStakeAmount,
-                    stakeToken,
-                  })
-                : null,
             withdrawnNotAvailable: null,
             ...def,
           };
@@ -132,13 +124,6 @@ export const useYieldMetaInfo = ({
                   providerName,
                 }),
             withdrawnNotAvailable: null,
-            minimumStakeAmount:
-              minimumStakeAmount > 0
-                ? t("details.lend.minimum_lend_amount", {
-                    minimumStakeAmount,
-                    stakeToken,
-                  })
-                : null,
             ...def,
           };
 
@@ -163,13 +148,6 @@ export const useYieldMetaInfo = ({
                 ? t("details.vault.withdrawn_time_days", { cooldownPeriodDays })
                 : t("details.vault.withdrawn_time_immediately"),
             withdrawnNotAvailable: null,
-            minimumStakeAmount:
-              minimumStakeAmount > 0
-                ? t("details.vault.minimum_deposit_amount", {
-                    minimumStakeAmount,
-                    stakeToken,
-                  })
-                : null,
             ...def,
           };
 
@@ -210,13 +188,6 @@ export const useYieldMetaInfo = ({
                   rewardTokens,
                 })
               : null,
-            minimumStakeAmount:
-              minimumStakeAmount > 0
-                ? t("details.liquid_stake.minimum_stake_amount", {
-                    minimumStakeAmount,
-                    stakeToken,
-                  })
-                : null,
             ...def,
           };
 
@@ -252,13 +223,6 @@ export const useYieldMetaInfo = ({
                   rewardTokens,
                 })
               : null,
-            minimumStakeAmount:
-              minimumStakeAmount > 0
-                ? t("details.restake.minimum_stake_amount", {
-                    minimumStakeAmount,
-                    stakeToken,
-                  })
-                : null,
             ...def,
           };
 
@@ -275,7 +239,6 @@ const ifNotFound: {
   earnRewards: string | null;
   withdrawnTime: string | null;
   withdrawnNotAvailable: string | null;
-  minimumStakeAmount: string | null;
   extra?: string;
 } = {
   description: null,
@@ -283,5 +246,4 @@ const ifNotFound: {
   earnRewards: null,
   withdrawnTime: null,
   withdrawnNotAvailable: null,
-  minimumStakeAmount: null,
 };

@@ -1,5 +1,5 @@
 import { Box } from "../../atoms/box";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { CaretLeftIcon, XIcon } from "../../atoms/icons";
 import { useLogout } from "../../../hooks";
 import { ConnectButton } from "@stakekit/rainbowkit";
@@ -18,9 +18,9 @@ import { AccountModal } from "../account-modal";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useSettings } from "../../../providers/settings";
+import { useDetailsMatch } from "../../../hooks/navigation/use-details-match";
 
 export const Header = () => {
-  const location = useLocation();
   const navigate = useNavigate();
 
   const { containerRef } = useSyncHeaderHeight();
@@ -39,7 +39,7 @@ export const Header = () => {
 
   const wagmiConfig = useWagmiConfig();
 
-  const showBack = location.pathname !== "/";
+  const showBack = !useDetailsMatch();
 
   const trackEvent = useTrackEvent();
 
