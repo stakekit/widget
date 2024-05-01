@@ -75,9 +75,7 @@
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
 
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
-
-      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}"
+      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available"
     },
 
     "vault": {
@@ -90,9 +88,7 @@
       "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
 
       "withdrawn_time_immediately": "When withdrawing, your assets will be available immediately",
-      "withdrawn_time_days": "When withdrawing it takes {{cooldownPeriodDays}} days for your assets will be available",
-
-      "minimum_deposit_amount": "The minimum deposit requirement is {{minimumStakeAmount}} {{stakeToken}}"
+      "withdrawn_time_days": "When withdrawing it takes {{cooldownPeriodDays}} days for your assets will be available"
     },
 
     "lend": {
@@ -106,9 +102,7 @@
       "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
 
       "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
-      "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days",
-
-      "minimum_lend_amount": "The minimum supply requirement is {{minimumStakeAmount}} {{stakeToken}}"
+      "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days"
     },
 
     "liquid_stake": {
@@ -124,9 +118,7 @@
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
       "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they’ll need to be staked again.",
 
-      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
-
-      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}"
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
 
     "restake": {
@@ -137,8 +129,7 @@
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
-      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs",
-      "minimum_stake_amount": "The minimum staking requirement is {{minimumStakeAmount}} {{stakeToken}}"
+      "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
 
     "extra_tezos": "You can use or send staked XTZ as normal",
