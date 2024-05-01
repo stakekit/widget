@@ -122,6 +122,7 @@ export const getTransactionsTotalGasAmount = (txs: TransactionDto[]) =>
 export const transactionsForConstructOnlySet = new Set<TransactionType>([
   "P2P_NODE_REQUEST",
   "LUGANODES_PROVISION",
+  "LUGANODES_EXIT_REQUEST",
 ]);
 
 export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
