@@ -16,6 +16,7 @@ export const config = {
   env: {
     apiUrl: import.meta.env.VITE_API_URL ?? "https://api.stakek.it/",
     isTestMode: import.meta.env.MODE === "test",
+    isDevMode: import.meta.env.MODE === "development",
   },
   assetsUrl,
 } as const;
