@@ -292,7 +292,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                       return signMessage(constructedTx.unsignedTransaction).map(
                         (val) => ({
                           type: "regular",
-                          data: { signedTx: val, broadcasted: true },
+                          data: { signedTx: val, broadcasted: false },
                         })
                       );
                     }
