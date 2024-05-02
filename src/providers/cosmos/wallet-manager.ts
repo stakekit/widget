@@ -66,7 +66,7 @@ export const getWalletManager = ({
           : 1
       ),
       filteredWallets,
-      new Logger("ERROR"),
+      new Logger(config.env.isDevMode ? "ERROR" : "NONE"),
       false,
       true,
       undefined,

@@ -1,4 +1,4 @@
-import { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import {
   getActionControllerPendingResponseMock,
   getTransactionControllerGetGasForNetworkResponseMock,
@@ -133,6 +133,7 @@ export const setup = async (opts?: {
         {
           ...def.transactions[0],
           type: "CLAIM_REWARDS",
+          isMessage: false,
           id: "be6f79f6-938e-48e5-bc38-8f7485d6ea67",
           status: "CREATED",
         },
