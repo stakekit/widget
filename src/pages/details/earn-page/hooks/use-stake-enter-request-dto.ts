@@ -37,9 +37,9 @@ export const useStakeEnterRequestDto = () => {
 
             // @ts-expect-error
             if (val.metadata.isIntegrationAggregator) {
-              return List.head(validators)
-                .map((v) => v.address)
-                .map((v) => ({ providerId: v }));
+              return List.head(validators).map((v) => ({
+                providerId: (v as any).providerId,
+              }));
             } else if (val.args.enter.args?.validatorAddresses?.required) {
               return Just({
                 validatorAddresses: validators.map((v) => v.address),
