@@ -28,7 +28,7 @@ export const configMeta = {
 export type ExtraProps = ConnectorWithFilteredChains &
   Pick<Adapter, "signTransaction">;
 
-export type TronConnector = Connector & ExtraProps;
+type TronConnector = Connector & ExtraProps;
 
 export const isTronConnector = (
   connector: Connector

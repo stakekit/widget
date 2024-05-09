@@ -67,7 +67,7 @@ const supportedEVMChains = [
   EvmNetworks.EthereumHolesky,
 ] as const;
 const supportedEVMChainsSet = new Set(supportedEVMChains);
-export type SupportedEvmChain = (typeof supportedEVMChains)[number];
+type SupportedEvmChain = (typeof supportedEVMChains)[number];
 export type EvmChainsMap = {
   [Key in SupportedEvmChain]: {
     type: "evm";
