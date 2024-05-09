@@ -30,7 +30,8 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
     queryKey: getKey({ yieldId, isLedgerLive }),
     enabled: !!integrationId,
     staleTime,
-    queryFn: () => queryFn({ yieldId, isLedgerLive, yieldYieldOpportunity }),
+    queryFn: ({ signal }) =>
+      queryFn({ yieldId, isLedgerLive, yieldYieldOpportunity, signal }),
   });
 };
 
@@ -44,7 +45,7 @@ export const getYieldOpportunity = (
     params.queryClient.fetchQuery({
       queryKey: getKey(params),
       staleTime,
-      queryFn: () => queryFn(params),
+      queryFn: ({ signal }) => queryFn({ ...params, signal }),
     })
   ).mapLeft((e) => {
     console.log(e);
@@ -54,6 +55,7 @@ export const getYieldOpportunity = (
 const queryFn = async (
   params: Params & {
     yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
+    signal?: AbortSignal;
   }
 ) => (await fn(params)).unsafeCoerce();
 
@@ -61,14 +63,20 @@ const fn = ({
   isLedgerLive,
   yieldId,
   yieldYieldOpportunity,
+  signal,
 }: Params & {
   yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
+  signal?: AbortSignal;
 }) =>
   withRequestErrorRetry({
     fn: () =>
-      yieldYieldOpportunity(yieldId, {
-        ledgerWalletAPICompatible: isLedgerLive,
-      }),
+      yieldYieldOpportunity(
+        yieldId,
+        {
+          ledgerWalletAPICompatible: isLedgerLive,
+        },
+        signal
+      ),
   }).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunity");

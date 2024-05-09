@@ -4,7 +4,7 @@ import { EitherAsync, List, Maybe } from "purify-ts";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
-import type { Address } from "viem";
+import { getAddress, type Address } from "viem";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import type { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import type { MutableRefObject } from "react";
@@ -125,7 +125,11 @@ export const externalProviderConnector = (
             };
 
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
-            () => {};
+            (accounts) => {
+              config.emitter.emit("change", {
+                accounts: accounts.map((a) => getAddress(a)),
+              });
+            };
 
           return {
             id: configMeta.id,

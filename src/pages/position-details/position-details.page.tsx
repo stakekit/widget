@@ -25,7 +25,7 @@ export const PositionDetails = () => {
     onUnstakeAmountChange,
     unstakeAmount,
     unstakeFormattedAmount,
-    canChangeAmount,
+    canChangeUnstakeAmount,
     onMaxClick,
     onUnstakeClick,
     onContinueUnstakeSignMessage,
@@ -165,39 +165,41 @@ export const PositionDetails = () => {
                   {/* Pending actions */}
                   {pendingActions
                     .map((val) =>
-                      val.map((pa) =>
-                        pa.amount ? (
+                      val.map((val) =>
+                        val.amount ? (
                           <AmountBlock
-                            key={`${pa.pendingActionDto.type}-${pa.pendingActionDto.passthrough}`}
+                            key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                             variant="action"
-                            isLoading={pa.isLoading}
-                            onAmountChange={(val) =>
-                              onPendingActionAmountChange(
-                                pa.pendingActionDto.type,
-                                val
-                              )
+                            isLoading={val.isLoading}
+                            onAmountChange={(amount) =>
+                              onPendingActionAmountChange({
+                                balanceType: val.yieldBalance.type,
+                                token: val.yieldBalance.token,
+                                actionType: val.pendingActionDto.type,
+                                amount,
+                              })
                             }
-                            value={pa.amount}
+                            value={val.amount}
                             canChangeAmount
                             onClick={() =>
                               onPendingActionClick({
-                                pendingActionDto: pa.pendingActionDto,
-                                yieldBalance: pa.yieldBalance,
+                                pendingActionDto: val.pendingActionDto,
+                                yieldBalance: val.yieldBalance,
                               })
                             }
                             label={t(
                               `position_details.pending_action_button.${
-                                pa.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                                val.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
                               }`
                             )}
                             onMaxClick={null}
-                            formattedAmount={pa.formattedAmount}
+                            formattedAmount={val.formattedAmount}
                             balance={null}
                           />
                         ) : (
                           <StaticActionBlock
-                            {...pa}
-                            key={`${pa.pendingActionDto.type}-${pa.pendingActionDto.passthrough}`}
+                            {...val}
+                            key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                             onPendingActionClick={onPendingActionClick}
                           />
                         )
@@ -208,10 +210,13 @@ export const PositionDetails = () => {
                   {/* Unstake */}
                   {Maybe.fromRecord({
                     reducedStakedOrLiquidBalance,
-                    canChangeAmount,
+                    canChangeUnstakeAmount,
                   })
                     .map(
-                      ({ reducedStakedOrLiquidBalance, canChangeAmount }) => (
+                      ({
+                        reducedStakedOrLiquidBalance,
+                        canChangeUnstakeAmount,
+                      }) => (
                         <AmountBlock
                           variant="unstake"
                           canUnstake={canUnstake}
@@ -219,7 +224,7 @@ export const PositionDetails = () => {
                           isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}
                           value={unstakeAmount}
-                          canChangeAmount={canChangeAmount}
+                          canChangeAmount={canChangeUnstakeAmount}
                           disabled={unstakeDisabled}
                           onClick={onUnstakeClick}
                           unstakeAmountError={unstakeAmountError}

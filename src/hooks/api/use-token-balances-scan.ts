@@ -1,12 +1,12 @@
 import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
-import {
-  getTokenTokenBalancesScanQueryKey,
-  useTokenTokenBalancesScan,
-} from "@stakekit/api-hooks";
-import { Just, Maybe } from "purify-ts";
+import { useTokenTokenBalancesScanHook } from "@stakekit/api-hooks";
+import { getTokenTokenBalancesScanQueryKey } from "@stakekit/api-hooks";
+import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSKQueryClient } from "../../providers/query-client";
+import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 export const useTokenBalancesScan = () => {
   const {
@@ -44,10 +44,48 @@ export const useTokenBalancesScan = () => {
     [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network]
   );
 
-  return useTokenTokenBalancesScan(param.dto, {
-    query: { enabled: param.enabled, refetchInterval: 1000 * 60 },
+  const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
+
+  return useQuery({
+    queryKey: getTokenTokenBalancesScanQueryKey(param.dto),
+    enabled: param.enabled,
+    refetchInterval: 1000 * 60,
+    queryFn: async () =>
+      (
+        await queryFn({
+          tokenBalanceScanDto: param.dto,
+          tokenTokenBalancesScan,
+        })
+      ).unsafeCoerce(),
   });
 };
+
+export const getTokenBalancesScan = (
+  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+) =>
+  EitherAsync(() =>
+    params.queryClient.fetchQuery({
+      queryKey: getTokenTokenBalancesScanQueryKey(params.tokenBalanceScanDto),
+      queryFn: async () => (await queryFn(params)).unsafeCoerce(),
+    })
+  ).mapLeft((e) => {
+    console.log(e);
+    return new Error("could not get multi yields");
+  });
+
+const queryFn = ({
+  tokenBalanceScanDto,
+  tokenTokenBalancesScan,
+}: {
+  tokenBalanceScanDto: TokenBalanceScanDto;
+  tokenTokenBalancesScan: ReturnType<typeof useTokenTokenBalancesScanHook>;
+}) =>
+  EitherAsync(() => tokenTokenBalancesScan(tokenBalanceScanDto)).mapLeft(
+    (e) => {
+      console.log(e);
+      return new Error("could not get token balances");
+    }
+  );
 
 export const useInvalidateTokenBalances = () => {
   const queryClient = useSKQueryClient();

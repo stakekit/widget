@@ -66,6 +66,57 @@ export const handlers = [
     ]);
   }),
 
+  http.get("*/v1/tokens", async () => {
+    await delay();
+
+    return HttpResponse.json([
+      {
+        token: {
+          network: "ethereum",
+          name: "Ethereum",
+          symbol: "ETH",
+          decimals: 18,
+          coinGeckoId: "ethereum",
+          logoURI: "https://assets.stakek.it/tokens/eth.svg",
+        },
+        availableYields: [
+          "ethereum-eth-etherfi-staking",
+          "ethereum-eth-p2p-staking",
+          "ethereum-eth-lido-staking",
+          "ethereum-eth-stakewise-staking",
+          "ethereum-eth-reth-staking",
+          "ethereum-eth-everstake-staking",
+          "ethereum-eth-figment-staking",
+          "ethereum-renzo-ezeth-staking",
+          "ethereum-eth-luganodes-staking",
+        ],
+      },
+      {
+        token: {
+          name: "Avalanche C Chain",
+          symbol: "AVAX",
+          decimals: 18,
+          network: "avalanche-c",
+          coinGeckoId: "avalanche-2",
+          logoURI: "https://assets.stakek.it/tokens/avax.svg",
+        },
+        availableYields: ["avalanche-avax-liquid-staking"],
+      },
+      {
+        token: {
+          name: "Celo",
+          symbol: "CELO",
+          decimals: 18,
+          address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
+          network: "celo",
+          coinGeckoId: "celo",
+          logoURI: "https://assets.stakek.it/tokens/celo.svg",
+        },
+        availableYields: ["celo-celo-native-staking"],
+      },
+    ]);
+  }),
+
   http.all("*", async () => {
     await delay();
     return passthrough();

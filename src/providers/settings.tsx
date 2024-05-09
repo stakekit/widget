@@ -1,12 +1,23 @@
 import type { ThemeWrapperTheme } from "./theme-wrapper";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
 import type { Properties, TrackEventVal, TrackPageVal } from "./tracking";
 import type { BuildWagmiConfig } from "./wagmi";
 import { config } from "../config";
 import type { SKExternalProviders } from "../domain/types/wallets";
 
-export interface SettingsContextType {
+export type VariantProps =
+  | {
+      variant: "zerion";
+      chainModal: (args: {
+        selectedChainId: number;
+        chainIds: number[];
+        onSwitchChain: (chainId: number) => void;
+      }) => ReactNode;
+    }
+  | { variant: "default" };
+
+export type SettingsProps = {
   apiKey: string;
   theme?: ThemeWrapperTheme;
   referralCheck?: boolean;
@@ -22,9 +33,10 @@ export interface SettingsContextType {
   externalProviders?: SKExternalProviders;
   disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
-  variant: "zerion" | "default";
   disableInitLayoutAnimation?: boolean;
-}
+};
+
+export type SettingsContextType = SettingsProps & VariantProps;
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined
