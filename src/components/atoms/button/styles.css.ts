@@ -84,47 +84,45 @@ export const buttonStyle = recipe({
           },
         },
       ],
-
-      // TODO: Fix this, button types are not clear
       smallButton: [
         atoms({
-          background: "secondaryButtonBackground",
-          color: "secondaryButtonColor",
-          borderColor: "secondaryButtonBackground",
+          background: "smallButtonBackground",
+          color: "smallButtonColor",
+          borderColor: "smallButtonOutline",
           borderRadius: "secondaryButton",
           fontWeight: "secondaryButton",
         }),
         {
           ":hover": {
-            background: vars.color.secondaryButtonBackground,
+            background: vars.color.smallButtonHoverBackground,
             color: vars.color.secondaryButtonHoverColor,
-            borderColor: vars.color.secondaryButtonBackground,
+            borderColor: vars.color.smallButtonHoverOutline,
           },
           ":active": {
-            background: vars.color.secondaryButtonBackground,
+            background: vars.color.smallButtonActiveBackground,
             color: vars.color.secondaryButtonActiveColor,
-            borderColor: vars.color.secondaryButtonBackground,
+            borderColor: vars.color.smallButtonActiveOutline,
           },
         },
       ],
       smallButtonLight: [
         atoms({
-          background: "stakeSectionBackground",
-          color: "secondaryButtonColor",
-          borderColor: "stakeSectionBackground",
+          background: "smallLightButtonBackground",
+          color: "smallLightButtonColor",
+          borderColor: "smallLightButtonOutline",
           borderRadius: "secondaryButton",
           fontWeight: "secondaryButton",
         }),
         {
           ":hover": {
-            background: vars.color.stakeSectionBackground,
-            color: vars.color.secondaryButtonHoverColor,
-            borderColor: vars.color.stakeSectionBackground,
+            background: vars.color.smallLightButtonHoverBackground,
+            color: vars.color.smallLightButtonHoverColor,
+            borderColor: vars.color.smallLightButtonHoverOutline,
           },
           ":active": {
-            background: vars.color.stakeSectionBackground,
-            color: vars.color.secondaryButtonActiveColor,
-            borderColor: vars.color.stakeSectionBackground,
+            background: vars.color.smallLightButtonActiveBackground,
+            color: vars.color.smallLightButtonActiveColor,
+            borderColor: vars.color.smallLightButtonActiveOutline,
           },
         },
       ],

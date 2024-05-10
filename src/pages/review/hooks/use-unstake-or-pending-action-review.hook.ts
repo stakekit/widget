@@ -58,8 +58,10 @@ export const useUnstakeOrPendingActionReview = () => {
   const { stakeExitTxGas, pendingActionTxGas } =
     useUnstakeOrPendingActionState();
 
+  const token = pendingActionMatch ? pendingActionToken : unstakeToken;
+
   const pricesState = useTokensPrices({
-    token: unstakeToken,
+    token,
     yieldDto: integrationData,
   });
 
@@ -116,8 +118,6 @@ export const useUnstakeOrPendingActionReview = () => {
       [onClickRef, t]
     )
   );
-
-  const token = pendingActionMatch ? pendingActionToken : unstakeToken;
 
   return {
     integrationData,
