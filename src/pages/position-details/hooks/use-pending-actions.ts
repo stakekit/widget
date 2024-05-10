@@ -9,7 +9,6 @@ import {
 import { useSavedRef } from "../../../hooks";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
 import type {
-  ActionTypes,
   PendingActionDto,
   ValidatorDto,
   YieldBalanceDto,
@@ -28,6 +27,8 @@ import { formatNumber } from "../../../utils";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useBaseToken } from "../../../hooks/use-base-token";
+import { getBalanceTokenActionType } from "../../../state/unstake-or-pending-action/utils";
+import type { PendingActionAmountChange } from "../../../state/unstake-or-pending-action/types";
 
 export const usePendingActions = () => {
   const {
@@ -63,9 +64,15 @@ export const usePendingActions = () => {
                 (v) => !!v,
                 pa.args?.args?.amount?.required
               ).chain(() =>
-                Maybe.fromNullable(pendingActionsState.get(pa.type)).altLazy(
-                  () => Maybe.of(new BigNumber(0))
-                )
+                Maybe.fromNullable(
+                  pendingActionsState.get(
+                    getBalanceTokenActionType({
+                      balanceType: balance.type,
+                      token: balance.token,
+                      actionType: pa.type,
+                    })
+                  )
+                ).altLazy(() => Maybe.of(new BigNumber(0)))
               );
 
               const formattedAmount = Maybe.fromRecord({
@@ -114,13 +121,9 @@ export const usePendingActions = () => {
   );
 
   const onPendingActionAmountChange = (
-    type: ActionTypes,
-    amount: BigNumber
+    data: PendingActionAmountChange["data"]
   ) => {
-    pendingActionDispatch({
-      type: "pendingAction/amount/change",
-      data: { actionType: type, amount },
-    });
+    pendingActionDispatch({ type: "pendingAction/amount/change", data });
   };
 
   const validatorAddressesHandling = useValidatorAddressesHandling();

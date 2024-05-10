@@ -54,6 +54,7 @@ import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMutation } from "@tanstack/react-query";
 import { useBaseToken } from "../../../../hooks/use-base-token";
+import { isForceMaxAmount } from "../../../../domain/types/stake";
 
 const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
 
@@ -61,6 +62,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const {
     actions: { onMaxClick: _onMaxClick },
     selectedToken,
+    selectedStakeId,
     selectedValidators,
     stakeAmount,
     selectedStake,
@@ -409,16 +411,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const stakeMaxAmount = useMemo(
     () =>
-      selectedStake.chainNullable(
-        (val) => val.args.enter.args?.amount?.maximum
-      ),
+      selectedStake
+        .chainNullable((val) => val.args.enter.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.maximum),
     [selectedStake]
   );
 
   const stakeMinAmount = useMemo(
     () =>
       selectedStake
-        .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+        .chainNullable((val) => val.args.enter.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.minimum)
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
     [selectedStake]
   );
@@ -449,6 +454,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const referralCode = useReferralCode();
 
   const appLoading =
+    selectedToken.isNothing() ||
     !wagmiConfig.data ||
     referralCode.isLoading ||
     wagmiConfig.isLoading ||
@@ -555,6 +561,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading || defaultTokensIsLoading;
 
   const selectYieldIsLoading =
+    selectedStakeId.isNothing() ||
     multiYieldsLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||

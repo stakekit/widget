@@ -25,7 +25,7 @@ import {
   Details,
 } from "./pages";
 import { Providers } from "./providers";
-import type { SettingsContextType } from "./providers/settings";
+import type { SettingsProps, VariantProps } from "./providers/settings";
 import { SettingsContextProvider } from "./providers/settings";
 import { PositionDetails } from "./pages/position-details";
 import { StakeCheck } from "./navigation/cheks/stake-check";
@@ -52,7 +52,6 @@ import {
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
-import { useUpdateEffect } from "./hooks/use-update-effect";
 import { preloadImages } from "./assets/images";
 
 preloadImages();
@@ -213,28 +212,20 @@ const Root = () => {
 
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
 
-export type SKAppProps = Omit<SettingsContextType, "variant"> &
-  Partial<Pick<SettingsContextType, "variant">>;
+export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 
 export const SKApp = (props: SKAppProps) => {
   const [showChild, setShowChild] = useState(false);
-  const [key, reloadApp] = useState(() => Date.now());
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
 
-  useUpdateEffect(() => {
-    reloadApp(Date.now());
-  }, [
-    props.externalProviders?.currentAddress,
-    props.externalProviders?.currentChain,
-  ]);
+  const variantProps: VariantProps =
+    !props.variant || props.variant === "default"
+      ? { variant: "default" }
+      : { variant: props.variant, chainModal: props.chainModal };
 
   return (
-    <SettingsContextProvider
-      key={key}
-      variant={props.variant ?? "default"}
-      {...props}
-    >
+    <SettingsContextProvider {...variantProps} {...props}>
       <Box className={appContainer}>
         {showChild && <RouterProvider router={router} />}
       </Box>

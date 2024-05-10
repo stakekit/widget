@@ -36,7 +36,7 @@ const getQueryClient = () =>
 const Context = createContext<QueryClient | undefined>(undefined);
 
 export const SKQueryClientProvider = ({ children }: PropsWithChildren) => {
-  const [queryClient] = useState(() => getQueryClient());
+  const [queryClient] = useState(getQueryClient);
 
   return (
     <Context.Provider value={queryClient}>

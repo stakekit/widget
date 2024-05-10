@@ -13,6 +13,8 @@ import type {
   ActionTypes,
   PendingActionDto,
   PriceRequestDto,
+  TokenDto,
+  YieldBalanceDto,
 } from "@stakekit/api-hooks";
 import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
 import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
@@ -20,7 +22,12 @@ import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
 import { usePositionBalances } from "../../hooks/use-position-balances";
 import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
 import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
-import type { Actions, ExtraData, State } from "./types";
+import type {
+  Actions,
+  BalanceTokenActionType,
+  ExtraData,
+  State,
+} from "./types";
 import { usePrices } from "../../hooks/api/use-prices";
 import { config } from "../../config";
 import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
@@ -28,6 +35,8 @@ import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
 import { useUnstakeOrPendingActionMatch } from "../../hooks/navigation/use-unstake-or-pending-action-match";
 import { usePendingActionSelectValidatorMatch } from "../../hooks/navigation/use-pending-action-select-validator-match";
 import { useBaseToken } from "../../hooks/use-base-token";
+import { getBalanceTokenActionType } from "./utils";
+import { isForceMaxAmount } from "../../domain/types/stake";
 
 const getInitialState = (): State => ({
   unstakeAmount: new BigNumber(0),
@@ -94,10 +103,7 @@ export const UnstakeOrPendingActionProvider = ({
 
   const baseToken = useBaseToken(integrationData);
 
-  const positionBalances = usePositionBalances({
-    balanceId: balanceId,
-    integrationId: integrationId,
-  });
+  const positionBalances = usePositionBalances({ balanceId, integrationId });
 
   const positionBalancePrices = usePrices(
     useMemo(
@@ -177,12 +183,25 @@ export const UnstakeOrPendingActionProvider = ({
 
   const positionBalancesByTypePendingActions = useMemo(
     () =>
-      new Map<PendingActionDto["type"], PendingActionDto>(
+      new Map<
+        BalanceTokenActionType,
+        { pendingAction: PendingActionDto; balance: YieldBalanceDto }
+      >(
         positionBalancesByType
           .map((pbbt) =>
             [...pbbt.values()].flatMap((val) =>
               val.flatMap((b) =>
-                b.pendingActions.map((p) => [p.type, p] as const)
+                b.pendingActions.map(
+                  (p) =>
+                    [
+                      getBalanceTokenActionType({
+                        balanceType: b.type,
+                        token: b.token,
+                        actionType: p.type,
+                      }),
+                      { pendingAction: p, balance: b },
+                    ] as const
+                )
               )
             )
           )
@@ -194,31 +213,47 @@ export const UnstakeOrPendingActionProvider = ({
   const getCorrectPendingActionAmount = ({
     state,
     amount,
-    type,
+    actionType,
+    balanceType,
+    token,
   }: {
     state: State["pendingActions"];
-    type: PendingActionDto["type"];
+    balanceType: YieldBalanceDto["type"];
+    token: TokenDto;
+    actionType: ActionTypes;
     amount: BigNumber;
-  }) =>
-    Maybe.fromNullable(
-      positionBalancesByTypePendingActions.get(type)
-    ).mapOrDefault((pendingAction) => {
+  }) => {
+    const key = getBalanceTokenActionType({ actionType, balanceType, token });
+
+    return Maybe.fromNullable(
+      positionBalancesByTypePendingActions.get(key)
+    ).mapOrDefault((val) => {
       const newMap = new Map(state);
-      newMap.set(type, amount);
+      newMap.set(key, amount);
 
       const max = new BigNumber(
-        pendingAction.args?.args?.amount?.maximum ?? Infinity
+        val.pendingAction.args?.args?.amount?.maximum ?? Infinity
       );
-      const min = new BigNumber(pendingAction.args?.args?.amount?.minimum ?? 0);
+      const min = new BigNumber(
+        val.pendingAction.args?.args?.amount?.minimum ?? 0
+      );
 
-      if (amount.isLessThan(min)) {
-        newMap.set(type, min);
+      if (
+        Maybe.fromNullable(val.pendingAction.args?.args?.amount).mapOrDefault(
+          isForceMaxAmount,
+          false
+        )
+      ) {
+        newMap.set(key, new BigNumber(val.balance.amount));
+      } else if (amount.isLessThan(min)) {
+        newMap.set(key, min);
       } else if (amount.isGreaterThan(max)) {
-        newMap.set(type, max);
+        newMap.set(key, max);
       }
 
       return newMap;
     }, state);
+  };
 
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
@@ -237,15 +272,11 @@ export const UnstakeOrPendingActionProvider = ({
       }
 
       case "pendingAction/amount/change": {
-        const newMap = new Map(state.pendingActions);
-        newMap.set(action.data.actionType, action.data.amount);
-
         return {
           ...state,
           pendingActions: getCorrectPendingActionAmount({
             state: state.pendingActions,
-            amount: action.data.amount,
-            type: action.data.actionType,
+            ...action.data,
           }),
         };
       }
@@ -396,6 +427,7 @@ export const UnstakeOrPendingActionProvider = ({
 
   const value: State & ExtraData = useMemo(
     () => ({
+      canChangeUnstakeAmount,
       unstakeAmountError,
       unstakeToken,
       unstakeAmount,
@@ -417,6 +449,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountValid,
     }),
     [
+      canChangeUnstakeAmount,
       unstakeAmountError,
       unstakeToken,
       unstakeAmount,

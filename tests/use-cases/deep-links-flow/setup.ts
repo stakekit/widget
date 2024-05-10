@@ -142,6 +142,23 @@ export const setup = async (opts?: {
     .unsafeCoerce();
 
   server.use(
+    http.get("*/v1/tokens", async () => {
+      await delay();
+
+      return HttpResponse.json([
+        {
+          token: {
+            name: "Avalanche C Chain",
+            symbol: "AVAX",
+            decimals: 18,
+            network: "avalanche-c",
+            coinGeckoId: "avalanche-2",
+            logoURI: "https://assets.stakek.it/tokens/avax.svg",
+          },
+          availableYields: ["avalanche-avax-liquid-staking"],
+        },
+      ]);
+    }),
     http.get("*/v1/yields/enabled/networks", async () => {
       await delay();
       return HttpResponse.json([token.network]);

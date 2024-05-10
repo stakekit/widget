@@ -1,7 +1,8 @@
 import { HttpResponse, delay, http } from "msw";
 import { server } from "../../mocks/server";
 import { rkMockWallet } from "../../utils/mock-connector";
-import { Networks, TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import { Networks } from "@stakekit/api-hooks";
 
 export const setup = () => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
@@ -116,6 +117,23 @@ export const setup = () => {
   };
 
   server.use(
+    http.get("*/v1/tokens", async () => {
+      await delay();
+
+      return HttpResponse.json([
+        {
+          token: {
+            name: "Avalanche C Chain",
+            symbol: "AVAX",
+            decimals: 18,
+            network: "avalanche-c",
+            coinGeckoId: "avalanche-2",
+            logoURI: "https://assets.stakek.it/tokens/avax.svg",
+          },
+          availableYields: ["avalanche-avax-liquid-staking"],
+        },
+      ]);
+    }),
     http.get("*/v1/yields/enabled/networks", async () => {
       await delay();
       return HttpResponse.json(["avalanche-c"]);

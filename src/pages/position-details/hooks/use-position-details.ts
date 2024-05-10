@@ -9,7 +9,6 @@ import {
   useUnstakeOrPendingActionState,
 } from "../../../state/unstake-or-pending-action";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUnstakeMachine } from "./use-unstake-machine";
@@ -29,6 +28,7 @@ export const usePositionDetails = () => {
     unstakeSession,
     unstakeToken,
     unstakeAmountError,
+    canChangeUnstakeAmount,
   } = useUnstakeOrPendingActionState();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
@@ -44,15 +44,7 @@ export const usePositionDetails = () => {
     ),
   });
 
-  const forceMax = useForceMaxAmount({
-    type: "exit",
-    integration: integrationData,
-  });
-
   const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
-  const canChangeAmount = integrationData.map(
-    (d) => !!(!forceMax && d.args.exit?.args?.amount?.required)
-  );
 
   const onUnstakeAmountChange = (value: BigNumber) =>
     dispatch({ type: "unstake/amount/change", data: value });
@@ -182,7 +174,7 @@ export const usePositionDetails = () => {
     onUnstakeAmountChange,
     unstakeFormattedAmount,
     onMaxClick,
-    canChangeAmount,
+    canChangeUnstakeAmount,
     onUnstakeClick,
     onContinueUnstakeSignMessage,
     onCloseUnstakeSignMessage,

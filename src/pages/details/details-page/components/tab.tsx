@@ -31,7 +31,10 @@ export const Tab = ({
   return (
     <Box className={tabContainer}>
       <Box className={clsx([pressAnimation, tab])} onClick={onTabPress}>
-        <Box {...(variant === "positions" && { position: "relative" })}>
+        <Box
+          {...(variant === "positions" && { position: "relative" })}
+          display="inline-flex"
+        >
           <Text variant={{ type: isSelected ? "regular" : "muted" }}>
             {variant === "earn"
               ? t("details.tab_earn")

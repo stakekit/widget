@@ -39,6 +39,7 @@ import {
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
+import { useSyncExternalProviderAddressOrChain } from "./use-sync-external-provider-address-or-chain";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -112,6 +113,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
 
     trackEvent("connectedWallet", { address, network });
   }, [address, isConnected, network, trackEvent]);
+
+  useSyncExternalProviderAddressOrChain({
+    address,
+    chain,
+    connector,
+    isConnected,
+  });
 
   /**
    * Network missmatch, disconnect
