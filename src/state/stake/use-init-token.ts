@@ -1,8 +1,5 @@
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
-import { getTokenBalancesScan } from "../../hooks/api/use-token-balances-scan";
-import { getDefaultTokens } from "../../hooks/api/use-default-tokens";
+import { EitherAsync, Maybe } from "purify-ts";
 import { getInitialToken } from "../../domain/types/stake";
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import {
   useTokenGetTokensHook,
   useTokenTokenBalancesScanHook,
@@ -15,6 +12,7 @@ import { useSKWallet } from "../../providers/sk-wallet";
 import { useSKQueryClient } from "../../providers/query-client";
 import { tokenString } from "../../domain";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
+import { getTokenBalances } from "../../common/get-token-balances";
 
 /**
  *
@@ -32,44 +30,23 @@ export const useInitToken = () => {
 
   return useQuery({
     staleTime: Infinity,
-    queryKey: ["init-token", isConnected, network],
+    queryKey: [
+      "init-token",
+      isConnected,
+      network,
+      address,
+      additionalAddresses,
+    ],
     queryFn: async () =>
       (
-        await EitherAsync.fromPromise(() =>
-          Promise.all([
-            getDefaultTokens({ queryClient, network, tokenGetTokens }),
-            EitherAsync.liftEither(
-              Maybe.fromRecord({
-                additionalAddresses: Maybe.fromNullable(additionalAddresses),
-                address: Maybe.fromNullable(address),
-                network: Maybe.fromNullable(network),
-              }).toEither(null)
-            )
-              .chain((val) =>
-                getTokenBalancesScan({
-                  queryClient,
-                  tokenTokenBalancesScan,
-                  tokenBalanceScanDto: {
-                    addresses: {
-                      address: val.address,
-                      additionalAddresses: val.additionalAddresses,
-                    },
-                    network: val.network,
-                  },
-                }).mapLeft(() => new Error("could not get token balances scan"))
-              )
-              .chainLeft(async (err) =>
-                err ? Left(err) : Right([] as TokenBalanceScanResponseDto[])
-              ),
-          ]).then(([defaultTokens, tokenBalances]) =>
-            defaultTokens.chain((d) =>
-              tokenBalances.map((b) => ({
-                defaultTokens: d,
-                tokenBalancesScan: b,
-              }))
-            )
-          )
-        ).chain((val) =>
+        await getTokenBalances({
+          additionalAddresses,
+          address,
+          network,
+          queryClient,
+          tokenGetTokens,
+          tokenTokenBalancesScan,
+        }).chain((val) =>
           getInitialQueryParams({
             isLedgerLive,
             queryClient,

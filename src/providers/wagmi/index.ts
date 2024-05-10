@@ -1,6 +1,7 @@
 import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
+import { hydrate } from "@wagmi/core";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -110,46 +111,48 @@ const buildWagmiConfig = async (opts: {
         queryParams: val.queryParams,
       }).map((l) => ({ ...val, ledgerLiveConnector: l }))
     )
-    .caseOf({
-      Right: ({
+    .map((val) => {
+      const {
         evmConfig,
         cosmosConfig,
         miscConfig,
         substrateConfig,
         ledgerLiveConnector,
-      }) => {
-        const chains = [
-          ...evmConfig.evmChains,
-          ...cosmosConfig.cosmosWagmiChains,
-          ...miscConfig.miscChains,
-          ...substrateConfig.substrateChains,
-        ] as [Chain, ...Chain[]];
+      } = val;
+      const chains = [
+        ...evmConfig.evmChains,
+        ...cosmosConfig.cosmosWagmiChains,
+        ...miscConfig.miscChains,
+        ...substrateConfig.substrateChains,
+      ] as [Chain, ...Chain[]];
 
-        const multiInjectedProviderDiscovery =
-          !opts.externalProviders && !isLedgerDappBrowserProvider();
+      const multiInjectedProviderDiscovery =
+        !opts.externalProviders && !isLedgerDappBrowserProvider();
 
-        const walletList: WalletList = (() => {
-          if (opts.externalProviders) {
-            return [
-              externalProviderConnector(
-                opts.externalProviders,
-                opts.transactionGetTransactionStatusByNetworkAndHash
-              ),
-            ];
-          } else if (ledgerLiveConnector) {
-            return [ledgerLiveConnector];
-          } else if (opts.customConnectors) {
-            return opts.customConnectors(chains);
-          }
+      const walletList: WalletList = (() => {
+        if (opts.externalProviders) {
+          return [
+            externalProviderConnector(
+              opts.externalProviders,
+              opts.transactionGetTransactionStatusByNetworkAndHash
+            ),
+          ];
+        } else if (ledgerLiveConnector) {
+          return [ledgerLiveConnector];
+        } else if (opts.customConnectors) {
+          return opts.customConnectors(chains);
+        }
 
-          return Maybe.catMaybes([
-            evmConfig.connector,
-            cosmosConfig.connector,
-            ...miscConfig.connectors,
-          ]);
-        })();
+        return Maybe.catMaybes([
+          evmConfig.connector,
+          cosmosConfig.connector,
+          ...miscConfig.connectors,
+        ]);
+      })();
 
-        const wagmiConfig = createConfig({
+      return {
+        ...val,
+        wagmiConfig: createConfig({
           chains,
           client: ({ chain }) => createClient({ chain, transport: http() }),
           multiInjectedProviderDiscovery,
@@ -158,14 +161,25 @@ const buildWagmiConfig = async (opts: {
             appIcon: config.appIcon,
             projectId: config.walletConnectV2.projectId,
           }),
-        });
-
+        }),
+      };
+    })
+    .chain((val) =>
+      EitherAsync(() =>
+        hydrate(val.wagmiConfig, { reconnectOnMount: true }).onMount()
+      ).bimap(
+        () => new Error("Could not hydrate wagmi config"),
+        () => val
+      )
+    )
+    .caseOf({
+      Right: (val) => {
         return Promise.resolve({
-          evmConfig,
-          cosmosConfig,
-          miscConfig,
-          substrateConfig,
-          wagmiConfig,
+          evmConfig: val.evmConfig,
+          cosmosConfig: val.cosmosConfig,
+          miscConfig: val.miscConfig,
+          substrateConfig: val.substrateConfig,
+          wagmiConfig: val.wagmiConfig,
         });
       },
       Left: (l) => {

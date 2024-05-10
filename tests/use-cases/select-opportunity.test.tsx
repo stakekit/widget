@@ -75,8 +75,6 @@ describe("Select opportunity", () => {
 
     await waitFor(() => getByTestId("select-opportunity").click());
 
-    await waitFor(() => getByTestId("select-opportunity").click());
-
     let selectContainer = await waitFor(() =>
       getByTestId("select-modal__container")
     );

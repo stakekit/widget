@@ -30,6 +30,7 @@ import { useInitToken } from "./use-init-token";
 import { onYieldSelectState } from "./utils";
 import { useTokenBalance } from "./use-token-balance";
 import { useInitYield } from "./use-init-yield";
+import { useSavedRef } from "../../hooks";
 
 const StakeStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -55,43 +56,43 @@ const Provider = ({ children }: PropsWithChildren) => {
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
       case "token/select": {
-        const diffToken = state.selectedToken
-          .map((v) => !equalTokens(v, action.data))
-          .orDefault(true);
-
-        if (!diffToken) return state;
-
-        const initYieldState = getInitYield({ selectedToken: action.data })
-          .map((val) =>
-            onYieldSelectState({
-              initParams: Maybe.fromNullable(initParams.data),
-              yieldDto: val,
-            })
+        return Maybe.fromFalsy(
+          state.selectedToken
+            .map((v) => !equalTokens(v, action.data))
+            .orDefault(true)
+        )
+          .chain(() =>
+            getInitYield({ selectedToken: action.data })
+              .map<ReturnType<typeof onYieldSelectState> | null>((val) =>
+                onYieldSelectState({
+                  initParams: Maybe.fromNullable(initParams.data),
+                  yieldDto: val,
+                })
+              )
+              .alt(Maybe.of(null))
           )
-          .extract();
-
-        return {
-          ...getInitialState(),
-          selectedToken: Maybe.of(action.data),
-          ...initYieldState,
-        };
+          .map((val) => ({
+            ...getInitialState(),
+            selectedToken: Maybe.of(action.data),
+            ...val,
+          }))
+          .orDefault(state);
       }
 
       case "yield/select": {
-        const diffYield = state.selectedStakeId
-          .map((v) => v !== action.data.id)
-          .orDefault(true);
-
-        const initYieldState = onYieldSelectState({
-          initParams: Maybe.fromNullable(initParams.data),
-          yieldDto: action.data,
-        });
-
-        return Maybe.fromFalsy(diffYield)
-          .map(() => ({
+        return Maybe.fromFalsy(
+          state.selectedStakeId.map((v) => v !== action.data.id).orDefault(true)
+        )
+          .map(() =>
+            onYieldSelectState({
+              initParams: Maybe.fromNullable(initParams.data),
+              yieldDto: action.data,
+            })
+          )
+          .map((val) => ({
             ...getInitialState(),
             selectedToken: state.selectedToken,
-            ...initYieldState,
+            ...val,
           }))
           .orDefault(state);
       }
@@ -231,6 +232,9 @@ const Provider = ({ children }: PropsWithChildren) => {
     }
   });
 
+  const initTokenRef = useSavedRef(initToken);
+  const initYieldRef = useSavedRef(initYield);
+
   /**
    * Set initial token
    */
@@ -239,8 +243,8 @@ const Provider = ({ children }: PropsWithChildren) => {
   }, [initToken, setToken]);
 
   useEffect(() => {
-    selectedToken.ifNothing(() => initToken.ifJust(setToken));
-  }, [initToken, selectedToken, setToken]);
+    selectedToken.ifNothing(() => initTokenRef.current.ifJust(setToken));
+  }, [initTokenRef, selectedToken, setToken]);
 
   /**
    * Set initial yield
@@ -250,8 +254,8 @@ const Provider = ({ children }: PropsWithChildren) => {
   }, [initYield, setYield]);
 
   useEffect(() => {
-    selectedStakeId.ifNothing(() => initYield.ifJust(setYield));
-  }, [initYield, selectedStakeId, setYield]);
+    selectedStakeId.ifNothing(() => initYieldRef.current.ifJust(setYield));
+  }, [initYieldRef, selectedStakeId, setYield]);
 
   /**
    * Reset selectedToken if we dont have initToken
