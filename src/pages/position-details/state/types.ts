@@ -1,19 +1,18 @@
 import type BigNumber from "bignumber.js";
-import type { Action } from "../../types";
+import type { Action } from "../../../types";
 import type { Maybe } from "purify-ts";
 import type {
-  ActionDto,
   ActionTypes,
   TokenDto,
   YieldBalanceDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import type { usePositionBalances } from "../../hooks/use-position-balances";
-import type { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import type { PositionBalancesByType } from "../../domain/types/positions";
-import type { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
-import type { usePrices } from "../../hooks/api/use-prices";
-import type { TokenString } from "../../domain/types";
+import type { usePositionBalances } from "../../../hooks/use-position-balances";
+import type { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import type { PositionBalancesByType } from "../../../domain/types/positions";
+import type { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
+import type { usePrices } from "../../../hooks/api/use-prices";
+import type { TokenString } from "../../../domain/types";
 
 type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
 type UnstakeAmountMax = Action<"unstake/amount/max">;
@@ -31,13 +30,10 @@ export type PendingActionAmountChange = Action<
   }
 >;
 
-type Reset = Action<"reset">;
-
 export type Actions =
   | UnstakeAmountChange
   | UnstakeAmountMax
-  | PendingActionAmountChange
-  | Reset;
+  | PendingActionAmountChange;
 
 export type State = {
   unstakeAmount: BigNumber;
@@ -47,11 +43,6 @@ export type State = {
 export type ExtraData = {
   pendingActionType: Maybe<ActionTypes>;
   integrationData: Maybe<YieldDto>;
-  stakeExitTxGas: Maybe<BigNumber>;
-  pendingActionTxGas: Maybe<BigNumber>;
-  unstakeSession: Maybe<ActionDto>;
-  pendingActionSession: Maybe<ActionDto>;
-  pendingActionToken: Maybe<TokenDto>;
   positionBalances: ReturnType<typeof usePositionBalances>;
   yieldOpportunity: ReturnType<typeof useYieldOpportunity>;
   positionBalancesByType: Maybe<PositionBalancesByType>;
@@ -62,7 +53,6 @@ export type ExtraData = {
     pricePerShare: string;
   }>;
   positionBalancePrices: ReturnType<typeof usePrices>;
-  isGasCheckError: boolean;
   unstakeAmountValid: boolean;
   unstakeToken: Maybe<TokenDto>;
   unstakeAmountError: boolean;

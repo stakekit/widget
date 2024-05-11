@@ -5,6 +5,7 @@ import type {
   TokenDto,
   useTransactionConstructHook,
   useTokenGetTokenBalancesHook,
+  YieldDto,
 } from "@stakekit/api-hooks";
 import { useActionGetGasEstimateHook } from "@stakekit/api-hooks";
 import { withRequestErrorRetry } from "../../common/utils";
@@ -72,6 +73,7 @@ const fn = ({
   transactionConstruct,
   tokenGetTokenBalances,
   gasEstimate,
+  stakeExitData,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -82,6 +84,10 @@ const fn = ({
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
+  stakeExitData: {
+    integrationData: YieldDto;
+    interactedToken: TokenDto;
+  };
 }) =>
   withRequestErrorRetry({ fn: () => actionExit(stakeRequestDto) })
     .mapLeft(() => new Error("Stake exit error"))
@@ -105,4 +111,5 @@ const fn = ({
         transactionConstruct,
         tokenGetTokenBalances,
       })
-    );
+    )
+    .map((val) => ({ ...val, stakeExitData }));

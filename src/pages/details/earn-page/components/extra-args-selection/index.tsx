@@ -1,12 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { Box, Divider, Text } from "../../../../../components";
 import type { TronResourceType } from "@stakekit/api-hooks";
 
 export const ExtraArgsSelection = () => {
   const { selectedStake, tronResource, onTronResourceSelect, validation } =
-    useDetailsContext();
+    useEarnPageContext();
 
   const { t } = useTranslation();
 

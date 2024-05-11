@@ -1,6 +1,6 @@
 import { Box } from "../../../../../components";
 import type { ValidatorDto } from "@stakekit/api-hooks";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
@@ -18,7 +18,7 @@ export const SelectValidatorSection = () => {
     onValidatorSearch,
     validatorsData,
     validatorSearch,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const isLoading = appLoading || selectValidatorIsLoading;
 

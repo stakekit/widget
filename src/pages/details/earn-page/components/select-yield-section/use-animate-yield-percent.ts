@@ -1,9 +1,9 @@
 import { animate, useMotionValue, useTransform } from "framer-motion";
 import { useEffect } from "react";
-import type { DetailsContextType } from "../../state/types";
+import type { EarnPageContextType } from "../../state/types";
 
 export const useAnimateYieldPercent = (
-  estimatedRewards: DetailsContextType["estimatedRewards"]
+  estimatedRewards: EarnPageContextType["estimatedRewards"]
 ) => {
   const perReward = estimatedRewards
     .map((val) => {

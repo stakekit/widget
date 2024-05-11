@@ -8,7 +8,7 @@ import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { Just } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";
-import type { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
+import type { useUnstakeOrPendingActionState } from "../state";
 import { useMemo } from "react";
 
 type AmountBlockProps = {

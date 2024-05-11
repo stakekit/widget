@@ -1,34 +1,27 @@
 import { Maybe } from "purify-ts";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useStakeState } from "../../../state/stake";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { importValidator } from "../../../common/import-validator";
-import { useSetActionHistoryData } from "../../../providers/stake-history";
 import { StepsPage } from "./common.page";
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
 
-  const {
-    selectedStake,
-    selectedToken,
-    stakeSession,
-    selectedValidators,
-    stakeAmount,
-  } = useStakeState();
-
   const { address, network } = useSKWallet();
+
+  const { stakeSession, stakeEnterData } = useStakeEnterData();
 
   const onSignSuccess = () =>
     Maybe.fromRecord({
-      selectedStake,
+      stakeEnterData,
       network: Maybe.fromNullable(network),
       address: Maybe.fromNullable(address),
     }).ifJust((val) =>
-      selectedValidators.forEach((v) =>
+      val.stakeEnterData.selectedValidators.forEach((v) =>
         importValidator({
           validatorData: {
-            integrationId: val.selectedStake.id,
+            integrationId: val.stakeEnterData.selectedStake.id,
             validator: v,
           },
           network: val.network,
@@ -37,24 +30,5 @@ export const StakeStepsPage = () => {
       )
     );
 
-  const setActionHistoryData = useSetActionHistoryData();
-
-  const onDone = () =>
-    Maybe.fromRecord({ selectedStake, selectedToken }).ifJust((val) => {
-      setActionHistoryData({
-        type: "stake",
-        integrationData: val.selectedStake,
-        amount: stakeAmount,
-        selectedValidators,
-        interactedToken: val.selectedToken,
-      });
-    });
-
-  return (
-    <StepsPage
-      session={stakeSession}
-      onSignSuccess={onSignSuccess}
-      onDone={onDone}
-    />
-  );
+  return <StepsPage session={stakeSession} onSignSuccess={onSignSuccess} />;
 };

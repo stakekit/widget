@@ -41,8 +41,7 @@ export const rightTabBorder = style({
 
 export const rewardsDot = style({
   position: "absolute",
-  top: "-.5px",
-  right: "-5px",
+  right: "-7px",
 });
 
 export const divider = style({

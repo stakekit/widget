@@ -1,7 +1,6 @@
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { ThemeWrapper } from "./theme-wrapper";
-import { StakeStateProvider } from "../state/stake";
 import { useSettings } from "./settings";
 import { WagmiConfigProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
@@ -22,6 +21,9 @@ import { SKApiClientProvider } from "./api/api-client-provider";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { RootElementProvider } from "./root-element";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
+import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stake-enter-and-txs-construct";
+import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
+import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
 
 export const Providers = ({
   children,
@@ -40,25 +42,29 @@ export const Providers = ({
                     <SKWalletProvider>
                       <RainbowProvider>
                         <ActionHistoryContextProvider>
-                          <StakeStateProvider>
-                            <ThemeWrapper>
-                              <ListStateContextProvider>
-                                <CurrentLayoutProvider>
-                                  <HeaderHeightProvider>
-                                    <FooterHeightProvider>
-                                      <FooterButtonProvider>
-                                        <PoweredByHeightProvider>
-                                          <DisableTransitionDurationProvider>
-                                            {children}
-                                          </DisableTransitionDurationProvider>
-                                        </PoweredByHeightProvider>
-                                      </FooterButtonProvider>
-                                    </FooterHeightProvider>
-                                  </HeaderHeightProvider>
-                                </CurrentLayoutProvider>
-                              </ListStateContextProvider>
-                            </ThemeWrapper>
-                          </StakeStateProvider>
+                          <StakeEnterAndTxsConstructProvider>
+                            <PendingActionAndTxsConstructContextProvider>
+                              <StakeExitAndTxsConstructContextProvider>
+                                <ThemeWrapper>
+                                  <ListStateContextProvider>
+                                    <CurrentLayoutProvider>
+                                      <HeaderHeightProvider>
+                                        <FooterHeightProvider>
+                                          <FooterButtonProvider>
+                                            <PoweredByHeightProvider>
+                                              <DisableTransitionDurationProvider>
+                                                {children}
+                                              </DisableTransitionDurationProvider>
+                                            </PoweredByHeightProvider>
+                                          </FooterButtonProvider>
+                                        </FooterHeightProvider>
+                                      </HeaderHeightProvider>
+                                    </CurrentLayoutProvider>
+                                  </ListStateContextProvider>
+                                </ThemeWrapper>
+                              </StakeExitAndTxsConstructContextProvider>
+                            </PendingActionAndTxsConstructContextProvider>
+                          </StakeEnterAndTxsConstructProvider>
                         </ActionHistoryContextProvider>
                       </RainbowProvider>
                     </SKWalletProvider>

@@ -1,1 +1,1 @@
-export { PositionDetails } from "./position-details.page";
+export { PositionDetailsPage } from "./position-details.page";

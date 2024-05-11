@@ -1,18 +1,18 @@
 import { EitherAsync, Maybe } from "purify-ts";
-import { getInitialToken } from "../../domain/types/stake";
+import { getInitialToken } from "@sk-widget/domain/types/stake";
 import {
   useTokenGetTokensHook,
   useTokenTokenBalancesScanHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { getInitialQueryParams } from "../../hooks/use-init-query-params";
-import { getMultipleYields } from "../../hooks/api/use-multi-yields";
+import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
 import { useQuery } from "@tanstack/react-query";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useSKQueryClient } from "../../providers/query-client";
-import { tokenString } from "../../domain";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { tokenString } from "@sk-widget/domain";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
-import { getTokenBalances } from "../../common/get-token-balances";
+import { getTokenBalances } from "@sk-widget/common/get-token-balances";
+import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
 
 /**
  *

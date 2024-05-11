@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useUnstakeOrPendingActionReview } from "../hooks/use-unstake-or-pending-action-review.hook";
+import { useUnstakeOrPendingActionReview } from "@sk-widget/pages/review/hooks/use-unstake-or-pending-action-review.hook";
 import { ReviewPage } from "./common.page";
 import { Maybe } from "purify-ts";
 
@@ -14,6 +14,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
     title,
     isGasCheckError,
     token,
+    metaInfo,
   } = useUnstakeOrPendingActionReview();
 
   useTrackPage(pendingActionMatch ? "pendingActionReview" : "unstakeReview");
@@ -35,6 +36,7 @@ export const UnstakeOrPendingActionReviewPage = () => {
       metadata={integrationData.map((d) => d.metadata)}
       token={token}
       isGasCheckError={isGasCheckError}
+      {...metaInfo}
     />
   );
 };

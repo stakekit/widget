@@ -11,7 +11,7 @@ import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { validatorVirtuosoContainer } from "../../styles.css";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectTokenListItem } from "./select-token-list-item";
 import { useSKWallet } from "../../../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
@@ -24,7 +24,7 @@ export const SelectToken = () => {
     selectedToken,
     onTokenSearch,
     tokenSearch,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const trackEvent = useTrackEvent();
 

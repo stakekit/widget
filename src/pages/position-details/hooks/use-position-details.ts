@@ -7,13 +7,14 @@ import { formatNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
-} from "../../../state/unstake-or-pending-action";
+} from "../state";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUnstakeMachine } from "./use-unstake-machine";
 import { useNavigate } from "react-router-dom";
 import { useBaseToken } from "../../../hooks/use-base-token";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 
 export const usePositionDetails = () => {
   const {
@@ -25,11 +26,12 @@ export const usePositionDetails = () => {
     positionBalancesByType,
     positionBalancePrices,
     unstakeAmountValid,
-    unstakeSession,
     unstakeToken,
     unstakeAmountError,
     canChangeUnstakeAmount,
   } = useUnstakeOrPendingActionState();
+
+  const { stakeExitSession } = useStakeExitData();
 
   const dispatch = useUnstakeOrPendingActionDispatch();
 
@@ -113,10 +115,10 @@ export const usePositionDetails = () => {
   };
 
   useEffect(() => {
-    if (machine.value === "unstakeDone" && unstakeSession.isJust()) {
+    if (machine.value === "unstakeDone" && stakeExitSession.isJust()) {
       navigate("unstake/review");
     }
-  }, [machine.value, navigate, unstakeSession]);
+  }, [machine.value, navigate, stakeExitSession]);
 
   const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
   const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");

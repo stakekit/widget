@@ -1,7 +1,7 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
+import { useUnstakeOrPendingActionState } from "../state";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@stakekit/api-hooks";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
@@ -25,16 +25,18 @@ export const useUnstakeMachine = () => {
   const transactionGetTransactionVerificationMessageForNetwork =
     useTransactionGetTransactionVerificationMessageForNetworkHook();
 
-  const { unstakeAmount, integrationData } = useUnstakeOrPendingActionState();
+  const { unstakeAmount, integrationData, unstakeToken } =
+    useUnstakeOrPendingActionState();
 
   const initValues = useMemo(
     () =>
       Maybe.fromRecord({
         integrationData,
+        unstakeToken,
         network: Maybe.fromNullable(network),
         address: Maybe.fromNullable(address),
       }),
-    [address, integrationData, network]
+    [address, integrationData, network, unstakeToken]
   );
 
   return useStateMachine({
@@ -161,23 +163,26 @@ export const useUnstakeMachine = () => {
         },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
-            stakeExitRequestDto
+            Maybe.fromRecord({ stakeExitRequestDto, initValues })
               .map((val) => {
                 if (
                   context.transactionVerificationMessageDto &&
                   context.signedMessage
                 ) {
-                  return merge(val, {
-                    dto: {
-                      args: {
-                        signatureVerification: {
-                          message:
-                            context.transactionVerificationMessageDto.message,
-                          signed: context.signedMessage,
+                  return {
+                    ...val,
+                    stakeExitRequestDto: merge(val.stakeExitRequestDto, {
+                      dto: {
+                        args: {
+                          signatureVerification: {
+                            message:
+                              context.transactionVerificationMessageDto.message,
+                            signed: context.signedMessage,
+                          },
                         },
                       },
-                    },
-                  } as Partial<typeof val>);
+                    } as Partial<typeof val>),
+                  };
                 }
 
                 return val;
@@ -186,7 +191,13 @@ export const useUnstakeMachine = () => {
           )
             .chain((val) =>
               EitherAsync(() =>
-                onStakeExit.mutateAsync({ stakeRequestDto: val })
+                onStakeExit.mutateAsync({
+                  stakeRequestDto: val.stakeExitRequestDto,
+                  stakeExitData: {
+                    integrationData: val.initValues.integrationData,
+                    interactedToken: val.initValues.unstakeToken,
+                  },
+                })
               ).mapLeft((e) => {
                 console.log(e);
                 return new Error("Failed to unstake");

@@ -14,30 +14,13 @@ import {
   useTransactionConstructHook,
   useTransactionGetGasForNetworkHook,
 } from "@stakekit/api-hooks";
-import type { UseMutationResult } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
-import type { PropsWithChildren } from "react";
-import { createContext, useContext } from "react";
 import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useMutation } from "@tanstack/react-query";
 
 const mutationKey = ["on-pending-action"];
 
-const OnPendingActionContext = createContext<
-  | UseMutationResult<
-      GetEitherAsyncRight<ReturnType<typeof fn>>,
-      GetEitherAsyncLeft<ReturnType<typeof fn>>,
-      {
-        pendingActionRequestDto: GetEitherRight<
-          ReturnType<typeof preparePendingActionRequestDto>
-        >;
-        yieldBalance: YieldBalanceDto;
-      }
-    >
-  | undefined
->(undefined);
-
-export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
+export const useOnPendingAction = () => {
   const pendingActionAndTxsConstruct = usePendingActionAndTxsConstruct();
 
   const { disableGasCheck = false } = useSettings();
@@ -52,18 +35,22 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
   const value = useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    {
-      pendingActionRequestDto: GetEitherRight<
-        ReturnType<typeof preparePendingActionRequestDto>
-      >;
-      yieldBalance: YieldBalanceDto;
-    }
+    Pick<
+      Parameters<typeof fn>[0],
+      "yieldBalance" | "pendingActionData" | "pendingActionRequestDto"
+    >
   >({
     mutationKey,
-    mutationFn: async (args) =>
+    mutationFn: async ({
+      pendingActionData,
+      yieldBalance,
+      pendingActionRequestDto,
+    }) =>
       (
         await fn({
-          ...args,
+          pendingActionData,
+          yieldBalance,
+          pendingActionRequestDto,
           pendingActionAndTxsConstruct:
             pendingActionAndTxsConstruct.mutateAsync,
           disableGasCheck,
@@ -75,22 +62,6 @@ export const OnPendingActionProvider = ({ children }: PropsWithChildren) => {
         })
       ).unsafeCoerce(),
   });
-
-  return (
-    <OnPendingActionContext.Provider value={value}>
-      {children}
-    </OnPendingActionContext.Provider>
-  );
-};
-
-export const useOnPendingAction = () => {
-  const value = useContext(OnPendingActionContext);
-
-  if (!value) {
-    throw new Error(
-      "useOnPendingAction must be used within a OnPendingActionProvider"
-    );
-  }
 
   return value;
 };
@@ -105,6 +76,7 @@ const fn = ({
   actionPending,
   tokenGetTokenBalances,
   transactionConstruct,
+  pendingActionData,
 }: {
   pendingActionRequestDto: GetEitherRight<
     ReturnType<typeof preparePendingActionRequestDto>
@@ -113,15 +85,20 @@ const fn = ({
   pendingActionAndTxsConstruct: ReturnType<
     typeof usePendingActionAndTxsConstruct
   >["mutateAsync"];
-  disableGasCheck: boolean;
-  isLedgerLive: boolean;
   transactionGetGasForNetwork: ReturnType<
     typeof useTransactionGetGasForNetworkHook
   >;
-  actionPending: ReturnType<typeof useActionPendingHook>;
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
-}) =>
+} & Pick<
+  Parameters<
+    ReturnType<typeof usePendingActionAndTxsConstruct>["mutateAsync"]
+  >[0],
+  | "isLedgerLive"
+  | "disableGasCheck"
+  | "pendingActionData"
+  | "actionPending"
+  | "tokenGetTokenBalances"
+  | "transactionConstruct"
+>) =>
   getAverageGasMode({
     network: pendingActionRequestDto.gasFeeToken.network,
     transactionGetGasForNetwork,
@@ -147,6 +124,7 @@ const fn = ({
           isLedgerLive,
           disableGasCheck,
           gasFeeToken: pendingActionRequestDto.gasFeeToken,
+          pendingActionData,
         })
       )
         .mapLeft(() => new Error("Stake claim and txs construct failed"))

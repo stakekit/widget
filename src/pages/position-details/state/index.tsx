@@ -1,14 +1,7 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useReducer,
-  useState,
-} from "react";
-import { useStakeExitAndTxsConstruct } from "../../hooks/api/use-stake-exit-and-txs-construct";
+import { createContext, useContext, useMemo, useReducer } from "react";
 import type {
   ActionTypes,
   PendingActionDto,
@@ -16,27 +9,24 @@ import type {
   TokenDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
-import { usePendingActionAndTxsConstruct } from "../../hooks/api/use-pending-action-and-txs-construct";
-import { useOnPendingAction } from "../../pages/position-details/hooks/use-on-pending-action";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import { usePositionBalances } from "../../hooks/use-position-balances";
-import { usePositionBalanceByType } from "../../hooks/use-position-balance-by-type";
-import { useStakedOrLiquidBalance } from "../../hooks/use-staked-or-liquid-balance";
+import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
+import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import type {
   Actions,
   BalanceTokenActionType,
   ExtraData,
   State,
 } from "./types";
-import { usePrices } from "../../hooks/api/use-prices";
-import { config } from "../../config";
-import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
-import { useUnstakeOrPendingActionMatch } from "../../hooks/navigation/use-unstake-or-pending-action-match";
-import { usePendingActionSelectValidatorMatch } from "../../hooks/navigation/use-pending-action-select-validator-match";
-import { useBaseToken } from "../../hooks/use-base-token";
+import { usePrices } from "../../../hooks/api/use-prices";
+import { config } from "../../../config";
+import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
+import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
+import { useBaseToken } from "../../../hooks/use-base-token";
 import { getBalanceTokenActionType } from "./utils";
-import { isForceMaxAmount } from "../../domain/types/stake";
+import { isForceMaxAmount } from "../../../domain/types/stake";
+import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 
 const getInitialState = (): State => ({
   unstakeAmount: new BigNumber(0),
@@ -54,45 +44,10 @@ const UnstakeOrPendingActionDispatchContext = createContext<
 export const UnstakeOrPendingActionProvider = ({
   children,
 }: PropsWithChildren<{}>) => {
-  const unstakeOrPendingActionFlowMatch = useUnstakeOrPendingActionMatch();
-  const pendingActionSelectValidatorMatch =
-    usePendingActionSelectValidatorMatch();
+  const { plain, pendingActionType } = useUnstakeOrPendingActionParams();
 
-  const currentParams = useMemo(() => {
-    const { balanceId, integrationId } =
-      unstakeOrPendingActionFlowMatch?.params ??
-      pendingActionSelectValidatorMatch?.params ??
-      {};
-
-    const pendingActionType = pendingActionSelectValidatorMatch?.params
-      .pendingActionType as ActionTypes | undefined;
-
-    return {
-      balanceId: Maybe.fromNullable(balanceId),
-      integrationId: Maybe.fromNullable(integrationId),
-      pendingActionType: Maybe.fromNullable(pendingActionType),
-      plain: {
-        balanceId,
-        integrationId,
-        pendingActionType,
-      },
-    };
-  }, [
-    pendingActionSelectValidatorMatch?.params,
-    unstakeOrPendingActionFlowMatch?.params,
-  ]);
-
-  /**
-   * On navigating away from unstake or pending action flow, keep last params
-   * to be able to finish animation with correct params.
-   * On next navigation to unstake or pending action flow, use new params
-   * and reset state
-   */
-  const [lastStateParams, setLastStateParams] = useState(currentParams.plain);
-
-  const balanceId = currentParams.plain.balanceId ?? lastStateParams.balanceId;
-  const integrationId =
-    currentParams.plain.integrationId ?? lastStateParams.integrationId;
+  const balanceId = plain.balanceId;
+  const integrationId = plain.integrationId;
 
   const yieldOpportunity = useYieldOpportunity(integrationId);
 
@@ -281,10 +236,6 @@ export const UnstakeOrPendingActionProvider = ({
         };
       }
 
-      case "reset": {
-        return { ...getInitialState() };
-      }
-
       default:
         return state;
     }
@@ -335,96 +286,6 @@ export const UnstakeOrPendingActionProvider = ({
     [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
   );
 
-  const stakeExitAndTxsConstructMutationState = useStakeExitAndTxsConstruct();
-  const pendingActionAndTxsConstructMutationState =
-    usePendingActionAndTxsConstruct();
-
-  const unstakeSession = useMemo(
-    () =>
-      Maybe.fromNullable(stakeExitAndTxsConstructMutationState.data?.actionDto),
-    [stakeExitAndTxsConstructMutationState.data?.actionDto]
-  );
-
-  const isGasCheckError = useMemo(
-    () =>
-      Maybe.fromNullable(
-        stakeExitAndTxsConstructMutationState.data?.gasCheckErr
-      )
-        .altLazy(() =>
-          Maybe.fromNullable(
-            pendingActionAndTxsConstructMutationState.data?.gasCheckErr
-          )
-        )
-        .isJust(),
-    [
-      pendingActionAndTxsConstructMutationState.data?.gasCheckErr,
-      stakeExitAndTxsConstructMutationState.data?.gasCheckErr,
-    ]
-  );
-
-  const pendingActionSession = useMemo(
-    () =>
-      Maybe.fromNullable(
-        pendingActionAndTxsConstructMutationState.data?.actionDto
-      ),
-    [pendingActionAndTxsConstructMutationState.data?.actionDto]
-  );
-
-  const stakeExitTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(
-        stakeExitAndTxsConstructMutationState.data?.actionDto.gasEstimate.amount
-      ),
-    [stakeExitAndTxsConstructMutationState.data?.actionDto]
-  );
-
-  const pendingActionTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(
-        pendingActionAndTxsConstructMutationState.data?.actionDto.gasEstimate
-          .amount
-      ),
-    [pendingActionAndTxsConstructMutationState.data?.actionDto]
-  );
-
-  const onPendingActionState = useOnPendingAction();
-
-  const pendingActionToken = useMemo<ExtraData["pendingActionToken"]>(
-    () =>
-      Maybe.fromNullable(onPendingActionState?.data).map(
-        (val) => val.pendingActionToken
-      ),
-    [onPendingActionState?.data]
-  );
-
-  Maybe.fromRecord({
-    integrationId: currentParams.integrationId,
-    balanceId: currentParams.balanceId,
-  })
-    .filter(() => !lastStateParams.balanceId || !lastStateParams.integrationId)
-    .ifJust(() => setLastStateParams(currentParams.plain));
-
-  /**
-   * Reset state and set new last params on navigation
-   */
-  Maybe.fromRecord({
-    integrationId: currentParams.integrationId,
-    balanceId: currentParams.balanceId,
-  })
-    .filter(
-      (val) =>
-        !!(lastStateParams.balanceId && lastStateParams.integrationId) &&
-        (lastStateParams.balanceId !== val.balanceId ||
-          lastStateParams.integrationId !== val.integrationId)
-    )
-    .ifJust(() => {
-      setLastStateParams(currentParams.plain);
-      dispatch({ type: "reset" });
-      stakeExitAndTxsConstructMutationState.reset();
-      pendingActionAndTxsConstructMutationState.reset();
-      onPendingActionState.reset();
-    });
-
   const value: State & ExtraData = useMemo(
     () => ({
       canChangeUnstakeAmount,
@@ -438,14 +299,8 @@ export const UnstakeOrPendingActionProvider = ({
       stakedOrLiquidBalances,
       yieldOpportunity,
       positionBalances,
-      pendingActionType: currentParams.pendingActionType,
+      pendingActionType,
       integrationData,
-      stakeExitTxGas,
-      unstakeSession,
-      pendingActionSession,
-      pendingActionTxGas,
-      pendingActionToken,
-      isGasCheckError,
       unstakeAmountValid,
     }),
     [
@@ -460,15 +315,9 @@ export const UnstakeOrPendingActionProvider = ({
       stakedOrLiquidBalances,
       yieldOpportunity,
       positionBalances,
-      currentParams.pendingActionType,
       integrationData,
-      stakeExitTxGas,
-      unstakeSession,
-      pendingActionSession,
-      pendingActionTxGas,
-      pendingActionToken,
-      isGasCheckError,
       unstakeAmountValid,
+      pendingActionType,
     ]
   );
 

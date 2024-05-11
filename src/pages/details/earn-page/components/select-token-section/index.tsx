@@ -3,7 +3,7 @@ import { Box, NumberInput, Text } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectToken } from "./select-token";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { useSettings } from "../../../../../providers/settings";
 import { Just, Maybe } from "purify-ts";
 import { SelectTokenTitle } from "./title";
@@ -25,7 +25,7 @@ export const SelectTokenSection = () => {
     stakeMaxAmount,
     stakeMinAmount,
     symbol,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const isLoading = appLoading || selectTokenIsLoading;
 
