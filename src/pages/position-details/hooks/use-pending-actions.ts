@@ -21,14 +21,14 @@ import { useNavigate } from "react-router-dom";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
-} from "../../../state/unstake-or-pending-action";
+} from "../state";
 import BigNumber from "bignumber.js";
 import { formatNumber } from "../../../utils";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useBaseToken } from "../../../hooks/use-base-token";
-import { getBalanceTokenActionType } from "../../../state/unstake-or-pending-action/utils";
-import type { PendingActionAmountChange } from "../../../state/unstake-or-pending-action/types";
+import { getBalanceTokenActionType } from "../state/utils";
+import type { PendingActionAmountChange } from "../state/types";
 
 export const usePendingActions = () => {
   const {
@@ -259,7 +259,14 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) =>
-      onPendingAction.mutate({ pendingActionRequestDto: val, yieldBalance })
+      onPendingAction.mutate({
+        pendingActionRequestDto: val,
+        yieldBalance,
+        pendingActionData: {
+          integrationData: integrationData,
+          interactedToken: yieldBalance.token,
+        },
+      })
     );
   };
 

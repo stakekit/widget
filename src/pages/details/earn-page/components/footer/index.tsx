@@ -1,8 +1,18 @@
+import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import { MetaInfo } from "../../../../components/meta-info";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const Footer = () => {
-  const { appLoading, footerIsLoading } = useDetailsContext();
+  const { appLoading, footerIsLoading } = useEarnPageContext();
+  const { selectedStake, selectedValidators, selectedToken } =
+    useEarnPageState();
 
-  return <MetaInfo isLoading={appLoading || footerIsLoading} />;
+  return (
+    <MetaInfo
+      isLoading={appLoading || footerIsLoading}
+      selectedStake={selectedStake}
+      selectedValidators={selectedValidators}
+      selectedToken={selectedToken}
+    />
+  );
 };

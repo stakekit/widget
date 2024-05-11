@@ -1,8 +1,8 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { useStakeState } from "../../state/stake";
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 
 export const StakeCheck = () => {
-  const { stakeSession } = useStakeState();
+  const { stakeSession } = useStakeEnterData();
 
   const isDetailsComplete = stakeSession.isJust();
 

@@ -43,6 +43,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
     server: { host: true },
     resolve: {
       alias: {
+        "@sk-widget": path.resolve(__dirname, "..", "src"),
         crypto: path.resolve(__dirname, "..", "polyfills", "empty.js"),
         stream: path.resolve(__dirname, "..", "polyfills", "empty.js"),
       },

@@ -1,19 +1,19 @@
 import { EitherAsync, Maybe } from "purify-ts";
-import { getInitialYield } from "../../domain/types/stake";
-import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import { getInitialYield } from "@sk-widget/domain/types/stake";
+import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
 import { useQuery } from "@tanstack/react-query";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import type { TokenDto } from "@stakekit/api-hooks";
 import {
   useTokenGetTokensHook,
   useTokenTokenBalancesScanHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { getMultipleYields } from "../../hooks/api/use-multi-yields";
-import { getTokenBalances } from "../../common/get-token-balances";
+import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
+import { getTokenBalances } from "@sk-widget/common/get-token-balances";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
-import { tokenString } from "../../domain";
+import { tokenString } from "@sk-widget/domain";
 import BigNumber from "bignumber.js";
 
 export const useInitYield = ({

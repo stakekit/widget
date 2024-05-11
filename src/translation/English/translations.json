@@ -179,7 +179,8 @@
     "failed": "Failed",
     "tx_of_one": "Transaction - {{type}}",
     "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
-    "skipped": "Skipped"
+    "skipped": "Skipped",
+    "approve_error": "Something went wrong. Check if wallet is connected"
   },
   "complete": {
     "successfully_staked": "Successfully {{action}} {{amount}} {{tokenNetwork}}",

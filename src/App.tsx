@@ -27,11 +27,11 @@ import {
 import { Providers } from "./providers";
 import type { SettingsProps, VariantProps } from "./providers/settings";
 import { SettingsContextProvider } from "./providers/settings";
-import { PositionDetails } from "./pages/position-details";
+import { PositionDetailsPage } from "./pages/position-details";
 import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-action/";
+import { UnstakeOrPendingActionProvider } from "./pages/position-details/state";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
@@ -138,10 +138,10 @@ const Widget = () => {
 
                       {/* Unstake or pending actions flow */}
                       <Route path="positions/:integrationId/:balanceId">
-                        <Route index element={<PositionDetails />} />
+                        <Route index element={<PositionDetailsPage />} />
                         <Route
                           path="select-validator/:pendingActionType"
-                          element={<PositionDetails />}
+                          element={<PositionDetailsPage />}
                         />
 
                         {/* Unstaking */}

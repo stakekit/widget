@@ -3,7 +3,7 @@ import { Box, Divider, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { motion } from "framer-motion";
 import { useAnimateYieldPercent } from "./use-animate-yield-percent";
 import { useSettings } from "../../../../../providers/settings";
@@ -16,7 +16,7 @@ export const SelectYieldSection = () => {
     estimatedRewards,
     selectedStake,
     selectYieldIsLoading,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const { variant } = useSettings();
 

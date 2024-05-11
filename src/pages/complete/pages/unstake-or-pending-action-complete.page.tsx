@@ -1,4 +1,3 @@
-import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import { useMemo } from "react";
 import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
@@ -6,21 +5,26 @@ import { useYieldType } from "../../../hooks/use-yield-type";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
-import { useActionHistoryData } from "../../../providers/stake-history";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
+import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 
 export const UnstakeOrPendingActionCompletePage = () => {
-  const { positionBalances } = useUnstakeOrPendingActionState();
+  const { plain } = useUnstakeOrPendingActionParams();
+  const positionBalances = usePositionBalances({
+    balanceId: plain.balanceId,
+    integrationId: plain.integrationId,
+  });
 
   const pendingActionMatch = usePendingActionMatch();
 
-  const unstakeOrPendingActionHistoryData =
-    useActionHistoryData().chainNullable((val) =>
-      val.type === "stake" ? null : val
-    );
+  const stakeExitData = useStakeExitData();
+  const pendingActionData = usePendingActionData();
 
-  const integrationData = unstakeOrPendingActionHistoryData.map(
-    (v) => v.integrationData
-  );
+  const integrationData = pendingActionMatch
+    ? pendingActionData.pendingActionData.map((val) => val.integrationData)
+    : stakeExitData.stakeExitData.map((val) => val.integrationData);
 
   useTrackPage(
     pendingActionMatch ? "pendingActionCompelete" : "unstakeCompelete"
@@ -33,27 +37,23 @@ export const UnstakeOrPendingActionCompletePage = () => {
     ),
   });
 
-  const token = unstakeOrPendingActionHistoryData.map((v) => v.interactedToken);
+  const token = pendingActionMatch
+    ? pendingActionData.pendingActionData.map((val) => val.interactedToken)
+    : stakeExitData.stakeExitData.map((val) => val.interactedToken);
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
-      unstakeOrPendingActionHistoryData.mapOrDefault(
-        (v) => formatNumber(v.amount),
-        ""
-      ),
-    [unstakeOrPendingActionHistoryData]
+      (pendingActionMatch
+        ? pendingActionData.amount
+        : stakeExitData.amount
+      ).mapOrDefault((v) => formatNumber(v), ""),
+    [pendingActionData.amount, pendingActionMatch, stakeExitData.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);
 
-  const pendingActionType = unstakeOrPendingActionHistoryData
-    .filter(
-      (v): v is Extract<typeof v, { type: "pending_action" }> =>
-        v.type === "pending_action"
-    )
-    .map((val) => val.pendingActionType)
-    .extract();
+  const pendingActionType = pendingActionData.pendingActionType.extract();
 
   return (
     <CompletePage

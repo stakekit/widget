@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { useOwnReferralCode } from "../../../../../hooks/api/referral/use-own-referral-code";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { Maybe } from "purify-ts";
 import { useEffect, useMemo, useState } from "react";
 import { MaybeWindow } from "../../../../../utils/maybe-window";
@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "../../../../../components/atoms/icons/check";
 
 export const ReferralCode = () => {
-  const { appLoading } = useDetailsContext();
+  const { appLoading } = useEarnPageContext();
 
   const referralCode = useOwnReferralCode();
   const isLoading = appLoading || referralCode.isLoading;

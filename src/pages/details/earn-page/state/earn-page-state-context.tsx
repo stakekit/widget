@@ -10,32 +10,25 @@ import {
   useReducer,
 } from "react";
 import type { Actions, ExtraData, State } from "./types";
-import {
-  StakeEnterAndTxsConstructProvider,
-  useStakeEnterAndTxsConstruct,
-} from "../../hooks/api/use-stake-enter-and-txs-construct";
-import { useMaxMinYieldAmount } from "../../hooks/use-max-min-yield-amount";
-import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
-import { useForceMaxAmount } from "../../hooks/use-force-max-amount";
+import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useForceMaxAmount } from "../../../../hooks/use-force-max-amount";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useInitQueryParams } from "../../hooks/use-init-query-params";
-import { PendingActionAndTxsConstructContextProvider } from "../../hooks/api/use-pending-action-and-txs-construct";
-import { StakeExitAndTxsConstructContextProvider } from "../../hooks/api/use-stake-exit-and-txs-construct";
-import { OnPendingActionProvider } from "../../pages/position-details/hooks/use-on-pending-action";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useInitQueryParams } from "../../../../hooks/use-init-query-params";
 import { useAmountValidation } from "./use-amount-validation";
-import { equalTokens } from "../../domain";
+import { equalTokens } from "../../../../domain";
 import { useGetInitYield } from "./use-get-init-yield";
 import { useInitToken } from "./use-init-token";
 import { onYieldSelectState } from "./utils";
 import { useTokenBalance } from "./use-token-balance";
 import { useInitYield } from "./use-init-yield";
-import { useSavedRef } from "../../hooks";
+import { useSavedRef } from "../../../../hooks";
 
-const StakeStateContext = createContext<(State & ExtraData) | undefined>(
+const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
 );
-const StakeDispatchContext = createContext<Dispatch<Actions> | undefined>(
+const EarnPageDispatchContext = createContext<Dispatch<Actions> | undefined>(
   undefined
 );
 
@@ -47,9 +40,9 @@ const getInitialState = (): State => ({
   tronResource: Maybe.empty(),
 });
 
-const Provider = ({ children }: PropsWithChildren) => {
+export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const initParams = useInitQueryParams();
-  const { network } = useSKWallet();
+  const { network, isConnected } = useSKWallet();
 
   const getInitYield = useGetInitYield();
 
@@ -232,8 +225,15 @@ const Provider = ({ children }: PropsWithChildren) => {
     }
   });
 
+  const selectedTokenRef = useSavedRef(selectedToken);
   const initTokenRef = useSavedRef(initToken);
   const initYieldRef = useSavedRef(initYield);
+
+  useEffect(() => {
+    if (!isConnected && selectedTokenRef.current.isJust()) {
+      dispatch({ type: "state/reset" });
+    }
+  }, [selectedTokenRef, isConnected]);
 
   /**
    * Set initial token
@@ -267,33 +267,6 @@ const Provider = ({ children }: PropsWithChildren) => {
     );
   }, [initToken, selectedToken]);
 
-  const stakeEnterAndTxsConstructMutationState = useStakeEnterAndTxsConstruct();
-
-  const stakeSession = useMemo(
-    () =>
-      Maybe.fromNullable(
-        stakeEnterAndTxsConstructMutationState.data?.actionDto
-      ),
-    [stakeEnterAndTxsConstructMutationState.data?.actionDto]
-  );
-
-  const isGasCheckError = useMemo(
-    () =>
-      Maybe.fromNullable(stakeEnterAndTxsConstructMutationState.data)
-        .chainNullable((val) => val.gasCheckErr)
-        .isJust(),
-    [stakeEnterAndTxsConstructMutationState.data]
-  );
-
-  const stakeEnterTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(
-        stakeEnterAndTxsConstructMutationState.data?.actionDto.gasEstimate
-          .amount
-      ),
-    [stakeEnterAndTxsConstructMutationState.data?.actionDto.gasEstimate.amount]
-  );
-
   const actions = useMemo(
     () => ({
       onMaxClick: () =>
@@ -316,15 +289,13 @@ const Provider = ({ children }: PropsWithChildren) => {
 
   const value: State & ExtraData = useMemo(
     () => ({
+      dispatch,
       selectedStakeId,
       selectedStake,
       selectedValidators,
       stakeAmount,
-      stakeSession,
       actions,
-      stakeEnterTxGas,
       tronResource,
-      isGasCheckError,
       stakeAmountGreaterThanAvailableAmount,
       stakeAmountGreaterThanMax,
       stakeAmountLessThanMin,
@@ -339,11 +310,8 @@ const Provider = ({ children }: PropsWithChildren) => {
       selectedToken,
       selectedValidators,
       stakeAmount,
-      stakeSession,
       actions,
-      stakeEnterTxGas,
       tronResource,
-      isGasCheckError,
       stakeAmountGreaterThanAvailableAmount,
       stakeAmountGreaterThanMax,
       stakeAmountLessThanMin,
@@ -354,30 +322,16 @@ const Provider = ({ children }: PropsWithChildren) => {
   );
 
   return (
-    <StakeStateContext.Provider value={value}>
-      <StakeDispatchContext.Provider value={dispatch}>
+    <EarnPageStateContext.Provider value={value}>
+      <EarnPageDispatchContext.Provider value={dispatch}>
         {children}
-      </StakeDispatchContext.Provider>
-    </StakeStateContext.Provider>
+      </EarnPageDispatchContext.Provider>
+    </EarnPageStateContext.Provider>
   );
 };
 
-export const StakeStateProvider = ({ children }: PropsWithChildren) => {
-  return (
-    <StakeEnterAndTxsConstructProvider>
-      <PendingActionAndTxsConstructContextProvider>
-        <StakeExitAndTxsConstructContextProvider>
-          <OnPendingActionProvider>
-            <Provider>{children}</Provider>
-          </OnPendingActionProvider>
-        </StakeExitAndTxsConstructContextProvider>
-      </PendingActionAndTxsConstructContextProvider>
-    </StakeEnterAndTxsConstructProvider>
-  );
-};
-
-export const useStakeState = () => {
-  const state = useContext(StakeStateContext);
+export const useEarnPageState = () => {
+  const state = useContext(EarnPageStateContext);
   if (state === undefined) {
     throw new Error("useState must be used within a StateProvider");
   }
@@ -385,8 +339,8 @@ export const useStakeState = () => {
   return state;
 };
 
-export const useStakeDispatch = () => {
-  const dispatch = useContext(StakeDispatchContext);
+export const useEarnPageDispatch = () => {
+  const dispatch = useContext(EarnPageDispatchContext);
   if (dispatch === undefined) {
     throw new Error("useDispatch must be used within a StateProvider");
   }

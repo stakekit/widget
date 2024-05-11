@@ -1,4 +1,4 @@
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { Box, Spinner, Text } from "../../../../../components";
 
 export const SelectTokenTitle = () => {
@@ -9,7 +9,7 @@ export const SelectTokenTitle = () => {
     selectYieldIsLoading,
     selectValidatorIsLoading,
     footerIsLoading,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const isLoading =
     appLoading ||

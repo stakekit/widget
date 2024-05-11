@@ -3,7 +3,7 @@ import type {
   TokenDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
-import { tokenString } from "../../domain";
+import { tokenString } from "../../../domain";
 import type { BalanceTokenActionType } from "./types";
 
 export const getBalanceTokenActionType = ({

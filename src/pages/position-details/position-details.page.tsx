@@ -14,8 +14,9 @@ import type { ActionTypes } from "@stakekit/api-hooks";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { container } from "./styles.css";
 import { UnstakeSignPopup } from "./components/unstake-sign-popup";
+import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
 
-export const PositionDetails = () => {
+const PositionDetails = () => {
   const {
     onPendingActionAmountChange,
     integrationData,
@@ -300,3 +301,9 @@ export const PositionDetails = () => {
     </AnimationPage>
   );
 };
+
+export const PositionDetailsPage = () => (
+  <UnstakeOrPendingActionProvider>
+    <PositionDetails />
+  </UnstakeOrPendingActionProvider>
+);

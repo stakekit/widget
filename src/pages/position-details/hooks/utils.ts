@@ -8,8 +8,8 @@ import type {
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
 import type { SKWallet } from "../../../domain/types";
-import type { State } from "../../../state/unstake-or-pending-action/types";
-import { getBalanceTokenActionType } from "../../../state/unstake-or-pending-action/utils";
+import type { State } from "../state/types";
+import { getBalanceTokenActionType } from "../state/utils";
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,

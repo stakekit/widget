@@ -32,12 +32,13 @@ export const useOnStakeExit = () => {
   return useMutation<
     GetEitherAsyncRight<ReturnType<typeof fn>>,
     GetEitherAsyncLeft<ReturnType<typeof fn>>,
-    { stakeRequestDto: GetMaybeJust<ReturnType<typeof useStakeExitRequestDto>> }
+    Pick<Parameters<typeof fn>[0], "stakeRequestDto" | "stakeExitData">
   >({
-    mutationFn: async ({ stakeRequestDto }) =>
+    mutationFn: async ({ stakeRequestDto, stakeExitData }) =>
       (
         await fn({
           stakeRequestDto,
+          stakeExitData,
           stakeExitAndTxsConstruct: stakeExitAndTxsConstruct.mutateAsync,
           disableGasCheck,
           isLedgerLive,
@@ -59,20 +60,24 @@ const fn = ({
   actionExit,
   transactionConstruct,
   tokenGetTokenBalances,
+  stakeExitData,
 }: {
   stakeRequestDto: GetMaybeJust<ReturnType<typeof useStakeExitRequestDto>>;
   stakeExitAndTxsConstruct: ReturnType<
     typeof useStakeExitAndTxsConstruct
   >["mutateAsync"];
-  disableGasCheck: boolean;
-  isLedgerLive: boolean;
   transactionGetGasForNetwork: ReturnType<
     typeof useTransactionGetGasForNetworkHook
   >;
-  actionExit: ReturnType<typeof useActionExitHook>;
-  transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-}) =>
+} & Pick<
+  Parameters<ReturnType<typeof useStakeExitAndTxsConstruct>["mutateAsync"]>[0],
+  | "isLedgerLive"
+  | "disableGasCheck"
+  | "actionExit"
+  | "tokenGetTokenBalances"
+  | "transactionConstruct"
+  | "stakeExitData"
+>) =>
   getAverageGasMode({
     network: stakeRequestDto.gasFeeToken.network,
     transactionGetGasForNetwork,
@@ -89,6 +94,7 @@ const fn = ({
           disableGasCheck,
           isLedgerLive,
           gasFeeToken: stakeRequestDto.gasFeeToken,
+          stakeExitData,
         })
       )
         .map((res) => ({ ...val, ...res }))
