@@ -1,10 +1,7 @@
 import type { PropsWithChildren } from "react";
-import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 import type { SettingsContextType } from "../settings";
-import { useSettings } from "../settings";
-import { useQuery } from "@tanstack/react-query";
-import { EitherAsync } from "purify-ts";
-import { config } from "@sk-widget/config";
+import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 
 const trackPageMap = {
   earn: "Earn",
@@ -74,50 +71,31 @@ export const TrackingContext = createContext<TrackingContextType | undefined>(
 export const TrackingContextProvider = ({
   children,
   tracking,
-}: PropsWithChildren<{ tracking: SettingsContextType["tracking"] }>) => {
-  const { variant } = useSettings();
-
-  const varitantTrackingRef = useRef<typeof tracking | null>(null);
-
-  useQuery({
-    queryKey: ["tracking", variant],
-    staleTime: Infinity,
-    queryFn: async () => {
-      varitantTrackingRef.current = null;
-
-      if (variant !== "zerion") return null;
-
-      return (
-        await EitherAsync(() => import("./tracking-variants"))
-          .ifRight((val) => {
-            val.initMixpanel(config.trackingVariants[variant]);
-            varitantTrackingRef.current = val.tracking;
-          })
-          .map(() => null)
-      ).unsafeCoerce();
-    },
-  });
-
+  variantTracking,
+}: PropsWithChildren<{
+  tracking: SettingsContextType["tracking"];
+  variantTracking?: SettingsContextType["tracking"];
+}>) => {
   const trackEvent = useCallback<TrackingContextType["trackEvent"]>(
     (event, props) => {
       tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : []));
-      varitantTrackingRef.current?.trackEvent(
+      variantTracking?.trackEvent(
         trackEventMap[event],
         ...(props ? [props] : [])
       );
     },
-    [tracking]
+    [tracking, variantTracking]
   );
 
   const trackPageView = useCallback<TrackingContextType["trackPageView"]>(
     (page, props) => {
       tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : []));
-      varitantTrackingRef.current?.trackPageView(
+      variantTracking?.trackPageView(
         trackPageMap[page],
         ...(props ? [props] : [])
       );
     },
-    [tracking]
+    [tracking, variantTracking]
   );
 
   const value = useMemo(
@@ -141,3 +119,11 @@ export const useTracking = () => {
 
   return context;
 };
+
+export const TrackingContextProviderWithProps = ({
+  children,
+}: PropsWithChildren) => (
+  <TrackingContextProvider {...useTrackingProps()}>
+    {children}
+  </TrackingContextProvider>
+);
