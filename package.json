@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.153",
+  "version": "0.0.154",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
@@ -84,6 +84,7 @@
     "@tronweb3/tronwallet-adapter-walletconnect": "^1.0.6",
     "@types/jsdom": "^21.1.6",
     "@types/lodash.merge": "^4.6.9",
+    "@types/mixpanel-browser": "^2",
     "@types/react": "18.3.1",
     "@types/react-dom": "^18.3.0",
     "@vanilla-extract/css": "^1.15.1",
@@ -109,6 +110,7 @@
     "jsdom": "^24.0.0",
     "knip": "^5.13.0",
     "lodash.merge": "^4.6.2",
+    "mixpanel-browser": "^2.50.0",
     "msw": "^2.3.0",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",

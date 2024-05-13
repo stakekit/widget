@@ -1,6 +1,9 @@
 import type { PropsWithChildren } from "react";
-import { createContext, useCallback, useContext, useMemo } from "react";
-import type { SettingsContextType } from "../settings";
+import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import { useSettings } from "../settings";
+import { useQuery } from "@tanstack/react-query";
+import { EitherAsync } from "purify-ts";
+import { config } from "@sk-widget/config";
 
 const trackPageMap = {
   earn: "Earn",
@@ -67,28 +70,56 @@ export const TrackingContext = createContext<TrackingContextType | undefined>(
   undefined
 );
 
-export const TrackingContextProvider = ({
-  children,
-  tracking,
-}: PropsWithChildren<{ tracking: SettingsContextType["tracking"] }>) => {
+export const TrackingContextProvider = ({ children }: PropsWithChildren) => {
+  const { tracking, variant } = useSettings();
+
+  const varitantTrackingRef = useRef<typeof tracking | null>(null);
+
+  useQuery({
+    queryKey: ["tracking", variant],
+    staleTime: Infinity,
+    queryFn: async () => {
+      varitantTrackingRef.current = null;
+
+      if (variant !== "zerion") return null;
+
+      return (
+        await EitherAsync(() => import("./tracking-variants"))
+          .ifRight((val) => {
+            val.initMixpanel(config.trackingVariants[variant]);
+            varitantTrackingRef.current = val.tracking;
+          })
+          .map(() => null)
+      ).unsafeCoerce();
+    },
+  });
+
   const trackEvent = useCallback<TrackingContextType["trackEvent"]>(
-    (event, props) =>
-      tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : [])),
+    (event, props) => {
+      tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : []));
+      varitantTrackingRef.current?.trackEvent(
+        trackEventMap[event],
+        ...(props ? [props] : [])
+      );
+    },
     [tracking]
   );
 
   const trackPageView = useCallback<TrackingContextType["trackPageView"]>(
-    (page, props) =>
-      tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : [])),
+    (page, props) => {
+      tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : []));
+      varitantTrackingRef.current?.trackPageView(
+        trackPageMap[page],
+        ...(props ? [props] : [])
+      );
+    },
     [tracking]
   );
 
-  const value = useMemo(() => {
-    return {
-      trackEvent,
-      trackPageView,
-    };
-  }, [trackEvent, trackPageView]);
+  const value = useMemo(
+    () => ({ trackEvent, trackPageView }),
+    [trackEvent, trackPageView]
+  );
 
   return (
     <TrackingContext.Provider value={value}>

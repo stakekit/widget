@@ -21,7 +21,7 @@ import { SelectTokenTitle } from "./components/select-token-section/title";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { StakedVia } from "./components/select-yield-section/staked-via";
 import { Just } from "purify-ts";
-import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -126,9 +126,9 @@ const EarnPageComponent = () => {
 };
 
 export const EarnPage = () => (
-  <EarnPageStateProvider>
+  <EarnPageStateUsageBoundaryProvider>
     <EarnPageContextProvider>
       <EarnPageComponent />
     </EarnPageContextProvider>
-  </EarnPageStateProvider>
+  </EarnPageStateUsageBoundaryProvider>
 );
