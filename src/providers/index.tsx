@@ -24,10 +24,13 @@ import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stak
 import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { useSettings } from "@sk-widget/providers/settings";
 
 export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
+  const { tracking } = useSettings();
+
   return (
     <StrictMode>
       <RootElementProvider>
@@ -36,7 +39,7 @@ export const Providers = ({
             <SKLocationProvider>
               <MountAnimationProvider>
                 <WagmiConfigProvider>
-                  <TrackingContextProvider>
+                  <TrackingContextProvider tracking={tracking}>
                     <SKWalletProvider>
                       <RainbowProvider>
                         <EarnPageStateProvider>
