@@ -24,6 +24,7 @@ import { onYieldSelectState } from "./utils";
 import { useTokenBalance } from "./use-token-balance";
 import { useInitYield } from "./use-init-yield";
 import { useSavedRef } from "../../../../hooks";
+import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 
 const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(
   undefined
@@ -191,6 +192,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     selectedToken,
   });
 
+  const multiYields = useMultiYields(availableYields.orDefault([]));
+
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
   const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
@@ -239,6 +242,13 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const selectedTokenRef = useSavedRef(selectedToken);
   const initTokenRef = useSavedRef(initToken);
   const initYieldRef = useSavedRef(initYield);
+
+  const hasNotYieldsForToken =
+    !multiYields.isLoading &&
+    multiYields.data?.length === 0 &&
+    initToken.isJust() &&
+    initYield.isNothing() &&
+    selectedStakeId.isNothing();
 
   useEffect(() => {
     if (!isConnected && selectedTokenRef.current.isJust()) {
@@ -314,6 +324,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       availableAmount,
       availableYields,
       selectedToken,
+      hasNotYieldsForToken,
     }),
     [
       selectedStakeId,
@@ -329,6 +340,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       stakeAmountIsZero,
       availableAmount,
       availableYields,
+      hasNotYieldsForToken,
     ]
   );
 

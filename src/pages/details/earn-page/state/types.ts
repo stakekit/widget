@@ -58,6 +58,7 @@ export type ExtraData = {
   stakeAmountIsZero: boolean;
   availableAmount: Maybe<BigNumber>;
   availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
+  hasNotYieldsForToken: boolean;
 };
 
 export type EarnPageContextType = {
