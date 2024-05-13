@@ -78,6 +78,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     stakeAmountIsZero,
     availableAmount,
     availableYields,
+    hasNotYieldsForToken,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
 
@@ -579,7 +580,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading || defaultTokensIsLoading;
 
   const selectYieldIsLoading =
-    selectedStakeId.isNothing() ||
+    (selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
     multiYieldsLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
@@ -653,6 +654,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedToken,
     validatorsData,
     validatorSearch,
+    hasNotYieldsForToken,
   };
 
   return (
