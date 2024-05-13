@@ -65,6 +65,9 @@ export const getGasFeeInUSD = ({
     }))
     .mapOrDefault(
       (val) =>
-        `${formatNumber(val.gas)} ${val.yieldDto.metadata.gasFeeToken.symbol} ($${formatNumber(val.gasFeeInUSD)})`,
+        `${formatNumber(val.gas)} ${val.yieldDto.metadata.gasFeeToken.symbol}` +
+        (val.gasFeeInUSD.isGreaterThan(0)
+          ? ` ($${formatNumber(val.gasFeeInUSD)})`
+          : ""),
       ""
     );
