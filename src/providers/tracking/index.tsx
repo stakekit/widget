@@ -1,5 +1,6 @@
 import type { PropsWithChildren } from "react";
 import { createContext, useCallback, useContext, useMemo, useRef } from "react";
+import type { SettingsContextType } from "../settings";
 import { useSettings } from "../settings";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -70,8 +71,11 @@ export const TrackingContext = createContext<TrackingContextType | undefined>(
   undefined
 );
 
-export const TrackingContextProvider = ({ children }: PropsWithChildren) => {
-  const { tracking, variant } = useSettings();
+export const TrackingContextProvider = ({
+  children,
+  tracking,
+}: PropsWithChildren<{ tracking: SettingsContextType["tracking"] }>) => {
+  const { variant } = useSettings();
 
   const varitantTrackingRef = useRef<typeof tracking | null>(null);
 
