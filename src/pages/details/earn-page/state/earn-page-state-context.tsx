@@ -31,6 +31,17 @@ const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(
 const EarnPageDispatchContext = createContext<Dispatch<Actions> | undefined>(
   undefined
 );
+const EarnPageStateUsageBoundary = createContext<boolean>(false);
+
+export const EarnPageStateUsageBoundaryProvider = ({
+  children,
+}: PropsWithChildren) => {
+  return (
+    <EarnPageStateUsageBoundary.Provider value>
+      {children}
+    </EarnPageStateUsageBoundary.Provider>
+  );
+};
 
 const getInitialState = (): State => ({
   selectedToken: Maybe.empty(),
@@ -330,7 +341,16 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   );
 };
 
+const useUsageCheck = () => {
+  const check = useContext(EarnPageStateUsageBoundary);
+  if (!check) {
+    throw new Error("hook must be used withing EarnPageStateUsageBoundary");
+  }
+};
+
 export const useEarnPageState = () => {
+  useUsageCheck();
+
   const state = useContext(EarnPageStateContext);
   if (state === undefined) {
     throw new Error("useState must be used within a StateProvider");
@@ -340,6 +360,8 @@ export const useEarnPageState = () => {
 };
 
 export const useEarnPageDispatch = () => {
+  useUsageCheck();
+
   const dispatch = useContext(EarnPageDispatchContext);
   if (dispatch === undefined) {
     throw new Error("useDispatch must be used within a StateProvider");

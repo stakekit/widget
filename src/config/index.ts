@@ -19,4 +19,7 @@ export const config = {
     isDevMode: import.meta.env.MODE === "development",
   },
   assetsUrl,
+  trackingVariants: {
+    zerion: "2cbed59baa70c46f7cadef7b05eb1bc3",
+  },
 } as const;
