@@ -4,7 +4,7 @@ import { ThemeWrapper } from "./theme-wrapper";
 import { WagmiConfigProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
-import { TrackingContextProvider } from "./tracking";
+import { TrackingContextProviderWithProps } from "./tracking";
 import { ActionHistoryContextProvider } from "./stake-history";
 import { ListStateContextProvider } from "./list-state";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
@@ -24,13 +24,10 @@ import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stak
 import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { useSettings } from "@sk-widget/providers/settings";
 
 export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
-  const { tracking } = useSettings();
-
   return (
     <StrictMode>
       <RootElementProvider>
@@ -39,7 +36,7 @@ export const Providers = ({
             <SKLocationProvider>
               <MountAnimationProvider>
                 <WagmiConfigProvider>
-                  <TrackingContextProvider tracking={tracking}>
+                  <TrackingContextProviderWithProps>
                     <SKWalletProvider>
                       <RainbowProvider>
                         <EarnPageStateProvider>
@@ -71,7 +68,7 @@ export const Providers = ({
                         </EarnPageStateProvider>
                       </RainbowProvider>
                     </SKWalletProvider>
-                  </TrackingContextProvider>
+                  </TrackingContextProviderWithProps>
                 </WagmiConfigProvider>
               </MountAnimationProvider>
             </SKLocationProvider>
