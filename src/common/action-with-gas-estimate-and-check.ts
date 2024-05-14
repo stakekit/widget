@@ -10,6 +10,7 @@ import type {
 import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
 import { constructTxs } from "./construct-txs";
 import { EitherAsync, Maybe } from "purify-ts";
+import type { CheckGasAmountIfStake } from "./check-gas-amount";
 import { checkGasAmount } from "./check-gas-amount";
 
 export const actionWithGasEstimateAndCheck = ({
@@ -22,6 +23,7 @@ export const actionWithGasEstimateAndCheck = ({
   transactionConstruct,
   tokenGetTokenBalances,
   gasEstimate,
+  ...rest
 }: {
   gasFeeToken: TokenDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -32,7 +34,7 @@ export const actionWithGasEstimateAndCheck = ({
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
-}) =>
+} & CheckGasAmountIfStake) =>
   addGasEstimateToTxs({ actionDto, gasEstimate })
     .chainLeft(() =>
       constructTxs({
@@ -43,7 +45,7 @@ export const actionWithGasEstimateAndCheck = ({
         transactionConstruct,
       })
     )
-    .chain((actionDto) =>
+    .chain((val) =>
       EitherAsync.liftEither(
         Maybe.fromFalsy(disableGasCheck)
           .map(() => null)
@@ -52,9 +54,10 @@ export const actionWithGasEstimateAndCheck = ({
         .chainLeft(() =>
           checkGasAmount({
             addressWithTokenDto: addressWithTokenDto,
-            txs: actionDto.transactions,
+            gasEstimate: val.gasEstimate,
             tokenGetTokenBalances,
+            ...rest,
           })
         )
-        .map((gasCheckErr) => ({ actionDto, gasCheckErr }))
+        .map((gasCheckErr) => ({ actionDto: val, gasCheckErr }))
     );

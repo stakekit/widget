@@ -1,22 +1,28 @@
 import type {
   AddressWithTokenDto,
-  TransactionDto,
+  TokenDto,
   useTokenGetTokenBalancesHook,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
-import { getTransactionsTotalGasAmount } from "../domain";
+import type { ActionDtoWithGasEstimate } from "@sk-widget/domain/types/action";
+import { equalTokens } from "@sk-widget/domain";
+
+export type CheckGasAmountIfStake =
+  | { isStake: true; stakeToken: TokenDto; stakeAmount: BigNumber }
+  | { isStake: false };
 
 export const checkGasAmount = ({
   addressWithTokenDto,
-  txs,
+  gasEstimate,
   tokenGetTokenBalances,
+  ...rest
 }: {
   addressWithTokenDto: AddressWithTokenDto;
-  txs: TransactionDto[];
+  gasEstimate: ActionDtoWithGasEstimate["gasEstimate"];
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
-}) =>
+} & CheckGasAmountIfStake) =>
   withRequestErrorRetry({
     fn: () => tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),
   })
@@ -24,12 +30,15 @@ export const checkGasAmount = ({
     .chain((res) =>
       EitherAsync.liftEither(
         List.head(res)
-          .map((gt) => new BigNumber(gt.amount ?? 0))
+          .map((val) => ({ ...val, amount: new BigNumber(val.amount ?? 0) }))
           .toEither(new GasTokenMissingError())
-      ).chain(async (gasTokenAmount) => {
-        const gasEstimate = getTransactionsTotalGasAmount(txs);
+      ).chain(async (gasTokenBalance) => {
+        const amount =
+          rest.isStake && equalTokens(gasTokenBalance.token, rest.stakeToken)
+            ? gasTokenBalance.amount.minus(rest.stakeAmount)
+            : gasTokenBalance.amount;
 
-        if (gasEstimate.isGreaterThan(gasTokenAmount)) {
+        if (gasEstimate.amount.isGreaterThan(amount)) {
           return Left(new NotEnoughGasTokenError());
         }
 
