@@ -116,6 +116,7 @@ const fn = ({
         },
         transactionConstruct,
         tokenGetTokenBalances,
+        isStake: false,
       })
     )
     .map((val) => ({ ...val, pendingActionData }));

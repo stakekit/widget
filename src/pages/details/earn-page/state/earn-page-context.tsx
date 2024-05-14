@@ -360,7 +360,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
       return Maybe.fromRecord({ selectedStake, selectedToken }).caseOf({
         Just: ({ selectedStake, selectedToken }) => {
-          return onStakeEnter.mutate({
+          return onStakeEnter.mutateAsync({
             stakeRequestDto: stakeEnterRequestDto,
             stakeEnterData: {
               selectedStake,
@@ -493,7 +493,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     (!tokenBalancesScan.data && tokenBalancesScan.isError);
 
   const buttonDisabled =
-    isConnected && (isFetching || stakeEnterRequestDto.isNothing());
+    (isConnected && (isFetching || stakeEnterRequestDto.isNothing())) ||
+    onClickHandler.isPending;
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {

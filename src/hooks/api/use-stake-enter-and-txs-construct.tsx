@@ -127,6 +127,9 @@ const fn = ({
         },
         transactionConstruct,
         tokenGetTokenBalances,
+        isStake: true,
+        stakeAmount: stakeEnterData.stakeAmount,
+        stakeToken: stakeEnterData.selectedToken,
       })
     )
     .map((val) => ({ ...val, stakeEnterData }));
