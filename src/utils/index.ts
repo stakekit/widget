@@ -95,3 +95,13 @@ export function formatAddress(
         address.length - trailingChars
       )}`;
 }
+
+const isAndroid = () =>
+  typeof navigator !== "undefined" &&
+  /Android\s([0-9.]+)/.test(navigator.userAgent);
+
+const isIOS = () =>
+  typeof navigator !== "undefined" &&
+  /Version\/([0-9._]+).*Mobile.*Safari.*/.test(navigator.userAgent);
+
+export const isMobile = () => isAndroid() || isIOS();

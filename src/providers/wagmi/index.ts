@@ -1,7 +1,7 @@
-import { createConfig, http } from "wagmi";
+import { createConfig, http, type Connector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
-import { hydrate } from "@wagmi/core";
+import { reconnect } from "@wagmi/core";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -12,10 +12,10 @@ import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { config } from "../../config";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, List, Maybe, Right } from "purify-ts";
 import { useSettings } from "../settings";
 import type { GetEitherAsyncRight } from "../../types";
-import { isLedgerDappBrowserProvider } from "../../utils";
+import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
 import { externalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
@@ -165,12 +165,35 @@ const buildWagmiConfig = async (opts: {
       };
     })
     .chain((val) =>
-      EitherAsync(() =>
-        hydrate(val.wagmiConfig, { reconnectOnMount: true }).onMount()
-      ).bimap(
-        () => new Error("Could not hydrate wagmi config"),
-        () => val
-      )
+      /**
+       * Reconnect to the last used connector if possible
+       * If not, try to connect to the injected connector if mobile app detected
+       */
+      EitherAsync(() => reconnect(val.wagmiConfig))
+        .chainLeft(async () => Right(null))
+        .chain(async (reconnectVal) => {
+          if (
+            reconnectVal?.length ||
+            isLedgerDappBrowserProvider() ||
+            !isMobile()
+          )
+            return Right(null);
+
+          return EitherAsync.liftEither(
+            List.find(
+              (c) => c.id === "injected",
+              val.wagmiConfig.connectors as Connector[]
+            ).toEither(new Error("Could not find injected connector"))
+          )
+            .chain((injConnector) => EitherAsync(() => injConnector.connect()))
+            .ifLeft((e) => console.log(e))
+            .chainLeft(async () => Right(null));
+        })
+
+        .bimap(
+          () => new Error("Could not hydrate wagmi config"),
+          () => val
+        )
     )
     .caseOf({
       Right: (val) => {
