@@ -1,7 +1,7 @@
 import { createConfig, http, type Connector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
-import { reconnect } from "@wagmi/core";
+import { reconnect, connect } from "@wagmi/core";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -173,6 +173,7 @@ const buildWagmiConfig = async (opts: {
         .chainLeft(async () => Right(null))
         .chain(async (reconnectVal) => {
           if (
+            opts.externalProviders ||
             reconnectVal?.length ||
             isLedgerDappBrowserProvider() ||
             !isMobile()
@@ -186,7 +187,11 @@ const buildWagmiConfig = async (opts: {
               val.wagmiConfig.connectors as Connector[]
             ).toEither(new Error("Could not find injected connector"))
           )
-            .chain((injConnector) => EitherAsync(() => injConnector.connect()))
+            .chain((injConnector) =>
+              EitherAsync(() =>
+                connect(val.wagmiConfig, { connector: injConnector })
+              )
+            )
             .ifLeft((e) => console.log(e))
             .chainLeft(async () => Right(null));
         })

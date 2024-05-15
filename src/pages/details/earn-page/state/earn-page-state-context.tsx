@@ -310,7 +310,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const value: State & ExtraData = useMemo(
     () => ({
-      dispatch,
       selectedStakeId,
       selectedStake,
       selectedValidators,
