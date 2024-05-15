@@ -176,8 +176,9 @@ const buildWagmiConfig = async (opts: {
             reconnectVal?.length ||
             isLedgerDappBrowserProvider() ||
             !isMobile()
-          )
+          ) {
             return Right(null);
+          }
 
           return EitherAsync.liftEither(
             List.find(
