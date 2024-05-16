@@ -26,7 +26,12 @@ type ExtraProps = ConnectorWithFilteredChains &
     | "sendMultipleTransactions"
     | "shouldMultiSend"
     | "signMessage"
-  >;
+  > & {
+    onSupportedChainsChanged: (args: {
+      supportedChainIds: number[];
+      currentChainId: number;
+    }) => void;
+  };
 
 type ExternalConnector = Connector & ExtraProps;
 
@@ -49,20 +54,24 @@ export const externalProviderConnector = (
       iconBackground: "#fff",
       createConnector: () =>
         createConnector<unknown, ExtraProps>((config) => {
-          const $filteredChains = new BehaviorSubject<Chain[]>([]);
+          const $filteredChains = new BehaviorSubject(
+            Maybe.fromNullable(variant.current.supportedChainIds)
+              .map((val) => new Set(val))
+              .mapOrDefault(
+                (val) => config.chains.filter((c) => val.has(c.id)),
+                config.chains as [Chain, ...Chain[]]
+              )
+          );
           const provider = new ExternalProvider(
             variant,
             transactionGetTransactionStatusByNetworkAndHash
           );
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-            async () =>
-              (
-                await provider.getAccount().map((val) => [val as Address])
-              ).unsafeCoerce();
+            async () => [variant.current.currentAddress as Address];
 
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-            async () => (await provider.getChainId()).unsafeCoerce();
+            async () => $filteredChains.getValue()[0].id;
 
           const connect: ReturnType<CreateConnectorFn>["connect"] =
             async () => {
@@ -72,15 +81,6 @@ export const externalProviderConnector = (
                 getAccounts(),
                 getChainId(),
               ]);
-
-              Maybe.fromNullable(variant.current.supportedChainIds)
-                .alt(Maybe.of([chainId]))
-                .map((val) => new Set(val))
-                .map((val) =>
-                  $filteredChains.next(
-                    config.chains.filter((c) => val.has(c.id))
-                  )
-                );
 
               return { accounts, chainId };
             };
@@ -131,6 +131,27 @@ export const externalProviderConnector = (
               });
             };
 
+          const onSupportedChainsChanged: ExtraProps["onSupportedChainsChanged"] =
+            ({ currentChainId, supportedChainIds }) => {
+              $filteredChains.next(
+                Maybe.fromNullable(supportedChainIds)
+                  .map((val) => new Set(val))
+                  .mapOrDefault(
+                    (val) => config.chains.filter((c) => val.has(c.id)),
+                    config.chains as [Chain, ...Chain[]]
+                  )
+              );
+
+              // If the current chain is not in the supported chains, switch to the first supported chain
+              if (
+                $filteredChains.getValue().every((c) => c.id !== currentChainId)
+              ) {
+                getChainId().then((chainId) =>
+                  onChainChanged(chainId.toString())
+                );
+              }
+            };
+
           return {
             id: configMeta.id,
             name: configMeta.name,
@@ -151,6 +172,7 @@ export const externalProviderConnector = (
             signMessage: provider.signMessage.bind(provider),
             shouldMultiSend: provider.shouldMultiSend,
             $filteredChains: $filteredChains.asObservable(),
+            onSupportedChainsChanged,
           };
         }),
     }),

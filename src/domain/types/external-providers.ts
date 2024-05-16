@@ -5,13 +5,13 @@ import type {
   useTransactionGetTransactionStatusByNetworkAndHashHook,
 } from "@stakekit/api-hooks";
 import type { SupportedSKChains } from "./chains";
-import type { MutableRefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
 import type { EVMTx } from "./wallets/generic-wallet";
+import type { MutableRefObject } from "react";
 
 export class ExternalProvider {
   get shouldMultiSend() {
-    return !!this.variant.current.provider.sendTransactions;
+    return !!this.variantProvider.current.provider.sendTransactions;
   }
 
   private txStatusesToContinue = new Set<TransactionStatus>([
@@ -21,7 +21,7 @@ export class ExternalProvider {
   ]);
 
   constructor(
-    private variant: MutableRefObject<SKExternalProviders>,
+    private variantProvider: MutableRefObject<SKExternalProviders>,
     private transactionGetTransactionStatusByNetworkAndHash: ReturnType<
       typeof useTransactionGetTransactionStatusByNetworkAndHashHook
     >
@@ -31,26 +31,9 @@ export class ExternalProvider {
     return EitherAsync.liftEither(Left(new Error("Invalid provider type")));
   }
 
-  getAccount() {
-    return EitherAsync(() => this.variant.current.provider.getAccounts())
-      .map((accounts) => accounts[0])
-      .mapLeft((e) => {
-        console.error(e);
-        return new Error("Failed to get account");
-      });
-  }
-
-  getChainId() {
-    return EitherAsync(() =>
-      this.variant.current.provider.getChainId()
-    ).mapLeft((e) => {
-      console.error(e);
-      return new Error("Failed to get chain id");
-    });
-  }
-
   sendTransaction(tx: EVMTx) {
-    const sendTransaction = this.variant.current.provider.sendTransaction;
+    const sendTransaction =
+      this.variantProvider.current.provider.sendTransaction;
 
     if (!sendTransaction) {
       return this.invalidProviderType();
@@ -69,7 +52,8 @@ export class ExternalProvider {
     network: SupportedSKChains;
     txs: EVMTx[];
   }) {
-    const sendTransactions = this.variant.current.provider.sendTransactions;
+    const sendTransactions =
+      this.variantProvider.current.provider.sendTransactions;
 
     if (!sendTransactions) return this.invalidProviderType();
 
@@ -78,7 +62,7 @@ export class ExternalProvider {
         withRequestErrorRetry({
           fn: async () => {
             const [providerRes, skRes] = await Promise.all([
-              this.variant.current.provider
+              this.variantProvider.current.provider
                 .getTransactionReceipt?.(hash)
                 .catch(() => null),
               this.transactionGetTransactionStatusByNetworkAndHash(
@@ -114,7 +98,7 @@ export class ExternalProvider {
 
   switchChain({ chainId }: { chainId: string }) {
     return EitherAsync(() =>
-      this.variant.current.provider.switchChain(chainId)
+      this.variantProvider.current.provider.switchChain(chainId)
     ).mapLeft((e) => {
       console.error(e);
       return new Error("Failed to switch chain");
@@ -123,7 +107,7 @@ export class ExternalProvider {
 
   signMessage(messageHash: string) {
     return EitherAsync(() =>
-      this.variant.current.provider.signMessage(messageHash)
+      this.variantProvider.current.provider.signMessage(messageHash)
     ).mapLeft((e) => {
       console.error(e);
       return new Error("Failed to sign message");
