@@ -16,7 +16,7 @@ export const formatCountryCode = ({
 };
 
 export const getRewardRateFormatted = (
-  opts: Pick<YieldDto, "rewardRate" | "rewardType">
+  opts: Pick<YieldDto, "rewardType"> & { rewardRate: number | undefined }
 ) => {
   const { rewardRate, rewardType } = opts;
 

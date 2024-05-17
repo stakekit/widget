@@ -5695,9 +5695,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.68":
-  version: 0.0.68
-  resolution: "@stakekit/api-hooks@npm:0.0.68"
+"@stakekit/api-hooks@npm:^0.0.70":
+  version: 0.0.70
+  resolution: "@stakekit/api-hooks@npm:0.0.70"
   dependencies:
     axios: "npm:^1.6.8"
   peerDependencies:
@@ -5710,7 +5710,7 @@ __metadata:
       optional: true
     msw:
       optional: true
-  checksum: 10/00ddbf8b4c1bdeae1e3aef78e2b379066f80fb05478c51b049cd73aa5fab618aa9675aae64c4d3f20a4700f98f899920e31fcb8b5114acf9afda186c506ba131
+  checksum: 10/573e4a9561b54a3db91c81982efbbc76d71cee15e48cb52dc450d698feab21d0a4e2603fb34e7316c5c010147c8db5abcf1af15f696a7c7c79b79b27c8a91e84
   languageName: node
   linkType: hard
 
@@ -5758,7 +5758,7 @@ __metadata:
     "@ledgerhq/wallet-api-client": "npm:^1.5.7"
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
-    "@stakekit/api-hooks": "npm:^0.0.68"
+    "@stakekit/api-hooks": "npm:^0.0.70"
     "@stakekit/common": "npm:^0.0.28"
     "@stakekit/rainbowkit": "npm:^2.0.1"
     "@tanstack/react-query": "npm:^5.29.2"

@@ -28,8 +28,8 @@ type Props = {
   pendingActionType?: ActionTypes;
   providersDetails: Maybe<
     {
-      logo: string;
-      name: string;
+      logo: string | undefined;
+      name: string | undefined;
     }[]
   >;
   yieldType: Maybe<YieldType>;
@@ -142,7 +142,10 @@ export const CompletePage = ({
                             containerProps={{ hw: "5" }}
                             src={v.logo}
                             fallback={
-                              <ImageFallback name={v.name} tokenLogoHw="5" />
+                              <ImageFallback
+                                name={v.name || v.logo}
+                                tokenLogoHw="5"
+                              />
                             }
                           />
                         )}

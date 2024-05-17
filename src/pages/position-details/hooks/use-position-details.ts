@@ -39,9 +39,9 @@ export const usePositionDetails = () => {
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: positionBalances.data.map((b) =>
-      b.type === "validators" ? b.validatorsAddresses : []
-    ),
+    validatorsAddresses: positionBalances.data.map((b) => {
+      return b.type === "validators" ? b.validatorsAddresses : [];
+    }),
   });
 
   const forceMax = useForceMaxAmount({

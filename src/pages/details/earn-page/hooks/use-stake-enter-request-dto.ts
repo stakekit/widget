@@ -35,7 +35,6 @@ export const useStakeEnterRequestDto = () => {
           >((val) => {
             const validators = [...selectedValidators.values()];
 
-            // @ts-expect-error
             if (val.metadata.isIntegrationAggregator) {
               return List.head(validators).map((v) => ({
                 providerId: (v as any).providerId,

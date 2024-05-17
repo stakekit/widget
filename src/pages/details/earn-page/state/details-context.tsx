@@ -292,7 +292,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
           .map((searchInput) =>
             ss.validators.filter(
               (validator) =>
-                validator.name.toLowerCase().includes(searchInput) ||
+                validator.name?.toLowerCase().includes(searchInput) ||
                 validator.address.toLowerCase().includes(searchInput)
             )
           )

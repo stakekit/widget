@@ -25,13 +25,10 @@ export const useStakeExitRequestDto = () => {
             | Pick<ActionRequestDto["args"], "validatorAddress">
             | { providerId: string | undefined }
           >(() => {
-            // @ts-expect-error
             if (val.integrationData.metadata.isIntegrationAggregator) {
               return List.find(
-                // @ts-expect-error
                 (b) => !!b.providerId,
                 val.stakedOrLiquidBalances
-                // @ts-expect-error
               ).map((b) => ({ providerId: b.providerId }));
             } else if (
               val.integrationData.args.exit?.args?.validatorAddresses?.required
