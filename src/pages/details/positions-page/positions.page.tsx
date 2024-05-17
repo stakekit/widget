@@ -31,8 +31,6 @@ export const PositionsPage = () => {
       return <FallbackContent type="not_connected" />;
     } else if (positionsData.isError && !positionsData.data.length) {
       return <FallbackContent type="something_wrong" />;
-    } else if (isConnected && !positionsData.data.length) {
-      return <FallbackContent type="no_current_positions" />;
     }
 
     return null;
@@ -81,6 +79,12 @@ export const PositionsPage = () => {
                       <ImportValidatorListItem
                         importValidators={importValidators}
                       />
+
+                      {isConnected && !positionsData.data.length && (
+                        <Box my="4">
+                          <FallbackContent type="no_current_positions" />
+                        </Box>
+                      )}
                     </>
                   ) : (
                     <PositionsListItem item={item} />

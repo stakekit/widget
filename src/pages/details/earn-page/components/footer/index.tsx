@@ -1,8 +1,21 @@
 import { MetaInfo } from "../../../../components/meta-info";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const Footer = () => {
-  const { appLoading, footerIsLoading } = useDetailsContext();
+  const {
+    appLoading,
+    footerIsLoading,
+    selectedStake,
+    selectedValidators,
+    selectedToken,
+  } = useEarnPageContext();
 
-  return <MetaInfo isLoading={appLoading || footerIsLoading} />;
+  return (
+    <MetaInfo
+      isLoading={appLoading || footerIsLoading}
+      selectedStake={selectedStake}
+      selectedValidators={selectedValidators}
+      selectedToken={selectedToken}
+    />
+  );
 };

@@ -6,9 +6,9 @@ import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectTokenSection } from "./components/select-token-section";
 import { SelectYieldSection } from "./components/select-yield-section";
 import {
-  DetailsContextProvider,
-  useDetailsContext,
-} from "./state/details-context";
+  EarnPageContextProvider,
+  useEarnPageContext,
+} from "./state/earn-page-context";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import type { MotionProps, TargetAndTransition } from "framer-motion";
@@ -21,6 +21,7 @@ import { SelectTokenTitle } from "./components/select-token-section/title";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { StakedVia } from "./components/select-yield-section/staked-via";
 import { Just } from "purify-ts";
+import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -29,7 +30,7 @@ const EarnPageComponent = () => {
 
   const { variant } = useSettings();
 
-  const { referralCheck, isError } = useDetailsContext();
+  const { referralCheck, isError } = useEarnPageContext();
 
   const { mountAnimationFinished, dispatch } = useMountAnimation();
 
@@ -125,7 +126,9 @@ const EarnPageComponent = () => {
 };
 
 export const EarnPage = () => (
-  <DetailsContextProvider>
-    <EarnPageComponent />
-  </DetailsContextProvider>
+  <EarnPageStateUsageBoundaryProvider>
+    <EarnPageContextProvider>
+      <EarnPageComponent />
+    </EarnPageContextProvider>
+  </EarnPageStateUsageBoundaryProvider>
 );

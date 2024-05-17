@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 
 export const StakedVia = () => {
-  const { selectedStake } = useDetailsContext();
+  const { selectedStake } = useEarnPageContext();
 
   const { t } = useTranslation();
 

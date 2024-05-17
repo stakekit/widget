@@ -1,4 +1,5 @@
 import type {
+  AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
   YieldDto,
 } from "@stakekit/api-hooks";
@@ -6,6 +7,15 @@ import type { Maybe } from "purify-ts";
 import { List } from "purify-ts";
 import type { QueryParams } from "./query-params";
 import BigNumber from "bignumber.js";
+
+const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
+  new BigNumber(val.amount).isGreaterThan(0);
+
+const hasYields = (val: TokenBalanceScanResponseDto) =>
+  !!val.availableYields.length;
+
+const hasYieldsAndAmount = (val: TokenBalanceScanResponseDto) =>
+  hasYields(val) && amountGreaterThanZero(val);
 
 export const getInitialToken = (args: {
   initQueryParams: Maybe<QueryParams>;
@@ -26,23 +36,12 @@ export const getInitialToken = (args: {
     /**
      * TB based on first token with available yields and amount > 0
      */
-    .altLazy(() =>
-      List.find(
-        (v) =>
-          !!v.availableYields.length &&
-          new BigNumber(v.amount).isGreaterThan(0),
-        args.tokenBalances
-      )
-    )
+    .altLazy(() => List.find(hasYieldsAndAmount, args.tokenBalances))
     /**
      * TB based on first token with available yields
      */
-    .altLazy(() =>
-      List.find((v) => !!v.availableYields.length, args.tokenBalances)
-    )
-    .altLazy(() =>
-      List.find((v) => !!v.availableYields.length, args.defaultTokens)
-    )
+    .altLazy(() => List.find(hasYields, args.tokenBalances))
+    .altLazy(() => List.find(hasYields, args.defaultTokens))
     .map((val) => val.token);
 
 const yieldTypeOrder: { [Key in YieldDto["metadata"]["type"]]: number } = {
@@ -53,7 +52,7 @@ const yieldTypeOrder: { [Key in YieldDto["metadata"]["type"]]: number } = {
   lending: 5,
 };
 
-export const getInitialYieldId = (args: {
+export const getInitialYield = (args: {
   initQueryParams: Maybe<QueryParams>;
   yieldDtos: YieldDto[];
   tokenBalanceAmount: BigNumber;
@@ -70,14 +69,24 @@ export const getInitialYieldId = (args: {
     .altLazy(() =>
       List.find(
         (yieldDto) =>
-          args.tokenBalanceAmount.isGreaterThanOrEqualTo(
-            getInitMinStakeAmount(yieldDto)
-          ),
+          balanceValidForYield({
+            tokenBalanceAmount: args.tokenBalanceAmount,
+            yieldDto,
+          }),
         sortedYields
       )
     )
     .altLazy(() => List.head(sortedYields));
 };
+
+const balanceValidForYield = ({
+  tokenBalanceAmount,
+  yieldDto,
+}: {
+  tokenBalanceAmount: BigNumber;
+  yieldDto: YieldDto;
+}) =>
+  tokenBalanceAmount.isGreaterThanOrEqualTo(getInitMinStakeAmount(yieldDto));
 
 export const getInitMinStakeAmount = (yieldDto: YieldDto) =>
   new BigNumber(yieldDto.args.enter.args?.amount?.minimum ?? 0);
@@ -97,3 +106,6 @@ export const getInitSelectedValidators = (args: {
     .altLazy(() => List.head(args.yieldDto.validators))
     .map((v) => new Map([[v.address, v]]))
     .orDefault(new Map());
+
+export const isForceMaxAmount = (args: AmountArgumentOptionsDto) =>
+  args.minimum === -1 && args.maximum === -1;

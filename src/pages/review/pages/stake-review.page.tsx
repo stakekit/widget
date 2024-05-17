@@ -5,7 +5,6 @@ import { useStakeReview } from "../hooks/use-stake-review.hook";
 import { ReviewPage } from "./common.page";
 import { useMemo } from "react";
 import { Maybe } from "purify-ts";
-import { useSettings } from "../../../providers/settings";
 
 export const StakeReviewPage = () => {
   useTrackPage("stakeReview");
@@ -19,6 +18,7 @@ export const StakeReviewPage = () => {
     rewardToken,
     token,
     isGasCheckError,
+    metaInfo,
   } = useStakeReview();
 
   const info = useMemo(
@@ -48,8 +48,6 @@ export const StakeReviewPage = () => {
     [rewardToken]
   );
 
-  const { variant } = useSettings();
-
   return (
     <ReviewPage
       fee={fee}
@@ -59,7 +57,7 @@ export const StakeReviewPage = () => {
       info={info}
       rewardTokenDetailsProps={rewardTokenDetailsProps}
       isGasCheckError={isGasCheckError}
-      showMetaInfo={variant === "zerion"}
+      {...metaInfo}
     />
   );
 };

@@ -8,7 +8,8 @@ import type {
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
 import type { SKWallet } from "../../../domain/types";
-import type { State } from "../../../state/unstake-or-pending-action/types";
+import type { State } from "../state/types";
+import { getBalanceTokenActionType } from "../state/utils";
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,
@@ -44,7 +45,15 @@ export const preparePendingActionRequestDto = ({
           Boolean,
           pendingActionDto.args?.args?.amount?.required
         )
-          .chainNullable(() => pendingActionsState.get(pendingActionDto.type))
+          .chainNullable(() =>
+            pendingActionsState.get(
+              getBalanceTokenActionType({
+                balanceType: yieldBalance.type,
+                token: yieldBalance.token,
+                actionType: pendingActionDto.type,
+              })
+            )
+          )
           .map((v) => v.toString())
           .alt(Maybe.of(yieldBalance.amount))
           .extract(),

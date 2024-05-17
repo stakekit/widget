@@ -23,7 +23,6 @@ import type {
   SelectModalProps,
 } from "../../../../components";
 import { useYieldType } from "../../../../hooks/use-yield-type";
-import { useStakeDispatch, useStakeState } from "../../../../state/stake";
 import { getTokenPriceInUSD, tokenString } from "../../../../domain";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
@@ -34,18 +33,17 @@ import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { useNavigate } from "react-router-dom";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useTranslation } from "react-i18next";
-import { useOnStakeEnter } from "../hooks/use-on-stake-enter";
-import { useStakeEnterRequestDto } from "../hooks/use-stake-enter-request-dto";
+import { useOnStakeEnter } from "./use-on-stake-enter";
+import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 import { List } from "purify-ts";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
-import type { DetailsContextType } from "./types";
+import type { EarnPageContextType } from "./types";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
-import { usePendingActionDeepLink } from "../../../../state/stake/use-pending-action-deep-link";
 import { useUpdateEffect } from "../../../../hooks/use-update-effect";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
@@ -54,13 +52,22 @@ import { useSettings } from "../../../../providers/settings";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useMutation } from "@tanstack/react-query";
 import { useBaseToken } from "../../../../hooks/use-base-token";
+import { isForceMaxAmount } from "../../../../domain/types/stake";
+import {
+  useEarnPageDispatch,
+  useEarnPageState,
+} from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 
-const DetailsContext = createContext<DetailsContextType | undefined>(undefined);
+const EarnPageContext = createContext<EarnPageContextType | undefined>(
+  undefined
+);
 
-export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
+export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const {
     actions: { onMaxClick: _onMaxClick },
     selectedToken,
+    selectedStakeId,
     selectedValidators,
     stakeAmount,
     selectedStake,
@@ -71,8 +78,9 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     stakeAmountIsZero,
     availableAmount,
     availableYields,
-  } = useStakeState();
-  const appDispatch = useStakeDispatch();
+    hasNotYieldsForToken,
+  } = useEarnPageState();
+  const dispatch = useEarnPageDispatch();
 
   const baseToken = useBaseToken(selectedStake);
 
@@ -312,35 +320,35 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const onTokenBalanceSelect = useCallback(
     (tokenBalance: TokenBalanceScanResponseDto) =>
-      appDispatch({ type: "token/select", data: tokenBalance.token }),
-    [appDispatch]
+      dispatch({ type: "token/select", data: tokenBalance.token }),
+    [dispatch]
   );
 
   const onYieldSelect = (yieldId: string) => {
     Maybe.fromNullable(multiYields.data)
       .chain((val) => List.find((v) => v.id === yieldId, val))
-      .ifJust((val) => appDispatch({ type: "yield/select", data: val }));
+      .ifJust((val) => dispatch({ type: "yield/select", data: val }));
   };
 
   const onValidatorSelect = (item: ValidatorDto) =>
     selectedStake.ifJust((ss) =>
       ss.args.enter.args?.validatorAddresses?.required
-        ? appDispatch({ type: "validator/multiselect", data: item })
-        : appDispatch({ type: "validator/select", data: item })
+        ? dispatch({ type: "validator/multiselect", data: item })
+        : dispatch({ type: "validator/select", data: item })
     );
 
   const onValidatorRemove = (item: ValidatorDto) =>
-    appDispatch({ type: "validator/remove", data: item });
+    dispatch({ type: "validator/remove", data: item });
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
-    appDispatch({ type: "stakeAmount/change", data: val });
+    dispatch({ type: "stakeAmount/change", data: val });
 
   const { t } = useTranslation();
 
   const navigate = useNavigate();
 
   const onStakeEnter = useOnStakeEnter();
-  const stakeRequestDto = useStakeEnterRequestDto();
+  const stakeEnterRequestDto = useStakeEnterRequestDto();
 
   const { openConnectModal } = useConnectModal();
 
@@ -350,7 +358,20 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
       if (!isConnected) return openConnectModal?.();
 
-      return onStakeEnter.mutate(stakeRequestDto);
+      return Maybe.fromRecord({ selectedStake, selectedToken }).caseOf({
+        Just: ({ selectedStake, selectedToken }) => {
+          return onStakeEnter.mutateAsync({
+            stakeRequestDto: stakeEnterRequestDto,
+            stakeEnterData: {
+              selectedStake,
+              selectedToken,
+              selectedValidators,
+              stakeAmount,
+            },
+          });
+        },
+        Nothing: () => {},
+      });
     },
   });
 
@@ -409,16 +430,19 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
 
   const stakeMaxAmount = useMemo(
     () =>
-      selectedStake.chainNullable(
-        (val) => val.args.enter.args?.amount?.maximum
-      ),
+      selectedStake
+        .chainNullable((val) => val.args.enter.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.maximum),
     [selectedStake]
   );
 
   const stakeMinAmount = useMemo(
     () =>
       selectedStake
-        .chainNullable((val) => val.args.enter.args?.amount?.minimum)
+        .chainNullable((val) => val.args.enter.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.minimum)
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
     [selectedStake]
   );
@@ -449,6 +473,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   const referralCode = useReferralCode();
 
   const appLoading =
+    selectedToken.isNothing() ||
     !wagmiConfig.data ||
     referralCode.isLoading ||
     wagmiConfig.isLoading ||
@@ -468,7 +493,8 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     (!tokenBalancesScan.data && tokenBalancesScan.isError);
 
   const buttonDisabled =
-    isConnected && (isFetching || stakeRequestDto.isNothing());
+    (isConnected && (isFetching || stakeEnterRequestDto.isNothing())) ||
+    onClickHandler.isPending;
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -494,7 +520,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
   };
 
   const onTronResourceSelect = (value: TronResourceType) =>
-    appDispatch({
+    dispatch({
       type: "tronResource/select",
       data: value,
     });
@@ -555,6 +581,7 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading || defaultTokensIsLoading;
 
   const selectYieldIsLoading =
+    (selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
     multiYieldsLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
@@ -628,18 +655,21 @@ export const DetailsContextProvider = ({ children }: PropsWithChildren) => {
     selectedToken,
     validatorsData,
     validatorSearch,
+    hasNotYieldsForToken,
   };
 
   return (
-    <DetailsContext.Provider value={value}>{children}</DetailsContext.Provider>
+    <EarnPageContext.Provider value={value}>
+      {children}
+    </EarnPageContext.Provider>
   );
 };
 
-export const useDetailsContext = () => {
-  const context = useContext(DetailsContext);
+export const useEarnPageContext = () => {
+  const context = useContext(EarnPageContext);
 
   if (!context) {
-    throw new Error("useDetailsContext must be used within a DetailsContext");
+    throw new Error("useEarnPageContext must be used within a EarnPageContext");
   }
 
   return context;

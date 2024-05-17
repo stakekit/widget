@@ -4,33 +4,33 @@ import { useMemo } from "react";
 import { Maybe } from "purify-ts";
 import { formatNumber } from "../../../utils";
 import { useTranslation } from "react-i18next";
-import BigNumber from "bignumber.js";
-import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useSavedRef, useTokensPrices } from "../../../hooks";
 import { getGasFeeInUSD } from "../../../utils/formatters";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 
 export const useUnstakeOrPendingActionReview = () => {
-  const { integrationData, isGasCheckError, unstakeToken, pendingActionToken } =
-    useUnstakeOrPendingActionState();
+  const stakeExitData = useStakeExitData();
+  const pendingActionData = usePendingActionData();
 
   const pendingActionMatch = usePendingActionMatch();
 
-  const { unstakeAmount, pendingActionSession } =
-    useUnstakeOrPendingActionState();
-
-  const pendingActionType = pendingActionSession.map((val) => val.type);
+  const pendingActionType = pendingActionData.pendingActionType;
 
   const { t } = useTranslation();
 
-  const amount = pendingActionMatch
-    ? pendingActionSession.map((val) =>
-        formatNumber(new BigNumber(val.amount ?? 0))
-      )
-    : Maybe.of(formatNumber(unstakeAmount));
+  const integrationData = pendingActionMatch
+    ? pendingActionData.pendingActionData.map((val) => val.integrationData)
+    : stakeExitData.stakeExitData.map((val) => val.integrationData);
+
+  const amount = (
+    pendingActionMatch ? pendingActionData.amount : stakeExitData.amount
+  ).map((val) => formatNumber(val));
 
   const title: Maybe<string> = pendingActionMatch
     ? pendingActionType.map((type) =>
@@ -55,27 +55,30 @@ export const useUnstakeOrPendingActionReview = () => {
 
   const navigate = useNavigate();
 
-  const { stakeExitTxGas, pendingActionTxGas } =
-    useUnstakeOrPendingActionState();
+  const token = pendingActionMatch
+    ? pendingActionData.pendingActionData.map((val) => val.interactedToken)
+    : stakeExitData.stakeExitData.map((val) => val.interactedToken);
 
   const pricesState = useTokensPrices({
-    token: unstakeToken,
+    token,
     yieldDto: integrationData,
   });
 
   const fee = useMemo(
     () =>
       getGasFeeInUSD({
-        gas: pendingActionMatch ? pendingActionTxGas : stakeExitTxGas,
+        gas: pendingActionMatch
+          ? pendingActionData.pendingActionTxGas
+          : stakeExitData.stakeExitTxGas,
         prices: Maybe.fromNullable(pricesState.data),
         yieldDto: integrationData,
       }),
     [
       integrationData,
+      pendingActionData.pendingActionTxGas,
       pendingActionMatch,
-      pendingActionTxGas,
       pricesState.data,
-      stakeExitTxGas,
+      stakeExitData.stakeExitTxGas,
     ]
   );
 
@@ -117,7 +120,27 @@ export const useUnstakeOrPendingActionReview = () => {
     )
   );
 
-  const token = pendingActionMatch ? pendingActionToken : unstakeToken;
+  const isGasCheckError = pendingActionMatch
+    ? pendingActionData.isGasCheckError
+    : stakeExitData.isGasCheckError;
+
+  // const { variant } = useSettings();
+
+  // const metaInfo: MetaInfoProps = useMemo(
+  //   () =>
+  //     variant === "zerion"
+  //       ? {
+  //           showMetaInfo: true,
+  //           metaInfoProps: {
+  //             selectedStake: integrationData,
+  //             selectedToken: token,
+  //             selectedValidators: new Map(),
+  //           },
+  //         }
+  //       : { showMetaInfo: false },
+  //   [integrationData, token, variant]
+  // );
+  const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
   return {
     integrationData,
@@ -128,5 +151,6 @@ export const useUnstakeOrPendingActionReview = () => {
     pendingActionMatch,
     isGasCheckError,
     token,
+    metaInfo,
   };
 };

@@ -16,6 +16,10 @@ import { Maybe } from "purify-ts";
 import { WarningBox } from "../../../components/atoms/warning-box";
 import { MetaInfo } from "../../components/meta-info";
 
+export type MetaInfoProps =
+  | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }
+  | { showMetaInfo: false; metaInfoProps?: never };
+
 type ReviewPageProps = {
   fee: string;
   title: string;
@@ -24,8 +28,7 @@ type ReviewPageProps = {
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
-  showMetaInfo?: boolean;
-};
+} & MetaInfoProps;
 
 export const ReviewPage = ({
   fee,
@@ -35,7 +38,7 @@ export const ReviewPage = ({
   info,
   rewardTokenDetailsProps,
   isGasCheckError,
-  showMetaInfo,
+  ...rest
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
 
@@ -141,7 +144,7 @@ export const ReviewPage = ({
 
         <Divider />
 
-        {showMetaInfo && (
+        {rest.showMetaInfo && (
           <>
             <Box marginBottom="4">
               <Box my="4">
@@ -150,14 +153,14 @@ export const ReviewPage = ({
                 </Text>
               </Box>
 
-              <MetaInfo />
+              <MetaInfo {...rest.metaInfoProps} />
             </Box>
 
             <Divider />
           </>
         )}
 
-        <Box marginTop="4" marginBottom={showMetaInfo ? "4" : "16"}>
+        <Box marginTop="4" marginBottom={rest.showMetaInfo ? "4" : "16"}>
           <Text variant={{ weight: "normal", type: "muted" }}>
             <Trans
               i18nKey="review.terms_of_use"

@@ -3,6 +3,7 @@ import type {
   GasModeValueDto,
   PendingActionRequestDto,
   TokenDto,
+  YieldDto,
   useActionPendingHook,
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
@@ -73,6 +74,7 @@ const fn = ({
   tokenGetTokenBalances,
   transactionConstruct,
   gasEstimate,
+  pendingActionData,
 }: {
   pendingActionRequestDto: PendingActionRequestDto & {
     addresses: AddressesDto;
@@ -85,6 +87,10 @@ const fn = ({
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
+  pendingActionData: {
+    integrationData: YieldDto;
+    interactedToken: TokenDto;
+  };
 }) =>
   withRequestErrorRetry({
     fn: () => actionPending(pendingActionRequestDto),
@@ -110,5 +116,7 @@ const fn = ({
         },
         transactionConstruct,
         tokenGetTokenBalances,
+        isStake: false,
       })
-    );
+    )
+    .map((val) => ({ ...val, pendingActionData }));

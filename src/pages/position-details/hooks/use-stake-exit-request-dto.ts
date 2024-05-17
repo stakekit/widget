@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Just, List, Maybe } from "purify-ts";
-import { useUnstakeOrPendingActionState } from "../../../state/unstake-or-pending-action";
+import { useUnstakeOrPendingActionState } from "../state";
 import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../providers/sk-wallet";
 
@@ -23,7 +23,7 @@ export const useStakeExitRequestDto = () => {
           .chain<
             | Pick<ActionRequestDto["args"], "validatorAddresses">
             | Pick<ActionRequestDto["args"], "validatorAddress">
-            | { providerId: string | undefined }
+            | Pick<ActionRequestDto["args"], "providerId">
           >(() => {
             if (val.integrationData.metadata.isIntegrationAggregator) {
               return List.find(

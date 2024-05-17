@@ -1,6 +1,7 @@
-import { createConfig, http } from "wagmi";
+import { createConfig, http, type Connector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
+import { reconnect, connect } from "@wagmi/core";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -11,10 +12,10 @@ import { connectorsForWallets } from "@stakekit/rainbowkit";
 import { config } from "../../config";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, List, Maybe, Right } from "purify-ts";
 import { useSettings } from "../settings";
 import type { GetEitherAsyncRight } from "../../types";
-import { isLedgerDappBrowserProvider } from "../../utils";
+import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
 import { externalProviderConnector } from "../external-provider";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import { useSKQueryClient } from "../query-client";
@@ -110,46 +111,48 @@ const buildWagmiConfig = async (opts: {
         queryParams: val.queryParams,
       }).map((l) => ({ ...val, ledgerLiveConnector: l }))
     )
-    .caseOf({
-      Right: ({
+    .map((val) => {
+      const {
         evmConfig,
         cosmosConfig,
         miscConfig,
         substrateConfig,
         ledgerLiveConnector,
-      }) => {
-        const chains = [
-          ...evmConfig.evmChains,
-          ...cosmosConfig.cosmosWagmiChains,
-          ...miscConfig.miscChains,
-          ...substrateConfig.substrateChains,
-        ] as [Chain, ...Chain[]];
+      } = val;
+      const chains = [
+        ...evmConfig.evmChains,
+        ...cosmosConfig.cosmosWagmiChains,
+        ...miscConfig.miscChains,
+        ...substrateConfig.substrateChains,
+      ] as [Chain, ...Chain[]];
 
-        const multiInjectedProviderDiscovery =
-          !opts.externalProviders && !isLedgerDappBrowserProvider();
+      const multiInjectedProviderDiscovery =
+        !opts.externalProviders && !isLedgerDappBrowserProvider();
 
-        const walletList: WalletList = (() => {
-          if (opts.externalProviders) {
-            return [
-              externalProviderConnector(
-                opts.externalProviders,
-                opts.transactionGetTransactionStatusByNetworkAndHash
-              ),
-            ];
-          } else if (ledgerLiveConnector) {
-            return [ledgerLiveConnector];
-          } else if (opts.customConnectors) {
-            return opts.customConnectors(chains);
-          }
+      const walletList: WalletList = (() => {
+        if (opts.externalProviders) {
+          return [
+            externalProviderConnector(
+              opts.externalProviders,
+              opts.transactionGetTransactionStatusByNetworkAndHash
+            ),
+          ];
+        } else if (ledgerLiveConnector) {
+          return [ledgerLiveConnector];
+        } else if (opts.customConnectors) {
+          return opts.customConnectors(chains);
+        }
 
-          return Maybe.catMaybes([
-            evmConfig.connector,
-            cosmosConfig.connector,
-            ...miscConfig.connectors,
-          ]);
-        })();
+        return Maybe.catMaybes([
+          evmConfig.connector,
+          cosmosConfig.connector,
+          ...miscConfig.connectors,
+        ]);
+      })();
 
-        const wagmiConfig = createConfig({
+      return {
+        ...val,
+        wagmiConfig: createConfig({
           chains,
           client: ({ chain }) => createClient({ chain, transport: http() }),
           multiInjectedProviderDiscovery,
@@ -158,14 +161,54 @@ const buildWagmiConfig = async (opts: {
             appIcon: config.appIcon,
             projectId: config.walletConnectV2.projectId,
           }),
-        });
+        }),
+      };
+    })
+    .chain((val) =>
+      /**
+       * Reconnect to the last used connector if possible
+       * If not, try to connect to the injected connector if mobile app detected
+       */
+      EitherAsync(() => reconnect(val.wagmiConfig))
+        .chainLeft(async () => Right(null))
+        .chain(async (reconnectVal) => {
+          if (
+            opts.externalProviders ||
+            reconnectVal?.length ||
+            isLedgerDappBrowserProvider() ||
+            !isMobile()
+          ) {
+            return Right(null);
+          }
 
+          return EitherAsync.liftEither(
+            List.find(
+              (c) => c.id === "injected",
+              val.wagmiConfig.connectors as Connector[]
+            ).toEither(new Error("Could not find injected connector"))
+          )
+            .chain((injConnector) =>
+              EitherAsync(() =>
+                connect(val.wagmiConfig, { connector: injConnector })
+              )
+            )
+            .ifLeft((e) => console.log(e))
+            .chainLeft(async () => Right(null));
+        })
+
+        .bimap(
+          () => new Error("Could not hydrate wagmi config"),
+          () => val
+        )
+    )
+    .caseOf({
+      Right: (val) => {
         return Promise.resolve({
-          evmConfig,
-          cosmosConfig,
-          miscConfig,
-          substrateConfig,
-          wagmiConfig,
+          evmConfig: val.evmConfig,
+          cosmosConfig: val.cosmosConfig,
+          miscConfig: val.miscConfig,
+          substrateConfig: val.substrateConfig,
+          wagmiConfig: val.wagmiConfig,
         });
       },
       Left: (l) => {

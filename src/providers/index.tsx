@@ -1,12 +1,10 @@
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { ThemeWrapper } from "./theme-wrapper";
-import { StakeStateProvider } from "../state/stake";
-import { useSettings } from "./settings";
 import { WagmiConfigProvider } from "./wagmi/provider";
 import { SKWalletProvider } from "./sk-wallet";
 import { RainbowProvider } from "./rainbow";
-import { TrackingContextProvider } from "./tracking";
+import { TrackingContextProviderWithProps } from "./tracking";
 import { ActionHistoryContextProvider } from "./stake-history";
 import { ListStateContextProvider } from "./list-state";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
@@ -22,12 +20,14 @@ import { SKApiClientProvider } from "./api/api-client-provider";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { RootElementProvider } from "./root-element";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
+import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stake-enter-and-txs-construct";
+import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
+import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
+import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 
 export const Providers = ({
   children,
 }: PropsWithChildren & ComponentProps<typeof WagmiConfigProvider>) => {
-  const { tracking } = useSettings();
-
   return (
     <StrictMode>
       <RootElementProvider>
@@ -36,33 +36,39 @@ export const Providers = ({
             <SKLocationProvider>
               <MountAnimationProvider>
                 <WagmiConfigProvider>
-                  <TrackingContextProvider tracking={tracking}>
+                  <TrackingContextProviderWithProps>
                     <SKWalletProvider>
                       <RainbowProvider>
-                        <ActionHistoryContextProvider>
-                          <StakeStateProvider>
-                            <ThemeWrapper>
-                              <ListStateContextProvider>
-                                <CurrentLayoutProvider>
-                                  <HeaderHeightProvider>
-                                    <FooterHeightProvider>
-                                      <FooterButtonProvider>
-                                        <PoweredByHeightProvider>
-                                          <DisableTransitionDurationProvider>
-                                            {children}
-                                          </DisableTransitionDurationProvider>
-                                        </PoweredByHeightProvider>
-                                      </FooterButtonProvider>
-                                    </FooterHeightProvider>
-                                  </HeaderHeightProvider>
-                                </CurrentLayoutProvider>
-                              </ListStateContextProvider>
-                            </ThemeWrapper>
-                          </StakeStateProvider>
-                        </ActionHistoryContextProvider>
+                        <EarnPageStateProvider>
+                          <ActionHistoryContextProvider>
+                            <StakeEnterAndTxsConstructProvider>
+                              <PendingActionAndTxsConstructContextProvider>
+                                <StakeExitAndTxsConstructContextProvider>
+                                  <ThemeWrapper>
+                                    <ListStateContextProvider>
+                                      <CurrentLayoutProvider>
+                                        <HeaderHeightProvider>
+                                          <FooterHeightProvider>
+                                            <FooterButtonProvider>
+                                              <PoweredByHeightProvider>
+                                                <DisableTransitionDurationProvider>
+                                                  {children}
+                                                </DisableTransitionDurationProvider>
+                                              </PoweredByHeightProvider>
+                                            </FooterButtonProvider>
+                                          </FooterHeightProvider>
+                                        </HeaderHeightProvider>
+                                      </CurrentLayoutProvider>
+                                    </ListStateContextProvider>
+                                  </ThemeWrapper>
+                                </StakeExitAndTxsConstructContextProvider>
+                              </PendingActionAndTxsConstructContextProvider>
+                            </StakeEnterAndTxsConstructProvider>
+                          </ActionHistoryContextProvider>
+                        </EarnPageStateProvider>
                       </RainbowProvider>
                     </SKWalletProvider>
-                  </TrackingContextProvider>
+                  </TrackingContextProviderWithProps>
                 </WagmiConfigProvider>
               </MountAnimationProvider>
             </SKLocationProvider>

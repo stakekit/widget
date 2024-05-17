@@ -10,15 +10,22 @@ import {
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { dotContainer } from "./styles.css";
-import { useStakeState } from "../../../state/stake";
+import type { Maybe } from "purify-ts";
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 
 type Props = {
   isLoading?: boolean;
+  selectedStake: Maybe<YieldDto>;
+  selectedValidators: Map<string, ValidatorDto>;
+  selectedToken: Maybe<TokenDto>;
 };
 
-export const MetaInfo = ({ isLoading }: Props) => {
-  const { selectedStake, selectedValidators, selectedToken } = useStakeState();
-
+export const MetaInfo = ({
+  isLoading,
+  selectedStake,
+  selectedToken,
+  selectedValidators,
+}: Props) => {
   const {
     description,
     earnPeriod,

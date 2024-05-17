@@ -50,7 +50,7 @@ export const Header = () => {
     navigate(-1);
   };
 
-  const { mutateAsync: logout } = useLogout();
+  const { mutate: logout } = useLogout();
 
   const onXPress = () => {
     trackEvent("widgetDisconnectClicked");

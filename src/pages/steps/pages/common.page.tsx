@@ -10,20 +10,17 @@ import { motion } from "framer-motion";
 
 type StepsPageProps = {
   session: Maybe<ActionDto>;
-  onDone?: () => void;
   onSignSuccess?: () => void;
   onSubmitSuccess?: () => void;
 };
 
 export const StepsPage = ({
   session,
-  onDone,
   onSignSuccess,
   onSubmitSuccess,
 }: StepsPageProps) => {
   const { retry, txStates } = useSteps({
     session,
-    onDone,
     onSignSuccess,
     onSubmitSuccess,
   });
@@ -61,7 +58,9 @@ export const StepsPage = ({
 
           {retry && (
             <Box my="4">
-              <Button onClick={retry}>{t("shared.retry")}</Button>
+              <Button data-rk="footer-button" onClick={retry}>
+                {t("shared.retry")}
+              </Button>
             </Box>
           )}
         </PageContainer>

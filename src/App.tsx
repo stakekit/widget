@@ -25,13 +25,12 @@ import {
   Details,
 } from "./pages";
 import { Providers } from "./providers";
-import type { SettingsContextType } from "./providers/settings";
+import type { SettingsProps, VariantProps } from "./providers/settings";
 import { SettingsContextProvider } from "./providers/settings";
-import { PositionDetails } from "./pages/position-details";
+import { PositionDetailsPage } from "./pages/position-details";
 import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { UnstakeOrPendingActionProvider } from "./state/unstake-or-pending-action/";
 import { useSKWallet } from "./providers/sk-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
@@ -52,7 +51,6 @@ import {
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useLoadErrorTranslations } from "./translation";
 import { PoweredBy } from "./pages/components/powered-by";
-import { useUpdateEffect } from "./hooks/use-update-effect";
 import { preloadImages } from "./assets/images";
 
 preloadImages();
@@ -114,82 +112,75 @@ const Widget = () => {
           </motion.div>
 
           <motion.div layout="position" className={container}>
-            <UnstakeOrPendingActionProvider>
-              <AnimatePresence>
-                <Routes location={current} key={key}>
-                  <Route
-                    element={<Layout currentPathname={current.pathname} />}
-                  >
-                    {/* Home + Tabs */}
-                    <Route element={<Details />}>
-                      <Route index element={<EarnPage />} />
-                      <Route path="positions" element={<PositionsPage />} />
+            <AnimatePresence>
+              <Routes location={current} key={key}>
+                <Route element={<Layout currentPathname={current.pathname} />}>
+                  {/* Home + Tabs */}
+                  <Route element={<Details />}>
+                    <Route index element={<EarnPage />} />
+                    <Route path="positions" element={<PositionsPage />} />
+                  </Route>
+
+                  <Route element={<ConnectedCheck />}>
+                    {/* Stake flow */}
+                    <Route element={<StakeCheck />}>
+                      <Route path="review" element={<StakeReviewPage />} />
+                      <Route path="steps" element={<StakeStepsPage />} />
+                      <Route path="complete" element={<StakeCompletePage />} />
                     </Route>
 
-                    <Route element={<ConnectedCheck />}>
-                      {/* Stake flow */}
-                      <Route element={<StakeCheck />}>
-                        <Route path="review" element={<StakeReviewPage />} />
-                        <Route path="steps" element={<StakeStepsPage />} />
+                    {/* Unstake or pending actions flow */}
+                    <Route path="positions/:integrationId/:balanceId">
+                      <Route index element={<PositionDetailsPage />} />
+                      <Route
+                        path="select-validator/:pendingActionType"
+                        element={<PositionDetailsPage />}
+                      />
+
+                      {/* Unstaking */}
+                      <Route
+                        path="unstake"
+                        element={<UnstakeOrPendingActionCheck />}
+                      >
+                        <Route
+                          path="review"
+                          element={<UnstakeOrPendingActionReviewPage />}
+                        />
+                        <Route
+                          path="steps"
+                          element={<UnstakeOrPendingActionStepsPage />}
+                        />
                         <Route
                           path="complete"
-                          element={<StakeCompletePage />}
+                          element={<UnstakeOrPendingActionCompletePage />}
                         />
                       </Route>
 
-                      {/* Unstake or pending actions flow */}
-                      <Route path="positions/:integrationId/:balanceId">
-                        <Route index element={<PositionDetails />} />
+                      {/* Pending Actions */}
+                      <Route
+                        path="pending-action"
+                        element={<UnstakeOrPendingActionCheck />}
+                      >
                         <Route
-                          path="select-validator/:pendingActionType"
-                          element={<PositionDetails />}
+                          path="review"
+                          element={<UnstakeOrPendingActionReviewPage />}
                         />
-
-                        {/* Unstaking */}
                         <Route
-                          path="unstake"
-                          element={<UnstakeOrPendingActionCheck />}
-                        >
-                          <Route
-                            path="review"
-                            element={<UnstakeOrPendingActionReviewPage />}
-                          />
-                          <Route
-                            path="steps"
-                            element={<UnstakeOrPendingActionStepsPage />}
-                          />
-                          <Route
-                            path="complete"
-                            element={<UnstakeOrPendingActionCompletePage />}
-                          />
-                        </Route>
-
-                        {/* Pending Actions */}
+                          path="steps"
+                          element={<UnstakeOrPendingActionStepsPage />}
+                        />
                         <Route
-                          path="pending-action"
-                          element={<UnstakeOrPendingActionCheck />}
-                        >
-                          <Route
-                            path="review"
-                            element={<UnstakeOrPendingActionReviewPage />}
-                          />
-                          <Route
-                            path="steps"
-                            element={<UnstakeOrPendingActionStepsPage />}
-                          />
-                          <Route
-                            path="complete"
-                            element={<UnstakeOrPendingActionCompletePage />}
-                          />
-                        </Route>
+                          path="complete"
+                          element={<UnstakeOrPendingActionCompletePage />}
+                        />
                       </Route>
                     </Route>
-
-                    <Route path="*" element={<Navigate to="/" replace />} />
                   </Route>
-                </Routes>
-              </AnimatePresence>
-            </UnstakeOrPendingActionProvider>
+
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Route>
+              </Routes>
+            </AnimatePresence>
           </motion.div>
 
           <FooterContent />
@@ -213,28 +204,20 @@ const Root = () => {
 
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
 
-export type SKAppProps = Omit<SettingsContextType, "variant"> &
-  Partial<Pick<SettingsContextType, "variant">>;
+export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 
 export const SKApp = (props: SKAppProps) => {
   const [showChild, setShowChild] = useState(false);
-  const [key, reloadApp] = useState(() => Date.now());
 
   useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
 
-  useUpdateEffect(() => {
-    reloadApp(Date.now());
-  }, [
-    props.externalProviders?.currentAddress,
-    props.externalProviders?.currentChain,
-  ]);
+  const variantProps: VariantProps =
+    !props.variant || props.variant === "default"
+      ? { variant: "default" }
+      : { variant: props.variant, chainModal: props.chainModal };
 
   return (
-    <SettingsContextProvider
-      key={key}
-      variant={props.variant ?? "default"}
-      {...props}
-    >
+    <SettingsContextProvider {...variantProps} {...props}>
       <Box className={appContainer}>
         {showChild && <RouterProvider router={router} />}
       </Box>

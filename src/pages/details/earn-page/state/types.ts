@@ -1,6 +1,5 @@
 import type { Maybe } from "purify-ts";
 import type { SelectedStakeData } from "../types";
-import type { ExtraData, State } from "../../../../state/stake/types";
 import type {
   TokenBalanceScanResponseDto,
   TokenDto,
@@ -9,12 +8,60 @@ import type {
   YieldType,
 } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
-import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
-import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
-import type { SettingsContextType } from "../../../../providers/settings";
+import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
+import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
+import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
+import type { SettingsContextType } from "@sk-widget/providers/settings";
+import type { Action } from "@sk-widget/types";
+import type { YieldDto } from "@stakekit/api-hooks";
 
-export type DetailsContextType = {
+export type State = {
+  selectedToken: Maybe<TokenBalanceScanResponseDto["token"]>;
+  selectedStakeId: Maybe<
+    TokenBalanceScanResponseDto["availableYields"][number]
+  >;
+  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
+  stakeAmount: BigNumber;
+  tronResource: Maybe<TronResourceType>;
+};
+
+type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
+type YieldSelectAction = Action<"yield/select", YieldDto>;
+
+type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
+type StakeAmountMaxAction = Action<"stakeAmount/max", BigNumber>;
+type StateResetAction = Action<"state/reset">;
+
+type ValidatorSelectAction = Action<"validator/select", ValidatorDto>;
+type ValidatorMultiSelectAction = Action<"validator/multiselect", ValidatorDto>;
+type ValidatorRemoveAction = Action<"validator/remove", ValidatorDto>;
+
+type SelectTronResourceAction = Action<"tronResource/select", TronResourceType>;
+
+export type Actions =
+  | TokenBalanceSelectAction
+  | YieldSelectAction
+  | StakeAmountChangeAction
+  | StakeAmountMaxAction
+  | StateResetAction
+  | ValidatorSelectAction
+  | ValidatorMultiSelectAction
+  | ValidatorRemoveAction
+  | SelectTronResourceAction;
+
+export type ExtraData = {
+  actions: { onMaxClick: () => void };
+  selectedStake: Maybe<YieldDto>;
+  stakeAmountLessThanMin: boolean;
+  stakeAmountGreaterThanMax: boolean;
+  stakeAmountGreaterThanAvailableAmount: boolean;
+  stakeAmountIsZero: boolean;
+  availableAmount: Maybe<BigNumber>;
+  availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
+  hasNotYieldsForToken: boolean;
+};
+
+export type EarnPageContextType = {
   referralCheck: SettingsContextType["referralCheck"];
   availableTokens: string;
   formattedPrice: string;

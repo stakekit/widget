@@ -11,7 +11,7 @@ import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
-import { useDetailsContext } from "../../state/details-context";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 
@@ -22,7 +22,7 @@ export const SelectOpportunity = () => {
     onSelectOpportunityClose,
     onYieldSearch,
     stakeSearch,
-  } = useDetailsContext();
+  } = useEarnPageContext();
 
   const trackEvent = useTrackEvent();
 

@@ -9,14 +9,13 @@ import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balance
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useTranslation } from "react-i18next";
 import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
+import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 
 export const useSteps = ({
   session,
-  onDone,
   onSignSuccess,
   onSubmitSuccess,
 }: {
-  onDone?: () => void;
   onSignSuccess?: () => void;
   onSubmitSuccess?: () => void;
   session: Maybe<ActionDto>;
@@ -26,7 +25,6 @@ export const useSteps = ({
   const callbacksRef = useSavedRef({
     onSignSuccess,
     onSubmitSuccess,
-    onDone,
   });
 
   const sessionExtracted = useMemo(() => session.extractNullable(), [session]);
@@ -68,6 +66,7 @@ export const useSteps = ({
 
   const invalidateYieldBalances = useInvalidateYieldBalances();
   const invalidateTokenBalances = useInvalidateTokenBalances();
+  const setActionHistoryData = useSetActionHistoryData();
 
   /**
    *
@@ -75,9 +74,9 @@ export const useSteps = ({
    */
   useEffect(() => {
     if (machine.value === "done") {
-      callbacksRef.current.onDone?.();
       invalidateYieldBalances();
       invalidateTokenBalances();
+      setActionHistoryData();
 
       navigate("../complete", {
         state: {
@@ -98,6 +97,7 @@ export const useSteps = ({
     navigate,
     invalidateYieldBalances,
     invalidateTokenBalances,
+    setActionHistoryData,
   ]);
 
   const onClick = () => navigate(-1);

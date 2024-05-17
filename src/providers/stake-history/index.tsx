@@ -1,10 +1,3 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
-import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
@@ -16,23 +9,11 @@ import {
 } from "react";
 
 type GenericData = { timestamp: number };
-type TypeData = {
-  integrationData: YieldDto;
-  amount: BigNumber;
-  interactedToken: TokenDto;
-} & (
-  | {
-      type: "stake";
-      selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
-    }
-  | { type: "unstake" }
-  | { type: "pending_action"; pendingActionType: ActionTypes }
-);
 
-type Data = Maybe<GenericData & TypeData>;
+type Data = Maybe<GenericData>;
 
 const ActionHistoryContext = createContext<
-  readonly [Data, (data: TypeData) => void] | undefined
+  readonly [Data, () => void] | undefined
 >(undefined);
 
 export const ActionHistoryContextProvider = ({
@@ -40,8 +21,8 @@ export const ActionHistoryContextProvider = ({
 }: PropsWithChildren) => {
   const [data, setData] = useState<Data>(Maybe.empty());
 
-  const setActionHistoryData = useCallback((data: TypeData) => {
-    setData(Maybe.of({ ...data, timestamp: Date.now() }));
+  const setActionHistoryData = useCallback(() => {
+    setData(Maybe.of({ timestamp: Date.now() }));
   }, []);
 
   const value = useMemo(

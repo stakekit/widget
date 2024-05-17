@@ -5,6 +5,8 @@ import type {
   TokenDto,
   useTransactionConstructHook,
   useTokenGetTokenBalancesHook,
+  YieldDto,
+  ValidatorDto,
 } from "@stakekit/api-hooks";
 import { useActionGetGasEstimateHook } from "@stakekit/api-hooks";
 import type { GetEitherAsyncLeft, GetEitherAsyncRight } from "../../types";
@@ -17,6 +19,7 @@ import { isAxiosError } from "axios";
 import { actionWithGasEstimateAndCheck } from "../../common/action-with-gas-estimate-and-check";
 import { getValidStakeSessionTx } from "../../domain";
 import { EitherAsync } from "purify-ts";
+import type BigNumber from "bignumber.js";
 
 type DataType = GetEitherAsyncRight<ReturnType<typeof fn>>;
 export type ErrorType = GetEitherAsyncLeft<ReturnType<typeof fn>>;
@@ -76,6 +79,7 @@ const fn = ({
   transactionConstruct,
   tokenGetTokenBalances,
   gasEstimate,
+  stakeEnterData,
 }: {
   stakeRequestDto: ActionRequestDto;
   gasModeValue: GasModeValueDto | undefined;
@@ -86,6 +90,12 @@ const fn = ({
   transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
   tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
   gasEstimate: ReturnType<typeof useActionGetGasEstimateHook>;
+  stakeEnterData: {
+    selectedStake: YieldDto;
+    selectedToken: TokenDto;
+    selectedValidators: Map<string, ValidatorDto>;
+    stakeAmount: BigNumber;
+  };
 }) =>
   withRequestErrorRetry({ fn: () => actionEnter(stakeRequestDto) })
     .mapLeft<StakingNotAllowedError | Error>((e) => {
@@ -117,8 +127,12 @@ const fn = ({
         },
         transactionConstruct,
         tokenGetTokenBalances,
+        isStake: true,
+        stakeAmount: stakeEnterData.stakeAmount,
+        stakeToken: stakeEnterData.selectedToken,
       })
-    );
+    )
+    .map((val) => ({ ...val, stakeEnterData }));
 
 class StakingNotAllowedError extends Error {
   static isStakingNotAllowedErrorDto = (e: unknown) => {

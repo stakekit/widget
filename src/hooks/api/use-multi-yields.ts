@@ -1,6 +1,6 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
-import type { UseQueryOptions } from "@tanstack/react-query";
+import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { createSelector } from "reselect";
 import type { SKWallet } from "../../domain/types";
@@ -13,15 +13,27 @@ import {
 import { config } from "../../config";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSKQueryClient } from "../../providers/query-client";
+import { EitherAsync, Maybe } from "purify-ts";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",
   yieldIds,
 ];
 
-export const useMultiYields = (
+export const getCachedMultiYields = ({
+  queryClient,
+  yieldIds,
+}: {
+  queryClient: QueryClient;
+  yieldIds: string[];
+}) =>
+  Maybe.fromNullable(
+    queryClient.getQueryData<YieldDto[]>(getMultiYieldsQueryKey(yieldIds))
+  );
+
+export const useMultiYields = <SelectData = YieldDto[]>(
   yieldIds: string[],
-  opts?: { select?: UseQueryOptions<YieldDto[], Error>["select"] }
+  opts?: { select?: UseQueryOptions<YieldDto[], Error, SelectData>["select"] }
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
@@ -29,43 +41,80 @@ export const useMultiYields = (
 
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
 
-  return useQuery<YieldDto[], Error>({
+  return useQuery<YieldDto[], Error, SelectData>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
     staleTime: config.queryClient.cacheTime,
     select: opts?.select,
     queryFn: async () =>
       (
-        await eitherAsyncPool(
-          yieldIds.map(
-            (y) => () =>
-              getYieldOpportunity({
-                isLedgerLive,
-                yieldId: y,
-                queryClient,
-                yieldYieldOpportunity,
-              })
-          ),
-          5
-        )()
-          .map((data) =>
-            defaultFiltered({ data, isConnected, network, isLedgerLive })
-          )
-          .ifRight((data) => {
-            /**
-             * Set the query data for each yield opportunity
-             */
-            data.forEach((y) =>
-              setYieldOpportunityInCache({
-                isLedgerLive,
-                yieldDto: y,
-                queryClient,
-              })
-            );
-          })
+        await queryFn({
+          isConnected,
+          isLedgerLive,
+          network,
+          queryClient,
+          yieldIds,
+          yieldYieldOpportunity,
+        })
       ).unsafeCoerce(),
   });
 };
+
+export const getMultipleYields = (
+  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+) =>
+  EitherAsync(() =>
+    params.queryClient.fetchQuery({
+      queryKey: getMultiYieldsQueryKey(params.yieldIds),
+      queryFn: async () => (await queryFn(params)).unsafeCoerce(),
+    })
+  ).mapLeft((e) => {
+    console.log(e);
+    return new Error("could not get multi yields");
+  });
+
+const queryFn = ({
+  yieldIds,
+  isLedgerLive,
+  queryClient,
+  isConnected,
+  network,
+  yieldYieldOpportunity,
+}: {
+  isLedgerLive: boolean;
+  yieldIds: string[];
+  queryClient: QueryClient;
+  isConnected: boolean;
+  network: SKWallet["network"];
+  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
+}) =>
+  eitherAsyncPool(
+    yieldIds.map(
+      (y) => () =>
+        getYieldOpportunity({
+          isLedgerLive,
+          yieldId: y,
+          queryClient,
+          yieldYieldOpportunity,
+        })
+    ),
+    5
+  )()
+    .map((data) =>
+      defaultFiltered({ data, isConnected, network, isLedgerLive })
+    )
+    .ifRight((data) => {
+      /**
+       * Set the query data for each yield opportunity
+       */
+      data.forEach((y) =>
+        setYieldOpportunityInCache({
+          isLedgerLive,
+          yieldDto: y,
+          queryClient,
+        })
+      );
+    });
 
 type SelectorInputData = {
   data: YieldDto[];

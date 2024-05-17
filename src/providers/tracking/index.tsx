@@ -1,6 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import type { SettingsContextType } from "../settings";
+import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 
 const trackPageMap = {
   earn: "Earn",
@@ -70,25 +71,37 @@ export const TrackingContext = createContext<TrackingContextType | undefined>(
 export const TrackingContextProvider = ({
   children,
   tracking,
-}: PropsWithChildren<{ tracking: SettingsContextType["tracking"] }>) => {
+  variantTracking,
+}: PropsWithChildren<{
+  tracking: SettingsContextType["tracking"];
+  variantTracking?: SettingsContextType["tracking"];
+}>) => {
   const trackEvent = useCallback<TrackingContextType["trackEvent"]>(
-    (event, props) =>
-      tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : [])),
-    [tracking]
+    (event, props) => {
+      tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : []));
+      variantTracking?.trackEvent(
+        trackEventMap[event],
+        ...(props ? [props] : [])
+      );
+    },
+    [tracking, variantTracking]
   );
 
   const trackPageView = useCallback<TrackingContextType["trackPageView"]>(
-    (page, props) =>
-      tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : [])),
-    [tracking]
+    (page, props) => {
+      tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : []));
+      variantTracking?.trackPageView(
+        trackPageMap[page],
+        ...(props ? [props] : [])
+      );
+    },
+    [tracking, variantTracking]
   );
 
-  const value = useMemo(() => {
-    return {
-      trackEvent,
-      trackPageView,
-    };
-  }, [trackEvent, trackPageView]);
+  const value = useMemo(
+    () => ({ trackEvent, trackPageView }),
+    [trackEvent, trackPageView]
+  );
 
   return (
     <TrackingContext.Provider value={value}>
@@ -106,3 +119,11 @@ export const useTracking = () => {
 
   return context;
 };
+
+export const TrackingContextProviderWithProps = ({
+  children,
+}: PropsWithChildren) => (
+  <TrackingContextProvider {...useTrackingProps()}>
+    {children}
+  </TrackingContextProvider>
+);

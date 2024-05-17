@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { Just, List, Maybe } from "purify-ts";
 import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
-import { useStakeState } from "../../../../state/stake";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
+import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 
 export const useStakeEnterRequestDto = () => {
   const {
@@ -12,7 +12,7 @@ export const useStakeEnterRequestDto = () => {
     selectedValidators,
     tronResource,
     selectedToken,
-  } = useStakeState();
+  } = useEarnPageState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   const referralcode = useReferralCode();
@@ -31,13 +31,13 @@ export const useStakeEnterRequestDto = () => {
           .chain<
             | Pick<ActionRequestDto["args"], "validatorAddresses">
             | Pick<ActionRequestDto["args"], "validatorAddress">
-            | { providerId: string | undefined }
+            | Pick<ActionRequestDto["args"], "providerId">
           >((val) => {
             const validators = [...selectedValidators.values()];
 
             if (val.metadata.isIntegrationAggregator) {
               return List.head(validators).map((v) => ({
-                providerId: (v as any).providerId,
+                providerId: v.providerId,
               }));
             } else if (val.args.enter.args?.validatorAddresses?.required) {
               return Just({
