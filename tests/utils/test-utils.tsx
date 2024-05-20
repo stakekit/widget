@@ -9,6 +9,7 @@ const renderApp = (opts?: {
   options?: RenderOptions;
   wagmi?: ComponentProps<typeof SettingsContextProvider>["wagmi"];
   referralCheck?: boolean;
+  skProps?: ComponentProps<typeof SKApp>;
 }) => {
   const App = (
     <VirtuosoMockContext.Provider
@@ -18,6 +19,7 @@ const renderApp = (opts?: {
         apiKey={import.meta.env.VITE_API_KEY}
         wagmi={opts?.wagmi}
         referralCheck={opts?.referralCheck}
+        {...opts?.skProps}
       />
     </VirtuosoMockContext.Provider>
   );

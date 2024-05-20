@@ -32,15 +32,7 @@ export const ChainModal = () => {
             >
               {Maybe.fromFalsy(c.unsupported && variant !== "zerion")
                 .map(() => (
-                  <Box
-                    px="2"
-                    py="2"
-                    as="button"
-                    onClick={() => {
-                      trackEvent("chainModalOpened");
-                      openChainModal();
-                    }}
-                  >
+                  <Box px="2" py="2">
                     <Text variant={{ type: "danger" }}>
                       {t("shared.unsupported_network")}
                     </Text>

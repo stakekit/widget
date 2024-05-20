@@ -192,7 +192,6 @@ const buildWagmiConfig = async (opts: {
                 connect(val.wagmiConfig, { connector: injConnector })
               )
             )
-            .ifLeft((e) => console.log(e))
             .chainLeft(async () => Right(null));
         })
 
