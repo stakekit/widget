@@ -26,6 +26,7 @@ export const StakedVia = () => {
         alignItems="center"
         marginTop="2"
         gap="2"
+        data-rk="stake-token-section-staked-via"
       >
         <Text variant={{ type: "regular", size: "medium" }}>
           {t("details.staked_via")}{" "}

@@ -1,3 +1,4 @@
+import { useSettings } from "@sk-widget/providers/settings";
 import type { RefObject } from "react";
 import { useEffect } from "react";
 import { usePrevious } from "../../../hooks/use-previous";
@@ -17,12 +18,15 @@ export const useAutoResizeText = ({
 }) => {
   const prevVal = usePrevious(inputVal);
 
+  const { disableResizingInputFontSize } = useSettings();
+
   useEffect(() => {
     if (
       !inputRef.current ||
       !spanRef.current ||
       !prevVal ||
-      inputVal.length === prevVal.length
+      inputVal.length === prevVal.length ||
+      disableResizingInputFontSize
     ) {
       return;
     }
@@ -34,7 +38,7 @@ export const useAutoResizeText = ({
 
     inputRef.current.style.fontSize = `${newFontSize}px`;
     spanRef.current.style.fontSize = `${newFontSize}px`;
-  }, [inputRef, inputVal, prevVal, spanRef]);
+  }, [inputRef, inputVal, prevVal, spanRef, disableResizingInputFontSize]);
 };
 
 const scale = ({

@@ -19,7 +19,7 @@ export const useTrackingProps = (): {
       return (
         await EitherAsync(() => import("./tracking-variants"))
           .ifRight((val) => {
-            val.initMixpanel(config.trackingVariants[variant]);
+            val.initMixpanel(config[variant].tracking);
             return val.tracking;
           })
           .map((val) => val.tracking)

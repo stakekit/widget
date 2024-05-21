@@ -57,6 +57,14 @@ export const getTokenPriceInUSD = ({
   return amountBN.times(tokenPrice);
 };
 
+export const stakeTokenSameAsGasToken = ({
+  stakeToken,
+  yieldDto,
+}: {
+  stakeToken: TokenDto;
+  yieldDto: YieldDto;
+}) => equalTokens(stakeToken, getGasFeeToken(yieldDto));
+
 export const getMaxAmount = ({
   availableAmount,
   gasEstimateTotal,

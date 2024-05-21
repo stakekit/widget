@@ -31,7 +31,11 @@ import type {
   NumberInputProps,
   SelectModalProps,
 } from "../../../../components";
-import { getTokenPriceInUSD, tokenString } from "../../../../domain";
+import {
+  getTokenPriceInUSD,
+  stakeTokenSameAsGasToken,
+  tokenString,
+} from "../../../../domain";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { isForceMaxAmount } from "../../../../domain/types/stake";
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
@@ -540,6 +544,19 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     openConnectModal?.();
   });
 
+  const isStakeTokenSameAsGasToken = useMemo(
+    () =>
+      Maybe.fromRecord({ selectedStake, selectedToken }).mapOrDefault(
+        (val) =>
+          stakeTokenSameAsGasToken({
+            stakeToken: val.selectedToken,
+            yieldDto: val.selectedStake,
+          }),
+        false
+      ),
+    [selectedStake, selectedToken]
+  );
+
   useRegisterFooterButton(
     useMemo(
       () =>
@@ -657,6 +674,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     validatorsData,
     validatorSearch,
     hasNotYieldsForToken,
+    isStakeTokenSameAsGasToken,
   };
 
   return (
