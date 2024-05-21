@@ -128,4 +128,5 @@ export type EarnPageContextType = {
   stakeMaxAmount: Maybe<number>;
   stakeMinAmount: Maybe<number>;
   validatorsData: Maybe<ValidatorDto[]>;
+  isStakeTokenSameAsGasToken: boolean;
 };

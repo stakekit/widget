@@ -5,6 +5,7 @@ import { vars } from "../../../styles";
 import { initialFontSizeVar } from "./styles.css";
 import { MaybeDocument } from "../../../utils/maybe-document";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import { useSettings } from "@sk-widget/providers/settings";
 
 export const useAutoResizeText = ({
   inputVal,
@@ -17,12 +18,15 @@ export const useAutoResizeText = ({
 }) => {
   const prevVal = usePrevious(inputVal);
 
+  const { disableResizingInputFontSize } = useSettings();
+
   useEffect(() => {
     if (
       !inputRef.current ||
       !spanRef.current ||
       !prevVal ||
-      inputVal.length === prevVal.length
+      inputVal.length === prevVal.length ||
+      disableResizingInputFontSize
     ) {
       return;
     }
@@ -34,7 +38,7 @@ export const useAutoResizeText = ({
 
     inputRef.current.style.fontSize = `${newFontSize}px`;
     spanRef.current.style.fontSize = `${newFontSize}px`;
-  }, [inputRef, inputVal, prevVal, spanRef]);
+  }, [inputRef, inputVal, prevVal, spanRef, disableResizingInputFontSize]);
 };
 
 const scale = ({

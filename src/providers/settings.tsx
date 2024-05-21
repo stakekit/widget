@@ -34,6 +34,7 @@ export type SettingsProps = {
   disableGasCheck?: boolean;
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
+  disableResizingInputFontSize?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

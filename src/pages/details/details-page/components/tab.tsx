@@ -35,7 +35,10 @@ export const Tab = ({
           {...(variant === "positions" && { position: "relative" })}
           display="inline-flex"
         >
-          <Text variant={{ type: isSelected ? "regular" : "muted" }}>
+          <Text
+            data-state={isSelected ? "selected" : "default"}
+            variant={{ type: isSelected ? "regular" : "muted" }}
+          >
             {variant === "earn"
               ? t("details.tab_earn")
               : t("details.tab_positions")}
