@@ -1,8 +1,8 @@
+import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import { Navigate, Outlet } from "react-router-dom";
 import { usePendingActionMatch } from "../../hooks/navigation/use-pending-action-match";
 import { useUnstakeMatch } from "../../hooks/navigation/use-unstake-match";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
-import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
 
 export const UnstakeOrPendingActionCheck = () => {
   const stakeExitData = useStakeExitData();

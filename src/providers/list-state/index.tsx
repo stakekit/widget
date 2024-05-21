@@ -1,7 +1,7 @@
 import type { Dispatch, PropsWithChildren, SetStateAction } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import type { StateSnapshot, VirtuosoHandle } from "react-virtuoso";
 import { useLocation } from "react-router-dom";
+import type { StateSnapshot, VirtuosoHandle } from "react-virtuoso";
 
 type ListStateContextType = { [Key in "positions"]: StateSnapshot | null };
 
@@ -39,6 +39,7 @@ export const useHandleListState = () => {
 
   const [state, setState] = useListState();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     const list = virtualListRef.current;
 

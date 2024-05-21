@@ -1,7 +1,7 @@
 import type { AxiosError } from "axios";
 import { isAxiosError } from "axios";
-import { waitForMs } from "../utils";
 import { EitherAsync } from "purify-ts";
+import { waitForMs } from "../utils";
 
 export const isAxios4xxError = (error: unknown): error is AxiosError =>
   !!(
@@ -29,23 +29,20 @@ const _shouldRetry = ({
  *
  * @summary Retry with exponential backoff. Fire once + retry times
  */
-export const withRequestErrorRetry = <
-  T extends () => Promise<any>,
-  E = unknown,
->({
+export const withRequestErrorRetry = <T, E = unknown>({
   fn,
   retryTimes = 2,
   shouldRetry,
   retryWaitForMs,
 }: {
-  fn: T;
+  fn: () => Promise<T>;
   retryTimes?: number;
   shouldRetry?: (error: unknown, retryCount: number) => boolean;
   retryWaitForMs?: () => number;
 }) => {
   let retryCount = 0;
 
-  const newFn = (): EitherAsync<E, Awaited<ReturnType<T>>> => {
+  const newFn = (): EitherAsync<E, T> => {
     return EitherAsync(async () => {
       try {
         return await fn();

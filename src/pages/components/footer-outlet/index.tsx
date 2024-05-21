@@ -1,18 +1,18 @@
-import { useState } from "react";
-import { Box, Button } from "../../../components";
 import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
-import { footerContainer } from "./styles.css";
+import { Just } from "purify-ts";
+import { useState } from "react";
+import { Box, Button } from "../../../components";
+import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import { useSettings } from "../../../providers/settings";
 import type { FooterButtonVal } from "./context";
 import {
   useFooterButton,
   useFooterHeight,
   useSyncFooterHeight,
 } from "./context";
-import { useMountAnimation } from "../../../providers/mount-animation";
-import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
-import { Just } from "purify-ts";
-import { useSettings } from "../../../providers/settings";
+import { footerContainer } from "./styles.css";
 
 const FooterButton = ({
   disabled,
@@ -42,7 +42,8 @@ const FooterButton = ({
               animate: {},
               initial: { opacity: 1, translateY: 0 },
             };
-          } else if (state.layout) {
+          }
+          if (state.layout) {
             return {
               animate: {
                 ...animateTo,

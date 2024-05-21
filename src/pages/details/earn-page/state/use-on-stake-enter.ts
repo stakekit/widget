@@ -1,22 +1,22 @@
-import { EitherAsync, Right } from "purify-ts";
-import { getAverageGasMode } from "../../../../common/get-gas-mode-value";
-import type { ErrorType } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
-import { useStakeEnterAndTxsConstruct } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
-import type { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
-import type {
-  GetEitherAsyncLeft,
-  GetEitherAsyncRight,
-} from "../../../../types";
-import { useMutationSync } from "../../../../hooks/use-mutation-sync";
-import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useSettings } from "../../../../providers/settings";
+import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import {
   useActionEnterHook,
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
   useTransactionGetGasForNetworkHook,
 } from "@stakekit/api-hooks";
-import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { EitherAsync, Right } from "purify-ts";
+import { getAverageGasMode } from "../../../../common/get-gas-mode-value";
+import type { ErrorType } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import { useStakeEnterAndTxsConstruct } from "../../../../hooks/api/use-stake-enter-and-txs-construct";
+import { useMutationSync } from "../../../../hooks/use-mutation-sync";
+import { useSettings } from "../../../../providers/settings";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import type {
+  GetEitherAsyncLeft,
+  GetEitherAsyncRight,
+} from "../../../../types";
+import type { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 
 export const useOnStakeEnter = () => {
   const stakeEnterAndTxsConstruct = useStakeEnterAndTxsConstruct();

@@ -1,11 +1,11 @@
+import { useSavedRef } from "@sk-widget/hooks";
+import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import type { SKWallet } from "../../domain/types";
-import { useSettings } from "../settings";
-import { isExternalProviderConnector } from "../external-provider";
 import type { Nullable } from "../../types";
-import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
-import { useSavedRef } from "@sk-widget/hooks";
+import { isExternalProviderConnector } from "../external-provider";
+import { useSettings } from "../settings";
 
 type Props = Pick<SKWallet, "connector" | "address" | "chain" | "isConnected">;
 

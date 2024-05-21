@@ -1,4 +1,12 @@
+import type {
+  Account,
+  CryptoCurrency,
+  Currency,
+  ERC20TokenCurrency,
+  WalletAPIClient,
+} from "@ledgerhq/wallet-api-client";
 import type { Chain } from "@stakekit/rainbowkit";
+import { EitherAsync } from "purify-ts";
 import type {
   CosmosChainsMap,
   EvmChainsMap,
@@ -9,16 +17,8 @@ import type {
   SupportedSKChains,
 } from "../../domain/types/chains";
 import { supportedLedgerFamiliesWithCurrency } from "../../domain/types/chains";
-import { typeSafeObjectEntries } from "../../utils";
-import type {
-  Account,
-  CryptoCurrency,
-  Currency,
-  ERC20TokenCurrency,
-  WalletAPIClient,
-} from "@ledgerhq/wallet-api-client";
-import { EitherAsync } from "purify-ts";
 import type { GetEitherAsyncRight } from "../../types";
+import { typeSafeObjectEntries } from "../../utils";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   accounts,
@@ -71,12 +71,15 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
           accountsFamilies.has(item.family) &&
           (key === "*" || accountsCurrencies.has(item.currencyId))
         ) {
+          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
           return { ...acc, [key]: { ...item, chain, enabled: true } };
-        } else {
-          return { ...acc, [key]: { ...item, chain, enabled: false } };
         }
+
+        // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+        return { ...acc, [key]: { ...item, chain, enabled: false } };
       }, {} as MappedSupportedLedgerFamiliesWithCurrency);
 
+      // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
       return { ...acc, [k]: filtered };
     },
     {} as MappedSupportedLedgerFamiliesWithCurrency

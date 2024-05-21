@@ -1,27 +1,27 @@
-import { Text } from "../../../components/atoms/typography";
+import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import type { MotionProps, TargetAndTransition } from "framer-motion";
+import { motion } from "framer-motion";
+import { Just } from "purify-ts";
+import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
+import { Text } from "../../../components/atoms/typography";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components";
+import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
-import { SelectValidatorSection } from "./components/select-validator-section";
+import { ReferralCode } from "./components/referral-code";
 import { SelectTokenSection } from "./components/select-token-section";
+import { SelectTokenTitle } from "./components/select-token-section/title";
+import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectYieldSection } from "./components/select-yield-section";
+import { StakedVia } from "./components/select-yield-section/staked-via";
 import {
   EarnPageContextProvider,
   useEarnPageContext,
 } from "./state/earn-page-context";
-import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { ExtraArgsSelection } from "./components/extra-args-selection";
-import type { MotionProps, TargetAndTransition } from "framer-motion";
-import { motion } from "framer-motion";
-import { ReferralCode } from "./components/referral-code";
-import { useMountAnimation } from "../../../providers/mount-animation";
-import { useTranslation } from "react-i18next";
-import { useSettings } from "../../../providers/settings";
-import { SelectTokenTitle } from "./components/select-token-section/title";
-import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
-import { StakedVia } from "./components/select-yield-section/staked-via";
-import { Just } from "purify-ts";
-import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -52,7 +52,8 @@ const EarnPageComponent = () => {
                 transition: { duration: 0.3, delay: 0 },
                 initial: { opacity: 0, translateY: "-10px" },
               };
-            } else if (disableInitLayoutAnimation) {
+            }
+            if (disableInitLayoutAnimation) {
               return {
                 transition: { duration: 0 },
                 initial: { opacity: 1, translateY: 0 },

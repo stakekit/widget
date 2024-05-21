@@ -1,20 +1,20 @@
+import { Trigger } from "@radix-ui/react-alert-dialog";
+import type { ReactNode } from "react";
+import { useContext, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { images } from "../../../assets/images";
+import type { useGeoBlock } from "../../../hooks/use-geo-block";
+import { TrackingContext } from "../../../providers/tracking";
+import { formatCountryCode } from "../../../utils/formatters";
+import { MaybeWindow } from "../../../utils/maybe-window";
+import { SKAnchor } from "../../atoms/anchor";
 import { Box } from "../../atoms/box";
+import { Button } from "../../atoms/button";
 import { HelpIcon } from "../../atoms/icons";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
 import { Heading, Text } from "../../atoms/typography";
-import { Trigger } from "@radix-ui/react-alert-dialog";
 import { container, imageStyle } from "./style.css";
-import { formatCountryCode } from "../../../utils/formatters";
-import type { useGeoBlock } from "../../../hooks/use-geo-block";
-import type { ReactNode } from "react";
-import { useContext, useMemo } from "react";
-import { SKAnchor } from "../../atoms/anchor";
-import { Button } from "../../atoms/button";
-import { TrackingContext } from "../../../providers/tracking";
-import { MaybeWindow } from "../../../utils/maybe-window";
-import { images } from "../../../assets/images";
 
 type ModalType =
   | ({ type: "geoBlock"; onClose: () => void } & Exclude<
@@ -63,7 +63,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
+        }
+        if (modal.tags.has("OFSI") && modal.tags.has("Crypto Ban")) {
           return {
             title,
             description: (
@@ -75,7 +76,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("Crypto Ban")) {
+        }
+        if (modal.tags.has("Crypto Ban")) {
           return {
             title,
             description: (
@@ -87,7 +89,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("OFAC")) {
+        }
+        if (modal.tags.has("OFAC")) {
           return {
             title,
             description: (
@@ -99,7 +102,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("OFSI")) {
+        }
+        if (modal.tags.has("OFSI")) {
           return {
             title,
             description: (
@@ -111,7 +115,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("Pending Litigation")) {
+        }
+        if (modal.tags.has("Pending Litigation")) {
           return {
             title,
             description: (
@@ -126,7 +131,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             ),
             image: images.fees,
           };
-        } else if (modal.tags.has("Staking Ban")) {
+        }
+        if (modal.tags.has("Staking Ban")) {
           return {
             title,
             description: (

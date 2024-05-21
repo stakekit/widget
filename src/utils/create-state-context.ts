@@ -25,7 +25,7 @@ const createStateContext = <T>(defaultInitialValue: T) => {
   const useStateContext = () => {
     const state = useContext(context);
     if (state == null) {
-      throw new Error(`useStateContext must be used inside a StateProvider.`);
+      throw new Error("useStateContext must be used inside a StateProvider.");
     }
     return state;
   };

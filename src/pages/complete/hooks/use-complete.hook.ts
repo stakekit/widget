@@ -1,13 +1,13 @@
-import { useLocation, useNavigate } from "react-router-dom";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import type { TransactionType } from "@stakekit/api-hooks";
-import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
-import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useMemo } from "react";
-import { useSavedRef } from "../../../hooks";
 import { useTranslation } from "react-i18next";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSavedRef } from "../../../hooks";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
+import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useComplete = () => {
   const navigate = useNavigate();

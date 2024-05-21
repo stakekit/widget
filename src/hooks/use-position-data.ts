@@ -1,6 +1,6 @@
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { usePositionsData } from "./use-positions-data";
-import { Maybe } from "purify-ts";
 
 export const usePositionData = ({
   integrationId,

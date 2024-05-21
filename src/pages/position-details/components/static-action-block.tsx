@@ -1,12 +1,12 @@
-import { Trans, useTranslation } from "react-i18next";
-import { Box, Button, Spinner, Text } from "../../../components";
-import { formatNumber } from "../../../utils";
-import BigNumber from "bignumber.js";
 import type {
   ActionTypes,
   PendingActionDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
+import { Trans, useTranslation } from "react-i18next";
+import { Box, Button, Spinner, Text } from "../../../components";
+import { formatNumber } from "../../../utils";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {

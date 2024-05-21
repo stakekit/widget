@@ -1,4 +1,12 @@
+import { Trigger } from "@radix-ui/react-alert-dialog";
+import type {
+  ValidatorDto,
+  ValidatorSearchResultDto,
+} from "@stakekit/api-hooks";
+import clsx from "clsx";
 import type { Maybe } from "purify-ts";
+import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SelectModalProps } from "../../../../components";
 import {
   Box,
@@ -8,24 +16,16 @@ import {
   SelectModalItemContainer,
   Text,
 } from "../../../../components";
-import { useTranslation } from "react-i18next";
-import { Trigger } from "@radix-ui/react-alert-dialog";
-import type {
-  ValidatorDto,
-  ValidatorSearchResultDto,
-} from "@stakekit/api-hooks";
-import clsx from "clsx";
+import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
+import { Image } from "../../../../components/atoms/image";
+import { ImageFallback } from "../../../../components/atoms/image-fallback";
+import { VirtualList } from "../../../../components/atoms/virtual-list";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import {
   importValidatorContainer,
   selectItemText,
   validatorAddress,
 } from "./styles.css";
-import { Image } from "../../../../components/atoms/image";
-import { ImageFallback } from "../../../../components/atoms/image-fallback";
-import { PreferredIcon } from "../../../../components/atoms/icons/preferred";
-import { useRef, useState } from "react";
-import { VirtualList } from "../../../../components/atoms/virtual-list";
-import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const ImportValidator = ({
   foundValidatorsData,

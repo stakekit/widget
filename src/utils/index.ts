@@ -1,7 +1,7 @@
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
-import { MaybeWindow } from "./maybe-window";
 import { config } from "../config";
+import { MaybeWindow } from "./maybe-window";
 
 BigNumber.config({
   FORMAT: {
@@ -52,9 +52,9 @@ export const isLedgerDappBrowserProvider = (() => {
         state = !!params.get("embed");
       } catch (error) {
         state = false;
-      } finally {
-        return !!state;
       }
+
+      return !!state;
     }).orDefault(false);
   };
 })();
@@ -122,7 +122,9 @@ export const isMobile = () => {
       )
     ) {
       return true;
-    } else if (hasTouchEvent()) {
+    }
+
+    if (hasTouchEvent()) {
       return true;
     }
     return false;

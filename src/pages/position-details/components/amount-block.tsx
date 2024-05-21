@@ -1,15 +1,15 @@
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type BigNumber from "bignumber.js";
+import { Just } from "purify-ts";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoxProps, NumberInputProps } from "../../../components";
 import { Box, Button, NumberInput, Spinner, Text } from "../../../components";
-import { formatNumber } from "../../../utils";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
-import type BigNumber from "bignumber.js";
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import { Just } from "purify-ts";
 import { InfoIcon } from "../../../components/atoms/icons/info";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
+import { formatNumber } from "../../../utils";
 import type { useUnstakeOrPendingActionState } from "../state";
-import { useMemo } from "react";
 
 type AmountBlockProps = {
   isLoading: boolean;

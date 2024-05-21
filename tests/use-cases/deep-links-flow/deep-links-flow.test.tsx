@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { setup } from "./setup";
-import { renderApp, waitFor } from "../../utils/test-utils";
-import { APToPercentage } from "../../../src/utils";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+import { APToPercentage } from "../../../src/utils";
+import { renderApp, waitFor } from "../../utils/test-utils";
+import { setup } from "./setup";
 
 describe("Deep links flow", () => {
   it("Loads app with correct yield opportunity", async () => {
@@ -28,13 +28,13 @@ describe("Deep links flow", () => {
     await waitFor(() =>
       expect(
         withAvaxLiquidStakingApp.getByText(
-          `You'll receive ${avaxLiquidStaking.metadata.rewardTokens![0].symbol}`
+          `You'll receive ${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`
         )
       ).toBeInTheDocument()
     );
     expect(
       withAvaxLiquidStakingApp.getByText(
-        `via ${avaxLiquidStaking.metadata.provider!.name}`
+        `via ${avaxLiquidStaking.metadata.provider.name}`
       )
     ).toBeInTheDocument();
 

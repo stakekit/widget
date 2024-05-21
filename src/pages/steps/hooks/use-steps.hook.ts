@@ -1,15 +1,15 @@
-import { useEffect, useLayoutEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
+import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useSavedRef } from "../../../hooks";
-import type { TxState } from "./use-steps-machine.hook";
-import { useStepsMachine } from "./use-steps-machine.hook";
+import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
-import { useTranslation } from "react-i18next";
-import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
-import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
+import type { TxState } from "./use-steps-machine.hook";
+import { useStepsMachine } from "./use-steps-machine.hook";
 
 export const useSteps = ({
   session,
@@ -91,13 +91,12 @@ export const useSteps = ({
       });
     }
   }, [
-    callbacksRef,
-    machine.context.txStates,
-    machine.value,
-    navigate,
     invalidateYieldBalances,
     invalidateTokenBalances,
     setActionHistoryData,
+    navigate,
+    machine.context.txStates,
+    machine.value,
   ]);
 
   const onClick = () => navigate(-1);
@@ -157,19 +156,19 @@ export const useSteps = ({
 
 export enum TxStateEnum {
   SIGN_IDLE = 0,
-  SIGN_ERROR,
-  SIGN_LOADING,
-  SIGN_SUCCESS,
+  SIGN_ERROR = 1,
+  SIGN_LOADING = 2,
+  SIGN_SUCCESS = 3,
 
-  BROADCAST_IDLE,
-  BROADCAST_ERROR,
-  BROADCAST_LOADING,
-  BROADCAST_SUCCESS,
+  BROADCAST_IDLE = 4,
+  BROADCAST_ERROR = 5,
+  BROADCAST_LOADING = 6,
+  BROADCAST_SUCCESS = 7,
 
-  CHECK_TX_STATUS_IDLE,
-  CHECK_TX_STATUS_ERROR,
-  CHECK_TX_STATUS_LOADING,
-  CHECK_TX_STATUS_SUCCESS,
+  CHECK_TX_STATUS_IDLE = 8,
+  CHECK_TX_STATUS_ERROR = 9,
+  CHECK_TX_STATUS_LOADING = 10,
+  CHECK_TX_STATUS_SUCCESS = 11,
 }
 
 const getState = ({

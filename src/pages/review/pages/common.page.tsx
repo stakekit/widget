@@ -1,20 +1,20 @@
+import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import { motion } from "framer-motion";
+import { Maybe } from "purify-ts";
+import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Divider } from "../../../components";
 import { Box } from "../../../components/atoms/box";
-import { Heading, Text } from "../../../components/atoms/typography";
-import { PageContainer } from "../../components";
-import { feeStyles, headingStyles, pointerStyles } from "./style.css";
-import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { TokenIcon } from "../../../components/atoms/token-icon";
-import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { motion } from "framer-motion";
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
-import type { ComponentProps, ReactNode } from "react";
-import { Maybe } from "purify-ts";
+import { Heading, Text } from "../../../components/atoms/typography";
 import { WarningBox } from "../../../components/atoms/warning-box";
+import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { AnimationPage } from "../../../navigation/containers/animation-page";
+import { PageContainer } from "../../components";
 import { MetaInfo } from "../../components/meta-info";
+import { feeStyles, headingStyles, pointerStyles } from "./style.css";
 
 export type MetaInfoProps =
   | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }
@@ -96,7 +96,7 @@ export const ReviewPage = ({
 
         {rewardTokenDetailsProps
           .chain((val) =>
-            val.rewardToken.map((v) => (
+            val.rewardToken.map(() => (
               <>
                 <Box my="4">
                   <RewardTokenDetails {...val} rewardToken={val.rewardToken} />
@@ -166,7 +166,7 @@ export const ReviewPage = ({
               i18nKey="review.terms_of_use"
               components={{
                 underline0: (
-                  // eslint-disable-next-line jsx-a11y/anchor-has-content
+                  // biome-ignore lint/a11y/useAnchorContent: <explanation>
                   <a
                     target="_blank"
                     onClick={() => trackEvent("termsClicked")}

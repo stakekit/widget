@@ -1,12 +1,3 @@
-import type { CreateConnectorFn } from "wagmi";
-import { createConnector } from "wagmi";
-import { isLedgerDappBrowserProvider } from "../../utils";
-import type { Address } from "viem";
-import type {
-  Chain,
-  WalletDetailsParams,
-  WalletList,
-} from "@stakekit/rainbowkit";
 import type { Account, Currency } from "@ledgerhq/wallet-api-client";
 import {
   WalletAPIClient,
@@ -14,19 +5,28 @@ import {
   deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
 import type {
+  Chain,
+  WalletDetailsParams,
+  WalletList,
+} from "@stakekit/rainbowkit";
+import { EitherAsync, List, Maybe } from "purify-ts";
+import { BehaviorSubject, map } from "rxjs";
+import type { Address } from "viem";
+import type { CreateConnectorFn } from "wagmi";
+import { createConnector } from "wagmi";
+import { images } from "../../assets/images";
+import { skNormalizeChainId } from "../../domain";
+import type {
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
 } from "../../domain/types/chains";
-import { EitherAsync, List, Maybe } from "purify-ts";
+import type { QueryParams } from "../../domain/types/query-params";
+import { isLedgerDappBrowserProvider } from "../../utils";
+import { type ExtraProps, configMeta } from "./ledger-live-connector-meta";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
 } from "./utils";
-import { BehaviorSubject, map } from "rxjs";
-import { skNormalizeChainId } from "../../domain";
-import { images } from "../../assets/images";
-import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
-import type { QueryParams } from "../../domain/types/query-params";
 
 const createLedgerLiveConnector = ({
   walletDetailsParams,
@@ -278,9 +278,10 @@ const createLedgerLiveConnector = ({
     > = async ({ chainId }): Promise<Chain> => {
       const currChain = currentChain;
 
-      if (!currChain) throw new Error("Chain not found");
+      if (!currChain || !filteredSkSupportedChainsValues)
+        throw new Error("Chain not found");
 
-      const skSupportedChain = [...filteredSkSupportedChainsValues!.values()]
+      const skSupportedChain = [...filteredSkSupportedChainsValues.values()]
         .flatMap((v) => [...v.values()])
         .find((v) => v.chain.id === chainId);
 

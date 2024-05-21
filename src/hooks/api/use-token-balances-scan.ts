@@ -1,12 +1,12 @@
 import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
 import { useTokenTokenBalancesScanHook } from "@stakekit/api-hooks";
 import { getTokenTokenBalancesScanQueryKey } from "@stakekit/api-hooks";
-import { EitherAsync, Just, Maybe } from "purify-ts";
-import { useCallback, useMemo } from "react";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useSKQueryClient } from "../../providers/query-client";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
+import { EitherAsync, Just, Maybe } from "purify-ts";
+import { useCallback, useMemo } from "react";
+import { useSKQueryClient } from "../../providers/query-client";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useTokenBalancesScan = () => {
   const {

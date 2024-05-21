@@ -7,11 +7,11 @@ import type {
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
 } from "@stakekit/api-hooks";
-import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
-import { constructTxs } from "./construct-txs";
 import { EitherAsync, Maybe } from "purify-ts";
+import { addGasEstimateToTxs } from "./add-gas-estimate-to-txs";
 import type { CheckGasAmountIfStake } from "./check-gas-amount";
 import { checkGasAmount } from "./check-gas-amount";
+import { constructTxs } from "./construct-txs";
 
 export const actionWithGasEstimateAndCheck = ({
   actionDto,

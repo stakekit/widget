@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { fireEvent, renderApp, waitFor } from "../../utils/test-utils";
-import { setup } from "./setup";
 import { setStorageItem } from "../../../src/services/local-storage";
 import { formatAddress } from "../../../src/utils";
+import { fireEvent, renderApp, waitFor } from "../../utils/test-utils";
+import { setup } from "./setup";
 
 describe("Referral flow", () => {
   it("On valid referral, shows app and url with referral code", async () => {

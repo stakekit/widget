@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
 import { userEvent } from "@testing-library/user-event";
-import { renderApp, renderHook, waitFor, within } from "../../utils/test-utils";
-import { setup } from "./setup";
 import BigNumber from "bignumber.js";
-import { useEstimatedRewards } from "../../../src/hooks/use-estimated-rewards";
 import { Just } from "purify-ts";
+import { describe, expect, it } from "vitest";
+import { useEstimatedRewards } from "../../../src/hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
 import { formatAddress, formatNumber } from "../../../src/utils";
+import { renderApp, renderHook, waitFor, within } from "../../utils/test-utils";
+import { setup } from "./setup";
 
 describe("Staking flow", () => {
   it("Works as expected", async () => {

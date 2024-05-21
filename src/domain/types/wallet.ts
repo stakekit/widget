@@ -1,17 +1,17 @@
+import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
   AddressWithTokenDtoAdditionalAddresses,
   TransactionDto,
 } from "@stakekit/api-hooks";
 import type { EitherAsync } from "purify-ts";
+import type { Chain } from "viem";
+import type { Connector } from "wagmi";
 import type {
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
-import type { SupportedSKChains } from "./chains";
-import type { Account } from "@ledgerhq/wallet-api-client";
-import type { Connector } from "wagmi";
-import type { Chain } from "viem";
 import type { Nullable } from "../../types";
+import type { SupportedSKChains } from "./chains";
 
 type SignedTxOrMessage = string;
 

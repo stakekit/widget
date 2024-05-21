@@ -1,7 +1,7 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
-import type { Connector } from "wagmi";
 import type { Account } from "@ledgerhq/wallet-api-client";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { BehaviorSubject } from "rxjs";
+import type { Connector } from "wagmi";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 
 export const useLedgerAccounts = (connector?: Connector) => {

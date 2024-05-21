@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { useSavedRef } from "./use-saved-ref";
 import { useIsomorphicEffect } from "./use-isomorphic-effect";
+import { useSavedRef } from "./use-saved-ref";
 
 export const useSyncElementHeight = (
   setCurrentHeight: (height: number) => void

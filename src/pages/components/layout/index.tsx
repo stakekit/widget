@@ -1,8 +1,8 @@
+import { motion } from "framer-motion";
 import { Outlet, ScrollRestoration } from "react-router-dom";
-import { absoluteContainer } from "./styles.css";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useCurrentLayout } from "./layout-context";
-import { motion } from "framer-motion";
+import { absoluteContainer } from "./styles.css";
 
 export const Layout = ({ currentPathname }: { currentPathname: string }) => {
   const { setState } = useCurrentLayout();

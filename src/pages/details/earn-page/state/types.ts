@@ -1,5 +1,8 @@
-import type { Maybe } from "purify-ts";
-import type { SelectedStakeData } from "../types";
+import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
+import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
+import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
+import type { SettingsContextType } from "@sk-widget/providers/settings";
+import type { Action } from "@sk-widget/types";
 import type {
   TokenBalanceScanResponseDto,
   TokenDto,
@@ -7,13 +10,10 @@ import type {
   ValidatorDto,
   YieldType,
 } from "@stakekit/api-hooks";
-import type BigNumber from "bignumber.js";
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
-import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
-import type { SettingsContextType } from "@sk-widget/providers/settings";
-import type { Action } from "@sk-widget/types";
 import type { YieldDto } from "@stakekit/api-hooks";
+import type BigNumber from "bignumber.js";
+import type { Maybe } from "purify-ts";
+import type { SelectedStakeData } from "../types";
 
 export type State = {
   selectedToken: Maybe<TokenBalanceScanResponseDto["token"]>;

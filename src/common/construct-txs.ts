@@ -1,17 +1,17 @@
 import type {
   ActionDto,
   GasModeValueDto,
-  useTransactionConstructHook,
   TokenDto,
+  useTransactionConstructHook,
 } from "@stakekit/api-hooks";
+import { isAxiosError } from "axios";
+import { EitherAsync } from "purify-ts";
 import {
   getTransactionsTotalGasAmount,
   getValidStakeSessionTx,
 } from "../domain";
-import { EitherAsync } from "purify-ts";
-import { withRequestErrorRetry } from "./utils";
-import { isAxiosError } from "axios";
 import type { ActionDtoWithGasEstimate } from "../domain/types/action";
+import { withRequestErrorRetry } from "./utils";
 
 export const constructTxs = ({
   actionDto,

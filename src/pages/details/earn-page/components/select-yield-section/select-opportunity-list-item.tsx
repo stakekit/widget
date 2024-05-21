@@ -1,12 +1,12 @@
+import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import type { ComponentProps } from "react";
 import { Box, SelectModalItem, Text } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import type { YieldDto } from "@stakekit/api-hooks";
-import { selectItemText } from "../../styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { getRewardRateFormatted } from "../../../../../utils/formatters";
-import type { ComponentProps } from "react";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { selectItemText } from "../../styles.css";
 
 export const SelectOpportunityListItem = ({
   item,

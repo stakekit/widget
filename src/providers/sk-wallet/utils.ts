@@ -1,3 +1,5 @@
+import type { Hex } from "viem";
+import { numberToHex } from "viem";
 import type { Chain } from "wagmi/chains";
 import type { SKWallet } from "../../domain/types";
 import type {
@@ -6,11 +8,9 @@ import type {
   MiscChainsMap,
   SubstrateChainsMap,
 } from "../../domain/types/chains";
-import type { DecodedEVMTransaction } from "./validation";
 import type { EVMTx } from "../../domain/types/wallets/generic-wallet";
 import { TxType } from "../../domain/types/wallets/generic-wallet";
-import type { Hex } from "viem";
-import { numberToHex } from "viem";
+import type { DecodedEVMTransaction } from "./validation";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,

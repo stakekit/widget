@@ -1,8 +1,8 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
-import type { Connector } from "wagmi";
 import type { Chain } from "@stakekit/rainbowkit";
-import type { Nullable } from "vitest";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { BehaviorSubject } from "rxjs";
+import type { Nullable } from "vitest";
+import type { Connector } from "wagmi";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 
 export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {

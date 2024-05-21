@@ -1,6 +1,4 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Box } from "../box";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import type { ReactNode } from "react";
 import {
   createContext,
@@ -10,6 +8,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import { MaybeWindow } from "../../../utils/maybe-window";
+import { Box } from "../box";
 import { Check } from "../icons/check";
 import { Copy } from "../icons/copy";
 import { container } from "./styles.css";

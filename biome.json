@@ -1,0 +1,33 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.7.3/schema.json",
+  "files": {
+    "include": ["src", "tests", "vite"],
+    "ignore": ["src/utils/region-iso-3166-codes.ts"]
+  },
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "organizeImports": { "enabled": true },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": { "noNonNullAssertion": "off" },
+      "suspicious": { "noArrayIndexKey": "off" },
+      "a11y": { "noSvgWithoutTitle": "off" },
+      "correctness": { "useJsxKeyInIterable": "off" },
+      "complexity": { "noForEach": "off" }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "trailingComma": "es5"
+    }
+  }
+}

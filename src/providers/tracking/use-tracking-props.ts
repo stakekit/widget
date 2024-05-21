@@ -12,7 +12,7 @@ export const useTrackingProps = (): {
 
   const variantTrackingRes = useQuery({
     queryKey: ["tracking", variant],
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () => {
       if (variant !== "zerion") return null;
 

@@ -1,11 +1,11 @@
+import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../components";
-import { formatNumber } from "../../../utils";
-import BigNumber from "bignumber.js";
-import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
-import { useMemo } from "react";
-import { daysUntilDate } from "../../../utils/date";
 import { TokenIcon } from "../../../components/atoms/token-icon";
+import { formatNumber } from "../../../utils";
+import { daysUntilDate } from "../../../utils/date";
 
 export const PositionBalances = ({
   yieldBalance,

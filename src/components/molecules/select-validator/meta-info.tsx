@@ -1,14 +1,14 @@
+import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
-import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import { SKAnchor } from "../../atoms/anchor";
 
 export const useMetaInfo = ({

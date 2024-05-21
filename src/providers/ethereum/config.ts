@@ -1,3 +1,6 @@
+import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
+import { EvmNetworks } from "@stakekit/common";
+import type { WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
   injectedWallet,
@@ -6,31 +9,28 @@ import {
   rainbowWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
+import type { QueryClient } from "@tanstack/react-query";
+import { EitherAsync, Maybe } from "purify-ts";
 import {
-  mainnet,
   arbitrum,
   avalanche,
   celo,
   goerli,
   harmonyOne,
+  holesky,
+  mainnet,
   optimism,
   polygon,
-  holesky,
 } from "wagmi/chains";
 import { config } from "../../config";
+import type { EvmChainsMap } from "../../domain/types/chains";
 import {
   getNetworkLogo,
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
-import { EvmNetworks } from "@stakekit/common";
-import type { EvmChainsMap } from "../../domain/types/chains";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { EitherAsync, Maybe } from "purify-ts";
-import type { WalletList } from "@stakekit/rainbowkit";
 import { viction } from "./chains";
-import type { QueryClient } from "@tanstack/react-query";
-import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryFn = async ({
   queryClient,
@@ -133,7 +133,7 @@ const queryFn = async ({
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   EitherAsync(() =>
     opts.queryClient.fetchQuery({
-      staleTime: Infinity,
+      staleTime: Number.POSITIVE_INFINITY,
       queryKey: [config.appPrefix, "evm-config"],
       queryFn: () => queryFn(opts),
     })

@@ -1,24 +1,24 @@
-import type { CreateConnectorFn } from "wagmi";
-import { createConnector } from "wagmi";
-import type { Wallet } from "@stakekit/rainbowkit";
+import { decodeSignature } from "@cosmjs/amino";
 import { fromHex, toBase64, toHex } from "@cosmjs/encoding";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import type { Address, Chain } from "viem";
 import type {
   ChainWalletBase,
   DirectSignDoc,
   MainWalletBase,
 } from "@cosmos-kit/core";
-import type { CosmosChainsMap } from "../../domain/types/chains";
-import { waitForMs } from "../../utils";
 import type { WCClient } from "@cosmos-kit/walletconnect";
+import type { Wallet } from "@stakekit/rainbowkit";
+import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import EventEmitter from "eventemitter3";
+import { EitherAsync } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
+import type { Address, Chain } from "viem";
+import type { CreateConnectorFn } from "wagmi";
+import { createConnector } from "wagmi";
+import type { CosmosChainsMap } from "../../domain/types/chains";
+import { getStorageItem, setStorageItem } from "../../services/local-storage";
+import { waitForMs } from "../../utils";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
-import { EitherAsync } from "purify-ts";
-import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { decodeSignature } from "@cosmjs/amino";
 
 export const createCosmosConnector = ({
   wallet,
@@ -108,7 +108,7 @@ export const createCosmosConnector = ({
               return provider.emit("display_uri", cw.qrUrl.data);
             }
 
-            checkForQRCode(--timesCheck);
+            checkForQRCode(timesCheck - 1);
           };
 
           if (cw.walletInfo.mode === "wallet-connect") {

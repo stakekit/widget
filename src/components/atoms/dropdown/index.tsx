@@ -1,5 +1,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Fragment } from "react";
 import { Box } from "../box";
+import { CaretDownIcon } from "../icons";
 import { Text } from "../typography";
 import {
   dropdownContent,
@@ -8,8 +10,6 @@ import {
   separator,
   trigger,
 } from "./styles.css";
-import { CaretDownIcon } from "../icons";
-import { Fragment } from "react";
 
 interface DropdownProps<T extends { label: string; value: string }> {
   options: T[];

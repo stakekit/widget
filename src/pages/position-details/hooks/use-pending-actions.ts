@@ -1,34 +1,34 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useOnPendingAction } from "./use-on-pending-action";
-import { Left, List, Maybe, Right } from "purify-ts";
-import {
-  PAMultiValidatorsRequired,
-  PASingleValidatorRequired,
-  getTokenPriceInUSD,
-} from "../../../domain";
-import { useSavedRef } from "../../../hooks";
-import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
 import type {
   PendingActionDto,
   ValidatorDto,
   YieldBalanceDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { preparePendingActionRequestDto } from "./utils";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import BigNumber from "bignumber.js";
+import { Left, List, Maybe, Right } from "purify-ts";
+import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
+  getTokenPriceInUSD,
+} from "../../../domain";
+import { useSavedRef } from "../../../hooks";
+import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useBaseToken } from "../../../hooks/use-base-token";
+import { useUpdateEffect } from "../../../hooks/use-update-effect";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { formatNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
 } from "../state";
-import BigNumber from "bignumber.js";
-import { formatNumber } from "../../../utils";
-import { useUpdateEffect } from "../../../hooks/use-update-effect";
-import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
-import { useBaseToken } from "../../../hooks/use-base-token";
-import { getBalanceTokenActionType } from "../state/utils";
 import type { PendingActionAmountChange } from "../state/types";
+import { getBalanceTokenActionType } from "../state/utils";
+import { useOnPendingAction } from "./use-on-pending-action";
+import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
+import { preparePendingActionRequestDto } from "./utils";
 
 export const usePendingActions = () => {
   const {
@@ -204,7 +204,8 @@ export const usePendingActions = () => {
           return Left(
             new Error("missing validatorAddressesHandling.showValidatorsModal")
           );
-        } else if (!selectedValidators.length) {
+        }
+        if (!selectedValidators.length) {
           return Left(new Error("selectedValidators is empty"));
         }
 
@@ -272,7 +273,7 @@ export const usePendingActions = () => {
 
   useUpdateEffect(() => {
     if (onPendingAction.isSuccess && onPendingAction.data) {
-      !!pendingActionSelectValidatorMatchRef.current
+      pendingActionSelectValidatorMatchRef.current
         ? navigate("../pending-action/review", { relative: "route" })
         : navigate("pending-action/review");
     }

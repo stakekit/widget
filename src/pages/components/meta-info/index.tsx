@@ -1,5 +1,6 @@
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import {
   ArrowsLeftRightIcon,
   Box,
@@ -7,11 +8,10 @@ import {
   GifIcon,
   Text,
 } from "../../../components";
-import { InfoIcon } from "../../../components/atoms/icons/info";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer } from "./styles.css";
-import type { Maybe } from "purify-ts";
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 
 type Props = {
   isLoading?: boolean;

@@ -13,7 +13,7 @@ const enableMocking = async () => {
 
 enableMocking()
   .then(() => {
-    ReactDOM.createRoot(document.getElementById("root")!).render(
+    ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <SKApp
         theme={darkTheme}
         apiKey={import.meta.env.VITE_API_KEY}

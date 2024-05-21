@@ -1,24 +1,24 @@
-import { createConnector } from "wagmi";
-import type { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
-import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
-import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
-import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
-import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
-import { EitherAsync, Maybe } from "purify-ts";
-import { tron } from "./chains";
-import { getTokenLogo } from "../../utils";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { config } from "../../config";
 import type {
   Chain,
   WalletDetailsParams,
   WalletList,
 } from "@stakekit/rainbowkit";
-import type { Address } from "viem";
+import type { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
+import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
+import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
+import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
+import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
+import { EitherAsync, Maybe } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
+import type { Address } from "viem";
+import { createConnector } from "wagmi";
+import { images } from "../../assets/images";
+import { config } from "../../config";
+import { getStorageItem, setStorageItem } from "../../services/local-storage";
+import { getTokenLogo } from "../../utils";
+import { tron } from "./chains";
 import type { ExtraProps } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";
-import { images } from "../../assets/images";
 
 const createTronConnector = ({
   adapter,

@@ -23,15 +23,18 @@ export const FallbackContent = ({
           <Spinner />
         </Box>
       );
-    } else if (type === "not_connected" && !externalProviders) {
+    }
+    if (type === "not_connected" && !externalProviders) {
       return <ConnectButton />;
-    } else if (type === "something_wrong") {
+    }
+    if (type === "something_wrong") {
       return (
         <Text variant={{ type: "danger" }} textAlign="center">
           {t("shared.something_went_wrong")}
         </Text>
       );
-    } else if (type === "no_current_positions") {
+    }
+    if (type === "no_current_positions") {
       return (
         <Text variant={{ weight: "medium" }} textAlign="center">
           {t("positions.no_current_positions")}

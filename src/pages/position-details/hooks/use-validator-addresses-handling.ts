@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useReducer } from "react";
-import type { Action } from "../../../types";
 import type {
   PendingActionDto,
   ValidatorDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
+import { useCallback, useMemo, useReducer } from "react";
 import type { SelectModalProps } from "../../../components";
+import type { Action } from "../../../types";
 
 type State = {
   selectedValidators: Set<ValidatorDto["address"]>;

@@ -1,10 +1,10 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
-import { server } from "../mocks/server";
-import { HttpResponse, delay, http } from "msw";
+import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
-import { renderApp, waitFor, within } from "../utils/test-utils";
 import { describe, expect, it } from "vitest";
+import { server } from "../mocks/server";
+import { renderApp, waitFor, within } from "../utils/test-utils";
 
 describe("Select opportunity", () => {
   it("Works as expected", async () => {

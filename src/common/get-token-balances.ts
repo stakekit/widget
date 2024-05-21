@@ -1,9 +1,9 @@
-import { EitherAsync, Right } from "purify-ts";
-import type { QueryClient } from "@tanstack/react-query";
 import type {
   useTokenGetTokensHook,
   useTokenTokenBalancesScanHook,
 } from "@stakekit/api-hooks";
+import type { QueryClient } from "@tanstack/react-query";
+import { EitherAsync, Right } from "purify-ts";
 import type { SKWallet } from "../domain/types";
 import { getDefaultTokens } from "../hooks/api/use-default-tokens";
 import { getTokenBalancesScan } from "../hooks/api/use-token-balances-scan";

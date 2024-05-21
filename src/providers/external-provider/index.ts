@@ -1,17 +1,17 @@
+import type { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import type { WalletList } from "@stakekit/rainbowkit";
-import { ExternalProvider } from "../../domain/types/external-providers";
 import { EitherAsync, List, Maybe } from "purify-ts";
+import type { MutableRefObject } from "react";
+import { BehaviorSubject } from "rxjs";
+import { type Address, getAddress } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
-import { getAddress, type Address } from "viem";
-import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
-import type { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
-import type { MutableRefObject } from "react";
-import { BehaviorSubject } from "rxjs";
-import type { SKExternalProviders } from "../../domain/types/wallets";
-import { skNormalizeChainId } from "../../domain";
 import { config } from "../../config";
+import { skNormalizeChainId } from "../../domain";
+import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
+import { ExternalProvider } from "../../domain/types/external-providers";
+import type { SKExternalProviders } from "../../domain/types/wallets";
 
 const configMeta = {
   id: "externalProviderConnector",

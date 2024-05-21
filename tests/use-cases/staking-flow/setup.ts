@@ -5,11 +5,11 @@ import type {
   TransactionDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { server } from "../../mocks/server";
-import { HttpResponse, delay, http } from "msw";
-import { rkMockWallet } from "../../utils/mock-connector";
+import { http, HttpResponse, delay } from "msw";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
+import { server } from "../../mocks/server";
+import { rkMockWallet } from "../../utils/mock-connector";
 
 export const setup = async () => {
   const token: TokenDto = {

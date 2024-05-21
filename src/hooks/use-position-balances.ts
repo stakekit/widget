@@ -1,6 +1,6 @@
 import { Maybe } from "purify-ts";
-import { usePositionData } from "./use-position-data";
 import { useMemo } from "react";
+import { usePositionData } from "./use-position-data";
 
 export const usePositionBalances = ({
   balanceId,

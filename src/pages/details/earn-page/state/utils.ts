@@ -1,11 +1,11 @@
-import type { YieldDto } from "@stakekit/api-hooks";
+import type { QueryParams } from "@sk-widget/domain/types/query-params";
 import {
   getInitMinStakeAmount,
   getInitSelectedValidators,
 } from "@sk-widget/domain/types/stake";
-import { Maybe } from "purify-ts";
-import type { QueryParams } from "@sk-widget/domain/types/query-params";
 import type { State } from "@sk-widget/pages/details/earn-page/state/types";
+import type { YieldDto } from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 
 export const onYieldSelectState = ({
   yieldDto,

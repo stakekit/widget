@@ -1,7 +1,7 @@
-import { usePrefersColorScheme } from "./use-color-scheme";
-import { MaybeDocument } from "../utils/maybe-document";
-import { useIsomorphicEffect } from "./use-isomorphic-effect";
 import { themes } from "../styles/theme/themes";
+import { MaybeDocument } from "../utils/maybe-document";
+import { usePrefersColorScheme } from "./use-color-scheme";
+import { useIsomorphicEffect } from "./use-isomorphic-effect";
 
 export const useToggleTheme = () => {
   const scheme = usePrefersColorScheme();

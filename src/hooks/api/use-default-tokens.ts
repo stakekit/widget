@@ -3,11 +3,11 @@ import {
   getTokenGetTokensQueryKey,
   useTokenGetTokensHook,
 } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../providers/sk-wallet";
-import type { SKWallet } from "../../domain/types";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import type { SKWallet } from "../../domain/types";
+import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useDefaultTokens = () => {
   const { network } = useSKWallet();

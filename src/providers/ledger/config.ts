@@ -1,12 +1,12 @@
-import { config } from "../../config";
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { QueryClient } from "@tanstack/react-query";
-import type { EnabledChainsMap } from "./ledger-connector";
-import { isLedgerDappBrowserProvider } from "../../utils";
+import { EitherAsync, Left, Maybe, Right } from "purify-ts";
+import { config } from "../../config";
 import type { QueryParams } from "../../domain/types/query-params";
+import { isLedgerDappBrowserProvider } from "../../utils";
+import type { EnabledChainsMap } from "./ledger-connector";
 
 const queryKey = [config.appPrefix, "ledger-live-config"];
-const staleTime = Infinity;
+const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   enabledChainsMap,

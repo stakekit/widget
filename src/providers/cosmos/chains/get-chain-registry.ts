@@ -1,10 +1,10 @@
-import { chains, assets } from "chain-registry";
-import type { WithWagmiName } from "../types";
-import {
-  supportedCosmosChains,
-  type SupportedCosmosChains,
-} from "../../../domain/types/chains";
 import { CosmosNetworks } from "@stakekit/common";
+import { assets, chains } from "chain-registry";
+import {
+  type SupportedCosmosChains,
+  supportedCosmosChains,
+} from "../../../domain/types/chains";
+import type { WithWagmiName } from "../types";
 
 type AssetList = (typeof assets)[number];
 export type Chain = (typeof chains)[number];

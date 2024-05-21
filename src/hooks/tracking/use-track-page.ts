@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { useSavedRef } from "../use-saved-ref";
 import type { Properties, TrackPageKey } from "../../providers/tracking";
 import { useTracking } from "../../providers/tracking";
+import { useSavedRef } from "../use-saved-ref";
 
 export const useTrackPage = (
   pageName: TrackPageKey,

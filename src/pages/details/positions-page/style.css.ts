@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
-import { atoms } from "../../../styles";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../styles";
 import { minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({

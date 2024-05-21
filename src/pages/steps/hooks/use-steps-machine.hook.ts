@@ -1,14 +1,5 @@
-import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
-import type { GetStakeSessionError, SendTransactionError } from "./errors";
-import {
-  TXCheckError,
-  SignError,
-  SubmitError,
-  SubmitHashError,
-  TransactionConstructError,
-} from "./errors";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
   useTransactionConstructHook,
@@ -18,20 +9,29 @@ import {
   useTransactionSubmitHashHook,
   useTransactionSubmitHook,
 } from "@stakekit/api-hooks";
+import { isAxiosError } from "axios";
+import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
+import { useMemo } from "react";
+import { getAverageGasMode } from "../../../common/get-gas-mode-value";
+import { withRequestErrorRetry } from "../../../common/utils";
 import {
   getTransactionsForMultiSign,
   isTxError,
   transactionsForConstructOnlySet,
 } from "../../../domain";
-import { withRequestErrorRetry } from "../../../common/utils";
-import { useSKWallet } from "../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { isAxiosError } from "axios";
-import { useMemo } from "react";
 import { isExternalProviderConnector } from "../../../providers/external-provider";
-import { getAverageGasMode } from "../../../common/get-gas-mode-value";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import type { GetStakeSessionError, SendTransactionError } from "./errors";
+import {
+  SignError,
+  SubmitError,
+  SubmitHashError,
+  TXCheckError,
+  TransactionConstructError,
+} from "./errors";
 
-const tt = t as <T extends unknown>() => {
+const tt = t as <T>() => {
   [$$t]: T;
 };
 
@@ -257,65 +257,65 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     return signMultipleTransactions({ txs });
                   })
                   .map((val) => ({ type: "regular", data: val }));
-              } else {
-                /**
-                 * Single sign transactions
-                 */
-                return getAverageGasMode({
-                  network: tx.network,
-                  transactionGetGasForNetwork,
-                })
-                  .chainLeft(async () => Right(null))
-                  .chain((gas) =>
-                    withRequestErrorRetry({
-                      fn: () =>
-                        transactionConstruct(tx.id, {
-                          gasArgs: gas?.gasArgs,
-                          ledgerWalletAPICompatible: isLedgerLive,
-                        }),
-                    }).mapLeft(() => new TransactionConstructError())
-                  )
-                  .chain((constructedTx) => {
-                    if (constructedTx.status === "BROADCASTED") {
-                      return EitherAsync.liftEither(
-                        Right({ type: "broadcasted" })
-                      );
-                    }
-
-                    if (!constructedTx.unsignedTransaction) {
-                      return EitherAsync.liftEither(
-                        Left(new TransactionConstructError())
-                      );
-                    }
-
-                    if (constructedTx.isMessage) {
-                      return signMessage(constructedTx.unsignedTransaction).map(
-                        (val) => ({
-                          type: "regular",
-                          data: { signedTx: val, broadcasted: false },
-                        })
-                      );
-                    }
-
-                    return signTransaction({
-                      tx: constructedTx.unsignedTransaction,
-                      ledgerHwAppId: constructedTx.ledgerHwAppId,
-                    })
-                      .map((val) => ({
-                        ...val,
-                        network: constructedTx.network,
-                        txId: constructedTx.id,
-                      }))
-                      .ifRight(() =>
-                        trackEvent("txSigned", {
-                          txId: constructedTx.id,
-                          network: constructedTx.network,
-                          yieldId: context.yieldId,
-                        })
-                      )
-                      .map((val) => ({ type: "regular", data: val }));
-                  });
               }
+
+              /**
+               * Single sign transactions
+               */
+              return getAverageGasMode({
+                network: tx.network,
+                transactionGetGasForNetwork,
+              })
+                .chainLeft(async () => Right(null))
+                .chain((gas) =>
+                  withRequestErrorRetry({
+                    fn: () =>
+                      transactionConstruct(tx.id, {
+                        gasArgs: gas?.gasArgs,
+                        ledgerWalletAPICompatible: isLedgerLive,
+                      }),
+                  }).mapLeft(() => new TransactionConstructError())
+                )
+                .chain((constructedTx) => {
+                  if (constructedTx.status === "BROADCASTED") {
+                    return EitherAsync.liftEither(
+                      Right({ type: "broadcasted" })
+                    );
+                  }
+
+                  if (!constructedTx.unsignedTransaction) {
+                    return EitherAsync.liftEither(
+                      Left(new TransactionConstructError())
+                    );
+                  }
+
+                  if (constructedTx.isMessage) {
+                    return signMessage(constructedTx.unsignedTransaction).map(
+                      (val) => ({
+                        type: "regular",
+                        data: { signedTx: val, broadcasted: false },
+                      })
+                    );
+                  }
+
+                  return signTransaction({
+                    tx: constructedTx.unsignedTransaction,
+                    ledgerHwAppId: constructedTx.ledgerHwAppId,
+                  })
+                    .map((val) => ({
+                      ...val,
+                      network: constructedTx.network,
+                      txId: constructedTx.id,
+                    }))
+                    .ifRight(() =>
+                      trackEvent("txSigned", {
+                        txId: constructedTx.id,
+                        network: constructedTx.network,
+                        yieldId: context.yieldId,
+                      })
+                    )
+                    .map((val) => ({ type: "regular", data: val }));
+                });
             })
             .caseOf({
               Left: (l) => {
@@ -394,23 +394,23 @@ export const useStepsMachine = (session: ActionDto | null) => {
                       yieldId: context.yieldId,
                     });
                   });
-              } else {
-                return withRequestErrorRetry({
-                  fn: async () => {
-                    await transactionSubmit(currentTx.tx.id, {
-                      signedTransaction: currentTx.meta.signedTx!,
-                    });
-                  },
-                })
-                  .mapLeft(() => new SubmitError())
-                  .ifRight(() => {
-                    trackEvent("txSubmitted", {
-                      txId: currentTx.tx.id,
-                      network: currentTx.tx.network,
-                      yieldId: context.yieldId,
-                    });
-                  });
               }
+
+              return withRequestErrorRetry({
+                fn: async () => {
+                  await transactionSubmit(currentTx.tx.id, {
+                    signedTransaction: currentTx.meta.signedTx!,
+                  });
+                },
+              })
+                .mapLeft(() => new SubmitError())
+                .ifRight(() => {
+                  trackEvent("txSubmitted", {
+                    txId: currentTx.tx.id,
+                    network: currentTx.tx.network,
+                    yieldId: context.yieldId,
+                  });
+                });
             })
             .caseOf({
               Left: (l) => {
@@ -572,9 +572,8 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
                   if (newCurrentTxIdx === null) {
                     return send("DONE");
-                  } else {
-                    send("SIGN_NEXT_TX");
                   }
+                  send("SIGN_NEXT_TX");
                 } else {
                   send({ type: "TX_CHECK_RETRY" });
                 }

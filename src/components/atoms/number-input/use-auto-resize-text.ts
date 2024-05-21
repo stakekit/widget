@@ -2,9 +2,9 @@ import type { RefObject } from "react";
 import { useEffect } from "react";
 import { usePrevious } from "../../../hooks/use-previous";
 import { vars } from "../../../styles";
-import { initialFontSizeVar } from "./styles.css";
 import { MaybeDocument } from "../../../utils/maybe-document";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import { initialFontSizeVar } from "./styles.css";
 
 export const useAutoResizeText = ({
   inputVal,
@@ -49,7 +49,9 @@ const scale = ({
 
     const descendingFontSizes = getDescendingFontSizes(inputEl);
 
-    let currentFontSize = parseFloat(w.getComputedStyle(spanEl).fontSize);
+    let currentFontSize = Number.parseFloat(
+      w.getComputedStyle(spanEl).fontSize
+    );
 
     for (const fs of descendingFontSizes) {
       spanEl.style.fontSize = `${fs}px`;
@@ -64,7 +66,7 @@ const scale = ({
 
 const convertRemToPixels = (rem: number) =>
   rem *
-  parseFloat(
+  Number.parseFloat(
     MaybeDocument.map(
       (doc) => getComputedStyle(doc.documentElement).fontSize
     ).orDefault("0")
@@ -80,7 +82,7 @@ const getDescendingFontSizes = (el: HTMLElement) =>
       vars.fontSize.lg,
     ].map((fs) =>
       convertRemToPixels(
-        parseFloat(
+        Number.parseFloat(
           w
             .getComputedStyle(el)
             .getPropertyValue(fs.replace(/(var\()|(\))/g, ""))

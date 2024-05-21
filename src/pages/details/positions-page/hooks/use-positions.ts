@@ -1,6 +1,3 @@
-import { usePositionsData } from "../../../../hooks/use-positions-data";
-import { createSelector } from "reselect";
-import BigNumber from "bignumber.js";
 import type {
   ValidatorDto,
   ValidatorSearchResultDto,
@@ -8,13 +5,16 @@ import type {
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import { useYieldFindValidators } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { useDebounce } from "../../../../hooks/use-debounce";
-import { useTranslation } from "react-i18next";
-import { importValidator } from "../../../../common/import-validator";
-import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { createSelector } from "reselect";
+import { importValidator } from "../../../../common/import-validator";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { useDebounce } from "../../../../hooks/use-debounce";
+import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const usePositions = () => {
   const { data, ...rest } = usePositionsData();

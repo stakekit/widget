@@ -1,9 +1,9 @@
-import { useMemo } from "react";
-import { List, Maybe } from "purify-ts";
-import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
+import { List, Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
+import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const useStakeEnterRequestDto = () => {
   const {

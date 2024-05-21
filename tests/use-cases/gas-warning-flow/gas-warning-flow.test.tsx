@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { setup } from "./setup";
-import { renderApp, waitFor, within } from "../../utils/test-utils";
 import { formatAddress } from "@sk-widget/utils";
-import userEvent from "@testing-library/user-event";
 import type { YieldDto } from "@stakekit/api-hooks";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+import { renderApp, waitFor, within } from "../../utils/test-utils";
+import { setup } from "./setup";
 
 describe("Gas warning flow", () => {
   const testFn = async ({
@@ -90,7 +90,7 @@ describe("Gas warning flow", () => {
               amount: "3",
             });
 
-            return (acc += 3);
+            return acc + 3;
           },
           0
         );
@@ -158,7 +158,7 @@ describe("Gas warning flow", () => {
               amount: "3",
             });
 
-            return (acc += 3);
+            return acc + 3;
           },
           0
         );
@@ -193,7 +193,7 @@ describe("Gas warning flow", () => {
               amount: "3",
             });
 
-            return (acc += 3);
+            return acc + 3;
           },
           0
         );

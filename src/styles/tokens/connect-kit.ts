@@ -1,4 +1,4 @@
-import { lightTheme, darkTheme } from "@stakekit/rainbowkit";
+import { darkTheme, lightTheme } from "@stakekit/rainbowkit";
 
 export const connectKitTheme = {
   lightMode: lightTheme(),

@@ -1,3 +1,4 @@
+import { waitForMs } from "@sk-widget/utils";
 import type {
   ActionDto,
   ActionRequestDto,
@@ -10,12 +11,11 @@ import {
   getTransactionControllerConstructResponseMock,
   getYieldControllerYieldOpportunityResponseMock,
 } from "@stakekit/api-hooks/msw";
+import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
-import { server } from "../../mocks/server";
-import { HttpResponse, delay, http } from "msw";
-import { rkMockWallet } from "../../utils/mock-connector";
 import { vitest } from "vitest";
-import { waitForMs } from "@sk-widget/utils";
+import { server } from "../../mocks/server";
+import { rkMockWallet } from "../../utils/mock-connector";
 
 export const setup = () => {
   const avalancheCToken: TokenDto = {

@@ -8,11 +8,11 @@ import {
 } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
-import { useLocalStorageValue } from "../use-local-storage-value";
+import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useLocalStorageValue } from "../use-local-storage-value";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],

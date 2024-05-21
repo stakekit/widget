@@ -1,7 +1,7 @@
-import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
-import createStateContext from "../../../utils/create-state-context";
 import { useIsPresent } from "framer-motion";
 import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
+import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
+import createStateContext from "../../../utils/create-state-context";
 
 export const [useFooterHeight, FooterHeightProvider] = createStateContext(0);
 

@@ -1,10 +1,10 @@
-import type { Address } from "viem";
-import { RainbowKitProviderWithTheme } from "../rainbow-kit";
-import type { PropsWithChildren } from "react";
-import { List, Maybe } from "purify-ts";
-import { formatAddress } from "../../utils";
-import { useSKWallet } from "../sk-wallet";
 import { AccountExtraInfoContext } from "@stakekit/rainbowkit";
+import { List, Maybe } from "purify-ts";
+import type { PropsWithChildren } from "react";
+import type { Address } from "viem";
+import { formatAddress } from "../../utils";
+import { RainbowKitProviderWithTheme } from "../rainbow-kit";
+import { useSKWallet } from "../sk-wallet";
 
 export const RainbowProvider = ({ children }: PropsWithChildren) => {
   const { ledgerAccounts, address, onLedgerAccountChange } = useSKWallet();

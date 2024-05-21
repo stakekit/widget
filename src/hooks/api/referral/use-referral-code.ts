@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe } from "purify-ts";
 import { isAxiosError } from "axios";
-import { useSettings } from "../../../providers/settings";
-import { useGetLatestReferralCode } from "./use-get-latest-referral-code";
-import { setStorageItem } from "../../../services/local-storage";
-import { useSKQueryClient } from "../../../providers/query-client";
+import { EitherAsync, Maybe } from "purify-ts";
 import { useApiClient } from "../../../providers/api/api-client-provider";
+import { useSKQueryClient } from "../../../providers/query-client";
+import { useSettings } from "../../../providers/settings";
+import { setStorageItem } from "../../../services/local-storage";
+import { useGetLatestReferralCode } from "./use-get-latest-referral-code";
 
 const queryKey = ["referral-code"];
 
@@ -19,7 +19,7 @@ export const useReferralCode = () => {
   return useQuery({
     queryKey,
     enabled: !latestReferralCode.isPending && !!referralCheck,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () =>
       (
         await EitherAsync.liftEither(

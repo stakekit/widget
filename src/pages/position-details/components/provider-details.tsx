@@ -1,26 +1,26 @@
 import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
-import { Box, Divider, Text } from "../../../components";
-import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
-import { useTranslation } from "react-i18next";
-import {
-  addressHover,
-  addressParent,
-  inactiveContainer,
-  noWrap,
-} from "../styles.css";
 import { memo } from "react";
-import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
-import type { useProvidersDetails } from "../../../hooks/use-provider-details";
-import type { GetMaybeJust } from "../../../types";
-import * as CopyText from "../../../components/atoms/copy-text";
-import { PreferredIcon } from "../../../components/atoms/icons/preferred";
+import { useTranslation } from "react-i18next";
+import { Box, Divider, Text } from "../../../components";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
+import * as CopyText from "../../../components/atoms/copy-text";
+import { PreferredIcon } from "../../../components/atoms/icons/preferred";
+import { Image } from "../../../components/atoms/image";
+import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
+import type { useProvidersDetails } from "../../../hooks/use-provider-details";
+import type { GetMaybeJust } from "../../../types";
+import {
+  addressHover,
+  addressParent,
+  inactiveContainer,
+  noWrap,
+} from "../styles.css";
 
 export const ProviderDetails = ({
   stakeType,

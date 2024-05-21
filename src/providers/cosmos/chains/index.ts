@@ -1,9 +1,9 @@
 import { CosmosNetworks } from "@stakekit/common";
-import { getNetworkLogo, getTokenLogo } from "../../../utils";
-import type { Chain as CosmosChain } from "./chain-registry";
 import type { Chain } from "@stakekit/rainbowkit";
 import { mainnet } from "viem/chains";
+import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import type { WithWagmiName } from "../types";
+import type { Chain as CosmosChain } from "./chain-registry";
 
 export type CosmosChainsAssets = WithWagmiName<CosmosChain>;
 

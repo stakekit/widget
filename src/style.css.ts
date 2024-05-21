@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
-import { minMediaQuery } from "./styles/tokens/breakpoints";
 import { atoms } from "./styles";
+import { minMediaQuery } from "./styles/tokens/breakpoints";
 
 export const animationContainer = style([
   atoms({ background: "background" }),

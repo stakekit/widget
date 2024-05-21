@@ -1,12 +1,12 @@
-import { useMemo } from "react";
-import { List, Maybe } from "purify-ts";
-import { useUnstakeOrPendingActionState } from "../state";
 import type {
   ActionArgumentsDto,
   ActionRequestDto,
   YieldDto,
 } from "@stakekit/api-hooks";
+import { List, Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useUnstakeOrPendingActionState } from "../state";
 
 export const useStakeExitRequestDto = () => {
   const { address, additionalAddresses } = useSKWallet();

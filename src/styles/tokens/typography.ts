@@ -143,12 +143,12 @@ export const headings: typeof headingsContract = {
     tablet: { fontSize: fontSizes["3xl"] },
   },
   h3: {
-    mobile: { fontSize: fontSizes["xl"] },
+    mobile: { fontSize: fontSizes.xl },
     tablet: { fontSize: fontSizes["2xl"] },
   },
   h4: {
-    mobile: { fontSize: fontSizes["lgx"] },
-    tablet: { fontSize: fontSizes["lgx"] },
+    mobile: { fontSize: fontSizes.lgx },
+    tablet: { fontSize: fontSizes.lgx },
   },
 };
 
@@ -173,15 +173,15 @@ export const textsContract: {
 
 export const texts: typeof textsContract = {
   large: {
-    mobile: { fontSize: fontSizes["lg"] },
-    tablet: { fontSize: fontSizes["lg"] },
+    mobile: { fontSize: fontSizes.lg },
+    tablet: { fontSize: fontSizes.lg },
   },
   medium: {
-    mobile: { fontSize: fontSizes["md"] },
-    tablet: { fontSize: fontSizes["md"] },
+    mobile: { fontSize: fontSizes.md },
+    tablet: { fontSize: fontSizes.md },
   },
   small: {
-    mobile: { fontSize: fontSizes["sm"] },
-    tablet: { fontSize: fontSizes["sm"] },
+    mobile: { fontSize: fontSizes.sm },
+    tablet: { fontSize: fontSizes.sm },
   },
 };

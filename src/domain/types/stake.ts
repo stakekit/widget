@@ -3,10 +3,10 @@ import type {
   TokenBalanceScanResponseDto,
   YieldDto,
 } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { List } from "purify-ts";
 import type { QueryParams } from "./query-params";
-import BigNumber from "bignumber.js";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);

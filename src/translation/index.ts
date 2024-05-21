@@ -1,10 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import translationEN from "./English/translations.json";
 import { withRequestErrorRetry } from "../common/utils";
-import { useQuery } from "@tanstack/react-query";
 import { useApiClient } from "../providers/api/api-client-provider";
+import translationEN from "./English/translations.json";
 
 export const localResources = {
   en: { translation: translationEN },
@@ -28,8 +28,8 @@ export const useLoadErrorTranslations = () => {
 
   return useQuery({
     queryKey: ["error-translations"],
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
     queryFn: () =>
       withRequestErrorRetry({
         fn: () =>

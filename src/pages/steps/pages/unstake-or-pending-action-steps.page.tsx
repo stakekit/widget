@@ -1,8 +1,8 @@
-import { StepsPage } from "./common.page";
-import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
 import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { StepsPage } from "./common.page";
 
 export const UnstakeOrPendingActionStepsPage = () => {
   const pendingActionData = usePendingActionData();

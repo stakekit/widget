@@ -1,7 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { images } from "../../../assets/images";
 import { Box, Button, Heading, SelectModal, Text } from "../../../components";
 import { unstakeSignContainer, unstakeSignImageStyle } from "../styles.css";
-import { useTranslation } from "react-i18next";
 
 export const UnstakeSignPopup = ({
   onCancel,

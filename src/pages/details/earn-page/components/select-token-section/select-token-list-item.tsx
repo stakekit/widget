@@ -1,3 +1,5 @@
+import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { memo, useMemo } from "react";
 import {
@@ -7,11 +9,9 @@ import {
   Text,
 } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { formatNumber } from "../../../../../utils";
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
-import { selectItemText } from "../../styles.css";
-import BigNumber from "bignumber.js";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { formatNumber } from "../../../../../utils";
+import { selectItemText } from "../../styles.css";
 
 type Props = {
   item: TokenBalanceScanResponseDto;
@@ -32,13 +32,12 @@ export const SelectTokenListItem = memo(
 
     const trackEvent = useTrackEvent();
 
-    const _onItemClick: ComponentProps<
-      typeof SelectModalItem
-    >["onItemClick"] = ({ closeModal }) => {
-      trackEvent("tokenSelected", { token: item.token.symbol });
-      onTokenBalanceSelect(item);
-      closeModal();
-    };
+    const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] =
+      ({ closeModal }) => {
+        trackEvent("tokenSelected", { token: item.token.symbol });
+        onTokenBalanceSelect(item);
+        closeModal();
+      };
 
     return (
       <SelectModalItemContainer>

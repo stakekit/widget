@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { configure } from "@testing-library/react";
-import ResizeObserver from "resize-observer-polyfill";
-import { MotionGlobalConfig } from "framer-motion";
 import { cleanup } from "@testing-library/react";
+import { MotionGlobalConfig } from "framer-motion";
+import ResizeObserver from "resize-observer-polyfill";
 import { server } from "../mocks/server";
 
 MotionGlobalConfig.skipAnimations = true;
