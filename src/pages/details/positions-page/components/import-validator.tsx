@@ -103,7 +103,9 @@ export const ImportValidator = ({
                             src={item.validator.image}
                             fallback={
                               <ImageFallback
-                                name={item.validator.name}
+                                name={
+                                  item.validator.name || item.validator.address
+                                }
                                 tokenLogoHw="9"
                               />
                             }

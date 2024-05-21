@@ -1,11 +1,7 @@
 import { useMemo } from "react";
-import { List, Maybe } from "purify-ts";
+import { Just, List, Maybe } from "purify-ts";
 import { useUnstakeOrPendingActionState } from "../state";
-import type {
-  ActionArgumentsDto,
-  ActionRequestDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
+import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../providers/sk-wallet";
 
 export const useStakeExitRequestDto = () => {
@@ -23,27 +19,36 @@ export const useStakeExitRequestDto = () => {
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
       }>((val) => {
-        const args: ActionArgumentsDto = {
-          amount: unstakeAmount.toString(10),
-        };
+        const validatorsOrProvider = Just(null)
+          .chain<
+            | Pick<ActionRequestDto["args"], "validatorAddresses">
+            | Pick<ActionRequestDto["args"], "validatorAddress">
+            | Pick<ActionRequestDto["args"], "providerId">
+          >(() => {
+            if (val.integrationData.metadata.isIntegrationAggregator) {
+              return List.find(
+                (b) => !!b.providerId,
+                val.stakedOrLiquidBalances
+              ).map((b) => ({ providerId: b.providerId }));
+            } else if (
+              val.integrationData.args.exit?.args?.validatorAddresses?.required
+            ) {
+              return List.find(
+                (b) => !!b.validatorAddresses,
+                val.stakedOrLiquidBalances
+              ).map((b) => ({ validatorAddresses: b.validatorAddresses }));
+            } else if (
+              val.integrationData.args.exit?.args?.validatorAddress?.required
+            ) {
+              return List.find(
+                (b) => !!b.validatorAddress,
+                val.stakedOrLiquidBalances
+              ).map((b) => ({ validatorAddress: b.validatorAddress }));
+            }
 
-        if (val.integrationData.args.exit?.args?.validatorAddresses?.required) {
-          args.validatorAddresses = List.find(
-            (b) => !!b.validatorAddresses,
-            val.stakedOrLiquidBalances
-          )
-            .map((b) => b.validatorAddresses)
-            .extract();
-        }
-
-        if (val.integrationData.args.exit?.args?.validatorAddress?.required) {
-          args.validatorAddress = List.find(
-            (b) => !!b.validatorAddress,
-            val.stakedOrLiquidBalances
-          )
-            .map((b) => b.validatorAddress)
-            .extract();
-        }
+            return Maybe.empty();
+          })
+          .orDefault({});
 
         return {
           gasFeeToken: val.integrationData.metadata.gasFeeToken,
@@ -53,7 +58,10 @@ export const useStakeExitRequestDto = () => {
               additionalAddresses: additionalAddresses ?? undefined,
             },
             integrationId: val.integrationData.id,
-            args,
+            args: {
+              amount: unstakeAmount.toString(10),
+              ...validatorsOrProvider,
+            },
           },
         };
       }),

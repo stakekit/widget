@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { List, Maybe } from "purify-ts";
+import { Just, List, Maybe } from "purify-ts";
 import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
@@ -27,6 +27,30 @@ export const useStakeEnterRequestDto = () => {
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
       }>((val) => {
+        const validatorsOrProvider = Just(val.selectedStake)
+          .chain<
+            | Pick<ActionRequestDto["args"], "validatorAddresses">
+            | Pick<ActionRequestDto["args"], "validatorAddress">
+            | Pick<ActionRequestDto["args"], "providerId">
+          >((val) => {
+            const validators = [...selectedValidators.values()];
+
+            if (val.metadata.isIntegrationAggregator) {
+              return List.head(validators).map((v) => ({
+                providerId: v.providerId,
+              }));
+            } else if (val.args.enter.args?.validatorAddresses?.required) {
+              return Just({
+                validatorAddresses: validators.map((v) => v.address),
+              });
+            }
+
+            return List.head(validators)
+              .map((v) => v.address)
+              .map((v) => ({ validatorAddress: v }));
+          })
+          .orDefault({});
+
         return {
           gasFeeToken: val.selectedStake.metadata.gasFeeToken,
           dto: {
@@ -41,20 +65,7 @@ export const useStakeEnterRequestDto = () => {
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
-              ...(val.selectedStake.args.enter.args?.validatorAddresses
-                ?.required
-                ? {
-                    validatorAddresses: [...selectedValidators.values()].map(
-                      (v) => v.address
-                    ),
-                  }
-                : {
-                    validatorAddress: List.head([
-                      ...selectedValidators.values(),
-                    ])
-                      .map((v) => v.address)
-                      .extract(),
-                  }),
+              ...validatorsOrProvider,
             },
           },
         };

@@ -5,10 +5,10 @@ import type { GetMaybeJust } from "../types";
 import { getRewardRateFormatted } from "../utils/formatters";
 
 type Res = Maybe<{
-  logo: string;
+  logo: string | undefined;
   name: string;
   rewardRateFormatted: string;
-  rewardRate: number;
+  rewardRate: number | undefined;
   rewardType: RewardTypes;
   address?: string;
   stakedBalance?: ValidatorDto["stakedBalance"];
@@ -56,7 +56,10 @@ const getProviderDetails = ({
   return integrationData.chain((val) =>
     validatorAddress
       .chain<GetMaybeJust<Res>>((addr) =>
-        List.find((v) => v.address === addr, val.validators).map((v) => ({
+        List.find(
+          (v) => v.address === addr || v.providerId === addr,
+          val.validators
+        ).map((v) => ({
           logo: v.image,
           name: v.name ?? v.address,
           rewardRateFormatted: getRewardRateFormatted({
