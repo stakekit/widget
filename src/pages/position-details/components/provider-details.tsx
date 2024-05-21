@@ -32,10 +32,10 @@ export const ProviderDetails = ({
   isFirst: boolean;
   stakeType: string;
   integrationData: YieldDto;
-  logo: string;
+  logo: string | undefined;
   name: string;
   rewardRateFormatted: string;
-  rewardRate: number;
+  rewardRate: number | undefined;
   rewardType: RewardTypes;
 } & GetMaybeJust<ReturnType<typeof useProvidersDetails>>[0]) => {
   const { t } = useTranslation();

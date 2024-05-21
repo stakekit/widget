@@ -36,13 +36,17 @@ const positionsDataSelector = createSelector(
               if (prev) {
                 prev.balances.push(b);
               } else {
-                if (b.validatorAddresses || b.validatorAddress) {
+                if (
+                  b.validatorAddresses ||
+                  b.validatorAddress ||
+                  b.providerId
+                ) {
                   acc.set(b.groupId, {
                     balances: [b],
                     type: "validators",
-                    validatorsAddresses: b.validatorAddresses ?? [
-                      b.validatorAddress!,
-                    ],
+                    validatorsAddresses:
+                      b.validatorAddresses ??
+                      (b.providerId ? [b.providerId] : [b.validatorAddress!]),
                   });
                 } else {
                   acc.set(b.groupId, {

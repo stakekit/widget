@@ -80,7 +80,7 @@ export const PositionsListItem = memo(
             ...val,
             rewardRateAverage: val.providersDetails
               .reduce(
-                (acc, val) => acc.plus(new BigNumber(val.rewardRate)),
+                (acc, val) => acc.plus(new BigNumber(val.rewardRate || 0)),
                 new BigNumber(0)
               )
               .dividedBy(val.providersDetails.length),
