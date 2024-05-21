@@ -25,6 +25,7 @@ export const SelectTokenSection = () => {
     stakeMaxAmount,
     stakeMinAmount,
     symbol,
+    isStakeTokenSameAsGasToken,
   } = useEarnPageContext();
 
   const isLoading = appLoading || selectTokenIsLoading;
@@ -47,6 +48,33 @@ export const SelectTokenSection = () => {
 
   const errorBalance = stakeAmountGreaterThanAvailableAmount;
 
+  const minStakeAmount = Just([
+    stakeMinAmount
+      .map((v) => `${t("shared.min")} ${v} ${symbol}`)
+      .extractNullable(),
+    stakeMaxAmount
+      .map((v) => `${t("shared.max")} ${v} ${symbol}`)
+      .extractNullable(),
+  ] as const)
+    .filter((val) => val.some(Boolean))
+    .map(([min, max]) => (
+      <Box
+        display="flex"
+        justifyContent="flex-end"
+        alignItems="center"
+        {...(variant === "default" && { marginRight: "2", marginTop: "2" })}
+        data-rk="stake-token-section-min-max"
+      >
+        <Text
+          key="min"
+          variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
+        >
+          {!!(min && max) ? `${min} / ${max}` : min ?? max}
+        </Text>
+      </Box>
+    ))
+    .extractNullable();
+
   return isLoading ? (
     <Box marginTop="2">
       <ContentLoaderSquare heightPx={112.5} />
@@ -65,7 +93,12 @@ export const SelectTokenSection = () => {
         submitted && stakeAmountIsZero ? "textDanger" : "transparent"
       }
     >
-      {variant === "zerion" && <SelectTokenTitle />}
+      {variant === "zerion" && (
+        <Box display="flex" justifyContent="space-between">
+          <SelectTokenTitle />
+          {minStakeAmount}
+        </Box>
+      )}
 
       <Box display="flex" justifyContent="space-between" alignItems="center">
         <Box minWidth="0" display="flex" flex={1}>
@@ -82,33 +115,7 @@ export const SelectTokenSection = () => {
         </Box>
       </Box>
 
-      {Just([
-        stakeMinAmount
-          .map((v) => `${t("shared.min")} ${v} ${symbol}`)
-          .extractNullable(),
-        stakeMaxAmount
-          .map((v) => `${t("shared.max")} ${v} ${symbol}`)
-          .extractNullable(),
-      ] as const)
-        .filter((val) => val.some(Boolean))
-        .map(([min, max]) => (
-          <Box
-            display="flex"
-            justifyContent="flex-end"
-            alignItems="center"
-            marginRight="2"
-            marginTop="2"
-            data-rk="stake-token-section-min-max"
-          >
-            <Text
-              key="min"
-              variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
-            >
-              {!!(min && max) ? `${min} / ${max}` : min ?? max}
-            </Text>
-          </Box>
-        ))
-        .extractNullable()}
+      {variant === "default" && minStakeAmount}
 
       <Box
         display="flex"
@@ -137,7 +144,19 @@ export const SelectTokenSection = () => {
                 .map((v) =>
                   variant === "zerion" ? (
                     <>
-                      <span>{t("shared.balance")}</span> <span>{v}</span>
+                      <span>{t("shared.balance")}:</span>{" "}
+                      {
+                        <Box
+                          {...(isStakeTokenSameAsGasToken
+                            ? { as: "span" }
+                            : {
+                                onClick: onMaxClick,
+                                as: "button",
+                              })}
+                        >
+                          {v}
+                        </Box>
+                      }
                     </>
                   ) : (
                     <>
@@ -149,20 +168,22 @@ export const SelectTokenSection = () => {
             </Text>
           </Box>
 
-          <Box
-            as="button"
-            borderRadius="xl"
-            background="background"
-            px="2"
-            py="1"
-            marginLeft="2"
-            onClick={onMaxClick}
-            className={pressAnimation}
-          >
-            <Text variant={{ weight: "semibold", type: "regular" }}>
-              {t("shared.max")}
-            </Text>
-          </Box>
+          {!isStakeTokenSameAsGasToken && (
+            <Box
+              as="button"
+              borderRadius="xl"
+              background="background"
+              px="2"
+              py="1"
+              marginLeft="2"
+              onClick={onMaxClick}
+              className={pressAnimation}
+            >
+              <Text variant={{ weight: "semibold", type: "regular" }}>
+                {t("shared.max")}
+              </Text>
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

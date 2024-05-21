@@ -7,6 +7,7 @@ import { ImageFallback } from "../image-fallback";
 import { getNetworkLogo } from "../../../utils";
 import type { Networks } from "@stakekit/common";
 import { useSettings } from "../../../providers/settings";
+import { useVariantTokenUrls } from "@sk-widget/hooks/use-variant-token-urls";
 
 export const TokenIcon = ({
   token,
@@ -22,6 +23,7 @@ export const TokenIcon = ({
   hideNetwork?: boolean;
 }) => {
   const { hideNetworkLogo } = useSettings();
+  const { mainUrl, fallbackUrl, name } = useVariantTokenUrls(token, metadata);
 
   return (
     <Box
@@ -32,11 +34,13 @@ export const TokenIcon = ({
       <Image
         data-rk="token-logo"
         containerProps={{ hw: tokenLogoHw, "data-rk": "token-logo" }}
-        src={metadata?.logoURI ?? token.logoURI}
+        src={mainUrl}
         fallback={
-          <ImageFallback
-            name={metadata?.name ?? token.name}
-            tokenLogoHw={tokenLogoHw}
+          <Image
+            data-rk="token-logo"
+            containerProps={{ hw: tokenLogoHw, "data-rk": "token-logo" }}
+            src={fallbackUrl}
+            fallback={<ImageFallback name={name} tokenLogoHw={tokenLogoHw} />}
           />
         }
       />
