@@ -32,7 +32,7 @@ export const useAnimateYieldPercent = (
 
   const transformedMotionValue = useTransform(
     rewardPercMotionValue,
-    (val) => `${val.toFixed(2)} %`
+    (val) => `${val.toFixed(2)}%`
   );
 
   return typeof perReward === "string" ? perReward : transformedMotionValue;

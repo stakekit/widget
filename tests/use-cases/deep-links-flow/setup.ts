@@ -40,6 +40,7 @@ export const setup = async (opts?: {
         rewardRate: 0.08486613028450002,
         rewardType: "apy",
         status: { enter: true, exit: true },
+        args: { enter: { args: { nfts: undefined } } },
         metadata: { ...def.metadata, type: "staking" },
         validators: [],
       })
@@ -57,6 +58,7 @@ export const setup = async (opts?: {
           token,
           tokens: [token],
           status: { enter: true, exit: true },
+          args: { enter: { args: { nfts: undefined } } },
           rewardRate: 0.05766578328258792,
           apy: 0.05766578328258792,
           rewardType: "apy",
