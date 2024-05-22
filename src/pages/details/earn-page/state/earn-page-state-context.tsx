@@ -1,3 +1,5 @@
+import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
@@ -9,22 +11,20 @@ import {
   useMemo,
   useReducer,
 } from "react";
-import type { Actions, ExtraData, State } from "./types";
-import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { equalTokens } from "../../../../domain";
+import { useSavedRef } from "../../../../hooks";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useForceMaxAmount } from "../../../../hooks/use-force-max-amount";
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useInitQueryParams } from "../../../../hooks/use-init-query-params";
+import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import type { Actions, ExtraData, State } from "./types";
 import { useAmountValidation } from "./use-amount-validation";
-import { equalTokens } from "../../../../domain";
 import { useGetInitYield } from "./use-get-init-yield";
 import { useInitToken } from "./use-init-token";
-import { onYieldSelectState } from "./utils";
-import { useTokenBalance } from "./use-token-balance";
 import { useInitYield } from "./use-init-yield";
-import { useSavedRef } from "../../../../hooks";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
+import { useTokenBalance } from "./use-token-balance";
+import { onYieldSelectState } from "./utils";
 
 const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(
   undefined

@@ -1,14 +1,14 @@
-import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import type { MiscChainsMap } from "../../domain/types/chains";
 import type { Networks } from "@stakekit/common";
 import { MiscNetworks } from "@stakekit/common";
-import { config } from "../../config";
-import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
-import { near, solana, tezos, tron } from "./chains";
 import type { QueryClient } from "@tanstack/react-query";
+import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
+import { config } from "../../config";
+import type { MiscChainsMap } from "../../domain/types/chains";
+import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
+import { near, solana, tezos, tron } from "./chains";
 
 const queryKey = [config.appPrefix, "misc-config"];
-const staleTime = Infinity;
+const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   enabledNetworks,

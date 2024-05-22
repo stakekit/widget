@@ -1,21 +1,21 @@
-import { EitherAsync, Right } from "purify-ts";
-import { useMutation } from "@tanstack/react-query";
-import { getAverageGasMode } from "../../../common/get-gas-mode-value";
-import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-and-txs-construct";
-import type { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-import type {
-  GetEitherAsyncLeft,
-  GetEitherAsyncRight,
-  GetMaybeJust,
-} from "../../../types";
-import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
 import {
   useActionExitHook,
   useTokenGetTokenBalancesHook,
   useTransactionConstructHook,
   useTransactionGetGasForNetworkHook,
 } from "@stakekit/api-hooks";
+import { useMutation } from "@tanstack/react-query";
+import { EitherAsync, Right } from "purify-ts";
+import { getAverageGasMode } from "../../../common/get-gas-mode-value";
+import { useStakeExitAndTxsConstruct } from "../../../hooks/api/use-stake-exit-and-txs-construct";
+import { useSettings } from "../../../providers/settings";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import type {
+  GetEitherAsyncLeft,
+  GetEitherAsyncRight,
+  GetMaybeJust,
+} from "../../../types";
+import type { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 
 export const useOnStakeExit = () => {
   const stakeExitAndTxsConstruct = useStakeExitAndTxsConstruct();

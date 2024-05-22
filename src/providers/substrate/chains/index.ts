@@ -1,6 +1,6 @@
+import { Networks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import { getNetworkLogo } from "../../../utils";
-import { Networks } from "@stakekit/common";
 
 export const polkadot = {
   id: 9999,

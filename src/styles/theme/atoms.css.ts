@@ -1,4 +1,4 @@
-import { defineProperties, createSprinkles } from "@vanilla-extract/sprinkles";
+import { createSprinkles, defineProperties } from "@vanilla-extract/sprinkles";
 import type { Breakpoint } from "../tokens/breakpoints";
 import { breakpoints, minMediaQuery } from "../tokens/breakpoints";
 import { vars } from "./contract.css";
@@ -21,7 +21,7 @@ const responsiveAtomicProperties = defineProperties({
 
       return acc;
     },
-    {} as { [Key in Breakpoint]: {} | { "@media": string } }
+    {} as { [Key in Breakpoint]: { "@media"?: string } }
   ),
 
   defaultCondition: "mobile",

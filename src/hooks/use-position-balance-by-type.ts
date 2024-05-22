@@ -1,13 +1,13 @@
-import type { usePrices } from "./api/use-prices";
 import type { TokenDto, YieldBalanceDto } from "@stakekit/api-hooks";
-import { getTokenPriceInUSD } from "../domain";
-import { useMemo } from "react";
-import type { PositionBalancesByType } from "../domain/types/positions";
-import { createSelector } from "reselect";
-import type { Prices } from "../domain/types";
 import BigNumber from "bignumber.js";
-import type { usePositionBalances } from "./use-position-balances";
 import { Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { createSelector } from "reselect";
+import { getTokenPriceInUSD } from "../domain";
+import type { Prices } from "../domain/types";
+import type { PositionBalancesByType } from "../domain/types/positions";
+import type { usePrices } from "./api/use-prices";
+import type { usePositionBalances } from "./use-position-balances";
 
 export const usePositionBalanceByType = ({
   positionBalancesData,

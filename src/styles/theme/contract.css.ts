@@ -1,6 +1,8 @@
 import { createGlobalThemeContract } from "@vanilla-extract/css";
+import { colorsContract } from "../tokens/colors/contract";
+import { fontsContract } from "../tokens/fonts";
+import { radiiContract } from "../tokens/radii/contract";
 import { spacesContract } from "../tokens/space";
-import { zIndicesContract } from "../tokens/z-indices";
 import {
   fontSizesContract,
   fontWeightsContract,
@@ -9,9 +11,7 @@ import {
   lineHeightsContract,
   textsContract,
 } from "../tokens/typography";
-import { fontsContract } from "../tokens/fonts";
-import { colorsContract } from "../tokens/colors/contract";
-import { radiiContract } from "../tokens/radii/contract";
+import { zIndicesContract } from "../tokens/z-indices";
 
 export const vars = createGlobalThemeContract(
   {

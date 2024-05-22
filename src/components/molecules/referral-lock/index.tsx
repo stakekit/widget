@@ -1,20 +1,20 @@
 import { useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import { useTranslation } from "react-i18next";
 import {
   useReferralCode,
   useValidateReferralCode,
 } from "../../../hooks/api/referral/use-referral-code";
+import { MaybeDocument } from "../../../utils/maybe-document";
+import { Box } from "../../atoms/box";
+import { Button } from "../../atoms/button";
+import { Divider } from "../../atoms/divider";
 import {
   SelectModal,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
-import { Box } from "../../atoms/box";
-import { useTranslation } from "react-i18next";
 import { Text } from "../../atoms/typography";
-import { Button } from "../../atoms/button";
-import { Divider } from "../../atoms/divider";
 import { input, inputContainer, inputsContainer } from "./style.css";
-import { flushSync } from "react-dom";
-import { MaybeDocument } from "../../../utils/maybe-document";
 
 const pinSize = 6;
 
@@ -123,6 +123,7 @@ export const ReferralLock = () => {
 
                     inputsRef.current[i] = el;
                   }}
+                  // biome-ignore lint/a11y/noAutofocus: <explanation>
                   autoFocus={i === 0}
                   value={userEnteredCode[i]}
                   onPaste={(e) => onPaste(e.clipboardData.getData("text"))}

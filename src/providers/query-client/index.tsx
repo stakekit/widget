@@ -1,10 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { isAxiosError } from "axios";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useState } from "react";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { config } from "../../config";
 import { shouldRetryRequest } from "../../common/utils";
-import { isAxiosError } from "axios";
+import { config } from "../../config";
 
 const getQueryClient = () =>
   new QueryClient({

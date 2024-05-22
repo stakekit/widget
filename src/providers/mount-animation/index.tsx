@@ -6,12 +6,12 @@ import {
   useMemo,
   useReducer,
 } from "react";
-import type { Action } from "../../types";
-import { useSettings } from "../settings";
-import { useSavedRef } from "../../hooks";
 import { delayAPIRequests } from "../../common/delay-api-requests";
-import { useSKLocation } from "../location";
 import { config } from "../../config";
+import { useSavedRef } from "../../hooks";
+import type { Action } from "../../types";
+import { useSKLocation } from "../location";
+import { useSettings } from "../settings";
 
 type State = {
   layout: boolean;
@@ -72,7 +72,7 @@ export const MountAnimationProvider = ({ children }: PropsWithChildren) => {
     if (current.pathname !== "/") {
       dispatch({ type: "all" });
     }
-  }, [current.pathname, dispatch]);
+  }, [current.pathname]);
 
   const mountAnimationFinished = state.layout && state.earnPage;
 

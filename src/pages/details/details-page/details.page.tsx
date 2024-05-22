@@ -1,13 +1,13 @@
-import { Box } from "../../../components/atoms/box";
-import type { TabsProps } from "./components/tabs";
-import { Tabs } from "./components/tabs";
-import { Outlet, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { Box } from "../../../components/atoms/box";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSKLocation } from "../../../providers/location";
 import { usePositions } from "../positions-page/hooks/use-positions";
 import { checkHasPendingClaimRewards } from "../shared";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { motion } from "framer-motion";
-import { useSKLocation } from "../../../providers/location";
+import type { TabsProps } from "./components/tabs";
+import { Tabs } from "./components/tabs";
 
 export const Details = () => {
   const trackEvent = useTrackEvent();

@@ -1,3 +1,20 @@
+import {
+  useEarnPageDispatch,
+  useEarnPageState,
+} from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
+import type {
+  TokenBalanceScanResponseDto,
+  TronResourceType,
+  ValidatorDto,
+  YieldDto,
+  YieldType,
+} from "@stakekit/api-hooks";
+import { useConnectModal } from "@stakekit/rainbowkit";
+import { useMutation } from "@tanstack/react-query";
+import BigNumber from "bignumber.js";
+import { Maybe } from "purify-ts";
+import { List } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
   createContext,
@@ -8,60 +25,43 @@ import {
   useMemo,
   useState,
 } from "react";
-import type { SelectedStakeData } from "../types";
-import { Maybe } from "purify-ts";
-import type {
-  TokenBalanceScanResponseDto,
-  TronResourceType,
-  ValidatorDto,
-  YieldDto,
-  YieldType,
-} from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import type {
   NumberInputProps,
   SelectModalProps,
 } from "../../../../components";
-import { useYieldType } from "../../../../hooks/use-yield-type";
 import {
   getTokenPriceInUSD,
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
-import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useSavedRef, useTokensPrices } from "../../../../hooks";
-import { formatNumber } from "../../../../utils";
-import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
-import { useNavigate } from "react-router-dom";
-import { useConnectModal } from "@stakekit/rainbowkit";
-import { useTranslation } from "react-i18next";
+import { isForceMaxAmount } from "../../../../domain/types/stake";
+import { useSavedRef, useTokensPrices } from "../../../../hooks";
+import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
+import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
+import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
+import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
+import { useBaseToken } from "../../../../hooks/use-base-token";
+import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import { useUpdateEffect } from "../../../../hooks/use-update-effect";
+import { useYieldType } from "../../../../hooks/use-yield-type";
+import { useMountAnimation } from "../../../../providers/mount-animation";
+import { useSettings } from "../../../../providers/settings";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useWagmiConfig } from "../../../../providers/wagmi";
+import { formatNumber } from "../../../../utils";
+import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
+import type { SelectedStakeData } from "../types";
+import type { EarnPageContextType } from "./types";
 import { useOnStakeEnter } from "./use-on-stake-enter";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
-import { List } from "purify-ts";
-import { useProvidersDetails } from "../../../../hooks/use-provider-details";
-import { useWagmiConfig } from "../../../../providers/wagmi";
-import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
-import type { EarnPageContextType } from "./types";
-import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
-import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
-import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
-import { useUpdateEffect } from "../../../../hooks/use-update-effect";
-import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
-import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
-import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
-import { useSettings } from "../../../../providers/settings";
-import { useMountAnimation } from "../../../../providers/mount-animation";
-import { useMutation } from "@tanstack/react-query";
-import { useBaseToken } from "../../../../hooks/use-base-token";
-import { isForceMaxAmount } from "../../../../domain/types/stake";
-import {
-  useEarnPageDispatch,
-  useEarnPageState,
-} from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 
 const EarnPageContext = createContext<EarnPageContextType | undefined>(
   undefined
@@ -381,6 +381,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
   useEffect(() => {
     onClickHandlerResetRef.current();
   }, [isConnected, selectedStake, onClickHandlerResetRef]);

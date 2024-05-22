@@ -1,9 +1,17 @@
+import clsx from "clsx";
+import { useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text, XIcon } from "../../../components";
+import {
+  CollapsibleArrow,
+  CollapsibleContent,
+  CollapsibleRoot,
+  CollapsibleTrigger,
+} from "../../../components/atoms/collapsible";
+import { CheckSteps } from "../../../components/atoms/icons/check-steps";
+import { removeUnderscores } from "../../../utils/text";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
-import { removeUnderscores } from "../../../utils/text";
-import clsx from "clsx";
 import {
   halfOpacityAfter,
   stepsAfter,
@@ -11,14 +19,6 @@ import {
   stepsBefore,
   stepsBeforeMuted,
 } from "./styles.css";
-import { CheckSteps } from "../../../components/atoms/icons/check-steps";
-import { useLayoutEffect, useState } from "react";
-import {
-  CollapsibleArrow,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
-} from "../../../components/atoms/collapsible";
 
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];

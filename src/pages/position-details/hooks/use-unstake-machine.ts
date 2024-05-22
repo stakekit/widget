@@ -1,17 +1,17 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useUnstakeOrPendingActionState } from "../state";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@stakekit/api-hooks";
-import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
-import { useOnStakeExit } from "./use-on-stake-exit";
-import { EitherAsync, Maybe } from "purify-ts";
-import { useSKWallet } from "../../../providers/sk-wallet";
-import { useMemo } from "react";
 import merge from "lodash.merge";
+import { EitherAsync, Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { useUnstakeOrPendingActionState } from "../state";
+import { useOnStakeExit } from "./use-on-stake-exit";
+import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 
-const tt = t as <T extends unknown>() => {
+const tt = t as <T>() => {
   [$$t]: T;
 };
 

@@ -1,11 +1,11 @@
 import { Trans, useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
-import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { useSettings } from "../../../../../providers/settings";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
+import { useSettings } from "../../../../../providers/settings";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectYieldRewardDetails = () => {
   const { t } = useTranslation();

@@ -1,6 +1,6 @@
-import type { InlineConfig } from "vitest";
+import path from "node:path";
 import { defineConfig } from "vite";
-import path from "path";
+import type { InlineConfig } from "vitest";
 import { getConfig } from "./vite.config.base";
 
 declare module "vite" {

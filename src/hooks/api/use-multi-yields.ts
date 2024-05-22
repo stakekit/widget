@@ -2,18 +2,18 @@ import type { YieldDto } from "@stakekit/api-hooks";
 import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
+import { EitherAsync, Maybe } from "purify-ts";
 import { createSelector } from "reselect";
+import { config } from "../../config";
 import type { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
+import { useSKQueryClient } from "../../providers/query-client";
+import { useSKWallet } from "../../providers/sk-wallet";
 import { eitherAsyncPool } from "../../utils/either-async-pool";
 import {
   getYieldOpportunity,
   setYieldOpportunityInCache,
 } from "./use-yield-opportunity";
-import { config } from "../../config";
-import { useSKWallet } from "../../providers/sk-wallet";
-import { useSKQueryClient } from "../../providers/query-client";
-import { EitherAsync, Maybe } from "purify-ts";
 
 const getMultiYieldsQueryKey = (yieldIds: string[]) => [
   "multi-yields",

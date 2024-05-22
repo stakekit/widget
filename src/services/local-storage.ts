@@ -4,9 +4,9 @@ import {
   Either,
   Right,
   array,
+  boolean,
   record,
   string,
-  boolean,
 } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
@@ -51,7 +51,7 @@ export const getStorageItem = <K extends keyof LocalStorageKV>(
 
   if (!val) return Right(null);
 
-  return Either.encase(() => JSON.parse(val) as Record<any, unknown>)
+  return Either.encase(() => JSON.parse(val) as Record<string, unknown>)
     .chainLeft(() => Right(val))
     .chain((parsedVal) =>
       codecs[key]

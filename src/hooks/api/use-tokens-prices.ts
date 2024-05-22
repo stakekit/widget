@@ -1,10 +1,10 @@
-import { useMemo } from "react";
-import { config } from "../../config";
-import { usePrices } from "./use-prices";
 import type { PriceRequestDto, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { config } from "../../config";
 import { useBaseToken } from "../use-base-token";
 import { useGasFeeToken } from "../use-gas-fee-token";
+import { usePrices } from "./use-prices";
 
 /**
  * Requested Token + Yield base token + Yield gas fee token prices

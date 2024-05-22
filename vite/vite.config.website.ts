@@ -1,5 +1,5 @@
-import type { InlineConfig } from "vitest";
 import { defineConfig } from "vite";
+import type { InlineConfig } from "vitest";
 import { getConfig } from "./vite.config.base";
 
 declare module "vite" {

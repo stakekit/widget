@@ -1,14 +1,14 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { Maybe } from "purify-ts";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { useOwnReferralCode } from "../../../../../hooks/api/referral/use-own-referral-code";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { Maybe } from "purify-ts";
-import { useEffect, useMemo, useState } from "react";
-import { MaybeWindow } from "../../../../../utils/maybe-window";
-import { Copy } from "../../../../../components/atoms/icons/copy";
-import { AnimatePresence, motion } from "framer-motion";
 import { Check } from "../../../../../components/atoms/icons/check";
+import { Copy } from "../../../../../components/atoms/icons/copy";
+import { useOwnReferralCode } from "../../../../../hooks/api/referral/use-own-referral-code";
+import { MaybeWindow } from "../../../../../utils/maybe-window";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const ReferralCode = () => {
   const { appLoading } = useEarnPageContext();

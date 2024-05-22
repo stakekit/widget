@@ -1,7 +1,4 @@
-import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
-import type { Dispatch, PropsWithChildren } from "react";
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import type {
   ActionTypes,
   PendingActionDto,
@@ -9,9 +6,19 @@ import type {
   TokenDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
+import { List, Maybe } from "purify-ts";
+import type { Dispatch, PropsWithChildren } from "react";
+import { createContext, useContext, useMemo, useReducer } from "react";
+import { config } from "../../../config";
+import { isForceMaxAmount } from "../../../domain/types/stake";
+import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
-import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { useBaseToken } from "../../../hooks/use-base-token";
+import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
+import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import type {
   Actions,
@@ -19,14 +26,7 @@ import type {
   ExtraData,
   State,
 } from "./types";
-import { usePrices } from "../../../hooks/api/use-prices";
-import { config } from "../../../config";
-import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
-import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
-import { useBaseToken } from "../../../hooks/use-base-token";
 import { getBalanceTokenActionType } from "./utils";
-import { isForceMaxAmount } from "../../../domain/types/stake";
-import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 
 const getInitialState = (): State => ({
   unstakeAmount: new BigNumber(0),
@@ -43,7 +43,7 @@ const UnstakeOrPendingActionDispatchContext = createContext<
 
 export const UnstakeOrPendingActionProvider = ({
   children,
-}: PropsWithChildren<{}>) => {
+}: PropsWithChildren) => {
   const { plain, pendingActionType } = useUnstakeOrPendingActionParams();
 
   const balanceId = plain.balanceId;
@@ -187,7 +187,8 @@ export const UnstakeOrPendingActionProvider = ({
       newMap.set(key, amount);
 
       const max = new BigNumber(
-        val.pendingAction.args?.args?.amount?.maximum ?? Infinity
+        val.pendingAction.args?.args?.amount?.maximum ??
+          Number.POSITIVE_INFINITY
       );
       const min = new BigNumber(
         val.pendingAction.args?.args?.amount?.minimum ?? 0

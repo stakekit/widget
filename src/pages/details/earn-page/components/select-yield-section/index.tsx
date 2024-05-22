@@ -1,13 +1,13 @@
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Box, Divider, Text } from "../../../../../components";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { useSettings } from "../../../../../providers/settings";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { motion } from "framer-motion";
-import { useAnimateYieldPercent } from "./use-animate-yield-percent";
-import { useSettings } from "../../../../../providers/settings";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
+import { useAnimateYieldPercent } from "./use-animate-yield-percent";
 
 export const SelectYieldSection = () => {
   const {

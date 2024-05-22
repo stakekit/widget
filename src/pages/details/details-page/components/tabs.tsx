@@ -1,11 +1,11 @@
-import { Box, Divider } from "../../../../components";
-import { divider } from "../styles.css";
 import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
-import { useMountAnimation } from "../../../../providers/mount-animation";
-import { Tab } from "./tab";
-import { useSettings } from "../../../../providers/settings";
 import { Just } from "purify-ts";
+import { Box, Divider } from "../../../../components";
+import { useMountAnimation } from "../../../../providers/mount-animation";
+import { useSettings } from "../../../../providers/settings";
+import { divider } from "../styles.css";
+import { Tab } from "./tab";
 
 export type TabsProps = {
   selectedTab: "earn" | "positions";

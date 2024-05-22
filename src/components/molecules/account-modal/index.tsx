@@ -1,11 +1,11 @@
 import { AvatarContext, ConnectButton } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
+import { useContext } from "react";
+import type { Address } from "viem";
 import { Box, CaretDownIcon, Text } from "../..";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { avatarContainer, container, titleStyle } from "./styles.css";
-import type { Address } from "viem";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { useContext } from "react";
+import { avatarContainer, container, titleStyle } from "./styles.css";
 
 export const AccountModal = () => {
   const trackEvent = useTrackEvent();

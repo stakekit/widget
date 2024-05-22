@@ -1,3 +1,15 @@
+import { withRequestErrorRetry } from "@sk-widget/common/utils";
+import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
+} from "@sk-widget/domain";
+import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
+import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
+import { useOnPendingAction } from "@sk-widget/pages/position-details/hooks/use-on-pending-action";
+import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
+import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import type { Override } from "@sk-widget/types";
 import type {
   AddressWithTokenDtoAdditionalAddresses,
   PendingActionDto,
@@ -8,21 +20,9 @@ import {
   useYieldGetSingleYieldBalancesHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
-import type { Override } from "@sk-widget/types";
-import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { useOnPendingAction } from "@sk-widget/pages/position-details/hooks/use-on-pending-action";
-import {
-  PAMultiValidatorsRequired,
-  PASingleValidatorRequired,
-} from "@sk-widget/domain";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 
 export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected, address, connector, additionalAddresses } =
@@ -36,8 +36,8 @@ export const usePendingActionDeepLink = () => {
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
 
   return useQuery({
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
     queryKey: ["pending-action-deep-link", isLedgerLive, address],
     enabled: !!(isConnected && address && connector),
     queryFn: async () =>

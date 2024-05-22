@@ -1,8 +1,8 @@
+import { useUnstakeOrPendingActionReview } from "@sk-widget/pages/review/hooks/use-unstake-or-pending-action-review.hook";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useUnstakeOrPendingActionReview } from "@sk-widget/pages/review/hooks/use-unstake-or-pending-action-review.hook";
 import { ReviewPage } from "./common.page";
-import { Maybe } from "purify-ts";
 
 export const UnstakeOrPendingActionReviewPage = () => {
   const {

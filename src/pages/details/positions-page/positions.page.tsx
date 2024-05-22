@@ -1,20 +1,20 @@
+import { motion } from "framer-motion";
+import { useMemo } from "react";
 import { Box } from "../../../components";
-import { usePositions } from "./hooks/use-positions";
+import { VirtualList } from "../../../components/atoms/virtual-list";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useHandleListState } from "../../../providers/list-state";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { PageContainer } from "../../components";
+import { FallbackContent } from "./components/fallback-content";
 import {
   ImportValidatorListItem,
   PositionsListItem,
 } from "./components/positions-list-item";
-import { PageContainer } from "../../components";
-import { VirtualList } from "../../../components/atoms/virtual-list";
-import { useSKWallet } from "../../../providers/sk-wallet";
-import { FallbackContent } from "./components/fallback-content";
-import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useHandleListState } from "../../../providers/list-state";
+import { usePositions } from "./hooks/use-positions";
 import { container } from "./style.css";
-import { motion } from "framer-motion";
-import { useMountAnimation } from "../../../providers/mount-animation";
-import { useMemo } from "react";
-import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
@@ -27,9 +27,11 @@ export const PositionsPage = () => {
   const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
       return <FallbackContent type="spinner" />;
-    } else if (!isConnected && !isConnecting) {
+    }
+    if (!isConnected && !isConnecting) {
       return <FallbackContent type="not_connected" />;
-    } else if (positionsData.isError && !positionsData.data.length) {
+    }
+    if (positionsData.isError && !positionsData.data.length) {
       return <FallbackContent type="something_wrong" />;
     }
 

@@ -1,11 +1,11 @@
-import { Box } from "../../../../../components";
 import type { ValidatorDto } from "@stakekit/api-hooks";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { Maybe } from "purify-ts";
-import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { SelectValidatorTrigger } from "./select-validator-trigger";
+import { Box } from "../../../../../components";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectValidator } from "../../../../../components/molecules/select-validator";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { SelectValidatorTrigger } from "./select-validator-trigger";
 
 export const SelectValidatorSection = () => {
   const {

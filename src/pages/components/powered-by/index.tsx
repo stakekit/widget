@@ -1,9 +1,9 @@
+import { motion } from "framer-motion";
 import { Box, Text } from "../../../components";
 import { SKLogo } from "../../../components/atoms/icons/sk-logo";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import createStateContext from "../../../utils/create-state-context";
-import { motion } from "framer-motion";
 
 export const [usePoweredByHeight, PoweredByHeightProvider] =
   createStateContext(0);

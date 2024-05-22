@@ -1,11 +1,11 @@
+import { assignInlineVars } from "@vanilla-extract/dynamic";
+import merge from "lodash.merge";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { rootSelector, vars } from "../styles";
-import { assignInlineVars } from "@vanilla-extract/dynamic";
-import merge from "lodash.merge";
+import { darkTheme, lightTheme } from "../styles/theme/themes";
 import type { RecursivePartial } from "../types";
 import { useSettings } from "./settings";
-import { darkTheme, lightTheme } from "../styles/theme/themes";
 
 export type ThemeWrapperTheme =
   | RecursivePartial<typeof lightTheme>
@@ -37,6 +37,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   return (
     <>
       <style
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
         dangerouslySetInnerHTML={{
           __html: [
             finalLightTheme

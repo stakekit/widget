@@ -1,7 +1,7 @@
-import { priceResponseDtoToPrices } from "../../utils/mappers";
 import type { PriceRequestDto, PriceResponseDto } from "@stakekit/api-hooks";
 import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
 import { createSelector } from "reselect";
+import { priceResponseDtoToPrices } from "../../utils/mappers";
 
 const defaultParam: PriceRequestDto = {
   currency: "USD",

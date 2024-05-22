@@ -1,24 +1,25 @@
+import clsx from "clsx";
+import type { ForwardedRef, ReactNode } from "react";
+import { Fragment, forwardRef, useState } from "react";
 import type {
   GroupedVirtuosoProps,
   VirtuosoHandle,
   VirtuosoProps,
 } from "react-virtuoso";
 import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
-import type { ForwardedRef, ReactNode } from "react";
-import { Fragment, forwardRef, useState } from "react";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
-import clsx from "clsx";
-import { container, hideScrollbar } from "./style.css";
-import { Box } from "../box";
 import { MaybeWindow } from "../../../utils/maybe-window";
+import { Box } from "../box";
+import { container, hideScrollbar } from "./style.css";
 
 declare module "react" {
+  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   function forwardRef<T, P = {}>(
     render: (props: P, ref: React.Ref<T>) => React.ReactElement | null
   ): (props: P & React.RefAttributes<T>) => React.ReactElement | null;
 }
 
-function _VirtualList<ItemData = any, Context = any>(
+function _VirtualList<ItemData = unknown, Context = unknown>(
   {
     style,
     className,
@@ -62,7 +63,7 @@ function _VirtualList<ItemData = any, Context = any>(
 
 export const VirtualList = forwardRef(_VirtualList);
 
-export const GroupedVirtualList = <ItemData = any, Context = any>({
+export const GroupedVirtualList = <ItemData = unknown, Context = unknown>({
   data,
   style,
   className,

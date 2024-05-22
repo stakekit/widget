@@ -1,7 +1,7 @@
+import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 import type { PropsWithChildren } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import type { SettingsContextType } from "../settings";
-import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 
 const trackPageMap = {
   earn: "Earn",
@@ -57,7 +57,7 @@ const trackEventMap = {
 type TrackEventKey = keyof typeof trackEventMap;
 export type TrackEventVal = (typeof trackEventMap)[TrackEventKey];
 
-export type Properties = Record<string, any>;
+export type Properties = Record<string, unknown>;
 
 type TrackingContextType = {
   trackEvent: (event: TrackEventKey, properties?: Properties) => void;

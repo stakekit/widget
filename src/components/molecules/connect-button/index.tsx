@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { Button } from "../../atoms/button";
-import type { ComponentProps } from "react";
 import { useConnectModal } from "@stakekit/rainbowkit";
+import type { ComponentProps } from "react";
+import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useSKWallet } from "../../../providers/sk-wallet";
 import { useAddLedgerAccount } from "../../../hooks/use-add-ledger-account";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { Button } from "../../atoms/button";
 
 export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   const { t } = useTranslation();

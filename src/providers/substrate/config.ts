@@ -1,19 +1,19 @@
+import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
+import { SubstrateNetworks } from "@stakekit/common";
+import type { QueryClient } from "@tanstack/react-query";
+import { EitherAsync } from "purify-ts";
+import { config } from "../../config";
+import type { SubstrateChainsMap } from "../../domain/types/chains";
 import {
   isLedgerDappBrowserProvider,
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
-import type { SubstrateChainsMap } from "../../domain/types/chains";
-import { SubstrateNetworks } from "@stakekit/common";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { config } from "../../config";
-import { EitherAsync } from "purify-ts";
 import { polkadot } from "./chains";
-import type { QueryClient } from "@tanstack/react-query";
-import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 
 const queryKey = [config.appPrefix, "substrate-config"];
-const staleTime = Infinity;
+const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   queryClient,

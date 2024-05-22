@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useInitQueryParams } from "../../use-init-query-params";
 import { setStorageItem } from "../../../services/local-storage";
+import { useInitQueryParams } from "../../use-init-query-params";
 import { useLocalStorageValue } from "../../use-local-storage-value";
 
 /**

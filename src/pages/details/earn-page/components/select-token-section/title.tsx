@@ -1,5 +1,5 @@
-import { useEarnPageContext } from "../../state/earn-page-context";
 import { Box, Spinner, Text } from "../../../../../components";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectTokenTitle = () => {
   const {

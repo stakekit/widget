@@ -1,6 +1,6 @@
 import type { Adapter } from "@tronweb3/tronwallet-abstract-adapter";
-import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 import type { Connector } from "wagmi";
+import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
 export const configMeta = {
   tronLink: {

@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../components";
 import { pressAnimation } from "../../../../components/atoms/button/styles.css";
 import {
@@ -10,7 +11,6 @@ import {
   tabBorder,
   tabContainer,
 } from "../styles.css";
-import { useTranslation } from "react-i18next";
 
 type Props = {
   isSelected: boolean;

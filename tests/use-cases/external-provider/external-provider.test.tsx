@@ -1,14 +1,14 @@
-import { describe, expect, it } from "vitest";
-import { renderApp, waitFor, within } from "../../utils/test-utils";
-import { server } from "../../mocks/server";
-import { HttpResponse, delay, http } from "msw";
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { Just } from "purify-ts";
-import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
-import { formatAddress } from "@sk-widget/utils";
 import { SKApp, type SKAppProps } from "@sk-widget/App";
-import { VirtuosoMockContext } from "react-virtuoso";
+import { formatAddress } from "@sk-widget/utils";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse, delay } from "msw";
+import { Just } from "purify-ts";
+import { VirtuosoMockContext } from "react-virtuoso";
+import { describe, expect, it } from "vitest";
+import { server } from "../../mocks/server";
+import { renderApp, waitFor, within } from "../../utils/test-utils";
 
 describe("External Provider", () => {
   it("Handles changing address and supported chains correctly", async () => {

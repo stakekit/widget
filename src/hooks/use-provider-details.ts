@@ -102,7 +102,7 @@ export const useProvidersDetails = ({
             })
           )
         ).chain((val) =>
-          !!val.length
+          val.length
             ? Maybe.of(val)
             : getProviderDetails({
                 integrationData,

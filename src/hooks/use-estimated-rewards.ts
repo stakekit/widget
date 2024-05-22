@@ -1,11 +1,11 @@
-import { useMemo } from "react";
-import type { YieldDto } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
-import { useProvidersDetails } from "./use-provider-details";
-import { formatNumber } from "../utils";
-import BigNumber from "bignumber.js";
-import { getRewardRateFormatted } from "../utils/formatters";
 import type { State } from "@sk-widget/pages/details/earn-page/state/types";
+import type { YieldDto } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
+import { Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { formatNumber } from "../utils";
+import { getRewardRateFormatted } from "../utils/formatters";
+import { useProvidersDetails } from "./use-provider-details";
 
 export const useEstimatedRewards = ({
   selectedStake,

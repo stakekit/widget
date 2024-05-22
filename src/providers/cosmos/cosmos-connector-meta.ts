@@ -1,9 +1,9 @@
+import type { toBase64 } from "@cosmjs/encoding";
 import type { ChainWalletBase } from "@cosmos-kit/core";
-import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
+import type { EitherAsync } from "purify-ts";
 import type { Observable } from "rxjs";
 import type { Connector } from "wagmi";
-import type { EitherAsync } from "purify-ts";
-import type { toBase64 } from "@cosmjs/encoding";
+import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
 export const configMeta = { type: "cosmosProvider" };
 

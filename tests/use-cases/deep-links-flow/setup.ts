@@ -4,12 +4,12 @@ import {
   getTransactionControllerGetGasForNetworkResponseMock,
   getYieldControllerYieldOpportunityResponseMock,
 } from "@stakekit/api-hooks/msw";
-import { rkMockWallet } from "../../utils/mock-connector";
-import { server } from "../../mocks/server";
-import { HttpResponse, delay, http } from "msw";
+import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
+import { server } from "../../mocks/server";
+import { rkMockWallet } from "../../utils/mock-connector";
 
 export const setup = async (opts?: {
   withValidatorAddressesRequired?: boolean;
@@ -40,6 +40,7 @@ export const setup = async (opts?: {
         rewardRate: 0.08486613028450002,
         rewardType: "apy",
         status: { enter: true, exit: true },
+        args: { enter: { args: { nfts: undefined } } },
         metadata: { ...def.metadata, type: "staking" },
         validators: [],
       })
@@ -50,54 +51,56 @@ export const setup = async (opts?: {
     getYieldControllerYieldOpportunityResponseMock()
   )
     .map(
-      (def): YieldDto => ({
-        ...def,
-        id: "avalanche-avax-liquid-staking",
-        token,
-        tokens: [token],
-        status: { enter: true, exit: true },
-        rewardRate: 0.05766578328258792,
-        apy: 0.05766578328258792,
-        rewardType: "apy",
-        metadata: {
-          ...def.metadata,
-          name: "AVAX Liquid Staking",
-          type: "liquid-staking",
-          provider: {
-            id: "benqi",
-            name: "Benqi",
-            description: "",
-            externalLink: "https://benqi.fi/",
-            logoURI: "https://assets.stakek.it/providers/benqi.svg",
-          },
-          rewardTokens: [
-            {
-              name: "Staked AVAX",
-              symbol: "sAVAX",
-              decimals: 18,
-              network: token.network,
-              logoURI: "https://assets.stakek.it/tokens/savax.svg",
-              address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
+      (def) =>
+        ({
+          ...def,
+          id: "avalanche-avax-liquid-staking",
+          token,
+          tokens: [token],
+          status: { enter: true, exit: true },
+          args: { enter: { args: { nfts: undefined } } },
+          rewardRate: 0.05766578328258792,
+          apy: 0.05766578328258792,
+          rewardType: "apy",
+          metadata: {
+            ...def.metadata,
+            name: "AVAX Liquid Staking",
+            type: "liquid-staking",
+            provider: {
+              id: "benqi",
+              name: "Benqi",
+              description: "",
+              externalLink: "https://benqi.fi/",
+              logoURI: "https://assets.stakek.it/providers/benqi.svg",
             },
-          ],
-        },
-        validators: opts?.withValidatorAddressesRequired
-          ? [
+            rewardTokens: [
               {
-                address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
-                status: "active",
-                name: "Stakely",
-                image: "https://assets.stakek.it/validators/stakely.png",
-                website: "https://stakely.io/",
-                apr: 0.0393,
-                commission: 0.1,
-                stakedBalance: "2263157",
-                votingPower: 0.0090962642447408,
-                preferred: true,
+                name: "Staked AVAX",
+                symbol: "sAVAX",
+                decimals: 18,
+                network: token.network,
+                logoURI: "https://assets.stakek.it/tokens/savax.svg",
+                address: "0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be",
               },
-            ]
-          : [],
-      })
+            ],
+          },
+          validators: opts?.withValidatorAddressesRequired
+            ? [
+                {
+                  address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
+                  status: "active",
+                  name: "Stakely",
+                  image: "https://assets.stakek.it/validators/stakely.png",
+                  website: "https://stakely.io/",
+                  apr: 0.0393,
+                  commission: 0.1,
+                  stakedBalance: "2263157",
+                  votingPower: 0.0090962642447408,
+                  preferred: true,
+                },
+              ]
+            : [],
+        }) satisfies YieldDto
     )
     .unsafeCoerce();
 
@@ -234,7 +237,7 @@ export const setup = async (opts?: {
         integrationId: data.integrationId,
       } satisfies typeof pendingAction);
     }),
-    http.patch(`*/v1/transactions/:transactionId`, async (info) => {
+    http.patch("*/v1/transactions/:transactionId", async (info) => {
       await delay();
 
       const transactionId = info.params.transactionId as string;

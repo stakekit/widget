@@ -1,6 +1,6 @@
+import type { Transaction as TronTx } from "@tronweb3/tronwallet-abstract-adapter";
 import type { GetType } from "purify-ts";
 import { Codec, Left, Right, number, optional } from "purify-ts";
-import type { Transaction as TronTx } from "@tronweb3/tronwallet-abstract-adapter";
 import type { Address, Hex } from "viem";
 
 const bigintCodec = Codec.custom<bigint>({
@@ -53,9 +53,8 @@ export const unsignedTronTransactionCodec = Codec.custom<TronTx>({
 
     if (val.raw_data && val.raw_data_hex && val.txID && "visible" in val) {
       return Right(val as TronTx);
-    } else {
-      return Left("Invalid Tron transaction");
     }
+    return Left("Invalid Tron transaction");
   },
   encode(value) {
     return value;

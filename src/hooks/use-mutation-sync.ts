@@ -6,8 +6,8 @@ import type {
 } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
 import type { DependencyList } from "react";
-import { useUpdateEffect } from "./use-update-effect";
 import { useSavedRef } from "./use-saved-ref";
+import { useUpdateEffect } from "./use-update-effect";
 
 export const useMutationSync = <
   TData = unknown,

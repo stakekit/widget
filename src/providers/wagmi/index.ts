@@ -1,34 +1,34 @@
-import { createConfig, http, type Connector } from "wagmi";
-import type { Chain } from "wagmi/chains";
-import { mainnet } from "wagmi/chains";
-import { reconnect, connect } from "@wagmi/core";
-import { getConfig as getEvmConfig } from "../ethereum/config";
-import { getConfig as getCosmosConfig } from "../cosmos/config";
-import { getConfig as getMiscConfig } from "../misc/config";
-import { getConfig as getSubstrateConfig } from "../substrate/config";
-import { getConfig as getLedgerLiveConfig } from "../ledger/config";
-import type { WalletList } from "@stakekit/rainbowkit";
-import { connectorsForWallets } from "@stakekit/rainbowkit";
-import { config } from "../../config";
-import type { QueryClient } from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, List, Maybe, Right } from "purify-ts";
-import { useSettings } from "../settings";
-import type { GetEitherAsyncRight } from "../../types";
-import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
-import { externalProviderConnector } from "../external-provider";
-import { getInitialQueryParams } from "../../hooks/use-init-query-params";
-import { useSKQueryClient } from "../query-client";
-import { createClient } from "viem";
 import {
   useTransactionGetTransactionStatusByNetworkAndHashHook,
   useYieldGetMyNetworksHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { useSavedRef } from "../../hooks";
+import type { WalletList } from "@stakekit/rainbowkit";
+import { connectorsForWallets } from "@stakekit/rainbowkit";
+import type { QueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { connect, reconnect } from "@wagmi/core";
+import { EitherAsync, List, Maybe, Right } from "purify-ts";
 import type { MutableRefObject } from "react";
+import { createClient } from "viem";
+import { http, type Connector, createConfig } from "wagmi";
+import type { Chain } from "wagmi/chains";
+import { mainnet } from "wagmi/chains";
+import { config } from "../../config";
 import type { SKExternalProviders } from "../../domain/types/wallets";
+import { useSavedRef } from "../../hooks";
+import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import type { GetEitherAsyncRight } from "../../types";
+import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
+import { getConfig as getCosmosConfig } from "../cosmos/config";
+import { getConfig as getEvmConfig } from "../ethereum/config";
+import { externalProviderConnector } from "../external-provider";
+import { getConfig as getLedgerLiveConfig } from "../ledger/config";
+import { getConfig as getMiscConfig } from "../misc/config";
+import { useSKQueryClient } from "../query-client";
+import { useSettings } from "../settings";
+import { getConfig as getSubstrateConfig } from "../substrate/config";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -137,9 +137,11 @@ const buildWagmiConfig = async (opts: {
               opts.transactionGetTransactionStatusByNetworkAndHash
             ),
           ];
-        } else if (ledgerLiveConnector) {
+        }
+        if (ledgerLiveConnector) {
           return [ledgerLiveConnector];
-        } else if (opts.customConnectors) {
+        }
+        if (opts.customConnectors) {
           return opts.customConnectors(chains);
         }
 
@@ -218,7 +220,7 @@ const buildWagmiConfig = async (opts: {
 };
 
 const queryKey = [config.appPrefix, "wagmi-config"];
-const staleTime = Infinity;
+const staleTime = Number.POSITIVE_INFINITY;
 
 export const useWagmiConfig = () => {
   const { wagmi, externalProviders } = useSettings();

@@ -1,5 +1,3 @@
-import BigNumber from "bignumber.js";
-import type { Prices, TokenString } from "./types";
 import type {
   ActionDto,
   PendingActionDto,
@@ -9,9 +7,11 @@ import type {
   TransactionType,
   YieldDto,
 } from "@stakekit/api-hooks";
-import type { Override } from "../types";
+import BigNumber from "bignumber.js";
 import { Left, Right } from "purify-ts";
 import { normalizeChainId } from "wagmi";
+import type { Override } from "../types";
+import type { Prices, TokenString } from "./types";
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
@@ -139,5 +139,5 @@ export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
 export const skNormalizeChainId = (chainId: string) => {
   const cId = normalizeChainId(chainId);
 
-  return isNaN(cId) ? (chainId as unknown as number) : cId;
+  return Number.isNaN(cId) ? (chainId as unknown as number) : cId;
 };

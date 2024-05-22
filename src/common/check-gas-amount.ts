@@ -1,3 +1,5 @@
+import { equalTokens } from "@sk-widget/domain";
+import type { ActionDtoWithGasEstimate } from "@sk-widget/domain/types/action";
 import type {
   AddressWithTokenDto,
   TokenDto,
@@ -6,8 +8,6 @@ import type {
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
-import type { ActionDtoWithGasEstimate } from "@sk-widget/domain/types/action";
-import { equalTokens } from "@sk-widget/domain";
 
 export type CheckGasAmountIfStake =
   | { isStake: true; stakeToken: TokenDto; stakeAmount: BigNumber }

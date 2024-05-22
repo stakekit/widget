@@ -1,8 +1,8 @@
 declare global {
   interface Window {
-    keplr?: any;
-    leap?: any;
+    keplr?: unknown;
+    leap?: unknown;
   }
 }
 
-export {};
+export type {};

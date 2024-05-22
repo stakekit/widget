@@ -41,6 +41,9 @@ jobs:
 
       - uses: ./.github/composite_actions/initial_setup
 
+      - name: Lint
+        run: yarn lint
+
       - name: Build
         run: yarn build
 

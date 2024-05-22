@@ -1,11 +1,11 @@
+import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
+import { MiscNetworks } from "@stakekit/common";
+import { Maybe } from "purify-ts";
+import { List } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { yieldTypesMap } from "../domain/types";
-import { MiscNetworks } from "@stakekit/common";
 import { capitalizeFirstLowerRest } from "../utils/text";
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
-import { List } from "purify-ts";
 
 export const useYieldMetaInfo = ({
   selectedStake,
@@ -191,7 +191,7 @@ export const useYieldMetaInfo = ({
             ...def,
           };
 
-        case yieldTypesMap["restaking"].type:
+        case yieldTypesMap.restaking.type:
           return {
             description: t("details.restake.description", {
               stakeToken,

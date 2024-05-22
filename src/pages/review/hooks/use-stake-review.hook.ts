@@ -1,18 +1,18 @@
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import { useSettings } from "@sk-widget/providers/settings";
+import BigNumber from "bignumber.js";
+import { Maybe } from "purify-ts";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSavedRef, useTokensPrices } from "../../../hooks";
-import { Maybe } from "purify-ts";
-import { formatNumber } from "../../../utils";
-import { useMemo } from "react";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
-import { useYieldType } from "../../../hooks/use-yield-type";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
-import { useTranslation } from "react-i18next";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
-import BigNumber from "bignumber.js";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useStakeReview = () => {
   const { isGasCheckError, stakeEnterData, stakeEnterTxGas } =

@@ -1,24 +1,24 @@
-import { useTranslation } from "react-i18next";
-import { Box, Heading, Text } from "../../../components";
-import { PageContainer } from "../../components";
-import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
-import { useComplete } from "../hooks/use-complete.hook";
-import { TokenIcon } from "../../../components/atoms/token-icon";
 import type {
   ActionTypes,
   TokenDto,
   YieldMetadataDto,
   YieldType,
 } from "@stakekit/api-hooks";
+import { motion } from "framer-motion";
 import { Just, Maybe } from "purify-ts";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { useTranslation } from "react-i18next";
+import { Box, Heading, Text } from "../../../components";
+import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { Image } from "../../../components/atoms/image";
+import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { TokenIcon } from "../../../components/atoms/token-icon";
+import { AnimationPage } from "../../../navigation/containers/animation-page";
 import {
   capitalizeFirstLowerRest,
   removeUnderscores,
 } from "../../../utils/text";
-import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { motion } from "framer-motion";
+import { PageContainer } from "../../components";
+import { useComplete } from "../hooks/use-complete.hook";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -102,7 +102,7 @@ export const CompletePage = ({
                   unstakeMatch
                     ? "complete.successfully_unstaked"
                     : pendingActionMatch
-                      ? `complete.successfully_pending_action`
+                      ? "complete.successfully_pending_action"
                       : "complete.successfully_staked",
                   {
                     action: yieldType.mapOrDefault(

@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { Maybe } from "purify-ts";
 import type { ExtraData } from "@sk-widget/pages/details/earn-page/state/types";
+import { Maybe } from "purify-ts";
+import { useMemo } from "react";
 
 export const useRewardTokenDetails = (
   yieldOpportunity: ExtraData["selectedStake"]

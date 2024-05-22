@@ -1,12 +1,12 @@
+import type { ActionDto } from "@stakekit/api-hooks";
+import { motion } from "framer-motion";
+import type { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Heading } from "../../../components";
+import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { PageContainer } from "../../components";
 import { useSteps } from "../hooks/use-steps.hook";
-import type { Maybe } from "purify-ts";
-import type { ActionDto } from "@stakekit/api-hooks";
 import { TxState } from "./tx-state";
-import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { motion } from "framer-motion";
 
 type StepsPageProps = {
   session: Maybe<ActionDto>;

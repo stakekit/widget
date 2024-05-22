@@ -1,6 +1,6 @@
 import type { OS, Wallet } from "@cosmos-kit/core";
-import { config } from "../../../config";
 import { images } from "../../../assets/images";
+import { config } from "../../../config";
 
 export const walletConnectInfo: Wallet = {
   name: "wallet-connect",

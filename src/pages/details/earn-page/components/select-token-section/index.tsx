@@ -1,11 +1,11 @@
+import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, NumberInput, Text } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { SelectToken } from "./select-token";
-import { useEarnPageContext } from "../../state/earn-page-context";
 import { useSettings } from "../../../../../providers/settings";
-import { Just, Maybe } from "purify-ts";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { SelectToken } from "./select-token";
 import { SelectTokenTitle } from "./title";
 
 export const SelectTokenSection = () => {
@@ -69,7 +69,7 @@ export const SelectTokenSection = () => {
           key="min"
           variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
         >
-          {!!(min && max) ? `${min} / ${max}` : min ?? max}
+          {min && max ? `${min} / ${max}` : min ?? max}
         </Text>
       </Box>
     ))

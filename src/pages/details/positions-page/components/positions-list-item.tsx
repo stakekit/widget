@@ -1,24 +1,24 @@
 import BigNumber from "bignumber.js";
+import { List, Maybe } from "purify-ts";
+import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
+import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { SKLink } from "../../../../components/atoms/link";
 import { ListItem } from "../../../../components/atoms/list/list-item";
-import type { usePositions } from "../hooks/use-positions";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
-import { formatNumber } from "../../../../utils";
-import { memo, useMemo } from "react";
-import { List, Maybe } from "purify-ts";
-import { useTranslation } from "react-i18next";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
-import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { formatNumber } from "../../../../utils";
+import { getRewardRateFormatted } from "../../../../utils/formatters";
+import { checkHasPendingClaimRewards } from "../../shared";
+import type { usePositions } from "../hooks/use-positions";
 import {
   listItemContainer,
   positionDetailsContainer,
   viaText,
 } from "../style.css";
-import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { ImportValidator } from "./import-validator";
-import { checkHasPendingClaimRewards } from "../../shared";
-import { getRewardRateFormatted } from "../../../../utils/formatters";
 import { listItem, noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(

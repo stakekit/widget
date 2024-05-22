@@ -2,8 +2,12 @@ const cachedResSymbol = Symbol("cachedRes");
 
 type CacheMap<T> = Map<unknown, { cachedRes: T } | CacheMap<T>>;
 
-export const memoize = <F extends (...args: any[]) => any>(fn: F) => {
-  const cache: CacheMap<ReturnType<F>> = new Map();
+export const memoize = <Args extends unknown[], Res>(
+  fn: (...args: Args) => Res
+) => {
+  const cache: CacheMap<ReturnType<typeof fn>> = new Map();
+
+  type F = typeof fn;
 
   const memoFn = (...args: Parameters<F>): ReturnType<F> => {
     let currentCacheMap = cache;

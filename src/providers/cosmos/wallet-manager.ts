@@ -2,17 +2,17 @@ import type { MainWalletBase } from "@cosmos-kit/core";
 import { Logger, WalletManager } from "@cosmos-kit/core";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
+import { CosmosNetworks } from "@stakekit/common";
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
+import { config } from "../../config";
 import type { CosmosChainsMap } from "../../domain/types/chains";
-import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
+import type { CosmosChainsAssets } from "./chains";
 import {
   cosmosAssets,
   registryIdsToSKCosmosNetworks,
 } from "./chains/chain-registry";
-import { config } from "../../config";
-import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { createCosmosConnector } from "./cosmos-connector";
-import type { CosmosChainsAssets } from "./chains";
-import { CosmosNetworks } from "@stakekit/common";
+import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
 
 const wallets: MainWalletBase[] = [
   ...keplrWallets,

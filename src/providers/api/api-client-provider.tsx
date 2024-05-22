@@ -1,14 +1,14 @@
+import { ApiClientProvider } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
 import axios from "axios";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useState } from "react";
-import { useSettings } from "../settings";
-import { ApiClientProvider } from "@stakekit/api-hooks";
+import { useTranslation } from "react-i18next";
 import { attachDelayInterceptor } from "../../common/delay-api-requests";
+import { config } from "../../config";
 import { attachGeoBlockInterceptor } from "../../hooks/use-geo-block";
 import { attachRichErrorsInterceptor } from "../../hooks/use-rich-errors";
-import { useTranslation } from "react-i18next";
-import { config } from "../../config";
+import { useSettings } from "../settings";
 
 const Context = createContext<AxiosInstance | undefined>(undefined);
 

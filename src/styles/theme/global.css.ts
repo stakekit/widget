@@ -69,7 +69,7 @@ globalStyle(`${rootSelector} input[type=number]`, {
 });
 
 globalStyle(
-  `.simple-display-wallet-list-sub-icon > img, .simple-display-wallet-list-icon > img`,
+  ".simple-display-wallet-list-sub-icon > img, .simple-display-wallet-list-icon > img",
   {
     "@layer": {
       [reset]: {
@@ -80,7 +80,7 @@ globalStyle(
   }
 );
 
-globalStyle(`button.simple-display-wallet-button`, {
+globalStyle("button.simple-display-wallet-button", {
   "@layer": {
     [reset]: {
       width: "auto",
@@ -89,7 +89,7 @@ globalStyle(`button.simple-display-wallet-button`, {
   },
 });
 
-globalStyle(`.simple-display-wallet-list-icon`, {
+globalStyle(".simple-display-wallet-list-icon", {
   "@layer": {
     [reset]: {
       display: "flex",

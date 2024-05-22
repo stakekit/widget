@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 import { Maybe } from "purify-ts";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSavedRef } from "./use-saved-ref";
-import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 
 export const useHandleDeepLinks = () => {
   const pendindActionDeepLinkCheck = usePendingActionDeepLink();

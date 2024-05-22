@@ -1,9 +1,9 @@
+import clsx from "clsx";
 import type { PropsWithChildren } from "react";
-import type { ItemContainerVariants } from "./styles.css";
-import { itemContainer } from "./styles.css";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
-import clsx from "clsx";
+import type { ItemContainerVariants } from "./styles.css";
+import { itemContainer } from "./styles.css";
 
 export const ListItem = ({
   children,

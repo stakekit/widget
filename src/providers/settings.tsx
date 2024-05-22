@@ -1,10 +1,10 @@
-import type { ThemeWrapperTheme } from "./theme-wrapper";
 import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useMemo } from "react";
-import type { Properties, TrackEventVal, TrackPageVal } from "./tracking";
-import type { BuildWagmiConfig } from "./wagmi";
 import { config } from "../config";
 import type { SKExternalProviders } from "../domain/types/wallets";
+import type { ThemeWrapperTheme } from "./theme-wrapper";
+import type { Properties, TrackEventVal, TrackPageVal } from "./tracking";
+import type { BuildWagmiConfig } from "./wagmi";
 
 export type VariantProps =
   | {

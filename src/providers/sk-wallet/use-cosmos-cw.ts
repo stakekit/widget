@@ -1,7 +1,7 @@
-import { useCallback, useState, useSyncExternalStore } from "react";
-import type { Connector } from "wagmi";
-import { BehaviorSubject } from "rxjs";
 import type { ChainWalletBase } from "@cosmos-kit/core";
+import { useCallback, useState, useSyncExternalStore } from "react";
+import { BehaviorSubject } from "rxjs";
+import type { Connector } from "wagmi";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 
 export const useCosmosCW = (connector?: Connector) => {

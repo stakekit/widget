@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Left, Maybe } from "purify-ts";
-import { useSKWallet } from "../../../providers/sk-wallet";
 import { isAxiosError } from "axios";
+import { EitherAsync, Left, Maybe } from "purify-ts";
 import { isAxios4xxError } from "../../../common/utils";
-import { useSettings } from "../../../providers/settings";
-import type { Nullable } from "../../../types";
 import { useApiClient } from "../../../providers/api/api-client-provider";
+import { useSettings } from "../../../providers/settings";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import type { Nullable } from "../../../types";
 
 const url = ({ address, network }: { network: string; address: string }) =>
   `/v1/networks/${network}/addresses/${address}/referrals`;
@@ -30,7 +30,7 @@ export const useOwnReferralCode = () => {
   return useQuery({
     enabled: !!(address && network && !!referralCheck),
     queryKey: getQueryKey({ address, network }),
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () =>
       (
         await EitherAsync.liftEither(

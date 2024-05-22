@@ -1,13 +1,13 @@
 import BigNumber from "bignumber.js";
+import { motion, useAnimation } from "framer-motion";
 import type { ChangeEvent } from "react";
 import { memo, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { useRootElement } from "../../../providers/root-element";
+import { formatNumber } from "../../../utils";
+import { Box } from "../box";
 import { container, numberInput, spanStyle } from "./styles.css";
 import { useAutoResizeText } from "./use-auto-resize-text";
-import { createPortal } from "react-dom";
-import { formatNumber } from "../../../utils";
-import { useRootElement } from "../../../providers/root-element";
-import { motion, useAnimation } from "framer-motion";
-import { Box } from "../box";
 
 export type NumberInputProps = {
   onChange: (value: BigNumber) => void;

@@ -1,8 +1,8 @@
-import { useMemo } from "react";
-import { Just, List, Maybe } from "purify-ts";
-import { useUnstakeOrPendingActionState } from "../state";
 import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
+import { Just, List, Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useUnstakeOrPendingActionState } from "../state";
 
 export const useStakeExitRequestDto = () => {
   const { address, additionalAddresses } = useSKWallet();
@@ -30,14 +30,16 @@ export const useStakeExitRequestDto = () => {
                 (b) => !!b.providerId,
                 val.stakedOrLiquidBalances
               ).map((b) => ({ providerId: b.providerId }));
-            } else if (
+            }
+            if (
               val.integrationData.args.exit?.args?.validatorAddresses?.required
             ) {
               return List.find(
                 (b) => !!b.validatorAddresses,
                 val.stakedOrLiquidBalances
               ).map((b) => ({ validatorAddresses: b.validatorAddresses }));
-            } else if (
+            }
+            if (
               val.integrationData.args.exit?.args?.validatorAddress?.required
             ) {
               return List.find(

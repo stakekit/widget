@@ -1,9 +1,9 @@
-import type { ComponentProps } from "react";
 import type { RenderOptions } from "@testing-library/react";
 import { render } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { VirtuosoMockContext } from "react-virtuoso";
-import type { SettingsContextProvider } from "../../src/providers/settings";
 import { SKApp } from "../../src/App";
+import type { SettingsContextProvider } from "../../src/providers/settings";
 
 const renderApp = (opts?: {
   options?: RenderOptions;

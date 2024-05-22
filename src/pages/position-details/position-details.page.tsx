@@ -1,20 +1,20 @@
+import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
+import type { ActionTypes } from "@stakekit/api-hooks";
+import { Just, Maybe } from "purify-ts";
+import { useTranslation } from "react-i18next";
 import { Box, Button, Heading, Spinner, Text } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
-import { PageContainer } from "../components";
-import { usePositionDetails } from "./hooks/use-position-details";
-import { useTranslation } from "react-i18next";
-import { PositionBalances } from "./components/position-balances";
-import { Just, Maybe } from "purify-ts";
-import { useTrackPage } from "../../hooks/tracking/use-track-page";
-import { ProviderDetails } from "./components/provider-details";
 import { SelectValidator } from "../../components/molecules/select-validator";
-import { AmountBlock } from "./components/amount-block";
-import { StaticActionBlock } from "./components/static-action-block";
-import type { ActionTypes } from "@stakekit/api-hooks";
+import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
-import { container } from "./styles.css";
+import { PageContainer } from "../components";
+import { AmountBlock } from "./components/amount-block";
+import { PositionBalances } from "./components/position-balances";
+import { ProviderDetails } from "./components/provider-details";
+import { StaticActionBlock } from "./components/static-action-block";
 import { UnstakeSignPopup } from "./components/unstake-sign-popup";
-import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
+import { usePositionDetails } from "./hooks/use-position-details";
+import { container } from "./styles.css";
 
 const PositionDetails = () => {
   const {

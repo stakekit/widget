@@ -5,7 +5,7 @@ import { BehaviorSubject } from "rxjs";
 
 interface RichError {
   message: string;
-  details?: { [key: string]: any };
+  details?: { [key: string]: unknown };
 }
 
 const $richError = new BehaviorSubject<RichError | null>(null);

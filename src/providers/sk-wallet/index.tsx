@@ -1,3 +1,5 @@
+import type { Account } from "@ledgerhq/wallet-api-client";
+import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
   createContext,
@@ -6,40 +8,38 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import type { SKWallet } from "../../domain/types";
+import type { Hash } from "viem";
 import {
   useAccount,
   useDisconnect,
   useSendTransaction,
   useSignMessage,
 } from "wagmi";
-import { useWagmiConfig } from "../wagmi";
-import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
-import { useLedgerAccounts } from "./use-ledger-accounts";
-import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
-import { useAdditionalAddresses } from "./use-additional-addresses";
+import type { SKWallet } from "../../domain/types";
+import { useTrackEvent } from "../../hooks/tracking/use-track-event";
+import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import {
   NotSupportedFlowError,
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
-import type { Account } from "@ledgerhq/wallet-api-client";
-import { useTrackEvent } from "../../hooks/tracking/use-track-event";
-import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import type { Hash } from "viem";
-import { isExternalProviderConnector } from "../external-provider";
-import { useConnectorChains } from "./use-connector-chains";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
+import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
+import { isExternalProviderConnector } from "../external-provider";
+import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
+import { isTronConnector } from "../misc/tron-connector-meta";
+import { useWagmiConfig } from "../wagmi";
+import { useAdditionalAddresses } from "./use-additional-addresses";
+import { useConnectorChains } from "./use-connector-chains";
 import { useCosmosCW } from "./use-cosmos-cw";
+import { useLedgerAccounts } from "./use-ledger-accounts";
+import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
+import { useSyncExternalProvider } from "./use-sync-external-provider";
+import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
 import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
-import { isTronConnector } from "../misc/tron-connector-meta";
-import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
-import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
-import { useSyncExternalProvider } from "./use-sync-external-provider";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -150,10 +150,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
       >(({ conn, address }) => {
+        /**
+         * Ledger Live connector
+         */
         if (isLedgerLiveConnector(conn)) {
-          /**
-           * Ledger Live connector
-           */
           return EitherAsync.liftEither(
             Maybe.fromNullable(ledgerCurrentAccountId).toEither(
               new Error("currentAccountId missing")
@@ -188,10 +188,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
             )
             .map((val) => ({ signedTx: val, broadcasted: true }));
-        } else if (isCosmosConnector(conn)) {
-          /**
-           * Cosmos connector
-           */
+        }
+
+        /**
+         * Cosmos connector
+         */
+        if (isCosmosConnector(conn)) {
           return EitherAsync.liftEither(
             Maybe.fromNullable(cosmosCW).toEither(new Error("cosmosCW missing"))
           ).chain((cw) =>
@@ -200,10 +202,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               .signTransaction({ cw, tx })
               .map((val) => ({ signedTx: val, broadcasted: false }))
           );
-        } else if (isTronConnector(conn)) {
-          /**
-           * Tron connector
-           */
+        }
+
+        /**
+         * Tron connector
+         */
+        if (isTronConnector(conn)) {
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
               .chain((val) => unsignedTronTransactionCodec.decode(val))
@@ -222,10 +226,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               signedTx: JSON.stringify(val),
               broadcasted: false,
             }));
-        } else if (isExternalProviderConnector(conn)) {
-          /**
-           * External provider connector
-           */
+        }
+
+        /**
+         * External provider connector
+         */
+        if (isExternalProviderConnector(conn)) {
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
               .chain((val) => unsignedEVMTransactionCodec.decode(val))
@@ -238,41 +244,41 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               conn.sendTransaction(prepareEVMTx({ address, decodedTx: val }))
             )
             .map((val) => ({ signedTx: val, broadcasted: true }));
-        } else {
-          /**
-           * EVM connector
-           */
-          return EitherAsync.liftEither(
-            Either.encase(() => JSON.parse(tx))
-              .chain((val) => unsignedEVMTransactionCodec.decode(val))
-              .mapLeft((e) => {
-                console.log(e);
-                return new TransactionDecodeError();
-              })
-          ).chain((val) =>
-            EitherAsync(() =>
-              /**
-               * Params need to be in strict format, don't spread the object(val)!
-               */
-              sendTransactionAsync({
-                data: val.data,
-                to: val.to,
-                value: val.value,
-                nonce: val.nonce,
-                maxFeePerGas: val.maxFeePerGas,
-                maxPriorityFeePerGas: val.maxPriorityFeePerGas,
-                chainId: val.chainId,
-                gas: val.gasLimit,
-                type: val.maxFeePerGas ? "eip1559" : "legacy",
-              })
-            )
-              .mapLeft((e) => {
-                console.log(e);
-                return new SendTransactionError();
-              })
-              .map((val) => ({ signedTx: val, broadcasted: true }))
-          );
         }
+
+        /**
+         * EVM connector
+         */
+        return EitherAsync.liftEither(
+          Either.encase(() => JSON.parse(tx))
+            .chain((val) => unsignedEVMTransactionCodec.decode(val))
+            .mapLeft((e) => {
+              console.log(e);
+              return new TransactionDecodeError();
+            })
+        ).chain((val) =>
+          EitherAsync(() =>
+            /**
+             * Params need to be in strict format, don't spread the object(val)!
+             */
+            sendTransactionAsync({
+              data: val.data,
+              to: val.to,
+              value: val.value,
+              nonce: val.nonce,
+              maxFeePerGas: val.maxFeePerGas,
+              maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+              chainId: val.chainId,
+              gas: val.gasLimit,
+              type: val.maxFeePerGas ? "eip1559" : "legacy",
+            })
+          )
+            .mapLeft((e) => {
+              console.log(e);
+              return new SendTransactionError();
+            })
+            .map((val) => ({ signedTx: val, broadcasted: true }))
+        );
       }),
     [connectorDetails, cosmosCW, ledgerCurrentAccountId, sendTransactionAsync]
   );
@@ -306,9 +312,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
           );
-        } else {
-          return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
         }
+
+        return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
       }),
     [connectorDetails]
   );

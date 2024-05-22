@@ -1,20 +1,20 @@
-import { useEffect, useMemo } from "react";
-import { Maybe } from "purify-ts";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import type { TokenDto } from "@stakekit/api-hooks";
-import { equalTokens, getTokenPriceInUSD } from "../../../domain";
 import BigNumber from "bignumber.js";
+import { Maybe } from "purify-ts";
+import { useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { equalTokens, getTokenPriceInUSD } from "../../../domain";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useBaseToken } from "../../../hooks/use-base-token";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { formatNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
 } from "../state";
-import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { usePendingActions } from "./use-pending-actions";
 import { useUnstakeMachine } from "./use-unstake-machine";
-import { useNavigate } from "react-router-dom";
-import { useBaseToken } from "../../../hooks/use-base-token";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 
 export const usePositionDetails = () => {
   const {

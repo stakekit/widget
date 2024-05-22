@@ -2,56 +2,56 @@ import "@stakekit/rainbowkit/styles.css";
 import "./styles/theme/global.css";
 import "./translation";
 import "./utils/extend-purify";
-import ReactDOM from "react-dom/client";
+import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { ComponentProps } from "react";
 import { useState } from "react";
+import ReactDOM from "react-dom/client";
 import {
   Navigate,
   Route,
   RouterProvider,
+  Routes,
   createMemoryRouter,
   useNavigate,
-  Routes,
 } from "react-router-dom";
+import { preloadImages } from "./assets/images";
+import { Box, Header } from "./components";
+import { GlobalModals } from "./components/molecules/global-modals";
 import { useSavedRef, useToggleTheme } from "./hooks";
-import {
-  Layout,
-  StakeStepsPage,
-  UnstakeOrPendingActionStepsPage,
-  StakeCompletePage,
-  UnstakeOrPendingActionCompletePage,
-  PositionsPage,
-  EarnPage,
-  Details,
-} from "./pages";
-import { Providers } from "./providers";
-import type { SettingsProps, VariantProps } from "./providers/settings";
-import { SettingsContextProvider } from "./providers/settings";
-import { PositionDetailsPage } from "./pages/position-details";
+import { useDetailsMatch } from "./hooks/navigation/use-details-match";
+import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
+import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
+import { usePrevious } from "./hooks/use-previous";
+import { ConnectedCheck } from "./navigation/cheks/connected-check";
 import { StakeCheck } from "./navigation/cheks/stake-check";
 import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
-import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { useSKWallet } from "./providers/sk-wallet";
-import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
-import { Box, Header } from "./components";
-import { headerContainer } from "./pages/components/layout/styles.css";
 import { AnimationLayout } from "./navigation/containers/animation-layout";
-import { appContainer, container } from "./style.css";
+import {
+  Details,
+  EarnPage,
+  Layout,
+  PositionsPage,
+  StakeCompletePage,
+  StakeStepsPage,
+  UnstakeOrPendingActionCompletePage,
+  UnstakeOrPendingActionStepsPage,
+} from "./pages";
 import { FooterContent } from "./pages/components/footer-outlet";
-import { useDetailsMatch } from "./hooks/navigation/use-details-match";
-import { useSKLocation } from "./providers/location";
-import { MaybeWindow } from "./utils/maybe-window";
-import { GlobalModals } from "./components/molecules/global-modals";
-import { usePrevious } from "./hooks/use-previous";
+import { headerContainer } from "./pages/components/layout/styles.css";
+import { PoweredBy } from "./pages/components/powered-by";
+import { PositionDetailsPage } from "./pages/position-details";
 import {
   StakeReviewPage,
   UnstakeOrPendingActionReviewPage,
 } from "./pages/review";
-import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
+import { Providers } from "./providers";
+import { useSKLocation } from "./providers/location";
+import type { SettingsProps, VariantProps } from "./providers/settings";
+import { SettingsContextProvider } from "./providers/settings";
+import { useSKWallet } from "./providers/sk-wallet";
+import { appContainer, container } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
-import { PoweredBy } from "./pages/components/powered-by";
-import { preloadImages } from "./assets/images";
+import { MaybeWindow } from "./utils/maybe-window";
 
 preloadImages();
 

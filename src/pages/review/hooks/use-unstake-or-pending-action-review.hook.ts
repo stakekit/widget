@@ -1,18 +1,18 @@
-import { useNavigate } from "react-router-dom";
+import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import type { ActionTypes } from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
-import { Maybe } from "purify-ts";
-import { formatNumber } from "../../../utils";
 import { useTranslation } from "react-i18next";
-import type { ActionTypes } from "@stakekit/api-hooks";
+import { useNavigate } from "react-router-dom";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
-import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import { useSavedRef, useTokensPrices } from "../../../hooks";
+import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
+import { formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
-import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useUnstakeOrPendingActionReview = () => {
   const stakeExitData = useStakeExitData();
@@ -46,8 +46,6 @@ export const useUnstakeOrPendingActionReview = () => {
           case "liquid-staking":
             return t("position_details.unstake");
 
-          case "lending":
-          case "vault":
           default:
             return t("position_details.withdraw");
         }

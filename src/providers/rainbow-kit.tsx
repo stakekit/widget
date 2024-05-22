@@ -2,19 +2,19 @@ import type { DisclaimerComponent } from "@stakekit/rainbowkit";
 import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
-import { id, vars } from "../styles";
-import { Text } from "../components";
-import { useSKWallet } from "./sk-wallet";
-import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
 import { useTranslation } from "react-i18next";
-import { useCloseChainModal } from "../hooks/use-close-chain-modal";
-import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
+import { Text } from "../components";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
+import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
+import { useCloseChainModal } from "../hooks/use-close-chain-modal";
+import { id, vars } from "../styles";
 import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
 import { isExternalProviderConnector } from "./external-provider";
-import { useRootElement } from "./root-element";
 import { isLedgerLiveConnector } from "./ledger/ledger-live-connector-meta";
+import { useRootElement } from "./root-element";
+import { useSKWallet } from "./sk-wallet";
+import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,

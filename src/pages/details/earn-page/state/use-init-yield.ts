@@ -1,20 +1,20 @@
-import { EitherAsync, Maybe } from "purify-ts";
+import { getTokenBalances } from "@sk-widget/common/get-token-balances";
+import { tokenString } from "@sk-widget/domain";
 import { getInitialYield } from "@sk-widget/domain/types/stake";
+import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
 import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { useQuery } from "@tanstack/react-query";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { TokenDto } from "@stakekit/api-hooks";
 import {
   useTokenGetTokensHook,
   useTokenTokenBalancesScanHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
-import { getTokenBalances } from "@sk-widget/common/get-token-balances";
-import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
-import { tokenString } from "@sk-widget/domain";
+import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
+import { EitherAsync, Maybe } from "purify-ts";
+import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
 export const useInitYield = ({
   selectedToken,
@@ -30,7 +30,7 @@ export const useInitYield = ({
   const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
 
   return useQuery({
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     queryKey: [
       "init-yield",
       isConnected,

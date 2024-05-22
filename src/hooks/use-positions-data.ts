@@ -2,9 +2,9 @@ import type {
   YieldBalanceDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
+import { useMemo } from "react";
 import { createSelector } from "reselect";
 import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
-import { useMemo } from "react";
 
 export const usePositionsData = () => {
   const { data, ...rest } = useYieldBalancesScan({
@@ -57,7 +57,13 @@ const positionsDataSelector = createSelector(
               }
 
               return acc;
-            }, new Map<YieldBalanceDtoID, { balances: YieldBalanceDto[] } & ({ type: "validators"; validatorsAddresses: string[] } | { type: "default" })>()),
+            }, new Map<
+              YieldBalanceDtoID,
+              { balances: YieldBalanceDto[] } & (
+                | { type: "validators"; validatorsAddresses: string[] }
+                | { type: "default" }
+              )
+            >()),
         });
 
         return acc;

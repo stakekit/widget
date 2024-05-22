@@ -6,7 +6,7 @@ export const useRegionCodeName = (regionCode: Nullable<string>) => {
   return useQuery({
     queryKey: ["region-codes"],
     enabled: !!regionCode,
-    staleTime: Infinity,
+    staleTime: Number.POSITIVE_INFINITY,
     queryFn: async () =>
       (
         await EitherAsync.liftEither(

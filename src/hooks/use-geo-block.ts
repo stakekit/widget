@@ -1,7 +1,7 @@
-import { useCallback, useSyncExternalStore } from "react";
 import type { GeolocationError } from "@stakekit/api-hooks";
 import { GeolocationErrorType } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
+import { useCallback, useSyncExternalStore } from "react";
 
 let _isGeoBlocked:
   | false

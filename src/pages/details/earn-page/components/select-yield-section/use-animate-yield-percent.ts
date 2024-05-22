@@ -7,9 +7,9 @@ export const useAnimateYieldPercent = (
 ) => {
   const perReward = estimatedRewards
     .map((val) => {
-      const parsedNum = parseFloat(val.percentage);
+      const parsedNum = Number.parseFloat(val.percentage);
 
-      if (isNaN(parsedNum)) return val.percentage;
+      if (Number.isNaN(parsedNum)) return val.percentage;
 
       return parsedNum;
     })
@@ -32,7 +32,7 @@ export const useAnimateYieldPercent = (
 
   const transformedMotionValue = useTransform(
     rewardPercMotionValue,
-    (val) => val.toFixed(2) + "%"
+    (val) => `${val.toFixed(2)}%`
   );
 
   return typeof perReward === "string" ? perReward : transformedMotionValue;

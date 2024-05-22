@@ -1,20 +1,20 @@
+import { Trigger } from "@radix-ui/react-alert-dialog";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   CaretDownIcon,
   SelectModal,
   Text,
 } from "../../../../../components";
-import { useTranslation } from "react-i18next";
-import { Trigger } from "@radix-ui/react-alert-dialog";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { validatorVirtuosoContainer } from "../../styles.css";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { SelectTokenListItem } from "./select-token-list-item";
-import { useSKWallet } from "../../../../../providers/sk-wallet";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { validatorVirtuosoContainer } from "../../styles.css";
+import { SelectTokenListItem } from "./select-token-list-item";
 
 export const SelectToken = () => {
   const {

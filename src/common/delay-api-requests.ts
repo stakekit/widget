@@ -1,8 +1,8 @@
 import type { AxiosInstance } from "axios";
 import { config } from "../config";
 
-const delayMap = new Map<{}, {}>();
-const subs = new Map<{}, () => void>();
+const delayMap = new Map<Record<string, never>, Record<string, never>>();
+const subs = new Map<() => void, () => void>();
 
 const subscribe = (fn: () => void) => {
   subs.set(fn, fn);

@@ -1,3 +1,6 @@
+import { Trigger } from "@radix-ui/react-alert-dialog";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Box,
   CaretDownIcon,
@@ -5,14 +8,11 @@ import {
   SelectModalItemContainer,
   Text,
 } from "../../../../../components";
-import { useTranslation } from "react-i18next";
-import { Trigger } from "@radix-ui/react-alert-dialog";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { useMemo } from "react";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
-import { useEarnPageContext } from "../../state/earn-page-context";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 
 export const SelectOpportunity = () => {

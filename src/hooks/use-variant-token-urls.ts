@@ -1,7 +1,7 @@
-import { useMemo } from "react";
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
-import { useSettings } from "@sk-widget/providers/settings";
 import { config } from "@sk-widget/config";
+import { useSettings } from "@sk-widget/providers/settings";
+import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import { useMemo } from "react";
 
 export const useVariantTokenUrls = (
   token: TokenDto,

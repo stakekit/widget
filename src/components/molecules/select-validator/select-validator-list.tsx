@@ -1,31 +1,31 @@
 import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import { useTranslation } from "react-i18next";
 import type { ComponentProps } from "react";
 import { memo } from "react";
-import { GroupedVirtualList } from "../../atoms/virtual-list";
-import { Box } from "../../atoms/box";
-import { Text } from "../../atoms/typography";
+import { useTranslation } from "react-i18next";
+import { vars } from "../../../styles";
 import {
-  getRewardTypeFormatted,
   getRewardRateFormatted,
+  getRewardTypeFormatted,
 } from "../../../utils/formatters";
+import { Box } from "../../atoms/box";
 import { Button } from "../../atoms/button";
+import { CheckSteps } from "../../atoms/icons/check-steps";
+import { PreferredIcon } from "../../atoms/icons/preferred";
+import { Image } from "../../atoms/image";
+import { ImageFallback } from "../../atoms/image-fallback";
 import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
-import { Image } from "../../atoms/image";
-import { ImageFallback } from "../../atoms/image-fallback";
-import { PreferredIcon } from "../../atoms/icons/preferred";
+import { Text } from "../../atoms/typography";
+import { GroupedVirtualList } from "../../atoms/virtual-list";
+import { useMetaInfo } from "./meta-info";
 import {
   inactiveContainer,
   modalItemNameContainer,
   noWrap,
   validatorVirtuosoContainer,
 } from "./styles.css";
-import { CheckSteps } from "../../atoms/icons/check-steps";
-import { vars } from "../../../styles";
-import { useMetaInfo } from "./meta-info";
 
 export type GroupedItem = { items: ValidatorDto[]; label: string };
 

@@ -1,3 +1,5 @@
+import { Trigger } from "@radix-ui/react-alert-dialog";
+import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import {
   Box,
@@ -6,20 +8,18 @@ import {
   Text,
   XIcon,
 } from "../../../../../components";
+import { PlusIcon } from "../../../../../components/atoms/icons/plus";
+import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
+import { Image } from "../../../../../components/atoms/image";
+import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
+import { noWrap } from "../../../../details/positions-page/components/styles.css";
 import {
   addValidatorButton,
   addValidatorContainer,
   breakWord,
   validatorPill,
 } from "../../styles.css";
-import type { ValidatorDto } from "@stakekit/api-hooks";
-import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
-import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
-import { PlusIcon } from "../../../../../components/atoms/icons/plus";
-import { Trigger } from "@radix-ui/react-alert-dialog";
-import { noWrap } from "../../../../details/positions-page/components/styles.css";
-import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
 
 export const SelectValidatorTrigger = ({
   onRemoveValidator,

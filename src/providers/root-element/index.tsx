@@ -1,7 +1,7 @@
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useLayoutEffect, useState } from "react";
-import { MaybeDocument } from "../../utils/maybe-document";
 import { rootSelector } from "../../styles";
+import { MaybeDocument } from "../../utils/maybe-document";
 
 const RootElementContext = createContext<HTMLElement | null>(null);
 
@@ -12,7 +12,7 @@ export const RootElementProvider = ({ children }: PropsWithChildren) => {
     MaybeDocument.chainNullable(
       (doc) => doc.querySelector(rootSelector) as HTMLElement
     ).ifJust((el) => setRootElement(el));
-  }, [rootElement]);
+  }, []);
 
   return (
     <RootElementContext.Provider value={rootElement}>

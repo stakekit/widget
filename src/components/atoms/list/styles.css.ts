@@ -1,6 +1,6 @@
-import { atoms, vars } from "../../../styles";
 import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms, vars } from "../../../styles";
 
 export const itemContainer = recipe({
   base: [

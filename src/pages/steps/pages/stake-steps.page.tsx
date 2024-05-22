@@ -1,9 +1,9 @@
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 import { Maybe } from "purify-ts";
+import { importValidator } from "../../../common/import-validator";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { importValidator } from "../../../common/import-validator";
 import { StepsPage } from "./common.page";
-import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 
 export const StakeStepsPage = () => {
   useTrackPage("stakingSteps");
