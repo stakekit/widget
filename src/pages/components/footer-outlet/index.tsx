@@ -85,7 +85,7 @@ const FooterButton = ({
           flexDirection="column"
         >
           <Button
-            data-rk="footer-button"
+            data-rk={`footer-button-${variant ?? "primary"}`}
             disabled={disabled}
             isLoading={isLoading}
             onClick={onClick}
