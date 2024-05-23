@@ -29,7 +29,10 @@ export const useStakeExitRequestDto = () => {
               return List.find(
                 (b) => !!b.providerId,
                 val.stakedOrLiquidBalances
-              ).map((b) => ({ providerId: b.providerId }));
+              ).map((b) => ({
+                providerId: b.providerId,
+                validatorAddress: b.validatorAddress,
+              }));
             }
             if (
               val.integrationData.args.exit?.args?.validatorAddresses?.required
