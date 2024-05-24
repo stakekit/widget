@@ -58,7 +58,7 @@ export const StepsPage = ({
 
           {retry && (
             <Box my="4">
-              <Button data-rk="footer-button" onClick={retry}>
+              <Button data-rk="footer-button-primary" onClick={retry}>
                 {t("shared.retry")}
               </Button>
             </Box>
