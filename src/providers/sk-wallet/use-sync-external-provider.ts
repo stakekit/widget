@@ -1,33 +1,67 @@
 import { useSavedRef } from "@sk-widget/hooks";
 import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
-import { Maybe } from "purify-ts";
-import { useEffect } from "react";
+import { List, Maybe } from "purify-ts";
+import { useEffect, useMemo } from "react";
+import { type Connector, useConnect, useConnectors } from "wagmi";
 import type { SKWallet } from "../../domain/types";
 import type { Nullable } from "../../types";
 import { isExternalProviderConnector } from "../external-provider";
 import { useSettings } from "../settings";
 
-type Props = Pick<SKWallet, "connector" | "address" | "chain" | "isConnected">;
+type Props = Pick<
+  SKWallet,
+  "address" | "chain" | "isConnected" | "isConnecting"
+>;
 
 export const useSyncExternalProvider = ({
   address,
   chain,
-  connector,
   isConnected,
+  isConnecting,
 }: { [Key in keyof Props]: Nullable<Props[Key]> }) => {
   const { externalProviders } = useSettings();
 
-  const connectorRef = useSavedRef(connector);
+  const { connect } = useConnect();
+
+  const connectors = useConnectors();
+  const externalProviderConnector = useMemo(
+    () =>
+      List.find(
+        (c) => isExternalProviderConnector(c),
+        connectors as Connector[]
+      ).filter(isExternalProviderConnector),
+    [connectors]
+  );
+
+  const connectRef = useSavedRef(connect);
+  const connectorRef = useSavedRef(externalProviderConnector);
   const chainRef = useSavedRef(chain);
 
+  /**
+   * Connect to the external provider if it exists and the wallet is not connected
+   */
+  useEffect(() => {
+    if (isConnected || isConnecting || !externalProviders?.currentAddress) {
+      return;
+    }
+
+    externalProviderConnector.ifJust((val) =>
+      connectRef.current({ connector: val })
+    );
+  }, [
+    isConnected,
+    isConnecting,
+    externalProviders?.currentAddress,
+    externalProviderConnector,
+    connectRef,
+  ]);
+
   useUpdateEffect(() => {
-    Maybe.fromNullable(connectorRef.current)
+    connectorRef.current
       .chain((conn) =>
         Maybe.fromNullable(chainRef.current).map((c) => ({ c, conn }))
       )
       .ifJust((val) => {
-        if (!isExternalProviderConnector(val.conn)) return;
-
         val.conn.onSupportedChainsChanged({
           supportedChainIds: externalProviders?.supportedChainIds ?? [],
           currentChainId: val.c.id,
@@ -37,35 +71,29 @@ export const useSyncExternalProvider = ({
 
   useEffect(() => {
     Maybe.fromRecord({
-      connector: Maybe.fromNullable(connector),
+      externalProviderConnector,
       address: Maybe.fromNullable(address),
       chain: Maybe.fromNullable(chain),
     })
-      .filter(
-        (val) =>
-          !!(
-            isExternalProviderConnector(val.connector) &&
-            val.address &&
-            val.chain &&
-            isConnected
-          )
-      )
+      .filter((val) => !!(val.address && val.chain && isConnected))
       .ifJust((val) => {
         const currentAddress = externalProviders?.currentAddress;
         const currentChain = externalProviders?.currentChain;
 
-        if (currentAddress && currentAddress !== val.address) {
-          val.connector.onAccountsChanged([currentAddress]);
+        if (currentAddress !== val.address) {
+          val.externalProviderConnector.onAccountsChanged([
+            currentAddress ?? "",
+          ]);
         }
 
         if (currentChain && currentChain !== val.chain.id) {
-          val.connector.onChainChanged(currentChain.toString());
+          val.externalProviderConnector.onChainChanged(currentChain.toString());
         }
       });
   }, [
     address,
     chain,
-    connector,
+    externalProviderConnector,
     externalProviders?.currentAddress,
     externalProviders?.currentChain,
     isConnected,
