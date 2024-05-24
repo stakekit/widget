@@ -200,7 +200,7 @@
       "liquid-staking": "unstaked",
       "vault": "withdrawn",
       "lending": "withdrawn",
-      "restaking": "restaked"
+      "restaking": "unstaked"
     },
     "pending_action": {
       "stake": "staked",
@@ -281,7 +281,7 @@
       "liquid-staking": "Unstake",
       "lending": "Withdraw",
       "vault": "Withdraw",
-      "restaking": "Restake"
+      "restaking": "Unstake"
     },
     "balance_type": {
       "available": "Available",
