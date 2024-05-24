@@ -117,8 +117,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   useSyncExternalProvider({
     address,
     chain,
-    connector,
     isConnected,
+    isConnecting,
   });
 
   /**

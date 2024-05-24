@@ -127,15 +127,15 @@ export const externalProviderConnector = (
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
             (accounts) => {
               config.emitter.emit("change", {
-                accounts: accounts.map((a) => getAddress(a)),
+                accounts: accounts.filter((a) => !!a).map((a) => getAddress(a)),
               });
             };
 
           const onSupportedChainsChanged: ExtraProps["onSupportedChainsChanged"] =
             ({ currentChainId, supportedChainIds }) => {
               $filteredChains.next(
-                Maybe.fromNullable(supportedChainIds)
-                  .map((val) => new Set(val))
+                Maybe.fromFalsy(!!supportedChainIds.length)
+                  .map(() => new Set(supportedChainIds))
                   .mapOrDefault(
                     (val) => config.chains.filter((c) => val.has(c.id)),
                     config.chains as [Chain, ...Chain[]]

@@ -1,5 +1,5 @@
 import { SKApp, type SKAppProps } from "@sk-widget/App";
-import { formatAddress } from "@sk-widget/utils";
+import { formatAddress, waitForMs } from "@sk-widget/utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
@@ -205,6 +205,50 @@ describe("External Provider", () => {
     within(container as HTMLElement).getByText(chainNames.avalanche);
 
     user.keyboard("[Escape]");
+
+    skProps.externalProviders.currentAddress =
+      "0xB7c5273e79E2aDD234EBC07d87F3824e0f94B2f7";
+
+    app.rerender(
+      <VirtuosoMockContext.Provider
+        value={{ viewportHeight: 800, itemHeight: 60 }}
+      >
+        <SKApp
+          {...skProps}
+          externalProviders={{
+            ...skProps.externalProviders,
+            supportedChainIds: [43114],
+          }}
+        />
+      </VirtuosoMockContext.Provider>
+    );
+
+    await waitFor(() =>
+      expect(
+        app.getByText(formatAddress(skProps.externalProviders.currentAddress))
+      ).toBeInTheDocument()
+    );
+
+    const prevAddress = skProps.externalProviders.currentAddress;
+    skProps.externalProviders.currentAddress = "";
+
+    app.rerender(
+      <VirtuosoMockContext.Provider
+        value={{ viewportHeight: 800, itemHeight: 60 }}
+      >
+        <SKApp
+          {...skProps}
+          externalProviders={{
+            ...skProps.externalProviders,
+            supportedChainIds: [43114],
+          }}
+        />
+      </VirtuosoMockContext.Provider>
+    );
+
+    await waitFor(() =>
+      expect(app.queryByText(formatAddress(prevAddress))).toBeNull()
+    );
 
     skProps.externalProviders.currentAddress =
       "0xB7c5273e79E2aDD234EBC07d87F3824e0f94B2f7";
