@@ -15,5 +15,5 @@
   },
   "[css]": {
     "editor.defaultFormatter": "biomejs.biome"
-  },
+  }
 }
