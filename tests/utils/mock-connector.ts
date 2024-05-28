@@ -1,5 +1,6 @@
+import { type EIP1193Provider, SwitchChainError, numberToHex } from "viem";
 import type { CreateConnectorFn } from "wagmi";
-import { custom } from "wagmi";
+import { ChainNotConfiguredError, custom } from "wagmi";
 import type { MockParameters } from "wagmi/connectors";
 import { mock as mockConnector } from "wagmi/connectors";
 import type { BuildWagmiConfig } from "../../src/providers/wagmi";
@@ -43,6 +44,18 @@ export const rkMockWallet =
                 return custom({ request: requestFn })({ retryCount: 0 });
               },
             }),
+            async switchChain({ chainId }) {
+              const provider = (await this.getProvider()) as EIP1193Provider;
+              const chain = config.chains.find((x) => x.id === chainId);
+              if (!chain)
+                throw new SwitchChainError(new ChainNotConfiguredError());
+              await provider.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: numberToHex(chainId) }],
+              });
+              config.emitter.emit("change", { chainId });
+              return chain;
+            },
             ...connectorParams,
           }),
         }),

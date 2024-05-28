@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event";
+import { numberToHex } from "viem";
 import { describe, expect, it } from "vitest";
 import { APToPercentage } from "../../../src/utils";
 import { renderApp, waitFor } from "../../utils/test-utils";
@@ -177,5 +178,24 @@ describe("Deep links flow", () => {
       ).toBeInTheDocument()
     );
     expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+  });
+
+  it("Handles init network correctly", async () => {
+    const { setUrl, customConnectors, requestFn, getCurrentChainId } =
+      await setup();
+
+    expect(getCurrentChainId()).not.toBe(1);
+    setUrl({ network: "ethereum" });
+
+    const app = renderApp({
+      wagmi: { __customConnectors__: customConnectors },
+    });
+
+    await waitFor(() => expect(app.getByText("Ethereum")).toBeInTheDocument());
+
+    expect(requestFn).toHaveBeenCalledWith({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: numberToHex(1) }],
+    });
   });
 });
