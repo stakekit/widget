@@ -89,22 +89,6 @@ describe("Renders initial page", () => {
         ]);
       }),
 
-      http.post("*/v1/tokens/balances/scan", async () => {
-        await delay();
-        return HttpResponse.json([
-          {
-            token: ether,
-            amount: "3",
-            availableYields: [etherNativeStaking.id],
-          },
-          {
-            token: avalancheCToken,
-            amount: "3",
-            availableYields: [avalancheAvaxNativeStaking.id],
-          },
-        ]);
-      }),
-
       http.get(`*/v1/yields/${etherNativeStaking.id}`, async () => {
         await delay();
 
