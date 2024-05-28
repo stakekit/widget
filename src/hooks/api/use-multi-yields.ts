@@ -2,7 +2,7 @@ import type { YieldDto } from "@stakekit/api-hooks";
 import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, Maybe, Right } from "purify-ts";
 import { createSelector } from "reselect";
 import { config } from "../../config";
 import type { SKWallet } from "../../domain/types";
@@ -96,10 +96,11 @@ const queryFn = ({
           yieldId: y,
           queryClient,
           yieldYieldOpportunity,
-        })
+        }).chainLeft(async () => Right(null))
     ),
     5
   )()
+    .map((val) => val.filter((v): v is NonNullable<typeof v> => !!v))
     .map((data) =>
       defaultFiltered({ data, isConnected, network, isLedgerLive })
     )
