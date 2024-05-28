@@ -116,7 +116,7 @@ const positionsTableDataSelector = createSelector(
           const filteredBalances = value.balances.filter((v) => {
             const amount = new BigNumber(v.amount);
 
-            return !amount.isZero() && !amount.isNaN();
+            return !amount.isZero() && !amount.isNaN() && !v.token.isPoints;
           });
 
           if (filteredBalances.length) {
