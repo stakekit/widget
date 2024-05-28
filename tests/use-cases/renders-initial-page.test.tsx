@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { renderApp, waitFor } from "../utils/test-utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
+import { describe, expect, it } from "vitest";
 import { server } from "../mocks/server";
+import { renderApp, waitFor } from "../utils/test-utils";
 
 describe("Renders initial page", () => {
   it("Works as expected", async () => {
