@@ -1,3 +1,9 @@
+import type {
+  CosmosChainsMap,
+  EvmChainsMap,
+  MiscChainsMap,
+  SubstrateChainsMap,
+} from "@sk-widget/domain/types/chains";
 import {
   useTransactionGetTransactionStatusByNetworkAndHashHook,
   useYieldGetMyNetworksHook,
@@ -7,11 +13,10 @@ import type { WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { connect, reconnect } from "@wagmi/core";
-import { EitherAsync, List, Maybe, Right } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 import type { MutableRefObject } from "react";
 import { createClient } from "viem";
-import { http, type Connector, createConfig } from "wagmi";
+import { http, createConfig } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
 import { config } from "../../config";
@@ -19,7 +24,7 @@ import type { SKExternalProviders } from "../../domain/types/wallets";
 import { useSavedRef } from "../../hooks";
 import { getInitialQueryParams } from "../../hooks/use-init-query-params";
 import type { GetEitherAsyncRight } from "../../types";
-import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
+import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getEvmConfig } from "../ethereum/config";
@@ -49,6 +54,7 @@ const buildWagmiConfig = async (opts: {
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
   substrateConfig: GetEitherAsyncRight<ReturnType<typeof getSubstrateConfig>>;
   wagmiConfig: ReturnType<typeof createConfig>;
+  queryParamsInitChainId: number | undefined;
 }> => {
   return getEnabledNetworks({
     queryClient: opts.queryClient,
@@ -138,9 +144,11 @@ const buildWagmiConfig = async (opts: {
             ),
           ];
         }
+
         if (ledgerLiveConnector) {
           return [ledgerLiveConnector];
         }
+
         if (opts.customConnectors) {
           return opts.customConnectors(chains);
         }
@@ -151,6 +159,19 @@ const buildWagmiConfig = async (opts: {
           ...miscConfig.connectors,
         ]);
       })();
+
+      const queryParamsInitChainId = Maybe.fromNullable(val.queryParams.network)
+        .chainNullable(
+          (n) =>
+            val.evmConfig.evmChainsMap[n as keyof EvmChainsMap] ??
+            val.cosmosConfig.cosmosChainsMap[n as keyof CosmosChainsMap] ??
+            val.miscConfig.miscChainsMap[n as keyof MiscChainsMap] ??
+            val.substrateConfig.substrateChainsMap[
+              n as keyof SubstrateChainsMap
+            ]
+        )
+        .map((c) => c.wagmiChain.id)
+        .extract();
 
       return {
         ...val,
@@ -164,54 +185,11 @@ const buildWagmiConfig = async (opts: {
             projectId: config.walletConnectV2.projectId,
           }),
         }),
+        queryParamsInitChainId,
       };
     })
-    .chain((val) =>
-      /**
-       * Reconnect to the last used connector if possible
-       * If not, try to connect to the injected connector if mobile app detected
-       */
-      EitherAsync(() => reconnect(val.wagmiConfig))
-        .chainLeft(async () => Right(null))
-        .chain(async (reconnectVal) => {
-          if (
-            opts.externalProviders ||
-            reconnectVal?.length ||
-            isLedgerDappBrowserProvider() ||
-            !isMobile()
-          ) {
-            return Right(null);
-          }
-
-          return EitherAsync.liftEither(
-            List.find(
-              (c) => c.id === "injected",
-              val.wagmiConfig.connectors as Connector[]
-            ).toEither(new Error("Could not find injected connector"))
-          )
-            .chain((injConnector) =>
-              EitherAsync(() =>
-                connect(val.wagmiConfig, { connector: injConnector })
-              )
-            )
-            .chainLeft(async () => Right(null));
-        })
-
-        .bimap(
-          () => new Error("Could not hydrate wagmi config"),
-          () => val
-        )
-    )
     .caseOf({
-      Right: (val) => {
-        return Promise.resolve({
-          evmConfig: val.evmConfig,
-          cosmosConfig: val.cosmosConfig,
-          miscConfig: val.miscConfig,
-          substrateConfig: val.substrateConfig,
-          wagmiConfig: val.wagmiConfig,
-        });
-      },
+      Right: async (val) => val,
       Left: (l) => {
         console.log(l);
         return Promise.reject(l);

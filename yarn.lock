@@ -4117,10 +4117,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/common@npm:^0.0.28":
-  version: 0.0.28
-  resolution: "@stakekit/common@npm:0.0.28"
-  checksum: 10/fd802b311c2001e27520c804f64f494e69da6e78dc332367704fa6161cea9af070f0ab968ae2ed27061e330ab2155c6d3111f5ed160ff5a34db7c28665008ca5
+"@stakekit/common@npm:^0.0.29":
+  version: 0.0.29
+  resolution: "@stakekit/common@npm:0.0.29"
+  checksum: 10/b87d496d5f3c0924edbf2fa1baed5007f2e688fec42c470b61a6bf3a4a8930d4de38117ecf48d5c99f31426ffbc168ace94e370f0e4acc2c51f884f0246e32b0
   languageName: node
   linkType: hard
 
@@ -4164,7 +4164,7 @@ __metadata:
     "@radix-ui/react-alert-dialog": "npm:^1.0.5"
     "@radix-ui/react-dropdown-menu": "npm:^2.0.6"
     "@stakekit/api-hooks": "npm:^0.0.70"
-    "@stakekit/common": "npm:^0.0.28"
+    "@stakekit/common": "npm:^0.0.29"
     "@stakekit/rainbowkit": "npm:^2.1.0"
     "@tanstack/react-query": "npm:^5.37.1"
     "@testing-library/jest-dom": "npm:^6.4.5"

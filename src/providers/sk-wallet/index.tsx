@@ -1,4 +1,5 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
+import { useInit } from "@sk-widget/providers/sk-wallet/use-init";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
@@ -53,6 +54,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     chain,
   } = useAccount();
 
+  const { isLoading } = useInit();
+
   const connector =
     _connector?.connect && _connector.emitter ? _connector : undefined;
 
@@ -101,6 +104,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   });
 
   const isConnecting =
+    isLoading ||
     _isConnecting ||
     isReconnecting ||
     wagmiConfig.isLoading ||

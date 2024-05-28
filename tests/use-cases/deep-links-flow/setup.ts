@@ -16,6 +16,15 @@ export const setup = async (opts?: {
 }) => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
+  const ether: TokenDto = {
+    network: "ethereum",
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+    coinGeckoId: "ethereum",
+    logoURI: "https://assets.stakek.it/tokens/eth.svg",
+  };
+
   const token: TokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
@@ -160,11 +169,12 @@ export const setup = async (opts?: {
           },
           availableYields: ["avalanche-avax-liquid-staking"],
         },
+        { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
     http.get("*/v1/yields/enabled/networks", async () => {
       await delay();
-      return HttpResponse.json([token.network]);
+      return HttpResponse.json([token.network, ether.network]);
     }),
 
     http.post("*/v1/tokens/balances/scan", async () => {
@@ -265,21 +275,36 @@ export const setup = async (opts?: {
     })
   );
 
-  const requestFn = vitest.fn(async ({ method }: { method: string }) => {
-    await waitForMs(500);
+  let currentChainId = 43114;
 
-    switch (method) {
-      case "eth_sendTransaction":
-        return "transaction_hash";
-      case "eth_chainId":
-        return 43114;
-      case "eth_requestAccounts":
-        return [account];
+  const getCurrentChainId = () => currentChainId;
+  const setCurrentChainId = (chainId: number) => {
+    currentChainId = chainId;
+  };
 
-      default:
-        throw new Error("unhandled method");
+  const requestFn = vitest.fn(
+    async ({ method, params }: { method: string; params: unknown }) => {
+      await waitForMs(500);
+
+      switch (method) {
+        case "eth_sendTransaction":
+          return "transaction_hash";
+        case "eth_chainId":
+          return currentChainId;
+        case "eth_requestAccounts":
+          return [account];
+        case "wallet_switchEthereumChain": {
+          currentChainId = Just(params as { chainId: number }[])
+            .map((val) => Number(val[0].chainId))
+            .unsafeCoerce();
+
+          return currentChainId;
+        }
+        default:
+          throw new Error("unhandled method");
+      }
     }
-  });
+  );
 
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });
 
@@ -287,13 +312,24 @@ export const setup = async (opts?: {
     accountId,
     yieldId,
     pendingaction,
-  }: {
-    yieldId: string;
-    accountId: string;
-    pendingaction?: string;
-  }) => {
+    network,
+  }:
+    | {
+        yieldId: string;
+        accountId: string;
+        pendingaction?: string;
+        network?: never;
+      }
+    | {
+        network: string;
+        yieldId?: never;
+        accountId?: never;
+        pendingaction?: never;
+      }) => {
     const url = new URL(
-      `http://localhost:5173/?yieldId=${yieldId}&accountId=${accountId}&pendingaction=${pendingaction}`
+      network
+        ? `http://localhost:5173/?network=${network}`
+        : `http://localhost:5173/?yieldId=${yieldId}&accountId=${accountId}&pendingaction=${pendingaction}`
     );
 
     Object.defineProperty(window, "location", {
@@ -317,5 +353,7 @@ export const setup = async (opts?: {
     avaxNativeStaking,
     account,
     requestFn,
+    setCurrentChainId,
+    getCurrentChainId,
   };
 };
