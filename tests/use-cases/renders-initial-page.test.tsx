@@ -8,7 +8,6 @@ import { server } from "../mocks/server";
 
 describe("Renders initial page", () => {
   it("Works as expected", async () => {
-
     const avalancheCToken: TokenDto = {
       name: "Avalanche C Chain",
       symbol: "AVAX",
