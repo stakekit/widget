@@ -44,6 +44,7 @@ function _VirtualList<ItemData = unknown, Context = unknown>(
         height: isTabletOrBigger ? maxHeight : "max(65vh, 500px)",
       }}
       className={clsx([hideScrollbar, className])}
+      increaseViewportBy={300}
       {...props}
     />
   ) : (
@@ -85,6 +86,7 @@ export const GroupedVirtualList = <ItemData = unknown, Context = unknown>({
     <GroupedVirtuoso
       style={{ ...style, height }}
       className={clsx([hideScrollbar, className])}
+      increaseViewportBy={300}
       {...props}
     />
   ) : (
