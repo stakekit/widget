@@ -18,5 +18,6 @@
   },
   "editor.codeActionsOnSave": {
     "source.organizeImports.biome": "explicit"
-  }
+  },
+  "biome.enabled": true
 }
