@@ -217,6 +217,11 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.AvalancheC,
     },
+    ethereum_holesky: {
+      currencyId: "ethereum_holesky",
+      family: "ethereum",
+      skChainName: EvmNetworks.EthereumHolesky,
+    },
   },
   cosmos: {
     cosmos: {
