@@ -57,7 +57,7 @@ export const getInitialYield = (args: {
   yieldDtos: YieldDto[];
   tokenBalanceAmount: BigNumber;
 }) => {
-  const sortedYields = args.yieldDtos.sort(
+  const sortedYields = args.yieldDtos.toSorted(
     (a, b) =>
       yieldTypeOrder[a.metadata.type] - yieldTypeOrder[b.metadata.type] ||
       getInitMinStakeAmount(b).minus(getInitMinStakeAmount(a)).toNumber()

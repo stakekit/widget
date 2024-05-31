@@ -219,6 +219,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       Maybe.fromNullable(multiYields.data)
         .alt(Maybe.of([]))
+        .map((val) => val.toSorted((a, b) => b.apy - a.apy))
+        .map((val) => val.filter((v) => v.apy > 0))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
             .chain((val) =>
@@ -241,7 +243,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
         .map(({ all, filteredDtos }) => {
-          const sorted = [...filteredDtos].sort(
+          const sorted = filteredDtos.toSorted(
             (a, b) =>
               yieldTypesSortRank[a.metadata.type] -
               yieldTypesSortRank[b.metadata.type]
