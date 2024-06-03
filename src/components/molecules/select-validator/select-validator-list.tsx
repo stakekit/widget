@@ -54,7 +54,6 @@ export const SelectValidatorList = ({
 
   return (
     <GroupedVirtualList
-      data={tableData}
       increaseViewportBy={{ bottom: 50, top: 0 }}
       groupCounts={groupCounts}
       groupContent={(index) => {

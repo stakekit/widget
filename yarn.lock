@@ -4167,6 +4167,7 @@ __metadata:
     "@stakekit/common": "npm:^0.0.29"
     "@stakekit/rainbowkit": "npm:^2.1.0"
     "@tanstack/react-query": "npm:^5.37.1"
+    "@tanstack/react-virtual": "npm:^3.5.0"
     "@testing-library/jest-dom": "npm:^6.4.5"
     "@testing-library/react": "npm:^15.0.7"
     "@testing-library/user-event": "npm:^14.5.2"
@@ -4372,6 +4373,25 @@ __metadata:
   peerDependencies:
     react: ^18.0.0
   checksum: 10/f7f11f0702382c7e8fc0bee7c24d11836b4c43eb5feea10282a9054afd4be554945db2887d30c2ded8c6f11018eeba93266a319b23de5f19c0fe50a445d39141
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-virtual@npm:^3.5.0":
+  version: 3.5.0
+  resolution: "@tanstack/react-virtual@npm:3.5.0"
+  dependencies:
+    "@tanstack/virtual-core": "npm:3.5.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: 10/ecb1424b9961ada3c7516b8f05a1bb37fb1b75cb88035e06530a9365e4e565e701b5de9668c17f727bbcb3be1bbe6482f7bd37af9e0b144846e5a67fc9dfd57d
+  languageName: node
+  linkType: hard
+
+"@tanstack/virtual-core@npm:3.5.0":
+  version: 3.5.0
+  resolution: "@tanstack/virtual-core@npm:3.5.0"
+  checksum: 10/76a37734118c59f992bfdd540bb5900aa30d040c723909312c1e7071af1619da6ddedabba1834802fee7e0f6497c38d0fe8bc70ab4950d2d09342558b5c89bb2
   languageName: node
   linkType: hard
 
