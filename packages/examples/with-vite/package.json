@@ -1,0 +1,26 @@
+{
+  "name": "@stakekit/with-vite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "start": "yarn dev",
+    "build": "tsc && vite build",
+    "lint": "tsc && biome check .",
+    "format": "biome check --apply .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@stakekit/widget": "workspace:*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.7.3",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0"
+  }
+}

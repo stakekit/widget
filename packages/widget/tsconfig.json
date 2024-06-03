@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@sk-widget/*": ["*"]
+    },
+    "lib": ["dom", "dom.iterable", "esnext"]
+  },
+  "include": ["src", "scripts", "tests", "vite/**/*.ts"],
+  "exclude": ["dist"]
+}
