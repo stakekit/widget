@@ -1,10 +1,9 @@
 import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
+import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import {
   type ForwardedRef,
-  Fragment,
-  type ReactNode,
   forwardRef,
   useImperativeHandle,
   useRef,
@@ -34,9 +33,12 @@ const _VirtualList = <ItemData = unknown>(
   useImperativeHandle(ref, () => innerRef.current!, []);
   const { data, itemContent, className } = props;
 
+  const observeElementRect = useObserveElementRect();
+
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => innerRef.current,
+    ...(observeElementRect && { observeElementRect }),
     estimateSize: () => 68,
     overscan: 10,
   });
@@ -95,12 +97,16 @@ const _GroupedVirtualList = (
     groupContent,
     className,
   } = props;
+
+  const observeElementRect = useObserveElementRect();
+
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
       (acc, numChildren) => acc + numChildren,
       groupCounts.length
     ),
     getScrollElement: () => innerRef.current,
+    ...(observeElementRect && { observeElementRect }),
     estimateSize: () => 50,
     overscan: 10,
     paddingStart: increaseViewportBy?.top,

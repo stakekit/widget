@@ -1,7 +1,8 @@
 import type { RenderOptions } from "@testing-library/react";
 import { render } from "@testing-library/react";
 import type { ComponentProps } from "react";
-import { VirtuosoMockContext } from "react-virtuoso";
+
+import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
 import { SKApp } from "../../src/App";
 import type { SettingsContextProvider } from "../../src/providers/settings";
 
@@ -12,16 +13,14 @@ const renderApp = (opts?: {
   skProps?: ComponentProps<typeof SKApp>;
 }) => {
   const App = (
-    <VirtuosoMockContext.Provider
-      value={{ viewportHeight: 800, itemHeight: 60 }}
-    >
+    <VirtualizerObserveElementRectProvider>
       <SKApp
         apiKey={import.meta.env.VITE_API_KEY}
         wagmi={opts?.wagmi}
         referralCheck={opts?.referralCheck}
         {...opts?.skProps}
       />
-    </VirtuosoMockContext.Provider>
+    </VirtualizerObserveElementRectProvider>
   );
 
   return render(App, opts?.options);
