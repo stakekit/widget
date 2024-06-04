@@ -85,7 +85,6 @@ export const SelectOpportunity = () => {
       }
     >
       <GroupedVirtualList
-        increaseViewportBy={{ bottom: 50, top: 0 }}
         groupCounts={data.groupCounts}
         groupContent={(index) => {
           return (

@@ -1,5 +1,7 @@
 import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
 import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
+import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
+import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import {
@@ -7,6 +9,7 @@ import {
   forwardRef,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import {
   absoluteWrapper,
@@ -26,23 +29,26 @@ const _VirtualList = <ItemData = unknown>(
     data: ItemData[];
     itemContent: (index: number, item: ItemData) => React.ReactNode;
     className?: BoxProps["className"];
+    maxHeight?: number;
   },
   ref: ForwardedRef<HTMLDivElement>
 ) => {
   const innerRef = useRef<HTMLDivElement>(null);
   useImperativeHandle(ref, () => innerRef.current!, []);
-  const { data, itemContent, className } = props;
+  const { data, itemContent, className, maxHeight = 600 } = props;
 
   const observeElementRect = useObserveElementRect();
+  const isTabletOrBigger = useIsTabletOrBigger();
 
   const rowVirtualizer = useVirtualizer({
     count: data.length,
     getScrollElement: () => innerRef.current,
     ...(observeElementRect && { observeElementRect }),
-    estimateSize: () => 68,
+    estimateSize: () => 10,
     overscan: 10,
   });
 
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
   return (
     <>
       <Box ref={innerRef} className={clsx([container, className])}>
@@ -50,6 +56,7 @@ const _VirtualList = <ItemData = unknown>(
           className={relativeWrapper}
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
+            maxHeight: _maxHeight,
           }}
         >
           <Box
@@ -85,6 +92,7 @@ const _GroupedVirtualList = (
     groupCounts: number[];
     groupContent: (index: number) => React.ReactNode;
     className?: BoxProps["className"];
+    maxHeight?: number;
   },
   ref: ForwardedRef<HTMLDivElement>
 ) => {
@@ -96,8 +104,9 @@ const _GroupedVirtualList = (
     groupCounts,
     groupContent,
     className,
+    maxHeight = 600,
   } = props;
-
+  const isTabletOrBigger = useIsTabletOrBigger();
   const observeElementRect = useObserveElementRect();
 
   const rowVirtualizer = useVirtualizer({
@@ -140,6 +149,8 @@ const _GroupedVirtualList = (
     [[] as ResultsArray[], 0]
   );
 
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+
   return (
     <>
       <Box ref={innerRef} className={clsx([container, className])}>
@@ -147,6 +158,7 @@ const _GroupedVirtualList = (
           className={relativeWrapper}
           style={{
             height: `${rowVirtualizer.getTotalSize()}px`,
+            maxHeight: _maxHeight,
           }}
         >
           <Box
@@ -180,3 +192,11 @@ const _GroupedVirtualList = (
 };
 
 export const GroupedVirtualList = forwardRef(_GroupedVirtualList);
+
+const useIsTabletOrBigger = () => {
+  const [windowWidth] = useState(() =>
+    MaybeWindow.map((w) => w.innerWidth).orDefault(0)
+  );
+
+  return windowWidth >= breakpoints.tablet;
+};
