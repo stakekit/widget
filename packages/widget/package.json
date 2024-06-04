@@ -35,6 +35,7 @@
     "format": "biome check --apply .",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",
     "build:package": "vite -c vite/vite.config.package.ts build",
+    "build:package:watch": "vite -w -c vite/vite.config.package.ts build",
     "build:bundle": "vite -c vite/vite.config.bundle.ts build",
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",

@@ -195,11 +195,11 @@ const Widget = () => {
 };
 
 const Root = () => {
-  return (
-    <Providers>
-      <Widget />
-    </Providers>
-  );
+  const [showChild, setShowChild] = useState(false);
+
+  useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
+
+  return <Providers>{showChild && <Widget />}</Providers>;
 };
 
 const router = createMemoryRouter([{ path: "*", Component: Root }]);
@@ -207,10 +207,6 @@ const router = createMemoryRouter([{ path: "*", Component: Root }]);
 export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 
 export const SKApp = (props: SKAppProps) => {
-  const [showChild, setShowChild] = useState(false);
-
-  useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
-
   const variantProps: VariantProps =
     !props.variant || props.variant === "default"
       ? { variant: "default" }
@@ -219,7 +215,7 @@ export const SKApp = (props: SKAppProps) => {
   return (
     <SettingsContextProvider {...variantProps} {...props}>
       <Box className={appContainer}>
-        {showChild && <RouterProvider router={router} />}
+        <RouterProvider router={router} />
       </Box>
     </SettingsContextProvider>
   );

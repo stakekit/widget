@@ -1,3 +1,4 @@
+import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
 import {
   useEarnPageDispatch,
   useEarnPageState,
@@ -26,7 +27,6 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import type {
   NumberInputProps,
   SelectModalProps,
@@ -351,8 +351,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const { t } = useTranslation();
 
-  const navigate = useNavigate();
-
   const onStakeEnter = useOnStakeEnter();
   const stakeEnterRequestDto = useStakeEnterRequestDto();
 
@@ -453,6 +451,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
     [selectedStake]
   );
+
+  const navigate = useNavigateWithScrollToTop();
 
   useUpdateEffect(() => {
     if (onStakeEnter.isSuccess && onStakeEnter.data) {
