@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Outlet, ScrollRestoration } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useCurrentLayout } from "./layout-context";
 import { absoluteContainer } from "./styles.css";
@@ -18,16 +18,12 @@ export const Layout = ({ currentPathname }: { currentPathname: string }) => {
   });
 
   return (
-    <>
-      <ScrollRestoration />
-
-      <motion.div
-        layout="position"
-        ref={containerRef}
-        className={absoluteContainer}
-      >
-        <Outlet />
-      </motion.div>
-    </>
+    <motion.div
+      layout="position"
+      ref={containerRef}
+      className={absoluteContainer}
+    >
+      <Outlet />
+    </motion.div>
   );
 };

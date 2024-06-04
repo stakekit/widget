@@ -3,7 +3,9 @@ import { createContext, useContext, useLayoutEffect, useState } from "react";
 import { rootSelector } from "../../styles";
 import { MaybeDocument } from "../../utils/maybe-document";
 
-const RootElementContext = createContext<HTMLElement | null>(null);
+const RootElementContext = createContext<HTMLElement | null | undefined>(
+  undefined
+);
 
 export const RootElementProvider = ({ children }: PropsWithChildren) => {
   const [rootElement, setRootElement] = useState<HTMLElement | null>(null);
