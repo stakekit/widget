@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.7.3/schema.json",
   "files": {
-    "ignore": ["node_modules", "dist", ".next", ".turbo"]
+    "ignore": [
+      "**/node_modules",
+      "**/dist",
+      "**/.next",
+      "**/.turbo",
+      "**/region-iso-3166-codes.ts",
+      "**/mockServiceWorker.js"
+    ]
   },
   "formatter": {
     "enabled": true,

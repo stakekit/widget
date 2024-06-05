@@ -1,12 +1,7 @@
 {
   "name": "stakekit",
-  "workspaces": [
-    "packages/*/**"
-  ],
-  "keywords": [
-    "stakekit",
-    "widget"
-  ],
+  "workspaces": ["packages/*/**"],
+  "keywords": ["stakekit", "widget"],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
   "scripts": {
@@ -23,7 +18,7 @@
     "@commitlint/config-conventional": "^19.2.2",
     "husky": "^9.0.11",
     "knip": "^5.16.0",
-    "turbo": "^1.13.3"
+    "turbo": "^1.13.4"
   },
   "packageManager": "yarn@4.1.1",
   "resolutions": {
