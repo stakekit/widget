@@ -67,6 +67,7 @@ export const PositionsPage = () => {
           {showPositions && (
             <Box flex={1} display="flex" flexDirection="column">
               <VirtualList
+                estimateSize={() => 60}
                 data={listData}
                 itemContent={(_, item) =>
                   item === "header" ? (

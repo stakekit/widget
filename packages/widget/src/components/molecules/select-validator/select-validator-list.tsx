@@ -1,3 +1,4 @@
+import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { memo } from "react";
@@ -18,7 +19,6 @@ import {
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
 import { Text } from "../../atoms/typography";
-import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { useMetaInfo } from "./meta-info";
 import {
   inactiveContainer,
@@ -53,6 +53,7 @@ export const SelectValidatorList = ({
   return (
     <GroupedVirtualList
       increaseViewportBy={{ bottom: 50, top: 0 }}
+      estimateSize={() => 60}
       groupCounts={groupCounts}
       groupContent={(index) => {
         if (

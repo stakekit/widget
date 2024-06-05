@@ -1,4 +1,5 @@
 import { Trigger } from "@radix-ui/react-alert-dialog";
+import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -10,7 +11,6 @@ import {
 } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
-import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectOpportunityListItem } from "./select-opportunity-list-item";
@@ -85,6 +85,7 @@ export const SelectOpportunity = () => {
       }
     >
       <GroupedVirtualList
+        estimateSize={() => 60}
         groupCounts={data.groupCounts}
         groupContent={(index) => {
           return (
