@@ -4,7 +4,9 @@
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/types/index.package.d.ts",
@@ -18,8 +20,16 @@
       "default": "./dist/package/style.css"
     }
   },
-  "files": ["dist", "package.json", "README.md", "!**/.*"],
-  "keywords": ["stakekit", "widget"],
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "!**/.*"
+  ],
+  "keywords": [
+    "stakekit",
+    "widget"
+  ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
   "publishConfig": {
@@ -116,6 +126,8 @@
     "wagmi": "^2.9.3"
   },
   "msw": {
-    "workerDirectory": ["public"]
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

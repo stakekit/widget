@@ -7,7 +7,8 @@
       "**/.next",
       "**/.turbo",
       "**/region-iso-3166-codes.ts",
-      "**/mockServiceWorker.js"
+      "**/mockServiceWorker.js",
+      "**/package.json"
     ]
   },
   "formatter": {

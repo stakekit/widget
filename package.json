@@ -1,7 +1,12 @@
 {
   "name": "stakekit",
-  "workspaces": ["packages/*/**"],
-  "keywords": ["stakekit", "widget"],
+  "workspaces": [
+    "packages/*/**"
+  ],
+  "keywords": [
+    "stakekit",
+    "widget"
+  ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
   "scripts": {
