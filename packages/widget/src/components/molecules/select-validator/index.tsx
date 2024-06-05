@@ -47,7 +47,12 @@ export const SelectValidator = ({
     setViewMore(true);
   };
 
-  const viewMore = !!multiSelect || _viewMore;
+  const _onClose = () => {
+    setViewMore(false);
+    onClose?.();
+  };
+
+  const viewMore = !!multiSelect || _viewMore || rest.searchValue;
 
   const data = useMemo<{
     tableData: ValidatorDto[];
@@ -101,15 +106,22 @@ export const SelectValidator = ({
       };
     }
 
+    const canViewMore =
+      !viewMore && groupedItems.preferred.items.length !== validators.length;
+
     const groupedItemsValues = Object.values(groupedItems);
 
     return {
       tableData: groupedItemsValues.flatMap((val) => val.items),
-      groupedItems: [...groupedItemsValues.filter((val) => !!val.items.length)],
+      groupedItems: [
+        ...groupedItemsValues.filter((val) => !!val.items.length),
+        ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+      ],
       groupCounts: [
         ...groupedItemsValues
           .filter((val) => !!val.items.length)
           .map((val) => val.items.length),
+        ...(canViewMore ? [1] : []),
       ],
     };
   }, [validators, t, viewMore]);
@@ -126,7 +138,7 @@ export const SelectValidator = ({
       title={t("details.validator_search_title", {
         count: multiSelect ? 2 : 1,
       })}
-      onClose={onClose}
+      onClose={_onClose}
       onOpen={onOpen}
       trigger={trigger}
       state={state}

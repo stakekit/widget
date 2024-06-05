@@ -91,6 +91,7 @@ export const ImportValidator = ({
             )}
             <VirtualList
               data={val}
+              estimateSize={() => 60}
               itemContent={(_index, item) => {
                 return (
                   <SelectModalItemContainer>

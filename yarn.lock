@@ -4235,6 +4235,7 @@ __metadata:
     "@stakekit/common": "npm:^0.0.29"
     "@stakekit/rainbowkit": "npm:^2.1.0"
     "@tanstack/react-query": "npm:^5.37.1"
+    "@tanstack/react-virtual": "npm:^3.5.0"
     "@testing-library/jest-dom": "npm:^6.4.5"
     "@testing-library/react": "npm:^15.0.7"
     "@testing-library/user-event": "npm:^14.5.2"
@@ -4275,7 +4276,6 @@ __metadata:
     react-i18next: "npm:^14.1.1"
     react-loading-skeleton: "npm:^3.4.0"
     react-router-dom: "npm:^6.23.1"
-    react-virtuoso: "npm:^4.7.10"
     reselect: "npm:^5.1.0"
     resize-observer-polyfill: "npm:^1.5.1"
     rxjs: "npm:^7.8.1"
@@ -4604,6 +4604,25 @@ __metadata:
   peerDependencies:
     react: ^18.0.0
   checksum: 10/f7f11f0702382c7e8fc0bee7c24d11836b4c43eb5feea10282a9054afd4be554945db2887d30c2ded8c6f11018eeba93266a319b23de5f19c0fe50a445d39141
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-virtual@npm:^3.5.0":
+  version: 3.5.0
+  resolution: "@tanstack/react-virtual@npm:3.5.0"
+  dependencies:
+    "@tanstack/virtual-core": "npm:3.5.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+  checksum: 10/ecb1424b9961ada3c7516b8f05a1bb37fb1b75cb88035e06530a9365e4e565e701b5de9668c17f727bbcb3be1bbe6482f7bd37af9e0b144846e5a67fc9dfd57d
+  languageName: node
+  linkType: hard
+
+"@tanstack/virtual-core@npm:3.5.0":
+  version: 3.5.0
+  resolution: "@tanstack/virtual-core@npm:3.5.0"
+  checksum: 10/76a37734118c59f992bfdd540bb5900aa30d040c723909312c1e7071af1619da6ddedabba1834802fee7e0f6497c38d0fe8bc70ab4950d2d09342558b5c89bb2
   languageName: node
   linkType: hard
 
@@ -11876,16 +11895,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-virtuoso@npm:^4.7.10":
-  version: 4.7.10
-  resolution: "react-virtuoso@npm:4.7.10"
-  peerDependencies:
-    react: ">=16 || >=17 || >= 18"
-    react-dom: ">=16 || >=17 || >= 18"
-  checksum: 10/6403bc36057dfcb1d85291fcc4536c2a0b17b44f35501ebb3b092f5b1a8140cd0db6e5980c42a76b34cbcbebc1477192eaf690bd4f10488dd85f1518bc93872a
-  languageName: node
-  linkType: hard
-
 "react@npm:^18, react@npm:^18.2.0, react@npm:^18.3.1":
   version: 18.3.1
   resolution: "react@npm:18.3.1"
@@ -12578,7 +12587,7 @@ __metadata:
     "@commitlint/config-conventional": "npm:^19.2.2"
     husky: "npm:^9.0.11"
     knip: "npm:^5.16.0"
-    turbo: "npm:^1.13.3"
+    turbo: "npm:^1.13.4"
   languageName: unknown
   linkType: soft
 
@@ -13018,58 +13027,58 @@ __metadata:
   languageName: node
   linkType: hard
 
-"turbo-darwin-64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-darwin-64@npm:1.13.3"
+"turbo-darwin-64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-darwin-64@npm:1.13.4"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-darwin-arm64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-darwin-arm64@npm:1.13.3"
+"turbo-darwin-arm64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-darwin-arm64@npm:1.13.4"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo-linux-64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-linux-64@npm:1.13.3"
+"turbo-linux-64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-linux-64@npm:1.13.4"
   conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-linux-arm64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-linux-arm64@npm:1.13.3"
+"turbo-linux-arm64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-linux-arm64@npm:1.13.4"
   conditions: os=linux & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo-windows-64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-windows-64@npm:1.13.3"
+"turbo-windows-64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-windows-64@npm:1.13.4"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"turbo-windows-arm64@npm:1.13.3":
-  version: 1.13.3
-  resolution: "turbo-windows-arm64@npm:1.13.3"
+"turbo-windows-arm64@npm:1.13.4":
+  version: 1.13.4
+  resolution: "turbo-windows-arm64@npm:1.13.4"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"turbo@npm:^1.13.3":
-  version: 1.13.3
-  resolution: "turbo@npm:1.13.3"
+"turbo@npm:^1.13.4":
+  version: 1.13.4
+  resolution: "turbo@npm:1.13.4"
   dependencies:
-    turbo-darwin-64: "npm:1.13.3"
-    turbo-darwin-arm64: "npm:1.13.3"
-    turbo-linux-64: "npm:1.13.3"
-    turbo-linux-arm64: "npm:1.13.3"
-    turbo-windows-64: "npm:1.13.3"
-    turbo-windows-arm64: "npm:1.13.3"
+    turbo-darwin-64: "npm:1.13.4"
+    turbo-darwin-arm64: "npm:1.13.4"
+    turbo-linux-64: "npm:1.13.4"
+    turbo-linux-arm64: "npm:1.13.4"
+    turbo-windows-64: "npm:1.13.4"
+    turbo-windows-arm64: "npm:1.13.4"
   dependenciesMeta:
     turbo-darwin-64:
       optional: true
@@ -13085,7 +13094,7 @@ __metadata:
       optional: true
   bin:
     turbo: bin/turbo
-  checksum: 10/de96309b3c4c28b51d9436cdec57e3df452dea4ec4512e6c3b7f6596265d4b22d2c16b9c8a674cc1bafa3cc2eea9feb89a807526d6d820f9bca0522d8d86df12
+  checksum: 10/b8187def43760428e117313fc4a559af5c02b473d816b3efef406165c2c45cf3a256fbda4b15f0c1a48ccd188bd43cf93686f2aeab176a15a01553cd165071cc
   languageName: node
   linkType: hard
 

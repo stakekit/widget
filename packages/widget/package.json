@@ -1,10 +1,12 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.166",
+  "version": "0.0.167",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/types/index.package.d.ts",
@@ -18,8 +20,16 @@
       "default": "./dist/package/style.css"
     }
   },
-  "files": ["dist", "package.json", "README.md", "!**/.*"],
-  "keywords": ["stakekit", "widget"],
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "!**/.*"
+  ],
+  "keywords": [
+    "stakekit",
+    "widget"
+  ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
   "publishConfig": {
@@ -63,6 +73,7 @@
     "@stakekit/common": "^0.0.29",
     "@stakekit/rainbowkit": "^2.1.0",
     "@tanstack/react-query": "^5.37.1",
+    "@tanstack/react-virtual": "^3.5.0",
     "@testing-library/jest-dom": "^6.4.5",
     "@testing-library/react": "^15.0.7",
     "@testing-library/user-event": "^14.5.2",
@@ -103,7 +114,6 @@
     "react-i18next": "^14.1.1",
     "react-loading-skeleton": "^3.4.0",
     "react-router-dom": "^6.23.1",
-    "react-virtuoso": "^4.7.10",
     "reselect": "^5.1.0",
     "resize-observer-polyfill": "^1.5.1",
     "rxjs": "^7.8.1",
@@ -116,6 +126,8 @@
     "wagmi": "^2.9.3"
   },
   "msw": {
-    "workerDirectory": ["public"]
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

@@ -1,11 +1,11 @@
 import { SKApp, type SKAppProps } from "@sk-widget/App";
+import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
 import { formatAddress } from "@sk-widget/utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
-import { VirtuosoMockContext } from "react-virtuoso";
 import { describe, expect, it } from "vitest";
 import { server } from "../../mocks/server";
 import { renderApp, waitFor, within } from "../../utils/test-utils";
@@ -170,9 +170,7 @@ describe("External Provider", () => {
     user.keyboard("[Escape]");
 
     app.rerender(
-      <VirtuosoMockContext.Provider
-        value={{ viewportHeight: 800, itemHeight: 60 }}
-      >
+      <VirtualizerObserveElementRectProvider>
         <SKApp
           {...skProps}
           externalProviders={{
@@ -180,7 +178,7 @@ describe("External Provider", () => {
             supportedChainIds: [43114],
           }}
         />
-      </VirtuosoMockContext.Provider>
+      </VirtualizerObserveElementRectProvider>
     );
 
     await waitFor(() =>
@@ -210,9 +208,7 @@ describe("External Provider", () => {
       "0xB7c5273e79E2aDD234EBC07d87F3824e0f94B2f7";
 
     app.rerender(
-      <VirtuosoMockContext.Provider
-        value={{ viewportHeight: 800, itemHeight: 60 }}
-      >
+      <VirtualizerObserveElementRectProvider>
         <SKApp
           {...skProps}
           externalProviders={{
@@ -220,7 +216,7 @@ describe("External Provider", () => {
             supportedChainIds: [43114],
           }}
         />
-      </VirtuosoMockContext.Provider>
+      </VirtualizerObserveElementRectProvider>
     );
 
     await waitFor(() =>
@@ -233,9 +229,7 @@ describe("External Provider", () => {
     skProps.externalProviders.currentAddress = "";
 
     app.rerender(
-      <VirtuosoMockContext.Provider
-        value={{ viewportHeight: 800, itemHeight: 60 }}
-      >
+      <VirtualizerObserveElementRectProvider>
         <SKApp
           {...skProps}
           externalProviders={{
@@ -243,7 +237,7 @@ describe("External Provider", () => {
             supportedChainIds: [43114],
           }}
         />
-      </VirtuosoMockContext.Provider>
+      </VirtualizerObserveElementRectProvider>
     );
 
     await waitFor(() =>
@@ -254,9 +248,7 @@ describe("External Provider", () => {
       "0xB7c5273e79E2aDD234EBC07d87F3824e0f94B2f7";
 
     app.rerender(
-      <VirtuosoMockContext.Provider
-        value={{ viewportHeight: 800, itemHeight: 60 }}
-      >
+      <VirtualizerObserveElementRectProvider>
         <SKApp
           {...skProps}
           externalProviders={{
@@ -264,7 +256,7 @@ describe("External Provider", () => {
             supportedChainIds: [43114],
           }}
         />
-      </VirtuosoMockContext.Provider>
+      </VirtualizerObserveElementRectProvider>
     );
 
     await waitFor(() =>

@@ -4,7 +4,6 @@ import { Box } from "../../../components";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { useHandleListState } from "../../../providers/list-state";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { PageContainer } from "../../components";
@@ -45,8 +44,6 @@ export const PositionsPage = () => {
     positionsData.isLoading,
   ]);
 
-  const { scrollTop, virtualListRef } = useHandleListState();
-
   const { mountAnimationFinished } = useMountAnimation();
 
   return (
@@ -70,9 +67,8 @@ export const PositionsPage = () => {
           {showPositions && (
             <Box flex={1} display="flex" flexDirection="column">
               <VirtualList
-                ref={virtualListRef}
+                estimateSize={() => 60}
                 data={listData}
-                initialScrollTop={scrollTop}
                 itemContent={(_, item) =>
                   item === "header" ? (
                     <>
