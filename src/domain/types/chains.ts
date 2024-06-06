@@ -57,6 +57,7 @@ export type CosmosChainsMap = {
 const supportedEVMChains = [
   EvmNetworks.AvalancheC,
   EvmNetworks.Arbitrum,
+  EvmNetworks.Binance,
   EvmNetworks.Celo,
   EvmNetworks.Ethereum,
   EvmNetworks.EthereumGoerli,
