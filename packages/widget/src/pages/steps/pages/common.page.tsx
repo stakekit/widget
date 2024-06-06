@@ -69,11 +69,11 @@ export const StepsPage = ({
   );
 };
 
-const getPosition = (txStatesLenght: number, currentIdx: number) =>
-  txStatesLenght === 1
-    ? "FIRST"
+const getPosition = (txStatesLength: number, currentIdx: number) =>
+  txStatesLength === 1
+    ? "SINGLE"
     : currentIdx === 0
       ? "FIRST"
-      : currentIdx === txStatesLenght - 1
+      : currentIdx === txStatesLength - 1
         ? "LAST"
         : "ELSE";

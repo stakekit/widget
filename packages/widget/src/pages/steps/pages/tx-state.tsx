@@ -22,7 +22,7 @@ import {
 
 type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
-  position: "FIRST" | "LAST" | "ELSE";
+  position: "SINGLE" | "FIRST" | "LAST" | "ELSE";
   count: { current: number; total: number };
 };
 
@@ -30,7 +30,7 @@ export const TxState = ({ txState, position, count }: Props) => {
   const { t } = useTranslation();
 
   const canCollapse =
-    (txState.meta.done && position !== "LAST") ||
+    (txState.meta.done && position !== "LAST" && position !== "SINGLE") ||
     txState.state === TxStateEnum.SIGN_IDLE;
 
   const [isCollapsed, setIsCollapsed] = useState(canCollapse);
@@ -40,7 +40,10 @@ export const TxState = ({ txState, position, count }: Props) => {
   }, [canCollapse]);
 
   return (
-    <Box key={txState.tx.id} marginTop={position === "FIRST" ? "0" : "4"}>
+    <Box
+      key={txState.tx.id}
+      marginTop={position === "FIRST" || position === "SINGLE" ? "0" : "4"}
+    >
       <CollapsibleRoot
         onClick={() => canCollapse && setIsCollapsed((prev) => !prev)}
         collapsed={isCollapsed}
