@@ -23,7 +23,7 @@ export const formatNumber = (
   decimals = defaultDecimalPlaces
 ) => {
   return BigNumber(number)
-    .decimalPlaces(decimals, BigNumber.ROUND_UP)
+    .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
     .toFormat();
 };
 
