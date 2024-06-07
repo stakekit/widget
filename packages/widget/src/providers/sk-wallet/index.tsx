@@ -1,4 +1,5 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
+import { config } from "@sk-widget/config";
 import { useInit } from "@sk-widget/providers/sk-wallet/use-init";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
@@ -9,7 +10,7 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import type { Hash } from "viem";
+import type { Address, Hash } from "viem";
 import {
   useAccount,
   useDisconnect,
@@ -49,10 +50,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     isReconnecting,
     isConnected: _isConnected,
     isConnecting: _isConnecting,
-    address,
+    address: _address,
     connector: _connector,
     chain,
   } = useAccount();
+
+  const address = (config.env.forceAddress as Address) || _address;
 
   const { isLoading } = useInit();
 
