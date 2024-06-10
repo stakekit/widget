@@ -4,7 +4,9 @@
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
-  "workspaces": ["packages/*"],
+  "workspaces": [
+    "packages/*"
+  ],
   "exports": {
     ".": {
       "types": "./dist/types/index.package.d.ts",
@@ -18,8 +20,16 @@
       "default": "./dist/package/style.css"
     }
   },
-  "files": ["dist", "package.json", "README.md", "!**/.*"],
-  "keywords": ["stakekit", "widget"],
+  "files": [
+    "dist",
+    "package.json",
+    "README.md",
+    "!**/.*"
+  ],
+  "keywords": [
+    "stakekit",
+    "widget"
+  ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
   "publishConfig": {
@@ -59,7 +69,7 @@
     "@ledgerhq/wallet-api-client": "^1.5.9",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
-    "@stakekit/api-hooks": "^0.0.70",
+    "@stakekit/api-hooks": "^0.0.72",
     "@stakekit/common": "^0.0.29",
     "@stakekit/rainbowkit": "^2.1.0",
     "@tanstack/react-query": "^5.37.1",
@@ -116,6 +126,8 @@
     "wagmi": "^2.9.3"
   },
   "msw": {
-    "workerDirectory": ["public"]
+    "workerDirectory": [
+      "public"
+    ]
   }
 }

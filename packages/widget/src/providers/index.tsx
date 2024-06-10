@@ -2,6 +2,7 @@ import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/ap
 import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stake-enter-and-txs-construct";
 import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { EnterStakeRequestDtoProvider } from "@sk-widget/providers/enter-stake-request-dto";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
@@ -52,7 +53,9 @@ export const Providers = ({
                                             <FooterButtonProvider>
                                               <PoweredByHeightProvider>
                                                 <DisableTransitionDurationProvider>
-                                                  {children}
+                                                  <EnterStakeRequestDtoProvider>
+                                                    {children}
+                                                  </EnterStakeRequestDtoProvider>
                                                 </DisableTransitionDurationProvider>
                                               </PoweredByHeightProvider>
                                             </FooterButtonProvider>
