@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from "react";
-import { createContext, useContext, useMemo } from "react";
+import { createContext, useContext } from "react";
 import { config } from "../config";
 import type { SKExternalProviders } from "../domain/types/wallets";
 import type { ThemeWrapperTheme } from "./theme-wrapper";
@@ -47,23 +47,12 @@ export const SettingsContextProvider = ({
   children,
   ...rest
 }: PropsWithChildren<SettingsContextType>) => {
-  const value = useMemo(
-    () => ({
-      ...rest,
-      wagmi: {
-        ...rest.wagmi,
-        __customConnectors__: config.env.isTestMode
-          ? rest.wagmi?.__customConnectors__
-          : undefined,
-      },
-    }),
-    [rest]
-  );
+  if (!config.env.isTestMode && rest.wagmi?.__customConnectors__) {
+    rest.wagmi.__customConnectors__ = undefined;
+  }
 
   return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
+    <SettingsContext.Provider value={rest}>{children}</SettingsContext.Provider>
   );
 };
 
