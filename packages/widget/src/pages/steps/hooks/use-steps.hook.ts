@@ -110,7 +110,7 @@ export const useSteps = ({
         return () => send({ type: "BROADCAST_RETRY" });
       }
       case "txCheckError": {
-        return () => send({ type: "BROADCAST_RETRY" });
+        return () => send({ type: "TX_CHECK_RETRY" });
       }
     }
   })();

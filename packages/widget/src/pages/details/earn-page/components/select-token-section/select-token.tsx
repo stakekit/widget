@@ -84,6 +84,7 @@ export const SelectToken = () => {
       <VirtualList
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
+        estimateSize={() => 60}
         itemContent={(_index, item) => (
           <SelectTokenListItem
             item={item}

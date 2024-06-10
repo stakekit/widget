@@ -1,130 +1,191 @@
+import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
+import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
+import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
+import { MaybeWindow } from "@sk-widget/utils/maybe-window";
+import {
+  type VirtualizerOptions,
+  useVirtualizer,
+} from "@tanstack/react-virtual";
 import clsx from "clsx";
-import type { ForwardedRef, ReactNode } from "react";
-import { Fragment, forwardRef, useState } from "react";
-import type {
-  GroupedVirtuosoProps,
-  VirtuosoHandle,
-  VirtuosoProps,
-} from "react-virtuoso";
-import { GroupedVirtuoso, Virtuoso } from "react-virtuoso";
-import { breakpoints } from "../../../styles/tokens/breakpoints";
-import { MaybeWindow } from "../../../utils/maybe-window";
-import { Box } from "../box";
-import { container, hideScrollbar } from "./style.css";
+import { useMemo, useRef, useState } from "react";
+import {
+  absoluteWrapper,
+  container,
+  relativeWrapper,
+} from "../virtual-list/style.css";
 
-declare module "react" {
-  // biome-ignore lint/complexity/noBannedTypes: <explanation>
-  function forwardRef<T, P = {}>(
-    render: (props: P, ref: React.Ref<T>) => React.ReactElement | null
-  ): (props: P & React.RefAttributes<T>) => React.ReactElement | null;
-}
+export const VirtualList = <ItemData = unknown>({
+  data,
+  itemContent,
+  className,
+  estimateSize,
+  maxHeight = 600,
+}: {
+  data: ItemData[];
+  itemContent: (index: number, item: ItemData) => React.ReactNode;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+}) => {
+  const innerRef = useRef<HTMLDivElement>(null);
 
-function _VirtualList<ItemData = unknown, Context = unknown>(
-  {
-    style,
-    className,
-    maxHeight = 600,
-    ...props
-  }: VirtuosoProps<ItemData, Context> & {
-    data: ItemData[] | undefined;
-    maxHeight?: number;
-    itemContent: (index: number, data: ItemData) => ReactNode;
-  },
-  ref: ForwardedRef<VirtuosoHandle>
-) {
+  const observeElementRect = useObserveElementRect();
   const isTabletOrBigger = useIsTabletOrBigger();
 
-  const hasMoreThan10Items = props.data && props.data.length > 10;
+  const rowVirtualizer = useVirtualizer({
+    count: data.length,
+    getScrollElement: () => innerRef.current,
+    estimateSize,
+    overscan: 10,
+    ...(observeElementRect && { observeElementRect }),
+  });
 
-  return hasMoreThan10Items ? (
-    <Virtuoso
-      ref={ref}
-      style={{
-        ...style,
-        height: isTabletOrBigger ? maxHeight : "max(65vh, 500px)",
-      }}
-      className={clsx([hideScrollbar, className])}
-      increaseViewportBy={300}
-      {...props}
-    />
-  ) : (
-    <Box
-      className={clsx([hideScrollbar, container, className])}
-      style={{
-        ...style,
-        ...(isTabletOrBigger ? { maxHeight } : { height: "max(65vh, 500px)" }),
-      }}
-    >
-      {props.data?.map((item, i) => (
-        <Fragment key={i}>{props.itemContent(i, item)}</Fragment>
-      ))}
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+
+  return (
+    <Box ref={innerRef} className={clsx([container, className])}>
+      <Box
+        className={relativeWrapper}
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          maxHeight: _maxHeight,
+        }}
+      >
+        <Box
+          className={absoluteWrapper}
+          style={{
+            transform: `translateY(${
+              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
+            }px)`,
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+            <Box
+              key={virtualItem.key}
+              data-index={virtualItem.index}
+              ref={rowVirtualizer.measureElement}
+            >
+              {itemContent(virtualItem.index, data[virtualItem.index])}
+            </Box>
+          ))}
+        </Box>
+      </Box>
     </Box>
   );
-}
+};
 
-export const VirtualList = forwardRef(_VirtualList);
-
-export const GroupedVirtualList = <ItemData = unknown, Context = unknown>({
-  data,
-  style,
+export const GroupedVirtualList = ({
+  itemContent,
+  groupContent,
+  increaseViewportBy,
+  groupCounts,
   className,
   maxHeight = 600,
-  ...props
-}: GroupedVirtuosoProps<ItemData, Context> & {
+  estimateSize,
+}: {
+  itemContent: (index: number, groupIndex: number) => React.ReactNode;
+  groupContent: (index: number) => React.ReactNode;
+  increaseViewportBy?: { bottom: number; top: number };
+  groupCounts: number[];
+  className?: BoxProps["className"];
   maxHeight?: number;
-  itemContent: (index: number, groupIndex: number) => ReactNode;
-  groupContent: (index: number) => ReactNode;
-  data: ItemData[] | undefined;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
 }) => {
+  const innerRef = useRef<HTMLDivElement>(null);
+
   const isTabletOrBigger = useIsTabletOrBigger();
+  const observeElementRect = useObserveElementRect();
 
-  const hasMoreThan10Items = data && data.length > 10;
+  const rowVirtualizer = useVirtualizer({
+    count: groupCounts.reduce(
+      (acc, numChildren) => acc + numChildren,
+      groupCounts.length
+    ),
+    getScrollElement: () => innerRef.current,
+    estimateSize,
+    overscan: 10,
+    paddingStart: increaseViewportBy?.top,
+    paddingEnd: increaseViewportBy?.bottom,
+    ...(observeElementRect && { observeElementRect }),
+  });
 
-  const height = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+  type ParentResult = {
+    type: "parent";
+    index: number;
+  };
 
-  return hasMoreThan10Items ? (
-    <GroupedVirtuoso
-      style={{ ...style, height }}
-      className={clsx([hideScrollbar, className])}
-      increaseViewportBy={300}
-      {...props}
-    />
-  ) : (
-    <Box
-      className={clsx([hideScrollbar, container, className])}
-      style={{
-        ...style,
-        ...(isTabletOrBigger ? { maxHeight } : { height: "max(65vh, 500px)" }),
-      }}
-    >
-      {
-        props.groupCounts?.reduce(
-          (acc, next, groupIndex) => {
-            const Content = (
-              <Fragment key={`group-${groupIndex}`}>
-                {props.groupContent(groupIndex)}
+  type ChildResult = {
+    type: "child";
+    index: number;
+    parentIndex: number;
+  };
 
-                {Array.from({ length: next }).map((_, i) => {
-                  return (
-                    <Fragment key={`item-${acc.currIdx}-${i}`}>
-                      {props.itemContent(acc.currIdx + i, groupIndex)}
-                    </Fragment>
-                  );
-                })}
-              </Fragment>
+  type ResultsArray = ParentResult | ChildResult;
+
+  const { resultArray } = useMemo(
+    () =>
+      groupCounts.reduce(
+        (acc, numChildren, parentIndex) => {
+          acc.resultArray.push({ type: "parent", index: parentIndex });
+
+          acc.resultArray.push(
+            ...Array.from(
+              { length: numChildren },
+              (_, i) =>
+                ({
+                  type: "child",
+                  index: acc.childIndex + i,
+                  parentIndex: parentIndex,
+                }) satisfies ChildResult
+            )
+          );
+
+          acc.childIndex += numChildren;
+
+          return acc;
+        },
+        { resultArray: [] as ResultsArray[], childIndex: 0 }
+      ),
+    [groupCounts]
+  );
+
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+
+  return (
+    <Box ref={innerRef} className={clsx([container, className])}>
+      <Box
+        className={relativeWrapper}
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          maxHeight: _maxHeight,
+        }}
+      >
+        <Box
+          className={absoluteWrapper}
+          style={{
+            transform: `translateY(${
+              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
+            }px)`,
+          }}
+        >
+          {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+            const item = resultArray[virtualItem.index];
+            const type = item.type;
+
+            return (
+              <Box
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualItem.index}
+                key={virtualItem.index}
+              >
+                {type === "child"
+                  ? itemContent(item.index, item.parentIndex)
+                  : groupContent(item.index)}
+              </Box>
             );
-
-            return {
-              items: [...acc.items, Content],
-              currIdx: acc.currIdx + next,
-            };
-          },
-          { items: [], currIdx: 0 } as {
-            items: ReactNode[];
-            currIdx: number;
-          }
-        ).items
-      }
+          })}
+        </Box>
+      </Box>
     </Box>
   );
 };
