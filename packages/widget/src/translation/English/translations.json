@@ -48,7 +48,7 @@
     },
 
     "rewards": {
-      "receive": "You'll receive <span0>{{symbol}}</span0> via",
+      "receive": "You'll receive <symbols1></symbols1> via",
       "yearly": "Estimated Yearly Earnings",
       "monthly": "Estimated Monthly Earnings"
     },
@@ -139,7 +139,7 @@
     "opportunity_search_title": "Select a yield",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
-    "reward_token": "You'll receive {{symbol}} <highlight0>via {{providerName}}</highlight0>",
+    "reward_token": "You'll receive <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tab_earn": "Earn",
     "tab_positions": "Positions",
     "validators_preferred": "Preferred",

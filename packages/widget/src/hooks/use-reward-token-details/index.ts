@@ -1,3 +1,4 @@
+import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import type { ExtraData } from "@sk-widget/pages/details/earn-page/state/types";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -15,7 +16,8 @@ export const useRewardTokenDetails = (
         )
         .map(({ p, rt }) => ({
           logoUri: p.logoURI ?? null,
-          symbol: rt.map((t) => t.symbol).join(", ") ?? null,
+          rewardTokens: rt,
+          symbols: getRewardTokenSymbols(rt),
           providerName: p.name ?? null,
         })),
     [yieldOpportunity]
