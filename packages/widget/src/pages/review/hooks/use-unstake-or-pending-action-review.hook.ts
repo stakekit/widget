@@ -1,4 +1,5 @@
 import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import type { ActionTypes } from "@stakekit/api-hooks";
@@ -88,20 +89,23 @@ export const useUnstakeOrPendingActionReview = () => {
     .chainNullable((v) =>
       v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
     )
-    .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
+    .map((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,
         providerName: v.provider.name,
-        symbol: v.rest.token.symbol,
-      });
+        symbols: getRewardTokenSymbols([v.rest.token]),
+        rewardTokens: [v.rest.token],
+      }) satisfies ComponentProps<typeof RewardTokenDetails>["rewardToken"];
 
-      return pendingActionMatch
-        ? {
-            type: "pendingAction",
-            pendingAction: pendingActionType.extract()!,
-            rewardToken,
-          }
-        : { type: "unstake", rewardToken };
+      return (
+        pendingActionMatch
+          ? {
+              type: "pendingAction",
+              pendingAction: pendingActionType.extract()!,
+              rewardToken,
+            }
+          : { type: "unstake", rewardToken }
+      ) satisfies ComponentProps<typeof RewardTokenDetails>;
     });
 
   const onClickRef = useSavedRef(onClick);
@@ -122,22 +126,6 @@ export const useUnstakeOrPendingActionReview = () => {
     ? pendingActionData.isGasCheckError
     : stakeExitData.isGasCheckError;
 
-  // const { variant } = useSettings();
-
-  // const metaInfo: MetaInfoProps = useMemo(
-  //   () =>
-  //     variant === "zerion"
-  //       ? {
-  //           showMetaInfo: true,
-  //           metaInfoProps: {
-  //             selectedStake: integrationData,
-  //             selectedToken: token,
-  //             selectedValidators: new Map(),
-  //           },
-  //         }
-  //       : { showMetaInfo: false },
-  //   [integrationData, token, variant]
-  // );
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
   return {

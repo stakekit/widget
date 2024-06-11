@@ -89,7 +89,7 @@ describe("Staking flow", () => {
     ).result.current.unsafeCoerce();
 
     expect(
-      getByText(`You'll receive ${rewardTokenDetails.symbol}`)
+      getByText(`You'll receive ${rewardTokenDetails.rewardTokens[0].symbol}`)
     ).toBeInTheDocument();
 
     expect(getByText("Stake")).toBeInTheDocument();
