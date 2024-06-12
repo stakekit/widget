@@ -1,8 +1,13 @@
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
+import { useStakeExitRequestDto } from "@sk-widget/pages/position-details/hooks/use-stake-exit-request-dto";
+import {
+  useExitStakeRequestDto,
+  useExitStakeRequestDtoDispatch,
+} from "@sk-widget/providers/exit-stake-request-dto";
 import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { equalTokens, getTokenPriceInUSD } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
@@ -14,7 +19,6 @@ import {
   useUnstakeOrPendingActionState,
 } from "../state";
 import { usePendingActions } from "./use-pending-actions";
-import { useUnstakeMachine } from "./use-unstake-machine";
 
 export const usePositionDetails = () => {
   const {
@@ -31,7 +35,32 @@ export const usePositionDetails = () => {
     canChangeUnstakeAmount,
   } = useUnstakeOrPendingActionState();
 
-  const { stakeExitSession } = useStakeExitData();
+  const navigate = useNavigate();
+
+  const stakeExitRequestDto = useStakeExitRequestDto();
+  const setExitDto = useExitStakeRequestDtoDispatch();
+  const exitDto = useExitStakeRequestDto();
+
+  const onUnstakeClick = () => {
+    Maybe.fromRecord({
+      stakeExitRequestDto,
+      integrationData,
+      unstakeToken,
+    }).ifJust((val) => {
+      setExitDto({
+        ...val.stakeExitRequestDto,
+        unstakeAmount,
+        integrationData: val.integrationData,
+        unstakeToken: val.unstakeToken,
+      });
+    });
+  };
+
+  useUpdateEffect(() => {
+    if (exitDto) {
+      navigate("unstake/review");
+    }
+  }, [exitDto]);
 
   const dispatch = useUnstakeOrPendingActionDispatch();
 
@@ -98,33 +127,6 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
   } = usePendingActions();
 
-  const [machine, send] = useUnstakeMachine();
-
-  const navigate = useNavigate();
-
-  const unstakeIsLoading =
-    machine.value === "unstakeCheck" ||
-    machine.value === "unstakeGetVerificationMessageLoading" ||
-    machine.value === "unstakeSignMessageLoading" ||
-    machine.value === "unstakeLoading";
-
-  const onUnstakeClick = () => {
-    if (unstakeIsLoading) return;
-
-    send("UNSTAKE");
-  };
-
-  useEffect(() => {
-    if (machine.value === "unstakeDone" && stakeExitSession.isJust()) {
-      navigate("unstake/review");
-    }
-  }, [machine.value, navigate, stakeExitSession]);
-
-  const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
-  const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
-
-  const showUnstakeSignMessagePopup = machine.value === "unstakeShowPopup";
-
   const liquidTokensToNativeConversion = useMemo(
     () =>
       Maybe.fromRecord({
@@ -157,7 +159,6 @@ export const usePositionDetails = () => {
 
   const unstakeDisabled =
     !unstakeAmountValid ||
-    unstakeIsLoading ||
     onPendingAction.isPending ||
     yieldOpportunity.isLoading ||
     !unstakeAvailable;
@@ -178,12 +179,8 @@ export const usePositionDetails = () => {
     onMaxClick,
     canChangeUnstakeAmount,
     onUnstakeClick,
-    onContinueUnstakeSignMessage,
-    onCloseUnstakeSignMessage,
-    showUnstakeSignMessagePopup,
     unstakeDisabled,
     isLoading,
-    unstakeIsLoading,
     onPendingActionClick,
     providersDetails,
     pendingActions,

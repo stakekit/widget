@@ -1,3 +1,7 @@
+import {
+  usePendingStakeRequestDto,
+  usePendingStakeRequestDtoDispatch,
+} from "@sk-widget/providers/pending-stake-request-dto";
 import type {
   PendingActionDto,
   ValidatorDto,
@@ -14,7 +18,6 @@ import {
   getTokenPriceInUSD,
 } from "../../../domain";
 import { useSavedRef } from "../../../hooks";
-import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
@@ -41,10 +44,6 @@ export const usePendingActions = () => {
   } = useUnstakeOrPendingActionState();
 
   const baseToken = useBaseToken(integrationData);
-
-  const pendingActionSelectValidatorMatchRef = useSavedRef(
-    usePendingActionSelectValidatorMatch()
-  );
 
   const pendingActionDispatch = useUnstakeOrPendingActionDispatch();
 
@@ -162,6 +161,9 @@ export const usePendingActions = () => {
       });
   }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
 
+  const setPendingDto = usePendingStakeRequestDtoDispatch();
+  const pendingDto = usePendingStakeRequestDto();
+
   const onPendingActionClick = ({
     yieldBalance,
     pendingActionDto,
@@ -173,7 +175,6 @@ export const usePendingActions = () => {
       yieldId: integrationData.map((v) => v.id).extract(),
       type: pendingActionDto.type,
     });
-
     if (
       PAMultiValidatorsRequired(pendingActionDto) ||
       PASingleValidatorRequired(pendingActionDto)
@@ -260,9 +261,9 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) =>
-      onPendingAction.mutate({
-        pendingActionRequestDto: val,
-        yieldBalance,
+      setPendingDto({
+        ...val,
+        pendingActionType,
         pendingActionData: {
           integrationData: integrationData,
           interactedToken: yieldBalance.token,
@@ -272,12 +273,16 @@ export const usePendingActions = () => {
   };
 
   useUpdateEffect(() => {
-    if (onPendingAction.isSuccess && onPendingAction.data) {
-      pendingActionSelectValidatorMatchRef.current
-        ? navigate("../pending-action/review", { relative: "route" })
-        : navigate("pending-action/review");
+    if (pendingDto) {
+      navigate("pending-action/review", { relative: "route" });
+      // navigate("../pending-action/review", { relative: "route" });
     }
-  }, [onPendingAction.isSuccess, onPendingAction.data]);
+    // if (onPendingAction.isSuccess && onPendingAction.data) {
+    //   pendingActionSelectValidatorMatchRef.current
+    //     ? navigate("../pending-action/review", { relative: "route" })
+    //     : navigate("pending-action/review");
+    // }
+  }, [pendingDto]);
 
   return {
     onPendingActionAmountChange,

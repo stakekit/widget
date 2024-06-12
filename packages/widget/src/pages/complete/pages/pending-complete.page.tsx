@@ -1,34 +1,31 @@
 import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
 import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
-export const UnstakeOrPendingActionCompletePage = () => {
+export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
   const positionBalances = usePositionBalances({
     balanceId: plain.balanceId,
     integrationId: plain.integrationId,
   });
 
-  const pendingActionMatch = usePendingActionMatch();
+  const { pendingActionData, amount, pendingActionType } =
+    usePendingActionData();
 
-  const stakeExitData = useStakeExitData();
-  const pendingActionData = usePendingActionData();
-
-  const integrationData = pendingActionMatch
-    ? pendingActionData.pendingActionData.map((val) => val.integrationData)
-    : stakeExitData.stakeExitData.map((val) => val.integrationData);
-
-  useTrackPage(
-    pendingActionMatch ? "pendingActionCompelete" : "unstakeCompelete"
+  const integrationData = Maybe.of(pendingActionData).map(
+    (val) => val.integrationData
   );
+
+  const token = Maybe.of(pendingActionData).map((val) => val.interactedToken);
+
+  useTrackPage("pendingActionCompelete");
 
   const providerDetails = useProvidersDetails({
     integrationData,
@@ -37,23 +34,16 @@ export const UnstakeOrPendingActionCompletePage = () => {
     ),
   });
 
-  const token = pendingActionMatch
-    ? pendingActionData.pendingActionData.map((val) => val.interactedToken)
-    : stakeExitData.stakeExitData.map((val) => val.interactedToken);
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
-  const amount = useMemo(
-    () =>
-      (pendingActionMatch
-        ? pendingActionData.amount
-        : stakeExitData.amount
-      ).mapOrDefault((v) => formatNumber(v), ""),
-    [pendingActionData.amount, pendingActionMatch, stakeExitData.amount]
+  const _amount = useMemo(
+    () => amount.mapOrDefault((v) => formatNumber(v), ""),
+    [amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);
 
-  const pendingActionType = pendingActionData.pendingActionType.extract();
+  const _pendingActionType = pendingActionType.extract();
 
   return (
     <CompletePage
@@ -62,8 +52,8 @@ export const UnstakeOrPendingActionCompletePage = () => {
       token={token}
       metadata={metadata}
       network={network}
-      amount={amount}
-      pendingActionType={pendingActionType}
+      amount={_amount}
+      pendingActionType={_pendingActionType}
     />
   );
 };

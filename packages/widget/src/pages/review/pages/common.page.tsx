@@ -1,3 +1,4 @@
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "framer-motion";
 import { Maybe } from "purify-ts";
@@ -8,7 +9,7 @@ import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading, Text } from "../../../components/atoms/typography";
 import { WarningBox } from "../../../components/atoms/warning-box";
-import { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
@@ -28,6 +29,7 @@ type ReviewPageProps = {
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
+  loading?: boolean;
 } & MetaInfoProps;
 
 export const ReviewPage = ({
@@ -38,6 +40,7 @@ export const ReviewPage = ({
   info,
   rewardTokenDetailsProps,
   isGasCheckError,
+  loading = false,
   ...rest
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
@@ -94,7 +97,7 @@ export const ReviewPage = ({
 
         <Divider />
 
-        {rewardTokenDetailsProps
+        {/* {rewardTokenDetailsProps
           .chain((val) =>
             val.rewardToken.map(() => (
               <>
@@ -106,7 +109,7 @@ export const ReviewPage = ({
               </>
             ))
           )
-          .extractNullable()}
+          .extractNullable()} */}
 
         <Box
           display="flex"
@@ -128,12 +131,18 @@ export const ReviewPage = ({
           <Text variant={{ weight: "normal", type: "muted" }}>
             {t("review.estimated_gas_fee")}
           </Text>
-          <Text
-            className={feeStyles}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {fee}
-          </Text>
+          {loading ? (
+            <Box width="40">
+              <ContentLoaderSquare heightPx={16} variant={{ size: "medium" }} />
+            </Box>
+          ) : (
+            <Text
+              className={feeStyles}
+              variant={{ type: "muted", weight: "normal" }}
+            >
+              {fee}
+            </Text>
+          )}
         </Box>
 
         {isGasCheckError && (

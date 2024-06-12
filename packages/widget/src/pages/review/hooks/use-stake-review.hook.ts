@@ -1,26 +1,14 @@
-import {
-  GasTokenMissingError,
-  NotEnoughGasTokenError,
-  checkGasAmount,
-} from "@sk-widget/common/check-gas-amount";
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import {
-  useEnterStakeRequestDto,
-  useEnterStakeRequestDtoDispatch,
-} from "@sk-widget/providers/enter-stake-request-dto";
+import { useEnterStakeRequestDtoDispatch } from "@sk-widget/providers/enter-stake-request-dto";
 import { useSettings } from "@sk-widget/providers/settings";
-import {
-  useActionEnterGasEstimation,
-  useActionEnterHook,
-  useTokenGetTokenBalancesHook,
-} from "@stakekit/api-hooks";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useActionEnterHook } from "@stakekit/api-hooks";
+import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
-import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSavedRef, useTokensPrices } from "../../../hooks";
@@ -32,64 +20,16 @@ import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useStakeReview = () => {
-  const enterRequest = useEnterStakeRequestDto();
-
-  const enterRequestDto = useMemo(
-    () => Maybe.fromNullable(enterRequest).unsafeCoerce(),
-    [enterRequest]
-  );
-
-  const { data } = useActionEnterGasEstimation(enterRequestDto.dto);
-
-  const stakeEnterTxGas = Maybe.fromNullable(data?.amount).map(
-    (val) => new BigNumber(val)
-  );
-  const selectedStake = Maybe.of(enterRequestDto.selectedStake);
-  const selectedValidators = enterRequestDto.selectedValidators;
-  const selectedToken = Maybe.of(enterRequestDto.selectedToken);
-
-  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
-
-  const { data: isGasCheckError } = useQuery({
-    queryKey: [
-      "gas-check",
-      stakeEnterTxGas.mapOrDefault((v) => v.toString(), ""),
-    ],
-    enabled: stakeEnterTxGas.isJust(),
-    staleTime: 0,
-    queryFn: async () => {
-      return (
-        await EitherAsync.liftEither(
-          stakeEnterTxGas.toEither(new Error("No gas amount"))
-        ).chain((val) =>
-          checkGasAmount({
-            gasEstimate: {
-              amount: val,
-              token: enterRequestDto.gasFeeToken,
-            },
-            addressWithTokenDto: {
-              address: enterRequestDto.dto.addresses.address,
-              network: enterRequestDto.gasFeeToken.network,
-            },
-            tokenGetTokenBalances,
-            isStake: true,
-            stakeAmount: new BigNumber(enterRequestDto.dto.args.amount),
-            stakeToken: enterRequestDto.selectedToken,
-          })
-        )
-      )
-        .map(
-          (val) =>
-            val instanceof NotEnoughGasTokenError ||
-            val instanceof GasTokenMissingError
-        )
-        .unsafeCoerce();
-    },
-  });
-
-  const stakeAmount = useMemo(() => {
-    return new BigNumber(enterRequestDto.dto.args.amount);
-  }, [enterRequestDto]);
+  const {
+    selectedStake,
+    selectedValidators,
+    selectedToken,
+    stakeEnterTxGas,
+    stakeAmount,
+    enterRequestDto,
+    isGasCheckError,
+    gasEstimatePending,
+  } = useStakeEnterData();
 
   const rewardToken = useRewardTokenDetails(selectedStake);
   const estimatedRewards = useEstimatedRewards({
@@ -129,9 +69,7 @@ export const useStakeReview = () => {
   const actionEnter = useActionEnterHook();
   const setEnterDto = useEnterStakeRequestDtoDispatch();
 
-  const [loading, setLoading] = useState(false);
-
-  const mut = useMutation({
+  const enterMutation = useMutation({
     mutationFn: async () => {
       return (
         await withRequestErrorRetry({
@@ -158,22 +96,16 @@ export const useStakeReview = () => {
   });
 
   const onClick = async () => {
-    setLoading(true);
-    const t = await mut.mutateAsync();
-    Maybe.fromNullable(t).map((val) => {
-      setEnterDto((prev) => ({ ...prev, val }));
-      setLoading(false);
-      navigate("/steps");
+    const mutate = await enterMutation.mutateAsync();
+    Maybe.fromNullable(mutate).map((val) => {
+      // CHECK THIS => prev && { ...prev, val }
+      setEnterDto((prev) => prev && { ...prev, actionDto: val });
     });
-    console.log({ t });
   };
 
   useEffect(() => {
-    const something = false;
-    if (something) {
-      navigate("/steps");
-    }
-  }, [navigate]);
+    enterMutation.isSuccess && navigate("/steps");
+  }, [enterMutation.isSuccess, navigate]);
 
   const onClickRef = useSavedRef(onClick);
 
@@ -183,11 +115,11 @@ export const useStakeReview = () => {
     useMemo(
       () => ({
         disabled: false,
-        isLoading: loading,
+        isLoading: enterMutation.isPending,
         label: t("shared.confirm"),
         onClick: () => onClickRef.current(),
       }),
-      [onClickRef, t, loading]
+      [onClickRef, t, enterMutation.isPending]
     )
   );
 
@@ -211,14 +143,14 @@ export const useStakeReview = () => {
   return {
     token: selectedToken,
     amount,
-    isGasCheckError: !!isGasCheckError,
+    isGasCheckError,
     fee,
     interestRate,
     yieldType,
     rewardToken,
     metadata,
     metaInfo,
-    loading: true,
+    gasEstimatePending,
   };
 };
 

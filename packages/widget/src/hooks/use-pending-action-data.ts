@@ -1,56 +1,81 @@
-import { usePendingActionAndTxsConstruct } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
+import {
+  GasTokenMissingError,
+  NotEnoughGasTokenError,
+  checkGasAmount,
+} from "@sk-widget/common/check-gas-amount";
+import { usePendingStakeRequestDto } from "@sk-widget/providers/pending-stake-request-dto";
+import {
+  useActionPendingGasEstimate,
+  useTokenGetTokenBalancesHook,
+} from "@stakekit/api-hooks";
+import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const usePendingActionData = () => {
-  const pendingActionAndTxsConstructMutationState =
-    usePendingActionAndTxsConstruct();
+  const pendingRequest = usePendingStakeRequestDto();
+  const pendingRequestDto = useMemo(
+    () => Maybe.fromNullable(pendingRequest).unsafeCoerce(),
+    [pendingRequest]
+  );
+  const { data, isFetching } = useActionPendingGasEstimate(pendingRequestDto);
 
-  const pendingActionAndTxsConstructData = useMemo(
-    () => Maybe.fromNullable(pendingActionAndTxsConstructMutationState.data),
-    [pendingActionAndTxsConstructMutationState.data]
+  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
+
+  const pendingTxGas = Maybe.fromNullable(data?.amount).map(
+    (val) => new BigNumber(val)
   );
 
-  const pendingActionSession = useMemo(
-    () => pendingActionAndTxsConstructData.map((val) => val.actionDto),
-    [pendingActionAndTxsConstructData]
-  );
-
-  const pendingActionData = useMemo(
-    () => pendingActionAndTxsConstructData.map((val) => val.pendingActionData),
-    [pendingActionAndTxsConstructData]
-  );
-
-  const pendingActionTxGas = useMemo(
-    () => pendingActionSession.map((val) => val.gasEstimate.amount),
-    [pendingActionSession]
-  );
-
-  const isGasCheckError = useMemo(
-    () =>
-      pendingActionAndTxsConstructData
-        .chainNullable((val) => val.gasCheckErr)
-        .isJust(),
-    [pendingActionAndTxsConstructData]
-  );
+  const { data: isGasCheckError, isPending } = useQuery({
+    queryKey: ["gas-check", pendingTxGas.mapOrDefault((v) => v.toString(), "")],
+    enabled: pendingTxGas.isJust(),
+    staleTime: 0,
+    queryFn: async () => {
+      return (
+        await EitherAsync.liftEither(
+          pendingTxGas.toEither(new Error("No gas amount"))
+        ).chain((val) =>
+          checkGasAmount({
+            gasEstimate: {
+              amount: val,
+              token: pendingRequestDto.gasFeeToken,
+            },
+            addressWithTokenDto: {
+              address: pendingRequestDto.address,
+              network: pendingRequestDto.gasFeeToken.network,
+            },
+            tokenGetTokenBalances,
+            isStake: false,
+          })
+        )
+      )
+        .map(
+          (val) =>
+            val instanceof NotEnoughGasTokenError ||
+            val instanceof GasTokenMissingError
+        )
+        .unsafeCoerce();
+    },
+  });
 
   const amount = useMemo(
-    () => pendingActionSession.map((val) => new BigNumber(val.amount ?? 0)),
-    [pendingActionSession]
-  );
-
-  const pendingActionType = useMemo(
-    () => pendingActionSession.map((val) => val.type),
-    [pendingActionSession]
+    () =>
+      Maybe.fromNullable(pendingRequestDto).map(
+        (val) => new BigNumber(val.args?.amount ?? 0)
+      ),
+    [pendingRequestDto]
   );
 
   return {
-    pendingActionSession,
-    pendingActionData,
-    isGasCheckError,
-    pendingActionTxGas,
+    pendingActionSession: data,
+    pendingActionData: pendingRequestDto.pendingActionData,
+    pendingActionTxGas: data?.amount,
     amount,
-    pendingActionType,
+    isGasCheckError,
+    pendingActionType: pendingRequestDto.pendingActionType,
+    gasEstimatePending: isFetching || isPending,
+    pendingTxGas,
+    pendingRequestDto,
   };
 };

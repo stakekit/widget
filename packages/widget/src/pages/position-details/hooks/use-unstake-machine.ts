@@ -1,5 +1,6 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
+import { useExitStakeRequestDto } from "@sk-widget/providers/exit-stake-request-dto";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@stakekit/api-hooks";
 import merge from "lodash.merge";
@@ -7,9 +8,7 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { useUnstakeOrPendingActionState } from "../state";
 import { useOnStakeExit } from "./use-on-stake-exit";
-import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 
 const tt = t as <T>() => {
   [$$t]: T;
@@ -17,26 +16,25 @@ const tt = t as <T>() => {
 
 export const useUnstakeMachine = () => {
   const trackEvent = useTrackEvent();
-  const stakeExitRequestDto = useStakeExitRequestDto();
+  const stakeExitRequestDto = useExitStakeRequestDto();
   const onStakeExit = useOnStakeExit();
+
+  const hackIt = Maybe.fromNullable(stakeExitRequestDto);
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
   const transactionGetTransactionVerificationMessageForNetwork =
     useTransactionGetTransactionVerificationMessageForNetworkHook();
 
-  const { unstakeAmount, integrationData, unstakeToken } =
-    useUnstakeOrPendingActionState();
-
   const initValues = useMemo(
     () =>
       Maybe.fromRecord({
-        integrationData,
-        unstakeToken,
+        integrationData: hackIt.map((val) => val.integrationData),
+        unstakeToken: hackIt.map((val) => val.unstakeToken),
         network: Maybe.fromNullable(network),
         address: Maybe.fromNullable(address),
       }),
-    [address, integrationData, network, unstakeToken]
+    [address, hackIt, network]
   );
 
   return useStateMachine({
@@ -66,7 +64,7 @@ export const useUnstakeMachine = () => {
           initValues.ifJust((val) => {
             trackEvent("unstakeClicked", {
               yieldId: val.integrationData.id,
-              amount: unstakeAmount.toString(),
+              amount: stakeExitRequestDto?.unstakeAmount.toString(),
             });
 
             if (
@@ -163,7 +161,7 @@ export const useUnstakeMachine = () => {
         },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
-            Maybe.fromRecord({ stakeExitRequestDto, initValues })
+            Maybe.fromRecord({ hackIt, initValues })
               .map((val) => {
                 if (
                   context.transactionVerificationMessageDto &&
@@ -171,7 +169,7 @@ export const useUnstakeMachine = () => {
                 ) {
                   return {
                     ...val,
-                    stakeExitRequestDto: merge(val.stakeExitRequestDto, {
+                    stakeExitRequestDto: merge(val.hackIt, {
                       dto: {
                         args: {
                           signatureVerification: {
@@ -192,7 +190,7 @@ export const useUnstakeMachine = () => {
             .chain((val) =>
               EitherAsync(() =>
                 onStakeExit.mutateAsync({
-                  stakeRequestDto: val.stakeExitRequestDto,
+                  stakeRequestDto: val.hackIt,
                   stakeExitData: {
                     integrationData: val.initValues.integrationData,
                     interactedToken: val.initValues.unstakeToken,

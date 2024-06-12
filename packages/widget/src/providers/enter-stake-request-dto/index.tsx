@@ -20,7 +20,7 @@ type State =
       selectedStake: YieldDto;
       selectedValidators: Map<string, ValidatorDto>;
       selectedToken: TokenDto;
-      val?: ActionDto;
+      actionDto?: ActionDto;
     }
   | undefined;
 
@@ -46,16 +46,8 @@ export const EnterStakeRequestDtoProvider = ({
   );
 };
 
-export const useEnterStakeRequestDto = () => {
-  const state = useContext(EnterStakeRequestDtoContext);
-
-  // if (!state) {
-  //   throw new Error(
-  //     "useEnterStakeRequestDto must be used within a EnterStakeRequestDtoProvider"
-  //   );
-  // }
-  return state;
-};
+export const useEnterStakeRequestDto = () =>
+  useContext(EnterStakeRequestDtoContext);
 
 export const useEnterStakeRequestDtoDispatch = () => {
   const dispatch = useContext(EnterStakeRequestDtoDispatchContext);

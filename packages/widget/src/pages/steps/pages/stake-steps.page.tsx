@@ -32,7 +32,7 @@ export const StakeStepsPage = () => {
 
   return (
     <StepsPage
-      session={Maybe.fromNullable(state?.val)}
+      session={Maybe.fromNullable(state?.actionDto)}
       onSignSuccess={onSignSuccess}
     />
   );
