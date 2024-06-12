@@ -104,13 +104,13 @@ export const AnimatedContent = ({
   const { showCopySuccess, onClick } = useCopyText();
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
-        key={showCopySuccess ? "copy" : "check"}
+        key={showCopySuccess ? "check" : "copy"}
         whileTap={{ scale: showCopySuccess ? 1 : 0.9 }}
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1, transition: { duration: 0.1 } }}
-        exit={{ opacity: 0, transition: { duration: 0.1 } }}
+        animate={{ opacity: 1, transition: { duration: 0.3 } }}
+        exit={{ opacity: 0, transition: { duration: 0 } }}
         className={className}
       >
         {/* Workaround to animate with previous state */}

@@ -34,7 +34,7 @@
     "formatter": {
       "semicolons": "always",
       "arrowParentheses": "always",
-      "trailingComma": "es5"
+      "trailingCommas": "es5"
     }
   }
 }

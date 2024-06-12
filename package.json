@@ -22,8 +22,8 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "husky": "^9.0.11",
-    "knip": "^5.16.0",
-    "turbo": "^1.13.4"
+    "knip": "^5.18.2",
+    "turbo": "^2.0.3"
   },
   "packageManager": "yarn@4.2.2",
   "resolutions": {

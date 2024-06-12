@@ -7,24 +7,28 @@ import type {
 import { useYieldFindValidators } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createSelector } from "reselect";
 import { importValidator } from "../../../../common/import-validator";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
-import { useDebounce } from "../../../../hooks/use-debounce";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const usePositions = () => {
-  const { data, ...rest } = usePositionsData();
+  const _positionsData = usePositionsData();
+  const positionsDataMapped = useMemo(
+    () => positionsTableDataSelector(_positionsData.data),
+    [_positionsData.data]
+  );
+
+  const positionsData = { ..._positionsData, data: positionsDataMapped };
 
   const { network, address, isConnected } = useSKWallet();
 
   const [validatorAddressOrName, setValidatorAddressOrName] = useState("");
-  const debouncedValidatorAddressOrName = useDebounce(
-    validatorAddressOrName,
-    500
+  const debouncedValidatorAddressOrName = useDeferredValue(
+    validatorAddressOrName
   );
 
   const onValidatorAddressOrNameChange = (validatorAddress: string) => {
@@ -88,11 +92,6 @@ export const usePositions = () => {
     onClose: () => setValidatorAddressOrName(""),
     onImportValidatorImport,
   };
-
-  const positionsData = useMemo(
-    () => ({ ...rest, data: positionsTableDataSelector(data) }),
-    [data, rest]
-  );
 
   const showPositions =
     isConnected &&
