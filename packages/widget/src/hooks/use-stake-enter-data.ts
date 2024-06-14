@@ -1,16 +1,8 @@
-import {
-  GasTokenMissingError,
-  NotEnoughGasTokenError,
-  checkGasAmount,
-} from "@sk-widget/common/check-gas-amount";
+import { useGasCheck } from "@sk-widget/hooks/use-gas-check";
 import { useEnterStakeRequestDto } from "@sk-widget/providers/enter-stake-request-dto";
-import {
-  useActionEnterGasEstimation,
-  useTokenGetTokenBalancesHook,
-} from "@stakekit/api-hooks";
-import { useQuery } from "@tanstack/react-query";
+import { useActionEnterGasEstimation } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const useStakeEnterData = () => {
@@ -35,43 +27,14 @@ export const useStakeEnterData = () => {
     return new BigNumber(enterRequestDto.dto.args.amount);
   }, [enterRequestDto]);
 
-  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
-
-  const { data: isGasCheckError, isPending } = useQuery({
-    queryKey: [
-      "gas-check",
-      stakeEnterTxGas.mapOrDefault((v) => v.toString(), ""),
-    ],
-    enabled: stakeEnterTxGas.isJust(),
-    staleTime: 0,
-    queryFn: async () => {
-      return (
-        await EitherAsync.liftEither(
-          stakeEnterTxGas.toEither(new Error("No gas amount"))
-        ).chain((val) =>
-          checkGasAmount({
-            gasEstimate: {
-              amount: val,
-              token: enterRequestDto.gasFeeToken,
-            },
-            addressWithTokenDto: {
-              address: enterRequestDto.dto.addresses.address,
-              network: enterRequestDto.gasFeeToken.network,
-            },
-            tokenGetTokenBalances,
-            isStake: true,
-            stakeAmount: new BigNumber(enterRequestDto.dto.args.amount),
-            stakeToken: enterRequestDto.selectedToken,
-          })
-        )
-      )
-        .map(
-          (val) =>
-            val instanceof NotEnoughGasTokenError ||
-            val instanceof GasTokenMissingError
-        )
-        .unsafeCoerce();
-    },
+  const { data: isGasCheckError, isPending } = useGasCheck({
+    gasAmount: stakeEnterTxGas,
+    token: enterRequestDto.gasFeeToken,
+    address: enterRequestDto.dto.addresses.address,
+    network: enterRequestDto.gasFeeToken.network,
+    isStake: true,
+    stakeAmount,
+    stakeToken: enterRequestDto.selectedToken,
   });
 
   return {

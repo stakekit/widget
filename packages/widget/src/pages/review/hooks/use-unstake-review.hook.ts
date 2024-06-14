@@ -115,6 +115,7 @@ export const useUnstakeActionReview = () => {
     .chainNullable((v) =>
       v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
     )
+    // @ts-ignore CHECK THIS
     .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,

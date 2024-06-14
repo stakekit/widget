@@ -1,3 +1,4 @@
+import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
 import {
   usePendingStakeRequestDto,
   usePendingStakeRequestDtoDispatch,
@@ -263,6 +264,7 @@ export const usePendingActions = () => {
     }).ifRight((val) =>
       setPendingDto({
         ...val,
+        address,
         pendingActionType,
         pendingActionData: {
           integrationData: integrationData,
@@ -271,17 +273,15 @@ export const usePendingActions = () => {
       })
     );
   };
-
+  const pendingActionSelectValidatorMatchRef = useSavedRef(
+    usePendingActionSelectValidatorMatch()
+  );
   useUpdateEffect(() => {
     if (pendingDto) {
-      navigate("pending-action/review", { relative: "route" });
-      // navigate("../pending-action/review", { relative: "route" });
+      pendingActionSelectValidatorMatchRef.current
+        ? navigate("../pending-action/review", { relative: "route" })
+        : navigate("pending-action/review");
     }
-    // if (onPendingAction.isSuccess && onPendingAction.data) {
-    //   pendingActionSelectValidatorMatchRef.current
-    //     ? navigate("../pending-action/review", { relative: "route" })
-    //     : navigate("pending-action/review");
-    // }
   }, [pendingDto]);
 
   return {

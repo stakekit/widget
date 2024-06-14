@@ -1,7 +1,7 @@
 import type {
   ActionDto,
   ActionTypes,
-  AddressWithTokenDtoAdditionalAddresses,
+  AddressesDto,
   PendingActionRequestDto,
   TokenDto,
   YieldDto,
@@ -17,16 +17,13 @@ import {
 
 type State =
   | ({
+      address: AddressesDto["address"] | null;
       pendingActionType: Maybe<ActionTypes>;
       pendingActionData: {
         integrationData: YieldDto;
         interactedToken: TokenDto;
       };
       gasFeeToken: TokenDto;
-      address: string;
-      additionalAddresses:
-        | NonNullable<AddressWithTokenDtoAdditionalAddresses | null>
-        | undefined;
       actionDto?: ActionDto;
     } & PendingActionRequestDto)
   | undefined;

@@ -101,6 +101,7 @@ export const usePendingActionReview = () => {
     .chainNullable((v) =>
       v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
     )
+
     .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,
