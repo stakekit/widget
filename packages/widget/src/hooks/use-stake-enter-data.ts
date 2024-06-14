@@ -9,7 +9,8 @@ export const useStakeEnterData = () => {
   const enterRequest = useEnterStakeState().unsafeCoerce();
 
   const actionEnterGasEstimation = useActionEnterGasEstimation(
-    enterRequest.requestDto
+    enterRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
   );
 
   const stakeEnterTxGas = useMemo(

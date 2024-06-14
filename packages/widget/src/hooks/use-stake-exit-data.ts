@@ -9,7 +9,8 @@ export const useStakeExitData = () => {
   const exitRequest = useExitStakeState().unsafeCoerce();
 
   const actionExitGasEstimate = useActionExitGasEstimate(
-    exitRequest.requestDto
+    exitRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
   );
 
   const stakeExitTxGas = useMemo(

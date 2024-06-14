@@ -9,7 +9,8 @@ export const usePendingActionData = () => {
   const pendingRequest = usePendingActionState().unsafeCoerce();
 
   const actionPendingGasEstimate = useActionPendingGasEstimate(
-    pendingRequest.requestDto
+    pendingRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
   );
 
   const pendingTxGas = useMemo(
