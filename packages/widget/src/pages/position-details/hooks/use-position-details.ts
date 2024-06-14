@@ -1,5 +1,6 @@
 import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import type { TokenDto } from "@stakekit/api-hooks";
+import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useEffect, useMemo } from "react";
@@ -108,11 +109,17 @@ export const usePositionDetails = () => {
     machine.value === "unstakeSignMessageLoading" ||
     machine.value === "unstakeLoading";
 
-  const onUnstakeClick = () => {
-    if (unstakeIsLoading) return;
+  const onClickHandler = useMutation({
+    mutationFn: async () => {
+      if (unstakeIsLoading || !unstakeAmountValid) return;
+      send("UNSTAKE");
+    },
+  });
 
-    send("UNSTAKE");
-  };
+  const onUnstakeClick = onClickHandler.mutate;
+
+  const _unstakeAmountError =
+    (unstakeAmount.isZero() && !onClickHandler.isIdle) || unstakeAmountError;
 
   useEffect(() => {
     if (machine.value === "unstakeDone" && stakeExitSession.isJust()) {
@@ -156,7 +163,6 @@ export const usePositionDetails = () => {
   );
 
   const unstakeDisabled =
-    !unstakeAmountValid ||
     unstakeIsLoading ||
     onPendingAction.isPending ||
     yieldOpportunity.isLoading ||
@@ -192,6 +198,6 @@ export const usePositionDetails = () => {
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
-    unstakeAmountError,
+    unstakeAmountError: _unstakeAmountError,
   };
 };
