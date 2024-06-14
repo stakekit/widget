@@ -1,8 +1,8 @@
 import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
 import {
-  usePendingStakeRequestDto,
-  usePendingStakeRequestDtoDispatch,
-} from "@sk-widget/providers/pending-stake-request-dto";
+  usePendingActionDispatch,
+  usePendingActionState,
+} from "@sk-widget/providers/pending-action-state";
 import type {
   PendingActionDto,
   ValidatorDto,
@@ -30,7 +30,6 @@ import {
 } from "../state";
 import type { PendingActionAmountChange } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
-import { useOnPendingAction } from "./use-on-pending-action";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
 import { preparePendingActionRequestDto } from "./utils";
 
@@ -51,8 +50,6 @@ export const usePendingActions = () => {
   const trackEvent = useTrackEvent();
 
   const navigate = useNavigate();
-
-  const onPendingAction = useOnPendingAction();
 
   const pendingActions = useMemo(
     () =>
@@ -97,21 +94,12 @@ export const usePendingActions = () => {
                 formattedAmount,
                 pendingActionDto: pa,
                 yieldBalance: balance,
-                isLoading:
-                  onPendingAction.variables?.pendingActionRequestDto
-                    .passthrough === pa.passthrough &&
-                  onPendingAction.variables?.pendingActionRequestDto.type ===
-                    pa.type &&
-                  onPendingAction.isPending,
               };
             })
           )
         )
       ),
     [
-      onPendingAction.isPending,
-      onPendingAction.variables?.pendingActionRequestDto.passthrough,
-      onPendingAction.variables?.pendingActionRequestDto.type,
       pendingActionsState,
       positionBalancePrices.data,
       positionBalancesByType,
@@ -162,8 +150,8 @@ export const usePendingActions = () => {
       });
   }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
 
-  const setPendingDto = usePendingStakeRequestDtoDispatch();
-  const pendingDto = usePendingStakeRequestDto();
+  const pendignActionRequestDispatch = usePendingActionDispatch();
+  const pendingActionRequestState = usePendingActionState();
 
   const onPendingActionClick = ({
     yieldBalance,
@@ -262,32 +250,39 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) =>
-      setPendingDto({
-        ...val,
-        pendingActionType,
-        pendingActionData: {
-          integrationData: integrationData,
+      pendignActionRequestDispatch(
+        Maybe.of({
+          actionDto: Maybe.empty(),
+          gasFeeToken: val.gasFeeToken,
+          integrationData: val.integrationData,
           interactedToken: yieldBalance.token,
-        },
-      })
+          pendingActionType: pendingActionDto.type,
+          requestDto: val.requestDto,
+          addresses: {
+            address: val.address,
+            additionalAddresses: val.additionalAddresses,
+          },
+        })
+      )
     );
   };
+
   const pendingActionSelectValidatorMatchRef = useSavedRef(
     usePendingActionSelectValidatorMatch()
   );
+
   useUpdateEffect(() => {
-    if (pendingDto) {
+    if (pendingActionRequestState.isJust()) {
       pendingActionSelectValidatorMatchRef.current
         ? navigate("../pending-action/review", { relative: "route" })
         : navigate("pending-action/review");
     }
-  }, [pendingDto]);
+  }, [pendingActionRequestState]);
 
   return {
     onPendingActionAmountChange,
     validatorAddressesHandling,
     pendingActions,
-    onPendingAction,
     onPendingActionClick,
     onValidatorsSubmit,
   };

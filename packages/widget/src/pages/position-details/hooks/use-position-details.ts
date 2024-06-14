@@ -1,9 +1,9 @@
 import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { useStakeExitRequestDto } from "@sk-widget/pages/position-details/hooks/use-stake-exit-request-dto";
 import {
-  useExitStakeRequestDto,
-  useExitStakeRequestDtoDispatch,
-} from "@sk-widget/providers/exit-stake-request-dto";
+  useExitStakeState,
+  useExitStakeStateDispatch,
+} from "@sk-widget/providers/exit-stake-state";
 import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -38,8 +38,8 @@ export const usePositionDetails = () => {
   const navigate = useNavigate();
 
   const stakeExitRequestDto = useStakeExitRequestDto();
-  const setExitDto = useExitStakeRequestDtoDispatch();
-  const exitDto = useExitStakeRequestDto();
+  const exitDispatch = useExitStakeStateDispatch();
+  const exitRequest = useExitStakeState();
 
   const onUnstakeClick = () => {
     Maybe.fromRecord({
@@ -47,20 +47,24 @@ export const usePositionDetails = () => {
       integrationData,
       unstakeToken,
     }).ifJust((val) => {
-      setExitDto({
-        ...val.stakeExitRequestDto,
-        unstakeAmount,
-        integrationData: val.integrationData,
-        unstakeToken: val.unstakeToken,
-      });
+      exitDispatch(
+        Maybe.of({
+          actionDto: Maybe.empty(),
+          gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
+          integrationData: val.integrationData,
+          requestDto: val.stakeExitRequestDto.dto,
+          unstakeAmount,
+          unstakeToken: val.unstakeToken,
+        })
+      );
     });
   };
 
   useUpdateEffect(() => {
-    if (exitDto) {
+    if (exitRequest.isJust()) {
       navigate("unstake/review");
     }
-  }, [exitDto]);
+  }, [exitRequest]);
 
   const dispatch = useUnstakeOrPendingActionDispatch();
 
@@ -121,7 +125,6 @@ export const usePositionDetails = () => {
   const {
     onPendingActionAmountChange,
     pendingActions,
-    onPendingAction,
     onPendingActionClick,
     onValidatorsSubmit,
     validatorAddressesHandling,
@@ -158,10 +161,7 @@ export const usePositionDetails = () => {
   );
 
   const unstakeDisabled =
-    !unstakeAmountValid ||
-    onPendingAction.isPending ||
-    yieldOpportunity.isLoading ||
-    !unstakeAvailable;
+    !unstakeAmountValid || yieldOpportunity.isLoading || !unstakeAvailable;
 
   const isLoading =
     positionBalances.isLoading ||

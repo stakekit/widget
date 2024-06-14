@@ -4,7 +4,7 @@ import { Just } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoxProps, NumberInputProps } from "../../../components";
-import { Box, Button, NumberInput, Spinner, Text } from "../../../components";
+import { Box, Button, NumberInput, Text } from "../../../components";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
@@ -12,7 +12,6 @@ import { formatNumber } from "../../../utils";
 import type { useUnstakeOrPendingActionState } from "../state";
 
 type AmountBlockProps = {
-  isLoading: boolean;
   onAmountChange: NumberInputProps["onChange"];
   value: NumberInputProps["value"];
   canChangeAmount: boolean;
@@ -42,7 +41,6 @@ type AmountBlockProps = {
 );
 
 export const AmountBlock = ({
-  isLoading,
   onAmountChange,
   value,
   canChangeAmount,
@@ -85,12 +83,6 @@ export const AmountBlock = ({
                 isInvalid={unstakeAmountError}
               />
             </Box>
-
-            {isLoading && (
-              <Box marginRight="3" display="flex">
-                <Spinner />
-              </Box>
-            )}
 
             <Button
               onClick={onClick}

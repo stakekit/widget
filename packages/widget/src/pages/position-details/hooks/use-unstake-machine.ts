@@ -1,14 +1,19 @@
 import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
-import { useExitStakeRequestDto } from "@sk-widget/providers/exit-stake-request-dto";
+import { withRequestErrorRetry } from "@sk-widget/common/utils";
+import { getValidStakeSessionTx } from "@sk-widget/domain";
+import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { useExitStakeStateDispatch } from "@sk-widget/providers/exit-stake-state";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
-import { useTransactionGetTransactionVerificationMessageForNetworkHook } from "@stakekit/api-hooks";
+import {
+  useActionExitHook,
+  useTransactionGetTransactionVerificationMessageForNetworkHook,
+} from "@stakekit/api-hooks";
 import merge from "lodash.merge";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { useOnStakeExit } from "./use-on-stake-exit";
 
 const tt = t as <T>() => {
   [$$t]: T;
@@ -16,10 +21,10 @@ const tt = t as <T>() => {
 
 export const useUnstakeMachine = () => {
   const trackEvent = useTrackEvent();
-  const stakeExitRequestDto = useExitStakeRequestDto();
-  const onStakeExit = useOnStakeExit();
+  const actionExit = useActionExitHook();
 
-  const hackIt = Maybe.fromNullable(stakeExitRequestDto);
+  const { exitRequest } = useStakeExitData();
+  const setExitDispatch = useExitStakeStateDispatch();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
@@ -29,12 +34,10 @@ export const useUnstakeMachine = () => {
   const initValues = useMemo(
     () =>
       Maybe.fromRecord({
-        integrationData: hackIt.map((val) => val.integrationData),
-        unstakeToken: hackIt.map((val) => val.unstakeToken),
         network: Maybe.fromNullable(network),
         address: Maybe.fromNullable(address),
       }),
-    [address, hackIt, network]
+    [address, network]
   );
 
   return useStateMachine({
@@ -61,21 +64,19 @@ export const useUnstakeMachine = () => {
           __UNSTAKE__: "unstakeLoading",
         },
         effect: ({ send }) => {
-          initValues.ifJust((val) => {
-            trackEvent("unstakeClicked", {
-              yieldId: val.integrationData.id,
-              amount: stakeExitRequestDto?.unstakeAmount.toString(),
-            });
-
-            if (
-              val.integrationData.args.exit?.args?.signatureVerification
-                ?.required
-            ) {
-              send("__UNSTAKE_GET_VERIFICATION_MESSAGE__");
-            } else {
-              send("__UNSTAKE__");
-            }
+          trackEvent("unstakeClicked", {
+            yieldId: exitRequest.integrationData.id,
+            amount: exitRequest.requestDto.args.amount,
           });
+
+          if (
+            exitRequest.integrationData.args.exit?.args?.signatureVerification
+              ?.required
+          ) {
+            send("__UNSTAKE_GET_VERIFICATION_MESSAGE__");
+          } else {
+            send("__UNSTAKE__");
+          }
         },
       },
 
@@ -161,26 +162,23 @@ export const useUnstakeMachine = () => {
         },
         effect: ({ context, setContext, send }) => {
           EitherAsync.liftEither(
-            Maybe.fromRecord({ hackIt, initValues })
+            Just(exitRequest.requestDto)
               .map((val) => {
                 if (
                   context.transactionVerificationMessageDto &&
                   context.signedMessage
                 ) {
-                  return {
-                    ...val,
-                    stakeExitRequestDto: merge(val.hackIt, {
-                      dto: {
-                        args: {
-                          signatureVerification: {
-                            message:
-                              context.transactionVerificationMessageDto.message,
-                            signed: context.signedMessage,
-                          },
+                  return merge(val, {
+                    dto: {
+                      args: {
+                        signatureVerification: {
+                          message:
+                            context.transactionVerificationMessageDto.message,
+                          signed: context.signedMessage,
                         },
                       },
-                    } as Partial<typeof val>),
-                  };
+                    },
+                  } as Partial<typeof val>);
                 }
 
                 return val;
@@ -188,18 +186,16 @@ export const useUnstakeMachine = () => {
               .toEither(new Error("Missing params"))
           )
             .chain((val) =>
-              EitherAsync(() =>
-                onStakeExit.mutateAsync({
-                  stakeRequestDto: val.hackIt,
-                  stakeExitData: {
-                    integrationData: val.initValues.integrationData,
-                    interactedToken: val.initValues.unstakeToken,
-                  },
-                })
-              ).mapLeft((e) => {
-                console.log(e);
-                return new Error("Failed to unstake");
-              })
+              withRequestErrorRetry({ fn: () => actionExit(val) })
+                .mapLeft(() => new Error("Stake exit error"))
+                .chain((actionDto) =>
+                  EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+                )
+                .ifRight((val) =>
+                  setExitDispatch((prev) =>
+                    prev.map((v) => ({ ...v, actionDto: Just(val) }))
+                  )
+                )
             )
             .caseOf({
               Right() {

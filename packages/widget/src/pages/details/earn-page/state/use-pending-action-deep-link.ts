@@ -5,7 +5,6 @@ import {
 } from "@sk-widget/domain";
 import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
 import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { useOnPendingAction } from "@sk-widget/pages/position-details/hooks/use-on-pending-action";
 import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
@@ -28,8 +27,6 @@ export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected, address, connector, additionalAddresses } =
     useSKWallet();
 
-  const onPendingAction = useOnPendingAction();
-
   const queryClient = useSKQueryClient();
 
   const yieldGetSingleYieldBalances = useYieldGetSingleYieldBalancesHook();
@@ -49,7 +46,6 @@ export const usePendingActionDeepLink = () => {
         ).chain((addr) =>
           fn({
             isLedgerLive,
-            onPendingAction: onPendingAction.mutateAsync,
             additionalAddresses,
             address: addr,
             queryClient,
@@ -70,7 +66,6 @@ const fn = ({
   yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
-  onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
@@ -175,10 +170,7 @@ const fn = ({
             PAMultiValidatorsRequired(val.pendingAction) ||
             PASingleValidatorRequired(val.pendingAction)
               ? EitherAsync.liftEither(
-                  Right({
-                    type: "positionDetails",
-                    ...val,
-                  })
+                  Right({ type: "positionDetails", ...val })
                 )
               : EitherAsync.liftEither(
                   preparePendingActionRequestDto({

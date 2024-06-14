@@ -1,4 +1,4 @@
-import { useEnterStakeRequestDto } from "@sk-widget/providers/enter-stake-request-dto";
+import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 import { Maybe } from "purify-ts";
 import { importValidator } from "../../../common/import-validator";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -10,18 +10,17 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const state = useEnterStakeRequestDto();
+  const { enterRequest } = useStakeEnterData();
 
   const onSignSuccess = () =>
     Maybe.fromRecord({
-      state: Maybe.fromNullable(state),
       network: Maybe.fromNullable(network),
       address: Maybe.fromNullable(address),
     }).ifJust((val) =>
-      val.state.selectedValidators.forEach((v) =>
+      enterRequest.selectedValidators.forEach((v) =>
         importValidator({
           validatorData: {
-            integrationId: val.state.selectedStake.id,
+            integrationId: enterRequest.selectedStake.id,
             validator: v,
           },
           network: val.network,
@@ -31,9 +30,6 @@ export const StakeStepsPage = () => {
     );
 
   return (
-    <StepsPage
-      session={Maybe.fromNullable(state?.actionDto)}
-      onSignSuccess={onSignSuccess}
-    />
+    <StepsPage session={enterRequest.actionDto} onSignSuccess={onSignSuccess} />
   );
 };

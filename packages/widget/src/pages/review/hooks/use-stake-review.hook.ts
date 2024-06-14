@@ -2,7 +2,7 @@ import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import { useEnterStakeRequestDtoDispatch } from "@sk-widget/providers/enter-stake-request-dto";
+import { useEnterStakeDispatch } from "@sk-widget/providers/enter-stake-state";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useActionEnterHook } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
@@ -21,21 +21,27 @@ import { useRegisterFooterButton } from "../../components/footer-outlet/context"
 
 export const useStakeReview = () => {
   const {
-    selectedStake,
-    selectedValidators,
-    selectedToken,
+    enterRequest,
+    gasCheckLoading,
+    isGasCheckWarning,
     stakeEnterTxGas,
     stakeAmount,
-    enterRequestDto,
-    isGasCheckError,
-    gasEstimatePending,
   } = useStakeEnterData();
+
+  const selectedStake = useMemo(
+    () => Maybe.of(enterRequest.selectedStake),
+    [enterRequest.selectedStake]
+  );
+  const selectedToken = useMemo(
+    () => Maybe.of(enterRequest.selectedToken),
+    [enterRequest.selectedToken]
+  );
 
   const rewardToken = useRewardTokenDetails(selectedStake);
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
     stakeAmount,
-    selectedValidators,
+    selectedValidators: enterRequest.selectedValidators,
   });
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.review,
@@ -67,13 +73,13 @@ export const useStakeReview = () => {
 
   const navigate = useNavigate();
   const actionEnter = useActionEnterHook();
-  const setEnterDto = useEnterStakeRequestDtoDispatch();
+  const enterDispatch = useEnterStakeDispatch();
 
   const enterMutation = useMutation({
     mutationFn: async () => {
       return (
         await withRequestErrorRetry({
-          fn: () => actionEnter(enterRequestDto.dto),
+          fn: () => actionEnter(enterRequest.requestDto),
         })
           .mapLeft<StakingNotAllowedError | Error>((e) => {
             if (
@@ -87,21 +93,19 @@ export const useStakeReview = () => {
 
             return new Error("Stake enter error");
           })
-          .chain((actionDto) => {
-            const a = EitherAsync.liftEither(getValidStakeSessionTx(actionDto));
-            return a;
-          })
+          .chain((actionDto) =>
+            EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+          )
+          .ifRight((actionDto) =>
+            enterDispatch((prev) =>
+              prev.map((v) => ({ ...v, actionDto: Maybe.of(actionDto) }))
+            )
+          )
       ).unsafeCoerce();
     },
   });
 
-  const onClick = async () => {
-    const mutate = await enterMutation.mutateAsync();
-    Maybe.fromNullable(mutate).map((val) => {
-      // CHECK THIS => prev && { ...prev, val }
-      setEnterDto((prev) => prev && { ...prev, actionDto: val });
-    });
-  };
+  const onClick = () => enterMutation.mutate();
 
   useEffect(() => {
     enterMutation.isSuccess && navigate("/steps");
@@ -125,32 +129,32 @@ export const useStakeReview = () => {
 
   const { variant } = useSettings();
 
-  const metaInfo: MetaInfoProps = useMemo(
+  const metaInfo = useMemo(
     () =>
-      variant === "zerion"
+      (variant === "zerion"
         ? {
             showMetaInfo: true,
             metaInfoProps: {
               selectedStake,
               selectedToken,
-              selectedValidators,
+              selectedValidators: enterRequest.selectedValidators,
             },
           }
-        : { showMetaInfo: false },
-    [selectedStake, selectedToken, selectedValidators, variant]
+        : { showMetaInfo: false }) satisfies MetaInfoProps,
+    [selectedStake, selectedToken, enterRequest.selectedValidators, variant]
   );
 
   return {
     token: selectedToken,
     amount,
-    isGasCheckError,
     fee,
     interestRate,
     yieldType,
     rewardToken,
     metadata,
     metaInfo,
-    gasEstimatePending,
+    isGasCheckWarning,
+    gasCheckLoading,
   };
 };
 

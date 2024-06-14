@@ -166,7 +166,6 @@ const PositionDetails = () => {
                           <AmountBlock
                             key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                             variant="action"
-                            isLoading={val.isLoading}
                             onAmountChange={(amount) =>
                               onPendingActionAmountChange({
                                 balanceType: val.yieldBalance.type,
@@ -213,8 +212,6 @@ const PositionDetails = () => {
                         canChangeUnstakeAmount,
                       }) => (
                         <AmountBlock
-                          // CHECK THIS
-                          isLoading={false}
                           variant="unstake"
                           canUnstake={canUnstake}
                           unstakeToken={unstakeToken}

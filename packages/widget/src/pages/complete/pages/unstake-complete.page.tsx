@@ -1,6 +1,7 @@
 import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
 import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
@@ -15,10 +16,11 @@ export const UnstakeCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const stakeExitData = useStakeExitData();
+  const { exitRequest } = useStakeExitData();
 
-  const integrationData = stakeExitData.stakeExitData.map(
-    (val) => val.integrationData
+  const integrationData = useMemo(
+    () => Maybe.of(exitRequest.integrationData),
+    [exitRequest.integrationData]
   );
 
   useTrackPage("unstakeCompelete");
@@ -30,12 +32,16 @@ export const UnstakeCompletePage = () => {
     ),
   });
 
-  const token = stakeExitData.stakeExitData.map((val) => val.interactedToken);
+  const token = useMemo(
+    () => Maybe.of(exitRequest.unstakeToken),
+    [exitRequest.unstakeToken]
+  );
+
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
-    () => stakeExitData.amount.mapOrDefault((v) => formatNumber(v), ""),
-    [stakeExitData.amount]
+    () => formatNumber(exitRequest.requestDto.args.amount),
+    [exitRequest.requestDto.args.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

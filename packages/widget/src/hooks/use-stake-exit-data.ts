@@ -1,53 +1,44 @@
-import { useGasCheck } from "@sk-widget/hooks/use-gas-check";
-import { useExitStakeRequestDto } from "@sk-widget/providers/exit-stake-request-dto";
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
+import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
 import { useActionExitGasEstimate } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const useStakeExitData = () => {
-  const exitRequest = useExitStakeRequestDto();
+  const exitRequest = useExitStakeState().unsafeCoerce();
 
-  const exitRequestDto = useMemo(
-    () => Maybe.fromNullable(exitRequest).unsafeCoerce(),
-    [exitRequest]
+  const actionExitGasEstimate = useActionExitGasEstimate(
+    exitRequest.requestDto
   );
 
-  const { data, isFetching } = useActionExitGasEstimate(exitRequestDto.dto);
-
-  const stakeExitTxGas = Maybe.fromNullable(data?.amount).map(
-    (val) => new BigNumber(val)
+  const stakeExitTxGas = useMemo(
+    () => Maybe.fromNullable(actionExitGasEstimate.data?.amount).map(BigNumber),
+    [actionExitGasEstimate.data]
   );
 
-  const { data: isGasCheckError, isPending } = useGasCheck({
+  const gasWarningCheck = useGasWarningCheck({
     gasAmount: stakeExitTxGas,
-    token: exitRequestDto.gasFeeToken,
-    address: exitRequestDto.dto.addresses.address,
-    network: exitRequestDto.gasFeeToken.network,
-    isStake: true,
-    stakeAmount: new BigNumber(exitRequestDto.dto.args.amount),
-    stakeToken: exitRequestDto.unstakeToken,
+    gasFeeToken: exitRequest.gasFeeToken,
+    address: exitRequest.requestDto.addresses.address,
+    additionalAddresses: exitRequest.requestDto.addresses.additionalAddresses,
+    isStake: false,
   });
 
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(exitRequestDto).map(
-        (val) => new BigNumber(val.unstakeAmount ?? 0)
+      Maybe.fromNullable(exitRequest.requestDto.args.amount).map(
+        (val) => new BigNumber(val ?? 0)
       ),
-    [exitRequestDto]
+    [exitRequest.requestDto.args.amount]
   );
 
   return {
-    stakeExitSession: data,
-    stakeExitData: Maybe.fromNullable({
-      integrationData: exitRequestDto.integrationData,
-      interactedToken: exitRequestDto.unstakeToken,
-    }),
-    isGasCheckError,
-    stakeExitTxGas: Maybe.fromNullable(data?.amount).map((val) =>
-      BigNumber(val)
-    ),
+    stakeExitTxGas,
+    exitRequest,
     amount,
-    gasEstimateLoading: isFetching || isPending,
+    isGasCheckWarning: !!gasWarningCheck.data,
+    gasCheckLoading:
+      actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
   };
 };

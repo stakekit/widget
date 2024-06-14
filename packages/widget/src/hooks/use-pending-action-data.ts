@@ -1,51 +1,45 @@
-import { useGasCheck } from "@sk-widget/hooks/use-gas-check";
-import { usePendingStakeRequestDto } from "@sk-widget/providers/pending-stake-request-dto";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
+import { usePendingActionState } from "@sk-widget/providers/pending-action-state";
 import { useActionPendingGasEstimate } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const usePendingActionData = () => {
-  const pendingRequest = usePendingStakeRequestDto();
-  const { address } = useSKWallet();
-  const pendingRequestDto = useMemo(
-    () => Maybe.fromNullable(pendingRequest).unsafeCoerce(),
-    [pendingRequest]
-  );
-  const { data, isFetching } = useActionPendingGasEstimate(pendingRequestDto);
+  const pendingRequest = usePendingActionState().unsafeCoerce();
 
-  const pendingTxGas = Maybe.fromNullable(data?.amount).map(
-    (val) => new BigNumber(val)
+  const actionPendingGasEstimate = useActionPendingGasEstimate(
+    pendingRequest.requestDto
   );
 
-  const { data: isGasCheckError, isPending } = useGasCheck({
+  const pendingTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
+    [actionPendingGasEstimate.data]
+  );
+
+  const gasWarningCheck = useGasWarningCheck({
     gasAmount: pendingTxGas,
-    token: pendingRequestDto.gasFeeToken,
-    address,
-    network: pendingRequestDto.gasFeeToken.network,
+    gasFeeToken: pendingRequest.gasFeeToken,
+    address: pendingRequest.addresses.address,
+    additionalAddresses: pendingRequest.addresses.additionalAddresses,
     isStake: false,
-    stakeAmount: new BigNumber(0),
-    stakeToken: pendingRequestDto.gasFeeToken,
   });
 
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(pendingRequestDto).map(
-        (val) => new BigNumber(val.args?.amount ?? 0)
+      Maybe.fromNullable(pendingRequest.requestDto.args?.amount).map(
+        (val) => new BigNumber(val ?? 0)
       ),
-    [pendingRequestDto]
+    [pendingRequest.requestDto.args?.amount]
   );
 
   return {
-    pendingActionSession: data,
-    pendingActionData: pendingRequestDto.pendingActionData,
-    pendingActionTxGas: data?.amount,
-    amount,
-    isGasCheckError,
-    pendingActionType: pendingRequestDto.pendingActionType,
-    gasEstimatePending: isFetching || isPending,
     pendingTxGas,
-    pendingRequestDto,
+    pendingRequest,
+    amount,
+    isGasCheckWarning: !!gasWarningCheck.data,
+    gasCheckLoading:
+      actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
   };
 };

@@ -1,5 +1,6 @@
 import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
 import { Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -9,8 +10,17 @@ import { CompletePage } from "./common.page";
 export const StakeCompletePage = () => {
   useTrackPage("stakeCompelete");
 
-  const { selectedStake, stakeAmount, selectedValidators, selectedToken } =
-    useStakeEnterData();
+  const { stakeAmount, enterRequest } = useStakeEnterData();
+
+  const selectedStake = useMemo(
+    () => Maybe.of(enterRequest.selectedStake),
+    [enterRequest.selectedStake]
+  );
+
+  const selectedToken = useMemo(
+    () => Maybe.of(enterRequest.selectedToken),
+    [enterRequest.selectedToken]
+  );
 
   const metadata = selectedStake.map((y) => y.metadata);
 
@@ -22,7 +32,7 @@ export const StakeCompletePage = () => {
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorsAddresses: Maybe.of(selectedValidators),
+    validatorsAddresses: Maybe.of(enterRequest.selectedValidators),
   });
 
   return (

@@ -12,13 +12,13 @@ export const UnstakeReviewPage = () => {
     integrationData,
     rewardTokenDetailsProps,
     title,
-    isGasCheckError,
     token,
     metaInfo,
     onContinueUnstakeSignMessage,
     onCloseUnstakeSignMessage,
     showUnstakeSignMessagePopup,
-    gasEstimateLoading,
+    gasCheckLoading,
+    isGasCheckWarning,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
@@ -40,8 +40,8 @@ export const UnstakeReviewPage = () => {
         info={info}
         metadata={integrationData.map((d) => d.metadata)}
         token={token}
-        isGasCheckError={!!isGasCheckError}
-        loading={gasEstimateLoading}
+        isGasCheckError={isGasCheckWarning}
+        loading={gasCheckLoading}
         {...metaInfo}
       />
       <UnstakeSignPopup

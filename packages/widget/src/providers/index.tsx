@@ -1,10 +1,7 @@
-import { PendingActionAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
-import { StakeEnterAndTxsConstructProvider } from "@sk-widget/hooks/api/use-stake-enter-and-txs-construct";
-import { StakeExitAndTxsConstructContextProvider } from "@sk-widget/hooks/api/use-stake-exit-and-txs-construct";
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { EnterStakeRequestDtoProvider } from "@sk-widget/providers/enter-stake-request-dto";
-import { ExitStakeRequestDtoProvider } from "@sk-widget/providers/exit-stake-request-dto";
-import { PendingStakeRequestDtoProvider } from "@sk-widget/providers/pending-stake-request-dto";
+import { EnterStakeProvider } from "@sk-widget/providers/enter-stake-state";
+import { ExitStakeProvider } from "@sk-widget/providers/exit-stake-state";
+import { PendingActionProvider } from "@sk-widget/providers/pending-action-state";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
@@ -44,35 +41,29 @@ export const Providers = ({
                       <RainbowProvider>
                         <EarnPageStateProvider>
                           <ActionHistoryContextProvider>
-                            <StakeEnterAndTxsConstructProvider>
-                              <PendingActionAndTxsConstructContextProvider>
-                                <StakeExitAndTxsConstructContextProvider>
-                                  <ThemeWrapper>
-                                    <ListStateContextProvider>
-                                      <CurrentLayoutProvider>
-                                        <HeaderHeightProvider>
-                                          <FooterHeightProvider>
-                                            <FooterButtonProvider>
-                                              <PoweredByHeightProvider>
-                                                <DisableTransitionDurationProvider>
-                                                  <EnterStakeRequestDtoProvider>
-                                                    <ExitStakeRequestDtoProvider>
-                                                      <PendingStakeRequestDtoProvider>
-                                                        {children}
-                                                      </PendingStakeRequestDtoProvider>
-                                                    </ExitStakeRequestDtoProvider>
-                                                  </EnterStakeRequestDtoProvider>
-                                                </DisableTransitionDurationProvider>
-                                              </PoweredByHeightProvider>
-                                            </FooterButtonProvider>
-                                          </FooterHeightProvider>
-                                        </HeaderHeightProvider>
-                                      </CurrentLayoutProvider>
-                                    </ListStateContextProvider>
-                                  </ThemeWrapper>
-                                </StakeExitAndTxsConstructContextProvider>
-                              </PendingActionAndTxsConstructContextProvider>
-                            </StakeEnterAndTxsConstructProvider>
+                            <ThemeWrapper>
+                              <ListStateContextProvider>
+                                <CurrentLayoutProvider>
+                                  <HeaderHeightProvider>
+                                    <FooterHeightProvider>
+                                      <FooterButtonProvider>
+                                        <PoweredByHeightProvider>
+                                          <DisableTransitionDurationProvider>
+                                            <EnterStakeProvider>
+                                              <ExitStakeProvider>
+                                                <PendingActionProvider>
+                                                  {children}
+                                                </PendingActionProvider>
+                                              </ExitStakeProvider>
+                                            </EnterStakeProvider>
+                                          </DisableTransitionDurationProvider>
+                                        </PoweredByHeightProvider>
+                                      </FooterButtonProvider>
+                                    </FooterHeightProvider>
+                                  </HeaderHeightProvider>
+                                </CurrentLayoutProvider>
+                              </ListStateContextProvider>
+                            </ThemeWrapper>
                           </ActionHistoryContextProvider>
                         </EarnPageStateProvider>
                       </RainbowProvider>

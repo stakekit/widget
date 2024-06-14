@@ -11,19 +11,23 @@ import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
+
   const positionBalances = usePositionBalances({
     balanceId: plain.balanceId,
     integrationId: plain.integrationId,
   });
 
-  const { pendingActionData, amount, pendingActionType } =
-    usePendingActionData();
+  const { amount, pendingRequest } = usePendingActionData();
 
-  const integrationData = Maybe.of(pendingActionData).map(
-    (val) => val.integrationData
+  const integrationData = useMemo(
+    () => Maybe.of(pendingRequest.integrationData),
+    [pendingRequest.integrationData]
   );
 
-  const token = Maybe.of(pendingActionData).map((val) => val.interactedToken);
+  const token = useMemo(
+    () => Maybe.of(pendingRequest.interactedToken),
+    [pendingRequest.interactedToken]
+  );
 
   useTrackPage("pendingActionCompelete");
 
@@ -43,8 +47,6 @@ export const PendingCompletePage = () => {
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);
 
-  const _pendingActionType = pendingActionType.extract();
-
   return (
     <CompletePage
       providersDetails={providerDetails}
@@ -53,7 +55,7 @@ export const PendingCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={_amount}
-      pendingActionType={_pendingActionType}
+      pendingActionType={pendingRequest.pendingActionType}
     />
   );
 };

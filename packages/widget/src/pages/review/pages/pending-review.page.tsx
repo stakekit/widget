@@ -11,10 +11,10 @@ export const PendingReviewPage = () => {
     integrationData,
     rewardTokenDetailsProps,
     title,
-    isGasCheckError,
     token,
     metaInfo,
-    gasEstimatePending,
+    gasCheckLoading,
+    isGasCheckWarning,
   } = usePendingActionReview();
 
   useTrackPage("pendingActionReview");
@@ -33,10 +33,10 @@ export const PendingReviewPage = () => {
       title={title.orDefault("")}
       fee={fee}
       info={info}
-      metadata={Maybe.of(integrationData.metadata)}
+      metadata={integrationData.map((val) => val.metadata)}
       token={token}
-      isGasCheckError={!!isGasCheckError}
-      loading={gasEstimatePending}
+      isGasCheckError={isGasCheckWarning}
+      loading={gasCheckLoading}
       {...metaInfo}
     />
   );

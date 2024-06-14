@@ -6,9 +6,9 @@ import {
 } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 import {
-  useEnterStakeRequestDto,
-  useEnterStakeRequestDtoDispatch,
-} from "@sk-widget/providers/enter-stake-request-dto";
+  useEnterStakeDispatch,
+  useEnterStakeState,
+} from "@sk-widget/providers/enter-stake-state";
 import type {
   TokenBalanceScanResponseDto,
   TronResourceType,
@@ -358,9 +358,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const { openConnectModal } = useConnectModal();
 
-  const setEnterDto = useEnterStakeRequestDtoDispatch();
+  const enterDispatch = useEnterStakeDispatch();
   const navigate = useNavigateWithScrollToTop();
-  const enterDto = useEnterStakeRequestDto();
+  const enterDto = useEnterStakeState();
 
   const onClickHandler = useMutation({
     mutationFn: async () => {
@@ -368,13 +368,20 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
       if (!isConnected) return openConnectModal?.();
 
-      Maybe.fromRecord({ stakeEnterRequestDto, selectedToken }).ifJust(
-        (val) => {
-          setEnterDto({
-            ...val.stakeEnterRequestDto,
-            selectedToken: val.selectedToken,
-          });
-        }
+      const val = Maybe.fromRecord({
+        stakeEnterRequestDto,
+        selectedToken,
+      }).unsafeCoerce();
+
+      enterDispatch(
+        Maybe.of({
+          requestDto: val.stakeEnterRequestDto.dto,
+          selectedToken: val.selectedToken,
+          gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
+          selectedStake: val.stakeEnterRequestDto.selectedStake,
+          selectedValidators: val.stakeEnterRequestDto.selectedValidators,
+          actionDto: Maybe.empty(),
+        })
       );
     },
   });
@@ -497,8 +504,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     (!tokenBalancesScan.data && tokenBalancesScan.isError);
 
   const buttonDisabled =
-    (isConnected && (isFetching || stakeEnterRequestDto.isNothing())) ||
-    onClickHandler.isPending;
+    isConnected && (isFetching || stakeEnterRequestDto.isNothing());
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
