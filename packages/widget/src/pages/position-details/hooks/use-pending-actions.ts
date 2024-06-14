@@ -264,7 +264,6 @@ export const usePendingActions = () => {
     }).ifRight((val) =>
       setPendingDto({
         ...val,
-        address,
         pendingActionType,
         pendingActionData: {
           integrationData: integrationData,

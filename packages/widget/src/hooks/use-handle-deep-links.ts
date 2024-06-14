@@ -19,7 +19,6 @@ export const useHandleDeepLinks = () => {
         flushSync(() => {
           dispatch({
             ...val.pendingActionDto,
-            address: val.pendingActionDto.address,
             pendingActionData: {
               integrationData: val.yieldOp,
               interactedToken: val.balance.token,

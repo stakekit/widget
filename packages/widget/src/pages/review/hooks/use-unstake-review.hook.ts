@@ -1,5 +1,6 @@
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
+import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
@@ -115,15 +116,17 @@ export const useUnstakeActionReview = () => {
     .chainNullable((v) =>
       v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
     )
-    // @ts-ignore CHECK THIS
-    .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
+    .map((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,
         providerName: v.provider.name,
-        symbol: v.rest.token.symbol,
-      });
+        symbols: getRewardTokenSymbols([v.rest.token]),
+        rewardTokens: [v.rest.token],
+      }) satisfies ComponentProps<typeof RewardTokenDetails>["rewardToken"];
 
-      return { type: "unstake", rewardToken };
+      return { type: "unstake", rewardToken } satisfies ComponentProps<
+        typeof RewardTokenDetails
+      >;
     });
 
   const onClickRef = useSavedRef(onClick);

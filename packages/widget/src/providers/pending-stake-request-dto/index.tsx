@@ -1,7 +1,6 @@
 import type {
   ActionDto,
   ActionTypes,
-  AddressesDto,
   PendingActionRequestDto,
   TokenDto,
   YieldDto,
@@ -17,7 +16,6 @@ import {
 
 type State =
   | ({
-      address: AddressesDto["address"] | null;
       pendingActionType: Maybe<ActionTypes>;
       pendingActionData: {
         integrationData: YieldDto;

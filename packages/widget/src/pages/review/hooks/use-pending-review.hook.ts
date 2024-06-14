@@ -1,6 +1,7 @@
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import { usePendingStakeRequestDtoDispatch } from "@sk-widget/providers/pending-stake-request-dto";
 import { type ActionTypes, useActionPendingHook } from "@stakekit/api-hooks";
@@ -101,19 +102,19 @@ export const usePendingActionReview = () => {
     .chainNullable((v) =>
       v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
     )
-
-    .map<ComponentProps<typeof RewardTokenDetails>>((v) => {
+    .map((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,
         providerName: v.provider.name,
-        symbol: v.rest.token.symbol,
-      });
+        symbols: getRewardTokenSymbols([v.rest.token]),
+        rewardTokens: [v.rest.token],
+      }) satisfies ComponentProps<typeof RewardTokenDetails>["rewardToken"];
 
       return {
         type: "pendingAction",
         pendingAction: pendingActionType.extract()!,
         rewardToken,
-      };
+      } satisfies ComponentProps<typeof RewardTokenDetails>;
     });
 
   const onClickRef = useSavedRef(onClick);
