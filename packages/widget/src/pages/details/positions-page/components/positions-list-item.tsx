@@ -1,3 +1,4 @@
+import { useSettings } from "@sk-widget/providers/settings";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { memo, useMemo } from "react";
@@ -28,6 +29,15 @@ export const PositionsListItem = memo(
     item: ReturnType<typeof usePositions>["positionsData"]["data"][number];
   }) => {
     const { t } = useTranslation();
+    const { showPositionLabel } = useSettings();
+
+    const yieldLabelDto = useMemo(
+      () =>
+        List.find((b) => !!b.label, item.balances).chainNullable(
+          (v) => v.label
+        ),
+      [item.balances]
+    );
 
     const actionRequired = useMemo(() => {
       return (
@@ -147,6 +157,24 @@ export const PositionsListItem = memo(
                       {token
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
+
+                      {showPositionLabel &&
+                        yieldLabelDto
+                          .map((label) => (
+                            <Box
+                              className={listItemContainer({
+                                type: "actionRequired",
+                              })}
+                            >
+                              <Text
+                                variant={{ type: "white" }}
+                                className={noWrap}
+                              >
+                                {t(label.type, label.params) as string}
+                              </Text>
+                            </Box>
+                          ))
+                          .extractNullable()}
 
                       {(hasPendingClaimRewards ||
                         actionRequired ||

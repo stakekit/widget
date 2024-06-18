@@ -15,6 +15,7 @@ enableMocking()
   .then(() => {
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <SKApp
+        showPositionLabel
         theme={darkTheme}
         apiKey={import.meta.env.VITE_API_KEY}
         referralCheck={import.meta.env.VITE_ENABLE_REFERRAL_CHECK === "true"}

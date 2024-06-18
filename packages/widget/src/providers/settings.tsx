@@ -35,6 +35,7 @@ export type SettingsProps = {
   hideNetworkLogo?: boolean;
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;
+  showPositionLabel?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
