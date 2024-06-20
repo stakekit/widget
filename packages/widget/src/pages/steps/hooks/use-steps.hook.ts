@@ -1,7 +1,7 @@
 import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useSavedRef } from "../../../hooks";
@@ -29,7 +29,16 @@ export const useSteps = ({
 
   const sessionExtracted = useMemo(() => session.extractNullable(), [session]);
 
-  const [machine, send] = useStepsMachine(sessionExtracted);
+  const stepsPageUnmounted = useRef<boolean>(false);
+
+  useEffect(() => {
+    stepsPageUnmounted.current = false;
+    return () => {
+      stepsPageUnmounted.current = true;
+    };
+  }, []);
+
+  const [machine, send] = useStepsMachine(sessionExtracted, stepsPageUnmounted);
 
   /**
    *
