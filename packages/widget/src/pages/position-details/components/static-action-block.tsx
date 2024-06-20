@@ -5,7 +5,7 @@ import type {
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import { Box, Button, Spinner, Text } from "../../../components";
+import { Box, Button, Text } from "../../../components";
 import { formatNumber } from "../../../utils";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
@@ -14,14 +14,12 @@ type StaticActionBlockProps = {
   yieldBalance: YieldBalanceDto & {
     tokenPriceInUsd: BigNumber;
   };
-  isLoading: boolean;
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
 };
 
 export const StaticActionBlock = ({
-  isLoading,
   pendingActionDto,
   yieldBalance,
   onPendingActionClick,
@@ -67,17 +65,11 @@ export const StaticActionBlock = ({
         display="flex"
         alignItems="center"
       >
-        {isLoading && (
-          <Box marginRight="3" display="flex">
-            <Spinner />
-          </Box>
-        )}
         <Button
           variant={{
             size: "small",
             color: "smallButtonLight",
           }}
-          disabled={isLoading}
           onClick={() =>
             onPendingActionClick({
               yieldBalance: yieldBalance,

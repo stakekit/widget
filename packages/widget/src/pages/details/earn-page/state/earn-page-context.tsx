@@ -1,9 +1,14 @@
 import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
+import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import {
   useEarnPageDispatch,
   useEarnPageState,
 } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
+import {
+  useEnterStakeDispatch,
+  useEnterStakeState,
+} from "@sk-widget/providers/enter-stake-state";
 import type {
   TokenBalanceScanResponseDto,
   TronResourceType,
@@ -50,7 +55,6 @@ import { useBaseToken } from "../../../../hooks/use-base-token";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
-import { useUpdateEffect } from "../../../../hooks/use-update-effect";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
@@ -60,7 +64,6 @@ import { formatNumber } from "../../../../utils";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import type { SelectedStakeData } from "../types";
 import type { EarnPageContextType } from "./types";
-import { useOnStakeEnter } from "./use-on-stake-enter";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 
 const EarnPageContext = createContext<EarnPageContextType | undefined>(
@@ -351,10 +354,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const { t } = useTranslation();
 
-  const onStakeEnter = useOnStakeEnter();
   const stakeEnterRequestDto = useStakeEnterRequestDto();
 
   const { openConnectModal } = useConnectModal();
+
+  const enterDispatch = useEnterStakeDispatch();
+  const navigate = useNavigateWithScrollToTop();
+  const enterDto = useEnterStakeState();
 
   const onClickHandler = useMutation({
     mutationFn: async () => {
@@ -362,22 +368,29 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
       if (!isConnected) return openConnectModal?.();
 
-      return Maybe.fromRecord({ selectedStake, selectedToken }).caseOf({
-        Just: ({ selectedStake, selectedToken }) => {
-          return onStakeEnter.mutateAsync({
-            stakeRequestDto: stakeEnterRequestDto,
-            stakeEnterData: {
-              selectedStake,
-              selectedToken,
-              selectedValidators,
-              stakeAmount,
-            },
-          });
-        },
-        Nothing: () => {},
-      });
+      const val = Maybe.fromRecord({
+        stakeEnterRequestDto,
+        selectedToken,
+      }).unsafeCoerce();
+
+      enterDispatch(
+        Maybe.of({
+          requestDto: val.stakeEnterRequestDto.dto,
+          selectedToken: val.selectedToken,
+          gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
+          selectedStake: val.stakeEnterRequestDto.selectedStake,
+          selectedValidators: val.stakeEnterRequestDto.selectedValidators,
+          actionDto: Maybe.empty(),
+        })
+      );
     },
   });
+
+  useUpdateEffect(() => {
+    if (enterDto) {
+      navigate("/review");
+    }
+  }, [enterDto]);
 
   const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
 
@@ -452,14 +465,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [selectedStake]
   );
 
-  const navigate = useNavigateWithScrollToTop();
-
-  useUpdateEffect(() => {
-    if (onStakeEnter.isSuccess && onStakeEnter.data) {
-      navigate("/review");
-    }
-  }, [onStakeEnter.data, onStakeEnter.isSuccess]);
-
   const selectedStakeYieldType = selectedStake
     .map((val) => val.metadata.type)
     .extractNullable();
@@ -495,13 +500,11 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const isFetching = multiYields.isFetching || tokenBalancesScan.isFetching;
 
   const isError =
-    onStakeEnter.isError ||
     (!multiYields.data && multiYields.isError) ||
     (!tokenBalancesScan.data && tokenBalancesScan.isError);
 
   const buttonDisabled =
-    (isConnected && (isFetching || stakeEnterRequestDto.isNothing())) ||
-    onClickHandler.isPending;
+    isConnected && (isFetching || stakeEnterRequestDto.isNothing());
 
   const buttonCTAText = useMemo(() => {
     switch (selectedStakeYieldType) {
@@ -565,7 +568,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         isConnected && !isLedgerLiveAccountPlaceholder
           ? {
               disabled: buttonDisabled,
-              isLoading: onStakeEnter.isPending || isFetching,
+              isLoading: isFetching,
               onClick: () => onClickRef.current(),
               label: buttonCTAText,
             }
@@ -589,7 +592,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         isConnected,
         isLedgerLiveAccountPlaceholder,
         onClickRef,
-        onStakeEnter.isPending,
         externalProviders,
         isFetching,
         t,
@@ -646,7 +648,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     rewardToken,
     onSelectOpportunityClose,
     onSelectTokenClose,
-    onStakeEnterIsLoading: onStakeEnter.isPending,
     selectedStakeYieldType,
     isConnected,
     appLoading,

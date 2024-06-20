@@ -2,6 +2,12 @@ import "@stakekit/rainbowkit/styles.css";
 import "./translation";
 import "./utils/extend-purify";
 import "./styles/theme/global.css";
+import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
+import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
+import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
+import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
+import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
+import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { ComponentProps } from "react";
 import { useState } from "react";
@@ -23,8 +29,6 @@ import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { usePrevious } from "./hooks/use-previous";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { StakeCheck } from "./navigation/cheks/stake-check";
-import { UnstakeOrPendingActionCheck } from "./navigation/cheks/unstake-or-pending-action-check";
 import { AnimationLayout } from "./navigation/containers/animation-layout";
 import {
   Details,
@@ -33,17 +37,12 @@ import {
   PositionsPage,
   StakeCompletePage,
   StakeStepsPage,
-  UnstakeOrPendingActionCompletePage,
-  UnstakeOrPendingActionStepsPage,
 } from "./pages";
 import { FooterContent } from "./pages/components/footer-outlet";
 import { headerContainer } from "./pages/components/layout/styles.css";
 import { PoweredBy } from "./pages/components/powered-by";
 import { PositionDetailsPage } from "./pages/position-details";
-import {
-  StakeReviewPage,
-  UnstakeOrPendingActionReviewPage,
-} from "./pages/review";
+import { StakeReviewPage } from "./pages/review";
 import { Providers } from "./providers";
 import { useSKLocation } from "./providers/location";
 import type { SettingsProps, VariantProps } from "./providers/settings";
@@ -123,7 +122,7 @@ const Widget = () => {
 
                   <Route element={<ConnectedCheck />}>
                     {/* Stake flow */}
-                    <Route element={<StakeCheck />}>
+                    <Route>
                       <Route path="review" element={<StakeReviewPage />} />
                       <Route path="steps" element={<StakeStepsPage />} />
                       <Route path="complete" element={<StakeCompletePage />} />
@@ -138,40 +137,22 @@ const Widget = () => {
                       />
 
                       {/* Unstaking */}
-                      <Route
-                        path="unstake"
-                        element={<UnstakeOrPendingActionCheck />}
-                      >
-                        <Route
-                          path="review"
-                          element={<UnstakeOrPendingActionReviewPage />}
-                        />
-                        <Route
-                          path="steps"
-                          element={<UnstakeOrPendingActionStepsPage />}
-                        />
+                      <Route path="unstake">
+                        <Route path="review" element={<UnstakeReviewPage />} />
+                        <Route path="steps" element={<UnstakeStepsPage />} />
                         <Route
                           path="complete"
-                          element={<UnstakeOrPendingActionCompletePage />}
+                          element={<UnstakeCompletePage />}
                         />
                       </Route>
 
                       {/* Pending Actions */}
-                      <Route
-                        path="pending-action"
-                        element={<UnstakeOrPendingActionCheck />}
-                      >
-                        <Route
-                          path="review"
-                          element={<UnstakeOrPendingActionReviewPage />}
-                        />
-                        <Route
-                          path="steps"
-                          element={<UnstakeOrPendingActionStepsPage />}
-                        />
+                      <Route path="pending-action">
+                        <Route path="review" element={<PendingReviewPage />} />
+                        <Route path="steps" element={<PendingStepsPage />} />
                         <Route
                           path="complete"
-                          element={<UnstakeOrPendingActionCompletePage />}
+                          element={<PendingCompletePage />}
                         />
                       </Route>
                     </Route>

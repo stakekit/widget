@@ -10,18 +10,17 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const { stakeSession, stakeEnterData } = useStakeEnterData();
+  const { enterRequest } = useStakeEnterData();
 
   const onSignSuccess = () =>
     Maybe.fromRecord({
-      stakeEnterData,
       network: Maybe.fromNullable(network),
       address: Maybe.fromNullable(address),
     }).ifJust((val) =>
-      val.stakeEnterData.selectedValidators.forEach((v) =>
+      enterRequest.selectedValidators.forEach((v) =>
         importValidator({
           validatorData: {
-            integrationId: val.stakeEnterData.selectedStake.id,
+            integrationId: enterRequest.selectedStake.id,
             validator: v,
           },
           network: val.network,
@@ -30,5 +29,7 @@ export const StakeStepsPage = () => {
       )
     );
 
-  return <StepsPage session={stakeSession} onSignSuccess={onSignSuccess} />;
+  return (
+    <StepsPage session={enterRequest.actionDto} onSignSuccess={onSignSuccess} />
+  );
 };

@@ -47,13 +47,13 @@ export const checkGasAmount = ({
     )
     .chainLeft(async (e) => Right(e));
 
-class NotEnoughGasTokenError extends Error {
+export class NotEnoughGasTokenError extends Error {
   constructor() {
     super("Not enough gas token");
   }
 }
 
-class GasTokenMissingError extends Error {
+export class GasTokenMissingError extends Error {
   constructor() {
     super("Gas token missing from response");
   }

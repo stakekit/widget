@@ -29,7 +29,9 @@ export const preparePendingActionRequestDto = ({
   selectedValidators: ValidatorDto["address"][];
 }): Either<
   Error,
-  PendingActionRequestDto & {
+  {
+    requestDto: PendingActionRequestDto;
+    integrationData: YieldDto;
     gasFeeToken: YieldDto["token"];
     address: NonNullable<SKWallet["address"]>;
     additionalAddresses:
@@ -68,12 +70,15 @@ export const preparePendingActionRequestDto = ({
       }
 
       return {
+        requestDto: {
+          args,
+          integrationId: integration.id,
+          passthrough: pendingActionDto.passthrough,
+          type: pendingActionDto.type,
+        },
         address: val,
         additionalAddresses: additionalAddresses ?? undefined,
         gasFeeToken: integration.metadata.gasFeeToken,
-        args,
-        integrationId: integration.id,
-        passthrough: pendingActionDto.passthrough,
-        type: pendingActionDto.type,
+        integrationData: integration,
       };
     });
