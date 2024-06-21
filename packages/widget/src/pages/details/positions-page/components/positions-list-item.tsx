@@ -1,5 +1,6 @@
+import type { YieldBalanceDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { List, Maybe, compare } from "purify-ts";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
@@ -58,7 +59,27 @@ export const PositionsListItem = memo(
       [item.balances]
     );
 
-    const token = List.head(item.balances).map((v) => v.token);
+    const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
+      available: 1,
+      staked: 2,
+      unstaking: 3,
+      unstaked: 4,
+      preparing: 5,
+      locked: 6,
+      unlocking: 7,
+      rewards: 8,
+    };
+
+    const token = useMemo(
+      () =>
+        List.head(
+          List.sort(
+            (a, b) => compare(priorityOrder[a.type], priorityOrder[b.type]),
+            item.balances
+          )
+        ).map((v) => v.token),
+      [item.balances]
+    );
 
     const hasPendingClaimRewards = useMemo(
       () => checkHasPendingClaimRewards(item.balances),
