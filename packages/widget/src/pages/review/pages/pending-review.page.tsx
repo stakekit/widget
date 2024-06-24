@@ -1,23 +1,23 @@
-import { useUnstakeOrPendingActionReview } from "@sk-widget/pages/review/hooks/use-unstake-or-pending-action-review.hook";
+import { usePendingActionReview } from "@sk-widget/pages/review/hooks/use-pending-review.hook";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ReviewPage } from "./common.page";
 
-export const UnstakeOrPendingActionReviewPage = () => {
+export const PendingReviewPage = () => {
   const {
-    pendingActionMatch,
     amount,
     fee,
     integrationData,
     rewardTokenDetailsProps,
     title,
-    isGasCheckError,
     token,
     metaInfo,
-  } = useUnstakeOrPendingActionReview();
+    gasCheckLoading,
+    isGasCheckWarning,
+  } = usePendingActionReview();
 
-  useTrackPage(pendingActionMatch ? "pendingActionReview" : "unstakeReview");
+  useTrackPage("pendingActionReview");
 
   const info = useMemo(
     () =>
@@ -33,9 +33,10 @@ export const UnstakeOrPendingActionReviewPage = () => {
       title={title.orDefault("")}
       fee={fee}
       info={info}
-      metadata={integrationData.map((d) => d.metadata)}
+      metadata={integrationData.map((val) => val.metadata)}
       token={token}
-      isGasCheckError={isGasCheckError}
+      isGasCheckError={isGasCheckWarning}
+      loading={gasCheckLoading}
       {...metaInfo}
     />
   );

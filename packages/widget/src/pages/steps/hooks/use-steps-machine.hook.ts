@@ -92,7 +92,14 @@ export const useStepsMachine = (
   const transactionGetTransaction = useTransactionGetTransactionHook();
   const transactionSubmitHash = useTransactionSubmitHashHook();
   const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
-  const transactionConstruct = useTransactionConstructHook();
+  const _transactionConstruct = useTransactionConstructHook();
+
+  const txConstruct = (...params: Parameters<typeof _transactionConstruct>) =>
+    withRequestErrorRetry({
+      fn: () => _transactionConstruct(...params),
+      shouldRetry: (e, retryCount) =>
+        retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
+    }).mapLeft(() => new Error("Transaction construct error"));
 
   const shouldMultiSend = useMemo(
     () =>
@@ -210,12 +217,9 @@ export const useStepsMachine = (
                         .chainLeft(async () => Right(null))
                         .chain((gas) => {
                           throwIfUnmounted(stepsPageUnmounted);
-                          return withRequestErrorRetry({
-                            fn: () =>
-                              transactionConstruct(constructOnlyTx.id, {
-                                gasArgs: gas?.gasArgs,
-                                ledgerWalletAPICompatible: isLedgerLive,
-                              }),
+                          return txConstruct(constructOnlyTx.id, {
+                            gasArgs: gas?.gasArgs,
+                            ledgerWalletAPICompatible: isLedgerLive,
                           }).mapLeft(() => new TransactionConstructError());
                         })
                         .chain(() => {
@@ -248,12 +252,9 @@ export const useStepsMachine = (
                       throwIfUnmounted(stepsPageUnmounted);
                       return EitherAsync.sequence(
                         txs.map((tx) =>
-                          withRequestErrorRetry({
-                            fn: () =>
-                              transactionConstruct(tx.id, {
-                                gasArgs: gas?.gasArgs,
-                                ledgerWalletAPICompatible: isLedgerLive,
-                              }),
+                          txConstruct(tx.id, {
+                            gasArgs: gas?.gasArgs,
+                            ledgerWalletAPICompatible: isLedgerLive,
                           }).mapLeft(() => new TransactionConstructError())
                         )
                       );
@@ -287,12 +288,9 @@ export const useStepsMachine = (
                 .chainLeft(async () => Right(null))
                 .chain((gas) => {
                   throwIfUnmounted(stepsPageUnmounted);
-                  return withRequestErrorRetry({
-                    fn: () =>
-                      transactionConstruct(tx.id, {
-                        gasArgs: gas?.gasArgs,
-                        ledgerWalletAPICompatible: isLedgerLive,
-                      }),
+                  return txConstruct(tx.id, {
+                    gasArgs: gas?.gasArgs,
+                    ledgerWalletAPICompatible: isLedgerLive,
                   }).mapLeft(() => new TransactionConstructError());
                 })
                 .chain((constructedTx) => {

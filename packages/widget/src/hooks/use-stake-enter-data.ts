@@ -1,45 +1,45 @@
-import { useStakeEnterAndTxsConstruct } from "@sk-widget/hooks/api/use-stake-enter-and-txs-construct";
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
+import { useEnterStakeState } from "@sk-widget/providers/enter-stake-state";
+import { useActionEnterGasEstimation } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const useStakeEnterData = () => {
-  const stakeEnterAndTxsConstructMutationState = useStakeEnterAndTxsConstruct();
+  const enterRequest = useEnterStakeState().unsafeCoerce();
 
-  const stakeEnterAndTxsConstructData = useMemo(
-    () => Maybe.fromNullable(stakeEnterAndTxsConstructMutationState.data),
-    [stakeEnterAndTxsConstructMutationState.data]
-  );
-
-  const stakeSession = useMemo(
-    () => stakeEnterAndTxsConstructData.map((val) => val.actionDto),
-    [stakeEnterAndTxsConstructData]
-  );
-
-  const stakeEnterData = useMemo(
-    () => stakeEnterAndTxsConstructData.map((val) => val.stakeEnterData),
-    [stakeEnterAndTxsConstructData]
+  const actionEnterGasEstimation = useActionEnterGasEstimation(
+    enterRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
   );
 
   const stakeEnterTxGas = useMemo(
     () =>
-      stakeEnterAndTxsConstructData.map(
-        (val) => val.actionDto.gasEstimate.amount
-      ),
-    [stakeEnterAndTxsConstructData]
+      Maybe.fromNullable(actionEnterGasEstimation.data?.amount).map(BigNumber),
+    [actionEnterGasEstimation.data]
   );
 
-  const isGasCheckError = useMemo(
-    () =>
-      stakeEnterAndTxsConstructData
-        .chainNullable((val) => val.gasCheckErr)
-        .isJust(),
-    [stakeEnterAndTxsConstructData]
+  const stakeAmount = useMemo(
+    () => new BigNumber(enterRequest.requestDto.args.amount),
+    [enterRequest]
   );
+
+  const gasCheckWarning = useGasWarningCheck({
+    gasAmount: stakeEnterTxGas,
+    gasFeeToken: enterRequest.gasFeeToken,
+    address: enterRequest.requestDto.addresses.address,
+    additionalAddresses: enterRequest.requestDto.addresses.additionalAddresses,
+    isStake: true,
+    stakeAmount,
+    stakeToken: enterRequest.selectedToken,
+  });
 
   return {
-    stakeSession,
-    stakeEnterData,
-    isGasCheckError,
     stakeEnterTxGas,
+    enterRequest,
+    stakeAmount,
+    isGasCheckWarning: !!gasCheckWarning.data,
+    gasCheckLoading:
+      actionEnterGasEstimation.isLoading || gasCheckWarning.isLoading,
   };
 };

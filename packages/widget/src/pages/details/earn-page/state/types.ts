@@ -86,7 +86,6 @@ export type EarnPageContextType = {
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onSelectTokenClose: () => void;
-  onStakeEnterIsLoading: boolean;
   selectedStakeYieldType: YieldType | null;
   isConnected: boolean;
   isLedgerLiveAccountPlaceholder: boolean;

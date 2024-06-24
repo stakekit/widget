@@ -1,56 +1,46 @@
-import { usePendingActionAndTxsConstruct } from "@sk-widget/hooks/api/use-pending-action-and-txs-construct";
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
+import { usePendingActionState } from "@sk-widget/providers/pending-action-state";
+import { useActionPendingGasEstimate } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 
 export const usePendingActionData = () => {
-  const pendingActionAndTxsConstructMutationState =
-    usePendingActionAndTxsConstruct();
+  const pendingRequest = usePendingActionState().unsafeCoerce();
 
-  const pendingActionAndTxsConstructData = useMemo(
-    () => Maybe.fromNullable(pendingActionAndTxsConstructMutationState.data),
-    [pendingActionAndTxsConstructMutationState.data]
+  const actionPendingGasEstimate = useActionPendingGasEstimate(
+    pendingRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
   );
 
-  const pendingActionSession = useMemo(
-    () => pendingActionAndTxsConstructData.map((val) => val.actionDto),
-    [pendingActionAndTxsConstructData]
-  );
-
-  const pendingActionData = useMemo(
-    () => pendingActionAndTxsConstructData.map((val) => val.pendingActionData),
-    [pendingActionAndTxsConstructData]
-  );
-
-  const pendingActionTxGas = useMemo(
-    () => pendingActionSession.map((val) => val.gasEstimate.amount),
-    [pendingActionSession]
-  );
-
-  const isGasCheckError = useMemo(
+  const pendingTxGas = useMemo(
     () =>
-      pendingActionAndTxsConstructData
-        .chainNullable((val) => val.gasCheckErr)
-        .isJust(),
-    [pendingActionAndTxsConstructData]
+      Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
+    [actionPendingGasEstimate.data]
   );
+
+  const gasWarningCheck = useGasWarningCheck({
+    gasAmount: pendingTxGas,
+    gasFeeToken: pendingRequest.gasFeeToken,
+    address: pendingRequest.addresses.address,
+    additionalAddresses: pendingRequest.addresses.additionalAddresses,
+    isStake: false,
+  });
 
   const amount = useMemo(
-    () => pendingActionSession.map((val) => new BigNumber(val.amount ?? 0)),
-    [pendingActionSession]
-  );
-
-  const pendingActionType = useMemo(
-    () => pendingActionSession.map((val) => val.type),
-    [pendingActionSession]
+    () =>
+      Maybe.fromNullable(pendingRequest.requestDto.args?.amount).map(
+        (val) => new BigNumber(val ?? 0)
+      ),
+    [pendingRequest.requestDto.args?.amount]
   );
 
   return {
-    pendingActionSession,
-    pendingActionData,
-    isGasCheckError,
-    pendingActionTxGas,
+    pendingTxGas,
+    pendingRequest,
     amount,
-    pendingActionType,
+    isGasCheckWarning: !!gasWarningCheck.data,
+    gasCheckLoading:
+      actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
   };
 };

@@ -30,6 +30,7 @@ export const useRegisterFooterButton = (val: FooterButtonVal) => {
   }, [isPresent, setFooterButton, val]);
 
   useIsomorphicEffect(() => {
+    if (!isPresent) return;
     setFooterButton(val);
 
     return () => {

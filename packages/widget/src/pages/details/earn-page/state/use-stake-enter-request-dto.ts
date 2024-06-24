@@ -1,5 +1,9 @@
 import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import type { ActionRequestDto, YieldDto } from "@stakekit/api-hooks";
+import type {
+  ActionRequestDto,
+  ValidatorDto,
+  YieldDto,
+} from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
@@ -26,6 +30,8 @@ export const useStakeEnterRequestDto = () => {
       }).map<{
         gasFeeToken: YieldDto["token"];
         dto: ActionRequestDto;
+        selectedValidators: Map<string, ValidatorDto>;
+        selectedStake: YieldDto;
       }>((val) => {
         const validatorsOrProvider = Just(val.selectedStake)
           .chain<
@@ -53,6 +59,8 @@ export const useStakeEnterRequestDto = () => {
           .orDefault({});
 
         return {
+          selectedValidators,
+          selectedStake: val.selectedStake,
           gasFeeToken: val.selectedStake.metadata.gasFeeToken,
           dto: {
             addresses: {
