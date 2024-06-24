@@ -22,6 +22,17 @@ import {
 import { ImportValidator } from "./import-validator";
 import { listItem, noWrap } from "./styles.css";
 
+const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
+  available: 1,
+  staked: 2,
+  unstaking: 3,
+  unstaked: 4,
+  preparing: 5,
+  locked: 6,
+  unlocking: 7,
+  rewards: 8,
+};
+
 export const PositionsListItem = memo(
   ({
     item,
@@ -58,17 +69,6 @@ export const PositionsListItem = memo(
       () => List.find((v) => !!v.token.isPoints, item.balances),
       [item.balances]
     );
-
-    const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
-      available: 1,
-      staked: 2,
-      unstaking: 3,
-      unstaked: 4,
-      preparing: 5,
-      locked: 6,
-      unlocking: 7,
-      rewards: 8,
-    };
 
     const token = useMemo(
       () =>
