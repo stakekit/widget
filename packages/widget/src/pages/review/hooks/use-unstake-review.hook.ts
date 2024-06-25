@@ -1,7 +1,10 @@
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
+import { useActionExitGasEstimate } from "@stakekit/api-hooks";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo } from "react";
@@ -14,13 +17,33 @@ import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useUnstakeActionReview = () => {
-  const {
-    amount,
-    exitRequest,
-    gasCheckLoading,
-    isGasCheckWarning,
-    stakeExitTxGas,
-  } = useStakeExitData();
+  const exitRequest = useExitStakeState().unsafeCoerce();
+
+  const actionExitGasEstimate = useActionExitGasEstimate(
+    exitRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
+  );
+
+  const stakeExitTxGas = useMemo(
+    () => Maybe.fromNullable(actionExitGasEstimate.data?.amount).map(BigNumber),
+    [actionExitGasEstimate.data]
+  );
+
+  const gasWarningCheck = useGasWarningCheck({
+    gasAmount: stakeExitTxGas,
+    gasFeeToken: exitRequest.gasFeeToken,
+    address: exitRequest.requestDto.addresses.address,
+    additionalAddresses: exitRequest.requestDto.addresses.additionalAddresses,
+    isStake: false,
+  });
+
+  const amount = useMemo(
+    () =>
+      Maybe.fromNullable(exitRequest.requestDto.args.amount).map(
+        (val) => new BigNumber(val ?? 0)
+      ),
+    [exitRequest.requestDto.args.amount]
+  );
 
   const { t } = useTranslation();
 
@@ -132,7 +155,8 @@ export const useUnstakeActionReview = () => {
     onContinueUnstakeSignMessage,
     onCloseUnstakeSignMessage,
     showUnstakeSignMessagePopup,
-    gasCheckLoading,
-    isGasCheckWarning,
+    gasCheckLoading:
+      actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
+    isGasCheckWarning: !!gasWarningCheck.data,
   };
 };

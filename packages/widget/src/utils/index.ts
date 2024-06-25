@@ -1,5 +1,6 @@
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
+import { Just } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "./maybe-window";
 
@@ -16,16 +17,13 @@ BigNumber.config({
   },
 });
 
-const defaultDecimalPlaces = 10;
-
-export const formatNumber = (
-  number: string | BigNumber,
-  decimals = defaultDecimalPlaces
-) => {
-  return BigNumber(number)
-    .decimalPlaces(decimals, BigNumber.ROUND_DOWN)
-    .toFormat();
-};
+export const formatNumber = (number: string | BigNumber, decimals?: number) =>
+  Just(BigNumber(number))
+    .map((v) =>
+      decimals ? v.decimalPlaces(decimals, BigNumber.ROUND_DOWN) : v
+    )
+    .map((v) => v.toFormat())
+    .unsafeCoerce();
 
 export const APToPercentage = (ap: number) => {
   return (ap * 100).toFixed(2);

@@ -100,7 +100,7 @@ export const usePositionDetails = () => {
             baseToken: val.baseToken,
           })
         )
-        .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
+        .mapOrDefault((v) => `$${formatNumber(v, 6)}`, ""),
     [
       positionBalancePrices.data,
       reducedStakedOrLiquidBalance,

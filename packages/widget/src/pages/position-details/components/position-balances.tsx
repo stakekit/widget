@@ -55,11 +55,14 @@ export const PositionBalances = ({
               />
             </Box>
           )}
-          <Text variant={{ type: "muted", weight: "normal" }}>
+          <Text
+            overflowWrap="anywhere"
+            variant={{ type: "muted", weight: "normal" }}
+          >
             {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
-              ` ($${formatNumber(yieldBalance.tokenPriceInUsd, 2)})`}
+              ` ($${formatNumber(yieldBalance.tokenPriceInUsd, 6)})`}
           </Text>
         </Box>
 

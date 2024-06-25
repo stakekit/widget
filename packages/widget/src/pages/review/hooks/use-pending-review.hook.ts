@@ -1,11 +1,20 @@
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
-import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
+import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import { usePendingActionDispatch } from "@sk-widget/providers/pending-action-state";
-import { type ActionTypes, useActionPendingHook } from "@stakekit/api-hooks";
+import {
+  usePendingActionDispatch,
+  usePendingActionState,
+} from "@sk-widget/providers/pending-action-state";
+import { formatNumber } from "@sk-widget/utils";
+import {
+  type ActionTypes,
+  useActionPendingGasEstimate,
+  useActionPendingHook,
+} from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
+import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo } from "react";
@@ -17,13 +26,34 @@ import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const usePendingActionReview = () => {
-  const {
-    pendingTxGas,
-    amount,
-    gasCheckLoading,
-    isGasCheckWarning,
-    pendingRequest,
-  } = usePendingActionData();
+  const pendingRequest = usePendingActionState().unsafeCoerce();
+
+  const actionPendingGasEstimate = useActionPendingGasEstimate(
+    pendingRequest.requestDto,
+    { query: { staleTime: 0, gcTime: 0 } }
+  );
+
+  const pendingTxGas = useMemo(
+    () =>
+      Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
+    [actionPendingGasEstimate.data]
+  );
+
+  const gasWarningCheck = useGasWarningCheck({
+    gasAmount: pendingTxGas,
+    gasFeeToken: pendingRequest.gasFeeToken,
+    address: pendingRequest.addresses.address,
+    additionalAddresses: pendingRequest.addresses.additionalAddresses,
+    isStake: false,
+  });
+
+  const amount = useMemo(
+    () =>
+      Maybe.fromNullable(pendingRequest.requestDto.args?.amount).map(
+        (val) => new BigNumber(val ?? 0)
+      ),
+    [pendingRequest.requestDto.args?.amount]
+  );
 
   const { t } = useTranslation();
 
@@ -137,15 +167,18 @@ export const usePendingActionReview = () => {
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
+  const formattedAmount = useMemo(() => amount.map(formatNumber), [amount]);
+
   return {
     integrationData,
     title,
-    amount,
+    formattedAmount,
     fee,
     rewardTokenDetailsProps,
     token: interactedToken,
     metaInfo,
-    gasCheckLoading,
-    isGasCheckWarning,
+    isGasCheckWarning: !!gasWarningCheck.data,
+    gasCheckLoading:
+      actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
   };
 };

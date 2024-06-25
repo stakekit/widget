@@ -1,4 +1,5 @@
-import { useStakeEnterData } from "@sk-widget/hooks/use-stake-enter-data";
+import { useEnterStakeState } from "@sk-widget/providers/enter-stake-state";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -10,7 +11,7 @@ import { CompletePage } from "./common.page";
 export const StakeCompletePage = () => {
   useTrackPage("stakeCompelete");
 
-  const { stakeAmount, enterRequest } = useStakeEnterData();
+  const enterRequest = useEnterStakeState().unsafeCoerce();
 
   const selectedStake = useMemo(
     () => Maybe.of(enterRequest.selectedStake),
@@ -26,7 +27,10 @@ export const StakeCompletePage = () => {
 
   const network = selectedToken.mapOrDefault((y) => y.symbol, "");
 
-  const amount = Maybe.of(stakeAmount).mapOrDefault((a) => formatNumber(a), "");
+  const amount = useMemo(
+    () => formatNumber(new BigNumber(enterRequest.requestDto.args.amount)),
+    [enterRequest.requestDto.args.amount]
+  );
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 

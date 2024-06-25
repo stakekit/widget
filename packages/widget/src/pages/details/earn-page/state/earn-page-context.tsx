@@ -138,16 +138,12 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             pricePerShare: null,
           })
         )
-        .mapOrDefault((v) => `$${formatNumber(v, 2)}`, ""),
+        .mapOrDefault((v) => `$${formatNumber(v, 6)}`, ""),
     [baseToken, pricesState.data, selectedToken, stakeAmount]
   );
 
   const formattedAmount = useMemo(
-    () =>
-      availableAmount.mapOrDefault(
-        (am) => formatNumber(new BigNumber(am), 4),
-        ""
-      ),
+    () => availableAmount.mapOrDefault((am) => formatNumber(am), ""),
     [availableAmount]
   );
 
