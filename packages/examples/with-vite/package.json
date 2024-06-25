@@ -16,11 +16,11 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.8.1",
+    "@biomejs/biome": "^1.8.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.7.0",
     "typescript": "^5.4.5",
-    "vite": "^5.2.13"
+    "vite": "^5.3.1"
   }
 }
