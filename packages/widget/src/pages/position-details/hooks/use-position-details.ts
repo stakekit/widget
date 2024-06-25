@@ -5,6 +5,7 @@ import {
   useExitStakeStateDispatch,
 } from "@sk-widget/providers/exit-stake-state";
 import type { TokenDto } from "@stakekit/api-hooks";
+import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -41,24 +42,35 @@ export const usePositionDetails = () => {
   const exitDispatch = useExitStakeStateDispatch();
   const exitRequest = useExitStakeState();
 
-  const onUnstakeClick = () => {
-    Maybe.fromRecord({
-      stakeExitRequestDto,
-      integrationData,
-      unstakeToken,
-    }).ifJust((val) => {
-      exitDispatch(
-        Maybe.of({
-          actionDto: Maybe.empty(),
-          gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
-          integrationData: val.integrationData,
-          requestDto: val.stakeExitRequestDto.dto,
-          unstakeAmount,
-          unstakeToken: val.unstakeToken,
-        })
-      );
-    });
-  };
+  const onClickHandler = useMutation({
+    mutationKey: [unstakeAmount.toString()],
+    mutationFn: async () => {
+      if (!unstakeAmountValid) throw new Error("Invalid amount");
+
+      Maybe.fromRecord({
+        stakeExitRequestDto,
+        integrationData,
+        unstakeToken,
+      }).ifJust((val) => {
+        exitDispatch(
+          Maybe.of({
+            actionDto: Maybe.empty(),
+            gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
+            integrationData: val.integrationData,
+            requestDto: val.stakeExitRequestDto.dto,
+            unstakeAmount,
+            unstakeToken: val.unstakeToken,
+          })
+        );
+      });
+
+      return null;
+    },
+  });
+
+  const onUnstakeClick = onClickHandler.mutate;
+
+  const _unstakeAmountError = onClickHandler.isError || unstakeAmountError;
 
   useUpdateEffect(() => {
     if (exitRequest.isJust()) {
@@ -160,8 +172,7 @@ export const usePositionDetails = () => {
     [integrationData, positionBalancesByType, baseToken]
   );
 
-  const unstakeDisabled =
-    !unstakeAmountValid || yieldOpportunity.isLoading || !unstakeAvailable;
+  const unstakeDisabled = yieldOpportunity.isLoading || !unstakeAvailable;
 
   const isLoading =
     positionBalances.isLoading ||
@@ -189,6 +200,6 @@ export const usePositionDetails = () => {
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
-    unstakeAmountError,
+    unstakeAmountError: _unstakeAmountError,
   };
 };
