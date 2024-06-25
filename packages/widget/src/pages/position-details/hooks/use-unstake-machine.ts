@@ -2,8 +2,10 @@ import useStateMachine, { t } from "@cassiozen/usestatemachine";
 import type { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
-import { useExitStakeStateDispatch } from "@sk-widget/providers/exit-stake-state";
+import {
+  useExitStakeState,
+  useExitStakeStateDispatch,
+} from "@sk-widget/providers/exit-stake-state";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import {
   useActionExitHook,
@@ -23,7 +25,7 @@ export const useUnstakeMachine = () => {
   const trackEvent = useTrackEvent();
   const actionExit = useActionExitHook();
 
-  const { exitRequest } = useStakeExitData();
+  const exitRequest = useExitStakeState().unsafeCoerce();
   const setExitDispatch = useExitStakeStateDispatch();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();

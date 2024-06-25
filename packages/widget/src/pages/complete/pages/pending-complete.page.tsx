@@ -1,6 +1,7 @@
 import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
-import { usePendingActionData } from "@sk-widget/hooks/use-pending-action-data";
 import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
+import { usePendingActionState } from "@sk-widget/providers/pending-action-state";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -17,7 +18,7 @@ export const PendingCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const { amount, pendingRequest } = usePendingActionData();
+  const pendingRequest = usePendingActionState().unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),
@@ -40,9 +41,12 @@ export const PendingCompletePage = () => {
 
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
-  const _amount = useMemo(
-    () => amount.mapOrDefault((v) => formatNumber(v), ""),
-    [amount]
+  const amount = useMemo(
+    () =>
+      Maybe.fromNullable(pendingRequest.requestDto.args?.amount)
+        .map((val) => new BigNumber(val ?? 0))
+        .mapOrDefault((v) => formatNumber(v), ""),
+    [pendingRequest.requestDto.args?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);
@@ -54,7 +58,7 @@ export const PendingCompletePage = () => {
       token={token}
       metadata={metadata}
       network={network}
-      amount={_amount}
+      amount={amount}
       pendingActionType={pendingRequest.pendingActionType}
     />
   );

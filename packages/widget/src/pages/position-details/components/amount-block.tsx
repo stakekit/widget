@@ -106,13 +106,18 @@ export const AmountBlock = ({
             marginTop="2"
             flexWrap="wrap"
           >
-            <Box flex={1}>
+            <Box flexGrow={1}>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {formattedAmount}
               </Text>
             </Box>
 
-            <Box display="flex" justifyContent="flex-end" alignItems="center">
+            <Box
+              flexGrow={1}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               {balance && (
                 <Text variant={{ weight: "normal" }}>
                   {t("position_details.available", {

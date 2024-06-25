@@ -6,7 +6,7 @@ import { ReviewPage } from "./common.page";
 
 export const PendingReviewPage = () => {
   const {
-    amount,
+    formattedAmount,
     fee,
     integrationData,
     rewardTokenDetailsProps,
@@ -21,10 +21,10 @@ export const PendingReviewPage = () => {
 
   const info = useMemo(
     () =>
-      Maybe.fromRecord({ token, amount })
-        .map((val) => `${val.amount} ${val.token.symbol}`)
+      Maybe.fromRecord({ token, formattedAmount })
+        .map((val) => `${val.formattedAmount} ${val.token.symbol}`)
         .extractNullable(),
-    [amount, token]
+    [formattedAmount, token]
   );
 
   return (

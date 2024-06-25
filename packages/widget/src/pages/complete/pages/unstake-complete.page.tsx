@@ -1,6 +1,6 @@
 import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
-import { useStakeExitData } from "@sk-widget/hooks/use-stake-exit-data";
+import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -16,7 +16,7 @@ export const UnstakeCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const { exitRequest } = useStakeExitData();
+  const exitRequest = useExitStakeState().unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(exitRequest.integrationData),

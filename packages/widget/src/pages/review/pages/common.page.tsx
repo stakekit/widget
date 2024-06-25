@@ -78,7 +78,11 @@ export const ReviewPage = ({
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ duration: 1, delay: 0.3 }}
           >
-            <Heading variant={{ level: "h2" }} className={headingStyles}>
+            <Heading
+              variant={{ level: "h2" }}
+              overflowWrap="anywhere"
+              className={headingStyles}
+            >
               {info}
             </Heading>
           </motion.div>
@@ -96,20 +100,6 @@ export const ReviewPage = ({
         </Box>
 
         <Divider />
-
-        {/* {rewardTokenDetailsProps
-          .chain((val) =>
-            val.rewardToken.map(() => (
-              <>
-                <Box my="4">
-                  <RewardTokenDetails {...val} rewardToken={val.rewardToken} />
-                </Box>
-
-                <Divider />
-              </>
-            ))
-          )
-          .extractNullable()} */}
 
         <Box
           display="flex"

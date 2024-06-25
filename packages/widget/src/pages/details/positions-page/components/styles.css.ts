@@ -20,4 +20,5 @@ export const noWrap = style({ whiteSpace: "nowrap" });
 
 export const listItem = style({
   alignItems: "flex-start",
+  gap: "10px",
 });

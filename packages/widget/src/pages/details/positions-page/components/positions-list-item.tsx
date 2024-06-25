@@ -140,8 +140,6 @@ export const PositionsListItem = memo(
                   display="flex"
                   justifyContent="flex-start"
                   alignItems="center"
-                  flex={3}
-                  minWidth="0"
                 >
                   {token.mapOrDefault(
                     (val) => (
@@ -157,7 +155,6 @@ export const PositionsListItem = memo(
                     flexDirection="column"
                     justifyContent="center"
                     alignItems="flex-start"
-                    minWidth="0"
                     gap={
                       hasPendingClaimRewards ||
                       actionRequired ||
@@ -226,7 +223,6 @@ export const PositionsListItem = memo(
                       justifyContent="center"
                       alignItems="flex-end"
                       flexDirection="column"
-                      flex={2}
                       textAlign="end"
                       gap="1"
                     >
@@ -234,7 +230,10 @@ export const PositionsListItem = memo(
                         {actionRequired ? " " : val.rewardRateAverage}
                       </Text>
 
-                      <Text variant={{ weight: "normal", type: "muted" }}>
+                      <Text
+                        overflowWrap="anywhere"
+                        variant={{ weight: "normal", type: "muted" }}
+                      >
                         {formatNumber(amount)} {val.token.symbol}
                       </Text>
 
@@ -256,7 +255,10 @@ export const PositionsListItem = memo(
                               tokenLogoHw="5"
                             />
 
-                            <Text variant={{ type: "muted", weight: "normal" }}>
+                            <Text
+                              overflowWrap="anywhere"
+                              variant={{ type: "muted", weight: "normal" }}
+                            >
                               {formatNumber(val.amount)}
                             </Text>
                           </Box>
