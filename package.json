@@ -22,7 +22,7 @@
     "@commitlint/cli": "^19.3.0",
     "@commitlint/config-conventional": "^19.2.2",
     "husky": "^9.0.11",
-    "knip": "^5.18.2",
+    "knip": "^5.23.0",
     "turbo": "^2.0.5"
   },
   "packageManager": "yarn@4.2.2",
