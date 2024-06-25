@@ -1,4 +1,5 @@
-import { useSettings } from "@sk-widget/providers/settings";
+import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { memo, useMemo } from "react";
@@ -29,7 +30,6 @@ export const PositionsListItem = memo(
     item: ReturnType<typeof usePositions>["positionsData"]["data"][number];
   }) => {
     const { t } = useTranslation();
-    const { showPositionLabel } = useSettings();
 
     const yieldLabelDto = useMemo(
       () =>
@@ -158,23 +158,37 @@ export const PositionsListItem = memo(
                         .map((t) => <Text>{t.symbol}</Text>)
                         .extractNullable()}
 
-                      {showPositionLabel &&
-                        yieldLabelDto
-                          .map((label) => (
-                            <Box
-                              className={listItemContainer({
-                                type: "actionRequired",
-                              })}
+                      {yieldLabelDto
+                        .map((label) => {
+                          return (
+                            <ToolTip
+                              textAlign="left"
+                              maxWidth={300}
+                              label={t(
+                                `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
+                                label.params as
+                                  | Record<string, string>
+                                  | undefined
+                              )}
                             >
-                              <Text
-                                variant={{ type: "white" }}
-                                className={noWrap}
+                              <Box
+                                className={listItemContainer({
+                                  type: "actionRequired",
+                                })}
                               >
-                                {t(label.type, label.params) as string}
-                              </Text>
-                            </Box>
-                          ))
-                          .extractNullable()}
+                                <Text
+                                  variant={{ type: "white" }}
+                                  className={noWrap}
+                                >
+                                  {t(
+                                    `position_details.labels.${label.type as PositionDetailsLabelType}.label`
+                                  )}
+                                </Text>
+                              </Box>
+                            </ToolTip>
+                          );
+                        })
+                        .extractNullable()}
 
                       {(hasPendingClaimRewards ||
                         actionRequired ||

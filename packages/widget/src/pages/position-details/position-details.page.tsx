@@ -1,3 +1,4 @@
+import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
@@ -43,6 +44,7 @@ const PositionDetails = () => {
     unstakeToken,
     canUnstake,
     unstakeAmountError,
+    positionLabel,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -102,6 +104,41 @@ const PositionDetails = () => {
                     </>
                   ))
                   .extractNullable()}
+                {positionLabel
+                  .map((l) => (
+                    <Box
+                      background="stakeSectionBackground"
+                      borderRadius="xl"
+                      marginTop="2"
+                      py="4"
+                      px="4"
+                    >
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="flex-start"
+                        gap="1"
+                      >
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                        >
+                          <InfoIcon />
+                        </Box>
+
+                        <Text variant={{ type: "muted", size: "small" }}>
+                          {
+                            t(
+                              `position_details.labels.${l.type}.details`,
+                              l.params
+                            ) as string
+                          }
+                        </Text>
+                      </Box>
+                    </Box>
+                  ))
+                  .extractNullable()}
 
                 <Box marginTop="4">
                   {providersDetails
@@ -120,7 +157,6 @@ const PositionDetails = () => {
                     )
                     .extractNullable()}
                 </Box>
-
                 <Box py="3" gap="2" display="flex" flexDirection="column">
                   {[...val.positionBalancesByType.values()].flatMap(
                     (yieldBalance) =>
@@ -133,7 +169,6 @@ const PositionDetails = () => {
                       ))
                   )}
                 </Box>
-
                 {liquidTokensToNativeConversion
                   .map((val) => (
                     <Box
@@ -154,7 +189,6 @@ const PositionDetails = () => {
                     </Box>
                   ))
                   .extractNullable()}
-
                 <Box
                   display="flex"
                   flex={1}
@@ -242,7 +276,6 @@ const PositionDetails = () => {
                     )
                     .extractNullable()}
                 </Box>
-
                 {validatorAddressesHandling.showValidatorsModal && (
                   <SelectValidator
                     selectedValidators={

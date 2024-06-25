@@ -33,6 +33,10 @@ export const usePositionDetails = () => {
 
   const { stakeExitSession } = useStakeExitData();
 
+  const positionLabel = positionBalances.data.chainNullable(
+    (b) => b.balances.find((b) => b.label)?.label
+  );
+
   const dispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
@@ -193,5 +197,6 @@ export const usePositionDetails = () => {
     onPendingActionAmountChange,
     unstakeToken,
     unstakeAmountError,
+    positionLabel,
   };
 };
