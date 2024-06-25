@@ -5,11 +5,10 @@ import {
 } from "@sk-widget/domain";
 import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
 import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { useOnPendingAction } from "@sk-widget/pages/position-details/hooks/use-on-pending-action";
 import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import type { Override } from "@sk-widget/types";
+import type { GetEitherRight, Override } from "@sk-widget/types";
 import type {
   AddressWithTokenDtoAdditionalAddresses,
   PendingActionDto,
@@ -27,8 +26,6 @@ import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected, address, connector, additionalAddresses } =
     useSKWallet();
-
-  const onPendingAction = useOnPendingAction();
 
   const queryClient = useSKQueryClient();
 
@@ -49,7 +46,6 @@ export const usePendingActionDeepLink = () => {
         ).chain((addr) =>
           fn({
             isLedgerLive,
-            onPendingAction: onPendingAction.mutateAsync,
             additionalAddresses,
             address: addr,
             queryClient,
@@ -63,7 +59,6 @@ export const usePendingActionDeepLink = () => {
 
 const fn = ({
   isLedgerLive,
-  onPendingAction,
   additionalAddresses,
   address,
   queryClient,
@@ -71,7 +66,6 @@ const fn = ({
   yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
-  onPendingAction: ReturnType<typeof useOnPendingAction>["mutateAsync"];
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
@@ -163,17 +157,20 @@ const fn = ({
                 balance: YieldBalanceDto;
                 balanceId: string;
               }
-            | ({ type: "review"; balanceId: string } & Awaited<
-                ReturnType<typeof onPendingAction>
-              >)
+            | {
+                type: "review";
+                yieldOp: YieldDto;
+                balance: YieldBalanceDto;
+                balanceId: string;
+                pendingActionDto: GetEitherRight<
+                  ReturnType<typeof preparePendingActionRequestDto>
+                >;
+              }
           >((val) =>
             PAMultiValidatorsRequired(val.pendingAction) ||
             PASingleValidatorRequired(val.pendingAction)
               ? EitherAsync.liftEither(
-                  Right({
-                    type: "positionDetails",
-                    ...val,
-                  })
+                  Right({ type: "positionDetails", ...val })
                 )
               : EitherAsync.liftEither(
                   preparePendingActionRequestDto({
@@ -186,24 +183,13 @@ const fn = ({
                     pendingActionDto: val.pendingAction,
                     selectedValidators: [],
                   })
-                )
-                  .chain((pendingActionRequestDto) =>
-                    EitherAsync(() =>
-                      onPendingAction({
-                        pendingActionRequestDto,
-                        yieldBalance: val.balance,
-                        pendingActionData: {
-                          integrationData: val.yieldOp,
-                          interactedToken: val.balance.token,
-                        },
-                      })
-                    ).mapLeft(() => new Error("on pending action failed"))
-                  )
-                  .map((res) => ({
-                    ...res,
-                    type: "review",
-                    balanceId: val.balanceId,
-                  }))
+                ).map((res) => ({
+                  yieldOp: val.yieldOp,
+                  pendingActionDto: res,
+                  type: "review",
+                  balanceId: val.balanceId,
+                  balance: val.balance,
+                }))
           )
       );
   });

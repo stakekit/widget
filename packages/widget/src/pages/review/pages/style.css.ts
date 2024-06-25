@@ -11,4 +11,6 @@ export const pointerStyles = style({
   color: vars.color.text,
 });
 
-export const headingStyles = style({ lineHeight: 1.25 });
+export const headingStyles = style({
+  lineHeight: 1.25,
+});

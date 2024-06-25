@@ -4,7 +4,7 @@ import { Just } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoxProps, NumberInputProps } from "../../../components";
-import { Box, Button, NumberInput, Spinner, Text } from "../../../components";
+import { Box, Button, NumberInput, Text } from "../../../components";
 import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
@@ -12,7 +12,6 @@ import { formatNumber } from "../../../utils";
 import type { useUnstakeOrPendingActionState } from "../state";
 
 type AmountBlockProps = {
-  isLoading: boolean;
   onAmountChange: NumberInputProps["onChange"];
   value: NumberInputProps["value"];
   canChangeAmount: boolean;
@@ -42,7 +41,6 @@ type AmountBlockProps = {
 );
 
 export const AmountBlock = ({
-  isLoading,
   onAmountChange,
   value,
   canChangeAmount,
@@ -86,12 +84,6 @@ export const AmountBlock = ({
               />
             </Box>
 
-            {isLoading && (
-              <Box marginRight="3" display="flex">
-                <Spinner />
-              </Box>
-            )}
-
             <Button
               onClick={onClick}
               disabled={disabled}
@@ -114,13 +106,18 @@ export const AmountBlock = ({
             marginTop="2"
             flexWrap="wrap"
           >
-            <Box flex={1}>
+            <Box flexGrow={1}>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {formattedAmount}
               </Text>
             </Box>
 
-            <Box display="flex" justifyContent="flex-end" alignItems="center">
+            <Box
+              flexGrow={1}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               {balance && (
                 <Text variant={{ weight: "normal" }}>
                   {t("position_details.available", {

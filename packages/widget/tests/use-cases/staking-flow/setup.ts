@@ -268,6 +268,21 @@ export const setup = async () => {
         },
       });
     }),
+    http.post("*/v1/actions/enter/estimate-gas", async () => {
+      await delay();
+      return HttpResponse.json({
+        amount: "0.002828600000000000",
+        token: {
+          network: "polygon",
+          coinGeckoId: "matic-network",
+          name: "Polygon",
+          decimals: 18,
+          symbol: "MATIC",
+          logoURI: "https://assets.stakek.it/tokens/matic.svg",
+        },
+        gasLimit: "",
+      });
+    }),
     http.post("*/v1/actions/enter", async (info) => {
       await delay();
 

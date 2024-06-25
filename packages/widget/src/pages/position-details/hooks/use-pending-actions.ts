@@ -1,3 +1,8 @@
+import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
+import {
+  usePendingActionDispatch,
+  usePendingActionState,
+} from "@sk-widget/providers/pending-action-state";
 import type {
   PendingActionDto,
   ValidatorDto,
@@ -14,7 +19,6 @@ import {
   getTokenPriceInUSD,
 } from "../../../domain";
 import { useSavedRef } from "../../../hooks";
-import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
@@ -26,7 +30,6 @@ import {
 } from "../state";
 import type { PendingActionAmountChange } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
-import { useOnPendingAction } from "./use-on-pending-action";
 import { useValidatorAddressesHandling } from "./use-validator-addresses-handling";
 import { preparePendingActionRequestDto } from "./utils";
 
@@ -42,17 +45,11 @@ export const usePendingActions = () => {
 
   const baseToken = useBaseToken(integrationData);
 
-  const pendingActionSelectValidatorMatchRef = useSavedRef(
-    usePendingActionSelectValidatorMatch()
-  );
-
   const pendingActionDispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
 
   const navigate = useNavigate();
-
-  const onPendingAction = useOnPendingAction();
 
   const pendingActions = useMemo(
     () =>
@@ -90,28 +87,19 @@ export const usePendingActions = () => {
                     baseToken: val.baseToken,
                   })
                 )
-                .mapOrDefault((v) => `$${formatNumber(v, 2)}`, "");
+                .mapOrDefault((v) => `$${formatNumber(v, 6)}`, "");
 
               return {
                 amount: amount.extractNullable(),
                 formattedAmount,
                 pendingActionDto: pa,
                 yieldBalance: balance,
-                isLoading:
-                  onPendingAction.variables?.pendingActionRequestDto
-                    .passthrough === pa.passthrough &&
-                  onPendingAction.variables?.pendingActionRequestDto.type ===
-                    pa.type &&
-                  onPendingAction.isPending,
               };
             })
           )
         )
       ),
     [
-      onPendingAction.isPending,
-      onPendingAction.variables?.pendingActionRequestDto.passthrough,
-      onPendingAction.variables?.pendingActionRequestDto.type,
       pendingActionsState,
       positionBalancePrices.data,
       positionBalancesByType,
@@ -162,6 +150,9 @@ export const usePendingActions = () => {
       });
   }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
 
+  const pendignActionRequestDispatch = usePendingActionDispatch();
+  const pendingActionRequestState = usePendingActionState();
+
   const onPendingActionClick = ({
     yieldBalance,
     pendingActionDto,
@@ -173,7 +164,6 @@ export const usePendingActions = () => {
       yieldId: integrationData.map((v) => v.id).extract(),
       type: pendingActionDto.type,
     });
-
     if (
       PAMultiValidatorsRequired(pendingActionDto) ||
       PASingleValidatorRequired(pendingActionDto)
@@ -260,30 +250,39 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) =>
-      onPendingAction.mutate({
-        pendingActionRequestDto: val,
-        yieldBalance,
-        pendingActionData: {
-          integrationData: integrationData,
+      pendignActionRequestDispatch(
+        Maybe.of({
+          actionDto: Maybe.empty(),
+          gasFeeToken: val.gasFeeToken,
+          integrationData: val.integrationData,
           interactedToken: yieldBalance.token,
-        },
-      })
+          pendingActionType: pendingActionDto.type,
+          requestDto: val.requestDto,
+          addresses: {
+            address: val.address,
+            additionalAddresses: val.additionalAddresses,
+          },
+        })
+      )
     );
   };
 
+  const pendingActionSelectValidatorMatchRef = useSavedRef(
+    usePendingActionSelectValidatorMatch()
+  );
+
   useUpdateEffect(() => {
-    if (onPendingAction.isSuccess && onPendingAction.data) {
+    if (pendingActionRequestState.isJust()) {
       pendingActionSelectValidatorMatchRef.current
         ? navigate("../pending-action/review", { relative: "route" })
         : navigate("pending-action/review");
     }
-  }, [onPendingAction.isSuccess, onPendingAction.data]);
+  }, [pendingActionRequestState]);
 
   return {
     onPendingActionAmountChange,
     validatorAddressesHandling,
     pendingActions,
-    onPendingAction,
     onPendingActionClick,
     onValidatorsSubmit,
   };

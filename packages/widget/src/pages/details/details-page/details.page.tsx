@@ -18,7 +18,9 @@ export const Details = () => {
 
   const hasPendingRewards = useMemo(
     () =>
-      positionsData.data.some((p) => checkHasPendingClaimRewards(p.balances)),
+      positionsData.data.some((p) =>
+        checkHasPendingClaimRewards(p.balancesWithAmount)
+      ),
     [positionsData.data]
   );
 

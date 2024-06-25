@@ -125,13 +125,13 @@ export const SelectTokenSection = () => {
         flexWrap="wrap"
         data-rk="stake-token-section-balance"
       >
-        <Box flex={1} display="flex">
+        <Box flexGrow={1} display="flex">
           <Text variant={{ type: "muted", weight: "normal" }}>
             {formattedPrice}
           </Text>
         </Box>
 
-        <Box display="flex" justifyContent="flex-end" alignItems="center">
+        <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex">
             <Text
               variant={{

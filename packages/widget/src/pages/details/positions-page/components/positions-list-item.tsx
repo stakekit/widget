@@ -1,5 +1,6 @@
+import type { YieldBalanceDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { List, Maybe, compare } from "purify-ts";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
@@ -21,6 +22,17 @@ import {
 import { ImportValidator } from "./import-validator";
 import { listItem, noWrap } from "./styles.css";
 
+const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
+  available: 1,
+  staked: 2,
+  unstaking: 3,
+  unstaked: 4,
+  preparing: 5,
+  locked: 6,
+  unlocking: 7,
+  rewards: 8,
+};
+
 export const PositionsListItem = memo(
   ({
     item,
@@ -29,12 +41,14 @@ export const PositionsListItem = memo(
   }) => {
     const { t } = useTranslation();
 
-    const actionRequired = useMemo(() => {
-      return (
+    const actionRequired = useMemo(
+      () =>
         item.type === "default" &&
-        item.balances.some((b) => b.type === "locked" || b.type === "unstaked")
-      );
-    }, [item.balances, item.type]);
+        item.balancesWithAmount.some(
+          (b) => b.type === "locked" || b.type === "unstaked"
+        ),
+      [item.balancesWithAmount, item.type]
+    );
 
     const yieldOpportunity = useYieldOpportunity(item.integrationId);
 
@@ -45,24 +59,33 @@ export const PositionsListItem = memo(
 
     const amount = useMemo(
       () =>
-        item.balances.reduce((acc, b) => {
+        item.balancesWithAmount.reduce((acc, b) => {
           if (b.token.isPoints) return acc;
 
           return new BigNumber(b.amount).plus(acc);
         }, new BigNumber(0)),
-      [item.balances]
+      [item.balancesWithAmount]
     );
 
     const pointsRewardTokenBalance = useMemo(
-      () => List.find((v) => !!v.token.isPoints, item.balances),
-      [item.balances]
+      () => List.find((v) => !!v.token.isPoints, item.balancesWithAmount),
+      [item.balancesWithAmount]
     );
 
-    const token = List.head(item.balances).map((v) => v.token);
+    const token = useMemo(
+      () =>
+        List.head(
+          List.sort(
+            (a, b) => compare(priorityOrder[a.type], priorityOrder[b.type]),
+            item.allBalances
+          )
+        ).map((v) => v.token),
+      [item.allBalances]
+    );
 
     const hasPendingClaimRewards = useMemo(
-      () => checkHasPendingClaimRewards(item.balances),
-      [item.balances]
+      () => checkHasPendingClaimRewards(item.balancesWithAmount),
+      [item.balancesWithAmount]
     );
 
     const providersDetails = useProvidersDetails({
@@ -98,7 +121,7 @@ export const PositionsListItem = memo(
       () =>
         providersDetails
           .chain((val) => List.find((v) => v.status !== "active", val))
-          .chain((val) => Maybe.fromNullable(val.status))
+          .chainNullable((val) => val.status)
           .map((v) => v as Exclude<typeof v, "active">)
           .extractNullable(),
       [providersDetails]
@@ -117,8 +140,6 @@ export const PositionsListItem = memo(
                   display="flex"
                   justifyContent="flex-start"
                   alignItems="center"
-                  flex={3}
-                  minWidth="0"
                 >
                   {token.mapOrDefault(
                     (val) => (
@@ -134,14 +155,7 @@ export const PositionsListItem = memo(
                     flexDirection="column"
                     justifyContent="center"
                     alignItems="flex-start"
-                    minWidth="0"
-                    gap={
-                      hasPendingClaimRewards ||
-                      actionRequired ||
-                      inactiveValidator
-                        ? "1"
-                        : "0"
-                    }
+                    gap="1"
                   >
                     <Box className={positionDetailsContainer}>
                       {token
@@ -203,7 +217,6 @@ export const PositionsListItem = memo(
                       justifyContent="center"
                       alignItems="flex-end"
                       flexDirection="column"
-                      flex={2}
                       textAlign="end"
                       gap="1"
                     >
@@ -211,7 +224,10 @@ export const PositionsListItem = memo(
                         {actionRequired ? " " : val.rewardRateAverage}
                       </Text>
 
-                      <Text variant={{ weight: "normal", type: "muted" }}>
+                      <Text
+                        overflowWrap="anywhere"
+                        variant={{ weight: "normal", type: "muted" }}
+                      >
                         {formatNumber(amount)} {val.token.symbol}
                       </Text>
 
@@ -233,7 +249,10 @@ export const PositionsListItem = memo(
                               tokenLogoHw="5"
                             />
 
-                            <Text variant={{ type: "muted", weight: "normal" }}>
+                            <Text
+                              overflowWrap="anywhere"
+                              variant={{ type: "muted", weight: "normal" }}
+                            >
                               {formatNumber(val.amount)}
                             </Text>
                           </Box>
