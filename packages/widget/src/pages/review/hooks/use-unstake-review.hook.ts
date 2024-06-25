@@ -101,7 +101,7 @@ export const useUnstakeActionReview = () => {
 
   useEffect(() => {
     if (machine.value === "unstakeDone" && exitRequest.actionDto.isJust()) {
-      navigate("unstake/review");
+      navigate("../steps", { relative: "path" });
     }
   }, [machine.value, exitRequest.actionDto, navigate]);
 
