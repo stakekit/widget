@@ -13,7 +13,6 @@ import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
-import { UnstakeSignPopup } from "./components/unstake-sign-popup";
 import { usePositionDetails } from "./hooks/use-position-details";
 import { container } from "./styles.css";
 
@@ -30,10 +29,6 @@ const PositionDetails = () => {
     canChangeUnstakeAmount,
     onMaxClick,
     onUnstakeClick,
-    onContinueUnstakeSignMessage,
-    onCloseUnstakeSignMessage,
-    showUnstakeSignMessagePopup,
-    unstakeIsLoading,
     unstakeDisabled,
     onPendingActionClick,
     pendingActions,
@@ -205,7 +200,6 @@ const PositionDetails = () => {
                           <AmountBlock
                             key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                             variant="action"
-                            isLoading={val.isLoading}
                             onAmountChange={(amount) =>
                               onPendingActionAmountChange({
                                 balanceType: val.yieldBalance.type,
@@ -241,7 +235,6 @@ const PositionDetails = () => {
                       )
                     )
                     .extractNullable()}
-
                   {/* Unstake */}
                   {Maybe.fromRecord({
                     reducedStakedOrLiquidBalance,
@@ -256,7 +249,6 @@ const PositionDetails = () => {
                           variant="unstake"
                           canUnstake={canUnstake}
                           unstakeToken={unstakeToken}
-                          isLoading={unstakeIsLoading}
                           onAmountChange={onUnstakeAmountChange}
                           value={unstakeAmount}
                           canChangeAmount={canChangeUnstakeAmount}
@@ -324,12 +316,6 @@ const PositionDetails = () => {
             ))
             .extractNullable()
         )}
-
-        <UnstakeSignPopup
-          isOpen={showUnstakeSignMessagePopup}
-          onClick={onContinueUnstakeSignMessage}
-          onCancel={onCloseUnstakeSignMessage}
-        />
       </PageContainer>
     </AnimationPage>
   );

@@ -6,7 +6,7 @@ import type {
 } from "@stakekit/api-hooks";
 import { useYieldFindValidators } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createSelector } from "reselect";
@@ -112,27 +112,31 @@ const positionsTableDataSelector = createSelector(
     return [...data.values()].reduce(
       (acc, val) => {
         [...val.balanceData.entries()].forEach(([id, value]) => {
-          const filteredBalances = value.balances.filter((v) => {
-            const amount = new BigNumber(v.amount);
-
-            return !amount.isZero() && !amount.isNaN() && !v.token.isPoints;
-          });
-
-          if (filteredBalances.length) {
-            acc.push({
-              ...value,
-              integrationId: val.integrationId,
-              balances: filteredBalances,
-              balanceId: id,
-            });
-          }
+          Just(
+            value.balances.filter((v) =>
+              Just(new BigNumber(v.amount))
+                .filter((v) => !v.isZero() && !v.isNaN())
+                .isJust()
+            )
+          )
+            .filter((v) => !!v.length)
+            .ifJust((v) =>
+              acc.push({
+                ...value,
+                integrationId: val.integrationId,
+                balancesWithAmount: v,
+                balanceId: id,
+                allBalances: value.balances,
+              })
+            );
         });
 
         return acc;
       },
       [] as ({
         integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
-        balances: YieldBalanceDto[];
+        balancesWithAmount: YieldBalanceDto[];
+        allBalances: YieldBalanceDto[];
         balanceId: YieldBalanceDto["groupId"];
       } & (
         | { type: "validators"; validatorsAddresses: string[] }

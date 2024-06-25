@@ -17,8 +17,9 @@ export const StakeReviewPage = () => {
     metadata,
     rewardToken,
     token,
-    isGasCheckError,
     metaInfo,
+    gasCheckLoading,
+    isGasCheckWarning,
   } = useStakeReview();
 
   const info = useMemo(
@@ -56,7 +57,8 @@ export const StakeReviewPage = () => {
       token={token}
       info={info}
       rewardTokenDetailsProps={rewardTokenDetailsProps}
-      isGasCheckError={isGasCheckError}
+      isGasCheckError={isGasCheckWarning}
+      loading={gasCheckLoading}
       {...metaInfo}
     />
   );

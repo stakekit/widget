@@ -90,7 +90,7 @@ describe("Deep links flow", () => {
       ).toBeInTheDocument()
     );
 
-    expect(app.getByText("Confirm")).toBeInTheDocument();
+    await waitFor(() => expect(app.getByText("Confirm")).toBeInTheDocument());
 
     const user = userEvent.setup();
 

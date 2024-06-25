@@ -97,7 +97,7 @@ export const CompletePage = ({
                 transition: { delay: 0.2, duration: 0.8 },
               }}
             >
-              <Heading variant={{ level: "h3" }}>
+              <Heading overflowWrap="anywhere" variant={{ level: "h3" }}>
                 {t(
                   unstakeMatch
                     ? "complete.successfully_unstaked"
