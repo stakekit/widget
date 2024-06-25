@@ -155,13 +155,7 @@ export const PositionsListItem = memo(
                     flexDirection="column"
                     justifyContent="center"
                     alignItems="flex-start"
-                    gap={
-                      hasPendingClaimRewards ||
-                      actionRequired ||
-                      inactiveValidator
-                        ? "1"
-                        : "0"
-                    }
+                    gap="1"
                   >
                     <Box className={positionDetailsContainer}>
                       {token
