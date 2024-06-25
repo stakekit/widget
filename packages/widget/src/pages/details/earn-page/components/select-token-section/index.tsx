@@ -131,12 +131,7 @@ export const SelectTokenSection = () => {
           </Text>
         </Box>
 
-        <Box
-          flexGrow={1}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        >
+        <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex">
             <Text
               variant={{
