@@ -1,8 +1,8 @@
-import { vars } from "@sk-widget/styles";
-import { style } from "@vanilla-extract/css";
+import { atoms } from "@sk-widget/styles";
 
-export const tooltipContent = style({
-  borderRadius: vars.borderRadius.baseContract.md,
-  padding: vars.space[2],
-  backgroundColor: vars.color.tooltipBackground,
+export const tooltipContent = atoms({
+  borderRadius: "md",
+  px: "2",
+  py: "2",
+  background: "tooltipBackground",
 });

@@ -1,4 +1,4 @@
-import { Trigger } from "@radix-ui/react-alert-dialog";
+import { Trigger } from "@radix-ui/react-dialog";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import {

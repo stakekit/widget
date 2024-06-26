@@ -1,4 +1,4 @@
-import { Trigger } from "@radix-ui/react-alert-dialog";
+import { Trigger } from "@radix-ui/react-dialog";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {

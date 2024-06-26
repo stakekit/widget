@@ -1,7 +1,7 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Text } from "@sk-widget/components";
 import { useRootElement } from "@sk-widget/providers/root-element";
-import type { ReactElement } from "react";
+import type { PropsWithChildren } from "react";
 import { tooltipContent } from "./style.css";
 
 export const ToolTip = ({
@@ -9,12 +9,11 @@ export const ToolTip = ({
   label,
   maxWidth = 200,
   textAlign = "center",
-}: {
-  children: ReactElement;
+}: PropsWithChildren<{
   label: string;
   maxWidth?: number;
   textAlign?: "center" | "left" | "right" | "end";
-}) => (
+}>) => (
   <Tooltip.Provider>
     <Tooltip.Root delayDuration={0}>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>

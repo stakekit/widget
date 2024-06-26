@@ -1,4 +1,4 @@
-import { Trigger } from "@radix-ui/react-alert-dialog";
+import { Trigger } from "@radix-ui/react-dialog";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
