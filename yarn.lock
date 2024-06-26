@@ -3347,30 +3347,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@radix-ui/react-alert-dialog@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "@radix-ui/react-alert-dialog@npm:1.1.1"
-  dependencies:
-    "@radix-ui/primitive": "npm:1.1.0"
-    "@radix-ui/react-compose-refs": "npm:1.1.0"
-    "@radix-ui/react-context": "npm:1.1.0"
-    "@radix-ui/react-dialog": "npm:1.1.1"
-    "@radix-ui/react-primitive": "npm:2.0.0"
-    "@radix-ui/react-slot": "npm:1.1.0"
-  peerDependencies:
-    "@types/react": "*"
-    "@types/react-dom": "*"
-    react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
-    react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
-  peerDependenciesMeta:
-    "@types/react":
-      optional: true
-    "@types/react-dom":
-      optional: true
-  checksum: 10/5049255a4b31b2d65c36235c32016c54234f7580778639b416c3c169af545a2522f9f452d6eb1d9d31c0d2e4d9ca2ae36cac4876bec31f5cc422e92acba5557c
-  languageName: node
-  linkType: hard
-
 "@radix-ui/react-arrow@npm:1.1.0":
   version: 1.1.0
   resolution: "@radix-ui/react-arrow@npm:1.1.0"
@@ -3438,7 +3414,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@radix-ui/react-dialog@npm:1.1.1":
+"@radix-ui/react-dialog@npm:^1.1.1":
   version: 1.1.1
   resolution: "@radix-ui/react-dialog@npm:1.1.1"
   dependencies:
@@ -3828,6 +3804,25 @@ __metadata:
     "@types/react":
       optional: true
   checksum: 10/01a11d4c07fc620b8a081e53d7ec8495b19a11e02688f3d9f47cf41a5fe0428d1e52ed60b2bf88dfd447dc2502797b9dad2841097389126dd108530913c4d90d
+  languageName: node
+  linkType: hard
+
+"@radix-ui/react-visually-hidden@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@radix-ui/react-visually-hidden@npm:1.1.0"
+  dependencies:
+    "@radix-ui/react-primitive": "npm:2.0.0"
+  peerDependencies:
+    "@types/react": "*"
+    "@types/react-dom": "*"
+    react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+    react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
+  peerDependenciesMeta:
+    "@types/react":
+      optional: true
+    "@types/react-dom":
+      optional: true
+  checksum: 10/9e30775dc3bd562722b5671d91545e3e16111f9d1942c98188cb84935eb4a7d31ef1ad1e028e1f1d41e490392f295fbd55424106263869cc7028de9f6141363d
   languageName: node
   linkType: hard
 
@@ -4365,8 +4360,9 @@ __metadata:
     "@cosmos-kit/walletconnect": "npm:2.10.0"
     "@faker-js/faker": "npm:^8.4.1"
     "@ledgerhq/wallet-api-client": "npm:^1.5.9"
-    "@radix-ui/react-alert-dialog": "npm:^1.1.1"
+    "@radix-ui/react-dialog": "npm:^1.1.1"
     "@radix-ui/react-dropdown-menu": "npm:^2.1.1"
+    "@radix-ui/react-visually-hidden": "npm:^1.1.0"
     "@stakekit/api-hooks": "npm:^0.0.74"
     "@stakekit/common": "npm:^0.0.34"
     "@stakekit/rainbowkit": "npm:^2.1.0"

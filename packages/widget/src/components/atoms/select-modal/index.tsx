@@ -1,4 +1,5 @@
-import { Content, Overlay, Portal, Root } from "@radix-ui/react-alert-dialog";
+import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
+import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSavedRef } from "../../../hooks";
@@ -103,7 +104,11 @@ const SelectModalWithoutState = ({
         <Box className={container} data-select-modal>
           <Overlay onClick={() => setOpen(false)} className={overlay} />
 
-          <Content data-testid="select-modal__container" className={content}>
+          <Content
+            data-testid="select-modal__container"
+            className={content}
+            aria-describedby={undefined}
+          >
             <Box display="flex" flexDirection="column" height="full">
               {showTopBar && (
                 <Box
@@ -113,13 +118,19 @@ const SelectModalWithoutState = ({
                   px="4"
                 >
                   <Box flex={1} display="flex" alignItems="center" gap="2">
-                    {title && (
-                      <Text
-                        data-testid="select-modal__title"
-                        variant={{ weight: "bold", size: "large" }}
-                      >
-                        {title}
-                      </Text>
+                    {title ? (
+                      <Title>
+                        <Text
+                          data-testid="select-modal__title"
+                          variant={{ weight: "bold", size: "large" }}
+                        >
+                          {title}
+                        </Text>
+                      </Title>
+                    ) : (
+                      <VisuallyHiddenRoot asChild>
+                        <Title>Selection Modal</Title>
+                      </VisuallyHiddenRoot>
                     )}
 
                     {isLoading && <Spinner />}

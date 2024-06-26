@@ -1,4 +1,4 @@
-import { Trigger } from "@radix-ui/react-alert-dialog";
+import { Trigger } from "@radix-ui/react-dialog";
 import { RootElementProvider } from "@sk-widget/providers/root-element";
 import type { ReactNode } from "react";
 import { useContext, useMemo } from "react";
