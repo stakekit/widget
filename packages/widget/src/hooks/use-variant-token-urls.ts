@@ -31,7 +31,7 @@ export const useVariantTokenUrls = (
          */
         if (token.address) {
           mainUrl = `${config.zerion.iconsByAddress}${token.address}.png`;
-        } else if (token.network === "ethereum") {
+        } else if (token.symbol === "ETH") {
           mainUrl = `${config.zerion.iconsByAddress}eth.png`;
         } else {
           mainUrl = `${config.zerion.iconsByNetwork}${token.network}.png`;
