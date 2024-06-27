@@ -239,11 +239,7 @@ export const UnstakeOrPendingActionProvider = ({
   };
 
   const [state, dispatch] = useReducer(reducer, {
-    unstakeAmount: new BigNumber(
-      integrationData
-        .chainNullable((v) => v.args.exit?.args?.amount?.minimum)
-        .orDefault(0)
-    ),
+    unstakeAmount: minEnterOrExitAmount,
     pendingActions: new Map(),
   });
 
@@ -292,7 +288,7 @@ export const UnstakeOrPendingActionProvider = ({
     [unstakeAmount, minEnterOrExitAmount]
   );
 
-  const unstakeIsGreaterOrLessError = useMemo(
+  const unstakeIsGreaterOrLessIntegrationLimitError = useMemo(
     () =>
       unstakeAmount.isGreaterThan(maxIntegrationAmount) || unstakeIsLessThanMin,
     [unstakeAmount, unstakeIsLessThanMin, maxIntegrationAmount]
@@ -302,12 +298,12 @@ export const UnstakeOrPendingActionProvider = ({
     () =>
       (!unstakeAmount.isZero() && unstakeIsLessThanMin) ||
       unstakeIsGreaterThanMax ||
-      unstakeIsGreaterOrLessError,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     [
       unstakeAmount,
       unstakeIsLessThanMin,
       unstakeIsGreaterThanMax,
-      unstakeIsGreaterOrLessError,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     ]
   );
 
@@ -327,7 +323,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionType,
       integrationData,
       unstakeAmountValid,
-      unstakeIsGreaterOrLessError,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     }),
     [
       canChangeUnstakeAmount,
@@ -344,7 +340,7 @@ export const UnstakeOrPendingActionProvider = ({
       integrationData,
       unstakeAmountValid,
       pendingActionType,
-      unstakeIsGreaterOrLessError,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     ]
   );
 

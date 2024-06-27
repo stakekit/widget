@@ -42,7 +42,7 @@ const PositionDetails = () => {
     positionLabel,
     unstakeMaxAmount,
     unstakeMinAmount,
-    unstakeIsGreaterOrLessError,
+    unstakeIsGreaterOrLessIntegrationLimitError,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -253,8 +253,8 @@ const PositionDetails = () => {
                         <AmountBlock
                           unstakeMaxAmount={unstakeMaxAmount}
                           unstakeMinAmount={unstakeMinAmount}
-                          unstakeIsGreaterOrLessError={
-                            unstakeIsGreaterOrLessError
+                          unstakeIsGreaterOrLessIntegrationLimitError={
+                            unstakeIsGreaterOrLessIntegrationLimitError
                           }
                           variant="unstake"
                           canUnstake={canUnstake}

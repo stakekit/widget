@@ -35,7 +35,7 @@ export const usePositionDetails = () => {
     unstakeToken,
     unstakeAmountError,
     canChangeUnstakeAmount,
-    unstakeIsGreaterOrLessError,
+    unstakeIsGreaterOrLessIntegrationLimitError,
   } = useUnstakeOrPendingActionState();
 
   const navigate = useNavigate();
@@ -233,6 +233,6 @@ export const usePositionDetails = () => {
     unstakeAmountError: _unstakeAmountError,
     unstakeMaxAmount,
     unstakeMinAmount,
-    unstakeIsGreaterOrLessError,
+    unstakeIsGreaterOrLessIntegrationLimitError,
   };
 };
