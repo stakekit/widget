@@ -28,11 +28,6 @@ import type {
 } from "./types";
 import { getBalanceTokenActionType } from "./utils";
 
-const getInitialState = (): State => ({
-  unstakeAmount: new BigNumber(0),
-  pendingActions: new Map(),
-});
-
 const UnstakeOrPendingActionContext = createContext<
   (State & ExtraData) | undefined
 >(undefined);
@@ -121,11 +116,12 @@ export const UnstakeOrPendingActionProvider = ({
     [stakedOrLiquidBalances]
   );
 
-  const { maxEnterOrExitAmount, minEnterOrExitAmount } = useMaxMinYieldAmount({
-    yieldOpportunity: integrationData,
-    type: "exit",
-    availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
-  });
+  const { maxIntegrationAmount, maxEnterOrExitAmount, minEnterOrExitAmount } =
+    useMaxMinYieldAmount({
+      yieldOpportunity: integrationData,
+      type: "exit",
+      availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
+    });
 
   const forceMaxUnstakeAmount = useForceMaxAmount({
     type: "exit",
@@ -242,7 +238,10 @@ export const UnstakeOrPendingActionProvider = ({
     }
   };
 
-  const [state, dispatch] = useReducer(reducer, getInitialState());
+  const [state, dispatch] = useReducer(reducer, {
+    unstakeAmount: minEnterOrExitAmount,
+    pendingActions: new Map(),
+  });
 
   const { pendingActions, unstakeAmount: _ustankeAmount } = state;
 
@@ -279,12 +278,33 @@ export const UnstakeOrPendingActionProvider = ({
     [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
   );
 
+  const unstakeIsGreaterThanMax = useMemo(
+    () => unstakeAmount.isGreaterThan(maxEnterOrExitAmount),
+    [unstakeAmount, maxEnterOrExitAmount]
+  );
+
+  const unstakeIsLessThanMin = useMemo(
+    () => unstakeAmount.isLessThan(minEnterOrExitAmount),
+    [unstakeAmount, minEnterOrExitAmount]
+  );
+
+  const unstakeIsGreaterOrLessIntegrationLimitError = useMemo(
+    () =>
+      unstakeAmount.isGreaterThan(maxIntegrationAmount) || unstakeIsLessThanMin,
+    [unstakeAmount, unstakeIsLessThanMin, maxIntegrationAmount]
+  );
+
   const unstakeAmountError = useMemo(
     () =>
-      (!unstakeAmount.isZero() &&
-        unstakeAmount.isLessThan(minEnterOrExitAmount)) ||
-      unstakeAmount.isGreaterThan(maxEnterOrExitAmount),
-    [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
+      (!unstakeAmount.isZero() && unstakeIsLessThanMin) ||
+      unstakeIsGreaterThanMax ||
+      unstakeIsGreaterOrLessIntegrationLimitError,
+    [
+      unstakeAmount,
+      unstakeIsLessThanMin,
+      unstakeIsGreaterThanMax,
+      unstakeIsGreaterOrLessIntegrationLimitError,
+    ]
   );
 
   const value: State & ExtraData = useMemo(
@@ -303,6 +323,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionType,
       integrationData,
       unstakeAmountValid,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     }),
     [
       canChangeUnstakeAmount,
@@ -319,6 +340,7 @@ export const UnstakeOrPendingActionProvider = ({
       integrationData,
       unstakeAmountValid,
       pendingActionType,
+      unstakeIsGreaterOrLessIntegrationLimitError,
     ]
   );
 

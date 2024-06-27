@@ -63,7 +63,8 @@ export const useMaxMinYieldAmount = ({
     () => ({
       minEnterOrExitAmount,
       maxEnterOrExitAmount,
+      maxIntegrationAmount,
     }),
-    [maxEnterOrExitAmount, minEnterOrExitAmount]
+    [maxEnterOrExitAmount, minEnterOrExitAmount, maxIntegrationAmount]
   );
 };

@@ -7,7 +7,8 @@ import { server } from "../mocks/server";
 import { renderApp, waitFor, within } from "../utils/test-utils";
 
 describe("Select opportunity", () => {
-  it("Works as expected", async () => {
+  // This loads cosmos wagmi config, which takes some time, so we need to increase the timeout
+  it("Works as expected", { timeout: 20000 }, async () => {
     const token: TokenDto = {
       network: "ethereum",
       name: "Ethereum",
@@ -18,6 +19,58 @@ describe("Select opportunity", () => {
     };
 
     server.use(
+      http.get("*/v1/yields/enabled/networks", async () => {
+        await delay();
+
+        return HttpResponse.json([
+          "ethereum",
+          "ethereum-goerli",
+          "avalanche-c",
+          "celo",
+          "akash",
+          "cosmos",
+          "kava",
+          "osmosis",
+          "juno",
+          "stargaze",
+          "persistence",
+          "axelar",
+          "onomy",
+          "quicksilver",
+          "agoric",
+          "band-protocol",
+          "bitsong",
+          "chihuahua",
+          "comdex",
+          "crescent",
+          "cronos",
+          "cudos",
+          "fetch-ai",
+          "gravity-bridge",
+          "injective",
+          "irisnet",
+          "ki-network",
+          "mars-protocol",
+          "regen",
+          "secret",
+          "sentinel",
+          "sommelier",
+          "teritori",
+          "umee",
+          "coreum",
+          "desmos",
+          "dydx",
+          "optimism",
+          "fantom",
+          "arbitrum",
+          "polygon",
+          "binance",
+          "near",
+          "harmony",
+          "solana",
+          "tezos",
+        ]);
+      }),
       http.get("*/v1/tokens", async () => {
         await delay();
         return HttpResponse.json([

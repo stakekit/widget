@@ -1,6 +1,6 @@
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
-import type BigNumber from "bignumber.js";
-import { Just } from "purify-ts";
+import BigNumber from "bignumber.js";
+import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoxProps, NumberInputProps } from "../../../components";
@@ -9,7 +9,6 @@ import { pressAnimation } from "../../../components/atoms/button/styles.css";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { formatNumber } from "../../../utils";
-import type { useUnstakeOrPendingActionState } from "../state";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];
@@ -25,9 +24,7 @@ type AmountBlockProps = {
 } & (
   | {
       variant: "unstake";
-      unstakeToken: ReturnType<
-        typeof useUnstakeOrPendingActionState
-      >["unstakeToken"];
+      unstakeToken: TokenDto;
       yieldDto: YieldDto;
       validators: {
         [Key in keyof Pick<
@@ -36,6 +33,9 @@ type AmountBlockProps = {
         >]?: ValidatorDto[Key];
       }[];
       canUnstake: boolean;
+      unstakeIsGreaterOrLessIntegrationLimitError: boolean;
+      unstakeMaxAmount: Maybe<number>;
+      unstakeMinAmount: Maybe<number>;
     }
   | { variant: "action" }
 );
@@ -54,6 +54,48 @@ export const AmountBlock = ({
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
+
+  const minMaxUnstakeAmount = Maybe.fromPredicate(
+    (v) => v.variant === "unstake",
+    rest as Extract<AmountBlockProps, { variant: "unstake" }>
+  )
+    .map(
+      (val) =>
+        [
+          val.unstakeMinAmount
+            .map(
+              (v) =>
+                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
+            )
+            .extractNullable(),
+          val.unstakeMaxAmount
+            .map(
+              (v) =>
+                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
+            )
+            .extractNullable(),
+          val.unstakeIsGreaterOrLessIntegrationLimitError,
+        ] as const
+    )
+    .filter((val) => val.some(Boolean))
+    .map(([min, max, error]) => (
+      <Box
+        display="flex"
+        justifyContent="flex-end"
+        alignItems="center"
+        marginTop="2"
+        marginRight="2"
+      >
+        <Text
+          key="min"
+          variant={{ type: error ? "danger" : "muted" }}
+          textAlign="right"
+        >
+          {min && max ? `${min} / ${max}` : min ?? max}
+        </Text>
+      </Box>
+    ))
+    .extractNullable();
 
   const variantProps: BoxProps =
     rest.variant === "action"
@@ -98,7 +140,7 @@ export const AmountBlock = ({
               <Text>{label}</Text>
             </Button>
           </Box>
-
+          {minMaxUnstakeAmount}
           <Box
             display="flex"
             justifyContent="space-between"
@@ -173,14 +215,12 @@ const UnstakeInfo = ({
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: ReturnType<
-    typeof useUnstakeOrPendingActionState
-  >["unstakeToken"];
+  unstakeToken: TokenDto;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable } = useYieldMetaInfo({
     validators,
     selectedStake: Just(yieldDto),
-    tokenDto: unstakeToken,
+    tokenDto: Just(unstakeToken),
   });
 
   return useMemo(
