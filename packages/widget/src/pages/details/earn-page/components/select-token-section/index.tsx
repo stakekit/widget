@@ -1,3 +1,4 @@
+import { priceTxt } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, NumberInput, Text } from "../../../../../components";
@@ -124,14 +125,20 @@ export const SelectTokenSection = () => {
         marginTop="2"
         flexWrap="wrap"
         data-rk="stake-token-section-balance"
+        gap="1"
       >
-        <Box flexGrow={1} display="flex">
+        <Box className={priceTxt} display="flex">
           <Text variant={{ type: "muted", weight: "normal" }}>
             {formattedPrice}
           </Text>
         </Box>
 
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box
+          flexGrow={1}
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+        >
           <Box display="flex">
             <Text
               variant={{
