@@ -28,11 +28,6 @@ import type {
 } from "./types";
 import { getBalanceTokenActionType } from "./utils";
 
-const getInitialState = (): State => ({
-  unstakeAmount: new BigNumber(0),
-  pendingActions: new Map(),
-});
-
 const UnstakeOrPendingActionContext = createContext<
   (State & ExtraData) | undefined
 >(undefined);
@@ -242,7 +237,14 @@ export const UnstakeOrPendingActionProvider = ({
     }
   };
 
-  const [state, dispatch] = useReducer(reducer, getInitialState());
+  const [state, dispatch] = useReducer(reducer, {
+    unstakeAmount: new BigNumber(
+      integrationData
+        .chainNullable((v) => v.args.exit?.args?.amount?.minimum)
+        .orDefault(0)
+    ),
+    pendingActions: new Map(),
+  });
 
   const { pendingActions, unstakeAmount: _ustankeAmount } = state;
 
@@ -279,12 +281,21 @@ export const UnstakeOrPendingActionProvider = ({
     [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
   );
 
+  const unstakeIsGreaterThanMax = useMemo(
+    () => unstakeAmount.isGreaterThan(maxEnterOrExitAmount),
+    [unstakeAmount, maxEnterOrExitAmount]
+  );
+
+  const unstakeIsLessThanMin = useMemo(
+    () => unstakeAmount.isLessThan(minEnterOrExitAmount),
+    [unstakeAmount, minEnterOrExitAmount]
+  );
+
   const unstakeAmountError = useMemo(
     () =>
-      (!unstakeAmount.isZero() &&
-        unstakeAmount.isLessThan(minEnterOrExitAmount)) ||
-      unstakeAmount.isGreaterThan(maxEnterOrExitAmount),
-    [maxEnterOrExitAmount, minEnterOrExitAmount, unstakeAmount]
+      (!unstakeAmount.isZero() && unstakeIsLessThanMin) ||
+      unstakeIsGreaterThanMax,
+    [unstakeAmount, unstakeIsLessThanMin, unstakeIsGreaterThanMax]
   );
 
   const value: State & ExtraData = useMemo(
@@ -303,6 +314,7 @@ export const UnstakeOrPendingActionProvider = ({
       pendingActionType,
       integrationData,
       unstakeAmountValid,
+      unstakeIsLessThanMin,
     }),
     [
       canChangeUnstakeAmount,
@@ -319,6 +331,7 @@ export const UnstakeOrPendingActionProvider = ({
       integrationData,
       unstakeAmountValid,
       pendingActionType,
+      unstakeIsLessThanMin,
     ]
   );
 

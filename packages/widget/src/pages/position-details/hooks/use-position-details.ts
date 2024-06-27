@@ -1,3 +1,4 @@
+import { isForceMaxAmount } from "@sk-widget/domain/types/stake";
 import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { useStakeExitRequestDto } from "@sk-widget/pages/position-details/hooks/use-stake-exit-request-dto";
 import {
@@ -34,6 +35,7 @@ export const usePositionDetails = () => {
     unstakeToken,
     unstakeAmountError,
     canChangeUnstakeAmount,
+    unstakeIsLessThanMin,
   } = useUnstakeOrPendingActionState();
 
   const navigate = useNavigate();
@@ -41,6 +43,25 @@ export const usePositionDetails = () => {
   const stakeExitRequestDto = useStakeExitRequestDto();
   const exitDispatch = useExitStakeStateDispatch();
   const exitRequest = useExitStakeState();
+
+  const unstakeMaxAmount = useMemo(
+    () =>
+      integrationData
+        .chainNullable((val) => val.args.exit?.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.maximum),
+    [integrationData]
+  );
+
+  const unstakeMinAmount = useMemo(
+    () =>
+      integrationData
+        .chainNullable((val) => val.args.exit?.args?.amount)
+        .filter((val) => !isForceMaxAmount(val))
+        .chainNullable((val) => val.minimum)
+        .filter((val) => new BigNumber(val).isGreaterThan(0)),
+    [integrationData]
+  );
 
   const onClickHandler = useMutation({
     mutationKey: [unstakeAmount.toString()],
@@ -201,5 +222,8 @@ export const usePositionDetails = () => {
     onPendingActionAmountChange,
     unstakeToken,
     unstakeAmountError: _unstakeAmountError,
+    unstakeMaxAmount,
+    unstakeMinAmount,
+    unstakeIsLessThanMin,
   };
 };

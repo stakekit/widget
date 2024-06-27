@@ -57,4 +57,5 @@ export type ExtraData = {
   unstakeToken: Maybe<TokenDto>;
   unstakeAmountError: boolean;
   canChangeUnstakeAmount: Maybe<boolean>;
+  unstakeIsLessThanMin: boolean;
 };

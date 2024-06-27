@@ -38,6 +38,9 @@ const PositionDetails = () => {
     unstakeToken,
     canUnstake,
     unstakeAmountError,
+    unstakeMaxAmount,
+    unstakeMinAmount,
+    unstakeIsLessThanMin,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -205,13 +208,18 @@ const PositionDetails = () => {
                   {Maybe.fromRecord({
                     reducedStakedOrLiquidBalance,
                     canChangeUnstakeAmount,
+                    unstakeToken,
                   })
                     .map(
                       ({
                         reducedStakedOrLiquidBalance,
                         canChangeUnstakeAmount,
+                        unstakeToken,
                       }) => (
                         <AmountBlock
+                          unstakeMaxAmount={unstakeMaxAmount}
+                          unstakeMinAmount={unstakeMinAmount}
+                          unstakeIsLessThanMin={unstakeIsLessThanMin}
                           variant="unstake"
                           canUnstake={canUnstake}
                           unstakeToken={unstakeToken}
