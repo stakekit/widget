@@ -33,7 +33,7 @@ type AmountBlockProps = {
         >]?: ValidatorDto[Key];
       }[];
       canUnstake: boolean;
-      unstakeIsLessThanMin: boolean;
+      unstakeIsGreaterOrLessError: boolean;
       unstakeMaxAmount: Maybe<number>;
       unstakeMinAmount: Maybe<number>;
     }
@@ -74,7 +74,7 @@ export const AmountBlock = ({
                 `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
             )
             .extractNullable(),
-          val.unstakeIsLessThanMin,
+          val.unstakeIsGreaterOrLessError,
         ] as const
     )
     .filter((val) => val.some(Boolean))
