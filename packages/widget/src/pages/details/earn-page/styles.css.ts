@@ -25,40 +25,6 @@ export const apyVariable = style({
   right: -10,
 });
 
-export const apyVariableTooltip = style({
-  cursor: "default",
-  visibility: "hidden",
-  backgroundColor: vars.color.tooltipBackground,
-  textAlign: "center",
-  borderRadius: "6px",
-  padding: "5px 5px",
-  position: "absolute",
-  zIndex: "1",
-  bottom: "150%",
-  width: "160px",
-  left: "50%",
-  marginLeft: "-80px",
-
-  selectors: {
-    [`${apyVariable}:hover &`]: {
-      visibility: "visible",
-    },
-    [`${apyVariable}:focus &`]: {
-      visibility: "visible",
-    },
-  },
-  "::after": {
-    content: "",
-    position: "absolute",
-    top: "100%",
-    left: "50%",
-    marginLeft: "-5px",
-    borderWidth: "5px",
-    borderStyle: "solid",
-    borderColor: "black transparent transparent transparent",
-  },
-});
-
 export const validatorPill = style([
   atoms({
     display: "flex",

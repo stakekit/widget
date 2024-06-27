@@ -1,10 +1,11 @@
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { ToolTip } from "@sk-widget/components/atoms/tooltip";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Box, Divider, Text } from "../../../../../components";
-import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { apyVariable, apyVariableTooltip, apyYield } from "../../styles.css";
+import { apyVariable, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
 import { useAnimateYieldPercent } from "./use-animate-yield-percent";
@@ -76,13 +77,14 @@ export const SelectYieldSection = () => {
                     {selectedStake
                       .filter((pd) => pd.rewardType === "variable")
                       .map(() => (
-                        <Box className={apyVariable}>
-                          <Text variant={{ size: "large" }}>*</Text>
-
-                          <Text className={apyVariableTooltip}>
-                            {t("details.reward_rate_estimate_tooltip")}
-                          </Text>
-                        </Box>
+                        <ToolTip
+                          maxWidth={160}
+                          label={t("details.reward_rate_estimate_tooltip")}
+                        >
+                          <Box className={apyVariable}>
+                            <Text variant={{ size: "large" }}>*</Text>
+                          </Box>
+                        </ToolTip>
                       ))
                       .extractNullable()}
 

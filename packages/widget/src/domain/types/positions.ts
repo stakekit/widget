@@ -7,3 +7,5 @@ export type PositionBalancesByType = Map<
     tokenPriceInUsd: BigNumber;
   })[]
 >;
+
+export type PositionDetailsLabelType = "hasFrozenV1";

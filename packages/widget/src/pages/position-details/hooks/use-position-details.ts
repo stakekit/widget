@@ -99,6 +99,14 @@ export const usePositionDetails = () => {
     }
   }, [exitRequest]);
 
+  const positionLabel = useMemo(
+    () =>
+      positionBalances.data.chainNullable(
+        (b) => b.balances.find((b) => b.label)?.label
+      ),
+    [positionBalances.data]
+  );
+
   const dispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
@@ -221,6 +229,7 @@ export const usePositionDetails = () => {
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
+    positionLabel,
     unstakeAmountError: _unstakeAmountError,
     unstakeMaxAmount,
     unstakeMinAmount,

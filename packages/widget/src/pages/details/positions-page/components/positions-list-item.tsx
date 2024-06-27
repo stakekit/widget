@@ -1,3 +1,5 @@
+import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
 import type { YieldBalanceDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { List, Maybe, compare } from "purify-ts";
@@ -40,6 +42,14 @@ export const PositionsListItem = memo(
     item: ReturnType<typeof usePositions>["positionsData"]["data"][number];
   }) => {
     const { t } = useTranslation();
+
+    const yieldLabelDto = useMemo(
+      () =>
+        List.find((b) => !!b.label, item.allBalances).chainNullable(
+          (v) => v.label
+        ),
+      [item.allBalances]
+    );
 
     const actionRequired = useMemo(
       () =>
@@ -160,6 +170,38 @@ export const PositionsListItem = memo(
                     <Box className={positionDetailsContainer}>
                       {token
                         .map((t) => <Text>{t.symbol}</Text>)
+                        .extractNullable()}
+
+                      {yieldLabelDto
+                        .map((label) => {
+                          return (
+                            <ToolTip
+                              textAlign="left"
+                              maxWidth={300}
+                              label={t(
+                                `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
+                                label.params as
+                                  | Record<string, string>
+                                  | undefined
+                              )}
+                            >
+                              <Box
+                                className={listItemContainer({
+                                  type: "actionRequired",
+                                })}
+                              >
+                                <Text
+                                  variant={{ type: "white" }}
+                                  className={noWrap}
+                                >
+                                  {t(
+                                    `position_details.labels.${label.type as PositionDetailsLabelType}.label`
+                                  )}
+                                </Text>
+                              </Box>
+                            </ToolTip>
+                          );
+                        })
                         .extractNullable()}
 
                       {(hasPendingClaimRewards ||
