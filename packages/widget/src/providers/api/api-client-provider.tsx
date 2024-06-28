@@ -20,6 +20,7 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
     const instance = axios.create({
       baseURL: config.env.apiUrl,
       headers: { "X-API-KEY": apiKey },
+      adapter: "fetch",
     });
 
     attachDelayInterceptor(instance);
