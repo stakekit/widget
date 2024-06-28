@@ -4355,9 +4355,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/rainbowkit@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@stakekit/rainbowkit@npm:2.1.0"
+"@stakekit/rainbowkit@npm:^2.1.6":
+  version: 2.1.6
+  resolution: "@stakekit/rainbowkit@npm:2.1.6"
   dependencies:
     "@vanilla-extract/css": "npm:1.14.0"
     "@vanilla-extract/dynamic": "npm:2.1.0"
@@ -4372,7 +4372,7 @@ __metadata:
     react-dom: ">=18"
     viem: 2.x
     wagmi: ^2.9.0
-  checksum: 10/04c436cc961ccde31c73b3b6633c53d25de710afcab3b9704bcc22cef8871622b430c745c4f112fadc68a95f3ee5cb8adaba3c035019e0c260db0c400d07e1ed
+  checksum: 10/27ec8adda3bead7baf78177573e61870d46b0f239e3efc6268b1b6ed2a749f925a1369b2c4f98e61843626a0aab9eed2e61c8f83d5cf4b0eeec0b9879a2e8715
   languageName: node
   linkType: hard
 
@@ -4396,7 +4396,7 @@ __metadata:
     "@radix-ui/react-visually-hidden": "npm:^1.1.0"
     "@stakekit/api-hooks": "npm:^0.0.74"
     "@stakekit/common": "npm:^0.0.34"
-    "@stakekit/rainbowkit": "npm:^2.1.0"
+    "@stakekit/rainbowkit": "npm:^2.1.6"
     "@tanstack/react-query": "npm:^5.47.0"
     "@tanstack/react-virtual": "npm:^3.7.0"
     "@testing-library/dom": "npm:^10.2.0"

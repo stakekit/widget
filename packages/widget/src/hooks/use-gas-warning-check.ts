@@ -44,7 +44,7 @@ export const useGasWarningCheck = (
   );
 
   return useQuery({
-    queryKey: ["gas-check"],
+    queryKey: ["gas-check", requestData.extract()],
     enabled: requestData.isJust(),
     staleTime: 0,
     queryFn: async () => {
