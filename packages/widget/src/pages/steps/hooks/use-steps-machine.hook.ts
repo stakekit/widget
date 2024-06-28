@@ -64,7 +64,18 @@ type SignRes =
       };
     };
 
-export const useStepsMachine = (session: ActionDto | null) => {
+const throwIfUnmounted = (
+  stepsPageUnmounted: React.MutableRefObject<boolean>
+) => {
+  if (stepsPageUnmounted.current) {
+    throw new Error("User cancelled.");
+  }
+};
+
+export const useStepsMachine = (
+  session: ActionDto | null,
+  stepsPageUnmounted: React.MutableRefObject<boolean>
+) => {
   const {
     signTransaction,
     signMultipleTransactions,
@@ -168,6 +179,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
           DONE: "done",
         },
         effect: ({ context, send, setContext }) => {
+          throwIfUnmounted(stepsPageUnmounted);
           EitherAsync.liftEither(
             Maybe.fromNullable(
               context.txStates[context.currentTxMeta?.idx!].tx
@@ -197,19 +209,22 @@ export const useStepsMachine = (session: ActionDto | null) => {
                         );
                       }
 
+                      throwIfUnmounted(stepsPageUnmounted);
                       return getAverageGasMode({
                         network: constructOnlyTx.network,
                         transactionGetGasForNetwork,
                       })
                         .chainLeft(async () => Right(null))
-                        .chain((gas) =>
-                          txConstruct(constructOnlyTx.id, {
+                        .chain((gas) => {
+                          throwIfUnmounted(stepsPageUnmounted);
+                          return txConstruct(constructOnlyTx.id, {
                             gasArgs: gas?.gasArgs,
                             ledgerWalletAPICompatible: isLedgerLive,
-                          }).mapLeft(() => new TransactionConstructError())
-                        )
-                        .chain(() =>
-                          withRequestErrorRetry({
+                          }).mapLeft(() => new TransactionConstructError());
+                        })
+                        .chain(() => {
+                          throwIfUnmounted(stepsPageUnmounted);
+                          return withRequestErrorRetry({
                             fn: () =>
                               transactionGetTransactionStatusFromId(
                                 constructOnlyTx.id
@@ -223,26 +238,28 @@ export const useStepsMachine = (session: ActionDto | null) => {
                               new Error(
                                 `failed to get ${constructOnlyTx.id} tx status`
                               )
-                          )
-                        )
+                          );
+                        })
                         .map(() => getTransactionsForMultiSign(txs));
                     })
                   )
-                  .chain((txs) =>
-                    getAverageGasMode({
+                  .chain((txs) => {
+                    throwIfUnmounted(stepsPageUnmounted);
+                    return getAverageGasMode({
                       network: tx.network,
                       transactionGetGasForNetwork,
-                    }).chain((gas) =>
-                      EitherAsync.sequence(
+                    }).chain((gas) => {
+                      throwIfUnmounted(stepsPageUnmounted);
+                      return EitherAsync.sequence(
                         txs.map((tx) =>
                           txConstruct(tx.id, {
                             gasArgs: gas?.gasArgs,
                             ledgerWalletAPICompatible: isLedgerLive,
                           }).mapLeft(() => new TransactionConstructError())
                         )
-                      )
-                    )
-                  )
+                      );
+                    });
+                  })
                   .map((txs) =>
                     txs
                       .map((tx) => tx.unsignedTransaction)
@@ -255,6 +272,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                       );
                     }
 
+                    throwIfUnmounted(stepsPageUnmounted);
                     return signMultipleTransactions({ txs });
                   })
                   .map((val) => ({ type: "regular", data: val }));
@@ -268,12 +286,13 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 transactionGetGasForNetwork,
               })
                 .chainLeft(async () => Right(null))
-                .chain((gas) =>
-                  txConstruct(tx.id, {
+                .chain((gas) => {
+                  throwIfUnmounted(stepsPageUnmounted);
+                  return txConstruct(tx.id, {
                     gasArgs: gas?.gasArgs,
                     ledgerWalletAPICompatible: isLedgerLive,
-                  }).mapLeft(() => new TransactionConstructError())
-                )
+                  }).mapLeft(() => new TransactionConstructError());
+                })
                 .chain((constructedTx) => {
                   if (constructedTx.status === "BROADCASTED") {
                     return EitherAsync.liftEither(
@@ -296,6 +315,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     );
                   }
 
+                  throwIfUnmounted(stepsPageUnmounted);
                   return signTransaction({
                     tx: constructedTx.unsignedTransaction,
                     ledgerHwAppId: constructedTx.ledgerHwAppId,
@@ -305,13 +325,14 @@ export const useStepsMachine = (session: ActionDto | null) => {
                       network: constructedTx.network,
                       txId: constructedTx.id,
                     }))
-                    .ifRight(() =>
-                      trackEvent("txSigned", {
+                    .ifRight(() => {
+                      throwIfUnmounted(stepsPageUnmounted);
+                      return trackEvent("txSigned", {
                         txId: constructedTx.id,
                         network: constructedTx.network,
                         yieldId: context.yieldId,
-                      })
-                    )
+                      });
+                    })
                     .map((val) => ({ type: "regular", data: val }));
                 });
             })
@@ -371,12 +392,14 @@ export const useStepsMachine = (session: ActionDto | null) => {
           BROADCAST_ERROR: "broadcastError",
         },
         effect: ({ send, context, setContext }) => {
+          throwIfUnmounted(stepsPageUnmounted);
           EitherAsync.liftEither(
             Maybe.fromNullable(
               context.txStates[context.currentTxMeta?.idx!]
             ).toEither(new Error("missing tx"))
           )
             .chain((currentTx) => {
+              throwIfUnmounted(stepsPageUnmounted);
               if (currentTx.meta.broadcasted) {
                 return withRequestErrorRetry({
                   fn: () =>
@@ -386,6 +409,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 })
                   .mapLeft(() => new SubmitHashError())
                   .ifRight(() => {
+                    throwIfUnmounted(stepsPageUnmounted);
                     trackEvent("txSubmitted", {
                       txId: currentTx.tx.id,
                       network: currentTx.tx.network,
@@ -393,7 +417,6 @@ export const useStepsMachine = (session: ActionDto | null) => {
                     });
                   });
               }
-
               return withRequestErrorRetry({
                 fn: async () => {
                   await transactionSubmit(currentTx.tx.id, {
@@ -403,6 +426,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
               })
                 .mapLeft(() => new SubmitError())
                 .ifRight(() => {
+                  throwIfUnmounted(stepsPageUnmounted);
                   trackEvent("txSubmitted", {
                     txId: currentTx.tx.id,
                     network: currentTx.tx.network,
@@ -466,13 +490,15 @@ export const useStepsMachine = (session: ActionDto | null) => {
           TX_CHECK_RETRY: "txCheckRetry",
         },
         effect: ({ send, context, setContext }) => {
+          throwIfUnmounted(stepsPageUnmounted);
           EitherAsync.liftEither(
             Maybe.fromNullable(
               context.txStates[context.currentTxMeta?.idx!]
             ).toEither(new Error("missing tx"))
           )
-            .chain((currentTx) =>
-              withRequestErrorRetry({
+            .chain((currentTx) => {
+              throwIfUnmounted(stepsPageUnmounted);
+              return withRequestErrorRetry({
                 fn: () =>
                   transactionGetTransactionStatusFromId(currentTx.tx.id),
                 shouldRetry: (e, retryCount) =>
@@ -481,17 +507,19 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   (e.response?.status === 404 || e.response?.status === 503),
               })
                 .map((res) => ({ url: res.url, status: res.status }))
-                .chainLeft(() =>
-                  withRequestErrorRetry({
+                .chainLeft(() => {
+                  throwIfUnmounted(stepsPageUnmounted);
+                  return withRequestErrorRetry({
                     fn: () => transactionGetTransaction(currentTx.tx.id),
                   }).map((res) => ({
                     url: res.explorerUrl,
                     status: res.status,
-                  }))
-                )
+                  }));
+                })
                 .mapLeft(() => new TXCheckError())
-                .chain((val) =>
-                  EitherAsync.liftEither(
+                .chain((val) => {
+                  throwIfUnmounted(stepsPageUnmounted);
+                  return EitherAsync.liftEither(
                     isTxError(val.status)
                       ? Left(
                           new SignError({
@@ -503,9 +531,9 @@ export const useStepsMachine = (session: ActionDto | null) => {
                           url: val.url,
                           isConfirmed: val.status === "CONFIRMED",
                         })
-                  )
-                )
-            )
+                  );
+                });
+            })
             .caseOf({
               Left: (l) => {
                 console.log(l);
@@ -536,6 +564,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 send("TX_CHECK_ERROR");
               },
               Right: (v) => {
+                throwIfUnmounted(stepsPageUnmounted);
                 if (v.isConfirmed) {
                   const newTxStates = context.txStates.map((val, i) =>
                     i === context.currentTxMeta?.idx!
@@ -571,6 +600,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   if (newCurrentTxIdx === null) {
                     return send("DONE");
                   }
+
                   send("SIGN_NEXT_TX");
                 } else {
                   send({ type: "TX_CHECK_RETRY" });
