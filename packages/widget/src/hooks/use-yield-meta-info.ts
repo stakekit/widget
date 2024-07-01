@@ -4,7 +4,6 @@ import { Maybe } from "purify-ts";
 import { List } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { yieldTypesMap } from "../domain/types";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
@@ -67,7 +66,7 @@ export const useYieldMetaInfo = ({
       };
 
       switch (y.metadata.type) {
-        case yieldTypesMap.staking.type: {
+        case "staking": {
           return {
             description: null,
             earnPeriod:
@@ -95,7 +94,7 @@ export const useYieldMetaInfo = ({
           };
         }
 
-        case yieldTypesMap.lending.type:
+        case "lending":
           return {
             earnPeriod:
               warmupPeriodDays > 0
@@ -127,7 +126,7 @@ export const useYieldMetaInfo = ({
             ...def,
           };
 
-        case yieldTypesMap.vault.type:
+        case "vault":
           return {
             description: t("details.vault.description", {
               stakeToken,
@@ -151,7 +150,7 @@ export const useYieldMetaInfo = ({
             ...def,
           };
 
-        case yieldTypesMap["liquid-staking"].type:
+        case "liquid-staking":
           return {
             description: t("details.liquid_stake.description", {
               stakeToken,
@@ -191,7 +190,7 @@ export const useYieldMetaInfo = ({
             ...def,
           };
 
-        case yieldTypesMap.restaking.type:
+        case "restaking":
           return {
             description: t("details.restake.description", {
               stakeToken,

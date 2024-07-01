@@ -1,0 +1,406 @@
+{
+  "shared": {
+    "stake_kit": "StakeKit",
+    "max": "Max",
+    "min": "Min",
+    "available": "disponible",
+    "balance": "Solde",
+    "yearly": "Annuel",
+    "monthly": "Mensuel",
+    "review": "Revoir",
+    "receive": "Recevoir",
+    "fees": "Frais",
+    "none": "Aucun",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "ok": "Ok",
+    "something_went_wrong": "Une erreur s'est produite",
+    "not_enough_gas_token": "Gas insuffisant",
+    "retry": "Réessayer",
+    "unsupported_network": "Réseau non supporté",
+    "points": "Points",
+    "continue": "Continuer"
+  },
+
+  "chain_modal": {
+    "disabled_chain_info": "Ajoutez un portefeuille"
+  },
+
+  "init": {
+    "get_started": "Connectez votre portefeuille pour commencer…",
+    "connect_wallet": "Connectez un portefeuille",
+    "ledger_add_account": "Ajoutez un portefeuille"
+  },
+  "details": {
+    "earn": "Earn",
+    "estimated_reward": "Récompenses estimées",
+    "staked_via": "Staké via",
+
+    "additional_info": "Infos supplémentaires",
+
+    "referral_code": {
+      "title": "Votre lien de parrainage :"
+    },
+
+    "rewards": {
+      "receive": "Vous recevrez des <span0>{{symbol}}</span0> via",
+      "yearly": "Gains annuels estimés",
+      "monthly": "Gains mensuels estimés"
+    },
+
+    "tron_resources": {
+      "label": "Ressource",
+      "placeholder": "Sélectionnez une ressource"
+    },
+
+    "reward_rate_estimate_tooltip": "Le taux de récompense ne peut pas être estimé de façon précise",
+
+    "unstake_before": "Vous avez déjà délégué vos fonds à un validateur. Déstakez et réessayez",
+
+    "no_opportunities": "Pas d'opportunité de yield pour ce token",
+
+    "selected_validators_one": "{{providerName}}",
+    "selected_validators_other": "{{providerName}} + {{count}} autres",
+
+    "native_staking": {
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
+
+      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
+      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement. Vos gains se cumulent, si vous les réclamez et restakez rapidement",
+
+      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
+      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours"
+    },
+
+    "vault": {
+      "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
+
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
+
+      "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
+      "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement",
+
+      "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
+      "withdrawn_time_days": "En les retirant, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
+    },
+
+    "lend": {
+      "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
+      "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
+
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
+
+      "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement",
+      "earn_interest_manual": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et doivent être réclamés manuellement",
+
+      "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
+      "withdrawn_time_days": "Après leur retrait, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
+    },
+
+    "liquid_stake": {
+      "description": "En stakant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
+
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké",
+
+      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
+      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
+
+      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
+      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
+      "unstake_time_days_with_claim_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours. Vous devez les réclamer sous {{claimDays}} jours, sans quoi il faudra les staker à nouveau.",
+
+      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
+    },
+
+    "restake": {
+      "description": "En déposant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
+      "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
+      "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké",
+      "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
+      "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
+      "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
+      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
+      "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
+    },
+
+    "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement",
+
+    "reward_type_varialbe": " Le taux de récompense de staking de {{symbol}} varie selon les trades et les frais de transaction que le protocole gagne, ce qui ne peut être estimé précisément",
+
+    "opportunity_search_title": "Sélectionnez un rendement",
+    "validator_search_title_one": "Sélectionnez un validateur",
+    "validator_search_title_other": "Sélectionnez des validateurs",
+    "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
+    "tab_earn": "Earn",
+    "tab_positions": "Positions",
+    "validators_preferred": "Préférés",
+    "validators_other": "Tous les validateurs",
+    "validators_view_all": "Tout voir",
+    "validators_inactive": "Inactif",
+    "validators_jailed": "Banni",
+    "validators_staked_balance": "Solde validateur",
+    "validators_voting_power": "Droit de vote",
+    "validators_address": "Adresse",
+    "validators_comission": "Commission",
+    "validators_website": "Site web"
+  },
+  "review": {
+    "estimated_reward": "Récompenses estimées",
+    "estimated_gas_fee": "Frais de gas estimés",
+    "wallet_fee": "Frais de {{wallet}}",
+    "claim": "Réclamer",
+    "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
+    "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
+    "additional_info": "Infos supplémentaires"
+  },
+  "steps": {
+    "title": "Suivi des étapes",
+    "sign_transaction": "Signez la transaction",
+    "sign_transaction_desc": "Retournez sur le portefeuille connecté pour autoriser la transaction",
+    "transaction_status": "Statut de la transaction",
+    "transaction_status_desc": "Vérification du statut de la transaction",
+    "finalize_stake": "Finalisez le staking",
+    "send_to_finalize_stake": "Envoyez la transaction pour finaliser le staking",
+    "approve": "Autoriser",
+    "approve_desc": "Autorisez cette transaction dans votre portefeuille",
+    "submitting": "Envoi de la transaction",
+    "submitted": "Envoyée",
+    "pending": "En cours",
+    "completed": "Complétée",
+    "failed": "Echouée",
+    "tx_of_one": "Transaction - {{type}}",
+    "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
+    "skipped": "Ignorée",
+    "approve_error": "Une erreur s'est produite. Vérifiez si le portefeuille est bien connecté"
+  },
+  "complete": {
+    "successfully_staked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
+    "successfully_unstaked": "{{amount}} {{tokenNetwork}} {{action}} avec succès",
+    "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
+    "view_transaction": "Voir la transaction {{type}}",
+    "via": "via {{providerName}}",
+    "stake": {
+      "staking": "staké",
+      "liquid-staking": "staké",
+      "vault": "déposé",
+      "lending": "fourni",
+      "restaking": "restaké"
+    },
+    "unstake": {
+      "staking": "déstaké",
+      "liquid-staking": "déstaké",
+      "vault": "retiré",
+      "lending": "retiré",
+      "restaking": "déstaké"
+    },
+    "pending_action": {
+      "stake": "staké",
+      "unstake": "déstaké",
+      "claim_rewards": "récompenses réclamées",
+      "restake_rewards": "récompenses restakées",
+      "withdraw": "reitré",
+      "restake": "restaké",
+      "claim_unstaked": "déstakés réclamés",
+      "unlock_locked": "bloqués débloqués",
+      "unlock_locked_legacy": "bloqués débloqués",
+      "stake_locked": "bloqués stakés",
+      "vote": "voté",
+      "revoke": "Révoquer",
+      "vote_locked": "Voter bloqué",
+      "revote": "Revoter",
+      "rebond": "Re-staker",
+      "migrate": "Migrer"
+    }
+  },
+  "help_modals": {
+    "geo_block": {
+      "title": "Bloquage Géographique",
+      "ofac": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”). Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
+      "ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
+      "pending_litigation": "Cette fonctionnalité n'est actuellement pas disponible en {{nameOfRegion}} du fait des litiges en cours au sujet du staking des cryptomonnaies",
+      "crypto_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} a mis en place une régulation stricte à l'usage des cryptomonnaies. Merci de vous référer aux ressources officielles de {{countryName}} pour en savoir plus.",
+      "staking_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. La Securities and Exchange Commission (“SEC”) de {{countryName}} a interdit aux opérateurs d'actifs numériques d'offrir des services de staking. Vous pouvez en apprendre plus sur les régulations de la SEC via ce lien : <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
+      "ofsi_crypto_ban": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur la liste des pays sanctionnés par l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFSI et ses programmes de sanctions via ce lien : <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} a aussi mis en place une régulatin stricte concernant l'usage des cryptomonnaies.",
+      "ofac_ofsi": "Cette fonctionnalité n'est pas disponible en {{countryName}}. {{countryName}} figure sur les listes des pays sanctionnés par l'Office of Foreign Assets Control (“OFAC”) et de l'Office of Financial Sanctions Implementation (“OFSI”) britannique. Vous pouvez en apprendre plus sur l'OFAC et ses programmes de sanctions via ce lien : <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, ainsi que sur ceux de l'OFSI via ce lien : <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
+      "default": "Cette fonctionnalité n'est pas disponible en {{countryName}}."
+    },
+    "get_in_touch": {
+      "title": "Une question ? Besoin d'aide ?",
+      "button": "Contactez-nous"
+    },
+    "what_is_stakekit": {
+      "title": "Qu'est-ce que StakeKit ?",
+      "description": "StakeKit est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. StakeKit abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de StakeKit sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
+    }
+  },
+
+  "positions": {
+    "title": "Mes Positions",
+    "via_one": "via {{providerName}}",
+    "via_other": "via {{providerName}} + {{count}} autres",
+    "connect_wallet": "Connecter un portefeuille",
+    "no_current_positions": "Aucune position",
+    "claim_rewards": "Réclamer les récompenses",
+    "action_required": "Action requise",
+    "dont_see_position": "Vous ne voyez pas une position?",
+    "import_validator": "Importez un validateur à qui vous avez délégué des fonds pour voir votre position",
+    "import_button": "Importer",
+    "import_validator_modal_title": "Importer un validateur",
+    "import_validator_already_imported": "Importé",
+    "search_for_validators": "Rechercher des validateurs par adresse ou nom"
+  },
+  "yield_types": {
+    "staking": {
+      "title": "Stake",
+      "review": "Stake",
+      "cta": "Stake"
+    },
+    "liquid-staking": {
+      "title": "Liquid stake",
+      "review": "Stake stake",
+      "cta": "Stake"
+    },
+    "vault": {
+      "title": "Vault",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "lending": {
+      "title": "Lending",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "restaking": {
+      "title": "Restaking",
+      "review": "Deposit",
+      "cta": "Deposit"
+    }
+  },
+  "position_details": {
+    "labels": {
+      "hasFrozenV1": {
+        "label": "Gelé 1.0",
+        "details": "{{amount}} TRX sont gelés avec Legacy Stake 1.0. Pour migrer vers 2.0 : Il suffit de déstaker {{amount}} TRX dans StakeKit et de les staker à nouveau (StakeKit priorise automatiquement le déstaking du solde de Stake 1.0)"
+      }
+    },
+    "via": "{{stakeType}} via {{providerName}}",
+    "rewards": "Récompenses",
+    "available_to": "<bold>{{amount}} {{symbol}}</bold> disponibles pour {{pendingAction, lowercase}}",
+    "claim": "Réclamer",
+    "unstake": "Déstaker",
+    "withdraw": "Retirer",
+    "available": "{{amount}} {{symbol}} disponibles",
+    "select_validators": {
+      "submit": "Envoyer"
+    },
+    "stake_type": {
+      "staking": "Staké",
+      "liquid-staking": "Staké",
+      "lending": "Déposé",
+      "vault": "Déposé",
+      "restaking": "Restaké"
+    },
+    "unstake_label": {
+      "staking": "Déstaker",
+      "liquid-staking": "Déstaker",
+      "lending": "Retirer",
+      "vault": "Retirer",
+      "restaking": "Déstaker"
+    },
+    "balance_type": {
+      "available": "Disponible",
+      "staked": "Staké",
+      "staked_yearn_or_deposit": "Déposé",
+      "unstaking": "En cours de déstaking",
+      "unstaking_yearn_or_deposit": "En cours de retrait",
+      "unstaked": "Déstaké",
+      "unstaked_yearn_or_deposit": "Retiré",
+      "preparing": "En cours de préparation",
+      "rewards": "Récompenses",
+      "locked": "Bloqué",
+      "unlocking": "En cours de déblocage"
+    },
+    "unstaking_days_one": "{{count}} jour restant",
+    "unstaking_days_other": "{{count}} jours restants",
+    "pending_action": {
+      "stake": "Staker",
+      "unstake": "Déstaker",
+      "claim_rewards": "Réclamer les récompenses",
+      "restake_rewards": "Restaker les récompenses",
+      "withdraw": "Retirer",
+      "restake": "Restaker",
+      "claim_unstaked": "Réclamer les déstakés",
+      "unlock_locked": "Débloquer",
+      "unlock_locked_legacy": "Débloquer",
+      "stake_locked": "Staker",
+      "vote": "Voter",
+      "revoke": "Révoquer",
+      "vote_locked": "Voter",
+      "revote": "Revoter",
+      "rebond": "Re-staker",
+      "migrate": "Migrer"
+    },
+    "pending_action_button": {
+      "stake": "Staker",
+      "unstake": "Déstaker",
+      "claim_rewards": "Réclamer",
+      "restake_rewards": "Restaker",
+      "withdraw": "Retirer",
+      "restake": "Restaker",
+      "claim_unstaked": "Réclamer",
+      "unlock_locked": "Débloquer",
+      "unlock_locked_legacy": "Débloquer",
+      "stake_locked": "Staker",
+      "vote": "Voter",
+      "revoke": "Révoquer",
+      "vote_locked": "Voter bloqué",
+      "revote": "Revoter",
+      "rebond": "Re-staker",
+      "migrate": "Migrer"
+    },
+    "unstake_sign": {
+      "title": "Vérifier la propriété",
+      "description": "Vous devez vérifier la propriété de cette adresse avant de procéder. Vous serez invité(e) à signer un message qui sera utilisé pour confirmer que vous possédez bien cette adresse."
+    }
+  },
+  "unstake_review": {
+    "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
+    "unstake_from": "Déstaker de {{providerName}}"
+  },
+  "pending_action_review": {
+    "pending_action_type": {
+      "stake": "Staker avec {{providerName}}",
+      "unstake": "Déstaker de {{providerName}}",
+      "claim_rewards": "Réclamer les récompenses de {{providerName}}",
+      "restake_rewards": "Restaker les récompenses avec {{providerName}}",
+      "withdraw": "Retirer de {{providerName}}",
+      "restake": "Restaker avec {{providerName}}",
+      "claim_unstaked": "Réclamer le déstaké de {{providerName}}",
+      "unlock_locked": "Débloquer le bloqué de {{providerName}}",
+      "unlock_locked_legacy": "Débloquer le bloqué de {{providerName}}",
+      "stake_locked": "Staker le bloqué avec {{providerName}}",
+      "vote": "Voter avec {{providerName}}",
+      "revoke": "Révoquer avec {{providerName}}",
+      "vote_locked": "Voter bloqué avec {{providerName}}",
+      "revote": "Revoter avec {{providerName}}",
+      "rebond": "Re-staker avec {{providerName}}",
+      "migrate": "Migrer de {{providerName}}"
+    }
+  },
+  "select_token": {
+    "title": "Sélectionner un token",
+    "n_available_opps": "{{count}} opportunités disponibles"
+  },
+  "referral_lock": {
+    "title": "Vérification du parrainage",
+    "body": "Saisissez votre code de parrainage pour continuer",
+    "submit": "Envoyer"
+  },
+  "error_modal": {
+    "solution": "Solution potentielle :"
+  }
+}
