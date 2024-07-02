@@ -14,6 +14,7 @@ import { EitherAsync, Maybe } from "purify-ts";
 import {
   arbitrum,
   avalanche,
+  base,
   bsc,
   celo,
   goerli,
@@ -96,6 +97,11 @@ const queryFn = async ({
             type: "evm",
             skChainName: EvmNetworks.Binance,
             wagmiChain: bsc,
+          },
+          [EvmNetworks.Base]: {
+            type: "evm",
+            skChainName: EvmNetworks.Base,
+            wagmiChain: base,
           },
           [EvmNetworks.EthereumHolesky]: {
             type: "evm",
