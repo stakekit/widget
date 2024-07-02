@@ -31,11 +31,6 @@
     "connect_wallet": "Connect Wallet",
     "ledger_add_account": "Add account"
   },
-  "yield_types": {
-    "liquid_stake": "Liquid Stake",
-    "stake": "Stake",
-    "deposit": "Deposit"
-  },
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
@@ -257,6 +252,33 @@
     "import_validator_modal_title": "Import validator",
     "import_validator_already_imported": "Imported",
     "search_for_validators": "Search for validators by address or name"
+  },
+  "yield_types": {
+    "staking": {
+      "title": "Stake",
+      "review": "Stake",
+      "cta": "Stake"
+    },
+    "liquid-staking": {
+      "title": "Liquid stake",
+      "review": "Liquid stake",
+      "cta": "Stake"
+    },
+    "vault": {
+      "title": "Vault",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "lending": {
+      "title": "Lending",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "restaking": {
+      "title": "Restaking",
+      "review": "Deposit",
+      "cta": "Deposit"
+    }
   },
   "position_details": {
     "labels": {

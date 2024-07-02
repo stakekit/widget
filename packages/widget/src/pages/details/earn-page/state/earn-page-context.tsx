@@ -41,7 +41,7 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import { yieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
+import { getYieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
 import { isForceMaxAmount } from "../../../../domain/types/stake";
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
@@ -88,6 +88,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     hasNotYieldsForToken,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
+
+  const { t } = useTranslation();
 
   const baseToken = useBaseToken(selectedStake);
 
@@ -255,7 +257,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   if (!acc.has(curr.metadata.type)) {
                     acc.set(curr.metadata.type, {
                       type: curr.metadata.type,
-                      title: yieldTypesMap[curr.metadata.type].title,
+                      title: getYieldTypesMap(t)[curr.metadata.type].title,
                       items: [curr],
                     });
                   } else {
@@ -268,7 +270,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   YieldType,
                   {
                     type: YieldType;
-                    title: (typeof yieldTypesMap)[YieldType]["title"];
+                    title: ReturnType<
+                      typeof getYieldTypesMap
+                    >[YieldType]["title"];
                     items: YieldDto[];
                   }
                 >()
@@ -294,7 +298,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             groupsWithCounts,
           };
         }),
-    [deferredStakeSearch, multiYields.data]
+    [deferredStakeSearch, multiYields.data, t]
   );
 
   const validatorsData = useMemo(
@@ -347,8 +351,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     dispatch({ type: "stakeAmount/change", data: val });
-
-  const { t } = useTranslation();
 
   const stakeEnterRequestDto = useStakeEnterRequestDto();
 
@@ -502,16 +504,10 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const buttonDisabled =
     isConnected && (isFetching || stakeEnterRequestDto.isNothing());
 
-  const buttonCTAText = useMemo(() => {
-    switch (selectedStakeYieldType) {
-      case "lending":
-      case "vault":
-        return t("yield_types.deposit");
-
-      default:
-        return t("yield_types.stake");
-    }
-  }, [selectedStakeYieldType, t]);
+  const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
+    (v) => v.cta,
+    ""
+  );
 
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,

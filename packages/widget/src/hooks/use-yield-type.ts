@@ -1,7 +1,11 @@
+import { getYieldTypesMap } from "@sk-widget/domain/types";
 import type { YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
-import { yieldTypesMap } from "../domain/types";
+import { useTranslation } from "react-i18next";
 
 export const useYieldType = (yieldOpportunity: Maybe<YieldDto>) => {
-  return yieldOpportunity.chainNullable((s) => yieldTypesMap[s.metadata.type]);
+  const { t } = useTranslation();
+  return yieldOpportunity.chainNullable(
+    (s) => getYieldTypesMap(t)[s.metadata.type]
+  );
 };
