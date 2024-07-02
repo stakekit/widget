@@ -69,6 +69,9 @@ export const setup = () => {
       description: "Stake your AVAX with Benqi",
       fee: {
         enabled: false,
+        depositFee: false,
+        managementFee: false,
+        performanceFee: false,
       },
       gasFeeToken: token,
       logoURI: "https://assets.stakek.it/tokens/savax.svg",
