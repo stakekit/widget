@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { setStorageItem } from "../../../services/local-storage";
-import { useInitQueryParams } from "../../use-init-query-params";
+import { useInitParams } from "../../use-init-params";
 import { useLocalStorageValue } from "../../use-local-storage-value";
 
 /**
  * Get the referral code from the query params or fallback to local storage
  */
 export const useGetLatestReferralCode = () => {
-  const initQueryParams = useInitQueryParams();
+  const initQueryParams = useInitParams();
 
   const localStorageReferralCode = useLocalStorageValue(
     "sk-widget@1//referralCode"
@@ -25,7 +25,7 @@ export const useGetLatestReferralCode = () => {
     );
   }, [initQueryParams.data?.referralCode]);
 
-  return useInitQueryParams({
+  return useInitParams({
     select: (val) => val.referralCode ?? localStorageReferralCode,
   });
 };

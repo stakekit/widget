@@ -4,9 +4,10 @@ import {
   PASingleValidatorRequired,
 } from "@sk-widget/domain";
 import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
+import { getInitParams } from "@sk-widget/hooks/use-init-params";
 import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { GetEitherRight, Override } from "@sk-widget/types";
 import type {
@@ -31,6 +32,7 @@ export const usePendingActionDeepLink = () => {
 
   const yieldGetSingleYieldBalances = useYieldGetSingleYieldBalancesHook();
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
+  const { externalProviders } = useSettings();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -51,6 +53,7 @@ export const usePendingActionDeepLink = () => {
             queryClient,
             yieldGetSingleYieldBalances,
             yieldYieldOpportunity,
+            externalProviders,
           })
         )
       ).unsafeCoerce(),
@@ -64,6 +67,7 @@ const fn = ({
   queryClient,
   yieldGetSingleYieldBalances,
   yieldYieldOpportunity,
+  externalProviders,
 }: {
   isLedgerLive: boolean;
   address: string;
@@ -73,11 +77,13 @@ const fn = ({
     typeof useYieldGetSingleYieldBalancesHook
   >;
   yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
+  externalProviders: ReturnType<typeof useSettings>["externalProviders"];
 }) =>
-  getInitialQueryParams({
+  getInitParams({
     isLedgerLive,
     queryClient,
     yieldYieldOpportunity,
+    externalProviders,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(

@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { config } from "../../config";
-import type { QueryParams } from "../../domain/types/query-params";
+import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import type { EnabledChainsMap } from "./ledger-connector";
 
@@ -13,7 +13,7 @@ const queryFn = async ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParams;
+  queryParams: InitParams;
 }) => {
   return EitherAsync.liftEither(
     Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null)

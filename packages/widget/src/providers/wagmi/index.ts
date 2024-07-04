@@ -22,7 +22,7 @@ import { mainnet } from "wagmi/chains";
 import { config } from "../../config";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import { useSavedRef } from "../../hooks";
-import { getInitialQueryParams } from "../../hooks/use-init-query-params";
+import { getInitParams } from "../../hooks/use-init-params";
 import type { GetEitherAsyncRight } from "../../types";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
@@ -81,10 +81,11 @@ const buildWagmiConfig = async (opts: {
             queryClient: opts.queryClient,
             yieldGetMyNetworks: opts.yieldGetMyNetworks,
           }),
-          getInitialQueryParams({
+          getInitParams({
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
             yieldYieldOpportunity: opts.yieldYieldOpportunity,
+            externalProviders: opts.externalProviders?.current,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
           evm.chain((e) =>

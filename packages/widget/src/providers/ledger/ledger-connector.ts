@@ -20,7 +20,7 @@ import type {
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
 } from "../../domain/types/chains";
-import type { QueryParams } from "../../domain/types/query-params";
+import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { type ExtraProps, configMeta } from "./ledger-live-connector-meta";
 import {
@@ -34,7 +34,7 @@ const createLedgerLiveConnector = ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParams;
+  queryParams: InitParams;
   walletDetailsParams: WalletDetailsParams;
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
@@ -340,7 +340,7 @@ export const ledgerLiveConnector = ({
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
-  queryParams: QueryParams;
+  queryParams: InitParams;
 }): WalletList[number] => ({
   groupName: "Ledger Live",
   wallets: [
