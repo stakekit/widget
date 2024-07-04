@@ -66,7 +66,6 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           layout="size"
           className={animationContainer}
           initial={{ height: 0 }}
-          style={{ borderRadius: "20px", position: "relative" }}
           animate={animate}
           onAnimationComplete={(def: typeof animate) => {
             if (!def.height || state.layout) {

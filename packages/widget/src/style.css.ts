@@ -5,6 +5,8 @@ import { minMediaQuery } from "./styles/tokens/breakpoints";
 export const animationContainer = style([
   atoms({ background: "background" }),
   {
+    position: "relative",
+    borderRadius: "20px",
     overflow: "hidden",
     display: "flex",
     flexDirection: "column",
@@ -15,7 +17,6 @@ export const animationContainer = style([
     "@media": {
       [minMediaQuery("tablet")]: {
         width: "400px",
-        borderRadius: "20px",
         marginBottom: "50px",
       },
     },
