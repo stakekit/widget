@@ -15,7 +15,7 @@ import { equalTokens, getTokenPriceInUSD } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { formatNumber } from "../../../utils";
+import { defaultFormattedNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
@@ -141,7 +141,7 @@ export const usePositionDetails = () => {
             baseToken: val.baseToken,
           })
         )
-        .mapOrDefault((v) => `$${formatNumber(v, 6)}`, ""),
+        .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
     [
       positionBalancePrices.data,
       reducedStakedOrLiquidBalance,
@@ -189,7 +189,7 @@ export const usePositionDetails = () => {
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
-                `1 ${yb.token.symbol} = ${formatNumber(
+                `1 ${yb.token.symbol} = ${defaultFormattedNumber(
                   new BigNumber(yb.pricePerShare)
                 )} ${v.baseToken.symbol}`
               );

@@ -60,7 +60,7 @@ import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useWagmiConfig } from "../../../../providers/wagmi";
-import { formatNumber } from "../../../../utils";
+import { defaultFormattedNumber, formatNumber } from "../../../../utils";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import type { SelectedStakeData } from "../types";
 import type { EarnPageContextType } from "./types";
@@ -140,7 +140,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             pricePerShare: null,
           })
         )
-        .mapOrDefault((v) => `$${formatNumber(v, 6)}`, ""),
+        .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
     [baseToken, pricesState.data, selectedToken, stakeAmount]
   );
 

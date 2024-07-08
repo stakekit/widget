@@ -1,9 +1,9 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
+import { id } from "@sk-widget/styles";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSavedRef } from "../../../hooks";
-import { useRootElement } from "../../../providers/root-element";
 import { Box } from "../box";
 import { SearchIcon, XIcon } from "../icons";
 import { ListItem } from "../list/list-item";
@@ -92,16 +92,14 @@ const SelectModalWithoutState = ({
     }
   }, [isOpen, onCloseRef, onOpenRef]);
 
-  const rootElement = useRootElement();
-
   const showTopBar = !!title || !hideTopBar || onSearch;
 
   return (
     <Root open={isOpen} onOpenChange={setOpen}>
       {trigger}
 
-      <Portal container={rootElement}>
-        <Box className={container} data-select-modal>
+      <Portal>
+        <Box className={container} data-select-modal data-rk={id}>
           <Overlay onClick={() => setOpen(false)} className={overlay} />
 
           <Content

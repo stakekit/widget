@@ -2,7 +2,7 @@ import { ToolTip } from "@sk-widget/components/atoms/tooltip";
 import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
 import type { YieldBalanceDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { List, Maybe, compare } from "purify-ts";
+import { Just, List, Maybe, compare } from "purify-ts";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Spinner, Text } from "../../../../components";
@@ -12,7 +12,7 @@ import { ListItem } from "../../../../components/atoms/list/list-item";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
-import { formatNumber } from "../../../../utils";
+import { defaultFormattedNumber } from "../../../../utils";
 import { getRewardRateFormatted } from "../../../../utils/formatters";
 import { checkHasPendingClaimRewards } from "../../shared";
 import type { usePositions } from "../hooks/use-positions";
@@ -69,16 +69,23 @@ export const PositionsListItem = memo(
 
     const amount = useMemo(
       () =>
-        item.balancesWithAmount.reduce((acc, b) => {
-          if (b.token.isPoints) return acc;
+        Just(
+          item.balancesWithAmount.reduce((acc, b) => {
+            if (b.token.isPoints) return acc;
 
-          return new BigNumber(b.amount).plus(acc);
-        }, new BigNumber(0)),
+            return new BigNumber(b.amount).plus(acc);
+          }, new BigNumber(0))
+        )
+          .map((v) => defaultFormattedNumber(v))
+          .unsafeCoerce(),
       [item.balancesWithAmount]
     );
 
     const pointsRewardTokenBalance = useMemo(
-      () => List.find((v) => !!v.token.isPoints, item.balancesWithAmount),
+      () =>
+        List.find((v) => !!v.token.isPoints, item.balancesWithAmount).map(
+          (v) => ({ ...v, amount: defaultFormattedNumber(v.amount) })
+        ),
       [item.balancesWithAmount]
     );
 
@@ -270,7 +277,7 @@ export const PositionsListItem = memo(
                         overflowWrap="anywhere"
                         variant={{ weight: "normal", type: "muted" }}
                       >
-                        {formatNumber(amount)} {val.token.symbol}
+                        {amount} {val.token.symbol}
                       </Text>
 
                       {pointsRewardTokenBalance
@@ -295,7 +302,7 @@ export const PositionsListItem = memo(
                               overflowWrap="anywhere"
                               variant={{ type: "muted", weight: "normal" }}
                             >
-                              {formatNumber(val.amount)}
+                              {val.amount}
                             </Text>
                           </Box>
                         ))

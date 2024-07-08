@@ -10,7 +10,7 @@ import {
 } from "../../../../../components";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { formatNumber } from "../../../../../utils";
+import { defaultFormattedNumber } from "../../../../../utils";
 import { selectItemText } from "../../styles.css";
 
 type Props = {
@@ -23,7 +23,10 @@ export const SelectTokenListItem = memo(
   ({ item, isConnected, onTokenBalanceSelect }: Props) => {
     const amount = useMemo(() => new BigNumber(item.amount), [item.amount]);
 
-    const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
+    const formattedAmount = useMemo(
+      () => defaultFormattedNumber(amount),
+      [amount]
+    );
 
     const amountGreaterThanZero = useMemo(
       () => amount.isGreaterThan(0),

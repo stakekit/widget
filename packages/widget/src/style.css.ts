@@ -31,7 +31,3 @@ export const container = style([
     justifyContent: "flex-end",
   }),
 ]);
-
-export const appContainer = style({
-  minHeight: "800px",
-});

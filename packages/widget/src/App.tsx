@@ -21,7 +21,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import { preloadImages } from "./assets/images";
-import { Box, Header } from "./components";
+import { Header } from "./components";
 import { GlobalModals } from "./components/molecules/global-modals";
 import { useSavedRef, useToggleTheme } from "./hooks";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
@@ -48,7 +48,7 @@ import { useSKLocation } from "./providers/location";
 import type { SettingsProps, VariantProps } from "./providers/settings";
 import { SettingsContextProvider } from "./providers/settings";
 import { useSKWallet } from "./providers/sk-wallet";
-import { appContainer, container } from "./style.css";
+import { container } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
 import { MaybeWindow } from "./utils/maybe-window";
 
@@ -195,9 +195,7 @@ export const SKApp = (props: SKAppProps) => {
 
   return (
     <SettingsContextProvider {...variantProps} {...props}>
-      <Box className={appContainer}>
-        <RouterProvider router={router} />
-      </Box>
+      <RouterProvider router={router} />
     </SettingsContextProvider>
   );
 };

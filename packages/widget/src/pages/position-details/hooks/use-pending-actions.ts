@@ -23,7 +23,7 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useUpdateEffect } from "../../../hooks/use-update-effect";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { formatNumber } from "../../../utils";
+import { defaultFormattedNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
@@ -87,7 +87,7 @@ export const usePendingActions = () => {
                     baseToken: val.baseToken,
                   })
                 )
-                .mapOrDefault((v) => `$${formatNumber(v, 6)}`, "");
+                .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, "");
 
               return {
                 amount: amount.extractNullable(),
