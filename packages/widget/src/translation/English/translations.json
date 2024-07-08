@@ -271,8 +271,8 @@
     },
     "lending": {
       "title": "Lending",
-      "review": "Deposit",
-      "cta": "Deposit"
+      "review": "Supply",
+      "cta": "Supply"
     },
     "restaking": {
       "title": "Restaking",

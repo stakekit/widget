@@ -255,29 +255,29 @@
   },
   "yield_types": {
     "staking": {
-      "title": "Stake",
-      "review": "Stake",
-      "cta": "Stake"
+      "title": "Staking",
+      "review": "Staker",
+      "cta": "Staker"
     },
     "liquid-staking": {
-      "title": "Liquid stake",
-      "review": "Stake stake",
-      "cta": "Stake"
+      "title": "Staking Liquide",
+      "review": "Staker",
+      "cta": "Staker"
     },
     "vault": {
       "title": "Vault",
-      "review": "Deposit",
-      "cta": "Deposit"
+      "review": "Déposer",
+      "cta": "Déposer"
     },
     "lending": {
       "title": "Lending",
-      "review": "Deposit",
-      "cta": "Deposit"
+      "review": "Fournir",
+      "cta": "Fournir"
     },
     "restaking": {
       "title": "Restaking",
-      "review": "Deposit",
-      "cta": "Deposit"
+      "review": "Déposer",
+      "cta": "Déposer"
     }
   },
   "position_details": {
