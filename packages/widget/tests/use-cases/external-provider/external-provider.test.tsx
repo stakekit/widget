@@ -159,12 +159,12 @@ describe("External Provider", () => {
 
     element.click();
 
-    await waitFor(() =>
-      expect(
-        app.container.querySelectorAll("button[data-testid^='rk-chain-option']")
-          .length
-      ).toBe(2)
-    );
+    const getChainOptions = () =>
+      app
+        .getAllByTestId("rk-chain-option", { exact: false })
+        .filter((el) => (el as HTMLButtonElement).type === "button");
+
+    await waitFor(() => expect(getChainOptions().length).toBe(2));
 
     const user = userEvent.setup();
     user.keyboard("[Escape]");
@@ -187,16 +187,9 @@ describe("External Provider", () => {
 
     app.getByText(chainNames.avalanche).click();
 
-    await waitFor(() =>
-      expect(
-        app.container.querySelectorAll("button[data-testid^='rk-chain-option']")
-          .length
-      ).toBe(1)
-    );
+    await waitFor(() => expect(getChainOptions().length).toBe(1));
 
-    const container = app.container.querySelectorAll(
-      "button[data-testid^='rk-chain-option']"
-    )[0];
+    const container = getChainOptions()[0];
 
     if (!container) throw new Error("Container not found");
 
