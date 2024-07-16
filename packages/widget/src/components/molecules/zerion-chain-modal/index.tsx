@@ -1,3 +1,4 @@
+import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { Box } from "../..";
 import type { VariantProps } from "../../../providers/settings";
@@ -24,13 +25,17 @@ export const ZerionChainModal = () => {
 
   if (settings.variant !== "zerion" || !switchChain || !connector) return null;
 
-  return (
-    <Box minHeight="8" data-rk="chain-modal">
-      {settings.chainModal({
-        chainIds,
-        selectedChainId: chain.id,
-        onSwitchChain,
-      })}
-    </Box>
-  );
+  return Maybe.fromNullable(
+    settings.chainModal({
+      chainIds,
+      selectedChainId: chain.id,
+      onSwitchChain,
+    })
+  )
+    .map((elem) => (
+      <Box minHeight="8" data-rk="chain-modal">
+        {elem}
+      </Box>
+    ))
+    .extractNullable();
 };

@@ -105,13 +105,7 @@ export type SubstrateChainsMap = {
   };
 };
 
-export const isSupportedChain = (
-  chain: string
-): chain is
-  | SupportedEvmChain
-  | SupportedCosmosChains
-  | SupportedMiscChains
-  | SupportedSubstrateChains => {
+export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
   return (
     supportedCosmosChainsSet.has(chain as SupportedCosmosChains) ||
     supportedEVMChainsSet.has(chain as SupportedEvmChain) ||

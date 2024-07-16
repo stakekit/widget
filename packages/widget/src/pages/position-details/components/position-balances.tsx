@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../components";
 import { TokenIcon } from "../../../components/atoms/token-icon";
-import { formatNumber } from "../../../utils";
+import { defaultFormattedNumber } from "../../../utils";
 import { daysUntilDate } from "../../../utils/date";
 
 export const PositionBalances = ({
@@ -59,10 +59,10 @@ export const PositionBalances = ({
             overflowWrap="anywhere"
             variant={{ type: "muted", weight: "normal" }}
           >
-            {formatNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
+            {defaultFormattedNumber(new BigNumber(yieldBalance.amount ?? 0))}{" "}
             {yieldBalance.token.symbol}
             {!yieldBalance.token.isPoints &&
-              ` ($${formatNumber(yieldBalance.tokenPriceInUsd, 6)})`}
+              ` ($${defaultFormattedNumber(yieldBalance.tokenPriceInUsd)})`}
           </Text>
         </Box>
 

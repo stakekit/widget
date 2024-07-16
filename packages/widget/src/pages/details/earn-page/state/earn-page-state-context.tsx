@@ -15,7 +15,7 @@ import { equalTokens } from "../../../../domain";
 import { useSavedRef } from "../../../../hooks";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useForceMaxAmount } from "../../../../hooks/use-force-max-amount";
-import { useInitQueryParams } from "../../../../hooks/use-init-query-params";
+import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import type { Actions, ExtraData, State } from "./types";
@@ -53,7 +53,7 @@ const getInitialState = (): State => ({
 });
 
 export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
-  const initParams = useInitQueryParams();
+  const initParams = useInitParams();
   const { network, isConnected } = useSKWallet();
 
   const getInitYield = useGetInitYield();

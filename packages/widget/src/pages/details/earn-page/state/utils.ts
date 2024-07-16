@@ -1,4 +1,4 @@
-import type { QueryParams } from "@sk-widget/domain/types/query-params";
+import type { InitParams } from "@sk-widget/domain/types/init-params";
 import {
   getInitMinStakeAmount,
   getInitSelectedValidators,
@@ -12,7 +12,7 @@ export const onYieldSelectState = ({
   initParams,
 }: {
   yieldDto: YieldDto;
-  initParams: Maybe<QueryParams>;
+  initParams: Maybe<InitParams>;
 }): Pick<State, "selectedStakeId" | "stakeAmount" | "selectedValidators"> => ({
   selectedStakeId: Maybe.of(yieldDto.id),
   stakeAmount: getInitMinStakeAmount(yieldDto),

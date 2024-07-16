@@ -2,7 +2,7 @@ import { ApiClientProvider } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
 import axios from "axios";
 import type { ComponentProps, PropsWithChildren } from "react";
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { attachDelayInterceptor } from "../../common/delay-api-requests";
 import { config } from "../../config";
@@ -30,12 +30,20 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
     return instance;
   });
 
+  const fetchInstance = useCallback<
+    ComponentProps<typeof ApiClientProvider>["fetchInstance"]
+  >(
+    (url, requestInit) =>
+      apiClient(url, requestInit).then((response) => response.data),
+    [apiClient]
+  );
+
   return (
     <Context.Provider value={apiClient}>
       <ApiClientProvider
-        apiClient={
-          apiClient as ComponentProps<typeof ApiClientProvider>["apiClient"]
-        }
+        apiKey={apiKey}
+        baseURL={config.env.apiUrl}
+        fetchInstance={fetchInstance}
       >
         {children}
       </ApiClientProvider>

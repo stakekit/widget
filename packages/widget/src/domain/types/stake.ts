@@ -1,3 +1,4 @@
+import { tokenString } from "@sk-widget/domain";
 import type {
   AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
@@ -6,7 +7,7 @@ import type {
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { List } from "purify-ts";
-import type { QueryParams } from "./query-params";
+import type { InitParams } from "./init-params";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -18,7 +19,7 @@ const hasYieldsAndAmount = (val: TokenBalanceScanResponseDto) =>
   hasYields(val) && amountGreaterThanZero(val);
 
 export const getInitialToken = (args: {
-  initQueryParams: Maybe<QueryParams>;
+  initQueryParams: Maybe<InitParams>;
   tokenBalances: TokenBalanceScanResponseDto[];
   defaultTokens: TokenBalanceScanResponseDto[];
 }) =>
@@ -26,10 +27,12 @@ export const getInitialToken = (args: {
    * TB based on query params
    */
   args.initQueryParams
-    .filter((val) => !!(val.network && val.token))
+    .filter((val) => !!val.token)
     .chain((val) =>
       List.find(
-        (t) => t.token.symbol === val.token && t.token.network === val.network,
+        (t) =>
+          (t.token.symbol === val.token && t.token.network === val.network) ||
+          tokenString(t.token) === val.token,
         [...args.tokenBalances, ...args.defaultTokens]
       )
     )
@@ -53,7 +56,7 @@ const yieldTypeOrder: { [Key in YieldDto["metadata"]["type"]]: number } = {
 };
 
 export const getInitialYield = (args: {
-  initQueryParams: Maybe<QueryParams>;
+  initQueryParams: Maybe<InitParams>;
   yieldDtos: YieldDto[];
   tokenBalanceAmount: BigNumber;
 }) => {
@@ -92,7 +95,7 @@ export const getInitMinStakeAmount = (yieldDto: YieldDto) =>
   new BigNumber(yieldDto.args.enter.args?.amount?.minimum ?? 0);
 
 export const getInitSelectedValidators = (args: {
-  initQueryParams: Maybe<QueryParams>;
+  initQueryParams: Maybe<InitParams>;
   yieldDto: YieldDto;
 }) =>
   args.initQueryParams

@@ -1,5 +1,4 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { RootElementProvider } from "@sk-widget/providers/root-element";
 import type { ReactNode } from "react";
 import { useContext, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -227,40 +226,38 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
   }, [customTrigger, modal, title, trackEvent]);
 
   return (
-    <RootElementProvider>
-      <SelectModal {...selectModalProps}>
-        <Box
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-          paddingBottom={{ mobile: "8" }}
-          className={container}
-        >
-          <Box as="img" src={image} className={imageStyle} />
+    <SelectModal {...selectModalProps}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
+        paddingBottom={{ mobile: "8" }}
+        className={container}
+      >
+        <Box as="img" src={image} className={imageStyle} />
 
-          <Heading variant={{ level: "h4" }}>{title}</Heading>
+        <Heading variant={{ level: "h4" }}>{title}</Heading>
 
-          <Box marginTop="2" lineHeight="short">
-            <Text
-              variant={{ type: "muted", weight: "normal" }}
-              textAlign="center"
-            >
-              {description}
-            </Text>
-          </Box>
-
-          {!!link && <SKAnchor>{link}</SKAnchor>}
-
-          {button && (
-            <Box marginTop="4" width="full">
-              <Button variant={{ color: "secondary" }} onClick={button.onClick}>
-                <Text variant={{ weight: "bold" }}>{button.title}</Text>
-              </Button>
-            </Box>
-          )}
+        <Box marginTop="2" lineHeight="short">
+          <Text
+            variant={{ type: "muted", weight: "normal" }}
+            textAlign="center"
+          >
+            {description}
+          </Text>
         </Box>
-      </SelectModal>
-    </RootElementProvider>
+
+        {!!link && <SKAnchor>{link}</SKAnchor>}
+
+        {button && (
+          <Box marginTop="4" width="full">
+            <Button variant={{ color: "secondary" }} onClick={button.onClick}>
+              <Text variant={{ weight: "bold" }}>{button.title}</Text>
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </SelectModal>
   );
 };

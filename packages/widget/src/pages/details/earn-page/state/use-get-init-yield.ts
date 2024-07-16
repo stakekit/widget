@@ -5,12 +5,12 @@ import { useCallback } from "react";
 import { tokenString } from "../../../../domain";
 import { getInitialYield } from "../../../../domain/types/stake";
 import { getCachedMultiYields } from "../../../../hooks/api/use-multi-yields";
-import { useInitQueryParams } from "../../../../hooks/use-init-query-params";
+import { useInitParams } from "../../../../hooks/use-init-params";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useTokenBalancesMap } from "./use-token-balances-map";
 
 export const useGetInitYield = () => {
-  const initParams = useInitQueryParams();
+  const initParams = useInitParams();
   const queryClient = useSKQueryClient();
   const tokenBalancesMap = useTokenBalancesMap();
 

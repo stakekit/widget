@@ -2,8 +2,9 @@ import { getTokenBalances } from "@sk-widget/common/get-token-balances";
 import { tokenString } from "@sk-widget/domain";
 import { getInitialYield } from "@sk-widget/domain/types/stake";
 import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
-import { getInitialQueryParams } from "@sk-widget/hooks/use-init-query-params";
+import { getInitParams } from "@sk-widget/hooks/use-init-params";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
+import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { TokenDto } from "@stakekit/api-hooks";
 import {
@@ -28,6 +29,7 @@ export const useInitYield = ({
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
   const tokenGetTokens = useTokenGetTokensHook();
   const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
+  const { externalProviders } = useSettings();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -60,10 +62,11 @@ export const useInitYield = ({
               )
             )
             .chain((val) =>
-              getInitialQueryParams({
+              getInitParams({
                 isLedgerLive,
                 queryClient,
                 yieldYieldOpportunity,
+                externalProviders,
               }).chain((initParams) =>
                 getMultipleYields({
                   isConnected,

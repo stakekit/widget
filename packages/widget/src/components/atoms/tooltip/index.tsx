@@ -1,6 +1,6 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Text } from "@sk-widget/components";
-import { useRootElement } from "@sk-widget/providers/root-element";
+import { id } from "@sk-widget/styles";
 import type { PropsWithChildren } from "react";
 import { tooltipContent } from "./style.css";
 
@@ -17,11 +17,12 @@ export const ToolTip = ({
   <Tooltip.Provider>
     <Tooltip.Root delayDuration={0}>
       <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
-      <Tooltip.Portal container={useRootElement()}>
+      <Tooltip.Portal>
         <Tooltip.Content
           className={tooltipContent}
           style={{ maxWidth }}
           sideOffset={5}
+          data-rk={id}
         >
           <Text textAlign={textAlign} variant={{ type: "white" }}>
             {label}

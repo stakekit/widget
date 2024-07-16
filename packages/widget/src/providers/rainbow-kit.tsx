@@ -12,7 +12,6 @@ import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
 import { isExternalProviderConnector } from "./external-provider";
 import { isLedgerLiveConnector } from "./ledger/ledger-live-connector-meta";
-import { useRootElement } from "./root-element";
 import { useSKWallet } from "./sk-wallet";
 import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
 
@@ -25,7 +24,6 @@ const finalTheme: ConnectKitTheme = {
 export const RainbowKitProviderWithTheme = ({
   children,
 }: PropsWithChildren) => {
-  const rootElement = useRootElement();
   const { connector, connectorChains } = useSKWallet();
 
   const ledgerDisabledChains = useLedgerDisabledChain(connector);
@@ -64,7 +62,6 @@ export const RainbowKitProviderWithTheme = ({
     <RainbowKitProvider
       chainIdsToUse={chainIdsToUse}
       id={id}
-      dialogRoot={rootElement as Element}
       modalSize="compact"
       disabledChains={disabledChains}
       onDisabledChainClick={(disabledChain) => {

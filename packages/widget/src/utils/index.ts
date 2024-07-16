@@ -25,9 +25,10 @@ export const formatNumber = (number: string | BigNumber, decimals?: number) =>
     .map((v) => v.toFormat())
     .unsafeCoerce();
 
-export const APToPercentage = (ap: number) => {
-  return (ap * 100).toFixed(2);
-};
+export const defaultFormattedNumber = (number: string | BigNumber) =>
+  formatNumber(number, 6);
+
+export const APToPercentage = (ap: number) => (ap * 100).toFixed(2);
 
 const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
 
