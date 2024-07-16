@@ -4330,21 +4330,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.75":
-  version: 0.0.75
-  resolution: "@stakekit/api-hooks@npm:0.0.75"
+"@stakekit/api-hooks@file:../../../js-sdk/packages/api-hooks/package-18.tgz::locator=%40stakekit%2Fwidget%40workspace%3Apackages%2Fwidget":
+  version: 0.0.77
+  resolution: "@stakekit/api-hooks@file:../../../js-sdk/packages/api-hooks/package-18.tgz#../../../js-sdk/packages/api-hooks/package-18.tgz::hash=5c5253&locator=%40stakekit%2Fwidget%40workspace%3Apackages%2Fwidget"
   peerDependencies:
     "@faker-js/faker": ^8
-    "@tanstack/react-query": ^5
-    axios: ">=1.6"
+    "@tanstack/react-query": ">=4"
     msw: ^2
     react: ">=18"
   peerDependenciesMeta:
     "@faker-js/faker":
       optional: true
+    "@tanstack/react-query":
+      optional: true
     msw:
       optional: true
-  checksum: 10/e0d839ef9da8d09357f775a0e1f49b69fda460041cfe97c1bc446254bd38398e2621085fc6eb3b62b8078d7115d99ce2e683812181481c2453e03ec26647b345
+  checksum: 10/7dadce820f0451242cbe7ec99da09f9c2a046158bb92bc1587c9db644b752eea04e5b95430644b1ed36305620aa7516cb0b4faa4702d4ee3cb521b98dda6cdd4
   languageName: node
   linkType: hard
 
@@ -4394,7 +4395,7 @@ __metadata:
     "@radix-ui/react-dropdown-menu": "npm:^2.1.1"
     "@radix-ui/react-tooltip": "npm:^1.1.1"
     "@radix-ui/react-visually-hidden": "npm:^1.1.0"
-    "@stakekit/api-hooks": "npm:^0.0.75"
+    "@stakekit/api-hooks": "file:../../../js-sdk/packages/api-hooks/package-18.tgz"
     "@stakekit/common": "npm:^0.0.34"
     "@stakekit/rainbowkit": "npm:^2.1.6"
     "@tanstack/react-query": "npm:^5.47.0"
