@@ -17,8 +17,10 @@ i18n
   .use(LanguageDetector)
   .init({
     resources: localResources,
+    supportedLngs: Object.keys(localResources),
     fallbackLng: "en",
     interpolation: { escapeValue: false },
+    detection: { order: ["navigator", "localStorage"] },
   });
 
 i18n.services.formatter?.add("lowercase", (value, _, __) =>
