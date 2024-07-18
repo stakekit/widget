@@ -2,6 +2,7 @@ import "@stakekit/rainbowkit/styles.css";
 import "./translation";
 import "./utils/extend-purify";
 import "./styles/theme/global.css";
+import { useInitParams } from "@sk-widget/hooks/use-init-params";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
@@ -10,7 +11,7 @@ import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.pag
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { ComponentProps } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Navigate,
@@ -91,6 +92,14 @@ const Widget = () => {
       });
     }
   }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
+
+  const initTab = useInitParams().data?.tab;
+
+  useEffect(() => {
+    if (!initTab) return;
+
+    navigateRef.current(initTab === "earn" ? "/" : "/positions");
+  }, [initTab, navigateRef]);
 
   useHandleDeepLinks();
 

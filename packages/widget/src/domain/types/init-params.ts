@@ -11,4 +11,5 @@ export type InitParams = {
   yieldData: YieldDto | null;
   referralCode: string | null;
   accountId: string | null;
+  tab: "earn" | "positions" | null;
 };

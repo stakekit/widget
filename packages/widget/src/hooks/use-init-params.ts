@@ -106,6 +106,10 @@ const fn = ({
           .decode(url.searchParams.get("accountId"))
           .toMaybe()
           .extractNullable(),
+        tab: tabCodec
+          .decode(url.searchParams.get("tab"))
+          .toMaybe()
+          .extractNullable(),
       }))
       .toEither(new Error("missing window"))
   )
@@ -138,5 +142,11 @@ const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
     typeof val === "string" && isSupportedChain(val)
       ? Right(val)
       : Left("invalid chain"),
+  encode: (val) => val,
+});
+
+const tabCodec = Codec.custom<"earn" | "positions">({
+  decode: (val) =>
+    val === "earn" || val === "positions" ? Right(val) : Left("invalid chain"),
   encode: (val) => val,
 });
