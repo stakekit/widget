@@ -13,10 +13,7 @@ import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import {
-  capitalizeFirstLowerRest,
-  removeUnderscores,
-} from "../../../utils/text";
+import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components";
 import { useComplete } from "../hooks/use-complete.hook";
 
@@ -179,7 +176,7 @@ export const CompletePage = ({
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
                     type: Just(val.type)
-                      .map(removeUnderscores)
+                      .map((v) => t(`steps.tx_type.${v}`))
                       .map(capitalizeFirstLowerRest)
                       .extract(),
                   })}

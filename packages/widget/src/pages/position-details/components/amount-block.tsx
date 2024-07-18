@@ -1,3 +1,4 @@
+import { priceTxt } from "@sk-widget/pages/position-details/styles.css";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
@@ -148,7 +149,7 @@ export const AmountBlock = ({
             marginTop="2"
             flexWrap="wrap"
           >
-            <Box flexGrow={1}>
+            <Box className={priceTxt}>
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {formattedAmount}
               </Text>

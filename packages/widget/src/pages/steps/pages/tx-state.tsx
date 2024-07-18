@@ -9,7 +9,6 @@ import {
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
 import { CheckSteps } from "../../../components/atoms/icons/check-steps";
-import { removeUnderscores } from "../../../utils/text";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
 import {
@@ -57,7 +56,7 @@ export const TxState = ({ txState, position, count }: Props) => {
             {t("steps.tx_of", {
               count: count.total,
               current: count.current,
-              type: removeUnderscores(txState.tx.type),
+              type: t(`steps.tx_type.${txState.tx.type}`),
             })}
           </Text>
 
