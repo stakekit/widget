@@ -17,14 +17,16 @@ export const GlobalModals = () => {
   const { referralCheck } = useSettings();
 
   if (geoBlock && !hideGeoBlock) {
-    <HelpModal
-      modal={{
-        type: "geoBlock",
-        ...geoBlock,
-        regionCodeName: regionCodeName.data,
-        onClose: () => setHideGeoBlock(true),
-      }}
-    />;
+    return (
+      <HelpModal
+        modal={{
+          type: "geoBlock",
+          ...geoBlock,
+          regionCodeName: regionCodeName.data,
+          onClose: () => setHideGeoBlock(true),
+        }}
+      />
+    );
   }
 
   return (
