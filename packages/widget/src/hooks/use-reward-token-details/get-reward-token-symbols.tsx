@@ -39,4 +39,4 @@ const maybeAddComma = ({
   i,
   str,
 }: { str: string; i: number; arrLength: number }) =>
-  i !== arrLength - 1 ? `${str}, ` : str;
+  i !== arrLength - 1 ? <>{str},&nbsp;</> : str;

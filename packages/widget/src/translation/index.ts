@@ -12,6 +12,8 @@ export const localResources = {
   fr: { translation: translationFR },
 } as const;
 
+export type Languages = keyof typeof localResources;
+
 i18n
   .use(initReactI18next)
   .use(LanguageDetector)

@@ -1,5 +1,7 @@
+import type { Languages } from "@sk-widget/translation";
 import type { PropsWithChildren, ReactNode } from "react";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useLayoutEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { config } from "../config";
 import type { SKExternalProviders } from "../domain/types/wallets";
 import type { ThemeWrapperTheme } from "./theme-wrapper";
@@ -36,6 +38,7 @@ export type SettingsProps = {
   disableInitLayoutAnimation?: boolean;
   disableResizingInputFontSize?: boolean;
   disableAutoScrollToTop?: boolean;
+  language?: Languages;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
@@ -51,6 +54,14 @@ export const SettingsContextProvider = ({
   if (!config.env.isTestMode && rest.wagmi?.__customConnectors__) {
     rest.wagmi.__customConnectors__ = undefined;
   }
+
+  const { i18n } = useTranslation();
+
+  useLayoutEffect(() => {
+    if (rest.language) {
+      i18n.changeLanguage(rest.language);
+    }
+  }, [rest.language, i18n]);
 
   return (
     <SettingsContext.Provider value={rest}>{children}</SettingsContext.Provider>
