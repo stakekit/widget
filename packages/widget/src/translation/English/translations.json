@@ -19,7 +19,8 @@
     "retry": "Try Again",
     "unsupported_network": "Unsupported network",
     "points": "Points",
-    "continue": "Continue"
+    "continue": "Continue",
+    "powered_by": "Powered by <span0>{{name}}</span0>"
   },
 
   "chain_modal": {

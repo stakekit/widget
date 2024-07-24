@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Trans, useTranslation } from "react-i18next";
 import { Box, Text } from "../../../components";
 import { SKLogo } from "../../../components/atoms/icons/sk-logo";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
@@ -13,6 +14,8 @@ const useSyncPoweredByHeight = () =>
 
 export const PoweredBy = () => {
   const { containerRef } = useSyncPoweredByHeight();
+
+  const { t } = useTranslation();
 
   const { state } = useMountAnimation();
 
@@ -34,10 +37,18 @@ export const PoweredBy = () => {
         gap="1"
       >
         <Text variant={{ type: "muted", weight: "normal" }}>
-          Powered by{" "}
-          <Text as="span" variant={{ type: "muted", weight: "semibold" }}>
-            StakeKit
-          </Text>
+          <Trans
+            i18nKey="shared.powered_by"
+            values={{ name: t("shared.stake_kit") }}
+            components={{
+              span0: (
+                <Text
+                  as="span"
+                  variant={{ type: "muted", weight: "semibold" }}
+                />
+              ),
+            }}
+          />
         </Text>
 
         <SKLogo />
