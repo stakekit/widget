@@ -1,8 +1,9 @@
+import type { TokenString } from "@sk-widget/domain/types";
 import {
   type SettingsContextType,
   useSettings,
 } from "@sk-widget/providers/settings";
-import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import { ActionTypes, useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { Codec, EitherAsync, Left, Right, string } from "purify-ts";
@@ -64,6 +65,48 @@ export const getInitParams = (
 const queryFn = async (params: Parameters<typeof fn>[0]) =>
   (await fn(params)).unsafeCoerce();
 
+export const getAndValidateInitParams = ({
+  externalProviderInitToken,
+}: { externalProviderInitToken?: TokenString }) =>
+  MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
+    network: safeParamCodec
+      .decode(url.searchParams.get("network"))
+      .chain(skSupportedChainsCodec.decode)
+      .toMaybe()
+      .extractNullable(),
+    token: safeParamCodec
+      .decode(url.searchParams.get("token") ?? externalProviderInitToken)
+      .toMaybe()
+      .extractNullable(),
+    yieldId: safeParamCodec
+      .decode(url.searchParams.get("yieldId"))
+      .chain(yieldIdCodec.decode)
+      .toMaybe()
+      .extractNullable(),
+    validator: string // Not safeParamCodec as it maybe has ../ or ./
+      .decode(url.searchParams.get("validator"))
+      .toMaybe()
+      .extractNullable(),
+    pendingaction: safeParamCodec
+      .decode(url.searchParams.get("pendingaction"))
+      .chain(pendingActionCodec.decode)
+      .toMaybe()
+      .extractNullable(),
+    referralCode: safeParamCodec
+      .decode(url.searchParams.get("ref"))
+      .toMaybe()
+      .extractNullable(),
+    accountId: string // Not safeParamCodec as it maybe has ../ or ./
+      .decode(url.searchParams.get("accountId"))
+      .toMaybe()
+      .extractNullable(),
+    tab: safeParamCodec
+      .decode(url.searchParams.get("tab"))
+      .chain(tabCodec.decode)
+      .toMaybe()
+      .extractNullable(),
+  }));
+
 const fn = ({
   isLedgerLive,
   queryClient,
@@ -76,42 +119,9 @@ const fn = ({
   externalProviders: SettingsContextType["externalProviders"];
 }): EitherAsync<Error, InitParams> =>
   EitherAsync.liftEither(
-    MaybeWindow.map((w) => new URL(w.location.href))
-      .map((url) => ({
-        network: skSupportedChainsCodec
-          .decode(url.searchParams.get("network"))
-          .toMaybe()
-          .extractNullable(),
-        token: string
-          .decode(url.searchParams.get("token") ?? externalProviders?.initToken)
-          .toMaybe()
-          .extractNullable(),
-        yieldId: string
-          .decode(url.searchParams.get("yieldId"))
-          .toMaybe()
-          .extractNullable(),
-        validator: string
-          .decode(url.searchParams.get("validator"))
-          .toMaybe()
-          .extractNullable(),
-        pendingaction: string
-          .decode(url.searchParams.get("pendingaction"))
-          .toMaybe()
-          .extractNullable(),
-        referralCode: string
-          .decode(url.searchParams.get("ref"))
-          .toMaybe()
-          .extractNullable(),
-        accountId: string
-          .decode(url.searchParams.get("accountId"))
-          .toMaybe()
-          .extractNullable(),
-        tab: tabCodec
-          .decode(url.searchParams.get("tab"))
-          .toMaybe()
-          .extractNullable(),
-      }))
-      .toEither(new Error("missing window"))
+    getAndValidateInitParams({
+      externalProviderInitToken: externalProviders?.initToken,
+    }).toEither(new Error("missing window"))
   )
     .map((val) => ({
       ...val,
@@ -126,22 +136,62 @@ const fn = ({
           yieldId: yId,
           queryClient,
           yieldYieldOpportunity,
-        }).map((yieldData) => ({
-          ...val,
-          network: yieldData.token.network as SupportedSKChains,
-          token: yieldData.token.symbol,
-          yieldData,
-        }));
+        })
+          .map((yieldData) => ({
+            ...val,
+            network: yieldData.token.network as SupportedSKChains,
+            token: yieldData.token.symbol,
+            yieldData,
+          }))
+          .chainLeft(async () => Right({ ...val, yieldData: null }));
       }
 
       return EitherAsync.liftEither(Right({ ...val, yieldData: null }));
     });
 
+const pendingActionCodec = Codec.custom<ActionTypes>({
+  decode: (val) =>
+    string
+      .decode(val)
+      .chain((v) =>
+        v in ActionTypes
+          ? Right(v as ActionTypes)
+          : Left("invalid pending action")
+      ),
+  encode: (val) => val,
+});
+
 const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
   decode: (val) =>
-    typeof val === "string" && isSupportedChain(val)
-      ? Right(val)
-      : Left("invalid chain"),
+    string
+      .decode(val)
+      .chain((v) => (isSupportedChain(v) ? Right(v) : Left("invalid chain"))),
+  encode: (val) => val,
+});
+
+const pathTraversalRegEx = /(\.\.\/)|(\.\/)/;
+
+const safeParamCodec = Codec.custom<string>({
+  decode: (val) =>
+    string
+      .decode(val)
+      .chain((v) =>
+        pathTraversalRegEx.test(v) ? Left("invalid string value") : Right(v)
+      ),
+  encode: (val) => val,
+});
+
+const yieldIdCodec = Codec.custom<string>({
+  decode: (val) =>
+    string.decode(val).chain((v) => {
+      const [network, token, ...yieldName] = v.split("-");
+
+      if (!network || !token || !yieldName.toString()) {
+        return Left("invalid yieldId format");
+      }
+
+      return Right(v);
+    }),
   encode: (val) => val,
 });
 
