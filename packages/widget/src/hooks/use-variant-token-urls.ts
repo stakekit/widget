@@ -11,6 +11,7 @@ export const useVariantTokenUrls = (
   return useMemo(() => {
     let mainUrl = metadata?.logoURI ?? token.logoURI;
 
+    const providerIcon = metadata?.provider?.logoURI;
     const fallbackUrl = metadata?.logoURI ?? token.logoURI;
     const name = metadata?.name ?? token.name;
 
@@ -39,6 +40,6 @@ export const useVariantTokenUrls = (
       }
     }
 
-    return { mainUrl, fallbackUrl, name };
+    return { mainUrl, fallbackUrl, name, providerIcon };
   }, [token, metadata, variant]);
 };
