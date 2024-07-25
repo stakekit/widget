@@ -1,8 +1,8 @@
+import { ProviderIcon } from "@sk-widget/components/atoms/provider-icon";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { Box, SelectModalItem, Text } from "../../../../../components";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { getRewardRateFormatted } from "../../../../../utils/formatters";
 import { useEarnPageContext } from "../../state/earn-page-context";
@@ -32,12 +32,7 @@ export const SelectOpportunityListItem = ({
       testId={`select-opportunity__item_${item.id}-${index}`}
       onItemClick={onItemClick}
     >
-      <TokenIcon
-        metadata={item.metadata}
-        token={item.token}
-        customLogo={item.metadata.provider?.logoURI}
-        customNetworkLogo={item.metadata.logoURI}
-      />
+      <ProviderIcon metadata={item.metadata} token={item.token} />
 
       <Box
         display="flex"

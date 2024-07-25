@@ -5,7 +5,7 @@ import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { useSettings } from "../../../providers/settings";
 import type { Atoms } from "../../../styles";
 
-export const TokenIcon = ({
+export const ProviderIcon = ({
   token,
   metadata,
   tokenLogoHw,
@@ -26,17 +26,17 @@ export const TokenIcon = ({
       token={token}
       metadata={metadata}
     >
-      {({ fallbackUrl, mainUrl, name, networkLogoUri }) => (
+      {({ fallbackUrl, mainUrl, name, networkLogoUri, providerIcon }) => (
         <>
           <TokenIconImage
             fallbackUrl={fallbackUrl}
-            mainUrl={mainUrl}
+            mainUrl={providerIcon}
             name={name}
             tokenLogoHw={tokenLogoHw}
           />
           {!hideNetwork && !hideNetworkLogo && (
             <NetworkLogoImage
-              networkLogoUri={networkLogoUri}
+              networkLogoUri={mainUrl || networkLogoUri}
               tokenNetworkLogoHw={tokenNetworkLogoHw}
             />
           )}

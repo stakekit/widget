@@ -1,4 +1,5 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import { ProviderIcon } from "@sk-widget/components/atoms/provider-icon";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +11,6 @@ import {
   Text,
 } from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectOpportunityListItem } from "./select-opportunity-list-item";
@@ -76,12 +76,7 @@ export const SelectOpportunity = () => {
               justifyContent="center"
               alignItems="center"
             >
-              <TokenIcon
-                token={data.ss.token}
-                metadata={data.ss.metadata}
-                customLogo={data.ss.metadata.provider?.logoURI}
-                customNetworkLogo={data.ss.metadata.logoURI}
-              />
+              <ProviderIcon token={data.ss.token} metadata={data.ss.metadata} />
               <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
             </Box>
             <CaretDownIcon />
