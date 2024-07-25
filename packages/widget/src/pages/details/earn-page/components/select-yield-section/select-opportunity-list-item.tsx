@@ -1,4 +1,4 @@
-import { ProviderIcon } from "@sk-widget/components/atoms/provider-icon";
+import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";

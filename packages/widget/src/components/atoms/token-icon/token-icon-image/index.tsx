@@ -1,6 +1,6 @@
-import type { Atoms } from "../../../styles";
-import { Image } from "../image";
-import { ImageFallback } from "../image-fallback";
+import { Image } from "@sk-widget/components/atoms/image";
+import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
+import type { Atoms } from "@sk-widget/styles";
 
 type TokenIconProps = {
   mainUrl?: string;

@@ -1,5 +1,5 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { ProviderIcon } from "@sk-widget/components/atoms/provider-icon";
+import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
