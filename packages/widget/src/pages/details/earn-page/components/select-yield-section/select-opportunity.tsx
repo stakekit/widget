@@ -76,7 +76,12 @@ export const SelectOpportunity = () => {
               justifyContent="center"
               alignItems="center"
             >
-              <TokenIcon token={data.ss.token} metadata={data.ss.metadata} />
+              <TokenIcon
+                token={data.ss.token}
+                metadata={data.ss.metadata}
+                customLogo={data.ss.metadata.provider?.logoURI}
+                customNetworkLogo={data.ss.metadata.logoURI}
+              />
               <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
             </Box>
             <CaretDownIcon />

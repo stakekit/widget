@@ -32,7 +32,12 @@ export const SelectOpportunityListItem = ({
       testId={`select-opportunity__item_${item.id}-${index}`}
       onItemClick={onItemClick}
     >
-      <TokenIcon metadata={item.metadata} token={item.token} />
+      <TokenIcon
+        metadata={item.metadata}
+        token={item.token}
+        customLogo={item.metadata.provider?.logoURI}
+        customNetworkLogo={item.metadata.logoURI}
+      />
 
       <Box
         display="flex"

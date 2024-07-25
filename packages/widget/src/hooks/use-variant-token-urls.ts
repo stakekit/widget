@@ -1,17 +1,21 @@
 import { config } from "@sk-widget/config";
 import { useSettings } from "@sk-widget/providers/settings";
+import { getNetworkLogo } from "@sk-widget/utils";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import type { Networks } from "@stakekit/common";
 import { useMemo } from "react";
 
 export const useVariantTokenUrls = (
   token: TokenDto,
-  metadata?: YieldMetadataDto
+  metadata?: YieldMetadataDto,
+  customLogo?: string,
+  customNetworkLogo?: string
 ) => {
   const { variant } = useSettings();
   return useMemo(() => {
-    let mainUrl = metadata?.logoURI ?? token.logoURI;
+    let mainUrl = customLogo ?? metadata?.logoURI ?? token.logoURI;
 
-    const fallbackUrl = metadata?.logoURI ?? token.logoURI;
+    const fallbackUrl = customLogo ?? metadata?.logoURI ?? token.logoURI;
     const name = metadata?.name ?? token.name;
 
     if (variant === "zerion") {
@@ -39,6 +43,12 @@ export const useVariantTokenUrls = (
       }
     }
 
-    return { mainUrl, fallbackUrl, name };
-  }, [token, metadata, variant]);
+    /**
+     * Network specific token icons
+     */
+    const networkLogo =
+      customNetworkLogo ?? getNetworkLogo(token.network as Networks);
+
+    return { mainUrl, fallbackUrl, name, networkLogo };
+  }, [token, metadata, variant, customLogo, customNetworkLogo]);
 };
