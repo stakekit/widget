@@ -13,11 +13,17 @@ export const onYieldSelectState = ({
 }: {
   yieldDto: YieldDto;
   initParams: Maybe<InitParams>;
-}): Pick<State, "selectedStakeId" | "stakeAmount" | "selectedValidators"> => ({
+}): Pick<
+  State,
+  "selectedStakeId" | "stakeAmount" | "selectedValidators" | "tronResource"
+> => ({
   selectedStakeId: Maybe.of(yieldDto.id),
   stakeAmount: getInitMinStakeAmount(yieldDto),
   selectedValidators: getInitSelectedValidators({
     initQueryParams: initParams,
     yieldDto: yieldDto,
   }),
+  tronResource: Maybe.fromFalsy(
+    yieldDto.args.enter.args?.tronResource?.required
+  ).map(() => "ENERGY"),
 });
