@@ -19,6 +19,10 @@ export const UnstakeReviewPage = () => {
     showUnstakeSignMessagePopup,
     gasCheckLoading,
     isGasCheckWarning,
+    depositFee,
+    managementFee,
+    performanceFee,
+    feeConfigLoading,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
@@ -37,6 +41,10 @@ export const UnstakeReviewPage = () => {
         rewardTokenDetailsProps={rewardTokenDetailsProps}
         title={title.orDefault("")}
         fee={fee}
+        depositFee={depositFee}
+        managementFee={managementFee}
+        performanceFee={performanceFee}
+        feeConfigLoading={feeConfigLoading}
         info={info}
         metadata={integrationData.map((d) => d.metadata)}
         token={token}

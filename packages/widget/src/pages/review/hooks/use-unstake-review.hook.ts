@@ -1,32 +1,61 @@
+import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
+import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
+import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
-import { useActionExitGasEstimate } from "@stakekit/api-hooks";
+import { bpsToAmount, formatNumber } from "@sk-widget/utils";
+import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
+import {
+  useActionExitGasEstimate,
+  useYieldGetFeeConfiguration,
+} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
-import { useSavedRef, useTokensPrices } from "../../../hooks";
-import { formatNumber } from "../../../utils";
-import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useUnstakeActionReview = () => {
   const exitRequest = useExitStakeState().unsafeCoerce();
+  const integrationId = exitRequest.requestDto.integrationId;
 
   const actionExitGasEstimate = useActionExitGasEstimate(
     exitRequest.requestDto,
     { query: { staleTime: 0, gcTime: 0 } }
   );
+  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
 
   const stakeExitTxGas = useMemo(
     () => Maybe.fromNullable(actionExitGasEstimate.data?.amount).map(BigNumber),
     [actionExitGasEstimate.data]
+  );
+
+  const depositFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeExitTxGas]
+  );
+
+  const managementFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeExitTxGas]
+  );
+
+  const performanceFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeExitTxGas]
   );
 
   const gasWarningCheck = useGasWarningCheck({
@@ -84,6 +113,34 @@ export const useUnstakeActionReview = () => {
         yieldDto: integrationData,
       }),
     [integrationData, pricesState.data, stakeExitTxGas]
+  );
+
+  const depositFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: depositFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, depositFeeUsd]
+  );
+  const managementFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: managementFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, managementFeeUsd]
+  );
+  const performanceFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: performanceFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, performanceFeeUsd]
   );
 
   const rewardTokenDetailsProps = integrationData
@@ -158,5 +215,9 @@ export const useUnstakeActionReview = () => {
     gasCheckLoading:
       actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
     isGasCheckWarning: !!gasWarningCheck.data,
+    depositFee,
+    managementFee,
+    performanceFee,
+    feeConfigLoading: feeConfigDto.isPending,
   };
 };

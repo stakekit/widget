@@ -20,6 +20,10 @@ export const StakeReviewPage = () => {
     metaInfo,
     gasCheckLoading,
     isGasCheckWarning,
+    depositFee,
+    managementFee,
+    performanceFee,
+    feeConfigLoading,
   } = useStakeReview();
 
   const info = useMemo(
@@ -52,6 +56,10 @@ export const StakeReviewPage = () => {
   return (
     <ReviewPage
       fee={fee}
+      depositFee={depositFee}
+      managementFee={managementFee}
+      performanceFee={performanceFee}
+      feeConfigLoading={feeConfigLoading}
       title={yieldType}
       metadata={metadata}
       token={token}

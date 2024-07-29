@@ -133,3 +133,6 @@ export const isMobile = () => {
 
   return mobile;
 };
+
+export const bpsToAmount = (bps: BigNumber, amount: BigNumber) =>
+  amount.multipliedBy(bps).dividedBy(10000);
