@@ -1,3 +1,4 @@
+import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
@@ -40,7 +41,12 @@ export const RewardTokenDetails = ({
         <>
           <Box display="flex" alignItems="center" gap="2">
             {rt.logoUri && (
-              <Box>
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                gap="1"
+              >
                 <Image
                   imageProps={{ borderRadius: "full" }}
                   containerProps={{ hw: "5" }}
@@ -49,6 +55,12 @@ export const RewardTokenDetails = ({
                     <ImageFallback name={rt.providerName} tokenLogoHw="5" />
                   }
                 />
+
+                {isMorphoProvider(rt.providerName) && (
+                  <Box width={"5"} height={"5"}>
+                    <MorphoStarsIcon />
+                  </Box>
+                )}
               </Box>
             )}
 
@@ -74,3 +86,5 @@ export const RewardTokenDetails = ({
     })
     .extractNullable();
 };
+
+const isMorphoProvider = (providerName: string) => /morpho/i.test(providerName);
