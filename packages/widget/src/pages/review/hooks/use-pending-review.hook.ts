@@ -7,11 +7,12 @@ import {
   usePendingActionDispatch,
   usePendingActionState,
 } from "@sk-widget/providers/pending-action-state";
-import { formatNumber } from "@sk-widget/utils";
+import { bpsToAmount, formatNumber } from "@sk-widget/utils";
 import {
   type ActionTypes,
   useActionPendingGasEstimate,
   useActionPendingHook,
+  useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
@@ -27,16 +28,43 @@ import { useRegisterFooterButton } from "../../components/footer-outlet/context"
 
 export const usePendingActionReview = () => {
   const pendingRequest = usePendingActionState().unsafeCoerce();
+  const integrationId = pendingRequest.requestDto.integrationId;
 
   const actionPendingGasEstimate = useActionPendingGasEstimate(
     pendingRequest.requestDto,
     { query: { staleTime: 0, gcTime: 0 } }
   );
 
+  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
+
   const pendingTxGas = useMemo(
     () =>
       Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
     [actionPendingGasEstimate.data]
+  );
+
+  const depositFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
+        .map(BigNumber)
+        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, pendingTxGas]
+  );
+
+  const managementFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
+        .map(BigNumber)
+        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, pendingTxGas]
+  );
+
+  const performanceFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
+        .map(BigNumber)
+        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, pendingTxGas]
   );
 
   const gasWarningCheck = useGasWarningCheck({
@@ -94,6 +122,34 @@ export const usePendingActionReview = () => {
         yieldDto: integrationData,
       }),
     [integrationData, pendingTxGas, pricesState.data]
+  );
+
+  const depositFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: depositFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, depositFeeUsd]
+  );
+  const managementFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: managementFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, managementFeeUsd]
+  );
+  const performanceFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: performanceFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: integrationData,
+      }),
+    [pricesState.data, integrationData, performanceFeeUsd]
   );
 
   const actionPending = useActionPendingHook();
@@ -180,5 +236,9 @@ export const usePendingActionReview = () => {
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
       actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
+    depositFee,
+    managementFee,
+    performanceFee,
+    feeConfigLoading: feeConfigDto.isPending,
   };
 };

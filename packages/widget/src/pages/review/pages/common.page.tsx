@@ -30,6 +30,10 @@ type ReviewPageProps = {
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
   loading?: boolean;
+  depositFee?: string;
+  managementFee?: string;
+  performanceFee?: string;
+  feeConfigLoading?: boolean;
 } & MetaInfoProps;
 
 export const ReviewPage = ({
@@ -41,6 +45,10 @@ export const ReviewPage = ({
   rewardTokenDetailsProps,
   isGasCheckError,
   loading = false,
+  depositFee,
+  managementFee,
+  performanceFee,
+  feeConfigLoading = false,
   ...rest
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
@@ -48,6 +56,8 @@ export const ReviewPage = ({
   const trackEvent = useTrackEvent();
 
   const { t } = useTranslation();
+
+  const isLoading = loading || feeConfigLoading;
 
   return (
     <AnimationPage>
@@ -110,30 +120,37 @@ export const ReviewPage = ({
           <Text variant={{ weight: "semibold" }}>{t("shared.fees")}</Text>
         </Box>
 
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          marginTop="2"
-          marginBottom="4"
-          data-testid="estimated_gas_fee"
-        >
-          <Text variant={{ weight: "normal", type: "muted" }}>
-            {t("review.estimated_gas_fee")}
-          </Text>
-          {loading ? (
-            <Box width="40">
-              <ContentLoaderSquare heightPx={16} variant={{ size: "medium" }} />
-            </Box>
-          ) : (
-            <Text
-              className={feeStyles}
-              variant={{ type: "muted", weight: "normal" }}
-            >
-              {fee}
-            </Text>
-          )}
-        </Box>
+        <GasFee
+          label={t("review.estimated_gas_fee")}
+          price={fee}
+          loading={isLoading}
+        />
+
+        {!isLoading && (
+          <>
+            {Maybe.fromFalsy(depositFee)
+              .map((val) => (
+                <ConfigFee label={t("review.deposit_fee")} price={`${val}`} />
+              ))
+              .extractNullable()}
+            {Maybe.fromFalsy(managementFee)
+              .map((val) => (
+                <ConfigFee
+                  label={t("review.management_fee")}
+                  price={`${val}`}
+                />
+              ))
+              .extractNullable()}
+            {Maybe.fromFalsy(performanceFee)
+              .map((val) => (
+                <ConfigFee
+                  label={t("review.performance_fee")}
+                  price={`${val}`}
+                />
+              ))
+              .extractNullable()}
+          </>
+        )}
 
         {isGasCheckError && (
           <Box marginBottom="2">
@@ -180,5 +197,62 @@ export const ReviewPage = ({
         </Box>
       </PageContainer>
     </AnimationPage>
+  );
+};
+
+const GasFee = ({
+  label,
+  price,
+  loading,
+}: { label: string; price: string; loading: boolean }) => {
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      marginTop="2"
+      marginBottom="2"
+      data-testid="estimated_gas_fee"
+      height="4"
+    >
+      <Text variant={{ weight: "normal", type: "muted" }}>{label}</Text>
+      {loading ? (
+        <Box width="40">
+          <ContentLoaderSquare heightPx={16} variant={{ size: "medium" }} />
+        </Box>
+      ) : (
+        <Text
+          className={feeStyles}
+          variant={{ type: "muted", weight: "normal" }}
+        >
+          {price}
+        </Text>
+      )}
+    </Box>
+  );
+};
+
+const ConfigFee = ({ label, price }: { label: string; price: string }) => {
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      data-testid="estimated_gas_fee"
+      height="4"
+      paddingLeft="2"
+      marginBottom="1"
+      opacity={0.5}
+    >
+      <Text variant={{ weight: "normal", type: "muted", size: "small" }}>
+        {label}
+      </Text>
+      <Text
+        className={feeStyles}
+        variant={{ type: "muted", weight: "normal", size: "small" }}
+      >
+        {price}
+      </Text>
+    </Box>
   );
 };

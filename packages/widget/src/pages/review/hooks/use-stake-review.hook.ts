@@ -1,15 +1,23 @@
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
+import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
+import { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
+import { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
+import { useYieldType } from "@sk-widget/hooks/use-yield-type";
+import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import {
   useEnterStakeDispatch,
   useEnterStakeState,
 } from "@sk-widget/providers/enter-stake-state";
 import { useSettings } from "@sk-widget/providers/settings";
+import { bpsToAmount, formatNumber } from "@sk-widget/utils";
+import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
   useActionEnterGasEstimation,
   useActionEnterHook,
+  useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
@@ -18,16 +26,12 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useSavedRef, useTokensPrices } from "../../../hooks";
-import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
-import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
-import { useYieldType } from "../../../hooks/use-yield-type";
-import { formatNumber } from "../../../utils";
-import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const useStakeReview = () => {
   const enterRequest = useEnterStakeState().unsafeCoerce();
+
+  const integrationId = enterRequest.requestDto.integrationId;
+  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
 
   const actionEnterGasEstimation = useActionEnterGasEstimation(
     enterRequest.requestDto,
@@ -38,6 +42,30 @@ export const useStakeReview = () => {
     () =>
       Maybe.fromNullable(actionEnterGasEstimation.data?.amount).map(BigNumber),
     [actionEnterGasEstimation.data]
+  );
+
+  const depositFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeEnterTxGas]
+  );
+
+  const managementFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeEnterTxGas]
+  );
+
+  const performanceFeeUsd = useMemo(
+    () =>
+      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
+        .map(BigNumber)
+        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
+    [feeConfigDto, stakeEnterTxGas]
   );
 
   const stakeAmount = useMemo(
@@ -94,6 +122,33 @@ export const useStakeReview = () => {
         yieldDto: selectedStake,
       }),
     [pricesState.data, selectedStake, stakeEnterTxGas]
+  );
+  const depositFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: depositFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: selectedStake,
+      }),
+    [pricesState.data, selectedStake, depositFeeUsd]
+  );
+  const managementFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: managementFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: selectedStake,
+      }),
+    [pricesState.data, selectedStake, managementFeeUsd]
+  );
+  const performanceFee = useMemo(
+    () =>
+      getGasFeeInUSD({
+        gas: performanceFeeUsd,
+        prices: Maybe.fromNullable(pricesState.data),
+        yieldDto: selectedStake,
+      }),
+    [pricesState.data, selectedStake, performanceFeeUsd]
   );
 
   const metadata = selectedStake.map((y) => y.metadata);
@@ -183,6 +238,10 @@ export const useStakeReview = () => {
     isGasCheckWarning: !!gasCheckWarning.data,
     gasCheckLoading:
       actionEnterGasEstimation.isLoading || gasCheckWarning.isLoading,
+    depositFee,
+    managementFee,
+    performanceFee,
+    feeConfigLoading: feeConfigDto.isPending,
   };
 };
 

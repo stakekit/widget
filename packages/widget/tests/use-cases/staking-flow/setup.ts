@@ -124,6 +124,7 @@ export const setup = async () => {
     type: "STAKE",
     currentStepIndex: 0,
     amount: null,
+    USDAmount: null,
     tokenId: null,
     validatorAddress: null,
     validatorAddresses: null,

@@ -156,7 +156,10 @@
     "claim": "Réclamer",
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
     "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
-    "additional_info": "Infos supplémentaires"
+    "additional_info": "Infos supplémentaires",
+    "deposit_fee": "Frais de dépôt",
+    "management_fee": "Frais de gestion",
+    "performance_fee": "Frais de performance"
   },
   "steps": {
     "title": "Suivi des étapes",
