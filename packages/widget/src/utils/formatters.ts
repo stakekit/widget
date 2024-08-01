@@ -1,7 +1,7 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { APToPercentage, defaultFormattedNumber } from ".";
+import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types";
 
@@ -65,7 +65,7 @@ export const getGasFeeInUSD = ({
     }))
     .mapOrDefault(
       (val) =>
-        `${defaultFormattedNumber(val.gas)} ${val.yieldDto.metadata.gasFeeToken.symbol} ${
+        `${formatNumber(val.gas, 10)} ${val.yieldDto.metadata.gasFeeToken.symbol} ${
           val.gasFeeInUSD.isGreaterThan(0)
             ? ` ($${defaultFormattedNumber(val.gasFeeInUSD)})`
             : ""

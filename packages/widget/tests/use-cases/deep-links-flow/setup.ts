@@ -10,6 +10,7 @@ import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
 import { server } from "../../mocks/server";
 import { rkMockWallet } from "../../utils/mock-connector";
+import { setUrl as _setUrl } from "./utils";
 
 export const setup = async (opts?: {
   withValidatorAddressesRequired?: boolean;
@@ -326,24 +327,9 @@ export const setup = async (opts?: {
         accountId?: never;
         pendingaction?: never;
       }) => {
-    const url = new URL(
-      network
-        ? `http://localhost:5173/?network=${network}`
-        : `http://localhost:5173/?yieldId=${yieldId}&accountId=${accountId}&pendingaction=${pendingaction}`
-    );
-
-    Object.defineProperty(window, "location", {
-      value: {
-        href: url.href,
-        hostname: url.hostname,
-        origin: url.origin,
-      },
-    });
-
-    return {
-      origin: url.origin,
-      url,
-    };
+    return network
+      ? _setUrl({ network })
+      : _setUrl({ yieldId, accountId, pendingaction });
   };
 
   return {

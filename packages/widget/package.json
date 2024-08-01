@@ -73,7 +73,7 @@
     "@radix-ui/react-visually-hidden": "^1.1.0",
     "@stakekit/api-hooks": "^0.0.78",
     "@stakekit/common": "^0.0.34",
-    "@stakekit/rainbowkit": "^2.1.6",
+    "@stakekit/rainbowkit": "^2.1.7",
     "@tanstack/react-query": "^5.51.1",
     "@tanstack/react-virtual": "^3.8.3",
     "@testing-library/dom": "^10.3.2",
