@@ -6,40 +6,42 @@ import { useMemo } from "react";
 export const useVariantTokenUrls = (
   token: TokenDto,
   metadata?: YieldMetadataDto
-) => {
+): {
+  mainUrl: string | undefined;
+  fallbackUrl: string | undefined;
+  name: string;
+  providerIcon: string | undefined;
+} => {
   const { variant } = useSettings();
-  return useMemo(() => {
-    let mainUrl = metadata?.logoURI ?? token.logoURI;
 
-    const providerIcon = metadata?.provider?.logoURI;
-    const fallbackUrl = metadata?.logoURI ?? token.logoURI;
-    const name = metadata?.name ?? token.name;
+  return useMemo(() => {
+    if (metadata) {
+      return {
+        mainUrl: metadata.logoURI,
+        fallbackUrl: metadata.logoURI ?? token.logoURI,
+        name: metadata.name,
+        providerIcon: metadata.provider?.logoURI,
+      };
+    }
+
+    let mainUrl = token.logoURI;
 
     if (variant === "zerion") {
       /**
-       * Use Zerion's ETH token for yields that are native staking on Ethereum
+       * Use Zerion's token icons
        */
-      if (metadata) {
-        if (
-          metadata.type === "staking" &&
-          metadata.token.network === "ethereum"
-        ) {
-          mainUrl = `${config.zerion.iconsByAddress}eth.png`;
-        }
-      } else {
-        /**
-         * Use Zerion's token icons
-         */
-        if (token.address) {
-          mainUrl = `${config.zerion.iconsByAddress}${token.address}.png`;
-        } else if (token.symbol === "ETH") {
-          mainUrl = `${config.zerion.iconsByAddress}eth.png`;
-        } else {
-          mainUrl = `${config.zerion.iconsByNetwork}${token.network}.png`;
-        }
+      if (token.address && token.symbol === "MATIC") {
+        mainUrl = `${config.zerion.iconsByAddress}${token.address}.png`;
+      } else if (token.symbol === "ETH") {
+        mainUrl = `${config.zerion.iconsByAddress}eth.png`;
       }
     }
 
-    return { mainUrl, fallbackUrl, name, providerIcon };
+    return {
+      mainUrl,
+      fallbackUrl: token.logoURI,
+      name: token.name,
+      providerIcon: undefined,
+    };
   }, [token, metadata, variant]);
 };
