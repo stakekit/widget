@@ -4,7 +4,7 @@ import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
 import { useEstimatedRewards } from "../../../src/hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
-import { defaultFormattedNumber, formatAddress } from "../../../src/utils";
+import { formatAddress, formatNumber } from "../../../src/utils";
 import { renderApp, renderHook, waitFor, within } from "../../utils/test-utils";
 import { setup } from "./setup";
 
@@ -103,7 +103,7 @@ describe("Staking flow", () => {
     await waitFor(() =>
       expect(
         within(getByTestId("estimated_gas_fee")).getByText(
-          `${defaultFormattedNumber(totalGasFee)} ${yieldOp.token.symbol}`,
+          `${formatNumber(totalGasFee, 10)} ${yieldOp.token.symbol}`,
           { exact: false }
         )
       ).toBeInTheDocument()
