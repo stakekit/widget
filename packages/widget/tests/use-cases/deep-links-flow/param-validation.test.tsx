@@ -1,5 +1,7 @@
-import { getAndValidateInitParams } from "@sk-widget/hooks/use-init-params";
+import { useInitQueryParams } from "@sk-widget/hooks/use-init-query-params";
+import { SettingsContextProvider } from "@sk-widget/providers/settings";
 import type { ActionTypes } from "@stakekit/api-hooks";
+import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { setUrl as _setUrl } from "./utils";
 
@@ -12,8 +14,17 @@ describe("Deep link param validation", () => {
       _setUrl({ yieldId });
 
       expect(
-        getAndValidateInitParams({ externalProviderInitToken: undefined })
-          .map((v) => v.yieldId)
+        renderHook(useInitQueryParams, {
+          wrapper: ({ children }) => (
+            <SettingsContextProvider
+              variant="default"
+              apiKey={import.meta.env.VITE_API_KEY}
+            >
+              {children}
+            </SettingsContextProvider>
+          ),
+        })
+          .result.current.map((v) => v.yieldId)
           .extract()
       ).toEqual(valid ? yieldId : null);
     };
@@ -34,8 +45,17 @@ describe("Deep link param validation", () => {
       _setUrl({ pendingaction });
 
       expect(
-        getAndValidateInitParams({ externalProviderInitToken: undefined })
-          .map((v) => v.pendingaction)
+        renderHook(useInitQueryParams, {
+          wrapper: ({ children }) => (
+            <SettingsContextProvider
+              variant="default"
+              apiKey={import.meta.env.VITE_API_KEY}
+            >
+              {children}
+            </SettingsContextProvider>
+          ),
+        })
+          .result.current.map((v) => v.pendingaction)
           .extract()
       ).toEqual(valid ? pendingaction : null);
     };
