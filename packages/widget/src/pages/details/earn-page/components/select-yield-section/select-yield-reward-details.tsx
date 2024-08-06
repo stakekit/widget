@@ -1,8 +1,12 @@
+import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
 import { Trans, useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../../components";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
-import { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
+import {
+  RewardTokenDetails,
+  isMorphoProvider,
+} from "../../../../../components/molecules/reward-token-details";
 import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
@@ -53,9 +57,20 @@ export const SelectYieldRewardDetails = () => {
                   />
                 </Text>
 
-                <Box display="flex" justifyContent="center" alignItems="center">
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  flexShrink={0}
+                >
                   {rt.logoUri && (
-                    <Box marginRight="1">
+                    <Box
+                      marginRight="1"
+                      display="flex"
+                      justifyContent="center"
+                      alignItems="center"
+                      gap="1"
+                    >
                       <Image
                         imageProps={{ borderRadius: "full" }}
                         containerProps={{ hw: "5" }}
@@ -67,6 +82,12 @@ export const SelectYieldRewardDetails = () => {
                           />
                         }
                       />
+
+                      {isMorphoProvider(rt.providerName) && (
+                        <Box width="5" height="5">
+                          <MorphoStarsIcon />
+                        </Box>
+                      )}
                     </Box>
                   )}
                   <Text variant={{ type: "muted", weight: "normal" }}>

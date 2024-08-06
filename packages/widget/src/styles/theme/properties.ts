@@ -10,6 +10,7 @@ export const unresponsiveProperties = {
   textAlign: ["left", "center", "right", "end"],
   flex: [1, 2, 3, 4, 5],
   flexGrow: [0, 1, 2, 3],
+  flexShrink: [0, 1, 2, 3],
   lineHeight: vars.lineHeight,
   letterSpacing: vars.letterSpacing,
   borderWidth: [0.5, 1, 2, 3],
