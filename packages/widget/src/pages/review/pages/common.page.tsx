@@ -30,9 +30,9 @@ type ReviewPageProps = {
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
   loading?: boolean;
-  depositFee?: string;
-  managementFee?: string;
-  performanceFee?: string;
+  depositFeeUSD: Maybe<string>;
+  managementFeeUSD: Maybe<string>;
+  performanceFeeUSD: Maybe<string>;
   feeConfigLoading?: boolean;
 } & MetaInfoProps;
 
@@ -45,9 +45,9 @@ export const ReviewPage = ({
   rewardTokenDetailsProps,
   isGasCheckError,
   loading = false,
-  depositFee,
-  managementFee,
-  performanceFee,
+  depositFeeUSD,
+  managementFeeUSD,
+  performanceFeeUSD,
   feeConfigLoading = false,
   ...rest
 }: ReviewPageProps) => {
@@ -128,25 +128,19 @@ export const ReviewPage = ({
 
         {!isLoading && (
           <>
-            {Maybe.fromFalsy(depositFee)
+            {depositFeeUSD
               .map((val) => (
-                <ConfigFee label={t("review.deposit_fee")} price={`${val}`} />
+                <ConfigFee label={t("review.deposit_fee")} price={val} />
               ))
               .extractNullable()}
-            {Maybe.fromFalsy(managementFee)
+            {managementFeeUSD
               .map((val) => (
-                <ConfigFee
-                  label={t("review.management_fee")}
-                  price={`${val}`}
-                />
+                <ConfigFee label={t("review.management_fee")} price={val} />
               ))
               .extractNullable()}
-            {Maybe.fromFalsy(performanceFee)
+            {performanceFeeUSD
               .map((val) => (
-                <ConfigFee
-                  label={t("review.performance_fee")}
-                  price={`${val}`}
-                />
+                <ConfigFee label={t("review.performance_fee")} price={val} />
               ))
               .extractNullable()}
           </>

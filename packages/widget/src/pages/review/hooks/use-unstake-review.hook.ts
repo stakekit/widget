@@ -4,9 +4,10 @@ import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
+import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
-import { bpsToAmount, formatNumber } from "@sk-widget/utils";
+import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
   useActionExitGasEstimate,
@@ -34,29 +35,38 @@ export const useUnstakeActionReview = () => {
     [actionExitGasEstimate.data]
   );
 
-  const depositFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeExitTxGas]
+  const interactedToken = useMemo(
+    () => Maybe.of(exitRequest.unstakeToken),
+    [exitRequest.unstakeToken]
   );
 
-  const managementFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeExitTxGas]
+  const integrationData = useMemo(
+    () => Maybe.of(exitRequest.integrationData),
+    [exitRequest.integrationData]
   );
 
-  const performanceFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeExitTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeExitTxGas]
+  const pricesState = useTokensPrices({
+    token: interactedToken,
+    yieldDto: integrationData,
+  });
+
+  const amount = useMemo(
+    () => new BigNumber(exitRequest.requestDto.args.amount ?? 0),
+    [exitRequest.requestDto.args.amount]
   );
+
+  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+    amount,
+    token: interactedToken,
+    feeConfigDto: useMemo(
+      () => Maybe.fromNullable(feeConfigDto.data),
+      [feeConfigDto.data]
+    ),
+    prices: useMemo(
+      () => Maybe.fromNullable(pricesState.data),
+      [pricesState.data]
+    ),
+  });
 
   const gasWarningCheck = useGasWarningCheck({
     gasAmount: stakeExitTxGas,
@@ -66,26 +76,9 @@ export const useUnstakeActionReview = () => {
     isStake: false,
   });
 
-  const amount = useMemo(
-    () =>
-      Maybe.fromNullable(exitRequest.requestDto.args.amount).map(
-        (val) => new BigNumber(val ?? 0)
-      ),
-    [exitRequest.requestDto.args.amount]
-  );
-
   const { t } = useTranslation();
 
-  const integrationData = useMemo(
-    () => Maybe.of(exitRequest.integrationData),
-    [exitRequest.integrationData]
-  );
-  const interactedToken = useMemo(
-    () => Maybe.of(exitRequest.unstakeToken),
-    [exitRequest.unstakeToken]
-  );
-
-  const formattedAmount = amount.map((val) => formatNumber(val));
+  const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
 
   const title: Maybe<string> = integrationData.map((d) => {
     switch (d.metadata.type) {
@@ -100,11 +93,6 @@ export const useUnstakeActionReview = () => {
 
   const navigate = useNavigate();
 
-  const pricesState = useTokensPrices({
-    token: interactedToken,
-    yieldDto: integrationData,
-  });
-
   const fee = useMemo(
     () =>
       getGasFeeInUSD({
@@ -113,34 +101,6 @@ export const useUnstakeActionReview = () => {
         yieldDto: integrationData,
       }),
     [integrationData, pricesState.data, stakeExitTxGas]
-  );
-
-  const depositFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: depositFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, depositFeeUsd]
-  );
-  const managementFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: managementFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, managementFeeUsd]
-  );
-  const performanceFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: performanceFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, performanceFeeUsd]
   );
 
   const rewardTokenDetailsProps = integrationData
@@ -215,9 +175,9 @@ export const useUnstakeActionReview = () => {
     gasCheckLoading:
       actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
     isGasCheckWarning: !!gasWarningCheck.data,
-    depositFee,
-    managementFee,
-    performanceFee,
+    depositFeeUSD,
+    managementFeeUSD,
+    performanceFeeUSD,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };
