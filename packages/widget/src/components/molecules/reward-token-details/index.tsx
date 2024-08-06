@@ -57,7 +57,7 @@ export const RewardTokenDetails = ({
                 />
 
                 {isMorphoProvider(rt.providerName) && (
-                  <Box width={"5"} height={"5"}>
+                  <Box width="5" height="5">
                     <MorphoStarsIcon />
                   </Box>
                 )}
@@ -87,4 +87,5 @@ export const RewardTokenDetails = ({
     .extractNullable();
 };
 
-const isMorphoProvider = (providerName: string) => /morpho/i.test(providerName);
+export const isMorphoProvider = (providerName: string) =>
+  /morpho/i.test(providerName);
