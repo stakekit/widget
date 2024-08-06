@@ -1,6 +1,5 @@
 import { UnstakeSignPopup } from "@sk-widget/pages/position-details/components/unstake-sign-popup";
 import { useUnstakeActionReview } from "@sk-widget/pages/review/hooks/use-unstake-review.hook";
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ReviewPage } from "./common.page";
@@ -19,19 +18,16 @@ export const UnstakeReviewPage = () => {
     showUnstakeSignMessagePopup,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFee,
-    managementFee,
-    performanceFee,
+    depositFeeUSD,
+    managementFeeUSD,
+    performanceFeeUSD,
     feeConfigLoading,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
 
   const info = useMemo(
-    () =>
-      Maybe.fromRecord({ token, amount })
-        .map((val) => `${val.amount} ${val.token.symbol}`)
-        .extractNullable(),
+    () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
     [amount, token]
   );
 
@@ -41,9 +37,9 @@ export const UnstakeReviewPage = () => {
         rewardTokenDetailsProps={rewardTokenDetailsProps}
         title={title.orDefault("")}
         fee={fee}
-        depositFee={depositFee}
-        managementFee={managementFee}
-        performanceFee={performanceFee}
+        depositFeeUSD={depositFeeUSD}
+        managementFeeUSD={managementFeeUSD}
+        performanceFeeUSD={performanceFeeUSD}
         feeConfigLoading={feeConfigLoading}
         info={info}
         metadata={integrationData.map((d) => d.metadata)}

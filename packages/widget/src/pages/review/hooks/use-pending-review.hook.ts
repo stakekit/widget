@@ -2,12 +2,13 @@ import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
+import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import {
   usePendingActionDispatch,
   usePendingActionState,
 } from "@sk-widget/providers/pending-action-state";
-import { bpsToAmount, formatNumber } from "@sk-widget/utils";
+import { formatNumber } from "@sk-widget/utils";
 import {
   type ActionTypes,
   useActionPendingGasEstimate,
@@ -43,47 +44,10 @@ export const usePendingActionReview = () => {
     [actionPendingGasEstimate.data]
   );
 
-  const depositFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
-        .map(BigNumber)
-        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, pendingTxGas]
-  );
-
-  const managementFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
-        .map(BigNumber)
-        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, pendingTxGas]
-  );
-
-  const performanceFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
-        .map(BigNumber)
-        .chain((v) => pendingTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, pendingTxGas]
-  );
-
-  const gasWarningCheck = useGasWarningCheck({
-    gasAmount: pendingTxGas,
-    gasFeeToken: pendingRequest.gasFeeToken,
-    address: pendingRequest.addresses.address,
-    additionalAddresses: pendingRequest.addresses.additionalAddresses,
-    isStake: false,
-  });
-
   const amount = useMemo(
-    () =>
-      Maybe.fromNullable(pendingRequest.requestDto.args?.amount).map(
-        (val) => new BigNumber(val ?? 0)
-      ),
+    () => new BigNumber(pendingRequest.requestDto.args?.amount ?? 0),
     [pendingRequest.requestDto.args?.amount]
   );
-
-  const { t } = useTranslation();
 
   const interactedToken = useMemo(
     () => Maybe.of(pendingRequest.interactedToken),
@@ -94,6 +58,34 @@ export const usePendingActionReview = () => {
     () => Maybe.of(pendingRequest.integrationData),
     [pendingRequest.integrationData]
   );
+
+  const pricesState = useTokensPrices({
+    token: interactedToken,
+    yieldDto: integrationData,
+  });
+
+  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+    amount,
+    token: interactedToken,
+    feeConfigDto: useMemo(
+      () => Maybe.fromNullable(feeConfigDto.data),
+      [feeConfigDto.data]
+    ),
+    prices: useMemo(
+      () => Maybe.fromNullable(pricesState.data),
+      [pricesState.data]
+    ),
+  });
+
+  const gasWarningCheck = useGasWarningCheck({
+    gasAmount: pendingTxGas,
+    gasFeeToken: pendingRequest.gasFeeToken,
+    address: pendingRequest.addresses.address,
+    additionalAddresses: pendingRequest.addresses.additionalAddresses,
+    isStake: false,
+  });
+
+  const { t } = useTranslation();
 
   const title = useMemo(
     () =>
@@ -109,11 +101,6 @@ export const usePendingActionReview = () => {
 
   const navigate = useNavigate();
 
-  const pricesState = useTokensPrices({
-    token: interactedToken,
-    yieldDto: integrationData,
-  });
-
   const fee = useMemo(
     () =>
       getGasFeeInUSD({
@@ -122,34 +109,6 @@ export const usePendingActionReview = () => {
         yieldDto: integrationData,
       }),
     [integrationData, pendingTxGas, pricesState.data]
-  );
-
-  const depositFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: depositFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, depositFeeUsd]
-  );
-  const managementFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: managementFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, managementFeeUsd]
-  );
-  const performanceFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: performanceFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: integrationData,
-      }),
-    [pricesState.data, integrationData, performanceFeeUsd]
   );
 
   const actionPending = useActionPendingHook();
@@ -223,12 +182,12 @@ export const usePendingActionReview = () => {
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
-  const formattedAmount = useMemo(() => amount.map(formatNumber), [amount]);
+  const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
 
   return {
     integrationData,
     title,
-    formattedAmount,
+    amount: formattedAmount,
     fee,
     rewardTokenDetailsProps,
     token: interactedToken,
@@ -236,9 +195,9 @@ export const usePendingActionReview = () => {
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
       actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
-    depositFee,
-    managementFee,
-    performanceFee,
+    depositFeeUSD,
+    managementFeeUSD,
+    performanceFeeUSD,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };

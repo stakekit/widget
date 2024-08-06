@@ -1,4 +1,4 @@
-import type { YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
@@ -68,6 +68,36 @@ export const getGasFeeInUSD = ({
         `${formatNumber(val.gas, 10)} ${val.yieldDto.metadata.gasFeeToken.symbol} ${
           val.gasFeeInUSD.isGreaterThan(0)
             ? ` ($${defaultFormattedNumber(val.gasFeeInUSD)})`
+            : ""
+        }`,
+      ""
+    );
+
+export const getFeesInUSD = ({
+  amount,
+  prices,
+  token,
+}: {
+  amount: Maybe<BigNumber>;
+  token: Maybe<TokenDto>;
+  prices: Maybe<Prices>;
+}) =>
+  Maybe.fromRecord({ token, amount })
+    .map((val) => ({
+      ...val,
+      feeInUSD: getTokenPriceInUSD({
+        amount: val.amount,
+        prices: prices.orDefault(new Prices(new Map())),
+        token: val.token,
+        pricePerShare: null,
+        baseToken: null,
+      }),
+    }))
+    .mapOrDefault(
+      (val) =>
+        `${formatNumber(val.amount, 10)} ${val.token.symbol} ${
+          val.feeInUSD.isGreaterThan(0)
+            ? ` ($${defaultFormattedNumber(val.feeInUSD)})`
             : ""
         }`,
       ""

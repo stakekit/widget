@@ -6,13 +6,14 @@ import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
+import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
 import {
   useEnterStakeDispatch,
   useEnterStakeState,
 } from "@sk-widget/providers/enter-stake-state";
 import { useSettings } from "@sk-widget/providers/settings";
-import { bpsToAmount, formatNumber } from "@sk-widget/utils";
+import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
   useActionEnterGasEstimation,
@@ -33,6 +34,11 @@ export const useStakeReview = () => {
   const integrationId = enterRequest.requestDto.integrationId;
   const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
 
+  const stakeAmount = useMemo(
+    () => new BigNumber(enterRequest.requestDto.args.amount),
+    [enterRequest]
+  );
+
   const actionEnterGasEstimation = useActionEnterGasEstimation(
     enterRequest.requestDto,
     { query: { staleTime: 0, gcTime: 0 } }
@@ -42,35 +48,6 @@ export const useStakeReview = () => {
     () =>
       Maybe.fromNullable(actionEnterGasEstimation.data?.amount).map(BigNumber),
     [actionEnterGasEstimation.data]
-  );
-
-  const depositFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.depositFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeEnterTxGas]
-  );
-
-  const managementFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.managementFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeEnterTxGas]
-  );
-
-  const performanceFeeUsd = useMemo(
-    () =>
-      Maybe.fromNullable(feeConfigDto.data?.performanceFeeBps)
-        .map(BigNumber)
-        .chain((v) => stakeEnterTxGas.map((gas) => bpsToAmount(v, gas))),
-    [feeConfigDto, stakeEnterTxGas]
-  );
-
-  const stakeAmount = useMemo(
-    () => new BigNumber(enterRequest.requestDto.args.amount),
-    [enterRequest]
   );
 
   const gasCheckWarning = useGasWarningCheck({
@@ -123,33 +100,19 @@ export const useStakeReview = () => {
       }),
     [pricesState.data, selectedStake, stakeEnterTxGas]
   );
-  const depositFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: depositFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: selectedStake,
-      }),
-    [pricesState.data, selectedStake, depositFeeUsd]
-  );
-  const managementFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: managementFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: selectedStake,
-      }),
-    [pricesState.data, selectedStake, managementFeeUsd]
-  );
-  const performanceFee = useMemo(
-    () =>
-      getGasFeeInUSD({
-        gas: performanceFeeUsd,
-        prices: Maybe.fromNullable(pricesState.data),
-        yieldDto: selectedStake,
-      }),
-    [pricesState.data, selectedStake, performanceFeeUsd]
-  );
+
+  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+    amount: stakeAmount,
+    token: selectedToken,
+    feeConfigDto: useMemo(
+      () => Maybe.fromNullable(feeConfigDto.data),
+      [feeConfigDto.data]
+    ),
+    prices: useMemo(
+      () => Maybe.fromNullable(pricesState.data),
+      [pricesState.data]
+    ),
+  });
 
   const metadata = selectedStake.map((y) => y.metadata);
 
@@ -238,9 +201,9 @@ export const useStakeReview = () => {
     isGasCheckWarning: !!gasCheckWarning.data,
     gasCheckLoading:
       actionEnterGasEstimation.isLoading || gasCheckWarning.isLoading,
-    depositFee,
-    managementFee,
-    performanceFee,
+    depositFeeUSD,
+    managementFeeUSD,
+    performanceFeeUSD,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };

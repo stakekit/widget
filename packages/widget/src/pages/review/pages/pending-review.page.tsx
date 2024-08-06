@@ -1,12 +1,11 @@
 import { usePendingActionReview } from "@sk-widget/pages/review/hooks/use-pending-review.hook";
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ReviewPage } from "./common.page";
 
 export const PendingReviewPage = () => {
   const {
-    formattedAmount,
+    amount,
     fee,
     integrationData,
     rewardTokenDetailsProps,
@@ -15,20 +14,17 @@ export const PendingReviewPage = () => {
     metaInfo,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFee,
-    managementFee,
-    performanceFee,
+    depositFeeUSD,
+    managementFeeUSD,
+    performanceFeeUSD,
     feeConfigLoading,
   } = usePendingActionReview();
 
   useTrackPage("pendingActionReview");
 
   const info = useMemo(
-    () =>
-      Maybe.fromRecord({ token, formattedAmount })
-        .map((val) => `${val.formattedAmount} ${val.token.symbol}`)
-        .extractNullable(),
-    [formattedAmount, token]
+    () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
+    [amount, token]
   );
 
   return (
@@ -36,9 +32,9 @@ export const PendingReviewPage = () => {
       rewardTokenDetailsProps={rewardTokenDetailsProps}
       title={title.orDefault("")}
       fee={fee}
-      depositFee={depositFee}
-      managementFee={managementFee}
-      performanceFee={performanceFee}
+      depositFeeUSD={depositFeeUSD}
+      managementFeeUSD={managementFeeUSD}
+      performanceFeeUSD={performanceFeeUSD}
       feeConfigLoading={feeConfigLoading}
       info={info}
       metadata={integrationData.map((val) => val.metadata)}
