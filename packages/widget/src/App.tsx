@@ -192,8 +192,6 @@ const Root = () => {
   return <Providers>{showChild && <Widget />}</Providers>;
 };
 
-const router = createMemoryRouter([{ path: "*", Component: Root }]);
-
 export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 
 export const SKApp = (props: SKAppProps) => {
@@ -201,6 +199,10 @@ export const SKApp = (props: SKAppProps) => {
     !props.variant || props.variant === "default"
       ? { variant: "default" }
       : { variant: props.variant, chainModal: props.chainModal };
+
+  const [router] = useState(() =>
+    createMemoryRouter([{ path: "*", Component: Root }])
+  );
 
   return (
     <SettingsContextProvider {...variantProps} {...props}>
