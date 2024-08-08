@@ -171,16 +171,15 @@ export const useUnstakeMachine = () => {
                   context.signedMessage
                 ) {
                   return merge(val, {
-                    dto: {
-                      args: {
-                        signatureVerification: {
-                          message:
-                            context.transactionVerificationMessageDto.message,
-                          signed: context.signedMessage,
-                        },
+                    args: {
+                      ...val.args,
+                      signatureVerification: {
+                        message:
+                          context.transactionVerificationMessageDto.message,
+                        signed: context.signedMessage,
                       },
-                    },
-                  } as Partial<typeof val>);
+                    } satisfies (typeof val)["args"],
+                  });
                 }
 
                 return val;
