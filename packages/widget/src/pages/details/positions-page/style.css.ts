@@ -1,7 +1,11 @@
+import {
+  widgetContainerMaxWidth,
+  widgetContainerName,
+} from "@sk-widget/style.css";
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles";
-import { minMediaQuery } from "../../../styles/tokens/breakpoints";
+import { minContainerWidth } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],
@@ -20,12 +24,14 @@ export const positionDetailsContainer = style([
   atoms({ gap: { mobile: "1", tablet: "2" } }),
   {
     display: "flex",
-    alignItems: "flex-start",
-    flexDirection: "column-reverse",
+
     justifyContent: "center",
 
-    "@media": {
-      [minMediaQuery("tablet")]: {
+    alignItems: "flex-start",
+    flexDirection: "column-reverse",
+
+    "@container": {
+      [minContainerWidth(widgetContainerName, widgetContainerMaxWidth)]: {
         alignItems: "center",
         flexDirection: "row",
       },
@@ -36,8 +42,6 @@ export const positionDetailsContainer = style([
 export const viaText = style({
   textOverflow: "ellipsis",
   overflow: "hidden",
-  whiteSpace: "nowrap",
-  width: "100%",
 });
 
 export const container = style({

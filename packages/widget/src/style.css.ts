@@ -1,6 +1,10 @@
-import { style } from "@vanilla-extract/css";
+import { createContainer, style } from "@vanilla-extract/css";
 import { atoms } from "./styles";
-import { minMediaQuery } from "./styles/tokens/breakpoints";
+import { minContainerWidth } from "./styles/tokens/breakpoints";
+
+export const appContainerName = createContainer();
+export const widgetContainerName = createContainer();
+export const widgetContainerMaxWidth = 400;
 
 export const animationContainer = style([
   atoms({ background: "background" }),
@@ -14,14 +18,17 @@ export const animationContainer = style([
     marginRight: "auto",
     borderTopLeftRadius: "20px",
     borderTopRightRadius: "20px",
-    "@media": {
-      [minMediaQuery("tablet")]: {
-        width: "400px",
+    maxWidth: widgetContainerMaxWidth,
+    containerType: "inline-size",
+    containerName: widgetContainerName,
+    "@container": {
+      [minContainerWidth(appContainerName, "tablet")]: {
         marginBottom: "50px",
       },
     },
   },
 ]);
+
 export const container = style([
   atoms({
     position: "relative",
@@ -34,4 +41,6 @@ export const container = style([
 
 export const appContainer = style({
   minHeight: "800px",
+  containerType: "inline-size",
+  containerName: appContainerName,
 });

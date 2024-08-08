@@ -1,5 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { vars } from "../../../../styles";
+import { atoms, vars } from "../../../../styles";
 
 export const selectItemText = style({
   color: vars.color.tokenSelect,
@@ -18,7 +18,7 @@ export const importValidatorContainer = style({
 
 export const noWrap = style({ whiteSpace: "nowrap" });
 
-export const listItem = style({
-  alignItems: "flex-start",
-  gap: "10px",
-});
+export const listItem = style([
+  atoms({ gap: "1" }),
+  { flexDirection: "column" },
+]);
