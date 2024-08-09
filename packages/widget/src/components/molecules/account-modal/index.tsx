@@ -20,6 +20,7 @@ export const AccountModal = () => {
         Maybe.fromNullable(account)
           .map((a) => (
             <Box
+              data-rk="account-modal-container"
               borderRadius="2xl"
               background="backgroundMuted"
               display="flex"

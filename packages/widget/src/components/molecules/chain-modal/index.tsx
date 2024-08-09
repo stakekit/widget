@@ -19,6 +19,7 @@ export const ChainModal = () => {
         Maybe.fromNullable(chain)
           .map((c) => (
             <Box
+              data-rk="chain-modal-container"
               borderRadius="2xl"
               background="backgroundMuted"
               display="flex"
