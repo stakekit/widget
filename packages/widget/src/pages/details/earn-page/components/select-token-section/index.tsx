@@ -1,11 +1,11 @@
+import { Box, NumberInput, Text } from "@sk-widget/components";
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { MaxButton } from "@sk-widget/components/atoms/max-button";
 import { priceTxt } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
+import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
+import { useSettings } from "@sk-widget/providers/settings";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, NumberInput, Text } from "../../../../../components";
-import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { useSettings } from "../../../../../providers/settings";
-import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectToken } from "./select-token";
 import { SelectTokenTitle } from "./title";
 
@@ -175,22 +175,7 @@ export const SelectTokenSection = () => {
             </Text>
           </Box>
 
-          {!isStakeTokenSameAsGasToken && (
-            <Box
-              as="button"
-              borderRadius="xl"
-              background="background"
-              px="2"
-              py="1"
-              marginLeft="2"
-              onClick={onMaxClick}
-              className={pressAnimation}
-            >
-              <Text variant={{ weight: "semibold", type: "regular" }}>
-                {t("shared.max")}
-              </Text>
-            </Box>
-          )}
+          {!isStakeTokenSameAsGasToken && <MaxButton onMaxClick={onMaxClick} />}
         </Box>
       </Box>
     </Box>

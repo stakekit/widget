@@ -1,15 +1,21 @@
+import {
+  Box,
+  type BoxProps,
+  Button,
+  NumberInput,
+  type NumberInputProps,
+  Text,
+} from "@sk-widget/components";
+import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
+import { MaxButton } from "@sk-widget/components/atoms/max-button";
+import { useYieldMetaInfo } from "@sk-widget/hooks/use-yield-meta-info";
 import { priceTxt } from "@sk-widget/pages/position-details/styles.css";
+import { formatNumber } from "@sk-widget/utils";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { BoxProps, NumberInputProps } from "../../../components";
-import { Box, Button, NumberInput, Text } from "../../../components";
-import { pressAnimation } from "../../../components/atoms/button/styles.css";
-import { InfoIcon } from "../../../components/atoms/icons/info";
-import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import { formatNumber } from "../../../utils";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];
@@ -170,24 +176,14 @@ export const AmountBlock = ({
                 </Text>
               )}
               {canChangeAmount && onMaxClick && (
-                <Box
-                  as="button"
-                  borderRadius="xl"
+                <MaxButton
+                  onMaxClick={onMaxClick}
                   background={
                     rest.variant === "unstake"
                       ? "background"
                       : "backgroundMuted"
                   }
-                  px="2"
-                  py="1"
-                  marginLeft="2"
-                  onClick={onMaxClick}
-                  className={pressAnimation}
-                >
-                  <Text variant={{ weight: "semibold", type: "regular" }}>
-                    {t("shared.max")}
-                  </Text>
-                </Box>
+                />
               )}
             </Box>
           </Box>

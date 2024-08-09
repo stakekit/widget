@@ -34,7 +34,10 @@ export const SelectValidatorTrigger = ({
 
   return (
     <>
-      <Box className={addValidatorContainer}>
+      <Box
+        data-rk="select-validator-trigger-container"
+        className={addValidatorContainer}
+      >
         <Box display="flex" alignItems="center" justifyContent="center">
           <Text className={breakWord} variant={{ weight: "bold" }}>
             {t("details.staked_via")}
@@ -49,7 +52,10 @@ export const SelectValidatorTrigger = ({
 
                 return (
                   <Box key={sv.address}>
-                    <Box className={validatorPill}>
+                    <Box
+                      data-rk="select-validator-trigger"
+                      className={validatorPill}
+                    >
                       <Box marginRight="2">
                         <Image
                           containerProps={{ hw: "5" }}
@@ -106,7 +112,7 @@ export const SelectValidatorTrigger = ({
                           marginLeft="1"
                           onClick={() => onRemoveValidator(sv)}
                         >
-                          <XIcon hw={12} strokeWidth={3.5} />
+                          <XIcon hw={12} strokeWidth={4.9} />
                         </Box>
                       )}
                     </Box>
@@ -117,13 +123,22 @@ export const SelectValidatorTrigger = ({
               {multiSelect ? (
                 <Box>
                   <Trigger asChild>
-                    <Box as="button" className={addValidatorButton}>
-                      <PlusIcon />
+                    <Box
+                      data-rk="select-validator-plus"
+                      as="button"
+                      className={addValidatorButton}
+                    >
+                      <PlusIcon hw={12} strokeWidth={4.9} />
                     </Box>
                   </Trigger>
                 </Box>
               ) : (
-                <Box display="flex" alignItems="center" justifyContent="center">
+                <Box
+                  data-rk="select-validator-caret-down"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
                   <CaretDownIcon />
                 </Box>
               )}
