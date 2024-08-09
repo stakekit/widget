@@ -233,14 +233,18 @@
       "liquid-staking": "staké",
       "vault": "déposé",
       "lending": "fourni",
-      "restaking": "restaké"
+      "restaking": "restaké",
+      "pooled_staking": "staké",
+      "native_staking": "staké"
     },
     "unstake": {
       "staking": "déstaké",
       "liquid-staking": "déstaké",
       "vault": "retiré",
       "lending": "retiré",
-      "restaking": "déstaké"
+      "restaking": "déstaké",
+      "pooled_staking": "déstaké",
+      "native_staking": "déstaké"
     },
     "pending_action": {
       "stake": "staké",
@@ -299,6 +303,16 @@
     "search_for_validators": "Rechercher des validateurs par adresse ou nom"
   },
   "yield_types": {
+    "native_staking": {
+      "title": "Staking Native",
+      "review": "Staker",
+      "cta": "Staker"
+    },
+    "pooled_staking": {
+      "title": "Staking Pooled",
+      "review": "Staker",
+      "cta": "Staker"
+    },
     "staking": {
       "title": "Staking",
       "review": "Staker",

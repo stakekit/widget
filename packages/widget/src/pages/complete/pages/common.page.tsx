@@ -1,8 +1,8 @@
+import type { ExtendedYieldType } from "@sk-widget/domain/types";
 import type {
   ActionTypes,
   TokenDto,
   YieldMetadataDto,
-  YieldType,
 } from "@stakekit/api-hooks";
 import { motion } from "framer-motion";
 import { Just, Maybe } from "purify-ts";
@@ -29,7 +29,7 @@ type Props = {
       name: string | undefined;
     }[]
   >;
-  yieldType: Maybe<YieldType>;
+  yieldType: Maybe<ExtendedYieldType>;
 };
 
 export const CompletePage = ({
