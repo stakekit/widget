@@ -19,11 +19,11 @@
     "check-unused": "npx knip"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.3.0",
+    "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",
-    "husky": "^9.0.11",
-    "knip": "^5.26.0",
-    "turbo": "^2.0.6"
+    "husky": "^9.1.4",
+    "knip": "^5.27.2",
+    "turbo": "^2.0.12"
   },
   "packageManager": "yarn@4.4.0",
   "resolutions": {
