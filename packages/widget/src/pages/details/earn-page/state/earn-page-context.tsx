@@ -14,7 +14,6 @@ import type {
   TronResourceType,
   ValidatorDto,
   YieldDto,
-  YieldType,
 } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useMutation } from "@tanstack/react-query";
@@ -41,7 +40,12 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import { getYieldTypesMap, yieldTypesSortRank } from "../../../../domain/types";
+import {
+  type ExtendedYieldType,
+  getExtendedYieldType,
+  getYieldTypeLabels,
+  yieldTypesSortRank,
+} from "../../../../domain/types";
 import { isForceMaxAmount } from "../../../../domain/types/stake";
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
@@ -254,25 +258,24 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             ...sorted
               .reduce(
                 (acc, curr) => {
-                  if (!acc.has(curr.metadata.type)) {
-                    acc.set(curr.metadata.type, {
-                      type: curr.metadata.type,
-                      title: getYieldTypesMap(t)[curr.metadata.type].title,
+                  const extendedYieldType = getExtendedYieldType(curr);
+                  if (!acc.has(extendedYieldType)) {
+                    acc.set(extendedYieldType, {
+                      type: extendedYieldType,
+                      title: getYieldTypeLabels(curr, t).title,
                       items: [curr],
                     });
                   } else {
-                    acc.get(curr.metadata.type)!.items.push(curr);
+                    acc.get(extendedYieldType)!.items.push(curr);
                   }
 
                   return acc;
                 },
                 new Map<
-                  YieldType,
+                  ExtendedYieldType,
                   {
-                    type: YieldType;
-                    title: ReturnType<
-                      typeof getYieldTypesMap
-                    >[YieldType]["title"];
+                    type: ExtendedYieldType;
+                    title: ReturnType<typeof getYieldTypeLabels>["title"];
                     items: YieldDto[];
                   }
                 >()
@@ -289,7 +292,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
               return acc;
             },
 
-            new Map<YieldType, { itemsLength: number; title: string }>()
+            new Map<ExtendedYieldType, { itemsLength: number; title: string }>()
           );
 
           return {

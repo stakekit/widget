@@ -1,10 +1,11 @@
-import type { YieldDto, YieldType } from "@stakekit/api-hooks";
+import type { ExtendedYieldType } from "@sk-widget/domain/types";
+import type { YieldDto } from "@stakekit/api-hooks";
 
 export type SelectedStakeData = {
   all: YieldDto[];
   filtered: YieldDto[];
   groupsWithCounts: Map<
-    YieldType,
+    ExtendedYieldType,
     {
       itemsLength: number;
       title: string;
