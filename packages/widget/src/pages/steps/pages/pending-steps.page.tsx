@@ -7,5 +7,5 @@ export const PendingStepsPage = () => {
 
   useTrackPage("pendingActionSteps");
 
-  return <StepsPage session={pendingRequest.actionDto} />;
+  return <StepsPage session={pendingRequest.actionDto.unsafeCoerce()} />;
 };

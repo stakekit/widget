@@ -1,6 +1,5 @@
 import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
-import type { Maybe } from "purify-ts";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -14,44 +13,37 @@ import { useStepsMachine } from "./use-steps-machine.hook";
 export const useSteps = ({
   session,
   onSignSuccess,
-  onSubmitSuccess,
 }: {
   onSignSuccess?: () => void;
-  onSubmitSuccess?: () => void;
-  session: Maybe<ActionDto>;
+  session: ActionDto;
 }) => {
   const navigate = useNavigate();
 
-  const callbacksRef = useSavedRef({
-    onSignSuccess,
-    onSubmitSuccess,
-  });
+  const callbacksRef = useSavedRef({ onSignSuccess });
 
-  const sessionExtracted = useMemo(() => session.extractNullable(), [session]);
-
-  const [machine, send] = useStepsMachine(sessionExtracted);
+  const [machineState, send, actorRef] = useStepsMachine(session);
 
   /**
    *
    * @summary Start sign + check tx on mount
    */
   useLayoutEffect(() => {
-    if (!sessionExtracted) return;
-
     send({ type: "START" });
-  }, [sessionExtracted, send]);
+  }, [send]);
 
   /**
    *
    * @summary Callbacks
    */
   useEffect(() => {
-    if (machine.event.type === "SIGN_SUCCESS") {
-      callbacksRef.current.onSignSuccess?.();
-    } else if (machine.event.type === "BROADCAST_SUCCESS") {
-      callbacksRef.current.onSubmitSuccess?.();
-    }
-  }, [machine.event.type, callbacksRef]);
+    const sub = actorRef.on("signSuccess", () =>
+      callbacksRef.current.onSignSuccess?.()
+    );
+
+    return () => {
+      sub.unsubscribe();
+    };
+  }, [actorRef, callbacksRef]);
 
   /**
    *
@@ -59,10 +51,9 @@ export const useSteps = ({
    */
   useEffect(() => {
     return () => {
-      const timeoutId = machine.context.txCheckTimeoutId;
-      if (timeoutId) clearTimeout(timeoutId);
+      machineState.context.txCheckTimeoutId.ifJust((id) => clearTimeout(id));
     };
-  }, [machine.context.txCheckTimeoutId]);
+  }, [machineState.context.txCheckTimeoutId]);
 
   const invalidateYieldBalances = useInvalidateYieldBalances();
   const invalidateTokenBalances = useInvalidateTokenBalances();
@@ -73,14 +64,14 @@ export const useSteps = ({
    * @summary Navigate to next page
    */
   useEffect(() => {
-    if (machine.value === "done") {
+    if (machineState.status === "done") {
       invalidateYieldBalances();
       invalidateTokenBalances();
       setActionHistoryData();
 
       navigate("../complete", {
         state: {
-          urls: machine.context.txStates
+          urls: machineState.context.txStates
             .map((val) => ({ type: val.tx.type, url: val.meta.url }))
             .filter(
               (val): val is { type: TransactionType; url: string } => !!val.url
@@ -95,37 +86,43 @@ export const useSteps = ({
     invalidateTokenBalances,
     setActionHistoryData,
     navigate,
-    machine.context.txStates,
-    machine.value,
+    machineState.context.txStates,
+    machineState.status,
   ]);
 
   const onClick = () => navigate(-1);
 
   const retry = (() => {
-    switch (machine.value) {
-      case "signError": {
-        return () => send({ type: "SIGN_RETRY" });
-      }
-      case "broadcastError": {
-        return () => send({ type: "BROADCAST_RETRY" });
-      }
-      case "txCheckError": {
-        return () => send({ type: "TX_CHECK_RETRY" });
-      }
+    if (machineState.matches("signError")) {
+      return () => send({ type: "__SIGN_RETRY__" });
+    }
+
+    if (machineState.matches("broadcastError")) {
+      return () => send({ type: "__BROADCAST_RETRY__" });
+    }
+
+    if (machineState.matches("txCheckError")) {
+      return () => send({ type: "__TX_CHECK_RETRY__" });
     }
   })();
 
   const txStates = useMemo(
     () =>
-      machine.context.txStates.map((val) => ({
+      machineState.context.txStates.map((val) => ({
         ...val,
         state: getState({
           txState: val,
-          machineState: machine.value,
-          currentTxId: machine.context.currentTxMeta?.id ?? null,
+          machineState: machineState.value,
+          currentTxId: machineState.context.currentTxMeta
+            .map((v) => v.id)
+            .extractNullable(),
         }),
       })),
-    [machine.context.currentTxMeta, machine.context.txStates, machine.value]
+    [
+      machineState.context.currentTxMeta,
+      machineState.context.txStates,
+      machineState.value,
+    ]
   );
 
   const { t } = useTranslation();

@@ -122,30 +122,32 @@ export const useUnstakeActionReview = () => {
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
-  const [machine, send] = useUnstakeMachine();
+  const [machineState, send] = useUnstakeMachine();
 
   const unstakeIsLoading =
-    machine.value === "unstakeCheck" ||
-    machine.value === "unstakeGetVerificationMessageLoading" ||
-    machine.value === "unstakeSignMessageLoading" ||
-    machine.value === "unstakeLoading";
+    machineState.matches("check") ||
+    machineState.matches({ getVerificationMessage: "loading" }) ||
+    machineState.matches({ signMessage: "loading" }) ||
+    machineState.matches({ submit: "loading" });
 
-  const onContinueUnstakeSignMessage = () => send("CONTINUE_MESSAGE_SIGN");
-  const onCloseUnstakeSignMessage = () => send("CANCEL_MESSAGE_SIGN");
+  const machineIsDone = machineState.matches("done");
+  const showUnstakeSignMessagePopup = machineState.matches("showPopup");
+
+  const onContinueUnstakeSignMessage = () =>
+    send({ type: "CONTINUE_MESSAGE_SIGN" });
+  const onCloseUnstakeSignMessage = () => send({ type: "CANCEL_MESSAGE_SIGN" });
 
   const onClick = () => {
     if (unstakeIsLoading) return;
 
-    send("UNSTAKE");
+    send({ type: "UNSTAKE" });
   };
 
   useEffect(() => {
-    if (machine.value === "unstakeDone" && exitRequest.actionDto.isJust()) {
+    if (machineIsDone && exitRequest.actionDto.isJust()) {
       navigate("../steps", { relative: "path" });
     }
-  }, [machine.value, exitRequest.actionDto, navigate]);
-
-  const showUnstakeSignMessagePopup = machine.value === "unstakeShowPopup";
+  }, [machineIsDone, exitRequest.actionDto, navigate]);
 
   const onClickRef = useSavedRef(onClick);
 

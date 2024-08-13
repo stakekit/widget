@@ -27,7 +27,13 @@ export const getWalletManager = ({
 }: {
   forceWalletConnectOnly: boolean;
   cosmosChainsMap: Partial<CosmosChainsMap>;
-}) => {
+}): {
+  connector: {
+    groupName: string;
+    wallets: WalletList[number]["wallets"];
+  };
+  walletManager: WalletManager;
+} => {
   const filteredWallets: MainWalletBase[] = forceWalletConnectOnly
     ? wallets.filter((w) => w instanceof WalletConnectWallet)
     : wallets;

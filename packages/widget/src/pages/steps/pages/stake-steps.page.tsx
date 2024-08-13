@@ -30,6 +30,9 @@ export const StakeStepsPage = () => {
     );
 
   return (
-    <StepsPage session={enterRequest.actionDto} onSignSuccess={onSignSuccess} />
+    <StepsPage
+      session={enterRequest.actionDto.unsafeCoerce()}
+      onSignSuccess={onSignSuccess}
+    />
   );
 };

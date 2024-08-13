@@ -7,5 +7,5 @@ export const UnstakeStepsPage = () => {
 
   useTrackPage("unstakeSteps");
 
-  return <StepsPage session={exitRequest.actionDto} />;
+  return <StepsPage session={exitRequest.actionDto.unsafeCoerce()} />;
 };

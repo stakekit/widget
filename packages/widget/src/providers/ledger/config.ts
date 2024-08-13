@@ -1,3 +1,4 @@
+import type { WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import { config } from "../../config";
@@ -14,7 +15,10 @@ const queryFn = async ({
 }: {
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
-}) => {
+}): Promise<{
+  groupName: string;
+  wallets: WalletList[number]["wallets"];
+} | null> => {
   return EitherAsync.liftEither(
     Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null)
   )
