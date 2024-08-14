@@ -275,9 +275,7 @@ const getMachine = (
                 )
                   .chain((constructOnlyTx) => {
                     if (!constructOnlyTx) {
-                      return EitherAsync.liftEither(
-                        Right(getTransactionsForMultiSign(txs))
-                      );
+                      return EitherAsync.liftEither(Right(null));
                     }
 
                     return getAverageGasMode({
@@ -306,9 +304,9 @@ const getMachine = (
                               `failed to get ${constructOnlyTx.id} tx status`
                             )
                         )
-                      )
-                      .map(() => getTransactionsForMultiSign(txs));
+                      );
                   })
+                  .map(() => getTransactionsForMultiSign(txs))
                   .chain((txs) =>
                     getAverageGasMode({
                       network: tx.network,
@@ -328,7 +326,7 @@ const getMachine = (
                   .map((txs) =>
                     txs
                       .map((tx) => tx.unsignedTransaction)
-                      .filter((tx): tx is NonNullable<typeof tx> => !!tx)
+                      .filter((tx) => tx !== null)
                   )
                   .chain((txs) => {
                     if (!txs.length) {
@@ -358,7 +356,10 @@ const getMachine = (
                   }).mapLeft(() => new TransactionConstructError())
                 )
                 .chain((constructedTx) => {
-                  if (constructedTx.status === "BROADCASTED") {
+                  if (
+                    constructedTx.status === "BROADCASTED" ||
+                    constructedTx.status === "CONFIRMED"
+                  ) {
                     return EitherAsync.liftEither(
                       Right({ type: "broadcasted" })
                     );

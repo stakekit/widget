@@ -100,7 +100,7 @@ const queryFn = ({
     ),
     5
   )()
-    .map((val) => val.filter((v): v is NonNullable<typeof v> => !!v))
+    .map((val) => val.filter((v) => !!v))
     .map((data) =>
       defaultFiltered({ data, isConnected, network, isLedgerLive })
     )
