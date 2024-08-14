@@ -10,10 +10,6 @@ export type GetEitherAsyncRight<T> = T extends EitherAsync<unknown, infer R>
   ? R
   : never;
 
-export type GetEitherAsyncLeft<T> = T extends EitherAsync<infer E, unknown>
-  ? E
-  : never;
-
 export type GetEitherRight<T> = T extends Either<unknown, infer R> ? R : never;
 
 export type GetMaybeJust<T> = T extends Maybe<infer R> ? R : never;
