@@ -148,14 +148,15 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [baseToken, pricesState.data, selectedToken, stakeAmount]
   );
 
-  const formattedAmount = useMemo(
-    () => availableAmount.mapOrDefault((am) => formatNumber(am), ""),
-    [availableAmount]
-  );
-
-  const availableTokens = useMemo(
-    () => `${formattedAmount} ${symbol}`.trim(),
-    [formattedAmount, symbol]
+  const selectedTokenAvailableAmount = useMemo(
+    () =>
+      availableAmount.map((am) => ({
+        symbol,
+        shortFormattedAmount: defaultFormattedNumber(am),
+        fullFormattedAmount: formatNumber(am),
+        amount: am,
+      })),
+    [availableAmount, symbol]
   );
 
   const [stakeSearch, setStakeSearch] = useState("");
@@ -620,7 +621,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const value = {
     referralCheck,
-    availableTokens,
+    selectedTokenAvailableAmount,
     formattedPrice,
     symbol,
     selectedStakeData,

@@ -1,10 +1,11 @@
 import { Box, NumberInput, Text } from "@sk-widget/components";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { MaxButton } from "@sk-widget/components/atoms/max-button";
+import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
 import { priceTxt } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
 import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
 import { useSettings } from "@sk-widget/providers/settings";
-import { Just, Maybe } from "purify-ts";
+import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { SelectToken } from "./select-token";
 import { SelectTokenTitle } from "./title";
@@ -16,7 +17,7 @@ export const SelectTokenSection = () => {
 
   const {
     appLoading,
-    availableTokens,
+    selectedTokenAvailableAmount,
     formattedPrice,
     onMaxClick,
     onStakeAmountChange,
@@ -147,28 +148,35 @@ export const SelectTokenSection = () => {
               }}
               data-state={errorBalance ? "error" : "valid"}
             >
-              {Maybe.fromNullable(availableTokens)
+              {selectedTokenAvailableAmount
                 .map((v) =>
                   variant === "zerion" ? (
                     <>
-                      <span>{t("shared.balance")}:</span>{" "}
-                      {
-                        <Box
-                          {...(isStakeTokenSameAsGasToken
-                            ? { as: "span" }
-                            : {
-                                onClick: onMaxClick,
-                                as: "button",
-                              })}
-                        >
-                          {v}
-                        </Box>
-                      }
+                      <span>{t("shared.balance")}:&nbsp;</span>
+                      <Box
+                        {...(isStakeTokenSameAsGasToken
+                          ? { as: "span" }
+                          : {
+                              onClick: onMaxClick,
+                              as: "button",
+                            })}
+                      >
+                        {v.shortFormattedAmount}&nbsp;{v.symbol}
+                      </Box>
                     </>
                   ) : (
-                    <>
-                      <span>{v}</span> <span>{t("shared.available")}</span>
-                    </>
+                    <AmountToggle.Root>
+                      <AmountToggle.Amount>
+                        {({ state }) => (
+                          <span>
+                            {state === "full"
+                              ? v.fullFormattedAmount
+                              : v.shortFormattedAmount}
+                            &nbsp;{v.symbol}&nbsp;{t("shared.available")}
+                          </span>
+                        )}
+                      </AmountToggle.Amount>
+                    </AmountToggle.Root>
                   )
                 )
                 .extractNullable()}
