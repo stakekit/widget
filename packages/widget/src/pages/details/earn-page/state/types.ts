@@ -63,7 +63,12 @@ export type ExtraData = {
 
 export type EarnPageContextType = {
   referralCheck: SettingsContextType["referralCheck"];
-  availableTokens: string;
+  selectedTokenAvailableAmount: Maybe<{
+    symbol: string;
+    shortFormattedAmount: string;
+    fullFormattedAmount: string;
+    amount: BigNumber;
+  }>;
   formattedPrice: string;
   symbol: string;
   selectedStakeData: Maybe<SelectedStakeData>;

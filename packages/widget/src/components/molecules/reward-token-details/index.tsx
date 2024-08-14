@@ -46,6 +46,7 @@ export const RewardTokenDetails = ({
                 justifyContent="center"
                 alignItems="center"
                 gap="1"
+                alignSelf="flex-start"
               >
                 <Image
                   imageProps={{ borderRadius: "full" }}
