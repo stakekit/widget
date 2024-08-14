@@ -44,7 +44,7 @@ import {
   type ExtendedYieldType,
   getExtendedYieldType,
   getYieldTypeLabels,
-  yieldTypesSortRank,
+  getYieldTypesSortRank,
 } from "../../../../domain/types";
 import { isForceMaxAmount } from "../../../../domain/types/stake";
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
@@ -250,9 +250,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         )
         .map(({ all, filteredDtos }) => {
           const sorted = filteredDtos.toSorted(
-            (a, b) =>
-              yieldTypesSortRank[a.metadata.type] -
-              yieldTypesSortRank[b.metadata.type]
+            (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
           );
 
           const groupsWithCounts = [
@@ -467,10 +465,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [selectedStake]
   );
 
-  const selectedStakeYieldType = selectedStake
-    .map((val) => val.metadata.type)
-    .extractNullable();
-
   const onSelectOpportunityClose = () => setStakeSearch("");
   const onSelectTokenClose = () => setTokenSearch("");
 
@@ -644,7 +638,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     rewardToken,
     onSelectOpportunityClose,
     onSelectTokenClose,
-    selectedStakeYieldType,
     isConnected,
     appLoading,
     yieldOpportunityLoading,

@@ -8,7 +8,6 @@ import type {
   TokenDto,
   TronResourceType,
   ValidatorDto,
-  YieldType,
 } from "@stakekit/api-hooks";
 import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
@@ -91,7 +90,6 @@ export type EarnPageContextType = {
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
   onSelectTokenClose: () => void;
-  selectedStakeYieldType: YieldType | null;
   isConnected: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
   appLoading: boolean;

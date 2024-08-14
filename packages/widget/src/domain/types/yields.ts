@@ -82,13 +82,18 @@ export const getYieldTypeLabels = (
   return map[yieldDto.metadata.type];
 };
 
-export const yieldTypesSortRank: { [Key in YieldType]: number } = {
+const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   staking: 1,
-  "liquid-staking": 2,
-  vault: 3,
-  lending: 4,
-  restaking: 5,
+  native_staking: 2,
+  pooled_staking: 3,
+  "liquid-staking": 4,
+  vault: 5,
+  lending: 6,
+  restaking: 7,
 };
+
+export const getYieldTypesSortRank = (yieldDto: YieldDto) =>
+  yieldTypesSortRank[getExtendedYieldType(yieldDto)];
 
 const isEthereumStaking = (yieldDto: YieldDto) =>
   yieldDto.metadata.type === "staking" &&
@@ -97,7 +102,11 @@ const isEthereumStaking = (yieldDto: YieldDto) =>
 
 const isNativeStaking = (yieldDto: YieldDto) =>
   Maybe.fromFalsy(isEthereumStaking(yieldDto))
-    .chain(() => Maybe.fromNullable(yieldDto.args.enter.args?.amount?.minimum))
+    .chain(() =>
+      Maybe.fromFalsy(yieldDto.args.enter.args?.amount?.required).chain(() =>
+        Maybe.fromNullable(yieldDto.args.enter.args?.amount?.minimum)
+      )
+    )
     .map(BigNumber)
     .filter((v) => v.isEqualTo(32))
     .isJust();
