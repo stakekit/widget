@@ -8,9 +8,10 @@ import {
 } from "@sk-widget/components";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { MaxButton } from "@sk-widget/components/atoms/max-button";
+import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
 import { useYieldMetaInfo } from "@sk-widget/hooks/use-yield-meta-info";
 import { priceTxt } from "@sk-widget/pages/position-details/styles.css";
-import { formatNumber } from "@sk-widget/utils";
+import { defaultFormattedNumber, formatNumber } from "@sk-widget/utils";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
@@ -168,12 +169,21 @@ export const AmountBlock = ({
               alignItems="center"
             >
               {balance && (
-                <Text variant={{ weight: "normal" }}>
-                  {t("position_details.available", {
-                    amount: formatNumber(balance.amount),
-                    symbol: balance.token?.symbol ?? "",
-                  })}
-                </Text>
+                <AmountToggle.Root>
+                  <AmountToggle.Amount>
+                    {({ state }) => (
+                      <Text variant={{ weight: "normal" }}>
+                        {t("position_details.available", {
+                          amount:
+                            state === "full"
+                              ? formatNumber(balance.amount)
+                              : defaultFormattedNumber(balance.amount),
+                          symbol: balance.token?.symbol ?? "",
+                        })}
+                      </Text>
+                    )}
+                  </AmountToggle.Amount>
+                </AmountToggle.Root>
               )}
               {canChangeAmount && onMaxClick && (
                 <MaxButton
