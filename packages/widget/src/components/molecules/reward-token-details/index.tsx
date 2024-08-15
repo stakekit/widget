@@ -1,5 +1,6 @@
 import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
 import type { ActionTypes } from "@stakekit/api-hooks";
+import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
@@ -40,30 +41,31 @@ export const RewardTokenDetails = ({
       return (
         <>
           <Box display="flex" alignItems="center" gap="2">
-            {rt.logoUri && (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                gap="1"
-                alignSelf="flex-start"
-              >
-                <Image
-                  imageProps={{ borderRadius: "full" }}
-                  containerProps={{ hw: "5" }}
-                  src={rt.logoUri}
-                  fallback={
-                    <ImageFallback name={rt.providerName} tokenLogoHw="5" />
-                  }
-                />
+            {Maybe.fromNullable(rt.logoUri)
+              .filter(() => isMorphoProvider(rt.providerName))
+              .map((logoUri) => (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  gap="1"
+                  alignSelf="flex-start"
+                >
+                  <Image
+                    imageProps={{ borderRadius: "full" }}
+                    containerProps={{ hw: "5" }}
+                    src={logoUri}
+                    fallback={
+                      <ImageFallback name={rt.providerName} tokenLogoHw="5" />
+                    }
+                  />
 
-                {isMorphoProvider(rt.providerName) && (
                   <Box width="5" height="5">
                     <MorphoStarsIcon />
                   </Box>
-                )}
-              </Box>
-            )}
+                </Box>
+              ))
+              .extractNullable()}
 
             <Text variant={{ weight: "semibold" }}>
               <Trans
