@@ -4,10 +4,7 @@ import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import {
-  usePendingActionDispatch,
-  usePendingActionState,
-} from "@sk-widget/providers/pending-action-state";
+import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import { formatNumber } from "@sk-widget/utils";
 import {
   type ActionTypes,
@@ -16,10 +13,11 @@ import {
   useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
+import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
@@ -28,7 +26,13 @@ import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
 export const usePendingActionReview = () => {
-  const pendingRequest = usePendingActionState().unsafeCoerce();
+  const pendingActionStore = usePendingActionStore();
+
+  const pendingRequest = useSelector(
+    pendingActionStore,
+    (state) => state.context.data
+  ).unsafeCoerce();
+
   const integrationId = pendingRequest.requestDto.integrationId;
 
   const actionPendingGasEstimate = useActionPendingGasEstimate(
@@ -112,11 +116,10 @@ export const usePendingActionReview = () => {
   );
 
   const actionPending = useActionPendingHook();
-  const pendignActionRequestDispatch = usePendingActionDispatch();
 
   const actionPendingMutation = useMutation({
-    mutationFn: async () => {
-      return (
+    mutationFn: async () =>
+      (
         await withRequestErrorRetry({
           fn: () => actionPending(pendingRequest.requestDto),
         })
@@ -124,22 +127,14 @@ export const usePendingActionReview = () => {
           .chain((actionDto) =>
             EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
           )
-          .ifRight((actionDto) =>
-            pendignActionRequestDispatch((prev) =>
-              prev.map((v) => ({ ...v, actionDto: Maybe.of(actionDto) }))
-            )
-          )
-      ).unsafeCoerce();
+      ).unsafeCoerce(),
+    onSuccess: (data) => {
+      pendingActionStore.send({ type: "setActionDto", data });
+      navigate("../steps", { relative: "path" });
     },
   });
 
   const onClick = () => actionPendingMutation.mutate();
-
-  useEffect(() => {
-    if (actionPendingMutation.isSuccess) {
-      navigate("../steps", { relative: "path" });
-    }
-  }, [actionPendingMutation.isSuccess, navigate]);
 
   const rewardTokenDetailsProps = useMemo(
     () =>

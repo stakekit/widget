@@ -1,8 +1,5 @@
 import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
-import {
-  usePendingActionDispatch,
-  usePendingActionState,
-} from "@sk-widget/providers/pending-action-state";
+import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import type {
   PendingActionDto,
   ValidatorDto,
@@ -21,7 +18,6 @@ import {
 import { useSavedRef } from "../../../hooks";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
-import { useUpdateEffect } from "../../../hooks/use-update-effect";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { defaultFormattedNumber } from "../../../utils";
 import {
@@ -150,9 +146,6 @@ export const usePendingActions = () => {
       });
   }, [pendingActionType, pendingActions, validatorAddressesHandlingRef]);
 
-  const pendignActionRequestDispatch = usePendingActionDispatch();
-  const pendingActionRequestState = usePendingActionState();
-
   const onPendingActionClick = ({
     yieldBalance,
     pendingActionDto,
@@ -230,6 +223,11 @@ export const usePendingActions = () => {
 
   const { additionalAddresses, address } = useSKWallet();
 
+  const pendingActionSelectValidatorMatch =
+    usePendingActionSelectValidatorMatch();
+
+  const pendingActionStore = usePendingActionStore();
+
   const continuePendingActionFlow = ({
     integrationData,
     pendingActionDto,
@@ -249,10 +247,10 @@ export const usePendingActions = () => {
       address,
       integration: integrationData,
       selectedValidators,
-    }).ifRight((val) =>
-      pendignActionRequestDispatch(
-        Maybe.of({
-          actionDto: Maybe.empty(),
+    }).ifRight((val) => {
+      pendingActionStore.send({
+        type: "initFlow",
+        data: {
           gasFeeToken: val.gasFeeToken,
           integrationData: val.integrationData,
           interactedToken: yieldBalance.token,
@@ -262,22 +260,14 @@ export const usePendingActions = () => {
             address: val.address,
             additionalAddresses: val.additionalAddresses,
           },
-        })
-      )
-    );
-  };
+        },
+      });
 
-  const pendingActionSelectValidatorMatchRef = useSavedRef(
-    usePendingActionSelectValidatorMatch()
-  );
-
-  useUpdateEffect(() => {
-    if (pendingActionRequestState.isJust()) {
-      pendingActionSelectValidatorMatchRef.current
+      pendingActionSelectValidatorMatch
         ? navigate("../pending-action/review", { relative: "route" })
         : navigate("pending-action/review");
-    }
-  }, [pendingActionRequestState]);
+    });
+  };
 
   return {
     onPendingActionAmountChange,

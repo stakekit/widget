@@ -3,10 +3,7 @@ import { getValidStakeSessionTx } from "@sk-widget/domain";
 import type { SKWallet } from "@sk-widget/domain/types";
 import { useSavedRef } from "@sk-widget/hooks";
 import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import {
-  useExitStakeState,
-  useExitStakeStateDispatch,
-} from "@sk-widget/providers/exit-stake-state";
+import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { GetMaybeJust } from "@sk-widget/types";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
@@ -15,16 +12,21 @@ import {
   useTransactionGetTransactionVerificationMessageForNetworkHook,
 } from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
-import { EitherAsync, Just, Maybe } from "purify-ts";
+import type { SnapshotFromStore } from "@xstate/store";
+import { useSelector } from "@xstate/store/react";
+import { EitherAsync, Maybe } from "purify-ts";
 import { type MutableRefObject, useState } from "react";
 import { assign, setup } from "xstate";
 
-export const useUnstakeMachine = () => {
+export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const trackEvent = useTrackEvent();
   const actionExit = useActionExitHook();
 
-  const exitRequest = useExitStakeState().unsafeCoerce();
-  const setExitDispatch = useExitStakeStateDispatch();
+  const exitStore = useExitStakeStore();
+  const exitRequest = useSelector(
+    useExitStakeStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
@@ -32,8 +34,9 @@ export const useUnstakeMachine = () => {
     useTransactionGetTransactionVerificationMessageForNetworkHook();
 
   const machineParams = useSavedRef({
+    onDone,
     trackEvent,
-    setExitDispatch,
+    exitStore,
     actionExit,
     signMessage,
     transactionGetTransactionVerificationMessageForNetwork,
@@ -50,15 +53,20 @@ export const useUnstakeMachine = () => {
 const getMachine = (
   ref: Readonly<
     MutableRefObject<{
+      onDone: () => void;
       transactionGetTransactionVerificationMessageForNetwork: ReturnType<
         typeof useTransactionGetTransactionVerificationMessageForNetworkHook
       >;
-      setExitDispatch: ReturnType<typeof useExitStakeStateDispatch>;
+      exitStore: ReturnType<typeof useExitStakeStore>;
       actionExit: ReturnType<typeof useActionExitHook>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       trackEvent: ReturnType<typeof useTrackEvent>;
       getData: () => Maybe<
-        GetMaybeJust<ReturnType<typeof useExitStakeState>> & {
+        GetMaybeJust<
+          SnapshotFromStore<
+            ReturnType<typeof useExitStakeStore>
+          >["context"]["data"]
+        > & {
           network: NonNullable<SKWallet["network"]>;
           address: NonNullable<SKWallet["address"]>;
           additionalAddresses: SKWallet["additionalAddresses"];
@@ -305,9 +313,10 @@ const getMachine = (
                       EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
                     )
                     .ifRight((val) =>
-                      ref.current.setExitDispatch((prev) =>
-                        prev.map((v) => ({ ...v, actionDto: Just(val) }))
-                      )
+                      ref.current.exitStore.send({
+                        type: "setActionDto",
+                        data: val,
+                      })
                     )
                 )
                 .caseOf({
@@ -326,6 +335,7 @@ const getMachine = (
 
       done: {
         type: "final",
+        entry: ref.current.onDone,
       },
     },
   });

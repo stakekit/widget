@@ -4364,6 +4364,7 @@ __metadata:
     "@vanilla-extract/vite-plugin": "npm:^4.0.13"
     "@vitejs/plugin-react-swc": "npm:^3.7.0"
     "@xstate/react": "npm:^4.1.1"
+    "@xstate/store": "npm:^2.2.0"
     autoprefixer: "npm:^10.4.20"
     axios: "npm:^1.7.3"
     bignumber.js: "npm:^9.1.2"
@@ -6091,6 +6092,18 @@ __metadata:
     xstate:
       optional: true
   checksum: 10/89591416ee615ece703adc9011b457609822eeb1dde8efc1deaa9d006bb2111147e4bf383999212d16d4b366edb3bfcf0b5f2247ca2e7e943f7150ae6a1f9855
+  languageName: node
+  linkType: hard
+
+"@xstate/store@npm:^2.2.0":
+  version: 2.2.0
+  resolution: "@xstate/store@npm:2.2.0"
+  peerDependencies:
+    react: ^18.2.0
+  peerDependenciesMeta:
+    react:
+      optional: true
+  checksum: 10/9e95d69311b3d91254a3fefd3135f1beec3274fe4dbb193d43db9f90b4c9493a7702b22c9ee8cb693fcf2716e37c8f71807507e800098d688e9b39949e9251b7
   languageName: node
   linkType: hard
 

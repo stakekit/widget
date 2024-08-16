@@ -1,7 +1,7 @@
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { EnterStakeProvider } from "@sk-widget/providers/enter-stake-state";
-import { ExitStakeProvider } from "@sk-widget/providers/exit-stake-state";
-import { PendingActionProvider } from "@sk-widget/providers/pending-action-state";
+import { EnterStakeStoreProvider } from "@sk-widget/providers/enter-stake-store";
+import { ExitStakeStoreProvider } from "@sk-widget/providers/exit-stake-store";
+import { PendingActionStoreProvider } from "@sk-widget/providers/pending-action-store";
 import { i18nInstance } from "@sk-widget/translation";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
@@ -52,13 +52,13 @@ export const Providers = ({
                                         <FooterButtonProvider>
                                           <PoweredByHeightProvider>
                                             <DisableTransitionDurationProvider>
-                                              <EnterStakeProvider>
-                                                <ExitStakeProvider>
-                                                  <PendingActionProvider>
+                                              <EnterStakeStoreProvider>
+                                                <ExitStakeStoreProvider>
+                                                  <PendingActionStoreProvider>
                                                     {children}
-                                                  </PendingActionProvider>
-                                                </ExitStakeProvider>
-                                              </EnterStakeProvider>
+                                                  </PendingActionStoreProvider>
+                                                </ExitStakeStoreProvider>
+                                              </EnterStakeStoreProvider>
                                             </DisableTransitionDurationProvider>
                                           </PoweredByHeightProvider>
                                         </FooterButtonProvider>

@@ -1,4 +1,5 @@
-import { useEnterStakeState } from "@sk-widget/providers/enter-stake-state";
+import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
+import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -11,7 +12,10 @@ import { CompletePage } from "./common.page";
 export const StakeCompletePage = () => {
   useTrackPage("stakeCompelete");
 
-  const enterRequest = useEnterStakeState().unsafeCoerce();
+  const enterRequest = useSelector(
+    useEnterStakeStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const selectedStake = useMemo(
     () => Maybe.of(enterRequest.selectedStake),

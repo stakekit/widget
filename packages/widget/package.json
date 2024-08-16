@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.182",
+  "version": "0.0.183",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
@@ -96,6 +96,7 @@
     "@vanilla-extract/vite-plugin": "^4.0.13",
     "@vitejs/plugin-react-swc": "^3.7.0",
     "@xstate/react": "^4.1.1",
+    "@xstate/store": "^2.2.0",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.3",
     "bignumber.js": "^9.1.2",

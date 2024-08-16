@@ -6,22 +6,27 @@ import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outl
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import { useExitStakeState } from "@sk-widget/providers/exit-stake-state";
+import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
   useActionExitGasEstimate,
   useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
+import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 export const useUnstakeActionReview = () => {
-  const exitRequest = useExitStakeState().unsafeCoerce();
+  const exitRequest = useSelector(
+    useExitStakeStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
+
   const integrationId = exitRequest.requestDto.integrationId;
 
   const actionExitGasEstimate = useActionExitGasEstimate(
@@ -122,7 +127,9 @@ export const useUnstakeActionReview = () => {
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
 
-  const [machineState, send] = useUnstakeMachine();
+  const [machineState, send] = useUnstakeMachine({
+    onDone: () => navigate("../steps", { relative: "path" }),
+  });
 
   const unstakeIsLoading =
     machineState.matches("check") ||
@@ -130,7 +137,6 @@ export const useUnstakeActionReview = () => {
     machineState.matches({ signMessage: "loading" }) ||
     machineState.matches({ submit: "loading" });
 
-  const machineIsDone = machineState.matches("done");
   const showUnstakeSignMessagePopup = machineState.matches("showPopup");
 
   const onContinueUnstakeSignMessage = () =>
@@ -142,12 +148,6 @@ export const useUnstakeActionReview = () => {
 
     send({ type: "UNSTAKE" });
   };
-
-  useEffect(() => {
-    if (machineIsDone && exitRequest.actionDto.isJust()) {
-      navigate("../steps", { relative: "path" });
-    }
-  }, [machineIsDone, exitRequest.actionDto, navigate]);
 
   const onClickRef = useSavedRef(onClick);
 

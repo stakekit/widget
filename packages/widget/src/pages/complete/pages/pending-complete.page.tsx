@@ -1,6 +1,7 @@
 import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
-import { usePendingActionState } from "@sk-widget/providers/pending-action-state";
+import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
+import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -18,7 +19,10 @@ export const PendingCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const pendingRequest = usePendingActionState().unsafeCoerce();
+  const pendingRequest = useSelector(
+    usePendingActionStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),
