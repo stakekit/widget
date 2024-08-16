@@ -1,10 +1,6 @@
 import { isForceMaxAmount } from "@sk-widget/domain/types/stake";
-import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { useStakeExitRequestDto } from "@sk-widget/pages/position-details/hooks/use-stake-exit-request-dto";
-import {
-  useExitStakeState,
-  useExitStakeStateDispatch,
-} from "@sk-widget/providers/exit-stake-state";
+import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import type { TokenDto } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
@@ -41,8 +37,7 @@ export const usePositionDetails = () => {
   const navigate = useNavigate();
 
   const stakeExitRequestDto = useStakeExitRequestDto();
-  const exitDispatch = useExitStakeStateDispatch();
-  const exitRequest = useExitStakeState();
+  const exitStore = useExitStakeStore();
 
   const unstakeMaxAmount = useMemo(
     () =>
@@ -73,16 +68,17 @@ export const usePositionDetails = () => {
         integrationData,
         unstakeToken,
       }).ifJust((val) => {
-        exitDispatch(
-          Maybe.of({
-            actionDto: Maybe.empty(),
+        exitStore.send({
+          type: "initFlow",
+          data: {
             gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
             integrationData: val.integrationData,
             requestDto: val.stakeExitRequestDto.dto,
             unstakeAmount,
             unstakeToken: val.unstakeToken,
-          })
-        );
+          },
+        });
+        navigate("unstake/review");
       });
 
       return null;
@@ -92,12 +88,6 @@ export const usePositionDetails = () => {
   const onUnstakeClick = onClickHandler.mutate;
 
   const _unstakeAmountError = onClickHandler.isError || unstakeAmountError;
-
-  useUpdateEffect(() => {
-    if (exitRequest.isJust()) {
-      navigate("unstake/review");
-    }
-  }, [exitRequest]);
 
   const positionLabel = useMemo(
     () =>

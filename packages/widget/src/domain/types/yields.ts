@@ -1,8 +1,8 @@
 import type { YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
+import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
-import type { useTranslation } from "react-i18next";
 
 export type ExtendedYieldType = YieldType | "native_staking" | "pooled_staking";
 
@@ -24,7 +24,7 @@ export const getExtendedYieldType = (yieldDto: YieldDto) =>
 
 export const getYieldTypeLabels = (
   yieldDto: YieldDto,
-  t: ReturnType<typeof useTranslation>["t"]
+  t: TFunction
 ): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
   const map = {
     staking: {

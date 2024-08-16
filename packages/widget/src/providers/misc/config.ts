@@ -1,5 +1,6 @@
 import type { Networks } from "@stakekit/common";
 import { MiscNetworks } from "@stakekit/common";
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
@@ -14,7 +15,14 @@ const queryFn = async ({
   enabledNetworks,
 }: {
   enabledNetworks: Set<Networks>;
-}) => {
+}): Promise<{
+  miscChainsMap: Partial<MiscChainsMap>;
+  miscChains: Chain[];
+  connectors: Maybe<{
+    groupName: string;
+    wallets: WalletList[number]["wallets"];
+  }>[];
+}> => {
   const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>({
     [MiscNetworks.Near]: {
       type: "misc",

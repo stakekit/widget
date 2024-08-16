@@ -1,4 +1,5 @@
-import { useEnterStakeState } from "@sk-widget/providers/enter-stake-state";
+import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
+import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { importValidator } from "../../../common/import-validator";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -10,7 +11,10 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const enterRequest = useEnterStakeState().unsafeCoerce();
+  const enterRequest = useSelector(
+    useEnterStakeStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const onSignSuccess = () =>
     Maybe.fromRecord({
@@ -30,6 +34,9 @@ export const StakeStepsPage = () => {
     );
 
   return (
-    <StepsPage session={enterRequest.actionDto} onSignSuccess={onSignSuccess} />
+    <StepsPage
+      session={enterRequest.actionDto.unsafeCoerce()}
+      onSignSuccess={onSignSuccess}
+    />
   );
 };

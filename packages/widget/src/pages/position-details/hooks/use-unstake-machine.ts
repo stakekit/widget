@@ -1,216 +1,341 @@
-import useStateMachine, { t } from "@cassiozen/usestatemachine";
-import type { $$t } from "@cassiozen/usestatemachine/dist/types";
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
-import {
-  useExitStakeState,
-  useExitStakeStateDispatch,
-} from "@sk-widget/providers/exit-stake-state";
+import type { SKWallet } from "@sk-widget/domain/types";
+import { useSavedRef } from "@sk-widget/hooks";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import type { GetMaybeJust } from "@sk-widget/types";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import {
   useActionExitHook,
   useTransactionGetTransactionVerificationMessageForNetworkHook,
 } from "@stakekit/api-hooks";
-import merge from "lodash.merge";
-import { EitherAsync, Just, Maybe } from "purify-ts";
-import { useMemo } from "react";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useMachine } from "@xstate/react";
+import type { SnapshotFromStore } from "@xstate/store";
+import { useSelector } from "@xstate/store/react";
+import { EitherAsync, Maybe } from "purify-ts";
+import { type MutableRefObject, useState } from "react";
+import { assign, setup } from "xstate";
 
-const tt = t as <T>() => {
-  [$$t]: T;
-};
-
-export const useUnstakeMachine = () => {
+export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const trackEvent = useTrackEvent();
   const actionExit = useActionExitHook();
 
-  const exitRequest = useExitStakeState().unsafeCoerce();
-  const setExitDispatch = useExitStakeStateDispatch();
+  const exitStore = useExitStakeStore();
+  const exitRequest = useSelector(
+    useExitStakeStore(),
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
   const transactionGetTransactionVerificationMessageForNetwork =
     useTransactionGetTransactionVerificationMessageForNetworkHook();
 
-  const initValues = useMemo(
-    () =>
+  const machineParams = useSavedRef({
+    onDone,
+    trackEvent,
+    exitStore,
+    actionExit,
+    signMessage,
+    transactionGetTransactionVerificationMessageForNetwork,
+    getData: () =>
       Maybe.fromRecord({
         network: Maybe.fromNullable(network),
         address: Maybe.fromNullable(address),
-      }),
-    [address, network]
-  );
+      }).map((val) => ({ ...val, ...exitRequest, additionalAddresses })),
+  });
 
-  return useStateMachine({
-    schema: {
-      context: tt<{
-        error: Error | null;
-        transactionVerificationMessageDto: TransactionVerificationMessageDto | null;
-        signedMessage: string | null;
-      }>(),
+  return useMachine(useState(() => getMachine(machineParams))[0]);
+};
+
+const getMachine = (
+  ref: Readonly<
+    MutableRefObject<{
+      onDone: () => void;
+      transactionGetTransactionVerificationMessageForNetwork: ReturnType<
+        typeof useTransactionGetTransactionVerificationMessageForNetworkHook
+      >;
+      exitStore: ReturnType<typeof useExitStakeStore>;
+      actionExit: ReturnType<typeof useActionExitHook>;
+      signMessage: ReturnType<typeof useSKWallet>["signMessage"];
+      trackEvent: ReturnType<typeof useTrackEvent>;
+      getData: () => Maybe<
+        GetMaybeJust<
+          SnapshotFromStore<
+            ReturnType<typeof useExitStakeStore>
+          >["context"]["data"]
+        > & {
+          network: NonNullable<SKWallet["network"]>;
+          address: NonNullable<SKWallet["address"]>;
+          additionalAddresses: SKWallet["additionalAddresses"];
+        }
+      >;
+    }>
+  >
+) =>
+  setup({
+    types: {
+      context: {} as {
+        error: Maybe<Error>;
+        transactionVerificationMessageDto: Maybe<TransactionVerificationMessageDto>;
+        signedMessage: Maybe<string>;
+        data: ReturnType<(typeof ref)["current"]["getData"]>;
+      },
+      events: {} as
+        | { type: "UNSTAKE" }
+        | {
+            type: "__GET_VERIFICATION_MESSAGE__";
+            val: GetMaybeJust<ReturnType<(typeof ref)["current"]["getData"]>>;
+          }
+        | {
+            type: "__SUBMIT__";
+            val: GetMaybeJust<ReturnType<(typeof ref)["current"]["getData"]>>;
+          }
+        | { type: "__RESET__" }
+        | {
+            type: "__GET_VERIFICATION_MESSAGE_SUCCESS__";
+            val: TransactionVerificationMessageDto;
+          }
+        | { type: "__GET_VERIFICATION_MESSAGE_ERROR__"; val: Error }
+        | { type: "CONTINUE_MESSAGE_SIGN" }
+        | { type: "CANCEL_MESSAGE_SIGN" }
+        | { type: "__SIGN_MESSAGE_SUCCESS__"; val: string }
+        | { type: "__SIGN_MESSAGE_ERROR__"; val: Error }
+        | { type: "__SUBMIT_SUCCESS__" }
+        | { type: "__SUBMIT_ERROR__" },
     },
-    initial: "initial",
+  }).createMachine({
     context: {
-      error: null,
-      transactionVerificationMessageDto: null,
-      signedMessage: null,
+      error: Maybe.empty(),
+      transactionVerificationMessageDto: Maybe.empty(),
+      signedMessage: Maybe.empty(),
+      data: Maybe.empty(),
     },
-    on: { UNSTAKE: "unstakeCheck" },
+    on: { UNSTAKE: { target: ".check", reenter: true } },
+    initial: "initial",
     states: {
       initial: {},
-      unstakeCheck: {
-        on: {
-          __UNSTAKE_GET_VERIFICATION_MESSAGE__:
-            "unstakeGetVerificationMessageLoading",
-          __UNSTAKE__: "unstakeLoading",
-        },
-        effect: ({ send }) => {
-          trackEvent("unstakeClicked", {
-            yieldId: exitRequest.integrationData.id,
-            amount: exitRequest.requestDto.args.amount,
-          });
 
-          if (
-            exitRequest.integrationData.args.exit?.args?.signatureVerification
-              ?.required
-          ) {
-            send("__UNSTAKE_GET_VERIFICATION_MESSAGE__");
-          } else {
-            send("__UNSTAKE__");
-          }
+      check: {
+        on: {
+          __GET_VERIFICATION_MESSAGE__: {
+            target: "getVerificationMessage",
+            actions: assign({ data: ({ event }) => Maybe.of(event.val) }),
+          },
+          __SUBMIT__: {
+            target: "submit",
+            actions: assign({ data: ({ event }) => Maybe.of(event.val) }),
+          },
+          __RESET__: "initial",
         },
+        entry: ({ self }) =>
+          ref.current.getData().caseOf({
+            Just: (val) => {
+              ref.current.trackEvent("unstakeClicked", {
+                yieldId: val.integrationData.id,
+                amount: val.requestDto.args.amount,
+              });
+
+              if (
+                val.integrationData.args.exit?.args?.signatureVerification
+                  ?.required
+              ) {
+                self.send({ type: "__GET_VERIFICATION_MESSAGE__", val });
+              } else {
+                self.send({ type: "__SUBMIT__", val });
+              }
+            },
+            Nothing: () => self.send({ type: "__RESET__" }),
+          }),
       },
 
-      unstakeGetVerificationMessageLoading: {
+      getVerificationMessage: {
         on: {
-          __UNSTAKE_GET_VERIFICATION_MESSAGE_SUCCESS__: "unstakeShowPopup",
-          __UNSTAKE_GET_VERIFICATION_MESSAGE_ERROR__:
-            "unstakeGetVerificationMessageError",
+          __GET_VERIFICATION_MESSAGE_SUCCESS__: {
+            target: "showPopup",
+            actions: assign(({ context, event }) => ({
+              ...context,
+              transactionVerificationMessageDto: Maybe.of(event.val),
+            })),
+          },
+          __GET_VERIFICATION_MESSAGE_ERROR__: {
+            target: ".error",
+            actions: assign(({ context, event }) => ({
+              ...context,
+              error: Maybe.of(event.val),
+            })),
+          },
         },
-        effect: ({ send, setContext }) => {
-          EitherAsync.liftEither(
-            initValues.toEither(new Error("Missing init values"))
-          )
-            .chain((val) =>
-              EitherAsync(() =>
-                transactionGetTransactionVerificationMessageForNetwork(
-                  val.network,
-                  {
-                    addresses: {
-                      address: val.address,
-                      additionalAddresses: additionalAddresses ?? undefined,
-                    },
-                  }
+        initial: "loading",
+        states: {
+          loading: {
+            entry: ({ self, context }) =>
+              EitherAsync.liftEither(
+                context.data.toEither(new Error("Missing init values"))
+              )
+                .chain((val) =>
+                  withRequestErrorRetry({
+                    fn: () =>
+                      ref.current.transactionGetTransactionVerificationMessageForNetwork(
+                        val.network,
+                        {
+                          addresses: {
+                            address: val.address,
+                            additionalAddresses:
+                              val.additionalAddresses ?? undefined,
+                          },
+                        }
+                      ),
+                  }).mapLeft(
+                    () => new Error("Failed to get verification message")
+                  )
                 )
-              ).mapLeft(() => new Error("Failed to get verification message"))
-            )
-            .caseOf({
-              Right(v) {
-                setContext((ctx) => ({
-                  ...ctx,
-                  transactionVerificationMessageDto: v,
-                }));
-                send("__UNSTAKE_GET_VERIFICATION_MESSAGE_SUCCESS__");
-              },
-              Left(l) {
-                setContext((ctx) => ({ ...ctx, error: l }));
-                send("__UNSTAKE_GET_VERIFICATION_MESSAGE_ERROR__");
-              },
-            });
+                .caseOf({
+                  Right(v) {
+                    self.send({
+                      type: "__GET_VERIFICATION_MESSAGE_SUCCESS__",
+                      val: v,
+                    });
+                  },
+                  Left(e) {
+                    self.send({
+                      type: "__GET_VERIFICATION_MESSAGE_ERROR__",
+                      val: e,
+                    });
+                  },
+                }),
+          },
+
+          error: {},
         },
       },
-      unstakeGetVerificationMessageError: {},
 
-      unstakeShowPopup: {
+      showPopup: {
         on: {
-          CONTINUE_MESSAGE_SIGN: "unstakeSignMessageLoading",
+          CONTINUE_MESSAGE_SIGN: "signMessage",
           CANCEL_MESSAGE_SIGN: "initial",
         },
       },
 
-      unstakeSignMessageLoading: {
+      signMessage: {
         on: {
-          __UNSTAKE_SIGN_MESSAGE_SUCCESS__: "unstakeLoading",
-          __UNSTAKE_SIGN_MESSAGE_ERROR__: "unstakeSignMessageError",
+          __SIGN_MESSAGE_SUCCESS__: {
+            target: "submit",
+            actions: assign(({ context, event }) => ({
+              ...context,
+              signedMessage: Maybe.of(event.val),
+            })),
+          },
+          __SIGN_MESSAGE_ERROR__: {
+            target: ".error",
+            actions: assign(({ context, event }) => ({
+              ...context,
+              error: Maybe.of(event.val),
+            })),
+          },
         },
-        effect: ({ send, context, setContext }) => {
-          EitherAsync.liftEither(
-            Maybe.fromNullable(
-              context.transactionVerificationMessageDto
-            ).toEither(new Error("Missing transaction verification message"))
-          )
-            .chain((val) => signMessage(val.message))
-            .caseOf({
-              Right(v) {
-                setContext((ctx) => ({ ...ctx, signedMessage: v }));
-
-                send("__UNSTAKE_SIGN_MESSAGE_SUCCESS__");
-              },
-              Left(l) {
-                setContext((ctx) => ({ ...ctx, error: l }));
-
-                send("__UNSTAKE_SIGN_MESSAGE_ERROR__");
-              },
-            });
+        initial: "loading",
+        states: {
+          loading: {
+            entry: ({ self, context }) =>
+              EitherAsync.liftEither(
+                context.transactionVerificationMessageDto.toEither(
+                  new Error("Missing transaction verification message")
+                )
+              )
+                .chain((val) => ref.current.signMessage(val.message))
+                .caseOf({
+                  Right(v) {
+                    self.send({
+                      type: "__SIGN_MESSAGE_SUCCESS__",
+                      val: v,
+                    });
+                  },
+                  Left(l) {
+                    self.send({ type: "__SIGN_MESSAGE_ERROR__", val: l });
+                  },
+                }),
+          },
+          error: {},
         },
       },
-      unstakeSignMessageError: {},
 
-      unstakeLoading: {
+      submit: {
         on: {
-          __UNSTAKE_ERROR__: "unstakeError",
-          __UNSTAKE_DONE__: "unstakeDone",
+          __SUBMIT_SUCCESS__: "done",
+          __SUBMIT_ERROR__: ".error",
         },
-        effect: ({ context, setContext, send }) => {
-          EitherAsync.liftEither(
-            Just(exitRequest.requestDto)
-              .map((val) => {
-                if (
-                  context.transactionVerificationMessageDto &&
-                  context.signedMessage
-                ) {
-                  return merge(val, {
-                    args: {
-                      ...val.args,
-                      signatureVerification: {
-                        message:
-                          context.transactionVerificationMessageDto.message,
-                        signed: context.signedMessage,
-                      },
-                    } satisfies (typeof val)["args"],
-                  });
-                }
-
-                return val;
-              })
-              .toEither(new Error("Missing params"))
-          )
-            .chain((val) =>
-              withRequestErrorRetry({ fn: () => actionExit(val) })
-                .mapLeft(() => new Error("Stake exit error"))
-                .chain((actionDto) =>
-                  EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
-                )
-                .ifRight((val) =>
-                  setExitDispatch((prev) =>
-                    prev.map((v) => ({ ...v, actionDto: Just(val) }))
+        initial: "loading",
+        states: {
+          loading: {
+            entry: ({
+              self,
+              context: {
+                data,
+                signedMessage,
+                transactionVerificationMessageDto,
+              },
+            }) =>
+              EitherAsync.liftEither(
+                data
+                  .map((val) => val.requestDto)
+                  .map((requestDto) =>
+                    Maybe.fromRecord({
+                      transactionVerificationMessageDto,
+                      signedMessage,
+                    })
+                      .map<typeof requestDto>(
+                        (val) =>
+                          ({
+                            ...requestDto,
+                            args: {
+                              ...requestDto.args,
+                              signatureVerification: {
+                                message:
+                                  val.transactionVerificationMessageDto.message,
+                                signed: val.signedMessage,
+                              },
+                            },
+                          }) satisfies typeof requestDto
+                      )
+                      .orDefault(requestDto)
                   )
+                  .toEither(new Error("Missing params"))
+              )
+                .chain((val) =>
+                  withRequestErrorRetry({
+                    fn: () => ref.current.actionExit(val),
+                  })
+                    .mapLeft(() => new Error("Stake exit error"))
+                    .chain((actionDto) =>
+                      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
+                    )
+                    .ifRight((val) =>
+                      ref.current.exitStore.send({
+                        type: "setActionDto",
+                        data: val,
+                      })
+                    )
                 )
-            )
-            .caseOf({
-              Right() {
-                send("__UNSTAKE_DONE__");
-              },
-              Left(error) {
-                setContext((ctx) => ({ ...ctx, error }));
-                send("__UNSTAKE_ERROR__");
-              },
-            });
+                .caseOf({
+                  Right() {
+                    self.send({ type: "__SUBMIT_SUCCESS__" });
+                  },
+                  Left(error) {
+                    assign(({ context }) => ({ ...context, error }));
+                    self.send({ type: "__SUBMIT_ERROR__" });
+                  },
+                }),
+          },
+          error: {},
         },
       },
-      unstakeDone: {},
-      unstakeError: {},
+
+      done: {
+        type: "final",
+        entry: ref.current.onDone,
+      },
     },
   });
-};

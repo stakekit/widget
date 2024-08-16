@@ -1,6 +1,6 @@
 import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
-import type { WalletList } from "@stakekit/rainbowkit";
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
   injectedWallet,
@@ -42,7 +42,11 @@ const queryFn = async ({
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
   yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-}) =>
+}): Promise<{
+  evmChainsMap: Partial<EvmChainsMap>;
+  evmChains: Chain[];
+  connector: Maybe<WalletList[number]>;
+}> =>
   getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
     Right: (networks) => {
       const evmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(

@@ -1,9 +1,11 @@
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { EnterStakeProvider } from "@sk-widget/providers/enter-stake-state";
-import { ExitStakeProvider } from "@sk-widget/providers/exit-stake-state";
-import { PendingActionProvider } from "@sk-widget/providers/pending-action-state";
+import { EnterStakeStoreProvider } from "@sk-widget/providers/enter-stake-store";
+import { ExitStakeStoreProvider } from "@sk-widget/providers/exit-stake-store";
+import { PendingActionStoreProvider } from "@sk-widget/providers/pending-action-store";
+import { i18nInstance } from "@sk-widget/translation";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
+import { I18nextProvider } from "react-i18next";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
 import {
@@ -31,49 +33,51 @@ export const Providers = ({
   return (
     <StrictMode>
       <RootElementProvider>
-        <SKApiClientProvider>
-          <SKQueryClientProvider>
-            <SKLocationProvider>
-              <MountAnimationProvider>
-                <WagmiConfigProvider>
-                  <TrackingContextProviderWithProps>
-                    <SKWalletProvider>
-                      <RainbowProvider>
-                        <EarnPageStateProvider>
-                          <ActionHistoryContextProvider>
-                            <ThemeWrapper>
-                              <ListStateContextProvider>
-                                <CurrentLayoutProvider>
-                                  <HeaderHeightProvider>
-                                    <FooterHeightProvider>
-                                      <FooterButtonProvider>
-                                        <PoweredByHeightProvider>
-                                          <DisableTransitionDurationProvider>
-                                            <EnterStakeProvider>
-                                              <ExitStakeProvider>
-                                                <PendingActionProvider>
-                                                  {children}
-                                                </PendingActionProvider>
-                                              </ExitStakeProvider>
-                                            </EnterStakeProvider>
-                                          </DisableTransitionDurationProvider>
-                                        </PoweredByHeightProvider>
-                                      </FooterButtonProvider>
-                                    </FooterHeightProvider>
-                                  </HeaderHeightProvider>
-                                </CurrentLayoutProvider>
-                              </ListStateContextProvider>
-                            </ThemeWrapper>
-                          </ActionHistoryContextProvider>
-                        </EarnPageStateProvider>
-                      </RainbowProvider>
-                    </SKWalletProvider>
-                  </TrackingContextProviderWithProps>
-                </WagmiConfigProvider>
-              </MountAnimationProvider>
-            </SKLocationProvider>
-          </SKQueryClientProvider>
-        </SKApiClientProvider>
+        <I18nextProvider i18n={i18nInstance}>
+          <SKApiClientProvider>
+            <SKQueryClientProvider>
+              <SKLocationProvider>
+                <MountAnimationProvider>
+                  <WagmiConfigProvider>
+                    <TrackingContextProviderWithProps>
+                      <SKWalletProvider>
+                        <RainbowProvider>
+                          <EarnPageStateProvider>
+                            <ActionHistoryContextProvider>
+                              <ThemeWrapper>
+                                <ListStateContextProvider>
+                                  <CurrentLayoutProvider>
+                                    <HeaderHeightProvider>
+                                      <FooterHeightProvider>
+                                        <FooterButtonProvider>
+                                          <PoweredByHeightProvider>
+                                            <DisableTransitionDurationProvider>
+                                              <EnterStakeStoreProvider>
+                                                <ExitStakeStoreProvider>
+                                                  <PendingActionStoreProvider>
+                                                    {children}
+                                                  </PendingActionStoreProvider>
+                                                </ExitStakeStoreProvider>
+                                              </EnterStakeStoreProvider>
+                                            </DisableTransitionDurationProvider>
+                                          </PoweredByHeightProvider>
+                                        </FooterButtonProvider>
+                                      </FooterHeightProvider>
+                                    </HeaderHeightProvider>
+                                  </CurrentLayoutProvider>
+                                </ListStateContextProvider>
+                              </ThemeWrapper>
+                            </ActionHistoryContextProvider>
+                          </EarnPageStateProvider>
+                        </RainbowProvider>
+                      </SKWalletProvider>
+                    </TrackingContextProviderWithProps>
+                  </WagmiConfigProvider>
+                </MountAnimationProvider>
+              </SKLocationProvider>
+            </SKQueryClientProvider>
+          </SKApiClientProvider>
+        </I18nextProvider>
       </RootElementProvider>
     </StrictMode>
   );

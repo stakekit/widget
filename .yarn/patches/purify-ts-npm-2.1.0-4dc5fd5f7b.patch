@@ -1,0 +1,44 @@
+diff --git a/Maybe.d.ts b/Maybe.d.ts
+index f91d96c3a8420d0d9eedef3f2c06aaa750f69494..9042659a874ac00c95e25b0383cbef5c3e17c435 100644
+--- a/Maybe.d.ts
++++ b/Maybe.d.ts
+@@ -5,7 +5,7 @@ export type MaybePatterns<T, U> = {
+ } | {
+     _: () => U;
+ };
+-interface AlwaysJust {
++export type AlwaysJust = {
+     kind: '$$MaybeAlwaysJust';
+ }
+ type ExtractMaybe<T, TDefault> = T extends never ? TDefault : T | TDefault;
+@@ -103,7 +103,7 @@ interface MaybeTypeRef {
+ }
+ export declare const Maybe: MaybeTypeRef;
+ declare class Nothing implements Maybe<never> {
+-    private __value;
++    // private __value;
+     isJust(): this is AlwaysJust;
+     isNothing(): this is Nothing;
+     inspect(): string;
+diff --git a/esm/Maybe.d.ts b/esm/Maybe.d.ts
+index f91d96c3a8420d0d9eedef3f2c06aaa750f69494..9042659a874ac00c95e25b0383cbef5c3e17c435 100644
+--- a/esm/Maybe.d.ts
++++ b/esm/Maybe.d.ts
+@@ -5,7 +5,7 @@ export type MaybePatterns<T, U> = {
+ } | {
+     _: () => U;
+ };
+-interface AlwaysJust {
++export type AlwaysJust = {
+     kind: '$$MaybeAlwaysJust';
+ }
+ type ExtractMaybe<T, TDefault> = T extends never ? TDefault : T | TDefault;
+@@ -103,7 +103,7 @@ interface MaybeTypeRef {
+ }
+ export declare const Maybe: MaybeTypeRef;
+ declare class Nothing implements Maybe<never> {
+-    private __value;
++    // private __value;
+     isJust(): this is AlwaysJust;
+     isNothing(): this is Nothing;
+     inspect(): string;

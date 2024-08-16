@@ -3,7 +3,7 @@ import { pressAnimation } from "@sk-widget/components/atoms/button/styles.css";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
 
-export type MaxButtonProps = PropsWithChildren<{
+type MaxButtonProps = PropsWithChildren<{
   onMaxClick: () => void;
 }> &
   BoxProps;

@@ -8,10 +8,7 @@ import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
-import {
-  useEnterStakeDispatch,
-  useEnterStakeState,
-} from "@sk-widget/providers/enter-stake-state";
+import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import { useSettings } from "@sk-widget/providers/settings";
 import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
@@ -21,15 +18,21 @@ import {
   useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
+import { useSelector } from "@xstate/store/react";
 import { isAxiosError } from "axios";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 export const useStakeReview = () => {
-  const enterRequest = useEnterStakeState().unsafeCoerce();
+  const enterStore = useEnterStakeStore();
+
+  const enterRequest = useSelector(
+    enterStore,
+    (state) => state.context.data
+  ).unsafeCoerce();
 
   const integrationId = enterRequest.requestDto.integrationId;
   const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
@@ -118,11 +121,10 @@ export const useStakeReview = () => {
 
   const navigate = useNavigate();
   const actionEnter = useActionEnterHook();
-  const enterDispatch = useEnterStakeDispatch();
 
   const enterMutation = useMutation({
-    mutationFn: async () => {
-      return (
+    mutationFn: async () =>
+      (
         await withRequestErrorRetry({
           fn: () => actionEnter(enterRequest.requestDto),
         })
@@ -141,20 +143,14 @@ export const useStakeReview = () => {
           .chain((actionDto) =>
             EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
           )
-          .ifRight((actionDto) =>
-            enterDispatch((prev) =>
-              prev.map((v) => ({ ...v, actionDto: Maybe.of(actionDto) }))
-            )
-          )
-      ).unsafeCoerce();
+      ).unsafeCoerce(),
+    onSuccess: (data) => {
+      enterStore.send({ type: "setActionDto", data });
+      navigate("/steps");
     },
   });
 
   const onClick = () => enterMutation.mutate();
-
-  useEffect(() => {
-    enterMutation.isSuccess && navigate("/steps");
-  }, [enterMutation.isSuccess, navigate]);
 
   const onClickRef = useSavedRef(onClick);
 

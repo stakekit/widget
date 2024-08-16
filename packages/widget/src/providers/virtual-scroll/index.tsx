@@ -1,7 +1,7 @@
 import type { Virtualizer } from "@tanstack/react-virtual";
 import { type ReactNode, createContext, useContext } from "react";
 
-export const VirtualizerObserveElementRect = createContext<
+const VirtualizerObserveElementRect = createContext<
   | ((
       instance: Virtualizer<HTMLDivElement, Element>,
       cb: (rect: { width: number; height: number }) => void

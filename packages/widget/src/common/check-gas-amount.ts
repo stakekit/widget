@@ -9,7 +9,7 @@ import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import { withRequestErrorRetry } from "./utils";
 
-export type CheckGasAmountIfStake =
+type CheckGasAmountIfStake =
   | { isStake: true; stakeToken: TokenDto; stakeAmount: BigNumber }
   | { isStake: false };
 

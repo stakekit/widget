@@ -35,6 +35,8 @@ if (typeof window !== "undefined") {
     if (
       message?.name === "CanceledError" ||
       message.constructor?.name === "CancelledError" ||
+      (typeof message.message === "string" &&
+        message.message.includes("Could not get enabled networks")) ||
       (typeof message === "string" && message.includes("CancelledError"))
     ) {
       return;

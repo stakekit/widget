@@ -1,5 +1,4 @@
-import useStateMachine, { t } from "@cassiozen/usestatemachine";
-import type { $$t } from "@cassiozen/usestatemachine/dist/types";
+import { useSavedRef } from "@sk-widget/hooks";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
   useTransactionConstructHook,
@@ -9,9 +8,11 @@ import {
   useTransactionSubmitHashHook,
   useTransactionSubmitHook,
 } from "@stakekit/api-hooks";
+import { useMachine } from "@xstate/react";
 import { isAxiosError } from "axios";
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
-import { useMemo } from "react";
+import { type MutableRefObject, useMemo, useState } from "react";
+import { assign, emit, setup } from "xstate";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { withRequestErrorRetry } from "../../../common/utils";
 import {
@@ -30,10 +31,6 @@ import {
   TXCheckError,
   TransactionConstructError,
 } from "./errors";
-
-const tt = t as <T>() => {
-  [$$t]: T;
-};
 
 type TxMeta = {
   url: string | null;
@@ -64,7 +61,7 @@ type SignRes =
       };
     };
 
-export const useStepsMachine = (session: ActionDto | null) => {
+export const useStepsMachine = (session: ActionDto) => {
   const {
     signTransaction,
     signMultipleTransactions,
@@ -74,87 +71,130 @@ export const useStepsMachine = (session: ActionDto | null) => {
   } = useSKWallet();
 
   const trackEvent = useTrackEvent();
-
   const transactionSubmit = useTransactionSubmitHook();
   const transactionGetTransactionStatusFromId =
     useTransactionGetTransactionStatusFromIdHook();
   const transactionGetTransaction = useTransactionGetTransactionHook();
   const transactionSubmitHash = useTransactionSubmitHashHook();
   const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
-  const _transactionConstruct = useTransactionConstructHook();
+  const transactionConstruct = useTransactionConstructHook();
 
-  const txConstruct = (...params: Parameters<typeof _transactionConstruct>) =>
+  const shouldMultiSend = useMemo(
+    () =>
+      !!(
+        connector &&
+        isExternalProviderConnector(connector) &&
+        connector.shouldMultiSend
+      ),
+    [connector]
+  );
+
+  const machineParams = useSavedRef({
+    session,
+    shouldMultiSend,
+    isLedgerLive,
+    trackEvent,
+    signMultipleTransactions,
+    signMessage,
+    signTransaction,
+    transactionSubmit,
+    transactionGetTransactionStatusFromId,
+    transactionGetTransaction,
+    transactionSubmitHash,
+    transactionGetGasForNetwork,
+    transactionConstruct,
+  });
+
+  return useMachine(useState(() => getMachine(machineParams))[0]);
+};
+
+const getMachine = (
+  ref: Readonly<
+    MutableRefObject<{
+      session: ActionDto;
+      shouldMultiSend: boolean;
+      isLedgerLive: boolean;
+      trackEvent: ReturnType<typeof useTrackEvent>;
+      signMultipleTransactions: ReturnType<
+        typeof useSKWallet
+      >["signMultipleTransactions"];
+      signMessage: ReturnType<typeof useSKWallet>["signMessage"];
+      signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
+      transactionSubmit: ReturnType<typeof useTransactionSubmitHook>;
+      transactionGetTransactionStatusFromId: ReturnType<
+        typeof useTransactionGetTransactionStatusFromIdHook
+      >;
+      transactionGetTransaction: ReturnType<
+        typeof useTransactionGetTransactionHook
+      >;
+      transactionSubmitHash: ReturnType<typeof useTransactionSubmitHashHook>;
+      transactionGetGasForNetwork: ReturnType<
+        typeof useTransactionGetGasForNetworkHook
+      >;
+      transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
+    }>
+  >
+) => {
+  const txConstruct = (
+    ...params: Parameters<(typeof ref)["current"]["transactionConstruct"]>
+  ) =>
     withRequestErrorRetry({
-      fn: () => _transactionConstruct(...params),
+      fn: () => ref.current.transactionConstruct(...params),
       shouldRetry: (e, retryCount) =>
         retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
     }).mapLeft(() => new Error("Transaction construct error"));
 
-  const shouldMultiSend = useMemo(
-    () =>
-      connector &&
-      isExternalProviderConnector(connector) &&
-      connector.shouldMultiSend,
-    [connector]
+  const initContext = getInitContext(
+    ref.current.session,
+    ref.current.shouldMultiSend
   );
 
-  const initContext = useMemo(() => {
-    const def = {
-      enabled: false,
-      txStates: null,
-      currentTxMeta: null,
-      yieldId: null,
-    };
-
-    if (!session?.transactions) return def;
-
-    const txs = session.transactions;
-
-    if (!txs.length) return def;
-
-    const txStates = txs.map<TxState>((dto) => ({
-      tx: dto,
-      meta: {
-        broadcasted: null,
-        signedTx: null,
-        url: null,
-        signError: null,
-        txCheckError: null,
-        done: false,
-      },
-    }));
-
-    const currentTxIdx = 0;
-
-    const currentTxMeta = {
-      idx: currentTxIdx,
-      id: txs[currentTxIdx].id,
-    };
-
-    return {
-      enabled: true,
-      txStates: shouldMultiSend ? [txStates[currentTxIdx]] : txStates,
-      currentTxMeta,
-      yieldId: session.integrationId,
-    };
-  }, [session, shouldMultiSend]);
-
-  const stateMachine = useStateMachine({
-    initial: initContext ? "idle" : "disabled",
-    schema: {
-      context: tt<{
-        yieldId: string | null;
+  return setup({
+    types: {
+      emitted: {} as { type: "signSuccess" },
+      context: {} as {
+        yieldId: Maybe<string>;
         txStates: TxState[];
-        currentTxMeta: { idx: number; id: string } | null;
-        txCheckTimeoutId: number | null;
-      }>(),
+        currentTxMeta: Maybe<{ idx: number; id: string }>;
+        txCheckTimeoutId: Maybe<number>;
+      },
+      events: {} as
+        | { type: "START" }
+        | {
+            type: "__SIGN_SUCCESS__";
+            val: Extract<SignRes, { type: "regular" }>;
+          }
+        | { type: "__SIGN_ERROR__"; val: Error }
+        | { type: "__BROADCAST_SUCCESS__" }
+        | { type: "__BROADCAST_ERROR__"; val: Error | SubmitHashError }
+        | { type: "__DONE__"; val: TxState[] }
+        | { type: "__SIGN_RETRY__" }
+        | { type: "__BROADCAST_RETRY__" }
+        | {
+            type: "__SIGN_NEXT_TX__";
+            val: {
+              newCurrentTxMeta: {
+                idx: number;
+                id: string;
+              };
+              newTxStates: TxState[];
+            };
+          }
+        | {
+            type: "__TX_CHECK_ERROR__";
+            val: Error | SignError | TXCheckError;
+          }
+        | { type: "__TX_CHECK_RETRY__" }
+        | { type: "__TX_CHECK_RETRY_TIMEOUT__"; val: number },
     },
+  }).createMachine({
     context: {
-      yieldId: initContext?.yieldId ?? null,
+      yieldId: Maybe.fromNullable(initContext?.yieldId),
       txStates: initContext?.txStates ?? [],
-      currentTxMeta: initContext?.currentTxMeta ?? null,
-      txCheckTimeoutId: null,
+      currentTxMeta: Maybe.fromNullable(initContext?.currentTxMeta),
+      txCheckTimeoutId: Maybe.empty(),
     },
+    initial: initContext.enabled ? "idle" : "disabled",
     states: {
       idle: {
         on: { START: "signLoading" },
@@ -162,82 +202,122 @@ export const useStepsMachine = (session: ActionDto | null) => {
       disabled: {},
       signLoading: {
         on: {
-          SIGN_SUCCESS: "broadcastLoading",
-          SIGN_ERROR: "signError",
-          BROADCAST_SUCCESS: "txCheckLoading",
-          DONE: "done",
+          __SIGN_SUCCESS__: {
+            target: "broadcastLoading",
+            actions: [
+              assign({
+                txStates: ({ context, event }) =>
+                  context.currentTxMeta
+                    .map((currentTxMeta) =>
+                      context.txStates.map((val, i) =>
+                        i === currentTxMeta.idx
+                          ? {
+                              ...val,
+                              meta: {
+                                ...val.meta,
+                                txCheckError: null,
+                                signError: null,
+                                broadcasted: event.val.data.broadcasted,
+                                signedTx: event.val.data.signedTx,
+                              },
+                            }
+                          : val
+                      )
+                    )
+                    .orDefault(context.txStates),
+              }),
+              emit({ type: "signSuccess" }),
+            ],
+          },
+          __SIGN_ERROR__: {
+            target: "signError",
+            actions: assign({
+              txStates: ({ context, event }) =>
+                context.currentTxMeta
+                  .map((currentTxMeta) =>
+                    context.txStates.map((val, i) =>
+                      i === currentTxMeta.idx
+                        ? {
+                            ...val,
+                            meta: {
+                              ...val.meta,
+                              txCheckError: null,
+                              signError: event.val,
+                            },
+                          }
+                        : val
+                    )
+                  )
+                  .orDefault(context.txStates),
+            }),
+          },
+          __BROADCAST_SUCCESS__: "txCheckLoading",
         },
-        effect: ({ context, send, setContext }) => {
+        entry: ({ context, self }) => {
           EitherAsync.liftEither(
-            Maybe.fromNullable(
-              context.txStates[context.currentTxMeta?.idx!].tx
-            ).toEither(new Error("missing tx"))
+            context.currentTxMeta
+              .chainNullable((v) => context.txStates[v.idx].tx)
+              .toEither(new Error("missing tx"))
           )
             .chain<Error, SignRes>((tx) => {
+              const txs = ref.current.session.transactions;
+
               /**
                * Multi sign transactions
                */
-              if (shouldMultiSend) {
+              if (ref.current.shouldMultiSend) {
                 return EitherAsync.liftEither(
-                  Maybe.fromNullable(session?.transactions).toEither(
-                    new Error("missing session")
+                  Right(
+                    txs.find((tx) =>
+                      transactionsForConstructOnlySet.has(tx.type)
+                    )
                   )
                 )
-                  .chain((txs) =>
-                    EitherAsync.liftEither(
-                      Right(
-                        txs.find((tx) =>
-                          transactionsForConstructOnlySet.has(tx.type)
-                        )
-                      )
-                    ).chain((constructOnlyTx) => {
-                      if (!constructOnlyTx) {
-                        return EitherAsync.liftEither(
-                          Right(getTransactionsForMultiSign(txs))
-                        );
-                      }
+                  .chain((constructOnlyTx) => {
+                    if (!constructOnlyTx) {
+                      return EitherAsync.liftEither(Right(null));
+                    }
 
-                      return getAverageGasMode({
-                        network: constructOnlyTx.network,
-                        transactionGetGasForNetwork,
-                      })
-                        .chainLeft(async () => Right(null))
-                        .chain((gas) =>
-                          txConstruct(constructOnlyTx.id, {
-                            gasArgs: gas?.gasArgs,
-                            ledgerWalletAPICompatible: isLedgerLive,
-                          }).mapLeft(() => new TransactionConstructError())
-                        )
-                        .chain(() =>
-                          withRequestErrorRetry({
-                            fn: () =>
-                              transactionGetTransactionStatusFromId(
-                                constructOnlyTx.id
-                              ),
-                            retryTimes: 10,
-                            retryWaitForMs() {
-                              return 5000;
-                            },
-                          }).mapLeft(
-                            () =>
-                              new Error(
-                                `failed to get ${constructOnlyTx.id} tx status`
-                              )
-                          )
-                        )
-                        .map(() => getTransactionsForMultiSign(txs));
+                    return getAverageGasMode({
+                      network: constructOnlyTx.network,
+                      transactionGetGasForNetwork:
+                        ref.current.transactionGetGasForNetwork,
                     })
-                  )
+                      .chainLeft(async () => Right(null))
+                      .chain((gas) =>
+                        txConstruct(constructOnlyTx.id, {
+                          gasArgs: gas?.gasArgs,
+                          ledgerWalletAPICompatible: ref.current.isLedgerLive,
+                        }).mapLeft(() => new TransactionConstructError())
+                      )
+                      .chain(() =>
+                        withRequestErrorRetry({
+                          fn: () =>
+                            ref.current.transactionGetTransactionStatusFromId(
+                              constructOnlyTx.id
+                            ),
+                          retryTimes: 10,
+                          retryWaitForMs: () => 5000,
+                        }).mapLeft(
+                          () =>
+                            new Error(
+                              `failed to get ${constructOnlyTx.id} tx status`
+                            )
+                        )
+                      );
+                  })
+                  .map(() => getTransactionsForMultiSign(txs))
                   .chain((txs) =>
                     getAverageGasMode({
                       network: tx.network,
-                      transactionGetGasForNetwork,
+                      transactionGetGasForNetwork:
+                        ref.current.transactionGetGasForNetwork,
                     }).chain((gas) =>
                       EitherAsync.sequence(
                         txs.map((tx) =>
                           txConstruct(tx.id, {
                             gasArgs: gas?.gasArgs,
-                            ledgerWalletAPICompatible: isLedgerLive,
+                            ledgerWalletAPICompatible: ref.current.isLedgerLive,
                           }).mapLeft(() => new TransactionConstructError())
                         )
                       )
@@ -246,7 +326,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   .map((txs) =>
                     txs
                       .map((tx) => tx.unsignedTransaction)
-                      .filter((tx): tx is NonNullable<typeof tx> => !!tx)
+                      .filter((tx) => tx !== null)
                   )
                   .chain((txs) => {
                     if (!txs.length) {
@@ -255,7 +335,7 @@ export const useStepsMachine = (session: ActionDto | null) => {
                       );
                     }
 
-                    return signMultipleTransactions({ txs });
+                    return ref.current.signMultipleTransactions({ txs });
                   })
                   .map((val) => ({ type: "regular", data: val }));
               }
@@ -265,17 +345,21 @@ export const useStepsMachine = (session: ActionDto | null) => {
                */
               return getAverageGasMode({
                 network: tx.network,
-                transactionGetGasForNetwork,
+                transactionGetGasForNetwork:
+                  ref.current.transactionGetGasForNetwork,
               })
                 .chainLeft(async () => Right(null))
                 .chain((gas) =>
                   txConstruct(tx.id, {
                     gasArgs: gas?.gasArgs,
-                    ledgerWalletAPICompatible: isLedgerLive,
+                    ledgerWalletAPICompatible: ref.current.isLedgerLive,
                   }).mapLeft(() => new TransactionConstructError())
                 )
                 .chain((constructedTx) => {
-                  if (constructedTx.status === "BROADCASTED") {
+                  if (
+                    constructedTx.status === "BROADCASTED" ||
+                    constructedTx.status === "CONFIRMED"
+                  ) {
                     return EitherAsync.liftEither(
                       Right({ type: "broadcasted" })
                     );
@@ -288,25 +372,26 @@ export const useStepsMachine = (session: ActionDto | null) => {
                   }
 
                   if (constructedTx.isMessage) {
-                    return signMessage(constructedTx.unsignedTransaction).map(
-                      (val) => ({
+                    return ref.current
+                      .signMessage(constructedTx.unsignedTransaction)
+                      .map((val) => ({
                         type: "regular",
                         data: { signedTx: val, broadcasted: false },
-                      })
-                    );
+                      }));
                   }
 
-                  return signTransaction({
-                    tx: constructedTx.unsignedTransaction,
-                    ledgerHwAppId: constructedTx.ledgerHwAppId,
-                  })
+                  return ref.current
+                    .signTransaction({
+                      tx: constructedTx.unsignedTransaction,
+                      ledgerHwAppId: constructedTx.ledgerHwAppId,
+                    })
                     .map((val) => ({
                       ...val,
                       network: constructedTx.network,
                       txId: constructedTx.id,
                     }))
                     .ifRight(() =>
-                      trackEvent("txSigned", {
+                      ref.current.trackEvent("txSigned", {
                         txId: constructedTx.id,
                         network: constructedTx.network,
                         yieldId: context.yieldId,
@@ -318,75 +403,87 @@ export const useStepsMachine = (session: ActionDto | null) => {
             .caseOf({
               Left: (l) => {
                 console.log(l);
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates: ctx.txStates.map((val, i) =>
-                    i === ctx.currentTxMeta?.idx!
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            txCheckError: null,
-                            signError: l,
-                          },
-                        }
-                      : val
-                  ),
-                }));
-                send("SIGN_ERROR");
+                self.send({ type: "__SIGN_ERROR__", val: l });
               },
-              Right: (tx) => {
-                if (tx.type === "broadcasted") return send("BROADCAST_SUCCESS");
+              Right: (signRes) => {
+                if (signRes.type === "broadcasted") {
+                  return self.send({ type: "__BROADCAST_SUCCESS__" });
+                }
 
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates: ctx.txStates.map((val, i) =>
-                    i === ctx.currentTxMeta?.idx!
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            txCheckError: null,
-                            signError: null,
-                            broadcasted: tx.data.broadcasted,
-                            signedTx: tx.data.signedTx,
-                          },
-                        }
-                      : val
-                  ),
-                }));
-                send({ type: "SIGN_SUCCESS" });
+                self.send({ type: "__SIGN_SUCCESS__", val: signRes });
               },
             });
         },
       },
 
       signError: {
-        on: { SIGN_RETRY: "signLoading" },
+        on: { __SIGN_RETRY__: "signLoading" },
       },
 
       broadcastLoading: {
         on: {
-          BROADCAST_SUCCESS: "txCheckLoading",
-          BROADCAST_ERROR: "broadcastError",
+          __BROADCAST_SUCCESS__: {
+            target: "txCheckLoading",
+            actions: assign({
+              txStates: ({ context }) =>
+                context.currentTxMeta
+                  .map((currentTxMeta) =>
+                    context.txStates.map((val, i) =>
+                      i === currentTxMeta.idx
+                        ? {
+                            ...val,
+                            meta: {
+                              ...val.meta,
+                              txCheckError: null,
+                              signError: null,
+                            },
+                          }
+                        : val
+                    )
+                  )
+                  .orDefault(context.txStates),
+            }),
+          },
+          __BROADCAST_ERROR__: {
+            target: "broadcastError",
+            actions: assign({
+              txStates: ({ context }) =>
+                context.currentTxMeta
+                  .map((currentTxMeta) =>
+                    context.txStates.map((val, i) =>
+                      i === currentTxMeta.idx
+                        ? {
+                            ...val,
+                            meta: {
+                              ...val.meta,
+                              txCheckError: null,
+                              signError: null,
+                            },
+                          }
+                        : val
+                    )
+                  )
+                  .orDefault(context.txStates),
+            }),
+          },
         },
-        effect: ({ send, context, setContext }) => {
+        entry: ({ self, context }) => {
           EitherAsync.liftEither(
-            Maybe.fromNullable(
-              context.txStates[context.currentTxMeta?.idx!]
-            ).toEither(new Error("missing tx"))
+            context.currentTxMeta
+              .chainNullable((v) => context.txStates[v.idx])
+              .toEither(new Error("missing tx"))
           )
             .chain((currentTx) => {
               if (currentTx.meta.broadcasted) {
                 return withRequestErrorRetry({
                   fn: () =>
-                    transactionSubmitHash(currentTx.tx.id, {
+                    ref.current.transactionSubmitHash(currentTx.tx.id, {
                       hash: currentTx.meta.signedTx!,
                     }),
                 })
                   .mapLeft(() => new SubmitHashError())
                   .ifRight(() => {
-                    trackEvent("txSubmitted", {
+                    ref.current.trackEvent("txSubmitted", {
                       txId: currentTx.tx.id,
                       network: currentTx.tx.network,
                       yieldId: context.yieldId,
@@ -396,14 +493,14 @@ export const useStepsMachine = (session: ActionDto | null) => {
 
               return withRequestErrorRetry({
                 fn: async () => {
-                  await transactionSubmit(currentTx.tx.id, {
+                  await ref.current.transactionSubmit(currentTx.tx.id, {
                     signedTransaction: currentTx.meta.signedTx!,
                   });
                 },
               })
                 .mapLeft(() => new SubmitError())
                 .ifRight(() => {
-                  trackEvent("txSubmitted", {
+                  ref.current.trackEvent("txSubmitted", {
                     txId: currentTx.tx.id,
                     network: currentTx.tx.network,
                     yieldId: context.yieldId,
@@ -413,68 +510,67 @@ export const useStepsMachine = (session: ActionDto | null) => {
             .caseOf({
               Left: (l) => {
                 console.log(l);
-                send({ type: "BROADCAST_ERROR" });
-
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates: ctx.txStates.map((val, i) =>
-                    i === ctx.currentTxMeta?.idx
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            txCheckError: null,
-                            signError: null,
-                          },
-                        }
-                      : val
-                  ),
-                }));
+                self.send({ type: "__BROADCAST_ERROR__", val: l });
               },
-              Right: () => {
-                send({ type: "BROADCAST_SUCCESS" });
-
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates: ctx.txStates.map((val, i) =>
-                    i === ctx.currentTxMeta?.idx!
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            txCheckError: null,
-                            signError: null,
-                          },
-                        }
-                      : val
-                  ),
-                }));
-              },
+              Right: () => self.send({ type: "__BROADCAST_SUCCESS__" }),
             });
         },
       },
 
       broadcastError: {
-        on: { BROADCAST_RETRY: "broadcastLoading" },
+        on: { __BROADCAST_RETRY__: "broadcastLoading" },
       },
 
       txCheckLoading: {
         on: {
-          SIGN_NEXT_TX: "signLoading",
-          DONE: "done",
-          TX_CHECK_ERROR: "txCheckError",
-          TX_CHECK_RETRY: "txCheckRetry",
+          __SIGN_NEXT_TX__: {
+            target: "signLoading",
+            actions: assign({
+              currentTxMeta: ({ event }) =>
+                Maybe.of(event.val.newCurrentTxMeta),
+              txStates: ({ event }) => event.val.newTxStates,
+            }),
+          },
+          __DONE__: {
+            target: "done",
+            actions: assign({ txStates: ({ event }) => event.val }),
+          },
+          __TX_CHECK_ERROR__: {
+            target: "txCheckError",
+            actions: assign({
+              txStates: ({ context, event }) =>
+                context.currentTxMeta
+                  .map((currentTxMeta) =>
+                    context.txStates.map((val, i) =>
+                      i === currentTxMeta.idx
+                        ? {
+                            ...val,
+                            meta: {
+                              ...val.meta,
+                              txCheckError: event.val,
+                              signError: null,
+                            },
+                          }
+                        : val
+                    )
+                  )
+                  .orDefault(context.txStates),
+            }),
+          },
+          __TX_CHECK_RETRY__: "txCheckRetry",
         },
-        effect: ({ send, context, setContext }) => {
+        entry: ({ self, context }) => {
           EitherAsync.liftEither(
-            Maybe.fromNullable(
-              context.txStates[context.currentTxMeta?.idx!]
-            ).toEither(new Error("missing tx"))
+            context.currentTxMeta
+              .chainNullable((v) => context.txStates[v.idx])
+              .toEither(new Error("missing tx"))
           )
             .chain((currentTx) =>
               withRequestErrorRetry({
                 fn: () =>
-                  transactionGetTransactionStatusFromId(currentTx.tx.id),
+                  ref.current.transactionGetTransactionStatusFromId(
+                    currentTx.tx.id
+                  ),
                 shouldRetry: (e, retryCount) =>
                   retryCount <= 3 &&
                   isAxiosError(e) &&
@@ -483,7 +579,8 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 .map((res) => ({ url: res.url, status: res.status }))
                 .chainLeft(() =>
                   withRequestErrorRetry({
-                    fn: () => transactionGetTransaction(currentTx.tx.id),
+                    fn: () =>
+                      ref.current.transactionGetTransaction(currentTx.tx.id),
                   }).map((res) => ({
                     url: res.explorerUrl,
                     status: res.status,
@@ -511,69 +608,55 @@ export const useStepsMachine = (session: ActionDto | null) => {
                 console.log(l);
 
                 if (l instanceof SignError) {
-                  trackEvent("txNotConfirmed", {
+                  ref.current.trackEvent("txNotConfirmed", {
                     txId: l.txId,
                     yieldId: context.yieldId,
                   });
                 }
 
-                setContext((ctx) => ({
-                  ...ctx,
-                  txStates: ctx.txStates.map((val, i) =>
-                    i === ctx.currentTxMeta?.idx!
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            txCheckError: l,
-                            signError: null,
-                          },
-                        }
-                      : val
-                  ),
-                }));
-
-                send("TX_CHECK_ERROR");
+                self.send({ type: "__TX_CHECK_ERROR__", val: l });
               },
               Right: (v) => {
                 if (v.isConfirmed) {
-                  const newTxStates = context.txStates.map((val, i) =>
-                    i === context.currentTxMeta?.idx!
-                      ? {
-                          ...val,
-                          meta: {
-                            ...val.meta,
-                            signError: null,
-                            txCheckError: null,
-                            url: v.url,
-                            done: true,
-                          },
-                        }
-                      : val
-                  );
+                  const newTxStates = context.currentTxMeta
+                    .map((currentTxMeta) =>
+                      context.txStates.map((val, i) =>
+                        i === currentTxMeta.idx
+                          ? {
+                              ...val,
+                              meta: {
+                                ...val.meta,
+                                signError: null,
+                                txCheckError: null,
+                                url: v.url,
+                                done: true,
+                              },
+                            }
+                          : val
+                      )
+                    )
+                    .orDefault(context.txStates);
 
-                  const newCurrentTxIdx = List.findIndex(
+                  const newCurrentTxMeta = List.findIndex(
                     (val) => !val.meta.done,
                     newTxStates
-                  ).extractNullable();
+                  )
+                    .map((idx) => ({
+                      idx,
+                      id: newTxStates[idx].tx.id,
+                    }))
+                    .extractNullable();
 
-                  setContext((ctx) => ({
-                    ...ctx,
-                    currentTxMeta: newCurrentTxIdx
-                      ? {
-                          idx: newCurrentTxIdx,
-                          id: newTxStates[newCurrentTxIdx]?.tx.id ?? null,
-                        }
-                      : null,
-                    txStates: newTxStates,
-                  }));
-
-                  if (newCurrentTxIdx === null) {
-                    return send("DONE");
+                  if (!newCurrentTxMeta) {
+                    return self.send({ type: "__DONE__", val: newTxStates });
                   }
-                  send("SIGN_NEXT_TX");
+
+                  self.send({
+                    type: "__SIGN_NEXT_TX__",
+                    val: { newTxStates, newCurrentTxMeta },
+                  });
                 } else {
-                  send({ type: "TX_CHECK_RETRY" });
+                  self.send({ type: "__TX_CHECK_RETRY__" });
                 }
               },
             });
@@ -581,26 +664,70 @@ export const useStepsMachine = (session: ActionDto | null) => {
       },
 
       txCheckRetry: {
-        on: { TX_CHECK_RETRY: "txCheckLoading" },
-        effect: ({ send, setContext }) => {
+        on: {
+          __TX_CHECK_RETRY__: "txCheckLoading",
+          __TX_CHECK_RETRY_TIMEOUT__: {
+            actions: assign({
+              txCheckTimeoutId: ({ event }) => Maybe.of(event.val),
+            }),
+          },
+        },
+        entry: ({ self }) => {
           const timeoutHandler = setTimeout(() => {
-            send({ type: "TX_CHECK_RETRY" });
+            self.send({ type: "__TX_CHECK_RETRY__" });
           }, 4000);
 
-          setContext((ctx) => ({
-            ...ctx,
-            txCheckTimeoutId: timeoutHandler as unknown as number,
-          }));
+          self.send({
+            type: "__TX_CHECK_RETRY_TIMEOUT__",
+            val: timeoutHandler as unknown as number,
+          });
         },
       },
 
       txCheckError: {
-        on: { TX_CHECK_RETRY: "txCheckLoading" },
+        on: { __TX_CHECK_RETRY__: "txCheckLoading" },
       },
 
-      done: {},
+      done: {
+        type: "final",
+      },
     },
   });
+};
 
-  return stateMachine;
+const getInitContext = (session: ActionDto, shouldMultiSend: boolean) => {
+  if (!session.transactions.length) {
+    return {
+      enabled: false,
+      txStates: null,
+      currentTxMeta: null,
+      yieldId: null,
+    };
+  }
+
+  const txStates = session.transactions.map<TxState>((dto) => ({
+    tx: dto,
+    meta: {
+      broadcasted: null,
+      signedTx: null,
+      url: null,
+      signError: null,
+      txCheckError: null,
+      done: false,
+    },
+  }));
+
+  const currentTxIdx = 0;
+
+  const currentTxMeta = {
+    idx: currentTxIdx,
+    id: session.transactions[currentTxIdx].id,
+  };
+
+  return {
+    enabled: true,
+    txStates: shouldMultiSend ? [txStates[currentTxIdx]] : txStates,
+    currentTxMeta,
+    yieldId: session.integrationId,
+  };
 };

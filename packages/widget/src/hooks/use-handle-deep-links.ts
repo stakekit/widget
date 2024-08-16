@@ -1,11 +1,7 @@
 import { useInitQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
-import {
-  usePendingActionDispatch,
-  usePendingActionState,
-} from "@sk-widget/providers/pending-action-state";
+import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { Maybe } from "purify-ts";
 import { useEffect } from "react";
@@ -15,8 +11,7 @@ import { useSavedRef } from "./use-saved-ref";
 export const useHandleDeepLinks = () => {
   const pendingActionDeepLinkCheck = usePendingActionDeepLink();
   const navigateRef = useSavedRef(useNavigate());
-  const pendingActionState = usePendingActionState();
-  const pendignActionRequestDispatch = usePendingActionDispatch();
+  const pendignActionStore = usePendingActionStore();
   const initQueryParams = useInitQueryParams();
 
   const { mountAnimationFinished } = useMountAnimation();
@@ -56,10 +51,10 @@ export const useHandleDeepLinks = () => {
         (val): val is Extract<typeof val, { type: "review" }> =>
           appReady && val.type === "review"
       )
-      .ifJust((val) =>
-        pendignActionRequestDispatch(
-          Maybe.of({
-            actionDto: Maybe.empty(),
+      .ifJust((val) => {
+        pendignActionStore.send({
+          type: "initFlow",
+          data: {
             requestDto: val.pendingActionDto.requestDto,
             addresses: {
               address: val.pendingActionDto.address,
@@ -69,19 +64,16 @@ export const useHandleDeepLinks = () => {
             integrationData: val.pendingActionDto.integrationData,
             interactedToken: val.balance.token,
             pendingActionType: val.pendingActionDto.requestDto.type,
-          })
-        )
-      );
-  }, [pendignActionRequestDispatch, pendingActionDeepLinkCheck.data, appReady]);
-
-  useUpdateEffect(() => {
-    pendingActionState
-      .chainNullable(() => pendingActionDeepLinkCheck.data)
-      .filter(() => appReady)
-      .ifJust((val) =>
+          },
+        });
         navigateRef.current(
           `positions/${val.yieldOp.id}/${val.balanceId}/pending-action/review`
-        )
-      );
-  }, [pendingActionState, pendingActionDeepLinkCheck.data, appReady]);
+        );
+      });
+  }, [
+    pendignActionStore,
+    pendingActionDeepLinkCheck.data,
+    appReady,
+    navigateRef,
+  ]);
 };

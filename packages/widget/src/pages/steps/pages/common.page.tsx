@@ -1,6 +1,5 @@
 import type { ActionDto } from "@stakekit/api-hooks";
 import { motion } from "framer-motion";
-import type { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, Button, Heading } from "../../../components";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
@@ -9,20 +8,14 @@ import { useSteps } from "../hooks/use-steps.hook";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
-  session: Maybe<ActionDto>;
+  session: ActionDto;
   onSignSuccess?: () => void;
-  onSubmitSuccess?: () => void;
 };
 
-export const StepsPage = ({
-  session,
-  onSignSuccess,
-  onSubmitSuccess,
-}: StepsPageProps) => {
+export const StepsPage = ({ session, onSignSuccess }: StepsPageProps) => {
   const { retry, txStates } = useSteps({
     session,
     onSignSuccess,
-    onSubmitSuccess,
   });
 
   const { t } = useTranslation();

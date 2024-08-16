@@ -2,7 +2,7 @@ import { createContainer, style } from "@vanilla-extract/css";
 import { atoms } from "./styles";
 import { minContainerWidth } from "./styles/tokens/breakpoints";
 
-export const appContainerName = createContainer();
+const appContainerName = createContainer();
 export const widgetContainerName = createContainer();
 export const widgetContainerMaxWidth = 400;
 

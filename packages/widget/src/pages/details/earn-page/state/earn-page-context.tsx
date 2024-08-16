@@ -1,14 +1,10 @@
 import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
-import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import {
   useEarnPageDispatch,
   useEarnPageState,
 } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
-import {
-  useEnterStakeDispatch,
-  useEnterStakeState,
-} from "@sk-widget/providers/enter-stake-state";
+import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import type {
   TokenBalanceScanResponseDto,
   TronResourceType,
@@ -358,9 +354,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const { openConnectModal } = useConnectModal();
 
-  const enterDispatch = useEnterStakeDispatch();
   const navigate = useNavigateWithScrollToTop();
-  const enterDto = useEnterStakeState();
+  const enterStakeStore = useEnterStakeStore();
 
   const onClickHandler = useMutation({
     mutationFn: async () => {
@@ -373,24 +368,19 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         selectedToken,
       }).unsafeCoerce();
 
-      enterDispatch(
-        Maybe.of({
+      enterStakeStore.send({
+        type: "initFlow",
+        data: {
           requestDto: val.stakeEnterRequestDto.dto,
           selectedToken: val.selectedToken,
           gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
           selectedStake: val.stakeEnterRequestDto.selectedStake,
           selectedValidators: val.stakeEnterRequestDto.selectedValidators,
-          actionDto: Maybe.empty(),
-        })
-      );
+        },
+      });
+      navigate("/review");
     },
   });
-
-  useUpdateEffect(() => {
-    if (enterDto) {
-      navigate("/review");
-    }
-  }, [enterDto]);
 
   const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
 

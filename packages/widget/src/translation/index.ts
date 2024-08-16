@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import i18n from "i18next";
+import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next, useTranslation } from "react-i18next";
 import { withRequestErrorRetry } from "../common/utils";
 import { useApiClient } from "../providers/api/api-client-provider";
 import translationEN from "./English/translations.json";
 import translationFR from "./French/translations.json";
+
+export const i18nInstance: ReturnType<typeof createInstance> = createInstance();
 
 export const localResources = {
   en: { translation: translationEN },
@@ -14,7 +16,7 @@ export const localResources = {
 
 export type Languages = keyof typeof localResources;
 
-i18n
+i18nInstance
   .use(initReactI18next)
   .use(LanguageDetector)
   .init({
@@ -25,7 +27,7 @@ i18n
     detection: { order: ["navigator", "localStorage"] },
   });
 
-i18n.services.formatter?.add("lowercase", (value, _, __) =>
+i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
   value.toLowerCase()
 );
 

@@ -1,7 +1,9 @@
 import { useInitQueryParams } from "@sk-widget/hooks/use-init-query-params";
 import { SettingsContextProvider } from "@sk-widget/providers/settings";
+import { i18nInstance } from "@sk-widget/translation";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { renderHook } from "@testing-library/react";
+import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import { setUrl as _setUrl } from "./utils";
 
@@ -20,7 +22,7 @@ describe("Deep link param validation", () => {
               variant="default"
               apiKey={import.meta.env.VITE_API_KEY}
             >
-              {children}
+              <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>
             </SettingsContextProvider>
           ),
         })
@@ -51,7 +53,7 @@ describe("Deep link param validation", () => {
               variant="default"
               apiKey={import.meta.env.VITE_API_KEY}
             >
-              {children}
+              <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>
             </SettingsContextProvider>
           ),
         })
