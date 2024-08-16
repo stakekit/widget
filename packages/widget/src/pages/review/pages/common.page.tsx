@@ -233,18 +233,10 @@ const ConfigFee = ({ label, price }: { label: string; price: string }) => {
       justifyContent="space-between"
       alignItems="center"
       data-testid="estimated_gas_fee"
-      height="4"
-      paddingLeft="2"
-      marginBottom="1"
-      opacity={0.5}
+      marginBottom="2"
     >
-      <Text variant={{ weight: "normal", type: "muted", size: "small" }}>
-        {label}
-      </Text>
-      <Text
-        className={feeStyles}
-        variant={{ type: "muted", weight: "normal", size: "small" }}
-      >
+      <Text variant={{ weight: "normal", type: "muted" }}>{label}</Text>
+      <Text className={feeStyles} variant={{ weight: "normal", type: "muted" }}>
         {price}
       </Text>
     </Box>
