@@ -4,9 +4,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-publish-release:
-    if: github.ref == 'refs/heads/main'
-
+  release:
+    name: Release
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -17,14 +16,14 @@ jobs:
 
       - uses: ./.github/composite_actions/initial_setup
 
-      - name: Set npm auth token
-        run: |
-          echo npmAuthToken: "$NPM_TOKEN" >> ./.yarnrc.yml
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Build
         run: yarn workspace @stakekit/widget build
 
-      - name: Publish
-        run: yarn workspace @stakekit/widget npm publish
+      - name: Create Release Pull Request or Publish to npm
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          publish: yarn release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
