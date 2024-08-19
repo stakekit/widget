@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.186
+
+### Patch Changes
+
+- d1dc518: Bump deps
+- 5fcec84: Tests unmount cleanup, fix flaky tests
+
 ## 0.0.185
 
 ### Patch Changes
