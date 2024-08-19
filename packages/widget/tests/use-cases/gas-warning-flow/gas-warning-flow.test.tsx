@@ -69,6 +69,7 @@ describe("Gas warning flow", () => {
         ).not.toBeInTheDocument()
       );
     }
+    app.unmount();
   };
 
   describe("Stake token same as gas token", () => {

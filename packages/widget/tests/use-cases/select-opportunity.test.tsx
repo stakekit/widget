@@ -124,7 +124,7 @@ describe("Select opportunity", () => {
       })
     );
 
-    const { getByTestId, getByText } = renderApp();
+    const { getByTestId, getByText, unmount } = renderApp();
 
     await waitFor(() => getByTestId("select-opportunity").click());
 
@@ -215,5 +215,7 @@ describe("Select opportunity", () => {
     await waitFor(() =>
       expect(getByText("You'll receive stETH")).toBeInTheDocument()
     );
+
+    unmount();
   });
 });

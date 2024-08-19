@@ -257,5 +257,6 @@ describe("External Provider", () => {
         app.getByText(formatAddress(skProps.externalProviders.currentAddress))
       ).toBeInTheDocument()
     );
+    app.unmount();
   });
 });
