@@ -14,9 +14,9 @@ export const PendingReviewPage = () => {
     metaInfo,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFeeUSD,
-    managementFeeUSD,
-    performanceFeeUSD,
+    depositFee,
+    managementFee,
+    performanceFee,
     feeConfigLoading,
   } = usePendingActionReview();
 
@@ -32,9 +32,9 @@ export const PendingReviewPage = () => {
       rewardTokenDetailsProps={rewardTokenDetailsProps}
       title={title.orDefault("")}
       fee={fee}
-      depositFeeUSD={depositFeeUSD}
-      managementFeeUSD={managementFeeUSD}
-      performanceFeeUSD={performanceFeeUSD}
+      depositFee={depositFee}
+      managementFee={managementFee}
+      performanceFee={performanceFee}
       feeConfigLoading={feeConfigLoading}
       info={info}
       metadata={integrationData.map((val) => val.metadata)}

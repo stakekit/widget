@@ -18,9 +18,9 @@ export const UnstakeReviewPage = () => {
     showUnstakeSignMessagePopup,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFeeUSD,
-    managementFeeUSD,
-    performanceFeeUSD,
+    depositFee,
+    managementFee,
+    performanceFee,
     feeConfigLoading,
   } = useUnstakeActionReview();
 
@@ -37,9 +37,9 @@ export const UnstakeReviewPage = () => {
         rewardTokenDetailsProps={rewardTokenDetailsProps}
         title={title.orDefault("")}
         fee={fee}
-        depositFeeUSD={depositFeeUSD}
-        managementFeeUSD={managementFeeUSD}
-        performanceFeeUSD={performanceFeeUSD}
+        depositFee={depositFee}
+        managementFee={managementFee}
+        performanceFee={performanceFee}
         feeConfigLoading={feeConfigLoading}
         info={info}
         metadata={integrationData.map((d) => d.metadata)}

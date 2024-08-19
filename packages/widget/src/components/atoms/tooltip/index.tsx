@@ -9,14 +9,16 @@ export const ToolTip = ({
   label,
   maxWidth = 200,
   textAlign = "center",
+  asChild,
 }: PropsWithChildren<{
   label: string;
   maxWidth?: number;
   textAlign?: "center" | "left" | "right" | "end";
+  asChild?: boolean;
 }>) => (
   <Tooltip.Provider>
     <Tooltip.Root delayDuration={0}>
-      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Tooltip.Trigger asChild={asChild}>{children}</Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Content
           className={tooltipContent}

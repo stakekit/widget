@@ -68,7 +68,7 @@ export const usePendingActionReview = () => {
     yieldDto: integrationData,
   });
 
-  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+  const { depositFee, managementFee, performanceFee } = useFees({
     amount,
     token: interactedToken,
     feeConfigDto: useMemo(
@@ -190,9 +190,9 @@ export const usePendingActionReview = () => {
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
       actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
-    depositFeeUSD,
-    managementFeeUSD,
-    performanceFeeUSD,
+    depositFee,
+    managementFee,
+    performanceFee,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };

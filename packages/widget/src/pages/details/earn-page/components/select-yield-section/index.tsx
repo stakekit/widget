@@ -78,6 +78,7 @@ export const SelectYieldSection = () => {
                       .filter((pd) => pd.rewardType === "variable")
                       .map(() => (
                         <ToolTip
+                          asChild
                           maxWidth={160}
                           label={t("details.reward_rate_estimate_tooltip")}
                         >
