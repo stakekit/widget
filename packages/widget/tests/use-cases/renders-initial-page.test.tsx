@@ -101,12 +101,13 @@ describe("Renders initial page", () => {
       })
     );
 
-    const { queryByText, queryByTestId } = renderApp();
+    const { queryByText, queryByTestId, unmount } = renderApp();
 
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
     expect(queryByText("Positions")).toBeInTheDocument();
     expect(queryByText("Connect Wallet")).toBeInTheDocument();
+    unmount();
   });
 });

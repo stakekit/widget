@@ -16,7 +16,7 @@ describe("Referral flow", () => {
 
     const { origin } = setUrl(validReferral);
 
-    const { queryByText, queryByTestId } = renderApp({
+    const { queryByText, queryByTestId, unmount } = renderApp({
       referralCheck: true,
       wagmi: {
         __customConnectors__: customConnectors,
@@ -38,6 +38,7 @@ describe("Referral flow", () => {
         queryByText(`${origin}/?ref=${referralCodeRes.code}`)
       ).toBeInTheDocument()
     );
+    unmount();
   });
 
   it("On app load without referral query param, gets previous from local storage", async () => {
@@ -52,7 +53,7 @@ describe("Referral flow", () => {
     setStorageItem("sk-widget@1//referralCode", validReferral);
     const { origin } = setUrl();
 
-    const { queryByText, queryByTestId } = renderApp({
+    const { queryByText, queryByTestId, unmount } = renderApp({
       referralCheck: true,
       wagmi: {
         __customConnectors__: customConnectors,
@@ -74,6 +75,7 @@ describe("Referral flow", () => {
         queryByText(`${origin}/?ref=${referralCodeRes.code}`)
       ).toBeInTheDocument()
     );
+    unmount();
   });
 
   it("On non-valid referral, shows manual referral flow", async () => {
@@ -81,9 +83,8 @@ describe("Referral flow", () => {
 
     setUrl();
 
-    const { queryByText, queryAllByRole, queryByTestId, getByRole } = renderApp(
-      { referralCheck: true }
-    );
+    const { queryByText, queryAllByRole, queryByTestId, getByRole, unmount } =
+      renderApp({ referralCheck: true });
 
     await waitFor(() =>
       expect(queryByText("Referral check")).toBeInTheDocument()
@@ -121,5 +122,6 @@ describe("Referral flow", () => {
 
     await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
     expect(queryByText("Positions")).toBeInTheDocument();
+    unmount();
   });
 });

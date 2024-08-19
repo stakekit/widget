@@ -18,7 +18,7 @@ describe("Staking flow", () => {
       requestFn,
     } = await setup();
 
-    const { getByTestId, getByText, getAllByText } = renderApp({
+    const { getByTestId, getByText, getAllByText, unmount } = renderApp({
       wagmi: {
         __customConnectors__: customConnectors,
         forceWalletConnectOnly: false,
@@ -143,5 +143,6 @@ describe("Staking flow", () => {
       ).toBeInTheDocument()
     );
     expect(getByText("View Stake transaction")).toBeInTheDocument();
+    unmount();
   });
 });

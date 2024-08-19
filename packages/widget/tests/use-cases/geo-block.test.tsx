@@ -20,11 +20,12 @@ describe("Geo block", () => {
       })
     );
 
-    const { queryByText } = renderApp();
+    const { queryByText, unmount } = renderApp();
 
     await waitFor(() => expect(queryByText("Geo Block")).toBeInTheDocument());
     expect(
       queryByText("This feature is not available in Austria.")
     ).toBeInTheDocument();
+    unmount();
   });
 });

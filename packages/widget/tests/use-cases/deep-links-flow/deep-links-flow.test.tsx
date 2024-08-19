@@ -66,6 +66,8 @@ describe("Deep links flow", () => {
         )
       ).toBeInTheDocument()
     );
+
+    withAvaxNativeStakingApp.unmount();
   });
 
   it("Works correctly with pending action query param without validator address requirement", async () => {
@@ -116,6 +118,8 @@ describe("Deep links flow", () => {
       ).toBeInTheDocument()
     );
     expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+
+    app.unmount();
   });
 
   it("Works correctly with pending action query param with validator address requirement", async () => {
@@ -178,6 +182,8 @@ describe("Deep links flow", () => {
       ).toBeInTheDocument()
     );
     expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+
+    app.unmount();
   });
 
   it("Handles init network correctly", async () => {
@@ -197,5 +203,7 @@ describe("Deep links flow", () => {
       method: "wallet_switchEthereumChain",
       params: [{ chainId: numberToHex(1) }],
     });
+
+    app.unmount();
   });
 });
