@@ -18,6 +18,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CHANGESETS_GITHUB_TOKEN }}
 
       - uses: ./.github/composite_actions/initial_setup
 
