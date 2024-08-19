@@ -60,7 +60,7 @@ export const useUnstakeActionReview = () => {
     [exitRequest.requestDto.args.amount]
   );
 
-  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+  const { depositFee, managementFee, performanceFee } = useFees({
     amount,
     token: interactedToken,
     feeConfigDto: useMemo(
@@ -177,9 +177,9 @@ export const useUnstakeActionReview = () => {
     gasCheckLoading:
       actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
     isGasCheckWarning: !!gasWarningCheck.data,
-    depositFeeUSD,
-    managementFeeUSD,
-    performanceFeeUSD,
+    depositFee,
+    managementFee,
+    performanceFee,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };

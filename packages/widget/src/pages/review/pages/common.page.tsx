@@ -1,4 +1,7 @@
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
+import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import type { FeesBps } from "@sk-widget/pages/review/types";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "framer-motion";
 import { Maybe } from "purify-ts";
@@ -30,9 +33,9 @@ type ReviewPageProps = {
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;
   loading?: boolean;
-  depositFeeUSD: Maybe<string>;
-  managementFeeUSD: Maybe<string>;
-  performanceFeeUSD: Maybe<string>;
+  depositFee: Maybe<FeesBps>;
+  managementFee: Maybe<FeesBps>;
+  performanceFee: Maybe<FeesBps>;
   feeConfigLoading?: boolean;
 } & MetaInfoProps;
 
@@ -45,9 +48,9 @@ export const ReviewPage = ({
   rewardTokenDetailsProps,
   isGasCheckError,
   loading = false,
-  depositFeeUSD,
-  managementFeeUSD,
-  performanceFeeUSD,
+  depositFee,
+  managementFee,
+  performanceFee,
   feeConfigLoading = false,
   ...rest
 }: ReviewPageProps) => {
@@ -128,20 +131,14 @@ export const ReviewPage = ({
 
         {!isLoading && (
           <>
-            {depositFeeUSD
-              .map((val) => (
-                <ConfigFee label={t("review.deposit_fee")} price={val} />
-              ))
+            {depositFee
+              .map((val) => <ConfigFee feesBps={val} />)
               .extractNullable()}
-            {managementFeeUSD
-              .map((val) => (
-                <ConfigFee label={t("review.management_fee")} price={val} />
-              ))
+            {managementFee
+              .map((val) => <ConfigFee feesBps={val} />)
               .extractNullable()}
-            {performanceFeeUSD
-              .map((val) => (
-                <ConfigFee label={t("review.performance_fee")} price={val} />
-              ))
+            {performanceFee
+              .map((val) => <ConfigFee feesBps={val} />)
               .extractNullable()}
           </>
         )}
@@ -226,7 +223,7 @@ const GasFee = ({
   );
 };
 
-const ConfigFee = ({ label, price }: { label: string; price: string }) => {
+const ConfigFee = ({ feesBps }: { feesBps: FeesBps }) => {
   return (
     <Box
       display="flex"
@@ -235,10 +232,26 @@ const ConfigFee = ({ label, price }: { label: string; price: string }) => {
       data-testid="estimated_gas_fee"
       marginBottom="2"
     >
-      <Text variant={{ weight: "normal", type: "muted" }}>{label}</Text>
-      <Text className={feeStyles} variant={{ weight: "normal", type: "muted" }}>
-        {price}
-      </Text>
+      <Box display="flex" alignItems="center" justifyContent="center" gap="1">
+        <Text variant={{ weight: "normal", type: "muted" }}>
+          {feesBps.label}
+        </Text>
+
+        <ToolTip label={feesBps.explanation}>
+          <Box display="flex">
+            <InfoIcon />
+          </Box>
+        </ToolTip>
+      </Box>
+
+      <ToolTip label={feesBps.inUSD}>
+        <Text
+          className={feeStyles}
+          variant={{ weight: "normal", type: "muted" }}
+        >
+          {feesBps.inPercentage}
+        </Text>
+      </ToolTip>
     </Box>
   );
 };

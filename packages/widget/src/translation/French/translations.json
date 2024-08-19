@@ -157,9 +157,12 @@
     "terms_of_use": "En cliquant sur Confirmer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
     "amount_and_earn": "<highlight0>{{amount}}</highlight0> <highlight1>{{tokenSymbol}}</highlight1> & earn <highlight3>{{interestRate}}</highlight3>",
     "additional_info": "Infos supplémentaires",
-    "deposit_fee": "Frais de dépôt",
-    "management_fee": "Frais de gestion",
-    "performance_fee": "Frais de performance"
+    "deposit_fee": "Frais de Dépôt",
+    "management_fee": "Frais de Gestion",
+    "performance_fee": "Frais de Performance",
+    "deposit_fee_explanation": "Une commission fixe déduite lors du dépôt, réduisant le capital investi.",
+    "management_fee_explanation": "Une commission annuelle fixe déduite des dépôts du vault en émettant de nouvelles parts, ce qui dilue les participants. Calculée en fonction du temps écoulé depuis la dernière récolte et appliquée lors de la récolte.",
+    "performance_fee_explanation": "Une commission déduite des gains lorsqu’un vault récolte une stratégie. Elle n’est appliquée qu’après avoir dépassé un seuil variable."
   },
   "steps": {
     "title": "Suivi des étapes",

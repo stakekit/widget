@@ -104,7 +104,7 @@ export const useStakeReview = () => {
     [pricesState.data, selectedStake, stakeEnterTxGas]
   );
 
-  const { depositFeeUSD, managementFeeUSD, performanceFeeUSD } = useFees({
+  const { depositFee, managementFee, performanceFee } = useFees({
     amount: stakeAmount,
     token: selectedToken,
     feeConfigDto: useMemo(
@@ -197,9 +197,9 @@ export const useStakeReview = () => {
     isGasCheckWarning: !!gasCheckWarning.data,
     gasCheckLoading:
       actionEnterGasEstimation.isLoading || gasCheckWarning.isLoading,
-    depositFeeUSD,
-    managementFeeUSD,
-    performanceFeeUSD,
+    depositFee,
+    managementFee,
+    performanceFee,
     feeConfigLoading: feeConfigDto.isPending,
   };
 };
