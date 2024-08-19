@@ -1,7 +1,12 @@
-name: "Publish package to npm"
+name: "Release"
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
 
 jobs:
   release:
