@@ -16,9 +16,11 @@
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky install",
-    "check-unused": "npx knip"
+    "check-unused": "npx knip",
+    "release": "changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.7",
     "@commitlint/cli": "^19.4.0",
     "@commitlint/config-conventional": "^19.2.2",
     "husky": "^9.1.4",
