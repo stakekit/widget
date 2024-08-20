@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.187
+
+### Patch Changes
+
+- 41bbec6: Add missing omony network logo
+
 ## 0.0.186
 
 ### Patch Changes
