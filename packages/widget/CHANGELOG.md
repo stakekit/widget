@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.188
+
+### Patch Changes
+
+- 0dfcb30: Position details title center align
+
 ## 0.0.187
 
 ### Patch Changes
