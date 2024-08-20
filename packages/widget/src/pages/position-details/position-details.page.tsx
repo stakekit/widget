@@ -94,7 +94,7 @@ const PositionDetails = () => {
                         alignItems="center"
                         flexDirection="column"
                       >
-                        <Heading variant={{ level: "h4" }}>
+                        <Heading variant={{ level: "h4" }} textAlign="center">
                           {val.integrationData.metadata.name}
                         </Heading>
                         <Text variant={{ type: "muted" }}>{t.symbol}</Text>
