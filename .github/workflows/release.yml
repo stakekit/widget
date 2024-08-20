@@ -17,6 +17,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.CHANGESETS_GITHUB_TOKEN }}
 
       - uses: ./.github/composite_actions/initial_setup
 
@@ -29,6 +31,8 @@ jobs:
         with:
           publish: yarn run release
           version: yarn run version
+          commit: 'ci(changesets): version packages'
+          title: 'ci(changesets): version packages'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CHANGESETS_GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
