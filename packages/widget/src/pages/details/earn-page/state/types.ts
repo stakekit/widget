@@ -1,3 +1,4 @@
+import type { ExtendedYieldType } from "@sk-widget/domain/types";
 import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
@@ -12,10 +13,11 @@ import type {
 import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
-import type { SelectedStakeData } from "../types";
+import type { YieldTypesData } from "../types";
 
 export type State = {
   selectedToken: Maybe<TokenBalanceScanResponseDto["token"]>;
+  selectedYieldType: Maybe<ExtendedYieldType>;
   selectedStakeId: Maybe<
     TokenBalanceScanResponseDto["availableYields"][number]
   >;
@@ -25,6 +27,7 @@ export type State = {
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
+type YieldTypeSelectAction = Action<"yieldType/select", ExtendedYieldType>;
 type YieldSelectAction = Action<"yield/select", YieldDto>;
 
 type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
@@ -46,7 +49,8 @@ export type Actions =
   | ValidatorSelectAction
   | ValidatorMultiSelectAction
   | ValidatorRemoveAction
-  | SelectTronResourceAction;
+  | SelectTronResourceAction
+  | YieldTypeSelectAction;
 
 export type ExtraData = {
   actions: { onMaxClick: () => void };
@@ -70,9 +74,12 @@ export type EarnPageContextType = {
   }>;
   formattedPrice: string;
   symbol: string;
-  selectedStakeData: Maybe<SelectedStakeData>;
+  yieldsToSelect: Maybe<YieldDto[]>;
+  yieldTypesData: Maybe<YieldTypesData>;
   selectedStake: ExtraData["selectedStake"];
+  selectedYieldType: State["selectedYieldType"];
   onYieldSelect: (yieldId: string) => void;
+  onYieldTypeSelect: (val: ExtendedYieldType) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
   onStakeAmountChange: (value: BigNumber) => void;
   estimatedRewards: ReturnType<typeof useEstimatedRewards>;

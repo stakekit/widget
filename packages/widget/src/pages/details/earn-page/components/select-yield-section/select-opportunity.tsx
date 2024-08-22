@@ -1,6 +1,8 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
-import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
+import { VirtualList } from "@sk-widget/components/atoms/virtual-list";
+import { getYieldTypeLabelsMap } from "@sk-widget/domain/types";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,38 +15,35 @@ import {
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { SelectOpportunityListItem } from "./select-opportunity-list-item";
+import { SelectYieldType } from "./select-opportunity-list-item";
 
 export const SelectOpportunity = () => {
   const {
     selectedStake,
-    selectedStakeData,
+    selectedYieldType,
+    yieldTypesData,
     onSelectOpportunityClose,
     onYieldSearch,
     stakeSearch,
   } = useEarnPageContext();
 
   const trackEvent = useTrackEvent();
-
   const { t } = useTranslation();
+
+  const yieldTypeLabel = useMemo(
+    () => selectedYieldType.map((val) => getYieldTypeLabelsMap(t)[val].title),
+    [selectedYieldType, t]
+  );
 
   const data = useMemo(
     () =>
-      selectedStakeData
-        .chain((ssd) =>
-          selectedStake.map((ss) => {
-            const val = [...ssd.groupsWithCounts.values()];
-
-            return {
-              ss,
-              all: ssd.filtered,
-              groups: val.map((v) => v.title),
-              groupCounts: val.map((v) => v.itemsLength),
-            };
-          })
-        )
-        .extractNullable(),
-    [selectedStake, selectedStakeData]
+      Maybe.fromRecord({
+        selectedStake,
+        yieldTypesData,
+        selectedYieldType,
+        yieldTypeLabel,
+      }).extractNullable(),
+    [selectedYieldType, yieldTypesData, yieldTypeLabel, selectedStake]
   );
 
   if (!data) return null;
@@ -76,39 +75,25 @@ export const SelectOpportunity = () => {
               justifyContent="center"
               alignItems="center"
             >
-              <ProviderIcon token={data.ss.token} metadata={data.ss.metadata} />
-              <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
+              <ProviderIcon
+                token={data.selectedStake.token}
+                metadata={data.selectedStake.metadata}
+              />
+              <Text variant={{ weight: "bold" }}>{data.yieldTypeLabel}</Text>
             </Box>
             <CaretDownIcon />
           </Box>
         </Trigger>
       }
     >
-      <GroupedVirtualList
+      <VirtualList
+        data={data.yieldTypesData}
         estimateSize={() => 60}
-        groupCounts={data.groupCounts}
-        groupContent={(index) => {
-          return (
-            <Box py="4" px="4" background="modalBodyBackground">
-              <Text variant={{ weight: "bold" }}>{data.groups[index]}</Text>
-            </Box>
-          );
-        }}
-        itemContent={(index) => {
-          const item = data.all[index];
-
-          return (
-            <SelectModalItemContainer>
-              {typeof item === "string" ? (
-                <Box py="4">
-                  <Text variant={{ weight: "bold" }}>{item}</Text>
-                </Box>
-              ) : (
-                <SelectOpportunityListItem index={index} item={item} />
-              )}
-            </SelectModalItemContainer>
-          );
-        }}
+        itemContent={(_, item) => (
+          <SelectModalItemContainer>
+            <SelectYieldType item={item} />
+          </SelectModalItemContainer>
+        )}
       />
     </SelectModal>
   );

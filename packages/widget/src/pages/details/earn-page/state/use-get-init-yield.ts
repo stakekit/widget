@@ -1,3 +1,7 @@
+import {
+  type ExtendedYieldType,
+  getExtendedYieldType,
+} from "@sk-widget/domain/types";
 import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -15,16 +19,32 @@ export const useGetInitYield = () => {
   const tokenBalancesMap = useTokenBalancesMap();
 
   return useCallback(
-    ({ selectedToken }: { selectedToken: TokenDto }) =>
+    ({
+      selectedToken,
+      selectedYieldType,
+    }: {
+      selectedToken: TokenDto;
+      selectedYieldType: Maybe<ExtendedYieldType>;
+    }) =>
       Maybe.fromNullable(tokenBalancesMap.get(tokenString(selectedToken)))
         .chain((val) =>
           getCachedMultiYields({
             queryClient,
             yieldIds: val.availableYields,
-          }).map((yields) => ({
-            yields,
-            availableAmount: new BigNumber(val.amount),
-          }))
+          })
+            .chain((yields) =>
+              selectedYieldType
+                .map((type) =>
+                  yields.filter(
+                    (yieldDto) => getExtendedYieldType(yieldDto) === type
+                  )
+                )
+                .alt(Maybe.of(yields))
+            )
+            .map((yields) => ({
+              yields,
+              availableAmount: new BigNumber(val.amount),
+            }))
         )
         .chain((val) =>
           getInitialYield({

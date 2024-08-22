@@ -13,7 +13,7 @@ import { useAnimateYieldPercent } from "./use-animate-yield-percent";
 export const SelectYieldSection = () => {
   const {
     appLoading,
-    selectedStakeData,
+    yieldTypesData,
     estimatedRewards,
     selectedStake,
     selectYieldIsLoading,
@@ -32,9 +32,9 @@ export const SelectYieldSection = () => {
       <ContentLoaderSquare heightPx={112.5} />
     </Box>
   ) : (
-    selectedStakeData
+    yieldTypesData
       .map((val) => {
-        return val.all.length === 0 ? (
+        return val.length === 0 ? (
           <Box
             my="4"
             display="flex"

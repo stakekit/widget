@@ -36,7 +36,7 @@ describe("Staking flow", () => {
     );
 
     within(selectContainer)
-      .getByTestId("select-opportunity__item_avalanche-avax-liquid-staking", {
+      .getByTestId("select-opportunity__item_liquid-staking", {
         exact: false,
       })
       .click();
@@ -44,7 +44,9 @@ describe("Staking flow", () => {
     await waitFor(() => {
       const trigger = getByTestId("select-opportunity");
 
-      return expect(within(trigger).getByText("AVAX")).toBeInTheDocument();
+      return expect(
+        within(trigger).getByText("Liquid Staking")
+      ).toBeInTheDocument();
     });
 
     const stakeAmount = "0.1";

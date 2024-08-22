@@ -71,24 +71,24 @@ export const useYieldMetaInfo = ({
             description: null,
             earnPeriod:
               warmupPeriodDays > 0
-                ? t("details.native_staking.earn_after_warmup", {
+                ? t("details.staking.earn_after_warmup", {
                     count: warmupPeriodDays,
                   })
                 : null,
             earnRewards:
               rewardClaiming === "manual"
-                ? t("details.native_staking.earn_rewards_manual", {
+                ? t("details.staking.earn_rewards_manual", {
                     rewardSchedule,
                   })
-                : t("details.native_staking.earn_rewards_auto", {
+                : t("details.staking.earn_rewards_auto", {
                     rewardSchedule,
                   }),
             withdrawnTime:
               cooldownPeriodDays > 0
-                ? t("details.native_staking.unstake_time_days", {
+                ? t("details.staking.unstake_time_days", {
                     cooldownPeriodDays,
                   })
-                : t("details.native_staking.unstake_time_immediately"),
+                : t("details.staking.unstake_time_immediately"),
             withdrawnNotAvailable: null,
             ...def,
           };

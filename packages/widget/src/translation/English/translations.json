@@ -63,7 +63,7 @@
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
 
-    "native_staking": {
+    "staking": {
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
 
@@ -132,7 +132,7 @@
 
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
 
-    "opportunity_search_title": "Select a yield",
+    "opportunity_search_title": "Select a yield type",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "reward_token": "You'll receive <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
@@ -237,8 +237,7 @@
       "vault": "deposited",
       "lending": "supplied",
       "restaking": "restaked",
-      "pooled_staking": "staked",
-      "native_staking": "staked"
+      "pooled_staking": "staked"
     },
     "unstake": {
       "staking": "unstaked",
@@ -246,8 +245,7 @@
       "vault": "withdrawn",
       "lending": "withdrawn",
       "restaking": "unstaked",
-      "pooled_staking": "unstaked",
-      "native_staking": "unstaked"
+      "pooled_staking": "unstaked"
     },
     "pending_action": {
       "stake": "staked",
@@ -306,18 +304,13 @@
     "search_for_validators": "Search for validators by address or name"
   },
   "yield_types": {
-    "native_staking": {
+    "staking": {
       "title": "Native Staking",
       "review": "Stake",
       "cta": "Stake"
     },
     "pooled_staking": {
       "title": "Pooled Staking",
-      "review": "Stake",
-      "cta": "Stake"
-    },
-    "staking": {
-      "title": "Stake",
       "review": "Stake",
       "cta": "Stake"
     },

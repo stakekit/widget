@@ -25,7 +25,7 @@ export const SelectTokenTitle = () => {
           <Spinner />
         </Box>
       ) : (
-        <Text>{yieldType}</Text>
+        <Text data-testid="title__yield_type">{yieldType}</Text>
       )}
     </Box>
   );

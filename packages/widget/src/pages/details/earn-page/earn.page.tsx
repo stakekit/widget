@@ -1,3 +1,4 @@
+import { NewSelectYieldSection } from "@sk-widget/pages/details/earn-page/components/new-select-yield-section";
 import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
@@ -17,7 +18,6 @@ import { SelectTokenSection } from "./components/select-token-section";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectYieldSection } from "./components/select-yield-section";
-import { StakedVia } from "./components/select-yield-section/staked-via";
 import {
   EarnPageContextProvider,
   useEarnPageContext,
@@ -92,7 +92,7 @@ const EarnPageComponent = () => {
 
           <SelectYieldSection />
 
-          <StakedVia />
+          <NewSelectYieldSection />
 
           <SelectValidatorSection />
 

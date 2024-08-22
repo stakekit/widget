@@ -1,3 +1,4 @@
+import { getExtendedYieldType } from "@sk-widget/domain/types";
 import type { InitParams } from "@sk-widget/domain/types/init-params";
 import {
   getInitMinStakeAmount,
@@ -15,7 +16,11 @@ export const onYieldSelectState = ({
   initParams: Maybe<InitParams>;
 }): Pick<
   State,
-  "selectedStakeId" | "stakeAmount" | "selectedValidators" | "tronResource"
+  | "selectedStakeId"
+  | "stakeAmount"
+  | "selectedValidators"
+  | "tronResource"
+  | "selectedYieldType"
 > => ({
   selectedStakeId: Maybe.of(yieldDto.id),
   stakeAmount: getInitMinStakeAmount(yieldDto),
@@ -23,6 +28,7 @@ export const onYieldSelectState = ({
     initQueryParams: initParams,
     yieldDto: yieldDto,
   }),
+  selectedYieldType: Maybe.fromFalsy(getExtendedYieldType(yieldDto)),
   tronResource: Maybe.fromFalsy(
     yieldDto.args.enter.args?.tronResource?.required
   ).map(() => "ENERGY"),
