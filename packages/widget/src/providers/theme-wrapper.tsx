@@ -1,8 +1,9 @@
+import { rootSelector } from "@sk-widget/styles/theme/ids";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
-import { rootSelector, vars } from "../styles";
+import { vars } from "../styles";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
 import type { RecursivePartial } from "../types";
 import { useSettings } from "./settings";

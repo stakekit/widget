@@ -1,6 +1,6 @@
+import { rootSelector } from "@sk-widget/styles/theme/ids";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useLayoutEffect, useState } from "react";
-import { rootSelector } from "../../styles";
 import { MaybeDocument } from "../../utils/maybe-document";
 
 const RootElementContext = createContext<HTMLElement | null | undefined>(
