@@ -1,6 +1,6 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
-import { id } from "@sk-widget/styles";
+import { id } from "@sk-widget/styles/theme/ids";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSavedRef } from "../../../hooks";

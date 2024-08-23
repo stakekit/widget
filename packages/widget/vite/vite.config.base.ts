@@ -3,10 +3,12 @@ import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react-swc";
 import autoprefixer from "autoprefixer";
 import merge from "lodash.merge";
+import assignLayer from "postcss-assign-layer";
 import macros from "unplugin-parcel-macros";
 import type { UserConfig } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
-import type { InlineConfig } from "vitest";
+import type { InlineConfig } from "vitest/node";
+import { globalSKLayer } from "../src/styles/theme/ids";
 
 declare module "vite" {
   interface UserConfig {
@@ -36,7 +38,15 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
     ],
     css: {
       postcss: {
-        plugins: [autoprefixer()],
+        plugins: [
+          autoprefixer(),
+          assignLayer([
+            {
+              include: "**/*.css",
+              layerName: globalSKLayer,
+            },
+          ]),
+        ],
       },
     },
     esbuild: { drop: ["console"] },

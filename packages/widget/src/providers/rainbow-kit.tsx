@@ -1,3 +1,5 @@
+import { vars } from "@sk-widget/styles";
+import { id } from "@sk-widget/styles/theme/ids";
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
 import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
 import type { PropsWithChildren } from "react";
@@ -7,7 +9,6 @@ import { Text } from "../components";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
-import { id, vars } from "../styles";
 import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
 import { isExternalProviderConnector } from "./external-provider";

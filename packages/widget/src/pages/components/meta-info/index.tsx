@@ -11,7 +11,7 @@ import {
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import { dotContainer } from "./styles.css";
+import { dotContainer, dotText } from "./styles.css";
 
 type Props = {
   isLoading?: boolean;
@@ -71,7 +71,7 @@ export const MetaInfo = ({
             ) : (
               <Box className={dotContainer}>
                 <Text
-                  style={{ fontSize: "7px" }}
+                  className={dotText}
                   variant={{ weight: "normal", type: "muted" }}
                 >
                   {"\u2B24"}

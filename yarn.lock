@@ -4231,6 +4231,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rollup/pluginutils@npm:^4.2.1":
+  version: 4.2.1
+  resolution: "@rollup/pluginutils@npm:4.2.1"
+  dependencies:
+    estree-walker: "npm:^2.0.1"
+    picomatch: "npm:^2.2.2"
+  checksum: 10/503a6f0a449e11a2873ac66cfdfb9a3a0b77ffa84c5cad631f5e4bc1063c850710e8d5cd5dab52477c0d66cda2ec719865726dbe753318cd640bab3fff7ca476
+  languageName: node
+  linkType: hard
+
 "@rollup/pluginutils@npm:^5.0.1":
   version: 5.1.0
   resolution: "@rollup/pluginutils@npm:5.1.0"
@@ -4822,6 +4832,7 @@ __metadata:
     mixpanel-browser: "npm:^2.55.0"
     msw: "npm:^2.3.5"
     postcss: "npm:^8.4.41"
+    postcss-assign-layer: "npm:^0.4.0"
     purify-ts: "patch:purify-ts@npm%3A2.1.0#~/.yarn/patches/purify-ts-npm-2.1.0-4dc5fd5f7b.patch"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
@@ -8856,7 +8867,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"estree-walker@npm:^2.0.2":
+"estree-walker@npm:^2.0.1, estree-walker@npm:^2.0.2":
   version: 2.0.2
   resolution: "estree-walker@npm:2.0.2"
   checksum: 10/b02109c5d46bc2ed47de4990eef770f7457b1159a229f0999a09224d2b85ffeed2d7679cffcff90aeb4448e94b0168feb5265b209cdec29aad50a3d6e93d21e2
@@ -12124,7 +12135,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picomatch@npm:^2.0.4, picomatch@npm:^2.2.1, picomatch@npm:^2.3.1":
+"picomatch@npm:^2.0.4, picomatch@npm:^2.2.1, picomatch@npm:^2.2.2, picomatch@npm:^2.3.1":
   version: 2.3.1
   resolution: "picomatch@npm:2.3.1"
   checksum: 10/60c2595003b05e4535394d1da94850f5372c9427ca4413b71210f437f7b2ca091dbd611c45e8b37d10036fa8eade25c1b8951654f9d3973bfa66a2ff4d3b08bc
@@ -12237,6 +12248,17 @@ __metadata:
   version: 2.1.10
   resolution: "pony-cause@npm:2.1.10"
   checksum: 10/906563565030996d0c40ba79a584e2f298391931acc59c98510f9fd583d72cd9e9c58b0fb5a25bbae19daf16840f94cb9c1ee72c7ed5ef249ecba147cee40495
+  languageName: node
+  linkType: hard
+
+"postcss-assign-layer@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "postcss-assign-layer@npm:0.4.0"
+  dependencies:
+    "@rollup/pluginutils": "npm:^4.2.1"
+  peerDependencies:
+    postcss: ^8.3.0
+  checksum: 10/489405e3fce8487a0a870ece9a7d2326db5588cd4b2a1f6a8102cb6acc214de383ee3e1a4fbc0531de650b6b3fb81e9a0416a451af91365dfc4b242a5cce6cf0
   languageName: node
   linkType: hard
 

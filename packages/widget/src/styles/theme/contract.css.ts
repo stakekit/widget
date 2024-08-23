@@ -33,6 +33,3 @@ export const vars = createGlobalThemeContract(
       .replace(/([a-z])([A-Z])/g, "$1-$2")
       .toLowerCase()}`
 );
-
-export const id = "stakekit";
-export const rootSelector = `[data-rk="${id}"]`;
