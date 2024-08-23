@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.189
+
+### Patch Changes
+
+- 2dd8893: Add global css layer. This will ease overriding widget styles from apps that are embeding it
+
 ## 0.0.188
 
 ### Patch Changes
