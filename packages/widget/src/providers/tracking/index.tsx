@@ -6,6 +6,7 @@ import type { SettingsContextType } from "../settings";
 const trackPageMap = {
   earn: "Earn",
   positions: "Positions",
+  activity: "Activity",
   positionDetails: "Position details",
   stakeReview: "Stake review",
   unstakeReview: "Unstake review",

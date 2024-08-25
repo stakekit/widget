@@ -18,6 +18,7 @@ type Props = {
 } & (
   | { variant: "earn"; hasPendingRewards?: never }
   | { variant: "positions"; hasPendingRewards: boolean }
+  | { variant: "activity"; hasPendingRewards?: never }
 );
 
 export const Tab = ({
@@ -39,9 +40,7 @@ export const Tab = ({
             data-state={isSelected ? "selected" : "default"}
             variant={{ type: isSelected ? "regular" : "muted" }}
           >
-            {variant === "earn"
-              ? t("details.tab_earn")
-              : t("details.tab_positions")}
+            {t(`details.tabs.${variant}`, variant)}
           </Text>
 
           {hasPendingRewards && (

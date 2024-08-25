@@ -7,9 +7,11 @@ import { useSettings } from "../../../../providers/settings";
 import { divider } from "../styles.css";
 import { Tab } from "./tab";
 
+export type TabsList = "earn" | "positions" | "activity";
+
 export type TabsProps = {
-  selectedTab: "earn" | "positions";
-  onTabPress: (selected: "earn" | "positions") => void;
+  selectedTab: TabsList;
+  onTabPress: (selected: TabsList) => void;
   hasPendingRewards: boolean;
 };
 
@@ -70,6 +72,12 @@ export const Tabs = ({
             onTabPress={() => onTabPress("positions")}
             variant="positions"
             hasPendingRewards={hasPendingRewards}
+          />
+
+          <Tab
+            isSelected={selectedTab === "activity"}
+            onTabPress={() => onTabPress("activity")}
+            variant="activity"
           />
         </Box>
 

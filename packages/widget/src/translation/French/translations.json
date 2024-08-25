@@ -136,8 +136,11 @@
     "validator_search_title_one": "Sélectionnez un validateur",
     "validator_search_title_other": "Sélectionnez des validateurs",
     "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
-    "tab_earn": "Earn",
-    "tab_positions": "Positions",
+    "tabs": {
+      "earn": "Earn",
+      "positions": "Positions",
+      "activity": "Activity"
+    },
     "validators_preferred": "Préférés",
     "validators_other": "Tous les validateurs",
     "validators_view_all": "Tout voir",
