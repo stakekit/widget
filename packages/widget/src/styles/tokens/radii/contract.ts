@@ -15,6 +15,7 @@ const baseContract = {
   widgetBorderRadius: "",
   primaryButton: "",
   secondaryButton: "",
+  smallButton: "",
 };
 
 export const radiiContract: {
