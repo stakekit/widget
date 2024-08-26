@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.190
+
+### Patch Changes
+
+- d42e738: add small button radii in theme
+
 ## 0.0.189
 
 ### Patch Changes
