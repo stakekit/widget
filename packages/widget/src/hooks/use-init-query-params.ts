@@ -41,14 +41,14 @@ const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
   encode: (val) => val,
 });
 
-const pathTraversalRegEx = /(\.\.\/)|(\.\/)/;
+const safeString = /^[a-zA-Z0-9-_]*$/;
 
 const safeParamCodec = Codec.custom<string>({
   decode: (val) =>
     string
       .decode(val)
       .chain((v) =>
-        pathTraversalRegEx.test(v) ? Left("invalid string value") : Right(v)
+        safeString.test(v) ? Right(v) : Left("invalid string value")
       ),
   encode: (val) => val,
 });
