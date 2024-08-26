@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.191
+
+### Patch Changes
+
+- b42c0bd: Change query param safe string codec
+
 ## 0.0.190
 
 ### Patch Changes
