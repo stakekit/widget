@@ -33,6 +33,10 @@ describe("Deep link param validation", () => {
 
     setAndAssertIsValidYieldIdParam("ethereum-eth-native-staking", true);
     setAndAssertIsValidYieldIdParam("../ethereum-eth-native-staking", false);
+    setAndAssertIsValidYieldIdParam("..", false);
+    setAndAssertIsValidYieldIdParam("..%2f", false);
+    setAndAssertIsValidYieldIdParam("..%252f", false);
+    setAndAssertIsValidYieldIdParam("AAA-%2f..%2f..%2f-whatever", false);
     setAndAssertIsValidYieldIdParam("./ethereum-eth-native-staking", false);
     setAndAssertIsValidYieldIdParam("ethereum-../eth-native-staking", false);
     setAndAssertIsValidYieldIdParam("ethereum-eth-native-staking../", false);
