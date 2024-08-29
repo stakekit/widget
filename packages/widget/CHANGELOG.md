@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.192
+
+### Patch Changes
+
+- 4199080: Add safe app connector support
+- 4199080: Update token query param validation
+
 ## 0.0.191
 
 ### Patch Changes
