@@ -87,7 +87,7 @@ export const getAndValidateInitParams = ({
       .chain(skSupportedChainsCodec.decode)
       .toMaybe()
       .extractNullable(),
-    token: safeParamCodec
+    token: string // Not safeParamCodec as it maybe has some extra special characters
       .decode(url.searchParams.get("token") ?? externalProviderInitToken)
       .toMaybe()
       .extractNullable(),

@@ -39,6 +39,7 @@ export type SettingsProps = {
   disableResizingInputFontSize?: boolean;
   disableAutoScrollToTop?: boolean;
   language?: Languages;
+  isSafe?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

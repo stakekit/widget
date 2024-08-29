@@ -1,3 +1,4 @@
+import { configMeta as safeConfigMeta } from "@sk-widget/providers/safe/safe-connector-meta";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useWagmiConfig } from "@sk-widget/providers/wagmi";
 import { isLedgerDappBrowserProvider, isMobile } from "@sk-widget/utils";
@@ -40,7 +41,7 @@ export const useInit = () => {
              */
             return EitherAsync.liftEither(
               List.find(
-                (c) => c.id === "injected",
+                (c) => c.id === "injected" || c.id === safeConfigMeta.id,
                 config.connectors as Connector[]
               ).toEither(new Error("Could not find injected connector"))
             )

@@ -5,7 +5,6 @@ import type {
   SubstrateChainsMap,
 } from "@sk-widget/domain/types/chains";
 import {
-  useTransactionGetTransactionStatusByNetworkAndHashHook,
   useYieldGetMyNetworksHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
@@ -13,7 +12,7 @@ import type { WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe } from "purify-ts";
+import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { MutableRefObject } from "react";
 import { createClient } from "viem";
 import { http, createConfig } from "wagmi";
@@ -32,6 +31,7 @@ import { externalProviderConnector } from "../external-provider";
 import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
 import { useSKQueryClient } from "../query-client";
+import { getConfig as getSafeConnector } from "../safe/config";
 import { useSettings } from "../settings";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
 
@@ -44,10 +44,8 @@ const buildWagmiConfig = async (opts: {
   queryClient: QueryClient;
   isLedgerLive: boolean;
   yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
-    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
-  >;
   yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
+  isSafe: boolean;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -118,6 +116,12 @@ const buildWagmiConfig = async (opts: {
         queryParams: val.queryParams,
       }).map((l) => ({ ...val, ledgerLiveConnector: l }))
     )
+    .chain((val) =>
+      EitherAsync.liftEither(Maybe.fromFalsy(opts.isSafe).toEither(null))
+        .chain(() => getSafeConnector({ queryClient: opts.queryClient }))
+        .chainLeft((e) => EitherAsync.liftEither(e ? Left(e) : Right(null)))
+        .map((s) => ({ ...val, safeConnector: s }))
+    )
     .map((val) => {
       const {
         evmConfig,
@@ -134,16 +138,17 @@ const buildWagmiConfig = async (opts: {
       ] as [Chain, ...Chain[]];
 
       const multiInjectedProviderDiscovery =
-        !opts.externalProviders && !isLedgerDappBrowserProvider();
+        !opts.externalProviders &&
+        !val.ledgerLiveConnector &&
+        !val.safeConnector;
 
       const walletList: WalletList = (() => {
         if (opts.externalProviders) {
-          return [
-            externalProviderConnector(
-              opts.externalProviders,
-              opts.transactionGetTransactionStatusByNetworkAndHash
-            ),
-          ];
+          return [externalProviderConnector(opts.externalProviders)];
+        }
+
+        if (val.safeConnector) {
+          return [val.safeConnector];
         }
 
         if (ledgerLiveConnector) {
@@ -202,14 +207,12 @@ const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 export const useWagmiConfig = () => {
-  const { wagmi, externalProviders } = useSettings();
+  const { wagmi, externalProviders, isSafe } = useSettings();
 
   const queryClient = useSKQueryClient();
 
   const yieldGetMyNetworks = useYieldGetMyNetworksHook();
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-  const transactionGetTransactionStatusByNetworkAndHash =
-    useTransactionGetTransactionStatusByNetworkAndHashHook();
 
   const externalProvidersRef = useSavedRef(externalProviders) as
     | MutableRefObject<SKExternalProviders>
@@ -224,8 +227,8 @@ export const useWagmiConfig = () => {
         customConnectors: wagmi?.__customConnectors__,
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
+        isSafe: !!isSafe,
         yieldGetMyNetworks,
-        transactionGetTransactionStatusByNetworkAndHash,
         yieldYieldOpportunity,
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
