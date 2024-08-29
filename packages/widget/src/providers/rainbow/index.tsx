@@ -21,14 +21,13 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
     <AccountExtraInfoContext.Provider
       value={{
         otherAddresses,
-        onOtherAddressClick: (address: Address) => {
+        onOtherAddressClick: (address: Address) =>
           Maybe.fromNullable(ledgerAccounts).ifJust((accounts) =>
             List.find(
               (acc) => formatAddress(acc.address) === address,
               accounts
             ).ifJust((acc) => onLedgerAccountChange?.(acc))
-          );
-        },
+          ),
       }}
     >
       <RainbowKitProviderWithTheme>{children}</RainbowKitProviderWithTheme>

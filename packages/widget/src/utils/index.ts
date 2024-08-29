@@ -38,6 +38,9 @@ export const getBackgroundColor = (stringInput: string) => {
   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
 };
 
+export const isIframe = () =>
+  MaybeWindow.map((w) => w.parent !== w).orDefault(false);
+
 export const isLedgerDappBrowserProvider = (() => {
   let state: boolean | null = null;
 

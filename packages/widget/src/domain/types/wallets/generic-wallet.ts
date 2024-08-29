@@ -27,10 +27,5 @@ export type EVMWallet = {
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: string) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-} & (
-  | { sendTransaction(tx: EVMTx): Promise<string>; sendTransactions?: never }
-  | {
-      sendTransaction?: never;
-      sendTransactions(tx: EVMTx[]): Promise<string>;
-    }
-);
+  sendTransaction(tx: EVMTx): Promise<string>;
+};

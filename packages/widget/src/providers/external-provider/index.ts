@@ -1,4 +1,3 @@
-import type { useTransactionGetTransactionStatusByNetworkAndHashHook } from "@stakekit/api-hooks";
 import type { WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, List, Maybe } from "purify-ts";
 import type { MutableRefObject } from "react";
@@ -20,13 +19,7 @@ const configMeta = {
 } as const;
 
 type ExtraProps = ConnectorWithFilteredChains &
-  Pick<
-    ExternalProvider,
-    | "sendTransaction"
-    | "sendMultipleTransactions"
-    | "shouldMultiSend"
-    | "signMessage"
-  > & {
+  Pick<ExternalProvider, "sendTransaction" | "signMessage"> & {
     onSupportedChainsChanged: (args: {
       supportedChainIds: number[];
       currentChainId: number;
@@ -40,10 +33,7 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: MutableRefObject<SKExternalProviders>,
-  transactionGetTransactionStatusByNetworkAndHash: ReturnType<
-    typeof useTransactionGetTransactionStatusByNetworkAndHashHook
-  >
+  variant: MutableRefObject<SKExternalProviders>
 ): WalletList[number] => ({
   groupName: "External Providers",
   wallets: [
@@ -62,10 +52,7 @@ export const externalProviderConnector = (
                 config.chains as [Chain, ...Chain[]]
               )
           );
-          const provider = new ExternalProvider(
-            variant,
-            transactionGetTransactionStatusByNetworkAndHash
-          );
+          const provider = new ExternalProvider(variant);
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
             async () => [variant.current.currentAddress as Address];
@@ -167,10 +154,7 @@ export const externalProviderConnector = (
             onAccountsChanged,
             switchChain,
             sendTransaction: provider.sendTransaction.bind(provider),
-            sendMultipleTransactions:
-              provider.sendMultipleTransactions.bind(provider),
             signMessage: provider.signMessage.bind(provider),
-            shouldMultiSend: provider.shouldMultiSend,
             $filteredChains: $filteredChains.asObservable(),
             onSupportedChainsChanged,
           };

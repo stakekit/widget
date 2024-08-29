@@ -1,3 +1,4 @@
+import { shouldMultiSend } from "@sk-widget/domain/types/connectors";
 import { useSavedRef } from "@sk-widget/hooks";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
@@ -21,7 +22,6 @@ import {
   transactionsForConstructOnlySet,
 } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { isExternalProviderConnector } from "../../../providers/external-provider";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import type { GetStakeSessionError, SendTransactionError } from "./errors";
 import {
@@ -79,19 +79,14 @@ export const useStepsMachine = (session: ActionDto) => {
   const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
   const transactionConstruct = useTransactionConstructHook();
 
-  const shouldMultiSend = useMemo(
-    () =>
-      !!(
-        connector &&
-        isExternalProviderConnector(connector) &&
-        connector.shouldMultiSend
-      ),
+  const multiSend = useMemo(
+    () => Maybe.fromNullable(connector).map(shouldMultiSend).orDefault(false),
     [connector]
   );
 
   const machineParams = useSavedRef({
     session,
-    shouldMultiSend,
+    multiSend,
     isLedgerLive,
     trackEvent,
     signMultipleTransactions,
@@ -112,7 +107,7 @@ const getMachine = (
   ref: Readonly<
     MutableRefObject<{
       session: ActionDto;
-      shouldMultiSend: boolean;
+      multiSend: boolean;
       isLedgerLive: boolean;
       trackEvent: ReturnType<typeof useTrackEvent>;
       signMultipleTransactions: ReturnType<
@@ -146,7 +141,7 @@ const getMachine = (
 
   const initContext = getInitContext(
     ref.current.session,
-    ref.current.shouldMultiSend
+    ref.current.multiSend
   );
 
   return setup({
@@ -265,7 +260,7 @@ const getMachine = (
               /**
                * Multi sign transactions
                */
-              if (ref.current.shouldMultiSend) {
+              if (ref.current.multiSend) {
                 return EitherAsync.liftEither(
                   Right(
                     txs.find((tx) =>

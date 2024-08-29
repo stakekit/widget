@@ -50,7 +50,14 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfig =>
       },
     },
     esbuild: { drop: ["console"] },
-    server: { host: true },
+    server: {
+      host: true,
+      cors: true,
+      // https: {
+      //   key: path.resolve(__dirname, "..", "certificates", "skwidget.key"),
+      //   cert: path.resolve(__dirname, "..", "certificates", "skwidget.crt"),
+      // },
+    },
     resolve: {
       alias: {
         "@sk-widget": path.resolve(__dirname, "..", "src"),

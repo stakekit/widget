@@ -1,5 +1,9 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
+import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { config } from "@sk-widget/config";
+import { useCheckIsUnmounted } from "@sk-widget/hooks/use-check-is-unmounted";
+import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
+import { SafeFailedError } from "@sk-widget/providers/sk-wallet/errors";
 import { useInit } from "@sk-widget/providers/sk-wallet/use-init";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
@@ -56,6 +60,8 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   } = useAccount();
 
   const address = (config.env.forceAddress as Address) || _address;
+
+  const checkIsUnmounted = useCheckIsUnmounted();
 
   const { isLoading } = useInit();
 
@@ -280,10 +286,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               type: val.maxFeePerGas ? "eip1559" : "legacy",
             })
           )
-            .mapLeft((e) => {
-              console.log(e);
-              return new SendTransactionError();
-            })
+            .mapLeft(() => new SendTransactionError())
             .map((val) => ({ signedTx: val, broadcasted: true }))
         );
       }),
@@ -297,33 +300,70 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
-      >(({ conn, network, address }) => {
-        if (isExternalProviderConnector(conn)) {
+      >(({ conn, address }) => {
+        if (isSafeConnector(conn)) {
           return EitherAsync.liftEither(
             Either.sequence(
               txs.map((tx) =>
                 Either.encase(() => JSON.parse(tx))
                   .chain((val) => unsignedEVMTransactionCodec.decode(val))
                   .map((val) => prepareEVMTx({ address, decodedTx: val }))
-                  .mapLeft((e) => {
-                    console.log(e);
-                    return new TransactionDecodeError();
-                  })
+                  .mapLeft(() => new TransactionDecodeError())
               )
             )
-          ).chain((val) =>
-            conn
-              .sendMultipleTransactions({
-                network,
-                txs: val,
+          )
+            .chain((val) =>
+              conn
+                .sendTransactions({
+                  txs: val.map((v) => ({
+                    data: v.data,
+                    to: v.to,
+                    value: v.value ?? "0",
+                  })),
+                })
+                .map((res) => res.safeTxHash)
+            )
+            .chain((safeTxHash) =>
+              withRequestErrorRetry({
+                fn: () =>
+                  conn
+                    .getTxStatus(safeTxHash)
+                    .chain((res) =>
+                      !res.txHash || res.txStatus !== conn.txStatus.SUCCESS
+                        ? EitherAsync.liftEither(
+                            Left(
+                              new SafeFailedError(
+                                res.txStatus === conn.txStatus.FAILED ||
+                                  res.txStatus === conn.txStatus.CANCELLED
+                                  ? "FAILED"
+                                  : "NOT_READY"
+                              )
+                            )
+                          )
+                        : EitherAsync.liftEither(Right(res.txHash))
+                    )
+                    .run()
+                    .then((res) => res.unsafeCoerce()),
+                shouldRetry: (error, retryCount) =>
+                  Maybe.fromNullable(error)
+                    .chainNullable((e) =>
+                      (e as SafeFailedError)._tag === "SafeFailedError"
+                        ? (e as SafeFailedError)
+                        : null
+                    )
+                    .filter((e) => e.type !== "FAILED" && !checkIsUnmounted())
+                    .map(() => retryCount < 120)
+                    .orDefault(false),
+                retryWaitForMs: () => 7000,
               })
-              .map((val) => ({ signedTx: val as Hash, broadcasted: true }))
-          );
+            )
+            .mapLeft(() => new Error("sendTransactions failed"))
+            .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
         }
 
         return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
       }),
-    [connectorDetails]
+    [connectorDetails, checkIsUnmounted]
   );
 
   const signMessage = useCallback<SKWallet["signMessage"]>(
