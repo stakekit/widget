@@ -23,7 +23,7 @@ describe("Deep links flow", () => {
 
     await waitFor(() =>
       expect(
-        withAvaxLiquidStakingApp.getByText("Liquid stake")
+        withAvaxLiquidStakingApp.getByText("Liquid Staking")
       ).toBeInTheDocument()
     );
     await waitFor(() =>
