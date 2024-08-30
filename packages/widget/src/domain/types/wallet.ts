@@ -35,6 +35,7 @@ export type SKWallet = {
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
   connectorChains: Chain[];
+  connectorSKNetworks: SupportedSKChains[];
 } & (
   | {
       network: SupportedSKChains;
