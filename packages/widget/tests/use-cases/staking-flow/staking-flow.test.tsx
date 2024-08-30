@@ -109,7 +109,7 @@ describe("Staking flow", () => {
       ).toBeInTheDocument()
     );
 
-    getAllByText("Liquid stake").forEach((el) =>
+    getAllByText("Liquid Staking").forEach((el) =>
       expect(el).toBeInTheDocument()
     );
     getAllByText(stakeAmount).forEach((el) => expect(el).toBeInTheDocument());
