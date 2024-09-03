@@ -6,6 +6,7 @@ import {
 } from "@sk-widget/pages/details/details-page/components/tabs";
 import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
 import { checkHasPendingClaimRewards } from "@sk-widget/pages/details/shared";
+import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -29,16 +30,23 @@ export const Details = () => {
     [positionsData.data]
   );
 
+  const { current } = useSKLocation();
+
   const navigate = useNavigate();
 
   const [selectedTab, setSelectedTab] = useState<
     "earn" | "positions" | "activity"
   >("earn");
 
-  console.log("selectedTab", selectedTab);
+  if (current.pathname === "/" && selectedTab === "positions") {
+    setSelectedTab("earn");
+  } else if (current.pathname === "/positions" && selectedTab === "earn") {
+    setSelectedTab("positions");
+  } else if (current.pathname === "/activity" && selectedTab === "earn") {
+    setSelectedTab("activity");
+  }
 
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
-    console.log("selected", selected);
     if (selectedTab === selected) return;
 
     trackEvent("tabClicked", { selected });
