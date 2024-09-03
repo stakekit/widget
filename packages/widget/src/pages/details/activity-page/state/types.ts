@@ -1,10 +1,8 @@
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
-import type { Maybe } from "purify-ts";
+import type { useActivityActions } from "@sk-widget/hooks/api/use-activity-actions";
+import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
 
 export type ActivityPageContextType = {
-  defaultTokens: Maybe<TokenBalanceScanResponseDto[]>;
-  tokenSearch: string;
-  onTokenSearch: (val: string) => void;
-  onTokenSelect: (val: TokenBalanceScanResponseDto) => void;
-  selectedToken: TokenBalanceScanResponseDto | undefined;
+  onActionSelect: (val: ActionYieldDto) => void;
+  // selectedAction: ActionTypes | undefined;
+  activityActions: ReturnType<typeof useActivityActions>;
 };

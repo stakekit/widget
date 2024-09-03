@@ -11,7 +11,7 @@ import type {
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
 import type { Nullable } from "../../types";
-import type { SupportedSKChains } from "./chains";
+import type { SupportedSKChains, SupportedSKChainsType } from "./chains";
 
 type SignedTxOrMessage = string;
 
@@ -35,6 +35,7 @@ export type SKWallet = {
   isLedgerLive: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
   connectorChains: Chain[];
+  connectorSKNetworks: SupportedSKChainsType[];
 } & (
   | {
       network: SupportedSKChains;

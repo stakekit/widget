@@ -35,7 +35,10 @@ export const Details = () => {
     "earn" | "positions" | "activity"
   >("earn");
 
+  console.log("selectedTab", selectedTab);
+
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
+    console.log("selected", selected);
     if (selectedTab === selected) return;
 
     trackEvent("tabClicked", { selected });

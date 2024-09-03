@@ -1,3 +1,4 @@
+import { Just } from "purify-ts";
 import type { Hex } from "viem";
 import { numberToHex } from "viem";
 import type { Chain } from "wagmi/chains";
@@ -7,10 +8,41 @@ import type {
   EvmChainsMap,
   MiscChainsMap,
   SubstrateChainsMap,
+  SupportedSKChainsType,
 } from "../../domain/types/chains";
 import type { EVMTx } from "../../domain/types/wallets/generic-wallet";
 import { TxType } from "../../domain/types/wallets/generic-wallet";
 import type { DecodedEVMTransaction } from "./validation";
+
+export const chainsToSKNetworks = ({
+  chains,
+  cosmosChainsMap,
+  evmChainsMap,
+  miscChainsMap,
+  substrateChainsMap,
+}: {
+  chains: Chain[];
+  evmChainsMap: Partial<EvmChainsMap>;
+  cosmosChainsMap: Partial<CosmosChainsMap>;
+  miscChainsMap: Partial<MiscChainsMap>;
+  substrateChainsMap: Partial<SubstrateChainsMap>;
+}) =>
+  Just(
+    Object.values({
+      ...evmChainsMap,
+      ...cosmosChainsMap,
+      ...miscChainsMap,
+      ...substrateChainsMap,
+    }).reduce((acc, chain) => {
+      acc.set(chain.wagmiChain.id, {
+        chainName: chain.skChainName,
+        chainIcon: chain.wagmiChain.iconUrl ?? undefined,
+      });
+      return acc;
+    }, new Map<number, SupportedSKChainsType>())
+  )
+    .map((val) => chains.map((chain) => val.get(chain.id)).filter((c) => !!c))
+    .unsafeCoerce();
 
 export const wagmiNetworkToSKNetwork = ({
   chain,

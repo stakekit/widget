@@ -1,9 +1,12 @@
-import { Box, Divider, Text } from "@sk-widget/components";
+import { Box } from "@sk-widget/components";
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { VirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import { SelectAction } from "@sk-widget/pages/details/activity-page/components/select-action";
-import { SelectNetwork } from "@sk-widget/pages/details/activity-page/components/select-network";
-import { SelectToken } from "@sk-widget/pages/details/activity-page/components/select-token";
-import { ActivityPageContextProvider } from "@sk-widget/pages/details/activity-page/state/activiti-page.context";
+import ActionListItem from "@sk-widget/pages/details/activity-page/components/action-list-item";
+import {
+  ActivityPageContextProvider,
+  useActivityPageContext,
+} from "@sk-widget/pages/details/activity-page/state/activiti-page.context";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { motion } from "framer-motion";
 import { PageContainer } from "../../components";
@@ -13,6 +16,7 @@ export const ActivityPageComponent = () => {
   useTrackPage("activity");
 
   const { mountAnimationFinished } = useMountAnimation();
+  const { activityActions, onActionSelect } = useActivityPageContext();
 
   return (
     <motion.div
@@ -30,13 +34,33 @@ export const ActivityPageComponent = () => {
           flex={1}
           flexDirection="column"
         >
-          <Text marginBottom="1">Follow Steps</Text>
-          <Box display="flex" gap="2">
-            <SelectNetwork />
-            <SelectToken />
-            <SelectAction />
-          </Box>
-          <Divider my="6" />
+          {activityActions.isPending ? (
+            <Box display="flex" gap="1" flexDirection="column">
+              {[...Array(5).keys()].map((item) => (
+                <ContentLoaderSquare key={item} heightPx={60} />
+              ))}
+            </Box>
+          ) : (
+            <Box display="flex" flexDirection="column">
+              {activityActions.allItems ? (
+                <VirtualList
+                  fetchNextPage={activityActions.fetchNextPage}
+                  hasNextPage={activityActions.hasNextPage}
+                  isFetchingNextPage={activityActions.isFetchingNextPage}
+                  data={activityActions.allItems}
+                  estimateSize={() => 60}
+                  itemContent={(_index, item) => (
+                    <ActionListItem
+                      onActionSelect={onActionSelect}
+                      action={item}
+                    />
+                  )}
+                />
+              ) : (
+                "No Data"
+              )}
+            </Box>
+          )}
         </Box>
       </PageContainer>
     </motion.div>

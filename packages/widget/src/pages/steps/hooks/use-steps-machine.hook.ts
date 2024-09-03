@@ -61,7 +61,13 @@ type SignRes =
       };
     };
 
-export const useStepsMachine = (session: ActionDto) => {
+export const useStepsMachine = ({
+  transactions,
+  integrationId,
+}: {
+  transactions: ActionDto["transactions"];
+  integrationId: ActionDto["integrationId"];
+}) => {
   const {
     signTransaction,
     signMultipleTransactions,
@@ -90,7 +96,8 @@ export const useStepsMachine = (session: ActionDto) => {
   );
 
   const machineParams = useSavedRef({
-    session,
+    transactions,
+    integrationId,
     shouldMultiSend,
     isLedgerLive,
     trackEvent,
@@ -111,7 +118,8 @@ export const useStepsMachine = (session: ActionDto) => {
 const getMachine = (
   ref: Readonly<
     MutableRefObject<{
-      session: ActionDto;
+      transactions: ActionDto["transactions"];
+      integrationId: ActionDto["integrationId"];
       shouldMultiSend: boolean;
       isLedgerLive: boolean;
       trackEvent: ReturnType<typeof useTrackEvent>;
@@ -145,7 +153,8 @@ const getMachine = (
     }).mapLeft(() => new Error("Transaction construct error"));
 
   const initContext = getInitContext(
-    ref.current.session,
+    ref.current.transactions,
+    ref.current.integrationId,
     ref.current.shouldMultiSend
   );
 
@@ -260,7 +269,7 @@ const getMachine = (
               .toEither(new Error("missing tx"))
           )
             .chain<Error, SignRes>((tx) => {
-              const txs = ref.current.session.transactions;
+              const txs = ref.current.transactions;
 
               /**
                * Multi sign transactions
@@ -695,8 +704,12 @@ const getMachine = (
   });
 };
 
-const getInitContext = (session: ActionDto, shouldMultiSend: boolean) => {
-  if (!session.transactions.length) {
+const getInitContext = (
+  transactions: ActionDto["transactions"],
+  integrationId: ActionDto["integrationId"],
+  shouldMultiSend: boolean
+) => {
+  if (!transactions.length) {
     return {
       enabled: false,
       txStates: null,
@@ -705,7 +718,7 @@ const getInitContext = (session: ActionDto, shouldMultiSend: boolean) => {
     };
   }
 
-  const txStates = session.transactions.map<TxState>((dto) => ({
+  const txStates = transactions.map<TxState>((dto) => ({
     tx: dto,
     meta: {
       broadcasted: null,
@@ -721,13 +734,13 @@ const getInitContext = (session: ActionDto, shouldMultiSend: boolean) => {
 
   const currentTxMeta = {
     idx: currentTxIdx,
-    id: session.transactions[currentTxIdx].id,
+    id: transactions[currentTxIdx].id,
   };
 
   return {
     enabled: true,
     txStates: shouldMultiSend ? [txStates[currentTxIdx]] : txStates,
     currentTxMeta,
-    yieldId: session.integrationId,
+    yieldId: integrationId,
   };
 };

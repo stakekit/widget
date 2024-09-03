@@ -3,11 +3,13 @@ import "./translation";
 import "./utils/extend-purify";
 import "./styles/theme/global.css";
 import { useInitParams } from "@sk-widget/hooks/use-init-params";
+import { ActivityCompletePage } from "@sk-widget/pages/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
 import { ActivityPage } from "@sk-widget/pages/details/activity-page/activity.page";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
 import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.page";
 import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
@@ -133,6 +135,15 @@ const Widget = () => {
                   </Route>
 
                   <Route element={<ConnectedCheck />}>
+                    {/* Activity flow */}
+                    <Route path="activity">
+                      <Route path="steps" element={<ActivityStepsPage />} />
+                      <Route
+                        path="complete"
+                        element={<ActivityCompletePage />}
+                      />
+                    </Route>
+
                     {/* Stake flow */}
                     <Route>
                       <Route path="review" element={<StakeReviewPage />} />

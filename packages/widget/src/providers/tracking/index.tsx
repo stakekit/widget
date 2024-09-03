@@ -13,9 +13,11 @@ const trackPageMap = {
   pendingActionReview: "Pending action review",
   stakingSteps: "Staking steps",
   unstakeSteps: "Unstake steps",
+  activitySteps: "Activity steps",
   pendingActionSteps: "Pending action steps",
-  stakeCompelete: "Stake complete",
-  unstakeCompelete: "Unstake complete",
+  stakeComplete: "Stake complete",
+  activityComplete: "Activity complete",
+  unstakeComplete: "Unstake complete",
   pendingActionCompelete: "Pending action complete",
 } as const;
 

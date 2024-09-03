@@ -1,4 +1,6 @@
 import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { useSavedRef } from "@sk-widget/hooks";
 import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
 import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
@@ -7,26 +9,43 @@ import {
   useVirtualizer,
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
-import { useMemo, useRef, useState } from "react";
+import { List, Maybe } from "purify-ts";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   absoluteWrapper,
   container,
   relativeWrapper,
 } from "../virtual-list/style.css";
 
+type VirtualListProps<T> = {
+  data: T[];
+  itemContent: (index: number, item: T) => React.ReactNode;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+} & (
+  | {
+      hasNextPage: boolean;
+      isFetchingNextPage: boolean;
+      fetchNextPage: () => void;
+    }
+  | {
+      hasNextPage?: never;
+      isFetchingNextPage?: never;
+      fetchNextPage?: never;
+    }
+);
+
 export const VirtualList = <ItemData = unknown>({
   data,
   itemContent,
   className,
   estimateSize,
-  maxHeight = 600,
-}: {
-  data: ItemData[];
-  itemContent: (index: number, item: ItemData) => React.ReactNode;
-  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-  className?: BoxProps["className"];
-  maxHeight?: number;
-}) => {
+  maxHeight = 400,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: VirtualListProps<ItemData>) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
   const observeElementRect = useObserveElementRect();
@@ -36,11 +55,30 @@ export const VirtualList = <ItemData = unknown>({
     count: data.length,
     getScrollElement: () => innerRef.current,
     estimateSize,
-    overscan: 10,
+    overscan: 2,
     ...(observeElementRect && { observeElementRect }),
   });
 
-  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
+  const isEndReached = useMemo(
+    () =>
+      List.head([...virtualItems].reverse())
+        .filter((item) => item.index >= data.length - 1)
+        .map(() => true)
+        .orDefault(false),
+    [virtualItems, data.length]
+  );
+
+  const fetchNextPageRef = useSavedRef(fetchNextPage);
+
+  useEffect(() => {
+    Maybe.fromFalsy(isEndReached)
+      .filter(() => !!hasNextPage && !isFetchingNextPage)
+      .ifJust(() => fetchNextPageRef.current?.());
+  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 400px)";
 
   return (
     <Box ref={innerRef} className={clsx([container, className])}>
@@ -54,12 +92,10 @@ export const VirtualList = <ItemData = unknown>({
         <Box
           className={absoluteWrapper}
           style={{
-            transform: `translateY(${
-              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
-            }px)`,
+            transform: `translateY(${virtualItems[0]?.start ?? 0}px)`,
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+          {virtualItems.map((virtualItem) => (
             <Box
               key={virtualItem.key}
               data-index={virtualItem.index}
@@ -68,6 +104,11 @@ export const VirtualList = <ItemData = unknown>({
               {itemContent(virtualItem.index, data[virtualItem.index])}
             </Box>
           ))}
+          {isFetchingNextPage && (
+            <Box justifyContent="center" display="flex" my="4">
+              <Spinner />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>
@@ -80,7 +121,7 @@ export const GroupedVirtualList = ({
   increaseViewportBy,
   groupCounts,
   className,
-  maxHeight = 600,
+  maxHeight = 400,
   estimateSize,
 }: {
   itemContent: (index: number, groupIndex: number) => React.ReactNode;

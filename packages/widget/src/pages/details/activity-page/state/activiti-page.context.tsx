@@ -1,16 +1,13 @@
-import type { SelectModalProps } from "@sk-widget/components";
-import { useDefaultTokens } from "@sk-widget/hooks/api/use-default-tokens";
+import { useActivityActions } from "@sk-widget/hooks/api/use-activity-actions";
 import type { ActivityPageContextType } from "@sk-widget/pages/details/activity-page/state/types";
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
+import { useActivityContext } from "@sk-widget/providers/activity-provider";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { useConnectModal } from "@stakekit/rainbowkit";
+import { useMutation } from "@tanstack/react-query";
 import { Maybe } from "purify-ts";
-import {
-  type PropsWithChildren,
-  createContext,
-  useContext,
-  useDeferredValue,
-  useMemo,
-  useState,
-} from "react";
+import { type PropsWithChildren, createContext, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 
 const ActivityPageContext = createContext<ActivityPageContextType | undefined>(
   undefined
@@ -19,48 +16,37 @@ const ActivityPageContext = createContext<ActivityPageContextType | undefined>(
 export const ActivityPageContextProvider = ({
   children,
 }: PropsWithChildren) => {
-  const { data: defaultTokens } = useDefaultTokens();
-  const [tokenSearch, setTokenSearch] = useState("");
-  const [selectedToken, setSelectedToken] =
-    useState<TokenBalanceScanResponseDto>();
+  const activityStore = useActivityContext();
+  const { openConnectModal } = useConnectModal();
+  const { isConnected } = useSKWallet();
+  const navigate = useNavigate();
 
-  const onTokenSearch: SelectModalProps["onSearch"] = (val) =>
-    setTokenSearch(val);
+  const onClickHandler = useMutation({
+    mutationFn: async (data: ActionYieldDto) => {
+      if (!isConnected) return openConnectModal?.();
 
-  const onTokenSelect = (val: TokenBalanceScanResponseDto) =>
-    setSelectedToken(val);
+      activityStore.send({
+        type: "setSelectedAction",
+        selectedAction: Maybe.of(data.actionData),
+        selectedYield: Maybe.of(data.yieldData),
+      });
 
-  const deferredTokenSearch = useDeferredValue(tokenSearch);
+      if (data.actionData.status === "SUCCESS")
+        return navigate("/activity/complete");
+      navigate("/activity/steps");
+    },
+  });
 
-  const tokens = useMemo(
-    () =>
-      Maybe.fromNullable(defaultTokens)
-        .map((tb1) => tb1)
-        .chain((tb) =>
-          Maybe.of(deferredTokenSearch)
-            .chain((val) =>
-              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-            )
-            .map((lowerSearch) =>
-              tb.filter(
-                (t) =>
-                  t.token.name.toLowerCase().includes(lowerSearch) ||
-                  t.token.symbol.toLowerCase().includes(lowerSearch)
-              )
-            )
-            .alt(Maybe.of(tb))
-        ),
-    [defaultTokens, deferredTokenSearch]
-  );
-
-  const value = {
-    defaultTokens: tokens,
-    tokenSearch,
-    onTokenSearch,
-    onTokenSelect,
-    selectedToken,
+  const onActionSelect = (action: ActionYieldDto) => {
+    onClickHandler.mutate(action);
   };
 
+  const activityActions = useActivityActions({});
+
+  const value = {
+    onActionSelect,
+    activityActions,
+  };
   return (
     <ActivityPageContext.Provider value={value}>
       {children}

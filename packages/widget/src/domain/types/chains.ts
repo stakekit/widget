@@ -6,6 +6,7 @@ import {
   SubstrateNetworks,
 } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import type { Chain as ChainRainbowKit } from "@stakekit/rainbowkit";
 import type { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
 export const supportedCosmosChains = [
@@ -299,3 +300,8 @@ export type SupportedLedgerFamiliesWithCurrency = Record<
     }
   >
 >;
+
+export type SupportedSKChainsType = {
+  chainName: SupportedSKChains;
+  chainIcon?: ChainRainbowKit["iconUrl"];
+};
