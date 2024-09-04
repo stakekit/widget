@@ -27,7 +27,7 @@ const bg_pos_map: { [key in ActionStatus]: ListItemContainerType } = {
   CREATED: "pending",
   WAITING_FOR_NEXT: "actionRequired",
   CANCELED: "actionRequired",
-  PROCESSING: "actionRequired",
+  PROCESSING: "claim",
 };
 
 const ActionListItem = ({
@@ -42,7 +42,7 @@ const ActionListItem = ({
     useActionListItem(action);
 
   return (
-    <Box py="1">
+    <Box py="1" paddingLeft="7">
       {integrationData.mapOrDefault(
         (d) => (
           <ListItem onClick={() => onActionSelect(action)} className={listItem}>

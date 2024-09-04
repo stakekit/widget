@@ -36,6 +36,27 @@ type VirtualListProps<T> = {
     }
 );
 
+type VirtualGroupListProps = {
+  itemContent: (index: number, groupIndex: number) => React.ReactNode;
+  groupContent: (index: number) => React.ReactNode;
+  increaseViewportBy?: { bottom: number; top: number };
+  groupCounts: number[];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+} & (
+  | {
+      hasNextPage: boolean;
+      isFetchingNextPage: boolean;
+      fetchNextPage: () => void;
+    }
+  | {
+      hasNextPage?: never;
+      isFetchingNextPage?: never;
+      fetchNextPage?: never;
+    }
+);
+
 export const VirtualList = <ItemData = unknown>({
   data,
   itemContent,
@@ -123,15 +144,10 @@ export const GroupedVirtualList = ({
   className,
   maxHeight = 400,
   estimateSize,
-}: {
-  itemContent: (index: number, groupIndex: number) => React.ReactNode;
-  groupContent: (index: number) => React.ReactNode;
-  increaseViewportBy?: { bottom: number; top: number };
-  groupCounts: number[];
-  className?: BoxProps["className"];
-  maxHeight?: number;
-  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-}) => {
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: VirtualGroupListProps) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
@@ -149,6 +165,9 @@ export const GroupedVirtualList = ({
     paddingEnd: increaseViewportBy?.bottom,
     ...(observeElementRect && { observeElementRect }),
   });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const fetchNextPageRef = useSavedRef(fetchNextPage);
 
   type ParentResult = {
     type: "parent";
@@ -190,6 +209,21 @@ export const GroupedVirtualList = ({
     [groupCounts]
   );
 
+  const isEndReached = useMemo(
+    () =>
+      List.head([...virtualItems].reverse())
+        .filter((item) => item.index >= resultArray.length - 1)
+        .map(() => true)
+        .orDefault(false),
+    [virtualItems, resultArray.length]
+  );
+
+  useEffect(() => {
+    Maybe.fromFalsy(isEndReached)
+      .filter(() => !!hasNextPage && !isFetchingNextPage)
+      .ifJust(() => fetchNextPageRef.current?.());
+  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
 
   return (
@@ -225,6 +259,11 @@ export const GroupedVirtualList = ({
               </Box>
             );
           })}
+          {isFetchingNextPage && (
+            <Box justifyContent="center" display="flex" my="4">
+              <Spinner />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

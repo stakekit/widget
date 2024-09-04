@@ -3,6 +3,7 @@ import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/type
 
 export type ActivityPageContextType = {
   onActionSelect: (val: ActionYieldDto) => void;
-  // selectedAction: ActionTypes | undefined;
   activityActions: ReturnType<typeof useActivityActions>;
+  labels: string[];
+  counts: number[];
 };
