@@ -7,6 +7,7 @@ import { ActivityCompletePage } from "@sk-widget/pages/complete/pages/activity-c
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
 import { ActivityPage } from "@sk-widget/pages/details/activity-page/activity.page";
+import { FailedReviewPage } from "@sk-widget/pages/review/pages/failed-review.page";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
 import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
 import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.page";
@@ -141,6 +142,10 @@ const Widget = () => {
                       <Route
                         path="complete"
                         element={<ActivityCompletePage />}
+                      />
+                      <Route
+                        path="error-review"
+                        element={<FailedReviewPage />}
                       />
                     </Route>
 

@@ -92,7 +92,7 @@ export const ActivityPageComponent = () => {
                 groupCounts={counts}
                 groupContent={(index) => {
                   return (
-                    <Box py="4" px="4" background="modalBodyBackground">
+                    <Box py="4" background="modalBodyBackground">
                       <Text variant={{ weight: "bold" }}>
                         {dateGroupLabels(labels[index], t)}
                       </Text>

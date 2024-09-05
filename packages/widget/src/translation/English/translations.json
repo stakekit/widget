@@ -34,6 +34,10 @@
     "date_group_labels": {
       "today": "Today",
       "yesterday": "Yesterday"
+    },
+    "failed_review": {
+      "unknown_error": "Unknown error",
+      "retry": "Retry"
     }
   },
   "details": {

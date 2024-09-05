@@ -43,7 +43,19 @@ export const ActivityPageContextProvider = ({
       ) {
         return navigate("/activity/complete");
       }
-      navigate("/activity/steps");
+
+      if (data.actionData.status === "FAILED") {
+        return navigate("/activity/error-review");
+      }
+
+      if (
+        data.actionData.status === "CREATED" ||
+        data.actionData.status === "WAITING_FOR_NEXT"
+      ) {
+        return navigate("/activity/steps");
+      }
+
+      return;
     },
   });
 
