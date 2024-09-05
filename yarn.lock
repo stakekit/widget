@@ -4780,6 +4780,8 @@ __metadata:
     "@radix-ui/react-dropdown-menu": "npm:^2.1.1"
     "@radix-ui/react-tooltip": "npm:^1.1.2"
     "@radix-ui/react-visually-hidden": "npm:^1.1.0"
+    "@safe-global/safe-apps-provider": "npm:^0.18.3"
+    "@safe-global/safe-apps-sdk": "npm:^9.1.0"
     "@stakekit/api-hooks": "npm:^0.0.83"
     "@stakekit/common": "npm:^0.0.35"
     "@stakekit/rainbowkit": "npm:^2.1.7"
