@@ -1,3 +1,4 @@
+import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { motion } from "framer-motion";
@@ -7,12 +8,9 @@ import { useNavigate } from "react-router-dom";
 import { useLogout } from "../../../hooks";
 import { useDetailsMatch } from "../../../hooks/navigation/use-details-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { isExternalProviderConnector } from "../../../providers/external-provider";
-import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-live-connector-meta";
 import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useWagmiConfig } from "../../../providers/wagmi";
-import { isLedgerDappBrowserProvider } from "../../../utils";
 import { Box } from "../../atoms/box";
 import { CaretLeftIcon, XIcon } from "../../atoms/icons";
 import { AccountModal } from "../account-modal";
@@ -31,9 +29,7 @@ export const Header = () => {
 
   const showDisconnect = useMemo(
     () =>
-      connector &&
-      !isExternalProviderConnector(connector) &&
-      !isLedgerLiveConnector(connector),
+      Maybe.fromNullable(connector).map(shouldShowDisconnect).orDefault(false),
     [connector]
   );
 
@@ -54,8 +50,6 @@ export const Header = () => {
 
   const onXPress = () => {
     trackEvent("widgetDisconnectClicked");
-    if (isLedgerDappBrowserProvider()) return;
-
     logout();
   };
 

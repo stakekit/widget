@@ -1,5 +1,9 @@
+import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
+import { vars } from "@sk-widget/styles";
+import { id } from "@sk-widget/styles/theme/ids";
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
 import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
+import { Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,11 +11,8 @@ import { Text } from "../components";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
-import { id, vars } from "../styles";
 import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
-import { isExternalProviderConnector } from "./external-provider";
-import { isLedgerLiveConnector } from "./ledger/ledger-live-connector-meta";
 import { useSKWallet } from "./sk-wallet";
 import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
 
@@ -50,11 +51,9 @@ export const RainbowKitProviderWithTheme = ({
 
   const hideDisconnect = useMemo(
     () =>
-      !!(
-        connector &&
-        (isExternalProviderConnector(connector) ||
-          isLedgerLiveConnector(connector))
-      ),
+      Maybe.fromNullable(connector)
+        .map((c) => !shouldShowDisconnect(c))
+        .orDefault(true),
     [connector]
   );
 

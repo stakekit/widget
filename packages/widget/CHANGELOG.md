@@ -1,5 +1,37 @@
 # @stakekit/widget
 
+## 0.0.193
+
+### Patch Changes
+
+- a980f11: Change validator label
+- d5dc458: Update liquid staking title
+
+## 0.0.192
+
+### Patch Changes
+
+- 4199080: Add safe app connector support
+- 4199080: Update token query param validation
+
+## 0.0.191
+
+### Patch Changes
+
+- b42c0bd: Change query param safe string codec
+
+## 0.0.190
+
+### Patch Changes
+
+- d42e738: add small button radii in theme
+
+## 0.0.189
+
+### Patch Changes
+
+- 2dd8893: Add global css layer. This will ease overriding widget styles from apps that are embeding it
+
 ## 0.0.188
 
 ### Patch Changes

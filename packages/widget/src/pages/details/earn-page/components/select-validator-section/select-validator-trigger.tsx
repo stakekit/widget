@@ -40,7 +40,7 @@ export const SelectValidatorTrigger = ({
       >
         <Box display="flex" alignItems="center" justifyContent="center">
           <Text className={breakWord} variant={{ weight: "bold" }}>
-            {t("details.staked_via")}
+            {t("details.earn_with")}
           </Text>
         </Box>
 

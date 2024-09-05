@@ -29,7 +29,7 @@ export const StakedVia = () => {
         data-rk="stake-token-section-staked-via"
       >
         <Text variant={{ type: "regular", size: "medium" }}>
-          {t("details.staked_via")}{" "}
+          {t("details.earn_with")}{" "}
           <Box as="span" fontWeight="bold">
             {val.name}
           </Box>

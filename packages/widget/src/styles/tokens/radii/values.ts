@@ -17,6 +17,7 @@ export const radii: typeof radiiContract = {
     widgetBorderRadius: "0",
     primaryButton: "16px",
     secondaryButton: "16px",
+    smallButton: "7.38px",
   },
 
   connectKit: {

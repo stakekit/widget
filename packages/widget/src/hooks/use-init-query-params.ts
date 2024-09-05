@@ -41,14 +41,14 @@ const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
   encode: (val) => val,
 });
 
-const pathTraversalRegEx = /(\.\.\/)|(\.\/)/;
+const safeString = /^[a-zA-Z0-9-_]*$/;
 
 const safeParamCodec = Codec.custom<string>({
   decode: (val) =>
     string
       .decode(val)
       .chain((v) =>
-        pathTraversalRegEx.test(v) ? Left("invalid string value") : Right(v)
+        safeString.test(v) ? Right(v) : Left("invalid string value")
       ),
   encode: (val) => val,
 });
@@ -87,7 +87,7 @@ export const getAndValidateInitParams = ({
       .chain(skSupportedChainsCodec.decode)
       .toMaybe()
       .extractNullable(),
-    token: safeParamCodec
+    token: string // Not safeParamCodec as it maybe has some extra special characters
       .decode(url.searchParams.get("token") ?? externalProviderInitToken)
       .toMaybe()
       .extractNullable(),

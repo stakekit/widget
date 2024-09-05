@@ -144,12 +144,12 @@ export const buttonStyle = recipe({
         style({
           padding: "9.8px 13.1px",
           width: "auto",
-          borderRadius: "7.38px",
         }),
         atoms({
           minHeight: "auto",
           px: "6",
           py: "3",
+          borderRadius: "smallButton",
         }),
       ],
     },

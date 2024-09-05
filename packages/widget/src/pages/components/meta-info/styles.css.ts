@@ -5,3 +5,7 @@ export const dotContainer = style({
   height: "16px",
   textAlign: "center",
 });
+
+export const dotText = style({
+  fontSize: "7px",
+});

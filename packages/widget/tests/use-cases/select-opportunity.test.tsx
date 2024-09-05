@@ -149,7 +149,7 @@ describe("Select opportunity", () => {
 
     await waitFor(() =>
       expect(
-        within(selectContainer).getByText("Liquid stake")
+        within(selectContainer).getByText("Liquid Staking")
       ).toBeInTheDocument()
     );
 

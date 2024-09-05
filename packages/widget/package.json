@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.188",
+  "version": "0.0.193",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",
@@ -112,6 +112,7 @@
     "mixpanel-browser": "^2.55.0",
     "msw": "^2.3.5",
     "postcss": "^8.4.41",
+    "postcss-assign-layer": "^0.4.0",
     "purify-ts": "patch:purify-ts@npm%3A2.1.0#~/.yarn/patches/purify-ts-npm-2.1.0-4dc5fd5f7b.patch",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
