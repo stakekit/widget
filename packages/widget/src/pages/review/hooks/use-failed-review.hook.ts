@@ -1,7 +1,7 @@
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSelector } from "@xstate/store/react";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
