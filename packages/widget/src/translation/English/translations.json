@@ -22,9 +22,11 @@
     "continue": "Continue",
     "powered_by": "Powered by <span0>{{name}}</span0>"
   },
+
   "chain_modal": {
     "disabled_chain_info": "Add account"
   },
+
   "init": {
     "get_started": "Connect your wallet to get started…",
     "connect_wallet": "Connect Wallet",
@@ -34,62 +36,87 @@
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
+
     "additional_info": "Additional info",
+
     "referral_code": {
       "title": "Your referral link:"
     },
+
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "yearly": "Estimated Yearly Earnings",
       "monthly": "Estimated Monthly Earnings"
     },
+
     "tron_resources": {
       "label": "Resource",
       "placeholder": "Select resource"
     },
+
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
+
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
+
     "no_opportunities": "No yield opportunities for this token",
+
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
+
     "native_staking": {
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
+
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available"
     },
+
     "vault": {
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
+
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+
       "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
       "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
+
       "withdrawn_time_immediately": "When withdrawing, your assets will be available immediately",
       "withdrawn_time_days": "When withdrawing it takes {{cooldownPeriodDays}} days for your assets will be available"
     },
+
     "lend": {
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
       "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
+
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+
       "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
       "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
+
       "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
       "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days"
     },
+
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
+
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you stake",
       "earn_after_warmup_other": "You’ll start earning {{count}} days after you stake",
+
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
+
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
       "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they’ll need to be staked again.",
+
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
+
     "restake": {
       "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you stake",
@@ -100,8 +127,11 @@
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
+
     "extra_tezos": "You can use or send staked XTZ as normal",
+
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
+
     "opportunity_search_title": "Select a yield",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
@@ -259,6 +289,7 @@
       "description": "StakeKit is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. StakeKit abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about StakeKit on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     }
   },
+
   "positions": {
     "title": "My Positions",
     "via_one": "via {{providerName}}",
