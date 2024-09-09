@@ -16,14 +16,14 @@ type Props = {
   isSelected: boolean;
   onTabPress: () => void;
 } & (
-  | { variant: "earn"; pendingRewardsCount?: never }
-  | { variant: "positions"; pendingRewardsCount?: number }
+  | { variant: "earn"; pendingActionCount?: never }
+  | { variant: "positions"; pendingActionCount?: number }
 );
 
 export const Tab = ({
   isSelected,
   variant,
-  pendingRewardsCount,
+  pendingActionCount,
   onTabPress,
 }: Props) => {
   const { t } = useTranslation();
@@ -31,9 +31,9 @@ export const Tab = ({
   return (
     <Box className={tabContainer}>
       <Box className={clsx([pressAnimation, tab])} onClick={onTabPress}>
-        {!!pendingRewardsCount && (
+        {!!pendingActionCount && (
           <Box className={rewardsBadge}>
-            <Text style={{ fontSize: 8 }}>{pendingRewardsCount}</Text>
+            <Text style={{ fontSize: 8 }}>{pendingActionCount}</Text>
           </Box>
         )}
         <Box
