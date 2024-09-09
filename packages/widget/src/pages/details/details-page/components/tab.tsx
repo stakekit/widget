@@ -5,7 +5,7 @@ import { pressAnimation } from "../../../../components/atoms/button/styles.css";
 import {
   activeTabBorder,
   leftTabBorder,
-  rewardsDot,
+  rewardsBadge,
   rightTabBorder,
   tab,
   tabBorder,
@@ -16,14 +16,14 @@ type Props = {
   isSelected: boolean;
   onTabPress: () => void;
 } & (
-  | { variant: "earn"; hasPendingRewards?: never }
-  | { variant: "positions"; hasPendingRewards: boolean }
+  | { variant: "earn"; pendingRewardsCount?: never }
+  | { variant: "positions"; pendingRewardsCount?: number }
 );
 
 export const Tab = ({
   isSelected,
   variant,
-  hasPendingRewards,
+  pendingRewardsCount,
   onTabPress,
 }: Props) => {
   const { t } = useTranslation();
@@ -31,6 +31,11 @@ export const Tab = ({
   return (
     <Box className={tabContainer}>
       <Box className={clsx([pressAnimation, tab])} onClick={onTabPress}>
+        {!!pendingRewardsCount && (
+          <Box className={rewardsBadge}>
+            <Text style={{ fontSize: 8 }}>{pendingRewardsCount}</Text>
+          </Box>
+        )}
         <Box
           {...(variant === "positions" && { position: "relative" })}
           display="inline-flex"
@@ -43,16 +48,6 @@ export const Tab = ({
               ? t("details.tab_earn")
               : t("details.tab_positions")}
           </Text>
-
-          {hasPendingRewards && (
-            <Box
-              borderRadius="full"
-              width="1"
-              height="1"
-              background="positionsClaimRewardsBackground"
-              className={rewardsDot}
-            />
-          )}
         </Box>
       </Box>
 

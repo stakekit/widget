@@ -22,11 +22,9 @@
     "continue": "Continuer",
     "powered_by": "Alimenté par <span0>{{name}}</span0>"
   },
-
   "chain_modal": {
     "disabled_chain_info": "Ajoutez un portefeuille"
   },
-
   "init": {
     "get_started": "Connectez votre portefeuille pour commencer…",
     "connect_wallet": "Connectez un portefeuille",
@@ -36,87 +34,62 @@
     "earn": "Earn",
     "estimated_reward": "Récompenses estimées",
     "staked_via": "Earn avec",
-
     "additional_info": "Infos supplémentaires",
-
     "referral_code": {
       "title": "Votre lien de parrainage :"
     },
-
     "rewards": {
       "receive": "Vous recevrez des <symbols1></symbols1> via",
       "yearly": "Gains annuels estimés",
       "monthly": "Gains mensuels estimés"
     },
-
     "tron_resources": {
       "label": "Ressource",
       "placeholder": "Sélectionnez une ressource"
     },
-
     "reward_rate_estimate_tooltip": "Le taux de récompense ne peut pas être estimé de façon précise",
-
     "unstake_before": "Vous avez déjà délégué vos fonds à un validateur. Déstakez et réessayez",
-
     "no_opportunities": "Pas d'opportunité de yield pour ce token",
-
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
-
     "native_staking": {
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
       "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement. Vos gains se cumulent, si vous les réclamez et restakez rapidement",
-
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
       "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours"
     },
-
     "vault": {
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
-
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-
       "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
       "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement",
-
       "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
       "withdrawn_time_days": "En les retirant, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
     },
-
     "lend": {
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
       "description_compound": "En fournissant du {{stakeToken}} vous recevrez du {{rewardTokens}}",
-
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
-
       "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement",
       "earn_interest_manual": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et doivent être réclamés manuellement",
-
       "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
       "withdrawn_time_days": "Après leur retrait, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
     },
-
     "liquid_stake": {
       "description": "En stakant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
-
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir staké",
-
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
       "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
-
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
       "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
       "unstake_time_days_with_claim_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours. Vous devez les réclamer sous {{claimDays}} jours, sans quoi il faudra les staker à nouveau.",
-
       "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
     },
-
     "restake": {
       "description": "En déposant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir staké",
@@ -127,17 +100,14 @@
       "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
       "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
     },
-
     "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement",
-
     "reward_type_varialbe": " Le taux de récompense de staking de {{symbol}} varie selon les trades et les frais de transaction que le protocole gagne, ce qui ne peut être estimé précisément",
-
     "opportunity_search_title": "Sélectionnez un rendement",
     "validator_search_title_one": "Sélectionnez un validateur",
     "validator_search_title_other": "Sélectionnez des validateurs",
     "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tab_earn": "Earn",
-    "tab_positions": "Positions",
+    "tab_positions": "Manage",
     "validators_preferred": "Préférés",
     "validators_other": "Tous les validateurs",
     "validators_view_all": "Tout voir",
@@ -289,7 +259,6 @@
       "description": "StakeKit est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. StakeKit abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de StakeKit sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
     }
   },
-
   "positions": {
     "title": "Mes Positions",
     "via_one": "via {{providerName}}",

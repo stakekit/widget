@@ -114,7 +114,12 @@ export const usePositions = () => {
     [positionsData.data]
   );
 
-  return { positionsData, listData, importValidators, showPositions };
+  return {
+    positionsData,
+    listData,
+    importValidators,
+    showPositions,
+  };
 };
 
 type Input = {

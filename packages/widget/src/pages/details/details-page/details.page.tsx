@@ -5,7 +5,6 @@ import { Box } from "../../../components/atoms/box";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSKLocation } from "../../../providers/location";
 import { usePositions } from "../positions-page/hooks/use-positions";
-import { checkHasPendingClaimRewards } from "../shared";
 import type { TabsProps } from "./components/tabs";
 import { Tabs } from "./components/tabs";
 
@@ -16,11 +15,13 @@ export const Details = () => {
 
   const { current } = useSKLocation();
 
-  const hasPendingRewards = useMemo(
+  const pendingRewardsCount = useMemo(
     () =>
-      positionsData.data.some((p) =>
-        checkHasPendingClaimRewards(p.balancesWithAmount)
-      ),
+      positionsData.data.reduce((acc, val) => {
+        if (val.hasPendingClaimRewards || val.actionRequired) return acc + 1;
+
+        return acc;
+      }, 0),
     [positionsData.data]
   );
 
@@ -52,7 +53,7 @@ export const Details = () => {
           <Tabs
             onTabPress={onTabPress}
             selectedTab={selectedTab}
-            hasPendingRewards={hasPendingRewards}
+            pendingRewardsCount={pendingRewardsCount}
           />
         </Box>
 
