@@ -15,7 +15,7 @@ export const Details = () => {
 
   const { current } = useSKLocation();
 
-  const pendingActionCount = useMemo(
+  const pendingActionsCount = useMemo(
     () =>
       positionsData.data.reduce((acc, val) => {
         if (val.hasPendingClaimRewards || val.actionRequired) return acc + 1;
@@ -53,7 +53,7 @@ export const Details = () => {
           <Tabs
             onTabPress={onTabPress}
             selectedTab={selectedTab}
-            pendingActionCount={pendingActionCount}
+            pendingActionsCount={pendingActionsCount}
           />
         </Box>
 
