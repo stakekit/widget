@@ -124,13 +124,13 @@ export const PositionsListItem = memo(
                               {t(
                                 item.actionRequired
                                   ? "positions.action_required"
-                                  : item.hasPendingClaimRewards
-                                    ? "positions.claim_rewards"
-                                    : inactiveValidator
-                                      ? inactiveValidator === "jailed"
-                                        ? "details.validators_jailed"
+                                  : inactiveValidator
+                                    ? inactiveValidator === "jailed"
+                                      ? "details.validators_jailed"
+                                      : item.hasPendingClaimRewards
+                                        ? "positions.claim_rewards"
                                         : "details.validators_inactive"
-                                      : "positions.action_required"
+                                    : "positions.action_required"
                               )}
                             </Text>
                           </Box>
