@@ -162,11 +162,9 @@ const positionsTableDataSelector = createSelector(
                         value.balances
                       )
                     ).map((v) => v.token),
-                    actionRequired:
-                      value.type === "default" &&
-                      v.some(
-                        (b) => b.type === "locked" || b.type === "unstaked"
-                      ),
+                    actionRequired: v.some(
+                      (b) => b.type === "locked" || b.type === "unstaked"
+                    ),
                     amount: Just(
                       v.reduce((acc, b) => {
                         if (b.token.isPoints) return acc;
