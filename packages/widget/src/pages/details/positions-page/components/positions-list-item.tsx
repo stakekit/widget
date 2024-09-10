@@ -105,15 +105,16 @@ export const PositionsListItem = memo(
                             );
                           })
                           .extractNullable()}
-
-                        {(item.hasPendingClaimRewards ||
-                          item.actionRequired ||
+                        {(item.actionRequired ||
+                          item.hasPendingClaimRewards ||
                           inactiveValidator) && (
                           <Box
                             className={listItemContainer({
-                              type: item.hasPendingClaimRewards
-                                ? "claim"
-                                : "actionRequired",
+                              type: item.actionRequired
+                                ? "actionRequired"
+                                : item.hasPendingClaimRewards
+                                  ? "claim"
+                                  : "actionRequired",
                             })}
                           >
                             <Text
@@ -121,13 +122,15 @@ export const PositionsListItem = memo(
                               className={noWrap}
                             >
                               {t(
-                                item.hasPendingClaimRewards
-                                  ? "positions.claim_rewards"
-                                  : inactiveValidator
-                                    ? inactiveValidator === "jailed"
-                                      ? "details.validators_jailed"
-                                      : "details.validators_inactive"
-                                    : "positions.action_required"
+                                item.actionRequired
+                                  ? "positions.action_required"
+                                  : item.hasPendingClaimRewards
+                                    ? "positions.claim_rewards"
+                                    : inactiveValidator
+                                      ? inactiveValidator === "jailed"
+                                        ? "details.validators_jailed"
+                                        : "details.validators_inactive"
+                                      : "positions.action_required"
                               )}
                             </Text>
                           </Box>
