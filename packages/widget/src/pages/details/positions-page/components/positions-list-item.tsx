@@ -112,9 +112,9 @@ export const PositionsListItem = memo(
                             className={listItemContainer({
                               type: item.actionRequired
                                 ? "actionRequired"
-                                : item.hasPendingClaimRewards
-                                  ? "claim"
-                                  : "actionRequired",
+                                : inactiveValidator
+                                  ? "actionRequired"
+                                  : "claim",
                             })}
                           >
                             <Text
@@ -127,10 +127,8 @@ export const PositionsListItem = memo(
                                   : inactiveValidator
                                     ? inactiveValidator === "jailed"
                                       ? "details.validators_jailed"
-                                      : item.hasPendingClaimRewards
-                                        ? "positions.claim_rewards"
-                                        : "details.validators_inactive"
-                                    : "positions.action_required"
+                                      : "details.validators_inactive"
+                                    : "positions.claim_rewards"
                               )}
                             </Text>
                           </Box>
