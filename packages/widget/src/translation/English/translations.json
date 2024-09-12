@@ -119,7 +119,7 @@
     "reward_token": "You'll receive <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tabs": {
       "earn": "Earn",
-      "positions": "Positions",
+      "positions": "Manage",
       "activity": "Activity"
     },
     "validators_preferred": "Preferred",

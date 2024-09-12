@@ -12,10 +12,35 @@ export const tab = style([
   { cursor: "pointer", userSelect: "none" },
 ]);
 
-export const rewardsDot = style({
-  position: "absolute",
-  right: "-7px",
+export const activeTabBorder = style({
+  transform: "translateX(0)",
 });
+
+export const leftTabBorder = style({
+  transform: "translateX(101%)",
+});
+
+export const rightTabBorder = style({
+  transform: "translateX(-101%)",
+});
+
+export const rewardsBadge = style([
+  atoms({
+    width: "4",
+    height: "4",
+    borderRadius: "full",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+    background: "positionsActionRequiredBackground",
+  }),
+  {
+    zIndex: 1,
+    top: "3px",
+    right: "0",
+  },
+]);
 
 export const divider = style({
   position: "absolute",

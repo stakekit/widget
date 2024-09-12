@@ -5,7 +5,6 @@ import {
   type TabsProps,
 } from "@sk-widget/pages/details/details-page/components/tabs";
 import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { checkHasPendingClaimRewards } from "@sk-widget/pages/details/shared";
 import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
@@ -22,11 +21,13 @@ export const Details = () => {
 
   const { positionsData } = usePositions();
 
-  const hasPendingRewards = useMemo(
+  const pendingActionsCount = useMemo(
     () =>
-      positionsData.data.some((p) =>
-        checkHasPendingClaimRewards(p.balancesWithAmount)
-      ),
+      positionsData.data.reduce((acc, val) => {
+        if (val.hasPendingClaimRewards || val.actionRequired) return acc + 1;
+
+        return acc;
+      }, 0),
     [positionsData.data]
   );
 
@@ -65,7 +66,7 @@ export const Details = () => {
           <Tabs
             onTabPress={onTabPress}
             selectedTab={selectedTab}
-            hasPendingRewards={hasPendingRewards}
+            pendingActionsCount={pendingActionsCount}
           />
         </Box>
 

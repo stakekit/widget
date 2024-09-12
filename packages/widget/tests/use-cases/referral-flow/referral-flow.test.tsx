@@ -24,7 +24,7 @@ describe("Referral flow", () => {
       },
     });
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
+    await waitFor(() => expect(queryByText("Manage")).toBeInTheDocument());
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
@@ -61,7 +61,7 @@ describe("Referral flow", () => {
       },
     });
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
+    await waitFor(() => expect(queryByText("Manage")).toBeInTheDocument());
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
@@ -120,8 +120,8 @@ describe("Referral flow", () => {
 
     fireEvent.click(submitButton);
 
-    await waitFor(() => expect(queryByText("Positions")).toBeInTheDocument());
-    expect(queryByText("Positions")).toBeInTheDocument();
+    await waitFor(() => expect(queryByText("Manage")).toBeInTheDocument());
+    expect(queryByText("Manage")).toBeInTheDocument();
     unmount();
   });
 });
