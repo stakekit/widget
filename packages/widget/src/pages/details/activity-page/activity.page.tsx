@@ -103,11 +103,9 @@ export const ActivityPageComponent = () => {
                 itemContent={(index) => {
                   const item = allData[index];
 
-                  const { isFirst, isLast } = isFirstAndLast(index, counts);
-
                   return (
                     <Box className={listItemWrapper}>
-                      <ListItemBullet isFirst={isFirst} isLast={isLast} />
+                      <ListItemBullet index={index} counts={counts} />
                       <ActionListItem
                         onActionSelect={onActionSelect}
                         action={item}
@@ -129,30 +127,3 @@ export const ActivityPage = () => (
     <ActivityPageComponent />
   </ActivityPageContextProvider>
 );
-
-function isFirstAndLast(
-  childrenIndex: number,
-  parentArray: number[]
-): { isFirst: boolean; isLast: boolean } {
-  let currentIndex = 0;
-
-  for (let i = 0; i < parentArray.length; i++) {
-    const parentSize = parentArray[i];
-    const firstIndex = currentIndex;
-    const lastIndex = currentIndex + parentSize - 1;
-
-    // Check if the childrenIndex falls within the current parent's group
-    if (childrenIndex >= firstIndex && childrenIndex <= lastIndex) {
-      return {
-        isFirst: childrenIndex === firstIndex,
-        isLast: childrenIndex === lastIndex,
-      };
-    }
-
-    // Move to the next parent's group
-    currentIndex += parentSize;
-  }
-
-  // If the index doesn't belong to any group, return false for both
-  return { isFirst: false, isLast: false };
-}
