@@ -10,13 +10,13 @@ import { Tab } from "./tab";
 export type TabsProps = {
   selectedTab: "earn" | "positions";
   onTabPress: (selected: "earn" | "positions") => void;
-  hasPendingRewards: boolean;
+  pendingActionsCount?: number;
 };
 
 export const Tabs = ({
   selectedTab,
   onTabPress,
-  hasPendingRewards,
+  pendingActionsCount,
 }: TabsProps) => {
   const { state } = useMountAnimation();
 
@@ -69,7 +69,7 @@ export const Tabs = ({
             isSelected={selectedTab === "positions"}
             onTabPress={() => onTabPress("positions")}
             variant="positions"
-            hasPendingRewards={hasPendingRewards}
+            pendingActionsCount={pendingActionsCount}
           />
         </Box>
 
