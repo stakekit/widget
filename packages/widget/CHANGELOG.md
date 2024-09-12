@@ -1,5 +1,18 @@
 # @stakekit/widget
 
+## 0.0.194
+
+### Patch Changes
+
+- 8ea61c3: position tab update
+
+## 0.0.193
+
+### Patch Changes
+
+- a980f11: Change validator label
+- d5dc458: Update liquid staking title
+
 ## 0.0.192
 
 ### Patch Changes

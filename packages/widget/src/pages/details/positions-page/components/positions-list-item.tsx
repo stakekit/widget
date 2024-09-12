@@ -105,15 +105,16 @@ export const PositionsListItem = memo(
                             );
                           })
                           .extractNullable()}
-
-                        {(item.hasPendingClaimRewards ||
-                          item.actionRequired ||
+                        {(item.actionRequired ||
+                          item.hasPendingClaimRewards ||
                           inactiveValidator) && (
                           <Box
                             className={listItemContainer({
-                              type: item.hasPendingClaimRewards
-                                ? "claim"
-                                : "actionRequired",
+                              type: item.actionRequired
+                                ? "actionRequired"
+                                : inactiveValidator
+                                  ? "actionRequired"
+                                  : "claim",
                             })}
                           >
                             <Text
@@ -121,13 +122,13 @@ export const PositionsListItem = memo(
                               className={noWrap}
                             >
                               {t(
-                                item.hasPendingClaimRewards
-                                  ? "positions.claim_rewards"
+                                item.actionRequired
+                                  ? "positions.action_required"
                                   : inactiveValidator
                                     ? inactiveValidator === "jailed"
                                       ? "details.validators_jailed"
                                       : "details.validators_inactive"
-                                    : "positions.action_required"
+                                    : "positions.claim_rewards"
                               )}
                             </Text>
                           </Box>

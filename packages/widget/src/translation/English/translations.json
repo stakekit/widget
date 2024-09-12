@@ -137,7 +137,7 @@
     "validator_search_title_other": "Select validators",
     "reward_token": "You'll receive <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tab_earn": "Earn",
-    "tab_positions": "Positions",
+    "tab_positions": "Manage",
     "validators_preferred": "Preferred",
     "validators_other": "All validators",
     "validators_view_all": "View all",

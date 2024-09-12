@@ -106,7 +106,7 @@ describe("Renders initial page", () => {
     await waitFor(() =>
       expect(queryByTestId("number-input")).toBeInTheDocument()
     );
-    expect(queryByText("Positions")).toBeInTheDocument();
+    expect(queryByText("Manage")).toBeInTheDocument();
     expect(queryByText("Connect Wallet")).toBeInTheDocument();
     unmount();
   });
