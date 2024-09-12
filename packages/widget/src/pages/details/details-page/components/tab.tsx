@@ -10,7 +10,7 @@ type Props = {
   onTabPress: () => void;
 } & (
   | { variant: "earn"; pendingActionsCount?: never }
-  | { variant: "positions"; pendingActionsCount: boolean }
+  | { variant: "positions"; pendingActionsCount?: number }
   | { variant: "activity"; pendingActionsCount?: never }
 );
 

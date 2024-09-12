@@ -1,18 +1,20 @@
 import { Box, Divider, Text } from "@sk-widget/components";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import { useActionReview } from "@sk-widget/pages/review/hooks/use-action-review.hook";
 import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
-import TermsOfUse from "@sk-widget/pages/review/pages/common-page/components/terms-of-use";
+import { pointerStyles } from "@sk-widget/pages/review/pages/style.css";
 import { capitalizeFirstLetter } from "@sk-widget/utils/formatters";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { PageContainer } from "../../components";
 
 export const ActionReviewPage = () => {
   const { t } = useTranslation();
+  const trackEvent = useTrackEvent();
   const { selectedYield, selectedAction, transactions } = useActionReview();
 
   const info = useMemo(
@@ -74,8 +76,26 @@ export const ActionReviewPage = () => {
             ))
           )
           .extractNullable()}
-
-        <TermsOfUse />
+        <Divider my="2" />
+        <Box marginTop="4" marginBottom="16">
+          <Text variant={{ weight: "normal", type: "muted" }}>
+            <Trans
+              i18nKey="activity.review.terms_of_use"
+              components={{
+                underline0: (
+                  // biome-ignore lint/a11y/useAnchorContent: <explanation>
+                  <a
+                    target="_blank"
+                    onClick={() => trackEvent("termsClicked")}
+                    href="https://docs.stakek.it/docs/terms-of-use"
+                    className={pointerStyles}
+                    rel="noreferrer"
+                  />
+                ),
+              }}
+            />
+          </Text>
+        </Box>
       </PageContainer>
     </AnimationPage>
   );

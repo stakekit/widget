@@ -1,13 +1,13 @@
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
-import TermsOfUse from "@sk-widget/pages/review/pages/common-page/components/terms-of-use";
 import type { FeesBps } from "@sk-widget/pages/review/types";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Divider } from "../../../../components";
 import { Box } from "../../../../components/atoms/box";
 import { Text } from "../../../../components/atoms/typography";
@@ -17,7 +17,7 @@ import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { PageContainer } from "../../../components";
 import { MetaInfo } from "../../../components/meta-info";
-import { feeStyles } from "../style.css";
+import { feeStyles, pointerStyles } from "../style.css";
 
 export type MetaInfoProps =
   | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }
@@ -55,6 +55,7 @@ export const ReviewPage = ({
 }: ReviewPageProps) => {
   useTrackPage("stakeReview");
 
+  const trackEvent = useTrackEvent();
   const { t } = useTranslation();
 
   const isLoading = loading || feeConfigLoading;
@@ -125,7 +126,25 @@ export const ReviewPage = ({
           </>
         )}
 
-        <TermsOfUse {...rest} />
+        <Box marginTop="4" marginBottom={rest.showMetaInfo ? "4" : "16"}>
+          <Text variant={{ weight: "normal", type: "muted" }}>
+            <Trans
+              i18nKey="review.terms_of_use"
+              components={{
+                underline0: (
+                  // biome-ignore lint/a11y/useAnchorContent: <explanation>
+                  <a
+                    target="_blank"
+                    onClick={() => trackEvent("termsClicked")}
+                    href="https://docs.stakek.it/docs/terms-of-use"
+                    className={pointerStyles}
+                    rel="noreferrer"
+                  />
+                ),
+              }}
+            />
+          </Text>
+        </Box>
       </PageContainer>
     </AnimationPage>
   );

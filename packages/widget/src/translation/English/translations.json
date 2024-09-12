@@ -38,7 +38,8 @@
     "review": {
       "transaction": "Transaction {{txIndex}}:",
       "retry": "Retry",
-      "unknown_error": "Unknown error"
+      "unknown_error": "Unknown error",
+      "terms_of_use": "By clicking retry you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures"
     }
   },
   "details": {
