@@ -42,7 +42,7 @@ const ActionListItem = ({
     useActionListItem(action);
 
   return (
-    <Box py="1" paddingLeft="7">
+    <Box py="1" width="full">
       {integrationData.mapOrDefault(
         (d) => (
           <ListItem onClick={() => onActionSelect(action)} className={listItem}>

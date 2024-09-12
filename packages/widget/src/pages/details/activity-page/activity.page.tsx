@@ -4,6 +4,7 @@ import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { dateGroupLabels } from "@sk-widget/domain/types/date-group-labels";
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import ActionListItem from "@sk-widget/pages/details/activity-page/components/action-list-item";
+import ListItemBullet from "@sk-widget/pages/details/activity-page/components/list-item-bullet";
 import {
   ActivityPageContextProvider,
   useActivityPageContext,
@@ -15,7 +16,7 @@ import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "../../components";
-import { container } from "./style.css";
+import { container, listItemWrapper } from "./style.css";
 
 export const ActivityPageComponent = () => {
   useTrackPage("activity");
@@ -102,11 +103,16 @@ export const ActivityPageComponent = () => {
                 itemContent={(index) => {
                   const item = allData[index];
 
+                  const { isFirst, isLast } = isFirstAndLast(index, counts);
+
                   return (
-                    <ActionListItem
-                      onActionSelect={onActionSelect}
-                      action={item}
-                    />
+                    <Box className={listItemWrapper}>
+                      <ListItemBullet isFirst={isFirst} isLast={isLast} />
+                      <ActionListItem
+                        onActionSelect={onActionSelect}
+                        action={item}
+                      />
+                    </Box>
                   );
                 }}
               />
@@ -123,3 +129,30 @@ export const ActivityPage = () => (
     <ActivityPageComponent />
   </ActivityPageContextProvider>
 );
+
+function isFirstAndLast(
+  childrenIndex: number,
+  parentArray: number[]
+): { isFirst: boolean; isLast: boolean } {
+  let currentIndex = 0;
+
+  for (let i = 0; i < parentArray.length; i++) {
+    const parentSize = parentArray[i];
+    const firstIndex = currentIndex;
+    const lastIndex = currentIndex + parentSize - 1;
+
+    // Check if the childrenIndex falls within the current parent's group
+    if (childrenIndex >= firstIndex && childrenIndex <= lastIndex) {
+      return {
+        isFirst: childrenIndex === firstIndex,
+        isLast: childrenIndex === lastIndex,
+      };
+    }
+
+    // Move to the next parent's group
+    currentIndex += parentSize;
+  }
+
+  // If the index doesn't belong to any group, return false for both
+  return { isFirst: false, isLast: false };
+}

@@ -1,5 +1,6 @@
 import type { ActionTypes, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
+import type { i18n } from "i18next";
 import { Maybe } from "purify-ts";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
 import { getTokenPriceInUSD } from "../domain";
@@ -108,3 +109,50 @@ export const formatActionName = (action: ActionTypes | undefined) =>
     (a) => a.replace(/_/g, " "),
     "Action"
   );
+
+export const groupDateStrings = (
+  dateStrings: string[],
+  i18n: i18n
+): [string[], number[]] => {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+
+  const formatDate = (date: Date): string =>
+    date.toLocaleDateString(i18n.language, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+  const labelsMap: { [key: string]: string } = {};
+  const countMap: { [key: string]: number } = {};
+
+  dateStrings.forEach((dateString) => {
+    const date = new Date(dateString);
+    let label: string;
+
+    if (date.toDateString() === today.toDateString()) {
+      label = "today";
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      label = "yesterday";
+    } else {
+      label = formatDate(date);
+    }
+
+    if (countMap[label]) {
+      countMap[label]++;
+    } else {
+      countMap[label] = 1;
+      labelsMap[label] = label;
+    }
+  });
+
+  const labels = Object.values(labelsMap);
+  const counts = Object.values(countMap);
+
+  return [labels, counts];
+};
+
+export const capitalizeFirstLetter = (text: string) =>
+  text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();

@@ -3,7 +3,7 @@ import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import { formatNumber } from "@sk-widget/utils";
 import {

@@ -2,7 +2,7 @@ import { UnstakeSignPopup } from "@sk-widget/pages/position-details/components/u
 import { useUnstakeActionReview } from "@sk-widget/pages/review/hooks/use-unstake-review.hook";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { ReviewPage } from "./common.page";
+import { ReviewPage } from "./common-page/common.page";
 
 export const UnstakeReviewPage = () => {
   const {

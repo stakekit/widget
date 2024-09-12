@@ -35,9 +35,10 @@
       "today": "Today",
       "yesterday": "Yesterday"
     },
-    "failed_review": {
-      "unknown_error": "Unknown error",
-      "retry": "Retry"
+    "review": {
+      "transaction": "Transaction {{txIndex}}:",
+      "retry": "Retry",
+      "unknown_error": "Unknown error"
     }
   },
   "details": {

@@ -3,7 +3,8 @@ import type { ActivityPageContextType } from "@sk-widget/pages/details/activity-
 import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import type { ActionListNetwork } from "@stakekit/api-hooks";
+import { groupDateStrings } from "@sk-widget/utils/formatters";
+import type { ActionListNetwork, TransactionType } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useMutation } from "@tanstack/react-query";
 import { Maybe } from "purify-ts";
@@ -13,6 +14,7 @@ import {
   useContext,
   useMemo,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 const ActivityPageContext = createContext<ActivityPageContextType | undefined>(
@@ -26,6 +28,7 @@ export const ActivityPageContextProvider = ({
   const { openConnectModal } = useConnectModal();
   const { isConnected, chain } = useSKWallet();
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
 
   const onClickHandler = useMutation({
     mutationFn: async (data: ActionYieldDto) => {
@@ -41,18 +44,24 @@ export const ActivityPageContextProvider = ({
         data.actionData.status === "SUCCESS" ||
         data.actionData.status === "PROCESSING"
       ) {
-        return navigate("/activity/complete");
-      }
-
-      if (data.actionData.status === "FAILED") {
-        return navigate("/activity/error-review");
+        return navigate("/activity/complete", {
+          state: {
+            urls: data.actionData.transactions
+              .map((val) => ({ type: val.type, url: val.explorerUrl }))
+              .filter(
+                (val): val is { type: TransactionType; url: string } =>
+                  !!val.url
+              ),
+          },
+        });
       }
 
       if (
         data.actionData.status === "CREATED" ||
-        data.actionData.status === "WAITING_FOR_NEXT"
+        data.actionData.status === "WAITING_FOR_NEXT" ||
+        data.actionData.status === "FAILED"
       ) {
-        return navigate("/activity/steps");
+        return navigate("/activity/review");
       }
 
       return;
@@ -81,7 +90,7 @@ export const ActivityPageContextProvider = ({
     [actions]
   );
 
-  const [labels, counts] = groupDateStrings(groupedDates.extract() ?? []);
+  const [labels, counts] = groupDateStrings(groupedDates.extract() ?? [], i18n);
 
   const value = {
     onActionSelect,
@@ -106,46 +115,4 @@ export const useActivityPageContext = () => {
   }
 
   return context;
-};
-
-const groupDateStrings = (dateStrings: string[]): [string[], number[]] => {
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  const formatDate = (date: Date): string => {
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const labelsMap: { [key: string]: string } = {};
-  const countMap: { [key: string]: number } = {};
-
-  dateStrings.forEach((dateString) => {
-    const date = new Date(dateString);
-    let label: string;
-
-    if (date.toDateString() === today.toDateString()) {
-      label = "today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      label = "yesterday";
-    } else {
-      label = formatDate(date);
-    }
-
-    if (countMap[label]) {
-      countMap[label]++;
-    } else {
-      countMap[label] = 1;
-      labelsMap[label] = label;
-    }
-  });
-
-  const labels = Object.values(labelsMap);
-  const counts = Object.values(countMap);
-
-  return [labels, counts];
 };

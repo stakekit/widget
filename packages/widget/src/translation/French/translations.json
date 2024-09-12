@@ -35,8 +35,8 @@
       "today": "Aujourd'hui",
       "yesterday": "Hier"
     },
-    "failed_review": {
-      "unknown_error": "Une erreur inconnue s'est produite",
+    "review": {
+      "transaction": "Transaction {{txIndex}}:",
       "retry": "Réessayer"
     }
   },

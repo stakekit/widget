@@ -42,3 +42,11 @@ export const listItem = style([
 export const noWrap = style({
   whiteSpace: "nowrap",
 });
+
+export const listItemWrapper = style([
+  atoms({
+    display: "flex",
+    gap: "3",
+    paddingLeft: "1",
+  }),
+]);
