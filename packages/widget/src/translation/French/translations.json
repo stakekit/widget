@@ -36,8 +36,10 @@
       "yesterday": "Hier"
     },
     "review": {
-      "transaction": "Transaction {{txIndex}}:",
-      "retry": "Réessayer"
+      "transactions": "Transactions",
+      "retry": "Réessayer",
+      "unknown_error": "Unknown error",
+      "terms_of_use": "En cliquant sur Réessayer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques"
     }
   },
   "details": {

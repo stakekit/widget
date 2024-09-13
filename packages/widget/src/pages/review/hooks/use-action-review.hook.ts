@@ -1,4 +1,5 @@
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
+import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import { useSelector } from "@xstate/store/react";
@@ -33,6 +34,11 @@ export const useActionReview = () => {
       w.open(url, "_blank");
     });
 
+  const yieldType = useYieldType(Maybe.of(selectedYield)).mapOrDefault(
+    (y) => y.review,
+    ""
+  );
+
   useRegisterFooterButton(
     useMemo(
       () => ({
@@ -50,5 +56,6 @@ export const useActionReview = () => {
     selectedAction,
     transactions,
     onViewTransactionClick,
+    yieldType,
   };
 };

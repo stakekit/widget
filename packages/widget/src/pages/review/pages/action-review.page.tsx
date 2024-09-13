@@ -15,7 +15,8 @@ import { PageContainer } from "../../components";
 export const ActionReviewPage = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { selectedYield, selectedAction, transactions } = useActionReview();
+  const { selectedYield, selectedAction, transactions, yieldType } =
+    useActionReview();
 
   const info = useMemo(
     () =>
@@ -32,25 +33,24 @@ export const ActionReviewPage = () => {
           info={info}
           metadata={Maybe.of(selectedYield.metadata)}
           token={Maybe.of(selectedYield.token)}
-          title={selectedAction.type}
+          title={yieldType}
         />
-        <Divider my="2" />
-
+        <Divider />
+        <Text marginTop="4" marginBottom="2">
+          {t("activity.review.transactions")}:
+        </Text>
         {transactions
           .map((tx) => tx.sort((a, b) => a.stepIndex - b.stepIndex))
           .map((stx) =>
-            stx.map((tx, i) => (
+            stx.map((tx) => (
               <Box
-                py="2"
+                marginBottom="2"
                 display="flex"
                 justifyContent="space-between"
                 key={tx.id}
               >
-                <Text>
-                  {t("activity.review.transaction", { txIndex: i + 1 })}{" "}
-                  <Text as="span" color="textMuted">
-                    {capitalizeFirstLetter(tx.type)}
-                  </Text>
+                <Text as="span" color="textMuted">
+                  {capitalizeFirstLetter(tx.type)}
                 </Text>
                 <Box
                   display="flex"
