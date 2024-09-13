@@ -10,6 +10,7 @@ import {
   viaText,
 } from "@sk-widget/pages/details/activity-page/style.css";
 import { listItemContainer } from "@sk-widget/pages/details/positions-page/style.css";
+import { capitalizeFirstLetter } from "@sk-widget/utils/formatters";
 import type { ActionDto, ActionStatus, YieldDto } from "@stakekit/api-hooks";
 import { List } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -38,8 +39,7 @@ const ActionListItem = ({
   onActionSelect: (action: ActionYieldDto) => void;
 }) => {
   const { t } = useTranslation();
-  const { integrationData, providersDetails, rewardRateAverage } =
-    useActionListItem(action);
+  const { integrationData, providersDetails } = useActionListItem(action);
 
   return (
     <Box py="1" width="full">
@@ -102,27 +102,25 @@ const ActionListItem = ({
                 </Box>
               </Box>
 
-              {rewardRateAverage
-                .map((rRA) => (
-                  <Box
-                    display="flex"
-                    justifyContent="center"
-                    alignItems="flex-end"
-                    flexDirection="column"
-                    textAlign="end"
-                    gap="1"
-                  >
-                    <Text variant={{ weight: "normal" }}>{rRA}</Text>
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="flex-end"
+                flexDirection="column"
+                textAlign="end"
+                gap="1"
+              >
+                <Text variant={{ weight: "normal" }}>
+                  {capitalizeFirstLetter(action.actionData.type)}
+                </Text>
 
-                    <Text
-                      overflowWrap="anywhere"
-                      variant={{ weight: "normal", type: "muted" }}
-                    >
-                      {action.actionData.amount} {d.token.symbol}
-                    </Text>
-                  </Box>
-                ))
-                .extractNullable()}
+                <Text
+                  overflowWrap="anywhere"
+                  variant={{ weight: "normal", type: "muted" }}
+                >
+                  {action.actionData.amount} {d.token.symbol}
+                </Text>
+              </Box>
             </Box>
           </ListItem>
         ),
