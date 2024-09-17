@@ -1,3 +1,4 @@
+import { attachMaintenanceInterceptor } from "@sk-widget/hooks/use-under-maintenance";
 import { ApiClientProvider } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
 import axios from "axios";
@@ -26,6 +27,7 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
     attachDelayInterceptor(instance);
     attachGeoBlockInterceptor(instance);
     attachRichErrorsInterceptor(instance, i18n);
+    attachMaintenanceInterceptor(instance);
 
     return instance;
   });

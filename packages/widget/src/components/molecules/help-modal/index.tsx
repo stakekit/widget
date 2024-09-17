@@ -24,7 +24,8 @@ type ModalType =
         regionCodeName: string | undefined;
       })
   | { type: "getInTouch" }
-  | { type: "whatIsStakeKit" };
+  | { type: "whatIsStakeKit" }
+  | { type: "underMaintenance"; onClose: () => void };
 
 type HelpModalProps = {
   modal: ModalType;
@@ -44,6 +45,16 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
     button?: { title: string; onClick: () => void };
   } => {
     switch (modal.type) {
+      case "underMaintenance": {
+        const title = t("help_modals.under_maintenance.title");
+        return {
+          title,
+          description: (
+            <Trans i18nKey="help_modals.under_maintenance.description" />
+          ),
+          image: images.fees,
+        };
+      }
       case "geoBlock": {
         const title = t("help_modals.geo_block.title");
         const countryName = formatCountryCode({
@@ -203,7 +214,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
       onOpen: () => trackEvent?.("helpModalOpened", { modal: title }),
     };
 
-    return modal.type === "geoBlock"
+    return modal.type === "geoBlock" || modal.type === "underMaintenance"
       ? {
           ...base,
           state: {

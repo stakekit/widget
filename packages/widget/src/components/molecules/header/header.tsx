@@ -1,4 +1,5 @@
 import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
+import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { motion } from "framer-motion";
@@ -20,6 +21,7 @@ import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const Header = () => {
   const navigate = useNavigate();
+  const underMaintenance = useUnderMaintenance();
 
   const { containerRef } = useSyncHeaderHeight();
 
@@ -78,7 +80,7 @@ export const Header = () => {
             )}
           </Box>
 
-          {showDisconnect && (
+          {showDisconnect && !underMaintenance && (
             <Box
               as="button"
               onClick={onXPress}
@@ -103,7 +105,10 @@ export const Header = () => {
                     aria-hidden={!mounted}
                   >
                     {Maybe.fromFalsy(
-                      (isConnected || isConnecting) && chain && account
+                      (isConnected || isConnecting) &&
+                        chain &&
+                        account &&
+                        !underMaintenance
                     )
                       .map(() => (
                         <motion.div
