@@ -31,11 +31,6 @@ export const Tab = ({
   return (
     <Box className={tabContainer}>
       <Box className={clsx([pressAnimation, tab])} onClick={onTabPress}>
-        {!!pendingActionsCount && (
-          <Box className={rewardsBadge}>
-            <Text style={{ fontSize: 8 }}>{pendingActionsCount}</Text>
-          </Box>
-        )}
         <Box
           {...(variant === "positions" && { position: "relative" })}
           display="inline-flex"
@@ -48,6 +43,12 @@ export const Tab = ({
               ? t("details.tab_earn")
               : t("details.tab_positions")}
           </Text>
+
+          {!!pendingActionsCount && (
+            <Box className={rewardsBadge}>
+              <Text style={{ fontSize: 8 }}>{pendingActionsCount}</Text>
+            </Box>
+          )}
         </Box>
       </Box>
 
