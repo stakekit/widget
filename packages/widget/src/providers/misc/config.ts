@@ -13,8 +13,10 @@ const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   enabledNetworks,
+  forceWalletConnectOnly,
 }: {
   enabledNetworks: Set<Networks>;
+  forceWalletConnectOnly: boolean;
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -53,7 +55,9 @@ const queryFn = async ({
 
   return Promise.all([
     MaybeAsync.liftMaybe(Maybe.fromFalsy(miscChainsMap.tron)).chain(() =>
-      MaybeAsync(() => import("./tron-connector")).map((v) => v.tronConnector)
+      MaybeAsync(() => import("./tron-connector")).map((v) =>
+        v.getTronConnectors({ forceWalletConnectOnly })
+      )
     ),
   ]).then((connectors) => ({
     miscChainsMap,
