@@ -35,7 +35,8 @@ export const createCosmosConnector = ({
     iconUrl:
       (typeof wallet.walletInfo.logo === "string"
         ? wallet.walletInfo.logo
-        : wallet.walletInfo.logo?.major ?? wallet.walletInfo.logo?.minor) ?? "",
+        : (wallet.walletInfo.logo?.major ?? wallet.walletInfo.logo?.minor)) ??
+      "",
     iconBackground: "transparent",
     downloadUrls: {
       chrome: wallet.walletInfo.downloads?.[0].link,
