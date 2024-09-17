@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.196
+
+### Patch Changes
+
+- 31d71a1: Actions count badge postion
+
 ## 0.0.195
 
 ### Patch Changes
