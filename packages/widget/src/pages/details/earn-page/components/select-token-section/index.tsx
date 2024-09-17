@@ -71,7 +71,7 @@ export const SelectTokenSection = () => {
           key="min"
           variant={{ type: stakeAmountLessThanMin ? "danger" : "muted" }}
         >
-          {min && max ? `${min} / ${max}` : min ?? max}
+          {min && max ? `${min} / ${max}` : (min ?? max)}
         </Text>
       </Box>
     ))
