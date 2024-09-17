@@ -15,6 +15,7 @@ const UnderMaintenance = () => {
       justifyContent="center"
       paddingBottom={{ mobile: "8" }}
       className={container}
+      data-testid="under-maintenance"
     >
       <Box as="img" src={images.fees} className={imageStyle} />
       <Box>
