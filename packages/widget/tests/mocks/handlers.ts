@@ -12,10 +12,11 @@ export const handlers = [
 
     return HttpResponse.json({});
   }),
-
-  http.all("*", async () => {
+  http.get("*relay.walletconnect*", async () => {
     await delay();
-    return passthrough();
+
+    return new HttpResponse(null, { status: 500 });
   }),
+  http.all("*", passthrough),
   ...getStakeKitMock(),
 ];
