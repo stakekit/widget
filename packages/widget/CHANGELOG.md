@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.197
+
+### Patch Changes
+
+- d459a1c: Fix breaking tests
+
 ## 0.0.196
 
 ### Patch Changes
