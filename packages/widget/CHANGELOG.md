@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.199
+
+### Patch Changes
+
+- 14e03c5: maintenance mode
+
 ## 0.0.198
 
 ### Patch Changes
