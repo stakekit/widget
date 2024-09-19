@@ -5,10 +5,12 @@ import "./styles/theme/global.css";
 import { useInitParams } from "@sk-widget/hooks/use-init-params";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
+import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
 import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
 import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
+import { useHealthHealthV2 } from "@stakekit/api-hooks";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
@@ -57,6 +59,12 @@ preloadImages();
 
 const Widget = () => {
   useToggleTheme();
+
+  const underMaintenance = useHealthHealthV2({
+    query: {
+      refetchInterval: 1000 * 30,
+    },
+  });
 
   useLoadErrorTranslations();
 
@@ -110,6 +118,9 @@ const Widget = () => {
    * Handle position details pages in their own Routes
    */
   const key = detailsMatch ? "/" : current.pathname;
+
+  if (underMaintenance.data?.db && underMaintenance.data.db !== "OK")
+    return <UnderMaintenance />;
 
   return (
     <>

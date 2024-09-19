@@ -1,5 +1,3 @@
-import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
-import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 import { Box } from "../../../components";
@@ -24,10 +22,6 @@ export const PositionsPage = () => {
     usePositions();
 
   const { isConnected, isConnecting } = useSKWallet();
-
-  const underMaintenance = useUnderMaintenance();
-
-  if (underMaintenance) return <UnderMaintenance />;
 
   const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {

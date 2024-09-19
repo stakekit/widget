@@ -12,7 +12,7 @@ export const [usePoweredByHeight, PoweredByHeightProvider] =
 const useSyncPoweredByHeight = () =>
   useSyncElementHeight(usePoweredByHeight()[1]);
 
-export const PoweredBy = () => {
+export const PoweredBy = ({ opacity }: { opacity?: number }) => {
   const { containerRef } = useSyncPoweredByHeight();
 
   const { t } = useTranslation();
@@ -25,7 +25,7 @@ export const PoweredBy = () => {
       ref={containerRef}
       initial={{ opacity: 0 }}
       animate={{
-        opacity: state.layout ? 1 : 0,
+        opacity: opacity || state.layout ? 1 : 0,
         transition: { duration: 0.3, delay: 0.2 },
       }}
     >

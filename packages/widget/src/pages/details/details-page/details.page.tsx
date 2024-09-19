@@ -1,5 +1,3 @@
-import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
-import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
@@ -30,10 +28,6 @@ export const Details = () => {
   const navigate = useNavigate();
 
   const [selectedTab, setSelectedTab] = useState<"earn" | "positions">("earn");
-
-  const underMaintenance = useUnderMaintenance();
-
-  if (underMaintenance) return <UnderMaintenance />;
 
   if (current.pathname === "/" && selectedTab === "positions") {
     setSelectedTab("earn");

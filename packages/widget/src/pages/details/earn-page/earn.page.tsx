@@ -1,5 +1,3 @@
-import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
-import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
 import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type { MotionProps, TargetAndTransition } from "framer-motion";
 import { motion } from "framer-motion";
@@ -37,9 +35,6 @@ const EarnPageComponent = () => {
   const { mountAnimationFinished, dispatch } = useMountAnimation();
 
   const { disableInitLayoutAnimation } = useSettings();
-  const underMaintenance = useUnderMaintenance();
-
-  if (underMaintenance) return <UnderMaintenance />;
 
   const { animate, initial } = Just({
     opacity: 1,
