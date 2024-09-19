@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.198
+
+### Patch Changes
+
+- eae3007: Fix yield id param validation
+
 ## 0.0.197
 
 ### Patch Changes
