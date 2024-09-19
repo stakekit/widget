@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { images } from "@sk-widget/assets/images";
 import { PoweredBy } from "@sk-widget/pages/components/powered-by";
 import { animationContainer } from "@sk-widget/style.css";
-import { container, description, imageStyle } from "./style.css";
+import { container, imageStyle } from "./style.css";
 
 const UnderMaintenance = () => {
   const { t } = useTranslation();
@@ -22,19 +22,28 @@ const UnderMaintenance = () => {
       >
         <Box as="img" src={images.fees} className={imageStyle} />
         <Box>
-          <Heading textAlign="center" variant={{ level: "h4" }}>
+          <Heading
+            marginBottom="4"
+            textAlign="center"
+            variant={{ level: "h4" }}
+          >
             {t("help_modals.under_maintenance.title")}
           </Heading>
 
-          <Box marginTop="2" lineHeight="short">
-            <Text
-              variant={{ type: "muted", weight: "normal" }}
-              textAlign="center"
-              className={description}
-            >
-              {t("help_modals.under_maintenance.description")}
-            </Text>
-          </Box>
+          <Text
+            variant={{ type: "muted", weight: "normal" }}
+            textAlign="center"
+            marginBottom="4"
+          >
+            {t("help_modals.under_maintenance.description")}
+          </Text>
+          <Text
+            variant={{ type: "muted", weight: "normal" }}
+            textAlign="center"
+            marginBottom="4"
+          >
+            {t("help_modals.under_maintenance.description2")}
+          </Text>
         </Box>
       </Box>
       <PoweredBy opacity={1} />

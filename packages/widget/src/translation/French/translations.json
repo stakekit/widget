@@ -290,7 +290,8 @@
     },
     "under_maintenance": {
       "title": "En maintenance",
-      "description": "Nous sommes actuellement en maintenance.\nVeuillez réessayer ultérieurement."
+      "description": "StakeKit est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
+      "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
     }
   },
 

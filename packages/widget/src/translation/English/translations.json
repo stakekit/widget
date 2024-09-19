@@ -290,7 +290,8 @@
     },
     "under_maintenance": {
       "title": "Under Maintenance",
-      "description": "We're currently undergoing maintenance.\nPlease try again later."
+      "description": "StakeKit is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
+      "description2": "We appreciate your patience and encourage you to check back shortly!"
     }
   },
 

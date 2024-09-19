@@ -9,7 +9,3 @@ export const container = style({
   paddingLeft: "25px",
   paddingRight: "25px",
 });
-
-export const description = style({
-  whiteSpace: "pre-line",
-});
