@@ -287,6 +287,11 @@
     "what_is_stakekit": {
       "title": "Qu'est-ce que StakeKit ?",
       "description": "StakeKit est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. StakeKit abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de StakeKit sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
+    },
+    "under_maintenance": {
+      "title": "En maintenance",
+      "description": "StakeKit est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
+      "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
     }
   },
 
