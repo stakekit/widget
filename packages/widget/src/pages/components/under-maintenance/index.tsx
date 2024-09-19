@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { images } from "@sk-widget/assets/images";
 import { PoweredBy } from "@sk-widget/pages/components/powered-by";
 import { animationContainer } from "@sk-widget/style.css";
-import { container, imageStyle } from "./style.css";
+import { container, description, imageStyle } from "./style.css";
 
 const UnderMaintenance = () => {
   const { t } = useTranslation();
@@ -30,6 +30,7 @@ const UnderMaintenance = () => {
             <Text
               variant={{ type: "muted", weight: "normal" }}
               textAlign="center"
+              className={description}
             >
               {t("help_modals.under_maintenance.description")}
             </Text>

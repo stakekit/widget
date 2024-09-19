@@ -290,7 +290,7 @@
     },
     "under_maintenance": {
       "title": "En maintenance",
-      "description": "Nous sommes actuellement en maintenance. Veuillez réessayer ultérieurement."
+      "description": "Nous sommes actuellement en maintenance.\nVeuillez réessayer ultérieurement."
     }
   },
 
