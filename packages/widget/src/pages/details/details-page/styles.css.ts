@@ -37,8 +37,8 @@ export const rewardsBadge = style([
   }),
   {
     zIndex: 1,
-    top: "3px",
-    right: "0",
+    top: "-12px",
+    right: "-15px",
   },
 ]);
 

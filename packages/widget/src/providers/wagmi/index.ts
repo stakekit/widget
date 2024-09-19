@@ -74,6 +74,7 @@ const buildWagmiConfig = async (opts: {
           getMiscConfig({
             enabledNetworks: networks,
             queryClient: opts.queryClient,
+            forceWalletConnectOnly: opts.forceWalletConnectOnly,
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,

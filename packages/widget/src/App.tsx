@@ -3,9 +3,11 @@ import "./translation";
 import "./utils/extend-purify";
 import "./styles/theme/global.css";
 import { useInitParams } from "@sk-widget/hooks/use-init-params";
+import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
 import { ActivityCompletePage } from "@sk-widget/pages/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
+import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
 import { ActivityPage } from "@sk-widget/pages/details/activity-page/activity.page";
 import { ActionReviewPage } from "@sk-widget/pages/review/pages/action-review.page";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
@@ -62,6 +64,8 @@ preloadImages();
 const Widget = () => {
   useToggleTheme();
 
+  const underMaintenance = useUnderMaintenance();
+
   useLoadErrorTranslations();
 
   const { chain, address } = useSKWallet();
@@ -115,6 +119,8 @@ const Widget = () => {
    * Handle position details pages in their own Routes
    */
   const key = detailsMatch ? "/" : current.pathname;
+
+  if (underMaintenance) return <UnderMaintenance />;
 
   return (
     <>

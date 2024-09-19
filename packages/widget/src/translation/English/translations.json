@@ -272,6 +272,11 @@
     "what_is_stakekit": {
       "title": "What is StakeKit?",
       "description": "StakeKit is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. StakeKit abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about StakeKit on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
+    },
+    "under_maintenance": {
+      "title": "Under Maintenance",
+      "description": "StakeKit is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
+      "description2": "We appreciate your patience and encourage you to check back shortly!"
     }
   },
   "positions": {

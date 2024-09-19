@@ -1,5 +1,31 @@
 # @stakekit/widget
 
+## 0.0.198
+
+### Patch Changes
+
+- eae3007: Fix yield id param validation
+
+## 0.0.197
+
+### Patch Changes
+
+- d459a1c: Fix breaking tests
+
+## 0.0.196
+
+### Patch Changes
+
+- 31d71a1: Actions count badge postion
+
+## 0.0.195
+
+### Patch Changes
+
+- 54c7cbe: Tron with walletconnect connector only option
+- 54c7cbe: Bump deps
+- 54c7cbe: Remove top css layer
+
 ## 0.0.194
 
 ### Patch Changes

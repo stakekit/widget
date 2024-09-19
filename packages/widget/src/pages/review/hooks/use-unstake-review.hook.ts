@@ -89,7 +89,7 @@ export const useUnstakeActionReview = () => {
     switch (d.metadata.type) {
       case "staking":
       case "liquid-staking":
-        return t("position_details.unstake");
+        return t("position_details.unstake") as string;
 
       default:
         return t("position_details.withdraw");

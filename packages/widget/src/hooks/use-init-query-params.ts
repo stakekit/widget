@@ -41,7 +41,7 @@ const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
   encode: (val) => val,
 });
 
-const safeString = /^[a-zA-Z0-9-_]*$/;
+const safeString = /^(?!.*\.\.)[a-zA-Z0-9-_.]*$/;
 
 const safeParamCodec = Codec.custom<string>({
   decode: (val) =>
