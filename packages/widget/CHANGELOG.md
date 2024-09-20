@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.200
+
+### Patch Changes
+
+- 86ec000: Connectors mapper
+
 ## 0.0.199
 
 ### Patch Changes
