@@ -8,7 +8,7 @@ import {
   useYieldGetMyNetworksHook,
   useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
-import type { WalletList } from "@stakekit/rainbowkit";
+import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
@@ -38,6 +38,17 @@ import { getConfig as getSubstrateConfig } from "../substrate/config";
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
 const buildWagmiConfig = async (opts: {
+  disableInjectedProviderDiscovery: boolean;
+  mapWalletFn?: (props: {
+    id: string;
+    iconUrl: string | (() => Promise<string>);
+    name: string;
+    iconBackground: string;
+  }) => {
+    iconUrl: string | (() => Promise<string>);
+    name: string;
+    iconBackground: string;
+  };
   externalProviders?: MutableRefObject<SKExternalProviders>;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
@@ -139,6 +150,7 @@ const buildWagmiConfig = async (opts: {
       ] as [Chain, ...Chain[]];
 
       const multiInjectedProviderDiscovery =
+        !opts.disableInjectedProviderDiscovery &&
         !opts.externalProviders &&
         !val.ledgerLiveConnector &&
         !val.safeConnector;
@@ -165,7 +177,26 @@ const buildWagmiConfig = async (opts: {
           cosmosConfig.connector,
           ...miscConfig.connectors,
         ]);
-      })();
+      })().map((val) => ({
+        ...val,
+        wallets: val.wallets.map((createWalletFn) => (createWalletParams) => {
+          const wallet = createWalletFn(createWalletParams);
+
+          const maybeMapped = opts.mapWalletFn
+            ? ({
+                ...wallet,
+                ...opts.mapWalletFn({
+                  iconBackground: wallet.iconBackground,
+                  iconUrl: wallet.iconUrl,
+                  id: wallet.id,
+                  name: wallet.name,
+                }),
+              } satisfies Wallet)
+            : wallet;
+
+          return maybeMapped;
+        }),
+      }));
 
       const queryParamsInitChainId = Maybe.fromNullable(val.queryParams.network)
         .chainNullable(
@@ -208,7 +239,13 @@ const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 export const useWagmiConfig = () => {
-  const { wagmi, externalProviders, isSafe } = useSettings();
+  const {
+    wagmi,
+    externalProviders,
+    isSafe,
+    disableInjectedProviderDiscovery,
+    mapWalletFn,
+  } = useSettings();
 
   const queryClient = useSKQueryClient();
 
@@ -224,6 +261,8 @@ export const useWagmiConfig = () => {
     queryKey,
     queryFn: () =>
       buildWagmiConfig({
+        mapWalletFn,
+        disableInjectedProviderDiscovery: !!disableInjectedProviderDiscovery,
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
         queryClient,
