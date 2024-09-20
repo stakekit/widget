@@ -40,6 +40,8 @@ export type SettingsProps = {
   disableAutoScrollToTop?: boolean;
   language?: Languages;
   isSafe?: boolean;
+  disableInjectedProviderDiscovery?: boolean;
+  mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
