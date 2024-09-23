@@ -4,9 +4,8 @@ import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/type
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { groupDateStrings } from "@sk-widget/utils/formatters";
-import type { ActionListNetwork, TransactionType } from "@stakekit/api-hooks";
+import type { Networks, TransactionType } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { useMutation } from "@tanstack/react-query";
 import { Maybe } from "purify-ts";
 import {
   type PropsWithChildren,
@@ -30,50 +29,52 @@ export const ActivityPageContextProvider = ({
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
-  const onClickHandler = useMutation({
-    mutationFn: async (data: ActionYieldDto) => {
-      if (!isConnected) return openConnectModal?.();
+  const onActionSelect = (data: ActionYieldDto) => {
+    if (!isConnected) return openConnectModal?.();
 
-      activityStore.send({
-        type: "setSelectedAction",
-        selectedAction: Maybe.of(data.actionData),
-        selectedYield: Maybe.of(data.yieldData),
+    activityStore.send({
+      type: "setSelectedAction",
+      selectedAction: Maybe.of(data.actionData),
+      selectedYield: Maybe.of(data.yieldData),
+    });
+
+    if (
+      data.actionData.status === "SUCCESS" ||
+      data.actionData.status === "PROCESSING"
+    ) {
+      const urls = data.actionData.transactions
+        .map((val) => ({ type: val.type, url: val.explorerUrl }))
+        .filter(
+          (val): val is { type: TransactionType; url: string } => !!val.url
+        );
+
+      const path =
+        data.actionData.type === "UNSTAKE"
+          ? "unstake"
+          : data.actionData.type === "STAKE"
+            ? "stake"
+            : "pending";
+
+      return navigate(`/activity/complete/${path}`, {
+        state: {
+          urls,
+        },
       });
+    }
 
-      if (
-        data.actionData.status === "SUCCESS" ||
-        data.actionData.status === "PROCESSING"
-      ) {
-        return navigate("/activity/complete", {
-          state: {
-            urls: data.actionData.transactions
-              .map((val) => ({ type: val.type, url: val.explorerUrl }))
-              .filter(
-                (val): val is { type: TransactionType; url: string } =>
-                  !!val.url
-              ),
-          },
-        });
-      }
+    if (
+      data.actionData.status === "CREATED" ||
+      data.actionData.status === "WAITING_FOR_NEXT" ||
+      data.actionData.status === "FAILED"
+    ) {
+      return navigate("/activity/review");
+    }
 
-      if (
-        data.actionData.status === "CREATED" ||
-        data.actionData.status === "WAITING_FOR_NEXT" ||
-        data.actionData.status === "FAILED"
-      ) {
-        return navigate("/activity/review");
-      }
-
-      return;
-    },
-  });
-
-  const onActionSelect = (action: ActionYieldDto) => {
-    onClickHandler.mutate(action);
+    return;
   };
 
   const activityActions = useActivityActions({
-    network: chain?.name.toLowerCase() as ActionListNetwork,
+    network: chain?.name.toLowerCase() as Networks,
     sort: "createdAtDesc",
   });
 

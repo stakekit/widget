@@ -15,15 +15,14 @@ import { PageContainer } from "../../components";
 export const ActionReviewPage = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { selectedYield, selectedAction, transactions, yieldType } =
-    useActionReview();
+  const { selectedYield, transactions, title, amount } = useActionReview();
 
   const info = useMemo(
     () =>
       Maybe.fromNullable(selectedYield.token)
-        .map((val) => `${selectedAction.amount} ${val.symbol}`)
+        .map((val) => `${amount} ${val.symbol}`)
         .extractNullable(),
-    [selectedAction.amount, selectedYield.token]
+    [amount, selectedYield.token]
   );
 
   return (
@@ -33,7 +32,7 @@ export const ActionReviewPage = () => {
           info={info}
           metadata={Maybe.of(selectedYield.metadata)}
           token={Maybe.of(selectedYield.token)}
-          title={yieldType}
+          title={title}
         />
         <Divider />
         <Text marginTop="4" marginBottom="2">

@@ -10,9 +10,8 @@ import {
   viaText,
 } from "@sk-widget/pages/details/activity-page/style.css";
 import { listItemContainer } from "@sk-widget/pages/details/positions-page/style.css";
-import { capitalizeFirstLetter } from "@sk-widget/utils/formatters";
 import type { ActionDto, ActionStatus, YieldDto } from "@stakekit/api-hooks";
-import { List } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 
 type ActionYieldDto = {
@@ -22,7 +21,7 @@ type ActionYieldDto = {
 
 type ListItemContainerType = "claim" | "pending" | "actionRequired" | undefined;
 
-const bg_pos_map: { [key in ActionStatus]: ListItemContainerType } = {
+const BADGE_BG_MAP: { [key in ActionStatus]: ListItemContainerType } = {
   SUCCESS: "claim",
   FAILED: "actionRequired",
   CREATED: "pending",
@@ -39,7 +38,8 @@ const ActionListItem = ({
   onActionSelect: (action: ActionYieldDto) => void;
 }) => {
   const { t } = useTranslation();
-  const { integrationData, providersDetails } = useActionListItem(action);
+  const { integrationData, providersDetails, actionType, amount } =
+    useActionListItem(action);
 
   return (
     <Box py="1" width="full">
@@ -70,14 +70,16 @@ const ActionListItem = ({
 
                     <Box
                       className={listItemContainer({
-                        type: bg_pos_map[action.actionData.status],
+                        type: BADGE_BG_MAP[action.actionData.status],
                       })}
                     >
                       <Text
                         variant={{ type: "white", size: "small" }}
                         className={noWrap}
                       >
-                        {action.actionData.status}
+                        {Maybe.fromNullable(action.actionData.status)
+                          .map((s) => s.replaceAll("_", " "))
+                          .extractNullable()}
                       </Text>
                     </Box>
                   </Box>
@@ -110,15 +112,13 @@ const ActionListItem = ({
                 textAlign="end"
                 gap="1"
               >
-                <Text variant={{ weight: "normal" }}>
-                  {capitalizeFirstLetter(action.actionData.type)}
-                </Text>
+                <Text variant={{ weight: "normal" }}>{actionType}</Text>
 
                 <Text
                   overflowWrap="anywhere"
                   variant={{ weight: "normal", type: "muted" }}
                 >
-                  {action.actionData.amount} {d.token.symbol}
+                  {amount.extractNullable()} {d.token.symbol}
                 </Text>
               </Box>
             </Box>

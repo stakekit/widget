@@ -144,12 +144,12 @@ const Widget = () => {
                   <Route element={<ConnectedCheck />}>
                     {/* Activity flow */}
                     <Route path="activity">
+                      <Route path="review" element={<ActionReviewPage />} />
                       <Route path="steps" element={<ActivityStepsPage />} />
                       <Route
-                        path="complete"
+                        path="complete/:pendingActionType"
                         element={<ActivityCompletePage />}
                       />
-                      <Route path="review" element={<ActionReviewPage />} />
                     </Route>
 
                     {/* Stake flow */}

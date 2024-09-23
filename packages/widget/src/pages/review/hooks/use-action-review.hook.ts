@@ -2,7 +2,9 @@ import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
+import { ActionTypes } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,9 +36,49 @@ export const useActionReview = () => {
       w.open(url, "_blank");
     });
 
-  const yieldType = useYieldType(Maybe.of(selectedYield)).mapOrDefault(
+  const stakeTitle = useYieldType(Maybe.of(selectedYield)).mapOrDefault(
     (y) => y.review,
     ""
+  );
+
+  const unstakeTitle = useMemo(() => {
+    switch (selectedYield.metadata.type) {
+      case "staking":
+      case "liquid-staking":
+        return t("position_details.unstake") as string;
+
+      default:
+        return t("position_details.withdraw");
+    }
+  }, [selectedYield, t]);
+
+  const pendingActionTitle = useMemo(
+    () =>
+      t(
+        `position_details.pending_action_button.${
+          selectedAction.type.toLowerCase() as Lowercase<ActionTypes>
+        }` as const
+      ),
+    [selectedAction.type, t]
+  );
+
+  const title = useMemo(
+    () =>
+      selectedAction.type === ActionTypes.STAKE
+        ? stakeTitle
+        : selectedAction.type === ActionTypes.UNSTAKE
+          ? unstakeTitle
+          : pendingActionTitle,
+    [selectedAction, stakeTitle, unstakeTitle, pendingActionTitle]
+  );
+
+  const amount = useMemo(
+    () =>
+      Maybe.fromNullable(selectedAction.amount)
+        .map(BigNumber)
+        .map((a) => a.toString())
+        .extractNullable(),
+    [selectedAction]
   );
 
   useRegisterFooterButton(
@@ -56,6 +98,7 @@ export const useActionReview = () => {
     selectedAction,
     transactions,
     onViewTransactionClick,
-    yieldType,
+    title,
+    amount,
   };
 };
