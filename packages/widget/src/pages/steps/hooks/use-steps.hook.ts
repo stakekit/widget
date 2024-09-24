@@ -22,9 +22,7 @@ export const useSteps = ({
   const callbacksRef = useSavedRef({ onSignSuccess });
 
   const [machineState, send, actorRef] = useStepsMachine({
-    transactions: session.transactions.sort(
-      (a, b) => a.stepIndex - b.stepIndex
-    ),
+    transactions: session.transactions,
     integrationId: session.integrationId,
   });
 

@@ -1,3 +1,5 @@
+import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
+import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
   type ActionListParams,
@@ -13,6 +15,8 @@ export const useActivityActions = (props: ActionListParams) => {
   const { address } = useSKWallet();
   const getActionList = useActionListHook();
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
+  const { isLedgerLive } = useSKWallet();
+  const queryClient = useSKQueryClient();
 
   const query = useInfiniteQuery({
     enabled: !!address,
@@ -30,7 +34,12 @@ export const useActivityActions = (props: ActionListParams) => {
           .chain(async (actionList) =>
             EitherAsync.all(
               actionList.data.map((action) =>
-                EitherAsync(() => yieldYieldOpportunity(action.integrationId))
+                getYieldOpportunity({
+                  yieldId: action.integrationId,
+                  isLedgerLive,
+                  queryClient,
+                  yieldYieldOpportunity,
+                })
                   .map((yieldData) => ({ actionData: action, yieldData }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
               )

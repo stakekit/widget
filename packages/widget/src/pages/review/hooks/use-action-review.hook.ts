@@ -81,15 +81,25 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
+  const path = useMemo(
+    () =>
+      selectedAction.type === ActionTypes.UNSTAKE
+        ? "unstake"
+        : selectedAction.type === ActionTypes.STAKE
+          ? "stake"
+          : "pending",
+    [selectedAction]
+  );
+
   useRegisterFooterButton(
     useMemo(
       () => ({
         label: t("activity.review.retry"),
-        onClick: () => navigate("/activity/steps"),
+        onClick: () => navigate(`/activity/${path}/steps`),
         disabled: false,
         isLoading: false,
       }),
-      [navigate, t]
+      [navigate, t, path]
     )
   );
 

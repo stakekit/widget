@@ -6,4 +6,15 @@ export type ActivityPageContextType = {
   activityActions: ReturnType<typeof useActivityActions>;
   labels: string[];
   counts: number[];
+  bulletLines: ItemBulletType[];
 };
+
+export const ItemBulletType = {
+  ALONE: "alone",
+  FIRST: "first",
+  MIDDLE: "middle",
+  LAST: "last",
+};
+
+export type ItemBulletType =
+  (typeof ItemBulletType)[keyof typeof ItemBulletType];

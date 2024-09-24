@@ -17,13 +17,7 @@ import {
   relativeWrapper,
 } from "../virtual-list/style.css";
 
-type VirtualListProps<T> = {
-  data: T[];
-  itemContent: (index: number, item: T) => React.ReactNode;
-  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-  className?: BoxProps["className"];
-  maxHeight?: number;
-} & (
+type InfiniteScrollProps =
   | {
       hasNextPage: boolean;
       isFetchingNextPage: boolean;
@@ -33,8 +27,15 @@ type VirtualListProps<T> = {
       hasNextPage?: never;
       isFetchingNextPage?: never;
       fetchNextPage?: never;
-    }
-);
+    };
+
+type VirtualListProps<T> = {
+  data: T[];
+  itemContent: (index: number, item: T) => React.ReactNode;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+} & InfiniteScrollProps;
 
 type VirtualGroupListProps = {
   itemContent: (index: number, groupIndex: number) => React.ReactNode;
@@ -44,25 +45,14 @@ type VirtualGroupListProps = {
   className?: BoxProps["className"];
   maxHeight?: number;
   estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-} & (
-  | {
-      hasNextPage: boolean;
-      isFetchingNextPage: boolean;
-      fetchNextPage: () => void;
-    }
-  | {
-      hasNextPage?: never;
-      isFetchingNextPage?: never;
-      fetchNextPage?: never;
-    }
-);
+} & InfiniteScrollProps;
 
 export const VirtualList = <ItemData = unknown>({
   data,
   itemContent,
   className,
   estimateSize,
-  maxHeight = 400,
+  maxHeight = 600,
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
@@ -76,7 +66,7 @@ export const VirtualList = <ItemData = unknown>({
     count: data.length,
     getScrollElement: () => innerRef.current,
     estimateSize,
-    overscan: 2,
+    overscan: 10,
     ...(observeElementRect && { observeElementRect }),
   });
 
@@ -86,8 +76,7 @@ export const VirtualList = <ItemData = unknown>({
     () =>
       List.head([...virtualItems].reverse())
         .filter((item) => item.index >= data.length - 1)
-        .map(() => true)
-        .orDefault(false),
+        .isJust(),
     [virtualItems, data.length]
   );
 
@@ -142,7 +131,7 @@ export const GroupedVirtualList = ({
   increaseViewportBy,
   groupCounts,
   className,
-  maxHeight = 400,
+  maxHeight = 600,
   estimateSize,
   hasNextPage,
   isFetchingNextPage,
@@ -213,8 +202,7 @@ export const GroupedVirtualList = ({
     () =>
       List.head([...virtualItems].reverse())
         .filter((item) => item.index >= resultArray.length - 1)
-        .map(() => true)
-        .orDefault(false),
+        .isJust(),
     [virtualItems, resultArray.length]
   );
 

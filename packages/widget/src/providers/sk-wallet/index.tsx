@@ -41,11 +41,7 @@ import { useCosmosCW } from "./use-cosmos-cw";
 import { useLedgerAccounts } from "./use-ledger-accounts";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 import { useSyncExternalProvider } from "./use-sync-external-provider";
-import {
-  chainsToSKNetworks,
-  prepareEVMTx,
-  wagmiNetworkToSKNetwork,
-} from "./utils";
+import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
 import {
   unsignedEVMTransactionCodec,
   unsignedTronTransactionCodec,
@@ -87,22 +83,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     wagmiConfig: wagmiConfig.data,
     connector,
   });
-
-  const connectorSKNetworks = useMemo(
-    () =>
-      Maybe.fromNullable(wagmiConfig.data)
-        .map((w) =>
-          chainsToSKNetworks({
-            chains: connectorChains,
-            evmChainsMap: w.evmConfig.evmChainsMap,
-            cosmosChainsMap: w.cosmosConfig.cosmosChainsMap,
-            miscChainsMap: w.miscConfig.miscChainsMap,
-            substrateChainsMap: w.substrateConfig.substrateChainsMap,
-          })
-        )
-        .orDefault([]),
-    [wagmiConfig.data, connectorChains]
-  );
 
   const network = useMemo(
     () =>
@@ -423,7 +403,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       signMultipleTransactions,
       signMessage,
       connectorChains,
-      connectorSKNetworks,
       isLedgerLive,
     };
 
@@ -461,7 +440,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     };
   }, [
     connectorChains,
-    connectorSKNetworks,
     additionalAddresses.data,
     address,
     chain,

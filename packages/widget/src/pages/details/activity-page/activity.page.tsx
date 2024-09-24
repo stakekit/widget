@@ -1,7 +1,6 @@
 import { Box, Text } from "@sk-widget/components";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { dateGroupLabels } from "@sk-widget/domain/types/date-group-labels";
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import ActionListItem from "@sk-widget/pages/details/activity-page/components/action-list-item";
 import ListItemBullet from "@sk-widget/pages/details/activity-page/components/list-item-bullet";
@@ -9,6 +8,8 @@ import {
   ActivityPageContextProvider,
   useActivityPageContext,
 } from "@sk-widget/pages/details/activity-page/state/activiti-page.context";
+import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
+import { dateGroupLabels } from "@sk-widget/pages/details/activity-page/types";
 import { FallbackContent } from "@sk-widget/pages/details/positions-page/components/fallback-content";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
@@ -25,7 +26,7 @@ export const ActivityPageComponent = () => {
   const { isConnected, isConnecting } = useSKWallet();
 
   const { mountAnimationFinished } = useMountAnimation();
-  const { activityActions, onActionSelect, labels, counts } =
+  const { activityActions, onActionSelect, labels, counts, bulletLines } =
     useActivityPageContext();
   const allData = activityActions.allItems;
 
@@ -105,7 +106,16 @@ export const ActivityPageComponent = () => {
 
                   return (
                     <Box className={listItemWrapper}>
-                      <ListItemBullet index={index} counts={counts} />
+                      <ListItemBullet
+                        isFirst={
+                          bulletLines[index] === ItemBulletType.FIRST ||
+                          bulletLines[index] === ItemBulletType.ALONE
+                        }
+                        isLast={
+                          bulletLines[index] === ItemBulletType.LAST ||
+                          bulletLines[index] === ItemBulletType.ALONE
+                        }
+                      />
                       <ActionListItem
                         onActionSelect={onActionSelect}
                         action={item}

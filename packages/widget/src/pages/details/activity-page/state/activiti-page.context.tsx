@@ -1,10 +1,17 @@
 import { useActivityActions } from "@sk-widget/hooks/api/use-activity-actions";
-import type { ActivityPageContextType } from "@sk-widget/pages/details/activity-page/state/types";
+import {
+  type ActivityPageContextType,
+  ItemBulletType,
+} from "@sk-widget/pages/details/activity-page/state/types";
 import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { groupDateStrings } from "@sk-widget/utils/formatters";
-import type { Networks, TransactionType } from "@stakekit/api-hooks";
+import {
+  ActionTypes,
+  type Networks,
+  type TransactionType,
+} from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
@@ -34,8 +41,10 @@ export const ActivityPageContextProvider = ({
 
     activityStore.send({
       type: "setSelectedAction",
-      selectedAction: Maybe.of(data.actionData),
-      selectedYield: Maybe.of(data.yieldData),
+      data: Maybe.of({
+        selectedAction: data.actionData,
+        selectedYield: data.yieldData,
+      }),
     });
 
     if (
@@ -49,13 +58,13 @@ export const ActivityPageContextProvider = ({
         );
 
       const path =
-        data.actionData.type === "UNSTAKE"
+        data.actionData.type === ActionTypes.UNSTAKE
           ? "unstake"
-          : data.actionData.type === "STAKE"
+          : data.actionData.type === ActionTypes.STAKE
             ? "stake"
             : "pending";
 
-      return navigate(`/activity/complete/${path}`, {
+      return navigate(`/activity/${path}/complete`, {
         state: {
           urls,
         },
@@ -93,11 +102,21 @@ export const ActivityPageContextProvider = ({
 
   const [labels, counts] = groupDateStrings(groupedDates.extract() ?? [], i18n);
 
+  const bulletLines = useMemo(
+    () =>
+      counts.reduce<ItemBulletType[]>(
+        (acc, val) => acc.concat(createSubArray(val)),
+        []
+      ),
+    [counts]
+  );
+
   const value = {
     onActionSelect,
     activityActions,
     labels,
     counts,
+    bulletLines,
   };
   return (
     <ActivityPageContext.Provider value={value}>
@@ -116,4 +135,13 @@ export const useActivityPageContext = () => {
   }
 
   return context;
+};
+
+const createSubArray = (val: number): ItemBulletType[] => {
+  return Array.from({ length: val }, (_, i) => {
+    if (val === 1) return ItemBulletType.ALONE;
+    if (i === 0) return ItemBulletType.FIRST;
+    if (i === val - 1) return ItemBulletType.LAST;
+    return ItemBulletType.MIDDLE;
+  });
 };

@@ -145,9 +145,12 @@ const Widget = () => {
                     {/* Activity flow */}
                     <Route path="activity">
                       <Route path="review" element={<ActionReviewPage />} />
-                      <Route path="steps" element={<ActivityStepsPage />} />
                       <Route
-                        path="complete/:pendingActionType"
+                        path=":pendingActionType/steps"
+                        element={<ActivityStepsPage />}
+                      />
+                      <Route
+                        path=":pendingActionType/complete"
                         element={<ActivityCompletePage />}
                       />
                     </Route>

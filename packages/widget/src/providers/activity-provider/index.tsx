@@ -12,12 +12,11 @@ const store = createStore(
     setSelectedAction: (
       _,
       event: {
-        selectedAction: Maybe<ActionDto>;
-        selectedYield: Maybe<YieldDto>;
+        data: Maybe<{ selectedAction: ActionDto; selectedYield: YieldDto }>;
       }
     ) => ({
-      selectedAction: event.selectedAction,
-      selectedYield: event.selectedYield,
+      selectedAction: event.data.map(({ selectedAction }) => selectedAction),
+      selectedYield: event.data.map(({ selectedYield }) => selectedYield),
     }),
   }
 );

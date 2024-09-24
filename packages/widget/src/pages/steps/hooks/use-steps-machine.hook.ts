@@ -90,8 +90,13 @@ export const useStepsMachine = ({
     [connector]
   );
 
+  const sortedTransactions = useMemo(
+    () => transactions.sort((a, b) => a.stepIndex - b.stepIndex),
+    [transactions]
+  );
+
   const machineParams = useSavedRef({
-    transactions,
+    transactions: sortedTransactions,
     integrationId,
     multiSend,
     isLedgerLive,
