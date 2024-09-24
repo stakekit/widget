@@ -7,11 +7,7 @@ import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/type
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { groupDateStrings } from "@sk-widget/utils/formatters";
-import {
-  ActionTypes,
-  type Networks,
-  type TransactionType,
-} from "@stakekit/api-hooks";
+import { ActionTypes, type TransactionType } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
@@ -32,7 +28,7 @@ export const ActivityPageContextProvider = ({
 }: PropsWithChildren) => {
   const activityStore = useActivityContext();
   const { openConnectModal } = useConnectModal();
-  const { isConnected, chain } = useSKWallet();
+  const { isConnected } = useSKWallet();
   const navigate = useNavigate();
   const { i18n } = useTranslation();
 
@@ -82,10 +78,7 @@ export const ActivityPageContextProvider = ({
     return;
   };
 
-  const activityActions = useActivityActions({
-    network: chain?.name.toLowerCase() as Networks,
-    sort: "createdAtDesc",
-  });
+  const activityActions = useActivityActions();
 
   const actions = useMemo(
     () => Maybe.fromNullable(activityActions.allItems),

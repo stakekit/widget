@@ -2,7 +2,6 @@ import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity"
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
-  type ActionListParams,
   getActionListQueryKey,
   useActionListHook,
   useYieldYieldOpportunityHook,
@@ -11,26 +10,34 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 
-export const useActivityActions = (props: ActionListParams) => {
-  const { address } = useSKWallet();
+export const useActivityActions = () => {
+  const { address, network } = useSKWallet();
   const getActionList = useActionListHook();
   const yieldYieldOpportunity = useYieldYieldOpportunityHook();
   const { isLedgerLive } = useSKWallet();
   const queryClient = useSKQueryClient();
 
   const query = useInfiniteQuery({
-    enabled: !!address,
-    queryKey: getActionListQueryKey(props),
+    enabled: !!address && !!network,
+    queryKey: getActionListQueryKey({
+      network: network!,
+      walletAddress: address!,
+    }),
     queryFn: async ({ pageParam = 1 }) => {
       return (
         await EitherAsync(() =>
           getActionList({
-            ...props,
             page: pageParam,
             walletAddress: address!,
+            network: network!,
+            sort: "createdAtDesc",
           })
         )
           .mapLeft(() => new Error("Could not get action list"))
+          .map((actionList) => ({
+            ...actionList,
+            data: actionList.data.filter((x) => x.status !== "CREATED"),
+          }))
           .chain(async (actionList) =>
             EitherAsync.all(
               actionList.data.map((action) =>

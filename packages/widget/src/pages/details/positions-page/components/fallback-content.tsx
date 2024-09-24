@@ -10,7 +10,8 @@ export const FallbackContent = ({
     | "not_connected"
     | "no_current_positions"
     | "spinner"
-    | "something_wrong";
+    | "something_wrong"
+    | "no_current_activity";
 }) => {
   const { t } = useTranslation();
 
@@ -38,6 +39,13 @@ export const FallbackContent = ({
       return (
         <Text variant={{ weight: "medium" }} textAlign="center">
           {t("positions.no_current_positions")}
+        </Text>
+      );
+    }
+    if (type === "no_current_activity") {
+      return (
+        <Text variant={{ weight: "medium" }} textAlign="center">
+          {t("activity.no_current_activity")}
         </Text>
       );
     }

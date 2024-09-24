@@ -38,7 +38,7 @@ export const ActivityPageComponent = () => {
     if (isConnected && !allData?.length && !activityActions.isPending) {
       return (
         <Box my="4">
-          <FallbackContent type="no_current_positions" />
+          <FallbackContent type="no_current_activity" />
         </Box>
       );
     }
