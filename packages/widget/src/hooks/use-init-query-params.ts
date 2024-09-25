@@ -87,7 +87,7 @@ export const getAndValidateInitParams = ({
       .alt(
         safeParamCodec.decode(url.searchParams.get("token")).chain((val) =>
           val.includes("-")
-            ? Right(val.split("-")[0]) // network is first part of TokenString
+            ? Right(val.split("-").slice(0, -1).join("-")) // network is first part of TokenString
             : Left("invalid TokenString")
         )
       )
