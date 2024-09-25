@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.202
+
+### Patch Changes
+
+- 06b3199: Fix token network param parsing
+
 ## 0.0.201
 
 ### Patch Changes
