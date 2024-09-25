@@ -84,6 +84,13 @@ export const getAndValidateInitParams = ({
   MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
     network: safeParamCodec
       .decode(url.searchParams.get("network"))
+      .alt(
+        safeParamCodec.decode(url.searchParams.get("token")).chain((val) =>
+          val.includes("-")
+            ? Right(val.split("-")[0]) // network is first part of TokenString
+            : Left("invalid TokenString")
+        )
+      )
       .chain(skSupportedChainsCodec.decode)
       .toMaybe()
       .extractNullable(),
