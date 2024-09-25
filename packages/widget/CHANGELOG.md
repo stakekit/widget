@@ -1,5 +1,30 @@
 # @stakekit/widget
 
+## 0.0.202
+
+### Patch Changes
+
+- 06b3199: Fix token network param parsing
+
+## 0.0.201
+
+### Patch Changes
+
+- 85437a7: Get init network from token query param
+- 2485acc: ui loading improvement
+
+## 0.0.200
+
+### Patch Changes
+
+- 86ec000: Connectors mapper
+
+## 0.0.199
+
+### Patch Changes
+
+- 14e03c5: maintenance mode
+
 ## 0.0.198
 
 ### Patch Changes
