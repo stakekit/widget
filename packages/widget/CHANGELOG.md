@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.201
+
+### Patch Changes
+
+- 85437a7: Get init network from token query param
+- 2485acc: ui loading improvement
+
 ## 0.0.200
 
 ### Patch Changes
