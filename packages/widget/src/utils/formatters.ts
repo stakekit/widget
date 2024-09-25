@@ -154,5 +154,14 @@ export const groupDateStrings = (
   return [labels, counts];
 };
 
-export const capitalizeFirstLetter = (text: string) =>
-  text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+export const capitalizeFirstLetters = (text: string): string =>
+  Maybe.fromNullable(text)
+    .map((t) =>
+      t
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ")
+    )
+    .orDefault("");

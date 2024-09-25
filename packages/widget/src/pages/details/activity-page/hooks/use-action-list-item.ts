@@ -1,5 +1,5 @@
 import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { capitalizeFirstLetter } from "@sk-widget/utils/formatters";
+import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
 import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -25,7 +25,8 @@ export const useActionListItem = (action: ActionYieldDto) => {
     () =>
       Maybe.of(action.actionData.type)
         .map((t) => t.replaceAll("_", " "))
-        .mapOrDefault(capitalizeFirstLetter, ""),
+        .map(capitalizeFirstLetters)
+        .extract(),
     [action]
   );
 

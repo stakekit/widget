@@ -61,6 +61,7 @@ export const ActivityCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={amount}
+      pendingActionType={selectedAction.type}
     />
   );
 };

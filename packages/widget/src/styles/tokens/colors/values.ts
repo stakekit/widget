@@ -39,7 +39,7 @@ export const lightThemeColors: typeof colorsContract = {
   positionsSectionDividerColor: "#F6F7F9",
   positionsClaimRewardsBackground: "#45D65C",
   positionsActionRequiredBackground: "#FA6878",
-  positionsPendingBackground: "#f57b42",
+  positionsPendingBackground: "#FFAA07",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#FFFFFF",
@@ -144,7 +144,7 @@ export const darkThemeColors: typeof colorsContract = {
   positionsSectionDividerColor: "#363636",
   positionsClaimRewardsBackground: "#45D65C",
   positionsActionRequiredBackground: "#FA6878",
-  positionsPendingBackground: "#f57b42",
+  positionsPendingBackground: "#FFAA07",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#2B2B2B",

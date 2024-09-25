@@ -2,6 +2,7 @@ import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity"
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
+  ActionStatus,
   getActionListQueryKey,
   useActionListHook,
   useYieldYieldOpportunityHook,
@@ -36,7 +37,9 @@ export const useActivityActions = () => {
           .mapLeft(() => new Error("Could not get action list"))
           .map((actionList) => ({
             ...actionList,
-            data: actionList.data.filter((x) => x.status !== "CREATED"),
+            data: actionList.data.filter(
+              (x) => x.status !== ActionStatus.CREATED
+            ),
           }))
           .chain(async (actionList) =>
             EitherAsync.all(

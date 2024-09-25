@@ -2,10 +2,10 @@ import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
-import { ActionTypes } from "@stakekit/api-hooks";
+import { ActionTypes, TransactionStatus } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -91,15 +91,38 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
+  const buttonLabel = useMemo(
+    () =>
+      Maybe.fromNullable(selectedAction)
+        .chain((a) =>
+          List.find(
+            (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
+            a.transactions
+          )
+            .chain((tx) =>
+              List.findIndex((i) => i === tx, a.transactions)
+                .map((index) => a.transactions[index - 1])
+                .chain((prevTx) =>
+                  Maybe.fromNullable(prevTx).map(
+                    (prevTx) => prevTx.status === TransactionStatus.CONFIRMED
+                  )
+                )
+            )
+            .map(() => t("activity.review.continue"))
+        )
+        .orDefault(t("activity.review.retry")),
+    [t, selectedAction]
+  );
+
   useRegisterFooterButton(
     useMemo(
       () => ({
-        label: t("activity.review.retry"),
+        label: buttonLabel,
         onClick: () => navigate(`/activity/${path}/steps`),
         disabled: false,
         isLoading: false,
       }),
-      [navigate, t, path]
+      [navigate, path, buttonLabel]
     )
   );
 

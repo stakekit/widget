@@ -5,7 +5,7 @@ import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import { useActionReview } from "@sk-widget/pages/review/hooks/use-action-review.hook";
 import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
 import { pointerStyles } from "@sk-widget/pages/review/pages/style.css";
-import { capitalizeFirstLetter } from "@sk-widget/utils/formatters";
+import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -49,7 +49,7 @@ export const ActionReviewPage = () => {
                 key={tx.id}
               >
                 <Text as="span" color="textMuted">
-                  {capitalizeFirstLetter(tx.type)}
+                  {capitalizeFirstLetters(tx.type)}
                 </Text>
                 <Box
                   display="flex"
@@ -59,8 +59,8 @@ export const ActionReviewPage = () => {
                 >
                   <Text color="textMuted">
                     {Maybe.of(tx.status)
-                      .map(capitalizeFirstLetter)
                       .map((tx) => tx.replaceAll("_", " "))
+                      .map(capitalizeFirstLetters)
                       .extract()}
                   </Text>
                   {Maybe.fromNullable(tx.error)

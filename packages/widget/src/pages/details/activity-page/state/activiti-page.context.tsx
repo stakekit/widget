@@ -7,7 +7,11 @@ import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/type
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { groupDateStrings } from "@sk-widget/utils/formatters";
-import { ActionTypes, type TransactionType } from "@stakekit/api-hooks";
+import {
+  ActionStatus,
+  ActionTypes,
+  type TransactionType,
+} from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
@@ -44,8 +48,8 @@ export const ActivityPageContextProvider = ({
     });
 
     if (
-      data.actionData.status === "SUCCESS" ||
-      data.actionData.status === "PROCESSING"
+      data.actionData.status === ActionStatus.SUCCESS ||
+      data.actionData.status === ActionStatus.PROCESSING
     ) {
       const urls = data.actionData.transactions
         .map((val) => ({ type: val.type, url: val.explorerUrl }))
@@ -60,7 +64,9 @@ export const ActivityPageContextProvider = ({
             ? "stake"
             : "pending";
 
-      return navigate(`/activity/${path}/complete`, {
+      // activity/:pendingActionType-review/complete and activity/:pendingActionType/complete
+      // let us know if we came to complete page from steps page or actions list page
+      return navigate(`/activity/${path}-review/complete`, {
         state: {
           urls,
         },
@@ -68,9 +74,9 @@ export const ActivityPageContextProvider = ({
     }
 
     if (
-      data.actionData.status === "CREATED" ||
-      data.actionData.status === "WAITING_FOR_NEXT" ||
-      data.actionData.status === "FAILED"
+      data.actionData.status === ActionStatus.CREATED ||
+      data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
+      data.actionData.status === ActionStatus.FAILED
     ) {
       return navigate("/activity/review");
     }
