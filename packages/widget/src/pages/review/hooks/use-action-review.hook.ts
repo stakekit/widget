@@ -2,7 +2,11 @@ import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
-import { ActionTypes, TransactionStatus } from "@stakekit/api-hooks";
+import {
+  ActionTypes,
+  type TokenDto,
+  TransactionStatus,
+} from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
@@ -20,6 +24,11 @@ export const useActionReview = () => {
     useActivityContext(),
     (state) => state.context.selectedAction
   ).unsafeCoerce();
+
+  const inputToken = useMemo(
+    () => Maybe.of(selectedAction.inputToken),
+    [selectedAction]
+  ) as Maybe<TokenDto>;
 
   const selectedYield = useSelector(
     useActivityContext(),
@@ -98,17 +107,12 @@ export const useActionReview = () => {
           List.find(
             (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
             a.transactions
+          ).chain((tx) =>
+            List.findIndex((i) => i === tx, a.transactions)
+              .chainNullable((index) => a.transactions[index - 1])
+              .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
+              .map(() => t("activity.review.continue"))
           )
-            .chain((tx) =>
-              List.findIndex((i) => i === tx, a.transactions)
-                .map((index) => a.transactions[index - 1])
-                .chain((prevTx) =>
-                  Maybe.fromNullable(prevTx).map(
-                    (prevTx) => prevTx.status === TransactionStatus.CONFIRMED
-                  )
-                )
-            )
-            .map(() => t("activity.review.continue"))
         )
         .orDefault(t("activity.review.retry")),
     [t, selectedAction]
@@ -133,5 +137,6 @@ export const useActionReview = () => {
     onViewTransactionClick,
     title,
     amount,
+    inputToken,
   };
 };

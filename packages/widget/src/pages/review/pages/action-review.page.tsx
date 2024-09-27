@@ -15,7 +15,8 @@ import { PageContainer } from "../../components";
 export const ActionReviewPage = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { selectedYield, transactions, title, amount } = useActionReview();
+  const { selectedYield, transactions, title, amount, inputToken } =
+    useActionReview();
 
   const info = useMemo(
     () =>
@@ -31,7 +32,7 @@ export const ActionReviewPage = () => {
         <ReviewTopSection
           info={info}
           metadata={Maybe.of(selectedYield.metadata)}
-          token={Maybe.of(selectedYield.token)}
+          token={inputToken}
           title={title}
         />
         <Divider />

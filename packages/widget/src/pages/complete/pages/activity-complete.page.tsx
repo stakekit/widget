@@ -3,6 +3,7 @@ import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { CompletePage } from "@sk-widget/pages/complete/pages/common.page";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { formatNumber } from "@sk-widget/utils";
+import type { TokenDto } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -20,7 +21,7 @@ export const ActivityCompletePage = () => {
   const amount = useMemo(
     () =>
       Maybe.fromNullable(selectedAction.amount)
-        .map((a) => new BigNumber(a))
+        .map(BigNumber)
         .map(formatNumber)
         .unsafeCoerce(),
     [selectedAction]
@@ -33,20 +34,17 @@ export const ActivityCompletePage = () => {
 
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
 
-  const token = useMemo(
-    () => selectedYield.map((y) => y.token),
-    [selectedYield]
-  );
+  const inputToken = useMemo(
+    () => Maybe.fromNullable(selectedAction).map((y) => y.inputToken),
+    [selectedAction]
+  ) as Maybe<TokenDto>;
 
   const metadata = useMemo(
     () => selectedYield.map((y) => y.metadata),
     [selectedYield]
   );
 
-  const network = useMemo(
-    () => selectedYield.map((a) => a.token.network).unsafeCoerce(),
-    [selectedYield]
-  );
+  const network = inputToken.mapOrDefault((y) => y.symbol, "");
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
@@ -57,7 +55,7 @@ export const ActivityCompletePage = () => {
     <CompletePage
       yieldType={yieldType}
       providersDetails={providerDetails}
-      token={token}
+      token={inputToken}
       metadata={metadata}
       network={network}
       amount={amount}

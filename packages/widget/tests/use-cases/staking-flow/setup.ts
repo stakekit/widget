@@ -118,6 +118,9 @@ export const setup = async () => {
   };
 
   const enterAction: ActionDto = {
+    addresses: {
+      address: "",
+    },
     id: "18bdda99-346a-4694-af71-58dfea68d542",
     integrationId: "avalanche-avax-liquid-staking",
     status: "CREATED",

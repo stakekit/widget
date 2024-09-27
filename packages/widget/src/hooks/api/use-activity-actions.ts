@@ -55,6 +55,7 @@ export const useActivityActions = () => {
               )
             )
               .map((res) => res.filter((x) => x !== null))
+              .map((res) => res.filter((x) => !!x.actionData.inputToken))
               .map((data) => ({ ...actionList, data }))
           )
       ).unsafeCoerce();
