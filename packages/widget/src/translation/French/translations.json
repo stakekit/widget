@@ -43,7 +43,7 @@
       "terms_of_use": "En cliquant sur Réessayer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours"
     },
-    "no_current_activity": "Aucune activité en cours"
+    "no_previous_activity": "Aucune activité précédente dans StakeKit"
   },
   "details": {
     "earn": "Earn",

@@ -11,7 +11,7 @@ export const FallbackContent = ({
     | "no_current_positions"
     | "spinner"
     | "something_wrong"
-    | "no_current_activity";
+    | "no_previous_activity";
 }) => {
   const { t } = useTranslation();
 
@@ -42,10 +42,10 @@ export const FallbackContent = ({
         </Text>
       );
     }
-    if (type === "no_current_activity") {
+    if (type === "no_previous_activity") {
       return (
         <Text variant={{ weight: "medium" }} textAlign="center">
-          {t("activity.no_current_activity")}
+          {t("activity.no_previous_activity")}
         </Text>
       );
     }
