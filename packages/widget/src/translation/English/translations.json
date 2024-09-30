@@ -40,7 +40,7 @@
       "retry": "Retry",
       "continue": "Continue",
       "unknown_error": "Unknown error",
-      "terms_of_use": "By clicking retry you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
+      "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In Progress"
     },
     "no_previous_activity": "No previous activity in StakeKit"

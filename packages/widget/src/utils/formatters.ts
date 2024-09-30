@@ -165,3 +165,10 @@ export const capitalizeFirstLetters = (text: string): string =>
         .join(" ")
     )
     .orDefault("");
+
+export const dateOlderThen7Days = (date: string): boolean => {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  return new Date(date) < sevenDaysAgo;
+};

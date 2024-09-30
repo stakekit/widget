@@ -1,6 +1,8 @@
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
+import type { LabelKey } from "@sk-widget/pages/review/types";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
+import { dateOlderThen7Days } from "@sk-widget/utils/formatters";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import {
   ActionTypes,
@@ -100,7 +102,7 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
-  const buttonLabel = useMemo(
+  const labelKey: LabelKey = useMemo(
     () =>
       Maybe.fromNullable(selectedAction)
         .chain((a) =>
@@ -111,22 +113,31 @@ export const useActionReview = () => {
             List.findIndex((i) => i === tx, a.transactions)
               .chainNullable((index) => a.transactions[index - 1])
               .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
-              .map(() => t("activity.review.continue"))
+              .map(() => "continue" as LabelKey)
           )
         )
-        .orDefault(t("activity.review.retry")),
-    [t, selectedAction]
+        .orDefault("retry"),
+    [selectedAction]
+  );
+
+  const actionOlderThan7Days = useMemo(
+    () =>
+      Maybe.of(selectedAction.createdAt)
+        .map(dateOlderThen7Days)
+        .orDefault(false),
+    [selectedAction]
   );
 
   useRegisterFooterButton(
     useMemo(
       () => ({
-        label: buttonLabel,
+        label: t(`activity.review.${labelKey}`),
         onClick: () => navigate(`/activity/${path}/steps`),
         disabled: false,
         isLoading: false,
+        hide: actionOlderThan7Days,
       }),
-      [navigate, path, buttonLabel]
+      [navigate, path, labelKey, actionOlderThan7Days, t]
     )
   );
 
@@ -138,5 +149,7 @@ export const useActionReview = () => {
     title,
     amount,
     inputToken,
+    actionOlderThan7Days,
+    labelKey,
   };
 };

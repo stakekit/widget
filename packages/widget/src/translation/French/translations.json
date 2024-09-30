@@ -40,7 +40,7 @@
       "retry": "Réessayer",
       "continue": "Continuer",
       "unknown_error": "Erreur inconnue",
-      "terms_of_use": "En cliquant sur Réessayer vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
+      "terms_of_use": "En cliquant sur {{action}} vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours"
     },
     "no_previous_activity": "Aucune activité précédente dans StakeKit"

@@ -92,10 +92,7 @@ export const ActivityPageContextProvider = ({
   );
 
   const groupedDates = useMemo(
-    () =>
-      actions
-        .map((action) => action.map((a) => a.actionData.createdAt))
-        .map((g) => g),
+    () => actions.map((action) => action.map((a) => a.actionData.createdAt)),
     [actions]
   );
 

@@ -15,8 +15,15 @@ import { PageContainer } from "../../components";
 export const ActionReviewPage = () => {
   const { t } = useTranslation();
   const trackEvent = useTrackEvent();
-  const { selectedYield, transactions, title, amount, inputToken } =
-    useActionReview();
+  const {
+    selectedYield,
+    transactions,
+    title,
+    amount,
+    inputToken,
+    actionOlderThan7Days,
+    labelKey,
+  } = useActionReview();
 
   const info = useMemo(
     () =>
@@ -77,25 +84,28 @@ export const ActionReviewPage = () => {
           )
           .extractNullable()}
         <Divider my="2" />
-        <Box marginTop="4" marginBottom="16">
-          <Text variant={{ weight: "normal", type: "muted" }}>
-            <Trans
-              i18nKey="activity.review.terms_of_use"
-              components={{
-                underline0: (
-                  // biome-ignore lint/a11y/useAnchorContent: <explanation>
-                  <a
-                    target="_blank"
-                    onClick={() => trackEvent("termsClicked")}
-                    href="https://docs.stakek.it/docs/terms-of-use"
-                    className={pointerStyles}
-                    rel="noreferrer"
-                  />
-                ),
-              }}
-            />
-          </Text>
-        </Box>
+        {!actionOlderThan7Days && (
+          <Box marginTop="4" marginBottom="16">
+            <Text variant={{ weight: "normal", type: "muted" }}>
+              <Trans
+                i18nKey="activity.review.terms_of_use"
+                values={{ action: t(`activity.review.${labelKey}`) }}
+                components={{
+                  underline0: (
+                    // biome-ignore lint/a11y/useAnchorContent: <explanation>
+                    <a
+                      target="_blank"
+                      onClick={() => trackEvent("termsClicked")}
+                      href="https://docs.stakek.it/docs/terms-of-use"
+                      className={pointerStyles}
+                      rel="noreferrer"
+                    />
+                  ),
+                }}
+              />
+            </Text>
+          </Box>
+        )}
       </PageContainer>
     </AnimationPage>
   );
