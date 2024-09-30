@@ -38,7 +38,10 @@ export const useActionReview = () => {
   ).unsafeCoerce();
 
   const transactions = useMemo(
-    () => Maybe.fromNullable(selectedAction).map((a) => a.transactions),
+    () =>
+      Maybe.fromNullable(selectedAction)
+        .map((a) => a.transactions)
+        .map((tx) => tx.sort((a, b) => a.stepIndex - b.stepIndex)),
     [selectedAction]
   );
 
@@ -104,20 +107,20 @@ export const useActionReview = () => {
 
   const labelKey: LabelKey = useMemo(
     () =>
-      Maybe.fromNullable(selectedAction)
-        .chain((a) =>
+      transactions
+        .chain((txs) =>
           List.find(
             (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
-            a.transactions
+            txs
           ).chain((tx) =>
-            List.findIndex((i) => i === tx, a.transactions)
-              .chainNullable((index) => a.transactions[index - 1])
+            List.findIndex((i) => i === tx, txs)
+              .chainNullable((index) => txs[index - 1])
               .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
               .map(() => "continue" as LabelKey)
           )
         )
         .orDefault("retry"),
-    [selectedAction]
+    [transactions]
   );
 
   const actionOlderThan7Days = useMemo(

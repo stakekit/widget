@@ -47,7 +47,6 @@ export const ActionReviewPage = () => {
           {t("activity.review.transactions")}:
         </Text>
         {transactions
-          .map((tx) => tx.sort((a, b) => a.stepIndex - b.stepIndex))
           .map((stx) =>
             stx.map((tx) => (
               <Box

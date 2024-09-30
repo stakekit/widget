@@ -10,29 +10,13 @@ import {
   viaText,
 } from "@sk-widget/pages/details/activity-page/style.css";
 import { listItemContainer } from "@sk-widget/pages/details/positions-page/style.css";
-import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
-import {
-  type ActionDto,
-  ActionStatus,
-  type YieldDto,
-} from "@stakekit/api-hooks";
-import { List, Maybe } from "purify-ts";
+import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
+import { List } from "purify-ts";
 import { useTranslation } from "react-i18next";
 
 type ActionYieldDto = {
   actionData: ActionDto;
   yieldData: YieldDto;
-};
-
-type ListItemContainerType = "claim" | "pending" | "actionRequired" | undefined;
-
-const BADGE_BG_MAP: { [key in ActionStatus]: ListItemContainerType } = {
-  SUCCESS: "claim",
-  FAILED: "actionRequired",
-  CREATED: "pending",
-  WAITING_FOR_NEXT: "pending",
-  CANCELED: "actionRequired",
-  PROCESSING: "claim",
 };
 
 const ActionListItem = ({
@@ -43,8 +27,14 @@ const ActionListItem = ({
   onActionSelect: (action: ActionYieldDto) => void;
 }) => {
   const { t } = useTranslation();
-  const { integrationData, providersDetails, actionType, amount } =
-    useActionListItem(action);
+  const {
+    integrationData,
+    providersDetails,
+    actionType,
+    amount,
+    badgeLabel,
+    badgeColor,
+  } = useActionListItem(action);
 
   return (
     <Box py="1" width="full">
@@ -75,23 +65,14 @@ const ActionListItem = ({
 
                     <Box
                       className={listItemContainer({
-                        type: BADGE_BG_MAP[action.actionData.status],
+                        type: badgeColor,
                       })}
                     >
                       <Text
                         variant={{ type: "white", size: "small" }}
                         className={noWrap}
                       >
-                        {Maybe.fromNullable(action.actionData.status)
-                          .map((status) => {
-                            if (status === ActionStatus.WAITING_FOR_NEXT) {
-                              return t("activity.review.in_progress");
-                            }
-                            return status;
-                          })
-                          .map((status) => status.replaceAll("_", " "))
-                          .map(capitalizeFirstLetters)
-                          .extract()}
+                        {badgeLabel}
                       </Text>
                     </Box>
                   </Box>
