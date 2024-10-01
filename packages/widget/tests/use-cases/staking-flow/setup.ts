@@ -1,6 +1,7 @@
 import type {
   ActionDto,
   ActionRequestDto,
+  AddressesDto,
   TokenDto,
   TransactionDto,
   YieldDto,
@@ -147,6 +148,7 @@ export const setup = async () => {
       },
     ],
     createdAt: "2023-12-28T14:36:21.700Z",
+    addresses: null as unknown as AddressesDto,
   };
 
   const transactionConstruct: TransactionDto = {
