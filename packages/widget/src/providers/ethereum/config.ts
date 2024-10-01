@@ -20,6 +20,7 @@ import {
   goerli,
   harmonyOne,
   holesky,
+  linea,
   mainnet,
   optimism,
   polygon,
@@ -106,6 +107,14 @@ const queryFn = async ({
             type: "evm",
             skChainName: EvmNetworks.Base,
             wagmiChain: base,
+          },
+          [EvmNetworks.Linea]: {
+            type: "evm",
+            skChainName: EvmNetworks.Linea,
+            wagmiChain: {
+              ...linea,
+              iconUrl: getNetworkLogo(EvmNetworks.Linea),
+            },
           },
           [EvmNetworks.EthereumHolesky]: {
             type: "evm",

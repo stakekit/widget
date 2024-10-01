@@ -1,6 +1,7 @@
 import type {
   ActionDto,
   ActionRequestDto,
+  AddressesDto,
   TokenDto,
   TransactionDto,
   YieldDto,
@@ -118,9 +119,6 @@ export const setup = async () => {
   };
 
   const enterAction: ActionDto = {
-    addresses: {
-      address: "",
-    },
     id: "18bdda99-346a-4694-af71-58dfea68d542",
     integrationId: "avalanche-avax-liquid-staking",
     status: "CREATED",
@@ -150,6 +148,7 @@ export const setup = async () => {
       },
     ],
     createdAt: "2023-12-28T14:36:21.700Z",
+    addresses: null as unknown as AddressesDto,
   };
 
   const transactionConstruct: TransactionDto = {

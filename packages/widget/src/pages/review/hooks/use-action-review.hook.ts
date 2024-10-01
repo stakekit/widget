@@ -2,7 +2,8 @@ import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import type { LabelKey } from "@sk-widget/pages/review/types";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { dateOlderThen7Days } from "@sk-widget/utils/formatters";
+import { defaultFormattedNumber } from "@sk-widget/utils";
+import { dateOlderThen7Days } from "@sk-widget/utils/date";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import {
   ActionTypes,
@@ -10,7 +11,6 @@ import {
   TransactionStatus,
 } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
-import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -89,8 +89,7 @@ export const useActionReview = () => {
   const amount = useMemo(
     () =>
       Maybe.fromNullable(selectedAction.amount)
-        .map(BigNumber)
-        .map((a) => a.toString())
+        .map(defaultFormattedNumber)
         .extractNullable(),
     [selectedAction]
   );

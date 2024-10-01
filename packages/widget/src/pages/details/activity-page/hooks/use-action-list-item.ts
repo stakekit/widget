@@ -1,14 +1,12 @@
 import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import {
-  capitalizeFirstLetters,
-  dateOlderThen7Days,
-} from "@sk-widget/utils/formatters";
+import { defaultFormattedNumber } from "@sk-widget/utils";
+import { dateOlderThen7Days } from "@sk-widget/utils/date";
+import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
 import {
   type ActionDto,
   ActionStatus,
   type YieldDto,
 } from "@stakekit/api-hooks";
-import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -95,9 +93,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(action.actionData.amount)
-        .map(BigNumber)
-        .map((a) => a.toString(10)),
+      Maybe.fromNullable(action.actionData.amount).map(defaultFormattedNumber),
     [action]
   );
 

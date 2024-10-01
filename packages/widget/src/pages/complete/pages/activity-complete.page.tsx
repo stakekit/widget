@@ -2,10 +2,9 @@ import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { CompletePage } from "@sk-widget/pages/complete/pages/common.page";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { formatNumber } from "@sk-widget/utils";
+import { defaultFormattedNumber } from "@sk-widget/utils";
 import type { TokenDto } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
-import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -21,8 +20,7 @@ export const ActivityCompletePage = () => {
   const amount = useMemo(
     () =>
       Maybe.fromNullable(selectedAction.amount)
-        .map(BigNumber)
-        .map(formatNumber)
+        .map(defaultFormattedNumber)
         .unsafeCoerce(),
     [selectedAction]
   );

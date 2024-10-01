@@ -6,7 +6,7 @@ import {
 import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
 import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { groupDateStrings } from "@sk-widget/utils/formatters";
+import { groupDateStrings } from "@sk-widget/utils";
 import {
   ActionStatus,
   ActionTypes,
@@ -96,7 +96,10 @@ export const ActivityPageContextProvider = ({
     [actions]
   );
 
-  const [labels, counts] = groupDateStrings(groupedDates.extract() ?? [], i18n);
+  const [labels, counts] = useMemo(
+    () => groupDateStrings(groupedDates.extract() ?? [], i18n),
+    [groupedDates, i18n]
+  );
 
   const bulletLines = useMemo(
     () =>
