@@ -109,7 +109,10 @@ describe("Select opportunity", () => {
               token,
               metadata: {
                 ...mock.metadata,
-                type: "liquid-staking",
+                type:
+                  integrationId === "ethereum-eth-stakewise-staking"
+                    ? "staking"
+                    : "liquid-staking",
                 rewardTokens: [rewardToken],
                 provider: { name: "Stakewise" },
               },
@@ -149,23 +152,14 @@ describe("Select opportunity", () => {
 
     await waitFor(() =>
       expect(
-        within(selectContainer).getByText("Liquid Staking")
+        within(selectContainer).getByText("ETH Liquid Staking")
       ).toBeInTheDocument()
     );
 
     await waitFor(() =>
       expect(
         within(selectContainer).getByTestId(
-          "select-opportunity__item_ethereum-eth-lido-staking",
-          { exact: false }
-        )
-      ).toBeInTheDocument()
-    );
-
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByTestId(
-          "select-opportunity__item_ethereum-eth-reth-staking",
+          "select-opportunity__item_liquid-staking",
           { exact: false }
         )
       ).toBeInTheDocument()
@@ -174,20 +168,10 @@ describe("Select opportunity", () => {
     await waitFor(() =>
       expect(
         within(selectContainer).queryByTestId(
-          "select-opportunity__item_ethereum-eth-stakewise-staking",
+          "select-opportunity__item_staking",
           { exact: false }
         )
       ).not.toBeInTheDocument()
-    );
-
-    within(selectContainer)
-      .getByTestId("select-opportunity__item_ethereum-eth-reth-staking", {
-        exact: false,
-      })
-      .click();
-
-    await waitFor(() =>
-      expect(getByText("You'll receive rETH")).toBeInTheDocument()
     );
 
     await waitFor(() =>
@@ -198,22 +182,6 @@ describe("Select opportunity", () => {
 
     await waitFor(() =>
       expect(getByText("Connect a Wallet")).toBeInTheDocument()
-    );
-
-    await getByTestId("select-opportunity").click();
-
-    selectContainer = await waitFor(() =>
-      getByTestId("select-modal__container")
-    );
-
-    within(selectContainer)
-      .getByTestId("select-opportunity__item_ethereum-eth-lido-staking", {
-        exact: false,
-      })
-      .click();
-
-    await waitFor(() =>
-      expect(getByText("You'll receive stETH")).toBeInTheDocument()
     );
 
     unmount();
