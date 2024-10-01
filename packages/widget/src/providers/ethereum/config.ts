@@ -111,7 +111,10 @@ const queryFn = async ({
           [EvmNetworks.Linea]: {
             type: "evm",
             skChainName: EvmNetworks.Linea,
-            wagmiChain: linea,
+            wagmiChain: {
+              ...linea,
+              iconUrl: getNetworkLogo(EvmNetworks.Linea),
+            },
           },
           [EvmNetworks.EthereumHolesky]: {
             type: "evm",
