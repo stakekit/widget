@@ -2,9 +2,9 @@ import type { YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import { Maybe } from "purify-ts";
+import { Just, Maybe } from "purify-ts";
 
-export type ExtendedYieldType = YieldType | "native_staking" | "pooled_staking";
+export type ExtendedYieldType = YieldType | "pooled_staking";
 
 type YieldTypeLabelsMap = {
   [Key in ExtendedYieldType]: {
@@ -16,17 +16,14 @@ type YieldTypeLabelsMap = {
 };
 
 export const getExtendedYieldType = (yieldDto: YieldDto) =>
-  isNativeStaking(yieldDto)
-    ? "native_staking"
-    : isPooledStaking(yieldDto)
+  Just(
+    (isPooledStaking(yieldDto)
       ? "pooled_staking"
-      : yieldDto.metadata.type;
+      : yieldDto.metadata.type) as ExtendedYieldType
+  ).unsafeCoerce();
 
-export const getYieldTypeLabels = (
-  yieldDto: YieldDto,
-  t: TFunction
-): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
-  const map = {
+export const getYieldTypeLabelsMap = (t: TFunction) =>
+  ({
     staking: {
       type: "staking",
       title: t("yield_types.staking.title"),
@@ -57,23 +54,19 @@ export const getYieldTypeLabels = (
       review: t("yield_types.restaking.review"),
       cta: t("yield_types.restaking.cta"),
     },
-    native_staking: {
-      type: "native_staking",
-      title: t("yield_types.native_staking.title"),
-      review: t("yield_types.native_staking.review"),
-      cta: t("yield_types.native_staking.cta"),
-    },
     pooled_staking: {
       type: "pooled_staking",
       title: t("yield_types.pooled_staking.title"),
       review: t("yield_types.pooled_staking.review"),
       cta: t("yield_types.pooled_staking.cta"),
     },
-  } satisfies YieldTypeLabelsMap;
+  }) satisfies YieldTypeLabelsMap;
 
-  if (isNativeStaking(yieldDto)) {
-    return map.native_staking;
-  }
+export const getYieldTypeLabels = (
+  yieldDto: YieldDto,
+  t: TFunction
+): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
+  const map = getYieldTypeLabelsMap(t);
 
   if (isPooledStaking(yieldDto)) {
     return map.pooled_staking;
@@ -84,16 +77,17 @@ export const getYieldTypeLabels = (
 
 const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   staking: 1,
-  native_staking: 2,
-  pooled_staking: 3,
-  "liquid-staking": 4,
-  vault: 5,
-  lending: 6,
-  restaking: 7,
+  pooled_staking: 2,
+  "liquid-staking": 3,
+  vault: 4,
+  lending: 5,
+  restaking: 6,
 };
 
-export const getYieldTypesSortRank = (yieldDto: YieldDto) =>
-  yieldTypesSortRank[getExtendedYieldType(yieldDto)];
+export const getYieldTypesSortRank = (val: ExtendedYieldType | YieldDto) =>
+  typeof val === "string"
+    ? yieldTypesSortRank[val]
+    : yieldTypesSortRank[getExtendedYieldType(val)];
 
 const isEthereumStaking = (yieldDto: YieldDto) =>
   yieldDto.metadata.type === "staking" &&

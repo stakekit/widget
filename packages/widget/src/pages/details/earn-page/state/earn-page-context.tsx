@@ -62,7 +62,7 @@ import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import { defaultFormattedNumber, formatNumber } from "../../../../utils";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
-import type { SelectedStakeData } from "../types";
+import type { YieldTypesData } from "../types";
 import type { EarnPageContextType } from "./types";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 
@@ -86,6 +86,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     availableAmount,
     availableYields,
     hasNotYieldsForToken,
+    selectedYieldType,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
 
@@ -217,102 +218,145 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
 
-  const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
+  const yieldTypesData = useMemo(
     () =>
       Maybe.fromNullable(multiYields.data)
         .alt(Maybe.of([]))
-        .map((val) => val.toSorted((a, b) => b.apy - a.apy))
-        .map((val) => val.filter((v) => v.apy > 0))
-        .chain((yieldDtos) =>
-          Maybe.of(deferredStakeSearch)
-            .chain((val) =>
-              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-            )
-            .map((lowerSearch) => ({
-              all: yieldDtos,
-              filteredDtos: yieldDtos.filter(
-                (d) =>
-                  d.token.name.toLowerCase().includes(lowerSearch) ||
-                  d.token.symbol.toLowerCase().includes(lowerSearch) ||
-                  d.metadata.name.toLowerCase().includes(lowerSearch) ||
-                  d.metadata.rewardTokens?.some(
-                    (rt) =>
-                      rt.name.toLowerCase().includes(lowerSearch) ||
-                      rt.symbol.toLowerCase().includes(lowerSearch)
-                  )
-              ),
-            }))
-            .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
-        )
-        .map(({ all, filteredDtos }) => {
-          const sorted = filteredDtos.toSorted(
-            (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
-          );
+        .map((val) =>
+          val.reduce((acc, curr) => {
+            const extendedYieldType = getExtendedYieldType(curr);
+            const prevItem = acc.get(extendedYieldType);
 
-          const groupsWithCounts = [
-            ...sorted
-              .reduce(
-                (acc, curr) => {
-                  const extendedYieldType = getExtendedYieldType(curr);
-                  if (!acc.has(extendedYieldType)) {
-                    acc.set(extendedYieldType, {
-                      type: extendedYieldType,
-                      title: getYieldTypeLabels(curr, t).title,
-                      items: [curr],
-                    });
-                  } else {
-                    acc.get(extendedYieldType)!.items.push(curr);
-                  }
+            const constructMinOrMax = (
+              yieldDto: YieldDto,
+              type: "minimum" | "maximum"
+            ) =>
+              Maybe.fromFalsy(yieldDto.args.enter.args?.amount?.required)
+                .chainNullable(() => yieldDto.args.enter.args?.amount?.[type])
+                .map(BigNumber)
+                .filter((val) => val.isGreaterThan(0));
 
-                  return acc;
-                },
-                new Map<
-                  ExtendedYieldType,
-                  {
-                    type: ExtendedYieldType;
-                    title: ReturnType<typeof getYieldTypeLabels>["title"];
-                    items: YieldDto[];
-                  }
-                >()
-              )
-              .values(),
-          ].reduce(
-            (acc, next) => {
-              acc.set(next.type, {
-                title: next.title,
-                itemsLength:
-                  (acc.get(next.type)?.itemsLength ?? 0) + next.items.length,
+            const getMinOrMax = ({
+              prevMinOrMax,
+              type,
+            }: {
+              prevMinOrMax: Maybe<BigNumber>;
+              type: "minimum" | "maximum";
+            }) =>
+              prevMinOrMax
+                .chain((prev) =>
+                  constructMinOrMax(curr, type).map((next) => ({
+                    prev,
+                    next,
+                  }))
+                )
+                .filter((val) => val.prev.isEqualTo(val.next))
+                .map((val) => val.prev);
+
+            if (!prevItem) {
+              acc.set(extendedYieldType, {
+                name: `${curr.token.symbol} ${getYieldTypeLabels(curr, t).title}`,
+                yields: [curr],
+                min: constructMinOrMax(curr, "minimum"),
+                max: constructMinOrMax(curr, "maximum"),
+                type: extendedYieldType,
+                symbol: curr.token.symbol,
+              });
+            } else {
+              prevItem.yields.push(curr);
+
+              prevItem.min = getMinOrMax({
+                prevMinOrMax: prevItem.min,
+                type: "minimum",
               });
 
-              return acc;
-            },
+              prevItem.max = getMinOrMax({
+                prevMinOrMax: prevItem.max,
+                type: "maximum",
+              });
+            }
 
-            new Map<ExtendedYieldType, { itemsLength: number; title: string }>()
-          );
+            return acc;
+          }, new Map<ExtendedYieldType, Omit<YieldTypesData[number], "apy">>())
+        )
+        .map((val) =>
+          [...val.values()]
+            .map((v) => ({
+              ...v,
+              apy: v.yields
+                .reduce((acc, curr) => acc.plus(curr.apy), BigNumber(0))
+                .dividedBy(v.yields.length),
+            }))
+            .sort(
+              (a, b) =>
+                getYieldTypesSortRank(a.type) - getYieldTypesSortRank(b.type)
+            )
+        )
+        .chain((items) =>
+          Maybe.of(deferredStakeSearch)
+            .filter((val) => val.length >= 1)
+            .map((val) => val.toLowerCase())
+            .map((lowerSearch) =>
+              items.filter(
+                (item) =>
+                  item.name.toLowerCase().includes(lowerSearch) ||
+                  item.yields.some((y) =>
+                    y.metadata.name.toLowerCase().includes(lowerSearch)
+                  )
+              )
+            )
+            .alt(Maybe.of(items))
+        ),
+    [multiYields.data, deferredStakeSearch, t]
+  );
 
-          return {
-            all,
-            filtered: sorted,
-            groupsWithCounts,
-          };
-        }),
-    [deferredStakeSearch, multiYields.data, t]
+  const yieldsToSelect = useMemo(
+    () =>
+      Maybe.fromNullable(multiYields.data)
+        .chain((yields) =>
+          selectedYieldType.map((yt) =>
+            yields.filter((y) => getExtendedYieldType(y) === yt)
+          )
+        )
+        .filter((val) =>
+          val.every(
+            (y) =>
+              !y.metadata.supportsMultipleValidators ||
+              // Stakewise special case
+              y.id === "ethereum-eth-stakewise-staking"
+          )
+        )
+        .chain((yields) =>
+          Maybe.of(deferredStakeSearch)
+            .filter((val) => val.length >= 1)
+            .map((val) => val.toLowerCase())
+            .map((lowerSearch) =>
+              yields.filter((item) =>
+                item.metadata.name.toLowerCase().includes(lowerSearch)
+              )
+            )
+            .alt(Maybe.of(yields))
+        ),
+    [multiYields.data, selectedYieldType, deferredStakeSearch]
   );
 
   const validatorsData = useMemo(
     () =>
-      selectedStake.chain((ss) =>
-        Maybe.fromNullable(deferredValidatorSearch)
-          .map((val) => val.toLowerCase())
-          .map((searchInput) =>
-            ss.validators.filter(
-              (validator) =>
-                validator.name?.toLowerCase().includes(searchInput) ||
-                validator.address.toLowerCase().includes(searchInput)
+      selectedStake
+        // Stakewise special case
+        .filter((val) => val.id !== "ethereum-eth-stakewise-staking")
+        .chain((ss) =>
+          Maybe.fromNullable(deferredValidatorSearch)
+            .map((val) => val.toLowerCase())
+            .map((searchInput) =>
+              ss.validators.filter(
+                (validator) =>
+                  validator.name?.toLowerCase().includes(searchInput) ||
+                  validator.address.toLowerCase().includes(searchInput)
+              )
             )
-          )
-          .alt(Maybe.of(ss.validators))
-      ),
+            .alt(Maybe.of(ss.validators))
+        ),
     [deferredValidatorSearch, selectedStake]
   );
 
@@ -335,6 +379,10 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     Maybe.fromNullable(multiYields.data)
       .chain((val) => List.find((v) => v.id === yieldId, val))
       .ifJust((val) => dispatch({ type: "yield/select", data: val }));
+  };
+
+  const onYieldTypeSelect = (val: ExtendedYieldType) => {
+    dispatch({ type: "yieldType/select", data: val });
   };
 
   const onValidatorSelect = (item: ValidatorDto) =>
@@ -604,11 +652,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const { referralCheck } = useSettings();
 
   const value = {
+    selectedYieldType,
+    onYieldTypeSelect,
     referralCheck,
     selectedTokenAvailableAmount,
     formattedPrice,
     symbol,
-    selectedStakeData,
+    yieldTypesData,
     selectedStake,
     onYieldSelect,
     onTokenBalanceSelect,
@@ -657,6 +707,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     validatorSearch,
     hasNotYieldsForToken,
     isStakeTokenSameAsGasToken,
+    yieldsToSelect,
   };
 
   return (
