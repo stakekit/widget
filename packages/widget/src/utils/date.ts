@@ -11,3 +11,10 @@ export const daysUntilDate = (futureDate: Date) => {
 
   return Math.floor((utc2 - utc1) / _MS_PER_DAY);
 };
+
+export const dateOlderThen7Days = (date: string): boolean => {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  return new Date(date) < sevenDaysAgo;
+};

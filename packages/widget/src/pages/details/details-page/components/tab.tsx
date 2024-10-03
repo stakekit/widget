@@ -1,16 +1,9 @@
 import clsx from "clsx";
+import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../components";
 import { pressAnimation } from "../../../../components/atoms/button/styles.css";
-import {
-  activeTabBorder,
-  leftTabBorder,
-  rewardsBadge,
-  rightTabBorder,
-  tab,
-  tabBorder,
-  tabContainer,
-} from "../styles.css";
+import { rewardsBadge, tab, tabBorder, tabContainer } from "../styles.css";
 
 type Props = {
   isSelected: boolean;
@@ -18,6 +11,7 @@ type Props = {
 } & (
   | { variant: "earn"; pendingActionsCount?: never }
   | { variant: "positions"; pendingActionsCount?: number }
+  | { variant: "activity"; pendingActionsCount?: never }
 );
 
 export const Tab = ({
@@ -39,9 +33,7 @@ export const Tab = ({
             data-state={isSelected ? "selected" : "default"}
             variant={{ type: isSelected ? "regular" : "muted" }}
           >
-            {variant === "earn"
-              ? t("details.tab_earn")
-              : t("details.tab_positions")}
+            {t(`details.tabs.${variant}`, variant)}
           </Text>
 
           {!!pendingActionsCount && (
@@ -52,16 +44,13 @@ export const Tab = ({
         </Box>
       </Box>
 
-      <Box
-        className={clsx([
-          tabBorder,
-          isSelected
-            ? activeTabBorder
-            : variant === "earn"
-              ? leftTabBorder
-              : rightTabBorder,
-        ])}
-      />
+      {isSelected ? (
+        <motion.div
+          className={tabBorder}
+          layoutId="underline"
+          transition={{ duration: 0.15 }}
+        />
+      ) : null}
     </Box>
   );
 };

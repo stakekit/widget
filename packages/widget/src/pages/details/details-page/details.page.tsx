@@ -1,19 +1,25 @@
+import { Box } from "@sk-widget/components";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import {
+  Tabs,
+  type TabsProps,
+} from "@sk-widget/pages/details/details-page/components/tabs";
+import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
+import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Box } from "../../../components/atoms/box";
-import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useSKLocation } from "../../../providers/location";
-import { usePositions } from "../positions-page/hooks/use-positions";
-import type { TabsProps } from "./components/tabs";
-import { Tabs } from "./components/tabs";
+
+export const TABS_MAP = {
+  earn: "/",
+  positions: "/positions",
+  activity: "/activity",
+};
 
 export const Details = () => {
   const trackEvent = useTrackEvent();
 
   const { positionsData } = usePositions();
-
-  const { current } = useSKLocation();
 
   const pendingActionsCount = useMemo(
     () =>
@@ -25,14 +31,20 @@ export const Details = () => {
     [positionsData.data]
   );
 
+  const { current } = useSKLocation();
+
   const navigate = useNavigate();
 
-  const [selectedTab, setSelectedTab] = useState<"earn" | "positions">("earn");
+  const [selectedTab, setSelectedTab] = useState<
+    "earn" | "positions" | "activity"
+  >("earn");
 
   if (current.pathname === "/" && selectedTab === "positions") {
     setSelectedTab("earn");
   } else if (current.pathname === "/positions" && selectedTab === "earn") {
     setSelectedTab("positions");
+  } else if (current.pathname === "/activity" && selectedTab === "earn") {
+    setSelectedTab("activity");
   }
 
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
@@ -40,7 +52,8 @@ export const Details = () => {
 
     trackEvent("tabClicked", { selected });
 
-    selected === "earn" ? navigate("/") : navigate("/positions");
+    setSelectedTab(selected);
+    navigate(TABS_MAP[selected]);
   };
 
   return (

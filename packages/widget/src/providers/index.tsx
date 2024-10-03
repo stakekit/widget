@@ -1,4 +1,5 @@
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { ActivityProvider } from "@sk-widget/providers/activity-provider";
 import { EnterStakeStoreProvider } from "@sk-widget/providers/enter-stake-store";
 import { ExitStakeStoreProvider } from "@sk-widget/providers/exit-stake-store";
 import { PendingActionStoreProvider } from "@sk-widget/providers/pending-action-store";
@@ -55,7 +56,9 @@ export const Providers = ({
                                               <EnterStakeStoreProvider>
                                                 <ExitStakeStoreProvider>
                                                   <PendingActionStoreProvider>
-                                                    {children}
+                                                    <ActivityProvider>
+                                                      {children}
+                                                    </ActivityProvider>
                                                   </PendingActionStoreProvider>
                                                 </ExitStakeStoreProvider>
                                               </EnterStakeStoreProvider>

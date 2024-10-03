@@ -11,6 +11,7 @@ export type FooterButtonVal = {
   isLoading: boolean;
   label: string;
   variant?: "primary" | "secondary";
+  hide?: boolean;
 } | null;
 
 export const [useFooterButton, FooterButtonProvider] =
@@ -30,7 +31,7 @@ export const useRegisterFooterButton = (val: FooterButtonVal) => {
   }, [isPresent, setFooterButton, val]);
 
   useIsomorphicEffect(() => {
-    if (!isPresent) return;
+    if (!isPresent || val?.hide) return;
     setFooterButton(val);
 
     return () => {

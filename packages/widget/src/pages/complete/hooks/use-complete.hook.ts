@@ -1,3 +1,6 @@
+import { useActivityUnstakeActionMatch } from "@sk-widget/hooks/navigation/use-activiti-unstake.match";
+import { useActivityPendingActionMatch } from "@sk-widget/hooks/navigation/use-activity-pending-action-match";
+import { useActivityReviewMatch } from "@sk-widget/hooks/navigation/use-activity-review.match";
 import type { TransactionType } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -35,6 +38,10 @@ export const useComplete = () => {
   const unstakeMatch = useUnstakeMatch();
   const pendingActionMatch = usePendingActionMatch();
 
+  const activityUnstakeMatch = useActivityUnstakeActionMatch();
+  const activityPendingMatch = useActivityPendingActionMatch();
+  const activityMatch = useActivityReviewMatch();
+
   const onClickRef = useSavedRef(onClick);
 
   const { t } = useTranslation();
@@ -46,15 +53,16 @@ export const useComplete = () => {
         isLoading: false,
         label: t("shared.ok"),
         onClick: () => onClickRef.current(),
+        hide: !!activityMatch,
       }),
-      [onClickRef, t]
+      [onClickRef, t, activityMatch]
     )
   );
 
   return {
     urls,
-    unstakeMatch,
-    pendingActionMatch,
+    unstakeMatch: unstakeMatch || activityUnstakeMatch,
+    pendingActionMatch: pendingActionMatch || activityPendingMatch,
     onViewTransactionClick,
   };
 };

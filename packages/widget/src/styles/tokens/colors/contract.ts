@@ -38,6 +38,7 @@ const baseColorsContract = {
   positionsSectionDividerColor: "",
   positionsClaimRewardsBackground: "",
   positionsActionRequiredBackground: "",
+  positionsPendingBackground: "",
 
   modalOverlayBackground: "",
   modalBodyBackground: "",

@@ -4,11 +4,15 @@ import "./utils/extend-purify";
 import "./styles/theme/global.css";
 import { useInitParams } from "@sk-widget/hooks/use-init-params";
 import { useUnderMaintenance } from "@sk-widget/hooks/use-under-maintenance";
+import { ActivityCompletePage } from "@sk-widget/pages/complete/pages/activity-complete.page";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
 import UnderMaintenance from "@sk-widget/pages/components/under-maintenance";
+import { ActivityPage } from "@sk-widget/pages/details/activity-page/activity.page";
+import { ActionReviewPage } from "@sk-widget/pages/review/pages/action-review.page";
 import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
 import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
+import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.page";
 import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
@@ -81,6 +85,7 @@ const Widget = () => {
     if (
       pathnameRef.current !== "/" &&
       pathnameRef.current !== "/positions" &&
+      pathnameRef.current !== "/activity" &&
       ((prevChain && chain !== prevChain) ||
         (prevAddress && address !== prevAddress))
     ) {
@@ -133,9 +138,23 @@ const Widget = () => {
                   <Route element={<Details />}>
                     <Route index element={<EarnPage />} />
                     <Route path="positions" element={<PositionsPage />} />
+                    <Route path="activity" element={<ActivityPage />} />
                   </Route>
 
                   <Route element={<ConnectedCheck />}>
+                    {/* Activity flow */}
+                    <Route path="activity">
+                      <Route path="review" element={<ActionReviewPage />} />
+                      <Route
+                        path=":pendingActionType/steps"
+                        element={<ActivityStepsPage />}
+                      />
+                      <Route
+                        path=":pendingActionType/complete"
+                        element={<ActivityCompletePage />}
+                      />
+                    </Route>
+
                     {/* Stake flow */}
                     <Route>
                       <Route path="review" element={<StakeReviewPage />} />

@@ -4,7 +4,7 @@ import { Trans } from "react-i18next";
 import { Highlight } from "../../../components";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useStakeReview } from "../hooks/use-stake-review.hook";
-import { ReviewPage } from "./common.page";
+import { ReviewPage } from "./common-page/common.page";
 
 export const StakeReviewPage = () => {
   useTrackPage("stakeReview");

@@ -27,7 +27,7 @@ export const UnstakeCompletePage = () => {
     [exitRequest.integrationData]
   );
 
-  useTrackPage("unstakeCompelete");
+  useTrackPage("unstakeComplete");
 
   const providerDetails = useProvidersDetails({
     integrationData,
