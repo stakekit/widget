@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.203
+
+### Patch Changes
+
+- 7e20fe8: Activity Tab
+
 ## 0.0.202
 
 ### Patch Changes
