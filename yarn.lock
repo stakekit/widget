@@ -4836,9 +4836,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@stakekit/api-hooks@npm:^0.0.88":
-  version: 0.0.88
-  resolution: "@stakekit/api-hooks@npm:0.0.88"
+"@stakekit/api-hooks@npm:^0.0.89":
+  version: 0.0.89
+  resolution: "@stakekit/api-hooks@npm:0.0.89"
   peerDependencies:
     "@faker-js/faker": ^8
     "@tanstack/react-query": ">=4"
@@ -4851,14 +4851,14 @@ __metadata:
       optional: true
     msw:
       optional: true
-  checksum: 10/66030f5163fba0c1f92dbf8bb9e2e16e71f00bd45dd90aa7aa756be011d5eff0795a83414495a150df5fff8c9f06dc6aed2437c3a73d315f5448de0fa0b73434
+  checksum: 10/e167b61d0a2cc91d60c5ba180a6aebbf0c7689b2e58ab55f4c30ece5794fe4a881b2a3481a64e2a1f3e8416c5cd7d40bff6ba20c057f26c2a857bd0b8ac1337e
   languageName: node
   linkType: hard
 
-"@stakekit/common@npm:^0.0.38":
-  version: 0.0.38
-  resolution: "@stakekit/common@npm:0.0.38"
-  checksum: 10/b6983a48c36753cb2047e76c4d61707a9db6e72e0880d83e4367ec1eed51d0604d84e5027b3e2114fec1be9d322502d3e78c0586a32c04fa8e8633f3035e23ba
+"@stakekit/common@npm:^0.0.39":
+  version: 0.0.39
+  resolution: "@stakekit/common@npm:0.0.39"
+  checksum: 10/7788d843437f4b38624c0209984a74bd9bf7db3ba320f053032e3d4aa27268142dd4c1925a9b2b63599600a4218aad9189db24029698234a94eb9b365d19978a
   languageName: node
   linkType: hard
 
@@ -4902,8 +4902,8 @@ __metadata:
     "@radix-ui/react-visually-hidden": "npm:^1.1.0"
     "@safe-global/safe-apps-provider": "npm:^0.18.3"
     "@safe-global/safe-apps-sdk": "npm:^9.1.0"
-    "@stakekit/api-hooks": "npm:^0.0.88"
-    "@stakekit/common": "npm:^0.0.38"
+    "@stakekit/api-hooks": "npm:^0.0.89"
+    "@stakekit/common": "npm:^0.0.39"
     "@stakekit/rainbowkit": "npm:^2.1.7"
     "@tanstack/react-query": "npm:^5.56.2"
     "@tanstack/react-virtual": "npm:^3.10.8"
