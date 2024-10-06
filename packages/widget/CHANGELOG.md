@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.204
+
+### Patch Changes
+
+- 973b661: removed date label bg color in activity page
+- 9f2aeb1: added sei network
+
 ## 0.0.203
 
 ### Patch Changes
