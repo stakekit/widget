@@ -47,6 +47,7 @@ const skCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Dydx]: "dydx-mainnet-1",
   [CosmosNetworks.Injective]: "injective-1",
   [CosmosNetworks.Sei]: "pacific-1",
+  [CosmosNetworks.Mantra]: "mantra-1",
 };
 
 const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =

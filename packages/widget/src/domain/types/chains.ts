@@ -44,6 +44,7 @@ export const supportedCosmosChains = [
   CosmosNetworks.Dydx,
   CosmosNetworks.Injective,
   CosmosNetworks.Sei,
+  CosmosNetworks.Mantra,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
 const supportedCosmosChainsSet = new Set(supportedCosmosChains);
@@ -292,6 +293,11 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "sei",
       family: "cosmos",
       skChainName: CosmosNetworks.Sei,
+    },
+    mantra: {
+      currencyId: "mantra",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Mantra,
     },
   },
 } as const satisfies SupportedLedgerFamiliesWithCurrency;
