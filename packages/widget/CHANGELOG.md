@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.206
+
+### Patch Changes
+
+- f901d39: Add support for Mantra Cosmos SDK chain
+
 ## 0.0.204
 
 ### Patch Changes
