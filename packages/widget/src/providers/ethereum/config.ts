@@ -30,7 +30,6 @@ import { config } from "../../config";
 import type { EvmChainsMap } from "../../domain/types/chains";
 import {
   getNetworkLogo,
-  getTokenLogo,
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
@@ -124,7 +123,7 @@ const queryFn = async ({
             wagmiChain: {
               ...core,
               name: "Core",
-              iconUrl: getTokenLogo("core-dao"),
+              iconUrl: getNetworkLogo(EvmNetworks.Core),
             },
           },
           [EvmNetworks.EthereumHolesky]: {
