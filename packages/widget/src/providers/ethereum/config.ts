@@ -17,6 +17,7 @@ import {
   base,
   bsc,
   celo,
+  coreDao as core,
   goerli,
   harmonyOne,
   holesky,
@@ -29,6 +30,7 @@ import { config } from "../../config";
 import type { EvmChainsMap } from "../../domain/types/chains";
 import {
   getNetworkLogo,
+  getTokenLogo,
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
@@ -114,6 +116,14 @@ const queryFn = async ({
             wagmiChain: {
               ...linea,
               iconUrl: getNetworkLogo(EvmNetworks.Linea),
+            },
+          },
+          [EvmNetworks.Core]: {
+            type: "evm",
+            skChainName: EvmNetworks.Core,
+            wagmiChain: {
+              ...core,
+              iconUrl: getTokenLogo("core-dao"),
             },
           },
           [EvmNetworks.EthereumHolesky]: {

@@ -71,6 +71,7 @@ const supportedEVMChains = [
   EvmNetworks.EthereumHolesky,
   EvmNetworks.Base,
   EvmNetworks.Linea,
+  EvmNetworks.Core,
 ] as const;
 const supportedEVMChainsSet = new Set(supportedEVMChains);
 type SupportedEvmChain = (typeof supportedEVMChains)[number];
