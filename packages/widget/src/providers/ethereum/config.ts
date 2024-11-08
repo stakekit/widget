@@ -123,6 +123,7 @@ const queryFn = async ({
             skChainName: EvmNetworks.Core,
             wagmiChain: {
               ...core,
+              name: "Core",
               iconUrl: getTokenLogo("core-dao"),
             },
           },
