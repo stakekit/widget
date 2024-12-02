@@ -60,3 +60,18 @@ export const tron = {
     default: { http: ["https://api.trongrid.io"] },
   },
 } as const satisfies Chain;
+
+export const ton = {
+  id: 3412,
+  name: "Ton",
+  iconUrl: getTokenLogo("ton"),
+  nativeCurrency: {
+    decimals: 9,
+    name: "Toncoin",
+    symbol: "TON",
+  },
+  rpcUrls: {
+    public: { http: ["https://ton.nownodes.io"] },
+    default: { http: ["https://ton.nownodes.io"] },
+  },
+} as const satisfies Chain;

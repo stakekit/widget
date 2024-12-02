@@ -6,7 +6,7 @@ import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
 import type { MiscChainsMap } from "../../domain/types/chains";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { near, solana, tezos, tron } from "./chains";
+import { near, solana, tezos, ton, tron } from "./chains";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Number.POSITIVE_INFINITY;
@@ -45,6 +45,11 @@ const queryFn = async ({
       type: "misc",
       skChainName: MiscNetworks.Tron,
       wagmiChain: tron,
+    },
+    [MiscNetworks.Ton]: {
+      type: "misc",
+      skChainName: MiscNetworks.Ton,
+      wagmiChain: ton,
     },
   }).filter(([_, v]) => enabledNetworks.has(v.skChainName));
 
