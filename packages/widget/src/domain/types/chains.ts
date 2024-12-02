@@ -88,6 +88,7 @@ const supportedMiscChains = [
   MiscNetworks.Tezos,
   MiscNetworks.Solana,
   MiscNetworks.Tron,
+  MiscNetworks.Ton,
 ] as const;
 const supportedMiscChainsSet = new Set(supportedMiscChains);
 type SupportedMiscChains = (typeof supportedMiscChains)[number];
@@ -140,6 +141,7 @@ export type SupportedLedgerLiveFamilies = Extract<
   | "celo"
   | "tron"
   | "polkadot"
+  | "ton"
 >;
 
 export const supportedLedgerFamiliesWithCurrency = {
@@ -169,6 +171,13 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "tron",
       family: "tron",
       skChainName: MiscNetworks.Tron,
+    },
+  },
+  ton: {
+    "*": {
+      currencyId: "ton",
+      family: "ton",
+      skChainName: MiscNetworks.Ton,
     },
   },
   polkadot: {
