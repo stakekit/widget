@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.207
+
+### Patch Changes
+
+- 8d353d2: Add Ton
+- d0ee8e8: Minor fixes related to Core network
+- f3b82e3: enable core-dao
+
 ## 0.0.206
 
 ### Patch Changes
