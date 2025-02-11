@@ -2,12 +2,12 @@ import type { MainWalletBase } from "@cosmos-kit/core";
 import { Logger, WalletManager } from "@cosmos-kit/core";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
+import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Just } from "purify-ts";
 import { config } from "../../config";
 import type { CosmosChainsMap } from "../../domain/types/chains";
-import type { CosmosChainsAssets } from "./chains";
 import {
   cosmosAssets,
   registryIdsToSKCosmosNetworks,

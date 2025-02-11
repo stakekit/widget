@@ -1,4 +1,5 @@
 import type { Currency, Families } from "@ledgerhq/wallet-api-client";
+import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
 import {
   CosmosNetworks,
   EvmNetworks,
@@ -7,7 +8,6 @@ import {
 } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import type { Chain as ChainRainbowKit } from "@stakekit/rainbowkit";
-import type { CosmosChainsAssets } from "../../providers/cosmos/chains";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,

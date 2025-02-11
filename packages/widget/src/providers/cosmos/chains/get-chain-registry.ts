@@ -1,15 +1,17 @@
+import type {
+  CosmosChain,
+  WithWagmiName,
+} from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks } from "@stakekit/common";
 import { chains as RegistryChains, assets } from "chain-registry";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,
 } from "../../../domain/types/chains";
-import type { WithWagmiName } from "../types";
 
 type AssetList = (typeof assets)[number];
-export type Chain = (typeof RegistryChains)[number];
 
-const mantra: Chain = {
+const mantra: CosmosChain = {
   $schema: "../chain.schema.json",
   chain_name: "mantrachain",
   status: "live",
@@ -41,7 +43,7 @@ const mantra: Chain = {
     ],
   },
   codebase: {
-    git_repo: "https://github.com/MANTRA-Chain/mantrachain",
+    git_repo: "https://github.com/MANTRA-CosmosChain/mantrachain",
     recommended_version: "1.0.0",
     compatible_versions: ["1.0.0"],
     cosmos_sdk_version: "0.50.10",
@@ -119,11 +121,11 @@ const mantra: Chain = {
   ],
 };
 
-const chains: Chain[] = [...RegistryChains, mantra];
+const chains: CosmosChain[] = [...RegistryChains, mantra];
 
 // CosmosNetworks -> chain_id from registry
 const skCosmosNetworksToRegistryIds: {
-  [Key in SupportedCosmosChains]: Chain["chain_id"];
+  [Key in SupportedCosmosChains]: CosmosChain["chain_id"];
 } = {
   [CosmosNetworks.Cosmos]: "cosmoshub-4",
   [CosmosNetworks.Akash]: "akashnet-2",
@@ -172,20 +174,22 @@ const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
 
 const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
 
-const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
+const chainMapper = <T extends AssetList | CosmosChain>(
+  val: T
+): WithWagmiName<T> => {
   let wagmiName = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
   if ("chain_id" in val) {
     if (val.chain_id === "crypto-org-chain-mainnet-1") {
       wagmiName = "Cronos POS Chain";
     } else if (val.chain_id === "laozi-mainnet") {
-      wagmiName = "Band Chain";
+      wagmiName = "Band CosmosChain";
     } else if (val.chain_id === "secret-4") {
       wagmiName = "Secret Network";
     } else if (val.chain_id === "fetchhub-4") {
       wagmiName = "Fetch.AI";
     } else if (val.chain_id === "kichain-2") {
-      wagmiName = "Ki Chain";
+      wagmiName = "Ki CosmosChain";
     } else if (val.chain_id === "irishub-1") {
       wagmiName = "IRISnet";
     } else if (val.chain_id === "gravity-bridge-3") {
@@ -201,7 +205,7 @@ const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
 };
 
 const assetMapper = (
-  val: WithWagmiName<AssetList & Pick<Chain, "chain_id">>
+  val: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>
 ) => {
   if (val.chain_id === "comdex-1") {
     val.assets[1].coingecko_id = "harbor-2";
@@ -210,12 +214,12 @@ const assetMapper = (
   return val;
 };
 
-const cosmosRegistryChains: WithWagmiName<Chain>[] = chains
+const cosmosRegistryChains: WithWagmiName<CosmosChain>[] = chains
   .filter((c) => registryIdsSet.has(c.chain_id))
   .map(chainMapper)
   .sort((a, b) => a.wagmiName.localeCompare(b.wagmiName));
 
-export const getCosmosRegistryChains = (): WithWagmiName<Chain>[] =>
+export const getCosmosRegistryChains = (): WithWagmiName<CosmosChain>[] =>
   cosmosRegistryChains;
 
 export const getRegistryIdsToSKCosmosNetworks =
@@ -228,7 +232,7 @@ const filteredCosmosChainNames = new Map(
 const filterMissingChainName = (val: AssetList) => !!val.chain_name;
 
 export const getCosmosAssets = (): WithWagmiName<
-  AssetList & Pick<Chain, "chain_id">
+  AssetList & Pick<CosmosChain, "chain_id">
 >[] =>
   assets
     .filter(filterMissingChainName)
@@ -237,7 +241,7 @@ export const getCosmosAssets = (): WithWagmiName<
     .map((val) => {
       const chain_id = filteredCosmosChainNames.get(val.chain_name);
 
-      if (!chain_id) throw new Error("Chain not found");
+      if (!chain_id) throw new Error("CosmosChain not found");
 
       return {
         ...val,

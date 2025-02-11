@@ -43,8 +43,8 @@ export const Providers = ({
                     <TrackingContextProviderWithProps>
                       <SKWalletProvider>
                         <RainbowProvider>
-                          <EarnPageStateProvider>
-                            <ActionHistoryContextProvider>
+                          <ActionHistoryContextProvider>
+                            <EarnPageStateProvider>
                               <ThemeWrapper>
                                 <ListStateContextProvider>
                                   <CurrentLayoutProvider>
@@ -70,8 +70,8 @@ export const Providers = ({
                                   </CurrentLayoutProvider>
                                 </ListStateContextProvider>
                               </ThemeWrapper>
-                            </ActionHistoryContextProvider>
-                          </EarnPageStateProvider>
+                            </EarnPageStateProvider>
+                          </ActionHistoryContextProvider>
                         </RainbowProvider>
                       </SKWalletProvider>
                     </TrackingContextProviderWithProps>
