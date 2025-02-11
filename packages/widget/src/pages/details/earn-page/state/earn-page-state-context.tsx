@@ -1,4 +1,5 @@
 import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
+import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -228,10 +229,13 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
+  const { data: positionsData } = usePositionsData();
+
   const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
     type: "enter",
     yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
     availableAmount,
+    positionsData,
   });
 
   const selectedStake = useMemo(

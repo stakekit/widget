@@ -5,7 +5,7 @@ import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
@@ -89,7 +89,7 @@ export const useUnstakeActionReview = () => {
     switch (d.metadata.type) {
       case "staking":
       case "liquid-staking":
-        return t("position_details.unstake");
+        return t("position_details.unstake") as string;
 
       default:
         return t("position_details.withdraw");

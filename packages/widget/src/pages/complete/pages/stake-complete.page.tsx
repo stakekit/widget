@@ -10,7 +10,7 @@ import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
-  useTrackPage("stakeCompelete");
+  useTrackPage("stakeComplete");
 
   const enterRequest = useSelector(
     useEnterStakeStore(),

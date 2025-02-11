@@ -6,3 +6,7 @@ export const tooltipContent = atoms({
   py: "2",
   background: "tooltipBackground",
 });
+
+export const triggerWrapper = atoms({
+  display: "flex",
+});

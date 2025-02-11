@@ -1,17 +1,131 @@
+import type {
+  CosmosChain,
+  WithWagmiName,
+} from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks } from "@stakekit/common";
-import { assets, chains } from "chain-registry";
+import { chains as RegistryChains, assets } from "chain-registry";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,
 } from "../../../domain/types/chains";
-import type { WithWagmiName } from "../types";
 
 type AssetList = (typeof assets)[number];
-export type Chain = (typeof chains)[number];
+
+const mantra: CosmosChain = {
+  $schema: "../chain.schema.json",
+  chain_name: "mantrachain",
+  status: "live",
+  network_type: "mainnet",
+  pretty_name: "MANTRA",
+  chain_type: "cosmos",
+  chain_id: "mantra-1",
+  bech32_prefix: "mantra",
+  daemon_name: "mantrachaind",
+  node_home: "$HOME/.mantrachain",
+  key_algos: ["secp256k1"],
+  slip44: 118,
+  fees: {
+    fee_tokens: [
+      {
+        denom: "uom",
+        fixed_min_gas_price: 0.01,
+        low_gas_price: 0.01,
+        average_gas_price: 0.02,
+        high_gas_price: 0.03,
+      },
+    ],
+  },
+  staking: {
+    staking_tokens: [
+      {
+        denom: "uom",
+      },
+    ],
+  },
+  codebase: {
+    git_repo: "https://github.com/MANTRA-CosmosChain/mantrachain",
+    recommended_version: "1.0.0",
+    compatible_versions: ["1.0.0"],
+    cosmos_sdk_version: "0.50.10",
+    consensus: {
+      type: "cometbft",
+      version: "0.38",
+    },
+    versions: [
+      {
+        name: "1.0.0-rc3",
+        recommended_version: "1.0.0-rc3",
+        compatible_versions: ["1.0.0-rc3"],
+        cosmos_sdk_version: "0.50.10",
+        consensus: {
+          type: "cometbft",
+          version: "0.38",
+        },
+      },
+    ],
+  },
+  peers: {
+    seeds: [
+      {
+        id: "32276da966637722914411e16ca91bd37dcd1c28",
+        address: "35.220.157.87:26656",
+      },
+      {
+        id: "9f5235b418c87af4302619705d0bf4748249ca6b",
+        address: "34.18.33.96:26656",
+      },
+      {
+        id: "b0acfd505bb4bc0c39d095663d310c253de18210",
+        address: "34.130.121.222:26656",
+      },
+    ],
+  },
+  apis: {
+    rpc: [
+      {
+        address: "https://rpc.mantrachain.io",
+        provider: "MANTRACHAIN",
+      },
+    ],
+    rest: [
+      {
+        address: "https://api.mantrachain.io",
+        provider: "MANTRACHAIN",
+      },
+    ],
+    grpc: [
+      {
+        address: "https://grpc.mantrachain.io",
+        provider: "MANTRACHAIN",
+      },
+    ],
+  },
+  logo_URIs: {
+    png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.png",
+    svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.svg",
+  },
+  explorers: [],
+  keywords: ["rwa", "wasm", "staking"],
+  images: [
+    {
+      image_sync: {
+        chain_name: "mantrachain",
+      },
+      png: "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.png",
+      svg: "https://raw.githubusercontent.com/cosmos/chain-registry/master/mantrachain/images/OM-Prim-Col.svg",
+      theme: {
+        circle: false,
+        primary_color_hex: "#fba0c1",
+      },
+    },
+  ],
+};
+
+const chains: CosmosChain[] = [...RegistryChains, mantra];
 
 // CosmosNetworks -> chain_id from registry
 const skCosmosNetworksToRegistryIds: {
-  [Key in SupportedCosmosChains]: Chain["chain_id"];
+  [Key in SupportedCosmosChains]: CosmosChain["chain_id"];
 } = {
   [CosmosNetworks.Cosmos]: "cosmoshub-4",
   [CosmosNetworks.Akash]: "akashnet-2",
@@ -46,6 +160,8 @@ const skCosmosNetworksToRegistryIds: {
   [CosmosNetworks.Desmos]: "desmos-mainnet",
   [CosmosNetworks.Dydx]: "dydx-mainnet-1",
   [CosmosNetworks.Injective]: "injective-1",
+  [CosmosNetworks.Sei]: "pacific-1",
+  [CosmosNetworks.Mantra]: "mantra-1",
 };
 
 const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
@@ -58,26 +174,30 @@ const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
 
 const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
 
-const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
+const chainMapper = <T extends AssetList | CosmosChain>(
+  val: T
+): WithWagmiName<T> => {
   let wagmiName = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
   if ("chain_id" in val) {
     if (val.chain_id === "crypto-org-chain-mainnet-1") {
-      wagmiName = "Crypto.org Chain";
+      wagmiName = "Cronos POS Chain";
     } else if (val.chain_id === "laozi-mainnet") {
-      wagmiName = "Band Chain";
+      wagmiName = "Band CosmosChain";
     } else if (val.chain_id === "secret-4") {
       wagmiName = "Secret Network";
     } else if (val.chain_id === "fetchhub-4") {
       wagmiName = "Fetch.AI";
     } else if (val.chain_id === "kichain-2") {
-      wagmiName = "Ki Chain";
+      wagmiName = "Ki CosmosChain";
     } else if (val.chain_id === "irishub-1") {
       wagmiName = "IRISnet";
     } else if (val.chain_id === "gravity-bridge-3") {
       wagmiName = "Gravity Bridge";
     } else if (val.chain_id === "cosmoshub-4") {
       wagmiName = "Cosmos";
+    } else if (val.chain_id === "mantra-1") {
+      wagmiName = "Mantra";
     }
   }
 
@@ -85,7 +205,7 @@ const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
 };
 
 const assetMapper = (
-  val: WithWagmiName<AssetList & Pick<Chain, "chain_id">>
+  val: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>
 ) => {
   if (val.chain_id === "comdex-1") {
     val.assets[1].coingecko_id = "harbor-2";
@@ -94,11 +214,12 @@ const assetMapper = (
   return val;
 };
 
-const cosmosRegistryChains: WithWagmiName<Chain>[] = chains
+const cosmosRegistryChains: WithWagmiName<CosmosChain>[] = chains
   .filter((c) => registryIdsSet.has(c.chain_id))
-  .map(chainMapper);
+  .map(chainMapper)
+  .sort((a, b) => a.wagmiName.localeCompare(b.wagmiName));
 
-export const getCosmosRegistryChains = (): WithWagmiName<Chain>[] =>
+export const getCosmosRegistryChains = (): WithWagmiName<CosmosChain>[] =>
   cosmosRegistryChains;
 
 export const getRegistryIdsToSKCosmosNetworks =
@@ -111,7 +232,7 @@ const filteredCosmosChainNames = new Map(
 const filterMissingChainName = (val: AssetList) => !!val.chain_name;
 
 export const getCosmosAssets = (): WithWagmiName<
-  AssetList & Pick<Chain, "chain_id">
+  AssetList & Pick<CosmosChain, "chain_id">
 >[] =>
   assets
     .filter(filterMissingChainName)
@@ -120,7 +241,7 @@ export const getCosmosAssets = (): WithWagmiName<
     .map((val) => {
       const chain_id = filteredCosmosChainNames.get(val.chain_name);
 
-      if (!chain_id) throw new Error("Chain not found");
+      if (!chain_id) throw new Error("CosmosChain not found");
 
       return {
         ...val,

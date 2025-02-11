@@ -41,7 +41,7 @@ const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
   encode: (val) => val,
 });
 
-const safeString = /^[a-zA-Z0-9-_]*$/;
+const safeString = /^(?!.*\.\.)[a-zA-Z0-9-_.]*$/;
 
 const safeParamCodec = Codec.custom<string>({
   decode: (val) =>
@@ -84,6 +84,13 @@ export const getAndValidateInitParams = ({
   MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
     network: safeParamCodec
       .decode(url.searchParams.get("network"))
+      .alt(
+        safeParamCodec.decode(url.searchParams.get("token")).chain((val) =>
+          val.includes("-")
+            ? Right(val.split("-").slice(0, -1).join("-")) // network is first part of TokenString
+            : Left("invalid TokenString")
+        )
+      )
       .chain(skSupportedChainsCodec.decode)
       .toMaybe()
       .extractNullable(),

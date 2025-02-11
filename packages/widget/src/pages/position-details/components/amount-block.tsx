@@ -99,7 +99,7 @@ export const AmountBlock = ({
           variant={{ type: error ? "danger" : "muted" }}
           textAlign="right"
         >
-          {min && max ? `${min} / ${max}` : min ?? max}
+          {min && max ? `${min} / ${max}` : (min ?? max)}
         </Text>
       </Box>
     ))

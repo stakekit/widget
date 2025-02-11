@@ -17,9 +17,11 @@ import {
   base,
   bsc,
   celo,
+  coreDao as core,
   goerli,
   harmonyOne,
   holesky,
+  linea,
   mainnet,
   optimism,
   polygon,
@@ -106,6 +108,23 @@ const queryFn = async ({
             type: "evm",
             skChainName: EvmNetworks.Base,
             wagmiChain: base,
+          },
+          [EvmNetworks.Linea]: {
+            type: "evm",
+            skChainName: EvmNetworks.Linea,
+            wagmiChain: {
+              ...linea,
+              iconUrl: getNetworkLogo(EvmNetworks.Linea),
+            },
+          },
+          [EvmNetworks.Core]: {
+            type: "evm",
+            skChainName: EvmNetworks.Core,
+            wagmiChain: {
+              ...core,
+              name: "Core",
+              iconUrl: getNetworkLogo(EvmNetworks.Core),
+            },
           },
           [EvmNetworks.EthereumHolesky]: {
             type: "evm",

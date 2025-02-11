@@ -79,7 +79,7 @@ export const SelectYieldType = ({
                 className={minMaxContainer}
               >
                 <Text variant={{ type: "muted", size: "small" }}>
-                  {min && max ? `${min} / ${max}` : min ?? max}
+                  {min && max ? `${min} / ${max}` : (min ?? max)}
                 </Text>
               </Box>
             ))

@@ -7,7 +7,7 @@ import { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common.page";
+import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import { useSettings } from "@sk-widget/providers/settings";
 import { formatNumber } from "@sk-widget/utils";

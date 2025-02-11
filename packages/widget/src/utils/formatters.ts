@@ -1,4 +1,4 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { ActionTypes, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
@@ -102,3 +102,21 @@ export const getFeesInUSD = ({
         }`,
       ""
     );
+
+export const formatActionName = (action: ActionTypes | undefined) =>
+  Maybe.fromNullable(action).mapOrDefault(
+    (a) => a.replace(/_/g, " "),
+    "Action"
+  );
+
+export const capitalizeFirstLetters = (text: string): string =>
+  Maybe.fromNullable(text)
+    .map((t) =>
+      t
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ")
+    )
+    .orDefault("");

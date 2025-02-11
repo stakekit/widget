@@ -6,15 +6,17 @@ import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
 import type { MiscChainsMap } from "../../domain/types/chains";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { near, solana, tezos, tron } from "./chains";
+import { near, solana, tezos, ton, tron } from "./chains";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   enabledNetworks,
+  forceWalletConnectOnly,
 }: {
   enabledNetworks: Set<Networks>;
+  forceWalletConnectOnly: boolean;
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -44,6 +46,11 @@ const queryFn = async ({
       skChainName: MiscNetworks.Tron,
       wagmiChain: tron,
     },
+    [MiscNetworks.Ton]: {
+      type: "misc",
+      skChainName: MiscNetworks.Ton,
+      wagmiChain: ton,
+    },
   }).filter(([_, v]) => enabledNetworks.has(v.skChainName));
 
   const miscChainsMap: Partial<MiscChainsMap> =
@@ -53,7 +60,9 @@ const queryFn = async ({
 
   return Promise.all([
     MaybeAsync.liftMaybe(Maybe.fromFalsy(miscChainsMap.tron)).chain(() =>
-      MaybeAsync(() => import("./tron-connector")).map((v) => v.tronConnector)
+      MaybeAsync(() => import("./tron-connector")).map((v) =>
+        v.getTronConnectors({ forceWalletConnectOnly })
+      )
     ),
   ]).then((connectors) => ({
     miscChainsMap,

@@ -16,6 +16,7 @@ export const listItemContainer = recipe({
       actionRequired: atoms({
         background: "positionsActionRequiredBackground",
       }),
+      pending: atoms({ background: "positionsPendingBackground" }),
     },
   },
 });

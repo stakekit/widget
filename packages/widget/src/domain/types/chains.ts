@@ -1,4 +1,5 @@
 import type { Currency, Families } from "@ledgerhq/wallet-api-client";
+import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
 import {
   CosmosNetworks,
   EvmNetworks,
@@ -6,7 +7,7 @@ import {
   SubstrateNetworks,
 } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
-import type { CosmosChainsAssets } from "../../providers/cosmos/chains";
+import type { Chain as ChainRainbowKit } from "@stakekit/rainbowkit";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,
@@ -42,6 +43,8 @@ export const supportedCosmosChains = [
   CosmosNetworks.Desmos,
   CosmosNetworks.Dydx,
   CosmosNetworks.Injective,
+  CosmosNetworks.Sei,
+  CosmosNetworks.Mantra,
 ] as const;
 export type SupportedCosmosChains = (typeof supportedCosmosChains)[number];
 const supportedCosmosChainsSet = new Set(supportedCosmosChains);
@@ -67,6 +70,8 @@ const supportedEVMChains = [
   EvmNetworks.Viction,
   EvmNetworks.EthereumHolesky,
   EvmNetworks.Base,
+  EvmNetworks.Linea,
+  EvmNetworks.Core,
 ] as const;
 const supportedEVMChainsSet = new Set(supportedEVMChains);
 type SupportedEvmChain = (typeof supportedEVMChains)[number];
@@ -83,6 +88,7 @@ const supportedMiscChains = [
   MiscNetworks.Tezos,
   MiscNetworks.Solana,
   MiscNetworks.Tron,
+  MiscNetworks.Ton,
 ] as const;
 const supportedMiscChainsSet = new Set(supportedMiscChains);
 type SupportedMiscChains = (typeof supportedMiscChains)[number];
@@ -135,6 +141,7 @@ export type SupportedLedgerLiveFamilies = Extract<
   | "celo"
   | "tron"
   | "polkadot"
+  | "ton"
 >;
 
 export const supportedLedgerFamiliesWithCurrency = {
@@ -164,6 +171,13 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "tron",
       family: "tron",
       skChainName: MiscNetworks.Tron,
+    },
+  },
+  ton: {
+    "*": {
+      currencyId: "ton",
+      family: "ton",
+      skChainName: MiscNetworks.Ton,
     },
   },
   polkadot: {
@@ -285,6 +299,16 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "cosmos",
       skChainName: CosmosNetworks.Injective,
     },
+    sei: {
+      currencyId: "sei",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Sei,
+    },
+    mantra: {
+      currencyId: "mantra",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Mantra,
+    },
   },
 } as const satisfies SupportedLedgerFamiliesWithCurrency;
 
@@ -299,3 +323,8 @@ export type SupportedLedgerFamiliesWithCurrency = Record<
     }
   >
 >;
+
+export type SupportedSKChainsType = {
+  chainName: SupportedSKChains;
+  chainIcon?: ChainRainbowKit["iconUrl"];
+};

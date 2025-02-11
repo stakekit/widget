@@ -1,4 +1,6 @@
 import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { useSavedRef } from "@sk-widget/hooks";
 import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
 import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
@@ -7,12 +9,43 @@ import {
   useVirtualizer,
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
-import { useMemo, useRef, useState } from "react";
+import { List, Maybe } from "purify-ts";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   absoluteWrapper,
   container,
   relativeWrapper,
 } from "../virtual-list/style.css";
+
+type InfiniteScrollProps =
+  | {
+      hasNextPage: boolean;
+      isFetchingNextPage: boolean;
+      fetchNextPage: () => void;
+    }
+  | {
+      hasNextPage?: never;
+      isFetchingNextPage?: never;
+      fetchNextPage?: never;
+    };
+
+type VirtualListProps<T> = {
+  data: T[];
+  itemContent: (index: number, item: T) => React.ReactNode;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+} & InfiniteScrollProps;
+
+type VirtualGroupListProps = {
+  itemContent: (index: number, groupIndex: number) => React.ReactNode;
+  groupContent: (index: number) => React.ReactNode;
+  increaseViewportBy?: { bottom: number; top: number };
+  groupCounts: number[];
+  className?: BoxProps["className"];
+  maxHeight?: number;
+  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
+} & InfiniteScrollProps;
 
 export const VirtualList = <ItemData = unknown>({
   data,
@@ -20,13 +53,10 @@ export const VirtualList = <ItemData = unknown>({
   className,
   estimateSize,
   maxHeight = 600,
-}: {
-  data: ItemData[];
-  itemContent: (index: number, item: ItemData) => React.ReactNode;
-  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-  className?: BoxProps["className"];
-  maxHeight?: number;
-}) => {
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: VirtualListProps<ItemData>) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
   const observeElementRect = useObserveElementRect();
@@ -40,7 +70,25 @@ export const VirtualList = <ItemData = unknown>({
     ...(observeElementRect && { observeElementRect }),
   });
 
-  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
+  const isEndReached = useMemo(
+    () =>
+      List.head([...virtualItems].reverse())
+        .filter((item) => item.index >= data.length - 1)
+        .isJust(),
+    [virtualItems, data.length]
+  );
+
+  const fetchNextPageRef = useSavedRef(fetchNextPage);
+
+  useEffect(() => {
+    Maybe.fromFalsy(isEndReached)
+      .filter(() => !!hasNextPage && !isFetchingNextPage)
+      .ifJust(() => fetchNextPageRef.current?.());
+  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+
+  const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 400px)";
 
   return (
     <Box ref={innerRef} className={clsx([container, className])}>
@@ -54,12 +102,10 @@ export const VirtualList = <ItemData = unknown>({
         <Box
           className={absoluteWrapper}
           style={{
-            transform: `translateY(${
-              rowVirtualizer.getVirtualItems()[0]?.start ?? 0
-            }px)`,
+            transform: `translateY(${virtualItems[0]?.start ?? 0}px)`,
           }}
         >
-          {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+          {virtualItems.map((virtualItem) => (
             <Box
               key={virtualItem.key}
               data-index={virtualItem.index}
@@ -68,6 +114,11 @@ export const VirtualList = <ItemData = unknown>({
               {itemContent(virtualItem.index, data[virtualItem.index])}
             </Box>
           ))}
+          {isFetchingNextPage && (
+            <Box justifyContent="center" display="flex" my="4">
+              <Spinner />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>
@@ -82,15 +133,10 @@ export const GroupedVirtualList = ({
   className,
   maxHeight = 600,
   estimateSize,
-}: {
-  itemContent: (index: number, groupIndex: number) => React.ReactNode;
-  groupContent: (index: number) => React.ReactNode;
-  increaseViewportBy?: { bottom: number; top: number };
-  groupCounts: number[];
-  className?: BoxProps["className"];
-  maxHeight?: number;
-  estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
-}) => {
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: VirtualGroupListProps) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
@@ -108,6 +154,9 @@ export const GroupedVirtualList = ({
     paddingEnd: increaseViewportBy?.bottom,
     ...(observeElementRect && { observeElementRect }),
   });
+
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const fetchNextPageRef = useSavedRef(fetchNextPage);
 
   type ParentResult = {
     type: "parent";
@@ -149,6 +198,20 @@ export const GroupedVirtualList = ({
     [groupCounts]
   );
 
+  const isEndReached = useMemo(
+    () =>
+      List.head([...virtualItems].reverse())
+        .filter((item) => item.index >= resultArray.length - 1)
+        .isJust(),
+    [virtualItems, resultArray.length]
+  );
+
+  useEffect(() => {
+    Maybe.fromFalsy(isEndReached)
+      .filter(() => !!hasNextPage && !isFetchingNextPage)
+      .ifJust(() => fetchNextPageRef.current?.());
+  }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
+
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
 
   return (
@@ -184,6 +247,11 @@ export const GroupedVirtualList = ({
               </Box>
             );
           })}
+          {isFetchingNextPage && (
+            <Box justifyContent="center" display="flex" my="4">
+              <Spinner />
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

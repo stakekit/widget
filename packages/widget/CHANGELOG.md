@@ -1,5 +1,103 @@
 # @stakekit/widget
 
+## 0.0.208
+
+### Patch Changes
+
+- ed15dba: Force min stake amount based on selected yield and available positions
+- b70251f: change name of crypto org chain to cronos pos chain
+
+## 0.0.207
+
+### Patch Changes
+
+- 8d353d2: Add Ton
+- d0ee8e8: Minor fixes related to Core network
+- f3b82e3: enable core-dao
+
+## 0.0.206
+
+### Patch Changes
+
+- f901d39: Add support for Mantra Cosmos SDK chain
+
+## 0.0.204
+
+### Patch Changes
+
+- 973b661: removed date label bg color in activity page
+- 9f2aeb1: added sei network
+
+## 0.0.203
+
+### Patch Changes
+
+- 7e20fe8: Activity Tab
+
+## 0.0.202
+
+### Patch Changes
+
+- 06b3199: Fix token network param parsing
+
+## 0.0.201
+
+### Patch Changes
+
+- 85437a7: Get init network from token query param
+- 2485acc: ui loading improvement
+
+## 0.0.200
+
+### Patch Changes
+
+- 86ec000: Connectors mapper
+
+## 0.0.199
+
+### Patch Changes
+
+- 14e03c5: maintenance mode
+
+## 0.0.198
+
+### Patch Changes
+
+- eae3007: Fix yield id param validation
+
+## 0.0.197
+
+### Patch Changes
+
+- d459a1c: Fix breaking tests
+
+## 0.0.196
+
+### Patch Changes
+
+- 31d71a1: Actions count badge postion
+
+## 0.0.195
+
+### Patch Changes
+
+- 54c7cbe: Tron with walletconnect connector only option
+- 54c7cbe: Bump deps
+- 54c7cbe: Remove top css layer
+
+## 0.0.194
+
+### Patch Changes
+
+- 8ea61c3: position tab update
+
+## 0.0.193
+
+### Patch Changes
+
+- a980f11: Change validator label
+- d5dc458: Update liquid staking title
+
 ## 0.0.192
 
 ### Patch Changes

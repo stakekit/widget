@@ -5,10 +5,10 @@ import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const StakedVia = () => {
-  const { selectedStake } = useEarnPageContext();
+  const { selectedStake, appLoading } = useEarnPageContext();
 
   const { t } = useTranslation();
-
+  if (appLoading) return null;
   return selectedStake
     .filter(
       (val) =>
