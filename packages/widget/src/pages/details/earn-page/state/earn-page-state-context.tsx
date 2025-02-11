@@ -47,6 +47,7 @@ export const EarnPageStateUsageBoundaryProvider = ({
 
 const getInitialState = (): State => ({
   selectedToken: Maybe.empty(),
+  selectedYieldType: Maybe.empty(),
   selectedStakeId: Maybe.empty(),
   selectedValidators: new Map(),
   stakeAmount: new BigNumber(0),
@@ -68,7 +69,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
             .orDefault(true)
         )
           .chain(() =>
-            getInitYield({ selectedToken: action.data })
+            getInitYield({
+              selectedToken: action.data,
+              selectedYieldType: Maybe.empty(),
+            })
               .map<ReturnType<typeof onYieldSelectState> | null>((val) =>
                 onYieldSelectState({
                   initParams: Maybe.fromNullable(initParams.data),
@@ -80,6 +84,33 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .map((val) => ({
             ...getInitialState(),
             selectedToken: Maybe.of(action.data),
+            ...val,
+          }))
+          .orDefault(state);
+      }
+
+      case "yieldType/select": {
+        return Maybe.fromFalsy(
+          state.selectedYieldType.map((v) => v !== action.data).orDefault(true)
+        )
+          .chain(() => state.selectedToken)
+          .chain((selectedToken) =>
+            getInitYield({
+              selectedToken,
+              selectedYieldType: Maybe.of(action.data),
+            })
+              .map<ReturnType<typeof onYieldSelectState> | null>((val) =>
+                onYieldSelectState({
+                  initParams: Maybe.fromNullable(initParams.data),
+                  yieldDto: val,
+                })
+              )
+              .alt(Maybe.of(null))
+          )
+          .map((val) => ({
+            ...getInitialState(),
+            selectedToken: state.selectedToken,
+            selectedYieldType: Maybe.of(action.data),
             ...val,
           }))
           .orDefault(state);
@@ -170,6 +201,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const [state, dispatch] = useReducer(reducer, getInitialState());
 
   const {
+    selectedYieldType,
     selectedToken,
     selectedStakeId,
     selectedValidators,
@@ -314,6 +346,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const value: State & ExtraData = useMemo(
     () => ({
+      selectedYieldType,
       selectedStakeId,
       selectedStake,
       selectedValidators,
@@ -330,6 +363,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       hasNotYieldsForToken,
     }),
     [
+      selectedYieldType,
       selectedStakeId,
       selectedStake,
       selectedToken,

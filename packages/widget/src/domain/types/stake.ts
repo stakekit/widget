@@ -1,4 +1,5 @@
 import { tokenString } from "@sk-widget/domain";
+import { getYieldTypesSortRank } from "@sk-widget/domain/types/yields";
 import type {
   AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
@@ -47,14 +48,6 @@ export const getInitialToken = (args: {
     .altLazy(() => List.find(hasYields, args.defaultTokens))
     .map((val) => val.token);
 
-const yieldTypeOrder: { [Key in YieldDto["metadata"]["type"]]: number } = {
-  staking: 1,
-  restaking: 2,
-  "liquid-staking": 3,
-  vault: 4,
-  lending: 5,
-};
-
 export const getInitialYield = (args: {
   initQueryParams: Maybe<InitParams>;
   yieldDtos: YieldDto[];
@@ -62,7 +55,7 @@ export const getInitialYield = (args: {
 }) => {
   const sortedYields = args.yieldDtos.toSorted(
     (a, b) =>
-      yieldTypeOrder[a.metadata.type] - yieldTypeOrder[b.metadata.type] ||
+      getYieldTypesSortRank(a) - getYieldTypesSortRank(b) ||
       getInitMinStakeAmount(b).minus(getInitMinStakeAmount(a)).toNumber()
   );
 

@@ -23,8 +23,8 @@ describe("Deep links flow", () => {
 
     await waitFor(() =>
       expect(
-        withAvaxLiquidStakingApp.getByText("Liquid Staking")
-      ).toBeInTheDocument()
+        withAvaxLiquidStakingApp.getByTestId("title__yield_type").textContent
+      ).toEqual("Liquid Staking")
     );
     await waitFor(() =>
       expect(
@@ -56,7 +56,9 @@ describe("Deep links flow", () => {
     });
 
     await waitFor(() =>
-      expect(withAvaxNativeStakingApp.getByText("Stake")).toBeInTheDocument()
+      expect(
+        withAvaxNativeStakingApp.getByTestId("title__yield_type").textContent
+      ).toEqual("Native Staking")
     );
 
     await waitFor(() =>
