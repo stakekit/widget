@@ -1,12 +1,13 @@
 import { tokenString } from "@sk-widget/domain";
+import type { PositionsData } from "@sk-widget/domain/types/positions";
 import type {
   AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
   YieldDto,
 } from "@stakekit/api-hooks";
+import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
-import type { Maybe } from "purify-ts";
-import { List } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import type { InitParams } from "./init-params";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
@@ -59,11 +60,14 @@ export const getInitialYield = (args: {
   initQueryParams: Maybe<InitParams>;
   yieldDtos: YieldDto[];
   tokenBalanceAmount: BigNumber;
+  positionsData: PositionsData;
 }) => {
   const sortedYields = args.yieldDtos.toSorted(
     (a, b) =>
       yieldTypeOrder[a.metadata.type] - yieldTypeOrder[b.metadata.type] ||
-      getInitMinStakeAmount(b).minus(getInitMinStakeAmount(a)).toNumber()
+      getMinStakeAmount(b, args.positionsData)
+        .minus(getMinStakeAmount(a, args.positionsData))
+        .toNumber()
   );
 
   return args.initQueryParams
@@ -75,6 +79,7 @@ export const getInitialYield = (args: {
           balanceValidForYield({
             tokenBalanceAmount: args.tokenBalanceAmount,
             yieldDto,
+            positionsData: args.positionsData,
           }),
         sortedYields
       )
@@ -85,14 +90,15 @@ export const getInitialYield = (args: {
 const balanceValidForYield = ({
   tokenBalanceAmount,
   yieldDto,
+  positionsData,
 }: {
   tokenBalanceAmount: BigNumber;
   yieldDto: YieldDto;
+  positionsData: PositionsData;
 }) =>
-  tokenBalanceAmount.isGreaterThanOrEqualTo(getInitMinStakeAmount(yieldDto));
-
-export const getInitMinStakeAmount = (yieldDto: YieldDto) =>
-  new BigNumber(yieldDto.args.enter.args?.amount?.minimum ?? 0);
+  tokenBalanceAmount.isGreaterThanOrEqualTo(
+    getMinStakeAmount(yieldDto, positionsData)
+  );
 
 export const getInitSelectedValidators = (args: {
   initQueryParams: Maybe<InitParams>;
@@ -112,3 +118,46 @@ export const getInitSelectedValidators = (args: {
 
 export const isForceMaxAmount = (args: AmountArgumentOptionsDto) =>
   args.minimum === -1 && args.maximum === -1;
+
+const yieldsWithEnterMinBasedOnPosition = new Map<
+  Networks,
+  Set<YieldDto["id"]>
+>([[Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])]]);
+
+export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
+  yieldsWithEnterMinBasedOnPosition.has(network);
+
+const isYieldWithEnterMinBasedOnPosition = (yieldDto: YieldDto) =>
+  Maybe.fromNullable(
+    yieldsWithEnterMinBasedOnPosition.get(
+      yieldDto.metadata.gasFeeToken.network as Networks
+    )
+  )
+    .filter((set) => set.has(yieldDto.id))
+    .isJust();
+
+export const getMinStakeAmount = (
+  yieldDto: YieldDto,
+  positionsData: PositionsData
+) => {
+  const integrationMin = new BigNumber(
+    yieldDto.args.enter.args?.amount?.minimum ?? 0
+  );
+
+  if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
+    const hasStaked = Maybe.fromNullable(positionsData.get(yieldDto.id))
+      .map((val) => [...val.balanceData.values()])
+      .map((val) =>
+        val.some((v) => v.balances.some((b) => b.type === "staked"))
+      )
+      .orDefault(false);
+
+    if (hasStaked) {
+      return new BigNumber(0);
+    }
+
+    return integrationMin;
+  }
+
+  return integrationMin;
+};

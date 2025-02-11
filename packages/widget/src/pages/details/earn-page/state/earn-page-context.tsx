@@ -1,4 +1,6 @@
 import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
+import { useMaxMinYieldAmount } from "@sk-widget/hooks/use-max-min-yield-amount";
+import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import {
   useEarnPageDispatch,
   useEarnPageState,
@@ -42,7 +44,6 @@ import {
   getYieldTypeLabels,
   getYieldTypesSortRank,
 } from "../../../../domain/types";
-import { isForceMaxAmount } from "../../../../domain/types/stake";
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
@@ -436,23 +437,33 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     tronResource,
   ]);
 
+  const {
+    maxIntegrationAmount,
+    minIntegrationAmount,
+    minEnterOrExitAmount,
+    maxEnterOrExitAmount,
+    isForceMax,
+  } = useMaxMinYieldAmount({
+    type: "enter",
+    yieldOpportunity: selectedStake,
+    availableAmount,
+    positionsData: usePositionsData().data,
+  });
+
   const stakeMaxAmount = useMemo(
     () =>
       selectedStake
-        .chainNullable((val) => val.args.enter.args?.amount)
-        .filter((val) => !isForceMaxAmount(val))
-        .chainNullable((val) => val.maximum),
-    [selectedStake]
+        .filter(() => maxIntegrationAmount.isJust() && !isForceMax)
+        .map(() => maxEnterOrExitAmount.toNumber()),
+    [maxEnterOrExitAmount, maxIntegrationAmount, isForceMax, selectedStake]
   );
 
   const stakeMinAmount = useMemo(
     () =>
       selectedStake
-        .chainNullable((val) => val.args.enter.args?.amount)
-        .filter((val) => !isForceMaxAmount(val))
-        .chainNullable((val) => val.minimum)
-        .filter((val) => new BigNumber(val).isGreaterThan(0)),
-    [selectedStake]
+        .filter(() => minIntegrationAmount.isJust() && !isForceMax)
+        .map(() => minEnterOrExitAmount.toNumber()),
+    [minEnterOrExitAmount, minIntegrationAmount, isForceMax, selectedStake]
   );
 
   const onSelectOpportunityClose = () => setStakeSearch("");

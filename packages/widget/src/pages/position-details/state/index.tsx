@@ -15,7 +15,6 @@ import { isForceMaxAmount } from "../../../domain/types/stake";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useBaseToken } from "../../../hooks/use-base-token";
-import { useForceMaxAmount } from "../../../hooks/use-force-max-amount";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
@@ -116,20 +115,19 @@ export const UnstakeOrPendingActionProvider = ({
     [stakedOrLiquidBalances]
   );
 
-  const { maxIntegrationAmount, maxEnterOrExitAmount, minEnterOrExitAmount } =
-    useMaxMinYieldAmount({
-      yieldOpportunity: integrationData,
-      type: "exit",
-      availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
-    });
-
-  const forceMaxUnstakeAmount = useForceMaxAmount({
+  const {
+    maxIntegrationAmount,
+    maxEnterOrExitAmount,
+    minEnterOrExitAmount,
+    isForceMax,
+  } = useMaxMinYieldAmount({
+    yieldOpportunity: integrationData,
     type: "exit",
-    integration: integrationData,
+    availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
   });
 
   const canChangeUnstakeAmount = integrationData.map(
-    (d) => !!(!forceMaxUnstakeAmount && d.args.exit?.args?.amount?.required)
+    (d) => !!(!isForceMax && d.args.exit?.args?.amount?.required)
   );
 
   const positionBalancesByTypePendingActions = useMemo(
@@ -253,7 +251,7 @@ export const UnstakeOrPendingActionProvider = ({
       })
         .map((val) => {
           if (
-            (!val.canChangeUnstakeAmount || forceMaxUnstakeAmount) &&
+            (!val.canChangeUnstakeAmount || isForceMax) &&
             !val.reducedStakedOrLiquidBalance.amount.isEqualTo(_ustankeAmount)
           ) {
             return val.reducedStakedOrLiquidBalance.amount;
@@ -265,7 +263,7 @@ export const UnstakeOrPendingActionProvider = ({
     [
       _ustankeAmount,
       canChangeUnstakeAmount,
-      forceMaxUnstakeAmount,
+      isForceMax,
       reducedStakedOrLiquidBalance,
     ]
   );
@@ -290,7 +288,9 @@ export const UnstakeOrPendingActionProvider = ({
 
   const unstakeIsGreaterOrLessIntegrationLimitError = useMemo(
     () =>
-      unstakeAmount.isGreaterThan(maxIntegrationAmount) || unstakeIsLessThanMin,
+      maxIntegrationAmount
+        .map((v) => unstakeAmount.isGreaterThan(v))
+        .orDefault(false) || unstakeIsLessThanMin,
     [unstakeAmount, unstakeIsLessThanMin, maxIntegrationAmount]
   );
 

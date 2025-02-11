@@ -1,6 +1,8 @@
+import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
 import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
@@ -15,7 +17,6 @@ import {
 import { equalTokens } from "../../../../domain";
 import { useSavedRef } from "../../../../hooks";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
-import { useForceMaxAmount } from "../../../../hooks/use-force-max-amount";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -59,6 +60,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const getInitYield = useGetInitYield();
 
+  const positionsData = usePositionsData();
+
   const reducer = (state: State, action: Actions): State => {
     switch (action.type) {
       case "token/select": {
@@ -73,6 +76,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
                 onYieldSelectState({
                   initParams: Maybe.fromNullable(initParams.data),
                   yieldDto: val,
+                  positionsData: positionsData.data,
                 })
               )
               .alt(Maybe.of(null))
@@ -93,6 +97,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
             onYieldSelectState({
               initParams: Maybe.fromNullable(initParams.data),
               yieldDto: action.data,
+              positionsData: positionsData.data,
             })
           )
           .map((val) => ({
@@ -197,31 +202,25 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
-  const { data: positionsData } = usePositionsData();
-
-  const { minEnterOrExitAmount, maxEnterOrExitAmount } = useMaxMinYieldAmount({
-    type: "enter",
-    yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
-    availableAmount,
-    positionsData,
-  });
+  const { minEnterOrExitAmount, maxEnterOrExitAmount, isForceMax } =
+    useMaxMinYieldAmount({
+      type: "enter",
+      yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
+      availableAmount,
+      positionsData: positionsData.data,
+    });
 
   const selectedStake = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
     [yieldOpportunity.data]
   );
 
-  const forceMax = useForceMaxAmount({
-    integration: selectedStake,
-    type: "enter",
-  });
-
   /**
    * If stake amount is less then min, use min
    */
   const stakeAmount = useMemo(
-    () => (forceMax ? maxEnterOrExitAmount : _stakeAmount),
-    [forceMax, maxEnterOrExitAmount, _stakeAmount]
+    () => (isForceMax ? maxEnterOrExitAmount : _stakeAmount),
+    [isForceMax, maxEnterOrExitAmount, _stakeAmount]
   );
 
   const setToken = useCallback(
@@ -260,27 +259,52 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     }
   }, [selectedTokenRef, isConnected]);
 
+  const shouldWaitForPositionsData = useMemo(
+    () =>
+      initToken
+        .filter(
+          (it) =>
+            isNetworkWithEnterMinBasedOnPosition(it.network as Networks) &&
+            positionsData.isPending
+        )
+        .isJust(),
+    [initToken, positionsData]
+  );
+
+  console.log({
+    shouldWaitForPositionsData,
+    positionsDataIsLoading: positionsData.isPending,
+  });
+
   /**
    * Set initial token
    */
   useEffect(() => {
+    if (shouldWaitForPositionsData) return;
+
     initToken.ifJust(setToken);
-  }, [initToken, setToken]);
+  }, [shouldWaitForPositionsData, initToken, setToken]);
 
   useEffect(() => {
+    if (shouldWaitForPositionsData) return;
+
     selectedToken.ifNothing(() => initTokenRef.current.ifJust(setToken));
-  }, [initTokenRef, selectedToken, setToken]);
+  }, [shouldWaitForPositionsData, initTokenRef, selectedToken, setToken]);
 
   /**
    * Set initial yield
    */
   useEffect(() => {
+    if (shouldWaitForPositionsData) return;
+
     initYield.ifJust(setYield);
-  }, [initYield, setYield]);
+  }, [initYield, shouldWaitForPositionsData, setYield]);
 
   useEffect(() => {
+    if (shouldWaitForPositionsData) return;
+
     selectedStakeId.ifNothing(() => initYieldRef.current.ifJust(setYield));
-  }, [initYieldRef, selectedStakeId, setYield]);
+  }, [initYieldRef, shouldWaitForPositionsData, selectedStakeId, setYield]);
 
   /**
    * Reset selectedToken if we dont have initToken

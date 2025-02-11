@@ -8,7 +8,7 @@ import type {
   YieldDto,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { Left, Right } from "purify-ts";
+import { Left, type Maybe, Right } from "purify-ts";
 import { normalizeChainId } from "wagmi";
 import type { Override } from "../types";
 import type { Prices, TokenString } from "./types";
@@ -72,10 +72,13 @@ export const getMaxAmount = ({
 }: {
   availableAmount: BigNumber;
   gasEstimateTotal: BigNumber;
-  integrationMaxLimit: BigNumber;
+  integrationMaxLimit: Maybe<BigNumber>;
 }) => {
   return BigNumber.max(
-    BigNumber.min(integrationMaxLimit, availableAmount.minus(gasEstimateTotal)),
+    BigNumber.min(
+      integrationMaxLimit.orDefault(BigNumber(Number.POSITIVE_INFINITY)),
+      availableAmount.minus(gasEstimateTotal)
+    ),
     new BigNumber(0)
   );
 };

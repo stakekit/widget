@@ -1,5 +1,5 @@
-import { shouldForceEnterMinToZero } from "@sk-widget/domain/types";
 import type { PositionsData } from "@sk-widget/domain/types/positions";
+import { getMinStakeAmount } from "@sk-widget/domain/types/stake";
 import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
@@ -21,44 +21,36 @@ export const useMaxMinYieldAmount = ({
   availableAmount,
   positionsData,
 }: Args) => {
-  const forceMax = useForceMaxAmount({
+  const isForceMax = useForceMaxAmount({
     type,
     integration: yieldOpportunity,
   });
 
-  const minIntegrationAmount = useMemo(() => {
-    return (
-      forceMax
+  const minIntegrationAmount = useMemo(
+    () =>
+      isForceMax
         ? availableAmount
         : yieldOpportunity
-            .chainNullable((y) => {
-              if (
-                type === "enter" &&
-                shouldForceEnterMinToZero(y.id, positionsData)
-              ) {
-                return new BigNumber(0);
-              }
-
-              return (type === "enter" ? y.args.enter : y.args.exit)?.args
-                ?.amount?.minimum;
-            })
-            .map((a) => new BigNumber(a))
-    ).orDefault(new BigNumber(0));
-  }, [availableAmount, forceMax, type, yieldOpportunity, positionsData]);
+            .chainNullable((y) =>
+              type === "enter"
+                ? getMinStakeAmount(y, positionsData)
+                : y.args.exit?.args?.amount?.minimum
+            )
+            .map((a) => new BigNumber(a)),
+    [availableAmount, isForceMax, type, yieldOpportunity, positionsData]
+  );
 
   const maxIntegrationAmount = useMemo(() => {
-    return (
-      forceMax
-        ? availableAmount
-        : yieldOpportunity
-            .chainNullable(
-              (y) =>
-                (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
-                  ?.maximum
-            )
-            .map((a) => new BigNumber(a))
-    ).orDefault(new BigNumber(Number.POSITIVE_INFINITY));
-  }, [availableAmount, forceMax, type, yieldOpportunity]);
+    return isForceMax
+      ? availableAmount
+      : yieldOpportunity
+          .chainNullable(
+            (y) =>
+              (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
+                ?.maximum
+          )
+          .map((a) => new BigNumber(a));
+  }, [availableAmount, isForceMax, type, yieldOpportunity]);
 
   const maxEnterOrExitAmount = useMemo(
     () =>
@@ -70,14 +62,27 @@ export const useMaxMinYieldAmount = ({
     [maxIntegrationAmount, availableAmount]
   );
 
-  const minEnterOrExitAmount = minIntegrationAmount;
+  const minEnterOrExitAmount = useMemo(
+    () => minIntegrationAmount.orDefault(new BigNumber(0)),
+    [minIntegrationAmount]
+  );
 
   return useMemo(
     () => ({
+      minIntegrationAmount,
+      maxIntegrationAmount,
+
       minEnterOrExitAmount,
       maxEnterOrExitAmount,
-      maxIntegrationAmount,
+
+      isForceMax,
     }),
-    [maxEnterOrExitAmount, minEnterOrExitAmount, maxIntegrationAmount]
+    [
+      minIntegrationAmount,
+      maxEnterOrExitAmount,
+      minEnterOrExitAmount,
+      maxIntegrationAmount,
+      isForceMax,
+    ]
   );
 };

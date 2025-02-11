@@ -1,3 +1,4 @@
+import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -13,6 +14,7 @@ export const useGetInitYield = () => {
   const initParams = useInitParams();
   const queryClient = useSKQueryClient();
   const tokenBalancesMap = useTokenBalancesMap();
+  const { data: positionsData } = usePositionsData();
 
   return useCallback(
     ({ selectedToken }: { selectedToken: TokenDto }) =>
@@ -31,8 +33,9 @@ export const useGetInitYield = () => {
             initQueryParams: Maybe.fromNullable(initParams.data),
             yieldDtos: val.yields,
             tokenBalanceAmount: val.availableAmount,
+            positionsData,
           })
         ),
-    [initParams.data, queryClient, tokenBalancesMap]
+    [initParams.data, queryClient, tokenBalancesMap, positionsData]
   );
 };
