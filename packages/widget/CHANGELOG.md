@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.208
+
+### Patch Changes
+
+- ed15dba: Force min stake amount based on selected yield and available positions
+- b70251f: change name of crypto org chain to cronos pos chain
+
 ## 0.0.207
 
 ### Patch Changes
