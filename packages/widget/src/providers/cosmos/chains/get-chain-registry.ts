@@ -177,7 +177,7 @@ const chainMapper = <T extends AssetList | Chain>(val: T): WithWagmiName<T> => {
 
   if ("chain_id" in val) {
     if (val.chain_id === "crypto-org-chain-mainnet-1") {
-      wagmiName = "Crypto.org Chain";
+      wagmiName = "Cronos POS Chain";
     } else if (val.chain_id === "laozi-mainnet") {
       wagmiName = "Band Chain";
     } else if (val.chain_id === "secret-4") {
