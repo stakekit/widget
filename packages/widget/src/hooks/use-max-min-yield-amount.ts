@@ -1,3 +1,5 @@
+import { shouldForceEnterMinToZero } from "@sk-widget/domain/types";
+import type { PositionsData } from "@sk-widget/domain/types/positions";
 import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
@@ -5,15 +7,20 @@ import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
+type Args = {
+  yieldOpportunity: Maybe<YieldDto>;
+  availableAmount: Maybe<BigNumber>;
+} & (
+  | { type: "enter"; positionsData: PositionsData }
+  | { type: "exit"; positionsData?: never }
+);
+
 export const useMaxMinYieldAmount = ({
   type,
   yieldOpportunity,
   availableAmount,
-}: {
-  yieldOpportunity: Maybe<YieldDto>;
-  availableAmount: Maybe<BigNumber>;
-  type: "enter" | "exit";
-}) => {
+  positionsData,
+}: Args) => {
   const forceMax = useForceMaxAmount({
     type,
     integration: yieldOpportunity,
@@ -24,14 +31,20 @@ export const useMaxMinYieldAmount = ({
       forceMax
         ? availableAmount
         : yieldOpportunity
-            .chainNullable(
-              (y) =>
-                (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
-                  ?.minimum
-            )
+            .chainNullable((y) => {
+              if (
+                type === "enter" &&
+                shouldForceEnterMinToZero(y.id, positionsData)
+              ) {
+                return new BigNumber(0);
+              }
+
+              return (type === "enter" ? y.args.enter : y.args.exit)?.args
+                ?.amount?.minimum;
+            })
             .map((a) => new BigNumber(a))
     ).orDefault(new BigNumber(0));
-  }, [availableAmount, forceMax, type, yieldOpportunity]);
+  }, [availableAmount, forceMax, type, yieldOpportunity, positionsData]);
 
   const maxIntegrationAmount = useMemo(() => {
     return (
