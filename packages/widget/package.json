@@ -1,6 +1,6 @@
 {
   "name": "@stakekit/widget",
-  "version": "0.0.208",
+  "version": "0.0.209",
   "type": "module",
   "main": "./dist/package/index.package.js",
   "types": "./dist/types/index.package.d.ts",

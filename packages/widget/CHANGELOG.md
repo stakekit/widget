@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.209
+
+### Patch Changes
+
+- 70f1b63: root deps bump
+- 2bcc017: fix init amount
+
 ## 0.0.208
 
 ### Patch Changes
