@@ -21,14 +21,14 @@
     "version": "changeset version"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.27.8",
-    "@commitlint/cli": "^19.5.0",
-    "@commitlint/config-conventional": "^19.5.0",
-    "husky": "^9.1.6",
-    "knip": "^5.30.2",
-    "turbo": "^2.1.2"
+    "@changesets/cli": "^2.27.12",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
+    "husky": "^9.1.7",
+    "knip": "^5.44.0",
+    "turbo": "^2.4.1"
   },
-  "packageManager": "yarn@4.5.0",
+  "packageManager": "yarn@4.6.0",
   "resolutions": {
     "@walletconnect/ethereum-provider": "patch:@walletconnect/ethereum-provider@npm%3A2.16.1#~/.yarn/patches/@walletconnect-ethereum-provider-npm-2.16.1-5b765e903e.patch",
     "@walletconnect/sign-client": "2.11.2"
