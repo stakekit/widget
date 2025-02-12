@@ -1,4 +1,3 @@
-import type { PositionsData } from "@sk-widget/domain/types/positions";
 import type { YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
@@ -114,19 +113,3 @@ const isNativeStaking = (yieldDto: YieldDto) =>
 
 const isPooledStaking = (yieldDto: YieldDto) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
-
-const yieldsWithEnterMinBasedOnPosition = new Set([
-  "polkadot-dot-validator-staking",
-]);
-
-export const shouldForceEnterMinToZero = (
-  yieldId: YieldDto["id"],
-  positionsData: PositionsData
-) => {
-  if (!yieldsWithEnterMinBasedOnPosition.has(yieldId)) return false;
-
-  return Maybe.fromNullable(positionsData.get("polkadot-dot-validator-staking"))
-    .map((val) => [...val.balanceData.values()])
-    .map((val) => val.some((v) => v.balances.some((b) => b.type === "staked")))
-    .orDefault(false);
-};

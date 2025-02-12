@@ -3,6 +3,7 @@ import { tokenString } from "@sk-widget/domain";
 import { getInitialYield } from "@sk-widget/domain/types/stake";
 import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
 import { getInitParams } from "@sk-widget/hooks/use-init-params";
+import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
@@ -30,6 +31,7 @@ export const useInitYield = ({
   const tokenGetTokens = useTokenGetTokensHook();
   const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
   const { externalProviders } = useSettings();
+  const { data: positionsData } = usePositionsData();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -81,6 +83,7 @@ export const useInitYield = ({
                       initQueryParams: Maybe.fromNullable(initParams),
                       yieldDtos: multipleYields,
                       tokenBalanceAmount: new BigNumber(val.amount),
+                      positionsData,
                     }).toEither(new Error("could not get initial yield"))
                   )
                 )
