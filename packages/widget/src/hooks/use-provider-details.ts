@@ -38,6 +38,7 @@ const getProviderDetails = ({
         rewardRate: val.rewardRate,
         rewardType: val.rewardType,
         website: v.externalLink,
+        address: validatorAddress.extract(),
       }))
       .altLazy(() =>
         Maybe.of({
@@ -49,6 +50,7 @@ const getProviderDetails = ({
           }),
           rewardRate: val.rewardRate,
           rewardType: val.rewardType,
+          address: validatorAddress.extract(),
         })
       )
   );
