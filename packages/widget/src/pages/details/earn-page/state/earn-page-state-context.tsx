@@ -271,11 +271,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     [initToken, positionsData]
   );
 
-  console.log({
-    shouldWaitForPositionsData,
-    positionsDataIsLoading: positionsData.isPending,
-  });
-
   /**
    * Set initial token
    */
