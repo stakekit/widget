@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.210
+
+### Patch Changes
+
+- f618106: Position details validator address on missing metadata
+
 ## 0.0.209
 
 ### Patch Changes
