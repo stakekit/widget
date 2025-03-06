@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.211
+
+### Patch Changes
+
+- 5823d64: Add body font to ConnectKit theme, Expand external dependencies in Vite config for React runtime
+
 ## 0.0.210
 
 ### Patch Changes
