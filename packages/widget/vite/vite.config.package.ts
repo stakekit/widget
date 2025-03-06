@@ -18,7 +18,12 @@ const config = getConfig({
       formats: ["es"],
     },
     rollupOptions: {
-      external: ["react", "react-dom"],
+      external: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+      ],
       output: { banner: '"use client";\n' },
     },
     copyPublicDir: false,

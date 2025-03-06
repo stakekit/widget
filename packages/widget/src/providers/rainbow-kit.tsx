@@ -20,6 +20,7 @@ const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,
   colors: vars.color.connectKit, // ThemeWrapper applies final light/dark colors
   radii: vars.borderRadius.connectKit,
+  fonts: { body: vars.font.body },
 };
 
 export const RainbowKitProviderWithTheme = ({
