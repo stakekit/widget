@@ -232,6 +232,11 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.EthereumHolesky,
     },
+    bsc: {
+      currencyId: "bsc",
+      family: "ethereum",
+      skChainName: EvmNetworks.Binance,
+    },
   },
   cosmos: {
     cosmos: {
