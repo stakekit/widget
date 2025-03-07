@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.212
+
+### Patch Changes
+
+- 3f9c696: feat(chains): add BSC support to Ledger wallet integration
+
 ## 0.0.211
 
 ### Patch Changes
