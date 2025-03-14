@@ -2,7 +2,7 @@ import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useSavedRef } from "../../../hooks";
 import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";

@@ -8,7 +8,7 @@ import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-
 import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router";
 
 export const TABS_MAP = {
   earn: "/",
@@ -55,6 +55,8 @@ export const Details = () => {
     setSelectedTab(selected);
     navigate(TABS_MAP[selected]);
   };
+
+  console.log({ selectedTab });
 
   return (
     <motion.div

@@ -5,7 +5,7 @@ import { usePendingActionStore } from "@sk-widget/providers/pending-action-store
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { Maybe } from "purify-ts";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useSavedRef } from "./use-saved-ref";
 
 export const useHandleDeepLinks = () => {

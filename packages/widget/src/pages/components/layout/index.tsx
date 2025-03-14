@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useCurrentLayout } from "./layout-context";
 import { absoluteContainer } from "./styles.css";

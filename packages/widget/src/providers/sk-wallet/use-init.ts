@@ -3,8 +3,9 @@ import { useSettings } from "@sk-widget/providers/settings";
 import { useWagmiConfig } from "@sk-widget/providers/wagmi";
 import { isLedgerDappBrowserProvider, isMobile } from "@sk-widget/utils";
 import { useQuery } from "@tanstack/react-query";
-import { type Connector, connect, reconnect, switchChain } from "@wagmi/core";
 import { EitherAsync, List, Right } from "purify-ts";
+import type { Connector } from "wagmi";
+import { connect, reconnect, switchChain } from "wagmi/actions";
 
 export const useInit = () => {
   const wagmiConfig = useWagmiConfig();

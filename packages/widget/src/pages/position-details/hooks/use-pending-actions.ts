@@ -9,7 +9,7 @@ import type {
 import BigNumber from "bignumber.js";
 import { Left, List, Maybe, Right } from "purify-ts";
 import { useEffect, useMemo, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,

@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { usePrevious } from "../../hooks/use-previous";
 
 const SKLocationContext = createContext<

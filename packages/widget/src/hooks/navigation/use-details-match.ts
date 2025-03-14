@@ -1,4 +1,4 @@
-import { useMatch } from "react-router-dom";
+import { useMatch } from "react-router";
 
 export const useDetailsMatch = () => {
   const rootMatch = useMatch("/");

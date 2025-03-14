@@ -4,7 +4,7 @@ import { useActivityReviewMatch } from "@sk-widget/hooks/navigation/use-activity
 import type { TransactionType } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { useSavedRef } from "../../../hooks";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";

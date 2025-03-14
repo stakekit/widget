@@ -1,0 +1,17 @@
+packages:
+  - packages/*
+  - packages/examples/*
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - '@parcel/watcher'
+  - '@swc/core'
+  - bigint-buffer
+  - bufferutil
+  - esbuild
+  - keccak
+  - lmdb
+  - msgpackr-extract
+  - msw
+  - protobufjs
+  - tiny-secp256k1
+  - utf-8-validate
