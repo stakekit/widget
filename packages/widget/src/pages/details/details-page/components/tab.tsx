@@ -22,8 +22,6 @@ export const Tab = ({
 }: Props) => {
   const { t } = useTranslation();
 
-  console.log({ isSelected, variant });
-
   return (
     <Box className={tabContainer}>
       <Box className={clsx([pressAnimation, tab])} onClick={onTabPress}>

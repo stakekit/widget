@@ -1,6 +1,6 @@
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { type JSX, useMemo } from "react";
 import {
   ArrowsLeftRightIcon,
   Box,

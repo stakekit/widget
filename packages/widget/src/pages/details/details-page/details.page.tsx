@@ -7,7 +7,7 @@ import {
 import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
 import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
 
 export const TABS_MAP = {
@@ -35,28 +35,19 @@ export const Details = () => {
 
   const navigate = useNavigate();
 
-  const [selectedTab, setSelectedTab] = useState<
-    "earn" | "positions" | "activity"
-  >("earn");
-
-  if (current.pathname === "/" && selectedTab === "positions") {
-    setSelectedTab("earn");
-  } else if (current.pathname === "/positions" && selectedTab === "earn") {
-    setSelectedTab("positions");
-  } else if (current.pathname === "/activity" && selectedTab === "earn") {
-    setSelectedTab("activity");
-  }
-
   const onTabPress: TabsProps["onTabPress"] = (selected) => {
     if (selectedTab === selected) return;
 
     trackEvent("tabClicked", { selected });
 
-    setSelectedTab(selected);
     navigate(TABS_MAP[selected]);
   };
 
-  console.log({ selectedTab });
+  const selectedTab = current.pathname.startsWith("/positions")
+    ? "positions"
+    : current.pathname.startsWith("/activity")
+      ? "activity"
+      : "earn";
 
   return (
     <motion.div

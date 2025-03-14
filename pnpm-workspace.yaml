@@ -13,5 +13,6 @@ onlyBuiltDependencies:
   - msgpackr-extract
   - msw
   - protobufjs
+  - sharp
   - tiny-secp256k1
   - utf-8-validate

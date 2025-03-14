@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from "react";
+import type { JSX, PropsWithChildren } from "react";
 import { Spinner } from "../spinner";
 import type { ButtonVariants } from "./styles.css";
 import { buttonStyle } from "./styles.css";

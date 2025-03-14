@@ -187,8 +187,9 @@ describe("Select opportunity", () => {
       .click();
 
     await waitFor(() =>
-      expect(getByText("You'll receive rETH")).toBeInTheDocument()
+      expect(getByText("You'll receive")).toBeInTheDocument()
     );
+    await waitFor(() => expect(getByText("rETH")).toBeInTheDocument());
 
     await waitFor(() =>
       expect(getByText("Connect Wallet")).toBeInTheDocument()
@@ -213,8 +214,9 @@ describe("Select opportunity", () => {
       .click();
 
     await waitFor(() =>
-      expect(getByText("You'll receive stETH")).toBeInTheDocument()
+      expect(getByText("You'll receive")).toBeInTheDocument()
     );
+    await waitFor(() => expect(getByText("stETH")).toBeInTheDocument());
 
     unmount();
   });

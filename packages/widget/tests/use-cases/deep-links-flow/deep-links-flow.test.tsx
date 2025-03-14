@@ -28,8 +28,13 @@ describe("Deep links flow", () => {
     );
     await waitFor(() =>
       expect(
+        withAvaxLiquidStakingApp.getByText(`You'll receive`)
+      ).toBeInTheDocument()
+    );
+    await waitFor(() =>
+      expect(
         withAvaxLiquidStakingApp.getByText(
-          `You'll receive ${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`
+          `${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`
         )
       ).toBeInTheDocument()
     );
@@ -56,7 +61,9 @@ describe("Deep links flow", () => {
     });
 
     await waitFor(() =>
-      expect(withAvaxNativeStakingApp.getByText("Stake")).toBeInTheDocument()
+      expect(
+        withAvaxNativeStakingApp.getAllByText("Stake")
+      ).length.greaterThanOrEqual(1)
     );
 
     await waitFor(() =>
