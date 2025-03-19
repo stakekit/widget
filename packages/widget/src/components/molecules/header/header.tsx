@@ -4,7 +4,7 @@ import classNames from "clsx";
 import { motion } from "framer-motion";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { useLogout } from "../../../hooks";
 import { useDetailsMatch } from "../../../hooks/navigation/use-details-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";

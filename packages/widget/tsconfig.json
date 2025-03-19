@@ -5,7 +5,7 @@
     "paths": {
       "@sk-widget/*": ["*"]
     },
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "es2023"]
   },
   "include": ["src", "scripts", "tests", "vite/**/*.ts"],
   "exclude": ["dist"]

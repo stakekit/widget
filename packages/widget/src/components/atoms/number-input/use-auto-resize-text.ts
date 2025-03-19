@@ -13,8 +13,8 @@ export const useAutoResizeText = ({
   spanRef,
 }: {
   inputVal: string;
-  inputRef: RefObject<HTMLInputElement>;
-  spanRef: RefObject<HTMLSpanElement>;
+  inputRef: RefObject<HTMLInputElement | null>;
+  spanRef: RefObject<HTMLSpanElement | null>;
 }) => {
   const prevVal = usePrevious(inputVal);
 

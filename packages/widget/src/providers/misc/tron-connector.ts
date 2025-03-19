@@ -103,7 +103,7 @@ export const getTronConnectors = ({
             projectId: config.walletConnectV2.projectId,
           },
           web3ModalConfig: {
-            themeVariables: { "--w3m-z-index": "99999999999" },
+            themeVariables: { "--wcm-z-index": "99999999999" },
           },
         }),
       }),

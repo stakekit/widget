@@ -4,7 +4,9 @@ import styles from "./page.module.css";
 export default function Home() {
   return (
     <main className={styles.main}>
-      <Widget />
+      <div className={styles.container}>
+        <Widget />
+      </div>
     </main>
   );
 }

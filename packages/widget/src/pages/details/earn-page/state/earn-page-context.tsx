@@ -462,7 +462,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       selectedStake
         .filter(() => minIntegrationAmount.isJust() && !isForceMax)
-        .map(() => minEnterOrExitAmount.toNumber()),
+        .map(() => minEnterOrExitAmount.toNumber())
+        .filter((val) => new BigNumber(val).isGreaterThan(0)),
     [minEnterOrExitAmount, minIntegrationAmount, isForceMax, selectedStake]
   );
 

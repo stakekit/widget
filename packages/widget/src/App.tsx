@@ -26,7 +26,7 @@ import {
   Routes,
   createMemoryRouter,
   useNavigate,
-} from "react-router-dom";
+} from "react-router";
 import { preloadImages } from "./assets/images";
 import { Box, Header } from "./components";
 import { GlobalModals } from "./components/molecules/global-modals";

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "start": "yarn dev",
+    "start": "pnpm dev",
     "build": "tsc && vite build",
     "lint": "tsc && biome check .",
     "format": "biome check --write .",
@@ -16,11 +16,10 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@biomejs/biome": "^1.9.1",
-    "@types/react": "^18.3.6",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react-swc": "^3.7.0",
-    "typescript": "^5.6.2",
-    "vite": "^5.4.6"
+    "@types/react": "19.0.11",
+    "@types/react-dom": "19.0.4",
+    "@vitejs/plugin-react-swc": "^3.8.1",
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2"
   }
 }

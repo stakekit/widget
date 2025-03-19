@@ -19,7 +19,7 @@ import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 
 export const useUnstakeActionReview = () => {
   const exitRequest = useSelector(

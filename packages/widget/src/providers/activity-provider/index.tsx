@@ -3,12 +3,12 @@ import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { type PropsWithChildren, createContext, useContext } from "react";
 
-const store = createStore(
-  {
+const store = createStore({
+  context: {
     selectedAction: Maybe.empty() as Maybe<ActionDto>,
     selectedYield: Maybe.empty() as Maybe<YieldDto>,
   },
-  {
+  on: {
     setSelectedAction: (
       _,
       event: {
@@ -18,8 +18,8 @@ const store = createStore(
       selectedAction: event.data.map(({ selectedAction }) => selectedAction),
       selectedYield: event.data.map(({ selectedYield }) => selectedYield),
     }),
-  }
-);
+  },
+});
 
 const ActivityContext = createContext<typeof store | undefined>(undefined);
 

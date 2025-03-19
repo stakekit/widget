@@ -23,14 +23,14 @@ jobs:
       - uses: ./.github/composite_actions/initial_setup
 
       - name: Build
-        run: yarn workspace @stakekit/widget build
+        run: pnpm turbo --filter=@stakekit/widget build
 
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: yarn run release
-          version: yarn run version
+          publish: pnpm release
+          version: pnpm version
           commit: 'ci(changesets): version packages'
           title: 'ci(changesets): version packages'
         env:

@@ -22,17 +22,13 @@ jobs:
 
       - uses: ./.github/composite_actions/initial_setup
 
-      - name: audit
-        run: yarn npm audit
-        continue-on-error: true
-
       - name: Build
-        run: yarn build
+        run: pnpm build
 
       - name: lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Test
-        run: yarn test
+        run: pnpm test
 
 

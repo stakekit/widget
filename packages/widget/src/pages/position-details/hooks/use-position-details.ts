@@ -6,7 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { equalTokens, getTokenPriceInUSD } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";

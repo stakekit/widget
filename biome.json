@@ -3,6 +3,10 @@
   "files": {
     "ignore": [
       "node_modules",
+      "dist",
+      ".next",
+      "next",
+      ".turbo",
       "**/node_modules",
       "**/dist",
       "**/.next",

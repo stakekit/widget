@@ -19,9 +19,9 @@ type InitData = {
 
 type Store = Maybe<InitData & { actionDto: Maybe<ActionDto> }>;
 
-const store = createStore(
-  { data: Maybe.empty() as Store },
-  {
+const store = createStore({
+  context: { data: Maybe.empty() as Store },
+  on: {
     initFlow: (_, event: { data: InitData }) => ({
       data: Maybe.of({ ...event.data, actionDto: Maybe.empty() }),
     }),
@@ -31,8 +31,8 @@ const store = createStore(
         actionDto: Maybe.of(event.data),
       })),
     }),
-  }
-);
+  },
+});
 
 const ExitStakeStoreContext = createContext<typeof store | undefined>(
   undefined

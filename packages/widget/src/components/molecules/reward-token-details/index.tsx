@@ -72,7 +72,11 @@ export const RewardTokenDetails = ({
                 i18nKey={i18nKey}
                 values={{ providerName: rt.providerName }}
                 components={{
-                  symbols1: <>{rt.symbols}</>,
+                  symbols1: (
+                    <Text as="span" variant={{ weight: "semibold" }}>
+                      {rt.symbols}
+                    </Text>
+                  ),
                   highlight2: (
                     <Text
                       as="span"
