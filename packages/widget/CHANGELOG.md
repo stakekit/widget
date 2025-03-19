@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.213
+
+### Patch Changes
+
+- 21855e0: feat(ledger): enhance account handling in Ledger connector
+- ce6af62: refactor: migrate from Yarn to PNPM, update dependencies, bump react, enable compiler, update examples
+
 ## 0.0.212
 
 ### Patch Changes
