@@ -164,19 +164,32 @@ const createLedgerLiveConnector = ({
       const preferredAccount = Maybe.fromNullable(queryParams.accountId)
         .chain((accId) =>
           Maybe.encase(() => {
-            const [, , , address] = accId.split(":");
+            if (accId.startsWith("js:")) {
+              const [, , , address] = accId.split(":");
 
-            return address;
+              return { type: "address", address };
+            }
+
+            return { type: "accountId", accountId: accId };
           })
         )
         .extractNullable();
 
-      const accountWithChain = List.find(
-        (v) =>
-          (!preferredAccount || v.account.address === preferredAccount) &&
-          v.chainItem.skChainName === queryParams.network,
-        accountsWithChain
-      )
+      const accountWithChain = List.find((v) => {
+        if (v.chainItem.skChainName !== queryParams.network) {
+          return false;
+        }
+
+        if (preferredAccount) {
+          if (preferredAccount.type === "address") {
+            return v.account.address === preferredAccount.address;
+          }
+
+          return v.account.id === preferredAccount.accountId;
+        }
+
+        return true;
+      }, accountsWithChain)
         .altLazy(() => List.head(accountsWithChain))
         .toEither(new Error("Account not found"))
         .unsafeCoerce();
