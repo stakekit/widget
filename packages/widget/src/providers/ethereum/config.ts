@@ -25,6 +25,7 @@ import {
   mainnet,
   optimism,
   polygon,
+  sonic,
 } from "wagmi/chains";
 import { config } from "../../config";
 import type { EvmChainsMap } from "../../domain/types/chains";
@@ -124,6 +125,15 @@ const queryFn = async ({
               ...core,
               name: "Core",
               iconUrl: getNetworkLogo(EvmNetworks.Core),
+            },
+          },
+          [EvmNetworks.Sonic]: {
+            type: "evm",
+            skChainName: EvmNetworks.Sonic,
+            wagmiChain: {
+              ...sonic,
+              name: "Sonic",
+              iconUrl: getNetworkLogo(EvmNetworks.Sonic),
             },
           },
           [EvmNetworks.EthereumHolesky]: {
