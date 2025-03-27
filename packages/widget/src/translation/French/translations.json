@@ -191,6 +191,7 @@
       "RESTAKE": "REMISE",
       "REBOND": "RELIER",
       "WITHDRAW": "RETIRER",
+      "WITHDRAW_ALL": "RETIRER TOUT",
       "CREATE_ACCOUNT": "CRÉER UN COMPTE",
       "REVEAL": "RÉVÉLER",
       "MIGRATE": "MIGRER",
@@ -253,7 +254,8 @@
       "vote_locked": "Voter bloqué",
       "revote": "Revoter",
       "rebond": "Re-staker",
-      "migrate": "Migrer"
+      "migrate": "Migrer",
+      "withdraw_all": "Retirer tout"
     }
   },
   "help_modals": {
@@ -386,6 +388,7 @@
       "claim_rewards": "Réclamer les récompenses",
       "restake_rewards": "Restaker les récompenses",
       "withdraw": "Retirer",
+      "withdraw_all": "Retirer tout",
       "restake": "Restaker",
       "claim_unstaked": "Réclamer les déstakés",
       "unlock_locked": "Débloquer",
@@ -404,6 +407,7 @@
       "claim_rewards": "Réclamer",
       "restake_rewards": "Restaker",
       "withdraw": "Retirer",
+      "withdraw_all": "Retirer tout",
       "restake": "Restaker",
       "claim_unstaked": "Réclamer",
       "unlock_locked": "Débloquer",
@@ -432,6 +436,7 @@
       "claim_rewards": "Réclamer les récompenses de {{providerName}}",
       "restake_rewards": "Restaker les récompenses avec {{providerName}}",
       "withdraw": "Retirer de {{providerName}}",
+      "withdraw_all": "Retirer tout de {{providerName}}",
       "restake": "Restaker avec {{providerName}}",
       "claim_unstaked": "Réclamer le déstaké de {{providerName}}",
       "unlock_locked": "Débloquer le bloqué de {{providerName}}",

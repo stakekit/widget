@@ -1,4 +1,4 @@
-import { useIsPresent } from "framer-motion";
+import { useIsPresent } from "motion/react";
 import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import createStateContext from "../../../utils/create-state-context";

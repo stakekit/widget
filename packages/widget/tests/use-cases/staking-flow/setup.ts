@@ -129,6 +129,8 @@ export const setup = async () => {
     tokenId: null,
     validatorAddress: null,
     validatorAddresses: null,
+    completedAt: null,
+    createdAt: "2023-12-28T14:36:21.700Z",
     transactions: [
       {
         id: "9aa80e02-3d81-4b0f-aa0b-155138b77293",
@@ -145,9 +147,10 @@ export const setup = async () => {
         stakeId: "",
         ledgerHwAppId: null,
         isMessage: false,
+        broadcastedAt: null,
+        createdAt: "2023-12-28T14:36:21.700Z",
       },
     ],
-    createdAt: "2023-12-28T14:36:21.700Z",
     addresses: null as unknown as AddressesDto,
   };
 
@@ -178,6 +181,8 @@ export const setup = async () => {
     explorerUrl: null,
     ledgerHwAppId: null,
     isMessage: false,
+    broadcastedAt: null,
+    createdAt: "2023-12-28T14:36:21.700Z",
   };
 
   server.use(

@@ -2,7 +2,7 @@ import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import {
   getActionControllerPendingResponseMock,
   getTransactionControllerGetGasForNetworkResponseMock,
-  getYieldControllerYieldOpportunityResponseMock,
+  getYieldV2ControllerGetYieldByIdResponseMock,
 } from "@stakekit/api-hooks/msw";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
@@ -37,9 +37,7 @@ export const setup = async (opts?: {
 
   const amount = "6.367499123588739454";
 
-  const avaxNativeStaking = Just(
-    getYieldControllerYieldOpportunityResponseMock()
-  )
+  const avaxNativeStaking = Just(getYieldV2ControllerGetYieldByIdResponseMock())
     .map(
       (def): YieldDto => ({
         ...def,
@@ -57,9 +55,7 @@ export const setup = async (opts?: {
     )
     .unsafeCoerce();
 
-  const avaxLiquidStaking = Just(
-    getYieldControllerYieldOpportunityResponseMock()
-  )
+  const avaxLiquidStaking = Just(getYieldV2ControllerGetYieldByIdResponseMock())
     .map(
       (def) =>
         ({

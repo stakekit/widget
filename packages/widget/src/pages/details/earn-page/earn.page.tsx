@@ -1,6 +1,6 @@
 import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import type { MotionProps, TargetAndTransition } from "framer-motion";
-import { motion } from "framer-motion";
+import type { MotionProps, TargetAndTransition } from "motion/react";
+import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";

@@ -1,11 +1,9 @@
+import { yieldYieldBalancesScan } from "@sk-widget/common/private-api";
 import type {
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
-import {
-  getYieldYieldBalancesScanQueryKey,
-  useYieldYieldBalancesScan,
-} from "@stakekit/api-hooks";
+import { useQuery } from "@tanstack/react-query";
 import { Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useSKQueryClient } from "../../providers/query-client";
@@ -64,12 +62,12 @@ export const useYieldBalancesScan = <
     [additionalAddresses, address, customValidators, network]
   );
 
-  const res = useYieldYieldBalancesScan(param.dto, {
-    query: {
-      enabled: param.enabled,
-      select: opts?.select,
-      refetchInterval: 1000 * 60,
-    },
+  const res = useQuery({
+    queryKey: getYieldYieldBalancesScanQueryKey(param.dto),
+    queryFn: () => yieldYieldBalancesScan(param.dto),
+    enabled: param.enabled,
+    select: opts?.select,
+    refetchInterval: 1000 * 60,
   });
 
   /**
@@ -101,4 +99,10 @@ export const useInvalidateYieldBalances = () => {
       }),
     [queryClient]
   );
+};
+
+export const getYieldYieldBalancesScanQueryKey = (
+  yieldBalanceScanRequestDto: YieldBalanceScanRequestDto
+) => {
+  return ["/v1/yields/balances/scan", yieldBalanceScanRequestDto] as const;
 };

@@ -1,4 +1,3 @@
-import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 import { SubstrateNetworks } from "@stakekit/common";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -17,12 +16,10 @@ const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   queryClient,
-  yieldGetMyNetworks,
 }: {
   queryClient: QueryClient;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
 }) =>
-  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
+  getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
       const substrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(

@@ -3,19 +3,15 @@ import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
   ActionStatus,
+  actionList,
   getActionListQueryKey,
-  useActionListHook,
-  useYieldYieldOpportunityHook,
 } from "@stakekit/api-hooks";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 
 export const useActivityActions = () => {
-  const { address, network } = useSKWallet();
-  const getActionList = useActionListHook();
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-  const { isLedgerLive } = useSKWallet();
+  const { address, network, isLedgerLive } = useSKWallet();
   const queryClient = useSKQueryClient();
 
   const query = useInfiniteQuery({
@@ -27,7 +23,7 @@ export const useActivityActions = () => {
     queryFn: async ({ pageParam = 1 }) => {
       return (
         await EitherAsync(() =>
-          getActionList({
+          actionList({
             page: pageParam,
             walletAddress: address!,
             network: network!,
@@ -46,9 +42,8 @@ export const useActivityActions = () => {
               actionList.data.map((action) =>
                 getYieldOpportunity({
                   yieldId: action.integrationId,
-                  isLedgerLive,
                   queryClient,
-                  yieldYieldOpportunity,
+                  isLedgerLive,
                 })
                   .map((yieldData) => ({ actionData: action, yieldData }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))

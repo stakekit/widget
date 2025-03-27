@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Box } from "../../../components";
 import { VirtualList } from "../../../components/atoms/virtual-list";

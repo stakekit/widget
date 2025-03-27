@@ -1,5 +1,5 @@
-import type { MotionProps, TargetAndTransition } from "framer-motion";
-import { motion } from "framer-motion";
+import type { MotionProps, TargetAndTransition } from "motion/react";
+import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { Box, Divider } from "../../../../components";
 import { useMountAnimation } from "../../../../providers/mount-animation";

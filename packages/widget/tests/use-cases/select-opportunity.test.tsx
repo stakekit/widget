@@ -1,5 +1,5 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
+import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
@@ -89,7 +89,7 @@ describe("Select opportunity", () => {
         const integrationId = info.params.integrationId as string;
         await delay();
 
-        return Just(getYieldControllerYieldOpportunityResponseMock())
+        return Just(getYieldV2ControllerGetYieldByIdResponseMock())
           .map((mock) => {
             const rewardToken = (() => {
               switch (integrationId) {

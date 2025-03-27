@@ -1,5 +1,5 @@
+import { yieldYieldOpportunity } from "@sk-widget/common/private-api";
 import type { YieldDto } from "@stakekit/api-hooks";
-import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -24,21 +24,17 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
 
   const yieldId = integrationId ?? "";
 
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   return useQuery({
     queryKey: getKey({ yieldId, isLedgerLive }),
     enabled: !!integrationId,
     staleTime,
-    queryFn: ({ signal }) =>
-      queryFn({ yieldId, isLedgerLive, yieldYieldOpportunity, signal }),
+    queryFn: ({ signal }) => queryFn({ yieldId, isLedgerLive, signal }),
   });
 };
 
 export const getYieldOpportunity = (
   params: Params & {
     queryClient: QueryClient;
-    yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
   }
 ) =>
   EitherAsync(() =>
@@ -54,7 +50,6 @@ export const getYieldOpportunity = (
 
 const queryFn = async (
   params: Params & {
-    yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
     signal?: AbortSignal;
   }
 ) => (await fn(params)).unsafeCoerce();
@@ -62,10 +57,8 @@ const queryFn = async (
 const fn = ({
   isLedgerLive,
   yieldId,
-  yieldYieldOpportunity,
   signal,
 }: Params & {
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
   signal?: AbortSignal;
 }) =>
   withRequestErrorRetry({

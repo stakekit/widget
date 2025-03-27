@@ -8,8 +8,8 @@ import { usePendingActionStore } from "@sk-widget/providers/pending-action-store
 import { formatNumber } from "@sk-widget/utils";
 import {
   type ActionTypes,
+  actionPending,
   useActionPendingGasEstimate,
-  useActionPendingHook,
   useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
@@ -114,8 +114,6 @@ export const usePendingActionReview = () => {
       }),
     [integrationData, pendingTxGas, pricesState.data]
   );
-
-  const actionPending = useActionPendingHook();
 
   const actionPendingMutation = useMutation({
     mutationFn: async () =>

@@ -1,9 +1,9 @@
 import { equalTokens } from "@sk-widget/domain";
 import type { ActionDtoWithGasEstimate } from "@sk-widget/domain/types/action";
-import type {
-  AddressWithTokenDto,
-  TokenDto,
-  useTokenGetTokenBalancesHook,
+import {
+  type AddressWithTokenDto,
+  type TokenDto,
+  tokenGetTokenBalances,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Right } from "purify-ts";
@@ -16,12 +16,10 @@ type CheckGasAmountIfStake =
 export const checkGasAmount = ({
   addressWithTokenDto,
   gasEstimate,
-  tokenGetTokenBalances,
   ...rest
 }: {
   addressWithTokenDto: AddressWithTokenDto;
   gasEstimate: ActionDtoWithGasEstimate["gasEstimate"];
-  tokenGetTokenBalances: ReturnType<typeof useTokenGetTokenBalancesHook>;
 } & CheckGasAmountIfStake) =>
   withRequestErrorRetry({
     fn: () => tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),

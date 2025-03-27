@@ -13,8 +13,8 @@ import { useSettings } from "@sk-widget/providers/settings";
 import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
+  actionEnter,
   useActionEnterGasEstimation,
-  useActionEnterHook,
   useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
@@ -120,7 +120,6 @@ export const useStakeReview = () => {
   const metadata = selectedStake.map((y) => y.metadata);
 
   const navigate = useNavigate();
-  const actionEnter = useActionEnterHook();
 
   const enterMutation = useMutation({
     mutationFn: async () =>

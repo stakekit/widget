@@ -1,5 +1,4 @@
 import type { YieldDto } from "@stakekit/api-hooks";
-import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
 import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Maybe, Right } from "purify-ts";
@@ -39,8 +38,6 @@ export const useMultiYields = <SelectData = YieldDto[]>(
 
   const queryClient = useSKQueryClient();
 
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   return useQuery<YieldDto[], Error, SelectData>({
     queryKey: getMultiYieldsQueryKey(yieldIds),
     enabled: !!yieldIds.length,
@@ -54,7 +51,6 @@ export const useMultiYields = <SelectData = YieldDto[]>(
           network,
           queryClient,
           yieldIds,
-          yieldYieldOpportunity,
         })
       ).unsafeCoerce(),
   });
@@ -79,14 +75,12 @@ const queryFn = ({
   queryClient,
   isConnected,
   network,
-  yieldYieldOpportunity,
 }: {
   isLedgerLive: boolean;
   yieldIds: string[];
   queryClient: QueryClient;
   isConnected: boolean;
   network: SKWallet["network"];
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
 }) =>
   eitherAsyncPool(
     yieldIds.map(
@@ -95,7 +89,6 @@ const queryFn = ({
           isLedgerLive,
           yieldId: y,
           queryClient,
-          yieldYieldOpportunity,
         }).chainLeft(async () => Right(null))
     ),
     5

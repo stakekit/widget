@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import type { PropsWithChildren } from "react";
 
 export const AnimationPage = ({ children }: PropsWithChildren) => {

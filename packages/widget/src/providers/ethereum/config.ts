@@ -1,4 +1,3 @@
-import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
@@ -40,17 +39,15 @@ import { viction } from "./chains";
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
-  yieldGetMyNetworks,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
 }): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
   connector: Maybe<WalletList[number]>;
 }> =>
-  getEnabledNetworks({ queryClient, yieldGetMyNetworks }).caseOf({
+  getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
       const evmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
         typeSafeObjectEntries<EvmChainsMap>({

@@ -1,4 +1,3 @@
-import type { useYieldGetMyNetworksHook } from "@stakekit/api-hooks";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, Right } from "purify-ts";
@@ -15,13 +14,11 @@ const staleTime = Number.POSITIVE_INFINITY;
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
-  yieldGetMyNetworks,
 }: {
   queryClient: QueryClient;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks({ queryClient, yieldGetMyNetworks })
+  getEnabledNetworks({ queryClient })
     .chain<
       Error,
       {

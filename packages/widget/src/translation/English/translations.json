@@ -191,6 +191,7 @@
       "RESTAKE": "RESTAKE",
       "REBOND": "REBOND",
       "WITHDRAW": "WITHDRAW",
+      "WITHDRAW_ALL": "WITHDRAW ALL",
       "CREATE_ACCOUNT": "CREATE ACCOUNT",
       "REVEAL": "REVEAL",
       "MIGRATE": "MIGRATE",
@@ -253,7 +254,8 @@
       "vote_locked": "Vote locked",
       "revote": "Revote",
       "rebond": "Rebond",
-      "migrate": "Migrate"
+      "migrate": "Migrate",
+      "withdraw_all": "withdrawn all"
     }
   },
   "help_modals": {
@@ -386,6 +388,7 @@
       "claim_rewards": "Claim rewards",
       "restake_rewards": "Restake rewards",
       "withdraw": "Withdraw",
+      "withdraw_all": "Withdraw all",
       "restake": "Restake",
       "claim_unstaked": "Claim unstaked",
       "unlock_locked": "Unlock",
@@ -404,6 +407,7 @@
       "claim_rewards": "Claim",
       "restake_rewards": "Restake",
       "withdraw": "Withdraw",
+      "withdraw_all": "Withdraw all",
       "restake": "Restake",
       "claim_unstaked": "Claim",
       "unlock_locked": "Unlock",
@@ -432,6 +436,7 @@
       "claim_rewards": "Claim rewards from {{providerName}}",
       "restake_rewards": "Restake rewards with {{providerName}}",
       "withdraw": "Withdraw from {{providerName}}",
+      "withdraw_all": "Withdraw all from {{providerName}}",
       "restake": "Restake with {{providerName}}",
       "claim_unstaked": "Claim unstaked from {{providerName}}",
       "unlock_locked": "Unlock locked from {{providerName}}",

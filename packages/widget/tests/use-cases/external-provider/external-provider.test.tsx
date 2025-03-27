@@ -2,7 +2,7 @@ import { SKApp, type SKAppProps } from "@sk-widget/App";
 import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
 import { formatAddress } from "@sk-widget/utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
+import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
@@ -47,7 +47,7 @@ describe("External Provider", () => {
     };
 
     const avalancheAvaxNativeStaking = Just(
-      getYieldControllerYieldOpportunityResponseMock()
+      getYieldV2ControllerGetYieldByIdResponseMock()
     )
       .map(
         (val) =>
@@ -68,7 +68,7 @@ describe("External Provider", () => {
       .unsafeCoerce();
 
     const etherNativeStaking = Just(
-      getYieldControllerYieldOpportunityResponseMock()
+      getYieldV2ControllerGetYieldByIdResponseMock()
     )
       .map(
         (val) =>

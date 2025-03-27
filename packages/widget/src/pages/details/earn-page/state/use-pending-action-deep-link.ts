@@ -10,15 +10,12 @@ import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { GetEitherRight, Override } from "@sk-widget/types";
-import type {
-  AddressWithTokenDtoAdditionalAddresses,
-  PendingActionDto,
-  YieldBalanceDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import {
-  useYieldGetSingleYieldBalancesHook,
-  useYieldYieldOpportunityHook,
+  type AddressWithTokenDtoAdditionalAddresses,
+  type PendingActionDto,
+  type YieldBalanceDto,
+  type YieldDto,
+  yieldGetSingleYieldBalances,
 } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
@@ -30,8 +27,6 @@ export const usePendingActionDeepLink = () => {
 
   const queryClient = useSKQueryClient();
 
-  const yieldGetSingleYieldBalances = useYieldGetSingleYieldBalancesHook();
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
   const { externalProviders } = useSettings();
 
   return useQuery({
@@ -51,8 +46,6 @@ export const usePendingActionDeepLink = () => {
             additionalAddresses,
             address: addr,
             queryClient,
-            yieldGetSingleYieldBalances,
-            yieldYieldOpportunity,
             externalProviders,
           })
         )
@@ -65,24 +58,17 @@ const fn = ({
   additionalAddresses,
   address,
   queryClient,
-  yieldGetSingleYieldBalances,
-  yieldYieldOpportunity,
   externalProviders,
 }: {
   isLedgerLive: boolean;
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
-  yieldGetSingleYieldBalances: ReturnType<
-    typeof useYieldGetSingleYieldBalancesHook
-  >;
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
   externalProviders: ReturnType<typeof useSettings>["externalProviders"];
 }) =>
   getInitParams({
     isLedgerLive,
     queryClient,
-    yieldYieldOpportunity,
     externalProviders,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
@@ -151,7 +137,6 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
-              yieldYieldOpportunity,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<

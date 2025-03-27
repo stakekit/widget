@@ -1,4 +1,8 @@
 import {
+  type YieldFindValidatorsParams,
+  yieldFindValidators,
+} from "@sk-widget/common/private-api";
+import {
   type SettingsContextType,
   useSettings,
 } from "@sk-widget/providers/settings";
@@ -10,7 +14,7 @@ import type {
   YieldBalanceLabelDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
-import { useYieldFindValidators } from "@stakekit/api-hooks";
+import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Just, List, Maybe, compare } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
@@ -46,10 +50,18 @@ export const usePositions = () => {
     setValidatorAddressOrName(validatorAddress);
   };
 
-  const foundValidators = useYieldFindValidators(
-    { query: debouncedValidatorAddressOrName, network: network ?? undefined },
-    { query: { enabled: debouncedValidatorAddressOrName.length >= 2 } }
-  );
+  const foundValidators = useQuery({
+    queryKey: getYieldFindValidatorsQueryKey({
+      query: debouncedValidatorAddressOrName,
+      network: network ?? undefined,
+    }),
+    queryFn: () =>
+      yieldFindValidators({
+        query: debouncedValidatorAddressOrName,
+        network: network ?? undefined,
+      }),
+    enabled: debouncedValidatorAddressOrName.length >= 2,
+  });
 
   const foundValidatorsData = Maybe.fromNullable(foundValidators.data)
     .alt(Maybe.of([]))
@@ -236,4 +248,10 @@ const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
   locked: 6,
   unlocking: 7,
   rewards: 8,
+};
+
+export const getYieldFindValidatorsQueryKey = (
+  params?: YieldFindValidatorsParams
+) => {
+  return ["/v1/yields/validators", ...(params ? [params] : [])] as const;
 };

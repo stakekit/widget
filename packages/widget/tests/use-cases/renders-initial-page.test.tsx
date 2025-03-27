@@ -1,5 +1,5 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { getYieldControllerYieldOpportunityResponseMock } from "@stakekit/api-hooks/msw";
+import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
@@ -27,7 +27,7 @@ describe("Renders initial page", () => {
     };
 
     const avalancheAvaxNativeStaking = Just(
-      getYieldControllerYieldOpportunityResponseMock()
+      getYieldV2ControllerGetYieldByIdResponseMock()
     )
       .map(
         (val) =>
@@ -48,7 +48,7 @@ describe("Renders initial page", () => {
       .unsafeCoerce();
 
     const etherNativeStaking = Just(
-      getYieldControllerYieldOpportunityResponseMock()
+      getYieldV2ControllerGetYieldByIdResponseMock()
     )
       .map(
         (val) =>

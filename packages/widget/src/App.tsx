@@ -15,7 +15,7 @@ import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.
 import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.page";
 import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";

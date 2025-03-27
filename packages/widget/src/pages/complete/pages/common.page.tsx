@@ -4,7 +4,7 @@ import type {
   TokenDto,
   YieldMetadataDto,
 } from "@stakekit/api-hooks";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, Heading, Text } from "../../../components";

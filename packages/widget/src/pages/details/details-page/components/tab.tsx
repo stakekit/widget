@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Box, Text } from "../../../../components";
 import { pressAnimation } from "../../../../components/atoms/button/styles.css";

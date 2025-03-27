@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Outlet } from "react-router";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useCurrentLayout } from "./layout-context";
