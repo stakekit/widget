@@ -1,8 +1,5 @@
 import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
-import {
-  getTokenGetTokensQueryKey,
-  useTokenGetTokensHook,
-} from "@stakekit/api-hooks";
+import { getTokenGetTokensQueryKey, tokenGetTokens } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -11,12 +8,10 @@ import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useDefaultTokens = () => {
   const { network } = useSKWallet();
-  const tokenGetTokens = useTokenGetTokensHook();
 
   return useQuery({
     queryKey: getTokenGetTokensQueryKey({ network: network ?? undefined }),
-    queryFn: async () =>
-      (await queryFn({ network, tokenGetTokens })).unsafeCoerce(),
+    queryFn: async () => (await queryFn({ network })).unsafeCoerce(),
     staleTime: 1000 * 60 * 5,
   });
 };
@@ -38,10 +33,8 @@ export const getDefaultTokens = (
 
 const queryFn = ({
   network,
-  tokenGetTokens,
 }: {
   network: SKWallet["network"];
-  tokenGetTokens: ReturnType<typeof useTokenGetTokensHook>;
 }) =>
   EitherAsync(() => tokenGetTokens({ network: network ?? undefined })).map(
     (val) =>

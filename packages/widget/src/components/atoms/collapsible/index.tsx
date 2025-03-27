@@ -1,11 +1,6 @@
 import clsx from "clsx";
-import type { Variants } from "framer-motion";
-import {
-  AnimatePresence,
-  motion,
-  useAnimate,
-  usePresence,
-} from "framer-motion";
+import type { Variants } from "motion/react";
+import { AnimatePresence, motion, useAnimate, usePresence } from "motion/react";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useFirstMountState } from "../../../hooks/use-first-mount-state";

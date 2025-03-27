@@ -1,4 +1,5 @@
-import { animate, useMotionValue, useTransform } from "framer-motion";
+import { config } from "@sk-widget/config";
+import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import type { EarnPageContextType } from "../../state/types";
 
@@ -35,5 +36,7 @@ export const useAnimateYieldPercent = (
     (val) => `${val.toFixed(2)}%`
   );
 
-  return typeof perReward === "string" ? perReward : transformedMotionValue;
+  return typeof perReward === "string" || config.env.isTestMode
+    ? estimatedRewards.extract()?.percentage
+    : transformedMotionValue;
 };

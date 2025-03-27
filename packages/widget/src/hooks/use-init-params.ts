@@ -3,14 +3,13 @@ import {
   type SettingsContextType,
   useSettings,
 } from "@sk-widget/providers/settings";
-import { useYieldYieldOpportunityHook } from "@stakekit/api-hooks";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SupportedSKChains } from "../domain/types/chains";
 import type { InitParams } from "../domain/types/init-params";
 import { useSKQueryClient } from "../providers/query-client";
-import { useSKWallet } from "../providers/sk-wallet";
 import { getYieldOpportunity } from "./api/use-yield-opportunity";
 
 const queryKey = ["init-params"];
@@ -21,12 +20,8 @@ export const useInitParams = <T = InitParams>(opts?: {
   select: (val: InitParams) => T;
 }) => {
   const { isLedgerLive } = useSKWallet();
-
   const { externalProviders } = useSettings();
-
   const queryClient = useSKQueryClient();
-
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
 
   return useQuery({
     queryKey,
@@ -36,7 +31,6 @@ export const useInitParams = <T = InitParams>(opts?: {
       queryFn({
         isLedgerLive,
         queryClient,
-        yieldYieldOpportunity,
         externalProviders,
       }),
     select: opts?.select,
@@ -64,12 +58,10 @@ const queryFn = async (params: Parameters<typeof fn>[0]) =>
 const fn = ({
   isLedgerLive,
   queryClient,
-  yieldYieldOpportunity,
   externalProviders,
 }: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
   externalProviders: SettingsContextType["externalProviders"];
 }): EitherAsync<Error, InitParams> =>
   EitherAsync.liftEither(
@@ -84,7 +76,6 @@ const fn = ({
         isLedgerLive,
         yieldId: yId,
         queryClient,
-        yieldYieldOpportunity,
       })
         .map((yieldData) => ({
           ...val,

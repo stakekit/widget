@@ -6,7 +6,7 @@ import {
 } from "@sk-widget/pages/details/details-page/components/tabs";
 import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
 import { useSKLocation } from "@sk-widget/providers/location";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
 

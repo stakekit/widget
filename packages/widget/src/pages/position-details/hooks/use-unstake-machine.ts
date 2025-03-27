@@ -8,19 +8,18 @@ import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { GetMaybeJust } from "@sk-widget/types";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import {
-  useActionExitHook,
-  useTransactionGetTransactionVerificationMessageForNetworkHook,
+  actionExit,
+  transactionGetTransactionVerificationMessageForNetwork,
 } from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
 import type { SnapshotFromStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import { EitherAsync, Maybe } from "purify-ts";
-import { type MutableRefObject, useState } from "react";
+import { type RefObject, useState } from "react";
 import { assign, setup } from "xstate";
 
 export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const trackEvent = useTrackEvent();
-  const actionExit = useActionExitHook();
 
   const exitStore = useExitStakeStore();
   const exitRequest = useSelector(
@@ -29,9 +28,6 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   ).unsafeCoerce();
 
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
-
-  const transactionGetTransactionVerificationMessageForNetwork =
-    useTransactionGetTransactionVerificationMessageForNetworkHook();
 
   const machineParams = useSavedRef({
     onDone,
@@ -52,13 +48,9 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
 
 const getMachine = (
   ref: Readonly<
-    MutableRefObject<{
+    RefObject<{
       onDone: () => void;
-      transactionGetTransactionVerificationMessageForNetwork: ReturnType<
-        typeof useTransactionGetTransactionVerificationMessageForNetworkHook
-      >;
       exitStore: ReturnType<typeof useExitStakeStore>;
-      actionExit: ReturnType<typeof useActionExitHook>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       trackEvent: ReturnType<typeof useTrackEvent>;
       getData: () => Maybe<
@@ -178,7 +170,7 @@ const getMachine = (
                 .chain((val) =>
                   withRequestErrorRetry({
                     fn: () =>
-                      ref.current.transactionGetTransactionVerificationMessageForNetwork(
+                      transactionGetTransactionVerificationMessageForNetwork(
                         val.network,
                         {
                           addresses: {
@@ -306,7 +298,7 @@ const getMachine = (
               )
                 .chain((val) =>
                   withRequestErrorRetry({
-                    fn: () => ref.current.actionExit(val),
+                    fn: () => actionExit(val),
                   })
                     .mapLeft(() => new Error("Stake exit error"))
                     .chain((actionDto) =>

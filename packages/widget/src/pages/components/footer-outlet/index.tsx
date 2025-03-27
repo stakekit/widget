@@ -1,5 +1,5 @@
-import type { MotionProps, TargetAndTransition } from "framer-motion";
-import { motion } from "framer-motion";
+import type { MotionProps, TargetAndTransition } from "motion/react";
+import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useState } from "react";
 import { Box, Button } from "../../../components";

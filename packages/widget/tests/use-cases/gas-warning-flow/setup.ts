@@ -9,7 +9,7 @@ import type {
 import {
   getActionControllerEnterResponseMock,
   getTransactionControllerConstructResponseMock,
-  getYieldControllerYieldOpportunityResponseMock,
+  getYieldV2ControllerGetYieldByIdResponseMock,
 } from "@stakekit/api-hooks/msw";
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
@@ -37,7 +37,7 @@ export const setup = () => {
   };
 
   const yieldWithSameGasAndStakeToken = Just(
-    getYieldControllerYieldOpportunityResponseMock()
+    getYieldV2ControllerGetYieldByIdResponseMock()
   )
     .map((val) => ({
       yieldDto: {
@@ -78,7 +78,7 @@ export const setup = () => {
     .unsafeCoerce();
 
   const yieldWithDifferentGasAndStakeToken = Just(
-    getYieldControllerYieldOpportunityResponseMock()
+    getYieldV2ControllerGetYieldByIdResponseMock()
   )
     .map((val) => ({
       yieldDto: {

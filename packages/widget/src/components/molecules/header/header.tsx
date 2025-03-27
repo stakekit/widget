@@ -1,7 +1,7 @@
 import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";

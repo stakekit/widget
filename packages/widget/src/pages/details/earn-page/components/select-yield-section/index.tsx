@@ -1,6 +1,6 @@
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Box, Divider, Text } from "../../../../../components";
 import { useSettings } from "../../../../../providers/settings";

@@ -1,8 +1,8 @@
-import { ApiClientProvider } from "@stakekit/api-hooks";
+import { StakeKitApiClient } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
-import axios from "axios";
-import type { ComponentProps, PropsWithChildren } from "react";
-import { createContext, useCallback, useContext, useState } from "react";
+import axios, { AxiosHeaders } from "axios";
+import type { PropsWithChildren } from "react";
+import { createContext, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { attachDelayInterceptor } from "../../common/delay-api-requests";
 import { config } from "../../config";
@@ -30,25 +30,30 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
     return instance;
   });
 
-  const fetchInstance = useCallback<
-    ComponentProps<typeof ApiClientProvider>["fetchInstance"]
-  >(
-    (url, requestInit) =>
-      apiClient(url, requestInit).then((response) => response.data),
-    [apiClient]
-  );
+  StakeKitApiClient.configure({
+    apiKey,
+    baseURL: config.env.apiUrl,
+    fetchInstance: (url, requestInit) => {
+      const headers = new Headers(requestInit.headers);
 
-  return (
-    <Context.Provider value={apiClient}>
-      <ApiClientProvider
-        apiKey={apiKey}
-        baseURL={config.env.apiUrl}
-        fetchInstance={fetchInstance}
-      >
-        {children}
-      </ApiClientProvider>
-    </Context.Provider>
-  );
+      const axiosHeaders = new AxiosHeaders();
+
+      for (const [key, value] of headers.entries()) {
+        axiosHeaders.set(key, value);
+      }
+
+      const signal = requestInit.signal ?? undefined;
+
+      return apiClient(url, {
+        ...requestInit,
+        headers: axiosHeaders,
+        data: requestInit.body,
+        signal,
+      }).then((response) => response.data);
+    },
+  });
+
+  return <Context.Provider value={apiClient}>{children}</Context.Provider>;
 };
 
 export const useApiClient = () => {

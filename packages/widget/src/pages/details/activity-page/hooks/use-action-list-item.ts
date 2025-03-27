@@ -25,6 +25,7 @@ const BADGE_BG_MAP: { [key in ActionStatus]: ListItemContainerType } = {
   WAITING_FOR_NEXT: "pending",
   CANCELED: "actionRequired",
   PROCESSING: "claim",
+  STALE: undefined,
 };
 
 export const useActionListItem = (action: ActionYieldDto) => {

@@ -1,6 +1,5 @@
+import { tokenTokenBalancesScan } from "@sk-widget/common/private-api";
 import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
-import { useTokenTokenBalancesScanHook } from "@stakekit/api-hooks";
-import { getTokenTokenBalancesScanQueryKey } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Just, Maybe } from "purify-ts";
@@ -44,8 +43,6 @@ export const useTokenBalancesScan = () => {
     [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network]
   );
 
-  const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
-
   return useQuery({
     queryKey: getTokenTokenBalancesScanQueryKey(param.dto),
     enabled: param.enabled,
@@ -54,7 +51,6 @@ export const useTokenBalancesScan = () => {
       (
         await queryFn({
           tokenBalanceScanDto: param.dto,
-          tokenTokenBalancesScan,
         })
       ).unsafeCoerce(),
   });
@@ -75,10 +71,8 @@ export const getTokenBalancesScan = (
 
 const queryFn = ({
   tokenBalanceScanDto,
-  tokenTokenBalancesScan,
 }: {
   tokenBalanceScanDto: TokenBalanceScanDto;
-  tokenTokenBalancesScan: ReturnType<typeof useTokenTokenBalancesScanHook>;
 }) =>
   EitherAsync(() => tokenTokenBalancesScan(tokenBalanceScanDto)).mapLeft(
     (e) => {
@@ -99,4 +93,10 @@ export const useInvalidateTokenBalances = () => {
       }),
     [queryClient]
   );
+};
+
+export const getTokenTokenBalancesScanQueryKey = (
+  tokenBalanceScanDto: TokenBalanceScanDto
+) => {
+  return ["/v1/tokens/balances/scan", tokenBalanceScanDto] as const;
 };

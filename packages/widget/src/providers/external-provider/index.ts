@@ -1,6 +1,6 @@
 import type { WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, List, Maybe } from "purify-ts";
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 import { BehaviorSubject } from "rxjs";
 import { type Address, getAddress } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
@@ -33,7 +33,7 @@ export const isExternalProviderConnector = (
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: MutableRefObject<SKExternalProviders>
+  variant: RefObject<SKExternalProviders>
 ): WalletList[number] => ({
   groupName: "External Providers",
   wallets: [

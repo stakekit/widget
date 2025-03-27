@@ -2,17 +2,16 @@ import { shouldMultiSend } from "@sk-widget/domain/types/connectors";
 import { useSavedRef } from "@sk-widget/hooks";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
-  useTransactionConstructHook,
-  useTransactionGetGasForNetworkHook,
-  useTransactionGetTransactionHook,
-  useTransactionGetTransactionStatusFromIdHook,
-  useTransactionSubmitHashHook,
-  useTransactionSubmitHook,
+  transactionConstruct,
+  transactionGetTransaction,
+  transactionGetTransactionStatusFromId,
+  transactionSubmit,
+  transactionSubmitHash,
 } from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
 import { isAxiosError } from "axios";
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
-import { type MutableRefObject, useMemo, useState } from "react";
+import { type RefObject, useMemo, useState } from "react";
 import { assign, emit, setup } from "xstate";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { withRequestErrorRetry } from "../../../common/utils";
@@ -77,13 +76,6 @@ export const useStepsMachine = ({
   } = useSKWallet();
 
   const trackEvent = useTrackEvent();
-  const transactionSubmit = useTransactionSubmitHook();
-  const transactionGetTransactionStatusFromId =
-    useTransactionGetTransactionStatusFromIdHook();
-  const transactionGetTransaction = useTransactionGetTransactionHook();
-  const transactionSubmitHash = useTransactionSubmitHashHook();
-  const transactionGetGasForNetwork = useTransactionGetGasForNetworkHook();
-  const transactionConstruct = useTransactionConstructHook();
 
   const multiSend = useMemo(
     () => Maybe.fromNullable(connector).map(shouldMultiSend).orDefault(false),
@@ -104,12 +96,6 @@ export const useStepsMachine = ({
     signMultipleTransactions,
     signMessage,
     signTransaction,
-    transactionSubmit,
-    transactionGetTransactionStatusFromId,
-    transactionGetTransaction,
-    transactionSubmitHash,
-    transactionGetGasForNetwork,
-    transactionConstruct,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -117,7 +103,7 @@ export const useStepsMachine = ({
 
 const getMachine = (
   ref: Readonly<
-    MutableRefObject<{
+    RefObject<{
       transactions: ActionDto["transactions"];
       integrationId: ActionDto["integrationId"];
       multiSend: boolean;
@@ -128,26 +114,12 @@ const getMachine = (
       >["signMultipleTransactions"];
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
-      transactionSubmit: ReturnType<typeof useTransactionSubmitHook>;
-      transactionGetTransactionStatusFromId: ReturnType<
-        typeof useTransactionGetTransactionStatusFromIdHook
-      >;
-      transactionGetTransaction: ReturnType<
-        typeof useTransactionGetTransactionHook
-      >;
-      transactionSubmitHash: ReturnType<typeof useTransactionSubmitHashHook>;
-      transactionGetGasForNetwork: ReturnType<
-        typeof useTransactionGetGasForNetworkHook
-      >;
-      transactionConstruct: ReturnType<typeof useTransactionConstructHook>;
     }>
   >
 ) => {
-  const txConstruct = (
-    ...params: Parameters<(typeof ref)["current"]["transactionConstruct"]>
-  ) =>
+  const txConstruct = (...params: Parameters<typeof transactionConstruct>) =>
     withRequestErrorRetry({
-      fn: () => ref.current.transactionConstruct(...params),
+      fn: () => transactionConstruct(...params),
       shouldRetry: (e, retryCount) =>
         retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
     }).mapLeft(() => new Error("Transaction construct error"));
@@ -289,8 +261,6 @@ const getMachine = (
 
                     return getAverageGasMode({
                       network: constructOnlyTx.network,
-                      transactionGetGasForNetwork:
-                        ref.current.transactionGetGasForNetwork,
                     })
                       .chainLeft(async () => Right(null))
                       .chain((gas) =>
@@ -302,7 +272,7 @@ const getMachine = (
                       .chain(() =>
                         withRequestErrorRetry({
                           fn: () =>
-                            ref.current.transactionGetTransactionStatusFromId(
+                            transactionGetTransactionStatusFromId(
                               constructOnlyTx.id
                             ),
                           retryTimes: 10,
@@ -317,11 +287,7 @@ const getMachine = (
                   })
                   .map(() => getTransactionsForMultiSign(txs))
                   .chain((txs) =>
-                    getAverageGasMode({
-                      network: tx.network,
-                      transactionGetGasForNetwork:
-                        ref.current.transactionGetGasForNetwork,
-                    }).chain((gas) =>
+                    getAverageGasMode({ network: tx.network }).chain((gas) =>
                       EitherAsync.sequence(
                         txs.map((tx) =>
                           txConstruct(tx.id, {
@@ -354,8 +320,6 @@ const getMachine = (
                */
               return getAverageGasMode({
                 network: tx.network,
-                transactionGetGasForNetwork:
-                  ref.current.transactionGetGasForNetwork,
               })
                 .chainLeft(async () => Right(null))
                 .chain((gas) =>
@@ -486,7 +450,7 @@ const getMachine = (
               if (currentTx.meta.broadcasted) {
                 return withRequestErrorRetry({
                   fn: () =>
-                    ref.current.transactionSubmitHash(currentTx.tx.id, {
+                    transactionSubmitHash(currentTx.tx.id, {
                       hash: currentTx.meta.signedTx!,
                     }),
                 })
@@ -502,7 +466,7 @@ const getMachine = (
 
               return withRequestErrorRetry({
                 fn: async () => {
-                  await ref.current.transactionSubmit(currentTx.tx.id, {
+                  await transactionSubmit(currentTx.tx.id, {
                     signedTransaction: currentTx.meta.signedTx!,
                   });
                 },
@@ -577,9 +541,7 @@ const getMachine = (
             .chain((currentTx) =>
               withRequestErrorRetry({
                 fn: () =>
-                  ref.current.transactionGetTransactionStatusFromId(
-                    currentTx.tx.id
-                  ),
+                  transactionGetTransactionStatusFromId(currentTx.tx.id),
                 shouldRetry: (e, retryCount) =>
                   retryCount <= 3 &&
                   isAxiosError(e) &&
@@ -588,8 +550,7 @@ const getMachine = (
                 .map((res) => ({ url: res.url, status: res.status }))
                 .chainLeft(() =>
                   withRequestErrorRetry({
-                    fn: () =>
-                      ref.current.transactionGetTransaction(currentTx.tx.id),
+                    fn: () => transactionGetTransaction(currentTx.tx.id),
                   }).map((res) => ({
                     url: res.explorerUrl,
                     status: res.status,

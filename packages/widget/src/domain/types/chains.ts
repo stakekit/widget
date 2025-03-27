@@ -72,6 +72,7 @@ const supportedEVMChains = [
   EvmNetworks.Base,
   EvmNetworks.Linea,
   EvmNetworks.Core,
+  EvmNetworks.Sonic,
 ] as const;
 const supportedEVMChainsSet = new Set(supportedEVMChains);
 type SupportedEvmChain = (typeof supportedEVMChains)[number];

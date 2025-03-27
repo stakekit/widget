@@ -4,16 +4,12 @@ import type {
   MiscChainsMap,
   SubstrateChainsMap,
 } from "@sk-widget/domain/types/chains";
-import {
-  useYieldGetMyNetworksHook,
-  useYieldYieldOpportunityHook,
-} from "@stakekit/api-hooks";
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 import { createClient } from "viem";
 import { http, createConfig } from "wagmi";
 import type { Chain } from "wagmi/chains";
@@ -49,13 +45,11 @@ const buildWagmiConfig = async (opts: {
     name: string;
     iconBackground: string;
   };
-  externalProviders?: MutableRefObject<SKExternalProviders>;
+  externalProviders?: RefObject<SKExternalProviders>;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
   isLedgerLive: boolean;
-  yieldGetMyNetworks: ReturnType<typeof useYieldGetMyNetworksHook>;
-  yieldYieldOpportunity: ReturnType<typeof useYieldYieldOpportunityHook>;
   isSafe: boolean;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
@@ -67,7 +61,6 @@ const buildWagmiConfig = async (opts: {
 }> => {
   return getEnabledNetworks({
     queryClient: opts.queryClient,
-    yieldGetMyNetworks: opts.yieldGetMyNetworks,
   })
     .chain((networks) =>
       EitherAsync.fromPromise(() =>
@@ -75,12 +68,10 @@ const buildWagmiConfig = async (opts: {
           getEvmConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
-            yieldGetMyNetworks: opts.yieldGetMyNetworks,
           }),
           getCosmosConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
-            yieldGetMyNetworks: opts.yieldGetMyNetworks,
           }),
           getMiscConfig({
             enabledNetworks: networks,
@@ -89,12 +80,10 @@ const buildWagmiConfig = async (opts: {
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,
-            yieldGetMyNetworks: opts.yieldGetMyNetworks,
           }),
           getInitParams({
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
-            yieldYieldOpportunity: opts.yieldYieldOpportunity,
             externalProviders: opts.externalProviders?.current,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
@@ -249,12 +238,9 @@ export const useWagmiConfig = () => {
 
   const queryClient = useSKQueryClient();
 
-  const yieldGetMyNetworks = useYieldGetMyNetworksHook();
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-
   const externalProvidersRef = useSavedRef(externalProviders) as
-    | MutableRefObject<SKExternalProviders>
-    | MutableRefObject<undefined>;
+    | RefObject<SKExternalProviders>
+    | RefObject<undefined>;
 
   return useQuery({
     staleTime,
@@ -268,8 +254,6 @@ export const useWagmiConfig = () => {
         queryClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         isSafe: !!isSafe,
-        yieldGetMyNetworks,
-        yieldYieldOpportunity,
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),

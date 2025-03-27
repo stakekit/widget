@@ -1,7 +1,3 @@
-import type {
-  useTokenGetTokensHook,
-  useTokenTokenBalancesScanHook,
-} from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SKWallet } from "../domain/types";
@@ -13,19 +9,15 @@ export const getTokenBalances = ({
   address,
   network,
   queryClient,
-  tokenGetTokens,
-  tokenTokenBalancesScan,
 }: {
   additionalAddresses: SKWallet["additionalAddresses"];
   address: SKWallet["address"];
   queryClient: QueryClient;
   network: SKWallet["network"];
-  tokenGetTokens: ReturnType<typeof useTokenGetTokensHook>;
-  tokenTokenBalancesScan: ReturnType<typeof useTokenTokenBalancesScanHook>;
 }) =>
   EitherAsync.fromPromise(() =>
     Promise.all([
-      getDefaultTokens({ queryClient, network, tokenGetTokens }),
+      getDefaultTokens({ queryClient, network }),
       EitherAsync.liftEither(
         Right({ additionalAddresses, address, network })
       ).chain(async (params) => {
@@ -35,7 +27,6 @@ export const getTokenBalances = ({
 
         return getTokenBalancesScan({
           queryClient,
-          tokenTokenBalancesScan,
           tokenBalanceScanDto: {
             addresses: {
               address: params.address,

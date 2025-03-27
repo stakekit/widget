@@ -3,11 +3,7 @@ import {
   NotEnoughGasTokenError,
   checkGasAmount,
 } from "@sk-widget/common/check-gas-amount";
-import {
-  type AddressesDto,
-  type TokenDto,
-  useTokenGetTokenBalancesHook,
-} from "@stakekit/api-hooks";
+import type { AddressesDto, TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import type BigNumber from "bignumber.js";
 import { EitherAsync, type Maybe } from "purify-ts";
@@ -25,8 +21,6 @@ export const useGasWarningCheck = (
     | { isStake: false }
   )
 ) => {
-  const tokenGetTokenBalances = useTokenGetTokenBalancesHook();
-
   const requestData = useMemo(
     () =>
       props.gasAmount.map((v) => ({
@@ -64,7 +58,6 @@ export const useGasWarningCheck = (
                 network: val.gasFeeToken.network,
                 tokenAddress: val.gasFeeToken.address,
               },
-              tokenGetTokenBalances,
               ...val.stakeData,
             })
           )

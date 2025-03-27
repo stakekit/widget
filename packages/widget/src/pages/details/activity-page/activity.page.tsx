@@ -13,7 +13,7 @@ import { dateGroupLabels } from "@sk-widget/pages/details/activity-page/types";
 import { FallbackContent } from "@sk-widget/pages/details/positions-page/components/fallback-content";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { PageContainer } from "../../components";

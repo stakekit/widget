@@ -8,11 +8,6 @@ import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { TokenDto } from "@stakekit/api-hooks";
-import {
-  useTokenGetTokensHook,
-  useTokenTokenBalancesScanHook,
-  useYieldYieldOpportunityHook,
-} from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
@@ -27,9 +22,6 @@ export const useInitYield = ({
   const { isLedgerLive, isConnected, network, additionalAddresses, address } =
     useSKWallet();
   const queryClient = useSKQueryClient();
-  const yieldYieldOpportunity = useYieldYieldOpportunityHook();
-  const tokenGetTokens = useTokenGetTokensHook();
-  const tokenTokenBalancesScan = useTokenTokenBalancesScanHook();
   const { externalProviders } = useSettings();
   const { data: positionsData } = usePositionsData();
 
@@ -53,8 +45,6 @@ export const useInitYield = ({
             address,
             network,
             queryClient,
-            tokenGetTokens,
-            tokenTokenBalancesScan,
           })
             .chain((val) =>
               EitherAsync.liftEither(
@@ -67,14 +57,12 @@ export const useInitYield = ({
               getInitParams({
                 isLedgerLive,
                 queryClient,
-                yieldYieldOpportunity,
                 externalProviders,
               }).chain((initParams) =>
                 getMultipleYields({
                   isConnected,
                   isLedgerLive,
                   queryClient,
-                  yieldYieldOpportunity,
                   network,
                   yieldIds: val.availableYields,
                 }).chain((multipleYields) =>

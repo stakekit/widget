@@ -1,10 +1,10 @@
 import { EitherAsync, Left } from "purify-ts";
-import type { MutableRefObject } from "react";
+import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
 import type { EVMTx } from "./wallets/generic-wallet";
 
 export class ExternalProvider {
-  constructor(private variantProvider: MutableRefObject<SKExternalProviders>) {}
+  constructor(private variantProvider: RefObject<SKExternalProviders>) {}
 
   private invalidProviderType() {
     return EitherAsync.liftEither(Left(new Error("Invalid provider type")));

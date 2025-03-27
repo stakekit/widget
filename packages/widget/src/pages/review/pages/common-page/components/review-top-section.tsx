@@ -3,7 +3,7 @@ import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
 import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
 import { headingStyles } from "@sk-widget/pages/review/pages/style.css";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
