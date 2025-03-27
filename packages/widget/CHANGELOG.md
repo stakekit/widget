@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.214
+
+### Patch Changes
+
+- 91b5793: enable sonic network, bump @stakekit/api-hooks
+
 ## 0.0.213
 
 ### Patch Changes
