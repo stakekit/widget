@@ -1,5 +1,4 @@
 import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
@@ -198,8 +197,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     selectedToken,
   });
 
-  const multiYields = useMultiYields(availableYields.orDefault([]));
-
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
 
   const { minEnterOrExitAmount, maxEnterOrExitAmount, isForceMax } =
@@ -247,8 +244,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const initYieldRef = useSavedRef(initYield);
 
   const hasNotYieldsForToken =
-    !multiYields.isLoading &&
-    multiYields.data?.length === 0 &&
+    !initYieldRes.isLoading &&
+    !initYieldRes.data &&
     initToken.isJust() &&
     initYield.isNothing() &&
     selectedStakeId.isNothing();

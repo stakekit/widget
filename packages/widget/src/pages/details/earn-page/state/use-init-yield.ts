@@ -1,7 +1,6 @@
 import { getTokenBalances } from "@sk-widget/common/get-token-balances";
 import { tokenString } from "@sk-widget/domain";
-import { getInitialYield } from "@sk-widget/domain/types/stake";
-import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
+import { getFirstEligibleYield } from "@sk-widget/hooks/api/use-multi-yields";
 import { getInitParams } from "@sk-widget/hooks/use-init-params";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
@@ -59,22 +58,16 @@ export const useInitYield = ({
                 queryClient,
                 externalProviders,
               }).chain((initParams) =>
-                getMultipleYields({
+                getFirstEligibleYield({
                   isConnected,
                   isLedgerLive,
                   queryClient,
                   network,
                   yieldIds: val.availableYields,
-                }).chain((multipleYields) =>
-                  EitherAsync.liftEither(
-                    getInitialYield({
-                      initQueryParams: Maybe.fromNullable(initParams),
-                      yieldDtos: multipleYields,
-                      tokenBalanceAmount: new BigNumber(val.amount),
-                      positionsData,
-                    }).toEither(new Error("could not get initial yield"))
-                  )
-                )
+                  initParams: initParams,
+                  positionsData: positionsData,
+                  tokenBalanceAmount: new BigNumber(val.amount),
+                })
               )
             )
         )

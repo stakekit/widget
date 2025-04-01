@@ -1,142 +1,176 @@
+import type { InitParams } from "@sk-widget/domain/types/init-params";
+import type { PositionsData } from "@sk-widget/domain/types/positions";
+import { canBeInitialYield } from "@sk-widget/domain/types/stake";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import type { YieldDto } from "@stakekit/api-hooks";
-import type { QueryClient, UseQueryOptions } from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Maybe, Right } from "purify-ts";
+import { type QueryClient, hashKey } from "@tanstack/react-query";
+import { useSelector } from "@xstate/react";
+import { createStore } from "@xstate/store";
+import type { BigNumber } from "bignumber.js";
+import { EitherAsync, Maybe } from "purify-ts";
+import { useEffect, useMemo } from "react";
 import { createSelector } from "reselect";
-import { config } from "../../config";
+import {
+  Observable,
+  defaultIfEmpty,
+  filter,
+  firstValueFrom,
+  from,
+  map,
+  merge,
+  repeat,
+  take,
+  tap,
+  timer,
+} from "rxjs";
 import type { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { eitherAsyncPool } from "../../utils/either-async-pool";
-import {
-  getYieldOpportunity,
-  setYieldOpportunityInCache,
-} from "./use-yield-opportunity";
+import { getYieldOpportunity } from "./use-yield-opportunity";
 
-const getMultiYieldsQueryKey = (yieldIds: string[]) => [
-  "multi-yields",
-  yieldIds,
-];
+const multiYieldsStore = createStore({
+  context: { data: new Map<string, Map<string, YieldDto>>() },
+  on: {
+    "yield-opportunity": (
+      context,
+      event: { data: { key: string; yieldDto: YieldDto } }
+    ) => {
+      const newMap = new Map(context.data);
+      const prev = newMap.get(event.data.key) ?? new Map();
 
-export const getCachedMultiYields = ({
-  queryClient,
-  yieldIds,
-}: {
-  queryClient: QueryClient;
-  yieldIds: string[];
-}) =>
-  Maybe.fromNullable(
-    queryClient.getQueryData<YieldDto[]>(getMultiYieldsQueryKey(yieldIds))
-  );
+      prev.set(event.data.yieldDto.id, event.data.yieldDto);
+      newMap.set(event.data.key, prev);
 
-export const useMultiYields = <SelectData = YieldDto[]>(
-  yieldIds: string[],
-  opts?: { select?: UseQueryOptions<YieldDto[], Error, SelectData>["select"] }
-) => {
+      return { data: newMap };
+    },
+  },
+});
+
+export const useMultiYields = (yieldIds: string[]) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
-  const queryClient = useSKQueryClient();
+  const argsRef = useSavedRef({
+    isLedgerLive,
+    queryClient: useSKQueryClient(),
+    network,
+    isConnected,
+  });
 
-  return useQuery<YieldDto[], Error, SelectData>({
-    queryKey: getMultiYieldsQueryKey(yieldIds),
-    enabled: !!yieldIds.length,
-    staleTime: config.queryClient.cacheTime,
-    select: opts?.select,
-    queryFn: async () =>
-      (
-        await queryFn({
-          isConnected,
-          isLedgerLive,
-          network,
-          queryClient,
-          yieldIds,
-        })
-      ).unsafeCoerce(),
+  const hashedKey = useMemo(() => hashKey(yieldIds), [yieldIds]);
+
+  useEffect(() => {
+    const sub = multipleYields$({
+      ...argsRef.current,
+      yieldIds,
+    })
+      .pipe(repeat({ delay: () => timer(1000 * 60 * 2) }))
+      .subscribe({
+        next: (v) =>
+          multiYieldsStore.send({
+            type: "yield-opportunity",
+            data: { yieldDto: v, key: hashedKey },
+          }),
+      });
+
+    return () => sub.unsubscribe();
+  }, [argsRef, yieldIds, hashedKey]);
+
+  return useSelector(multiYieldsStore, (state) => {
+    const map = state.context.data.get(hashedKey);
+
+    return map ? Array.from(map.values()) : [];
   });
 };
 
-export const getMultipleYields = (
-  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+export const getFirstEligibleYield = (
+  params: Parameters<typeof firstEligibleYield$>[0]
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
-      queryKey: getMultiYieldsQueryKey(params.yieldIds),
-      queryFn: async () => (await queryFn(params)).unsafeCoerce(),
+      queryKey: getFirstEligibleYieldQueryKey(params.yieldIds),
+      queryFn: () => firstValueFrom(firstEligibleYield$(params)),
     })
   ).mapLeft((e) => {
     console.log(e);
-    return new Error("could not get multi yields");
+    return new Error("could not get first eligible yield");
   });
 
-const queryFn = ({
-  yieldIds,
-  isLedgerLive,
-  queryClient,
-  isConnected,
-  network,
-}: {
+const multipleYields$ = (args: {
   isLedgerLive: boolean;
-  yieldIds: string[];
   queryClient: QueryClient;
   isConnected: boolean;
   network: SKWallet["network"];
+  yieldIds: string[];
 }) =>
-  eitherAsyncPool(
-    yieldIds.map(
-      (y) => () =>
+  merge(
+    ...args.yieldIds.map((v) =>
+      from(
         getYieldOpportunity({
-          isLedgerLive,
-          yieldId: y,
-          queryClient,
-        }).chainLeft(async () => Right(null))
-    ),
-    5
-  )()
-    .map((val) => val.filter((v) => !!v))
-    .map((data) =>
-      defaultFiltered({ data, isConnected, network, isLedgerLive })
-    )
-    .ifRight((data) => {
-      /**
-       * Set the query data for each yield opportunity
-       */
-      data.forEach((y) =>
-        setYieldOpportunityInCache({
-          isLedgerLive,
-          yieldDto: y,
-          queryClient,
+          isLedgerLive: args.isLedgerLive,
+          yieldId: v,
+          queryClient: args.queryClient,
         })
-      );
+      )
+    )
+  ).pipe(
+    map((v) => (v.isRight() ? v.extract() : null)),
+    filter(
+      (v): v is YieldDto =>
+        !!(
+          v &&
+          defaultFiltered({
+            data: [v],
+            isConnected: args.isConnected,
+            network: args.network,
+            isLedgerLive: args.isLedgerLive,
+          }).length > 0
+        )
+    )
+  );
+
+const firstEligibleYield$ = (args: {
+  isLedgerLive: boolean;
+  queryClient: QueryClient;
+  isConnected: boolean;
+  network: SKWallet["network"];
+  yieldIds: string[];
+  initParams: InitParams;
+  positionsData: PositionsData;
+  tokenBalanceAmount: BigNumber;
+}) => {
+  let defaultYield: YieldDto | null = null;
+
+  const successStream = multipleYields$(args).pipe(
+    tap((v) => {
+      defaultYield = v;
+    }),
+    filter((y) =>
+      canBeInitialYield({
+        initQueryParams: Maybe.fromNullable(args.initParams),
+        yieldDto: y,
+        tokenBalanceAmount: args.tokenBalanceAmount,
+        positionsData: args.positionsData,
+      })
+    ),
+    take(1),
+    defaultIfEmpty(null)
+  );
+
+  return new Observable<YieldDto | null>((subscriber) => {
+    successStream.subscribe({
+      complete: () => subscriber.complete(),
+      next: (v) => subscriber.next(v ?? defaultYield),
+      error: (e) => subscriber.error(e),
     });
+  });
+};
 
 type SelectorInputData = {
   data: YieldDto[];
   isConnected: boolean;
   network: SKWallet["network"];
   isLedgerLive: boolean;
-};
-
-const skFilter = ({
-  o,
-  isConnected,
-  network,
-}: {
-  o: YieldDto;
-  isConnected: boolean;
-  network: SKWallet["network"];
-}) => {
-  const defaultFilter =
-    !o.args.enter.args?.nfts &&
-    o.id !== "binance-bnb-native-staking" &&
-    o.id !== "binance-testnet-bnb-native-staking" &&
-    o.id !== "avax-native-staking" &&
-    o.status.enter &&
-    isSupportedChain(o.token.network);
-
-  if (!isConnected) return defaultFilter;
-
-  return network === o.token.network && defaultFilter;
 };
 
 const selectData = (val: SelectorInputData) => val.data;
@@ -148,5 +182,33 @@ const defaultFiltered = createSelector(
   selectConnected,
   selectNetwork,
   (data, isConnected, network) =>
-    data.filter((o) => skFilter({ o, isConnected, network }))
+    data.filter((o) => {
+      const defaultFilter =
+        !o.args.enter.args?.nfts &&
+        o.id !== "binance-bnb-native-staking" &&
+        o.id !== "binance-testnet-bnb-native-staking" &&
+        o.id !== "avax-native-staking" &&
+        o.status.enter &&
+        isSupportedChain(o.token.network);
+
+      if (!isConnected) return defaultFilter;
+
+      return network === o.token.network && defaultFilter;
+    })
 );
+
+const getFirstEligibleYieldQueryKey = (yieldIds: string[]) => [
+  "first-eligible-yield",
+  yieldIds,
+];
+
+export const getCachedFirstEligibleYield = ({
+  queryClient,
+  yieldIds,
+}: {
+  queryClient: QueryClient;
+  yieldIds: string[];
+}) =>
+  Maybe.fromNullable(
+    queryClient.getQueryData<YieldDto>(getFirstEligibleYieldQueryKey(yieldIds))
+  );

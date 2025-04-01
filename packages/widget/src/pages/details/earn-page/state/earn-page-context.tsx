@@ -5,6 +5,7 @@ import {
   useEarnPageDispatch,
   useEarnPageState,
 } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
+import { useInitYield } from "@sk-widget/pages/details/earn-page/state/use-init-yield";
 import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
 import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import type {
@@ -163,7 +164,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const [validatorSearch, setValidatorSearch] = useState("");
   const deferredValidatorSearch = useDeferredValue(validatorSearch);
 
-  const multiYields = useMultiYields(availableYields.orDefault([]));
+  const multiYields = useMultiYields(
+    useMemo(() => availableYields.orDefault([]), [availableYields])
+  );
 
   const tokenBalancesScan = useTokenBalancesScan();
   const defaultTokens = useDefaultTokens();
@@ -220,8 +223,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
-      Maybe.fromNullable(multiYields.data)
-        .alt(Maybe.of([]))
+      Maybe.of(multiYields)
         .map((val) => val.toSorted((a, b) => b.apy - a.apy))
         .map((val) => val.filter((v) => v.apy > 0))
         .chain((yieldDtos) =>
@@ -297,7 +299,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             groupsWithCounts,
           };
         }),
-    [deferredStakeSearch, multiYields.data, t]
+    [deferredStakeSearch, multiYields, t]
   );
 
   const validatorsData = useMemo(
@@ -333,7 +335,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   );
 
   const onYieldSelect = (yieldId: string) => {
-    Maybe.fromNullable(multiYields.data)
+    Maybe.fromNullable(multiYields)
       .chain((val) => List.find((v) => v.id === yieldId, val))
       .ifJust((val) => dispatch({ type: "yield/select", data: val }));
   };
@@ -491,15 +493,12 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     isConnecting ||
     !state.layout;
 
-  const multiYieldsLoading = multiYields.isLoading;
   const tokenBalancesScanLoading = tokenBalancesScan.isLoading;
   const defaultTokensIsLoading = defaultTokens.isLoading;
 
-  const isFetching = multiYields.isFetching || tokenBalancesScan.isFetching;
+  const isFetching = tokenBalancesScan.isFetching;
 
-  const isError =
-    (!multiYields.data && multiYields.isError) ||
-    (!tokenBalancesScan.data && tokenBalancesScan.isError);
+  const isError = !tokenBalancesScan.data && tokenBalancesScan.isError;
 
   const buttonDisabled =
     isConnected && (isFetching || stakeEnterRequestDto.isNothing());
@@ -594,9 +593,11 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const selectTokenIsLoading =
     tokenBalancesScanLoading || defaultTokensIsLoading;
 
+  const initYieldRes = useInitYield({ selectedToken });
+
   const selectYieldIsLoading =
     (selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
-    multiYieldsLoading ||
+    initYieldRes.isLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
     defaultTokensIsLoading;
@@ -604,13 +605,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const selectValidatorIsLoading =
     defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
-    multiYieldsLoading ||
+    initYieldRes.isLoading ||
     yieldOpportunityLoading;
 
   const footerIsLoading =
     defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
-    multiYieldsLoading ||
+    initYieldRes.isLoading ||
     yieldOpportunityLoading;
 
   const { referralCheck } = useSettings();
@@ -643,7 +644,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     isConnected,
     appLoading,
     yieldOpportunityLoading,
-    multiYieldsLoading,
     tokenBalancesScanLoading,
     tokenBalancesData,
     onTokenSearch,
