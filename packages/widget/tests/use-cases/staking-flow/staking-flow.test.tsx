@@ -35,11 +35,13 @@ describe("Staking flow", () => {
       getByTestId("select-modal__container")
     );
 
-    within(selectContainer)
-      .getByTestId("select-opportunity__item_avalanche-avax-liquid-staking", {
-        exact: false,
-      })
-      .click();
+    await waitFor(() =>
+      within(selectContainer)
+        .getByTestId("select-opportunity__item_avalanche-avax-liquid-staking", {
+          exact: false,
+        })
+        .click()
+    );
 
     await waitFor(() => {
       const trigger = getByTestId("select-opportunity");

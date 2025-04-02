@@ -1,12 +1,14 @@
 import { getTokenBalances } from "@sk-widget/common/get-token-balances";
 import { tokenString } from "@sk-widget/domain";
 import { getInitialToken } from "@sk-widget/domain/types/stake";
-import { getMultipleYields } from "@sk-widget/hooks/api/use-multi-yields";
+import { getFirstEligibleYield } from "@sk-widget/hooks/api/use-multi-yields";
 import { getInitParams } from "@sk-widget/hooks/use-init-params";
+import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
+import { BigNumber } from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
@@ -19,6 +21,7 @@ export const useInitToken = () => {
   const { isLedgerLive, isConnected, network, additionalAddresses, address } =
     useSKWallet();
   const queryClient = useSKQueryClient();
+  const { data: positionsData } = usePositionsData();
 
   const { externalProviders } = useSettings();
 
@@ -57,12 +60,15 @@ export const useInitToken = () => {
                 ).toEither(new Error("could not get token balance"))
               )
                 .chain((tokenBalance) =>
-                  getMultipleYields({
+                  getFirstEligibleYield({
                     isConnected,
                     isLedgerLive,
                     queryClient,
                     network,
                     yieldIds: tokenBalance.availableYields,
+                    initParams: initParams,
+                    positionsData: positionsData,
+                    tokenBalanceAmount: new BigNumber(tokenBalance.amount),
                   })
                 )
                 .map(() => token)

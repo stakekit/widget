@@ -48,44 +48,28 @@ export const getInitialToken = (args: {
     .altLazy(() => List.find(hasYields, args.defaultTokens))
     .map((val) => val.token);
 
-const yieldTypeOrder: { [Key in YieldDto["metadata"]["type"]]: number } = {
-  staking: 1,
-  restaking: 2,
-  "liquid-staking": 3,
-  vault: 4,
-  lending: 5,
-};
-
-export const getInitialYield = (args: {
+export const canBeInitialYield = (args: {
   initQueryParams: Maybe<InitParams>;
-  yieldDtos: YieldDto[];
+  yieldDto: YieldDto;
   tokenBalanceAmount: BigNumber;
   positionsData: PositionsData;
-}) => {
-  const sortedYields = args.yieldDtos.toSorted(
-    (a, b) =>
-      yieldTypeOrder[a.metadata.type] - yieldTypeOrder[b.metadata.type] ||
-      getMinStakeAmount(b, args.positionsData)
-        .minus(getMinStakeAmount(a, args.positionsData))
-        .toNumber()
-  );
-
-  return args.initQueryParams
-    .filter((val) => !!val.yieldId)
-    .chain((val) => List.find((y) => val.yieldId === y.id, sortedYields))
-    .altLazy(() =>
-      List.find(
-        (yieldDto) =>
-          balanceValidForYield({
-            tokenBalanceAmount: args.tokenBalanceAmount,
-            yieldDto,
-            positionsData: args.positionsData,
-          }),
-        sortedYields
+}) =>
+  args.initQueryParams
+    .chain((queryParams) =>
+      Maybe.fromFalsy(
+        !!queryParams.yieldId && queryParams.yieldId === args.yieldDto.id
       )
     )
-    .altLazy(() => List.head(sortedYields));
-};
+    .altLazy(() =>
+      Maybe.fromFalsy(
+        balanceValidForYield({
+          tokenBalanceAmount: args.tokenBalanceAmount,
+          yieldDto: args.yieldDto,
+          positionsData: args.positionsData,
+        })
+      )
+    )
+    .isJust();
 
 const balanceValidForYield = ({
   tokenBalanceAmount,

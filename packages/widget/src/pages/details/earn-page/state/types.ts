@@ -93,7 +93,6 @@ export type EarnPageContextType = {
   isConnected: boolean;
   isLedgerLiveAccountPlaceholder: boolean;
   appLoading: boolean;
-  multiYieldsLoading: boolean;
   yieldOpportunityLoading: boolean;
   tokenBalancesScanLoading: boolean;
   selectedToken: State["selectedToken"];
