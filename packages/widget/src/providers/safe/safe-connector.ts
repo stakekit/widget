@@ -137,7 +137,7 @@ function safe(
 }
 
 export const safeConnector = (): WalletList[number] => ({
-  groupName: "Ledger Live",
+  groupName: "Safe Wallet",
   wallets: [
     () => ({
       id: configMeta.id,

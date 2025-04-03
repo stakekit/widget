@@ -1,0 +1,20 @@
+{
+  "name": "with-vite-bundled",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "tsc && biome check .",
+    "format": "biome check --write ."
+  },
+  "dependencies": {
+    "@stakekit/widget": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "vite": "^6.2.0"
+  }
+}
