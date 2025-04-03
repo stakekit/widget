@@ -20,28 +20,6 @@ yarn add @stakekit/widget
 pnpm add @stakekit/widget
 ```
 
-If you are going to use StakeKit Widget as a React component, you'll need to install some additional peer dependencies:
-
-```bash
-npm install wagmi@2 viem@2
-
-yarn add wagmi@2 viem@2
-
-pnpm add wagmi@2 viem@2
-```
-
-If you're using Next.js, add this to your webpack configuration in `next.config.js`:
-
-```js
-const nextConfig = {
-  webpack: (config) => {
-    config.externals.push("pino-pretty", "lokijs", "encoding");
-
-    return config;
-  },
-};
-```
-
 ## Usage
 
 To use StakeKit Widget, first you'll need API key from StakeKit.
@@ -163,66 +141,85 @@ const App = () => {
 
 ```ts
 {
-    color: {
-        white: string;
-        black: string;
-        transparent: string;
-        primary: string;
-        accent: string;
-        disabled: string;
-        text: string;
-        textMuted: string;
-        textDanger: string;
-        background: string;
-        backgroundMuted: string;
-        tokenSelectBackground: string;
-        tokenSelectHoverBackground: string;
-        tokenSelect: string;
-        skeletonLoaderBase: string;
-        skeletonLoaderHighlight: string;
-        tabBorder: string;
-        stakeSectionBackground: string;
-        dropdownBackground: string;
-        selectValidatorMultiSelectedBackground: string;
-        selectValidatorMultiDefaultBackground: string;
-        warningBoxBackground: string;
-        positionsSectionBackgroundColor: string;
-        positionsSectionBorderColor: string;
-        positionsSectionDividerColor: string;
-        positionsClaimRewardsBackground: string;
-        positionsActionRequiredBackground: string;
-        modalOverlayBackground: string;
-        modalBodyBackground: string;
-        tooltipBackground: string;
-        primaryButtonColor: string;
-        primaryButtonBackground: string;
-        primaryButtonOutline: string;
-        primaryButtonHoverColor: string;
-        primaryButtonHoverBackground: string;
-        primaryButtonHoverOutline: string;
-        primaryButtonActiveColor: string;
-        primaryButtonActiveBackground: string;
-        primaryButtonActiveOutline: string;
-        secondaryButtonColor: string;
-        secondaryButtonBackground: string;
-        secondaryButtonOutline: string;
-        secondaryButtonHoverColor: string;
-        secondaryButtonHoverBackground: string;
-        secondaryButtonHoverOutline: string;
-        secondaryButtonActiveColor: string;
-        secondaryButtonActiveBackground: string;
-        secondaryButtonActiveOutline: string;
-        disabledButtonColor: string;
-        disabledButtonBackground: string;
-        disabledButtonOutline: string;
-        disabledButtonHoverColor: string;
-        disabledButtonHoverBackground: string;
-        disabledButtonHoverOutline: string;
-        disabledButtonActiveColor: string;
-        disabledButtonActiveBackground: string;
-        disabledButtonActiveOutline: string;
-    } & {
-        connectKit: {
+  color: {
+      white: string;
+      black: string;
+      transparent: string;
+      primary: string;
+      accent: string;
+      disabled: string;
+      text: string;
+      textMuted: string;
+      textDanger: string;
+      background: string;
+      backgroundMuted: string;
+      tokenSelectBackground: string;
+      tokenSelectHoverBackground: string;
+      tokenSelect: string;
+      skeletonLoaderBase: string;
+      skeletonLoaderHighlight: string;
+      tabBorder: string;
+      stakeSectionBackground: string;
+      dropdownBackground: string;
+      selectValidatorMultiSelectedBackground: string;
+      selectValidatorMultiDefaultBackground: string;
+      warningBoxBackground: string;
+      positionsSectionBackgroundColor: string;
+      positionsSectionBorderColor: string;
+      positionsSectionDividerColor: string;
+      positionsClaimRewardsBackground: string;
+      positionsActionRequiredBackground: string;
+      positionsPendingBackground: string;
+      modalOverlayBackground: string;
+      modalBodyBackground: string;
+      tooltipBackground: string;
+      primaryButtonColor: string;
+      primaryButtonBackground: string;
+      primaryButtonOutline: string;
+      primaryButtonHoverColor: string;
+      primaryButtonHoverBackground: string;
+      primaryButtonHoverOutline: string;
+      primaryButtonActiveColor: string;
+      primaryButtonActiveBackground: string;
+      primaryButtonActiveOutline: string;
+      secondaryButtonColor: string;
+      secondaryButtonBackground: string;
+      secondaryButtonOutline: string;
+      secondaryButtonHoverColor: string;
+      secondaryButtonHoverBackground: string;
+      secondaryButtonHoverOutline: string;
+      secondaryButtonActiveColor: string;
+      secondaryButtonActiveBackground: string;
+      secondaryButtonActiveOutline: string;
+      smallButtonColor: string;
+      smallButtonBackground: string;
+      smallButtonOutline: string;
+      smallButtonHoverColor: string;
+      smallButtonHoverBackground: string;
+      smallButtonHoverOutline: string;
+      smallButtonActiveColor: string;
+      smallButtonActiveBackground: string;
+      smallButtonActiveOutline: string;
+      smallLightButtonColor: string;
+      smallLightButtonBackground: string;
+      smallLightButtonOutline: string;
+      smallLightButtonHoverColor: string;
+      smallLightButtonHoverBackground: string;
+      smallLightButtonHoverOutline: string;
+      smallLightButtonActiveColor: string;
+      smallLightButtonActiveBackground: string;
+      smallLightButtonActiveOutline: string;
+      disabledButtonColor: string;
+      disabledButtonBackground: string;
+      disabledButtonOutline: string;
+      disabledButtonHoverColor: string;
+      disabledButtonHoverBackground: string;
+      disabledButtonHoverOutline: string;
+      disabledButtonActiveColor: string;
+      disabledButtonActiveBackground: string;
+      disabledButtonActiveOutline: string;
+  } & {
+      connectKit: {
             accentColor: string;
             accentColorForeground: string;
             actionButtonBorder: string;
@@ -254,186 +251,234 @@ const App = () => {
             selectedOptionBorder: string;
             standby: string;
         };
-    };
-    fontSize: {
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        lgx: string;
-        xl: string;
-        "2xl": string;
-        "3xl": string;
-        "4xl": string;
-        "5xl": string;
-        "6xl": string;
-    };
-    letterSpacing: {
-        tighter: string;
-        tight: string;
-        normal: string;
-        wide: string;
-        wider: string;
-        widest: string;
-    };
-    lineHeight: {
-        none: string;
-        shorter: string;
-        short: string;
-        base: string;
-        tall: string;
-        taller: string;
-        xs: string;
-        sm: string;
-        md: string;
-        lg: string;
-        xl: string;
-        "2xl": string;
-        "3xl": string;
-        "4xl": string;
-        "5xl": string;
-        "6xl": string;
-    };
-    fontWeight: {
-        normal: string;
-        medium: string;
-        semibold: string;
-        bold: string;
-        extrabold: string;
-        modalHeading: string;
-        tokenSelect: string;
-        primaryButton: string;
-        secondaryButton: string;
-    };
-    borderRadius: {
-        baseContract: {
-            none: string;
-            sm: string;
-            base: string;
-            md: string;
-            lg: string;
-            xl: string;
-            "2xl": string;
-            "3xl": string;
-            full: string;
-            half: string;
-            widgetBorderRadius: string;
-            primaryButton: string;
-            secondaryButton: string;
-        };
-        connectKit: {
+  };
+  fontSize: {
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      lgx: string;
+      xl: string;
+      "2xl": string;
+      "3xl": string;
+      "4xl": string;
+      "5xl": string;
+      "6xl": string;
+  };
+  letterSpacing: {
+      tighter: string;
+      tight: string;
+      normal: string;
+      wide: string;
+      wider: string;
+      widest: string;
+  };
+  lineHeight: {
+      none: string;
+      shorter: string;
+      short: string;
+      base: string;
+      tall: string;
+      taller: string;
+      xs: string;
+      sm: string;
+      md: string;
+      lg: string;
+      xl: string;
+      "2xl": string;
+      "3xl": string;
+      "4xl": string;
+      "5xl": string;
+      "6xl": string;
+  };
+  fontWeight: {
+      normal: string;
+      medium: string;
+      semibold: string;
+      bold: string;
+      extrabold: string;
+      modalHeading: string;
+      tokenSelect: string;
+      primaryButton: string;
+      secondaryButton: string;
+  };
+  borderRadius: {
+      baseContract: {
+          none: string;
+          sm: string;
+          base: string;
+          md: string;
+          lg: string;
+          xl: string;
+          "2xl": string;
+          "3xl": string;
+          full: string;
+          half: string;
+          widgetBorderRadius: string;
+          primaryButton: string;
+          secondaryButton: string;
+          smallButton: string;
+      };
+      connectKit: {
             actionButton: string;
             connectButton: string;
             menuButton: string;
             modal: string;
             modalMobile: string;
         };
-    };
-    space: {
-        full: string;
-        unset: string;
-        auto: string;
-        "0": string;
-        "1": string;
-        "2": string;
-        "3": string;
-        "4": string;
-        "5": string;
-        "6": string;
-        "7": string;
-        "8": string;
-        "9": string;
-        "10": string;
-        "12": string;
-        "14": string;
-        "16": string;
-        "20": string;
-        "24": string;
-        "28": string;
-        "32": string;
-        "36": string;
-        "40": string;
-        "44": string;
-        "48": string;
-        px: string;
-        buttonMinHeight: string;
-    };
-    heading: {
-        h1: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        h2: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        h3: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        h4: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-    };
-    text: {
-        large: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        medium: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-        small: {
-            mobile: {
-                fontSize: string;
-            };
-            tablet: {
-                fontSize: string;
-            };
-        };
-    };
-    zIndices: {
-        hide: string;
-        auto: string;
-        base: string;
-        docked: string;
-        dropdown: string;
-        sticky: string;
-        banner: string;
-        overlay: string;
-        modal: string;
-        skipLink: string;
-    };
-    font: {
-        body: string;
-    };
+  };
+  space: {
+      full: string;
+      unset: string;
+      auto: string;
+      "0": string;
+      "1": string;
+      "2": string;
+      "3": string;
+      "4": string;
+      "5": string;
+      "6": string;
+      "7": string;
+      "8": string;
+      "9": string;
+      "10": string;
+      "12": string;
+      "14": string;
+      "16": string;
+      "20": string;
+      "24": string;
+      "28": string;
+      "32": string;
+      "36": string;
+      "40": string;
+      "44": string;
+      "48": string;
+      px: string;
+      buttonMinHeight: string;
+  };
+  heading: {
+      h1: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+      h2: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+      h3: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+      h4: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+  };
+  text: {
+      small: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+      large: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+      medium: {
+          mobile: {
+              fontSize: string;
+          };
+          tablet: {
+              fontSize: string;
+          };
+      };
+  };
+  zIndices: {
+      hide: string;
+      auto: string;
+      simple: string;
+      base: string;
+      docked: string;
+      dropdown: string;
+      sticky: string;
+      banner: string;
+      overlay: string;
+      modal: string;
+      skipLink: string;
+  };
+  font: {
+      body: string;
+  };
 }
+```
+
+### Custom provider
+
+Optionally, you can pass externalProviders property to the widget which will be used to connect to the wallet.
+
+```ts
+type SKExternalProviders = {
+  currentChain?: number;
+  currentAddress: string;
+  initToken?: `${TokenDto["network"]}-${TokenDto["address"]}`;
+  supportedChainIds?: number[];
+  type: "generic";
+  provider: EVMWallet;
+};
+
+type EVMWallet = {
+  signMessage: (message: string) => Promise<string>;
+  switchChain: (chainId: string) => Promise<void>;
+  getTransactionReceipt?(txHash: string): Promise<{
+      transactionHash?: string;
+  }>;
+  sendTransaction(tx: EVMTx): Promise<string>;
+};
+
+export declare enum TxType {
+    Legacy = "0x1",
+    EIP1559 = "0x2"
+}
+
+export type EVMTx = {
+    data: Hex;
+    from: Hex;
+    to: Hex;
+    value: Hex | undefined;
+    nonce: Hex;
+    gas: Hex;
+    chainId: Hex;
+    type: Hex;
+} & ({
+    type: TxType.EIP1559;
+    maxFeePerGas: Hex | undefined;
+    maxPriorityFeePerGas: Hex | undefined;
+} | {
+    type: TxType.Legacy;
+});
 ```
 
 ### Tracking
