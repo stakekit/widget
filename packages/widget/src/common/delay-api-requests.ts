@@ -27,10 +27,10 @@ const checkDelay = () => {
 };
 
 export const attachDelayInterceptor = (apiClient: AxiosInstance) =>
-  apiClient.interceptors.request.use(async (config) => {
+  apiClient.interceptors.response.use(async (response) => {
     await checkDelay();
 
-    return config;
+    return response;
   });
 
 /**
