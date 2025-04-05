@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.215
+
+### Patch Changes
+
+- 30ce569: feat: delay response instead of request
+- 9d6c472: feat(earn-page): enhance footer button registration logic and improve yield initialization checks
+- cb905aa: refactor: stream multi yield load
+
 ## 0.0.214
 
 ### Patch Changes
