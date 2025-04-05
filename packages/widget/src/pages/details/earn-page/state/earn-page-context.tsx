@@ -104,6 +104,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     (y) => y.title,
     ""
   );
+
+  const initYieldRes = useInitYield({ selectedToken });
+
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
     selectedValidators,
@@ -553,47 +556,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [selectedStake, selectedToken]
   );
 
-  useRegisterFooterButton(
-    useMemo(
-      () =>
-        isConnected && !isLedgerLiveAccountPlaceholder
-          ? {
-              disabled: buttonDisabled,
-              isLoading: isFetching,
-              onClick: () => onClickRef.current(),
-              label: buttonCTAText,
-            }
-          : externalProviders
-            ? null
-            : {
-                disabled: appLoading,
-                isLoading: appLoading,
-                label: t(
-                  isLedgerLiveAccountPlaceholder
-                    ? "init.ledger_add_account"
-                    : "init.connect_wallet"
-                ),
-                onClick: () => connectClickRef.current(),
-              },
-      [
-        appLoading,
-        buttonCTAText,
-        buttonDisabled,
-        connectClickRef,
-        isConnected,
-        isLedgerLiveAccountPlaceholder,
-        onClickRef,
-        externalProviders,
-        isFetching,
-        t,
-      ]
-    )
-  );
-
   const selectTokenIsLoading =
     tokenBalancesScanLoading || defaultTokensIsLoading;
-
-  const initYieldRes = useInitYield({ selectedToken });
 
   const selectYieldIsLoading =
     (selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
@@ -613,6 +577,46 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading ||
     initYieldRes.isLoading ||
     yieldOpportunityLoading;
+
+  useRegisterFooterButton(
+    useMemo(
+      () =>
+        hasNotYieldsForToken
+          ? null
+          : isConnected && !isLedgerLiveAccountPlaceholder
+            ? {
+                disabled: buttonDisabled,
+                isLoading: !buttonCTAText || isFetching,
+                onClick: () => onClickRef.current(),
+                label: buttonCTAText,
+              }
+            : externalProviders
+              ? null
+              : {
+                  disabled: appLoading,
+                  isLoading: appLoading,
+                  label: t(
+                    isLedgerLiveAccountPlaceholder
+                      ? "init.ledger_add_account"
+                      : "init.connect_wallet"
+                  ),
+                  onClick: () => connectClickRef.current(),
+                },
+      [
+        appLoading,
+        buttonCTAText,
+        buttonDisabled,
+        connectClickRef,
+        isConnected,
+        isLedgerLiveAccountPlaceholder,
+        onClickRef,
+        externalProviders,
+        isFetching,
+        t,
+        hasNotYieldsForToken,
+      ]
+    )
+  );
 
   const { referralCheck } = useSettings();
 

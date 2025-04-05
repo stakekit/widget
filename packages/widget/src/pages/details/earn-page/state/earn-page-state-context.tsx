@@ -247,6 +247,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     !initYieldRes.isLoading &&
     !initYieldRes.data &&
     initToken.isJust() &&
+    selectedToken.isJust() &&
     initYield.isNothing() &&
     selectedStakeId.isNothing();
 
