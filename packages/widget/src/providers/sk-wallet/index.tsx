@@ -25,7 +25,7 @@ import type { SKWallet } from "../../domain/types";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import {
-  NotSupportedFlowError,
+  type NotSupportedFlowError,
   SendTransactionError,
   TransactionDecodeError,
 } from "../../pages/steps/hooks/errors";
@@ -260,66 +260,25 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         }
 
         /**
-         * EVM connector
+         * Safe connector
          */
-        return EitherAsync.liftEither(
-          Either.encase(() => JSON.parse(tx))
-            .chain((val) => unsignedEVMTransactionCodec.decode(val))
-            .mapLeft((e) => {
-              console.log(e);
-              return new TransactionDecodeError();
-            })
-        ).chain((val) =>
-          EitherAsync(() =>
-            /**
-             * Params need to be in strict format, don't spread the object(val)!
-             */
-            sendTransactionAsync({
-              data: val.data,
-              to: val.to,
-              value: val.value,
-              nonce: val.nonce,
-              maxFeePerGas: val.maxFeePerGas,
-              maxPriorityFeePerGas: val.maxPriorityFeePerGas,
-              chainId: val.chainId,
-              gas: val.gasLimit,
-              type: val.maxFeePerGas ? "eip1559" : "legacy",
-            })
-          )
-            .mapLeft(() => new SendTransactionError())
-            .map((val) => ({ signedTx: val, broadcasted: true }))
-        );
-      }),
-    [connectorDetails, cosmosCW, ledgerCurrentAccountId, sendTransactionAsync]
-  );
-
-  const signMultipleTransactions = useCallback<
-    SKWallet["signMultipleTransactions"]
-  >(
-    ({ txs }) =>
-      connectorDetails.chain<
-        TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
-        { signedTx: string; broadcasted: boolean }
-      >(({ conn, address }) => {
         if (isSafeConnector(conn)) {
           return EitherAsync.liftEither(
-            Either.sequence(
-              txs.map((tx) =>
-                Either.encase(() => JSON.parse(tx))
-                  .chain((val) => unsignedEVMTransactionCodec.decode(val))
-                  .map((val) => prepareEVMTx({ address, decodedTx: val }))
-                  .mapLeft(() => new TransactionDecodeError())
-              )
-            )
+            Either.encase(() => JSON.parse(tx))
+              .chain((val) => unsignedEVMTransactionCodec.decode(val))
+              .map((val) => prepareEVMTx({ address, decodedTx: val }))
+              .mapLeft(() => new TransactionDecodeError())
           )
             .chain((val) =>
               conn
                 .sendTransactions({
-                  txs: val.map((v) => ({
-                    data: v.data,
-                    to: v.to,
-                    value: v.value ?? "0",
-                  })),
+                  txs: [
+                    {
+                      data: val.data,
+                      to: val.to,
+                      value: val.value ?? "0",
+                    },
+                  ],
                 })
                 .map((res) => res.safeTxHash)
             )
@@ -361,9 +320,44 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
         }
 
-        return EitherAsync.liftEither(Left(new NotSupportedFlowError()));
+        /**
+         * EVM connector
+         */
+        return EitherAsync.liftEither(
+          Either.encase(() => JSON.parse(tx))
+            .chain((val) => unsignedEVMTransactionCodec.decode(val))
+            .mapLeft((e) => {
+              console.log(e);
+              return new TransactionDecodeError();
+            })
+        ).chain((val) =>
+          EitherAsync(() =>
+            /**
+             * Params need to be in strict format, don't spread the object(val)!
+             */
+            sendTransactionAsync({
+              data: val.data,
+              to: val.to,
+              value: val.value,
+              nonce: val.nonce,
+              maxFeePerGas: val.maxFeePerGas,
+              maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+              chainId: val.chainId,
+              gas: val.gasLimit,
+              type: val.maxFeePerGas ? "eip1559" : "legacy",
+            })
+          )
+            .mapLeft(() => new SendTransactionError())
+            .map((val) => ({ signedTx: val, broadcasted: true }))
+        );
       }),
-    [connectorDetails, checkIsUnmounted]
+    [
+      connectorDetails,
+      cosmosCW,
+      ledgerCurrentAccountId,
+      sendTransactionAsync,
+      checkIsUnmounted,
+    ]
   );
 
   const signMessage = useCallback<SKWallet["signMessage"]>(
@@ -400,7 +394,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     const common = {
       disconnect,
       signTransaction,
-      signMultipleTransactions,
       signMessage,
       connectorChains,
       isLedgerLive,
@@ -451,7 +444,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     network,
     onLedgerAccountChange,
     signTransaction,
-    signMultipleTransactions,
     signMessage,
   ]);
 

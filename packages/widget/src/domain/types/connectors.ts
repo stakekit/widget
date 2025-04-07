@@ -20,7 +20,3 @@ export const shouldShowDisconnect = (connector: Connector) =>
   !isExternalProviderConnector(connector) &&
   !isLedgerLiveConnector(connector) &&
   !isSafeConnector(connector);
-
-export const shouldMultiSend: (conn: Connector) => boolean = (
-  connector: Connector
-) => isSafeConnector(connector);
