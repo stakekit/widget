@@ -1,4 +1,3 @@
-import { shouldMultiSend } from "@sk-widget/domain/types/connectors";
 import { useSavedRef } from "@sk-widget/hooks";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
@@ -15,11 +14,7 @@ import { type RefObject, useMemo, useState } from "react";
 import { assign, emit, setup } from "xstate";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { withRequestErrorRetry } from "../../../common/utils";
-import {
-  getTransactionsForMultiSign,
-  isTxError,
-  transactionsForConstructOnlySet,
-} from "../../../domain";
+import { isTxError } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import type { GetStakeSessionError, SendTransactionError } from "./errors";
@@ -67,20 +62,9 @@ export const useStepsMachine = ({
   transactions: ActionDto["transactions"];
   integrationId: ActionDto["integrationId"];
 }) => {
-  const {
-    signTransaction,
-    signMultipleTransactions,
-    signMessage,
-    connector,
-    isLedgerLive,
-  } = useSKWallet();
+  const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
 
   const trackEvent = useTrackEvent();
-
-  const multiSend = useMemo(
-    () => Maybe.fromNullable(connector).map(shouldMultiSend).orDefault(false),
-    [connector]
-  );
 
   const sortedTransactions = useMemo(
     () => transactions.sort((a, b) => a.stepIndex - b.stepIndex),
@@ -90,10 +74,8 @@ export const useStepsMachine = ({
   const machineParams = useSavedRef({
     transactions: sortedTransactions,
     integrationId,
-    multiSend,
     isLedgerLive,
     trackEvent,
-    signMultipleTransactions,
     signMessage,
     signTransaction,
   });
@@ -106,12 +88,8 @@ const getMachine = (
     RefObject<{
       transactions: ActionDto["transactions"];
       integrationId: ActionDto["integrationId"];
-      multiSend: boolean;
       isLedgerLive: boolean;
       trackEvent: ReturnType<typeof useTrackEvent>;
-      signMultipleTransactions: ReturnType<
-        typeof useSKWallet
-      >["signMultipleTransactions"];
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
     }>
@@ -126,8 +104,7 @@ const getMachine = (
 
   const initContext = getInitContext(
     ref.current.transactions,
-    ref.current.integrationId,
-    ref.current.multiSend
+    ref.current.integrationId
   );
 
   return setup({
@@ -241,80 +218,6 @@ const getMachine = (
               .toEither(new Error("missing tx"))
           )
             .chain<Error, SignRes>((tx) => {
-              const txs = ref.current.transactions;
-
-              /**
-               * Multi sign transactions
-               */
-              if (ref.current.multiSend) {
-                return EitherAsync.liftEither(
-                  Right(
-                    txs.find((tx) =>
-                      transactionsForConstructOnlySet.has(tx.type)
-                    )
-                  )
-                )
-                  .chain((constructOnlyTx) => {
-                    if (!constructOnlyTx) {
-                      return EitherAsync.liftEither(Right(null));
-                    }
-
-                    return getAverageGasMode({
-                      network: constructOnlyTx.network,
-                    })
-                      .chainLeft(async () => Right(null))
-                      .chain((gas) =>
-                        txConstruct(constructOnlyTx.id, {
-                          gasArgs: gas?.gasArgs,
-                          ledgerWalletAPICompatible: ref.current.isLedgerLive,
-                        }).mapLeft(() => new TransactionConstructError())
-                      )
-                      .chain(() =>
-                        withRequestErrorRetry({
-                          fn: () =>
-                            transactionGetTransactionStatusFromId(
-                              constructOnlyTx.id
-                            ),
-                          retryTimes: 10,
-                          retryWaitForMs: () => 5000,
-                        }).mapLeft(
-                          () =>
-                            new Error(
-                              `failed to get ${constructOnlyTx.id} tx status`
-                            )
-                        )
-                      );
-                  })
-                  .map(() => getTransactionsForMultiSign(txs))
-                  .chain((txs) =>
-                    getAverageGasMode({ network: tx.network }).chain((gas) =>
-                      EitherAsync.sequence(
-                        txs.map((tx) =>
-                          txConstruct(tx.id, {
-                            gasArgs: gas?.gasArgs,
-                            ledgerWalletAPICompatible: ref.current.isLedgerLive,
-                          }).mapLeft(() => new TransactionConstructError())
-                        )
-                      )
-                    )
-                  )
-                  .map((txs) =>
-                    txs
-                      .map((tx) => tx.unsignedTransaction)
-                      .filter((tx) => tx !== null)
-                  )
-                  .chain((txs) => {
-                    if (!txs.length) {
-                      return EitherAsync.liftEither(
-                        Left(new TransactionConstructError())
-                      );
-                    }
-
-                    return ref.current.signMultipleTransactions({ txs });
-                  })
-                  .map((val) => ({ type: "regular", data: val }));
-              }
-
               /**
                * Single sign transactions
                */
@@ -667,8 +570,7 @@ const getMachine = (
 
 const getInitContext = (
   transactions: ActionDto["transactions"],
-  integrationId: ActionDto["integrationId"],
-  shouldMultiSend: boolean
+  integrationId: ActionDto["integrationId"]
 ) => {
   if (!transactions.length) {
     return {
@@ -700,7 +602,7 @@ const getInitContext = (
 
   return {
     enabled: true,
-    txStates: shouldMultiSend ? [txStates[currentTxIdx]] : txStates,
+    txStates,
     currentTxMeta,
     yieldId: integrationId,
   };

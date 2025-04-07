@@ -130,9 +130,6 @@ export const transactionsForConstructOnlySet = new Set<TransactionType>([
   "LUGANODES_EXIT_REQUEST",
 ]);
 
-export const getTransactionsForMultiSign = (txs: TransactionDto[]) =>
-  txs.filter((tx) => !transactionsForConstructOnlySet.has(tx.type));
-
 export const skNormalizeChainId = (chainId: string) => {
   const cId = normalizeChainId(chainId);
 
