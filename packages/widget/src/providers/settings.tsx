@@ -1,4 +1,5 @@
-import type { Languages } from "@sk-widget/translation";
+import type { Languages, localResources } from "@sk-widget/translation";
+import type { RecursivePartial } from "@sk-widget/types";
 import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -42,6 +43,7 @@ export type SettingsProps = {
   isSafe?: boolean;
   disableInjectedProviderDiscovery?: boolean;
   mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
+  customTranslations?: RecursivePartial<typeof localResources>;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
@@ -65,6 +67,14 @@ export const SettingsContextProvider = ({
       i18n.changeLanguage(rest.language);
     }
   }, [rest.language, i18n]);
+
+  useLayoutEffect(() => {
+    if (rest.customTranslations) {
+      Object.entries(rest.customTranslations).forEach(([lng, val]) => {
+        i18n.addResourceBundle(lng, "translation", val.translation, true, true);
+      });
+    }
+  }, [rest.customTranslations, i18n]);
 
   return (
     <SettingsContext.Provider value={rest}>{children}</SettingsContext.Provider>
