@@ -1,5 +1,16 @@
 # with-vite-bundled
 
+## 0.2.0
+
+### Minor Changes
+
+- e89a71a: add `customTranslations` prop to extend translations
+
+### Patch Changes
+
+- Updated dependencies [e89a71a]
+  - @stakekit/widget@0.0.217
+
 ## 0.1.0
 
 ### Minor Changes

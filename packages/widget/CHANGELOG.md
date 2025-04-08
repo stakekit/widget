@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.217
+
+### Patch Changes
+
+- e89a71a: add `customTranslations` prop to extend translations
+
 ## 0.0.215
 
 ### Patch Changes
