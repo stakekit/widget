@@ -1,5 +1,12 @@
 # with-vite-bundled
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [e69494c]
+  - @stakekit/widget@0.0.218
+
 ## 0.2.0
 
 ### Minor Changes

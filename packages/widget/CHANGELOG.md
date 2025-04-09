@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.218
+
+### Patch Changes
+
+- e69494c: feat: enhance account sorting logic in ledger connector
+
 ## 0.0.217
 
 ### Patch Changes
