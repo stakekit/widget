@@ -4,6 +4,7 @@ import {
   WindowMessageTransport,
   deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
+import { Networks } from "@stakekit/common";
 import type {
   Chain,
   WalletDetailsParams,
@@ -117,28 +118,44 @@ const createLedgerLiveConnector = ({
 
       ledgerAccounts = accounts;
 
-      const accountsWithChain = accounts.reduce(
-        (acc, next) => {
-          const family = ledgerCurrencies.get(next.currency);
+      const chainPriority = new Map<SupportedSKChains, number>([
+        [Networks.Polkadot, 1],
+        [Networks.AvalancheC, 2],
+        [Networks.Tron, 3],
+        [Networks.Binance, 4],
+        [Networks.Cronos, 5],
+        [Networks.Polygon, 6],
+      ]);
 
-          if (!family) return acc;
+      const accountsWithChain = accounts
+        .reduce(
+          (acc, next) => {
+            const family = ledgerCurrencies.get(next.currency);
 
-          const itemMap = filteredSupportedLedgerFamiliesWithCurrency.get(
-            family as SupportedLedgerLiveFamilies
-          );
+            if (!family) return acc;
 
-          if (!family || !itemMap) return acc;
+            const itemMap = filteredSupportedLedgerFamiliesWithCurrency.get(
+              family as SupportedLedgerLiveFamilies
+            );
 
-          const chainItem = itemMap.get("*") || itemMap.get(next.currency);
+            if (!family || !itemMap) return acc;
 
-          if (chainItem) {
-            acc.push({ account: next, chainItem });
-          }
+            const chainItem = itemMap.get("*") || itemMap.get(next.currency);
 
-          return acc;
-        },
-        [] as { account: Account; chainItem: ChainItem }[]
-      );
+            if (chainItem) {
+              acc.push({ account: next, chainItem });
+            }
+
+            return acc;
+          },
+          [] as { account: Account; chainItem: ChainItem }[]
+        )
+        .sort((a, b) => {
+          const aPriority = chainPriority.get(a.chainItem.skChainName) || 999;
+          const bPriority = chainPriority.get(b.chainItem.skChainName) || 999;
+
+          return aPriority - bPriority;
+        });
 
       if (!accountsWithChain.length) {
         const defaultChain = Maybe.fromNullable(
@@ -161,8 +178,8 @@ const createLedgerLiveConnector = ({
         };
       }
 
-      const preferredAccount = Maybe.fromNullable(queryParams.accountId)
-        .chain((accId) =>
+      const preferredAccount = Maybe.fromNullable(queryParams.accountId).chain(
+        (accId) =>
           Maybe.encase(() => {
             if (accId.startsWith("js:")) {
               const [, , , address] = accId.split(":");
@@ -172,24 +189,26 @@ const createLedgerLiveConnector = ({
 
             return { type: "accountId", accountId: accId };
           })
+      );
+
+      const accountWithChain = preferredAccount
+        .chain((pa) =>
+          List.find((v) => {
+            if (pa.type === "address") {
+              return v.account.address === pa.address;
+            }
+
+            return v.account.id === pa.accountId;
+          }, accountsWithChain)
         )
-        .extractNullable();
-
-      const accountWithChain = List.find((v) => {
-        if (v.chainItem.skChainName !== queryParams.network) {
-          return false;
-        }
-
-        if (preferredAccount) {
-          if (preferredAccount.type === "address") {
-            return v.account.address === preferredAccount.address;
-          }
-
-          return v.account.id === preferredAccount.accountId;
-        }
-
-        return true;
-      }, accountsWithChain)
+        .altLazy(() =>
+          Maybe.fromNullable(queryParams.network).chain((network) =>
+            List.find(
+              (v) => v.chainItem.skChainName === network,
+              accountsWithChain
+            )
+          )
+        )
         .altLazy(() => List.head(accountsWithChain))
         .toEither(new Error("Account not found"))
         .unsafeCoerce();
