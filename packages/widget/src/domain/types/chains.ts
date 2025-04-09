@@ -223,7 +223,7 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.Optimism,
     },
-    "avalanche-c": {
+    avalanche_c_chain: {
       currencyId: "avalanche_c_chain",
       family: "ethereum",
       skChainName: EvmNetworks.AvalancheC,
