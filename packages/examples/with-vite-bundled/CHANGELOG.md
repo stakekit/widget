@@ -1,5 +1,14 @@
 # with-vite-bundled
 
+## 0.2.2
+
+### Patch Changes
+
+- 7145bd2: chore: rename package to @stakekit/with-vite-bundled
+- Updated dependencies [7145bd2]
+- Updated dependencies [7145bd2]
+  - @stakekit/widget@0.0.219
+
 ## 0.2.1
 
 ### Patch Changes

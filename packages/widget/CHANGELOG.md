@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.219
+
+### Patch Changes
+
+- 7145bd2: feat: ledger disabled accounts if on priority list
+- 7145bd2: feat(earn-page): add tracking for initial token and yield selection events
+
 ## 0.0.218
 
 ### Patch Changes
