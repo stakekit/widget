@@ -4,7 +4,6 @@ import {
   WindowMessageTransport,
   deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
-import { Networks } from "@stakekit/common";
 import type {
   Chain,
   WalletDetailsParams,
@@ -17,9 +16,10 @@ import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
 import { skNormalizeChainId } from "../../domain";
-import type {
-  SupportedLedgerLiveFamilies,
-  SupportedSKChains,
+import {
+  type SupportedLedgerLiveFamilies,
+  type SupportedSKChains,
+  ledgerChainPriority,
 } from "../../domain/types/chains";
 import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
@@ -118,15 +118,6 @@ const createLedgerLiveConnector = ({
 
       ledgerAccounts = accounts;
 
-      const chainPriority = new Map<SupportedSKChains, number>([
-        [Networks.Polkadot, 1],
-        [Networks.AvalancheC, 2],
-        [Networks.Tron, 3],
-        [Networks.Binance, 4],
-        [Networks.Cronos, 5],
-        [Networks.Polygon, 6],
-      ]);
-
       const accountsWithChain = accounts
         .reduce(
           (acc, next) => {
@@ -151,8 +142,10 @@ const createLedgerLiveConnector = ({
           [] as { account: Account; chainItem: ChainItem }[]
         )
         .sort((a, b) => {
-          const aPriority = chainPriority.get(a.chainItem.skChainName) || 999;
-          const bPriority = chainPriority.get(b.chainItem.skChainName) || 999;
+          const aPriority =
+            ledgerChainPriority.get(a.chainItem.skChainName) || 999;
+          const bPriority =
+            ledgerChainPriority.get(b.chainItem.skChainName) || 999;
 
           return aPriority - bPriority;
         });
