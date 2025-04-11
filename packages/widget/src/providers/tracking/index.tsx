@@ -55,6 +55,8 @@ const trackEventMap = {
   validatorsSubmitted: "Validators submitted",
   validatorImported: "Validator imported",
   viewTxClicked: "View transaction clicked",
+  initYield: "system/initYield",
+  initToken: "system/initToken",
 } as const;
 
 type TrackEventKey = keyof typeof trackEventMap;
