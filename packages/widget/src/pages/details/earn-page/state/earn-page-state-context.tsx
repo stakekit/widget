@@ -1,5 +1,6 @@
 import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
+import { useTrackStateEvents } from "@sk-widget/pages/details/earn-page/state/use-track-state-events";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
@@ -308,6 +309,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       selectedToken.ifJust(() => dispatch({ type: "state/reset" }))
     );
   }, [initToken, selectedToken]);
+
+  useTrackStateEvents({ initToken, initYield });
 
   const actions = useMemo(
     () => ({

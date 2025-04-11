@@ -16,7 +16,10 @@ import type {
   SupportedLedgerLiveFamilies,
   SupportedSKChains,
 } from "../../domain/types/chains";
-import { supportedLedgerFamiliesWithCurrency } from "../../domain/types/chains";
+import {
+  ledgerChainPriority,
+  supportedLedgerFamiliesWithCurrency,
+} from "../../domain/types/chains";
 import type { GetEitherAsyncRight } from "../../types";
 import { typeSafeObjectEntries } from "../../utils";
 
@@ -75,8 +78,16 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
           return { ...acc, [key]: { ...item, chain, enabled: true } };
         }
 
-        // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
-        return { ...acc, [key]: { ...item, chain, enabled: false } };
+        if (
+          ledgerChainPriority.has(
+            item.skChainName as unknown as SupportedSKChains
+          )
+        ) {
+          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+          return { ...acc, [key]: { ...item, chain, enabled: false } };
+        }
+
+        return acc;
       }, {} as MappedSupportedLedgerFamiliesWithCurrency);
 
       // biome-ignore lint/performance/noAccumulatingSpread: <explanation>

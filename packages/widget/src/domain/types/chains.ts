@@ -318,6 +318,15 @@ export const supportedLedgerFamiliesWithCurrency = {
   },
 } as const satisfies SupportedLedgerFamiliesWithCurrency;
 
+export const ledgerChainPriority = new Map<SupportedSKChains, number>([
+  [SubstrateNetworks.Polkadot, 1],
+  [EvmNetworks.AvalancheC, 2],
+  [MiscNetworks.Tron, 3],
+  [EvmNetworks.Binance, 4],
+  [CosmosNetworks.Cronos, 5],
+  [EvmNetworks.Polygon, 6],
+]);
+
 export type SupportedLedgerFamiliesWithCurrency = Record<
   SupportedLedgerLiveFamilies,
   Record<
