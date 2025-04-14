@@ -111,7 +111,7 @@
     "jsdom": "^26.1.0",
     "lodash.merge": "^4.6.2",
     "mixpanel-browser": "^2.63.0",
-    "motion": "^12.6.5",
+    "motion": "12.6.2",
     "msw": "^2.7.4",
     "postcss": "^8.5.3",
     "purify-ts": "2.1.0",
