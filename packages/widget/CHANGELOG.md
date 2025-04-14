@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.223
+
+### Patch Changes
+
+- 8cef39f: feat: add txMeta arg to external provider sendTransaction
+- 8cef39f: fix: revert motion for useAnimate
+
 ## 0.0.222
 
 ### Patch Changes
