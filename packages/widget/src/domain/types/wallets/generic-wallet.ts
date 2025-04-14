@@ -1,3 +1,4 @@
+import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import type { Hex } from "viem";
 
 export enum TxType {
@@ -27,5 +28,8 @@ export type EVMWallet = {
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: string) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-  sendTransaction(tx: EVMTx): Promise<string>;
+  sendTransaction(
+    tx: EVMTx,
+    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] }
+  ): Promise<string>;
 };

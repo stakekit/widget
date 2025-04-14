@@ -158,7 +158,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
-    ({ tx, ledgerHwAppId }) =>
+    ({ tx, ledgerHwAppId, txMeta }) =>
       connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
@@ -254,7 +254,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               })
           )
             .chain((val) =>
-              conn.sendTransaction(prepareEVMTx({ address, decodedTx: val }))
+              conn.sendTransaction(
+                prepareEVMTx({ address, decodedTx: val }),
+                txMeta
+              )
             )
             .map((val) => ({ signedTx: val, broadcasted: true }));
         }

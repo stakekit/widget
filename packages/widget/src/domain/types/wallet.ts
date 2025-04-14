@@ -1,5 +1,6 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
+  ActionDto,
   AddressWithTokenDtoAdditionalAddresses,
   TransactionDto,
 } from "@stakekit/api-hooks";
@@ -19,6 +20,7 @@ export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
+    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] };
     ledgerHwAppId: Nullable<string>;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,

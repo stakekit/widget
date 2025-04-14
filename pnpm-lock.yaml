@@ -305,8 +305,8 @@ importers:
         specifier: ^2.63.0
         version: 2.63.0
       motion:
-        specifier: ^12.6.5
-        version: 12.6.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 12.6.2
+        version: 12.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       msw:
         specifier: ^2.7.4
         version: 2.7.4(@types/node@22.14.1)(typescript@5.8.3)
@@ -4618,8 +4618,8 @@ packages:
   motion@10.16.2:
     resolution: {integrity: sha512-p+PurYqfUdcJZvtnmAqu5fJgV2kR0uLFQuBKtLeFVTrYEVllI99tiOTSefVNYuip9ELTEkepIIDftNdze76NAQ==}
 
-  motion@12.6.5:
-    resolution: {integrity: sha512-X3IIy76nxyk4I87xQEm5Ah8ojQ4qisd+/H592eXF14ha+xqpbDJcWOSf9PEKCOCC0K4PN/0UBaz+MvSQUkIeXQ==}
+  motion@12.6.2:
+    resolution: {integrity: sha512-8OBjjuC59WuWHKmPzVWT5M0t5kDxtkfMfHF1M7Iey6F/nvd0AI15YlPnpGlcagW/eOfkdWDO90U/K5LF/k55Yw==}
     peerDependencies:
       '@emotion/is-prop-valid': '*'
       react: ^18.0.0 || ^19.0.0
@@ -12144,7 +12144,7 @@ snapshots:
       '@motionone/utils': 10.18.0
       '@motionone/vue': 10.16.4
 
-  motion@12.6.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  motion@12.6.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       framer-motion: 12.6.5(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       tslib: 2.8.1
