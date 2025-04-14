@@ -24,6 +24,7 @@ export const useSteps = ({
   const [machineState, send, actorRef] = useStepsMachine({
     transactions: session.transactions,
     integrationId: session.integrationId,
+    actionId: session.id,
   });
 
   /**

@@ -1,3 +1,4 @@
+import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import { EitherAsync, Left } from "purify-ts";
 import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
@@ -10,15 +11,18 @@ export class ExternalProvider {
     return EitherAsync.liftEither(Left(new Error("Invalid provider type")));
   }
 
-  sendTransaction(tx: EVMTx) {
-    const sendTransaction =
+  sendTransaction(
+    tx: EVMTx,
+    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] }
+  ) {
+    const _sendTransaction =
       this.variantProvider.current.provider.sendTransaction;
 
-    if (!sendTransaction) {
+    if (!_sendTransaction) {
       return this.invalidProviderType();
     }
 
-    return EitherAsync(() => sendTransaction(tx)).mapLeft((e) => {
+    return EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft((e) => {
       console.log(e);
       return new Error("Failed to send transaction");
     });

@@ -58,9 +58,11 @@ type SignRes =
 export const useStepsMachine = ({
   transactions,
   integrationId,
+  actionId,
 }: {
   transactions: ActionDto["transactions"];
   integrationId: ActionDto["integrationId"];
+  actionId: ActionDto["id"];
 }) => {
   const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
 
@@ -78,6 +80,7 @@ export const useStepsMachine = ({
     trackEvent,
     signMessage,
     signTransaction,
+    actionId,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -92,6 +95,7 @@ const getMachine = (
       trackEvent: ReturnType<typeof useTrackEvent>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
+      actionId: ActionDto["id"];
     }>
   >
 ) => {
@@ -260,6 +264,10 @@ const getMachine = (
                     .signTransaction({
                       tx: constructedTx.unsignedTransaction,
                       ledgerHwAppId: constructedTx.ledgerHwAppId,
+                      txMeta: {
+                        actionId: ref.current.actionId,
+                        txId: constructedTx.id,
+                      },
                     })
                     .map((val) => ({
                       ...val,
