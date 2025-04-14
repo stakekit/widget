@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.222
+
+### Patch Changes
+
+- 0704cbe: fix(useSavedRef): save latest ref value before layout
+
 ## 0.0.221
 
 ### Patch Changes
