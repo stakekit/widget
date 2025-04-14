@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.221
+
+### Patch Changes
+
+- 3520b1d: chore: update dependencies
+
 ## 0.0.220
 
 ### Patch Changes
