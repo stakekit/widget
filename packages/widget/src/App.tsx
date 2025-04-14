@@ -118,7 +118,7 @@ const Widget = () => {
    * Dont unmount details page with tabs
    * Handle position details pages in their own Routes
    */
-  const key = detailsMatch ? "/" : current.pathname;
+  const key = detailsMatch ? "/" : current.key;
 
   if (underMaintenance) return <UnderMaintenance />;
 
