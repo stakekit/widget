@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.220
+
+### Patch Changes
+
+- 015e2ec: fix(widget): layout size change
+
 ## 0.0.219
 
 ### Patch Changes
