@@ -19,7 +19,7 @@ type ActionYieldDto = {
   yieldData: YieldDto;
 };
 
-const ActionListItem = ({
+export const ActionListItem = ({
   action,
   onActionSelect,
 }: {
@@ -69,7 +69,10 @@ const ActionListItem = ({
                       })}
                     >
                       <Text
-                        variant={{ type: "white", size: "small" }}
+                        variant={{
+                          type: badgeColor ? "white" : "regular",
+                          size: "small",
+                        }}
                         className={noWrap}
                       >
                         {badgeLabel}
@@ -122,5 +125,3 @@ const ActionListItem = ({
     </Box>
   );
 };
-
-export default ActionListItem;

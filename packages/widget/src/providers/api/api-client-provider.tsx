@@ -1,3 +1,4 @@
+import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { StakeKitApiClient } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
 import axios, { AxiosHeaders } from "axios";
@@ -44,12 +45,17 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
 
       const signal = requestInit.signal ?? undefined;
 
-      return apiClient(url, {
-        ...requestInit,
-        headers: axiosHeaders,
-        data: requestInit.body,
-        signal,
-      }).then((response) => response.data);
+      return withRequestErrorRetry({
+        fn: () =>
+          apiClient(url, {
+            ...requestInit,
+            headers: axiosHeaders,
+            data: requestInit.body,
+            signal,
+          }).then((response) => response.data),
+      })
+        .run()
+        .then((res) => res.unsafeCoerce());
     },
   });
 

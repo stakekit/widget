@@ -1,9 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useState } from "react";
-import { shouldRetryRequest } from "../../common/utils";
 import { config } from "../../config";
 
 const getQueryClient = () =>
@@ -12,24 +10,10 @@ const getQueryClient = () =>
       queries: {
         gcTime: config.queryClient.cacheTime,
         staleTime: config.queryClient.staleTime,
-        retry: (failureCount, error) => {
-          if (isAxiosError(error)) {
-            return !!(shouldRetryRequest(error) && failureCount < 2);
-          }
-
-          return false;
-        },
+        retry: false,
         refetchOnWindowFocus: false,
       },
-      mutations: {
-        retry: (failureCount, error) => {
-          if (isAxiosError(error)) {
-            return !!(shouldRetryRequest(error) && failureCount < 2);
-          }
-
-          return false;
-        },
-      },
+      mutations: { retry: false },
     },
   });
 

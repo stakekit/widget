@@ -11,9 +11,6 @@ export const isAxios4xxError = (error: unknown): error is AxiosError =>
     error.response?.status < 500
   );
 
-export const shouldRetryRequest = (error: AxiosError) =>
-  !!(error.response?.status && error.response.status >= 500);
-
 const _shouldRetry = ({
   error,
   retryCount,
@@ -22,8 +19,15 @@ const _shouldRetry = ({
   error: unknown;
   retryCount: number;
   retryTimes: number;
-}) =>
-  isAxiosError(error) && shouldRetryRequest(error) && retryCount < retryTimes;
+}) => {
+  const res =
+    isAxiosError(error) &&
+    error?.code !== "ERR_CANCELED" &&
+    (!error.response?.status || error.response.status >= 500) &&
+    retryCount < retryTimes;
+
+  return res;
+};
 
 /**
  *
