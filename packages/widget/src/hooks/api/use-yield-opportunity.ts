@@ -3,7 +3,6 @@ import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
-import { withRequestErrorRetry } from "../../common/utils";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 type Params = {
@@ -61,16 +60,15 @@ const fn = ({
 }: Params & {
   signal?: AbortSignal;
 }) =>
-  withRequestErrorRetry({
-    fn: () =>
-      yieldYieldOpportunity(
-        yieldId,
-        {
-          ledgerWalletAPICompatible: isLedgerLive,
-        },
-        signal
-      ),
-  }).mapLeft((e) => {
+  EitherAsync(() =>
+    yieldYieldOpportunity(
+      yieldId,
+      {
+        ledgerWalletAPICompatible: isLedgerLive,
+      },
+      signal
+    )
+  ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunity");
   });

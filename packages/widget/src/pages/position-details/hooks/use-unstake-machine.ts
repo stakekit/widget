@@ -1,4 +1,3 @@
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import type { SKWallet } from "@sk-widget/domain/types";
 import { useSavedRef } from "@sk-widget/hooks";
@@ -168,19 +167,18 @@ const getMachine = (
                 context.data.toEither(new Error("Missing init values"))
               )
                 .chain((val) =>
-                  withRequestErrorRetry({
-                    fn: () =>
-                      transactionGetTransactionVerificationMessageForNetwork(
-                        val.network,
-                        {
-                          addresses: {
-                            address: val.address,
-                            additionalAddresses:
-                              val.additionalAddresses ?? undefined,
-                          },
-                        }
-                      ),
-                  }).mapLeft(
+                  EitherAsync(() =>
+                    transactionGetTransactionVerificationMessageForNetwork(
+                      val.network,
+                      {
+                        addresses: {
+                          address: val.address,
+                          additionalAddresses:
+                            val.additionalAddresses ?? undefined,
+                        },
+                      }
+                    )
+                  ).mapLeft(
                     () => new Error("Failed to get verification message")
                   )
                 )
@@ -297,9 +295,7 @@ const getMachine = (
                   .toEither(new Error("Missing params"))
               )
                 .chain((val) =>
-                  withRequestErrorRetry({
-                    fn: () => actionExit(val),
-                  })
+                  EitherAsync(() => actionExit(val))
                     .mapLeft(() => new Error("Stake exit error"))
                     .chain((actionDto) =>
                       EitherAsync.liftEither(getValidStakeSessionTx(actionDto))

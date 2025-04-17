@@ -1,4 +1,3 @@
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
@@ -86,15 +85,14 @@ const fn = ({
 
     return EitherAsync.liftEither(initQueryParams)
       .chain((initQueryParams) =>
-        withRequestErrorRetry({
-          fn: () =>
-            yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-              addresses: {
-                address,
-                additionalAddresses: additionalAddresses ?? undefined,
-              },
-            }),
-        })
+        EitherAsync(() =>
+          yieldGetSingleYieldBalances(initQueryParams.yieldId, {
+            addresses: {
+              address,
+              additionalAddresses: additionalAddresses ?? undefined,
+            },
+          })
+        )
           .mapLeft(() => new Error("could not get yield balances"))
           .map((val) => ({
             yieldId: initQueryParams.yieldId,

@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
+import { EitherAsync } from "purify-ts";
 import { initReactI18next, useTranslation } from "react-i18next";
-import { withRequestErrorRetry } from "../common/utils";
 import { useApiClient } from "../providers/api/api-client-provider";
 import translationEN from "./English/translations.json";
 import translationFR from "./French/translations.json";
@@ -42,16 +42,17 @@ export const useLoadErrorTranslations = () => {
     queryKey: ["error-translations", lng],
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
-    queryFn: () =>
-      withRequestErrorRetry({
-        fn: () =>
+    queryFn: async () =>
+      (
+        await EitherAsync(() =>
           apiClient.get<Record<string, unknown>>(
             `https://i18n.stakek.it/locales/${lng}/errors.json`
-          ),
-      }).ifRight((res) =>
-        i18n.addResourceBundle(i18n.language, "translation", {
-          errors: res.data,
-        })
-      ),
+          )
+        ).ifRight((res) =>
+          i18n.addResourceBundle(i18n.language, "translation", {
+            errors: res.data,
+          })
+        )
+      ).unsafeCoerce(),
   });
 };
