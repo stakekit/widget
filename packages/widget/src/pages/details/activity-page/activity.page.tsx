@@ -2,7 +2,7 @@ import { Box, Text } from "@sk-widget/components";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import ActionListItem from "@sk-widget/pages/details/activity-page/components/action-list-item";
+import { ActionListItem } from "@sk-widget/pages/details/activity-page/components/action-list-item";
 import ListItemBullet from "@sk-widget/pages/details/activity-page/components/list-item-bullet";
 import {
   ActivityPageContextProvider,
@@ -94,7 +94,7 @@ export const ActivityPageComponent = () => {
                 groupCounts={counts}
                 groupContent={(index) => {
                   return (
-                    <Box paddingBottom="4">
+                    <Box marginBottom="3">
                       <Text variant={{ weight: "bold" }}>
                         {dateGroupLabels(labels[index], t)}
                       </Text>
@@ -105,7 +105,15 @@ export const ActivityPageComponent = () => {
                   const item = allData[index];
 
                   return (
-                    <Box className={listItemWrapper}>
+                    <Box
+                      className={listItemWrapper}
+                      marginBottom={
+                        bulletLines[index] === ItemBulletType.ALONE ||
+                        bulletLines[index] === ItemBulletType.LAST
+                          ? "4"
+                          : "0"
+                      }
+                    >
                       <ListItemBullet
                         isFirst={
                           bulletLines[index] === ItemBulletType.FIRST ||

@@ -359,12 +359,11 @@ const getMachine = (
           )
             .chain((currentTx) => {
               if (currentTx.meta.broadcasted) {
-                return withRequestErrorRetry({
-                  fn: () =>
-                    transactionSubmitHash(currentTx.tx.id, {
-                      hash: currentTx.meta.signedTx!,
-                    }),
-                })
+                return EitherAsync(() =>
+                  transactionSubmitHash(currentTx.tx.id, {
+                    hash: currentTx.meta.signedTx!,
+                  })
+                )
                   .mapLeft(() => new SubmitHashError())
                   .ifRight(() => {
                     ref.current.trackEvent("txSubmitted", {
@@ -372,16 +371,15 @@ const getMachine = (
                       network: currentTx.tx.network,
                       yieldId: context.yieldId,
                     });
-                  });
+                  })
+                  .void();
               }
 
-              return withRequestErrorRetry({
-                fn: async () => {
-                  await transactionSubmit(currentTx.tx.id, {
-                    signedTransaction: currentTx.meta.signedTx!,
-                  });
-                },
-              })
+              return EitherAsync(() =>
+                transactionSubmit(currentTx.tx.id, {
+                  signedTransaction: currentTx.meta.signedTx!,
+                })
+              )
                 .mapLeft(() => new SubmitError())
                 .ifRight(() => {
                   ref.current.trackEvent("txSubmitted", {
@@ -389,7 +387,8 @@ const getMachine = (
                     network: currentTx.tx.network,
                     yieldId: context.yieldId,
                   });
-                });
+                })
+                .void();
             })
             .caseOf({
               Left: (l) => {
@@ -456,13 +455,13 @@ const getMachine = (
                 shouldRetry: (e, retryCount) =>
                   retryCount <= 3 &&
                   isAxiosError(e) &&
-                  (e.response?.status === 404 || e.response?.status === 503),
+                  e.response?.status === 404,
               })
                 .map((res) => ({ url: res.url, status: res.status }))
                 .chainLeft(() =>
-                  withRequestErrorRetry({
-                    fn: () => transactionGetTransaction(currentTx.tx.id),
-                  }).map((res) => ({
+                  EitherAsync(() =>
+                    transactionGetTransaction(currentTx.tx.id)
+                  ).map((res) => ({
                     url: res.explorerUrl,
                     status: res.status,
                   }))

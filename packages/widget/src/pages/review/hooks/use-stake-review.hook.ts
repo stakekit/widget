@@ -1,4 +1,3 @@
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
 import { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
@@ -124,9 +123,7 @@ export const useStakeReview = () => {
   const enterMutation = useMutation({
     mutationFn: async () =>
       (
-        await withRequestErrorRetry({
-          fn: () => actionEnter(enterRequest.requestDto),
-        })
+        await EitherAsync(() => actionEnter(enterRequest.requestDto))
           .mapLeft<StakingNotAllowedError | Error>((e) => {
             if (
               isAxiosError(e) &&

@@ -1,4 +1,3 @@
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
@@ -118,9 +117,7 @@ export const usePendingActionReview = () => {
   const actionPendingMutation = useMutation({
     mutationFn: async () =>
       (
-        await withRequestErrorRetry({
-          fn: () => actionPending(pendingRequest.requestDto),
-        })
+        await EitherAsync(() => actionPending(pendingRequest.requestDto))
           .mapLeft(() => new Error("Pending actions error"))
           .chain((actionDto) =>
             EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
