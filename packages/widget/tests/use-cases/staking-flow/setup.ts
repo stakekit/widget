@@ -7,6 +7,7 @@ import type {
   YieldDto,
 } from "@stakekit/api-hooks";
 import { http, HttpResponse, delay } from "msw";
+import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
 import { server } from "../../mocks/server";
@@ -331,7 +332,7 @@ export const setup = async () => {
       case "eth_sendTransaction":
         return "transaction_hash";
       case "eth_chainId":
-        return 43114;
+        return avalanche.id;
       case "eth_requestAccounts":
         return [account];
 

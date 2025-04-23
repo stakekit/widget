@@ -43,13 +43,13 @@ export const externalProviderConnector = (
       iconUrl: config.appIcon,
       iconBackground: "#fff",
       createConnector: () =>
-        createConnector<unknown, ExtraProps>((config) => {
+        createConnector<unknown, ExtraProps>((connectorConfig) => {
           const $filteredChains = new BehaviorSubject(
             Maybe.fromNullable(variant.current.supportedChainIds)
               .map((val) => new Set(val))
               .mapOrDefault(
-                (val) => config.chains.filter((c) => val.has(c.id)),
-                config.chains as [Chain, ...Chain[]]
+                (val) => connectorConfig.chains.filter((c) => val.has(c.id)),
+                connectorConfig.chains as [Chain, ...Chain[]]
               )
           );
           const provider = new ExternalProvider(variant);
@@ -62,7 +62,7 @@ export const externalProviderConnector = (
 
           const connect: ReturnType<CreateConnectorFn>["connect"] =
             async () => {
-              config.emitter.emit("message", { type: "connecting" });
+              connectorConfig.emitter.emit("message", { type: "connecting" });
 
               const [accounts, chainId] = await Promise.all([
                 getAccounts(),
@@ -78,13 +78,11 @@ export const externalProviderConnector = (
                 await EitherAsync.liftEither(
                   List.find(
                     (c) => c.id === chainId,
-                    config.chains as unknown as Array<Chain>
+                    connectorConfig.chains as unknown as Array<Chain>
                   ).toEither(new Error("Chain not found"))
                 )
                   .chain((chain) =>
-                    provider
-                      .switchChain({ chainId: `0x${chainId.toString(16)}` })
-                      .map(() => chain)
+                    provider.switchChain({ chainId }).map(() => chain)
                   )
                   .ifRight((chain) => onChainChanged(chain.id.toString()))
               ).unsafeCoerce();
@@ -101,19 +99,19 @@ export const externalProviderConnector = (
 
           const onDisconnect: ReturnType<CreateConnectorFn>["onDisconnect"] =
             () => {
-              config.emitter.emit("disconnect");
+              connectorConfig.emitter.emit("disconnect");
             };
 
           const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] =
             (chainId) => {
-              config.emitter.emit("change", {
+              connectorConfig.emitter.emit("change", {
                 chainId: skNormalizeChainId(chainId),
               });
             };
 
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
             (accounts) => {
-              config.emitter.emit("change", {
+              connectorConfig.emitter.emit("change", {
                 accounts: accounts.filter((a) => !!a).map((a) => getAddress(a)),
               });
             };
@@ -124,8 +122,9 @@ export const externalProviderConnector = (
                 Maybe.fromFalsy(!!supportedChainIds.length)
                   .map(() => new Set(supportedChainIds))
                   .mapOrDefault(
-                    (val) => config.chains.filter((c) => val.has(c.id)),
-                    config.chains as [Chain, ...Chain[]]
+                    (val) =>
+                      connectorConfig.chains.filter((c) => val.has(c.id)),
+                    connectorConfig.chains as [Chain, ...Chain[]]
                   )
               );
 

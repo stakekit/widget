@@ -112,10 +112,22 @@ export type SubstrateChainsMap = {
   };
 };
 
+export const isEvmChain = (chain: string): chain is SupportedEvmChain => {
+  return supportedEVMChainsSet.has(chain as SupportedEvmChain);
+};
+
+export const isSolanaChain = (chain: string): chain is SupportedMiscChains => {
+  return chain === MiscNetworks.Solana;
+};
+
+export const isTonChain = (chain: string): chain is SupportedMiscChains => {
+  return chain === MiscNetworks.Ton;
+};
+
 export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
   return (
+    isEvmChain(chain) ||
     supportedCosmosChainsSet.has(chain as SupportedCosmosChains) ||
-    supportedEVMChainsSet.has(chain as SupportedEvmChain) ||
     supportedMiscChainsSet.has(chain as SupportedMiscChains) ||
     supportedSubstrateChainsSet.has(chain as SupportedSubstrateChains)
   );

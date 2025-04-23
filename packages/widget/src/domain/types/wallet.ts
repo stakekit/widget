@@ -2,6 +2,7 @@ import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
   ActionDto,
   AddressWithTokenDtoAdditionalAddresses,
+  Networks,
   TransactionDto,
 } from "@stakekit/api-hooks";
 import type { EitherAsync } from "purify-ts";
@@ -22,6 +23,7 @@ export type SKWallet = {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
     txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] };
     ledgerHwAppId: Nullable<string>;
+    network: Networks;
   }) => EitherAsync<
     TransactionDecodeError | SendTransactionError,
     { signedTx: SignedTxOrMessage; broadcasted: boolean }

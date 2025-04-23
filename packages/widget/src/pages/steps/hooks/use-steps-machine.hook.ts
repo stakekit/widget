@@ -268,6 +268,7 @@ const getMachine = (
                         actionId: ref.current.actionId,
                         txId: constructedTx.id,
                       },
+                      network: constructedTx.network,
                     })
                     .map((val) => ({
                       ...val,
