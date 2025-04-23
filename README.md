@@ -41,13 +41,18 @@ const App = () => {
 
 ```ts
 import "@stakekit/widget/bundle/css";
-import { renderSKWidget, lightTheme } from "@stakekit/widget/bundle";
+import { renderSKWidget, lightTheme, darkTheme } from "@stakekit/widget/bundle";
 
-renderSKWidget({
+const { rerender } = renderSKWidget({
   container: document.getElementById("sk_widget_container")!,
   apiKey: "your-api-key",
   theme: lightTheme,
 });
+
+rerender({
+  apiKey: "your-api-key",
+  theme: darkTheme,
+}) // pass new props here
 ```
 
 ## Params
@@ -455,15 +460,26 @@ type EVMWallet = {
   getTransactionReceipt?(txHash: string): Promise<{
       transactionHash?: string;
   }>;
-  sendTransaction(tx: EVMTx): Promise<string>;
+  sendTransaction(
+    tx: SKTx,
+    txMeta: {
+      txId: TransactionDto["id"];
+      actionId: ActionDto["id"];
+      actionType: ActionDto["type"];
+      txType: TransactionDto["type"];
+    }): Promise<string>;
 };
 
-export declare enum TxType {
-    Legacy = "0x1",
-    EIP1559 = "0x2"
+type Base64String = string;
+
+export enum TxType {
+  Legacy = "0x1",
+  EIP1559 = "0x2",
 }
 
 export type EVMTx = {
+  type: "evm";
+  tx: {
     data: Hex;
     from: Hex;
     to: Hex;
@@ -472,13 +488,27 @@ export type EVMTx = {
     gas: Hex;
     chainId: Hex;
     type: Hex;
-} & ({
-    type: TxType.EIP1559;
-    maxFeePerGas: Hex | undefined;
-    maxPriorityFeePerGas: Hex | undefined;
-} | {
-    type: TxType.Legacy;
-});
+  } & (
+    | {
+        type: TxType.EIP1559; // EIP-1559
+        maxFeePerGas: Hex | undefined;
+        maxPriorityFeePerGas: Hex | undefined;
+      }
+    | { type: TxType.Legacy } // Legacy
+  );
+};
+
+export type SolanaTx = { type: "solana"; tx: Base64String };
+
+export type TonTx = {
+  type: "ton";
+  tx: {
+    seqno: bigint;
+    message: Base64String;
+  };
+};
+
+export type SKTx = EVMTx | SolanaTx | TonTx;
 ```
 
 ### Tracking

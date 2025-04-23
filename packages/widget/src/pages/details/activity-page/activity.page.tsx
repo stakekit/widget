@@ -90,11 +90,11 @@ export const ActivityPageComponent = () => {
                 hasNextPage={activityActions.hasNextPage}
                 isFetchingNextPage={activityActions.isFetchingNextPage}
                 fetchNextPage={activityActions.fetchNextPage}
-                estimateSize={() => 60}
+                estimateSize={() => 100}
                 groupCounts={counts}
                 groupContent={(index) => {
                   return (
-                    <Box marginBottom="3">
+                    <Box paddingBottom="3">
                       <Text variant={{ weight: "bold" }}>
                         {dateGroupLabels(labels[index], t)}
                       </Text>
@@ -107,7 +107,7 @@ export const ActivityPageComponent = () => {
                   return (
                     <Box
                       className={listItemWrapper}
-                      marginBottom={
+                      paddingBottom={
                         bulletLines[index] === ItemBulletType.ALONE ||
                         bulletLines[index] === ItemBulletType.LAST
                           ? "4"
