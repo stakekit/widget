@@ -16,8 +16,8 @@ import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.p
 import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
-import type { ComponentProps } from "react";
-import { useEffect, useState } from "react";
+import type { ComponentProps, RefObject } from "react";
+import { createRef, useEffect, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
   Navigate,
@@ -238,6 +238,20 @@ export const SKApp = (props: SKAppProps) => {
   );
 };
 
+export type BundledSKWidgetProps = SKAppProps & {
+  ref?: RefObject<{ rerender: (newProps: SKAppProps) => void }>;
+};
+
+const BundledSKWidget = (_props: BundledSKWidgetProps) => {
+  const [props, setProps] = useState(_props);
+
+  useImperativeHandle(props.ref, () => ({
+    rerender: (newProps: SKAppProps) => setProps(newProps),
+  }));
+
+  return <SKApp {...props} />;
+};
+
 export const renderSKWidget = ({
   container,
   ...rest
@@ -247,5 +261,14 @@ export const renderSKWidget = ({
   if (!rest.apiKey) throw new Error("API key is required");
 
   const root = ReactDOM.createRoot(container);
-  root.render(<SKApp {...rest} />);
+
+  const appRef = createRef<{ rerender: () => void }>() as NonNullable<
+    BundledSKWidgetProps["ref"]
+  >;
+
+  root.render(<BundledSKWidget {...rest} ref={appRef} />);
+
+  return {
+    rerender: (newProps: SKAppProps) => appRef.current.rerender(newProps),
+  };
 };

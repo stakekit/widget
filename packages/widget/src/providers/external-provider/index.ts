@@ -2,7 +2,7 @@ import type { WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, List, Maybe } from "purify-ts";
 import type { RefObject } from "react";
 import { BehaviorSubject } from "rxjs";
-import { type Address, getAddress } from "viem";
+import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
@@ -112,7 +112,7 @@ export const externalProviderConnector = (
           const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
             (accounts) => {
               connectorConfig.emitter.emit("change", {
-                accounts: accounts.filter((a) => !!a).map((a) => getAddress(a)),
+                accounts: accounts.filter((a) => !!a) as Address[],
               });
             };
 
