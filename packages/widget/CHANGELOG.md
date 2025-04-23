@@ -1,5 +1,15 @@
 # @stakekit/widget
 
+## 0.0.224
+
+### Patch Changes
+
+- c232467: fix: activity item header margin
+- e4b6188: feat(externalProvider): expose actionType and txType in sendTransaction txMeta
+- c232467: refactor: request error retry on api client level
+- ccbd565: feat(widget): enhance bundled SKApp with support for rerendering
+- e4b6188: feat(externalProvider): add solana and ton support
+
 ## 0.0.223
 
 ### Patch Changes
