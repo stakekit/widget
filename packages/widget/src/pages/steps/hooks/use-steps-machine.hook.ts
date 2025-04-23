@@ -59,10 +59,12 @@ export const useStepsMachine = ({
   transactions,
   integrationId,
   actionId,
+  actionType,
 }: {
   transactions: ActionDto["transactions"];
   integrationId: ActionDto["integrationId"];
   actionId: ActionDto["id"];
+  actionType: ActionDto["type"];
 }) => {
   const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
 
@@ -81,6 +83,7 @@ export const useStepsMachine = ({
     signMessage,
     signTransaction,
     actionId,
+    actionType,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -96,6 +99,7 @@ const getMachine = (
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
       actionId: ActionDto["id"];
+      actionType: ActionDto["type"];
     }>
   >
 ) => {
@@ -267,6 +271,8 @@ const getMachine = (
                       txMeta: {
                         actionId: ref.current.actionId,
                         txId: constructedTx.id,
+                        actionType: ref.current.actionType,
+                        txType: constructedTx.type,
                       },
                       network: constructedTx.network,
                     })

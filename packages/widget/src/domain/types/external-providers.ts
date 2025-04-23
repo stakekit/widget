@@ -13,7 +13,12 @@ export class ExternalProvider {
 
   sendTransaction(
     tx: SKTx,
-    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] }
+    txMeta: {
+      txId: TransactionDto["id"];
+      actionId: ActionDto["id"];
+      actionType: ActionDto["type"];
+      txType: TransactionDto["type"];
+    }
   ) {
     const _sendTransaction =
       this.variantProvider.current.provider.sendTransaction;

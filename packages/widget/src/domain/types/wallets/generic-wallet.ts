@@ -47,6 +47,11 @@ export type SKWallet = {
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(
     tx: SKTx,
-    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] }
+    txMeta: {
+      txId: TransactionDto["id"];
+      actionId: ActionDto["id"];
+      actionType: ActionDto["type"];
+      txType: TransactionDto["type"];
+    }
   ): Promise<string>;
 };

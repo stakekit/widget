@@ -67,7 +67,12 @@ describe("SK Wallet", () => {
     const solanaRes = await solanaWallet.result.current.signTransaction({
       network: "solana",
       tx: "12345",
-      txMeta: { txId: "", actionId: "" },
+      txMeta: {
+        txId: "",
+        actionId: "",
+        actionType: "STAKE",
+        txType: "APPROVAL",
+      },
       ledgerHwAppId: null,
     });
 
@@ -83,6 +88,8 @@ describe("SK Wallet", () => {
       {
         txId: "",
         actionId: "",
+        actionType: "STAKE",
+        txType: "APPROVAL",
       }
     );
   });
@@ -116,7 +123,12 @@ describe("SK Wallet", () => {
     const tonRes = await tonWallet.result.current.signTransaction({
       network: "ton",
       tx: JSON.stringify({ seqno: 0, message: "12345" }),
-      txMeta: { txId: "", actionId: "" },
+      txMeta: {
+        txId: "",
+        actionId: "",
+        actionType: "STAKE",
+        txType: "APPROVAL",
+      },
       ledgerHwAppId: null,
     });
 
@@ -132,6 +144,8 @@ describe("SK Wallet", () => {
       {
         txId: "",
         actionId: "",
+        actionType: "STAKE",
+        txType: "APPROVAL",
       }
     );
   });
