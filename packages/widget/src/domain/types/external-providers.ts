@@ -2,7 +2,7 @@ import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import { EitherAsync, Left } from "purify-ts";
 import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
-import type { EVMTx } from "./wallets/generic-wallet";
+import type { SKTx } from "./wallets/generic-wallet";
 
 export class ExternalProvider {
   constructor(private variantProvider: RefObject<SKExternalProviders>) {}
@@ -12,8 +12,13 @@ export class ExternalProvider {
   }
 
   sendTransaction(
-    tx: EVMTx,
-    txMeta: { txId: TransactionDto["id"]; actionId: ActionDto["id"] }
+    tx: SKTx,
+    txMeta: {
+      txId: TransactionDto["id"];
+      actionId: ActionDto["id"];
+      actionType: ActionDto["type"];
+      txType: TransactionDto["type"];
+    }
   ) {
     const _sendTransaction =
       this.variantProvider.current.provider.sendTransaction;
@@ -28,7 +33,7 @@ export class ExternalProvider {
     });
   }
 
-  switchChain({ chainId }: { chainId: string }) {
+  switchChain({ chainId }: { chainId: number }) {
     return EitherAsync(() =>
       this.variantProvider.current.provider.switchChain(chainId)
     ).mapLeft((e) => {

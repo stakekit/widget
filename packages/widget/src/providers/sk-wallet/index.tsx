@@ -1,6 +1,12 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { config } from "@sk-widget/config";
+import {
+  isEvmChain,
+  isSolanaChain,
+  isTonChain,
+} from "@sk-widget/domain/types/chains";
+import type { SKTx } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useCheckIsUnmounted } from "@sk-widget/hooks/use-check-is-unmounted";
 import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
 import { SafeFailedError } from "@sk-widget/providers/sk-wallet/errors";
@@ -44,6 +50,8 @@ import { useSyncExternalProvider } from "./use-sync-external-provider";
 import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
 import {
   unsignedEVMTransactionCodec,
+  unsignedSolanaTransactionCodec,
+  unsignedTonTransactionCodec,
   unsignedTronTransactionCodec,
 } from "./validation";
 
@@ -148,17 +156,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       EitherAsync.liftEither(
         !isConnected || !network || !connector || !address
           ? Left(new Error("No wallet connected"))
-          : Right({
-              conn: connector,
-              network,
-              address,
-            })
+          : Right({ conn: connector, network, address })
       ),
     [connector, isConnected, network, address]
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
-    ({ tx, ledgerHwAppId, txMeta }) =>
+    ({ tx, ledgerHwAppId, txMeta, network }) =>
       connectorDetails.chain<
         TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
         { signedTx: string; broadcasted: boolean }
@@ -246,19 +250,33 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
          */
         if (isExternalProviderConnector(conn)) {
           return EitherAsync.liftEither(
-            Either.encase(() => JSON.parse(tx))
-              .chain((val) => unsignedEVMTransactionCodec.decode(val))
+            Right(null)
+              .chain<string, SKTx>(() => {
+                if (isEvmChain(network)) {
+                  return Either.encase(() => JSON.parse(tx))
+                    .mapLeft(() => "Failed to parse tx")
+                    .chain((val) => unsignedEVMTransactionCodec.decode(val))
+                    .map((v) => prepareEVMTx({ address, decodedTx: v }));
+                }
+
+                if (isSolanaChain(network)) {
+                  return unsignedSolanaTransactionCodec.decode(tx);
+                }
+
+                if (isTonChain(network)) {
+                  return Either.encase(() => JSON.parse(tx))
+                    .mapLeft(() => "Failed to parse tx")
+                    .chain((val) => unsignedTonTransactionCodec.decode(val));
+                }
+
+                return Left("Unsupported network");
+              })
               .mapLeft((e) => {
                 console.log(e);
                 return new TransactionDecodeError();
               })
           )
-            .chain((val) =>
-              conn.sendTransaction(
-                prepareEVMTx({ address, decodedTx: val }),
-                txMeta
-              )
-            )
+            .chain((val) => conn.sendTransaction(val, txMeta))
             .map((val) => ({ signedTx: val, broadcasted: true }));
         }
 
@@ -272,14 +290,14 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               .map((val) => prepareEVMTx({ address, decodedTx: val }))
               .mapLeft(() => new TransactionDecodeError())
           )
-            .chain((val) =>
+            .chain(({ tx }) =>
               conn
                 .sendTransactions({
                   txs: [
                     {
-                      data: val.data,
-                      to: val.to,
-                      value: val.value ?? "0",
+                      data: tx.data,
+                      to: tx.to,
+                      value: tx.value ?? "0",
                     },
                   ],
                 })

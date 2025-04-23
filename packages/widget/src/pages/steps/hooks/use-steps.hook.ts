@@ -25,6 +25,7 @@ export const useSteps = ({
     transactions: session.transactions,
     integrationId: session.integrationId,
     actionId: session.id,
+    actionType: session.type,
   });
 
   /**

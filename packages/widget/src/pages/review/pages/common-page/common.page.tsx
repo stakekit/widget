@@ -13,7 +13,6 @@ import { Box } from "../../../../components/atoms/box";
 import { Text } from "../../../../components/atoms/typography";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
-import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { PageContainer } from "../../../components";
 import { MetaInfo } from "../../../components/meta-info";
@@ -53,8 +52,6 @@ export const ReviewPage = ({
   feeConfigLoading = false,
   ...rest
 }: ReviewPageProps) => {
-  useTrackPage("stakeReview");
-
   const trackEvent = useTrackEvent();
   const { t } = useTranslation();
 

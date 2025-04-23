@@ -1,3 +1,7 @@
+import type {
+  SolanaTx,
+  TonTx,
+} from "@sk-widget/domain/types/wallets/generic-wallet";
 import type { Transaction as TronTx } from "@tronweb3/tronwallet-abstract-adapter";
 import type { GetType } from "purify-ts";
 import { Codec, Left, Right, number, optional } from "purify-ts";
@@ -55,6 +59,33 @@ export const unsignedTronTransactionCodec = Codec.custom<TronTx>({
       return Right(val as TronTx);
     }
     return Left("Invalid Tron transaction");
+  },
+  encode(value) {
+    return value;
+  },
+});
+
+export const unsignedSolanaTransactionCodec = Codec.custom<SolanaTx>({
+  decode(value) {
+    if (typeof value !== "string") {
+      return Left("Invalid solana transaction");
+    }
+
+    return Right({ type: "solana", tx: value } as SolanaTx);
+  },
+  encode(value) {
+    return value;
+  },
+});
+
+export const unsignedTonTransactionCodec = Codec.custom<TonTx>({
+  decode(value) {
+    const val = value as Partial<TonTx["tx"]>;
+
+    if (typeof val.seqno === "number" && typeof val.message === "string") {
+      return Right({ type: "ton", tx: val } as TonTx);
+    }
+    return Left("Invalid TON transaction");
   },
   encode(value) {
     return value;

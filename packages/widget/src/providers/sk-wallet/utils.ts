@@ -42,20 +42,23 @@ export const prepareEVMTx = ({
   address: Hex;
   decodedTx: DecodedEVMTransaction;
 }): EVMTx => ({
-  to: decodedTx.to,
-  from: address,
-  data: decodedTx.data,
-  value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
-  nonce: numberToHex(decodedTx.nonce),
-  gas: numberToHex(decodedTx.gasLimit),
-  chainId: numberToHex(decodedTx.chainId),
-  ...(decodedTx.maxFeePerGas
-    ? {
-        type: TxType.EIP1559,
-        maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
-        maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
-          ? numberToHex(decodedTx.maxPriorityFeePerGas)
-          : undefined,
-      }
-    : { type: TxType.Legacy }),
+  type: "evm",
+  tx: {
+    to: decodedTx.to,
+    from: address,
+    data: decodedTx.data,
+    value: decodedTx.value ? numberToHex(decodedTx.value) : undefined,
+    nonce: numberToHex(decodedTx.nonce),
+    gas: numberToHex(decodedTx.gasLimit),
+    chainId: numberToHex(decodedTx.chainId),
+    ...(decodedTx.maxFeePerGas
+      ? {
+          type: TxType.EIP1559,
+          maxFeePerGas: numberToHex(decodedTx.maxFeePerGas),
+          maxPriorityFeePerGas: decodedTx.maxPriorityFeePerGas
+            ? numberToHex(decodedTx.maxPriorityFeePerGas)
+            : undefined,
+        }
+      : { type: TxType.Legacy }),
+  },
 });
