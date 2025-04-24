@@ -239,14 +239,14 @@ export const SKApp = (props: SKAppProps) => {
 };
 
 export type BundledSKWidgetProps = SKAppProps & {
-  ref?: RefObject<{ rerender: (newProps: SKAppProps) => void }>;
+  ref?: RefObject<{ rerender: (newProps: BundledSKWidgetProps) => void }>;
 };
 
 const BundledSKWidget = (_props: BundledSKWidgetProps) => {
   const [props, setProps] = useState(_props);
 
   useImperativeHandle(props.ref, () => ({
-    rerender: (newProps: SKAppProps) => setProps(newProps),
+    rerender: (newProps: BundledSKWidgetProps) => setProps(newProps),
   }));
 
   return <SKApp {...props} />;
@@ -269,6 +269,7 @@ export const renderSKWidget = ({
   root.render(<BundledSKWidget {...rest} ref={appRef} />);
 
   return {
-    rerender: (newProps: SKAppProps) => appRef.current.rerender(newProps),
+    rerender: (newProps: SKAppProps) =>
+      appRef.current.rerender({ ...newProps, ref: appRef }),
   };
 };
