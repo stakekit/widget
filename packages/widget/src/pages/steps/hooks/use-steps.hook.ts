@@ -1,4 +1,6 @@
+import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { useEffect, useLayoutEffect, useMemo } from "react";
@@ -14,19 +16,42 @@ import { useStepsMachine } from "./use-steps-machine.hook";
 export const useSteps = ({
   session,
   onSignSuccess,
+  providersDetails,
 }: {
   onSignSuccess?: () => void;
   session: ActionDto;
+  providersDetails: ReturnType<typeof useProvidersDetails>;
 }) => {
   const navigate = useNavigate();
 
   const callbacksRef = useSavedRef({ onSignSuccess });
 
+  const actionMeta = useMemo(
+    (): ActionMeta => ({
+      actionId: session.id,
+      actionType: session.type,
+      amount: session.amount,
+      inputToken: session.inputToken,
+      providersDetails: providersDetails
+        .map((providerDetail) =>
+          providerDetail.map((v) => ({
+            name: v.name,
+            address: v.address,
+            rewardRate: v.rewardRate,
+            rewardType: v.rewardType,
+            website: v.website,
+            logo: v.logo,
+          }))
+        )
+        .orDefault([]),
+    }),
+    [session, providersDetails]
+  );
+
   const [machineState, send, actorRef] = useStepsMachine({
     transactions: session.transactions,
     integrationId: session.integrationId,
-    actionId: session.id,
-    actionType: session.type,
+    actionMeta,
   });
 
   /**

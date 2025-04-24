@@ -1,4 +1,8 @@
-import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
+import type {
+  ActionDto,
+  RewardTypes,
+  TransactionDto,
+} from "@stakekit/api-hooks";
 import type * as TronWeb from "tronweb";
 import type { Hex } from "viem";
 
@@ -45,17 +49,29 @@ export type TronTx = {
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
 
+export type ActionMeta = {
+  actionId: ActionDto["id"];
+  actionType: ActionDto["type"];
+  amount: ActionDto["amount"];
+  inputToken: ActionDto["inputToken"];
+  providersDetails: {
+    name: string;
+    address: string | undefined;
+    rewardRate: number | undefined;
+    rewardType: RewardTypes;
+    website: string | undefined;
+    logo: string | undefined;
+  }[];
+};
+
+export type SKTxMeta = ActionMeta & {
+  txId: TransactionDto["id"];
+  txType: TransactionDto["type"];
+};
+
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-  sendTransaction(
-    tx: SKTx,
-    txMeta: {
-      txId: TransactionDto["id"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
-      txType: TransactionDto["type"];
-    }
-  ): Promise<string>;
+  sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<string>;
 };

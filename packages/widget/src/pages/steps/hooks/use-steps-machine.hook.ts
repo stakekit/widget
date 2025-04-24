@@ -1,3 +1,4 @@
+import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useSavedRef } from "@sk-widget/hooks";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
@@ -58,13 +59,11 @@ type SignRes =
 export const useStepsMachine = ({
   transactions,
   integrationId,
-  actionId,
-  actionType,
+  actionMeta,
 }: {
   transactions: ActionDto["transactions"];
   integrationId: ActionDto["integrationId"];
-  actionId: ActionDto["id"];
-  actionType: ActionDto["type"];
+  actionMeta: ActionMeta;
 }) => {
   const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
 
@@ -82,8 +81,7 @@ export const useStepsMachine = ({
     trackEvent,
     signMessage,
     signTransaction,
-    actionId,
-    actionType,
+    actionMeta,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -98,8 +96,7 @@ const getMachine = (
       trackEvent: ReturnType<typeof useTrackEvent>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
+      actionMeta: ActionMeta;
     }>
   >
 ) => {
@@ -269,9 +266,8 @@ const getMachine = (
                       tx: constructedTx.unsignedTransaction,
                       ledgerHwAppId: constructedTx.ledgerHwAppId,
                       txMeta: {
-                        actionId: ref.current.actionId,
+                        ...ref.current.actionMeta,
                         txId: constructedTx.id,
-                        actionType: ref.current.actionType,
                         txType: constructedTx.type,
                       },
                       network: constructedTx.network,

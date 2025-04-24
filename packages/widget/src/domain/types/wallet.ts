@@ -1,6 +1,5 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
-  ActionDto,
   AddressWithTokenDtoAdditionalAddresses,
   Networks,
   TransactionDto,
@@ -14,19 +13,14 @@ import type {
 } from "../../pages/steps/hooks/errors";
 import type { Nullable } from "../../types";
 import type { SupportedSKChains } from "./chains";
-
+import type { SKTxMeta } from "./wallets/generic-wallet";
 type SignedTxOrMessage = string;
 
 export type SKWallet = {
   disconnect: () => Promise<void>;
   signTransaction: (args: {
     tx: NonNullable<TransactionDto["unsignedTransaction"]>;
-    txMeta: {
-      txId: TransactionDto["id"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
-      txType: TransactionDto["type"];
-    };
+    txMeta: SKTxMeta;
     ledgerHwAppId: Nullable<string>;
     network: Networks;
   }) => EitherAsync<
