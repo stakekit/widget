@@ -124,6 +124,10 @@ export const isTonChain = (chain: string): chain is SupportedMiscChains => {
   return chain === MiscNetworks.Ton;
 };
 
+export const isTronChain = (chain: string): chain is SupportedMiscChains => {
+  return chain === MiscNetworks.Tron;
+};
+
 export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
   return (
     isEvmChain(chain) ||

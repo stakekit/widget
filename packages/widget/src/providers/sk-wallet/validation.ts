@@ -1,10 +1,15 @@
-import type {
-  SolanaTx,
-  TonTx,
-} from "@sk-widget/domain/types/wallets/generic-wallet";
-import type { Transaction as TronTx } from "@tronweb3/tronwallet-abstract-adapter";
 import type { GetType } from "purify-ts";
-import { Codec, Left, Right, number, optional } from "purify-ts";
+import {
+  Codec,
+  Left,
+  Right,
+  boolean,
+  number,
+  optional,
+  record,
+  string,
+  unknown,
+} from "purify-ts";
 import type { Address, Hex } from "viem";
 
 const bigintCodec = Codec.custom<bigint>({
@@ -51,43 +56,16 @@ export const unsignedEVMTransactionCodec = Codec.interface({
 
 export type DecodedEVMTransaction = GetType<typeof unsignedEVMTransactionCodec>;
 
-export const unsignedTronTransactionCodec = Codec.custom<TronTx>({
-  decode(value) {
-    const val = value as Partial<TronTx>;
-
-    if (val.raw_data && val.raw_data_hex && val.txID && "visible" in val) {
-      return Right(val as TronTx);
-    }
-    return Left("Invalid Tron transaction");
-  },
-  encode(value) {
-    return value;
-  },
+export const unsignedTronTransactionCodec = Codec.interface({
+  raw_data: record(string, unknown),
+  raw_data_hex: string,
+  txID: string,
+  visible: boolean,
 });
 
-export const unsignedSolanaTransactionCodec = Codec.custom<SolanaTx>({
-  decode(value) {
-    if (typeof value !== "string") {
-      return Left("Invalid solana transaction");
-    }
+export const unsignedSolanaTransactionCodec = string;
 
-    return Right({ type: "solana", tx: value } as SolanaTx);
-  },
-  encode(value) {
-    return value;
-  },
-});
-
-export const unsignedTonTransactionCodec = Codec.custom<TonTx>({
-  decode(value) {
-    const val = value as Partial<TonTx["tx"]>;
-
-    if (typeof val.seqno === "number" && typeof val.message === "string") {
-      return Right({ type: "ton", tx: val } as TonTx);
-    }
-    return Left("Invalid TON transaction");
-  },
-  encode(value) {
-    return value;
-  },
+export const unsignedTonTransactionCodec = Codec.interface({
+  seqno: bigintCodec,
+  message: string,
 });

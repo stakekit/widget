@@ -5,8 +5,12 @@ import {
   isEvmChain,
   isSolanaChain,
   isTonChain,
+  isTronChain,
 } from "@sk-widget/domain/types/chains";
-import type { SKTx } from "@sk-widget/domain/types/wallets/generic-wallet";
+import type {
+  SKTx,
+  TronTx,
+} from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useCheckIsUnmounted } from "@sk-widget/hooks/use-check-is-unmounted";
 import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
 import { SafeFailedError } from "@sk-widget/providers/sk-wallet/errors";
@@ -260,13 +264,23 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 }
 
                 if (isSolanaChain(network)) {
-                  return unsignedSolanaTransactionCodec.decode(tx);
+                  return unsignedSolanaTransactionCodec
+                    .decode(tx)
+                    .map((v) => ({ type: "solana", tx: v }));
                 }
 
                 if (isTonChain(network)) {
                   return Either.encase(() => JSON.parse(tx))
                     .mapLeft(() => "Failed to parse tx")
-                    .chain((val) => unsignedTonTransactionCodec.decode(val));
+                    .chain((val) => unsignedTonTransactionCodec.decode(val))
+                    .map((v) => ({ type: "ton", tx: v }));
+                }
+
+                if (isTronChain(network)) {
+                  return Either.encase(() => JSON.parse(tx))
+                    .mapLeft(() => "Failed to parse tx")
+                    .chain((val) => unsignedTronTransactionCodec.decode(val))
+                    .map((v) => ({ type: "tron", tx: v }) as TronTx);
                 }
 
                 return Left("Unsupported network");

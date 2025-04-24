@@ -1,7 +1,6 @@
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
+import type * as TronWeb from "tronweb";
 import type { Hex } from "viem";
-
-type Base64String = string;
 
 export enum TxType {
   Legacy = "0x1",
@@ -29,17 +28,22 @@ export type EVMTx = {
   );
 };
 
-export type SolanaTx = { type: "solana"; tx: Base64String };
+export type SolanaTx = { type: "solana"; tx: string };
 
 export type TonTx = {
   type: "ton";
   tx: {
     seqno: bigint;
-    message: Base64String;
+    message: string;
   };
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx;
+export type TronTx = {
+  type: "tron";
+  tx: TronWeb.Types.Transaction;
+};
+
+export type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;

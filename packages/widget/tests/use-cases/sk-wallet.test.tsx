@@ -139,7 +139,7 @@ describe("SK Wallet", () => {
     expect(sendTransactionSpy).toHaveBeenCalledWith(
       {
         type: "ton",
-        tx: { seqno: 0, message: "12345" },
+        tx: { seqno: 0n, message: "12345" },
       },
       {
         txId: "",
