@@ -55,6 +55,7 @@ const trackEventMap = {
   validatorsSubmitted: "Validators submitted",
   validatorImported: "Validator imported",
   viewTxClicked: "View transaction clicked",
+  actionStepsCancelled: "Action steps cancelled",
   initYield: "system/initYield",
   initToken: "system/initToken",
 } as const;

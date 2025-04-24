@@ -1,3 +1,4 @@
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { useEffect, useLayoutEffect, useMemo } from "react";
@@ -95,7 +96,12 @@ export const useSteps = ({
     machineState.status,
   ]);
 
-  const onClick = () => navigate(-1);
+  const trackEvent = useTrackEvent();
+
+  const onClick = () => {
+    trackEvent("actionStepsCancelled");
+    navigate(-1);
+  };
 
   const retry = (() => {
     if (machineState.matches("signError")) {
