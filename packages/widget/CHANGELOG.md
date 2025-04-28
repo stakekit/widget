@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.226
+
+### Patch Changes
+
+- 9d61bb5: feat(initQueryParams): whitelist `+` in query params
+
 ## 0.0.225
 
 ### Patch Changes
