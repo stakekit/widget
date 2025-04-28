@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.225
+
+### Patch Changes
+
+- 15da93d: fix(ledger): cronos from cosmos family
+
 ## 0.0.224
 
 ### Patch Changes
