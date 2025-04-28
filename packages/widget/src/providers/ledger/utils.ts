@@ -39,8 +39,12 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 }) => {
   const { accountsFamilies, accountsCurrencies } = accounts.reduce(
     (acc, next) => {
-      acc.accountsFamilies.add(ledgerCurrencies.get(next.currency));
-      acc.accountsCurrencies.add(next.currency);
+      const ledgerCurrency = ledgerCurrencies.get(next.currency);
+
+      if (ledgerCurrency) {
+        acc.accountsFamilies.add(ledgerCurrency);
+        acc.accountsCurrencies.add(next.currency);
+      }
 
       return acc;
     },

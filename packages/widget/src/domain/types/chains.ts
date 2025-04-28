@@ -150,7 +150,6 @@ export type SupportedLedgerLiveFamilies = Extract<
   | "tezos"
   | "solana"
   | "cosmos"
-  | "crypto_org"
   | "celo"
   | "tron"
   | "polkadot"
@@ -207,13 +206,6 @@ export const supportedLedgerFamiliesWithCurrency = {
       skChainName: EvmNetworks.Celo,
     },
   },
-  crypto_org: {
-    "*": {
-      currencyId: "crypto_org",
-      family: "crypto_org",
-      skChainName: CosmosNetworks.Cronos,
-    },
-  },
   ethereum: {
     ethereum: {
       currencyId: "ethereum",
@@ -256,6 +248,11 @@ export const supportedLedgerFamiliesWithCurrency = {
       currencyId: "cosmos",
       family: "cosmos",
       skChainName: CosmosNetworks.Cosmos,
+    },
+    crypto_org: {
+      currencyId: "crypto_org",
+      family: "cosmos",
+      skChainName: CosmosNetworks.Cronos,
     },
     osmo: {
       currencyId: "osmo",
