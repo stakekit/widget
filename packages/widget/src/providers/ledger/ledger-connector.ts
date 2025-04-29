@@ -72,17 +72,38 @@ const createLedgerLiveConnector = ({
         await getLedgerCurrencies(walletApiClient)
       ).unsafeCoerce();
 
-      const accounts = (
-        await EitherAsync(() => walletApiClient.account.list()).mapLeft((e) => {
-          console.log(e);
-          return new Error("could not get accounts");
-        })
+      const allAccounts = (
+        await EitherAsync(() => walletApiClient.account.list())
+          .map((val) => ({
+            accounts: val,
+            accountsMap: new Map<Account["id"], Account>(
+              val.map((v) => [v.id, v])
+            ),
+          }))
+          .map((val) =>
+            val.accounts.map((acc) =>
+              acc.parentAccountId
+                ? Maybe.fromNullable(val.accountsMap.get(acc.parentAccountId))
+                    .map((parentAcc) => ({
+                      ...acc,
+                      currency: parentAcc.currency,
+                    }))
+                    .orDefault(acc)
+                : acc
+            )
+          )
+          .mapLeft((e) => {
+            console.log(e);
+            return new Error("could not get accounts");
+          })
       ).unsafeCoerce();
+
+      ledgerAccounts = allAccounts.filter((a) => !a.parentAccountId);
 
       const filteredSupportedLedgerFamiliesWithCurrency =
         getFilteredSupportedLedgerFamiliesWithCurrency({
           ledgerCurrencies,
-          accounts,
+          accounts: ledgerAccounts,
           enabledChainsMap,
         });
 
@@ -116,9 +137,7 @@ const createLedgerLiveConnector = ({
       $filteredChains.next([...enabled, ...disabled]);
       $disabledChains.next(disabled);
 
-      ledgerAccounts = accounts;
-
-      const accountsWithChain = accounts
+      const accountsWithChain = allAccounts
         .reduce(
           (acc, next) => {
             const family = ledgerCurrencies.get(next.currency);
@@ -177,10 +196,10 @@ const createLedgerLiveConnector = ({
             if (accId.startsWith("js:")) {
               const [, , , address] = accId.split(":");
 
-              return { type: "address", address };
+              return { type: "address", address } as const;
             }
 
-            return { type: "accountId", accountId: accId };
+            return { type: "accountId", accountId: accId } as const;
           })
       );
 
