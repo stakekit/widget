@@ -13,7 +13,10 @@ import type {
 } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useCheckIsUnmounted } from "@sk-widget/hooks/use-check-is-unmounted";
 import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
-import { SafeFailedError } from "@sk-widget/providers/sk-wallet/errors";
+import {
+  SafeFailedError,
+  SendTransactionError,
+} from "@sk-widget/providers/sk-wallet/errors";
 import { useInit } from "@sk-widget/providers/sk-wallet/use-init";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
@@ -34,17 +37,13 @@ import {
 import type { SKWallet } from "../../domain/types";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
-import {
-  type NotSupportedFlowError,
-  SendTransactionError,
-  TransactionDecodeError,
-} from "../../pages/steps/hooks/errors";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isExternalProviderConnector } from "../external-provider";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { useWagmiConfig } from "../wagmi";
+import { TransactionDecodeError } from "./errors";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { useConnectorChains } from "./use-connector-chains";
 import { useCosmosCW } from "./use-cosmos-cw";
@@ -167,225 +166,239 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
     ({ tx, ledgerHwAppId, txMeta, network }) =>
-      connectorDetails.chain<
-        TransactionDecodeError | SendTransactionError | NotSupportedFlowError,
-        { signedTx: string; broadcasted: boolean }
-      >(({ conn, address }) => {
-        /**
-         * Ledger Live connector
-         */
-        if (isLedgerLiveConnector(conn)) {
-          return EitherAsync.liftEither(
-            Maybe.fromNullable(ledgerCurrentAccountId).toEither(
-              new Error("currentAccountId missing")
+      connectorDetails
+        .mapLeft(() => new SendTransactionError())
+        .chain<
+          TransactionDecodeError | SendTransactionError,
+          { signedTx: string; broadcasted: boolean }
+        >(({ conn, address }) => {
+          /**
+           * Ledger Live connector
+           */
+          if (isLedgerLiveConnector(conn)) {
+            return EitherAsync.liftEither(
+              Maybe.fromNullable(ledgerCurrentAccountId).toEither(
+                new SendTransactionError()
+              )
             )
-          )
-            .chain((val) =>
-              EitherAsync.liftEither(
-                Either.encase(() => JSON.parse(tx))
-                  .mapLeft(() => new Error("JSON.parse failed"))
-                  .chain((parsedTx) =>
-                    Either.encase(() =>
-                      conn.deserializeTransaction(parsedTx)
-                    ).mapLeft(() => new Error("deserializeTransaction failed"))
-                  )
-              ).map((deserializedTransaction) => ({
-                accountId: val,
-                deserializedTransaction,
-              }))
-            )
-            .chain(({ accountId, deserializedTransaction }) =>
-              EitherAsync(() =>
-                conn.walletApiClient.transaction.signAndBroadcast(
-                  accountId,
+              .chain((val) =>
+                EitherAsync.liftEither(
+                  Either.encase(() => JSON.parse(tx))
+
+                    .chain((parsedTx) =>
+                      Either.encase(() => conn.deserializeTransaction(parsedTx))
+                    )
+                    .mapLeft(() => new TransactionDecodeError())
+                ).map((deserializedTransaction) => ({
+                  accountId: val,
                   deserializedTransaction,
-                  Maybe.fromNullable(ledgerHwAppId)
-                    .map((v) => ({ hwAppId: v }))
-                    .extract()
-                )
-              ).mapLeft((e) => {
-                console.log(e);
-                return new Error("sign failed");
-              })
+                }))
+              )
+              .chain(({ accountId, deserializedTransaction }) =>
+                EitherAsync(() =>
+                  conn.walletApiClient.transaction.signAndBroadcast(
+                    accountId,
+                    deserializedTransaction,
+                    Maybe.fromNullable(ledgerHwAppId)
+                      .map((v) => ({ hwAppId: v }))
+                      .extract()
+                  )
+                ).mapLeft((e) => {
+                  console.log(e);
+                  return new SendTransactionError();
+                })
+              )
+              .map((val) => ({ signedTx: val, broadcasted: true }));
+          }
+
+          /**
+           * Cosmos connector
+           */
+          if (isCosmosConnector(conn)) {
+            return EitherAsync.liftEither(
+              Maybe.fromNullable(cosmosCW).toEither(
+                new Error("cosmosCW missing")
+              )
             )
-            .map((val) => ({ signedTx: val, broadcasted: true }));
-        }
+              .chain((cw) =>
+                // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
+                conn
+                  .signTransaction({ cw, tx })
+                  .map((val) => ({ signedTx: val, broadcasted: false }))
+              )
+              .mapLeft(() => new SendTransactionError());
+          }
 
-        /**
-         * Cosmos connector
-         */
-        if (isCosmosConnector(conn)) {
-          return EitherAsync.liftEither(
-            Maybe.fromNullable(cosmosCW).toEither(new Error("cosmosCW missing"))
-          ).chain((cw) =>
-            // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
-            conn
-              .signTransaction({ cw, tx })
-              .map((val) => ({ signedTx: val, broadcasted: false }))
-          );
-        }
-
-        /**
-         * Tron connector
-         */
-        if (isTronConnector(conn)) {
-          return EitherAsync.liftEither(
-            Either.encase(() => JSON.parse(tx))
-              .chain((val) => unsignedTronTransactionCodec.decode(val))
-              .mapLeft((e) => {
-                console.log(e);
-                return new TransactionDecodeError();
-              })
-          )
-            .chain((val) =>
-              EitherAsync(() => conn.signTransaction(val)).mapLeft((e) => {
-                console.log(e);
-                return new Error("sign failed");
-              })
+          /**
+           * Tron connector
+           */
+          if (isTronConnector(conn)) {
+            return EitherAsync.liftEither(
+              Either.encase(() => JSON.parse(tx))
+                .chain((val) => unsignedTronTransactionCodec.decode(val))
+                .mapLeft((e) => {
+                  console.log(e);
+                  return new TransactionDecodeError();
+                })
             )
-            .map((val) => ({
-              signedTx: JSON.stringify(val),
-              broadcasted: false,
-            }));
-        }
+              .chain((val) =>
+                EitherAsync(() => conn.signTransaction(val)).mapLeft((e) => {
+                  console.log(e);
+                  return new SendTransactionError();
+                })
+              )
+              .map((val) => ({
+                signedTx: JSON.stringify(val),
+                broadcasted: false,
+              }));
+          }
 
-        /**
-         * External provider connector
-         */
-        if (isExternalProviderConnector(conn)) {
-          return EitherAsync.liftEither(
-            Right(null)
-              .chain<string, SKTx>(() => {
-                if (isEvmChain(network)) {
-                  return Either.encase(() => JSON.parse(tx))
-                    .mapLeft(() => "Failed to parse tx")
-                    .chain((val) => unsignedEVMTransactionCodec.decode(val))
-                    .map((v) => prepareEVMTx({ address, decodedTx: v }));
-                }
+          /**
+           * External provider connector
+           */
+          if (isExternalProviderConnector(conn)) {
+            return EitherAsync.liftEither(
+              Right(null)
+                .chain<string, SKTx>(() => {
+                  if (isEvmChain(network)) {
+                    return Either.encase(() => JSON.parse(tx))
+                      .mapLeft(() => "Failed to parse tx")
+                      .chain((val) => unsignedEVMTransactionCodec.decode(val))
+                      .map((v) => prepareEVMTx({ address, decodedTx: v }));
+                  }
 
-                if (isSolanaChain(network)) {
-                  return unsignedSolanaTransactionCodec
-                    .decode(tx)
-                    .map((v) => ({ type: "solana", tx: v }));
-                }
+                  if (isSolanaChain(network)) {
+                    return unsignedSolanaTransactionCodec
+                      .decode(tx)
+                      .map((v) => ({ type: "solana", tx: v }));
+                  }
 
-                if (isTonChain(network)) {
-                  return Either.encase(() => JSON.parse(tx))
-                    .mapLeft(() => "Failed to parse tx")
-                    .chain((val) => unsignedTonTransactionCodec.decode(val))
-                    .map((v) => ({ type: "ton", tx: v }));
-                }
+                  if (isTonChain(network)) {
+                    return Either.encase(() => JSON.parse(tx))
+                      .mapLeft(() => "Failed to parse tx")
+                      .chain((val) => unsignedTonTransactionCodec.decode(val))
+                      .map((v) => ({ type: "ton", tx: v }));
+                  }
 
-                if (isTronChain(network)) {
-                  return Either.encase(() => JSON.parse(tx))
-                    .mapLeft(() => "Failed to parse tx")
-                    .chain((val) => unsignedTronTransactionCodec.decode(val))
-                    .map((v) => ({ type: "tron", tx: v }) as TronTx);
-                }
+                  if (isTronChain(network)) {
+                    return Either.encase(() => JSON.parse(tx))
+                      .mapLeft(() => "Failed to parse tx")
+                      .chain((val) => unsignedTronTransactionCodec.decode(val))
+                      .map((v) => ({ type: "tron", tx: v }) as TronTx);
+                  }
 
-                return Left("Unsupported network");
-              })
-              .mapLeft((e) => {
-                console.log(e);
-                return new TransactionDecodeError();
-              })
-          )
-            .chain((val) => conn.sendTransaction(val, txMeta))
-            .map((val) => ({ signedTx: val, broadcasted: true }));
-        }
+                  return Left("Unsupported network");
+                })
+                .mapLeft((e) => {
+                  console.log(e);
+                  return new TransactionDecodeError();
+                })
+            )
+              .chain((val) =>
+                conn
+                  .sendTransaction(val, txMeta)
+                  .mapLeft(
+                    (e) =>
+                      new SendTransactionError(
+                        typeof e === "string" ? e : undefined
+                      )
+                  )
+              )
+              .map((val) => ({ signedTx: val, broadcasted: true }));
+          }
 
-        /**
-         * Safe connector
-         */
-        if (isSafeConnector(conn)) {
+          /**
+           * Safe connector
+           */
+          if (isSafeConnector(conn)) {
+            return EitherAsync.liftEither(
+              Either.encase(() => JSON.parse(tx))
+                .chain((val) => unsignedEVMTransactionCodec.decode(val))
+                .map((val) => prepareEVMTx({ address, decodedTx: val }))
+                .mapLeft(() => new TransactionDecodeError())
+            )
+              .chain(({ tx }) =>
+                conn
+                  .sendTransactions({
+                    txs: [
+                      {
+                        data: tx.data,
+                        to: tx.to,
+                        value: tx.value ?? "0",
+                      },
+                    ],
+                  })
+                  .map((res) => res.safeTxHash)
+              )
+              .chain((safeTxHash) =>
+                withRequestErrorRetry({
+                  fn: () =>
+                    conn
+                      .getTxStatus(safeTxHash)
+                      .chain((res) =>
+                        !res.txHash || res.txStatus !== conn.txStatus.SUCCESS
+                          ? EitherAsync.liftEither(
+                              Left(
+                                new SafeFailedError(
+                                  res.txStatus === conn.txStatus.FAILED ||
+                                    res.txStatus === conn.txStatus.CANCELLED
+                                    ? "FAILED"
+                                    : "NOT_READY"
+                                )
+                              )
+                            )
+                          : EitherAsync.liftEither(Right(res.txHash))
+                      )
+                      .run()
+                      .then((res) => res.unsafeCoerce()),
+                  shouldRetry: (error, retryCount) =>
+                    Maybe.fromNullable(error)
+                      .chainNullable((e) =>
+                        (e as SafeFailedError)._tag === "SafeFailedError"
+                          ? (e as SafeFailedError)
+                          : null
+                      )
+                      .filter((e) => e.type !== "FAILED" && !checkIsUnmounted())
+                      .map(() => retryCount < 120)
+                      .orDefault(false),
+                  retryWaitForMs: () => 7000,
+                })
+              )
+              .mapLeft(() => new SendTransactionError())
+              .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
+          }
+
+          /**
+           * EVM connector
+           */
           return EitherAsync.liftEither(
             Either.encase(() => JSON.parse(tx))
               .chain((val) => unsignedEVMTransactionCodec.decode(val))
-              .map((val) => prepareEVMTx({ address, decodedTx: val }))
-              .mapLeft(() => new TransactionDecodeError())
-          )
-            .chain(({ tx }) =>
-              conn
-                .sendTransactions({
-                  txs: [
-                    {
-                      data: tx.data,
-                      to: tx.to,
-                      value: tx.value ?? "0",
-                    },
-                  ],
-                })
-                .map((res) => res.safeTxHash)
-            )
-            .chain((safeTxHash) =>
-              withRequestErrorRetry({
-                fn: () =>
-                  conn
-                    .getTxStatus(safeTxHash)
-                    .chain((res) =>
-                      !res.txHash || res.txStatus !== conn.txStatus.SUCCESS
-                        ? EitherAsync.liftEither(
-                            Left(
-                              new SafeFailedError(
-                                res.txStatus === conn.txStatus.FAILED ||
-                                  res.txStatus === conn.txStatus.CANCELLED
-                                  ? "FAILED"
-                                  : "NOT_READY"
-                              )
-                            )
-                          )
-                        : EitherAsync.liftEither(Right(res.txHash))
-                    )
-                    .run()
-                    .then((res) => res.unsafeCoerce()),
-                shouldRetry: (error, retryCount) =>
-                  Maybe.fromNullable(error)
-                    .chainNullable((e) =>
-                      (e as SafeFailedError)._tag === "SafeFailedError"
-                        ? (e as SafeFailedError)
-                        : null
-                    )
-                    .filter((e) => e.type !== "FAILED" && !checkIsUnmounted())
-                    .map(() => retryCount < 120)
-                    .orDefault(false),
-                retryWaitForMs: () => 7000,
+              .mapLeft((e) => {
+                console.log(e);
+                return new TransactionDecodeError();
+              })
+          ).chain((val) =>
+            EitherAsync(() =>
+              /**
+               * Params need to be in strict format, don't spread the object(val)!
+               */
+              sendTransactionAsync({
+                data: val.data,
+                to: val.to,
+                value: val.value,
+                nonce: val.nonce,
+                maxFeePerGas: val.maxFeePerGas,
+                maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+                chainId: val.chainId,
+                gas: val.gasLimit,
+                type: val.maxFeePerGas ? "eip1559" : "legacy",
               })
             )
-            .mapLeft(() => new Error("sendTransactions failed"))
-            .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
-        }
-
-        /**
-         * EVM connector
-         */
-        return EitherAsync.liftEither(
-          Either.encase(() => JSON.parse(tx))
-            .chain((val) => unsignedEVMTransactionCodec.decode(val))
-            .mapLeft((e) => {
-              console.log(e);
-              return new TransactionDecodeError();
-            })
-        ).chain((val) =>
-          EitherAsync(() =>
-            /**
-             * Params need to be in strict format, don't spread the object(val)!
-             */
-            sendTransactionAsync({
-              data: val.data,
-              to: val.to,
-              value: val.value,
-              nonce: val.nonce,
-              maxFeePerGas: val.maxFeePerGas,
-              maxPriorityFeePerGas: val.maxPriorityFeePerGas,
-              chainId: val.chainId,
-              gas: val.gasLimit,
-              type: val.maxFeePerGas ? "eip1559" : "legacy",
-            })
-          )
-            .mapLeft(() => new SendTransactionError())
-            .map((val) => ({ signedTx: val, broadcasted: true }))
-        );
-      }),
+              .mapLeft(() => new SendTransactionError())
+              .map((val) => ({ signedTx: val, broadcasted: true }))
+          );
+        }),
     [
       connectorDetails,
       cosmosCW,

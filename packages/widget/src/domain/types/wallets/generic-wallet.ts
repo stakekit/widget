@@ -73,5 +73,12 @@ export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
   switchChain: (chainId: number) => Promise<void>;
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
-  sendTransaction(tx: SKTx, txMeta: SKTxMeta): Promise<string>;
+  sendTransaction(
+    tx: SKTx,
+    txMeta: SKTxMeta
+  ): Promise<
+    | string
+    | { type: "success"; txHash: string }
+    | { type: "error"; error: string }
+  >;
 };
