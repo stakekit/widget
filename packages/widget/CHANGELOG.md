@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.227
+
+### Patch Changes
+
+- 10199f3: feat(ledger): parent account handling
+
 ## 0.0.226
 
 ### Patch Changes
