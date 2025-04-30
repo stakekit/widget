@@ -1,5 +1,16 @@
 # @stakekit/widget
 
+## 0.0.228
+
+### Patch Changes
+
+- 00e01c7: feat: tokens for enabled yields only option
+- 00e01c7: feat(externalProviders): add tron support
+- 00e01c7: feat(externalProviders): display signTransaction message
+- 00e01c7: feat(externalProviders): provider details in txMeta
+- 00e01c7: fix(bundledWidget): allow multiple re-renders
+- 00e01c7: feat(tracking): add action steps cancelled event
+
 ## 0.0.227
 
 ### Patch Changes
