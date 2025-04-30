@@ -1,36 +1,33 @@
-import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
-import { EitherAsync, Left } from "purify-ts";
+import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
-import type { SKTx } from "./wallets/generic-wallet";
+import type { SKTx, SKTxMeta } from "./wallets/generic-wallet";
 
 export class ExternalProvider {
   constructor(private variantProvider: RefObject<SKExternalProviders>) {}
 
-  private invalidProviderType() {
-    return EitherAsync.liftEither(Left(new Error("Invalid provider type")));
-  }
+  sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
+    return EitherAsync.liftEither(
+      Maybe.fromNullable(
+        this.variantProvider.current.provider.sendTransaction
+      ).toEither(new Error("Invalid provider type"))
+    )
+      .chain((_sendTransaction) =>
+        EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft(
+          () => new Error("Failed to send transaction, unknown error")
+        )
+      )
+      .chain((res) => {
+        if (typeof res === "string") {
+          return EitherAsync.liftEither(Right(res));
+        }
 
-  sendTransaction(
-    tx: SKTx,
-    txMeta: {
-      txId: TransactionDto["id"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
-      txType: TransactionDto["type"];
-    }
-  ) {
-    const _sendTransaction =
-      this.variantProvider.current.provider.sendTransaction;
+        if (res.type === "success") {
+          return EitherAsync.liftEither(Right(res.txHash));
+        }
 
-    if (!_sendTransaction) {
-      return this.invalidProviderType();
-    }
-
-    return EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft((e) => {
-      console.log(e);
-      return new Error("Failed to send transaction");
-    });
+        return EitherAsync.liftEither(Left(res.error));
+      });
   }
 
   switchChain({ chainId }: { chainId: number }) {

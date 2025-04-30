@@ -132,6 +132,7 @@ export const setup = async () => {
     validatorAddresses: null,
     completedAt: null,
     createdAt: "2023-12-28T14:36:21.700Z",
+    projectId: "projectId",
     transactions: [
       {
         id: "9aa80e02-3d81-4b0f-aa0b-155138b77293",

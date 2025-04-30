@@ -7,3 +7,24 @@ export class SafeFailedError extends Error {
     this.type = type;
   }
 }
+
+export class SendTransactionError extends Error {
+  _tag = "SendTransactionError";
+
+  constructor(message?: string) {
+    super(message);
+
+    this._tag = "SendTransactionError";
+  }
+}
+export class TransactionDecodeError extends Error {
+  _tag = "TransactionDecodeError";
+
+  constructor(message?: string) {
+    super(message);
+
+    this._tag = "TransactionDecodeError";
+  }
+}
+
+new SendTransactionError();

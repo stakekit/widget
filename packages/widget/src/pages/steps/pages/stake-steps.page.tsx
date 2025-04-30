@@ -1,6 +1,8 @@
+import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { importValidator } from "../../../common/import-validator";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../providers/sk-wallet";
@@ -33,10 +35,22 @@ export const StakeStepsPage = () => {
       )
     );
 
+  const providersDetails = useProvidersDetails({
+    integrationData: useMemo(
+      () => Maybe.of(enterRequest.selectedStake),
+      [enterRequest.selectedStake]
+    ),
+    validatorsAddresses: useMemo(
+      () => Maybe.of(enterRequest.selectedValidators),
+      [enterRequest.selectedValidators]
+    ),
+  });
+
   return (
     <StepsPage
       session={enterRequest.actionDto.unsafeCoerce()}
       onSignSuccess={onSignSuccess}
+      providersDetails={providersDetails}
     />
   );
 };

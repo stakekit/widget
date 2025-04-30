@@ -1,7 +1,10 @@
-import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
+import type {
+  ActionDto,
+  RewardTypes,
+  TransactionDto,
+} from "@stakekit/api-hooks";
+import type * as TronWeb from "tronweb";
 import type { Hex } from "viem";
-
-type Base64String = string;
 
 export enum TxType {
   Legacy = "0x1",
@@ -29,17 +32,42 @@ export type EVMTx = {
   );
 };
 
-export type SolanaTx = { type: "solana"; tx: Base64String };
+export type SolanaTx = { type: "solana"; tx: string };
 
 export type TonTx = {
   type: "ton";
   tx: {
     seqno: bigint;
-    message: Base64String;
+    message: string;
   };
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx;
+export type TronTx = {
+  type: "tron";
+  tx: TronWeb.Types.Transaction;
+};
+
+export type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
+
+export type ActionMeta = {
+  actionId: ActionDto["id"];
+  actionType: ActionDto["type"];
+  amount: ActionDto["amount"];
+  inputToken: ActionDto["inputToken"];
+  providersDetails: {
+    name: string;
+    address: string | undefined;
+    rewardRate: number | undefined;
+    rewardType: RewardTypes;
+    website: string | undefined;
+    logo: string | undefined;
+  }[];
+};
+
+export type SKTxMeta = ActionMeta & {
+  txId: TransactionDto["id"];
+  txType: TransactionDto["type"];
+};
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
@@ -47,11 +75,10 @@ export type SKWallet = {
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(
     tx: SKTx,
-    txMeta: {
-      txId: TransactionDto["id"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
-      txType: TransactionDto["type"];
-    }
-  ): Promise<string>;
+    txMeta: SKTxMeta
+  ): Promise<
+    | string
+    | { type: "success"; txHash: string }
+    | { type: "error"; error: string }
+  >;
 };

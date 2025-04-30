@@ -119,7 +119,7 @@ export const TxState = ({ txState, position, count }: Props) => {
               <Text>{t("steps.approve")}</Text>
               {txState.state === TxStateEnum.SIGN_ERROR ? (
                 <Text variant={{ type: "danger" }}>
-                  {t("steps.approve_error")}
+                  {txState.meta.signError?.message || t("steps.approve_error")}
                 </Text>
               ) : (
                 <Text variant={{ type: "muted", weight: "normal" }}>

@@ -23,7 +23,7 @@ export const useInitToken = () => {
   const queryClient = useSKQueryClient();
   const { data: positionsData } = usePositionsData();
 
-  const { externalProviders } = useSettings();
+  const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -41,6 +41,7 @@ export const useInitToken = () => {
           address,
           network,
           queryClient,
+          tokensForEnabledYieldsOnly,
         }).chain((val) =>
           getInitParams({
             isLedgerLive,

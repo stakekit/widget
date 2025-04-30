@@ -72,6 +72,15 @@ describe("SK Wallet", () => {
         actionId: "",
         actionType: "STAKE",
         txType: "APPROVAL",
+        amount: "100",
+        inputToken: {
+          address: "",
+          decimals: 0,
+          symbol: "",
+          name: "",
+          network: "solana",
+        },
+        providersDetails: [],
       },
       ledgerHwAppId: null,
     });
@@ -90,6 +99,15 @@ describe("SK Wallet", () => {
         actionId: "",
         actionType: "STAKE",
         txType: "APPROVAL",
+        amount: "100",
+        inputToken: {
+          address: "",
+          decimals: 0,
+          symbol: "",
+          name: "",
+          network: "solana",
+        },
+        providersDetails: [],
       }
     );
   });
@@ -128,6 +146,15 @@ describe("SK Wallet", () => {
         actionId: "",
         actionType: "STAKE",
         txType: "APPROVAL",
+        amount: "100",
+        inputToken: {
+          address: "",
+          decimals: 0,
+          symbol: "",
+          name: "",
+          network: "ton",
+        },
+        providersDetails: [],
       },
       ledgerHwAppId: null,
     });
@@ -139,13 +166,22 @@ describe("SK Wallet", () => {
     expect(sendTransactionSpy).toHaveBeenCalledWith(
       {
         type: "ton",
-        tx: { seqno: 0, message: "12345" },
+        tx: { seqno: 0n, message: "12345" },
       },
       {
         txId: "",
         actionId: "",
         actionType: "STAKE",
         txType: "APPROVAL",
+        amount: "100",
+        inputToken: {
+          address: "",
+          decimals: 0,
+          symbol: "",
+          name: "",
+          network: "ton",
+        },
+        providersDetails: [],
       }
     );
   });

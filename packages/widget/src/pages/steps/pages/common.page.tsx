@@ -1,3 +1,4 @@
+import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import type { ActionDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -10,12 +11,18 @@ import { TxState } from "./tx-state";
 type StepsPageProps = {
   session: ActionDto;
   onSignSuccess?: () => void;
+  providersDetails: ReturnType<typeof useProvidersDetails>;
 };
 
-export const StepsPage = ({ session, onSignSuccess }: StepsPageProps) => {
+export const StepsPage = ({
+  session,
+  onSignSuccess,
+  providersDetails,
+}: StepsPageProps) => {
   const { retry, txStates } = useSteps({
     session,
     onSignSuccess,
+    providersDetails,
   });
 
   const { t } = useTranslation();

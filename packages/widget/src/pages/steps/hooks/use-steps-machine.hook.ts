@@ -1,4 +1,9 @@
+import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useSavedRef } from "@sk-widget/hooks";
+import type {
+  SendTransactionError,
+  TransactionDecodeError,
+} from "@sk-widget/providers/sk-wallet/errors";
 import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
 import {
   transactionConstruct,
@@ -17,7 +22,7 @@ import { withRequestErrorRetry } from "../../../common/utils";
 import { isTxError } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import type { GetStakeSessionError, SendTransactionError } from "./errors";
+import type { GetStakeSessionError } from "./errors";
 import {
   SignError,
   SubmitError,
@@ -31,10 +36,9 @@ type TxMeta = {
   signedTx: string | null;
   broadcasted: boolean | null;
   signError:
-    | Error
-    | GetStakeSessionError
     | SendTransactionError
-    | SignError
+    | TransactionDecodeError
+    | TransactionConstructError
     | null;
   txCheckError: GetStakeSessionError | null;
   done: boolean;
@@ -58,13 +62,11 @@ type SignRes =
 export const useStepsMachine = ({
   transactions,
   integrationId,
-  actionId,
-  actionType,
+  actionMeta,
 }: {
   transactions: ActionDto["transactions"];
   integrationId: ActionDto["integrationId"];
-  actionId: ActionDto["id"];
-  actionType: ActionDto["type"];
+  actionMeta: ActionMeta;
 }) => {
   const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
 
@@ -82,8 +84,7 @@ export const useStepsMachine = ({
     trackEvent,
     signMessage,
     signTransaction,
-    actionId,
-    actionType,
+    actionMeta,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -98,8 +99,7 @@ const getMachine = (
       trackEvent: ReturnType<typeof useTrackEvent>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
+      actionMeta: ActionMeta;
     }>
   >
 ) => {
@@ -130,7 +130,14 @@ const getMachine = (
             type: "__SIGN_SUCCESS__";
             val: Extract<SignRes, { type: "regular" }>;
           }
-        | { type: "__SIGN_ERROR__"; val: Error }
+        | {
+            type: "__SIGN_ERROR__";
+            val:
+              | SendTransactionError
+              | TransactionDecodeError
+              | TransactionConstructError
+              | SignError;
+          }
         | { type: "__BROADCAST_SUCCESS__" }
         | { type: "__BROADCAST_ERROR__"; val: Error | SubmitHashError }
         | { type: "__DONE__"; val: TxState[] }
@@ -223,15 +230,16 @@ const getMachine = (
           EitherAsync.liftEither(
             context.currentTxMeta
               .chainNullable((v) => context.txStates[v.idx].tx)
-              .toEither(new Error("missing tx"))
+              .toEither(new TransactionConstructError("missing tx"))
           )
-            .chain<Error, SignRes>((tx) => {
-              /**
-               * Single sign transactions
-               */
-              return getAverageGasMode({
-                network: tx.network,
-              })
+            .chain<
+              | TransactionConstructError
+              | SendTransactionError
+              | TransactionDecodeError
+              | SignError,
+              SignRes
+            >((tx) =>
+              getAverageGasMode({ network: tx.network })
                 .chainLeft(async () => Right(null))
                 .chain((gas) =>
                   txConstruct(tx.id, {
@@ -239,7 +247,13 @@ const getMachine = (
                     ledgerWalletAPICompatible: ref.current.isLedgerLive,
                   }).mapLeft(() => new TransactionConstructError())
                 )
-                .chain((constructedTx) => {
+                .chain<
+                  | TransactionConstructError
+                  | SendTransactionError
+                  | TransactionDecodeError
+                  | SignError,
+                  SignRes
+                >((constructedTx) => {
                   if (
                     constructedTx.status === "BROADCASTED" ||
                     constructedTx.status === "CONFIRMED"
@@ -259,9 +273,16 @@ const getMachine = (
                     return ref.current
                       .signMessage(constructedTx.unsignedTransaction)
                       .map((val) => ({
-                        type: "regular",
+                        type: "regular" as const,
                         data: { signedTx: val, broadcasted: false },
-                      }));
+                      }))
+                      .mapLeft(
+                        () =>
+                          new SignError({
+                            network: constructedTx.network,
+                            txId: constructedTx.id,
+                          })
+                      );
                   }
 
                   return ref.current
@@ -269,9 +290,8 @@ const getMachine = (
                       tx: constructedTx.unsignedTransaction,
                       ledgerHwAppId: constructedTx.ledgerHwAppId,
                       txMeta: {
-                        actionId: ref.current.actionId,
+                        ...ref.current.actionMeta,
                         txId: constructedTx.id,
-                        actionType: ref.current.actionType,
                         txType: constructedTx.type,
                       },
                       network: constructedTx.network,
@@ -289,8 +309,8 @@ const getMachine = (
                       })
                     )
                     .map((val) => ({ type: "regular", data: val }));
-                });
-            })
+                })
+            )
             .caseOf({
               Left: (l) => {
                 console.log(l);
