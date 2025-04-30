@@ -44,6 +44,7 @@ export type SettingsProps = {
   disableInjectedProviderDiscovery?: boolean;
   mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
   customTranslations?: RecursivePartial<typeof localResources>;
+  tokensForEnabledYieldsOnly?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

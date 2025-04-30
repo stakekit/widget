@@ -21,7 +21,7 @@ export const useInitYield = ({
   const { isLedgerLive, isConnected, network, additionalAddresses, address } =
     useSKWallet();
   const queryClient = useSKQueryClient();
-  const { externalProviders } = useSettings();
+  const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
   const { data: positionsData } = usePositionsData();
 
   return useQuery({
@@ -44,6 +44,7 @@ export const useInitYield = ({
             address,
             network,
             queryClient,
+            tokensForEnabledYieldsOnly,
           })
             .chain((val) =>
               EitherAsync.liftEither(

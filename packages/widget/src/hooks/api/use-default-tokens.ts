@@ -1,17 +1,27 @@
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
+import { useSettings } from "@sk-widget/providers/settings";
+import type {
+  TokenBalanceScanResponseDto,
+  TokenGetTokensParams,
+} from "@stakekit/api-hooks";
 import { getTokenGetTokensQueryKey, tokenGetTokens } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
-import type { SKWallet } from "../../domain/types";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useDefaultTokens = () => {
   const { network } = useSKWallet();
+  const { tokensForEnabledYieldsOnly } = useSettings();
 
   return useQuery({
     queryKey: getTokenGetTokensQueryKey({ network: network ?? undefined }),
-    queryFn: async () => (await queryFn({ network })).unsafeCoerce(),
+    queryFn: async () =>
+      (
+        await queryFn({
+          network: network ?? undefined,
+          enabledYieldsOnly: !!tokensForEnabledYieldsOnly,
+        })
+      ).unsafeCoerce(),
     staleTime: 1000 * 60 * 5,
   });
 };
@@ -33,10 +43,13 @@ export const getDefaultTokens = (
 
 const queryFn = ({
   network,
-}: {
-  network: SKWallet["network"];
-}) =>
-  EitherAsync(() => tokenGetTokens({ network: network ?? undefined })).map(
-    (val) =>
-      val.map<TokenBalanceScanResponseDto>((v) => ({ ...v, amount: "0" }))
+  enabledYieldsOnly,
+}: Pick<TokenGetTokensParams, "network" | "enabledYieldsOnly">) =>
+  EitherAsync(() =>
+    tokenGetTokens({
+      network,
+      enabledYieldsOnly: enabledYieldsOnly || undefined,
+    })
+  ).map((val) =>
+    val.map<TokenBalanceScanResponseDto>((v) => ({ ...v, amount: "0" }))
   );
