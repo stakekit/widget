@@ -94,7 +94,10 @@ export const evmChainsMap: EvmChainsMap = {
   [EvmNetworks.Viction]: {
     type: "evm",
     skChainName: EvmNetworks.Viction,
-    wagmiChain: viction,
+    wagmiChain: {
+      ...viction,
+      iconUrl: getNetworkLogo(EvmNetworks.Viction),
+    },
   },
   [EvmNetworks.Binance]: {
     type: "evm",

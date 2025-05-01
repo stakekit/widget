@@ -25,8 +25,8 @@ export type SettingsProps = {
   theme?: ThemeWrapperTheme;
   referralCheck?: boolean;
   tracking?: {
-    trackEvent: (event: TrackEventVal, properties?: Properties) => void;
-    trackPageView: (page: TrackPageVal, properties?: Properties) => void;
+    trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
+    trackPageView?: (page: TrackPageVal, properties?: Properties) => void;
   };
   onMountAnimationComplete?: () => void;
   wagmi?: {
