@@ -185,8 +185,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2)
       '@stakekit/api-hooks':
-        specifier: 0.0.100
-        version: 0.0.100(@faker-js/faker@9.7.0)(@tanstack/react-query@5.74.0(react@19.1.0))(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(react@19.1.0)
+        specifier: 0.0.101
+        version: 0.0.101(@faker-js/faker@9.7.0)(@tanstack/react-query@5.74.0(react@19.1.0))(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(react@19.1.0)
       '@stakekit/common':
         specifier: ^0.0.48
         version: 0.0.48
@@ -2541,8 +2541,8 @@ packages:
   '@stablelib/x25519@1.0.3':
     resolution: {integrity: sha512-KnTbKmUhPhHavzobclVJQG5kuivH+qDLpe84iRqX3CLrKp881cF160JvXJ+hjn1aMyCwYOKeIZefIH/P5cJoRw==}
 
-  '@stakekit/api-hooks@0.0.100':
-    resolution: {integrity: sha512-vXvZHDU6Wzkt6349D86gw2S7YqgzmvMzQdjXglkdsfVP6p6tz02BJxkZ8x+nIKwRwN9WteIHmIFUwPJiybHUsA==}
+  '@stakekit/api-hooks@0.0.101':
+    resolution: {integrity: sha512-h55QZEmG7QC9P5TOybrH9j8uX+JpKf8VQrTQS6/1uYh7ZLUu3YZNTliaY5JVk8JRyoqXXBH58SVP4Ve+tCSr0Q==}
     peerDependencies:
       '@faker-js/faker': ^9
       '@tanstack/react-query': '>=5'
@@ -4511,6 +4511,7 @@ packages:
 
   lodash.isequal@4.5.0:
     resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
+    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
 
   lodash.isplainobject@4.0.6:
     resolution: {integrity: sha512-oSXzaWypCMHkPC3NvBEaPHf0KsA5mvPrOPgQWDsbg8n7orZ290M0BmC/jgRZ4vcJ6DTAhjrsSYgdsW/F+MFOBA==}
@@ -9104,7 +9105,7 @@ snapshots:
       '@stablelib/random': 1.0.2
       '@stablelib/wipe': 1.0.1
 
-  '@stakekit/api-hooks@0.0.100(@faker-js/faker@9.7.0)(@tanstack/react-query@5.74.0(react@19.1.0))(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(react@19.1.0)':
+  '@stakekit/api-hooks@0.0.101(@faker-js/faker@9.7.0)(@tanstack/react-query@5.74.0(react@19.1.0))(msw@2.7.4(@types/node@22.14.1)(typescript@5.8.3))(react@19.1.0)':
     dependencies:
       react: 19.1.0
     optionalDependencies:

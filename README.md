@@ -445,70 +445,105 @@ const App = () => {
 Optionally, you can pass externalProviders property to the widget which will be used to connect to the wallet.
 
 ```ts
-type SKExternalProviders = {
-  currentChain?: number;
+ type SKExternalProviders = {
+  currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: `${TokenDto["network"]}-${TokenDto["address"]}`;
-  supportedChainIds?: number[];
+  supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
-  provider: EVMWallet;
+  provider: SKWallet;
 };
 
-type EVMWallet = {
-  signMessage: (message: string) => Promise<string>;
-  switchChain: (chainId: string) => Promise<void>;
-  getTransactionReceipt?(txHash: string): Promise<{
-      transactionHash?: string;
-  }>;
-  sendTransaction(
-    tx: SKTx,
-    txMeta: {
-      txId: TransactionDto["id"];
-      actionId: ActionDto["id"];
-      actionType: ActionDto["type"];
-      txType: TransactionDto["type"];
-    }): Promise<string>;
-};
+type SupportedSKChainIds =
+  | EvmChainIds
+  | SubstrateChainIds
+  | MiscChainIds;
 
-type Base64String = string;
-
-export enum TxType {
-  Legacy = "0x1",
-  EIP1559 = "0x2",
+enum EvmChainIds {
+  Ethereum = 1,
+  Polygon = 137,
+  Optimism = 10,
+  Arbitrum = 42_161,
+  AvalancheC = 43_114,
+  Celo = 42_220,
+  Harmony = 1_666_600_000,
+  Viction = 88,
+  Binance = 56,
+  Base = 8453,
+  Linea = 59_144,
+  Core = 1116,
+  Sonic = 146,
+  EthereumHolesky = 17000,
+  EthereumGoerli = 5,
 }
 
-export type EVMTx = {
+enum SubstrateChainIds {
+  Polkadot = 9999,
+}
+
+enum MiscChainIds {
+  Near = 397,
+  Tezos = 1729,
+  Solana = 501,
+  Tron = 79,
+  Ton = 3412,
+}
+
+type EVMTx = {
   type: "evm";
-  tx: {
-    data: Hex;
-    from: Hex;
-    to: Hex;
-    value: Hex | undefined;
-    nonce: Hex;
-    gas: Hex;
-    chainId: Hex;
-    type: Hex;
-  } & (
-    | {
-        type: TxType.EIP1559; // EIP-1559
-        maxFeePerGas: Hex | undefined;
-        maxPriorityFeePerGas: Hex | undefined;
-      }
-    | { type: TxType.Legacy } // Legacy
-  );
+  tx: DecodedEVMTransaction;
 };
 
-export type SolanaTx = { type: "solana"; tx: Base64String };
+type SolanaTx = {
+  type: "solana";
+  tx: DecodedSolanaTransaction;
+};
 
-export type TonTx = {
+type TonTx = {
   type: "ton";
-  tx: {
-    seqno: bigint;
-    message: Base64String;
-  };
+  tx: DecodedTonTransaction;
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx;
+type TronTx = {
+  type: "tron";
+  tx: DecodedTronTransaction;
+};
+
+type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
+
+type ActionMeta = {
+  actionId: ActionDto["id"];
+  actionType: ActionDto["type"];
+  amount: ActionDto["amount"];
+  inputToken: ActionDto["inputToken"];
+  providersDetails: {
+    name: string;
+    address: string | undefined;
+    rewardRate: number | undefined;
+    rewardType: RewardTypes;
+    website: string | undefined;
+    logo: string | undefined;
+  }[];
+};
+
+type SKTxMeta = ActionMeta & {
+  txId: TransactionDto["id"];
+  txType: TransactionDto["type"];
+};
+
+type SKWallet = {
+  signMessage: (message: string) => Promise<string>;
+  switchChain: (chainId: number) => Promise<void>;
+  getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
+  sendTransaction(
+    tx: SKTx,
+    txMeta: SKTxMeta
+  ): Promise<
+    | string
+    | { type: "success"; txHash: string }
+    | { type: "error"; error: string }
+  >;
+};
 ```
 
 ### Tracking

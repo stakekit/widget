@@ -7,6 +7,13 @@ import {
   isTonChain,
   isTronChain,
 } from "@sk-widget/domain/types/chains";
+import {
+  decodeAndPrepareEvmTransaction,
+  unsignedEVMTransactionCodec,
+  unsignedSolanaTransactionCodec,
+  unsignedTonTransactionCodec,
+  unsignedTronTransactionCodec,
+} from "@sk-widget/domain/types/transaction";
 import type {
   SKTx,
   TronTx,
@@ -50,13 +57,7 @@ import { useCosmosCW } from "./use-cosmos-cw";
 import { useLedgerAccounts } from "./use-ledger-accounts";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 import { useSyncExternalProvider } from "./use-sync-external-provider";
-import { prepareEVMTx, wagmiNetworkToSKNetwork } from "./utils";
-import {
-  unsignedEVMTransactionCodec,
-  unsignedSolanaTransactionCodec,
-  unsignedTonTransactionCodec,
-  unsignedTronTransactionCodec,
-} from "./validation";
+import { wagmiNetworkToSKNetwork } from "./utils";
 
 const SKWalletContext = createContext<SKWallet | undefined>(undefined);
 
@@ -263,8 +264,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   if (isEvmChain(network)) {
                     return Either.encase(() => JSON.parse(tx))
                       .mapLeft(() => "Failed to parse tx")
-                      .chain((val) => unsignedEVMTransactionCodec.decode(val))
-                      .map((v) => prepareEVMTx({ address, decodedTx: v }));
+                      .chain((val) =>
+                        decodeAndPrepareEvmTransaction({ address, input: val })
+                      )
+                      .map((v) => ({ type: "evm", tx: v }));
                   }
 
                   if (isSolanaChain(network)) {
@@ -313,11 +316,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           if (isSafeConnector(conn)) {
             return EitherAsync.liftEither(
               Either.encase(() => JSON.parse(tx))
-                .chain((val) => unsignedEVMTransactionCodec.decode(val))
-                .map((val) => prepareEVMTx({ address, decodedTx: val }))
+                .chain((val) =>
+                  decodeAndPrepareEvmTransaction({ address, input: val })
+                )
                 .mapLeft(() => new TransactionDecodeError())
             )
-              .chain(({ tx }) =>
+              .chain((tx) =>
                 conn
                   .sendTransactions({
                     txs: [

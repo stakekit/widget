@@ -1,10 +1,15 @@
 import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
 import { useSavedRef } from "@sk-widget/hooks";
+import { useSettings } from "@sk-widget/providers/settings";
 import type {
   SendTransactionError,
   TransactionDecodeError,
 } from "@sk-widget/providers/sk-wallet/errors";
-import type { ActionDto, TransactionDto } from "@stakekit/api-hooks";
+import type {
+  ActionDto,
+  TransactionDto,
+  TransactionFormat,
+} from "@stakekit/api-hooks";
 import {
   transactionConstruct,
   transactionGetTransaction,
@@ -69,7 +74,7 @@ export const useStepsMachine = ({
   actionMeta: ActionMeta;
 }) => {
   const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
-
+  const { preferredTransactionFormat } = useSettings();
   const trackEvent = useTrackEvent();
 
   const sortedTransactions = useMemo(
@@ -85,6 +90,7 @@ export const useStepsMachine = ({
     signMessage,
     signTransaction,
     actionMeta,
+    preferredTransactionFormat,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -100,6 +106,7 @@ const getMachine = (
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
       actionMeta: ActionMeta;
+      preferredTransactionFormat?: TransactionFormat;
     }>
   >
 ) => {
@@ -245,6 +252,9 @@ const getMachine = (
                   txConstruct(tx.id, {
                     gasArgs: gas?.gasArgs,
                     ledgerWalletAPICompatible: ref.current.isLedgerLive,
+                    ...(!!ref.current.preferredTransactionFormat && {
+                      transactionFormat: ref.current.preferredTransactionFormat,
+                    }),
                   }).mapLeft(() => new TransactionConstructError())
                 )
                 .chain<

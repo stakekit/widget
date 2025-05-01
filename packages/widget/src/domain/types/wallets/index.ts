@@ -6,7 +6,7 @@ export type SKExternalProviders = {
   currentChain?: SupportedSKChainIds;
   currentAddress: string;
   initToken?: TokenString;
-  supportedChainIds?: number[];
+  supportedChainIds?: SupportedSKChainIds[];
   type: "generic";
   provider: SKWallet;
 };
