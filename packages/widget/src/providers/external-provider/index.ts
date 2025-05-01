@@ -52,6 +52,11 @@ export const externalProviderConnector = (
                 connectorConfig.chains as [Chain, ...Chain[]]
               )
           );
+
+          if ($filteredChains.getValue().length === 0) {
+            throw new Error("No supported chains found!");
+          }
+
           const provider = new ExternalProvider(variant);
 
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
