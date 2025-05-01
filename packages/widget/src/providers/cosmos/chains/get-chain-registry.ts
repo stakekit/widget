@@ -1,13 +1,13 @@
+import {
+  type SupportedCosmosChains,
+  supportedCosmosChains,
+} from "@sk-widget/domain/types/chains/cosmos";
 import type {
   CosmosChain,
   WithWagmiName,
 } from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks } from "@stakekit/common";
 import { chains as RegistryChains, assets } from "chain-registry";
-import {
-  type SupportedCosmosChains,
-  supportedCosmosChains,
-} from "../../../domain/types/chains";
 
 type AssetList = (typeof assets)[number];
 

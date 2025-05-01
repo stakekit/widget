@@ -1,9 +1,7 @@
-import type {
-  CosmosChainsMap,
-  EvmChainsMap,
-  MiscChainsMap,
-  SubstrateChainsMap,
-} from "@sk-widget/domain/types/chains";
+import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
+import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
+import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
+import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";

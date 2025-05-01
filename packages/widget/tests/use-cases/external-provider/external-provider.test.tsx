@@ -1,5 +1,5 @@
 import { SKApp, type SKAppProps } from "@sk-widget/App";
-import { solana, ton } from "@sk-widget/providers/misc/chains";
+import { solana, ton } from "@sk-widget/domain/types/chains/misc";
 import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
 import { formatAddress } from "@sk-widget/utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";

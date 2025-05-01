@@ -1,9 +1,9 @@
+import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
+import { supportedCosmosChains } from "@sk-widget/domain/types/chains/cosmos";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, Right } from "purify-ts";
 import { config } from "../../config";
-import type { CosmosChainsMap } from "../../domain/types/chains";
-import { supportedCosmosChains } from "../../domain/types/chains";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getWagmiChain } from "./chains";

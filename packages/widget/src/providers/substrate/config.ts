@@ -1,15 +1,16 @@
-import { SubstrateNetworks } from "@stakekit/common";
+import {
+  type SubstrateChainsMap,
+  substrateChainsMap,
+} from "@sk-widget/domain/types/chains/substrate";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { config } from "../../config";
-import type { SubstrateChainsMap } from "../../domain/types/chains";
 import {
   isLedgerDappBrowserProvider,
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { polkadot } from "./chains";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Number.POSITIVE_INFINITY;
@@ -21,22 +22,21 @@ const queryFn = async ({
 }) =>
   getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
-      const substrateChainsMap: Partial<SubstrateChainsMap> =
+      const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(
-          typeSafeObjectEntries<SubstrateChainsMap>({
-            [SubstrateNetworks.Polkadot]: {
-              type: "substrate",
-              skChainName: SubstrateNetworks.Polkadot,
-              wagmiChain: polkadot,
-            },
-          }).filter(([_, v]) => networks.has(v.skChainName))
+          typeSafeObjectEntries<SubstrateChainsMap>(substrateChainsMap).filter(
+            ([_, v]) => networks.has(v.skChainName)
+          )
         );
 
       const substrateChains = isLedgerDappBrowserProvider()
-        ? Object.values(substrateChainsMap).map((val) => val.wagmiChain)
+        ? Object.values(filteredSubstrateChainsMap).map((val) => val.wagmiChain)
         : [];
 
-      return Promise.resolve({ substrateChainsMap, substrateChains });
+      return Promise.resolve({
+        substrateChainsMap: filteredSubstrateChainsMap,
+        substrateChains,
+      });
     },
     Left: (l) => Promise.reject(l),
   });
