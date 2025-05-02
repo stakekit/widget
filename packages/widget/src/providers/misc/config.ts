@@ -1,12 +1,13 @@
+import {
+  type MiscChainsMap,
+  miscChainsMap,
+} from "@sk-widget/domain/types/chains/misc";
 import type { Networks } from "@stakekit/common";
-import { MiscNetworks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
-import type { MiscChainsMap } from "../../domain/types/chains";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { near, solana, tezos, ton, tron } from "./chains";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Number.POSITIVE_INFINITY;
@@ -25,47 +26,26 @@ const queryFn = async ({
     wallets: WalletList[number]["wallets"];
   }>[];
 }> => {
-  const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>({
-    [MiscNetworks.Near]: {
-      type: "misc",
-      skChainName: MiscNetworks.Near,
-      wagmiChain: near,
-    },
-    [MiscNetworks.Tezos]: {
-      type: "misc",
-      skChainName: MiscNetworks.Tezos,
-      wagmiChain: tezos,
-    },
-    [MiscNetworks.Solana]: {
-      type: "misc",
-      skChainName: MiscNetworks.Solana,
-      wagmiChain: solana,
-    },
-    [MiscNetworks.Tron]: {
-      type: "misc",
-      skChainName: MiscNetworks.Tron,
-      wagmiChain: tron,
-    },
-    [MiscNetworks.Ton]: {
-      type: "misc",
-      skChainName: MiscNetworks.Ton,
-      wagmiChain: ton,
-    },
-  }).filter(([_, v]) => enabledNetworks.has(v.skChainName));
+  const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>(
+    miscChainsMap
+  ).filter(([_, v]) => enabledNetworks.has(v.skChainName));
 
-  const miscChainsMap: Partial<MiscChainsMap> =
+  const filteredMiscChainsMap: Partial<MiscChainsMap> =
     typeSafeObjectFromEntries(miscChainsEntries);
 
-  const miscChains = Object.values(miscChainsMap).map((val) => val.wagmiChain);
+  const miscChains = Object.values(filteredMiscChainsMap).map(
+    (val) => val.wagmiChain
+  );
 
   return Promise.all([
-    MaybeAsync.liftMaybe(Maybe.fromFalsy(miscChainsMap.tron)).chain(() =>
-      MaybeAsync(() => import("./tron-connector")).map((v) =>
-        v.getTronConnectors({ forceWalletConnectOnly })
-      )
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.tron)).chain(
+      () =>
+        MaybeAsync(() => import("./tron-connector")).map((v) =>
+          v.getTronConnectors({ forceWalletConnectOnly })
+        )
     ),
   ]).then((connectors) => ({
-    miscChainsMap,
+    miscChainsMap: filteredMiscChainsMap,
     miscChains,
     connectors,
   }));

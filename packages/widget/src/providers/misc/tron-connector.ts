@@ -1,3 +1,4 @@
+import { tron } from "@sk-widget/domain/types/chains/misc";
 import type {
   Chain,
   WalletDetailsParams,
@@ -16,7 +17,6 @@ import { images } from "../../assets/images";
 import { config } from "../../config";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getTokenLogo } from "../../utils";
-import { tron } from "./chains";
 import type { ExtraProps } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";
 

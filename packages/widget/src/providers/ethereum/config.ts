@@ -1,40 +1,20 @@
-import { EvmNetworks } from "@stakekit/common";
+import {
+  type EvmChainsMap,
+  evmChainsMap,
+} from "@sk-widget/domain/types/chains/evm";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
   injectedWallet,
   metaMaskWallet,
-  // ledgerWallet,
   rainbowWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
-import {
-  arbitrum,
-  avalanche,
-  base,
-  bsc,
-  celo,
-  coreDao as core,
-  goerli,
-  harmonyOne,
-  holesky,
-  linea,
-  mainnet,
-  optimism,
-  polygon,
-  sonic,
-} from "wagmi/chains";
 import { config } from "../../config";
-import type { EvmChainsMap } from "../../domain/types/chains";
-import {
-  getNetworkLogo,
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../utils";
+import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { viction } from "./chains";
 
 const queryFn = async ({
   queryClient,
@@ -49,104 +29,14 @@ const queryFn = async ({
 }> =>
   getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
-      const evmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
-        typeSafeObjectEntries<EvmChainsMap>({
-          [EvmNetworks.Ethereum]: {
-            type: "evm",
-            skChainName: EvmNetworks.Ethereum,
-            wagmiChain: mainnet,
-          },
-          [EvmNetworks.Polygon]: {
-            type: "evm",
-            skChainName: EvmNetworks.Polygon,
-            wagmiChain: polygon,
-          },
-          [EvmNetworks.Optimism]: {
-            type: "evm",
-            skChainName: EvmNetworks.Optimism,
-            wagmiChain: optimism,
-          },
-          [EvmNetworks.Arbitrum]: {
-            type: "evm",
-            skChainName: EvmNetworks.Arbitrum,
-            wagmiChain: arbitrum,
-          },
-          [EvmNetworks.AvalancheC]: {
-            type: "evm",
-            skChainName: EvmNetworks.AvalancheC,
-            wagmiChain: avalanche,
-          },
-          [EvmNetworks.Celo]: {
-            type: "evm",
-            skChainName: EvmNetworks.Celo,
-            wagmiChain: {
-              ...celo,
-              iconUrl: getNetworkLogo(EvmNetworks.Celo),
-            },
-          },
-          [EvmNetworks.Harmony]: {
-            type: "evm",
-            skChainName: EvmNetworks.Harmony,
-            wagmiChain: {
-              ...harmonyOne,
-              iconUrl: getNetworkLogo(EvmNetworks.Harmony),
-            },
-          },
-          [EvmNetworks.Viction]: {
-            type: "evm",
-            skChainName: EvmNetworks.Viction,
-            wagmiChain: viction,
-          },
-          [EvmNetworks.Binance]: {
-            type: "evm",
-            skChainName: EvmNetworks.Binance,
-            wagmiChain: bsc,
-          },
-          [EvmNetworks.Base]: {
-            type: "evm",
-            skChainName: EvmNetworks.Base,
-            wagmiChain: base,
-          },
-          [EvmNetworks.Linea]: {
-            type: "evm",
-            skChainName: EvmNetworks.Linea,
-            wagmiChain: {
-              ...linea,
-              iconUrl: getNetworkLogo(EvmNetworks.Linea),
-            },
-          },
-          [EvmNetworks.Core]: {
-            type: "evm",
-            skChainName: EvmNetworks.Core,
-            wagmiChain: {
-              ...core,
-              name: "Core",
-              iconUrl: getNetworkLogo(EvmNetworks.Core),
-            },
-          },
-          [EvmNetworks.Sonic]: {
-            type: "evm",
-            skChainName: EvmNetworks.Sonic,
-            wagmiChain: {
-              ...sonic,
-              name: "Sonic",
-              iconUrl: getNetworkLogo(EvmNetworks.Sonic),
-            },
-          },
-          [EvmNetworks.EthereumHolesky]: {
-            type: "evm",
-            skChainName: EvmNetworks.EthereumHolesky,
-            wagmiChain: holesky,
-          },
-          [EvmNetworks.EthereumGoerli]: {
-            type: "evm",
-            skChainName: EvmNetworks.EthereumGoerli,
-            wagmiChain: goerli,
-          },
-        }).filter(([_, v]) => networks.has(v.skChainName))
-      );
+      const filteredEvmChainsMap: Partial<EvmChainsMap> =
+        typeSafeObjectFromEntries(
+          typeSafeObjectEntries<EvmChainsMap>(evmChainsMap).filter(([_, v]) =>
+            networks.has(v.skChainName)
+          )
+        );
 
-      const evmChains = Object.values(evmChainsMap).map(
+      const evmChains = Object.values(filteredEvmChainsMap).map(
         (val) => val.wagmiChain
       );
 
@@ -164,7 +54,7 @@ const queryFn = async ({
       };
 
       return Promise.resolve({
-        evmChainsMap,
+        evmChainsMap: filteredEvmChainsMap,
         evmChains,
         connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
       });

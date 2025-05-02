@@ -1,5 +1,6 @@
 import type { Languages, localResources } from "@sk-widget/translation";
 import type { RecursivePartial } from "@sk-widget/types";
+import type { TransactionFormat } from "@stakekit/api-hooks";
 import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,8 +26,8 @@ export type SettingsProps = {
   theme?: ThemeWrapperTheme;
   referralCheck?: boolean;
   tracking?: {
-    trackEvent: (event: TrackEventVal, properties?: Properties) => void;
-    trackPageView: (page: TrackPageVal, properties?: Properties) => void;
+    trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
+    trackPageView?: (page: TrackPageVal, properties?: Properties) => void;
   };
   onMountAnimationComplete?: () => void;
   wagmi?: {
@@ -45,6 +46,7 @@ export type SettingsProps = {
   mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
+  preferredTransactionFormat?: TransactionFormat;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

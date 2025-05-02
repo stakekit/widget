@@ -84,8 +84,8 @@ export const TrackingContextProvider = ({
 }>) => {
   const trackEvent = useCallback<TrackingContextType["trackEvent"]>(
     (event, props) => {
-      tracking?.trackEvent(trackEventMap[event], ...(props ? [props] : []));
-      variantTracking?.trackEvent(
+      tracking?.trackEvent?.(trackEventMap[event], ...(props ? [props] : []));
+      variantTracking?.trackEvent?.(
         trackEventMap[event],
         ...(props ? [props] : [])
       );
@@ -95,8 +95,8 @@ export const TrackingContextProvider = ({
 
   const trackPageView = useCallback<TrackingContextType["trackPageView"]>(
     (page, props) => {
-      tracking?.trackPageView(trackPageMap[page], ...(props ? [props] : []));
-      variantTracking?.trackPageView(
+      tracking?.trackPageView?.(trackPageMap[page], ...(props ? [props] : []));
+      variantTracking?.trackPageView?.(
         trackPageMap[page],
         ...(props ? [props] : [])
       );

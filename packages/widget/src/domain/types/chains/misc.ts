@@ -1,5 +1,26 @@
+import { getTokenLogo } from "@sk-widget/utils";
+import { MiscNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
-import { getTokenLogo } from "../../../utils";
+
+const supportedMiscChains = [
+  MiscNetworks.Near,
+  MiscNetworks.Tezos,
+  MiscNetworks.Solana,
+  MiscNetworks.Tron,
+  MiscNetworks.Ton,
+] as const;
+
+export const supportedMiscChainsSet = new Set(supportedMiscChains);
+
+export type SupportedMiscChains = (typeof supportedMiscChains)[number];
+
+export type MiscChainsMap = {
+  [Key in SupportedMiscChains]: {
+    type: "misc";
+    skChainName: Key;
+    wagmiChain: Chain;
+  };
+};
 
 export const near = {
   id: 397,
@@ -75,3 +96,39 @@ export const ton = {
     default: { http: ["https://ton.nownodes.io"] },
   },
 } as const satisfies Chain;
+
+export const miscChainsMap: MiscChainsMap = {
+  [MiscNetworks.Near]: {
+    type: "misc",
+    skChainName: MiscNetworks.Near,
+    wagmiChain: near,
+  },
+  [MiscNetworks.Tezos]: {
+    type: "misc",
+    skChainName: MiscNetworks.Tezos,
+    wagmiChain: tezos,
+  },
+  [MiscNetworks.Solana]: {
+    type: "misc",
+    skChainName: MiscNetworks.Solana,
+    wagmiChain: solana,
+  },
+  [MiscNetworks.Tron]: {
+    type: "misc",
+    skChainName: MiscNetworks.Tron,
+    wagmiChain: tron,
+  },
+  [MiscNetworks.Ton]: {
+    type: "misc",
+    skChainName: MiscNetworks.Ton,
+    wagmiChain: ton,
+  },
+};
+
+export enum MiscChainIds {
+  Near = 397,
+  Tezos = 1729,
+  Solana = 501,
+  Tron = 79,
+  Ton = 3412,
+}

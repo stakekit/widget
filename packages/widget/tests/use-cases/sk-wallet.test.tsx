@@ -1,7 +1,6 @@
+import { solana, ton } from "@sk-widget/domain/types/chains/misc";
 import type { SKExternalProviders } from "@sk-widget/domain/types/wallets";
 import { SKApiClientProvider } from "@sk-widget/providers/api/api-client-provider";
-import { ton } from "@sk-widget/providers/misc/chains";
-import { solana } from "@sk-widget/providers/misc/chains";
 import { SKQueryClientProvider } from "@sk-widget/providers/query-client";
 import { SettingsContextProvider } from "@sk-widget/providers/settings";
 import { SKWalletProvider, useSKWallet } from "@sk-widget/providers/sk-wallet";

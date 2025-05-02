@@ -5,21 +5,19 @@ import type {
   ERC20TokenCurrency,
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
-import type { Chain } from "@stakekit/rainbowkit";
-import { EitherAsync } from "purify-ts";
-import type {
-  CosmosChainsMap,
-  EvmChainsMap,
-  MiscChainsMap,
-  SubstrateChainsMap,
-  SupportedLedgerFamiliesWithCurrency,
-  SupportedLedgerLiveFamilies,
-  SupportedSKChains,
-} from "../../domain/types/chains";
+import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
+import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
 import {
+  type SupportedLedgerFamiliesWithCurrency,
+  type SupportedLedgerLiveFamilies,
   ledgerChainPriority,
   supportedLedgerFamiliesWithCurrency,
-} from "../../domain/types/chains";
+} from "@sk-widget/domain/types/chains/ledger";
+import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
+import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
+import type { Chain } from "@stakekit/rainbowkit";
+import { EitherAsync } from "purify-ts";
+import type { SupportedSKChains } from "../../domain/types/chains";
 import type { GetEitherAsyncRight } from "../../types";
 import { typeSafeObjectEntries } from "../../utils";
 
