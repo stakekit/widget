@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## 0.0.229
+
+### Patch Changes
+
+- 53094f6: refactor: chain configuration
+- 53094f6: feat: partial tracking
+- 53094f6: feat(transaction): transaction format option
+- 53094f6: feat(externalProviders): check configured chains
+
 ## 0.0.228
 
 ### Patch Changes
