@@ -18,8 +18,14 @@ export const useInitYield = ({
   selectedToken: Maybe<TokenDto>;
 }) => {
   const getTokenBalancesMap = useGetTokenBalancesMap();
-  const { isLedgerLive, isConnected, network, additionalAddresses, address } =
-    useSKWallet();
+  const {
+    isLedgerLive,
+    isConnected,
+    network,
+    additionalAddresses,
+    address,
+    isConnecting,
+  } = useSKWallet();
   const queryClient = useSKQueryClient();
   const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
   const { data: positionsData } = usePositionsData();
@@ -34,6 +40,7 @@ export const useInitYield = ({
       address,
       selectedToken.extract(),
     ],
+    enabled: !isConnecting,
     queryFn: async () =>
       (
         await EitherAsync.liftEither(

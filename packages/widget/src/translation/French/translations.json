@@ -135,7 +135,8 @@
     "validators_voting_power": "Droit de vote",
     "validators_address": "Adresse",
     "validators_comission": "Commission",
-    "validators_website": "Site web"
+    "validators_website": "Site web",
+    "validators_nominator_count": "Nombre de nominators"
   },
   "review": {
     "estimated_reward": "Récompenses estimées",

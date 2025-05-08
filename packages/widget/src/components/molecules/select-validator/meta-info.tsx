@@ -20,10 +20,16 @@ export const useMetaInfo = ({
   rewardRate,
   rewardType,
   website,
+  nominatorCount,
 }: {
   [Key in keyof Pick<
     ValidatorDto,
-    "stakedBalance" | "votingPower" | "commission" | "address" | "website"
+    | "stakedBalance"
+    | "votingPower"
+    | "commission"
+    | "address"
+    | "website"
+    | "nominatorCount"
   >]: ValidatorDto[Key] | undefined;
 } & {
   stakedBalanceToken: YieldDto["token"] | undefined;
@@ -35,7 +41,12 @@ export const useMetaInfo = ({
   return useMemo<{
     [Key in keyof Pick<
       ValidatorDto,
-      "stakedBalance" | "votingPower" | "commission" | "address" | "website"
+      | "stakedBalance"
+      | "votingPower"
+      | "commission"
+      | "address"
+      | "website"
+      | "nominatorCount"
     >]: { title: string; val: ReactNode } | null;
   }>(
     () => ({
@@ -68,6 +79,12 @@ export const useMetaInfo = ({
               .filter((v) => !v.isNaN())
               .map((v) => `${APToPercentage(v.toNumber())}%`)
               .orDefault("-"),
+          }
+        : null,
+      nominatorCount: Number.isInteger(nominatorCount)
+        ? {
+            title: t("details.validators_nominator_count"),
+            val: nominatorCount,
           }
         : null,
       commission: commission
@@ -109,6 +126,7 @@ export const useMetaInfo = ({
       commission,
       address,
       website,
+      nominatorCount,
     ]
   );
 };
