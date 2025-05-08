@@ -214,6 +214,7 @@ export const SelectValidatorList = ({
                   commission={item.commission}
                   stakedBalance={item.stakedBalance}
                   votingPower={item.votingPower}
+                  nominatorCount={item.nominatorCount}
                   rewardRate={undefined}
                   rewardType={undefined}
                   stakedBalanceToken={selectedStake.token}

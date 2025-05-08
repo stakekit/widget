@@ -68,7 +68,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           initial={{ height: 0 }}
           animate={animate}
           onAnimationComplete={(def: typeof animate) => {
-            if (!def.height || state.layout) {
+            if (!def.height || def.height !== animate.height || state.layout) {
               return;
             }
 
