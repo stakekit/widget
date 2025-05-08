@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.230
+
+### Patch Changes
+
+- a54c3da: feat: nominator count in validator info
+- a54c3da: fix: init token + yield after connect
+
 ## 0.0.229
 
 ### Patch Changes
