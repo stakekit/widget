@@ -18,8 +18,14 @@ import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
  */
 export const useInitToken = () => {
   const getTokenBalancesMap = useGetTokenBalancesMap();
-  const { isLedgerLive, isConnected, network, additionalAddresses, address } =
-    useSKWallet();
+  const {
+    isLedgerLive,
+    isConnected,
+    network,
+    additionalAddresses,
+    address,
+    isConnecting,
+  } = useSKWallet();
   const queryClient = useSKQueryClient();
   const { data: positionsData } = usePositionsData();
 
@@ -34,6 +40,7 @@ export const useInitToken = () => {
       address,
       additionalAddresses,
     ],
+    enabled: !isConnecting,
     queryFn: async () =>
       (
         await getTokenBalances({
