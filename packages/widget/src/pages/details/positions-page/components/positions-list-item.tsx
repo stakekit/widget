@@ -31,6 +31,7 @@ export const PositionsListItem = memo(
       providersDetails,
       inactiveValidator,
       rewardRateAverage,
+      amount,
     } = usePositionListItem(item);
 
     return (
@@ -158,6 +159,7 @@ export const PositionsListItem = memo(
                   {Maybe.fromRecord({
                     token: item.token,
                     rewardRateAverage,
+                    amount,
                   })
                     .map((val) => (
                       <Box
@@ -176,7 +178,7 @@ export const PositionsListItem = memo(
                           overflowWrap="anywhere"
                           variant={{ weight: "normal", type: "muted" }}
                         >
-                          {item.amount} {val.token.symbol}
+                          {val.amount} {val.token.symbol}
                         </Text>
                       </Box>
                     ))
