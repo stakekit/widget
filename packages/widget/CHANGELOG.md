@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.231
+
+### Patch Changes
+
+- 129bee1: feat: whitelisted validators, hide chain modal prop
+- 129bee1: fix: position list item amount
+
 ## 0.0.230
 
 ### Patch Changes
