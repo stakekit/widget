@@ -1,4 +1,5 @@
 import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
+import { useSettings } from "@sk-widget/providers/settings";
 import { vars } from "@sk-widget/styles";
 import { id } from "@sk-widget/styles/theme/ids";
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
@@ -36,6 +37,8 @@ export const RainbowKitProviderWithTheme = ({
 
   const { t } = useTranslation();
 
+  const { hideChainModal } = useSettings();
+
   const chainIdsToUse = useMemo(
     () => new Set(connectorChains.map((c) => c.id)),
     [connectorChains]
@@ -69,6 +72,8 @@ export const RainbowKitProviderWithTheme = ({
         onDisabledChainClick.mutate(disabledChain);
       }}
       appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
+      {...(hideChainModal && { avatar: null })}
+      showRecentTransactions={false}
       theme={finalTheme}
       hideDisconnect={hideDisconnect}
     >

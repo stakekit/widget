@@ -2,6 +2,7 @@ import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
 import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
 import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
 import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
@@ -49,6 +50,7 @@ const buildWagmiConfig = async (opts: {
   queryClient: QueryClient;
   isLedgerLive: boolean;
   isSafe: boolean;
+  whitelistedValidatorAddresses: Set<string> | null;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -83,6 +85,7 @@ const buildWagmiConfig = async (opts: {
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
             externalProviders: opts.externalProviders?.current,
+            whitelistedValidatorAddresses: opts.whitelistedValidatorAddresses,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
           evm.chain((e) =>
@@ -236,6 +239,8 @@ export const useWagmiConfig = () => {
 
   const queryClient = useSKQueryClient();
 
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
+
   const externalProvidersRef = useSavedRef(externalProviders) as
     | RefObject<SKExternalProviders>
     | RefObject<undefined>;
@@ -255,6 +260,7 @@ export const useWagmiConfig = () => {
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),
+        whitelistedValidatorAddresses,
       }),
   });
 };

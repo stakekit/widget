@@ -191,8 +191,8 @@ importers:
         specifier: ^0.0.48
         version: 0.0.48
       '@stakekit/rainbowkit':
-        specifier: ^2.2.4
-        version: 2.2.4(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(wagmi@2.14.16(@tanstack/query-core@5.74.0)(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(zod@3.24.2))
+        specifier: ^2.2.5
+        version: 2.2.5(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(wagmi@2.14.16(@tanstack/query-core@5.74.0)(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(zod@3.24.2))
       '@tanstack/react-query':
         specifier: ^5.74.0
         version: 5.74.0(react@19.1.0)
@@ -2559,8 +2559,8 @@ packages:
   '@stakekit/common@0.0.48':
     resolution: {integrity: sha512-zqcK6/rviNwmCjvi/7xQzm6j+9WjqmCtU6tK1cTgX/IBFmNLn6HYgEzRhz90+RV5Y3wVTncI/LBA65xXuvHisw==}
 
-  '@stakekit/rainbowkit@2.2.4':
-    resolution: {integrity: sha512-oS1MPY0uAOacieacZWhl6Gg5dLbhGZHJ2hFSSPgMprgNrU3eyS9pNyiZzGnz7MXgkdF44ojI3DMN4tmyFsu5SA==}
+  '@stakekit/rainbowkit@2.2.5':
+    resolution: {integrity: sha512-yTSnt+7Kv+uX2Z0Xw0S9mhBXT4nzTYccXg531bhYVFJCDrqgEb0W1UED342fCDMt7u/JmIiTq3zGqRAqEWHqtg==}
     engines: {node: '>=12.4'}
     peerDependencies:
       '@tanstack/react-query': '>=5.0.0'
@@ -9115,7 +9115,7 @@ snapshots:
 
   '@stakekit/common@0.0.48': {}
 
-  '@stakekit/rainbowkit@2.2.4(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(wagmi@2.14.16(@tanstack/query-core@5.74.0)(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(zod@3.24.2))':
+  '@stakekit/rainbowkit@2.2.5(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(wagmi@2.14.16(@tanstack/query-core@5.74.0)(@tanstack/react-query@5.74.0(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.26.5(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.24.2))(zod@3.24.2))':
     dependencies:
       '@tanstack/react-query': 5.74.0(react@19.1.0)
       '@vanilla-extract/css': 1.15.5

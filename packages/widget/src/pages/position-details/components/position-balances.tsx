@@ -18,7 +18,8 @@ export const PositionBalances = ({
 
   const daysRemaining = useMemo(() => {
     return (yieldBalance.type === "unstaking" ||
-      yieldBalance.type === "unlocking") &&
+      yieldBalance.type === "unlocking" ||
+      yieldBalance.type === "preparing") &&
       yieldBalance.date
       ? daysUntilDate(new Date(yieldBalance.date))
       : null;

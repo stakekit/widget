@@ -1,5 +1,5 @@
 import { yieldYieldOpportunity } from "@sk-widget/common/private-api";
-import type { YieldDto } from "@stakekit/api-hooks";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -8,6 +8,7 @@ import { useSKWallet } from "../../providers/sk-wallet";
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
+  whitelistedValidatorAddresses: Set<string> | null;
   signal?: AbortSignal;
 };
 
@@ -21,13 +22,16 @@ const getKey = (params: Params) => [
 export const useYieldOpportunity = (integrationId: string | undefined) => {
   const { isLedgerLive } = useSKWallet();
 
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
+
   const yieldId = integrationId ?? "";
 
   return useQuery({
-    queryKey: getKey({ yieldId, isLedgerLive }),
+    queryKey: getKey({ yieldId, isLedgerLive, whitelistedValidatorAddresses }),
     enabled: !!integrationId,
     staleTime,
-    queryFn: ({ signal }) => queryFn({ yieldId, isLedgerLive, signal }),
+    queryFn: ({ signal }) =>
+      queryFn({ yieldId, isLedgerLive, signal, whitelistedValidatorAddresses }),
   });
 };
 
@@ -57,6 +61,7 @@ const fn = ({
   isLedgerLive,
   yieldId,
   signal,
+  whitelistedValidatorAddresses,
 }: Params & {
   signal?: AbortSignal;
 }) =>
@@ -68,22 +73,18 @@ const fn = ({
       },
       signal
     )
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get yield opportunity");
-  });
-
-export const setYieldOpportunityInCache = ({
-  yieldDto,
-  isLedgerLive,
-  queryClient,
-}: {
-  yieldDto: YieldDto;
-  isLedgerLive: boolean;
-  queryClient: QueryClient;
-}) => {
-  queryClient.setQueryData(
-    getKey({ isLedgerLive, yieldId: yieldDto.id }),
-    yieldDto
-  );
-};
+  )
+    .map((y) =>
+      whitelistedValidatorAddresses
+        ? {
+            ...y,
+            validators: y.validators.filter((v) =>
+              whitelistedValidatorAddresses.has(v.address)
+            ),
+          }
+        : y
+    )
+    .mapLeft((e) => {
+      console.log(e);
+      return new Error("Could not get yield opportunity");
+    });

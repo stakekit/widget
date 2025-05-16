@@ -45,7 +45,7 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            {variant === "default" && (
+            {variant !== "zerion" && (
               <Box my="2">
                 <Text>{t("details.earn")}</Text>
               </Box>
@@ -98,7 +98,7 @@ export const SelectYieldSection = () => {
                 </Box>
               </Box>
 
-              {variant === "default" && <SelectYieldRewardDetails />}
+              {variant !== "zerion" && <SelectYieldRewardDetails />}
             </Box>
 
             {variant === "zerion" && (

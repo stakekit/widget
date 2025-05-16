@@ -3,6 +3,7 @@ import { tokenString } from "@sk-widget/domain";
 import { getFirstEligibleYield } from "@sk-widget/hooks/api/use-multi-yields";
 import { getInitParams } from "@sk-widget/hooks/use-init-params";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
@@ -29,6 +30,8 @@ export const useInitYield = ({
   const queryClient = useSKQueryClient();
   const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
   const { data: positionsData } = usePositionsData();
+
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -65,6 +68,7 @@ export const useInitYield = ({
                 isLedgerLive,
                 queryClient,
                 externalProviders,
+                whitelistedValidatorAddresses,
               }).chain((initParams) =>
                 getFirstEligibleYield({
                   isConnected,
@@ -75,6 +79,7 @@ export const useInitYield = ({
                   initParams: initParams,
                   positionsData: positionsData,
                   tokenBalanceAmount: new BigNumber(val.amount),
+                  whitelistedValidatorAddresses,
                 })
               )
             )

@@ -2,6 +2,7 @@ import type { InitParams } from "@sk-widget/domain/types/init-params";
 import type { PositionsData } from "@sk-widget/domain/types/positions";
 import { canBeInitialYield } from "@sk-widget/domain/types/stake";
 import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { type QueryClient, hashKey } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
@@ -59,10 +60,13 @@ export const useMultiYields = (yieldIds: string[]) => {
 
   const hashedKey = useMemo(() => hashKey(yieldIds), [yieldIds]);
 
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
+
   useEffect(() => {
     const sub = multipleYields$({
       ...argsRef.current,
       yieldIds,
+      whitelistedValidatorAddresses,
     })
       .pipe(repeat({ delay: () => timer(1000 * 60 * 2) }))
       .subscribe({
@@ -74,7 +78,7 @@ export const useMultiYields = (yieldIds: string[]) => {
       });
 
     return () => sub.unsubscribe();
-  }, [argsRef, yieldIds, hashedKey]);
+  }, [argsRef, yieldIds, hashedKey, whitelistedValidatorAddresses]);
 
   return useSelector(multiYieldsStore, (state) => {
     const map = state.context.data.get(hashedKey);
@@ -102,6 +106,7 @@ const multipleYields$ = (args: {
   isConnected: boolean;
   network: SKWallet["network"];
   yieldIds: string[];
+  whitelistedValidatorAddresses: Set<string> | null;
 }) =>
   merge(
     ...args.yieldIds.map((v) =>
@@ -110,6 +115,7 @@ const multipleYields$ = (args: {
           isLedgerLive: args.isLedgerLive,
           yieldId: v,
           queryClient: args.queryClient,
+          whitelistedValidatorAddresses: args.whitelistedValidatorAddresses,
         })
       )
     )
@@ -138,6 +144,7 @@ const firstEligibleYield$ = (args: {
   initParams: InitParams;
   positionsData: PositionsData;
   tokenBalanceAmount: BigNumber;
+  whitelistedValidatorAddresses: Set<string> | null;
 }) => {
   let defaultYield: YieldDto | null = null;
 

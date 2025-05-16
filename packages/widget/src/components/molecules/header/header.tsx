@@ -23,7 +23,7 @@ export const Header = () => {
 
   const { containerRef } = useSyncHeaderHeight();
 
-  const { variant } = useSettings();
+  const { variant, hideChainModal } = useSettings();
 
   const { isConnected, isConnecting, connector } = useSKWallet();
 
@@ -112,7 +112,7 @@ export const Header = () => {
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.2, duration: 0.2 }}
                         >
-                          <ChainModal />
+                          {!hideChainModal && <ChainModal />}
 
                           <AccountModal />
                         </motion.div>

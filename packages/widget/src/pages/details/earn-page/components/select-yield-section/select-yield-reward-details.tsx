@@ -28,7 +28,7 @@ export const SelectYieldRewardDetails = () => {
 
   return (
     <Box data-rk="yield-rewards">
-      {variant === "default" && (
+      {variant !== "zerion" && (
         <Box marginTop="3">
           <RewardTokenDetails rewardToken={rewardToken} type="stake" />
         </Box>

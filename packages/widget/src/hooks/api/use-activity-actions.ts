@@ -1,4 +1,5 @@
 import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
@@ -13,6 +14,8 @@ import { useMemo } from "react";
 export const useActivityActions = () => {
   const { address, network, isLedgerLive } = useSKWallet();
   const queryClient = useSKQueryClient();
+
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
 
   const query = useInfiniteQuery({
     enabled: !!address && !!network,
@@ -44,6 +47,7 @@ export const useActivityActions = () => {
                   yieldId: action.integrationId,
                   queryClient,
                   isLedgerLive,
+                  whitelistedValidatorAddresses,
                 })
                   .map((yieldData) => ({ actionData: action, yieldData }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))

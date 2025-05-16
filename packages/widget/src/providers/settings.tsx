@@ -1,4 +1,5 @@
 import type { Languages, localResources } from "@sk-widget/translation";
+import utilaTranslations from "@sk-widget/translation/English/utila-variant.json";
 import type { RecursivePartial } from "@sk-widget/types";
 import type { TransactionFormat } from "@stakekit/api-hooks";
 import type { PropsWithChildren, ReactNode } from "react";
@@ -19,6 +20,7 @@ export type VariantProps =
         onSwitchChain: (chainId: number) => void;
       }) => ReactNode;
     }
+  | { variant: "utila" }
   | { variant: "default" };
 
 export type SettingsProps = {
@@ -47,6 +49,8 @@ export type SettingsProps = {
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
+  hideChainModal?: boolean;
+  whitelistedValidatorAddresses?: string[];
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
@@ -72,12 +76,22 @@ export const SettingsContextProvider = ({
   }, [rest.language, i18n]);
 
   useLayoutEffect(() => {
+    if (rest.variant === "utila") {
+      i18n.addResourceBundle(
+        "en",
+        "translation",
+        utilaTranslations,
+        true,
+        true
+      );
+    }
+
     if (rest.customTranslations) {
       Object.entries(rest.customTranslations).forEach(([lng, val]) => {
         i18n.addResourceBundle(lng, "translation", val.translation, true, true);
       });
     }
-  }, [rest.customTranslations, i18n]);
+  }, [rest.customTranslations, i18n, rest.variant]);
 
   return (
     <SettingsContext.Provider value={rest}>{children}</SettingsContext.Provider>

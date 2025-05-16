@@ -173,19 +173,13 @@ const positionsTableDataSelector = createSelector(
                           compare(priorityOrder[a.type], priorityOrder[b.type]),
                         value.balances
                       )
-                    ).map((v) => v.token),
+                    ).map((v) => ({
+                      ...v.token,
+                      pricePerShare: v.pricePerShare,
+                    })),
                     actionRequired: v.some(
                       (b) => b.type === "locked" || b.type === "unstaked"
                     ),
-                    amount: Just(
-                      v.reduce((acc, b) => {
-                        if (b.token.isPoints) return acc;
-
-                        return new BigNumber(b.amount).plus(acc);
-                      }, new BigNumber(0))
-                    )
-                      .map(defaultFormattedNumber)
-                      .unsafeCoerce(),
                     pointsRewardTokenBalance: List.find(
                       (v) => !!v.token.isPoints,
                       v
@@ -216,10 +210,9 @@ const positionsTableDataSelector = createSelector(
             allBalances: YieldBalanceDto[];
             balanceId: YieldBalanceDto["groupId"];
             actionRequired: boolean;
-            amount: string;
             pointsRewardTokenBalance: Maybe<YieldBalanceDto>;
             hasPendingClaimRewards: boolean;
-            token: Maybe<YieldBalanceDto["token"]>;
+            token: Maybe<YieldBalanceDto["token"] & { pricePerShare: string }>;
             yieldLabelDto: Maybe<YieldBalanceLabelDto>;
           } & (
             | { type: "validators"; validatorsAddresses: string[] }
@@ -232,7 +225,7 @@ const positionsTableDataSelector = createSelector(
           ? val.toSorted((a, b) => {
               if (a.hasPendingClaimRewards) return -1;
               if (b.hasPendingClaimRewards) return 1;
-              return BigNumber(b.amount).minus(BigNumber(a.amount)).toNumber();
+              return 0;
             })
           : val
       )

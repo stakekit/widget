@@ -76,6 +76,32 @@ const App = () => {
 };
 ```
 
+### Options
+
+```tsx
+type SettingsProps = {
+  apiKey: string;
+  theme?: ThemeWrapperTheme;
+  tracking?: {
+    trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
+    trackPageView?: (page: TrackPageVal, properties?: Properties) => void;
+  };
+  onMountAnimationComplete?: () => void;
+  externalProviders?: SKExternalProviders;
+  disableGasCheck?: boolean;
+  hideNetworkLogo?: boolean;
+  disableInitLayoutAnimation?: boolean;
+  disableResizingInputFontSize?: boolean;
+  disableAutoScrollToTop?: boolean;
+  language?: Languages;
+  customTranslations?: RecursivePartial<typeof localResources>;
+  tokensForEnabledYieldsOnly?: boolean;
+  preferredTransactionFormat?: TransactionFormat;
+  hideChainModal?: boolean;
+  whitelistedValidatorAddresses?: string[];
+};
+```
+
 After this is done, you can start using the widget.
 
 ## Style customization
