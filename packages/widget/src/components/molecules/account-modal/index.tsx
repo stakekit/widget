@@ -49,7 +49,12 @@ export const AccountModal = () => {
                       marginRight="2"
                       className={avatarContainer}
                     >
-                      <AvatarComponent address={address as Address} size={24} />
+                      {AvatarComponent && (
+                        <AvatarComponent
+                          address={address as Address}
+                          size={24}
+                        />
+                      )}
                     </Box>
 
                     <Text className={titleStyle}>

@@ -221,9 +221,9 @@ export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 
 export const SKApp = (props: SKAppProps) => {
   const variantProps: VariantProps =
-    !props.variant || props.variant === "default"
-      ? { variant: "default" }
-      : { variant: props.variant, chainModal: props.chainModal };
+    props.variant === "zerion"
+      ? { variant: props.variant, chainModal: props.chainModal }
+      : { variant: props.variant ?? "default" };
 
   const [router] = useState(() =>
     createMemoryRouter([{ path: "*", Component: Root }])

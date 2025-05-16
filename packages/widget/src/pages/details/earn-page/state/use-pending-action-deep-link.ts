@@ -4,6 +4,7 @@ import {
 } from "@sk-widget/domain";
 import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
 import { getInitParams } from "@sk-widget/hooks/use-init-params";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSettings } from "@sk-widget/providers/settings";
@@ -28,6 +29,8 @@ export const usePendingActionDeepLink = () => {
 
   const { externalProviders } = useSettings();
 
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
+
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
@@ -46,6 +49,7 @@ export const usePendingActionDeepLink = () => {
             address: addr,
             queryClient,
             externalProviders,
+            whitelistedValidatorAddresses,
           })
         )
       ).unsafeCoerce(),
@@ -58,17 +62,20 @@ const fn = ({
   address,
   queryClient,
   externalProviders,
+  whitelistedValidatorAddresses,
 }: {
   isLedgerLive: boolean;
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
   externalProviders: ReturnType<typeof useSettings>["externalProviders"];
+  whitelistedValidatorAddresses: Set<string> | null;
 }) =>
   getInitParams({
     isLedgerLive,
     queryClient,
     externalProviders,
+    whitelistedValidatorAddresses,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
@@ -135,6 +142,7 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
+              whitelistedValidatorAddresses,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<

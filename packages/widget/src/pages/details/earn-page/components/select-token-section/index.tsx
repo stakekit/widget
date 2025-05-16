@@ -64,7 +64,7 @@ export const SelectTokenSection = () => {
         display="flex"
         justifyContent="flex-end"
         alignItems="center"
-        {...(variant === "default" && { marginRight: "2", marginTop: "2" })}
+        {...(variant !== "zerion" && { marginRight: "2", marginTop: "2" })}
         data-rk="stake-token-section-min-max"
       >
         <Text
@@ -117,7 +117,7 @@ export const SelectTokenSection = () => {
         </Box>
       </Box>
 
-      {variant === "default" && minStakeAmount}
+      {variant !== "zerion" && minStakeAmount}
 
       <Box
         display="flex"

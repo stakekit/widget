@@ -1,4 +1,5 @@
 import { getAndValidateInitParams } from "@sk-widget/hooks/use-init-query-params";
+import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import {
   type SettingsContextType,
   useSettings,
@@ -22,6 +23,7 @@ export const useInitParams = <T = InitParams>(opts?: {
   const { isLedgerLive } = useSKWallet();
   const { externalProviders } = useSettings();
   const queryClient = useSKQueryClient();
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
 
   return useQuery({
     queryKey,
@@ -32,6 +34,7 @@ export const useInitParams = <T = InitParams>(opts?: {
         isLedgerLive,
         queryClient,
         externalProviders,
+        whitelistedValidatorAddresses,
       }),
     select: opts?.select,
   });
@@ -59,10 +62,12 @@ const fn = ({
   isLedgerLive,
   queryClient,
   externalProviders,
+  whitelistedValidatorAddresses,
 }: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
   externalProviders: SettingsContextType["externalProviders"];
+  whitelistedValidatorAddresses: Set<string> | null;
 }): EitherAsync<Error, InitParams> =>
   EitherAsync.liftEither(
     getAndValidateInitParams({
@@ -76,6 +81,7 @@ const fn = ({
         isLedgerLive,
         yieldId: yId,
         queryClient,
+        whitelistedValidatorAddresses,
       })
         .map((yieldData) => ({
           ...val,

@@ -84,7 +84,7 @@ const EarnPageComponent = () => {
     >
       <PageContainer>
         <Box>
-          {variant === "default" && <SelectTokenTitle />}
+          {variant !== "zerion" && <SelectTokenTitle />}
 
           <ZerionChainModal />
 
