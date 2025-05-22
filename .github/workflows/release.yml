@@ -11,6 +11,10 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: write
+      deployments: write
     environment: production
     env:
       NODE_OPTIONS: "--max_old_space_size=8192"
