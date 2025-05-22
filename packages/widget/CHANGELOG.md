@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.233
+
+### Patch Changes
+
+- a4e8cb4: feat: chain + token icon mapping
+
 ## 0.0.232
 
 ### Patch Changes
