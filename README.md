@@ -99,7 +99,26 @@ type SettingsProps = {
   preferredTransactionFormat?: TransactionFormat;
   hideChainModal?: boolean;
   whitelistedValidatorAddresses?: string[];
+  tokenIconMapping?:
+    | Record<TokenDto["symbol"], string>
+    | ((token: TokenDto) => string);
+  chainIconMapping?:
+    | Record<SupportedSKChains, string>
+    | ((chain: SupportedSKChains) => string);
 };
+```
+
+### Override Icons
+
+You can override token or chain icons in widget
+
+```tsx
+tokenIconMapping?:
+  | Record<TokenDto["symbol"], string>
+  | ((token: TokenDto) => string);
+chainIconMapping?:
+  | Record<SupportedSKChains, string>
+  | ((chain: SupportedSKChains) => string);
 ```
 
 After this is done, you can start using the widget.
