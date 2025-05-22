@@ -7,7 +7,6 @@ import type { YieldDto } from "@stakekit/api-hooks";
 import { type QueryClient, hashKey } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
 import { createStore } from "@xstate/store";
-import type { BigNumber } from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useEffect, useMemo } from "react";
 import { createSelector } from "reselect";
