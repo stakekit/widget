@@ -44,7 +44,9 @@ const createLedgerLiveConnector = ({
     const $disabledChains = new BehaviorSubject<Chain[]>([]);
     const $currentAccount = new BehaviorSubject<Account | undefined>(undefined);
 
-    const $currentAccountId = $currentAccount.pipe(map((v) => v?.id));
+    const $currentAccountId = $currentAccount.pipe(
+      map((v) => v?.parentAccountId ?? v?.id)
+    );
     let ledgerAccounts: Account[] = [];
     const $accountsOnCurrentChain = new BehaviorSubject<Account[]>([]);
     let currentChain: ChainItem | null = null;
