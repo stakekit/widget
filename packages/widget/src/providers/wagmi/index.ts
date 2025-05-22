@@ -1,10 +1,13 @@
+import { getVariantNetworkUrl } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
 import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
 import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
 import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
+import type { Networks } from "@stakekit/common";
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
+import type { Chain as RainbowkitChain } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
@@ -27,7 +30,7 @@ import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
 import { useSKQueryClient } from "../query-client";
 import { getConfig as getSafeConnector } from "../safe/config";
-import { useSettings } from "../settings";
+import { type SettingsProps, useSettings } from "../settings";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
@@ -51,6 +54,7 @@ const buildWagmiConfig = async (opts: {
   isLedgerLive: boolean;
   isSafe: boolean;
   whitelistedValidatorAddresses: Set<string> | null;
+  chainIconMapping: SettingsProps["chainIconMapping"];
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -132,12 +136,53 @@ const buildWagmiConfig = async (opts: {
         substrateConfig,
         ledgerLiveConnector,
       } = val;
-      const chains = [
-        ...evmConfig.evmChains,
-        ...cosmosConfig.cosmosWagmiChains,
-        ...miscConfig.miscChains,
-        ...substrateConfig.substrateChains,
-      ] as [Chain, ...Chain[]];
+
+      const chains = Maybe.fromNullable(opts.chainIconMapping)
+        .map((chainIconMapping) => {
+          const mapWagmiChain = (val: {
+            wagmiChain: RainbowkitChain;
+            skChainName: Networks;
+          }) => {
+            const res = getVariantNetworkUrl({
+              network: val.skChainName,
+              chainIconMapping,
+            });
+
+            if (res === val.wagmiChain.iconUrl) {
+              return val.wagmiChain;
+            }
+
+            return {
+              ...val.wagmiChain,
+              iconBackground: undefined,
+              iconUrl: res,
+            } as RainbowkitChain;
+          };
+
+          return [
+            ...Object.values(evmConfig.evmChainsMap).map((val) =>
+              mapWagmiChain(val)
+            ),
+            ...Object.values(cosmosConfig.cosmosChainsMap).map((val) =>
+              mapWagmiChain(val)
+            ),
+            ...Object.values(miscConfig.miscChainsMap).map((val) =>
+              mapWagmiChain(val)
+            ),
+            ...Object.values(substrateConfig.substrateChainsMap).map((val) =>
+              mapWagmiChain(val)
+            ),
+          ] as [RainbowkitChain, ...RainbowkitChain[]];
+        })
+        .orDefaultLazy(
+          () =>
+            [
+              ...evmConfig.evmChains,
+              ...cosmosConfig.cosmosWagmiChains,
+              ...miscConfig.miscChains,
+              ...substrateConfig.substrateChains,
+            ] as [RainbowkitChain, ...RainbowkitChain[]]
+        );
 
       const multiInjectedProviderDiscovery =
         !opts.disableInjectedProviderDiscovery &&
@@ -235,6 +280,7 @@ export const useWagmiConfig = () => {
     isSafe,
     disableInjectedProviderDiscovery,
     mapWalletFn,
+    chainIconMapping,
   } = useSettings();
 
   const queryClient = useSKQueryClient();
@@ -261,6 +307,7 @@ export const useWagmiConfig = () => {
           externalProviders: externalProvidersRef,
         }),
         whitelistedValidatorAddresses,
+        chainIconMapping,
       }),
   });
 };
