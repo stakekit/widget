@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.232
+
+### Patch Changes
+
+- 66f77dc: Bump Ledger Wallet API Client
+
 ## 0.0.231
 
 ### Patch Changes
