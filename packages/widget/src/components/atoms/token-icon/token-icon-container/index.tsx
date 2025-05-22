@@ -1,6 +1,6 @@
 import { Box } from "@sk-widget/components";
-import { useVariantTokenUrls } from "@sk-widget/hooks/use-variant-token-urls";
-import { getNetworkLogo } from "@sk-widget/utils";
+import { useVariantNetworkUrls } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
+import { useVariantTokenUrls } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-token-urls";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
 import type { ReactElement } from "react";
@@ -26,7 +26,8 @@ export const TokenIconContainer = ({
     token,
     metadata
   );
-  const networkLogoUri = getNetworkLogo(token.network as Networks);
+
+  const networkLogoUri = useVariantNetworkUrls(token.network as Networks);
 
   return (
     <Box

@@ -1,7 +1,8 @@
+import type { SupportedSKChains } from "@sk-widget/domain/types/chains";
 import type { Languages, localResources } from "@sk-widget/translation";
 import utilaTranslations from "@sk-widget/translation/English/utila-variant.json";
 import type { RecursivePartial } from "@sk-widget/types";
-import type { TransactionFormat } from "@stakekit/api-hooks";
+import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
 import type { PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -51,6 +52,12 @@ export type SettingsProps = {
   preferredTransactionFormat?: TransactionFormat;
   hideChainModal?: boolean;
   whitelistedValidatorAddresses?: string[];
+  tokenIconMapping?:
+    | Record<TokenDto["symbol"], string>
+    | ((token: TokenDto) => string);
+  chainIconMapping?:
+    | Record<SupportedSKChains, string>
+    | ((chain: SupportedSKChains) => string);
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

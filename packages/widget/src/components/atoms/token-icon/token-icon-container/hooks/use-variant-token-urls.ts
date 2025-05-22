@@ -13,7 +13,7 @@ export const useVariantTokenUrls = (
   name: string;
   providerIcon: string | undefined;
 } => {
-  const { variant } = useSettings();
+  const { variant, tokenIconMapping } = useSettings();
 
   return useMemo(() => {
     if (metadata) {
@@ -30,6 +30,26 @@ export const useVariantTokenUrls = (
         name: metadata.name,
         providerIcon: metadata.provider?.logoURI,
       };
+    }
+
+    const tokenMappingResult = Maybe.fromNullable(tokenIconMapping)
+      .chainNullable((mapping) => {
+        if (typeof mapping === "function") {
+          return mapping(token);
+        }
+
+        return mapping[token.symbol];
+      })
+      .map((url) => ({
+        mainUrl: url,
+        fallbackUrl: url,
+        name: token.name,
+        providerIcon: undefined,
+      }))
+      .extractNullable();
+
+    if (tokenMappingResult) {
+      return tokenMappingResult;
     }
 
     const mainUrl = Maybe.fromFalsy(variant === "zerion")
@@ -54,7 +74,7 @@ export const useVariantTokenUrls = (
       name: token.name,
       providerIcon: undefined,
     };
-  }, [token, metadata, variant]);
+  }, [token, metadata, variant, tokenIconMapping]);
 };
 
 const skETHIconUrlsSuffix = ["/tokens/eth.svg", "/tokens/steth2.svg"];
