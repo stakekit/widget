@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.234
+
+### Patch Changes
+
+- db37cb9: chore: bump deps
+- 92e2bbe: fix(ledger): use parentAccountId if exists
+
 ## 0.0.233
 
 ### Patch Changes
