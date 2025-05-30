@@ -59,6 +59,7 @@ export const setup = () => {
         },
       },
     },
+    feeConfigurations: [],
     id: "avalanche-avax-liquid-staking",
     token,
     tokens: [token],
