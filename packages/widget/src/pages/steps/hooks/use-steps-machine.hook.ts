@@ -303,6 +303,10 @@ const getMachine = (
                         ...ref.current.actionMeta,
                         txId: constructedTx.id,
                         txType: constructedTx.type,
+                        annotatedTransaction:
+                          constructedTx.annotatedTransaction,
+                        structuredTransaction:
+                          constructedTx.structuredTransaction,
                       },
                       network: constructedTx.network,
                     })

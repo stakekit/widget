@@ -29,6 +29,7 @@ export const setup = async () => {
     apy: 0.05863407069791653,
     rewardRate: 0.05863407069791653,
     rewardType: "apy",
+    feeConfigurations: [],
     args: {
       enter: {
         addresses: {
@@ -151,6 +152,8 @@ export const setup = async () => {
         isMessage: false,
         broadcastedAt: null,
         createdAt: "2023-12-28T14:36:21.700Z",
+        annotatedTransaction: null,
+        structuredTransaction: null,
       },
     ],
     addresses: null as unknown as AddressesDto,
@@ -167,6 +170,8 @@ export const setup = async () => {
       '{"from":"0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7","gasLimit":"56572","value":"10000000000000000","to":"0x2b2c81e08f1af8835a78bb2a90ae924ace0ea4be","data":"0x5bcb2fc6","nonce":122,"type":2,"maxFeePerGas":"50000000000","maxPriorityFeePerGas":"0","chainId":43114}',
     stepIndex: 0,
     error: null,
+    annotatedTransaction: null,
+    structuredTransaction: null,
     gasEstimate: {
       amount: "0.002828600000000000",
       gasLimit: "56572",
