@@ -1,9 +1,10 @@
+import { SKAnchor } from "@sk-widget/components/atoms/anchor";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { MiscNetworks } from "@stakekit/common";
 import { Maybe } from "purify-ts";
 import { List } from "purify-ts";
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { type ReactNode, useMemo } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
@@ -55,6 +56,22 @@ export const useYieldMetaInfo = ({
       const isCompound = providerName.includes("Compound");
 
       const def = {
+        campaign:
+          y.metadata.rewardSchedule === "campaign" ? (
+            <Trans
+              i18nKey="details.campaign"
+              components={{
+                link0: (
+                  <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+                    {t("shared.learn_more")}
+                  </SKAnchor>
+                ),
+              }}
+            />
+          ) : null,
+        lockupPeriod: y.metadata.lockupPeriod?.days
+          ? t("details.lockup_period", { days: y.metadata.lockupPeriod?.days })
+          : null,
         extra:
           y.rewardType === "variable"
             ? t("details.reward_type_varialbe", {
@@ -233,16 +250,20 @@ export const useYieldMetaInfo = ({
 };
 
 const ifNotFound: {
+  campaign: ReactNode | null;
   description: string | null;
   earnPeriod: string | null;
   earnRewards: string | null;
   withdrawnTime: string | null;
   withdrawnNotAvailable: string | null;
   extra?: string;
+  lockupPeriod: string | null;
 } = {
+  campaign: null,
   description: null,
   earnPeriod: null,
   earnRewards: null,
   withdrawnTime: null,
   withdrawnNotAvailable: null,
+  lockupPeriod: null,
 };
