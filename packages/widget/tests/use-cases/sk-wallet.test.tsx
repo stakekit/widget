@@ -79,6 +79,8 @@ describe("SK Wallet", () => {
           name: "",
           network: "solana",
         },
+        structuredTransaction: null,
+        annotatedTransaction: null,
         providersDetails: [],
       },
       ledgerHwAppId: null,
@@ -106,6 +108,8 @@ describe("SK Wallet", () => {
           name: "",
           network: "solana",
         },
+        structuredTransaction: null,
+        annotatedTransaction: null,
         providersDetails: [],
       }
     );
@@ -153,6 +157,8 @@ describe("SK Wallet", () => {
           name: "",
           network: "ton",
         },
+        structuredTransaction: null,
+        annotatedTransaction: null,
         providersDetails: [],
       },
       ledgerHwAppId: null,
@@ -180,6 +186,8 @@ describe("SK Wallet", () => {
           name: "",
           network: "ton",
         },
+        structuredTransaction: null,
+        annotatedTransaction: null,
         providersDetails: [],
       }
     );

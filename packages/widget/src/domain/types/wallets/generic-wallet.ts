@@ -50,7 +50,7 @@ export type ActionMeta = {
 export type SKTxMeta = ActionMeta & {
   txId: TransactionDto["id"];
   txType: TransactionDto["type"];
-};
+} & Pick<TransactionDto, "structuredTransaction" | "annotatedTransaction">;
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;
