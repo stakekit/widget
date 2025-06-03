@@ -1,6 +1,6 @@
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
-import { type JSX, useMemo } from "react";
+import { type JSX, type ReactNode, useMemo } from "react";
 import {
   ArrowsLeftRightIcon,
   Box,
@@ -33,6 +33,8 @@ export const MetaInfo = ({
     withdrawnNotAvailable,
     withdrawnTime,
     extra,
+    campaign,
+    lockupPeriod,
   } = useYieldMetaInfo({
     selectedStake,
     validators: [...selectedValidators.values()],
@@ -48,14 +50,21 @@ export const MetaInfo = ({
         { text: withdrawnNotAvailable, icon: <InfoIcon /> },
         { text: withdrawnTime, icon: <InfoIcon /> },
         { text: extra, icon: <InfoIcon /> },
-      ].filter((val): val is { text: string; icon: JSX.Element } => !!val.text),
+        { text: campaign, icon: <InfoIcon /> },
+        { text: lockupPeriod, icon: <InfoIcon /> },
+      ].filter(
+        (val): val is { text: string | ReactNode; icon: JSX.Element } =>
+          !!val.text
+      ),
     [
+      campaign,
       description,
       earnPeriod,
       earnRewards,
       withdrawnNotAvailable,
       withdrawnTime,
       extra,
+      lockupPeriod,
     ]
   );
 
@@ -63,8 +72,8 @@ export const MetaInfo = ({
     <ContentLoaderSquare heightPx={150} />
   ) : (
     <Box as="footer" gap="3" display="flex" flexDirection="column">
-      {items.map((item) => (
-        <Box key={item.text} display="flex" alignItems="center" gap="4">
+      {items.map((item, i) => (
+        <Box key={i} display="flex" alignItems="center" gap="4">
           <Box alignItems="center" justifyContent="center" display="flex">
             {item.icon ? (
               item.icon
