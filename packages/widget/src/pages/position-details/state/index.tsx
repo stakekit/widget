@@ -356,7 +356,9 @@ export const UnstakeOrPendingActionProvider = ({
 export const useUnstakeOrPendingActionState = () => {
   const state = useContext(UnstakeOrPendingActionContext);
   if (state === undefined) {
-    throw new Error("useState must be used within a UnstakeContextProvider");
+    throw new Error(
+      "useUnstakeOrPendingActionState must be used within a UnstakeContextProvider"
+    );
   }
 
   return state;
@@ -365,7 +367,9 @@ export const useUnstakeOrPendingActionState = () => {
 export const useUnstakeOrPendingActionDispatch = () => {
   const dispatch = useContext(UnstakeOrPendingActionDispatchContext);
   if (dispatch === undefined) {
-    throw new Error("useDispatch must be used within a UnstakeContextProvider");
+    throw new Error(
+      "useUnstakeOrPendingActionDispatch must be used within a UnstakeContextProvider"
+    );
   }
 
   return dispatch;

@@ -1,8 +1,8 @@
-import type { TokenString } from "@sk-widget/domain/types";
 import {
   type SupportedSKChains,
   isSupportedChain,
 } from "@sk-widget/domain/types/chains";
+import type { TokenString } from "@sk-widget/domain/types/tokens";
 import { useSettings } from "@sk-widget/providers/settings";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import { ActionTypes } from "@stakekit/api-hooks";
@@ -114,10 +114,6 @@ export const getAndValidateInitParams = ({
     pendingaction: safeParamCodec
       .decode(url.searchParams.get("pendingaction"))
       .chain(pendingActionCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-    referralCode: safeParamCodec
-      .decode(url.searchParams.get("ref"))
       .toMaybe()
       .extractNullable(),
     accountId: accountIdCodec // Not safeParamCodec as it maybe has ../ or ./

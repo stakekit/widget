@@ -1,11 +1,11 @@
+import type { SelectModalProps } from "@sk-widget/components/atoms/select-modal";
+import type { Action } from "@sk-widget/types/utils";
 import type {
   PendingActionDto,
   ValidatorDto,
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
 import { useCallback, useMemo, useReducer } from "react";
-import type { SelectModalProps } from "../../../components";
-import type { Action } from "../../../types";
 
 type State = {
   selectedValidators: Set<ValidatorDto["address"]>;

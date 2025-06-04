@@ -95,7 +95,7 @@ export const useInvalidateTokenBalances = () => {
   );
 };
 
-export const getTokenTokenBalancesScanQueryKey = (
+const getTokenTokenBalancesScanQueryKey = (
   tokenBalanceScanDto: TokenBalanceScanDto
 ) => {
   return ["/v1/tokens/balances/scan", tokenBalanceScanDto] as const;

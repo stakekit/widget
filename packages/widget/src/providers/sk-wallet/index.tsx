@@ -14,6 +14,7 @@ import {
   unsignedTonTransactionCodec,
   unsignedTronTransactionCodec,
 } from "@sk-widget/domain/types/transaction";
+import type { SKWallet } from "@sk-widget/domain/types/wallet";
 import type {
   SKTx,
   TronTx,
@@ -41,7 +42,6 @@ import {
   useSendTransaction,
   useSignMessage,
 } from "wagmi";
-import type { SKWallet } from "../../domain/types";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { isLedgerDappBrowserProvider } from "../../utils";

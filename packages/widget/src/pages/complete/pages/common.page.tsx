@@ -1,4 +1,18 @@
-import type { ExtendedYieldType } from "@sk-widget/domain/types";
+import { Box } from "@sk-widget/components/atoms/box";
+import { CheckCircleIcon } from "@sk-widget/components/atoms/icons/check-circle";
+import { Image } from "@sk-widget/components/atoms/image";
+import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
+import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
+import { Heading } from "@sk-widget/components/atoms/typography/heading";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import type { ExtendedYieldType } from "@sk-widget/domain/types/yields";
+import { AnimationPage } from "@sk-widget/navigation/containers/animation-page";
+import {
+  CompleteCommonContextProvider,
+  useCompleteCommonContext,
+} from "@sk-widget/pages/complete/state";
+import { PageContainer } from "@sk-widget/pages/components/page-container";
+import { capitalizeFirstLowerRest } from "@sk-widget/utils/text";
 import type {
   ActionTypes,
   TokenDto,
@@ -7,14 +21,6 @@ import type {
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, Heading, Text } from "../../../components";
-import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
-import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
-import { TokenIcon } from "../../../components/atoms/token-icon";
-import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { capitalizeFirstLowerRest } from "../../../utils/text";
-import { PageContainer } from "../../components";
 import { useComplete } from "../hooks/use-complete.hook";
 
 type Props = {
@@ -32,7 +38,7 @@ type Props = {
   yieldType: Maybe<ExtendedYieldType>;
 };
 
-export const CompletePage = ({
+export const CompletePageComponent = ({
   amount,
   metadata,
   network,
@@ -44,7 +50,7 @@ export const CompletePage = ({
   const { t } = useTranslation();
 
   const { onViewTransactionClick, unstakeMatch, pendingActionMatch, urls } =
-    useComplete();
+    useCompleteCommonContext();
 
   return (
     <AnimationPage>
@@ -187,5 +193,13 @@ export const CompletePage = ({
         </Box>
       </PageContainer>
     </AnimationPage>
+  );
+};
+
+export const CompletePage = (props: Props) => {
+  return (
+    <CompleteCommonContextProvider value={useComplete()}>
+      <CompletePageComponent {...props} />
+    </CompleteCommonContextProvider>
   );
 };

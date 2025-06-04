@@ -1,13 +1,12 @@
-import {
-  Box,
-  type BoxProps,
-  Button,
-  NumberInput,
-  type NumberInputProps,
-  Text,
-} from "@sk-widget/components";
+import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
+import { Button } from "@sk-widget/components/atoms/button";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { MaxButton } from "@sk-widget/components/atoms/max-button";
+import {
+  NumberInput,
+  type NumberInputProps,
+} from "@sk-widget/components/atoms/number-input";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
 import { useYieldMetaInfo } from "@sk-widget/hooks/use-yield-meta-info";
 import { priceTxt } from "@sk-widget/pages/position-details/styles.css";
@@ -116,7 +115,7 @@ export const AmountBlock = ({
       : { background: "stakeSectionBackground" };
 
   return (
-    <Box {...variantProps} borderRadius="xl" marginTop="2" py="4" px="4">
+    <Box {...variantProps} borderRadius="xl" py="4" px="4">
       {(rest.variant === "action" || rest.canUnstake) && (
         <Box marginBottom="3">
           <Box

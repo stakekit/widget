@@ -1,4 +1,6 @@
-import { Box, Spinner, Text } from "../../../../../components";
+import { Box } from "@sk-widget/components/atoms/box";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectTokenTitle = () => {

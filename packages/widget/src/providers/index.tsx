@@ -1,3 +1,4 @@
+import { SummaryProvider } from "@sk-widget/hooks/use-summary";
 import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import { ActivityProvider } from "@sk-widget/providers/activity-provider";
 import { EnterStakeStoreProvider } from "@sk-widget/providers/enter-stake-store";
@@ -57,7 +58,9 @@ export const Providers = ({
                                                 <ExitStakeStoreProvider>
                                                   <PendingActionStoreProvider>
                                                     <ActivityProvider>
-                                                      {children}
+                                                      <SummaryProvider>
+                                                        {children}
+                                                      </SummaryProvider>
                                                     </ActivityProvider>
                                                   </PendingActionStoreProvider>
                                                 </ExitStakeStoreProvider>

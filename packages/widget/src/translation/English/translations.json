@@ -51,9 +51,6 @@
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
     "additional_info": "Additional info",
-    "referral_code": {
-      "title": "Your referral link:"
-    },
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "yearly": "Estimated Yearly Earnings",
@@ -140,6 +137,34 @@
     "validators_comission": "Commission",
     "validators_website": "Website",
     "validators_nominator_count": "Nominator count"
+  },
+  "dashboard": {
+    "details": {
+      "tabs": {
+        "overview": "Overview",
+        "rewards": "Rewards",
+        "activity": "Activity"
+      },
+      "positions_tooltip": "Positions are your current staked balances on the network."
+    },
+    "position_details_info": {
+      "balances": "Balances"
+    },
+    "overview": {
+      "summary": {
+        "total_staked": "Total staked",
+        "total_rewards": "Total rewards",
+        "available_balance": "Available"
+      }
+    },
+    "rewards": {
+      "no_data": "No data",
+      "summary": {
+        "all_time": "All time",
+        "one_month": "1 month",
+        "one_week": "1 week"
+      }
+    }
   },
   "review": {
     "estimated_reward": "Estimated rewards",
@@ -459,11 +484,6 @@
   "select_token": {
     "title": "Select token",
     "n_available_opps": "{{count}} available opportunities"
-  },
-  "referral_lock": {
-    "title": "Referral check",
-    "body": "Enter your referral code to continue",
-    "submit": "Submit"
   },
   "error_modal": {
     "solution": "Potential solution:"

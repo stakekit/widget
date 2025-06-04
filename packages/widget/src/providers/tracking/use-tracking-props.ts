@@ -1,6 +1,6 @@
 import { config } from "@sk-widget/config";
-import type { SettingsProps } from "@sk-widget/providers/settings";
 import { useSettings } from "@sk-widget/providers/settings";
+import type { SettingsProps } from "@sk-widget/providers/settings/types";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 

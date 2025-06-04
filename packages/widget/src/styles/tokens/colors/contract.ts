@@ -94,12 +94,28 @@ const baseColorsContract = {
   disabledButtonActiveColor: "",
   disabledButtonActiveBackground: "",
   disabledButtonActiveOutline: "",
+
+  dashboardDetailsSectionBackground: "",
 };
 
 export const colorsContract: typeof baseColorsContract & {
   connectKit: ConnectKitTheme["colors"];
+  __internal__utila__greyOne: string;
+  __internal__utila__border: string;
+  __internal__utila__selectTokenBorder: string;
+  __internal__utila__primaryBlue: string;
+  __internal__utila__primaryBlueHover: string;
+  __internal__utila__primaryBlueActive: string;
+  __internal__utila__tabPageDivider: string;
 } = {
   ...baseColorsContract,
+  __internal__utila__greyOne: "",
+  __internal__utila__border: "",
+  __internal__utila__selectTokenBorder: "",
+  __internal__utila__primaryBlue: "",
+  __internal__utila__tabPageDivider: "",
+  __internal__utila__primaryBlueHover: "",
+  __internal__utila__primaryBlueActive: "",
   connectKit: {
     accentColor: "",
     accentColorForeground: "",

@@ -1,3 +1,4 @@
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import type { PropsWithChildren } from "react";
 import {
   createContext,
@@ -7,7 +8,6 @@ import {
   useState,
 } from "react";
 import { useLocation } from "react-router";
-import { useSavedRef } from "../../../hooks";
 
 type CurrentLayoutContextValue = {
   setState: (args: { pathname: string; height: number }) => void;

@@ -1,5 +1,5 @@
 import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
-import { useSavedRef } from "@sk-widget/hooks";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useSettings } from "@sk-widget/providers/settings";
 import type {
   SendTransactionError,

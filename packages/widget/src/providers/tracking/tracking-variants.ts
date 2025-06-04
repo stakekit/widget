@@ -1,4 +1,4 @@
-import type { SettingsProps } from "@sk-widget/providers/settings";
+import type { SettingsProps } from "@sk-widget/providers/settings/types";
 import mixpanel from "mixpanel-browser";
 
 export const initMixpanel = (token: string) => mixpanel.init(token);

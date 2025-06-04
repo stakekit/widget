@@ -1,6 +1,6 @@
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { vars } from "../../../styles";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 
 export const ContentLoaderSquare = ({
   heightPx,

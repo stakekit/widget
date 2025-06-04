@@ -1,7 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import { ConnectButton } from "@sk-widget/components/molecules/connect-button";
+import { useSettings } from "@sk-widget/providers/settings";
 import { useTranslation } from "react-i18next";
-import { Box, Spinner, Text } from "../../../../components";
-import { ConnectButton } from "../../../../components/molecules/connect-button";
-import { useSettings } from "../../../../providers/settings";
 
 export const FallbackContent = ({
   type,

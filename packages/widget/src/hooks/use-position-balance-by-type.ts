@@ -1,11 +1,11 @@
+import { getTokenPriceInUSD } from "@sk-widget/domain";
+import type { PositionBalancesByType } from "@sk-widget/domain/types/positions";
+import type { Prices } from "@sk-widget/domain/types/price";
 import type { TokenDto, YieldBalanceDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
-import { getTokenPriceInUSD } from "../domain";
-import type { Prices } from "../domain/types";
-import type { PositionBalancesByType } from "../domain/types/positions";
 import type { usePrices } from "./api/use-prices";
 import type { usePositionBalances } from "./use-position-balances";
 
@@ -15,7 +15,7 @@ export const usePositionBalanceByType = ({
   baseToken,
 }: {
   positionBalancesData: ReturnType<typeof usePositionBalances>["data"];
-  prices: ReturnType<typeof usePrices>;
+  prices: ReturnType<typeof usePrices<Prices>>;
   baseToken: Maybe<TokenDto>;
 }) => {
   /**

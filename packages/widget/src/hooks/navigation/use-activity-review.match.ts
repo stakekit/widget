@@ -1,6 +1,9 @@
 import { useMatch } from "react-router";
 
-export const useActivityReviewMatch = () =>
-  useMatch("activity/stake-review/complete") ||
-  useMatch("activity/unstake-review/complete") ||
-  useMatch("activity/pending-review/complete");
+export const useActivityReviewMatch = () => {
+  const stakeReviewMatch = useMatch("activity/stake-review/complete");
+  const unstakeReviewMatch = useMatch("activity/unstake-review/complete");
+  const pendingReviewMatch = useMatch("activity/pending-review/complete");
+
+  return stakeReviewMatch || unstakeReviewMatch || pendingReviewMatch;
+};

@@ -104,6 +104,16 @@ export const lightThemeColors: typeof colorsContract = {
     profileActionHover: "#E0E0E0",
     modalBackdrop: "rgba(0, 0, 0, 0.5)",
   },
+
+  __internal__utila__greyOne: "#F8F8F9",
+  __internal__utila__border: "#E7E8EB",
+  __internal__utila__selectTokenBorder: "#C9CFFF",
+  __internal__utila__primaryBlue: "#4A60FF",
+  __internal__utila__primaryBlueHover: "#5d70f7",
+  __internal__utila__primaryBlueActive: "#5d70f7",
+  __internal__utila__tabPageDivider: "#E7E8EB",
+
+  dashboardDetailsSectionBackground: "#00000005",
 };
 
 export const darkThemeColors: typeof colorsContract = {
@@ -209,4 +219,14 @@ export const darkThemeColors: typeof colorsContract = {
     profileActionHover: "#444444",
     modalBackdrop: "rgba(0, 0, 0, 0.5)",
   },
+
+  __internal__utila__greyOne: "#F8F8F9",
+  __internal__utila__border: "#E7E8EB",
+  __internal__utila__selectTokenBorder: "#C9CFFF",
+  __internal__utila__primaryBlue: "#4A60FF",
+  __internal__utila__primaryBlueHover: "#5d70f7",
+  __internal__utila__primaryBlueActive: "#5d70f7",
+  __internal__utila__tabPageDivider: "#E7E8EB",
+
+  dashboardDetailsSectionBackground: "#00000005",
 };

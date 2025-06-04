@@ -1,9 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { useSettings } from "@sk-widget/providers/settings";
+import type { VariantProps } from "@sk-widget/providers/settings/types";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
-import { Box } from "../..";
-import type { VariantProps } from "../../../providers/settings";
-import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
 
 export const ZerionChainModal = () => {
   const settings = useSettings();

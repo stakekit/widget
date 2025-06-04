@@ -1,5 +1,6 @@
 import type { SupportedSKChains } from "@sk-widget/domain/types/chains";
-import { type SettingsProps, useSettings } from "@sk-widget/providers/settings";
+import { useSettings } from "@sk-widget/providers/settings";
+import type { SettingsProps } from "@sk-widget/providers/settings/types";
 import { getNetworkLogo } from "@sk-widget/utils";
 import type { Networks } from "@stakekit/common";
 import { Maybe } from "purify-ts";

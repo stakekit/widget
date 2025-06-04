@@ -1,3 +1,5 @@
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
+import type { Action } from "@sk-widget/types/utils";
 import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
@@ -8,8 +10,6 @@ import {
 } from "react";
 import { delayAPIRequests } from "../../common/delay-api-requests";
 import { config } from "../../config";
-import { useSavedRef } from "../../hooks";
-import type { Action } from "../../types";
 import { useSKLocation } from "../location";
 import { useSettings } from "../settings";
 
@@ -23,10 +23,7 @@ type Actions = Action<"layout" | "earnPage" | "all">;
 const initialState = (): State =>
   config.env.isTestMode
     ? { layout: true, earnPage: true }
-    : {
-        earnPage: false,
-        layout: false,
-      };
+    : { earnPage: false, layout: false };
 
 const reducer = (state: State, actions: Actions): State => {
   switch (actions.type) {
@@ -57,7 +54,13 @@ export const MountAnimationProvider = ({ children }: PropsWithChildren) => {
   const onMountAnimationCompleteRef = useSavedRef(
     useSettings().onMountAnimationComplete
   );
-  const [state, dispatch] = useReducer(reducer, initialState());
+
+  const { dashboardVariant } = useSettings();
+
+  const [state, dispatch] = useReducer(
+    reducer,
+    dashboardVariant ? { earnPage: true, layout: true } : initialState()
+  );
 
   useEffect(() => {
     if (state.layout && state.earnPage) {

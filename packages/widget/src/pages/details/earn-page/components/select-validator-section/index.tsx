@@ -1,9 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
-import { Box } from "../../../../../components";
-import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { SelectValidator } from "../../../../../components/molecules/select-validator";
-import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 

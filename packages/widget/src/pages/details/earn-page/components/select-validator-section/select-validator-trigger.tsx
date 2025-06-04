@@ -1,13 +1,11 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import { Box } from "@sk-widget/components/atoms/box";
+import { Divider } from "@sk-widget/components/atoms/divider";
+import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
+import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  CaretDownIcon,
-  Divider,
-  Text,
-  XIcon,
-} from "../../../../../components";
 import { PlusIcon } from "../../../../../components/atoms/icons/plus";
 import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { Image } from "../../../../../components/atoms/image";

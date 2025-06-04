@@ -1,24 +1,11 @@
-import { Box } from "@sk-widget/components";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import {
-  Tabs,
-  type TabsProps,
-} from "@sk-widget/pages/details/details-page/components/tabs";
+import { Box } from "@sk-widget/components/atoms/box";
+import { AnimatedTabs } from "@sk-widget/pages/details/details-page/components/tabs";
 import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { useSKLocation } from "@sk-widget/providers/location";
 import { motion } from "motion/react";
 import { useMemo } from "react";
-import { Outlet, useNavigate } from "react-router";
-
-export const TABS_MAP = {
-  earn: "/",
-  positions: "/positions",
-  activity: "/activity",
-};
+import { Outlet } from "react-router";
 
 export const Details = () => {
-  const trackEvent = useTrackEvent();
-
   const { positionsData } = usePositions();
 
   const pendingActionsCount = useMemo(
@@ -31,24 +18,6 @@ export const Details = () => {
     [positionsData.data]
   );
 
-  const { current } = useSKLocation();
-
-  const navigate = useNavigate();
-
-  const onTabPress: TabsProps["onTabPress"] = (selected) => {
-    if (selectedTab === selected) return;
-
-    trackEvent("tabClicked", { selected });
-
-    navigate(TABS_MAP[selected]);
-  };
-
-  const selectedTab = current.pathname.startsWith("/positions")
-    ? "positions"
-    : current.pathname.startsWith("/activity")
-      ? "activity"
-      : "earn";
-
   return (
     <motion.div
       exit={{ opacity: 0, filter: "blur(8px)", scale: 0.8 }}
@@ -56,11 +25,7 @@ export const Details = () => {
     >
       <Box flex={1} display="flex" flexDirection="column">
         <Box marginBottom="1">
-          <Tabs
-            onTabPress={onTabPress}
-            selectedTab={selectedTab}
-            pendingActionsCount={pendingActionsCount}
-          />
+          <AnimatedTabs pendingActionsCount={pendingActionsCount} />
         </Box>
 
         <Box display="flex" flex={1} flexDirection="column">

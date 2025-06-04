@@ -1,7 +1,8 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Image } from "@sk-widget/components/atoms/image";
+import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { useTranslation } from "react-i18next";
-import { Box, Text } from "../../../../../components";
-import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const StakedVia = () => {

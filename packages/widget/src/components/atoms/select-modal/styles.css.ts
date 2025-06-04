@@ -1,6 +1,10 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
+import { vars } from "@sk-widget/styles/theme/contract.css";
+import {
+  breakpoints,
+  minMediaQuery,
+} from "@sk-widget/styles/tokens/breakpoints";
 import { keyframes, style } from "@vanilla-extract/css";
-import { atoms, vars } from "../../../styles";
-import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 const slideUp = keyframes({
   "0%": { transform: "translateY(20%)" },

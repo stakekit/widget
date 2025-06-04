@@ -1,4 +1,4 @@
-import { getYieldTypeLabels } from "@sk-widget/domain/types";
+import { getYieldTypeLabels } from "@sk-widget/domain/types/yields";
 import type { YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";

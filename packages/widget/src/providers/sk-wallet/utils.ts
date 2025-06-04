@@ -2,8 +2,8 @@ import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
 import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
 import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
 import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
+import type { SKWallet } from "@sk-widget/domain/types/wallet";
 import type { Chain } from "wagmi/chains";
-import type { SKWallet } from "../../domain/types";
 
 export const wagmiNetworkToSKNetwork = ({
   chain,

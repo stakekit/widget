@@ -1,7 +1,8 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 import { style } from "@vanilla-extract/css";
 import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
-import { atoms, vars } from "../../../styles";
 
 export const pressAnimation = style({
   transition: "transform 0.1s ease-in-out",
@@ -28,6 +29,10 @@ export const buttonStyle = recipe({
   ],
 
   variants: {
+    variant: {
+      default: {},
+      utila: {},
+    },
     color: {
       primary: [
         atoms({

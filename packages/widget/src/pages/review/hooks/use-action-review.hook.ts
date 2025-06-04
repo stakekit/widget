@@ -22,8 +22,10 @@ export const useActionReview = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
+  const activityContext = useActivityContext();
+
   const selectedAction = useSelector(
-    useActivityContext(),
+    activityContext,
     (state) => state.context.selectedAction
   ).unsafeCoerce();
 
@@ -33,7 +35,7 @@ export const useActionReview = () => {
   ) as Maybe<TokenDto>;
 
   const selectedYield = useSelector(
-    useActivityContext(),
+    activityContext,
     (state) => state.context.selectedYield
   ).unsafeCoerce();
 

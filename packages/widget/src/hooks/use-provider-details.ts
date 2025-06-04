@@ -1,7 +1,7 @@
+import type { GetMaybeJust } from "@sk-widget/types/utils";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { GetMaybeJust } from "../types";
 import { getRewardRateFormatted } from "../utils/formatters";
 
 type Res = Maybe<{

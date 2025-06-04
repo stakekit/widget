@@ -1,15 +1,6 @@
-import type { AxiosError } from "axios";
 import { isAxiosError } from "axios";
 import { EitherAsync } from "purify-ts";
 import { waitForMs } from "../utils";
-
-export const isAxios4xxError = (error: unknown): error is AxiosError =>
-  !!(
-    isAxiosError(error) &&
-    error.response &&
-    error.response?.status >= 400 &&
-    error.response?.status < 500
-  );
 
 const _shouldRetry = ({
   error,

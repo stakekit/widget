@@ -1,4 +1,4 @@
-import { Box } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { useVariantNetworkUrls } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { useVariantTokenUrls } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-token-urls";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";

@@ -74,7 +74,6 @@ export const Image = ({
           {...imageProps}
           src={src}
           as="img"
-          style={{ visibility: loadState.loaded ? "visible" : "hidden" }}
           onLoad={onLoad}
           onError={onError}
         />

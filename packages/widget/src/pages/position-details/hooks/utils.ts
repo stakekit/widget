@@ -1,3 +1,4 @@
+import type { SKWallet } from "@sk-widget/domain/types/wallet";
 import type {
   PendingActionDto,
   PendingActionRequestDto,
@@ -7,7 +8,6 @@ import type {
 } from "@stakekit/api-hooks";
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
-import type { SKWallet } from "../../../domain/types";
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
 

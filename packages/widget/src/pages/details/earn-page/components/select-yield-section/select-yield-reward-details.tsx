@@ -1,13 +1,14 @@
+import { Box } from "@sk-widget/components/atoms/box";
 import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
-import { Trans, useTranslation } from "react-i18next";
-import { Box, Text } from "../../../../../components";
-import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { Image } from "@sk-widget/components/atoms/image";
+import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import {
   RewardTokenDetails,
   isMorphoProvider,
-} from "../../../../../components/molecules/reward-token-details";
-import { useSettings } from "../../../../../providers/settings";
+} from "@sk-widget/components/molecules/reward-token-details";
+import { useSettings } from "@sk-widget/providers/settings";
+import { Trans, useTranslation } from "react-i18next";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectYieldRewardDetails = () => {

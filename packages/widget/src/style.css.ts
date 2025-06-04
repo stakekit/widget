@@ -1,6 +1,7 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
+import { minContainerWidth } from "@sk-widget/styles/tokens/breakpoints";
 import { createContainer, style } from "@vanilla-extract/css";
-import { atoms } from "./styles";
-import { minContainerWidth } from "./styles/tokens/breakpoints";
+import { recipe } from "@vanilla-extract/recipes";
 
 const appContainerName = createContainer();
 export const widgetContainerName = createContainer();
@@ -39,8 +40,22 @@ export const container = style([
   }),
 ]);
 
-export const appContainer = style({
-  minHeight: "800px",
-  containerType: "inline-size",
-  containerName: appContainerName,
+export const appContainer = recipe({
+  base: {
+    minHeight: "800px",
+    containerType: "inline-size",
+    containerName: appContainerName,
+  },
+  variants: {
+    variant: {
+      widget: {},
+      dashboard: {
+        display: "flex",
+        justifyContent: "center",
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "widget",
+  },
 });

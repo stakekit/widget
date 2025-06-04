@@ -4,6 +4,8 @@ import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
 import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
+import { WalletConnectWallet } from "@sk-widget/providers/cosmos/wallet-connect/main-wallet";
+import { walletConnectInfo } from "@sk-widget/providers/cosmos/wallet-connect/registry";
 import { CosmosNetworks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { Just } from "purify-ts";
@@ -13,7 +15,6 @@ import {
   registryIdsToSKCosmosNetworks,
 } from "./chains/chain-registry";
 import { createCosmosConnector } from "./cosmos-connector";
-import { WalletConnectWallet, walletConnectInfo } from "./wallet-connect";
 
 const wallets: MainWalletBase[] = [
   ...keplrWallets,

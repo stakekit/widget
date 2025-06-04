@@ -1,5 +1,5 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { Text } from "@sk-widget/components";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { id } from "@sk-widget/styles/theme/ids";
 import type { PropsWithChildren } from "react";
 import { tooltipContent, triggerWrapper } from "./style.css";

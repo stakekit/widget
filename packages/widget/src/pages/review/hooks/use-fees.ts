@@ -1,4 +1,4 @@
-import type { Prices } from "@sk-widget/domain/types";
+import type { Prices } from "@sk-widget/domain/types/price";
 import type { FeesBps } from "@sk-widget/pages/review/types";
 import { bpsToAmount, bpsToPercentage } from "@sk-widget/utils";
 import { getFeesInUSD } from "@sk-widget/utils/formatters";

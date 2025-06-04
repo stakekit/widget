@@ -15,10 +15,10 @@ import {
 } from "@sk-widget/domain/types/chains/ledger";
 import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
 import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
+import type { GetEitherAsyncRight } from "@sk-widget/types/utils";
 import type { Chain } from "@stakekit/rainbowkit";
 import { EitherAsync } from "purify-ts";
 import type { SupportedSKChains } from "../../domain/types/chains";
-import type { GetEitherAsyncRight } from "../../types";
 import { typeSafeObjectEntries } from "../../utils";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({

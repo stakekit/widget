@@ -1,5 +1,5 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
 import { style } from "@vanilla-extract/css";
-import { atoms } from "../../../styles";
 
 export const tabContainer = style({
   display: "flex",
@@ -11,18 +11,6 @@ export const tab = style([
   atoms({ px: "4", py: "3" }),
   { cursor: "pointer", userSelect: "none" },
 ]);
-
-export const activeTabBorder = style({
-  transform: "translateX(0)",
-});
-
-export const leftTabBorder = style({
-  transform: "translateX(101%)",
-});
-
-export const rightTabBorder = style({
-  transform: "translateX(-101%)",
-});
 
 export const rewardsBadge = style([
   atoms({

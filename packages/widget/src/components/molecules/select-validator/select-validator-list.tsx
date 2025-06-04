@@ -1,15 +1,16 @@
+import { Button } from "@sk-widget/components/atoms/button";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { vars } from "../../../styles";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
-import { Button } from "../../atoms/button";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { PreferredIcon } from "../../atoms/icons/preferred";
 import { Image } from "../../atoms/image";
@@ -18,7 +19,6 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
-import { Text } from "../../atoms/typography";
 import { useMetaInfo } from "./meta-info";
 import {
   inactiveContainer,

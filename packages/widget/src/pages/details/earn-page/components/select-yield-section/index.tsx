@@ -1,9 +1,11 @@
+import { Box } from "@sk-widget/components/atoms/box";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { Divider } from "@sk-widget/components/atoms/divider";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import { useSettings } from "@sk-widget/providers/settings";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Text } from "../../../../../components";
-import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { apyVariable, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
