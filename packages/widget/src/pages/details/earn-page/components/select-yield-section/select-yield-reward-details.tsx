@@ -7,13 +7,12 @@ import {
   RewardTokenDetails,
   isMorphoProvider,
 } from "@sk-widget/components/molecules/reward-token-details";
+import { VerticalDivider } from "@sk-widget/pages-dashboard/common/components/divider";
 import { useSettings } from "@sk-widget/providers/settings";
 import { Trans, useTranslation } from "react-i18next";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectYieldRewardDetails = () => {
-  const { t } = useTranslation();
-
   const { variant } = useSettings();
 
   const { rewardToken, estimatedRewards, symbol } = useEarnPageContext();
@@ -99,39 +98,81 @@ export const SelectYieldRewardDetails = () => {
             ))
             .extractNullable()}
 
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          data-testid="estimated-reward__yearly"
-          data-rk="estimated-reward__yearly"
-          gap="2"
-        >
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t(
-              variant === "zerion" ? "details.rewards.yearly" : "shared.yearly"
-            )}
-          </Text>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {earnYearly}
-          </Text>
-        </Box>
+        {variant === "utila" ? (
+          <UtilaEarnYearlyOrMonthly
+            earnMonthly={earnMonthly}
+            earnYearly={earnYearly}
+          />
+        ) : (
+          <DefaultEarnYearlyOrMonthly
+            earnMonthly={earnMonthly}
+            earnYearly={earnYearly}
+          />
+        )}
+      </Box>
+    </Box>
+  );
+};
 
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          data-testid="estimated-reward__monthly"
-          data-rk="estimated-reward__monthly"
-          gap="2"
-        >
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("shared.monthly")}
-          </Text>
-          <Text variant={{ type: "muted", weight: "normal" }}>
-            {earnMonthly}
-          </Text>
-        </Box>
+const DefaultEarnYearlyOrMonthly = ({
+  earnMonthly,
+  earnYearly,
+}: { earnMonthly: string; earnYearly: string }) => {
+  const { t } = useTranslation();
+
+  const { variant } = useSettings();
+
+  return (
+    <>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        data-testid="estimated-reward__yearly"
+        data-rk="estimated-reward__yearly"
+        gap="2"
+      >
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
+        </Text>
+        <Text variant={{ type: "muted", weight: "normal" }}>{earnYearly}</Text>
+      </Box>
+
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        data-testid="estimated-reward__monthly"
+        data-rk="estimated-reward__monthly"
+        gap="2"
+      >
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("shared.monthly")}
+        </Text>
+        <Text variant={{ type: "muted", weight: "normal" }}>{earnMonthly}</Text>
+      </Box>
+    </>
+  );
+};
+
+const UtilaEarnYearlyOrMonthly = ({
+  earnMonthly,
+  earnYearly,
+}: { earnMonthly: string; earnYearly: string }) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box display="flex" alignItems="center" gap="3" flexWrap="wrap">
+      <Box display="flex" alignItems="center" gap="2">
+        <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
+        <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
+      </Box>
+
+      <VerticalDivider />
+
+      <Box display="flex" alignItems="center" gap="2">
+        <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
+        <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
       </Box>
     </Box>
   );

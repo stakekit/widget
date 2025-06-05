@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## 0.0.234
+
+### Patch Changes
+
+- db37cb9: chore: bump deps
+- 9a9e11d: feat: enriched tx
+- 7e822fe: feat: new meta info added
+- 92e2bbe: fix(ledger): use parentAccountId if exists
+
 ## 0.0.233
 
 ### Patch Changes
