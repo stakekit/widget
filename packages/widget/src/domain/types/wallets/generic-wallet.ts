@@ -1,4 +1,5 @@
 import type {
+  DecodedBittensorTransaction,
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
   DecodedTonTransaction,
@@ -30,7 +31,12 @@ export type TronTx = {
   tx: DecodedTronTransaction;
 };
 
-export type SKTx = EVMTx | SolanaTx | TonTx | TronTx;
+export type BittensorTx = {
+  type: "bittensor";
+  tx: DecodedBittensorTransaction;
+};
+
+export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
 export type ActionMeta = {
   actionId: ActionDto["id"];
