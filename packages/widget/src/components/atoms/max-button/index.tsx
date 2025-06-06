@@ -26,11 +26,6 @@ export const MaxButton = ({
     <Box
       data-rk="stake-token-section-max-button"
       as="button"
-      borderRadius="xl"
-      background="background"
-      px="2"
-      py="1"
-      marginLeft="2"
       onClick={onMaxClick}
       className={clsx(
         pressAnimation,

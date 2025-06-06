@@ -11,7 +11,7 @@ export const container = recipe({
   ],
   variants: {
     variant: {
-      default: { background: "background", borderRadius: "xl" },
+      default: atoms({ background: "background", borderRadius: "xl" }),
       utila: [
         { borderRadius: "4px" },
         atoms({ background: "__internal__utila__maxButtonBackground" }),
