@@ -1,4 +1,4 @@
-import { vars } from "../../../styles";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 
 export const PlusIcon = (props: {
   color?: Exclude<keyof (typeof vars)["color"], "connectKit">;

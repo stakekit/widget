@@ -1,6 +1,6 @@
-import { Box } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { Image } from "@sk-widget/components/atoms/image";
-import type { Atoms } from "@sk-widget/styles";
+import type { Atoms } from "@sk-widget/styles/theme/atoms.css";
 import { logoContainer, logoImage } from "./style.css";
 
 type NetworkLogoImageProps = {

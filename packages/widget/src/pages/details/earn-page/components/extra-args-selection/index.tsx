@@ -1,7 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Divider } from "@sk-widget/components/atoms/divider";
+import { Dropdown } from "@sk-widget/components/atoms/dropdown";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { TronResourceType } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Text } from "../../../../../components";
-import { Dropdown } from "../../../../../components/atoms/dropdown";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const ExtraArgsSelection = () => {

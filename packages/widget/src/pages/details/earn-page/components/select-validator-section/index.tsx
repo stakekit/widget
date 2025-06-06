@@ -1,48 +1,24 @@
-import type { ValidatorDto } from "@stakekit/api-hooks";
+import { Box } from "@sk-widget/components/atoms/box";
+import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
 import { Maybe } from "purify-ts";
-import { Box } from "../../../../../components";
-import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { SelectValidator } from "../../../../../components/molecules/select-validator";
-import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
+import { useSelectValidator } from "./use-select-validator";
 
 export const SelectValidatorSection = () => {
   const {
-    appLoading,
-    onValidatorSelect,
-    onValidatorRemove,
+    isLoading,
+    onViewMoreClick,
+    onClose,
+    onOpen,
+    onItemClick,
+    onRemoveValidator,
     selectedValidators,
     selectedStake,
-    selectValidatorIsLoading,
-    onValidatorSearch,
     validatorsData,
     validatorSearch,
-  } = useEarnPageContext();
-
-  const isLoading = appLoading || selectValidatorIsLoading;
-
-  const trackEvent = useTrackEvent();
-
-  const onViewMoreClick = () => trackEvent("selectValidatorViewMoreClicked");
-  const onClose = () => trackEvent("selectValidatorModalClosed");
-  const onOpen = () => trackEvent("selectValidatorModalOpened");
-
-  const onItemClick = (item: ValidatorDto) => {
-    trackEvent("validatorSelected", {
-      validatorName: item.name,
-      validatorAddress: item.address,
-    });
-    onValidatorSelect(item);
-  };
-
-  const onRemoveValidator = (item: ValidatorDto) => {
-    trackEvent("validatorRemoved", {
-      validatorName: item.name,
-      validatorAddress: item.address,
-    });
-    onValidatorRemove(item);
-  };
+    onValidatorSearch,
+  } = useSelectValidator();
 
   return isLoading ? (
     <Box marginTop="2">

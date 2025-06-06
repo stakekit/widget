@@ -2,7 +2,7 @@ import {
   widgetContainerMaxWidth,
   widgetContainerName,
 } from "@sk-widget/style.css";
-import { atoms } from "@sk-widget/styles";
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
 import { minContainerWidth } from "@sk-widget/styles/tokens/breakpoints";
 import { style } from "@vanilla-extract/css";
 

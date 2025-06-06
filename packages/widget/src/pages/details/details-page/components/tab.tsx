@@ -1,8 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { pressAnimation } from "@sk-widget/components/atoms/button/styles.css";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import clsx from "clsx";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Box, Text } from "../../../../components";
-import { pressAnimation } from "../../../../components/atoms/button/styles.css";
 import { rewardsBadge, tab, tabBorder, tabContainer } from "../styles.css";
 
 type Props = {

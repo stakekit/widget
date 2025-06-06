@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { useGeoBlock } from "../../../hooks/use-geo-block";
 import { useRegionCodeName } from "../../../hooks/use-region-code-names";
-import { useSettings } from "../../../providers/settings";
 import { HelpModal } from "../help-modal";
-import { ReferralLock } from "../referral-lock";
 import { RichErrorModal } from "../rich-error-modal";
 
 export const GlobalModals = () => {
@@ -13,8 +11,6 @@ export const GlobalModals = () => {
   );
 
   const [hideGeoBlock, setHideGeoBlock] = useState(false);
-
-  const { referralCheck } = useSettings();
 
   if (geoBlock && !hideGeoBlock) {
     return (
@@ -31,7 +27,6 @@ export const GlobalModals = () => {
 
   return (
     <>
-      {referralCheck && <ReferralLock />}
       <RichErrorModal />
     </>
   );

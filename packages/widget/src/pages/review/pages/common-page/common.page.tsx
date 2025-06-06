@@ -1,20 +1,20 @@
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
+import { Divider } from "@sk-widget/components/atoms/divider";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
 import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import { PageContainer } from "@sk-widget/pages/components/page-container";
 import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
 import type { FeesBps } from "@sk-widget/pages/review/types";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Divider } from "../../../../components";
 import { Box } from "../../../../components/atoms/box";
-import { Text } from "../../../../components/atoms/typography";
+import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
-import { PageContainer } from "../../../components";
 import { MetaInfo } from "../../../components/meta-info";
 import { feeStyles, pointerStyles } from "../style.css";
 

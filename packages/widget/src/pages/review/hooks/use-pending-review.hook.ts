@@ -1,6 +1,8 @@
 import { getValidStakeSessionTx } from "@sk-widget/domain";
+import { useTokensPrices } from "@sk-widget/hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
@@ -20,7 +22,6 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
-import { useSavedRef, useTokensPrices } from "../../../hooks";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 

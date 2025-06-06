@@ -10,17 +10,17 @@ import type {
   TransactionDto,
 } from "@stakekit/api-hooks";
 
-export type EVMTx = {
+type EVMTx = {
   type: "evm";
   tx: DecodedEVMTransaction;
 };
 
-export type SolanaTx = {
+type SolanaTx = {
   type: "solana";
   tx: DecodedSolanaTransaction;
 };
 
-export type TonTx = {
+type TonTx = {
   type: "ton";
   tx: DecodedTonTransaction;
 };

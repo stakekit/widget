@@ -1,6 +1,7 @@
+import type { Price } from "@sk-widget/domain/types/price";
+import { Prices } from "@sk-widget/domain/types/price";
+import type { TokenString } from "@sk-widget/domain/types/tokens";
 import type { PriceResponseDto } from "@stakekit/api-hooks";
-import { Prices } from "../domain/types";
-import type { Price, TokenString } from "../domain/types";
 
 const priceDtoToPrice = (priceDto: PriceResponseDto[string]): Price => ({
   price: priceDto.price,

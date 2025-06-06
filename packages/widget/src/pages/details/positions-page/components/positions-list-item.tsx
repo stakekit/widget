@@ -1,13 +1,15 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { ListItem } from "@sk-widget/components/atoms/list/list-item";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
 import { ToolTip } from "@sk-widget/components/atoms/tooltip";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
 import { usePositionListItem } from "@sk-widget/pages/details/positions-page/hooks/use-position-list-item";
 import { List, Maybe } from "purify-ts";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Spinner, Text } from "../../../../components";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { SKLink } from "../../../../components/atoms/link";
-import { ListItem } from "../../../../components/atoms/list/list-item";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
 import type { usePositions } from "../hooks/use-positions";
 import {
@@ -15,7 +17,6 @@ import {
   positionDetailsContainer,
   viaText,
 } from "../style.css";
-import { ImportValidator } from "./import-validator";
 import { listItem, noWrap } from "./styles.css";
 
 export const PositionsListItem = memo(
@@ -31,7 +32,7 @@ export const PositionsListItem = memo(
       providersDetails,
       inactiveValidator,
       rewardRateAverage,
-      amount,
+      totalAmountFormatted,
     } = usePositionListItem(item);
 
     return (
@@ -108,7 +109,7 @@ export const PositionsListItem = memo(
                           .extractNullable()}
                         {(item.actionRequired ||
                           item.hasPendingClaimRewards ||
-                          inactiveValidator) && (
+                          !!inactiveValidator) && (
                           <Box
                             className={listItemContainer({
                               type: item.actionRequired
@@ -159,7 +160,7 @@ export const PositionsListItem = memo(
                   {Maybe.fromRecord({
                     token: item.token,
                     rewardRateAverage,
-                    amount,
+                    totalAmountFormatted,
                   })
                     .map((val) => (
                       <Box
@@ -178,41 +179,44 @@ export const PositionsListItem = memo(
                           overflowWrap="anywhere"
                           variant={{ weight: "normal", type: "muted" }}
                         >
-                          {val.amount} {val.token.symbol}
+                          {val.totalAmountFormatted} {val.token.symbol}
                         </Text>
                       </Box>
                     ))
                     .extractNullable()}
                 </Box>
 
-                {item.pointsRewardTokenBalance
-                  .map((val) => (
-                    <Box
-                      alignSelf="flex-end"
-                      background="background"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      borderRadius="lg"
-                      px="2"
-                      py="1"
-                      gap="1"
-                    >
-                      <TokenIcon
-                        token={val.token}
-                        hideNetwork
-                        tokenLogoHw="5"
-                      />
-
-                      <Text
-                        overflowWrap="anywhere"
-                        variant={{ type: "muted", weight: "normal" }}
+                {item.pointsRewardTokenBalances.length > 0 && (
+                  <Box display="flex" alignSelf="flex-end" gap="1">
+                    {item.pointsRewardTokenBalances.map((val, i) => (
+                      <Box
+                        key={i}
+                        alignSelf="flex-end"
+                        background="background"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        borderRadius="lg"
+                        px="2"
+                        py="1"
+                        gap="1"
                       >
-                        {val.amount}
-                      </Text>
-                    </Box>
-                  ))
-                  .extractNullable()}
+                        <TokenIcon
+                          token={val.token}
+                          hideNetwork
+                          tokenLogoHw="5"
+                        />
+
+                        <Text
+                          overflowWrap="anywhere"
+                          variant={{ type: "muted", weight: "normal" }}
+                        >
+                          {val.amount}
+                        </Text>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </ListItem>
             ),
             <ContentLoaderSquare heightPx={60} />
@@ -222,43 +226,3 @@ export const PositionsListItem = memo(
     );
   }
 );
-
-export const ImportValidatorListItem = ({
-  importValidators,
-}: {
-  importValidators: ReturnType<typeof usePositions>["importValidators"];
-}) => {
-  const { t } = useTranslation();
-
-  return (
-    <Box py="1">
-      <ListItem variant={{ hover: "disabled" }}>
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          gap="2"
-        >
-          <Box display="flex" flexDirection="column" gap="2" flex={2}>
-            <Text variant={{ weight: "bold" }}>
-              {t("positions.dont_see_position")}
-            </Text>
-
-            <Text variant={{ weight: "normal", type: "muted" }}>
-              {t("positions.import_validator")}
-            </Text>
-          </Box>
-
-          <Box
-            flex={1}
-            display="flex"
-            justifyContent="flex-end"
-            alignItems="center"
-          >
-            <ImportValidator {...importValidators} />
-          </Box>
-        </Box>
-      </ListItem>
-    </Box>
-  );
-};

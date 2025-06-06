@@ -1,7 +1,9 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, CaretDownIcon, Text } from "../..";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../providers/settings";
 import { container, titleStyle } from "./styles.css";

@@ -1,13 +1,16 @@
-import clsx from "clsx";
-import { useLayoutEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Box, Spinner, Text, XIcon } from "../../../components";
+import { Box } from "@sk-widget/components/atoms/box";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "../../../components/atoms/collapsible";
+} from "@sk-widget/components/atoms/collapsible";
+import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import clsx from "clsx";
+import { useLayoutEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckSteps } from "../../../components/atoms/icons/check-steps";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
