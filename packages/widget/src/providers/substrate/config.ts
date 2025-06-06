@@ -5,11 +5,7 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { config } from "../../config";
-import {
-  isLedgerDappBrowserProvider,
-  typeSafeObjectEntries,
-  typeSafeObjectFromEntries,
-} from "../../utils";
+import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 
 const queryKey = [config.appPrefix, "substrate-config"];
@@ -29,9 +25,9 @@ const queryFn = async ({
           )
         );
 
-      const substrateChains = isLedgerDappBrowserProvider()
-        ? Object.values(filteredSubstrateChainsMap).map((val) => val.wagmiChain)
-        : [];
+      const substrateChains = Object.values(filteredSubstrateChainsMap).map(
+        (val) => val.wagmiChain
+      );
 
       return Promise.resolve({
         substrateChainsMap: filteredSubstrateChainsMap,

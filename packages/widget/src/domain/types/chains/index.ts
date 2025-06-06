@@ -17,7 +17,7 @@ import {
   type SupportedSubstrateChains,
   supportedSubstrateChainsSet,
 } from "@sk-widget/domain/types/chains/substrate";
-import { MiscNetworks } from "@stakekit/common";
+import { MiscNetworks, SubstrateNetworks } from "@stakekit/common";
 
 export const isEvmChain = (chain: string): chain is SupportedEvmChain => {
   return supportedEVMChainsSet.has(chain as SupportedEvmChain);
@@ -33,6 +33,12 @@ export const isTonChain = (chain: string): chain is SupportedMiscChains => {
 
 export const isTronChain = (chain: string): chain is SupportedMiscChains => {
   return chain === MiscNetworks.Tron;
+};
+
+export const isBittensorChain = (
+  chain: string
+): chain is SupportedSubstrateChains => {
+  return chain === SubstrateNetworks.Bittensor;
 };
 
 export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
