@@ -18,6 +18,48 @@ export const listItemContainer = recipe({
       }),
       pending: atoms({ background: "positionsPendingBackground" }),
     },
+    variant: {
+      default: {},
+      utila: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: "utila",
+      },
+      style: {
+        background: "none",
+      },
+    },
+  ],
+
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+export const badgeText = recipe({
+  variants: {
+    type: {
+      regular: atoms({ color: "text" }),
+      white: atoms({ color: "white" }),
+    },
+  },
+});
+
+export const utilaBadgeText = recipe({
+  base: [
+    {
+      fontSize: "12px",
+    },
+  ],
+  variants: {
+    type: {
+      regular: atoms({ color: "text" }),
+      success: atoms({ color: "__internal__utila__badgeTextSuccess" }),
+      error: atoms({ color: "__internal__utila__badgeTextError" }),
+    },
   },
 });
 

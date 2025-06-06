@@ -50,3 +50,14 @@ export const selectTokenSection = recipe({
     },
   ],
 });
+
+export const selectTokenTitle = recipe({
+  variants: {
+    variant: {
+      default: {},
+      utila: {
+        fontSize: "16px",
+      },
+    },
+  },
+});

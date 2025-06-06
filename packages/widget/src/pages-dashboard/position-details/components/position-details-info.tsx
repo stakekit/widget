@@ -135,6 +135,7 @@ export const PositionDetailsInfo = () => {
               </Box>
 
               {liquidTokensToNativeConversion
+                .filter((val) => val.size > 0)
                 .map((val) => (
                   <Box
                     my="2"

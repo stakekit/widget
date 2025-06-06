@@ -72,9 +72,7 @@ export const PositionsListItem = memo(
 
                     <Box className={columnContainer}>
                       <Box className={positionDetailsContainer}>
-                        {item.token
-                          .map((t) => <Text>{t.symbol}</Text>)
-                          .extractNullable()}
+                        <Text>{d.metadata.name}</Text>
 
                         {item.yieldLabelDto
                           .map((label) => {

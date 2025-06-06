@@ -6,6 +6,7 @@ import type { EnabledRewardsSummaryYieldId } from "@sk-widget/domain/types/rewar
 import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import { usePrices } from "@sk-widget/hooks/api/use-prices";
 import { useTokenBalancesScan } from "@sk-widget/hooks/api/use-token-balances-scan";
+import { getProviderDetails } from "@sk-widget/hooks/use-provider-details";
 import {
   type RewardsSummaryResult,
   useMultiRewardsSummary,
@@ -14,6 +15,7 @@ import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-
 import type { StakeKitErrorDto, YieldDto } from "@stakekit/api-hooks";
 import type { UseQueryResult } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
+import { List, Maybe } from "purify-ts";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
 const SummaryContext = createContext<
@@ -23,6 +25,7 @@ const SummaryContext = createContext<
           allPositions: {
             yieldName: string;
             usdAmount: number;
+            providerDetails: ReturnType<typeof getProviderDetails>;
           }[];
           allPositionsSum: BigNumber;
         },
@@ -119,8 +122,17 @@ export const SummaryProvider = ({
               balances: p.balancesWithAmount,
             });
 
+            const providerDetails = getProviderDetails({
+              integrationData: Maybe.of(yieldDto),
+              validatorAddress:
+                p.type === "validators"
+                  ? List.head(p.validatorsAddresses)
+                  : Maybe.empty(),
+            });
+
             return {
               yieldName: yieldDto.metadata.name,
+              providerDetails,
               usdAmount: getTokenPriceInUSD({
                 baseToken,
                 amount: positionTotalAmount,

@@ -27,7 +27,7 @@ export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
   const queryClient = useSKQueryClient();
 
   return useQuery({
-    enabled: filteredYieldIds.length > 0 && !!address,
+    enabled: !!address,
     staleTime: 0,
     queryKey: [
       "yield-rewards-summary",

@@ -1,18 +1,17 @@
 import { Box } from "@sk-widget/components/atoms/box";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
+import { SelectValidatorTrigger } from "@sk-widget/pages-dashboard/overview/earn-page/utila-select-validator-trigger";
+import { useSelectValidator } from "@sk-widget/pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { Maybe } from "purify-ts";
-import { SelectValidatorTrigger } from "./select-validator-trigger";
-import { useSelectValidator } from "./use-select-validator";
 
-export const SelectValidatorSection = () => {
+export const UtilaSelectValidatorSection = () => {
   const {
     isLoading,
     onViewMoreClick,
     onClose,
     onOpen,
     onItemClick,
-    onRemoveValidator,
     selectedValidators,
     selectedStake,
     validatorsData,
@@ -37,9 +36,7 @@ export const SelectValidatorSection = () => {
           <SelectValidator
             trigger={
               <SelectValidatorTrigger
-                onRemoveValidator={onRemoveValidator}
                 selectedValidatorsArr={selectedValidatorsArr}
-                multiSelect={multiSelect}
               />
             }
             selectedValidators={

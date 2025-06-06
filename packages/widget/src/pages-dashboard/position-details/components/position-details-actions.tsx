@@ -10,6 +10,26 @@ import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 
+export const positionDetailsActionsHasContent = (
+  val: ReturnType<typeof usePositionDetails>
+) =>
+  Maybe.fromRecord({
+    integrationData: val.integrationData,
+    positionBalancesByType: val.positionBalancesByType,
+  })
+    .filter(
+      () =>
+        Maybe.catMaybes([
+          val.pendingActions.filter((pa) => pa.length > 0).map(() => true),
+          Maybe.fromRecord({
+            reducedStakedOrLiquidBalance: val.reducedStakedOrLiquidBalance,
+            canChangeUnstakeAmount: val.canChangeUnstakeAmount,
+            unstakeToken: val.unstakeToken,
+          }).map(() => true),
+        ]).length > 0
+    )
+    .isJust();
+
 export const PositionDetailsActions = () => {
   const {
     isLoading,
@@ -53,7 +73,7 @@ export const PositionDetailsActions = () => {
   }
 
   return Maybe.fromRecord({ integrationData, positionBalancesByType })
-    .map((val) => (
+    .map((v) => (
       <Box className={container} flex={1} display="flex" flexDirection="column">
         <Box display="flex" flex={1} flexDirection="column" gap="4">
           {/* Pending actions */}
@@ -129,11 +149,11 @@ export const PositionDetailsActions = () => {
                   unstakeAmountError={unstakeAmountError}
                   onMaxClick={onMaxClick}
                   label={t(
-                    `position_details.unstake_label.${val.integrationData.metadata.type}`
+                    `position_details.unstake_label.${v.integrationData.metadata.type}`
                   )}
                   formattedAmount={unstakeFormattedAmount}
                   balance={reducedStakedOrLiquidBalance}
-                  yieldDto={val.integrationData}
+                  yieldDto={v.integrationData}
                   validators={providersDetails.orDefault([])}
                 />
               )
@@ -151,8 +171,8 @@ export const PositionDetailsActions = () => {
 
               onValidatorsSubmit([val.address]);
             }}
-            selectedStake={val.integrationData}
-            validators={val.integrationData.validators}
+            selectedStake={v.integrationData}
+            validators={v.integrationData.validators}
             multiSelect={validatorAddressesHandling.multiSelect}
             state={validatorAddressesHandling.modalState}
           >

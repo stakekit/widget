@@ -107,6 +107,10 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__utila__primaryBlueHover: string;
   __internal__utila__primaryBlueActive: string;
   __internal__utila__tabPageDivider: string;
+  __internal__utila__maxButtonBackground: string;
+  __internal__utila__maxButtonText: string;
+  __internal__utila__badgeTextSuccess: string;
+  __internal__utila__badgeTextError: string;
 } = {
   ...baseColorsContract,
   __internal__utila__greyOne: "",
@@ -116,6 +120,10 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__utila__tabPageDivider: "",
   __internal__utila__primaryBlueHover: "",
   __internal__utila__primaryBlueActive: "",
+  __internal__utila__maxButtonBackground: "",
+  __internal__utila__maxButtonText: "",
+  __internal__utila__badgeTextSuccess: "",
+  __internal__utila__badgeTextError: "",
   connectKit: {
     accentColor: "",
     accentColorForeground: "",

@@ -22,7 +22,9 @@ import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { ActionStatus } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { Maybe } from "purify-ts";
+import { useSelector } from "@xstate/store/react";
+import { List, Maybe } from "purify-ts";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 const ActivityPageComponent = () => {
@@ -136,6 +138,28 @@ const _ActivityPage = () => {
 
     return;
   };
+
+  const selectedAction = useSelector(
+    activityStore,
+    (state) => state.context.selectedAction
+  );
+
+  /**
+   * If the selected action is not set, set the first action in the list as the selected action
+   */
+  useEffect(() => {
+    if (selectedAction.isJust() || !value.activityActions.allItems) return;
+
+    List.head(value.activityActions.allItems).ifJust((val) =>
+      activityStore.send({
+        type: "setSelectedAction",
+        data: Maybe.of({
+          selectedAction: val.actionData,
+          selectedYield: val.yieldData,
+        }),
+      })
+    );
+  }, [selectedAction, activityStore, value.activityActions.allItems]);
 
   return (
     <ActivityPageContext.Provider value={{ ...value, onActionSelect }}>

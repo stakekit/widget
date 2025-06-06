@@ -41,6 +41,7 @@ export const tabPageContainer = recipe({
     flexDirection: "row",
     gap: "24px",
     alignItems: "stretch",
+    justifyContent: "center",
   },
 });
 

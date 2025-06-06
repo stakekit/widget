@@ -34,7 +34,7 @@ export const ActivityDetailsPage = () => {
     selectedAction.status === ActionStatus.PROCESSING
   ) {
     return (
-      <Box flex={1}>
+      <Box flex={1} px="4">
         <ActivityCompletePage key={selectedAction.id} />
       </Box>
     );
@@ -46,7 +46,7 @@ export const ActivityDetailsPage = () => {
     selectedAction.status === ActionStatus.FAILED
   ) {
     return (
-      <Box flex={1}>
+      <Box flex={1} px="4">
         <ActionReviewPage key={selectedAction.id} />
       </Box>
     );

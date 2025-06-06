@@ -31,7 +31,10 @@ export const RewardsDetailsTab = () => {
     return (
       (selectedOption.value === "positions"
         ? allPositionsQuery.data?.allPositions.map((v) => ({
-            name: v.yieldName,
+            name: v.providerDetails.mapOrDefault(
+              (pd) => `${v.yieldName} - ${pd.name ?? pd.address}`,
+              v.yieldName
+            ),
             value: v.usdAmount,
           }))
         : rewardsPositionsQuery.data?.rewardsPositions.map((v) => ({
@@ -105,7 +108,7 @@ export const RewardsDetailsTab = () => {
                 tooltip: {
                   callbacks: {
                     label: (context: { label: string; parsed: number }) =>
-                      `${context.label}: $${formatNumber(context.parsed, 2)}`,
+                      `$${formatNumber(context.parsed, 2)}`,
                   },
                 },
                 annotation: {

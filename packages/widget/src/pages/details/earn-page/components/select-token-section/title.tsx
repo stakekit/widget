@@ -1,6 +1,9 @@
 import { Box } from "@sk-widget/components/atoms/box";
 import { Spinner } from "@sk-widget/components/atoms/spinner";
 import { Text } from "@sk-widget/components/atoms/typography/text";
+import { selectTokenTitle } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
+import { useSettings } from "@sk-widget/providers/settings";
+import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectTokenTitle = () => {
@@ -20,6 +23,8 @@ export const SelectTokenTitle = () => {
     selectValidatorIsLoading ||
     footerIsLoading;
 
+  const { variant } = useSettings();
+
   return (
     <Box display="flex" alignItems="center" my="1">
       {isLoading ? (
@@ -27,7 +32,14 @@ export const SelectTokenTitle = () => {
           <Spinner />
         </Box>
       ) : (
-        <Text>{yieldType}</Text>
+        <Text
+          className={combineRecipeWithVariant({
+            rec: selectTokenTitle,
+            variant,
+          })}
+        >
+          {yieldType}
+        </Text>
       )}
     </Box>
   );

@@ -21,7 +21,8 @@
     "points": "Points",
     "continue": "Continue",
     "powered_by": "Powered by <span0>{{name}}</span0>",
-    "learn_more": "Learn more"
+    "learn_more": "Learn more",
+    "change": "Change"
   },
   "chain_modal": {
     "disabled_chain_info": "Add account"

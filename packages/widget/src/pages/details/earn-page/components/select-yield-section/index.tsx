@@ -47,7 +47,7 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            {variant !== "zerion" && (
+            {variant !== "zerion" && variant !== "utila" && (
               <Box my="2">
                 <Text>{t("details.earn")}</Text>
               </Box>

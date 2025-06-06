@@ -3,6 +3,8 @@ import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader"
 import { Text } from "@sk-widget/components/atoms/typography/text";
 import {
   type SummaryLabelContainerVariants,
+  loader,
+  loaderContainer,
   summaryItem,
   summaryLabel,
   summaryLabelContainer,
@@ -26,8 +28,18 @@ export const SummaryItem = ({
   const { variant } = useSettings();
 
   const content = isLoading ? (
-    <Box width="full">
-      <ContentLoaderSquare heightPx={40} variant={{ size: "medium" }} />
+    <Box
+      width="full"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      className={loaderContainer}
+    >
+      <ContentLoaderSquare
+        containerClassName={loader}
+        heightPx={40}
+        variant={{ size: "medium" }}
+      />
     </Box>
   ) : (
     <>
@@ -66,9 +78,11 @@ export const SummaryItem = ({
 
   return (
     <Box
-      px="2"
-      py="2"
-      className={combineRecipeWithVariant({ rec: summaryItem, variant })}
+      className={combineRecipeWithVariant({
+        rec: summaryItem,
+        variant,
+        state: isLoading ? "isLoading" : undefined,
+      })}
       background="background"
     >
       {content}

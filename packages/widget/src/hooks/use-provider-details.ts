@@ -19,7 +19,7 @@ type Res = Maybe<{
   preferred?: ValidatorDto["preferred"];
 }>;
 
-const getProviderDetails = ({
+export const getProviderDetails = ({
   integrationData,
   validatorAddress,
 }: {
