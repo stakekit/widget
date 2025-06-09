@@ -1,4 +1,4 @@
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
+import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity/get-yield-opportunity";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";

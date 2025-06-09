@@ -5,11 +5,9 @@ import { defaultConfig, useWagmiConfig } from "../wagmi";
 export const WagmiConfigProvider = ({ children }: PropsWithChildren) => {
   const wagmiConfig = useWagmiConfig();
 
+  const value = wagmiConfig.data?.wagmiConfig ?? defaultConfig;
+
   return (
-    <WagmiContext.Provider
-      value={wagmiConfig.data?.wagmiConfig ?? defaultConfig}
-    >
-      {children}
-    </WagmiContext.Provider>
+    <WagmiContext.Provider value={value}>{children}</WagmiContext.Provider>
   );
 };

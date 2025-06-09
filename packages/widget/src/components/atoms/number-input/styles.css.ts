@@ -1,5 +1,6 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 import { style } from "@vanilla-extract/css";
-import { atoms, vars } from "../../../styles";
 
 export const initialFontSizeVar = vars.fontSize["3xl"];
 
@@ -35,4 +36,5 @@ export const spanStyle = style([
 export const container = style({
   display: "flex",
   minWidth: 0,
+  flex: 1,
 });

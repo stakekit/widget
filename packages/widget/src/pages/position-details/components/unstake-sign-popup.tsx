@@ -1,6 +1,10 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Button } from "@sk-widget/components/atoms/button";
+import { SelectModal } from "@sk-widget/components/atoms/select-modal";
+import { Heading } from "@sk-widget/components/atoms/typography/heading";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { useTranslation } from "react-i18next";
 import { images } from "../../../assets/images";
-import { Box, Button, Heading, SelectModal, Text } from "../../../components";
 import { unstakeSignContainer, unstakeSignImageStyle } from "../styles.css";
 
 export const UnstakeSignPopup = ({

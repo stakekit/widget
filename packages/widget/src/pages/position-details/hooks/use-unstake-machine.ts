@@ -1,10 +1,10 @@
 import { getValidStakeSessionTx } from "@sk-widget/domain";
-import type { SKWallet } from "@sk-widget/domain/types";
-import { useSavedRef } from "@sk-widget/hooks";
+import type { SKWallet } from "@sk-widget/domain/types/wallet";
 import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import type { GetMaybeJust } from "@sk-widget/types";
+import type { GetMaybeJust } from "@sk-widget/types/utils";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import {
   actionExit,

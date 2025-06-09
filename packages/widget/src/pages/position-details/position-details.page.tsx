@@ -1,14 +1,18 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Button } from "@sk-widget/components/atoms/button";
 import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
+import { Spinner } from "@sk-widget/components/atoms/spinner";
+import { Heading } from "@sk-widget/components/atoms/typography/heading";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import { PageContainer } from "@sk-widget/pages/components/page-container";
 import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Heading, Spinner, Text } from "../../components";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
-import { PageContainer } from "../components";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
@@ -71,6 +75,7 @@ const PositionDetails = () => {
                 flex={1}
                 display="flex"
                 flexDirection="column"
+                gap="1"
               >
                 {unstakeToken
                   .altLazy(() => Just(val.integrationData.token))
@@ -102,6 +107,7 @@ const PositionDetails = () => {
                     </>
                   ))
                   .extractNullable()}
+
                 {positionLabel
                   .map((l) => (
                     <Box
@@ -155,6 +161,7 @@ const PositionDetails = () => {
                     )
                     .extractNullable()}
                 </Box>
+
                 <Box py="3" gap="2" display="flex" flexDirection="column">
                   {[...val.positionBalancesByType.values()].flatMap(
                     (yieldBalance) =>
@@ -187,6 +194,7 @@ const PositionDetails = () => {
                     </Box>
                   ))
                   .extractNullable()}
+
                 <Box
                   display="flex"
                   flex={1}

@@ -1,6 +1,16 @@
+import type { NumberInputProps } from "@sk-widget/components/atoms/number-input";
+import type { SelectModalProps } from "@sk-widget/components/atoms/select-modal";
+import {
+  type ExtendedYieldType,
+  getExtendedYieldType,
+  getYieldTypeLabels,
+  getYieldTypesSortRank,
+} from "@sk-widget/domain/types/yields";
+import { useTokensPrices } from "@sk-widget/hooks/api/use-tokens-prices";
 import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
 import { useMaxMinYieldAmount } from "@sk-widget/hooks/use-max-min-yield-amount";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import {
   useEarnPageDispatch,
   useEarnPageState,
@@ -30,25 +40,13 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  NumberInputProps,
-  SelectModalProps,
-} from "../../../../components";
 import {
   getTokenPriceInUSD,
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import {
-  type ExtendedYieldType,
-  getExtendedYieldType,
-  getYieldTypeLabels,
-  getYieldTypesSortRank,
-} from "../../../../domain/types";
-import { useSavedRef, useTokensPrices } from "../../../../hooks";
-import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
-import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
+import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
@@ -167,7 +165,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const [validatorSearch, setValidatorSearch] = useState("");
   const deferredValidatorSearch = useDeferredValue(validatorSearch);
 
-  const multiYields = useMultiYields(
+  const multiYields = useStreamMultiYields(
     useMemo(() => availableYields.orDefault([]), [availableYields])
   );
 
@@ -485,12 +483,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake.extract()?.id
   ).isLoading;
 
-  const referralCode = useReferralCode();
-
   const appLoading =
     selectedToken.isNothing() ||
     !wagmiConfig.data ||
-    referralCode.isLoading ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
     isConnecting ||
@@ -618,10 +613,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     )
   );
 
-  const { referralCheck } = useSettings();
-
   const value = {
-    referralCheck,
     selectedTokenAvailableAmount,
     formattedPrice,
     symbol,

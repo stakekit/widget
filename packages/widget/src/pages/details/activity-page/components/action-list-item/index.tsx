@@ -1,7 +1,8 @@
-import { Box, Text } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { ListItem } from "@sk-widget/components/atoms/list/list-item";
 import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { useActionListItem } from "@sk-widget/pages/details/activity-page/hooks/use-action-list-item";
 import {
   activityDetailsContainer,
@@ -63,11 +64,7 @@ export const ActionListItem = ({
                   <Box className={activityDetailsContainer}>
                     <Text>{d.token.symbol}</Text>
 
-                    <Box
-                      className={listItemContainer({
-                        type: badgeColor,
-                      })}
-                    >
+                    <Box className={listItemContainer({ type: badgeColor })}>
                       <Text
                         variant={{
                           type: badgeColor ? "white" : "regular",

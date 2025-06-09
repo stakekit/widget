@@ -1,5 +1,5 @@
+import { atoms } from "@sk-widget/styles/theme/atoms.css";
 import { style } from "@vanilla-extract/css";
-import { atoms } from "../../../styles";
 
 export const container = style({
   cursor: "pointer",

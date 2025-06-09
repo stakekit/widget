@@ -1,7 +1,8 @@
 import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
-import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
+import { useTokensPrices } from "@sk-widget/hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";

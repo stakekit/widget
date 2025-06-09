@@ -1,8 +1,9 @@
 import { getValidStakeSessionTx } from "@sk-widget/domain";
-import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
+import { useTokensPrices } from "@sk-widget/hooks/api/use-tokens-prices";
 import { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useYieldType } from "@sk-widget/hooks/use-yield-type";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useFees } from "@sk-widget/pages/review/hooks/use-fees";

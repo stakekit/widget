@@ -1,4 +1,4 @@
-import type { GetEitherRight } from "@sk-widget/types";
+import type { GetEitherRight } from "@sk-widget/types/utils";
 import type { GetType } from "purify-ts";
 import {
   Codec,

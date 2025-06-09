@@ -1,5 +1,7 @@
-import { Box, Heading, Text } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
+import { Heading } from "@sk-widget/components/atoms/typography/heading";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
 import { headingStyles } from "@sk-widget/pages/review/pages/style.css";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
@@ -24,6 +26,7 @@ const ReviewTopSection = ({
   rewardTokenDetailsProps,
 }: Props) => {
   const { t } = useTranslation();
+
   return (
     <Box marginBottom="4">
       <motion.div

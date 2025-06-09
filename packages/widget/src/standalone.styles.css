@@ -1,10 +1,10 @@
 body {
-  background: #211f25;
+  background: #f8f8f9;
 }
 
 #root {
   padding-top: 80px;
-  background: #211f25;
+  background: #f8f8f9;
 }
 
 @media (max-width: 520px) {
