@@ -22,7 +22,7 @@ export const useStakeExitRequestDto = () => {
         const validatorsOrProvider = Just(null)
           .chain<
             | Pick<ActionRequestDto["args"], "validatorAddresses">
-            | Pick<ActionRequestDto["args"], "validatorAddress">
+            | Pick<ActionRequestDto["args"], "validatorAddress" | "subnetId">
             | Pick<ActionRequestDto["args"], "providerId">
           >(() => {
             if (val.integrationData.metadata.isIntegrationAggregator) {
@@ -48,7 +48,23 @@ export const useStakeExitRequestDto = () => {
               return List.find(
                 (b) => !!b.validatorAddress,
                 val.stakedOrLiquidBalances
-              ).map((b) => ({ validatorAddress: b.validatorAddress }));
+              ).map((b) => {
+                const subnetId = Maybe.fromNullable(
+                  val.integrationData.args.exit?.args?.subnetId?.required
+                )
+                  .chainNullable(() =>
+                    val.integrationData.validators.find(
+                      (v) => v.address === b.validatorAddress
+                    )
+                  )
+                  .map((validator) => validator.subnetId)
+                  .extract();
+
+                return {
+                  validatorAddress: b.validatorAddress,
+                  subnetId,
+                };
+              });
             }
 
             return Maybe.empty();

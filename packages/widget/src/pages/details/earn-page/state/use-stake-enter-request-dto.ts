@@ -32,11 +32,11 @@ export const useStakeEnterRequestDto = () => {
         dto: ActionRequestDto;
         selectedValidators: Map<string, ValidatorDto>;
         selectedStake: YieldDto;
-      }>((val) => {
-        const validatorsOrProvider = Just(val.selectedStake)
+      }>(({ address, selectedStake, selectedToken }) => {
+        const validatorsOrProvider = Just(selectedStake)
           .chain<
             | Pick<ActionRequestDto["args"], "validatorAddresses">
-            | Pick<ActionRequestDto["args"], "validatorAddress">
+            | Pick<ActionRequestDto["args"], "validatorAddress" | "subnetId">
             | Pick<ActionRequestDto["args"], "providerId">
           >((val) => {
             const validators = [...selectedValidators.values()];
@@ -52,25 +52,29 @@ export const useStakeEnterRequestDto = () => {
               });
             }
 
-            return List.head(validators)
-              .map((v) => v.address)
-              .map((v) => ({ validatorAddress: v }));
+            const subnetIdRequired =
+              !!selectedStake.args.enter.args?.subnetId?.required;
+
+            return List.head(validators).map((v) => ({
+              validatorAddress: v.address,
+              subnetId: subnetIdRequired ? v.subnetId : undefined,
+            }));
           })
           .orDefault({});
 
         return {
           selectedValidators,
-          selectedStake: val.selectedStake,
-          gasFeeToken: val.selectedStake.metadata.gasFeeToken,
+          selectedStake: selectedStake,
+          gasFeeToken: selectedStake.metadata.gasFeeToken,
           dto: {
             addresses: {
-              address: val.address,
+              address: address,
               additionalAddresses: additionalAddresses ?? undefined,
             },
-            integrationId: val.selectedStake.id,
+            integrationId: selectedStake.id,
             referralCode: referralcode.data?.code,
             args: {
-              inputToken: val.selectedToken,
+              inputToken: selectedToken,
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
