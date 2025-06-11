@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.235
+
+### Patch Changes
+
+- 30b90c0: feat: add bittensor support
+- d6bd237: feat: ledger live usde banner
+- b47dc2d: feat: add sepolia and unichain support
+
 ## 0.0.234
 
 ### Patch Changes
