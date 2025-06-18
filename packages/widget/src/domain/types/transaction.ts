@@ -124,3 +124,29 @@ export const unsignedTonTransactionCodec = oneOf([
 ]);
 
 export type DecodedTonTransaction = GetType<typeof unsignedTonTransactionCodec>;
+
+export const bittensorPayloadCodec = Codec.interface({
+  tx: Codec.interface({
+    address: string,
+    assetId: optional(hexStringCodec),
+    blockHash: hexStringCodec,
+    blockNumber: hexStringCodec,
+    era: hexStringCodec,
+    genesisHash: hexStringCodec,
+    metadataHash: optional(hexStringCodec),
+    method: string,
+    mode: optional(number),
+    nonce: hexStringCodec,
+    specVersion: hexStringCodec,
+    tip: hexStringCodec,
+    transactionVersion: hexStringCodec,
+    signedExtensions: array(string),
+    version: number,
+    metadataRpc: hexStringCodec,
+  }),
+  specName: string,
+  specVersion: number,
+  metadataRpc: hexStringCodec,
+});
+
+export type DecodedBittensorTransaction = GetType<typeof bittensorPayloadCodec>;

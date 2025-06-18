@@ -2,12 +2,14 @@ import type { Account } from "@ledgerhq/wallet-api-client";
 import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { config } from "@sk-widget/config";
 import {
+  isBittensorChain,
   isEvmChain,
   isSolanaChain,
   isTonChain,
   isTronChain,
 } from "@sk-widget/domain/types/chains";
 import {
+  bittensorPayloadCodec,
   decodeAndPrepareEvmTransaction,
   unsignedEVMTransactionCodec,
   unsignedSolanaTransactionCodec,
@@ -16,6 +18,7 @@ import {
 } from "@sk-widget/domain/types/transaction";
 import type { SKWallet } from "@sk-widget/domain/types/wallet";
 import type {
+  BittensorTx,
   SKTx,
   TronTx,
 } from "@sk-widget/domain/types/wallets/generic-wallet";
@@ -288,6 +291,15 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                       .mapLeft(() => "Failed to parse tx")
                       .chain((val) => unsignedTronTransactionCodec.decode(val))
                       .map((v) => ({ type: "tron", tx: v }) as TronTx);
+                  }
+
+                  if (isBittensorChain(network)) {
+                    return Either.encase(() => JSON.parse(tx))
+                      .mapLeft(() => "Failed to parse tx")
+                      .chain((val) => bittensorPayloadCodec.decode(val))
+                      .map(
+                        (v) => ({ type: "bittensor", tx: v }) as BittensorTx
+                      );
                   }
 
                   return Left("Unsupported network");

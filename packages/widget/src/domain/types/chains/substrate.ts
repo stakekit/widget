@@ -2,7 +2,10 @@ import { getNetworkLogo } from "@sk-widget/utils";
 import { SubstrateNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 
-const supportedSubstrateChains = [SubstrateNetworks.Polkadot] as const;
+const supportedSubstrateChains = [
+  SubstrateNetworks.Polkadot,
+  SubstrateNetworks.Bittensor,
+] as const;
 
 export const supportedSubstrateChainsSet = new Set(supportedSubstrateChains);
 
@@ -44,14 +47,37 @@ const polkadot = {
   },
 } as const satisfies Chain;
 
+export const bittensor = {
+  id: 558,
+  name: "Bittensor",
+  iconUrl: getNetworkLogo(SubstrateNetworks.Bittensor),
+  nativeCurrency: {
+    decimals: 9,
+    name: "Bittensor Token",
+    symbol: "TAO",
+  },
+  rpcUrls: {
+    default: {
+      http: ["https://entrypoint-finney.opentensor.ai"],
+      webSocket: ["wss://entrypoint-finney.opentensor.ai"],
+    },
+  },
+} as const satisfies Chain;
+
 export const substrateChainsMap: SubstrateChainsMap = {
   [SubstrateNetworks.Polkadot]: {
     type: "substrate",
     skChainName: SubstrateNetworks.Polkadot,
     wagmiChain: polkadot,
   },
+  [SubstrateNetworks.Bittensor]: {
+    type: "substrate",
+    skChainName: SubstrateNetworks.Bittensor,
+    wagmiChain: bittensor,
+  },
 };
 
 export enum SubstrateChainIds {
   Polkadot = 9999,
+  Bittensor = 558,
 }

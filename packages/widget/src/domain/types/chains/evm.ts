@@ -15,7 +15,9 @@ import {
   mainnet,
   optimism,
   polygon,
+  sepolia,
   sonic,
+  unichain,
   viction,
 } from "viem/chains";
 
@@ -35,6 +37,8 @@ const supportedEVMChains = [
   EvmNetworks.Linea,
   EvmNetworks.Core,
   EvmNetworks.Sonic,
+  EvmNetworks.EthereumSepolia,
+  EvmNetworks.Unichain,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -145,6 +149,16 @@ export const evmChainsMap: EvmChainsMap = {
     skChainName: EvmNetworks.EthereumGoerli,
     wagmiChain: goerli,
   },
+  [EvmNetworks.EthereumSepolia]: {
+    type: "evm",
+    skChainName: EvmNetworks.EthereumSepolia,
+    wagmiChain: sepolia,
+  },
+  [EvmNetworks.Unichain]: {
+    type: "evm",
+    skChainName: EvmNetworks.Unichain,
+    wagmiChain: unichain,
+  },
 };
 
 export enum EvmChainIds {
@@ -163,4 +177,6 @@ export enum EvmChainIds {
   Sonic = 146,
   EthereumHolesky = 17000,
   EthereumGoerli = 5,
+  EthereumSepolia = 11_155_111,
+  Unichain = 130,
 }
