@@ -6,7 +6,7 @@ import { OverviewPage } from "@sk-widget/pages-dashboard/overview";
 import { EarnPage } from "@sk-widget/pages-dashboard/overview/earn-page";
 import { PositionDetailsPage } from "@sk-widget/pages-dashboard/position-details";
 import { PositionDetailsActions } from "@sk-widget/pages-dashboard/position-details/components/position-details-actions";
-import { RewardsTabPage } from "@sk-widget/pages-dashboard/rewards";
+// import { RewardsTabPage } from "@sk-widget/pages-dashboard/rewards";
 import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "@sk-widget/pages/complete/pages/stake-complete.page";
 import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
@@ -62,7 +62,7 @@ export const Dashboard = () => {
         </Route>
 
         {/* Rewards Tab */}
-        <Route path="rewards" element={<RewardsTabPage />} />
+        {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
 
         {/* Activity Tab */}
         <Route path="activity" element={<ActivityTabPage />}>

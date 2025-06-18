@@ -44,7 +44,7 @@ const selectPrices = (val: Args) => val.prices;
 const selectPvd = (val: Args) => val.pvd;
 const selectBaseToken = (val: Args) => val.baseToken;
 
-const getPositionBalanceByTypeWithPrices = createSelector(
+export const getPositionBalanceByTypeWithPrices = createSelector(
   selectPrices,
   selectPvd,
   selectBaseToken,

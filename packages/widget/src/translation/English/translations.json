@@ -165,6 +165,9 @@
         "one_month": "1 month",
         "one_week": "1 week"
       }
+    },
+    "activity_details": {
+      "your_position": "Your Position"
     }
   },
   "review": {

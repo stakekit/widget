@@ -12,11 +12,14 @@ import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { useNavigate } from "react-router";
 import { Tab } from "./tab";
 
-type TabsList = "overview" | "rewards" | "activity";
+type TabsList =
+  | "overview"
+  //  "rewards" |
+  | "activity";
 
 const TABS_MAP = {
   overview: "/",
-  rewards: "/rewards",
+  // rewards: "/rewards",
   activity: "/activity",
 };
 
@@ -58,11 +61,11 @@ export const Tabs = () => {
           variant="overview"
         />
 
-        <Tab
+        {/* <Tab
           isSelected={selectedTab === "rewards"}
           onTabPress={() => onTabPress("rewards")}
           variant="rewards"
-        />
+        /> */}
 
         <Tab
           isSelected={selectedTab === "activity"}

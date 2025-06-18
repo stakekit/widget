@@ -104,7 +104,7 @@ const _ActivityPage = () => {
 
   const activityStore = useActivityContext();
   const { openConnectModal } = useConnectModal();
-  const { isConnected } = useSKWallet();
+  const { isConnected, network } = useSKWallet();
 
   const onActionSelect = (data: ActionYieldDto) => {
     if (!isConnected) return openConnectModal?.();
@@ -143,6 +143,23 @@ const _ActivityPage = () => {
     activityStore,
     (state) => state.context.selectedAction
   );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  useEffect(() => {
+    activityStore.send({
+      type: "setSelectedAction",
+      data: Maybe.empty(),
+    });
+  }, [network, activityStore]);
+
+  useEffect(() => {
+    if (!isConnected && selectedAction.isJust()) {
+      activityStore.send({
+        type: "setSelectedAction",
+        data: Maybe.empty(),
+      });
+    }
+  }, [isConnected, selectedAction, activityStore]);
 
   /**
    * If the selected action is not set, set the first action in the list as the selected action
