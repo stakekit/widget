@@ -7,11 +7,8 @@ import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { useTranslation } from "react-i18next";
 
 export const Summary = () => {
-  const {
-    allPositionsQuery,
-    // rewardsPositionsQuery,
-    availableBalanceSumQuery,
-  } = useSummary();
+  const { allPositionsQuery, rewardsPositionsQuery, availableBalanceSumQuery } =
+    useSummary();
 
   const { t } = useTranslation();
 
@@ -31,14 +28,14 @@ export const Summary = () => {
         isLoading={allPositionsQuery.isLoading || allPositionsQuery.isPending}
       />
 
-      {/* <SummaryItem
+      <SummaryItem
         type="rewards"
         label={t("dashboard.overview.summary.total_rewards")}
         value={rewardsPositionsQuery.data?.rewardsPositionsTotalSum}
         isLoading={
           rewardsPositionsQuery.isLoading || rewardsPositionsQuery.isPending
         }
-      /> */}
+      />
 
       <SummaryItem
         type="available"

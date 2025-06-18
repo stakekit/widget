@@ -168,6 +168,9 @@
     },
     "activity_details": {
       "your_position": "Your Position"
+    },
+    "summary_item": {
+      "rewards_summary_tooltip": "Reward Summary Coming Soon"
     }
   },
   "review": {
