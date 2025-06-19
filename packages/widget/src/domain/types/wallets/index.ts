@@ -1,5 +1,5 @@
-import type { TokenString } from "@sk-widget/domain/types";
 import type { SupportedSKChainIds } from "@sk-widget/domain/types/chains";
+import type { TokenString } from "@sk-widget/domain/types/tokens";
 import type { SKWallet } from "./generic-wallet";
 
 export type SKExternalProviders = {

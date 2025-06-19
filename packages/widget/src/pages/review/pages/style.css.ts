@@ -1,5 +1,5 @@
+import { vars } from "@sk-widget/styles/theme/contract.css";
 import { style } from "@vanilla-extract/css";
-import { vars } from "../../../styles";
 
 export const feeStyles = style({
   textAlign: "right",

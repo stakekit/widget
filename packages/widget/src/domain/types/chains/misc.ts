@@ -22,7 +22,7 @@ export type MiscChainsMap = {
   };
 };
 
-export const near = {
+const near = {
   id: 397,
   name: "NEAR Protocol",
   iconUrl: getTokenLogo("near"),
@@ -37,7 +37,7 @@ export const near = {
   },
 } as const satisfies Chain;
 
-export const tezos = {
+const tezos = {
   id: 1729,
   name: "Tezos",
   iconUrl: getTokenLogo("xtz"),

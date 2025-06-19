@@ -1,3 +1,4 @@
+import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { i18n } from "i18next";
@@ -18,7 +19,10 @@ BigNumber.config({
   },
 });
 
-export const formatNumber = (number: string | BigNumber, decimals?: number) =>
+export const formatNumber = (
+  number: string | BigNumber | number,
+  decimals?: number
+) =>
   Just(BigNumber(number))
     .map((v) =>
       decimals ? v.decimalPlaces(decimals, BigNumber.ROUND_DOWN) : v
@@ -186,4 +190,13 @@ export const groupDateStrings = (
   const counts = Object.values(countMap);
 
   return [labels, counts];
+};
+
+export const createSubArray = (val: number): ItemBulletType[] => {
+  return Array.from({ length: val }, (_, i) => {
+    if (val === 1) return ItemBulletType.ALONE;
+    if (i === 0) return ItemBulletType.FIRST;
+    if (i === val - 1) return ItemBulletType.LAST;
+    return ItemBulletType.MIDDLE;
+  });
 };
