@@ -1,20 +1,23 @@
 import { Box, NumberInput, Text } from "@sk-widget/components";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { Balance } from "@sk-widget/components/atoms/icons/balance";
+// import { Balance } from "@sk-widget/components/atoms/icons/balance";
 import { MaxButton } from "@sk-widget/components/atoms/max-button";
 import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
-import { isUSDeToken } from "@sk-widget/domain/types";
+// import { isUSDeToken } from "@sk-widget/domain/types";
 import {
-  bottomBanner,
-  bottomBannerBottomRadius,
-  bottomBannerText,
+  // bottomBanner,
+  // bottomBannerBottomRadius,
+  // bottomBannerText,
   priceTxt,
 } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
 import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
 import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import clsx from "clsx";
-import { Just, Maybe } from "purify-ts";
+// import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+// import clsx from "clsx";
+import {
+  Just,
+  // Maybe
+} from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { SelectToken } from "./select-token";
 import { SelectTokenTitle } from "./title";
@@ -24,7 +27,7 @@ export const SelectTokenSection = () => {
 
   const { variant } = useSettings();
 
-  const { isLedgerLive } = useSKWallet();
+  // const { isLedgerLive } = useSKWallet();
 
   const {
     appLoading,
@@ -39,7 +42,7 @@ export const SelectTokenSection = () => {
     stakeMinAmount,
     symbol,
     isStakeTokenSameAsGasToken,
-    selectedToken,
+    // selectedToken,
   } = useEarnPageContext();
 
   const isLoading = appLoading || selectTokenIsLoading;
@@ -62,17 +65,18 @@ export const SelectTokenSection = () => {
 
   const errorBalance = stakeAmountGreaterThanAvailableAmount;
 
-  const showBottomUSDeBanner = Maybe.fromRecord({
-    selectedTokenAvailableAmount,
-    selectedToken,
-  })
-    .filter(
-      (val) =>
-        isLedgerLive &&
-        val.selectedTokenAvailableAmount.amount.isZero() &&
-        isUSDeToken(val.selectedToken)
-    )
-    .isJust();
+  // TODO: remove this once ready
+  // const showBottomUSDeBanner = Maybe.fromRecord({
+  //   selectedTokenAvailableAmount,
+  //   selectedToken,
+  // })
+  //   .filter(
+  //     (val) =>
+  //       isLedgerLive &&
+  //       val.selectedTokenAvailableAmount.amount.isZero() &&
+  //       isUSDeToken(val.selectedToken)
+  //   )
+  //   .isJust();
 
   const minStakeAmount = Just([
     stakeMinAmount
@@ -119,9 +123,9 @@ export const SelectTokenSection = () => {
         borderColor={
           submitted && stakeAmountIsZero ? "textDanger" : "transparent"
         }
-        className={clsx({
-          [bottomBannerBottomRadius]: showBottomUSDeBanner,
-        })}
+        // className={clsx({
+        //   [bottomBannerBottomRadius]: showBottomUSDeBanner,
+        // })}
       >
         {variant === "zerion" && (
           <Box display="flex" justifyContent="space-between">
@@ -218,7 +222,7 @@ export const SelectTokenSection = () => {
         </Box>
       </Box>
 
-      {showBottomUSDeBanner && (
+      {/* {showBottomUSDeBanner && (
         <Box
           className={bottomBanner}
           px="2"
@@ -232,7 +236,7 @@ export const SelectTokenSection = () => {
             {t("select_token.usde_banner")}
           </Text>
         </Box>
-      )}
+      )} */}
     </Box>
   );
 };
