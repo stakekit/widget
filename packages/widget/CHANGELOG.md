@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.236
+
+### Patch Changes
+
+- 8dd3292: feat: enable usde banner prop
+
 ## 0.0.235
 
 ### Patch Changes
