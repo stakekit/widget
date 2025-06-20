@@ -58,6 +58,7 @@ export type SettingsProps = {
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
+  showUSDeBanner?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
