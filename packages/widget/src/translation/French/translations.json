@@ -1,6 +1,6 @@
 {
   "shared": {
-    "stake_kit": "StakeKit",
+    "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
     "available": "disponible",
@@ -274,16 +274,16 @@
       "default": "Cette fonctionnalité n'est pas disponible en {{countryName}}."
     },
     "get_in_touch": {
-      "title": "Une question ? Besoin d'aide ?",
+      "title": "Une question? Besoin d'aide?",
       "button": "Contactez-nous"
     },
     "what_is_stakekit": {
-      "title": "Qu'est-ce que StakeKit ?",
-      "description": "StakeKit est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. StakeKit abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de StakeKit sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
+      "title": "Qu'est-ce que Yield.xyz?",
+      "description": "Yield.xyz est une plateforme qui vous permet d'engendrer facilement des rendements en propre à travers les réseaux et tokens les plus importants. Du staking au staking liquide, en passant par les vaults et le lending. Yield.xyz abstrait toute la complexité, rendant les gains accessibles en moins de 3 clics. Et cerise sur le gâteau, vous restez propriétaires de vos fonds.<br0/><br0/>Vous trouverez plus d'informations à propos de Yield.xyz sur notre <link0>site web</link0> ou dans notre <link1>FAQ.</link1>"
     },
     "under_maintenance": {
       "title": "En maintenance",
-      "description": "StakeKit est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
+      "description": "Yield.xyz est actuellement en maintenance de routine. Notre service devrait être de retour en ligne dans environ 5 à 10 minutes.",
       "description2": "Nous apprécions votre patience et vous encourageons à revenir bientôt !"
     }
   },
@@ -343,7 +343,7 @@
     "labels": {
       "hasFrozenV1": {
         "label": "Gelé 1.0",
-        "details": "{{amount}} TRX sont gelés avec Legacy Stake 1.0. Pour migrer vers 2.0 : Il suffit de déstaker {{amount}} TRX dans StakeKit et de les staker à nouveau (StakeKit priorise automatiquement le déstaking du solde de Stake 1.0)"
+        "details": "{{amount}} TRX sont gelés avec Legacy Stake 1.0. Pour migrer vers 2.0 : Il suffit de déstaker {{amount}} TRX dans Yield.xyz et de les staker à nouveau (Yield.xyz priorise automatiquement le déstaking du solde de Stake 1.0)"
       }
     },
     "via": "{{stakeType}} via {{providerName}}",

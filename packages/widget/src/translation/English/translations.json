@@ -1,6 +1,6 @@
 {
   "shared": {
-    "stake_kit": "StakeKit",
+    "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
     "available": "available",
@@ -281,12 +281,12 @@
       "button": "Get in touch"
     },
     "what_is_stakekit": {
-      "title": "What is StakeKit?",
-      "description": "StakeKit is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. StakeKit abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about StakeKit on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
+      "title": "What is Yield.xyz?",
+      "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     },
     "under_maintenance": {
       "title": "Under Maintenance",
-      "description": "StakeKit is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
+      "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
       "description2": "We appreciate your patience and encourage you to check back shortly!"
     }
   },
@@ -346,7 +346,7 @@
     "labels": {
       "hasFrozenV1": {
         "label": "Frozen 1.0",
-        "details": "{{amount}} TRX are frozen with Legacy Stake 1.0. To migrate to 2.0: Simply unstake {{amount}} TRX in StakeKit and stake again (StakeKit automatically prioritizes unstaking of Stake 1.0 balance)"
+        "details": "{{amount}} TRX are frozen with Legacy Stake 1.0. To migrate to 2.0: Simply unstake {{amount}} TRX in Yield.xyz and stake again (Yield.xyz automatically prioritizes unstaking of Stake 1.0 balance)"
       }
     },
     "via": "{{stakeType}} via {{providerName}}",
@@ -468,5 +468,6 @@
   },
   "error_modal": {
     "solution": "Potential solution:"
-  }
+  },
+  "chain_modal_disclaimer": "Powered by Yield.xyz"
 }
