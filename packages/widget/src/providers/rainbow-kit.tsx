@@ -71,7 +71,7 @@ export const RainbowKitProviderWithTheme = ({
         trackEvent("addLedgerAccountClicked");
         onDisabledChainClick.mutate(disabledChain);
       }}
-      appInfo={{ disclaimer: Disclamer, appName: "StakeKit" }}
+      appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
       {...(hideChainModal && { avatar: null })}
       showRecentTransactions={false}
       theme={finalTheme}
@@ -90,5 +90,6 @@ const DisabledChainHandling = () => {
 };
 
 const Disclamer: DisclaimerComponent = () => {
-  return <Text>Powered by StakeKit</Text>;
+  const { t } = useTranslation();
+  return <Text>{t("chain_modal_disclaimer")}</Text>;
 };

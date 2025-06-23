@@ -1,8 +1,8 @@
-# StakeKit Widget
+# Widget
 
-StakeKit Widget is a component that you can embed in your website with few lines of code. It allows your users to stake their crypto assets and earn rewards.
+Widget is a component that you can embed in your website with few lines of code. It allows your users to stake their crypto assets and earn rewards.
 
-StakeKit Widget is mainly built as a React component and can be easily added in your application by importing it. There is also an option to use fully bundled widget component which can be added in any javascript library. If your application is already using React, using it as a React component will reduce bundle size of your application. If not, there is option for fully bundled component.
+Widget is mainly built as a React component and can be easily added in your application by importing it. There is also an option to use fully bundled widget component which can be added in any javascript library. If your application is already using React, using it as a React component will reduce bundle size of your application. If not, there is option for fully bundled component.
 
 ## Development
 
@@ -10,7 +10,7 @@ Create `.env.development.local` file and add variables from `.env.example`. For 
 
 ## Installation
 
-To install StakeKit Widget:
+To install Widget:
 
 ```bash
 npm install @stakekit/widget
@@ -22,7 +22,7 @@ pnpm add @stakekit/widget
 
 ## Usage
 
-To use StakeKit Widget, first you'll need API key from StakeKit.
+To use Widget, first you'll need API key from Yield.xyz.
 
 ## React component usage
 
@@ -125,7 +125,7 @@ After this is done, you can start using the widget.
 
 ## Style customization
 
-You can customize look of widget by overriding `darkTheme` or `lightTheme`, or providing your own theme and passing it to StakeKit. If theme is not provided, widget will use default `lightTheme`.
+You can customize look of widget by overriding `darkTheme` or `lightTheme`, or providing your own theme and passing it to Widget. If theme is not provided, widget will use default `lightTheme`.
 
 ```tsx
 import "@stakekit/widget/package/css";
@@ -593,7 +593,7 @@ type SKWallet = {
 
 ### Tracking
 
-StakeKit component provides `tracking` prop for analytics to track user actions and page views
+Widget component provides `tracking` prop for analytics to track user actions and page views
 
 ```tsx
 import "@stakekit/widget/package/css";
@@ -619,7 +619,7 @@ const App = () => {
 
 ## React Native wallets usage
 
-To use StakeKit with your wallets managed provider, you can use utility hook to get prepared props and pass them to `WebView` component from `react-native-webview`. Using widget with injected provider skips connection step.
+To use Widget with your wallets managed provider, you can use utility hook to get prepared props and pass them to `WebView` component from `react-native-webview`. Using widget with injected provider skips connection step.
 
 First, install package:
 
