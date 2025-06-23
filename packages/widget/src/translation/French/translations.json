@@ -21,7 +21,8 @@
     "points": "Points",
     "continue": "Continuer",
     "powered_by": "Alimenté par <span0>{{name}}</span0>",
-    "learn_more": "En savoir plus"
+    "learn_more": "En savoir plus",
+    "change": "Changer"
   },
   "chain_modal": {
     "disabled_chain_info": "Ajoutez un portefeuille"
@@ -455,7 +456,8 @@
   },
   "select_token": {
     "title": "Sélectionner un token",
-    "n_available_opps": "{{count}} opportunités disponibles"
+    "n_available_opps": "{{count}} opportunités disponibles",
+    "usde_banner": "Solde USDe manquant? Échangez maintenant et commencez à gagner!"
   },
   "error_modal": {
     "solution": "Solution potentielle :"
@@ -486,6 +488,21 @@
         "one_month": "1 mois",
         "one_week": "1 semaine"
       }
+    },
+    "activity_details": {
+      "your_position": "Votre Position"
+    },
+    "summary_item": {
+      "rewards_summary_zero_tooltip": "Résumé des récompenses bientôt disponible",
+      "rewards_summary_current_enabled_tooltip": "Résumé des récompenses actuellement activé pour :"
+    },
+    "enabled_rewards_summary_yield_names": {
+      "polkadot_dot_validator_staking": "Staking natif DOT",
+      "avalanche_avax_liquid_staking": "Staking liquide AVAX",
+      "cronos_cro_native_staking": "Staking natif CRO",
+      "ethereum_matic_native_staking": "Staking natif POL",
+      "bsc_bnb_native_staking": "Staking natif BNB",
+      "tron_trx_native_staking": "Staking natif TRX"
     }
   }
 }

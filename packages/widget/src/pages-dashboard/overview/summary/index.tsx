@@ -16,10 +16,7 @@ export const Summary = () => {
 
   return (
     <Box
-      className={combineRecipeWithVariant({
-        rec: summaryContainer,
-        variant,
-      })}
+      className={combineRecipeWithVariant({ rec: summaryContainer, variant })}
     >
       <SummaryItem
         type="staked"

@@ -12,6 +12,7 @@ import {
   summaryLabelContainer,
   summaryNumber,
 } from "@sk-widget/components/molecules/summary-item/index.css";
+import { enabledRewardsSummaryYieldNames } from "@sk-widget/domain/types/rewards";
 import { useSettings } from "@sk-widget/providers/settings";
 import { formatNumber } from "@sk-widget/utils";
 import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
@@ -60,8 +61,33 @@ export const SummaryItem = ({
       )}
 
       <Box display="flex" alignItems="center" justifyContent="center" gap="1">
-        {value?.isEqualTo(0) && (
-          <ToolTip label={t("dashboard.summary_item.rewards_summary_tooltip")}>
+        {type === "rewards" && (
+          <ToolTip
+            maxWidth={300}
+            label={
+              value?.isEqualTo(0) ? (
+                t("dashboard.summary_item.rewards_summary_zero_tooltip")
+              ) : (
+                <Box display="flex" flexDirection="column" gap="1">
+                  <Text variant={{ type: "white" }}>
+                    {t(
+                      "dashboard.summary_item.rewards_summary_current_enabled_tooltip"
+                    )}
+                  </Text>
+
+                  <Text variant={{ type: "white" }}>
+                    <ul style={{ paddingLeft: "15px" }}>
+                      {enabledRewardsSummaryYieldNames.map((v) => (
+                        <li style={{ marginTop: "5px" }} key={v}>
+                          {t(v)}
+                        </li>
+                      ))}
+                    </ul>
+                  </Text>
+                </Box>
+              )
+            }
+          >
             <InfoIcon />
           </ToolTip>
         )}

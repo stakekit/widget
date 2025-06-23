@@ -1,7 +1,7 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { Text } from "@sk-widget/components/atoms/typography/text";
 import { id } from "@sk-widget/styles/theme/ids";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { tooltipContent, triggerWrapper } from "./style.css";
 
 export const ToolTip = ({
@@ -11,7 +11,7 @@ export const ToolTip = ({
   textAlign = "center",
   asChild,
 }: PropsWithChildren<{
-  label: string;
+  label: string | ReactNode;
   maxWidth?: number;
   textAlign?: "center" | "left" | "right" | "end";
   asChild?: boolean;
@@ -28,9 +28,13 @@ export const ToolTip = ({
           sideOffset={5}
           data-rk={id}
         >
-          <Text textAlign={textAlign} variant={{ type: "white" }}>
-            {label}
-          </Text>
+          {typeof label === "string" ? (
+            <Text textAlign={textAlign} variant={{ type: "white" }}>
+              {label}
+            </Text>
+          ) : (
+            label
+          )}
           <Tooltip.Arrow />
         </Tooltip.Content>
       </Tooltip.Portal>

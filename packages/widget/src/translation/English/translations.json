@@ -146,7 +146,7 @@
         "rewards": "Rewards",
         "activity": "Activity"
       },
-      "positions_tooltip": "Positions are your current staked balances on the network."
+      "positions_tooltip": "Positions are your yield-related balances on the network."
     },
     "position_details_info": {
       "balances": "Balances"
@@ -170,7 +170,16 @@
       "your_position": "Your Position"
     },
     "summary_item": {
-      "rewards_summary_tooltip": "Reward Summary Coming Soon"
+      "rewards_summary_zero_tooltip": "Reward summary not available – rewards may still be accruing",
+      "rewards_summary_current_enabled_tooltip": "Reward summary currently available for:"
+    },
+    "enabled_rewards_summary_yield_names": {
+      "polkadot_dot_validator_staking": "DOT native staking",
+      "avalanche_avax_liquid_staking": "AVAX liquid staking",
+      "cronos_cro_native_staking": "CRO native staking",
+      "ethereum_matic_native_staking": "POL native staking",
+      "bsc_bnb_native_staking": "BNB native staking",
+      "tron_trx_native_staking": "TRX native staking"
     }
   },
   "review": {
