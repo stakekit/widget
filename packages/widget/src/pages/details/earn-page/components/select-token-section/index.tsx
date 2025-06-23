@@ -26,7 +26,7 @@ import { SelectTokenTitle } from "./title";
 export const SelectTokenSection = () => {
   const { t } = useTranslation();
 
-  const { variant } = useSettings();
+  const { variant, showUSDeBanner } = useSettings();
 
   const { isLedgerLive } = useSKWallet();
 
@@ -72,6 +72,7 @@ export const SelectTokenSection = () => {
   })
     .filter(
       (val) =>
+        !!showUSDeBanner &&
         isLedgerLive &&
         val.selectedTokenAvailableAmount.amount.isZero() &&
         isUSDeToken(val.selectedToken)

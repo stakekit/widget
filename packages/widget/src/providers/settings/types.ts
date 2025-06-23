@@ -59,6 +59,7 @@ export type SettingsProps = {
   dashboardVariant?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
+  showUSDeBanner?: boolean;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
