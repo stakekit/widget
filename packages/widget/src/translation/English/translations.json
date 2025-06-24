@@ -50,6 +50,7 @@
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
+    "restake_with": "Restake with",
     "additional_info": "Additional info",
     "referral_code": {
       "title": "Your referral link:"
@@ -217,7 +218,15 @@
       "INFSTONES_EXIT_REQUEST": "INFSTONES EXIT REQUEST",
       "INFSTONES_CLAIM_REQUEST": "INFSTONES CLAIM REQUEST",
       "WRAP": "WRAP",
-      "UNWRAP": "UNWRAP"
+      "UNWRAP": "UNWRAP",
+      "DELEGATE": "DELEGATE",
+      "UNDELEGATE": "UNDELEGATE",
+      "VERIFY_WITHDRAW_CREDENTIALS": "VERIFY WITHDRAW CREDENTIALS",
+      "CREATE_EIGENPOD": "CREATE EIGENPOD",
+      "START_CHECKPOINT": "START CHECKPOINT",
+      "VERIFY_CHECKPOINT_PROOFS": "VERIFY CHECKPOINT PROOFS",
+      "QUEUE_WITHDRAWALS": "QUEUE WITHDRAWALS",
+      "COMPLETE_QUEUED_WITHDRAWALS": "COMPLETE_QUEUED_WITHDRAWALS"
     }
   },
   "complete": {
@@ -261,7 +270,15 @@
       "revote": "Revote",
       "rebond": "Rebond",
       "migrate": "Migrate",
-      "withdraw_all": "withdrawn all"
+      "withdraw_all": "withdraw all",
+      "verify_withdraw_credentials": "verified withdraw credentials",
+      "delegate": "delegated",
+      "undelegate": "undelegated",
+      "create_eigenpod": "created eigenpod",
+      "start_checkpoint": "started checkpoint",
+      "verify_checkpoint_proofs": "verified checkpoint proofs",
+      "queue_withdrawals": "queued withdrawals",
+      "complete_queued_withdrawals": "completed queued withdrawals"
     }
   },
   "help_modals": {
@@ -405,7 +422,15 @@
       "vote_locked": "Vote",
       "revote": "Revote",
       "rebond": "Rebond",
-      "migrate": "Migrate"
+      "migrate": "Migrate",
+      "verify_withdraw_credentials": "Verify withdraw credentials",
+      "delegate": "Delegate",
+      "undelegate": "Undelegate",
+      "create_eigenpod": "Create eigenpod",
+      "start_checkpoint": "Start checkpoint",
+      "verify_checkpoint_proofs": "Verify checkpoint proofs",
+      "queue_withdrawals": "Queue withdrawals",
+      "complete_queued_withdrawals": "Complete queued withdrawals"
     },
     "pending_action_button": {
       "stake": "Stake",
@@ -424,7 +449,9 @@
       "vote_locked": "Vote locked",
       "revote": "Revote",
       "rebond": "Rebond",
-      "migrate": "Migrate"
+      "migrate": "Migrate",
+      "verify_withdraw_credentials": "Verify withdraw credentials",
+      "delegate": "Delegate"
     },
     "unstake_sign": {
       "title": "Verify Ownership",
@@ -453,7 +480,9 @@
       "vote_locked": "Vote locked with {{providerName}}",
       "revote": "Revote with {{providerName}}",
       "rebond": "Rebond with {{providerName}}",
-      "migrate": "Migrate from {{providerName}}"
+      "migrate": "Migrate from {{providerName}}",
+      "verify_withdraw_credentials": "Verify withdraw credentials from {{providerName}}",
+      "delegate": "Delegate with {{providerName}}"
     }
   },
   "select_token": {

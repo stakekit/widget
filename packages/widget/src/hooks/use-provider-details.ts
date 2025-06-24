@@ -1,3 +1,5 @@
+import { isEigenRestaking } from "@sk-widget/domain/types";
+import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -22,9 +24,11 @@ type Res = Maybe<{
 const getProviderDetails = ({
   integrationData,
   validatorAddress,
+  p2pYield,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorAddress: Maybe<string>;
+  p2pYield: Maybe<YieldDto>;
 }): Res => {
   const def = integrationData.chain((val) =>
     Maybe.fromNullable(val.metadata.provider)
@@ -61,23 +65,34 @@ const getProviderDetails = ({
         List.find(
           (v) => v.address === addr || v.providerId === addr,
           val.validators
-        ).map((v) => ({
-          logo: v.image,
-          name: v.name ?? v.address,
-          rewardRateFormatted: getRewardRateFormatted({
-            rewardRate: v.apr,
+        ).map((v) => {
+          const { rewardRate, rewardType } = Maybe.fromFalsy(
+            isEigenRestaking(val)
+          )
+            .chain(() => p2pYield.map((v) => v.rewardRate + v.rewardRate))
+            .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
+              (res) => ({ rewardRate: res, rewardType: val.rewardType })
+            )
+            .orDefault({ rewardRate: v.apr, rewardType: val.rewardType });
+
+          return {
+            logo: v.image,
+            name: v.name ?? v.address,
+            rewardRateFormatted: getRewardRateFormatted({
+              rewardRate,
+              rewardType,
+            }),
+            rewardRate,
             rewardType: val.rewardType,
-          }),
-          rewardRate: v.apr,
-          rewardType: val.rewardType,
-          address: v.address,
-          stakedBalance: v.stakedBalance,
-          votingPower: v.votingPower,
-          commission: v.commission,
-          status: v.status,
-          website: v.website,
-          preferred: v.preferred,
-        }))
+            address: v.address,
+            stakedBalance: v.stakedBalance,
+            votingPower: v.votingPower,
+            commission: v.commission,
+            status: v.status,
+            website: v.website,
+            preferred: v.preferred,
+          };
+        })
       )
       .altLazy(() => def)
   );
@@ -89,8 +104,10 @@ export const useProvidersDetails = ({
 }: {
   integrationData: Maybe<YieldDto>;
   validatorsAddresses: Maybe<string[] | Map<string, ValidatorDto>>;
-}) =>
-  useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
+}) => {
+  const p2pYield = useP2PYield(integrationData.map(isEigenRestaking).isJust());
+
+  return useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
     () =>
       validatorsAddresses.chain((val) =>
         Maybe.sequence(
@@ -101,6 +118,7 @@ export const useProvidersDetails = ({
             getProviderDetails({
               integrationData,
               validatorAddress: Maybe.of(v),
+              p2pYield: Maybe.fromNullable(p2pYield.data),
             })
           )
         ).chain((val) =>
@@ -109,8 +127,10 @@ export const useProvidersDetails = ({
             : getProviderDetails({
                 integrationData,
                 validatorAddress: Maybe.empty(),
+                p2pYield: Maybe.fromNullable(p2pYield.data),
               }).map((v) => [v])
         )
       ),
-    [integrationData, validatorsAddresses]
+    [integrationData, validatorsAddresses, p2pYield.data]
   );
+};

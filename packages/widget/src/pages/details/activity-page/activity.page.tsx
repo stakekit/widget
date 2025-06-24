@@ -9,7 +9,10 @@ import {
   useActivityPageContext,
 } from "@sk-widget/pages/details/activity-page/state/activiti-page.context";
 import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
-import { dateGroupLabels } from "@sk-widget/pages/details/activity-page/types";
+import {
+  type ActionYieldDto,
+  dateGroupLabels,
+} from "@sk-widget/pages/details/activity-page/types";
 import { FallbackContent } from "@sk-widget/pages/details/positions-page/components/fallback-content";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
@@ -126,7 +129,7 @@ export const ActivityPageComponent = () => {
                       />
                       <ActionListItem
                         onActionSelect={onActionSelect}
-                        action={item}
+                        action={item as ActionYieldDto}
                       />
                     </Box>
                   );

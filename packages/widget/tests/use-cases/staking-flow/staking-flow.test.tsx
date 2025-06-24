@@ -1,3 +1,4 @@
+import { SKQueryClientProvider } from "@sk-widget/providers/query-client";
 import { userEvent } from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
@@ -60,12 +61,20 @@ describe("Staking flow", () => {
 
     expect(getByText("Stake")).toBeInTheDocument();
 
-    const estimatedRewards = renderHook(() =>
-      useEstimatedRewards({
-        selectedStake: Just(yieldOp),
-        selectedValidators: new Map(),
-        stakeAmount: new BigNumber(stakeAmount),
-      })
+    const estimatedRewards = renderHook(
+      () =>
+        useEstimatedRewards({
+          selectedStake: Just(yieldOp),
+          selectedValidators: new Map(),
+          stakeAmount: new BigNumber(stakeAmount),
+        }),
+      {
+        wrapper(props) {
+          return (
+            <SKQueryClientProvider>{props.children}</SKQueryClientProvider>
+          );
+        },
+      }
     ).result.current.unsafeCoerce();
 
     expect(
