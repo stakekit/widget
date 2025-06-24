@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.238
+
+### Patch Changes
+
+- ba34187: feat: eigenlayer
+
 ## 0.0.237
 
 ### Patch Changes
