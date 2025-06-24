@@ -1,3 +1,4 @@
+import { isEigenRestaking, p2pProviderId } from "@sk-widget/domain/types";
 import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type {
   ActionRequestDto,
@@ -78,6 +79,9 @@ export const useStakeEnterRequestDto = () => {
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
+              ...(isEigenRestaking(selectedStake) && {
+                providerId: p2pProviderId,
+              }),
               ...validatorsOrProvider,
             },
           },

@@ -185,8 +185,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.20)
       '@stakekit/api-hooks':
-        specifier: 0.0.105
-        version: 0.0.105(@faker-js/faker@9.8.0)(@tanstack/react-query@5.76.1(react@19.1.0))(msw@2.8.4(@types/node@22.15.21)(typescript@5.8.3))(react@19.1.0)
+        specifier: 0.0.106
+        version: 0.0.106(@faker-js/faker@9.8.0)(@tanstack/react-query@5.76.1(react@19.1.0))(msw@2.8.4(@types/node@22.15.21)(typescript@5.8.3))(react@19.1.0)
       '@stakekit/common':
         specifier: ^0.0.51
         version: 0.0.51
@@ -2543,8 +2543,8 @@ packages:
   '@stacks/transactions@6.17.0':
     resolution: {integrity: sha512-FUah2BRgV66ApLcEXGNGhwyFTRXqX5Zco3LpiM3essw8PF0NQlHwwdPgtDko5RfrJl3LhGXXe/30nwsfNnB3+g==}
 
-  '@stakekit/api-hooks@0.0.105':
-    resolution: {integrity: sha512-ZyIWpMvavYBawAZg8YFb9IsLWdLH8Qskk/itjxJ/DMWLM9XpjXhrTf/ZaAADtzgiMvq5c/bJNaanp+VpdlHGew==}
+  '@stakekit/api-hooks@0.0.106':
+    resolution: {integrity: sha512-7YTsm4kfOQy0YFwQI3qdj9AmfmjTuMi0k1+VUpVEwDMJDt2Q3uSLGDB84Jz9eOWUPx/KCt+/VDQTeI/1pp8fKg==}
     peerDependencies:
       '@faker-js/faker': ^9
       '@tanstack/react-query': '>=5'
@@ -5176,9 +5176,6 @@ packages:
   preact@10.26.4:
     resolution: {integrity: sha512-KJhO7LBFTjP71d83trW+Ilnjbo+ySsaAgCfXOXUlmGzJ4ygYPWmysm77yg4emwfmoz3b22yvH5IsVFHbhUaH5w==}
 
-  preact@10.26.5:
-    resolution: {integrity: sha512-fmpDkgfGU6JYux9teDWLhj9mKN55tyepwYbxHgQuIxbWQzgFg5vk7Mrrtfx7xRxq798ynkY4DDDxZr235Kk+4w==}
-
   preact@10.26.6:
     resolution: {integrity: sha512-5SRRBinwpwkaD+OqlBDeITlRgvd8I8QlxHJw9AxSdMNV6O+LodN9nUyYGpSF7sadHjs6RzeFShMexC6DbtWr9g==}
 
@@ -7712,7 +7709,7 @@ snapshots:
     dependencies:
       '@ethersproject/bytes': 5.8.0
       '@ethersproject/logger': 5.8.0
-      bn.js: 5.2.1
+      bn.js: 5.2.2
 
   '@ethersproject/bytes@5.8.0':
     dependencies:
@@ -9554,7 +9551,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stakekit/api-hooks@0.0.105(@faker-js/faker@9.8.0)(@tanstack/react-query@5.76.1(react@19.1.0))(msw@2.8.4(@types/node@22.15.21)(typescript@5.8.3))(react@19.1.0)':
+  '@stakekit/api-hooks@0.0.106(@faker-js/faker@9.8.0)(@tanstack/react-query@5.76.1(react@19.1.0))(msw@2.8.4(@types/node@22.15.21)(typescript@5.8.3))(react@19.1.0)':
     dependencies:
       react: 19.1.0
     optionalDependencies:
@@ -10645,7 +10642,7 @@ snapshots:
       '@walletconnect/legacy-types': 2.0.0
       '@walletconnect/legacy-utils': 2.0.0
       copy-to-clipboard: 3.3.3
-      preact: 10.26.5
+      preact: 10.26.6
       qrcode: 1.5.4
 
   '@walletconnect/legacy-provider@2.0.0(encoding@0.1.13)':
@@ -13467,8 +13464,6 @@ snapshots:
       source-map-js: 1.2.1
 
   preact@10.26.4: {}
-
-  preact@10.26.5: {}
 
   preact@10.26.6: {}
 

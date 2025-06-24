@@ -524,10 +524,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   };
 
   const onTronResourceSelect = (value: TronResourceType) =>
-    dispatch({
-      type: "tronResource/select",
-      data: value,
-    });
+    dispatch({ type: "tronResource/select", data: value });
 
   const onClickRef = useSavedRef(onClickHandler.mutate);
 

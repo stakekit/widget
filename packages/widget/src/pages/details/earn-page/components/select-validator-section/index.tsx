@@ -1,3 +1,4 @@
+import { isEigenRestaking } from "@sk-widget/domain/types";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { Box } from "../../../../../components";
@@ -64,6 +65,7 @@ export const SelectValidatorSection = () => {
                 onRemoveValidator={onRemoveValidator}
                 selectedValidatorsArr={selectedValidatorsArr}
                 multiSelect={multiSelect}
+                isEigenRestaking={isEigenRestaking(val.selectedStake)}
               />
             }
             selectedValidators={
