@@ -1,9 +1,9 @@
 const assetsUrl = "https://assets.stakek.it";
 
 export const config = {
-  appName: "StakeKit",
+  appName: "Yield.xyz",
   appIcon: `${assetsUrl}/stakekit/sk-icon_320x320.png`,
-  appUrl: "https://stakek.it",
+  appUrl: "https://yield.xyz",
   currency: "USD",
   queryClient: {
     staleTime: 1000 * 5,

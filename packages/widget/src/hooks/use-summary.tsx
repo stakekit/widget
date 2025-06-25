@@ -128,6 +128,7 @@ export const SummaryProvider = ({
                 p.type === "validators"
                   ? List.head(p.validatorsAddresses)
                   : Maybe.empty(),
+              p2pYield: Maybe.empty(),
             });
 
             return {

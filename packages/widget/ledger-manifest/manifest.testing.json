@@ -1,8 +1,8 @@
 {
   "id": "stakekit",
-  "name": "StakeKit",
+  "name": "Yield.xyz",
   "url": "https://ledger-live-app-testing.vercel.app/?embed=true",
-  "homepageUrl": "https://stakek.it/",
+  "homepageUrl": "https://yield.xyz/",
   "platform": ["all"],
   "apiVersion": "^2.0.0",
   "manifestVersion": "2",
@@ -15,7 +15,7 @@
       "en": "Start earning yield on your crypto in just 3 clicks. Enjoy staking, liquid staking, yield vaults, and lending pools covering more than 40 blockchain networks and 400+ yield opportunities all in one place."
     },
     "description": {
-      "en": "StakeKit is the world's most powerful self-custodial yield platform. Covering more than 40 blockchain networks and 400+ yield opportunities, StakeKit aggregates all yields across all chains and across all major DeFi providers in one place: be it staking, liquid staking, yield vaults, or lending protocols"
+      "en": "Yield.xyz is the world's most powerful self-custodial yield platform. Covering more than 40 blockchain networks and 400+ yield opportunities, Yield.xyz aggregates all yields across all chains and across all major DeFi providers in one place: be it staking, liquid staking, yield vaults, or lending protocols"
     }
   },
   "permissions": [

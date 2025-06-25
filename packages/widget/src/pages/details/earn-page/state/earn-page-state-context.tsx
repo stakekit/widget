@@ -1,4 +1,6 @@
 import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
+import { isEigenRestaking } from "@sk-widget/domain/types/yields";
+import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
 import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useTrackStateEvents } from "@sk-widget/pages/details/earn-page/state/use-track-state-events";
@@ -331,6 +333,11 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     maxEnterOrExitAmount,
     minEnterOrExitAmount,
   });
+
+  /**
+   * Prefetch if needed
+   */
+  useP2PYield(selectedStake.map(isEigenRestaking).isJust());
 
   const value: State & ExtraData = useMemo(
     () => ({

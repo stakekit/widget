@@ -1,6 +1,6 @@
 {
   "shared": {
-    "stake_kit": "StakeKit",
+    "stake_kit": "Yield.xyz",
     "max": "Max",
     "min": "Min",
     "available": "available",
@@ -51,6 +51,7 @@
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
+    "restake_with": "Restake with",
     "additional_info": "Additional info",
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
@@ -258,7 +259,15 @@
       "INFSTONES_EXIT_REQUEST": "INFSTONES EXIT REQUEST",
       "INFSTONES_CLAIM_REQUEST": "INFSTONES CLAIM REQUEST",
       "WRAP": "WRAP",
-      "UNWRAP": "UNWRAP"
+      "UNWRAP": "UNWRAP",
+      "DELEGATE": "DELEGATE",
+      "UNDELEGATE": "UNDELEGATE",
+      "VERIFY_WITHDRAW_CREDENTIALS": "VERIFY WITHDRAW CREDENTIALS",
+      "CREATE_EIGENPOD": "CREATE EIGENPOD",
+      "START_CHECKPOINT": "START CHECKPOINT",
+      "VERIFY_CHECKPOINT_PROOFS": "VERIFY CHECKPOINT PROOFS",
+      "QUEUE_WITHDRAWALS": "QUEUE WITHDRAWALS",
+      "COMPLETE_QUEUED_WITHDRAWALS": "COMPLETE_QUEUED_WITHDRAWALS"
     }
   },
   "complete": {
@@ -302,7 +311,15 @@
       "revote": "Revote",
       "rebond": "Rebond",
       "migrate": "Migrate",
-      "withdraw_all": "withdrawn all"
+      "withdraw_all": "withdraw all",
+      "verify_withdraw_credentials": "verified withdraw credentials",
+      "delegate": "delegated",
+      "undelegate": "undelegated",
+      "create_eigenpod": "created eigenpod",
+      "start_checkpoint": "started checkpoint",
+      "verify_checkpoint_proofs": "verified checkpoint proofs",
+      "queue_withdrawals": "queued withdrawals",
+      "complete_queued_withdrawals": "completed queued withdrawals"
     }
   },
   "help_modals": {
@@ -322,12 +339,12 @@
       "button": "Get in touch"
     },
     "what_is_stakekit": {
-      "title": "What is StakeKit?",
-      "description": "StakeKit is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. StakeKit abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about StakeKit on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
+      "title": "What is Yield.xyz?",
+      "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     },
     "under_maintenance": {
       "title": "Under Maintenance",
-      "description": "StakeKit is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
+      "description": "Yield.xyz is currently undergoing routine maintenance. Our service is expected to be back up and running in approximately 5-10 minutes.",
       "description2": "We appreciate your patience and encourage you to check back shortly!"
     }
   },
@@ -387,7 +404,7 @@
     "labels": {
       "hasFrozenV1": {
         "label": "Frozen 1.0",
-        "details": "{{amount}} TRX are frozen with Legacy Stake 1.0. To migrate to 2.0: Simply unstake {{amount}} TRX in StakeKit and stake again (StakeKit automatically prioritizes unstaking of Stake 1.0 balance)"
+        "details": "{{amount}} TRX are frozen with Legacy Stake 1.0. To migrate to 2.0: Simply unstake {{amount}} TRX in Yield.xyz and stake again (Yield.xyz automatically prioritizes unstaking of Stake 1.0 balance)"
       }
     },
     "via": "{{stakeType}} via {{providerName}}",
@@ -446,7 +463,15 @@
       "vote_locked": "Vote",
       "revote": "Revote",
       "rebond": "Rebond",
-      "migrate": "Migrate"
+      "migrate": "Migrate",
+      "verify_withdraw_credentials": "Verify withdraw credentials",
+      "delegate": "Delegate",
+      "undelegate": "Undelegate",
+      "create_eigenpod": "Create eigenpod",
+      "start_checkpoint": "Start checkpoint",
+      "verify_checkpoint_proofs": "Verify checkpoint proofs",
+      "queue_withdrawals": "Queue withdrawals",
+      "complete_queued_withdrawals": "Complete queued withdrawals"
     },
     "pending_action_button": {
       "stake": "Stake",
@@ -465,7 +490,9 @@
       "vote_locked": "Vote locked",
       "revote": "Revote",
       "rebond": "Rebond",
-      "migrate": "Migrate"
+      "migrate": "Migrate",
+      "verify_withdraw_credentials": "Verify withdraw credentials",
+      "delegate": "Delegate"
     },
     "unstake_sign": {
       "title": "Verify Ownership",
@@ -494,7 +521,9 @@
       "vote_locked": "Vote locked with {{providerName}}",
       "revote": "Revote with {{providerName}}",
       "rebond": "Rebond with {{providerName}}",
-      "migrate": "Migrate from {{providerName}}"
+      "migrate": "Migrate from {{providerName}}",
+      "verify_withdraw_credentials": "Verify withdraw credentials from {{providerName}}",
+      "delegate": "Delegate with {{providerName}}"
     }
   },
   "select_token": {
@@ -504,5 +533,6 @@
   },
   "error_modal": {
     "solution": "Potential solution:"
-  }
+  },
+  "chain_modal_disclaimer": "Powered by Yield.xyz"
 }

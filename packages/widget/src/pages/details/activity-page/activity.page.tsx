@@ -7,7 +7,10 @@ import ListItemBullet from "@sk-widget/pages/details/activity-page/components/li
 import { useActivityPage } from "@sk-widget/pages/details/activity-page/hooks/use-activity-page";
 import { ActivityPageContextProvider } from "@sk-widget/pages/details/activity-page/state/activity-page.context";
 import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
-import { dateGroupLabels } from "@sk-widget/pages/details/activity-page/types";
+import {
+  type ActionYieldDto,
+  dateGroupLabels,
+} from "@sk-widget/pages/details/activity-page/types";
 import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
@@ -73,7 +76,7 @@ export const ActivityPageComponent = () => {
                   />
                   <ActionListItem
                     onActionSelect={onActionSelect}
-                    action={item}
+                    action={item as ActionYieldDto}
                   />
                 </Box>
               );

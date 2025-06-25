@@ -4,6 +4,7 @@ import { Divider } from "@sk-widget/components/atoms/divider";
 import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
 import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
 import { Text } from "@sk-widget/components/atoms/typography/text";
+import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import { PlusIcon } from "../../../../../components/atoms/icons/plus";
@@ -23,22 +24,40 @@ export const SelectValidatorTrigger = ({
   onRemoveValidator,
   multiSelect,
   selectedValidatorsArr,
+  isEigenRestaking,
 }: {
   onRemoveValidator: (item: ValidatorDto) => void;
   multiSelect: boolean;
   selectedValidatorsArr: ValidatorDto[];
+  isEigenRestaking: boolean;
 }) => {
   const { t } = useTranslation();
 
+  const p2pYield = useP2PYield(isEigenRestaking);
+
   return (
     <>
+      {isEigenRestaking && (
+        <Box my="2" display="flex" alignItems="center" gap="1">
+          <Text>{t("details.earn_with")} P2P</Text>
+          <Image
+            imageProps={{ borderRadius: "full" }}
+            containerProps={{ hw: "5" }}
+            src={p2pYield.data?.metadata.provider?.logoURI}
+            fallback={<ImageFallback name="P2P" tokenLogoHw="5" />}
+          />
+        </Box>
+      )}
+
       <Box
         data-rk="select-validator-trigger-container"
         className={addValidatorContainer}
       >
         <Box display="flex" alignItems="center" justifyContent="center">
           <Text className={breakWord} variant={{ weight: "bold" }}>
-            {t("details.earn_with")}
+            {isEigenRestaking
+              ? t("details.restake_with")
+              : t("details.earn_with")}
           </Text>
         </Box>
 

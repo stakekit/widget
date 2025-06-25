@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.237
+
+### Patch Changes
+
+- 1c7e376: feat: rebrand
+
 ## 0.0.236
 
 ### Patch Changes

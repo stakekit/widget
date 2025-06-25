@@ -1,6 +1,7 @@
 import { Box } from "@sk-widget/components/atoms/box";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
+import { isEigenRestaking } from "@sk-widget/domain/types/yields";
 import { Maybe } from "purify-ts";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";
@@ -40,6 +41,7 @@ export const SelectValidatorSection = () => {
                 onRemoveValidator={onRemoveValidator}
                 selectedValidatorsArr={selectedValidatorsArr}
                 multiSelect={multiSelect}
+                isEigenRestaking={isEigenRestaking(val.selectedStake)}
               />
             }
             selectedValidators={
