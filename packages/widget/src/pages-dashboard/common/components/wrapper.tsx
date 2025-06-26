@@ -14,7 +14,7 @@ export const DashboardWrapper = () => {
   const { variant } = useSettings();
 
   return (
-    <Box className={wrapper}>
+    <Box className={combineRecipeWithVariant({ rec: wrapper, variant })}>
       <Header />
 
       <Tabs />

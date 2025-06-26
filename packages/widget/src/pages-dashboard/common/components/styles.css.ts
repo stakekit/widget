@@ -1,20 +1,30 @@
 import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 
-export const wrapper = style([
-  atoms({
-    background: "background",
-    borderColor: "backgroundMuted",
-  }),
-  {
-    borderWidth: "1px",
-    borderStyle: "solid",
-    borderRadius: "30px",
-    boxShadow: "0px 15px 40px 0px #0000000D",
-    width: "1000px",
+export const wrapper = recipe({
+  base: [
+    atoms({
+      background: "background",
+      borderColor: "backgroundMuted",
+    }),
+    {
+      borderWidth: "1px",
+      borderStyle: "solid",
+      boxShadow: "0px 15px 40px 0px #0000000D",
+      width: "1000px",
+    },
+  ],
+  variants: {
+    variant: {
+      default: {
+        borderRadius: "30px",
+      },
+      utila: {
+        borderRadius: "8px",
+      },
+    },
   },
-]);
+});
 
 export const outletWrapper = recipe({
   variants: {

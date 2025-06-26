@@ -24,8 +24,14 @@ export const Header = () => {
     hideAccountAndChainSelector,
   } = useHeader();
 
-  if (wagmiConfig.isLoading || !wagmiConfig.data || hideAccountAndChainSelector)
+  if (
+    wagmiConfig.isLoading ||
+    !wagmiConfig.data ||
+    hideAccountAndChainSelector ||
+    !isConnected
+  ) {
     return null;
+  }
 
   return (
     <Box ref={containerRef} data-rk="header" className={headerContainer}>

@@ -101,7 +101,7 @@ export const SummaryProvider = ({
       }, [multiYieldsMapQuery.data, positionsData.data]),
     },
     {
-      enabled: !!multiYieldsMapQuery.data,
+      enabled: !multiYieldsMapQuery.isLoading,
       select: useCallback(
         (prices: Prices) => {
           if (!positionsData.data || !multiYieldsMapQuery.data) {
@@ -168,7 +168,7 @@ export const SummaryProvider = ({
       ),
     },
     {
-      enabled: !!rewardsSummaryQuery.data && !!multiYieldsMapQuery.data,
+      enabled: !rewardsSummaryQuery.isLoading && !multiYieldsMapQuery.isLoading,
       select: useCallback(
         (prices: Prices) => {
           if (!rewardsSummaryQuery.data || !multiYieldsMapQuery.data) {
@@ -242,16 +242,20 @@ export const SummaryProvider = ({
 
   const tokenBalancesScan = useTokenBalancesScan();
 
+  const tokenList = useMemo(
+    () => tokenBalancesScan.data?.map((tb) => tb.token),
+    [tokenBalancesScan.data]
+  );
+
   const availableBalanceSumQuery = usePrices(
+    tokenList
+      ? {
+          currency: config.currency,
+          tokenList,
+        }
+      : null,
     {
-      currency: config.currency,
-      tokenList: useMemo(
-        () => tokenBalancesScan.data?.map((tb) => tb.token) ?? [],
-        [tokenBalancesScan.data]
-      ),
-    },
-    {
-      enabled: !!tokenBalancesScan.data,
+      enabled: !tokenBalancesScan.isLoading && !tokenBalancesScan.isPending,
       select: useCallback(
         (prices: Prices) => {
           if (!tokenBalancesScan.data) return BigNumber(0);
