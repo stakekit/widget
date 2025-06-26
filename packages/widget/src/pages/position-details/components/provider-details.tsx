@@ -1,7 +1,10 @@
+import { Box } from "@sk-widget/components/atoms/box";
+import { Divider } from "@sk-widget/components/atoms/divider";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import type { GetMaybeJust } from "@sk-widget/types/utils";
 import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Text } from "../../../components";
 import {
   CollapsibleArrow,
   CollapsibleContent,
@@ -14,7 +17,6 @@ import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
-import type { GetMaybeJust } from "../../../types";
 import {
   addressHover,
   addressParent,

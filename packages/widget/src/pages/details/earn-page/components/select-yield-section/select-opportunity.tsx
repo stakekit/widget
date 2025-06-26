@@ -1,17 +1,21 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
-import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { Box } from "@sk-widget/components/atoms/box";
+import { pressAnimation } from "@sk-widget/components/atoms/button/styles.css";
+import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
 import {
-  Box,
-  CaretDownIcon,
   SelectModal,
   SelectModalItemContainer,
-  Text,
-} from "../../../../../components";
-import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
-import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+} from "@sk-widget/components/atoms/select-modal";
+import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
+import { Text } from "@sk-widget/components/atoms/typography/text";
+import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
+import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
+import { selectOpportunityButton } from "@sk-widget/pages/details/earn-page/components/select-yield-section/styles.css";
+import { useSettings } from "@sk-widget/providers/settings";
+import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
+import clsx from "clsx";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 
@@ -47,6 +51,8 @@ export const SelectOpportunity = () => {
     [selectedStake, selectedStakeData]
   );
 
+  const { variant } = useSettings();
+
   if (!data) return null;
 
   return (
@@ -60,15 +66,14 @@ export const SelectOpportunity = () => {
         <Trigger asChild>
           <Box
             as="button"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            background="background"
-            borderRadius="2xl"
-            px="2"
-            py="1"
+            className={clsx(
+              combineRecipeWithVariant({
+                rec: selectOpportunityButton,
+                variant,
+              }),
+              pressAnimation
+            )}
             data-testid="select-opportunity"
-            className={pressAnimation}
           >
             <Box
               marginRight="2"

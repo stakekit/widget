@@ -1,9 +1,9 @@
-import { isEigenRestaking } from "@sk-widget/domain/types";
+import { isEigenRestaking } from "@sk-widget/domain/types/yields";
 import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
+import type { GetMaybeJust } from "@sk-widget/types/utils";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { GetMaybeJust } from "../types";
 import { getRewardRateFormatted } from "../utils/formatters";
 
 type Res = Maybe<{
@@ -21,7 +21,7 @@ type Res = Maybe<{
   preferred?: ValidatorDto["preferred"];
 }>;
 
-const getProviderDetails = ({
+export const getProviderDetails = ({
   integrationData,
   validatorAddress,
   p2pYield,

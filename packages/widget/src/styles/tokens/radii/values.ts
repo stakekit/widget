@@ -1,4 +1,4 @@
-import { vars } from "../../theme";
+import { vars } from "@sk-widget/styles/theme/contract.css";
 import { connectKitTheme } from "../connect-kit";
 import type { radiiContract } from "./contract";
 

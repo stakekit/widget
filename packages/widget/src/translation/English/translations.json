@@ -21,7 +21,8 @@
     "points": "Points",
     "continue": "Continue",
     "powered_by": "Powered by <span0>{{name}}</span0>",
-    "learn_more": "Learn more"
+    "learn_more": "Learn more",
+    "change": "Change"
   },
   "chain_modal": {
     "disabled_chain_info": "Add account"
@@ -52,9 +53,6 @@
     "earn_with": "Earn with",
     "restake_with": "Restake with",
     "additional_info": "Additional info",
-    "referral_code": {
-      "title": "Your referral link:"
-    },
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "yearly": "Estimated Yearly Earnings",
@@ -141,6 +139,49 @@
     "validators_comission": "Commission",
     "validators_website": "Website",
     "validators_nominator_count": "Nominator count"
+  },
+  "dashboard": {
+    "details": {
+      "tabs": {
+        "overview": "Overview",
+        "rewards": "Rewards",
+        "activity": "Activity"
+      },
+      "positions_tooltip": "Positions are your yield-related balances on the network."
+    },
+    "position_details_info": {
+      "balances": "Balances"
+    },
+    "overview": {
+      "summary": {
+        "total_staked": "Total staked",
+        "total_rewards": "Total rewards",
+        "available_balance": "Available"
+      }
+    },
+    "rewards": {
+      "no_data": "No data",
+      "summary": {
+        "all_time": "All time",
+        "one_month": "1 month",
+        "one_week": "1 week"
+      }
+    },
+    "activity_details": {
+      "your_position": "Your Position"
+    },
+    "summary_item": {
+      "rewards_summary_zero_tooltip": "Reward summary not available – rewards may still be accruing",
+      "rewards_summary_current_enabled_tooltip": "Reward summary currently available for:"
+    },
+    "enabled_rewards_summary_yield_names": {
+      "polkadot_dot_validator_staking": "DOT native staking",
+      "avalanche_avax_liquid_staking": "AVAX liquid staking",
+      "cronos_cro_native_staking": "CRO native staking",
+      "ethereum_matic_native_staking": "POL native staking",
+      "bsc_bnb_native_staking": "BNB native staking",
+      "tron_trx_native_staking": "TRX native staking"
+    }
   },
   "review": {
     "estimated_reward": "Estimated rewards",
@@ -489,11 +530,6 @@
     "title": "Select token",
     "n_available_opps": "{{count}} available opportunities",
     "usde_banner": "Missing USDe balance? Swap now and start earning!"
-  },
-  "referral_lock": {
-    "title": "Referral check",
-    "body": "Enter your referral code to continue",
-    "submit": "Submit"
   },
   "error_modal": {
     "solution": "Potential solution:"

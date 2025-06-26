@@ -1,18 +1,22 @@
-import { Box, NumberInput, Text } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
 import { Balance } from "@sk-widget/components/atoms/icons/balance";
 import { MaxButton } from "@sk-widget/components/atoms/max-button";
+import { NumberInput } from "@sk-widget/components/atoms/number-input";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
-import { isUSDeToken } from "@sk-widget/domain/types";
+import { isUSDeToken } from "@sk-widget/domain/types/tokens";
 import {
   bottomBanner,
   bottomBannerBottomRadius,
   bottomBannerText,
   priceTxt,
+  selectTokenSection,
 } from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
 import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
 import { useSettings } from "@sk-widget/providers/settings";
 import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import clsx from "clsx";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -117,12 +121,16 @@ export const SelectTokenSection = () => {
         px="4"
         borderStyle="solid"
         borderWidth={1}
-        borderColor={
-          submitted && stakeAmountIsZero ? "textDanger" : "transparent"
-        }
-        className={clsx({
-          [bottomBannerBottomRadius]: showBottomUSDeBanner,
-        })}
+        className={clsx(
+          {
+            [bottomBannerBottomRadius]: showBottomUSDeBanner,
+          },
+          combineRecipeWithVariant({
+            rec: selectTokenSection,
+            variant,
+            state: submitted && stakeAmountIsZero ? "danger" : "default",
+          })
+        )}
       >
         {variant === "zerion" && (
           <Box display="flex" justifyContent="space-between">

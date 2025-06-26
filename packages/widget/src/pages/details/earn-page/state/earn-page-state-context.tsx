@@ -1,7 +1,8 @@
-import { isEigenRestaking } from "@sk-widget/domain/types";
 import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
+import { isEigenRestaking } from "@sk-widget/domain/types/yields";
 import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
 import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useTrackStateEvents } from "@sk-widget/pages/details/earn-page/state/use-track-state-events";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
@@ -17,7 +18,6 @@ import {
   useReducer,
 } from "react";
 import { equalTokens } from "../../../../domain";
-import { useSavedRef } from "../../../../hooks";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";

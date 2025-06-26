@@ -1,6 +1,6 @@
 import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
 import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { useSavedRef } from "@sk-widget/hooks";
+import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
 import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";

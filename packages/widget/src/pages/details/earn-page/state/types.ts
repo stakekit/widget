@@ -1,8 +1,7 @@
 import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
-import type { SettingsContextType } from "@sk-widget/providers/settings";
-import type { Action } from "@sk-widget/types";
+import type { Action } from "@sk-widget/types/utils";
 import type {
   TokenBalanceScanResponseDto,
   TokenDto,
@@ -61,7 +60,6 @@ export type ExtraData = {
 };
 
 export type EarnPageContextType = {
-  referralCheck: SettingsContextType["referralCheck"];
   selectedTokenAvailableAmount: Maybe<{
     symbol: string;
     shortFormattedAmount: string;

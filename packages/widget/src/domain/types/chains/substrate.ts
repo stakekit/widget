@@ -20,7 +20,7 @@ export type SubstrateChainsMap = {
   };
 };
 
-export const polkadot = {
+const polkadot = {
   id: 9999,
   name: "Polkadot",
   iconUrl: getNetworkLogo(SubstrateNetworks.Polkadot),

@@ -1,12 +1,10 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import { Box } from "@sk-widget/components/atoms/box";
+import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
+import { SelectModal } from "@sk-widget/components/atoms/select-modal";
+import { Text } from "@sk-widget/components/atoms/typography/text";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Box,
-  CaretDownIcon,
-  SelectModal,
-  Text,
-} from "../../../../../components";
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";

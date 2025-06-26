@@ -1,4 +1,4 @@
-import { Box } from "@sk-widget/components";
+import { Box } from "@sk-widget/components/atoms/box";
 import { tokenString } from "@sk-widget/domain";
 import { symbolIcon } from "@sk-widget/hooks/use-reward-token-details/style.css";
 import type { TokenDto } from "@stakekit/api-hooks";
