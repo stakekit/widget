@@ -4,14 +4,12 @@ import { useSettings } from "../../../providers/settings";
 import { formatNumber } from "../../../utils";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { Box } from "../../atoms/box";
-import { ContentLoaderSquare } from "../../atoms/content-loader";
 import { InfoIcon } from "../../atoms/icons/info";
+import { Spinner } from "../../atoms/spinner";
 import { ToolTip } from "../../atoms/tooltip";
 import { Text } from "../../atoms/typography/text";
 import {
   type SummaryLabelContainerVariants,
-  loader,
-  loaderContainer,
   summaryItem,
   summaryLabel,
   summaryLabelContainer,
@@ -33,30 +31,24 @@ export const SummaryItem = ({
 
   const { t } = useTranslation();
 
-  const content = isLoading ? (
+  return (
     <Box
-      width="full"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      className={loaderContainer}
+      className={combineRecipeWithVariant({
+        rec: summaryItem,
+        variant,
+      })}
+      background="background"
     >
-      <ContentLoaderSquare
-        containerClassName={loader}
-        heightPx={40}
-        variant={{ size: "medium" }}
-      />
-    </Box>
-  ) : (
-    <>
-      {value && (
+      {isLoading ? (
+        <Spinner variant={{ size: "small" }} />
+      ) : (
         <Text
           className={combineRecipeWithVariant({
             rec: summaryNumber,
             variant,
           })}
         >
-          {value.gt(0) ? `$${formatNumber(value, 2)}` : "-"}
+          {value?.gt(0) ? `$${formatNumber(value, 2)}` : "-"}
         </Text>
       )}
 
@@ -111,19 +103,6 @@ export const SummaryItem = ({
           </Text>
         </Box>
       </Box>
-    </>
-  );
-
-  return (
-    <Box
-      className={combineRecipeWithVariant({
-        rec: summaryItem,
-        variant,
-        state: isLoading ? "isLoading" : undefined,
-      })}
-      background="background"
-    >
-      {content}
     </Box>
   );
 };

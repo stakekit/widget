@@ -22,26 +22,21 @@ export const Summary = () => {
         type="staked"
         label={t("dashboard.overview.summary.total_staked")}
         value={allPositionsQuery.data?.allPositionsSum}
-        isLoading={allPositionsQuery.isLoading || allPositionsQuery.isPending}
+        isLoading={allPositionsQuery.isLoading}
       />
 
       <SummaryItem
         type="rewards"
         label={t("dashboard.overview.summary.total_rewards")}
         value={rewardsPositionsQuery.data?.rewardsPositionsTotalSum}
-        isLoading={
-          rewardsPositionsQuery.isLoading || rewardsPositionsQuery.isPending
-        }
+        isLoading={rewardsPositionsQuery.isLoading}
       />
 
       <SummaryItem
         type="available"
         label={t("dashboard.overview.summary.available_balance")}
         value={availableBalanceSumQuery.data}
-        isLoading={
-          availableBalanceSumQuery.isLoading ||
-          availableBalanceSumQuery.isPending
-        }
+        isLoading={availableBalanceSumQuery.isLoading}
       />
     </Box>
   );
