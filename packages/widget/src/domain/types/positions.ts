@@ -1,4 +1,3 @@
-import { equalTokens } from "@sk-widget/domain";
 import type {
   BalanceTypes,
   TokenDto,
@@ -6,6 +5,7 @@ import type {
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
+import { equalTokens } from "..";
 
 export type PositionBalancesByType = Map<
   BalanceTypes,

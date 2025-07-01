@@ -40,7 +40,7 @@
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
     "build": "pnpm lint && pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
-    "lint": "tsc && biome check .",
+    "lint": "biome check . && tsc",
     "test": "vitest -c vite/vite.config.dev.ts --retry 2 run",
     "format": "biome check --write .",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",

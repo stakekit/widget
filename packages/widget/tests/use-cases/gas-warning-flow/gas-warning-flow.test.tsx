@@ -1,7 +1,7 @@
-import { formatAddress } from "@sk-widget/utils";
 import type { YieldDto } from "@stakekit/api-hooks";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { formatAddress } from "../../../src/utils";
 import { renderApp, waitFor, within } from "../../utils/test-utils";
 import { setup } from "./setup";
 

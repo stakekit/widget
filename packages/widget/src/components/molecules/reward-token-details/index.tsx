@@ -1,13 +1,13 @@
-import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
-import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
 import { Box } from "../../atoms/box";
+import { MorphoStarsIcon } from "../../atoms/icons/morpho-stars";
 import { Image } from "../../atoms/image";
 import { ImageFallback } from "../../atoms/image-fallback";
+import { Text } from "../../atoms/typography/text";
 import { inlineText } from "./style.css";
 
 export const RewardTokenDetails = ({

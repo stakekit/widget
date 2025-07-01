@@ -1,12 +1,12 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { Box } from "@sk-widget/components/atoms/box";
-import { Image } from "@sk-widget/components/atoms/image";
-import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { changeButton } from "@sk-widget/pages-dashboard/overview/earn-page/styles.css";
-import { breakWord } from "@sk-widget/pages/details/earn-page/styles.css";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { Image } from "../../../components/atoms/image";
+import { ImageFallback } from "../../../components/atoms/image-fallback";
+import { Text } from "../../../components/atoms/typography/text";
+import { breakWord } from "../../../pages/details/earn-page/styles.css";
+import { changeButton } from "./styles.css";
 
 export const SelectValidatorTrigger = ({
   selectedValidatorsArr,

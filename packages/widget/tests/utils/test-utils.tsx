@@ -2,9 +2,9 @@ import type { RenderOptions } from "@testing-library/react";
 import { render } from "@testing-library/react";
 import type { ComponentProps } from "react";
 
-import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
 import { SKApp } from "../../src/App";
 import type { SettingsContextProvider } from "../../src/providers/settings";
+import { VirtualizerObserveElementRectProvider } from "../../src/providers/virtual-scroll";
 
 const renderApp = (opts?: {
   options?: RenderOptions;

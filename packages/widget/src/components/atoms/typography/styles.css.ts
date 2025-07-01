@@ -1,9 +1,9 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { vars } from "@sk-widget/styles/theme/contract.css";
-import { minMediaQuery } from "@sk-widget/styles/tokens/breakpoints";
-import type { Heading, Text } from "@sk-widget/styles/tokens/typography";
 import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
+import { minMediaQuery } from "../../../styles/tokens/breakpoints";
+import type { Heading, Text } from "../../../styles/tokens/typography";
 
 export const heading = recipe({
   base: atoms({ color: "text" }),

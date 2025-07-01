@@ -1,6 +1,6 @@
-import { getTokenLogo } from "@sk-widget/utils";
 import { MiscNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import { getTokenLogo } from "../../../utils";
 
 const supportedMiscChains = [
   MiscNetworks.Near,

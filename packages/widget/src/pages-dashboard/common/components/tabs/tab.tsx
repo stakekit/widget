@@ -1,17 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { pressAnimation } from "@sk-widget/components/atoms/button/styles.css";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import {
-  tab,
-  tabBorder,
-  tabContainer,
-  tabText,
-} from "@sk-widget/pages-dashboard/common/components/tabs/styles.css";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import clsx from "clsx";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../../components/atoms/box";
+import { pressAnimation } from "../../../../components/atoms/button/styles.css";
+import { Text } from "../../../../components/atoms/typography/text";
+import { useSettings } from "../../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../../utils/styles";
+import { tab, tabBorder, tabContainer, tabText } from "./styles.css";
 
 type Props = {
   isSelected: boolean;

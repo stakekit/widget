@@ -1,20 +1,17 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { PageContainer } from "@sk-widget/pages/components/page-container";
-import { ActionListItem } from "@sk-widget/pages/details/activity-page/components/action-list-item";
-import ListItemBullet from "@sk-widget/pages/details/activity-page/components/list-item-bullet";
-import { useActivityPage } from "@sk-widget/pages/details/activity-page/hooks/use-activity-page";
-import { ActivityPageContextProvider } from "@sk-widget/pages/details/activity-page/state/activity-page.context";
-import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
-import {
-  type ActionYieldDto,
-  dateGroupLabels,
-} from "@sk-widget/pages/details/activity-page/types";
-import { useMountAnimation } from "@sk-widget/providers/mount-animation";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { Text } from "../../../components/atoms/typography/text";
+import { GroupedVirtualList } from "../../../components/atoms/virtual-list";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import { PageContainer } from "../../components/page-container";
+import { ActionListItem } from "./components/action-list-item";
+import ListItemBullet from "./components/list-item-bullet";
+import { useActivityPage } from "./hooks/use-activity-page";
+import { ActivityPageContextProvider } from "./state/activity-page.context";
+import { ItemBulletType } from "./state/types";
 import { container, listItemWrapper } from "./style.css";
+import { type ActionYieldDto, dateGroupLabels } from "./types";
 
 export const ActivityPageComponent = () => {
   const {

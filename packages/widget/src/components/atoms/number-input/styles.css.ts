@@ -1,6 +1,6 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { vars } from "@sk-widget/styles/theme/contract.css";
 import { style } from "@vanilla-extract/css";
+import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
 
 export const initialFontSizeVar = vars.fontSize["3xl"];
 

@@ -1,17 +1,17 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
-import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
-import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
 import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { Divider } from "../../../../../components/atoms/divider";
+import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
 import { PlusIcon } from "../../../../../components/atoms/icons/plus";
 import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
+import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
+import { useP2PYield } from "../../../../../hooks/api/use-p2p-yield";
 import { noWrap } from "../../../../details/positions-page/components/styles.css";
 import {
   addValidatorButton,

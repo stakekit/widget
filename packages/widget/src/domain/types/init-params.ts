@@ -1,6 +1,6 @@
-import type { SupportedSKChains } from "@sk-widget/domain/types/chains";
-import type { TokenString } from "@sk-widget/domain/types/tokens";
 import type { YieldDto } from "@stakekit/api-hooks";
+import type { SupportedSKChains } from "./chains";
+import type { TokenString } from "./tokens";
 
 export type InitParams = {
   network: SupportedSKChains | null;

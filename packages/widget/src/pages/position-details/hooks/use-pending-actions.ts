@@ -1,6 +1,3 @@
-import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import type {
   PendingActionDto,
   ValidatorDto,
@@ -16,8 +13,11 @@ import {
   PASingleValidatorRequired,
   getTokenPriceInUSD,
 } from "../../../domain";
+import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { defaultFormattedNumber } from "../../../utils";
 import {

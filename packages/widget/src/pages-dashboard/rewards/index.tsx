@@ -1,10 +1,10 @@
-// import { Box } from "@sk-widget/components/atoms/box";
-// import { AnimationPage } from "@sk-widget/navigation/containers/animation-page";
-// import { VerticalDivider } from "@sk-widget/pages-dashboard/common/components/divider";
-// import { TabPageContainer } from "@sk-widget/pages-dashboard/common/components/tab-page-container";
-// import { Summary } from "@sk-widget/pages-dashboard/rewards/components/summary";
-// import { RewardsPage } from "@sk-widget/pages-dashboard/rewards/rewards.page";
-// import { rewardDetailsContainer } from "@sk-widget/pages-dashboard/rewards/styles.css";
+// import { Box } from "../../components/atoms/box";
+// import { AnimationPage } from "../../navigation/containers/animation-page";
+// import { VerticalDivider } from "../common/components/divider";
+// import { TabPageContainer } from "../common/components/tab-page-container";
+// import { Summary } from "./components/summary";
+// import { RewardsPage } from "./rewards.page";
+// import { rewardDetailsContainer } from "./styles.css";
 // import { lazy } from "react";
 
 // const RewardsDetailsTab = lazy(() =>

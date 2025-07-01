@@ -1,5 +1,5 @@
-import type { GetMaybeJust } from "@sk-widget/types/utils";
 import { Just, Maybe, Nothing } from "purify-ts";
+import type { GetMaybeJust } from "../types/utils";
 
 Maybe.fromRecord = <T extends Record<string, Maybe<unknown>>>(
   val: T

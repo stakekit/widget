@@ -1,13 +1,13 @@
-import { vars } from "@sk-widget/styles/theme/contract.css";
-import { rootSelector } from "@sk-widget/styles/theme/ids";
-import { utilaLightThemeOverrides } from "@sk-widget/styles/theme/variant-overrides";
-import type { RecursivePartial } from "@sk-widget/types/utils";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
 import { Just } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
+import { vars } from "../styles/theme/contract.css";
+import { rootSelector } from "../styles/theme/ids";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
+import { utilaLightThemeOverrides } from "../styles/theme/variant-overrides";
+import type { RecursivePartial } from "../types/utils";
 import { useSettings } from "./settings";
 
 export type ThemeWrapperTheme =

@@ -1,9 +1,9 @@
-import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks, type Networks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import { Just } from "purify-ts";
 import { mainnet } from "viem/chains";
 import { getNetworkLogo, getTokenLogo } from "../../../utils";
+import type { CosmosChainsAssets } from "./types";
 
 export const getWagmiChain = (
   chain: CosmosChainsAssets

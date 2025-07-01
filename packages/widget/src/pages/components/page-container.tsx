@@ -1,8 +1,8 @@
-import { BackButton } from "@sk-widget/pages-dashboard/common/components/back-button";
-import { useSettings } from "@sk-widget/providers/settings";
 import type { PropsWithChildren } from "react";
 import type { BoxProps } from "../../components/atoms/box";
 import { Box } from "../../components/atoms/box";
+import { BackButton } from "../../pages-dashboard/common/components/back-button";
+import { useSettings } from "../../providers/settings";
 
 export const PageContainer = ({
   children,

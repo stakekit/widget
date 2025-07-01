@@ -1,10 +1,10 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { defaultFormattedNumber } from "@sk-widget/utils";
 import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../components/atoms/box";
+import { TokenIcon } from "../../components/atoms/token-icon";
+import { Text } from "../../components/atoms/typography/text";
+import { defaultFormattedNumber } from "../../utils";
 
 export const PositionBalances = ({
   yieldBalance,

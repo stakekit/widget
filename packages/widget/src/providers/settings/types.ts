@@ -1,16 +1,12 @@
-import type { SupportedSKChains } from "@sk-widget/domain/types/chains";
-import type { SKExternalProviders } from "@sk-widget/domain/types/wallets";
-import type { ThemeWrapperTheme } from "@sk-widget/providers/theme-wrapper";
-import type {
-  Properties,
-  TrackEventVal,
-  TrackPageVal,
-} from "@sk-widget/providers/tracking";
-import type { BuildWagmiConfig } from "@sk-widget/providers/wagmi";
-import type { Languages, localResources } from "@sk-widget/translation";
-import type { RecursivePartial } from "@sk-widget/types/utils";
 import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
 import type { ReactNode } from "react";
+import type { SupportedSKChains } from "../../domain/types/chains";
+import type { SKExternalProviders } from "../../domain/types/wallets";
+import type { Languages, localResources } from "../../translation";
+import type { RecursivePartial } from "../../types/utils";
+import type { ThemeWrapperTheme } from "../theme-wrapper";
+import type { Properties, TrackEventVal, TrackPageVal } from "../tracking";
+import type { BuildWagmiConfig } from "../wagmi";
 
 export type VariantProps =
   | {

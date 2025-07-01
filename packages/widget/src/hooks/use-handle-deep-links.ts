@@ -1,11 +1,11 @@
-import { useInitQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
-import { useMountAnimation } from "@sk-widget/providers/mount-animation";
-import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { usePendingActionDeepLink } from "../pages/details/earn-page/state/use-pending-action-deep-link";
+import { useMountAnimation } from "../providers/mount-animation";
+import { usePendingActionStore } from "../providers/pending-action-store";
+import { useSKWallet } from "../providers/sk-wallet";
+import { useInitQueryParams } from "./use-init-query-params";
 import { useSavedRef } from "./use-saved-ref";
 
 export const useHandleDeepLinks = () => {

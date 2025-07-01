@@ -1,5 +1,3 @@
-import type { TokenString } from "@sk-widget/domain/types/tokens";
-import type { Override } from "@sk-widget/types/utils";
 import type {
   ActionDto,
   PendingActionDto,
@@ -11,8 +9,10 @@ import type {
 import BigNumber from "bignumber.js";
 import { Left, type Maybe, Right } from "purify-ts";
 import { normalizeChainId } from "wagmi";
+import type { Override } from "../types/utils";
+import type { TokenString } from "./types/tokens";
 
-export { getTokenPriceInUSD } from "@sk-widget/domain/types/price";
+export { getTokenPriceInUSD } from "./types/price";
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;

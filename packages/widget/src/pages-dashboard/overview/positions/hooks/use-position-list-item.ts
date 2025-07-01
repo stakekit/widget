@@ -1,13 +1,13 @@
-import { config } from "@sk-widget/config";
-import { getTokenPriceInUSD } from "@sk-widget/domain";
-import { usePrices } from "@sk-widget/hooks/api/use-prices";
-import { useRewardsSummary } from "@sk-widget/hooks/use-rewards-summary";
-import { usePositionListItem as useBasePositionListItem } from "@sk-widget/pages/details/positions-page/hooks/use-position-list-item";
-import type { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { defaultFormattedNumber, formatNumber } from "@sk-widget/utils";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { config } from "../../../../config";
+import { getTokenPriceInUSD } from "../../../../domain";
+import { usePrices } from "../../../../hooks/api/use-prices";
+import { useRewardsSummary } from "../../../../hooks/use-rewards-summary";
+import { usePositionListItem as useBasePositionListItem } from "../../../../pages/details/positions-page/hooks/use-position-list-item";
+import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
+import { defaultFormattedNumber, formatNumber } from "../../../../utils";
 
 export const usePositionListItem = (
   item: ReturnType<typeof usePositions>["positionsData"]["data"][number]

@@ -1,9 +1,9 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { UtilaFailIcon } from "@sk-widget/components/atoms/icons/utila/fail";
-import { UtilaSuccessIcon } from "@sk-widget/components/atoms/icons/utila/success";
-import { useSettings } from "@sk-widget/providers/settings";
 import { ActionStatus } from "@stakekit/api-hooks";
 import { Just, Nothing } from "purify-ts";
+import { Box } from "../../../../../components/atoms/box";
+import { UtilaFailIcon } from "../../../../../components/atoms/icons/utila/fail";
+import { UtilaSuccessIcon } from "../../../../../components/atoms/icons/utila/success";
+import { useSettings } from "../../../../../providers/settings";
 
 const ListItemBullet = ({
   isFirst,

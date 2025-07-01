@@ -1,12 +1,12 @@
-import type { Prices } from "@sk-widget/domain/types/price";
-import type { FeesBps } from "@sk-widget/pages/review/types";
-import { bpsToAmount, bpsToPercentage } from "@sk-widget/utils";
-import { getFeesInUSD } from "@sk-widget/utils/formatters";
 import type { FeeConfigurationDto, TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, type Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Prices } from "../../../domain/types/price";
+import { bpsToAmount, bpsToPercentage } from "../../../utils";
+import { getFeesInUSD } from "../../../utils/formatters";
+import type { FeesBps } from "../types";
 
 export const useFees = ({
   amount,

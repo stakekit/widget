@@ -1,4 +1,4 @@
-import { useSummary } from "@sk-widget/hooks/use-summary";
+import { useSummary } from "../../../hooks/use-summary";
 
 export const useRewardDetails = () => {
   const {

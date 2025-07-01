@@ -1,15 +1,15 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { MorphoStarsIcon } from "@sk-widget/components/atoms/icons/morpho-stars";
-import { Image } from "@sk-widget/components/atoms/image";
-import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
-import { Text } from "@sk-widget/components/atoms/typography/text";
+import { Trans, useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { MorphoStarsIcon } from "../../../../../components/atoms/icons/morpho-stars";
+import { Image } from "../../../../../components/atoms/image";
+import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { Text } from "../../../../../components/atoms/typography/text";
 import {
   RewardTokenDetails,
   isMorphoProvider,
-} from "@sk-widget/components/molecules/reward-token-details";
-import { VerticalDivider } from "@sk-widget/pages-dashboard/common/components/divider";
-import { useSettings } from "@sk-widget/providers/settings";
-import { Trans, useTranslation } from "react-i18next";
+} from "../../../../../components/molecules/reward-token-details";
+import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
+import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const SelectYieldRewardDetails = () => {

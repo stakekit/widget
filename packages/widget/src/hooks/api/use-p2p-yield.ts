@@ -1,7 +1,7 @@
-import { p2pYieldId } from "@sk-widget/domain/types/yields";
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity/get-yield-opportunity";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
 import { useQuery } from "@tanstack/react-query";
+import { p2pYieldId } from "../../domain/types/yields";
+import { useSKQueryClient } from "../../providers/query-client";
+import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 export const useP2PYield = (enabled: boolean) => {
   const queryClient = useSKQueryClient();

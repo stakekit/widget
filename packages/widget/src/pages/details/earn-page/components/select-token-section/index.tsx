@@ -1,26 +1,26 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { Balance } from "@sk-widget/components/atoms/icons/balance";
-import { MaxButton } from "@sk-widget/components/atoms/max-button";
-import { NumberInput } from "@sk-widget/components/atoms/number-input";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
-import { isUSDeToken } from "@sk-widget/domain/types/tokens";
+import clsx from "clsx";
+import { Just, Maybe } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { Balance } from "../../../../../components/atoms/icons/balance";
+import { MaxButton } from "../../../../../components/atoms/max-button";
+import { NumberInput } from "../../../../../components/atoms/number-input";
+import { Text } from "../../../../../components/atoms/typography/text";
+import * as AmountToggle from "../../../../../components/molecules/amount-toggle";
+import { isUSDeToken } from "../../../../../domain/types/tokens";
+import { useSettings } from "../../../../../providers/settings";
+import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { SelectToken } from "./select-token";
 import {
   bottomBanner,
   bottomBannerBottomRadius,
   bottomBannerText,
   priceTxt,
   selectTokenSection,
-} from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
-import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
-import clsx from "clsx";
-import { Just, Maybe } from "purify-ts";
-import { useTranslation } from "react-i18next";
-import { SelectToken } from "./select-token";
+} from "./styles.css";
 import { SelectTokenTitle } from "./title";
 
 export const SelectTokenSection = () => {

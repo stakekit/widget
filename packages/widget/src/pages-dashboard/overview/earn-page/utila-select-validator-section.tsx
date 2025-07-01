@@ -1,9 +1,9 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
-import { SelectValidatorTrigger } from "@sk-widget/pages-dashboard/overview/earn-page/utila-select-validator-trigger";
-import { useSelectValidator } from "@sk-widget/pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { Maybe } from "purify-ts";
+import { Box } from "../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { SelectValidator } from "../../../components/molecules/select-validator";
+import { useSelectValidator } from "../../../pages/details/earn-page/components/select-validator-section/use-select-validator";
+import { SelectValidatorTrigger } from "./utila-select-validator-trigger";
 
 export const UtilaSelectValidatorSection = () => {
   const {

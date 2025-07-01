@@ -1,13 +1,13 @@
-import {
-  GasTokenMissingError,
-  NotEnoughGasTokenError,
-  checkGasAmount,
-} from "@sk-widget/common/check-gas-amount";
 import type { AddressesDto, TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import type BigNumber from "bignumber.js";
 import { EitherAsync, type Maybe } from "purify-ts";
 import { useMemo } from "react";
+import {
+  GasTokenMissingError,
+  NotEnoughGasTokenError,
+  checkGasAmount,
+} from "../common/check-gas-amount";
 
 export const useGasWarningCheck = (
   props: {

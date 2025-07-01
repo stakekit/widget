@@ -1,11 +1,11 @@
+import { style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
 import {
   widgetContainerMaxWidth,
   widgetContainerName,
-} from "@sk-widget/style.css";
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { minContainerWidth } from "@sk-widget/styles/tokens/breakpoints";
-import { style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
+} from "../../../style.css";
+import { atoms } from "../../../styles/theme/atoms.css";
+import { minContainerWidth } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],

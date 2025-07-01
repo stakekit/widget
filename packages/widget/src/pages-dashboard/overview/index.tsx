@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { AnimationPage } from "@sk-widget/navigation/containers/animation-page";
-import { BackButtonProvider } from "@sk-widget/pages-dashboard/common/components/back-button";
-import { VerticalDivider } from "@sk-widget/pages-dashboard/common/components/divider";
-import { FooterOutlet } from "@sk-widget/pages-dashboard/common/components/footer-outlet";
-import { TabPageContainer } from "@sk-widget/pages-dashboard/common/components/tab-page-container";
-import { PositionsPage } from "@sk-widget/pages-dashboard/overview/positions/positions.page";
-import { Summary } from "@sk-widget/pages-dashboard/overview/summary";
 import { Outlet } from "react-router";
+import { Box } from "../../components/atoms/box";
+import { AnimationPage } from "../../navigation/containers/animation-page";
+import { BackButtonProvider } from "../common/components/back-button";
+import { VerticalDivider } from "../common/components/divider";
+import { FooterOutlet } from "../common/components/footer-outlet";
+import { TabPageContainer } from "../common/components/tab-page-container";
+import { PositionsPage } from "./positions/positions.page";
+import { Summary } from "./summary";
 
 export const OverviewPage = () => {
   return (

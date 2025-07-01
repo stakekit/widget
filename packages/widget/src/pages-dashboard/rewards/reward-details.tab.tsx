@@ -1,8 +1,8 @@
-// import { Box } from "@sk-widget/components/atoms/box";
-// import { Dropdown } from "@sk-widget/components/atoms/dropdown";
-// import { Text } from "@sk-widget/components/atoms/typography/text";
-// import { useRewardDetails } from "@sk-widget/pages-dashboard/rewards/hooks/use-reward-details-tab.hook";
-// import { formatNumber } from "@sk-widget/utils";
+// import { Box } from "../../components/atoms/box";
+// import { Dropdown } from "../../components/atoms/dropdown";
+// import { Text } from "../../components/atoms/typography/text";
+// import { useRewardDetails } from "./hooks/use-reward-details-tab.hook";
+// import { formatNumber } from "../../utils";
 // import {
 //   ArcElement,
 //   Chart as ChartJS,

@@ -1,6 +1,6 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { tabPageContainer } from "@sk-widget/pages-dashboard/common/components/styles.css";
 import clsx from "clsx";
+import { Box } from "../../../components/atoms/box";
+import { tabPageContainer } from "./styles.css";
 
 export const TabPageContainer = ({
   children,

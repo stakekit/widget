@@ -1,12 +1,12 @@
-import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { useYieldType } from "@sk-widget/hooks/use-yield-type";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { defaultFormattedNumber } from "@sk-widget/utils";
 import type { TokenDto } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useActivityContext } from "../../../providers/activity-provider";
+import { defaultFormattedNumber } from "../../../utils";
 
 export const useActivityComplete = () => {
   useTrackPage("activityComplete");

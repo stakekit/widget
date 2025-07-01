@@ -1,21 +1,18 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { AnimationPage } from "@sk-widget/navigation/containers/animation-page";
+import { Outlet } from "react-router";
+import { Box } from "../../components/atoms/box";
+import { AnimationPage } from "../../navigation/containers/animation-page";
+import { usePositionDetails } from "../../pages/position-details/hooks/use-position-details";
+import { UnstakeOrPendingActionProvider } from "../../pages/position-details/state";
 import {
   BackButton,
   BackButtonProvider,
-} from "@sk-widget/pages-dashboard/common/components/back-button";
-import { FooterOutlet } from "@sk-widget/pages-dashboard/common/components/footer-outlet";
-import { TabPageContainer } from "@sk-widget/pages-dashboard/common/components/tab-page-container";
-import { positionDetailsActionsHasContent } from "@sk-widget/pages-dashboard/position-details/components/position-details-actions";
-import { PositionDetailsInfo } from "@sk-widget/pages-dashboard/position-details/components/position-details-info";
-import { TopHeader } from "@sk-widget/pages-dashboard/position-details/components/top-header";
-import {
-  headerContainer,
-  posistionDetailsInfoContainer,
-} from "@sk-widget/pages-dashboard/position-details/styles.css";
-import { usePositionDetails } from "@sk-widget/pages/position-details/hooks/use-position-details";
-import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
-import { Outlet } from "react-router";
+} from "../common/components/back-button";
+import { FooterOutlet } from "../common/components/footer-outlet";
+import { TabPageContainer } from "../common/components/tab-page-container";
+import { positionDetailsActionsHasContent } from "./components/position-details-actions";
+import { PositionDetailsInfo } from "./components/position-details-info";
+import { TopHeader } from "./components/top-header";
+import { headerContainer, posistionDetailsInfoContainer } from "./styles.css";
 
 const PositionDetailsPageComponent = () => {
   const shouldShowActions = positionDetailsActionsHasContent(

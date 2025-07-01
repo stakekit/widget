@@ -1,15 +1,15 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import {
-  SelectModalItem,
-  SelectModalItemContainer,
-} from "@sk-widget/components/atoms/select-modal";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { memo, useMemo } from "react";
+import { Box } from "../../../../../components/atoms/box";
+import {
+  SelectModalItem,
+  SelectModalItemContainer,
+} from "../../../../../components/atoms/select-modal";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { Text } from "../../../../../components/atoms/typography/text";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { defaultFormattedNumber } from "../../../../../utils";
 import { selectItemText } from "../../styles.css";
 

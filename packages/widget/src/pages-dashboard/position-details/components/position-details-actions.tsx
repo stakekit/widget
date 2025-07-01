@@ -1,14 +1,14 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
-import { container } from "@sk-widget/pages-dashboard/position-details/components/styles.css";
-import { AmountBlock } from "@sk-widget/pages/position-details/components/amount-block";
-import { StaticActionBlock } from "@sk-widget/pages/position-details/components/static-action-block";
-import { usePositionDetails } from "@sk-widget/pages/position-details/hooks/use-position-details";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { Spinner } from "../../../components/atoms/spinner";
+import { SelectValidator } from "../../../components/molecules/select-validator";
+import { AmountBlock } from "../../../pages/position-details/components/amount-block";
+import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
+import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import { container } from "./styles.css";
 
 export const positionDetailsActionsHasContent = (
   val: ReturnType<typeof usePositionDetails>

@@ -1,14 +1,14 @@
-import { useActivityPendingActionMatch } from "@sk-widget/hooks/navigation/use-activity-pending-action-match";
-import { useActivityReviewMatch } from "@sk-widget/hooks/navigation/use-activity-review.match";
-import { useActivityUnstakeActionMatch } from "@sk-widget/hooks/navigation/use-activity-unstake.match";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import type { TransactionType } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
+import { useActivityPendingActionMatch } from "../../../hooks/navigation/use-activity-pending-action-match";
+import { useActivityReviewMatch } from "../../../hooks/navigation/use-activity-review.match";
+import { useActivityUnstakeActionMatch } from "../../../hooks/navigation/use-activity-unstake.match";
 import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-action-match";
 import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { MaybeWindow } from "../../../utils/maybe-window";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 

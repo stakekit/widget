@@ -1,16 +1,16 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { VirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { ZerionChainModal } from "@sk-widget/components/molecules/zerion-chain-modal";
-import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import { PositionsListItem } from "@sk-widget/pages-dashboard/overview/positions/components/positions-list-item";
-import { FallbackContent } from "@sk-widget/pages/details/positions-page/components/fallback-content";
-import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { ToolTip } from "../../../components/atoms/tooltip";
+import { Text } from "../../../components/atoms/typography/text";
+import { VirtualList } from "../../../components/atoms/virtual-list";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { FallbackContent } from "../../../pages/details/positions-page/components/fallback-content";
+import { usePositions } from "../../../pages/details/positions-page/hooks/use-positions";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { PositionsListItem } from "./components/positions-list-item";
 import { container, headerContainer } from "./styles.css";
 
 export const PositionsPage = () => {

@@ -1,8 +1,3 @@
-import {
-  isEigenRestaking,
-  p2pProviderId,
-} from "@sk-widget/domain/types/yields";
-import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type {
   ActionRequestDto,
   ValidatorDto,
@@ -10,7 +5,12 @@ import type {
 } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import {
+  isEigenRestaking,
+  p2pProviderId,
+} from "../../../../domain/types/yields";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useEarnPageState } from "./earn-page-state-context";
 
 export const useStakeEnterRequestDto = () => {
   const {

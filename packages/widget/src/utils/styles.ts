@@ -1,5 +1,5 @@
-import type { VariantProps } from "@sk-widget/providers/settings/types";
 import type { recipe } from "@vanilla-extract/recipes";
+import type { VariantProps } from "../providers/settings/types";
 
 export const combineRecipeWithVariant = ({
   rec,

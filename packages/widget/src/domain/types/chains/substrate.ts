@@ -1,6 +1,6 @@
-import { getNetworkLogo } from "@sk-widget/utils";
 import { SubstrateNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import { getNetworkLogo } from "../../../utils";
 
 const supportedSubstrateChains = [
   SubstrateNetworks.Polkadot,

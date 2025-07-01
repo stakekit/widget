@@ -1,13 +1,13 @@
-import {
-  type SupportedSKChains,
-  isSupportedChain,
-} from "@sk-widget/domain/types/chains";
-import type { TokenString } from "@sk-widget/domain/types/tokens";
-import { useSettings } from "@sk-widget/providers/settings";
-import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { Codec, Left, Right, string } from "purify-ts";
 import { useMemo } from "react";
+import {
+  type SupportedSKChains,
+  isSupportedChain,
+} from "../domain/types/chains";
+import type { TokenString } from "../domain/types/tokens";
+import { useSettings } from "../providers/settings";
+import { MaybeWindow } from "../utils/maybe-window";
 
 export const useInitQueryParams = () => {
   const { externalProviders } = useSettings();

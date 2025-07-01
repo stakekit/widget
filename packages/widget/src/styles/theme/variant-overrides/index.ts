@@ -1,6 +1,6 @@
-import { vars } from "@sk-widget/styles/theme/contract.css";
-import type { lightTheme } from "@sk-widget/styles/theme/themes";
-import type { RecursivePartial } from "@sk-widget/types/utils";
+import type { RecursivePartial } from "../../../types/utils";
+import { vars } from "../contract.css";
+import type { lightTheme } from "../themes";
 
 export const utilaLightThemeOverrides: RecursivePartial<typeof lightTheme> = {
   space: {

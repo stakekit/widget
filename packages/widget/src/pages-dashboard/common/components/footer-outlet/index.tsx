@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { useIsomorphicEffect } from "@sk-widget/hooks/use-isomorphic-effect";
+import { Box } from "../../../../components/atoms/box";
+import { Button } from "../../../../components/atoms/button";
+import { useIsomorphicEffect } from "../../../../hooks/use-isomorphic-effect";
 import {
   type FooterButtonVal,
   useFooterButton,
   useFooterHeight,
   useSyncFooterHeight,
-} from "@sk-widget/pages/components/footer-outlet/context";
+} from "../../../../pages/components/footer-outlet/context";
 
 const FooterButton = ({
   disabled,

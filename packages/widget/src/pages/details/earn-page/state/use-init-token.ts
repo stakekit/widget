@@ -1,16 +1,16 @@
-import { getTokenBalances } from "@sk-widget/common/get-token-balances";
-import { tokenString } from "@sk-widget/domain";
-import { getInitialToken } from "@sk-widget/domain/types/stake";
-import { getFirstEligibleYield } from "@sk-widget/hooks/api/use-multi-yields";
-import { getInitParams } from "@sk-widget/hooks/use-init-params";
-import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
 import { BigNumber } from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
+import { getTokenBalances } from "../../../../common/get-token-balances";
+import { tokenString } from "../../../../domain";
+import { getInitialToken } from "../../../../domain/types/stake";
+import { getFirstEligibleYield } from "../../../../hooks/api/use-multi-yields";
+import { getInitParams } from "../../../../hooks/use-init-params";
+import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { useWhitelistedValidators } from "../../../../hooks/use-whitelisted-validators";
+import { useSKQueryClient } from "../../../../providers/query-client";
+import { useSettings } from "../../../../providers/settings";
+import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
 /**

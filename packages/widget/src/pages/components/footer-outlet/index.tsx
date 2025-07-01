@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { useIsomorphicEffect } from "@sk-widget/hooks/use-isomorphic-effect";
-import { useMountAnimation } from "@sk-widget/providers/mount-animation";
-import { useSettings } from "@sk-widget/providers/settings";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useState } from "react";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import { useSettings } from "../../../providers/settings";
 import type { FooterButtonVal } from "./context";
 import {
   useFooterButton,

@@ -1,8 +1,8 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { SelectValidator } from "@sk-widget/components/molecules/select-validator";
-import { isEigenRestaking } from "@sk-widget/domain/types/yields";
 import { Maybe } from "purify-ts";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { SelectValidator } from "../../../../../components/molecules/select-validator";
+import { isEigenRestaking } from "../../../../../domain/types/yields";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";
 

@@ -1,16 +1,16 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
-import { SearchIcon } from "@sk-widget/components/atoms/icons/search";
-import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import { id } from "@sk-widget/styles/theme/ids";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { id } from "../../../styles/theme/ids";
 import { Box } from "../box";
+import { SearchIcon } from "../icons/search";
+import { XIcon } from "../icons/x-icon";
 import { ListItem } from "../list/list-item";
 import type { ItemContainerVariants } from "../list/styles.css";
 import { Spinner } from "../spinner";
+import { Text } from "../typography/text";
 import {
   container,
   content,

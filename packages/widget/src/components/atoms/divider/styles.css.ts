@@ -1,5 +1,5 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../styles/theme/atoms.css";
 
 export const divider = recipe({
   base: atoms({

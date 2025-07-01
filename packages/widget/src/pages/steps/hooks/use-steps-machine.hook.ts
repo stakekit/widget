@@ -1,10 +1,3 @@
-import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import { useSettings } from "@sk-widget/providers/settings";
-import type {
-  SendTransactionError,
-  TransactionDecodeError,
-} from "@sk-widget/providers/sk-wallet/errors";
 import type {
   ActionDto,
   TransactionDto,
@@ -25,8 +18,15 @@ import { assign, emit, setup } from "xstate";
 import { getAverageGasMode } from "../../../common/get-gas-mode-value";
 import { withRequestErrorRetry } from "../../../common/utils";
 import { isTxError } from "../../../domain";
+import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import type {
+  SendTransactionError,
+  TransactionDecodeError,
+} from "../../../providers/sk-wallet/errors";
 import type { GetStakeSessionError } from "./errors";
 import {
   SignError,

@@ -1,7 +1,7 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { CaretLeftIcon } from "@sk-widget/components/atoms/icons/caret-left";
-import { useHeader } from "@sk-widget/components/molecules/header/use-header";
 import { type PropsWithChildren, createContext, useContext } from "react";
+import { Box } from "../../../components/atoms/box";
+import { CaretLeftIcon } from "../../../components/atoms/icons/caret-left";
+import { useHeader } from "../../../components/molecules/header/use-header";
 
 export const BackButtonContext = createContext<boolean>(false);
 

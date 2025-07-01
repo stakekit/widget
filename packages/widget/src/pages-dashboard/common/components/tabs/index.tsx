@@ -1,15 +1,11 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import {
-  divider,
-  tabsContainer,
-  tabsWrapper,
-} from "@sk-widget/pages-dashboard/common/components/tabs/styles.css";
-import { useSKLocation } from "@sk-widget/providers/location";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { useNavigate } from "react-router";
+import { Box } from "../../../../components/atoms/box";
+import { Divider } from "../../../../components/atoms/divider";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { useSKLocation } from "../../../../providers/location";
+import { useSettings } from "../../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../../utils/styles";
+import { divider, tabsContainer, tabsWrapper } from "./styles.css";
 import { Tab } from "./tab";
 
 type TabsList =

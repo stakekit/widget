@@ -1,9 +1,9 @@
-import { config } from "@sk-widget/config";
-import type { SettingsContextType } from "@sk-widget/providers/settings/types";
-import utilaTranslations from "@sk-widget/translation/English/utila-variant.json";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { config } from "../../config";
+import utilaTranslations from "../../translation/English/utila-variant.json";
+import type { SettingsContextType } from "./types";
 
 const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined

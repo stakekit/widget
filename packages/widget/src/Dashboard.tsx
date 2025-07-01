@@ -1,23 +1,23 @@
-import { ConnectedCheck } from "@sk-widget/navigation/cheks/connected-check";
-import { ActivityTabPage } from "@sk-widget/pages-dashboard/activity";
-import { ActivityDetailsPage } from "@sk-widget/pages-dashboard/activity/activity-details.page";
-import { DashboardWrapper } from "@sk-widget/pages-dashboard/common/components/wrapper";
-import { OverviewPage } from "@sk-widget/pages-dashboard/overview";
-import { EarnPage } from "@sk-widget/pages-dashboard/overview/earn-page";
-import { PositionDetailsPage } from "@sk-widget/pages-dashboard/position-details";
-import { PositionDetailsActions } from "@sk-widget/pages-dashboard/position-details/components/position-details-actions";
-// import { RewardsTabPage } from "@sk-widget/pages-dashboard/rewards";
-import { PendingCompletePage } from "@sk-widget/pages/complete/pages/pending-complete.page";
-import { StakeCompletePage } from "@sk-widget/pages/complete/pages/stake-complete.page";
-import { UnstakeCompletePage } from "@sk-widget/pages/complete/pages/unstake-complete.page";
-import { StakeReviewPage } from "@sk-widget/pages/review";
-import { PendingReviewPage } from "@sk-widget/pages/review/pages/pending-review.page";
-import { UnstakeReviewPage } from "@sk-widget/pages/review/pages/unstake-review.page";
-import { StakeStepsPage } from "@sk-widget/pages/steps";
-import { ActivityStepsPage } from "@sk-widget/pages/steps/pages/activity-steps.page";
-import { PendingStepsPage } from "@sk-widget/pages/steps/pages/pending-steps.page";
-import { UnstakeStepsPage } from "@sk-widget/pages/steps/pages/unstake-steps.page";
 import { Route, Routes } from "react-router";
+import { ConnectedCheck } from "./navigation/cheks/connected-check";
+import { ActivityTabPage } from "./pages-dashboard/activity";
+import { ActivityDetailsPage } from "./pages-dashboard/activity/activity-details.page";
+import { DashboardWrapper } from "./pages-dashboard/common/components/wrapper";
+import { OverviewPage } from "./pages-dashboard/overview";
+import { EarnPage } from "./pages-dashboard/overview/earn-page";
+import { PositionDetailsPage } from "./pages-dashboard/position-details";
+import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
+// import { RewardsTabPage } from "./pages-dashboard/rewards";
+import { PendingCompletePage } from "./pages/complete/pages/pending-complete.page";
+import { StakeCompletePage } from "./pages/complete/pages/stake-complete.page";
+import { UnstakeCompletePage } from "./pages/complete/pages/unstake-complete.page";
+import { StakeReviewPage } from "./pages/review";
+import { PendingReviewPage } from "./pages/review/pages/pending-review.page";
+import { UnstakeReviewPage } from "./pages/review/pages/unstake-review.page";
+import { StakeStepsPage } from "./pages/steps";
+import { ActivityStepsPage } from "./pages/steps/pages/activity-steps.page";
+import { PendingStepsPage } from "./pages/steps/pages/pending-steps.page";
+import { UnstakeStepsPage } from "./pages/steps/pages/unstake-steps.page";
 
 export const Dashboard = () => {
   return (

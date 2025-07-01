@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { AvatarContext, ConnectButton } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import { useContext } from "react";
 import type { Address } from "viem";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { Box } from "../../atoms/box";
+import { CaretDownIcon } from "../../atoms/icons/caret-down";
+import { Text } from "../../atoms/typography/text";
 import { avatarContainer, container, titleStyle } from "./styles.css";
 
 export const AccountModal = () => {

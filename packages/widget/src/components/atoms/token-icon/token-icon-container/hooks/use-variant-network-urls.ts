@@ -1,10 +1,10 @@
-import type { SupportedSKChains } from "@sk-widget/domain/types/chains";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { SettingsProps } from "@sk-widget/providers/settings/types";
-import { getNetworkLogo } from "@sk-widget/utils";
 import type { Networks } from "@stakekit/common";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { SupportedSKChains } from "../../../../../domain/types/chains";
+import { useSettings } from "../../../../../providers/settings";
+import type { SettingsProps } from "../../../../../providers/settings/types";
+import { getNetworkLogo } from "../../../../../utils";
 
 export const getVariantNetworkUrl = ({
   chainIconMapping,

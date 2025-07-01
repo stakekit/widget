@@ -1,6 +1,6 @@
-import { yieldYieldOpportunity } from "@sk-widget/common/private-api";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import { yieldYieldOpportunity } from "../../../common/private-api";
 
 type Params = {
   yieldId: string;

@@ -1,7 +1,4 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
-import type { SendTransactionError } from "@sk-widget/providers/sk-wallet/errors";
-import type { TransactionDecodeError } from "@sk-widget/providers/sk-wallet/errors";
-import type { Nullable } from "@sk-widget/types/utils";
 import type {
   AddressWithTokenDtoAdditionalAddresses,
   Networks,
@@ -10,6 +7,9 @@ import type {
 import type { EitherAsync } from "purify-ts";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
+import type { SendTransactionError } from "../../providers/sk-wallet/errors";
+import type { TransactionDecodeError } from "../../providers/sk-wallet/errors";
+import type { Nullable } from "../../types/utils";
 import type { SupportedSKChains } from "./chains";
 import type { SKTxMeta } from "./wallets/generic-wallet";
 

@@ -1,14 +1,14 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { ArrowsLeftRightIcon } from "@sk-widget/components/atoms/icons/arrows-left-right";
-import { ClockClockWiseIcon } from "@sk-widget/components/atoms/icons/clock-clock-wise";
-import { GifIcon } from "@sk-widget/components/atoms/icons/gift";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useYieldMetaInfo } from "@sk-widget/hooks/use-yield-meta-info";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { type JSX, type ReactNode, useMemo } from "react";
+import { Box } from "../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { ArrowsLeftRightIcon } from "../../../components/atoms/icons/arrows-left-right";
+import { ClockClockWiseIcon } from "../../../components/atoms/icons/clock-clock-wise";
+import { GifIcon } from "../../../components/atoms/icons/gift";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { Text } from "../../../components/atoms/typography/text";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 
 type Props = {

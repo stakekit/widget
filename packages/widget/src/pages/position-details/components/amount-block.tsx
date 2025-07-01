@@ -1,21 +1,21 @@
-import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { MaxButton } from "@sk-widget/components/atoms/max-button";
-import {
-  NumberInput,
-  type NumberInputProps,
-} from "@sk-widget/components/atoms/number-input";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
-import { useYieldMetaInfo } from "@sk-widget/hooks/use-yield-meta-info";
-import { priceTxt } from "@sk-widget/pages/position-details/styles.css";
-import { defaultFormattedNumber, formatNumber } from "@sk-widget/utils";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Box, type BoxProps } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { MaxButton } from "../../../components/atoms/max-button";
+import {
+  NumberInput,
+  type NumberInputProps,
+} from "../../../components/atoms/number-input";
+import { Text } from "../../../components/atoms/typography/text";
+import * as AmountToggle from "../../../components/molecules/amount-toggle";
+import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
+import { defaultFormattedNumber, formatNumber } from "../../../utils";
+import { priceTxt } from "../styles.css";
 
 type AmountBlockProps = {
   onAmountChange: NumberInputProps["onChange"];

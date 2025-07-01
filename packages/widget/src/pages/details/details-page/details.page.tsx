@@ -1,9 +1,9 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { AnimatedTabs } from "@sk-widget/pages/details/details-page/components/tabs";
-import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
 import { motion } from "motion/react";
 import { useMemo } from "react";
 import { Outlet } from "react-router";
+import { Box } from "../../../components/atoms/box";
+import { usePositions } from "../positions-page/hooks/use-positions";
+import { AnimatedTabs } from "./components/tabs";
 
 export const Details = () => {
   const { positionsData } = usePositions();

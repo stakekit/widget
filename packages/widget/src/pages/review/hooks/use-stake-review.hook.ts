@@ -1,17 +1,3 @@
-import { getValidStakeSessionTx } from "@sk-widget/domain";
-import { useTokensPrices } from "@sk-widget/hooks/api/use-tokens-prices";
-import { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
-import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
-import { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import { useYieldType } from "@sk-widget/hooks/use-yield-type";
-import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
-import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
-import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
-import { useSettings } from "@sk-widget/providers/settings";
-import { formatNumber } from "@sk-widget/utils";
-import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import {
   actionEnter,
   useActionEnterGasEstimation,
@@ -25,6 +11,20 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { getValidStakeSessionTx } from "../../../domain";
+import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
+import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
+import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
+import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useEnterStakeStore } from "../../../providers/enter-stake-store";
+import { useSettings } from "../../../providers/settings";
+import { formatNumber } from "../../../utils";
+import { getGasFeeInUSD } from "../../../utils/formatters";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { MetaInfoProps } from "../pages/common-page/common.page";
+import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
   const enterStore = useEnterStakeStore();

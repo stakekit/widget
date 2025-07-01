@@ -1,16 +1,16 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ListItem } from "@sk-widget/components/atoms/list/list-item";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
-import { usePositionListItem } from "@sk-widget/pages/details/positions-page/hooks/use-position-list-item";
 import { List, Maybe } from "purify-ts";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { SKLink } from "../../../../components/atoms/link";
+import { ListItem } from "../../../../components/atoms/list/list-item";
+import { Spinner } from "../../../../components/atoms/spinner";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
+import { ToolTip } from "../../../../components/atoms/tooltip";
+import { Text } from "../../../../components/atoms/typography/text";
+import type { PositionDetailsLabelType } from "../../../../domain/types/positions";
+import { usePositionListItem } from "../hooks/use-position-list-item";
 import type { usePositions } from "../hooks/use-positions";
 import {
   listItemContainer,

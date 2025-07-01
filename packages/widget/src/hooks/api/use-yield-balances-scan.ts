@@ -1,4 +1,3 @@
-import { yieldYieldBalancesScan } from "@sk-widget/common/private-api";
 import type {
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
@@ -6,6 +5,7 @@ import type {
 import { useQuery } from "@tanstack/react-query";
 import { Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
+import { yieldYieldBalancesScan } from "../../common/private-api";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";

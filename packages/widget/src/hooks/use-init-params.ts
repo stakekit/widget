@@ -1,15 +1,15 @@
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity/get-yield-opportunity";
-import { getAndValidateInitParams } from "@sk-widget/hooks/use-init-query-params";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { SettingsContextType } from "@sk-widget/providers/settings/types";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SupportedSKChains } from "../domain/types/chains";
 import type { InitParams } from "../domain/types/init-params";
 import { useSKQueryClient } from "../providers/query-client";
+import { useSettings } from "../providers/settings";
+import type { SettingsContextType } from "../providers/settings/types";
+import { useSKWallet } from "../providers/sk-wallet";
+import { getYieldOpportunity } from "./api/use-yield-opportunity/get-yield-opportunity";
+import { getAndValidateInitParams } from "./use-init-query-params";
+import { useWhitelistedValidators } from "./use-whitelisted-validators";
 
 const queryKey = ["init-params"];
 const staleTime = 0;

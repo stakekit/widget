@@ -1,7 +1,7 @@
-import { queryFn } from "@sk-widget/hooks/api/use-yield-opportunity/get-yield-opportunity";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useQuery } from "@tanstack/react-query";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { useWhitelistedValidators } from "../../use-whitelisted-validators";
+import { queryFn } from "./get-yield-opportunity";
 
 type Params = {
   yieldId: string;

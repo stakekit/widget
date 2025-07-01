@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { Heading } from "@sk-widget/components/atoms/typography/heading";
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { PageContainer } from "@sk-widget/pages/components/page-container";
 import type { ActionDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { Heading } from "../../../components/atoms/typography/heading";
+import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
+import { PageContainer } from "../../components/page-container";
 import { useSteps } from "../hooks/use-steps.hook";
 import { TxState } from "./tx-state";
 

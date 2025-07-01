@@ -1,26 +1,26 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { ListItem } from "@sk-widget/components/atoms/list/list-item";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
+import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
+import clsx from "clsx";
+import { List } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { ListItem } from "../../../components/atoms/list/list-item";
+import { TokenIcon } from "../../../components/atoms/token-icon";
+import { Text } from "../../../components/atoms/typography/text";
+import { useActionListItem } from "../../../pages/details/activity-page/hooks/use-action-list-item";
+import {
+  badgeText,
+  listItemContainer,
+  utilaBadgeText,
+} from "../../../pages/details/positions-page/style.css";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import {
   activityDetailsContainer,
   listItem,
   noWrap,
   viaText,
-} from "@sk-widget/pages-dashboard/activity/action-list-item/style.css";
-import { useActionListItem } from "@sk-widget/pages/details/activity-page/hooks/use-action-list-item";
-import {
-  badgeText,
-  listItemContainer,
-  utilaBadgeText,
-} from "@sk-widget/pages/details/positions-page/style.css";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
-import clsx from "clsx";
-import { List } from "purify-ts";
-import { useTranslation } from "react-i18next";
+} from "./style.css";
 
 type ActionYieldDto = {
   actionData: ActionDto;

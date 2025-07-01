@@ -1,14 +1,14 @@
-import { CaretLeftIcon } from "@sk-widget/components/atoms/icons/caret-left";
-import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
-import { useHeader } from "@sk-widget/components/molecules/header/use-header";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { motion } from "motion/react";
 import { Maybe } from "purify-ts";
 import { Box } from "../../atoms/box";
+import { CaretLeftIcon } from "../../atoms/icons/caret-left";
+import { XIcon } from "../../atoms/icons/x-icon";
 import { AccountModal } from "../account-modal";
 import { ChainModal } from "../chain-modal";
 import { animationContainer, parentButton } from "./styles.css";
+import { useHeader } from "./use-header";
 
 export const Header = () => {
   const {

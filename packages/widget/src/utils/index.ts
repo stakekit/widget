@@ -1,9 +1,9 @@
-import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { i18n } from "i18next";
 import { Just } from "purify-ts";
 import { config } from "../config";
+import { ItemBulletType } from "../pages/details/activity-page/state/types";
 import { MaybeWindow } from "./maybe-window";
 
 BigNumber.config({

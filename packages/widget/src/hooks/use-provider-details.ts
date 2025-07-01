@@ -1,10 +1,10 @@
-import { isEigenRestaking } from "@sk-widget/domain/types/yields";
-import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
-import type { GetMaybeJust } from "@sk-widget/types/utils";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { isEigenRestaking } from "../domain/types/yields";
+import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
+import { useP2PYield } from "./api/use-p2p-yield";
 
 type Res = Maybe<{
   logo: string | undefined;

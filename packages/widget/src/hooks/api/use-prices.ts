@@ -1,8 +1,8 @@
-import type { Prices } from "@sk-widget/domain/types/price";
 import type { PriceRequestDto, PriceResponseDto } from "@stakekit/api-hooks";
 import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
 import { useCallback } from "react";
 import { createSelector } from "reselect";
+import type { Prices } from "../../domain/types/price";
 import { priceResponseDtoToPrices } from "../../utils/mappers";
 
 const defaultParam: PriceRequestDto = {

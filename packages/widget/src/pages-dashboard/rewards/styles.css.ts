@@ -1,11 +1,8 @@
-import {
-  widgetContainerMaxWidth,
-  widgetContainerName,
-} from "@sk-widget/style.css";
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { minContainerWidth } from "@sk-widget/styles/tokens/breakpoints";
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
+import { widgetContainerMaxWidth, widgetContainerName } from "../../style.css";
+import { atoms } from "../../styles/theme/atoms.css";
+import { minContainerWidth } from "../../styles/tokens/breakpoints";
 
 export const container = style({
   minHeight: "300px",

@@ -1,4 +1,3 @@
-import type { GetEitherRight } from "@sk-widget/types/utils";
 import type { GetType } from "purify-ts";
 import {
   Codec,
@@ -14,6 +13,7 @@ import {
   unknown,
 } from "purify-ts";
 import { type Address, type Hex, numberToHex } from "viem";
+import type { GetEitherRight } from "../../types/utils";
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {

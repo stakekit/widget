@@ -1,5 +1,3 @@
-import { PageContainer } from "@sk-widget/pages/components/page-container";
-import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
@@ -10,6 +8,7 @@ import { ZerionChainModal } from "../../../components/molecules/zerion-chain-mod
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
+import { PageContainer } from "../../components/page-container";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
 import { SelectTokenSection } from "./components/select-token-section";
@@ -21,6 +20,7 @@ import {
   EarnPageContextProvider,
   useEarnPageContext,
 } from "./state/earn-page-context";
+import { EarnPageStateUsageBoundaryProvider } from "./state/earn-page-state-context";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");

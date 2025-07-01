@@ -1,10 +1,10 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { SummaryItem } from "@sk-widget/components/molecules/summary-item";
-import { summaryContainer } from "@sk-widget/components/molecules/summary-item/index.css";
-import { useSummary } from "@sk-widget/hooks/use-summary";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { SummaryItem } from "../../../components/molecules/summary-item";
+import { summaryContainer } from "../../../components/molecules/summary-item/index.css";
+import { useSummary } from "../../../hooks/use-summary";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 
 export const Summary = () => {
   const { allPositionsQuery, rewardsPositionsQuery, availableBalanceSumQuery } =

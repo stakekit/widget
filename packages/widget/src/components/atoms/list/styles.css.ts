@@ -1,7 +1,7 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { vars } from "@sk-widget/styles/theme/contract.css";
 import type { RecipeVariants } from "@vanilla-extract/recipes";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
 
 export const itemContainer = recipe({
   base: [

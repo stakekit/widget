@@ -1,22 +1,22 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
+import { Box } from "../../../components/atoms/box";
+import { Divider } from "../../../components/atoms/divider";
+import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/extra-args-selection";
+import { Footer } from "../../../pages/details/earn-page/components/footer";
+import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
+import { SelectTokenTitle } from "../../../pages/details/earn-page/components/select-token-section/title";
+import { SelectValidatorSection } from "../../../pages/details/earn-page/components/select-validator-section";
+import { SelectYieldSection } from "../../../pages/details/earn-page/components/select-yield-section";
+import { StakedVia } from "../../../pages/details/earn-page/components/select-yield-section/staked-via";
+import { EarnPageContextProvider } from "../../../pages/details/earn-page/state/earn-page-context";
+import { EarnPageStateUsageBoundaryProvider } from "../../../pages/details/earn-page/state/earn-page-state-context";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import {
   container,
   selectTokenTitleContainer,
   selectValidatorSectionContainer,
-} from "@sk-widget/pages-dashboard/overview/earn-page/styles.css";
-import { UtilaSelectValidatorSection } from "@sk-widget/pages-dashboard/overview/earn-page/utila-select-validator-section";
-import { ExtraArgsSelection } from "@sk-widget/pages/details/earn-page/components/extra-args-selection";
-import { Footer } from "@sk-widget/pages/details/earn-page/components/footer";
-import { SelectTokenSection } from "@sk-widget/pages/details/earn-page/components/select-token-section";
-import { SelectTokenTitle } from "@sk-widget/pages/details/earn-page/components/select-token-section/title";
-import { SelectValidatorSection } from "@sk-widget/pages/details/earn-page/components/select-validator-section";
-import { SelectYieldSection } from "@sk-widget/pages/details/earn-page/components/select-yield-section";
-import { StakedVia } from "@sk-widget/pages/details/earn-page/components/select-yield-section/staked-via";
-import { EarnPageContextProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
-import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
+} from "./styles.css";
+import { UtilaSelectValidatorSection } from "./utila-select-validator-section";
 
 export const EarnPage = () => {
   const { variant } = useSettings();

@@ -1,8 +1,8 @@
-import { config } from "@sk-widget/config";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { SettingsProps } from "@sk-widget/providers/settings/types";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import { config } from "../../config";
+import { useSettings } from "../settings";
+import type { SettingsProps } from "../settings/types";
 
 export const useTrackingProps = (): {
   tracking: SettingsProps["tracking"];

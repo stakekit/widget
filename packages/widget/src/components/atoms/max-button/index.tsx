@@ -1,11 +1,11 @@
-import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
-import { pressAnimation } from "@sk-widget/components/atoms/button/styles.css";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import clsx from "clsx";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
+import { Box, type BoxProps } from "../box";
+import { pressAnimation } from "../button/styles.css";
+import { Text } from "../typography/text";
 import { container, text } from "./styles.css";
 
 type MaxButtonProps = PropsWithChildren<{

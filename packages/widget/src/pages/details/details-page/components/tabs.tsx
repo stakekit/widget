@@ -1,13 +1,13 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useSKLocation } from "@sk-widget/providers/location";
-import { useMountAnimation } from "@sk-widget/providers/mount-animation";
-import { useSettings } from "@sk-widget/providers/settings";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useNavigate } from "react-router";
+import { Box } from "../../../../components/atoms/box";
+import { Divider } from "../../../../components/atoms/divider";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { useSKLocation } from "../../../../providers/location";
+import { useMountAnimation } from "../../../../providers/mount-animation";
+import { useSettings } from "../../../../providers/settings";
 import { divider } from "../styles.css";
 import { Tab } from "./tab";
 

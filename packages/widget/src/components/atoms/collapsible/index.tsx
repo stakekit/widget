@@ -1,4 +1,3 @@
-import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
 import clsx from "clsx";
 import type { Variants } from "motion/react";
 import { AnimatePresence, motion, useAnimate, usePresence } from "motion/react";
@@ -8,6 +7,7 @@ import { useFirstMountState } from "../../../hooks/use-first-mount-state";
 import { useDisableTransitionDuration } from "../../../navigation/containers/animation-layout";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
+import { CaretDownIcon } from "../icons/caret-down";
 import { caretContainer, rotate180deg, triggerContainer } from "./styles.css";
 
 type State = { collapsed: boolean; onClick: () => void; initial?: never };

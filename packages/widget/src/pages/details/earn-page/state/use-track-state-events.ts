@@ -1,7 +1,7 @@
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { useEffect } from "react";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const useTrackStateEvents = ({
   initToken,

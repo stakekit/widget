@@ -1,23 +1,23 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Button } from "@sk-widget/components/atoms/button";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { Heading } from "@sk-widget/components/atoms/typography/heading";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { PageContainer } from "@sk-widget/pages/components/page-container";
-import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../components/atoms/box";
+import { Button } from "../../components/atoms/button";
+import { InfoIcon } from "../../components/atoms/icons/info";
+import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
+import { Heading } from "../../components/atoms/typography/heading";
+import { Text } from "../../components/atoms/typography/text";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
+import { PageContainer } from "../components/page-container";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
 import { usePositionDetails } from "./hooks/use-position-details";
+import { UnstakeOrPendingActionProvider } from "./state";
 import { container } from "./styles.css";
 
 const PositionDetails = () => {

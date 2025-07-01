@@ -1,9 +1,9 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { topHeaderYieldName } from "@sk-widget/pages-dashboard/position-details/components/styles.css";
-import { usePositionDetails } from "@sk-widget/pages/position-details/hooks/use-position-details";
 import { Just, Maybe } from "purify-ts";
+import { Box } from "../../../components/atoms/box";
+import { TokenIcon } from "../../../components/atoms/token-icon";
+import { Text } from "../../../components/atoms/typography/text";
+import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import { topHeaderYieldName } from "./styles.css";
 
 export const TopHeader = () => {
   const { unstakeToken, integrationData, positionBalancesByType } =

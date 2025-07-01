@@ -1,10 +1,3 @@
-import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import { useYieldType } from "@sk-widget/hooks/use-yield-type";
-import type { LabelKey } from "@sk-widget/pages/review/types";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { defaultFormattedNumber } from "@sk-widget/utils";
-import { dateOlderThen7Days } from "@sk-widget/utils/date";
-import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import {
   ActionTypes,
   type TokenDto,
@@ -15,7 +8,14 @@ import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useYieldType } from "../../../hooks/use-yield-type";
+import { useActivityContext } from "../../../providers/activity-provider";
+import { defaultFormattedNumber } from "../../../utils";
+import { dateOlderThen7Days } from "../../../utils/date";
+import { MaybeWindow } from "../../../utils/maybe-window";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { LabelKey } from "../types";
 
 export const useActionReview = () => {
   useTrackPage("stakeReview");

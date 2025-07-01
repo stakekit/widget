@@ -1,10 +1,4 @@
 import {
-  type EnabledRewardsSummaryYieldId,
-  isValidYieldIdForRewardsSummary,
-} from "@sk-widget/domain/types/rewards";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import {
   type AddressesDto,
   type YieldDto,
   type YieldRewardsSummaryResponseDto,
@@ -12,6 +6,12 @@ import {
 } from "@stakekit/api-hooks";
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import {
+  type EnabledRewardsSummaryYieldId,
+  isValidYieldIdForRewardsSummary,
+} from "../domain/types/rewards";
+import { useSKQueryClient } from "../providers/query-client";
+import { useSKWallet } from "../providers/sk-wallet";
 
 export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
   yieldIds: YieldDto["id"][],

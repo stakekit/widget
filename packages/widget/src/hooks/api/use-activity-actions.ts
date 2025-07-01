@@ -1,7 +1,3 @@
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity/get-yield-opportunity";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
   type ActionDto,
   type ActionList200,
@@ -12,6 +8,10 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
+import { useSKQueryClient } from "../../providers/query-client";
+import { useSKWallet } from "../../providers/sk-wallet";
+import { useWhitelistedValidators } from "../use-whitelisted-validators";
+import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 export const useActivityActions = () => {
   const { address, network, isLedgerLive } = useSKWallet();

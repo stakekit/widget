@@ -1,9 +1,9 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { CaretDownIcon } from "@sk-widget/components/atoms/icons/caret-down";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { id } from "@sk-widget/styles/theme/ids";
 import { Fragment } from "react";
+import { id } from "../../../styles/theme/ids";
 import { Box } from "../box";
+import { CaretDownIcon } from "../icons/caret-down";
+import { Text } from "../typography/text";
 import {
   dropdownContent,
   dropdownGroup,

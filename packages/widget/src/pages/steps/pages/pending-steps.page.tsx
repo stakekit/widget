@@ -1,11 +1,11 @@
-import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
-import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
+import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { StepsPage } from "./common.page";
 
 export const PendingStepsPage = () => {

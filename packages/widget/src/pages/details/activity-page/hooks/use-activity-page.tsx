@@ -1,10 +1,10 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { useTrackPage } from "@sk-widget/hooks/tracking/use-track-page";
-import { useActivityPageContext } from "@sk-widget/pages/details/activity-page/state/activity-page.context";
-import { FallbackContent } from "@sk-widget/pages/details/positions-page/components/fallback-content";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { useMemo } from "react";
+import { Box } from "../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
+import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { FallbackContent } from "../../positions-page/components/fallback-content";
+import { useActivityPageContext } from "../state/activity-page.context";
 
 export const useActivityPage = () => {
   useTrackPage("activity");

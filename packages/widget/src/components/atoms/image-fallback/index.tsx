@@ -1,9 +1,9 @@
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import type { Atoms } from "@sk-widget/styles/theme/atoms.css";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
+import type { Atoms } from "../../../styles/theme/atoms.css";
 import { getBackgroundColor } from "../../../utils";
 import { Box } from "../box";
 import type { TextVariants } from "../typography/styles.css";
+import { Text } from "../typography/text";
 import { defaultColor, fallbackContainer } from "./styles.css";
 
 export const ImageFallback = ({

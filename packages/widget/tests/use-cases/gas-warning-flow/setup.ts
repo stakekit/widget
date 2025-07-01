@@ -1,4 +1,3 @@
-import { waitForMs } from "@sk-widget/utils";
 import type {
   ActionDto,
   ActionRequestDto,
@@ -14,6 +13,7 @@ import {
 import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
+import { waitForMs } from "../../../src/utils";
 import { server } from "../../mocks/server";
 import { rkMockWallet } from "../../utils/mock-connector";
 

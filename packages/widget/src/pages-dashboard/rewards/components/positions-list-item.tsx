@@ -1,24 +1,24 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ListItem } from "@sk-widget/components/atoms/list/list-item";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import type { PositionDetailsLabelType } from "@sk-widget/domain/types/positions";
-import { usePositionListItem } from "@sk-widget/pages-dashboard/overview/positions/hooks/use-position-list-item";
+import { List } from "purify-ts";
+import { memo } from "react";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { ListItem } from "../../../components/atoms/list/list-item";
+import { Spinner } from "../../../components/atoms/spinner";
+import { ToolTip } from "../../../components/atoms/tooltip";
+import { Text } from "../../../components/atoms/typography/text";
+import type { PositionDetailsLabelType } from "../../../domain/types/positions";
 import {
   columnContainer,
   listItem,
   noWrap,
   overflowText,
-} from "@sk-widget/pages/details/positions-page/components/styles.css";
-import type { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { List } from "purify-ts";
-import { memo } from "react";
-import { useTranslation } from "react-i18next";
+} from "../../../pages/details/positions-page/components/styles.css";
+import type { usePositions } from "../../../pages/details/positions-page/hooks/use-positions";
+import { usePositionListItem } from "../../overview/positions/hooks/use-position-list-item";
 
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { SKLink } from "@sk-widget/components/atoms/link";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { SKLink } from "../../../components/atoms/link";
+import { TokenIcon } from "../../../components/atoms/token-icon";
 import {
   listItemContainer,
   positionDetailsContainer,

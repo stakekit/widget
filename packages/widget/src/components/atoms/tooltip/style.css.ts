@@ -1,4 +1,4 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
+import { atoms } from "../../../styles/theme/atoms.css";
 
 export const tooltipContent = atoms({
   borderRadius: "md",

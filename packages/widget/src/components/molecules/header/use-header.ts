@@ -1,14 +1,14 @@
-import { useSyncHeaderHeight } from "@sk-widget/components/molecules/header/use-sync-header-height";
-import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
-import { useDetailsMatch } from "@sk-widget/hooks/navigation/use-details-match";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useLogout } from "@sk-widget/hooks/use-logout";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { useWagmiConfig } from "@sk-widget/providers/wagmi";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
+import { shouldShowDisconnect } from "../../../domain/types/connectors";
+import { useDetailsMatch } from "../../../hooks/navigation/use-details-match";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useLogout } from "../../../hooks/use-logout";
+import { useSettings } from "../../../providers/settings";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { useWagmiConfig } from "../../../providers/wagmi";
+import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {
   const navigate = useNavigate();

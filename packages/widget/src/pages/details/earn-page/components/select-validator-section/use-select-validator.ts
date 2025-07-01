@@ -1,6 +1,6 @@
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
 import type { ValidatorDto } from "@stakekit/api-hooks";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const useSelectValidator = () => {
   const {

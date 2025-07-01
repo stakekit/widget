@@ -1,7 +1,7 @@
-import type { SettingsContextType } from "@sk-widget/providers/settings/types";
-import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 import type { PropsWithChildren } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
+import type { SettingsContextType } from "../settings/types";
+import { useTrackingProps } from "./use-tracking-props";
 
 const trackPageMap = {
   earn: "Earn",

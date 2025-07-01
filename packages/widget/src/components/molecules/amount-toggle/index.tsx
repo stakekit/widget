@@ -1,4 +1,3 @@
-import { Box } from "@sk-widget/components/atoms/box";
 import {
   type Dispatch,
   type PropsWithChildren,
@@ -8,6 +7,7 @@ import {
   useContext,
   useState,
 } from "react";
+import { Box } from "../../atoms/box";
 
 type State = "full" | "short";
 

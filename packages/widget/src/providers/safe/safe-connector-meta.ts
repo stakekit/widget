@@ -4,9 +4,9 @@ import type {
   TransactionStatus,
 } from "@safe-global/safe-apps-sdk";
 import type SDK from "@safe-global/safe-apps-sdk";
-import type { ConnectorWithFilteredChains } from "@sk-widget/domain/types/connectors";
 import type { EitherAsync } from "purify-ts";
 import type { Connector } from "wagmi";
+import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
 export const configMeta = {
   id: "safe",

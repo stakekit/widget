@@ -1,12 +1,3 @@
-import { useActivityActions } from "@sk-widget/hooks/api/use-activity-actions";
-import type {
-  ActivityPageContextType,
-  ItemBulletType,
-} from "@sk-widget/pages/details/activity-page/state/types";
-import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { createSubArray, groupDateStrings } from "@sk-widget/utils";
 import {
   ActionStatus,
   ActionTypes,
@@ -22,6 +13,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { useActivityActions } from "../../../../hooks/api/use-activity-actions";
+import { useActivityContext } from "../../../../providers/activity-provider";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import { createSubArray, groupDateStrings } from "../../../../utils";
+import type { ActionYieldDto } from "../types";
+import type { ActivityPageContextType, ItemBulletType } from "./types";
 
 export const ActivityPageContext = createContext<
   ActivityPageContextType | undefined

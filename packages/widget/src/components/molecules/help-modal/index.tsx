@@ -1,8 +1,4 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { Button } from "@sk-widget/components/atoms/button";
-import { HelpIcon } from "@sk-widget/components/atoms/icons/help";
-import { Heading } from "@sk-widget/components/atoms/typography/heading";
-import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { ReactNode } from "react";
 import { useContext, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -13,8 +9,12 @@ import { formatCountryCode } from "../../../utils/formatters";
 import { MaybeWindow } from "../../../utils/maybe-window";
 import { SKAnchor } from "../../atoms/anchor";
 import { Box } from "../../atoms/box";
+import { Button } from "../../atoms/button";
+import { HelpIcon } from "../../atoms/icons/help";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
+import { Heading } from "../../atoms/typography/heading";
+import { Text } from "../../atoms/typography/text";
 import { container, imageStyle } from "./style.css";
 
 type ModalType =

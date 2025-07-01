@@ -1,22 +1,22 @@
-import { config } from "@sk-widget/config";
-import { getBaseToken, getTokenPriceInUSD } from "@sk-widget/domain";
-import { getPositionTotalAmount } from "@sk-widget/domain/types/positions";
-import type { Prices } from "@sk-widget/domain/types/price";
-import type { EnabledRewardsSummaryYieldId } from "@sk-widget/domain/types/rewards";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
-import { usePrices } from "@sk-widget/hooks/api/use-prices";
-import { useTokenBalancesScan } from "@sk-widget/hooks/api/use-token-balances-scan";
-import { getProviderDetails } from "@sk-widget/hooks/use-provider-details";
-import {
-  type RewardsSummaryResult,
-  useMultiRewardsSummary,
-} from "@sk-widget/hooks/use-rewards-summary";
-import { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
 import type { StakeKitErrorDto, YieldDto } from "@stakekit/api-hooks";
 import type { UseQueryResult } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { createContext, useCallback, useContext, useMemo } from "react";
+import { config } from "../config";
+import { getBaseToken, getTokenPriceInUSD } from "../domain";
+import { getPositionTotalAmount } from "../domain/types/positions";
+import type { Prices } from "../domain/types/price";
+import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
+import { usePositions } from "../pages/details/positions-page/hooks/use-positions";
+import { useMultiYields } from "./api/use-multi-yields";
+import { usePrices } from "./api/use-prices";
+import { useTokenBalancesScan } from "./api/use-token-balances-scan";
+import { getProviderDetails } from "./use-provider-details";
+import {
+  type RewardsSummaryResult,
+  useMultiRewardsSummary,
+} from "./use-rewards-summary";
 
 const SummaryContext = createContext<
   | {

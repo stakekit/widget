@@ -1,19 +1,3 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { config } from "@sk-widget/config";
-import { usePrices } from "@sk-widget/hooks/api/use-prices";
-import { useYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useBaseToken } from "@sk-widget/hooks/use-base-token";
-import { getPositionBalanceByTypeWithPrices } from "@sk-widget/hooks/use-position-balance-by-type";
-import { usePositionData } from "@sk-widget/hooks/use-position-data";
-import { useActivityComplete } from "@sk-widget/pages/complete/hooks/use-activity-complete.hook";
-import { useComplete } from "@sk-widget/pages/complete/hooks/use-complete.hook";
-import { CompletePageComponent } from "@sk-widget/pages/complete/pages/common.page";
-import { CompleteCommonContextProvider } from "@sk-widget/pages/complete/state";
-import { ActionReviewPage } from "@sk-widget/pages/review/pages/action-review.page";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { defaultFormattedNumber } from "@sk-widget/utils";
 import {
   ActionStatus,
   ActionTypes,
@@ -26,6 +10,22 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../components/atoms/box";
+import { Divider } from "../../components/atoms/divider";
+import { Text } from "../../components/atoms/typography/text";
+import { config } from "../../config";
+import { usePrices } from "../../hooks/api/use-prices";
+import { useYieldOpportunity } from "../../hooks/api/use-yield-opportunity";
+import { useBaseToken } from "../../hooks/use-base-token";
+import { getPositionBalanceByTypeWithPrices } from "../../hooks/use-position-balance-by-type";
+import { usePositionData } from "../../hooks/use-position-data";
+import { useActivityComplete } from "../../pages/complete/hooks/use-activity-complete.hook";
+import { useComplete } from "../../pages/complete/hooks/use-complete.hook";
+import { CompletePageComponent } from "../../pages/complete/pages/common.page";
+import { CompleteCommonContextProvider } from "../../pages/complete/state";
+import { ActionReviewPage } from "../../pages/review/pages/action-review.page";
+import { useActivityContext } from "../../providers/activity-provider";
+import { defaultFormattedNumber } from "../../utils";
 import { PositionBalances } from "./position-balances";
 
 export const ActivityDetailsPage = () => {

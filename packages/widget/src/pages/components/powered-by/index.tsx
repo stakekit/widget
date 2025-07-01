@@ -1,11 +1,11 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { SKLogo } from "@sk-widget/components/atoms/icons/sk-logo";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useSyncElementHeight } from "@sk-widget/hooks/use-sync-element-height";
-import { useMountAnimation } from "@sk-widget/providers/mount-animation";
-import createStateContext from "@sk-widget/utils/create-state-context";
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { SKLogo } from "../../../components/atoms/icons/sk-logo";
+import { Text } from "../../../components/atoms/typography/text";
+import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
+import { useMountAnimation } from "../../../providers/mount-animation";
+import createStateContext from "../../../utils/create-state-context";
 
 export const [usePoweredByHeight, PoweredByHeightProvider] =
   createStateContext(0);

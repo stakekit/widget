@@ -1,9 +1,9 @@
 import classNames from "clsx";
 
-import type { Atoms } from "@sk-widget/styles/theme/atoms.css";
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
 import type { AllHTMLAttributes, ElementType, PropsWithChildren } from "react";
 import { createElement, forwardRef } from "react";
+import type { Atoms } from "../../../styles/theme/atoms.css";
+import { atoms } from "../../../styles/theme/atoms.css";
 
 export type BoxProps = PropsWithChildren<
   Omit<

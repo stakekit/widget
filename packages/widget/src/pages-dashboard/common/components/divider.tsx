@@ -1,7 +1,7 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { tabPageDivider } from "@sk-widget/pages-dashboard/common/components/styles.css";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
+import { Box } from "../../../components/atoms/box";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
+import { tabPageDivider } from "./styles.css";
 
 export const VerticalDivider = () => {
   const { variant } = useSettings();

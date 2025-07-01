@@ -1,7 +1,3 @@
-import type { YieldFindValidatorsParams } from "@sk-widget/common/private-api";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { SettingsContextType } from "@sk-widget/providers/settings/types";
-import { defaultFormattedNumber } from "@sk-widget/utils";
 import type {
   YieldBalanceDto,
   YieldBalanceLabelDto,
@@ -11,8 +7,12 @@ import BigNumber from "bignumber.js";
 import { Just, List, type Maybe, compare } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
+import type { YieldFindValidatorsParams } from "../../../../common/private-api";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { useSettings } from "../../../../providers/settings";
+import type { SettingsContextType } from "../../../../providers/settings/types";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { defaultFormattedNumber } from "../../../../utils";
 
 export const usePositions = () => {
   const { variant } = useSettings();

@@ -1,9 +1,9 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Divider } from "@sk-widget/components/atoms/divider";
-import { Dropdown } from "@sk-widget/components/atoms/dropdown";
-import { Text } from "@sk-widget/components/atoms/typography/text";
 import type { TronResourceType } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { Divider } from "../../../../../components/atoms/divider";
+import { Dropdown } from "../../../../../components/atoms/dropdown";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const ExtraArgsSelection = () => {

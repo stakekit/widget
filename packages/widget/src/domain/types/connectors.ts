@@ -1,9 +1,9 @@
-import { isExternalProviderConnector } from "@sk-widget/providers/external-provider";
-import { isLedgerLiveConnector } from "@sk-widget/providers/ledger/ledger-live-connector-meta";
-import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
 import type { Observable } from "rxjs";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
+import { isExternalProviderConnector } from "../../providers/external-provider";
+import { isLedgerLiveConnector } from "../../providers/ledger/ledger-live-connector-meta";
+import { isSafeConnector } from "../../providers/safe/safe-connector-meta";
 
 export type ConnectorWithFilteredChains = {
   $filteredChains: Observable<Chain[]>;

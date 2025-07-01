@@ -2,22 +2,19 @@ import "@stakekit/rainbowkit/styles.css";
 import "./translation";
 import "./utils/extend-purify";
 import "./styles/theme/global.css";
-import { Dashboard } from "@sk-widget/Dashboard";
-import { Widget } from "@sk-widget/Widget";
-import { Box } from "@sk-widget/components/atoms/box";
-import { useToggleTheme } from "@sk-widget/hooks/use-toggle-theme";
-import type {
-  SettingsProps,
-  VariantProps,
-} from "@sk-widget/providers/settings/types";
 import type { ComponentProps, RefObject } from "react";
 import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createMemoryRouter } from "react-router";
+import { Dashboard } from "./Dashboard";
+import { Widget } from "./Widget";
 import { preloadImages } from "./assets/images";
+import { Box } from "./components/atoms/box";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
+import { useToggleTheme } from "./hooks/use-toggle-theme";
 import { Providers } from "./providers";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
+import type { SettingsProps, VariantProps } from "./providers/settings/types";
 import { appContainer } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
 

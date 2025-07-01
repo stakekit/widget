@@ -1,16 +1,13 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { XIcon } from "@sk-widget/components/atoms/icons/x-icon";
-import { AccountModal } from "@sk-widget/components/molecules/account-modal";
-import { ChainModal } from "@sk-widget/components/molecules/chain-modal";
-import { parentButton } from "@sk-widget/components/molecules/header/styles.css";
-import { useHeader } from "@sk-widget/components/molecules/header/use-header";
-import {
-  headerContainer,
-  middleItem,
-} from "@sk-widget/pages-dashboard/common/components/tabs/styles.css";
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { Maybe } from "purify-ts";
+import { Box } from "../../../components/atoms/box";
+import { XIcon } from "../../../components/atoms/icons/x-icon";
+import { AccountModal } from "../../../components/molecules/account-modal";
+import { ChainModal } from "../../../components/molecules/chain-modal";
+import { parentButton } from "../../../components/molecules/header/styles.css";
+import { useHeader } from "../../../components/molecules/header/use-header";
+import { headerContainer, middleItem } from "./tabs/styles.css";
 
 export const Header = () => {
   const {

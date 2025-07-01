@@ -1,4 +1,3 @@
-import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import type {
   ActionTypes,
   PendingActionDto,
@@ -14,6 +13,7 @@ import { config } from "../../../config";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";

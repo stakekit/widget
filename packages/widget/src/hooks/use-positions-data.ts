@@ -1,10 +1,10 @@
-import type { PositionsData } from "@sk-widget/domain/types/positions";
 import type {
   YieldBalanceDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
+import type { PositionsData } from "../domain/types/positions";
 import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
 
 export const usePositionsData = () => {

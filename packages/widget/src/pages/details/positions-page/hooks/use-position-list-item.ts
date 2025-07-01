@@ -1,13 +1,13 @@
-import { getBaseToken } from "@sk-widget/domain";
-import { getPositionTotalAmount } from "@sk-widget/domain/types/positions";
-import { useYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import type { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { defaultFormattedNumber } from "@sk-widget/utils";
-import { getRewardRateFormatted } from "@sk-widget/utils/formatters";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getBaseToken } from "../../../../domain";
+import { getPositionTotalAmount } from "../../../../domain/types/positions";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { defaultFormattedNumber } from "../../../../utils";
+import { getRewardRateFormatted } from "../../../../utils/formatters";
+import type { usePositions } from "./use-positions";
 
 export const usePositionListItem = (
   item: ReturnType<typeof usePositions>["positionsData"]["data"][number]

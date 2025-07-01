@@ -1,7 +1,7 @@
-import { atoms } from "@sk-widget/styles/theme/atoms.css";
-import { minContainerWidth } from "@sk-widget/styles/tokens/breakpoints";
 import { createContainer, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "./styles/theme/atoms.css";
+import { minContainerWidth } from "./styles/tokens/breakpoints";
 
 const appContainerName = createContainer();
 export const widgetContainerName = createContainer();

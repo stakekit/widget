@@ -1,31 +1,28 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { ActionListItem } from "@sk-widget/pages-dashboard/activity/action-list-item";
-import {
-  container,
-  listItemWrapper,
-} from "@sk-widget/pages-dashboard/activity/styles.css";
-import ListItemBullet from "@sk-widget/pages/details/activity-page/components/list-item-bullet";
-import { useActivityPage } from "@sk-widget/pages/details/activity-page/hooks/use-activity-page";
-import {
-  ActivityPageContext,
-  ActivityPageContextProvider,
-  useActivityPageContext,
-} from "@sk-widget/pages/details/activity-page/state/activity-page.context";
-import { ItemBulletType } from "@sk-widget/pages/details/activity-page/state/types";
-import {
-  type ActionYieldDto,
-  dateGroupLabels,
-} from "@sk-widget/pages/details/activity-page/types";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import { ActionStatus } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useSelector } from "@xstate/store/react";
 import { List, Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../components/atoms/box";
+import { Text } from "../../components/atoms/typography/text";
+import { GroupedVirtualList } from "../../components/atoms/virtual-list";
+import ListItemBullet from "../../pages/details/activity-page/components/list-item-bullet";
+import { useActivityPage } from "../../pages/details/activity-page/hooks/use-activity-page";
+import {
+  ActivityPageContext,
+  ActivityPageContextProvider,
+  useActivityPageContext,
+} from "../../pages/details/activity-page/state/activity-page.context";
+import { ItemBulletType } from "../../pages/details/activity-page/state/types";
+import {
+  type ActionYieldDto,
+  dateGroupLabels,
+} from "../../pages/details/activity-page/types";
+import { useActivityContext } from "../../providers/activity-provider";
+import { useSKWallet } from "../../providers/sk-wallet";
+import { ActionListItem } from "./action-list-item";
+import { container, listItemWrapper } from "./styles.css";
 
 const ActivityPageComponent = () => {
   const {

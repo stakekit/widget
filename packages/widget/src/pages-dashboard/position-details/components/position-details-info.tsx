@@ -1,19 +1,19 @@
-import { Box } from "@sk-widget/components/atoms/box";
+import { Maybe } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
 import {
   CollapsibleArrow,
   CollapsibleContent,
   CollapsibleRoot,
   CollapsibleTrigger,
-} from "@sk-widget/components/atoms/collapsible";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { ProviderDetails } from "@sk-widget/pages-dashboard/position-details/components/provider-details";
-import { container } from "@sk-widget/pages-dashboard/position-details/components/styles.css";
-import { PositionBalances } from "@sk-widget/pages/position-details/components/position-balances";
-import { usePositionDetails } from "@sk-widget/pages/position-details/hooks/use-position-details";
-import { Maybe } from "purify-ts";
-import { useTranslation } from "react-i18next";
+} from "../../../components/atoms/collapsible";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { Spinner } from "../../../components/atoms/spinner";
+import { Text } from "../../../components/atoms/typography/text";
+import { PositionBalances } from "../../../pages/position-details/components/position-balances";
+import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import { ProviderDetails } from "./provider-details";
+import { container } from "./styles.css";
 
 export const PositionDetailsInfo = () => {
   const {

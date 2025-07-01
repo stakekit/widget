@@ -1,5 +1,5 @@
-import { useActivityComplete } from "@sk-widget/pages/complete/hooks/use-activity-complete.hook";
-import { CompletePage } from "@sk-widget/pages/complete/pages/common.page";
+import { useActivityComplete } from "../hooks/use-activity-complete.hook";
+import { CompletePage } from "./common.page";
 
 export const ActivityCompletePage = () => {
   const {

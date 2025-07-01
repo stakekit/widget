@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { VirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { ZerionChainModal } from "@sk-widget/components/molecules/zerion-chain-modal";
-import { PageContainer } from "@sk-widget/pages/components/page-container";
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { Box } from "../../../components/atoms/box";
+import { VirtualList } from "../../../components/atoms/virtual-list";
+import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { PageContainer } from "../../components/page-container";
 import { FallbackContent } from "./components/fallback-content";
 import { PositionsListItem } from "./components/positions-list-item";
 import { usePositions } from "./hooks/use-positions";

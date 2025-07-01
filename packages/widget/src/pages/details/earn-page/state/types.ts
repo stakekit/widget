@@ -1,7 +1,3 @@
-import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
-import type { Action } from "@sk-widget/types/utils";
 import type {
   TokenBalanceScanResponseDto,
   TokenDto,
@@ -11,6 +7,10 @@ import type {
 import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
+import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import type { Action } from "../../../../types/utils";
 import type { SelectedStakeData } from "../types";
 
 export type State = {

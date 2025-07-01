@@ -1,8 +1,13 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { Text } from "@sk-widget/components/atoms/typography/text";
+import { useTranslation } from "react-i18next";
+import { enabledRewardsSummaryYieldNames } from "../../../domain/types/rewards";
+import { useSettings } from "../../../providers/settings";
+import { formatNumber } from "../../../utils";
+import { combineRecipeWithVariant } from "../../../utils/styles";
+import { Box } from "../../atoms/box";
+import { ContentLoaderSquare } from "../../atoms/content-loader";
+import { InfoIcon } from "../../atoms/icons/info";
+import { ToolTip } from "../../atoms/tooltip";
+import { Text } from "../../atoms/typography/text";
 import {
   type SummaryLabelContainerVariants,
   loader,
@@ -11,12 +16,7 @@ import {
   summaryLabel,
   summaryLabelContainer,
   summaryNumber,
-} from "@sk-widget/components/molecules/summary-item/index.css";
-import { enabledRewardsSummaryYieldNames } from "@sk-widget/domain/types/rewards";
-import { useSettings } from "@sk-widget/providers/settings";
-import { formatNumber } from "@sk-widget/utils";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
-import { useTranslation } from "react-i18next";
+} from "./index.css";
 
 export const SummaryItem = ({
   label,

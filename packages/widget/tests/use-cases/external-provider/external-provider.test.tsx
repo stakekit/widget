@@ -1,7 +1,3 @@
-import { SKApp, type SKAppProps } from "@sk-widget/App";
-import { solana, ton } from "@sk-widget/domain/types/chains/misc";
-import { VirtualizerObserveElementRectProvider } from "@sk-widget/providers/virtual-scroll";
-import { formatAddress } from "@sk-widget/utils";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
@@ -9,6 +5,10 @@ import { http, HttpResponse, delay } from "msw";
 import { Just } from "purify-ts";
 import { avalanche, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
+import { SKApp, type SKAppProps } from "../../../src/App";
+import { solana, ton } from "../../../src/domain/types/chains/misc";
+import { VirtualizerObserveElementRectProvider } from "../../../src/providers/virtual-scroll";
+import { formatAddress } from "../../../src/utils";
 import { server } from "../../mocks/server";
 import { renderApp, waitFor, within } from "../../utils/test-utils";
 

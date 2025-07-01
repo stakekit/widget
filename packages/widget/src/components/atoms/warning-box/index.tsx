@@ -1,6 +1,6 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { WarningIcon } from "@sk-widget/components/atoms/icons/warning";
-import { Text } from "@sk-widget/components/atoms/typography/text";
+import { Box } from "../box";
+import { WarningIcon } from "../icons/warning";
+import { Text } from "../typography/text";
 
 export const WarningBox = ({ text }: { text: string }) => (
   <Box

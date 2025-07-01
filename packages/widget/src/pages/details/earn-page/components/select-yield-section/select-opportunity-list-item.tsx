@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { SelectModalItem } from "@sk-widget/components/atoms/select-modal";
-import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
-import { Text } from "@sk-widget/components/atoms/typography/text";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { getRewardRateFormatted } from "@sk-widget/utils/formatters";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
+import { Box } from "../../../../../components/atoms/box";
+import { SelectModalItem } from "../../../../../components/atoms/select-modal";
+import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
+import { Text } from "../../../../../components/atoms/typography/text";
+import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { getRewardRateFormatted } from "../../../../../utils/formatters";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { selectItemText } from "../../styles.css";
 

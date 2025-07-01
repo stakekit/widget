@@ -1,14 +1,11 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { Header } from "@sk-widget/pages-dashboard/common/components/header";
-import {
-  outletWrapper,
-  wrapper,
-} from "@sk-widget/pages-dashboard/common/components/styles.css";
-import { Tabs } from "@sk-widget/pages-dashboard/common/components/tabs";
-import { PoweredBy } from "@sk-widget/pages/components/powered-by";
-import { useSettings } from "@sk-widget/providers/settings";
-import { combineRecipeWithVariant } from "@sk-widget/utils/styles";
 import { Outlet } from "react-router";
+import { Box } from "../../../components/atoms/box";
+import { PoweredBy } from "../../../pages/components/powered-by";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
+import { Header } from "./header";
+import { outletWrapper, wrapper } from "./styles.css";
+import { Tabs } from "./tabs";
 
 export const DashboardWrapper = () => {
   const { variant } = useSettings();

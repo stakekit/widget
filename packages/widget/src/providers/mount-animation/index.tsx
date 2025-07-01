@@ -1,5 +1,3 @@
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import type { Action } from "@sk-widget/types/utils";
 import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
@@ -10,6 +8,8 @@ import {
 } from "react";
 import { delayAPIRequests } from "../../common/delay-api-requests";
 import { config } from "../../config";
+import { useSavedRef } from "../../hooks/use-saved-ref";
+import type { Action } from "../../types/utils";
 import { useSKLocation } from "../location";
 import { useSettings } from "../settings";
 

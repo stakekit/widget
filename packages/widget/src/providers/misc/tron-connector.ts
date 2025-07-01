@@ -1,4 +1,3 @@
-import { tron } from "@sk-widget/domain/types/chains/misc";
 import type {
   Chain,
   WalletDetailsParams,
@@ -15,6 +14,7 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
 import { config } from "../../config";
+import { tron } from "../../domain/types/chains/misc";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getTokenLogo } from "../../utils";
 import type { ExtraProps } from "./tron-connector-meta";
