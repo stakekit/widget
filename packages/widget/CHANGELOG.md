@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.238
+
+### Patch Changes
+
+- a9c0156: chore: bump deps
+- ba34187: feat: eigenlayer
+
 ## 0.0.237
 
 ### Patch Changes
