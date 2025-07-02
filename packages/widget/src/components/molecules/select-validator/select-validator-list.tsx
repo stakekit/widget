@@ -136,9 +136,7 @@ export const SelectValidatorList = ({
                     >
                       {selectedValidators.has(item.address) ? (
                         <CheckSteps hw={16} color={vars.color.white} />
-                      ) : (
-                        <></>
-                      )}
+                      ) : null}
                     </Box>
                   )}
 

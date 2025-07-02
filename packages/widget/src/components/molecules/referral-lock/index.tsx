@@ -123,7 +123,7 @@ export const ReferralLock = () => {
 
                     inputsRef.current[i] = el;
                   }}
-                  // biome-ignore lint/a11y/noAutofocus: <explanation>
+                  // biome-ignore lint: false
                   autoFocus={i === 0}
                   value={userEnteredCode[i]}
                   onPaste={(e) => onPaste(e.clipboardData.getData("text"))}

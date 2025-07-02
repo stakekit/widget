@@ -7,7 +7,7 @@ import type {
 import { createStore } from "@xstate/store";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { type PropsWithChildren, createContext, useContext } from "react";
+import { createContext, type PropsWithChildren, useContext } from "react";
 
 type InitData = {
   requestDto: ActionRequestDto;

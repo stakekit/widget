@@ -1,8 +1,8 @@
 "use-client";
 
 import "@stakekit/widget/style.css";
+import { darkTheme, SKApp } from "@stakekit/widget";
 import { config } from "@/config";
-import { SKApp, darkTheme } from "@stakekit/widget";
 
 export const Widget = () => {
   return <SKApp apiKey={config.apiKey} theme={darkTheme} />;

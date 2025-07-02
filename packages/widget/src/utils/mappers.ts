@@ -1,6 +1,6 @@
 import type { PriceResponseDto } from "@stakekit/api-hooks";
-import { Prices } from "../domain/types";
 import type { Price, TokenString } from "../domain/types";
+import { Prices } from "../domain/types";
 
 const priceDtoToPrice = (priceDto: PriceResponseDto[string]): Price => ({
   price: priceDto.price,

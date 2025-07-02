@@ -11,11 +11,7 @@ import { getEnabledNetworks } from "../api/get-enabled-networks";
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
-const queryFn = async ({
-  queryClient,
-}: {
-  queryClient: QueryClient;
-}) =>
+const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
   getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
       const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =

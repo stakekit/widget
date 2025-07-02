@@ -91,7 +91,7 @@ export const ActionReviewPage = () => {
                 values={{ action: t(`activity.review.${labelKey}`) }}
                 components={{
                   underline0: (
-                    // biome-ignore lint/a11y/useAnchorContent: <explanation>
+                    // biome-ignore lint: false
                     <a
                       target="_blank"
                       onClick={() => trackEvent("termsClicked")}

@@ -3,7 +3,10 @@ import { Box } from "@sk-widget/components";
 const ListItemBullet = ({
   isFirst,
   isLast,
-}: { isFirst: boolean; isLast: boolean }) => (
+}: {
+  isFirst: boolean;
+  isLast: boolean;
+}) => (
   <Box
     flex={1}
     display="flex"

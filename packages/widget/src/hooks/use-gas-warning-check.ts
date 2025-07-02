@@ -1,7 +1,7 @@
 import {
+  checkGasAmount,
   GasTokenMissingError,
   NotEnoughGasTokenError,
-  checkGasAmount,
 } from "@sk-widget/common/check-gas-amount";
 import type { AddressesDto, TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";

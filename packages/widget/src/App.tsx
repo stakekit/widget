@@ -20,11 +20,11 @@ import type { ComponentProps, RefObject } from "react";
 import { createRef, useEffect, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import {
+  createMemoryRouter,
   Navigate,
   Route,
   RouterProvider,
   Routes,
-  createMemoryRouter,
   useNavigate,
 } from "react-router";
 import { preloadImages } from "./assets/images";

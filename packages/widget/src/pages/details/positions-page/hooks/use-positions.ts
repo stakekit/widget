@@ -16,7 +16,7 @@ import type {
 } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { Just, List, Maybe, compare } from "purify-ts";
+import { compare, Just, List, Maybe } from "purify-ts";
 import { useDeferredValue, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createSelector } from "reselect";
@@ -77,10 +77,10 @@ export const usePositions = () => {
 
           return acc;
         },
-        new Array<{
+        [] as {
           integrationId: ValidatorSearchResultDto["integrationId"];
           validator: ValidatorDto;
-        }>()
+        }[]
       )
     );
 

@@ -1,6 +1,6 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { Networks } from "@stakekit/api-hooks";
-import { http, HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { server } from "../../mocks/server";
 import { rkMockWallet } from "../../utils/mock-connector";
 
