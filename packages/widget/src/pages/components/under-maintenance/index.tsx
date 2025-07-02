@@ -1,8 +1,10 @@
-import { images } from "@sk-widget/assets/images";
-import { Box, Heading, Text } from "@sk-widget/components";
-import { PoweredBy } from "@sk-widget/pages/components/powered-by";
-import { animationContainer } from "@sk-widget/style.css";
 import { useTranslation } from "react-i18next";
+import { images } from "../../../assets/images";
+import { Box } from "../../../components/atoms/box";
+import { Heading } from "../../../components/atoms/typography/heading";
+import { Text } from "../../../components/atoms/typography/text";
+import { animationContainer } from "../../../style.css";
+import { PoweredBy } from "../powered-by";
 import { container, imageStyle } from "./style.css";
 
 const UnderMaintenance = () => {

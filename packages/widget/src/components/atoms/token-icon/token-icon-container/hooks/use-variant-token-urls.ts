@@ -1,8 +1,8 @@
-import { config } from "@sk-widget/config";
-import { useSettings } from "@sk-widget/providers/settings";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { config } from "../../../../../config";
+import { useSettings } from "../../../../../providers/settings";
 
 export const useVariantTokenUrls = (
   token: TokenDto,

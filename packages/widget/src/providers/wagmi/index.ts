@@ -1,9 +1,3 @@
-import { getVariantNetworkUrl } from "@sk-widget/components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
-import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
-import type { EvmChainsMap } from "@sk-widget/domain/types/chains/evm";
-import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
-import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { Networks } from "@stakekit/common";
 import type {
   Chain as RainbowkitChain,
@@ -19,11 +13,17 @@ import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
+import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { config } from "../../config";
+import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
+import type { EvmChainsMap } from "../../domain/types/chains/evm";
+import type { MiscChainsMap } from "../../domain/types/chains/misc";
+import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
 import type { SKExternalProviders } from "../../domain/types/wallets";
-import { useSavedRef } from "../../hooks";
 import { getInitParams } from "../../hooks/use-init-params";
-import type { GetEitherAsyncRight } from "../../types";
+import { useSavedRef } from "../../hooks/use-saved-ref";
+import { useWhitelistedValidators } from "../../hooks/use-whitelisted-validators";
+import type { GetEitherAsyncRight } from "../../types/utils";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
@@ -33,7 +33,8 @@ import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
 import { useSKQueryClient } from "../query-client";
 import { getConfig as getSafeConnector } from "../safe/config";
-import { type SettingsProps, useSettings } from "../settings";
+import { useSettings } from "../settings";
+import type { SettingsProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;

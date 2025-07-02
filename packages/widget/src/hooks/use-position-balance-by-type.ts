@@ -4,8 +4,8 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
 import { getTokenPriceInUSD } from "../domain";
-import type { Prices } from "../domain/types";
 import type { PositionBalancesByType } from "../domain/types/positions";
+import type { Prices } from "../domain/types/price";
 import type { usePrices } from "./api/use-prices";
 import type { usePositionBalances } from "./use-position-balances";
 
@@ -15,7 +15,7 @@ export const usePositionBalanceByType = ({
   baseToken,
 }: {
   positionBalancesData: ReturnType<typeof usePositionBalances>["data"];
-  prices: ReturnType<typeof usePrices>;
+  prices: ReturnType<typeof usePrices<Prices>>;
   baseToken: Maybe<TokenDto>;
 }) => {
   /**
@@ -44,7 +44,7 @@ const selectPrices = (val: Args) => val.prices;
 const selectPvd = (val: Args) => val.pvd;
 const selectBaseToken = (val: Args) => val.baseToken;
 
-const getPositionBalanceByTypeWithPrices = createSelector(
+export const getPositionBalanceByTypeWithPrices = createSelector(
   selectPrices,
   selectPvd,
   selectBaseToken,

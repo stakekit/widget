@@ -1,9 +1,9 @@
-import { SKAnchor } from "@sk-widget/components/atoms/anchor";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { MiscNetworks } from "@stakekit/common";
 import { List, Maybe } from "purify-ts";
 import { type ReactNode, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { SKAnchor } from "../components/atoms/anchor";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({

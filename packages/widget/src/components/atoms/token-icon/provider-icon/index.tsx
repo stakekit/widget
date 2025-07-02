@@ -1,9 +1,9 @@
-import { NetworkLogoImage } from "@sk-widget/components/atoms/token-icon/network-icon-image";
-import { TokenIconContainer } from "@sk-widget/components/atoms/token-icon/token-icon-container";
-import { TokenIconImage } from "@sk-widget/components/atoms/token-icon/token-icon-image";
-import { useSettings } from "@sk-widget/providers/settings";
-import type { Atoms } from "@sk-widget/styles";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import { useSettings } from "../../../../providers/settings";
+import type { Atoms } from "../../../../styles/theme/atoms.css";
+import { NetworkLogoImage } from "../network-icon-image";
+import { TokenIconContainer } from "../token-icon-container";
+import { TokenIconImage } from "../token-icon-image";
 
 export const ProviderIcon = ({
   token,

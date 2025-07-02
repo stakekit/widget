@@ -1,5 +1,5 @@
-import type { ExtendedYieldType } from "@sk-widget/domain/types";
 import type { YieldDto } from "@stakekit/api-hooks";
+import type { ExtendedYieldType } from "../../../domain/types/yields";
 
 export type SelectedStakeData = {
   all: YieldDto[];

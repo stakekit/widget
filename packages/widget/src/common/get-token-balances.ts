@@ -1,9 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
-import type { SKWallet } from "../domain/types";
+import type { SKWallet } from "../domain/types/wallet";
 import { getDefaultTokens } from "../hooks/api/use-default-tokens";
 import { getTokenBalancesScan } from "../hooks/api/use-token-balances-scan";
-import type { SettingsProps } from "../providers/settings";
+import type { SettingsProps } from "../providers/settings/types";
 
 export const getTokenBalances = ({
   additionalAddresses,

@@ -1,7 +1,9 @@
 import type { TronResourceType } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Text } from "../../../../../components";
+import { Box } from "../../../../../components/atoms/box";
+import { Divider } from "../../../../../components/atoms/divider";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const ExtraArgsSelection = () => {

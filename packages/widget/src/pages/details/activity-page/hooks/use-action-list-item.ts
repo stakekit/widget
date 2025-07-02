@@ -1,7 +1,3 @@
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { defaultFormattedNumber } from "@sk-widget/utils";
-import { dateOlderThen7Days } from "@sk-widget/utils/date";
-import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
 import {
   type ActionDto,
   ActionStatus,
@@ -10,6 +6,10 @@ import {
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { defaultFormattedNumber } from "../../../../utils";
+import { dateOlderThen7Days } from "../../../../utils/date";
+import { capitalizeFirstLetters } from "../../../../utils/formatters";
 
 type ActionYieldDto = {
   actionData: ActionDto;

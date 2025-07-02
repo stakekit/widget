@@ -1,13 +1,10 @@
+import { CosmosNetworks } from "@stakekit/common";
+import { assets, chains as RegistryChains } from "chain-registry";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,
-} from "@sk-widget/domain/types/chains/cosmos";
-import type {
-  CosmosChain,
-  WithWagmiName,
-} from "@sk-widget/providers/cosmos/chains/types";
-import { CosmosNetworks } from "@stakekit/common";
-import { assets, chains as RegistryChains } from "chain-registry";
+} from "../../../domain/types/chains/cosmos";
+import type { CosmosChain, WithWagmiName } from "./types";
 
 type AssetList = (typeof assets)[number];
 

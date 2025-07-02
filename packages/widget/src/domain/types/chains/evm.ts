@@ -1,4 +1,3 @@
-import { getNetworkLogo } from "@sk-widget/utils";
 import { EvmNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import {
@@ -20,6 +19,7 @@ import {
   unichain,
   viction,
 } from "viem/chains";
+import { getNetworkLogo } from "../../../utils";
 
 const supportedEVMChains = [
   EvmNetworks.AvalancheC,

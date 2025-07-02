@@ -6,7 +6,7 @@ export type ActionYieldDto = {
   yieldData: YieldDto;
 };
 
-export type DateGroupLabels = "today" | "yesterday" | string;
+type DateGroupLabels = "today" | "yesterday" | string;
 
 export const dateGroupLabels = (label: DateGroupLabels, t: TFunction) => {
   if (label === "today") return t("activity.date_group_labels.today");

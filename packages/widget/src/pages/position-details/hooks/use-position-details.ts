@@ -1,6 +1,3 @@
-import { isForceMaxAmount } from "@sk-widget/domain/types/stake";
-import { useStakeExitRequestDto } from "@sk-widget/pages/position-details/hooks/use-stake-exit-request-dto";
-import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import type { TokenDto } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
@@ -8,15 +5,18 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { equalTokens, getTokenPriceInUSD } from "../../../domain";
+import { isForceMaxAmount } from "../../../domain/types/stake";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
+import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
   useUnstakeOrPendingActionState,
 } from "../state";
 import { usePendingActions } from "./use-pending-actions";
+import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
 
 export const usePositionDetails = () => {
   const {

@@ -2,13 +2,13 @@ import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { ComponentProps } from "react";
 import { memo, useMemo } from "react";
+import { Box } from "../../../../../components/atoms/box";
 import {
-  Box,
   SelectModalItem,
   SelectModalItemContainer,
-  Text,
-} from "../../../../../components";
+} from "../../../../../components/atoms/select-modal";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { defaultFormattedNumber } from "../../../../../utils";
 import { selectItemText } from "../../styles.css";

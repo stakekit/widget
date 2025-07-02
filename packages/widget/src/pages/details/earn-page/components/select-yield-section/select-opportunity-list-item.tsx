@@ -1,8 +1,10 @@
-import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
-import { Box, SelectModalItem, Text } from "../../../../../components";
+import { Box } from "../../../../../components/atoms/box";
+import { SelectModalItem } from "../../../../../components/atoms/select-modal";
+import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { getRewardRateFormatted } from "../../../../../utils/formatters";
 import { useEarnPageContext } from "../../state/earn-page-context";

@@ -1,14 +1,14 @@
-import { solana, ton } from "@sk-widget/domain/types/chains/misc";
-import type { SKExternalProviders } from "@sk-widget/domain/types/wallets";
-import { SKApiClientProvider } from "@sk-widget/providers/api/api-client-provider";
-import { SKQueryClientProvider } from "@sk-widget/providers/query-client";
-import { SettingsContextProvider } from "@sk-widget/providers/settings";
-import { SKWalletProvider, useSKWallet } from "@sk-widget/providers/sk-wallet";
-import { TrackingContextProviderWithProps } from "@sk-widget/providers/tracking";
-import { WagmiConfigProvider } from "@sk-widget/providers/wagmi/provider";
 import { MiscNetworks } from "@stakekit/common";
 import { delay, HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
+import { solana, ton } from "../../src/domain/types/chains/misc";
+import type { SKExternalProviders } from "../../src/domain/types/wallets";
+import { SKApiClientProvider } from "../../src/providers/api/api-client-provider";
+import { SKQueryClientProvider } from "../../src/providers/query-client";
+import { SettingsContextProvider } from "../../src/providers/settings";
+import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
+import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
+import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
 import { server } from "../mocks/server";
 import { renderHook, waitFor } from "../utils/test-utils";
 

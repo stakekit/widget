@@ -1,4 +1,3 @@
-import { useSettings } from "@sk-widget/providers/settings";
 import type {
   TokenBalanceScanResponseDto,
   TokenGetTokensParams,
@@ -7,6 +6,7 @@ import { getTokenGetTokensQueryKey, tokenGetTokens } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import { useSettings } from "../../providers/settings";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 export const useDefaultTokens = () => {

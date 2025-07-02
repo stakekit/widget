@@ -1,12 +1,12 @@
-import {
-  type MiscChainsMap,
-  miscChainsMap,
-} from "@sk-widget/domain/types/chains/misc";
 import type { Networks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
+import {
+  type MiscChainsMap,
+  miscChainsMap,
+} from "../../domain/types/chains/misc";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 
 const queryKey = [config.appPrefix, "misc-config"];

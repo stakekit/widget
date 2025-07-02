@@ -5,7 +5,9 @@ import type {
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
-import { Box, Button, Text } from "../../../components";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { Text } from "../../../components/atoms/typography/text";
 import { formatNumber } from "../../../utils";
 import type { usePositionDetails } from "../hooks/use-position-details";
 

@@ -1,10 +1,10 @@
-import { SKQueryClientProvider } from "@sk-widget/providers/query-client";
 import { userEvent } from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
 import { useEstimatedRewards } from "../../../src/hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
+import { SKQueryClientProvider } from "../../../src/providers/query-client";
 import { formatAddress, formatNumber } from "../../../src/utils";
 import { renderApp, renderHook, waitFor, within } from "../../utils/test-utils";
 import { setup } from "./setup";

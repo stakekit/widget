@@ -2,7 +2,8 @@ import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useState } from "react";
-import { Box, Button } from "../../../components";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
 import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
@@ -21,6 +22,32 @@ const FooterButton = ({
   label,
   variant,
 }: NonNullable<FooterButtonVal>) => {
+  return (
+    <Box px="4" marginTop="2" marginBottom="4" zIndex="modal">
+      <Box
+        flex={1}
+        display="flex"
+        justifyContent="flex-end"
+        flexDirection="column"
+      >
+        <Button
+          data-rk={`footer-button-${variant ?? "primary"}`}
+          disabled={disabled}
+          isLoading={isLoading}
+          onClick={onClick}
+          variant={{
+            color: variant ?? (disabled || isLoading ? "disabled" : "primary"),
+            animation: "press",
+          }}
+        >
+          {label}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
+const AnimatedFooterButton = (props: NonNullable<FooterButtonVal>) => {
   const { containerRef } = useSyncFooterHeight();
 
   const { state } = useMountAnimation();
@@ -77,33 +104,12 @@ const FooterButton = ({
         setInitAnimationFinished(true);
       }}
     >
-      <Box px="4" marginTop="2" marginBottom="4" zIndex="modal">
-        <Box
-          flex={1}
-          display="flex"
-          justifyContent="flex-end"
-          flexDirection="column"
-        >
-          <Button
-            data-rk={`footer-button-${variant ?? "primary"}`}
-            disabled={disabled}
-            isLoading={isLoading}
-            onClick={onClick}
-            variant={{
-              color:
-                variant ?? (disabled || isLoading ? "disabled" : "primary"),
-              animation: "press",
-            }}
-          >
-            {label}
-          </Button>
-        </Box>
-      </Box>
+      <FooterButton {...props} />
     </motion.div>
   );
 };
 
-export const FooterContent = () => {
+export const AnimatedFooterContent = () => {
   const [val] = useFooterButton();
 
   const [, setFooterHeight] = useFooterHeight();
@@ -114,5 +120,25 @@ export const FooterContent = () => {
 
   if (!val) return null;
 
-  return <FooterButton {...val} />;
+  return <AnimatedFooterButton {...val} />;
+};
+
+export const FooterContent = () => {
+  const [val] = useFooterButton();
+
+  const { containerRef } = useSyncFooterHeight();
+
+  const [, setFooterHeight] = useFooterHeight();
+
+  useIsomorphicEffect(() => {
+    !val && setFooterHeight(0);
+  }, [setFooterHeight, val]);
+
+  if (!val) return null;
+
+  return (
+    <Box ref={containerRef}>
+      <FooterButton {...val} />
+    </Box>
+  );
 };

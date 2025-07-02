@@ -1,25 +1,21 @@
 import { motion } from "motion/react";
 import { useMemo } from "react";
-import { Box } from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { PageContainer } from "../../components";
+import { PageContainer } from "../../components/page-container";
 import { FallbackContent } from "./components/fallback-content";
-import {
-  ImportValidatorListItem,
-  PositionsListItem,
-} from "./components/positions-list-item";
+import { PositionsListItem } from "./components/positions-list-item";
 import { usePositions } from "./hooks/use-positions";
 import { container } from "./style.css";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, listData, importValidators, showPositions } =
-    usePositions();
+  const { positionsData, listData, showPositions } = usePositions();
 
   const { isConnected, isConnecting } = useSKWallet();
 
@@ -44,6 +40,38 @@ export const PositionsPage = () => {
     positionsData.isLoading,
   ]);
 
+  return (
+    <Box className={container} display="flex" flex={1} flexDirection="column">
+      {content}
+
+      {showPositions && (
+        <Box flex={1} display="flex" flexDirection="column">
+          <VirtualList
+            estimateSize={() => 60}
+            data={listData}
+            itemContent={(_, item) =>
+              item === "header" ? (
+                <>
+                  <ZerionChainModal />
+
+                  {isConnected && !positionsData.data.length && (
+                    <Box my="4">
+                      <FallbackContent type="no_current_positions" />
+                    </Box>
+                  )}
+                </>
+              ) : (
+                <PositionsListItem item={item} />
+              )
+            }
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export const AnimatedPositionsPage = () => {
   const { mountAnimationFinished } = useMountAnimation();
 
   return (
@@ -56,42 +84,7 @@ export const PositionsPage = () => {
       }}
     >
       <PageContainer>
-        <Box
-          className={container}
-          display="flex"
-          flex={1}
-          flexDirection="column"
-        >
-          {content}
-
-          {showPositions && (
-            <Box flex={1} display="flex" flexDirection="column">
-              <VirtualList
-                estimateSize={() => 60}
-                data={listData}
-                itemContent={(_, item) =>
-                  item === "header" ? (
-                    <>
-                      <ZerionChainModal />
-
-                      <ImportValidatorListItem
-                        importValidators={importValidators}
-                      />
-
-                      {isConnected && !positionsData.data.length && (
-                        <Box my="4">
-                          <FallbackContent type="no_current_positions" />
-                        </Box>
-                      )}
-                    </>
-                  ) : (
-                    <PositionsListItem item={item} />
-                  )
-                }
-              />
-            </Box>
-          )}
-        </Box>
+        <PositionsPage />
       </PageContainer>
     </motion.div>
   );

@@ -1,6 +1,6 @@
-import { usePendingActionReview } from "@sk-widget/pages/review/hooks/use-pending-review.hook";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
 
 export const PendingReviewPage = () => {

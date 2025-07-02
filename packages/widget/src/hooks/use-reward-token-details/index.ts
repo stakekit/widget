@@ -1,7 +1,7 @@
-import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
-import type { ExtraData } from "@sk-widget/pages/details/earn-page/state/types";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { ExtraData } from "../../pages/details/earn-page/state/types";
+import { getRewardTokenSymbols } from "./get-reward-token-symbols";
 
 export const useRewardTokenDetails = (
   yieldOpportunity: ExtraData["selectedStake"]

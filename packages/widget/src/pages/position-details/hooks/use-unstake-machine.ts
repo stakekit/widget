@@ -1,10 +1,3 @@
-import { getValidStakeSessionTx } from "@sk-widget/domain";
-import type { SKWallet } from "@sk-widget/domain/types";
-import { useSavedRef } from "@sk-widget/hooks";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import type { GetMaybeJust } from "@sk-widget/types";
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import {
   actionExit,
@@ -16,6 +9,13 @@ import { useSelector } from "@xstate/store/react";
 import { EitherAsync, Maybe } from "purify-ts";
 import { type RefObject, useState } from "react";
 import { assign, setup } from "xstate";
+import { getValidStakeSessionTx } from "../../../domain";
+import type { SKWallet } from "../../../domain/types/wallet";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import type { GetMaybeJust } from "../../../types/utils";
 
 export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const trackEvent = useTrackEvent();

@@ -3,7 +3,8 @@ import { images } from "../../../assets/images";
 import { useRichErrors } from "../../../hooks/use-rich-errors";
 import { Box } from "../../atoms/box";
 import { SelectModal } from "../../atoms/select-modal";
-import { Heading, Text } from "../../atoms/typography";
+import { Heading } from "../../atoms/typography/heading";
+import { Text } from "../../atoms/typography/text";
 import { imageStyle } from "./style.css";
 
 export const RichErrorModal = () => {

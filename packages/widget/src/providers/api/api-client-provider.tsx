@@ -1,4 +1,3 @@
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
 import { StakeKitApiClient } from "@stakekit/api-hooks";
 import type { AxiosInstance } from "axios";
 import axios, { AxiosHeaders } from "axios";
@@ -6,6 +5,7 @@ import type { PropsWithChildren } from "react";
 import { createContext, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { attachDelayInterceptor } from "../../common/delay-api-requests";
+import { withRequestErrorRetry } from "../../common/utils";
 import { config } from "../../config";
 import { attachGeoBlockInterceptor } from "../../hooks/use-geo-block";
 import { attachRichErrorsInterceptor } from "../../hooks/use-rich-errors";
