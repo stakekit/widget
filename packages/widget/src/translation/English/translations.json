@@ -70,8 +70,8 @@
     "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
     "lockup_period": "Minimum lock up time is {{days}} days",
     "native_staking": {
-      "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
@@ -79,8 +79,8 @@
     },
     "vault": {
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
-      "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
       "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
       "withdrawn_time_immediately": "When withdrawing, your assets will be available immediately",
@@ -89,8 +89,8 @@
     "lend": {
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
       "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
-      "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",
-      "earn_after_warmup_other": "You’ll start earning {{count}} days after you supply your assets",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
       "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
       "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
@@ -98,19 +98,19 @@
     },
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
-      "earn_after_warmup_one": "You’ll start earning {{count}} day after you stake",
-      "earn_after_warmup_other": "You’ll start earning {{count}} days after you stake",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake",
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
       "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
-      "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they’ll need to be staked again.",
+      "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they'll need to be staked again.",
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "restake": {
       "description": "When you deposit {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
-      "earn_after_warmup_one": "You’ll start earning {{count}} day after you stake",
-      "earn_after_warmup_other": "You’ll start earning {{count}} days after you stake",
+      "earn_after_warmup_one": "You'll start earning {{count}} day after you stake",
+      "earn_after_warmup_other": "You'll start earning {{count}} days after you stake",
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
@@ -118,7 +118,7 @@
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "extra_tezos": "You can use or send staked XTZ as normal",
-    "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can’t be accurately estimated",
+    "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
     "opportunity_search_title": "Select a yield",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
@@ -196,7 +196,7 @@
     "performance_fee": "Performance fee",
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
-    "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It’s only applied after surpassing a variable threshold."
+    "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold."
   },
   "steps": {
     "title": "Follow Steps",
@@ -325,13 +325,13 @@
   "help_modals": {
     "geo_block": {
       "title": "Geo Block",
-      "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
-      "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
+      "ofac": "This feature is not available in {{countryName}}. {{countryName}} is on the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>.",
+      "ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>.",
       "pending_litigation": "This feature is currently unavailable in {{nameOfRegion}} due to pending litigation on the subject of staking cryptocurrencies",
       "crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} has implemented firm regulations against the use of cryptocurrencies. Please refer to official {{countryName}} resources to learn more.",
-      "staking_ban": "This feature is not available in {{countryName}}. The Securities and Exchange Commission (“SEC”) of {{countryName}} has restricted digital asset business operators from offering staking services. You can learn more about the SEC regualtions here <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
-      "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
-      "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (“OFAC”) list of sanctioned countries, as well as the U.K.’s Office of Financial Sanctions Implementation (“OFSI”) list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
+      "staking_ban": "This feature is not available in {{countryName}}. The Securities and Exchange Commission (\"SEC\") of {{countryName}} has restricted digital asset business operators from offering staking services. You can learn more about the SEC regualtions here <link0>https://www.sec.or.th/TH/Pages/News_Detail.aspx?SECID=10018</link0>.",
+      "ofsi_crypto_ban": "This feature is not available in {{countryName}}. {{countryName}} is on the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFSI and its sanctions programs here <link0>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link0>. {{countryName}} has further implemented firm regulations against the use of cryptocurrencies.",
+      "ofac_ofsi": "This feature is not available in {{countryName}}. {{countryName}} is on both the Office of Foreign Assets Control (\"OFAC\") list of sanctioned countries, as well as the U.K.'s Office of Financial Sanctions Implementation (\"OFSI\") list of sanctioned countries. You can learn more about OFAC and its sanctions programs here <link0>https://ofac.treasury.gov/sanctions-programs-and-country-information</link0>, as well as OFSI and its sanctions programs here <link>https://www.gov.uk/government/collections/financial-sanctions-regime-specific-consolidated-lists-and-releases</link>.",
       "default": "This feature is not available in {{countryName}}."
     },
     "get_in_touch": {
@@ -340,7 +340,7 @@
     },
     "what_is_stakekit": {
       "title": "What is Yield.xyz?",
-      "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it’s fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
+      "description": "Yield.xyz is a platform that allows you to easily earn self-custodial yield across all major networks and tokens. From staking and liquid staking, to yield vaults and lending. Yield.xyz abstracts all complexity so that every yield is accessible in merely 3 clicks. And best of all, it's fully self-custodial.<br0/><br0/>You can find more information about Yield.xyz on our <link0>website</link0> or in our <link1>FAQ section.</link1>"
     },
     "under_maintenance": {
       "title": "Under Maintenance",
@@ -534,5 +534,111 @@
   "error_modal": {
     "solution": "Potential solution:"
   },
-  "chain_modal_disclaimer": "Powered by Yield.xyz"
+  "chain_modal_disclaimer": "Powered by Yield.xyz",
+  "tos_modal": {
+    "title": "Terms of Use",
+    "accept_button": "I Accept",
+    "introduction": "These StakeKit Terms of Use are entered into between you (\"you\" or \"your\") and StakeKit LLC, together with Omni Ltd. and its other affiliates (\"StakeKit\", \"we\", \"us\", and \"our\"). By accessing, downloading, using, or clicking on \"I Agree\" to accept any \"StakeKit Services\" provided by StakeKit, you agree that you have carefully read, understood, and accepted all of the terms and conditions within these Terms of Use (\"Terms\") as well as our Privacy Policy. Our Privacy Policy can be accessed here: StakeKit Privacy Policy.",
+    "additional_terms": "In addition, when using some features of the Services, you may be subject to specific additional terms and conditions applicable to those features.",
+    "risk_warning": "As with any asset, the values of \"Cryptocurrencies\" may fluctuate significantly and there is a substantial risk of economic losses when purchasing, selling, holding, or investing in Cryptocurrencies and their derivatives. By making use of StakeKit Services, you acknowledge and agree that (1) you are aware of the risks associated with transactions of Cryptocurrencies and their derivatives, (2) you shall assume all risks related to the use of StakeKit Services and transactions of digital currencies and their derivatives, and (3) StakeKit shall not be liable for any such risks or adverse outcomes.",
+    "agreement_binding": "By accessing, using, or attempting to use StakeKit Services in any capacity, you acknowledge that you accept and agree to be bound by these Terms. These Terms supersede and replace any and all prior oral and/or written agreements between StakeKit and you regarding the Services.",
+    "sections": {
+      "stakekit_services": {
+        "title": "StakeKit Services",
+        "content": "StakeKit allows you to stake Cryptocurrency assets across all major blockchains and allows you to earn interest on your Cryptocurrencies. StakeKit Services include the creation of Cryptocurrency wallets where custody and personal keys remain with the user. Services also include the ability to send, receive, stake, bridge, and swap Cryptocurrency assets. The Cryptocurrency assets that are supported by StakeKit are subject to change."
+      },
+      "agreement_to_terms": {
+        "title": "Agreement to Terms",
+        "content": "When you click \"I Agree\" or when you access the StakeKit application or use any of the StakeKit Services, you agree to be bound by these terms. If you do not agree to these Terms, do not agree to or use the Services."
+      },
+      "intellectual_property": {
+        "title": "Intellectual Property Rights",
+        "content_1": "The StakeKit application and websites, and their entire contents, features, and functionality (including software, text, images, videos, audio, design, and information) are owned by StakeKit LLC, its licensors, affiliates, or other providers of such material and are protected by both United States and international intellectual property laws (including copyright, trademark, patent, trade secret and other intellectual or proprietary rights laws).",
+        "content_2": "Under these Terms, you are permitted to make use of the StakeKit application for your personal, non-commercial use only."
+      },
+      "user_content": {
+        "title": "User Content",
+        "content_1": "Any content that you make available to StakeKit through its Services constitutes User Content. You must possess the right and the authority to submit your User Content and that your User Content does not infringe upon any intellectual property rights or the rights of a third party. StakeKit reserves the right to a worldwide, non-exclusive, royalty-free, sub-licensable, and transferable license to use, copy, distribute, create derivative works of, and display the User Content that you upload, submit, store, send, or receive on the StakeKit application.",
+        "content_2": "You must acknowledge that there may be certain instances in which you may have deleted specific User Content, and some of your User Content may not be completely removed and copies of your User Content may continue to exist on the Services. StakeKit is not responsible or liable for the deletion of any of your User Content.",
+        "content_3": "StakeKit maintains no obligation to monitor User Content. When you access StakeKit Services, you must understand that you may be exposed to User Content that is offensive, indecent, or objectionable. StakeKit is neither responsible nor reserves any liability for User Content, including any loss or damage to your User Content."
+      },
+      "acceptable_use": {
+        "title": "Acceptable Use",
+        "intro": "You may only use the StakeKit application and Services for lawful purposes and in compliance with these Terms. You may not use the StakeKit application in the following ways:",
+        "violation_laws": "• In any way that violates any applicable federal, state, local, or international law or regulation (including, without limitation, any laws regarding the export of data or software to and from the United States or other countries).",
+        "harm_minors": "• For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way by exposing them to inappropriate content, asking for personally identifiable information, or otherwise.",
+        "impersonation": "• To impersonate or attempt to impersonate StakeKit, an StakeKit employee, another user, or any other person or entity.",
+        "restrict_use": "• To engage in any other conduct that restricts or inhibits anyone's use or enjoyment of StakeKit Services, or which, as determined by us, may harm StakeKit or users of the StakeKit, or expose them to liability.",
+        "interfere": "• To use any device, software, or routine that interferes with the proper working of the StakeKit application or Services.",
+        "additional": "Additionally, you agree not to otherwise attempt to interfere with the proper working of the StakeKit application and Services."
+      },
+      "termination": {
+        "title": "Termination of Use",
+        "content": "StakeKit reserves the right to terminate your access and use to the StakeKit application and/or Services at our sole discretion."
+      },
+      "fees": {
+        "title": "Fees",
+        "content": "StakeKit may charge fees for certain Services. We reserve the right to make changes to the fee amount at our discretion. We will disclose the amount of fees that we will charge you for the applicable Services when you access the Services."
+      },
+      "taxes": {
+        "title": "Taxes and Withholdings",
+        "content": "You are responsible for paying all taxes, assessments, charges, fees, and levies that may be imposed by any governmental authority in connection with your use of StakeKit Services."
+      },
+      "confidentiality": {
+        "title": "Confidentiality",
+        "content_1": "\"Confidential Information\" means any and all information that one party (the \"disclosing party\") discloses to the other party (the \"recipient\") learns or receives from or on behalf of the disclosing party in connection with the Agreement, whether in writing, orally, or in any other form, that the recipient knows or reasonably should know is considered confidential or proprietary by the disclosing party.",
+        "content_2": "A party's Confidential Information includes, but is not limited to, (a) that party's trade secrets, technical information, know-how, technology, prototypes, methods, ideas, data, cost information, client information, financial information, supplier and customer identities and lists, and business and marketing plans, and (b) any copies, extracts, analyses, compilations, forecasts, studies or other documents containing or reflecting that party's Confidential Information that are prepared by, on behalf of, or in cooperation with the other party. StakeKit's Confidential Information includes but is not limited to StakeKit application and Services, subject to the rights and permissions granted to you under these Terms."
+      },
+      "non_disclosure": {
+        "title": "Confidentiality and Non-Disclosure",
+        "content_1": "The recipient acknowledges that the disclosing party's Confidential Information is an asset of considerable value, and that disclosure of that Confidential Information to third parties would be damaging. The recipient will: (a) keep the disclosing party's Confidential Information confidential and use it solely for the purposes of exercising its rights and performing its obligations under the Agreement; (b) not directly, or indirectly, without authorization, reveal, report, publish, disclose or transfer the disclosing party's Confidential Information to any third party except as expressly authorized under this Agreement or otherwise in writing by the disclosing party; (c) use procedures constituting a high degree of care to maintain the security of the disclosing party's Confidential Information, but in no event less than a reasonable standard of care under the circumstances; and (d) disclose the disclosing party's Confidential Information to the recipient's employees, consultants and subcontractors solely as permitted under this Agreement, and in any case only on a need-to-know basis as required in connection with recipient's performance of its duties and exercise of its rights under the Agreement.",
+        "content_2": "The parties may disclose the general nature of the Agreement; however, all other terms of the Agreement are StakeKit's Confidential Information and may not be disclosed to any third party without StakeKit's prior written consent."
+      },
+      "required_disclosures": {
+        "title": "Required Disclosures",
+        "content": "If the recipient is required by law or court order to disclose any of the disclosing party's Confidential Information, the recipient will: (a) notify the disclosing party in writing as soon as possible, but in no event less than ten days prior to any required disclosure; (b) cooperate with the disclosing party to preserve the confidentiality of its Confidential Information consistent with applicable law; and (c) limit any disclosure to the minimum disclosure necessary to comply with the applicable law or court order."
+      },
+      "return_confidential": {
+        "title": "Return of Confidential Information",
+        "content": "Subject to your rights in previously acquired Confidential Information in accordance with the Termination clause, the recipient shall return or destroy the disclosing party's Confidential Information within 20 days after the effective date of termination of this Agreement. The recipient will not be required to search archived electronic files for the disclosing party's Confidential Information in order to purge that information from its files. The recipient may retain copies of the disclosing party's Confidential Information as necessary to comply with applicable laws, the recipient's written document retention or information governance policies, or any applicable professional standard."
+      },
+      "limitation_liability": {
+        "title": "Limitation of Liability",
+        "content_1": "TO THE FULLEST EXTENT PROVIDED BY LAW, IN NO EVENT WILL STAKEKIT, ITS AFFILIATES, OR THEIR LICENSORS, SERVICE PROVIDERS, EMPLOYEES, AGENTS, OFFICERS, OR DIRECTORS BE LIABLE FOR DAMAGES OF ANY KIND, UNDER ANY LEGAL THEORY, ARISING OUT OF OR IN CONNECTION WITH YOUR USE, OR INABILITY TO USE, THE APPLICATION, ANY SERVICES LINKED TO IT, ANY CONTENT ON THE APPLICATION, INCLUDING ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING BUT NOT LIMITED TO, PERSONAL INJURY, PAIN AND SUFFERING, EMOTIONAL DISTRESS, LOSS OF REVENUE, LOSS OF PROFITS, LOSS OF BUSINESS OR ANTICIPATED SAVINGS, LOSS OF USE, LOSS OF GOODWILL, LOSS OF DATA, AND WHETHER CAUSED BY TORT (INCLUDING NEGLIGENCE), BREACH OF CONTRACT, OR OTHERWISE, EVEN IF FORESEEABLE.",
+        "content_2": "THE FOREGOING DOES NOT AFFECT ANY LIABILITY THAT CANNOT BE EXCLUDED OR LIMITED UNDER APPLICABLE LAW. IN NO EVENT SHALL THE TOTAL LIABILITY TO YOU FROM STAKEKIT FOR ALL DAMAGES EXCEED THE AMOUNT OF ONE HUNDRED U.S. DOLLARS ($100.00) OR ITS EQUIVALENT IN THE LOCAL CURRENCY OF THE APPLICABLE JURISDICTION."
+      },
+      "dispute_resolution": {
+        "title": "Dispute Resolution",
+        "content_1": "You and StakeKit will work together in good faith first to resolve any issues through discussions between their respective relationship managers. If the relationship managers are unable to resolve the issue within 30 days after their discussions on that issue begin, then they will escalate the dispute to their senior management. If an issue is not resolved within 30 days after escalation to senior management, either party may initiate arbitration pursuant to the commercial rules of the American Arbitration Association (\"AAA\").",
+        "content_2": "The arbitration will be conducted in New York, New York by one arbitrator agreed upon by the parties or, in the absence of agreement, selected by the AAA. Each party will pay its own expenses arising from the arbitration, and the parties will share equally the expenses of the arbitrator and the AAA. The prevailing party in the arbitration proceedings will be entitled to recover reasonable attorneys' fees and expenses incurred in connection with the proceeding, in addition to any other relief to which the prevailing party may be entitled.",
+        "content_3": "Any arbitration award will be final, and judgment on it may be entered in any court of competent jurisdiction. If a party breaches or threatens to breach its obligations under these Terms, the other party may suffer harm that may not be adequately compensated by monetary damages. In that case, the other party may, in addition to pursuing arbitration in accordance with this clause, seek specific performance and injunctive or other equitable relief in any court of competent jurisdiction."
+      },
+      "governing_law": {
+        "title": "Governing Law and Jurisdiction",
+        "content": "These Terms will be governed by, and construed under, the laws of Delaware, without application of its conflict of laws rules. Subject the preceding Dispute Resolution clause, the parties hereby consent to the exclusive jurisdiction of, and venue in, the courts of Delaware. IF THE ARBITRATION PROVISION IN THE PRECEDING DISPUTE RESOLUTION CLAUSE IS HELD TO BE INVALID AND TO THE MAXIMUM EXTENT PERMITTED BY LAW, YOU AND STAKEKIT HEREBY WAIVE ANY RIGHT TO TRIAL BY JURY IN ANY ACTION OR PROCEEDING REGARDING ANY LITIGATION RELATED TO THIS AGREEMENT."
+      },
+      "class_action": {
+        "title": "Class Action Restrictions",
+        "content": "YOU AND STAKEKIT HEREBY AGREE THAT EACH PARTY MAY BRING CLAIMS AGAINST THE OTHER ONLY ON AN INDIVIDUAL BASIS AND NOT AS A PLAINTIFF OR CLASS MEMBER IN ANY PURPORTED CLASS OR REPRESENTATIVE ACTION OR PROCEEDING. UNLESS BOTH PARTIES AGREE OTHERWISE, THE ARBITRATOR MAY NOT CONSOLIDATE OR JOIN MORE THAN ONE PERSON'S OR PARTY'S CLAIMS AND MAY NOT OTHERWISE PRESIDE OVER ANY FORM OF A CONSOLIDATED, REPRESENTATIVE, OR CLASS PROCEEDING."
+      },
+      "time_limits": {
+        "title": "Time Limits on Claims",
+        "content": "No action against StakeKit arising from or relating to the violation of any rights pertaining to these Terms may be brought more than two years after the date on which the alleged claim arose."
+      },
+      "changes_terms": {
+        "title": "Changes to the Terms of Use",
+        "content": "It is the sole discretion of StakeKit to periodically revise and update these Terms of Use. These revisions and updates are effective immediately when we post them and apply to all access to and use of StakeKit. It is your responsibility to periodically check our Terms of Use page so that you are up to date on any changes made, since the changes are binding on you. If you continue to access and use StakeKit after a revision or update to the Terms of Use, then accept and agree to the changes."
+      },
+      "privacy_policy": {
+        "title": "Privacy Policy",
+        "content_1": "All of the information that StakeKit collects from its users is subject to the StakeKit Privacy Policy, which could be found here: StakeKit Privacy Policy.",
+        "content_2": "By using our website and StakeKit Services, you consent to all of our actions with respect to your personal information in compliance with the StakeKit Privacy Policy."
+      },
+      "contact": {
+        "title": "Contact",
+        "content": "If you have any questions or comments in regard to these Terms, or wish to provide any other feedback, comments, or requests for technical support, please contact us at support@stakek.it. If you do not agree to these Terms, then you should not access or use StakeKit or any of our StakeKit Services."
+      }
+    },
+    "complete_terms_link": "For the complete Terms of Use, please visit: https://docs.yield.xyz/docs/terms-of-use"
+  }
 }

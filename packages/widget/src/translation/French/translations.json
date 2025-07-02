@@ -504,5 +504,111 @@
       "bsc_bnb_native_staking": "Staking natif BNB",
       "tron_trx_native_staking": "Staking natif TRX"
     }
+  },
+  "tos_modal": {
+    "title": "Conditions d'utilisation",
+    "accept_button": "J'accepte",
+    "introduction": "Ces Conditions d'utilisation de StakeKit sont conclues entre vous (« vous » ou « votre ») et StakeKit LLC, ainsi qu'Omni Ltd. et ses autres filiales (« StakeKit », « nous », « notre » et « nos »). En accédant, téléchargeant, utilisant ou en cliquant sur « J'accepte » pour accepter tout « Service StakeKit » fourni par StakeKit, vous acceptez d'avoir lu attentivement, compris et accepté tous les termes et conditions de ces Conditions d'utilisation (« Conditions ») ainsi que notre Politique de confidentialité. Notre Politique de confidentialité peut être consultée ici : Politique de confidentialité StakeKit.",
+    "additional_terms": "De plus, lors de l'utilisation de certaines fonctionnalités des Services, vous pourriez être soumis à des termes et conditions supplémentaires spécifiques applicables à ces fonctionnalités.",
+    "risk_warning": "Comme pour tout actif, les valeurs des « Cryptomonnaies » peuvent fluctuer de manière significative et il existe un risque substantiel de pertes économiques lors de l'achat, de la vente, de la détention ou de l'investissement dans les cryptomonnaies et leurs dérivés. En utilisant les Services StakeKit, vous reconnaissez et acceptez que (1) vous êtes conscient des risques associés aux transactions de cryptomonnaies et de leurs dérivés, (2) vous assumez tous les risques liés à l'utilisation des Services StakeKit et aux transactions de monnaies numériques et de leurs dérivés, et (3) StakeKit ne sera pas responsable de ces risques ou de leurs conséquences négatives.",
+    "agreement_binding": "En accédant, utilisant ou tentant d'utiliser les Services StakeKit à quelque titre que ce soit, vous reconnaissez que vous acceptez et acceptez d'être lié par ces Conditions. Ces Conditions remplacent et annulent tous accords oraux et/ou écrits antérieurs entre StakeKit et vous concernant les Services.",
+    "sections": {
+      "stakekit_services": {
+        "title": "Services StakeKit",
+        "content": "StakeKit vous permet de staker des actifs de cryptomonnaies sur toutes les principales blockchains et vous permet de gagner des intérêts sur vos cryptomonnaies. Les Services StakeKit incluent la création de portefeuilles de cryptomonnaies où la garde et les clés personnelles restent avec l'utilisateur. Les Services incluent également la possibilité d'envoyer, recevoir, staker, faire des ponts et échanger des actifs de cryptomonnaies. Les actifs de cryptomonnaies supportés par StakeKit sont sujets à changement."
+      },
+      "agreement_to_terms": {
+        "title": "Accord aux Conditions",
+        "content": "Lorsque vous cliquez sur « J'accepte » ou lorsque vous accédez à l'application StakeKit ou utilisez l'un des Services StakeKit, vous acceptez d'être lié par ces conditions. Si vous n'acceptez pas ces Conditions, n'acceptez pas ou n'utilisez pas les Services."
+      },
+      "intellectual_property": {
+        "title": "Droits de propriété intellectuelle",
+        "content_1": "L'application et les sites Web StakeKit, ainsi que l'intégralité de leur contenu, fonctionnalités et fonctionnalités (y compris les logiciels, textes, images, vidéos, audio, design et informations) appartiennent à StakeKit LLC, ses concédants de licence, affiliés ou autres fournisseurs de ce matériel et sont protégés par les lois américaines et internationales sur la propriété intellectuelle (y compris les lois sur le droit d'auteur, les marques de commerce, les brevets, les secrets commerciaux et autres droits de propriété intellectuelle ou propriétaires).",
+        "content_2": "Sous ces Conditions, vous êtes autorisé à utiliser l'application StakeKit pour votre usage personnel et non commercial uniquement."
+      },
+      "user_content": {
+        "title": "Contenu utilisateur",
+        "content_1": "Tout contenu que vous mettez à disposition de StakeKit via ses Services constitue du Contenu utilisateur. Vous devez posséder le droit et l'autorité de soumettre votre Contenu utilisateur et que votre Contenu utilisateur n'enfreint aucun droit de propriété intellectuelle ou les droits d'un tiers. StakeKit se réserve le droit à une licence mondiale, non exclusive, libre de redevances, sous-licenciable et transférable d'utiliser, copier, distribuer, créer des œuvres dérivées et afficher le Contenu utilisateur que vous téléchargez, soumettez, stockez, envoyez ou recevez sur l'application StakeKit.",
+        "content_2": "Vous devez reconnaître qu'il peut y avoir certains cas où vous avez supprimé un Contenu utilisateur spécifique, et une partie de votre Contenu utilisateur peut ne pas être complètement supprimée et des copies de votre Contenu utilisateur peuvent continuer à exister sur les Services. StakeKit n'est pas responsable de la suppression de votre Contenu utilisateur.",
+        "content_3": "StakeKit ne maintient aucune obligation de surveiller le Contenu utilisateur. Lorsque vous accédez aux Services StakeKit, vous devez comprendre que vous pourriez être exposé à du Contenu utilisateur qui est offensant, indécent ou répréhensible. StakeKit n'est ni responsable ni ne réserve aucune responsabilité pour le Contenu utilisateur, y compris toute perte ou dommage à votre Contenu utilisateur."
+      },
+      "acceptable_use": {
+        "title": "Utilisation acceptable",
+        "intro": "Vous ne pouvez utiliser l'application et les Services StakeKit qu'à des fins légales et en conformité avec ces Conditions. Vous ne pouvez pas utiliser l'application StakeKit de la manière suivante :",
+        "violation_laws": "• De toute manière qui viole toute loi ou réglementation fédérale, étatique, locale ou internationale applicable (y compris, sans limitation, toute loi concernant l'exportation de données ou de logiciels vers et depuis les États-Unis ou d'autres pays).",
+        "harm_minors": "• Dans le but d'exploiter, nuire ou tenter d'exploiter ou de nuire aux mineurs de quelque manière que ce soit en les exposant à du contenu inapproprié, en demandant des informations personnellement identifiables, ou autrement.",
+        "impersonation": "• Pour usurper l'identité ou tenter d'usurper l'identité de StakeKit, d'un employé de StakeKit, d'un autre utilisateur, ou de toute autre personne ou entité.",
+        "restrict_use": "• Pour s'engager dans toute autre conduite qui restreint ou inhibe l'utilisation ou la jouissance de quiconque des Services StakeKit, ou qui, comme déterminé par nous, peut nuire à StakeKit ou aux utilisateurs de StakeKit, ou les exposer à une responsabilité.",
+        "interfere": "• Pour utiliser tout dispositif, logiciel ou routine qui interfère avec le bon fonctionnement de l'application ou des Services StakeKit.",
+        "additional": "De plus, vous acceptez de ne pas tenter autrement d'interférer avec le bon fonctionnement de l'application et des Services StakeKit."
+      },
+      "termination": {
+        "title": "Résiliation d'utilisation",
+        "content": "StakeKit se réserve le droit de résilier votre accès et utilisation de l'application et/ou des Services StakeKit à notre seule discrétion."
+      },
+      "fees": {
+        "title": "Frais",
+        "content": "StakeKit peut facturer des frais pour certains Services. Nous nous réservons le droit de modifier le montant des frais à notre discrétion. Nous divulguerons le montant des frais que nous vous facturerons pour les Services applicables lorsque vous accédez aux Services."
+      },
+      "taxes": {
+        "title": "Taxes et retenues",
+        "content": "Vous êtes responsable du paiement de toutes les taxes, évaluations, charges, frais et prélèvements qui peuvent être imposés par toute autorité gouvernementale en relation avec votre utilisation des Services StakeKit."
+      },
+      "confidentiality": {
+        "title": "Confidentialité",
+        "content_1": "« Informations confidentielles » signifie toutes informations qu'une partie (la « partie divulgatrice ») divulgue à l'autre partie (le « destinataire ») apprend ou reçoit de ou au nom de la partie divulgatrice en relation avec l'Accord, que ce soit par écrit, oralement, ou sous toute autre forme, que le destinataire sait ou devrait raisonnablement savoir est considéré comme confidentiel ou propriétaire par la partie divulgatrice.",
+        "content_2": "Les Informations confidentielles d'une partie incluent, mais ne se limitent pas à, (a) les secrets commerciaux de cette partie, les informations techniques, le savoir-faire, la technologie, les prototypes, les méthodes, les idées, les données, les informations de coût, les informations client, les informations financières, les identités et listes de fournisseurs et de clients, et les plans d'affaires et de marketing, et (b) toutes copies, extraits, analyses, compilations, prévisions, études ou autres documents contenant ou reflétant les Informations confidentielles de cette partie qui sont préparés par, au nom de, ou en coopération avec l'autre partie. Les Informations confidentielles de StakeKit incluent mais ne se limitent pas à l'application et aux Services StakeKit, sous réserve des droits et permissions qui vous sont accordés sous ces Conditions."
+      },
+      "non_disclosure": {
+        "title": "Confidentialité et non-divulgation",
+        "content_1": "Le destinataire reconnaît que les Informations confidentielles de la partie divulgatrice sont un actif de valeur considérable, et que la divulgation de ces Informations confidentielles à des tiers serait dommageable. Le destinataire : (a) gardera les Informations confidentielles de la partie divulgatrice confidentielles et les utilisera uniquement aux fins d'exercer ses droits et d'exécuter ses obligations sous l'Accord ; (b) ne révélera pas, directement ou indirectement, sans autorisation, ne rapportera pas, ne publiera pas, ne divulguera pas ou ne transférera pas les Informations confidentielles de la partie divulgatrice à tout tiers sauf comme expressément autorisé sous cet Accord ou autrement par écrit par la partie divulgatrice ; (c) utilisera des procédures constituant un haut degré de soin pour maintenir la sécurité des Informations confidentielles de la partie divulgatrice, mais en aucun cas moins qu'un standard raisonnable de soin selon les circonstances ; et (d) divulguera les Informations confidentielles de la partie divulgatrice aux employés, consultants et sous-traitants du destinataire uniquement comme permis sous cet Accord, et en tout cas seulement sur une base de besoin de savoir comme requis en relation avec l'exécution des devoirs du destinataire et l'exercice de ses droits sous l'Accord.",
+        "content_2": "Les parties peuvent divulguer la nature générale de l'Accord ; cependant, tous les autres termes de l'Accord sont des Informations confidentielles de StakeKit et ne peuvent pas être divulgués à tout tiers sans le consentement écrit préalable de StakeKit."
+      },
+      "required_disclosures": {
+        "title": "Divulgations requises",
+        "content": "Si le destinataire est requis par la loi ou ordonnance judiciaire de divulguer toute Information confidentielle de la partie divulgatrice, le destinataire : (a) notifiera la partie divulgatrice par écrit dès que possible, mais en aucun cas moins de dix jours avant toute divulgation requise ; (b) coopérera avec la partie divulgatrice pour préserver la confidentialité de ses Informations confidentielles conformément à la loi applicable ; et (c) limitera toute divulgation à la divulgation minimale nécessaire pour se conformer à la loi applicable ou à l'ordonnance judiciaire."
+      },
+      "return_confidential": {
+        "title": "Retour des informations confidentielles",
+        "content": "Sous réserve de vos droits dans les Informations confidentielles précédemment acquises conformément à la clause de Résiliation, le destinataire retournera ou détruira les Informations confidentielles de la partie divulgatrice dans les 20 jours après la date effective de résiliation de cet Accord. Le destinataire ne sera pas requis de rechercher dans les fichiers électroniques archivés les Informations confidentielles de la partie divulgatrice afin de purger ces informations de ses fichiers. Le destinataire peut conserver des copies des Informations confidentielles de la partie divulgatrice comme nécessaire pour se conformer aux lois applicables, aux politiques écrites de rétention de documents ou de gouvernance de l'information du destinataire, ou à tout standard professionnel applicable."
+      },
+      "limitation_liability": {
+        "title": "Limitation de responsabilité",
+        "content_1": "DANS LA MESURE MAXIMALE PRÉVUE PAR LA LOI, EN AUCUN CAS STAKEKIT, SES AFFILIÉS, OU LEURS CONCÉDANTS DE LICENCE, FOURNISSEURS DE SERVICES, EMPLOYÉS, AGENTS, DIRIGEANTS OU DIRECTEURS NE SERONT RESPONSABLES DE DOMMAGES DE QUELQUE NATURE QUE CE SOIT, SOUS TOUTE THÉORIE LÉGALE, DÉCOULANT DE OU EN RELATION AVEC VOTRE UTILISATION, OU INCAPACITÉ À UTILISER, L'APPLICATION, TOUT SERVICE LIÉ À CELLE-CI, TOUT CONTENU SUR L'APPLICATION, Y COMPRIS TOUT DOMMAGE DIRECT, INDIRECT, SPÉCIAL, ACCESSOIRE, CONSÉCUTIF OU PUNITIF, Y COMPRIS MAIS SANS S'Y LIMITER, BLESSURE PERSONNELLE, DOULEUR ET SOUFFRANCE, DÉTRESSE ÉMOTIONNELLE, PERTE DE REVENUS, PERTE DE PROFITS, PERTE D'AFFAIRES OU D'ÉCONOMIES ANTICIPÉES, PERTE D'UTILISATION, PERTE DE BONNE VOLONTÉ, PERTE DE DONNÉES, ET QUE CE SOIT CAUSÉ PAR DÉLIT (Y COMPRIS NÉGLIGENCE), RUPTURE DE CONTRAT, OU AUTREMENT, MÊME SI PRÉVISIBLE.",
+        "content_2": "CE QUI PRÉCÈDE N'AFFECTE AUCUNE RESPONSABILITÉ QUI NE PEUT ÊTRE EXCLUE OU LIMITÉE SOUS LA LOI APPLICABLE. EN AUCUN CAS LA RESPONSABILITÉ TOTALE ENVERS VOUS DE STAKEKIT POUR TOUS DOMMAGES NE DÉPASSERA LE MONTANT DE CENT DOLLARS AMÉRICAINS (100,00 $) OU SON ÉQUIVALENT DANS LA DEVISE LOCALE DE LA JURIDICTION APPLICABLE."
+      },
+      "dispute_resolution": {
+        "title": "Résolution des litiges",
+        "content_1": "Vous et StakeKit travaillerez ensemble de bonne foi d'abord pour résoudre tout problème par des discussions entre leurs gestionnaires de relations respectifs. Si les gestionnaires de relations ne peuvent pas résoudre le problème dans les 30 jours après le début de leurs discussions sur ce problème, alors ils escaladeront le litige à leur direction supérieure. Si un problème n'est pas résolu dans les 30 jours après l'escalade à la direction supérieure, l'une ou l'autre partie peut initier un arbitrage conformément aux règles commerciales de l'American Arbitration Association (« AAA »).",
+        "content_2": "L'arbitrage sera conduit à New York, New York par un arbitre convenu par les parties ou, en l'absence d'accord, sélectionné par l'AAA. Chaque partie paiera ses propres dépenses découlant de l'arbitrage, et les parties partageront également les dépenses de l'arbitre et de l'AAA. La partie gagnante dans les procédures d'arbitrage aura droit de récupérer les honoraires d'avocat raisonnables et les dépenses encourues en relation avec la procédure, en plus de tout autre recours auquel la partie gagnante peut avoir droit.",
+        "content_3": "Toute sentence d'arbitrage sera finale, et un jugement sur celle-ci peut être entré dans tout tribunal de juridiction compétente. Si une partie viole ou menace de violer ses obligations sous ces Conditions, l'autre partie peut subir un préjudice qui peut ne pas être adéquatement compensé par des dommages monétaires. Dans ce cas, l'autre partie peut, en plus de poursuivre l'arbitrage conformément à cette clause, chercher une exécution spécifique et un recours injonctif ou autre équitable dans tout tribunal de juridiction compétente."
+      },
+      "governing_law": {
+        "title": "Loi applicable et juridiction",
+        "content": "Ces Conditions seront régies par, et interprétées sous, les lois du Delaware, sans application de ses règles de conflit de lois. Sous réserve de la clause de Résolution des litiges précédente, les parties consentent par les présentes à la juridiction exclusive de, et au lieu dans, les tribunaux du Delaware. SI LA DISPOSITION D'ARBITRAGE DANS LA CLAUSE DE RÉSOLUTION DES LITIGES PRÉCÉDENTE EST JUGÉE INVALIDE ET DANS LA MESURE MAXIMALE PERMISE PAR LA LOI, VOUS ET STAKEKIT RENONCEZ PAR LES PRÉSENTES À TOUT DROIT À UN PROCÈS PAR JURY DANS TOUTE ACTION OU PROCÉDURE CONCERNANT TOUT LITIGE LIÉ À CET ACCORD."
+      },
+      "class_action": {
+        "title": "Restrictions d'action collective",
+        "content": "VOUS ET STAKEKIT CONVENEZ PAR LES PRÉSENTES QUE CHAQUE PARTIE NE PEUT PORTER PLAINTE CONTRE L'AUTRE QUE SUR UNE BASE INDIVIDUELLE ET NON COMME DEMANDEUR OU MEMBRE DE CLASSE DANS TOUTE ACTION OU PROCÉDURE COLLECTIVE OU REPRÉSENTATIVE PRÉSUMÉE. SAUF SI LES DEUX PARTIES CONVIENNENT AUTREMENT, L'ARBITRE NE PEUT PAS CONSOLIDER OU JOINDRE LES RÉCLAMATIONS DE PLUS D'UNE PERSONNE OU PARTIE ET NE PEUT PAS AUTREMENT PRÉSIDER TOUTE FORME DE PROCÉDURE CONSOLIDÉE, REPRÉSENTATIVE OU COLLECTIVE."
+      },
+      "time_limits": {
+        "title": "Limites de temps sur les réclamations",
+        "content": "Aucune action contre StakeKit découlant de ou liée à la violation de tout droit concernant ces Conditions ne peut être intentée plus de deux ans après la date à laquelle la réclamation alléguée est survenue."
+      },
+      "changes_terms": {
+        "title": "Modifications des conditions d'utilisation",
+        "content": "Il est de la seule discrétion de StakeKit de réviser et mettre à jour périodiquement ces Conditions d'utilisation. Ces révisions et mises à jour sont effectives immédiatement lorsque nous les publions et s'appliquent à tout accès et utilisation de StakeKit. Il est de votre responsabilité de vérifier périodiquement notre page des Conditions d'utilisation afin d'être au courant de tout changement effectué, car les changements vous lient. Si vous continuez à accéder et utiliser StakeKit après une révision ou mise à jour des Conditions d'utilisation, alors vous acceptez et convenez aux changements."
+      },
+      "privacy_policy": {
+        "title": "Politique de confidentialité",
+        "content_1": "Toutes les informations que StakeKit collecte de ses utilisateurs sont sujettes à la Politique de confidentialité de StakeKit, qui peut être trouvée ici : Politique de confidentialité StakeKit.",
+        "content_2": "En utilisant notre site Web et les Services StakeKit, vous consentez à toutes nos actions concernant vos informations personnelles en conformité avec la Politique de confidentialité de StakeKit."
+      },
+      "contact": {
+        "title": "Contact",
+        "content": "Si vous avez des questions ou commentaires concernant ces Conditions, ou souhaitez fournir tout autre retour, commentaires, ou demandes de support technique, veuillez nous contacter à support@stakek.it. Si vous n'acceptez pas ces Conditions, alors vous ne devriez pas accéder ou utiliser StakeKit ou l'un de nos Services StakeKit."
+      }
+    },
+    "complete_terms_link": "Pour les Conditions d'utilisation complètes, veuillez visiter : https://docs.yield.xyz/docs/terms-of-use"
   }
 }

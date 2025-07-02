@@ -9,6 +9,7 @@ const localStorageBuildKey = <K extends string>(key: K) =>
 const codecs = {
   [localStorageBuildKey("skPubKeys")]: record(string, string),
   [localStorageBuildKey("shimDisconnect/tron")]: boolean,
+  [localStorageBuildKey("tosAccepted")]: boolean,
 };
 
 export type LocalStorageKV = {
@@ -58,6 +59,7 @@ type Listener<K extends keyof LocalStorageKV = keyof LocalStorageKV> = (
 const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
   [localStorageBuildKey("skPubKeys")]: new Map(),
   [localStorageBuildKey("shimDisconnect/tron")]: new Map(),
+  [localStorageBuildKey("tosAccepted")]: new Map(),
 };
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(

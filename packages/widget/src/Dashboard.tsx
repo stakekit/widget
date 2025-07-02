@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router";
+import { GlobalModals } from "./components/molecules/global-modals";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
 // import { RewardsTabPage } from "./pages-dashboard/rewards";
 import { PendingCompletePage } from "./pages/complete/pages/pending-complete.page";
@@ -21,58 +22,62 @@ import { PositionDetailsActions } from "./pages-dashboard/position-details/compo
 
 export const Dashboard = () => {
   return (
-    <Routes>
-      <Route element={<DashboardWrapper />}>
-        {/* Overview Tab */}
-        <Route element={<OverviewPage />}>
-          <Route index element={<EarnPage />} />
+    <>
+      <Routes>
+        <Route element={<DashboardWrapper />}>
+          {/* Overview Tab */}
+          <Route element={<OverviewPage />}>
+            <Route index element={<EarnPage />} />
 
-          <Route element={<ConnectedCheck />}>
-            <Route path="review" element={<StakeReviewPage />} />
-            <Route path="steps" element={<StakeStepsPage />} />
-            <Route path="complete" element={<StakeCompletePage />} />
+            <Route element={<ConnectedCheck />}>
+              <Route path="review" element={<StakeReviewPage />} />
+              <Route path="steps" element={<StakeStepsPage />} />
+              <Route path="complete" element={<StakeCompletePage />} />
+            </Route>
           </Route>
-        </Route>
 
-        {/* Position Details */}
-        <Route
-          path="positions/:integrationId/:balanceId"
-          element={<PositionDetailsPage />}
-        >
-          <Route index element={<PositionDetailsActions />} />
-
+          {/* Position Details */}
           <Route
-            path="select-validator/:pendingActionType"
+            path="positions/:integrationId/:balanceId"
             element={<PositionDetailsPage />}
-          />
+          >
+            <Route index element={<PositionDetailsActions />} />
 
-          {/* Unstaking */}
-          <Route path="unstake">
-            <Route path="review" element={<UnstakeReviewPage />} />
-            <Route path="steps" element={<UnstakeStepsPage />} />
-            <Route path="complete" element={<UnstakeCompletePage />} />
+            <Route
+              path="select-validator/:pendingActionType"
+              element={<PositionDetailsPage />}
+            />
+
+            {/* Unstaking */}
+            <Route path="unstake">
+              <Route path="review" element={<UnstakeReviewPage />} />
+              <Route path="steps" element={<UnstakeStepsPage />} />
+              <Route path="complete" element={<UnstakeCompletePage />} />
+            </Route>
+
+            {/* Pending Actions */}
+            <Route path="pending-action">
+              <Route path="review" element={<PendingReviewPage />} />
+              <Route path="steps" element={<PendingStepsPage />} />
+              <Route path="complete" element={<PendingCompletePage />} />
+            </Route>
           </Route>
 
-          {/* Pending Actions */}
-          <Route path="pending-action">
-            <Route path="review" element={<PendingReviewPage />} />
-            <Route path="steps" element={<PendingStepsPage />} />
-            <Route path="complete" element={<PendingCompletePage />} />
+          {/* Rewards Tab */}
+          {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
+
+          {/* Activity Tab */}
+          <Route path="activity" element={<ActivityTabPage />}>
+            <Route index element={<ActivityDetailsPage />} />
+            <Route
+              path=":pendingActionType/steps"
+              element={<ActivityStepsPage />}
+            />
           </Route>
         </Route>
+      </Routes>
 
-        {/* Rewards Tab */}
-        {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
-
-        {/* Activity Tab */}
-        <Route path="activity" element={<ActivityTabPage />}>
-          <Route index element={<ActivityDetailsPage />} />
-          <Route
-            path=":pendingActionType/steps"
-            element={<ActivityStepsPage />}
-          />
-        </Route>
-      </Route>
-    </Routes>
+      <GlobalModals />
+    </>
   );
 };
