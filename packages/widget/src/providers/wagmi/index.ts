@@ -5,15 +5,18 @@ import type { MiscChainsMap } from "@sk-widget/domain/types/chains/misc";
 import type { SubstrateChainsMap } from "@sk-widget/domain/types/chains/substrate";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { Networks } from "@stakekit/common";
-import type { Wallet, WalletList } from "@stakekit/rainbowkit";
+import type {
+  Chain as RainbowkitChain,
+  Wallet,
+  WalletList,
+} from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
-import type { Chain as RainbowkitChain } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import { createClient } from "viem";
-import { http, createConfig } from "wagmi";
+import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
 import { config } from "../../config";

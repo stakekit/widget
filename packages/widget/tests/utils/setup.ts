@@ -1,7 +1,6 @@
 import { afterAll, afterEach, beforeAll, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { configure } from "@testing-library/react";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { MotionGlobalConfig } from "motion/react";
 import ResizeObserver from "resize-observer-polyfill";
 import { server } from "../mocks/server";

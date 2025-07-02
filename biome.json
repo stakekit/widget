@@ -1,19 +1,22 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      ".next",
-      "next",
-      ".turbo",
-      "**/node_modules",
-      "**/dist",
-      "**/.next",
-      "**/.turbo",
-      "**/region-iso-3166-codes.ts",
-      "**/mockServiceWorker.js",
-      "**/package.json"
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/node_modules/**",
+      "!**/dist",
+      "!**/dist/**",
+      "!**/.next",
+      "!**/next",
+      "!**/.turbo",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.next",
+      "!**/.turbo",
+      "!**/region-iso-3166-codes.ts",
+      "!**/mockServiceWorker.js",
+      "!**/package.json"
     ]
   },
   "formatter": {
@@ -23,12 +26,24 @@
     "indentWidth": 2,
     "lineWidth": 80
   },
-  "organizeImports": { "enabled": true },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
-      "style": { "noNonNullAssertion": "off" },
+      "style": {
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
+      },
       "suspicious": { "noArrayIndexKey": "off" },
       "a11y": { "noSvgWithoutTitle": "off" },
       "correctness": { "useJsxKeyInIterable": "off" },

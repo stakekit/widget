@@ -1,6 +1,6 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
-import { http, HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
 import { server } from "../mocks/server";

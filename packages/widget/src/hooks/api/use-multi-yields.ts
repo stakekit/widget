@@ -4,20 +4,20 @@ import { canBeInitialYield } from "@sk-widget/domain/types/stake";
 import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { YieldDto } from "@stakekit/api-hooks";
-import { type QueryClient, hashKey } from "@tanstack/react-query";
+import { hashKey, type QueryClient } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
 import { createStore } from "@xstate/store";
 import { EitherAsync, Maybe } from "purify-ts";
 import { useEffect, useMemo } from "react";
 import { createSelector } from "reselect";
 import {
-  Observable,
   defaultIfEmpty,
   filter,
   firstValueFrom,
   from,
   map,
   merge,
+  Observable,
   repeat,
   take,
   tap,

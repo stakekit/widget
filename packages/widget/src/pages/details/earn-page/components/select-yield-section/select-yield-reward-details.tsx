@@ -4,8 +4,8 @@ import { Box, Text } from "../../../../../components";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import {
-  RewardTokenDetails,
   isMorphoProvider,
+  RewardTokenDetails,
 } from "../../../../../components/molecules/reward-token-details";
 import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";

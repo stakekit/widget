@@ -8,8 +8,8 @@ import type {
   TokenDto,
   TronResourceType,
   ValidatorDto,
+  YieldDto,
 } from "@stakekit/api-hooks";
-import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import type { SelectedStakeData } from "../types";

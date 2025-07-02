@@ -1,10 +1,10 @@
 import type { GetType } from "purify-ts";
 import {
+  array,
+  boolean,
   Codec,
   Either,
   Right,
-  array,
-  boolean,
   record,
   string,
 } from "purify-ts";

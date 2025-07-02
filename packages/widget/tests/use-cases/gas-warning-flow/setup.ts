@@ -11,7 +11,7 @@ import {
   getTransactionControllerConstructResponseMock,
   getYieldV2ControllerGetYieldByIdResponseMock,
 } from "@stakekit/api-hooks/msw";
-import { http, HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
 import { server } from "../../mocks/server";

@@ -1,9 +1,8 @@
-import { Box, Heading, Text } from "@sk-widget/components";
-import { useTranslation } from "react-i18next";
-
 import { images } from "@sk-widget/assets/images";
+import { Box, Heading, Text } from "@sk-widget/components";
 import { PoweredBy } from "@sk-widget/pages/components/powered-by";
 import { animationContainer } from "@sk-widget/style.css";
+import { useTranslation } from "react-i18next";
 import { container, imageStyle } from "./style.css";
 
 const UnderMaintenance = () => {

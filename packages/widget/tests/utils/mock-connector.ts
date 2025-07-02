@@ -1,4 +1,4 @@
-import { type EIP1193Provider, SwitchChainError, numberToHex } from "viem";
+import { type EIP1193Provider, numberToHex, SwitchChainError } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { ChainNotConfiguredError, custom } from "wagmi";
 import type { MockParameters } from "wagmi/connectors";

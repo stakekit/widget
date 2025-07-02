@@ -85,7 +85,9 @@ const createTronConnector = ({
 
 export const getTronConnectors = ({
   forceWalletConnectOnly,
-}: { forceWalletConnectOnly: boolean }): WalletList[number] => {
+}: {
+  forceWalletConnectOnly: boolean;
+}): WalletList[number] => {
   const wcWallet: WalletList[number]["wallets"][0] = () => ({
     id: configMeta.tronWc.id,
     name: configMeta.tronWc.name,

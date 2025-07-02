@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import autoprefixer from "autoprefixer";
 import merge from "lodash.merge";
 import macros from "unplugin-parcel-macros";
-import { type UserConfig, type UserConfigFnObject, defineConfig } from "vite";
+import { defineConfig, type UserConfig, type UserConfigFnObject } from "vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 import type { InlineConfig } from "vitest/node";
 

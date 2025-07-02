@@ -6,7 +6,7 @@ import type {
   TransactionDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import { http, HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";

@@ -11,9 +11,9 @@ import { Left, List, Maybe, Right } from "purify-ts";
 import { useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router";
 import {
+  getTokenPriceInUSD,
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
-  getTokenPriceInUSD,
 } from "../../../domain";
 import { useSavedRef } from "../../../hooks";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";

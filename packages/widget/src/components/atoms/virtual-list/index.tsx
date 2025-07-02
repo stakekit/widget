@@ -5,8 +5,8 @@ import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
 import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import {
-  type VirtualizerOptions,
   useVirtualizer,
+  type VirtualizerOptions,
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { List, Maybe } from "purify-ts";

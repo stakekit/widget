@@ -1,9 +1,9 @@
 import { ConnectButton } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, CaretDownIcon, Text } from "../..";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../providers/settings";
+import { Box, CaretDownIcon, Text } from "../..";
 import { container, titleStyle } from "./styles.css";
 
 export const ChainModal = () => {

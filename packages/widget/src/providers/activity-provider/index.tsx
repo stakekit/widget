@@ -1,7 +1,7 @@
 import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
-import { type PropsWithChildren, createContext, useContext } from "react";
+import { createContext, type PropsWithChildren, useContext } from "react";
 
 const store = createStore({
   context: {

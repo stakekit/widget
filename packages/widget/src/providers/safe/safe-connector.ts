@@ -1,22 +1,17 @@
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import SafeSDK, { TransactionStatus } from "@safe-global/safe-apps-sdk";
 import {
-  type ExtraProps,
   configMeta,
+  type ExtraProps,
 } from "@sk-widget/providers/safe/safe-connector-meta";
 import { isIframe } from "@sk-widget/utils";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, Maybe } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
 import { getAddress, withTimeout } from "viem";
-import { ProviderNotFoundError } from "wagmi";
-import { type Connector, createConnector } from "wagmi";
+import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 
-function safe(
-  parameters: {
-    shimDisconnect?: boolean;
-  } = {}
-) {
+function safe(parameters: { shimDisconnect?: boolean } = {}) {
   const { shimDisconnect = false } = parameters;
 
   type Provider = SafeAppProvider | undefined;

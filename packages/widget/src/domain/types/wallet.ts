@@ -1,6 +1,8 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
-import type { SendTransactionError } from "@sk-widget/providers/sk-wallet/errors";
-import type { TransactionDecodeError } from "@sk-widget/providers/sk-wallet/errors";
+import type {
+  SendTransactionError,
+  TransactionDecodeError,
+} from "@sk-widget/providers/sk-wallet/errors";
 import type {
   AddressWithTokenDtoAdditionalAddresses,
   Networks,

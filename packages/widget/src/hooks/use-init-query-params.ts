@@ -1,7 +1,7 @@
 import type { TokenString } from "@sk-widget/domain/types";
 import {
-  type SupportedSKChains,
   isSupportedChain,
+  type SupportedSKChains,
 } from "@sk-widget/domain/types/chains";
 import { useSettings } from "@sk-widget/providers/settings";
 import { MaybeWindow } from "@sk-widget/utils/maybe-window";
@@ -80,7 +80,9 @@ const accountIdCodec = Codec.custom<string>({
 
 export const getAndValidateInitParams = ({
   externalProviderInitToken,
-}: { externalProviderInitToken?: TokenString }) =>
+}: {
+  externalProviderInitToken?: TokenString;
+}) =>
   MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
     network: safeParamCodec
       .decode(url.searchParams.get("network"))
