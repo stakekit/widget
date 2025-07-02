@@ -2,8 +2,8 @@ import { ActionTypes } from "@stakekit/api-hooks";
 import { Codec, Left, Right, string } from "purify-ts";
 import { useMemo } from "react";
 import {
-  type SupportedSKChains,
   isSupportedChain,
+  type SupportedSKChains,
 } from "../domain/types/chains";
 import type { TokenString } from "../domain/types/tokens";
 import { useSettings } from "../providers/settings";
@@ -80,7 +80,9 @@ const accountIdCodec = Codec.custom<string>({
 
 export const getAndValidateInitParams = ({
   externalProviderInitToken,
-}: { externalProviderInitToken?: TokenString }) =>
+}: {
+  externalProviderInitToken?: TokenString;
+}) =>
   MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
     network: safeParamCodec
       .decode(url.searchParams.get("network"))

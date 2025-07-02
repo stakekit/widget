@@ -1,6 +1,6 @@
 import {
-  type VirtualizerOptions,
   useVirtualizer,
+  type VirtualizerOptions,
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
 import { List, Maybe } from "purify-ts";

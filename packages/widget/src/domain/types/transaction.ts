@@ -1,13 +1,13 @@
 import type { GetType } from "purify-ts";
 import {
-  Codec,
-  Left,
-  Right,
   array,
   boolean,
+  Codec,
+  Left,
   number,
   oneOf,
   optional,
+  Right,
   record,
   string,
   unknown,
@@ -60,7 +60,10 @@ export const unsignedEVMTransactionCodec = Codec.interface({
 export const decodeAndPrepareEvmTransaction = ({
   address,
   input,
-}: { address: Address; input: unknown }) =>
+}: {
+  address: Address;
+  input: unknown;
+}) =>
   unsignedEVMTransactionCodec.decode(input).map((decodedTx) => ({
     to: decodedTx.to,
     from: address,

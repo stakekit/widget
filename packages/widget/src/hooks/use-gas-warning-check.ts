@@ -4,9 +4,9 @@ import type BigNumber from "bignumber.js";
 import { EitherAsync, type Maybe } from "purify-ts";
 import { useMemo } from "react";
 import {
+  checkGasAmount,
   GasTokenMissingError,
   NotEnoughGasTokenError,
-  checkGasAmount,
 } from "../common/check-gas-amount";
 
 export const useGasWarningCheck = (

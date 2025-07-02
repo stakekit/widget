@@ -57,7 +57,7 @@ export const isLedgerDappBrowserProvider = (() => {
         const params = new URLSearchParams(w.self.location.search);
 
         state = !!params.get("embed");
-      } catch (error) {
+      } catch (_error) {
         state = false;
       }
 
@@ -112,7 +112,7 @@ export const isMobile = () => {
 
       document.createEvent("TouchEvent");
       return true;
-    } catch (e) {
+    } catch (_e) {
       return false;
     }
   };

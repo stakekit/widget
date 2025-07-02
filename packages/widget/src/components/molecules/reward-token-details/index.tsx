@@ -39,56 +39,54 @@ export const RewardTokenDetails = ({
   return rewardToken
     .map((rt) => {
       return (
-        <>
-          <Box display="flex" alignItems="center" gap="2">
-            {Maybe.fromNullable(rt.logoUri)
-              .filter(() => isMorphoProvider(rt.providerName))
-              .map((logoUri) => (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  gap="1"
-                  alignSelf="flex-start"
-                >
-                  <Image
-                    imageProps={{ borderRadius: "full" }}
-                    containerProps={{ hw: "5" }}
-                    src={logoUri}
-                    fallback={
-                      <ImageFallback name={rt.providerName} tokenLogoHw="5" />
-                    }
-                  />
+        <Box display="flex" alignItems="center" gap="2">
+          {Maybe.fromNullable(rt.logoUri)
+            .filter(() => isMorphoProvider(rt.providerName))
+            .map((logoUri) => (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                gap="1"
+                alignSelf="flex-start"
+              >
+                <Image
+                  imageProps={{ borderRadius: "full" }}
+                  containerProps={{ hw: "5" }}
+                  src={logoUri}
+                  fallback={
+                    <ImageFallback name={rt.providerName} tokenLogoHw="5" />
+                  }
+                />
 
-                  <Box width="5" height="5">
-                    <MorphoStarsIcon />
-                  </Box>
+                <Box width="5" height="5">
+                  <MorphoStarsIcon />
                 </Box>
-              ))
-              .extractNullable()}
+              </Box>
+            ))
+            .extractNullable()}
 
-            <Text variant={{ weight: "semibold" }}>
-              <Trans
-                i18nKey={i18nKey}
-                values={{ providerName: rt.providerName }}
-                components={{
-                  symbols1: (
-                    <Text as="span" variant={{ weight: "semibold" }}>
-                      {rt.symbols}
-                    </Text>
-                  ),
-                  highlight2: (
-                    <Text
-                      as="span"
-                      className={inlineText}
-                      variant={{ type: "muted", weight: "medium" }}
-                    />
-                  ),
-                }}
-              />
-            </Text>
-          </Box>
-        </>
+          <Text variant={{ weight: "semibold" }}>
+            <Trans
+              i18nKey={i18nKey}
+              values={{ providerName: rt.providerName }}
+              components={{
+                symbols1: (
+                  <Text as="span" variant={{ weight: "semibold" }}>
+                    {rt.symbols}
+                  </Text>
+                ),
+                highlight2: (
+                  <Text
+                    as="span"
+                    className={inlineText}
+                    variant={{ type: "muted", weight: "medium" }}
+                  />
+                ),
+              }}
+            />
+          </Text>
+        </Box>
       );
     })
     .extractNullable();

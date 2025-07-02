@@ -1,7 +1,7 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { avalanche, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";

@@ -129,7 +129,7 @@ export const ReviewPage = ({
               i18nKey="review.terms_of_use"
               components={{
                 underline0: (
-                  // biome-ignore lint/a11y/useAnchorContent: <explanation>
+                  // biome-ignore lint: false
                   <a
                     target="_blank"
                     onClick={() => trackEvent("termsClicked")}
@@ -151,7 +151,11 @@ const GasFee = ({
   label,
   price,
   loading,
-}: { label: string; price: string; loading: boolean }) => {
+}: {
+  label: string;
+  price: string;
+  loading: boolean;
+}) => {
   return (
     <Box
       display="flex"

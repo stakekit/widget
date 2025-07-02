@@ -54,7 +54,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   return (
     <>
       <style
-        // biome-ignore lint/security/noDangerouslySetInnerHtml: <explanation>
+        // biome-ignore lint: false
         dangerouslySetInnerHTML={{
           __html: [
             finalLightTheme

@@ -5,11 +5,10 @@ import "./styles/theme/global.css";
 import type { ComponentProps, RefObject } from "react";
 import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider, createMemoryRouter } from "react-router";
-import { Dashboard } from "./Dashboard";
-import { Widget } from "./Widget";
+import { createMemoryRouter, RouterProvider } from "react-router";
 import { preloadImages } from "./assets/images";
 import { Box } from "./components/atoms/box";
+import { Dashboard } from "./Dashboard";
 import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useToggleTheme } from "./hooks/use-toggle-theme";
 import { Providers } from "./providers";
@@ -17,6 +16,7 @@ import { SettingsContextProvider, useSettings } from "./providers/settings";
 import type { SettingsProps, VariantProps } from "./providers/settings/types";
 import { appContainer } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
+import { Widget } from "./Widget";
 
 preloadImages();
 

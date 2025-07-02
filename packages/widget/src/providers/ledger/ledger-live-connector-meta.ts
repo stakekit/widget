@@ -1,7 +1,7 @@
-import type { Account } from "@ledgerhq/wallet-api-client";
 import type {
-  WalletAPIClient,
+  Account,
   deserializeTransaction,
+  WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import type { Chain } from "@stakekit/rainbowkit";
 import type { EitherAsync } from "purify-ts";

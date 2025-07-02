@@ -1,6 +1,5 @@
 import { MiscNetworks } from "@stakekit/common";
-import { http } from "msw";
-import { HttpResponse, delay } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import type { SKExternalProviders } from "../../src/domain/types/wallets";

@@ -7,8 +7,7 @@ import type {
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import { List } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
   createContext,
@@ -388,7 +387,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint: false
   useEffect(() => {
     onClickHandlerResetRef.current();
   }, [isConnected, selectedStake, onClickHandlerResetRef]);

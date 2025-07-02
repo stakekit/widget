@@ -5,8 +5,8 @@ import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import {
-  RewardTokenDetails,
   isMorphoProvider,
+  RewardTokenDetails,
 } from "../../../../../components/molecules/reward-token-details";
 import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
 import { useSettings } from "../../../../../providers/settings";

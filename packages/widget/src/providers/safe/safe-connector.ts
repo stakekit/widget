@@ -4,16 +4,11 @@ import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, Maybe } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
 import { getAddress, withTimeout } from "viem";
-import { ProviderNotFoundError } from "wagmi";
-import { type Connector, createConnector } from "wagmi";
+import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
 import { isIframe } from "../../utils";
-import { type ExtraProps, configMeta } from "./safe-connector-meta";
+import { configMeta, type ExtraProps } from "./safe-connector-meta";
 
-function safe(
-  parameters: {
-    shimDisconnect?: boolean;
-  } = {}
-) {
+function safe(parameters: { shimDisconnect?: boolean } = {}) {
   const { shimDisconnect = false } = parameters;
 
   type Provider = SafeAppProvider | undefined;

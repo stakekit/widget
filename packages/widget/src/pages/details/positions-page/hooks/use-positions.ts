@@ -4,7 +4,7 @@ import type {
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { Just, List, type Maybe, compare } from "purify-ts";
+import { compare, Just, List, type Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
 import type { YieldFindValidatorsParams } from "../../../../common/private-api";

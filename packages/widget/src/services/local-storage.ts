@@ -1,5 +1,5 @@
 import type { GetType } from "purify-ts";
-import { Either, Right, boolean, record, string } from "purify-ts";
+import { boolean, Either, Right, record, string } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
 

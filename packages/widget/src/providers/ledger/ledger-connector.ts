@@ -1,8 +1,8 @@
 import type { Account, Currency } from "@ledgerhq/wallet-api-client";
 import {
+  deserializeTransaction,
   WalletAPIClient,
   WindowMessageTransport,
-  deserializeTransaction,
 } from "@ledgerhq/wallet-api-client";
 import type {
   Chain,
@@ -18,12 +18,12 @@ import { images } from "../../assets/images";
 import { skNormalizeChainId } from "../../domain";
 import type { SupportedSKChains } from "../../domain/types/chains";
 import {
-  type SupportedLedgerLiveFamilies,
   ledgerChainPriority,
+  type SupportedLedgerLiveFamilies,
 } from "../../domain/types/chains/ledger";
 import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { type ExtraProps, configMeta } from "./ledger-live-connector-meta";
+import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,

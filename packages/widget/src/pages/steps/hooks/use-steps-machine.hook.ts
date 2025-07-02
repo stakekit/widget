@@ -32,8 +32,8 @@ import {
   SignError,
   SubmitError,
   SubmitHashError,
-  TXCheckError,
   TransactionConstructError,
+  TXCheckError,
 } from "./errors";
 
 type TxMeta = {

@@ -58,7 +58,7 @@ const queryFn = async ({
                   }
 
                   return {
-                    // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+                    // biome-ignore lint: false
                     ...acc,
                     [skChainName]: {
                       type: "cosmos",

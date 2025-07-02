@@ -206,7 +206,7 @@ export const createCosmosConnector = ({
           async () => {
             try {
               return !!$chainWallet.getValue().address;
-            } catch (error) {
+            } catch (_error) {
               return false;
             }
           };

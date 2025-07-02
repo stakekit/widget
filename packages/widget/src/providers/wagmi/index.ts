@@ -1,13 +1,16 @@
 import type { Networks } from "@stakekit/common";
-import type { Wallet, WalletList } from "@stakekit/rainbowkit";
+import type {
+  Chain as RainbowkitChain,
+  Wallet,
+  WalletList,
+} from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
-import type { Chain as RainbowkitChain } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import { createClient } from "viem";
-import { http, createConfig } from "wagmi";
+import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
 import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";

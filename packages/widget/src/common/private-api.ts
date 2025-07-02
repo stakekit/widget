@@ -1,11 +1,11 @@
 import {
+  customFetch,
   type TokenBalanceScanDto,
   type TokenBalanceScanResponseDto,
   type ValidatorSearchResultDto,
   type YieldBalanceScanRequestDto,
   type YieldBalancesWithIntegrationIdDto,
   type YieldDto,
-  customFetch,
 } from "@stakekit/api-hooks";
 
 /**

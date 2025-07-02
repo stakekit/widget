@@ -11,9 +11,9 @@ import type { SupportedSKChains } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import {
+  ledgerChainPriority,
   type SupportedLedgerFamiliesWithCurrency,
   type SupportedLedgerLiveFamilies,
-  ledgerChainPriority,
   supportedLedgerFamiliesWithCurrency,
 } from "../../domain/types/chains/ledger";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
@@ -76,7 +76,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
           accountsFamilies.has(item.family) &&
           (key === "*" || accountsCurrencies.has(item.currencyId))
         ) {
-          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+          // biome-ignore lint: false
           return { ...acc, [key]: { ...item, chain, enabled: true } };
         }
 
@@ -85,14 +85,14 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
             item.skChainName as unknown as SupportedSKChains
           )
         ) {
-          // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+          // biome-ignore lint: false
           return { ...acc, [key]: { ...item, chain, enabled: false } };
         }
 
         return acc;
       }, {} as MappedSupportedLedgerFamiliesWithCurrency);
 
-      // biome-ignore lint/performance/noAccumulatingSpread: <explanation>
+      // biome-ignore lint: false
       return { ...acc, [k]: filtered };
     },
     {} as MappedSupportedLedgerFamiliesWithCurrency

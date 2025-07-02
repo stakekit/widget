@@ -1,5 +1,5 @@
 import { CosmosNetworks } from "@stakekit/common";
-import { chains as RegistryChains, assets } from "chain-registry";
+import { assets, chains as RegistryChains } from "chain-registry";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,

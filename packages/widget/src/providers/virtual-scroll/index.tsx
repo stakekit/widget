@@ -1,5 +1,5 @@
 import type { Virtualizer } from "@tanstack/react-virtual";
-import { type ReactNode, createContext, useContext } from "react";
+import { createContext, type ReactNode, useContext } from "react";
 
 const VirtualizerObserveElementRect = createContext<
   | ((
@@ -11,7 +11,9 @@ const VirtualizerObserveElementRect = createContext<
 
 export const VirtualizerObserveElementRectProvider = ({
   children,
-}: { children: ReactNode }) => {
+}: {
+  children: ReactNode;
+}) => {
   return (
     <VirtualizerObserveElementRect.Provider
       value={(_, cb) => {

@@ -6,8 +6,8 @@ import {
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
-  type PropsWithChildren,
   createContext,
+  type PropsWithChildren,
   useContext,
   useMemo,
 } from "react";

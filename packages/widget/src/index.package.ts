@@ -1,11 +1,10 @@
-export { SKApp } from "./App";
-export { TrackingContextProvider } from "./providers/tracking";
-export { HelpModal } from "./components/molecules/help-modal";
-export { darkTheme, lightTheme } from "./styles/theme/themes";
-export { EvmChainIds } from "./domain/types/chains/evm";
-export { SubstrateChainIds } from "./domain/types/chains/substrate";
-export { MiscChainIds } from "./domain/types/chains/misc";
-
 export type { SKAppProps } from "./App";
+export { SKApp } from "./App";
+export { HelpModal } from "./components/molecules/help-modal";
 export type { SupportedSKChainIds } from "./domain/types/chains";
+export { EvmChainIds } from "./domain/types/chains/evm";
+export { MiscChainIds } from "./domain/types/chains/misc";
+export { SubstrateChainIds } from "./domain/types/chains/substrate";
 export type * from "./domain/types/wallets/generic-wallet";
+export { TrackingContextProvider } from "./providers/tracking";
+export { darkTheme, lightTheme } from "./styles/theme/themes";

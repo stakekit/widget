@@ -4,11 +4,7 @@ import {
 } from "@stakekit/api-hooks";
 import { EitherAsync, List } from "purify-ts";
 
-export const getAverageGasMode = ({
-  network,
-}: {
-  network: Networks;
-}) =>
+export const getAverageGasMode = ({ network }: { network: Networks }) =>
   EitherAsync(() => transactionGetGasForNetwork(network))
     .mapLeft(() => new Error("Get gas for network error"))
     .chain((gas) =>
