@@ -48,8 +48,11 @@ import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isSafeConnector } from "../safe/safe-connector-meta";
 import { useWagmiConfig } from "../wagmi";
-import { SafeFailedError, SendTransactionError } from "./errors";
-import { TransactionDecodeError } from "./errors";
+import {
+  SafeFailedError,
+  SendTransactionError,
+  TransactionDecodeError,
+} from "./errors";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { useConnectorChains } from "./use-connector-chains";
 import { useCosmosCW } from "./use-cosmos-cw";

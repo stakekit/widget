@@ -52,7 +52,9 @@ const SummaryContext = createContext<
 
 export const SummaryProvider = ({
   children,
-}: { children: React.ReactNode }) => {
+}: {
+  children: React.ReactNode;
+}) => {
   const { positionsData } = usePositions();
 
   const yieldIds = useMemo(

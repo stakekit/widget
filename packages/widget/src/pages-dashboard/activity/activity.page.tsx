@@ -141,7 +141,7 @@ const _ActivityPage = () => {
     (state) => state.context.selectedAction
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+  // biome-ignore lint: false
   useEffect(() => {
     activityStore.send({
       type: "setSelectedAction",

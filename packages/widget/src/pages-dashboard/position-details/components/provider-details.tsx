@@ -43,89 +43,86 @@ export const ProviderDetails = ({
   const nameOrAddress = providerDetails.name ?? providerDetails ?? "";
 
   return (
-    <>
-      <CollapsibleRoot initial={false}>
-        <Box display="flex" flexDirection="column">
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            marginBottom="2"
-          >
-            <Box display="flex" justifyContent="flex-start" alignItems="center">
-              <Box marginRight="2">
-                <Image
-                  containerProps={{ hw: "8" }}
-                  imageProps={{ borderRadius: "full" }}
-                  src={logo}
-                  fallback={
-                    <Box marginRight="1">
-                      <ImageFallback
-                        name={nameOrAddress}
-                        tokenLogoHw="8"
-                        textVariant={{ type: "white", weight: "bold" }}
-                      />
-                    </Box>
-                  }
-                />
-              </Box>
-
-              <Text>
-                {t("position_details.via", {
-                  stakeType,
-                  providerName: nameOrAddress,
-                })}
-              </Text>
-
-              {providerDetails.preferred && (
-                <Box marginLeft="1" display="flex">
-                  <PreferredIcon />
-                </Box>
-              )}
-
-              {providerDetails.status &&
-                providerDetails.status !== "active" && (
-                  <Box marginLeft="1" className={inactiveContainer}>
-                    <Text
-                      variant={{
-                        type: "white",
-                        weight: "medium",
-                        size: "small",
-                      }}
-                      className={noWrap}
-                    >
-                      {t(
-                        providerDetails.status === "jailed"
-                          ? "details.validators_jailed"
-                          : "details.validators_inactive"
-                      )}
-                    </Text>
+    <CollapsibleRoot initial={false}>
+      <Box display="flex" flexDirection="column">
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          marginBottom="2"
+        >
+          <Box display="flex" justifyContent="flex-start" alignItems="center">
+            <Box marginRight="2">
+              <Image
+                containerProps={{ hw: "8" }}
+                imageProps={{ borderRadius: "full" }}
+                src={logo}
+                fallback={
+                  <Box marginRight="1">
+                    <ImageFallback
+                      name={nameOrAddress}
+                      tokenLogoHw="8"
+                      textVariant={{ type: "white", weight: "bold" }}
+                    />
                   </Box>
-                )}
+                }
+              />
             </Box>
 
-            <CollapsibleTrigger flex={1} justifyContent="flex-end">
-              <CollapsibleArrow />
-            </CollapsibleTrigger>
+            <Text>
+              {t("position_details.via", {
+                stakeType,
+                providerName: nameOrAddress,
+              })}
+            </Text>
+
+            {providerDetails.preferred && (
+              <Box marginLeft="1" display="flex">
+                <PreferredIcon />
+              </Box>
+            )}
+
+            {providerDetails.status && providerDetails.status !== "active" && (
+              <Box marginLeft="1" className={inactiveContainer}>
+                <Text
+                  variant={{
+                    type: "white",
+                    weight: "medium",
+                    size: "small",
+                  }}
+                  className={noWrap}
+                >
+                  {t(
+                    providerDetails.status === "jailed"
+                      ? "details.validators_jailed"
+                      : "details.validators_inactive"
+                  )}
+                </Text>
+              </Box>
+            )}
           </Box>
 
-          <CollapsibleContent>
-            <ValidatorMeta
-              address={providerDetails.address}
-              commission={providerDetails.commission}
-              rewardRate={providerDetails.rewardRate}
-              stakedBalance={providerDetails.stakedBalance}
-              votingPower={providerDetails.votingPower}
-              rewardType={providerDetails.rewardType}
-              website={providerDetails.website}
-              stakedBalanceToken={integrationData.token}
-            />
-          </CollapsibleContent>
-
-          <Divider />
+          <CollapsibleTrigger flex={1} justifyContent="flex-end">
+            <CollapsibleArrow />
+          </CollapsibleTrigger>
         </Box>
-      </CollapsibleRoot>
-    </>
+
+        <CollapsibleContent>
+          <ValidatorMeta
+            address={providerDetails.address}
+            commission={providerDetails.commission}
+            rewardRate={providerDetails.rewardRate}
+            stakedBalance={providerDetails.stakedBalance}
+            votingPower={providerDetails.votingPower}
+            rewardType={providerDetails.rewardType}
+            website={providerDetails.website}
+            stakedBalanceToken={integrationData.token}
+          />
+        </CollapsibleContent>
+
+        <Divider />
+      </Box>
+    </CollapsibleRoot>
   );
 };
 

@@ -25,9 +25,5 @@ export const GlobalModals = () => {
     );
   }
 
-  return (
-    <>
-      <RichErrorModal />
-    </>
-  );
+  return <RichErrorModal />;
 };

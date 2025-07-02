@@ -1,7 +1,6 @@
 import { style } from "@vanilla-extract/css";
-import { atoms } from "../../../styles/theme/atoms.css";
-
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
+import { atoms } from "../../../styles/theme/atoms.css";
 
 export const summaryContainer = recipe({
   base: atoms({

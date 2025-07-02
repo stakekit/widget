@@ -1,12 +1,5 @@
 import { Route, Routes } from "react-router";
 import { ConnectedCheck } from "./navigation/cheks/connected-check";
-import { ActivityTabPage } from "./pages-dashboard/activity";
-import { ActivityDetailsPage } from "./pages-dashboard/activity/activity-details.page";
-import { DashboardWrapper } from "./pages-dashboard/common/components/wrapper";
-import { OverviewPage } from "./pages-dashboard/overview";
-import { EarnPage } from "./pages-dashboard/overview/earn-page";
-import { PositionDetailsPage } from "./pages-dashboard/position-details";
-import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
 // import { RewardsTabPage } from "./pages-dashboard/rewards";
 import { PendingCompletePage } from "./pages/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "./pages/complete/pages/stake-complete.page";
@@ -18,6 +11,13 @@ import { StakeStepsPage } from "./pages/steps";
 import { ActivityStepsPage } from "./pages/steps/pages/activity-steps.page";
 import { PendingStepsPage } from "./pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "./pages/steps/pages/unstake-steps.page";
+import { ActivityTabPage } from "./pages-dashboard/activity";
+import { ActivityDetailsPage } from "./pages-dashboard/activity/activity-details.page";
+import { DashboardWrapper } from "./pages-dashboard/common/components/wrapper";
+import { OverviewPage } from "./pages-dashboard/overview";
+import { EarnPage } from "./pages-dashboard/overview/earn-page";
+import { PositionDetailsPage } from "./pages-dashboard/position-details";
+import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
 
 export const Dashboard = () => {
   return (

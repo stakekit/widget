@@ -54,23 +54,21 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     .unsafeCoerce();
 
   return (
-    <>
-      <motion.div
-        data-rk="widget-container"
-        layout="size"
-        className={animationContainer}
-        initial={{ height: 0 }}
-        animate={animate}
-        onAnimationComplete={(def: typeof animate) => {
-          if (!def.height || def.height !== animate.height || state.layout) {
-            return;
-          }
+    <motion.div
+      data-rk="widget-container"
+      layout="size"
+      className={animationContainer}
+      initial={{ height: 0 }}
+      animate={animate}
+      onAnimationComplete={(def: typeof animate) => {
+        if (!def.height || def.height !== animate.height || state.layout) {
+          return;
+        }
 
-          dispatch({ type: "layout" });
-        }}
-      >
-        {children}
-      </motion.div>
-    </>
+        dispatch({ type: "layout" });
+      }}
+    >
+      {children}
+    </motion.div>
   );
 };

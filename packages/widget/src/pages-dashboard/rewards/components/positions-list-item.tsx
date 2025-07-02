@@ -2,8 +2,11 @@ import { List } from "purify-ts";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { SKLink } from "../../../components/atoms/link";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { Spinner } from "../../../components/atoms/spinner";
+import { TokenIcon } from "../../../components/atoms/token-icon";
 import { ToolTip } from "../../../components/atoms/tooltip";
 import { Text } from "../../../components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "../../../domain/types/positions";
@@ -15,10 +18,6 @@ import {
 } from "../../../pages/details/positions-page/components/styles.css";
 import type { usePositions } from "../../../pages/details/positions-page/hooks/use-positions";
 import { usePositionListItem } from "../../overview/positions/hooks/use-position-list-item";
-
-import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
-import { SKLink } from "../../../components/atoms/link";
-import { TokenIcon } from "../../../components/atoms/token-icon";
 import {
   listItemContainer,
   positionDetailsContainer,

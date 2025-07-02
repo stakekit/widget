@@ -117,7 +117,10 @@ export const SelectYieldRewardDetails = () => {
 const DefaultEarnYearlyOrMonthly = ({
   earnMonthly,
   earnYearly,
-}: { earnMonthly: string; earnYearly: string }) => {
+}: {
+  earnMonthly: string;
+  earnYearly: string;
+}) => {
   const { t } = useTranslation();
 
   const { variant } = useSettings();
@@ -158,7 +161,10 @@ const DefaultEarnYearlyOrMonthly = ({
 const UtilaEarnYearlyOrMonthly = ({
   earnMonthly,
   earnYearly,
-}: { earnMonthly: string; earnYearly: string }) => {
+}: {
+  earnMonthly: string;
+  earnYearly: string;
+}) => {
   const { t } = useTranslation();
 
   return (
