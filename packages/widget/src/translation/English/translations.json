@@ -69,7 +69,10 @@
     "no_opportunities": "No yield opportunities for this token",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
-    "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
+    "campaign_description": "After staking sUSD, the position is locked until April 20, 2026.",
+    "campaign_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
+    "campaign_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",
+    "campaign": "Learn more about sUSD staking program <link0>here</link0>",
     "lockup_period": "Minimum lock up time is {{days}} days",
     "native_staking": {
       "earn_after_warmup_one": "You’ll start earning {{count}} day after you supply your assets",

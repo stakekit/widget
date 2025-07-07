@@ -54,22 +54,48 @@ export const useYieldMetaInfo = ({
 
       const isCompound = providerName.includes("Compound");
 
-      const def = {
-        campaign:
-          y.metadata.rewardSchedule === "campaign" ? (
+      if (y.metadata.rewardSchedule === "campaign") {
+        return {
+          description: t("details.campaign_description"),
+          extra: t("details.campaign_extra"),
+          positionLocked: (
             <Trans
-              i18nKey="details.campaign"
+              i18nKey="details.campaign_position_locked"
               components={{
                 link0: (
-                  <SKAnchor href="https://420.synthetix.io/?collateral=SNX">
+                  <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
                     {t("shared.learn_more")}
                   </SKAnchor>
                 ),
               }}
             />
-          ) : null,
+          ),
+          campaign: (
+            <Trans
+              i18nKey="details.campaign"
+              components={{
+                link0: (
+                  <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+                    {t("shared.learn_more")}
+                  </SKAnchor>
+                ),
+              }}
+            />
+          ),
+          withdrawnTime: null,
+          lockupPeriod: null,
+          earnPeriod: null,
+          earnRewards: null,
+          withdrawnNotAvailable: null,
+        };
+      }
+
+      const def = {
+        campaign: null,
         lockupPeriod: y.metadata.lockupPeriod?.days
-          ? t("details.lockup_period", { days: y.metadata.lockupPeriod?.days })
+          ? t("details.lockup_period", {
+              days: y.metadata.lockupPeriod?.days,
+            })
           : null,
         extra:
           y.rewardType === "variable"
@@ -255,8 +281,9 @@ const ifNotFound: {
   earnRewards: string | null;
   withdrawnTime: string | null;
   withdrawnNotAvailable: string | null;
-  extra?: string;
   lockupPeriod: string | null;
+  extra?: string;
+  positionLocked?: ReactNode;
 } = {
   campaign: null,
   description: null,
