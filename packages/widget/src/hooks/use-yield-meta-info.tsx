@@ -52,8 +52,6 @@ export const useYieldMetaInfo = ({
       const warmupPeriodDays = y.metadata.warmupPeriod?.days ?? 0;
       const rewardClaiming = y.metadata.rewardClaiming;
 
-      console.log({ selectedStake, tokenDto });
-
       const isCompound = providerName.includes("Compound");
 
       if (
