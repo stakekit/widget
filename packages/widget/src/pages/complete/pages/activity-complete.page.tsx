@@ -47,6 +47,7 @@ export const ActivityCompletePage = () => {
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
     validatorsAddresses: Maybe.of(selectedAction.validatorAddresses ?? []),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   return (

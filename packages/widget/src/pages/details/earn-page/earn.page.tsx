@@ -1,3 +1,4 @@
+import { SelectProvider } from "@sk-widget/pages/details/earn-page/components/select-provider";
 import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
@@ -93,6 +94,8 @@ const EarnPageComponent = () => {
           <SelectYieldSection />
 
           <StakedVia />
+
+          <SelectProvider />
 
           <SelectValidatorSection />
 

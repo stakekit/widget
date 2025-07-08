@@ -41,6 +41,7 @@ export const PendingCompletePage = () => {
     validatorsAddresses: positionBalances.data.map((p) =>
       p.type === "validators" ? p.validatorsAddresses : []
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const metadata = integrationData.map((d) => d.metadata);

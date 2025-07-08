@@ -6,7 +6,7 @@ import {
 } from "@sk-widget/domain/types/stake";
 import type { State } from "@sk-widget/pages/details/earn-page/state/types";
 import type { YieldDto } from "@stakekit/api-hooks";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 
 export const onYieldSelectState = ({
   yieldDto,
@@ -18,7 +18,11 @@ export const onYieldSelectState = ({
   initParams: Maybe<InitParams>;
 }): Pick<
   State,
-  "selectedStakeId" | "stakeAmount" | "selectedValidators" | "tronResource"
+  | "selectedStakeId"
+  | "stakeAmount"
+  | "selectedValidators"
+  | "tronResource"
+  | "selectedProviderYieldId"
 > => ({
   selectedStakeId: Maybe.of(yieldDto.id),
   stakeAmount: getMinStakeAmount(yieldDto, positionsData),
@@ -29,4 +33,9 @@ export const onYieldSelectState = ({
   tronResource: Maybe.fromFalsy(
     yieldDto.args.enter.args?.tronResource?.required
   ).map(() => "ENERGY"),
+  selectedProviderYieldId: Maybe.fromNullable(
+    yieldDto.args.enter.args?.providerId
+  )
+    .filter((val) => val.required)
+    .chain((val) => List.head(val.options)),
 });

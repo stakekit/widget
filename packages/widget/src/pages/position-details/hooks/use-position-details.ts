@@ -108,6 +108,7 @@ export const usePositionDetails = () => {
     validatorsAddresses: positionBalances.data.map((b) => {
       return b.type === "validators" ? b.validatorsAddresses : [];
     }),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();

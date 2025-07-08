@@ -26,8 +26,8 @@ export const setup = async () => {
   const amount = "6.367499123588739454";
 
   const yieldOp: YieldDto = {
-    apy: 0.05863407069791653,
-    rewardRate: 0.05863407069791653,
+    apy: 0.05082415753100329,
+    rewardRate: 0.05082415753100329,
     rewardType: "apy",
     feeConfigurations: [],
     args: {

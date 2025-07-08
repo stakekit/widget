@@ -1,5 +1,8 @@
-import { isEigenRestaking } from "@sk-widget/domain/types";
-import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
+import {
+  getYieldProviderYieldIds,
+  isYieldWithProviderOptions,
+} from "@sk-widget/domain/types";
+import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -24,11 +27,13 @@ type Res = Maybe<{
 const getProviderDetails = ({
   integrationData,
   validatorAddress,
-  p2pYield,
+  yields,
+  selectedProviderYieldId,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorAddress: Maybe<string>;
-  p2pYield: Maybe<YieldDto>;
+  yields: Maybe<YieldDto[]>;
+  selectedProviderYieldId: Maybe<string>;
 }): Res => {
   const def = integrationData.chain((val) =>
     Maybe.fromNullable(val.metadata.provider)
@@ -66,10 +71,14 @@ const getProviderDetails = ({
           (v) => v.address === addr || v.providerId === addr,
           val.validators
         ).map((v) => {
-          const { rewardRate, rewardType } = Maybe.fromFalsy(
-            isEigenRestaking(val)
-          )
-            .chain(() => p2pYield.map((v) => v.rewardRate + v.rewardRate))
+          const { rewardRate, rewardType } = Maybe.fromRecord({
+            _: Maybe.fromFalsy(isYieldWithProviderOptions(val)),
+            selectedProviderYieldId,
+          })
+            .chain(({ selectedProviderYieldId }) =>
+              yields.chain(List.find((v) => v.id === selectedProviderYieldId))
+            )
+            .map((v) => v.rewardRate + v.rewardRate)
             .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
               (res) => ({ rewardRate: res, rewardType: val.rewardType })
             )
@@ -101,11 +110,15 @@ const getProviderDetails = ({
 export const useProvidersDetails = ({
   integrationData,
   validatorsAddresses,
+  selectedProviderYieldId,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorsAddresses: Maybe<string[] | Map<string, ValidatorDto>>;
+  selectedProviderYieldId: Maybe<string>;
 }) => {
-  const p2pYield = useP2PYield(integrationData.map(isEigenRestaking).isJust());
+  const yields = useMultiYields(
+    integrationData.map(getYieldProviderYieldIds).orDefault([])
+  );
 
   return useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
     () =>
@@ -118,7 +131,8 @@ export const useProvidersDetails = ({
             getProviderDetails({
               integrationData,
               validatorAddress: Maybe.of(v),
-              p2pYield: Maybe.fromNullable(p2pYield.data),
+              yields: Maybe.fromNullable(yields.data),
+              selectedProviderYieldId,
             })
           )
         ).chain((val) =>
@@ -127,10 +141,11 @@ export const useProvidersDetails = ({
             : getProviderDetails({
                 integrationData,
                 validatorAddress: Maybe.empty(),
-                p2pYield: Maybe.fromNullable(p2pYield.data),
+                yields: Maybe.fromNullable(yields.data),
+                selectedProviderYieldId,
               }).map((v) => [v])
         )
       ),
-    [integrationData, validatorsAddresses, p2pYield.data]
+    [integrationData, validatorsAddresses, yields.data, selectedProviderYieldId]
   );
 };
