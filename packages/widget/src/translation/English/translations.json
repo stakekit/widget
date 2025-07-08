@@ -239,6 +239,7 @@
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View {{type}} transaction",
     "via": "via {{providerName}}",
+    "continue": "Go to Earn dashboard",
     "stake": {
       "staking": "staked",
       "liquid-staking": "staked",

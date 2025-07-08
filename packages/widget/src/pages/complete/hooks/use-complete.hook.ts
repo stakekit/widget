@@ -51,7 +51,7 @@ export const useComplete = () => {
       () => ({
         disabled: false,
         isLoading: false,
-        label: t("shared.ok"),
+        label: t("complete.continue"),
         onClick: () => onClickRef.current(),
         hide: !!activityMatch,
       }),
