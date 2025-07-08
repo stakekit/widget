@@ -4,15 +4,11 @@ import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
 import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
 import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
-import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { formatNumber } from "@sk-widget/utils";
 import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
-import {
-  useActionExitGasEstimate,
-  useYieldGetFeeConfiguration,
-} from "@stakekit/api-hooks";
+import { useActionExitGasEstimate } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -27,13 +23,10 @@ export const useUnstakeActionReview = () => {
     (state) => state.context.data
   ).unsafeCoerce();
 
-  const integrationId = exitRequest.requestDto.integrationId;
-
   const actionExitGasEstimate = useActionExitGasEstimate(
     exitRequest.requestDto,
     { query: { staleTime: 0, gcTime: 0 } }
   );
-  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
 
   const stakeExitTxGas = useMemo(
     () => Maybe.fromNullable(actionExitGasEstimate.data?.amount).map(BigNumber),
@@ -59,19 +52,6 @@ export const useUnstakeActionReview = () => {
     () => new BigNumber(exitRequest.requestDto.args.amount ?? 0),
     [exitRequest.requestDto.args.amount]
   );
-
-  const { depositFee, managementFee, performanceFee } = useFees({
-    amount,
-    token: interactedToken,
-    feeConfigDto: useMemo(
-      () => Maybe.fromNullable(feeConfigDto.data),
-      [feeConfigDto.data]
-    ),
-    prices: useMemo(
-      () => Maybe.fromNullable(pricesState.data),
-      [pricesState.data]
-    ),
-  });
 
   const gasWarningCheck = useGasWarningCheck({
     gasAmount: stakeExitTxGas,
@@ -177,9 +157,5 @@ export const useUnstakeActionReview = () => {
     gasCheckLoading:
       actionExitGasEstimate.isLoading || gasWarningCheck.isLoading,
     isGasCheckWarning: !!gasWarningCheck.data,
-    depositFee,
-    managementFee,
-    performanceFee,
-    feeConfigLoading: feeConfigDto.isPending,
   };
 };

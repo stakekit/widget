@@ -1,5 +1,6 @@
 import { UnstakeSignPopup } from "@sk-widget/pages/position-details/components/unstake-sign-popup";
 import { useUnstakeActionReview } from "@sk-widget/pages/review/hooks/use-unstake-review.hook";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { ReviewPage } from "./common-page/common.page";
@@ -18,10 +19,6 @@ export const UnstakeReviewPage = () => {
     showUnstakeSignMessagePopup,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFee,
-    managementFee,
-    performanceFee,
-    feeConfigLoading,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
@@ -30,6 +27,17 @@ export const UnstakeReviewPage = () => {
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
     [amount, token]
   );
+
+  const { depositFee, managementFee, performanceFee, feeConfigLoading } =
+    useMemo(
+      () => ({
+        depositFee: Maybe.empty(),
+        managementFee: Maybe.empty(),
+        performanceFee: Maybe.empty(),
+        feeConfigLoading: false,
+      }),
+      []
+    );
 
   return (
     <>

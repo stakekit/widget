@@ -1,7 +1,6 @@
 import { getValidStakeSessionTx } from "@sk-widget/domain";
 import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
-import { useFees } from "@sk-widget/pages/review/hooks/use-fees";
 import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
 import { usePendingActionStore } from "@sk-widget/providers/pending-action-store";
 import { formatNumber } from "@sk-widget/utils";
@@ -9,7 +8,6 @@ import {
   type ActionTypes,
   actionPending,
   useActionPendingGasEstimate,
-  useYieldGetFeeConfiguration,
 } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
@@ -32,14 +30,10 @@ export const usePendingActionReview = () => {
     (state) => state.context.data
   ).unsafeCoerce();
 
-  const integrationId = pendingRequest.requestDto.integrationId;
-
   const actionPendingGasEstimate = useActionPendingGasEstimate(
     pendingRequest.requestDto,
     { query: { staleTime: 0, gcTime: 0 } }
   );
-
-  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
 
   const pendingTxGas = useMemo(
     () =>
@@ -65,19 +59,6 @@ export const usePendingActionReview = () => {
   const pricesState = useTokensPrices({
     token: interactedToken,
     yieldDto: integrationData,
-  });
-
-  const { depositFee, managementFee, performanceFee } = useFees({
-    amount,
-    token: interactedToken,
-    feeConfigDto: useMemo(
-      () => Maybe.fromNullable(feeConfigDto.data),
-      [feeConfigDto.data]
-    ),
-    prices: useMemo(
-      () => Maybe.fromNullable(pricesState.data),
-      [pricesState.data]
-    ),
   });
 
   const gasWarningCheck = useGasWarningCheck({
@@ -185,9 +166,5 @@ export const usePendingActionReview = () => {
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
       actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
-    depositFee,
-    managementFee,
-    performanceFee,
-    feeConfigLoading: feeConfigDto.isPending,
   };
 };
