@@ -47,6 +47,7 @@ export const setup = () => {
         tokens: [avalancheCToken],
         status: { enter: true, exit: true },
         args: { enter: { args: { nfts: undefined } } },
+        feeConfigurations: [],
         metadata: {
           ...val.metadata,
           type: "staking",
@@ -88,6 +89,7 @@ export const setup = () => {
         tokens: [usdcToken],
         status: { enter: true, exit: true },
         args: { enter: { args: { nfts: undefined } } },
+        feeConfigurations: [],
         metadata: {
           ...val.metadata,
           type: "staking",
