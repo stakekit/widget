@@ -1,5 +1,16 @@
 # @stakekit/widget
 
+## 0.0.238
+
+### Patch Changes
+
+- a9c0156: chore: bump deps
+- 186f2af: feat: update cta text on complete page
+- 04e8c0a: fix: sUSD meta info
+- ba34187: feat: eigenlayer
+- 186f2af: fix: remove fees for exit + actions
+- 186f2af: feat: provider options
+
 ## 0.0.237
 
 ### Patch Changes
