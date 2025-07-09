@@ -38,9 +38,15 @@ export const StakeCompletePage = () => {
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
+  const selectedProviderYieldId = useMemo(
+    () => Maybe.fromNullable(enterRequest.requestDto.args.providerId),
+    [enterRequest.requestDto.args.providerId]
+  );
+
   const providerDetails = useProvidersDetails({
     integrationData: selectedStake,
     validatorsAddresses: Maybe.of(enterRequest.selectedValidators),
+    selectedProviderYieldId,
   });
 
   return (

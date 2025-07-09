@@ -114,8 +114,19 @@ const isNativeStaking = (yieldDto: YieldDto) =>
 const isPooledStaking = (yieldDto: YieldDto) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
 
-export const isEigenRestaking = (yieldDto: YieldDto) =>
-  yieldDto.id === "ethereum-eth-eigen-restaking";
+export const isYieldWithProviderOptions = (yieldDto: YieldDto) =>
+  !!yieldDto.args.enter.args?.providerId?.required;
 
-export const p2pYieldId = "ethereum-eth-p2p-staking";
-export const p2pProviderId = "P2P";
+export const getYieldProviderYieldIds = (yieldDto: YieldDto) =>
+  yieldDto.args.enter.args?.providerId?.options ?? [];
+
+export const getCorrectRewardRate = (yieldDto: YieldDto) =>
+  Maybe.fromFalsy(!!yieldDto.feeConfigurations.length)
+    .map(() =>
+      yieldDto.feeConfigurations.reduce(
+        (acc, curr) => acc.plus(curr.computedRewardRate),
+        new BigNumber(0)
+      )
+    )
+    .map((v) => v.dividedBy(yieldDto.feeConfigurations.length).toNumber())
+    .orDefault(yieldDto.rewardRate);

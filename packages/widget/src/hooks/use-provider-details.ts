@@ -1,5 +1,9 @@
-import { isEigenRestaking } from "@sk-widget/domain/types";
-import { useP2PYield } from "@sk-widget/hooks/api/use-p2p-yield";
+import {
+  getCorrectRewardRate,
+  getYieldProviderYieldIds,
+  isYieldWithProviderOptions,
+} from "@sk-widget/domain/types";
+import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -24,22 +28,28 @@ type Res = Maybe<{
 const getProviderDetails = ({
   integrationData,
   validatorAddress,
-  p2pYield,
+  yields,
+  selectedProviderYieldId,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorAddress: Maybe<string>;
-  p2pYield: Maybe<YieldDto>;
+  yields: Maybe<YieldDto[]>;
+  selectedProviderYieldId: Maybe<string>;
 }): Res => {
-  const def = integrationData.chain((val) =>
-    Maybe.fromNullable(val.metadata.provider)
+  const def = integrationData.chain((val) => {
+    const rewardRate = getCorrectRewardRate(val);
+
+    const rewardRateFormatted = getRewardRateFormatted({
+      rewardRate,
+      rewardType: val.rewardType,
+    });
+
+    return Maybe.fromNullable(val.metadata.provider)
       .map<GetMaybeJust<Res>>((v) => ({
         logo: v.logoURI,
         name: v.name,
-        rewardRateFormatted: getRewardRateFormatted({
-          rewardRate: val.rewardRate,
-          rewardType: val.rewardType,
-        }),
-        rewardRate: val.rewardRate,
+        rewardRateFormatted,
+        rewardRate,
         rewardType: val.rewardType,
         website: v.externalLink,
         address: validatorAddress.extract(),
@@ -48,49 +58,53 @@ const getProviderDetails = ({
         Maybe.of({
           logo: val.metadata.logoURI,
           name: val.metadata.name,
-          rewardRateFormatted: getRewardRateFormatted({
-            rewardRate: val.rewardRate,
-            rewardType: val.rewardType,
-          }),
-          rewardRate: val.rewardRate,
+          rewardRateFormatted,
+          rewardRate,
           rewardType: val.rewardType,
           address: validatorAddress.extract(),
         })
-      )
-  );
+      );
+  });
 
-  return integrationData.chain((val) =>
+  return integrationData.chain((yieldDto) =>
     validatorAddress
       .chain<GetMaybeJust<Res>>((addr) =>
         List.find(
           (v) => v.address === addr || v.providerId === addr,
-          val.validators
-        ).map((v) => {
-          const { rewardRate, rewardType } = Maybe.fromFalsy(
-            isEigenRestaking(val)
-          )
-            .chain(() => p2pYield.map((v) => v.rewardRate + v.rewardRate))
-            .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
-              (res) => ({ rewardRate: res, rewardType: val.rewardType })
+          yieldDto.validators
+        ).map((validator) => {
+          const { rewardRate, rewardType } = Maybe.fromRecord({
+            _: Maybe.fromFalsy(isYieldWithProviderOptions(yieldDto)),
+            selectedProviderYieldId,
+          })
+            .chain(({ selectedProviderYieldId }) =>
+              yields.chain(List.find((v) => v.id === selectedProviderYieldId))
             )
-            .orDefault({ rewardRate: v.apr, rewardType: val.rewardType });
+            .map((v) => v.rewardRate + v.rewardRate)
+            .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
+              (res) => ({ rewardRate: res, rewardType: yieldDto.rewardType })
+            )
+            .orDefault({
+              rewardRate: validator.apr,
+              rewardType: yieldDto.rewardType,
+            });
 
           return {
-            logo: v.image,
-            name: v.name ?? v.address,
+            logo: validator.image,
+            name: validator.name ?? validator.address,
             rewardRateFormatted: getRewardRateFormatted({
               rewardRate,
               rewardType,
             }),
             rewardRate,
-            rewardType: val.rewardType,
-            address: v.address,
-            stakedBalance: v.stakedBalance,
-            votingPower: v.votingPower,
-            commission: v.commission,
-            status: v.status,
-            website: v.website,
-            preferred: v.preferred,
+            rewardType: yieldDto.rewardType,
+            address: validator.address,
+            stakedBalance: validator.stakedBalance,
+            votingPower: validator.votingPower,
+            commission: validator.commission,
+            status: validator.status,
+            website: validator.website,
+            preferred: validator.preferred,
           };
         })
       )
@@ -101,11 +115,15 @@ const getProviderDetails = ({
 export const useProvidersDetails = ({
   integrationData,
   validatorsAddresses,
+  selectedProviderYieldId,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorsAddresses: Maybe<string[] | Map<string, ValidatorDto>>;
+  selectedProviderYieldId: Maybe<string>;
 }) => {
-  const p2pYield = useP2PYield(integrationData.map(isEigenRestaking).isJust());
+  const yields = useMultiYields(
+    integrationData.map(getYieldProviderYieldIds).orDefault([])
+  );
 
   return useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
     () =>
@@ -118,7 +136,8 @@ export const useProvidersDetails = ({
             getProviderDetails({
               integrationData,
               validatorAddress: Maybe.of(v),
-              p2pYield: Maybe.fromNullable(p2pYield.data),
+              yields: Maybe.fromNullable(yields.data),
+              selectedProviderYieldId,
             })
           )
         ).chain((val) =>
@@ -127,10 +146,11 @@ export const useProvidersDetails = ({
             : getProviderDetails({
                 integrationData,
                 validatorAddress: Maybe.empty(),
-                p2pYield: Maybe.fromNullable(p2pYield.data),
+                yields: Maybe.fromNullable(yields.data),
+                selectedProviderYieldId,
               }).map((v) => [v])
         )
       ),
-    [integrationData, validatorsAddresses, p2pYield.data]
+    [integrationData, validatorsAddresses, yields.data, selectedProviderYieldId]
   );
 };

@@ -11,14 +11,17 @@ export const useEstimatedRewards = ({
   selectedStake,
   stakeAmount,
   selectedValidators,
+  selectedProviderYieldId,
 }: {
   selectedStake: Maybe<YieldDto>;
   stakeAmount: State["stakeAmount"];
   selectedValidators: State["selectedValidators"];
+  selectedProviderYieldId: State["selectedProviderYieldId"];
 }) => {
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
     validatorsAddresses: Maybe.of(selectedValidators),
+    selectedProviderYieldId,
   });
 
   return useMemo(

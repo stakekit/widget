@@ -22,6 +22,7 @@ export type State = {
   selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
   stakeAmount: BigNumber;
   tronResource: Maybe<TronResourceType>;
+  selectedProviderYieldId: Maybe<YieldDto["id"]>;
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
@@ -37,6 +38,11 @@ type ValidatorRemoveAction = Action<"validator/remove", ValidatorDto>;
 
 type SelectTronResourceAction = Action<"tronResource/select", TronResourceType>;
 
+type ProviderYieldIdSelectAction = Action<
+  "providerYieldId/select",
+  YieldDto["id"]
+>;
+
 export type Actions =
   | TokenBalanceSelectAction
   | YieldSelectAction
@@ -46,7 +52,8 @@ export type Actions =
   | ValidatorSelectAction
   | ValidatorMultiSelectAction
   | ValidatorRemoveAction
-  | SelectTronResourceAction;
+  | SelectTronResourceAction
+  | ProviderYieldIdSelectAction;
 
 export type ExtraData = {
   actions: { onMaxClick: () => void };

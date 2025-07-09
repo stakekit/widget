@@ -1,6 +1,7 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
 import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
+import { SelectOpportunityListItem } from "@sk-widget/components/molecules/select-opportunity-list-item";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -13,7 +14,6 @@ import {
 import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 
 export const SelectOpportunity = () => {
   const {
@@ -22,6 +22,7 @@ export const SelectOpportunity = () => {
     onSelectOpportunityClose,
     onYieldSearch,
     stakeSearch,
+    onYieldSelect,
   } = useEarnPageContext();
 
   const trackEvent = useTrackEvent();
@@ -104,7 +105,11 @@ export const SelectOpportunity = () => {
                   <Text variant={{ weight: "bold" }}>{item}</Text>
                 </Box>
               ) : (
-                <SelectOpportunityListItem index={index} item={item} />
+                <SelectOpportunityListItem
+                  item={item}
+                  onYieldSelect={(yieldDto) => onYieldSelect(yieldDto.id)}
+                  testId={`select-opportunity__item_${item.id}-${index}`}
+                />
               )}
             </SelectModalItemContainer>
           );

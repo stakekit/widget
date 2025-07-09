@@ -128,6 +128,7 @@
     "opportunity_search_title": "Select a yield",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
+    "provider_search_title": "Select provider",
     "reward_token": "You'll receive <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tabs": {
       "earn": "Earn",
@@ -239,6 +240,7 @@
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View {{type}} transaction",
     "via": "via {{providerName}}",
+    "continue": "Go to Earn dashboard",
     "stake": {
       "staking": "staked",
       "liquid-staking": "staked",

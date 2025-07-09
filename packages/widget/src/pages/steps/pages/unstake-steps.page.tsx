@@ -30,6 +30,7 @@ export const UnstakeStepsPage = () => {
     validatorsAddresses: positionBalances.data.map((p) =>
       p.type === "validators" ? p.validatorsAddresses : []
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   return (

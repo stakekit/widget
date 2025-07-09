@@ -47,7 +47,7 @@ import {
 import { useSavedRef, useTokensPrices } from "../../../../hooks";
 import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
-import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
+import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
@@ -87,6 +87,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     availableAmount,
     availableYields,
     hasNotYieldsForToken,
+    selectedProviderYieldId,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
 
@@ -110,6 +111,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake,
     selectedValidators,
     stakeAmount,
+    selectedProviderYieldId,
   });
   const rewardToken = useRewardTokenDetails(selectedStake);
 
@@ -166,7 +168,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const [validatorSearch, setValidatorSearch] = useState("");
   const deferredValidatorSearch = useDeferredValue(validatorSearch);
 
-  const multiYields = useMultiYields(
+  const multiYields = useStreamMultiYields(
     useMemo(() => availableYields.orDefault([]), [availableYields])
   );
 
@@ -513,6 +515,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
     validatorsAddresses: Maybe.of(selectedValidators),
+    selectedProviderYieldId,
   });
 
   const trackEvent = useTrackEvent();

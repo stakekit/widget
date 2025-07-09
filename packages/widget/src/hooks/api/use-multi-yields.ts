@@ -1,10 +1,12 @@
 import type { InitParams } from "@sk-widget/domain/types/init-params";
 import type { PositionsData } from "@sk-widget/domain/types/positions";
 import { canBeInitialYield } from "@sk-widget/domain/types/stake";
+import type { SKWallet } from "@sk-widget/domain/types/wallet";
+import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
 import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { YieldDto } from "@stakekit/api-hooks";
-import { hashKey, type QueryClient } from "@tanstack/react-query";
+import { hashKey, type QueryClient, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
 import { createStore } from "@xstate/store";
 import { EitherAsync, Maybe } from "purify-ts";
@@ -22,12 +24,11 @@ import {
   take,
   tap,
   timer,
+  toArray,
 } from "rxjs";
-import type { SKWallet } from "../../domain/types";
 import { isSupportedChain } from "../../domain/types/chains";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { getYieldOpportunity } from "./use-yield-opportunity";
 
 const multiYieldsStore = createStore({
   context: { data: new Map<string, Map<string, YieldDto>>() },
@@ -47,7 +48,7 @@ const multiYieldsStore = createStore({
   },
 });
 
-export const useMultiYields = (yieldIds: string[]) => {
+export const useStreamMultiYields = (yieldIds: string[]) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
   const argsRef = useSavedRef({
@@ -83,6 +84,39 @@ export const useMultiYields = (yieldIds: string[]) => {
     const map = state.context.data.get(hashedKey);
 
     return map ? Array.from(map.values()) : [];
+  });
+};
+
+export const useMultiYields = <T = YieldDto[]>(
+  yieldIds: string[],
+  opts?: {
+    select?: (val: YieldDto[]) => T;
+    enabled?: boolean;
+  }
+) => {
+  const { network, isConnected, isLedgerLive } = useSKWallet();
+
+  const whitelistedValidatorAddresses = useWhitelistedValidators();
+
+  const argsRef = useSavedRef({
+    isLedgerLive,
+    queryClient: useSKQueryClient(),
+    network,
+    isConnected,
+  });
+
+  return useQuery({
+    enabled: yieldIds.length > 0 && opts?.enabled,
+    queryKey: ["multi-yields", yieldIds, whitelistedValidatorAddresses],
+    queryFn: () =>
+      firstValueFrom(
+        multipleYields$({
+          ...argsRef.current,
+          yieldIds,
+          whitelistedValidatorAddresses,
+        }).pipe(toArray())
+      ),
+    select: opts?.select,
   });
 };
 

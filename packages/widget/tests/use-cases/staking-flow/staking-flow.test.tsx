@@ -1,9 +1,7 @@
-import { SKQueryClientProvider } from "@sk-widget/providers/query-client";
 import { userEvent } from "@testing-library/user-event";
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
-import { useEstimatedRewards } from "../../../src/hooks/use-estimated-rewards";
 import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
 import { formatAddress, formatNumber } from "../../../src/utils";
 import { renderApp, renderHook, waitFor, within } from "../../utils/test-utils";
@@ -61,37 +59,19 @@ describe("Staking flow", () => {
 
     expect(getByText("Stake")).toBeInTheDocument();
 
-    const estimatedRewards = renderHook(
-      () =>
-        useEstimatedRewards({
-          selectedStake: Just(yieldOp),
-          selectedValidators: new Map(),
-          stakeAmount: new BigNumber(stakeAmount),
-        }),
-      {
-        wrapper(props) {
-          return (
-            <SKQueryClientProvider>{props.children}</SKQueryClientProvider>
-          );
-        },
-      }
-    ).result.current.unsafeCoerce();
-
     expect(
-      within(getByTestId("estimated-reward__percent")).getByText(
-        estimatedRewards.percentage
-      )
+      within(getByTestId("estimated-reward__percent")).getByText("5.08%")
     ).toBeInTheDocument();
 
     expect(
       within(getByTestId("estimated-reward__yearly")).getByText(
-        `${estimatedRewards.yearly} ${yieldOp.token.symbol}`
+        `0.00508 ${yieldOp.token.symbol}`
       )
     ).toBeInTheDocument();
 
     expect(
       within(getByTestId("estimated-reward__monthly")).getByText(
-        `${estimatedRewards.monthly} ${yieldOp.token.symbol}`
+        `0.00042 ${yieldOp.token.symbol}`
       )
     ).toBeInTheDocument();
 
@@ -129,9 +109,7 @@ describe("Staking flow", () => {
       expect(el).toBeInTheDocument()
     );
     expect(getByText("& earn")).toBeInTheDocument();
-    getAllByText(estimatedRewards.percentage).forEach((el) =>
-      expect(el).toBeInTheDocument()
-    );
+    getAllByText("5.08%").forEach((el) => expect(el).toBeInTheDocument());
 
     expect(getByText("Confirm")).toBeInTheDocument();
 
