@@ -1,6 +1,8 @@
 import { useActivityUnstakeActionMatch } from "@sk-widget/hooks/navigation/use-activiti-unstake.match";
 import { useActivityPendingActionMatch } from "@sk-widget/hooks/navigation/use-activity-pending-action-match";
 import { useActivityReviewMatch } from "@sk-widget/hooks/navigation/use-activity-review.match";
+import { useSKWallet } from "@sk-widget/providers/sk-wallet";
+import { isMobile } from "@sk-widget/utils";
 import type { TransactionType } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +19,8 @@ export const useComplete = () => {
 
   const location = useLocation();
 
+  const { isLedgerLive } = useSKWallet();
+
   const urls: {
     type: TransactionType;
     url: string;
@@ -25,6 +29,11 @@ export const useComplete = () => {
   const trackEvent = useTrackEvent();
 
   const onClick = () => {
+    if (isLedgerLive && !isMobile()) {
+      window.location.href = "ledgerlive://earn";
+
+      return;
+    }
     navigate("/");
   };
 
