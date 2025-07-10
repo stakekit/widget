@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.240
+
+### Patch Changes
+
+- c6b0b16: fix: ll naming
+
 ## 0.0.239
 
 ### Patch Changes
