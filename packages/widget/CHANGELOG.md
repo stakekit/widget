@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.239
+
+### Patch Changes
+
+- c0b0fb6: fix: ll usde
+
 ## 0.0.238
 
 ### Patch Changes
