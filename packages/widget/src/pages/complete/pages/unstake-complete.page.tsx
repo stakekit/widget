@@ -59,6 +59,7 @@ export const UnstakeCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={amount}
+      integrationId={exitRequest.integrationData.id}
     />
   );
 };

@@ -1,5 +1,7 @@
 import { yieldYieldOpportunity } from "@sk-widget/common/private-api";
+import { isEthenaUsdeStaking } from "@sk-widget/domain/types";
 import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
+import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
@@ -82,6 +84,17 @@ const fn = ({
               whitelistedValidatorAddresses.has(v.address)
             ),
           }
+        : y
+    )
+    .map((y) =>
+      isEthenaUsdeStaking(y.id)
+        ? ({
+            ...y,
+            metadata: {
+              ...y.metadata,
+              name: y.metadata.name.replace(/staking/i, ""),
+            },
+          } satisfies YieldDto)
         : y
     )
     .mapLeft((e) => {

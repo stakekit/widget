@@ -1,7 +1,11 @@
-import type { ExtendedYieldType } from "@sk-widget/domain/types";
+import {
+  type ExtendedYieldType,
+  isEthenaUsdeStaking,
+} from "@sk-widget/domain/types";
 import type {
   ActionTypes,
   TokenDto,
+  YieldDto,
   YieldMetadataDto,
 } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
@@ -30,6 +34,7 @@ type Props = {
     }[]
   >;
   yieldType: Maybe<ExtendedYieldType>;
+  integrationId: YieldDto["id"];
 };
 
 export const CompletePage = ({
@@ -40,6 +45,7 @@ export const CompletePage = ({
   pendingActionType,
   yieldType,
   providersDetails,
+  integrationId,
 }: Props) => {
   const { t } = useTranslation();
 
@@ -105,8 +111,16 @@ export const CompletePage = ({
                     action: yieldType.mapOrDefault(
                       (yt) =>
                         unstakeMatch
-                          ? t(`complete.unstake.${yt}`)
-                          : t(`complete.stake.${yt}`),
+                          ? t(`complete.unstake.${yt}`, {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ethena_usde"
+                                : undefined,
+                            })
+                          : t(`complete.stake.${yt}`, {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ethena_usde"
+                                : undefined,
+                            }),
                       ""
                     ),
                     amount,
@@ -176,7 +190,13 @@ export const CompletePage = ({
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
                     type: Just(val.type)
-                      .map((v) => t(`steps.tx_type.${v}`))
+                      .map((v) =>
+                        t(`steps.tx_type.${v}`, {
+                          context: isEthenaUsdeStaking(integrationId)
+                            ? "ETHENA_USDE"
+                            : undefined,
+                        })
+                      )
                       .map(capitalizeFirstLowerRest)
                       .extract(),
                   })}

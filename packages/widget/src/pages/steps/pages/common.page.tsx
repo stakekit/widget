@@ -51,6 +51,7 @@ export const StepsPage = ({
                   txState={txState}
                   position={getPosition(txStates.length, i)}
                   count={{ current: i + 1, total: txStates.length }}
+                  session={session}
                 />
               ))}
             </Box>

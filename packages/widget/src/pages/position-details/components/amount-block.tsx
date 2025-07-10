@@ -234,7 +234,7 @@ const UnstakeInfo = ({
   return useMemo(
     () =>
       Just([withdrawnTime, withdrawnNotAvailable, positionLocked])
-        .map((val) => val.filter((v) => v !== null))
+        .map((val) => val.filter((v) => !!v))
         .filter((val) => !!val.length)
         .map((val) => (
           <Box display="flex" flexDirection="column" gap="2">

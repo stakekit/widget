@@ -1,4 +1,5 @@
 import { SKAnchor } from "@sk-widget/components/atoms/anchor";
+import { isEthenaUsdeStaking } from "@sk-widget/domain/types";
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { MiscNetworks } from "@stakekit/common";
 import { List, Maybe } from "purify-ts";
@@ -188,6 +189,9 @@ export const useYieldMetaInfo = ({
             description: t("details.vault.description", {
               stakeToken,
               depositToken: rewardTokens,
+              context: isEthenaUsdeStaking(y.id)
+                ? "ethena_usde_staking"
+                : undefined,
             }),
             earnPeriod:
               warmupPeriodDays > 0
