@@ -1,5 +1,4 @@
 import {
-  getCorrectRewardRate,
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
 } from "@sk-widget/domain/types";
@@ -37,7 +36,7 @@ const getProviderDetails = ({
   selectedProviderYieldId: Maybe<string>;
 }): Res => {
   const def = integrationData.chain((val) => {
-    const rewardRate = getCorrectRewardRate(val);
+    const rewardRate = val.rewardRate;
 
     const rewardRateFormatted = getRewardRateFormatted({
       rewardRate,

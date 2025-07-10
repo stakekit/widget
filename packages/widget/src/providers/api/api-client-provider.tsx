@@ -14,12 +14,14 @@ import { useSettings } from "../settings";
 const Context = createContext<AxiosInstance | undefined>(undefined);
 
 export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
-  const { apiKey } = useSettings();
+  const { apiKey, baseUrl } = useSettings();
   const { i18n } = useTranslation();
+
+  const url = baseUrl ?? config.env.apiUrl;
 
   const [apiClient] = useState(() => {
     const instance = axios.create({
-      baseURL: config.env.apiUrl,
+      baseURL: url,
       headers: { "X-API-KEY": apiKey },
       adapter: "fetch",
     });
@@ -33,7 +35,7 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
 
   StakeKitApiClient.configure({
     apiKey,
-    baseURL: config.env.apiUrl,
+    baseURL: url,
     fetchInstance: (url, requestInit) => {
       const headers = new Headers(requestInit.headers);
 

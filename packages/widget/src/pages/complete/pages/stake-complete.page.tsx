@@ -57,6 +57,7 @@ export const StakeCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={amount}
+      integrationId={enterRequest.selectedStake.id}
     />
   );
 };

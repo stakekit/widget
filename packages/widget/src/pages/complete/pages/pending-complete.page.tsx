@@ -65,6 +65,7 @@ export const PendingCompletePage = () => {
       network={network}
       amount={amount}
       pendingActionType={pendingRequest.pendingActionType}
+      integrationId={pendingRequest.integrationData.id}
     />
   );
 };

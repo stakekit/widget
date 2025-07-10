@@ -26,6 +26,7 @@ export type VariantProps =
 
 export type SettingsProps = {
   apiKey: string;
+  baseUrl?: string;
   theme?: ThemeWrapperTheme;
   referralCheck?: boolean;
   tracking?: {
