@@ -189,9 +189,7 @@ export const useYieldMetaInfo = ({
             description: t("details.vault.description", {
               stakeToken,
               depositToken: rewardTokens,
-              context: isEthenaUsdeStaking(y.id)
-                ? "ethena_usde_staking"
-                : undefined,
+              context: isEthenaUsdeStaking(y.id) ? "ethena_usde" : undefined,
             }),
             earnPeriod:
               warmupPeriodDays > 0

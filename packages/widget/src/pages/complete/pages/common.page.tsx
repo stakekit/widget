@@ -128,7 +128,12 @@ export const CompletePage = ({
                     pendingAction: t(
                       `complete.pending_action.${
                         pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
-                      }` as const
+                      }` as const,
+                      {
+                        context: isEthenaUsdeStaking(integrationId)
+                          ? "ethena_usde"
+                          : undefined,
+                      }
                     ),
                   }
                 )}
