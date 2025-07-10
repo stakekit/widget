@@ -65,7 +65,7 @@ const PositionDetails = () => {
           </Box>
         ) : (
           Maybe.fromRecord({ integrationData, positionBalancesByType })
-            .map((val) => (
+            .map(({ integrationData, positionBalancesByType }) => (
               <Box
                 className={container}
                 flex={1}
@@ -73,7 +73,7 @@ const PositionDetails = () => {
                 flexDirection="column"
               >
                 {unstakeToken
-                  .altLazy(() => Just(val.integrationData.token))
+                  .altLazy(() => Just(integrationData.token))
                   .map((t) => (
                     <>
                       <Box
@@ -82,7 +82,7 @@ const PositionDetails = () => {
                         alignItems="center"
                       >
                         <TokenIcon
-                          metadata={val.integrationData.metadata}
+                          metadata={integrationData.metadata}
                           token={t}
                           tokenLogoHw="14"
                         />
@@ -95,7 +95,7 @@ const PositionDetails = () => {
                         flexDirection="column"
                       >
                         <Heading variant={{ level: "h4" }} textAlign="center">
-                          {val.integrationData.metadata.name}
+                          {integrationData.metadata.name}
                         </Heading>
                         <Text variant={{ type: "muted" }}>{t.symbol}</Text>
                       </Box>
@@ -147,21 +147,21 @@ const PositionDetails = () => {
                           key={p.address ?? idx}
                           isFirst={idx === 0}
                           stakeType={t(
-                            `position_details.stake_type.${val.integrationData.metadata.type}`
+                            `position_details.stake_type.${integrationData.metadata.type}`
                           )}
-                          integrationData={val.integrationData}
+                          integrationData={integrationData}
                         />
                       ))
                     )
                     .extractNullable()}
                 </Box>
                 <Box py="3" gap="2" display="flex" flexDirection="column">
-                  {[...val.positionBalancesByType.values()].flatMap(
+                  {[...positionBalancesByType.values()].flatMap(
                     (yieldBalance) =>
                       yieldBalance.map((yb, i) => (
                         <PositionBalances
                           key={`${yb.type}-${i}`}
-                          integrationData={val.integrationData}
+                          integrationData={integrationData}
                           yieldBalance={yb}
                         />
                       ))
@@ -233,6 +233,7 @@ const PositionDetails = () => {
                             {...val}
                             key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                             onPendingActionClick={onPendingActionClick}
+                            yieldId={integrationData.id}
                           />
                         )
                       )
@@ -267,11 +268,11 @@ const PositionDetails = () => {
                           unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
-                            `position_details.unstake_label.${val.integrationData.metadata.type}`
+                            `position_details.unstake_label.${integrationData.metadata.type}`
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}
-                          yieldDto={val.integrationData}
+                          yieldDto={integrationData}
                           validators={providersDetails.orDefault([])}
                         />
                       )
@@ -290,8 +291,8 @@ const PositionDetails = () => {
 
                       onValidatorsSubmit([val.address]);
                     }}
-                    selectedStake={val.integrationData}
-                    validators={val.integrationData.validators}
+                    selectedStake={integrationData}
+                    validators={integrationData.validators}
                     multiSelect={validatorAddressesHandling.multiSelect}
                     state={validatorAddressesHandling.modalState}
                   >
