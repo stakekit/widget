@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.241
+
+### Patch Changes
+
+- 8de2e83: Adds gnosis chain support
+- 5c05567: feat: add katana
+
 ## 0.0.240
 
 ### Patch Changes
