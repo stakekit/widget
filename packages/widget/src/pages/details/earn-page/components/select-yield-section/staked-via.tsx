@@ -1,7 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { Box, Text } from "../../../../../components";
+import { Box } from "../../../../../components/atoms/box";
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const StakedVia = () => {

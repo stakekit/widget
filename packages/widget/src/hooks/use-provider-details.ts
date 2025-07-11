@@ -1,13 +1,13 @@
-import {
-  getYieldProviderYieldIds,
-  isYieldWithProviderOptions,
-} from "@sk-widget/domain/types";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { GetMaybeJust } from "../types";
+import {
+  getYieldProviderYieldIds,
+  isYieldWithProviderOptions,
+} from "../domain/types/yields";
+import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
+import { useMultiYields } from "./api/use-multi-yields";
 
 type Res = Maybe<{
   logo: string | undefined;
@@ -24,7 +24,7 @@ type Res = Maybe<{
   preferred?: ValidatorDto["preferred"];
 }>;
 
-const getProviderDetails = ({
+export const getProviderDetails = ({
   integrationData,
   validatorAddress,
   yields,

@@ -1,6 +1,6 @@
-import { rootSelector } from "@sk-widget/styles/theme/ids";
 import { globalStyle, layer } from "@vanilla-extract/css";
 import { vars } from "./contract.css";
+import { rootSelector } from "./ids";
 
 const reset = layer("reset");
 

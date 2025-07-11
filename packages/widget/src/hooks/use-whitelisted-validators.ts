@@ -1,5 +1,5 @@
-import { useSettings } from "@sk-widget/providers/settings";
 import { useMemo } from "react";
+import { useSettings } from "../providers/settings";
 
 export const useWhitelistedValidators = () => {
   const { whitelistedValidatorAddresses } = useSettings();

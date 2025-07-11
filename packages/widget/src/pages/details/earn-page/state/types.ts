@@ -1,8 +1,3 @@
-import type { useEstimatedRewards } from "@sk-widget/hooks/use-estimated-rewards";
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import type { useRewardTokenDetails } from "@sk-widget/hooks/use-reward-token-details";
-import type { SettingsContextType } from "@sk-widget/providers/settings";
-import type { Action } from "@sk-widget/types";
 import type {
   TokenBalanceScanResponseDto,
   TokenDto,
@@ -12,6 +7,10 @@ import type {
 } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
+import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import type { Action } from "../../../../types/utils";
 import type { SelectedStakeData } from "../types";
 
 export type State = {
@@ -68,7 +67,6 @@ export type ExtraData = {
 };
 
 export type EarnPageContextType = {
-  referralCheck: SettingsContextType["referralCheck"];
   selectedTokenAvailableAmount: Maybe<{
     symbol: string;
     shortFormattedAmount: string;

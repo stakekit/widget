@@ -6,13 +6,14 @@ import type {
 } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
-import type { TokenString } from "../../../domain/types";
 import type { PositionBalancesByType } from "../../../domain/types/positions";
+import type { Prices } from "../../../domain/types/price";
+import type { TokenString } from "../../../domain/types/tokens";
 import type { usePrices } from "../../../hooks/api/use-prices";
 import type { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import type { usePositionBalances } from "../../../hooks/use-position-balances";
 import type { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
-import type { Action } from "../../../types";
+import type { Action } from "../../../types/utils";
 
 type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
 type UnstakeAmountMax = Action<"unstake/amount/max">;
@@ -52,7 +53,7 @@ export type ExtraData = {
     token: TokenDto;
     pricePerShare: string;
   }>;
-  positionBalancePrices: ReturnType<typeof usePrices>;
+  positionBalancePrices: ReturnType<typeof usePrices<Prices>>;
   unstakeAmountValid: boolean;
   unstakeToken: Maybe<TokenDto>;
   unstakeAmountError: boolean;

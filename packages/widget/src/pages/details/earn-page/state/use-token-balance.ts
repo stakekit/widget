@@ -1,8 +1,8 @@
-import { tokenString } from "@sk-widget/domain";
 import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { tokenString } from "../../../../domain";
 import { useTokenBalancesMap } from "./use-token-balances-map";
 
 export const useTokenBalance = ({

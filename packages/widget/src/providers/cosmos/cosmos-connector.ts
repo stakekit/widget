@@ -6,7 +6,6 @@ import type {
   MainWalletBase,
 } from "@cosmos-kit/core";
 import type { WCClient } from "@cosmos-kit/walletconnect";
-import type { CosmosChainsMap } from "@sk-widget/domain/types/chains/cosmos";
 import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import EventEmitter from "eventemitter3";
@@ -15,6 +14,7 @@ import { BehaviorSubject } from "rxjs";
 import type { Address, Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
+import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { waitForMs } from "../../utils";
 import type { ExtraProps } from "./cosmos-connector-meta";

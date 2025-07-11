@@ -1,16 +1,4 @@
 import {
-  PAMultiValidatorsRequired,
-  PASingleValidatorRequired,
-} from "@sk-widget/domain";
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { getInitParams } from "@sk-widget/hooks/use-init-params";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { preparePendingActionRequestDto } from "@sk-widget/pages/position-details/hooks/utils";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import type { GetEitherRight, Override } from "@sk-widget/types";
-import {
   type AddressWithTokenDtoAdditionalAddresses,
   type PendingActionDto,
   type YieldBalanceDto,
@@ -20,6 +8,18 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
+import {
+  PAMultiValidatorsRequired,
+  PASingleValidatorRequired,
+} from "../../../../domain";
+import { getYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
+import { getInitParams } from "../../../../hooks/use-init-params";
+import { useWhitelistedValidators } from "../../../../hooks/use-whitelisted-validators";
+import { useSKQueryClient } from "../../../../providers/query-client";
+import { useSettings } from "../../../../providers/settings";
+import { useSKWallet } from "../../../../providers/sk-wallet";
+import type { GetEitherRight, Override } from "../../../../types/utils";
+import { preparePendingActionRequestDto } from "../../../position-details/hooks/utils";
 
 export const usePendingActionDeepLink = () => {
   const { isLedgerLive, isConnected, address, connector, additionalAddresses } =

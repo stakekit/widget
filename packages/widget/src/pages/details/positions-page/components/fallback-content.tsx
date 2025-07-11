@@ -1,5 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { Box, Spinner, Text } from "../../../../components";
+import { Box } from "../../../../components/atoms/box";
+import { Spinner } from "../../../../components/atoms/spinner";
+import { Text } from "../../../../components/atoms/typography/text";
 import { ConnectButton } from "../../../../components/molecules/connect-button";
 import { useSettings } from "../../../../providers/settings";
 

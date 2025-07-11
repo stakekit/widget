@@ -1,9 +1,8 @@
-import { GroupedVirtualList } from "@sk-widget/components/atoms/virtual-list";
 import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { vars } from "../../../styles";
+import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
@@ -18,7 +17,8 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
-import { Text } from "../../atoms/typography";
+import { Text } from "../../atoms/typography/text";
+import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { useMetaInfo } from "./meta-info";
 import {
   inactiveContainer,

@@ -1,7 +1,7 @@
-import { useTrackingProps } from "@sk-widget/providers/tracking/use-tracking-props";
 import type { PropsWithChildren } from "react";
 import { createContext, useCallback, useContext, useMemo } from "react";
-import type { SettingsContextType } from "../settings";
+import type { SettingsContextType } from "../settings/types";
+import { useTrackingProps } from "./use-tracking-props";
 
 const trackPageMap = {
   earn: "Earn",
@@ -40,6 +40,9 @@ const trackEventMap = {
   widgetDisconnectClicked: "Widget disconnect clicked",
   backClicked: "Back clicked",
   helpModalOpened: "Help modal opened",
+  termsModalOpened: "Terms modal opened",
+  termsModalAccepted: "Terms modal accepted",
+  termsModalDeclined: "Terms modal declined",
   earnPageMaxClicked: "Earn page max clicked",
   connectedWallet: "Connected wallet",
   importValidatorModalOpened: "Import validator modal opened",

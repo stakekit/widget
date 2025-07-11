@@ -1,27 +1,27 @@
 import type {
+  ActionDto,
+  RewardTypes,
+  TransactionDto,
+} from "@stakekit/api-hooks";
+import type {
   DecodedBittensorTransaction,
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
   DecodedTonTransaction,
   DecodedTronTransaction,
-} from "@sk-widget/domain/types/transaction";
-import type {
-  ActionDto,
-  RewardTypes,
-  TransactionDto,
-} from "@stakekit/api-hooks";
+} from "../../types/transaction";
 
-export type EVMTx = {
+type EVMTx = {
   type: "evm";
   tx: DecodedEVMTransaction;
 };
 
-export type SolanaTx = {
+type SolanaTx = {
   type: "solana";
   tx: DecodedSolanaTransaction;
 };
 
-export type TonTx = {
+type TonTx = {
   type: "ton";
   tx: DecodedTonTransaction;
 };

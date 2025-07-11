@@ -1,10 +1,10 @@
-import { useSavedRef } from "@sk-widget/hooks";
-import { useUpdateEffect } from "@sk-widget/hooks/use-update-effect";
 import { List, Maybe } from "purify-ts";
 import { useEffect, useMemo } from "react";
 import { type Connector, useConnect, useConnectors } from "wagmi";
-import type { SKWallet } from "../../domain/types";
-import type { Nullable } from "../../types";
+import type { SKWallet } from "../../domain/types/wallet";
+import { useSavedRef } from "../../hooks/use-saved-ref";
+import { useUpdateEffect } from "../../hooks/use-update-effect";
+import type { Nullable } from "../../types/utils";
 import { isExternalProviderConnector } from "../external-provider";
 import { useSettings } from "../settings";
 

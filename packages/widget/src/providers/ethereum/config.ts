@@ -1,7 +1,3 @@
-import {
-  type EvmChainsMap,
-  evmChainsMap,
-} from "@sk-widget/domain/types/chains/evm";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
@@ -13,6 +9,7 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { config } from "../../config";
+import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 

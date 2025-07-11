@@ -1,12 +1,12 @@
-import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
-import { usePositionBalances } from "@sk-widget/hooks/use-position-balances";
-import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
+import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 

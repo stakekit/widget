@@ -1,9 +1,9 @@
 import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
-import type { VariantProps } from "../../../providers/settings";
 import { useSettings } from "../../../providers/settings";
+import type { VariantProps } from "../../../providers/settings/types";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { Box } from "../..";
+import { Box } from "../../atoms/box";
 
 export const ZerionChainModal = () => {
   const settings = useSettings();

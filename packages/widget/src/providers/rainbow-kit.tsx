@@ -1,19 +1,19 @@
-import { shouldShowDisconnect } from "@sk-widget/domain/types/connectors";
-import { useSettings } from "@sk-widget/providers/settings";
-import { vars } from "@sk-widget/styles";
-import { id } from "@sk-widget/styles/theme/ids";
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
 import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Text } from "../components";
+import { Text } from "../components/atoms/typography/text";
+import { shouldShowDisconnect } from "../domain/types/connectors";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
+import { vars } from "../styles/theme/contract.css";
+import { id } from "../styles/theme/ids";
 import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
+import { useSettings } from "./settings";
 import { useSKWallet } from "./sk-wallet";
 import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
 
@@ -37,7 +37,7 @@ export const RainbowKitProviderWithTheme = ({
 
   const { t } = useTranslation();
 
-  const { hideChainModal } = useSettings();
+  const { hideAccountAndChainSelector } = useSettings();
 
   const chainIdsToUse = useMemo(
     () => new Set(connectorChains.map((c) => c.id)),
@@ -72,7 +72,7 @@ export const RainbowKitProviderWithTheme = ({
         onDisabledChainClick.mutate(disabledChain);
       }}
       appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
-      {...(hideChainModal && { avatar: null })}
+      {...(hideAccountAndChainSelector && { avatar: null })}
       showRecentTransactions={false}
       theme={finalTheme}
       hideDisconnect={hideDisconnect}

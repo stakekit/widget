@@ -1,19 +1,23 @@
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { UnstakeOrPendingActionProvider } from "@sk-widget/pages/position-details/state";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Heading, Spinner, Text } from "../../components";
+import { Box } from "../../components/atoms/box";
+import { Button } from "../../components/atoms/button";
+import { InfoIcon } from "../../components/atoms/icons/info";
+import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
+import { Heading } from "../../components/atoms/typography/heading";
+import { Text } from "../../components/atoms/typography/text";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
-import { PageContainer } from "../components";
+import { PageContainer } from "../components/page-container";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
 import { ProviderDetails } from "./components/provider-details";
 import { StaticActionBlock } from "./components/static-action-block";
 import { usePositionDetails } from "./hooks/use-position-details";
+import { UnstakeOrPendingActionProvider } from "./state";
 import { container } from "./styles.css";
 
 const PositionDetails = () => {
@@ -71,6 +75,7 @@ const PositionDetails = () => {
                 flex={1}
                 display="flex"
                 flexDirection="column"
+                gap="1"
               >
                 {unstakeToken
                   .altLazy(() => Just(integrationData.token))
@@ -102,6 +107,7 @@ const PositionDetails = () => {
                     </>
                   ))
                   .extractNullable()}
+
                 {positionLabel
                   .map((l) => (
                     <Box
@@ -155,6 +161,7 @@ const PositionDetails = () => {
                     )
                     .extractNullable()}
                 </Box>
+
                 <Box py="3" gap="2" display="flex" flexDirection="column">
                   {[...positionBalancesByType.values()].flatMap(
                     (yieldBalance) =>
@@ -187,6 +194,7 @@ const PositionDetails = () => {
                     </Box>
                   ))
                   .extractNullable()}
+
                 <Box
                   display="flex"
                   flex={1}

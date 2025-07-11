@@ -1,6 +1,6 @@
-import { config } from "@sk-widget/config";
 import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
+import { config } from "../../../../../config";
 import type { EarnPageContextType } from "../../state/types";
 
 export const useAnimateYieldPercent = (

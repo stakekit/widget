@@ -1,22 +1,22 @@
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
-import type { FeesBps } from "@sk-widget/pages/review/types";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Divider } from "../../../../components";
 import { Box } from "../../../../components/atoms/box";
-import { Text } from "../../../../components/atoms/typography";
+import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
+import { Divider } from "../../../../components/atoms/divider";
+import { InfoIcon } from "../../../../components/atoms/icons/info";
+import { ToolTip } from "../../../../components/atoms/tooltip";
+import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
-import { PageContainer } from "../../../components";
 import { MetaInfo } from "../../../components/meta-info";
+import { PageContainer } from "../../../components/page-container";
+import type { FeesBps } from "../../types";
 import { feeStyles, pointerStyles } from "../style.css";
+import ReviewTopSection from "./components/review-top-section";
 
 export type MetaInfoProps =
   | { showMetaInfo: true; metaInfoProps: ComponentProps<typeof MetaInfo> }

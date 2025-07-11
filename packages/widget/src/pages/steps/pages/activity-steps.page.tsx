@@ -1,9 +1,9 @@
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { useActivityContext } from "@sk-widget/providers/activity-provider";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
+import { useProvidersDetails } from "../../../hooks/use-provider-details";
+import { useActivityContext } from "../../../providers/activity-provider";
 import { StepsPage } from "./common.page";
 
 export const ActivityStepsPage = () => {

@@ -1,10 +1,10 @@
-import { useInitQueryParams } from "@sk-widget/hooks/use-init-query-params";
-import { SettingsContextProvider } from "@sk-widget/providers/settings";
-import { i18nInstance } from "@sk-widget/translation";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { renderHook } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
+import { useInitQueryParams } from "../../../src/hooks/use-init-query-params";
+import { SettingsContextProvider } from "../../../src/providers/settings";
+import { i18nInstance } from "../../../src/translation";
 import { setUrl as _setUrl } from "./utils";
 
 describe("Deep link param validation", () => {

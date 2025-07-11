@@ -1,6 +1,6 @@
-import { useSettings } from "@sk-widget/providers/settings";
 import { useCallback } from "react";
 import { type NavigateOptions, type To, useNavigate } from "react-router";
+import { useSettings } from "../../providers/settings";
 
 export const useNavigateWithScrollToTop = () => {
   const navigate = useNavigate();

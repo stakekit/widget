@@ -1,5 +1,5 @@
-import type { useActivityActions } from "@sk-widget/hooks/api/use-activity-actions";
-import type { ActionYieldDto } from "@sk-widget/pages/details/activity-page/types";
+import type { useActivityActions } from "../../../../hooks/api/use-activity-actions";
+import type { ActionYieldDto } from "../types";
 
 export type ActivityPageContextType = {
   onActionSelect: (val: ActionYieldDto) => void;

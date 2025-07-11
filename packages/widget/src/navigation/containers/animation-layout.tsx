@@ -2,9 +2,7 @@ import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import type { PropsWithChildren } from "react";
-import { Box, Spinner } from "../../components";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
-import { useReferralCode } from "../../hooks/api/referral/use-referral-code";
 import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { useCurrentLayout } from "../../pages/components/layout/layout-context";
 import { usePoweredByHeight } from "../../pages/components/powered-by";
@@ -24,10 +22,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const { state, dispatch } = useMountAnimation();
 
-  const { referralCheck, disableInitLayoutAnimation } = useSettings();
-  const referralCode = useReferralCode();
-
-  const showApp = !referralCheck || !!referralCode.data;
+  const { disableInitLayoutAnimation } = useSettings();
 
   const containerHeight =
     currentLayout.state?.height && headerHeight
@@ -59,29 +54,21 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
     .unsafeCoerce();
 
   return (
-    <>
-      {showApp ? (
-        <motion.div
-          data-rk="widget-container"
-          layout="size"
-          className={animationContainer}
-          initial={{ height: 0 }}
-          animate={animate}
-          onAnimationComplete={(def: typeof animate) => {
-            if (!def.height || def.height !== animate.height || state.layout) {
-              return;
-            }
+    <motion.div
+      data-rk="widget-container"
+      layout="size"
+      className={animationContainer}
+      initial={{ height: 0 }}
+      animate={animate}
+      onAnimationComplete={(def: typeof animate) => {
+        if (!def.height || def.height !== animate.height || state.layout) {
+          return;
+        }
 
-            dispatch({ type: "layout" });
-          }}
-        >
-          {children}
-        </motion.div>
-      ) : referralCode.isLoading ? (
-        <Box display="flex" justifyContent="center" alignItems="center">
-          <Spinner />
-        </Box>
-      ) : null}
-    </>
+        dispatch({ type: "layout" });
+      }}
+    >
+      {children}
+    </motion.div>
   );
 };

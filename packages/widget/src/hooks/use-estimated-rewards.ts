@@ -1,8 +1,8 @@
-import type { State } from "@sk-widget/pages/details/earn-page/state/types";
 import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { State } from "../pages/details/earn-page/state/types";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useProvidersDetails } from "./use-provider-details";

@@ -1,8 +1,8 @@
-import { usePendingActionSelectValidatorMatch } from "@sk-widget/hooks/navigation/use-pending-action-select-validator-match";
-import { useUnstakeOrPendingActionMatch } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-match";
 import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
+import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
 
 export const useUnstakeOrPendingActionParams = () => {
   const unstakeOrPendingActionFlowMatch = useUnstakeOrPendingActionMatch();

@@ -1,14 +1,14 @@
-import type { ActionMeta } from "@sk-widget/domain/types/wallets/generic-wallet";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import { useSetActionHistoryData } from "@sk-widget/providers/stake-history";
 import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { useSavedRef } from "../../../hooks";
+import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
 import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import type { useProvidersDetails } from "../../../hooks/use-provider-details";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useSetActionHistoryData } from "../../../providers/stake-history";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import type { TxState } from "./use-steps-machine.hook";
 import { useStepsMachine } from "./use-steps-machine.hook";
@@ -193,12 +193,12 @@ export enum TxStateEnum {
   SIGN_LOADING = 2,
   SIGN_SUCCESS = 3,
 
-  BROADCAST_IDLE = 4,
+  // BROADCAST_IDLE = 4,
   BROADCAST_ERROR = 5,
   BROADCAST_LOADING = 6,
   BROADCAST_SUCCESS = 7,
 
-  CHECK_TX_STATUS_IDLE = 8,
+  // CHECK_TX_STATUS_IDLE = 8,
   CHECK_TX_STATUS_ERROR = 9,
   CHECK_TX_STATUS_LOADING = 10,
   CHECK_TX_STATUS_SUCCESS = 11,

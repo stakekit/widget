@@ -1,11 +1,11 @@
-import { configMeta as safeConfigMeta } from "@sk-widget/providers/safe/safe-connector-meta";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useWagmiConfig } from "@sk-widget/providers/wagmi";
-import { isLedgerDappBrowserProvider, isMobile } from "@sk-widget/utils";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, List, Right } from "purify-ts";
 import type { Connector } from "wagmi";
 import { connect, reconnect, switchChain } from "wagmi/actions";
+import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
+import { configMeta as safeConfigMeta } from "../safe/safe-connector-meta";
+import { useSettings } from "../settings";
+import { useWagmiConfig } from "../wagmi";
 
 export const useInit = () => {
   const wagmiConfig = useWagmiConfig();

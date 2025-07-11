@@ -1,29 +1,18 @@
-import {
-  type YieldFindValidatorsParams,
-  yieldFindValidators,
-} from "@sk-widget/common/private-api";
-import {
-  type SettingsContextType,
-  useSettings,
-} from "@sk-widget/providers/settings";
-import { defaultFormattedNumber } from "@sk-widget/utils";
 import type {
-  ValidatorDto,
-  ValidatorSearchResultDto,
   YieldBalanceDto,
   YieldBalanceLabelDto,
   YieldBalancesWithIntegrationIdDto,
 } from "@stakekit/api-hooks";
-import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
-import { compare, Just, List, Maybe } from "purify-ts";
-import { useDeferredValue, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { compare, Just, List, type Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { createSelector } from "reselect";
-import { importValidator } from "../../../../common/import-validator";
-import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import type { YieldFindValidatorsParams } from "../../../../common/private-api";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { useSettings } from "../../../../providers/settings";
+import type { SettingsContextType } from "../../../../providers/settings/types";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { defaultFormattedNumber } from "../../../../utils";
 
 export const usePositions = () => {
   const { variant } = useSettings();
@@ -39,82 +28,7 @@ export const usePositions = () => {
 
   const positionsData = { ..._positionsData, data: positionsDataMapped };
 
-  const { network, address, isConnected } = useSKWallet();
-
-  const [validatorAddressOrName, setValidatorAddressOrName] = useState("");
-  const debouncedValidatorAddressOrName = useDeferredValue(
-    validatorAddressOrName
-  );
-
-  const onValidatorAddressOrNameChange = (validatorAddress: string) => {
-    setValidatorAddressOrName(validatorAddress);
-  };
-
-  const foundValidators = useQuery({
-    queryKey: getYieldFindValidatorsQueryKey({
-      query: debouncedValidatorAddressOrName,
-      network: network ?? undefined,
-    }),
-    queryFn: () =>
-      yieldFindValidators({
-        query: debouncedValidatorAddressOrName,
-        network: network ?? undefined,
-      }),
-    enabled: debouncedValidatorAddressOrName.length >= 2,
-  });
-
-  const foundValidatorsData = Maybe.fromNullable(foundValidators.data)
-    .alt(Maybe.of([]))
-    .map((val) =>
-      val.reduce(
-        (acc, val) => {
-          val.validators.forEach((v) => {
-            acc.push({
-              integrationId: val.integrationId,
-              validator: v,
-            });
-          });
-
-          return acc;
-        },
-        [] as {
-          integrationId: ValidatorSearchResultDto["integrationId"];
-          validator: ValidatorDto;
-        }[]
-      )
-    );
-
-  const { t } = useTranslation();
-
-  const trackEvent = useTrackEvent();
-
-  const onImportValidatorImport = (val: {
-    integrationId: ValidatorSearchResultDto["integrationId"];
-    validator: ValidatorDto;
-  }) => {
-    Maybe.fromRecord({
-      network: Maybe.fromNullable(network),
-      address: Maybe.fromNullable(address),
-    }).ifJust((na) => {
-      importValidator({ ...na, validatorData: val });
-      trackEvent("validatorImported", {
-        yieldId: val.integrationId,
-        name: val.validator.name,
-        address: val.validator.address,
-      });
-    });
-  };
-
-  const importValidators = {
-    foundValidatorsData,
-    onValidatorAddressOrNameChange,
-    isLoading: foundValidators.isLoading,
-    errorMessage: foundValidators.error
-      ? t("shared.something_went_wrong")
-      : undefined,
-    onClose: () => setValidatorAddressOrName(""),
-    onImportValidatorImport,
-  };
+  const { isConnected } = useSKWallet();
 
   const showPositions =
     isConnected &&
@@ -129,7 +43,6 @@ export const usePositions = () => {
   return {
     positionsData,
     listData,
-    importValidators,
     showPositions,
   };
 };
@@ -180,13 +93,12 @@ const positionsTableDataSelector = createSelector(
                     actionRequired: v.some(
                       (b) => b.type === "locked" || b.type === "unstaked"
                     ),
-                    pointsRewardTokenBalance: List.find(
-                      (v) => !!v.token.isPoints,
-                      v
-                    ).map((v) => ({
-                      ...v,
-                      amount: defaultFormattedNumber(v.amount),
-                    })),
+                    pointsRewardTokenBalances: v
+                      .filter((v) => !!v.token.isPoints)
+                      .map((v) => ({
+                        ...v,
+                        amount: defaultFormattedNumber(v.amount),
+                      })),
                     hasPendingClaimRewards: List.find(
                       (b) => b.type === "rewards",
                       v
@@ -210,7 +122,7 @@ const positionsTableDataSelector = createSelector(
             allBalances: YieldBalanceDto[];
             balanceId: YieldBalanceDto["groupId"];
             actionRequired: boolean;
-            pointsRewardTokenBalance: Maybe<YieldBalanceDto>;
+            pointsRewardTokenBalances: YieldBalanceDto[];
             hasPendingClaimRewards: boolean;
             token: Maybe<YieldBalanceDto["token"] & { pricePerShare: string }>;
             yieldLabelDto: Maybe<YieldBalanceLabelDto>;

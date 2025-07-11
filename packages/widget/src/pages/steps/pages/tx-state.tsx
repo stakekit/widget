@@ -1,9 +1,8 @@
-import { isEthenaUsdeStaking } from "@sk-widget/domain/types";
 import type { ActionDto } from "@stakekit/api-hooks";
 import clsx from "clsx";
 import { useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Spinner, Text, XIcon } from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import {
   CollapsibleArrow,
   CollapsibleContent,
@@ -11,6 +10,10 @@ import {
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
 import { CheckSteps } from "../../../components/atoms/icons/check-steps";
+import { XIcon } from "../../../components/atoms/icons/x-icon";
+import { Spinner } from "../../../components/atoms/spinner";
+import { Text } from "../../../components/atoms/typography/text";
+import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
 import {
