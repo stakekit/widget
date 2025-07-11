@@ -185,11 +185,11 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.67)
       '@stakekit/api-hooks':
-        specifier: 0.0.106
-        version: 0.0.106(@faker-js/faker@9.9.0)(@tanstack/react-query@5.81.5(react@19.1.0))(msw@2.10.2(@types/node@24.0.10)(typescript@5.8.3))(react@19.1.0)
+        specifier: 0.0.107
+        version: 0.0.107(@faker-js/faker@9.9.0)(@tanstack/react-query@5.81.5(react@19.1.0))(msw@2.10.2(@types/node@24.0.10)(typescript@5.8.3))(react@19.1.0)
       '@stakekit/common':
-        specifier: ^0.0.54
-        version: 0.0.54
+        specifier: ^0.0.55
+        version: 0.0.55
       '@stakekit/rainbowkit':
         specifier: ^2.2.5
         version: 2.2.5(@tanstack/react-query@5.81.5(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.31.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.67))(wagmi@2.15.4(@tanstack/query-core@5.81.5)(@tanstack/react-query@5.81.5(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.31.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.67))(zod@3.25.67))
@@ -2580,8 +2580,8 @@ packages:
   '@stacks/transactions@6.17.0':
     resolution: {integrity: sha512-FUah2BRgV66ApLcEXGNGhwyFTRXqX5Zco3LpiM3essw8PF0NQlHwwdPgtDko5RfrJl3LhGXXe/30nwsfNnB3+g==}
 
-  '@stakekit/api-hooks@0.0.106':
-    resolution: {integrity: sha512-7YTsm4kfOQy0YFwQI3qdj9AmfmjTuMi0k1+VUpVEwDMJDt2Q3uSLGDB84Jz9eOWUPx/KCt+/VDQTeI/1pp8fKg==}
+  '@stakekit/api-hooks@0.0.107':
+    resolution: {integrity: sha512-PEWjHE2sFHpywTfEbOWsnO/AMKTnQzPrjo/pWOahijGTJL9trun/mKGI8ax8vJTh65PWGp0SnKELxbuQ6Jd1BQ==}
     peerDependencies:
       '@faker-js/faker': ^9
       '@tanstack/react-query': '>=5'
@@ -2595,8 +2595,8 @@ packages:
       msw:
         optional: true
 
-  '@stakekit/common@0.0.54':
-    resolution: {integrity: sha512-0geDMuHBUUbRX+TnxdzuzP3pRsoMkprSWxFDc3gh8c5cLVb/1bh97irQkO3w54jmUCZE0v2d5wTrgaMwD185/w==}
+  '@stakekit/common@0.0.55':
+    resolution: {integrity: sha512-QcgVGWzMUzFO/dU/Akg7cgYUEPWM38E2hYWwzDWX2hoiDgICYWa29Uu8h74X02+LCpZvqnOziZ83P0GQ+st8FQ==}
 
   '@stakekit/rainbowkit@2.2.5':
     resolution: {integrity: sha512-yTSnt+7Kv+uX2Z0Xw0S9mhBXT4nzTYccXg531bhYVFJCDrqgEb0W1UED342fCDMt7u/JmIiTq3zGqRAqEWHqtg==}
@@ -10024,7 +10024,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stakekit/api-hooks@0.0.106(@faker-js/faker@9.9.0)(@tanstack/react-query@5.81.5(react@19.1.0))(msw@2.10.2(@types/node@24.0.10)(typescript@5.8.3))(react@19.1.0)':
+  '@stakekit/api-hooks@0.0.107(@faker-js/faker@9.9.0)(@tanstack/react-query@5.81.5(react@19.1.0))(msw@2.10.2(@types/node@24.0.10)(typescript@5.8.3))(react@19.1.0)':
     dependencies:
       react: 19.1.0
     optionalDependencies:
@@ -10032,7 +10032,7 @@ snapshots:
       '@tanstack/react-query': 5.81.5(react@19.1.0)
       msw: 2.10.2(@types/node@24.0.10)(typescript@5.8.3)
 
-  '@stakekit/common@0.0.54': {}
+  '@stakekit/common@0.0.55': {}
 
   '@stakekit/rainbowkit@2.2.5(@tanstack/react-query@5.81.5(react@19.1.0))(@types/react@19.0.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(viem@2.31.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.67))(wagmi@2.15.4(@tanstack/query-core@5.81.5)(@tanstack/react-query@5.81.5(react@19.1.0))(@types/react@19.0.10)(bufferutil@4.0.9)(encoding@0.1.13)(react@19.1.0)(typescript@5.8.3)(utf-8-validate@5.0.10)(viem@2.31.6(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.67))(zod@3.25.67))':
     dependencies:
