@@ -39,6 +39,7 @@ const supportedEVMChains = [
   EvmNetworks.Sonic,
   EvmNetworks.EthereumSepolia,
   EvmNetworks.Unichain,
+  EvmNetworks.Katana,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -159,6 +160,25 @@ export const evmChainsMap: EvmChainsMap = {
     skChainName: EvmNetworks.Unichain,
     wagmiChain: unichain,
   },
+  [EvmNetworks.Katana]: {
+    type: "evm",
+    skChainName: EvmNetworks.Katana,
+    wagmiChain: {
+      id: 747474,
+      name: "Katana",
+      iconUrl: getNetworkLogo(EvmNetworks.Katana),
+      nativeCurrency: {
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.katana.network/"],
+        },
+      },
+    },
+  },
 };
 
 export enum EvmChainIds {
@@ -179,4 +199,5 @@ export enum EvmChainIds {
   EthereumGoerli = 5,
   EthereumSepolia = 11_155_111,
   Unichain = 130,
+  Katana = 747474,
 }
