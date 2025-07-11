@@ -1,6 +1,7 @@
 import type {
   ActionTypes,
   TokenDto,
+  YieldDto,
   YieldMetadataDto,
 } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
@@ -13,7 +14,10 @@ import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
-import type { ExtendedYieldType } from "../../../domain/types/yields";
+import {
+  type ExtendedYieldType,
+  isEthenaUsdeStaking,
+} from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
@@ -36,6 +40,7 @@ type Props = {
     }[]
   >;
   yieldType: Maybe<ExtendedYieldType>;
+  integrationId: YieldDto["id"];
 };
 
 export const CompletePageComponent = ({
@@ -46,6 +51,7 @@ export const CompletePageComponent = ({
   pendingActionType,
   yieldType,
   providersDetails,
+  integrationId,
 }: Props) => {
   const { t } = useTranslation();
 
@@ -111,8 +117,16 @@ export const CompletePageComponent = ({
                     action: yieldType.mapOrDefault(
                       (yt) =>
                         unstakeMatch
-                          ? t(`complete.unstake.${yt}`)
-                          : t(`complete.stake.${yt}`),
+                          ? t(`complete.unstake.${yt}`, {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ethena_usde"
+                                : undefined,
+                            })
+                          : t(`complete.stake.${yt}`, {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ethena_usde"
+                                : undefined,
+                            }),
                       ""
                     ),
                     amount,
@@ -120,7 +134,12 @@ export const CompletePageComponent = ({
                     pendingAction: t(
                       `complete.pending_action.${
                         pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
-                      }` as const
+                      }` as const,
+                      {
+                        context: isEthenaUsdeStaking(integrationId)
+                          ? "ethena_usde"
+                          : undefined,
+                      }
                     ),
                   }
                 )}
@@ -182,7 +201,13 @@ export const CompletePageComponent = ({
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
                     type: Just(val.type)
-                      .map((v) => t(`steps.tx_type.${v}`))
+                      .map((v) =>
+                        t(`steps.tx_type.${v}`, {
+                          context: isEthenaUsdeStaking(integrationId)
+                            ? "ETHENA_USDE"
+                            : undefined,
+                        })
+                      )
                       .map(capitalizeFirstLowerRest)
                       .extract(),
                   })}

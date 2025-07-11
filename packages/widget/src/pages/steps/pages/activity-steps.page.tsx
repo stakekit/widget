@@ -27,6 +27,7 @@ export const ActivityStepsPage = () => {
       () => Maybe.of(selectedAction.validatorAddresses ?? []),
       [selectedAction.validatorAddresses]
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   return (

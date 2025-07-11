@@ -21,6 +21,7 @@ export const ActivityCompletePage = () => {
       network={network}
       amount={amount}
       pendingActionType={selectedAction.type}
+      integrationId={selectedAction.integrationId}
     />
   );
 };

@@ -81,6 +81,7 @@ describe("External Provider", () => {
             tokens: [avalancheCToken],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -102,6 +103,7 @@ describe("External Provider", () => {
             tokens: [ether],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -123,6 +125,7 @@ describe("External Provider", () => {
             tokens: [solanaToken],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -144,6 +147,7 @@ describe("External Provider", () => {
             tokens: [tonToken],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",

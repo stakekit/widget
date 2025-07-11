@@ -22,6 +22,7 @@ export type VariantProps =
 
 export type SettingsProps = {
   apiKey: string;
+  baseUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;

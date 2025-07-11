@@ -11,7 +11,6 @@ import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
-import { useP2PYield } from "../../../../../hooks/api/use-p2p-yield";
 import { noWrap } from "../../../../details/positions-page/components/styles.css";
 import {
   addValidatorButton,
@@ -24,38 +23,24 @@ export const SelectValidatorTrigger = ({
   onRemoveValidator,
   multiSelect,
   selectedValidatorsArr,
-  isEigenRestaking,
+  isWithProviderOptions,
 }: {
   onRemoveValidator: (item: ValidatorDto) => void;
   multiSelect: boolean;
   selectedValidatorsArr: ValidatorDto[];
-  isEigenRestaking: boolean;
+  isWithProviderOptions: boolean;
 }) => {
   const { t } = useTranslation();
 
-  const p2pYield = useP2PYield(isEigenRestaking);
-
   return (
     <>
-      {isEigenRestaking && (
-        <Box my="2" display="flex" alignItems="center" gap="1">
-          <Text>{t("details.earn_with")} P2P</Text>
-          <Image
-            imageProps={{ borderRadius: "full" }}
-            containerProps={{ hw: "5" }}
-            src={p2pYield.data?.metadata.provider?.logoURI}
-            fallback={<ImageFallback name="P2P" tokenLogoHw="5" />}
-          />
-        </Box>
-      )}
-
       <Box
         data-rk="select-validator-trigger-container"
         className={addValidatorContainer}
       >
         <Box display="flex" alignItems="center" justifyContent="center">
           <Text className={breakWord} variant={{ weight: "bold" }}>
-            {isEigenRestaking
+            {isWithProviderOptions
               ? t("details.restake_with")
               : t("details.earn_with")}
           </Text>

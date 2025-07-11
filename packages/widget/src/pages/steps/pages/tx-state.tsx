@@ -1,3 +1,4 @@
+import type { ActionDto } from "@stakekit/api-hooks";
 import clsx from "clsx";
 import { useLayoutEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,7 @@ import { CheckSteps } from "../../../components/atoms/icons/check-steps";
 import { XIcon } from "../../../components/atoms/icons/x-icon";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
+import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
 import {
@@ -26,9 +28,10 @@ type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
   position: "SINGLE" | "FIRST" | "LAST" | "ELSE";
   count: { current: number; total: number };
+  session: ActionDto;
 };
 
-export const TxState = ({ txState, position, count }: Props) => {
+export const TxState = ({ txState, position, count, session }: Props) => {
   const { t } = useTranslation();
 
   const canCollapse =
@@ -59,7 +62,11 @@ export const TxState = ({ txState, position, count }: Props) => {
             {t("steps.tx_of", {
               count: count.total,
               current: count.current,
-              type: t(`steps.tx_type.${txState.tx.type}`),
+              type: t(`steps.tx_type.${txState.tx.type}`, {
+                context: isEthenaUsdeStaking(session.integrationId)
+                  ? "ETHENA_USDE"
+                  : undefined,
+              }),
             })}
           </Text>
 

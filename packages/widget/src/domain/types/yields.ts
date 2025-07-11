@@ -114,8 +114,11 @@ const isNativeStaking = (yieldDto: YieldDto) =>
 const isPooledStaking = (yieldDto: YieldDto) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
 
-export const isEigenRestaking = (yieldDto: YieldDto) =>
-  yieldDto.id === "ethereum-eth-eigen-restaking";
+export const isYieldWithProviderOptions = (yieldDto: YieldDto) =>
+  !!yieldDto.args.enter.args?.providerId?.required;
 
-export const p2pYieldId = "ethereum-eth-p2p-staking";
-export const p2pProviderId = "P2P";
+export const getYieldProviderYieldIds = (yieldDto: YieldDto) =>
+  yieldDto.args.enter.args?.providerId?.options ?? [];
+
+export const isEthenaUsdeStaking = (yieldId: string) =>
+  yieldId === "ethena-usde-staking";

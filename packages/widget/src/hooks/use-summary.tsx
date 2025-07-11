@@ -124,13 +124,16 @@ export const SummaryProvider = ({
               balances: p.balancesWithAmount,
             });
 
+            const yields = [...multiYieldsMapQuery.data.values()];
+
             const providerDetails = getProviderDetails({
               integrationData: Maybe.of(yieldDto),
               validatorAddress:
                 p.type === "validators"
                   ? List.head(p.validatorsAddresses)
                   : Maybe.empty(),
-              p2pYield: Maybe.empty(),
+              selectedProviderYieldId: Maybe.empty(),
+              yields: Maybe.of(yields),
             });
 
             return {

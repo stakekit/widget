@@ -1,39 +1,31 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
-import { Box } from "../../../../../components/atoms/box";
-import { SelectModalItem } from "../../../../../components/atoms/select-modal";
-import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
-import { Text } from "../../../../../components/atoms/typography/text";
-import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { getRewardRateFormatted } from "../../../../../utils/formatters";
-import { useEarnPageContext } from "../../state/earn-page-context";
-import { selectItemText } from "../../styles.css";
+import { getRewardRateFormatted } from "../../../utils/formatters";
+import { Box } from "../../atoms/box";
+import { SelectModalItem } from "../../atoms/select-modal";
+import { ProviderIcon } from "../../atoms/token-icon/provider-icon";
+import { Text } from "../../atoms/typography/text";
+import { selectItemText } from "./styles.css";
 
 export const SelectOpportunityListItem = ({
   item,
-  index,
+  onYieldSelect,
+  testId,
 }: {
   item: YieldDto;
-  index: number;
+  onYieldSelect: (item: YieldDto) => void;
+  testId?: string;
 }) => {
-  const { onYieldSelect } = useEarnPageContext();
-
-  const trackEvent = useTrackEvent();
-
   const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
   }) => {
-    trackEvent("yieldSelected", { yield: item.id });
-    onYieldSelect(item.id);
+    onYieldSelect(item);
     closeModal();
   };
 
   return (
-    <SelectModalItem
-      testId={`select-opportunity__item_${item.id}-${index}`}
-      onItemClick={onItemClick}
-    >
+    <SelectModalItem testId={testId} onItemClick={onItemClick}>
       <ProviderIcon metadata={item.metadata} token={item.token} />
 
       <Box

@@ -34,6 +34,7 @@ export const UnstakeCompletePage = () => {
     validatorsAddresses: positionBalances.data.map((p) =>
       p.type === "validators" ? p.validatorsAddresses : []
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const token = useMemo(
@@ -58,6 +59,7 @@ export const UnstakeCompletePage = () => {
       metadata={metadata}
       network={network}
       amount={amount}
+      integrationId={exitRequest.integrationData.id}
     />
   );
 };

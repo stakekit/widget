@@ -1,3 +1,4 @@
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
@@ -14,10 +15,6 @@ export const PendingReviewPage = () => {
     metaInfo,
     gasCheckLoading,
     isGasCheckWarning,
-    depositFee,
-    managementFee,
-    performanceFee,
-    feeConfigLoading,
   } = usePendingActionReview();
 
   useTrackPage("pendingActionReview");
@@ -26,6 +23,17 @@ export const PendingReviewPage = () => {
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
     [amount, token]
   );
+
+  const { depositFee, managementFee, performanceFee, feeConfigLoading } =
+    useMemo(
+      () => ({
+        depositFee: Maybe.empty(),
+        managementFee: Maybe.empty(),
+        performanceFee: Maybe.empty(),
+        feeConfigLoading: false,
+      }),
+      []
+    );
 
   return (
     <ReviewPage

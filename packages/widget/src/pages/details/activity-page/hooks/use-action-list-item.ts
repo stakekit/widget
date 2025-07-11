@@ -39,6 +39,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
   const providersDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: Maybe.of(action.actionData.validatorAddresses ?? []),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const actionType = useMemo(

@@ -114,6 +114,7 @@ export const PositionDetailsActions = () => {
                     {...val}
                     key={`${val.pendingActionDto.type}-${val.pendingActionDto.passthrough}`}
                     onPendingActionClick={onPendingActionClick}
+                    yieldId={v.integrationData.id}
                   />
                 )
               )

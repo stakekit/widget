@@ -50,6 +50,7 @@ export const setup = async (opts?: {
         status: { enter: true, exit: true },
         args: { enter: { args: { nfts: undefined } } },
         metadata: { ...def.metadata, type: "staking" },
+        feeConfigurations: [],
         validators: [],
       })
     )
@@ -68,6 +69,7 @@ export const setup = async (opts?: {
           rewardRate: 0.05766578328258792,
           apy: 0.05766578328258792,
           rewardType: "apy",
+          feeConfigurations: [],
           metadata: {
             ...def.metadata,
             name: "AVAX Liquid Staking",

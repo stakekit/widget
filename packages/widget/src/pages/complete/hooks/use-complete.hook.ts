@@ -9,6 +9,8 @@ import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-act
 import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useSKWallet } from "../../../providers/sk-wallet";
+import { isMobile } from "../../../utils";
 import { MaybeWindow } from "../../../utils/maybe-window";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 
@@ -16,6 +18,8 @@ export const useComplete = () => {
   const navigate = useNavigate();
 
   const location = useLocation();
+
+  const { isLedgerLive } = useSKWallet();
 
   const urls: {
     type: TransactionType;
@@ -25,6 +29,11 @@ export const useComplete = () => {
   const trackEvent = useTrackEvent();
 
   const onClick = () => {
+    if (isLedgerLive && !isMobile()) {
+      window.location.href = "ledgerlive://earn";
+
+      return;
+    }
     navigate("/");
   };
 
@@ -51,7 +60,7 @@ export const useComplete = () => {
       () => ({
         disabled: false,
         isLoading: false,
-        label: t("shared.ok"),
+        label: t("complete.continue"),
         onClick: () => onClickRef.current(),
         hide: !!activityReviewMatch,
       }),

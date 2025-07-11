@@ -4,6 +4,7 @@ import { List, Maybe } from "purify-ts";
 import { type ReactNode, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { SKAnchor } from "../components/atoms/anchor";
+import { isEthenaUsdeStaking } from "../domain/types/yields";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
@@ -54,6 +55,45 @@ export const useYieldMetaInfo = ({
 
       const isCompound = providerName.includes("Compound");
 
+      if (
+        y.metadata.rewardSchedule === "campaign" &&
+        stakeToken.toUpperCase() === "SUSD"
+      ) {
+        return {
+          description: t("details.campaign_susd_description"),
+          extra: t("details.campaign_susd_extra"),
+          positionLocked: (
+            <Trans
+              i18nKey="details.campaign_susd_position_locked"
+              components={{
+                link0: (
+                  <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+                    {t("shared.learn_more")}
+                  </SKAnchor>
+                ),
+              }}
+            />
+          ),
+          campaign: (
+            <Trans
+              i18nKey="details.campaign_susd"
+              components={{
+                link0: (
+                  <SKAnchor href="https://blog.synthetix.io/susd-staks-5-million-snx-rewards/">
+                    {t("shared.learn_more")}
+                  </SKAnchor>
+                ),
+              }}
+            />
+          ),
+          withdrawnTime: null,
+          lockupPeriod: null,
+          earnPeriod: null,
+          earnRewards: null,
+          withdrawnNotAvailable: null,
+        };
+      }
+
       const def = {
         campaign:
           y.metadata.rewardSchedule === "campaign" ? (
@@ -69,7 +109,9 @@ export const useYieldMetaInfo = ({
             />
           ) : null,
         lockupPeriod: y.metadata.lockupPeriod?.days
-          ? t("details.lockup_period", { days: y.metadata.lockupPeriod?.days })
+          ? t("details.lockup_period", {
+              days: y.metadata.lockupPeriod?.days,
+            })
           : null,
         extra:
           y.rewardType === "variable"
@@ -147,6 +189,7 @@ export const useYieldMetaInfo = ({
             description: t("details.vault.description", {
               stakeToken,
               depositToken: rewardTokens,
+              context: isEthenaUsdeStaking(y.id) ? "ethena_usde" : undefined,
             }),
             earnPeriod:
               warmupPeriodDays > 0
@@ -255,8 +298,9 @@ const ifNotFound: {
   earnRewards: string | null;
   withdrawnTime: string | null;
   withdrawnNotAvailable: string | null;
-  extra?: string;
   lockupPeriod: string | null;
+  extra?: string;
+  positionLocked?: ReactNode;
 } = {
   campaign: null,
   description: null,

@@ -85,6 +85,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     availableAmount,
     availableYields,
     hasNotYieldsForToken,
+    selectedProviderYieldId,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
 
@@ -108,6 +109,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake,
     selectedValidators,
     stakeAmount,
+    selectedProviderYieldId,
   });
   const rewardToken = useRewardTokenDetails(selectedStake);
 
@@ -508,6 +510,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
     validatorsAddresses: Maybe.of(selectedValidators),
+    selectedProviderYieldId,
   });
 
   const trackEvent = useTrackEvent();

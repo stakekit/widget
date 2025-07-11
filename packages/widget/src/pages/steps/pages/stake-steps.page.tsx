@@ -32,6 +32,7 @@ export const StakeStepsPage = () => {
       () => Maybe.of(enterRequest.selectedValidators),
       [enterRequest.selectedValidators]
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   return (

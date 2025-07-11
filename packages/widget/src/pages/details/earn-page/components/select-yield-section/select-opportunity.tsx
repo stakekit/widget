@@ -12,11 +12,11 @@ import {
 import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
+import { SelectOpportunityListItem } from "../../../../../components/molecules/select-opportunity-list-item";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { SelectOpportunityListItem } from "./select-opportunity-list-item";
 import { selectOpportunityButton } from "./styles.css";
 
 export const SelectOpportunity = () => {
@@ -26,6 +26,7 @@ export const SelectOpportunity = () => {
     onSelectOpportunityClose,
     onYieldSearch,
     stakeSearch,
+    onYieldSelect,
   } = useEarnPageContext();
 
   const trackEvent = useTrackEvent();
@@ -109,7 +110,11 @@ export const SelectOpportunity = () => {
                   <Text variant={{ weight: "bold" }}>{item}</Text>
                 </Box>
               ) : (
-                <SelectOpportunityListItem index={index} item={item} />
+                <SelectOpportunityListItem
+                  item={item}
+                  onYieldSelect={(yieldDto) => onYieldSelect(yieldDto.id)}
+                  testId={`select-opportunity__item_${item.id}-${index}`}
+                />
               )}
             </SelectModalItemContainer>
           );

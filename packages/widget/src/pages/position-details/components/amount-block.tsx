@@ -223,16 +223,17 @@ const UnstakeInfo = ({
   }[];
   unstakeToken: TokenDto;
 }) => {
-  const { withdrawnTime, withdrawnNotAvailable } = useYieldMetaInfo({
-    validators,
-    selectedStake: Just(yieldDto),
-    tokenDto: Just(unstakeToken),
-  });
+  const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
+    useYieldMetaInfo({
+      validators,
+      selectedStake: Just(yieldDto),
+      tokenDto: Just(unstakeToken),
+    });
 
   return useMemo(
     () =>
-      Just([withdrawnTime, withdrawnNotAvailable])
-        .map((val) => val.filter((v) => v !== null))
+      Just([withdrawnTime, withdrawnNotAvailable, positionLocked])
+        .map((val) => val.filter((v) => !!v))
         .filter((val) => !!val.length)
         .map((val) => (
           <Box display="flex" flexDirection="column" gap="2">
@@ -254,6 +255,6 @@ const UnstakeInfo = ({
           </Box>
         ))
         .extractNullable(),
-    [withdrawnTime, withdrawnNotAvailable]
+    [withdrawnTime, withdrawnNotAvailable, positionLocked]
   );
 };

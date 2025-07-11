@@ -2,7 +2,7 @@ import { Maybe } from "purify-ts";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectValidator } from "../../../../../components/molecules/select-validator";
-import { isEigenRestaking } from "../../../../../domain/types/yields";
+import { isYieldWithProviderOptions } from "../../../../../domain/types/yields";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";
 
@@ -41,7 +41,9 @@ export const SelectValidatorSection = () => {
                 onRemoveValidator={onRemoveValidator}
                 selectedValidatorsArr={selectedValidatorsArr}
                 multiSelect={multiSelect}
-                isEigenRestaking={isEigenRestaking(val.selectedStake)}
+                isWithProviderOptions={isYieldWithProviderOptions(
+                  val.selectedStake
+                )}
               />
             }
             selectedValidators={

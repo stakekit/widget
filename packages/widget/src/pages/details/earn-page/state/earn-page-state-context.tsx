@@ -13,8 +13,6 @@ import {
 } from "react";
 import { equalTokens } from "../../../../domain";
 import { isNetworkWithEnterMinBasedOnPosition } from "../../../../domain/types/stake";
-import { isEigenRestaking } from "../../../../domain/types/yields";
-import { useP2PYield } from "../../../../hooks/api/use-p2p-yield";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
@@ -54,6 +52,7 @@ const getInitialState = (): State => ({
   selectedValidators: new Map(),
   stakeAmount: new BigNumber(0),
   tronResource: Maybe.empty(),
+  selectedProviderYieldId: Maybe.empty(),
 });
 
 export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
@@ -137,6 +136,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         };
       }
 
+      case "providerYieldId/select": {
+        return { ...state, selectedProviderYieldId: Maybe.of(action.data) };
+      }
+
       case "validator/remove": {
         const selectedValidators = new Map(state.selectedValidators);
         selectedValidators.delete(action.data.address);
@@ -182,6 +185,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     selectedValidators,
     stakeAmount: _stakeAmount,
     tronResource,
+    selectedProviderYieldId,
   } = state;
 
   const initTokenRes = useInitToken();
@@ -334,11 +338,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     minEnterOrExitAmount,
   });
 
-  /**
-   * Prefetch if needed
-   */
-  useP2PYield(selectedStake.map(isEigenRestaking).isJust());
-
   const value: State & ExtraData = useMemo(
     () => ({
       selectedStakeId,
@@ -355,6 +354,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       availableYields,
       selectedToken,
       hasNotYieldsForToken,
+      selectedProviderYieldId,
     }),
     [
       selectedStakeId,
@@ -371,6 +371,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       availableAmount,
       availableYields,
       hasNotYieldsForToken,
+      selectedProviderYieldId,
     ]
   );
 

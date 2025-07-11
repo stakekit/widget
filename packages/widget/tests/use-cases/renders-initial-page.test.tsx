@@ -38,6 +38,7 @@ describe("Renders initial page", () => {
             tokens: [avalancheCToken],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -59,6 +60,7 @@ describe("Renders initial page", () => {
             tokens: [ether],
             status: { enter: true, exit: true },
             args: { enter: { args: { nfts: undefined } } },
+            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",

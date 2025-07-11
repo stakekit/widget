@@ -72,11 +72,17 @@ export const useStakeReview = () => {
     [enterRequest.selectedToken]
   );
 
+  const selectedProviderYieldId = useMemo(
+    () => Maybe.fromNullable(enterRequest.requestDto.args.providerId),
+    [enterRequest.requestDto.args.providerId]
+  );
+
   const rewardToken = useRewardTokenDetails(selectedStake);
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
     stakeAmount,
     selectedValidators: enterRequest.selectedValidators,
+    selectedProviderYieldId,
   });
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.review,

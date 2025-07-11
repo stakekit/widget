@@ -23,6 +23,7 @@ export const usePositionListItem = (
     validatorsAddresses: Maybe.of(
       item.type === "validators" ? item.validatorsAddresses : []
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const rewardRateAverage = useMemo(

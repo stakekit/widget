@@ -41,6 +41,7 @@ export const PendingCompletePage = () => {
     validatorsAddresses: positionBalances.data.map((p) =>
       p.type === "validators" ? p.validatorsAddresses : []
     ),
+    selectedProviderYieldId: Maybe.empty(),
   });
 
   const metadata = integrationData.map((d) => d.metadata);
@@ -64,6 +65,7 @@ export const PendingCompletePage = () => {
       network={network}
       amount={amount}
       pendingActionType={pendingRequest.pendingActionType}
+      integrationId={pendingRequest.integrationData.id}
     />
   );
 };

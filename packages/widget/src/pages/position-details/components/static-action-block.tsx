@@ -2,12 +2,14 @@ import type {
   ActionTypes,
   PendingActionDto,
   YieldBalanceDto,
+  YieldDto,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Text } from "../../../components/atoms/typography/text";
+import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import { formatNumber } from "../../../utils";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
@@ -19,12 +21,14 @@ type StaticActionBlockProps = {
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
+  yieldId: YieldDto["id"];
 };
 
 export const StaticActionBlock = ({
   pendingActionDto,
   yieldBalance,
   onPendingActionClick,
+  yieldId,
 }: StaticActionBlockProps) => {
   const { t } = useTranslation();
 
@@ -50,7 +54,12 @@ export const StaticActionBlock = ({
               pendingAction: t(
                 `position_details.pending_action.${
                   pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
-                }`
+                }`,
+                {
+                  context: isEthenaUsdeStaking(yieldId)
+                    ? "ethena_usde"
+                    : undefined,
+                }
               ),
             }}
             components={{

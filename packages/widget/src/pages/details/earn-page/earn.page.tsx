@@ -11,6 +11,7 @@ import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
+import { SelectProvider } from "./components/select-provider";
 import { SelectTokenSection } from "./components/select-token-section";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
@@ -43,6 +44,8 @@ const EarnPageComponent = () => {
         <SelectYieldSection />
 
         <StakedVia />
+
+        <SelectProvider />
 
         <SelectValidatorSection />
 

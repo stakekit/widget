@@ -48,6 +48,7 @@ export const useActivityComplete = () => {
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
     validatorsAddresses: Maybe.of(selectedAction.validatorAddresses ?? []),
+    selectedProviderYieldId: Maybe.of(selectedAction.integrationId),
   });
 
   return {

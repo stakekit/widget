@@ -5,10 +5,6 @@ import type {
 } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import {
-  isEigenRestaking,
-  p2pProviderId,
-} from "../../../../domain/types/yields";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useEarnPageState } from "./earn-page-state-context";
 
@@ -19,6 +15,7 @@ export const useStakeEnterRequestDto = () => {
     selectedValidators,
     tronResource,
     selectedToken,
+    selectedProviderYieldId,
   } = useEarnPageState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
@@ -78,9 +75,7 @@ export const useStakeEnterRequestDto = () => {
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
-              ...(isEigenRestaking(selectedStake) && {
-                providerId: p2pProviderId,
-              }),
+              providerId: selectedProviderYieldId.extract(),
               ...validatorsOrProvider,
             },
           },
@@ -95,6 +90,7 @@ export const useStakeEnterRequestDto = () => {
       selectedValidators,
       stakeAmount,
       tronResource,
+      selectedProviderYieldId,
     ]
   );
 };

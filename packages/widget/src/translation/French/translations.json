@@ -224,6 +224,7 @@
     "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
     "view_transaction": "Voir la transaction {{type}}",
     "via": "via {{providerName}}",
+    "continue": "Aller au tableau de bord Earn",
     "stake": {
       "staking": "staké",
       "liquid-staking": "staké",

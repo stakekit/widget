@@ -90,6 +90,7 @@ describe("Select opportunity", () => {
         await delay();
 
         return Just(getYieldV2ControllerGetYieldByIdResponseMock())
+          .map((val) => ({ ...val, feeConfigurations: [] }) as YieldDto)
           .map((mock) => {
             const rewardToken = (() => {
               switch (integrationId) {

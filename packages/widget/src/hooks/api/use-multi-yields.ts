@@ -87,7 +87,7 @@ export const useStreamMultiYields = (yieldIds: string[]) => {
   });
 };
 
-export const useMultiYields = <T = YieldDto>(
+export const useMultiYields = <T = YieldDto[]>(
   yieldIds: string[],
   opts?: {
     select?: (val: YieldDto[]) => T;
