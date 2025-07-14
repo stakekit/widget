@@ -97,6 +97,7 @@ export const VirtualList = <ItemData = unknown>({
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
           maxHeight: _maxHeight,
+          minHeight: "100px",
         }}
       >
         <Box

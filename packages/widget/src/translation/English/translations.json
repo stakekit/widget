@@ -285,7 +285,8 @@
     "successfully_pending_action": "Successfully {{pendingAction}} {{amount}} {{tokenNetwork}}",
     "view_transaction": "View {{type}} transaction",
     "via": "via {{providerName}}",
-    "continue": "Go to Earn dashboard",
+    "continue": "Go to Overview Dashboard",
+    "continue_ledger": "Go to Earn dashboard",
     "stake": {
       "staking": "staked",
       "staking_ethena_usde": "deposited",
@@ -366,7 +367,7 @@
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
-    "no_current_positions": "No current positions",
+    "no_current_positions": "No active positions",
     "claim_rewards": "Claim rewards",
     "action_required": "Action required",
     "dont_see_position": "Don't see a position?",

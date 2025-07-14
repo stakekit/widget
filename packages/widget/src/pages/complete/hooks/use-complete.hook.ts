@@ -60,11 +60,13 @@ export const useComplete = () => {
       () => ({
         disabled: false,
         isLoading: false,
-        label: t("complete.continue"),
+        label: t("complete.continue", {
+          context: isLedgerLive ? "ledger" : undefined,
+        }),
         onClick: () => onClickRef.current(),
         hide: !!activityReviewMatch,
       }),
-      [onClickRef, t, activityReviewMatch]
+      [onClickRef, t, activityReviewMatch, isLedgerLive]
     )
   );
 

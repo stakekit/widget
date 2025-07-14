@@ -48,7 +48,7 @@ export const SummaryItem = ({
             variant,
           })}
         >
-          {value?.gt(0) ? `$${formatNumber(value, 2)}` : "-"}
+          {value?.gt(0) ? `$${formatNumber(value, 3)}` : "-"}
         </Text>
       )}
 

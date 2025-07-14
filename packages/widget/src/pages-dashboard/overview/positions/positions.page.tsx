@@ -68,20 +68,18 @@ export const PositionsPage = () => {
               data={listData}
               itemContent={(_, item) =>
                 item === "header" ? (
-                  <>
-                    <ZerionChainModal />
-
-                    {isConnected && !positionsData.data.length && (
-                      <Box my="4">
-                        <FallbackContent type="no_current_positions" />
-                      </Box>
-                    )}
-                  </>
+                  <ZerionChainModal />
                 ) : (
                   <PositionsListItem item={item} />
                 )
               }
             />
+
+            {isConnected && !positionsData.data.length && (
+              <Box my="4">
+                <FallbackContent type="no_current_positions" />
+              </Box>
+            )}
           </Box>
         </>
       )}
