@@ -7,6 +7,7 @@ import {
   bsc,
   celo,
   coreDao,
+  gnosis,
   goerli,
   harmonyOne,
   holesky,
@@ -40,6 +41,7 @@ const supportedEVMChains = [
   EvmNetworks.EthereumSepolia,
   EvmNetworks.Unichain,
   EvmNetworks.Katana,
+  EvmNetworks.Gnosis,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -159,6 +161,11 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     skChainName: EvmNetworks.Unichain,
     wagmiChain: unichain,
+  },
+  [EvmNetworks.Gnosis]: {
+    type: "evm",
+    skChainName: EvmNetworks.Gnosis,
+    wagmiChain: gnosis,
   },
   [EvmNetworks.Katana]: {
     type: "evm",

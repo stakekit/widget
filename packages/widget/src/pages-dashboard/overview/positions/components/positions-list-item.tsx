@@ -204,9 +204,7 @@ export const PositionsListItem = memo(
                           >
                             {rewardsAmountPriceFormatted
                               .map((v) => <>{v}$</>)
-                              .orDefault(
-                                <Text style={{ textAlign: "center" }}>-</Text>
-                              )}
+                              .orDefault(<span>-</span>)}
                           </Text>
                         </>
                       ))
