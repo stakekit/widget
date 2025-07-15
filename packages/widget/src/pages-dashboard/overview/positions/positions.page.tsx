@@ -88,6 +88,8 @@ export const PositionsPage = () => {
 };
 
 function THead() {
+  const { t } = useTranslation();
+
   return (
     <Box
       className={headerContainer}
@@ -96,10 +98,9 @@ function THead() {
       py="1"
       gap="1"
     >
-      <Text flex={5}>Yield</Text>
-      <Text flex={3}>Reward Rate</Text>
-      <Text flex={2}>Staked</Text>
-      <Text flex={2}>Rewards</Text>
+      <Text flex={5}>{t("dashboard.details.positions_yield")}</Text>
+      <Text flex={3}>{t("dashboard.details.positions_reward_rate")}</Text>
+      <Text flex={2}>{t("dashboard.details.positions_amount")}</Text>
     </Box>
   );
 }

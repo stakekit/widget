@@ -39,8 +39,6 @@ export const PositionsListItem = memo(
       rewardRateAverage,
       totalAmountFormatted,
       totalAmountPriceFormatted,
-      rewardsAmountFormatted,
-      rewardsAmountPriceFormatted,
     } = usePositionListItem(item);
 
     return (
@@ -184,28 +182,6 @@ export const PositionsListItem = memo(
                             .orDefaultLazy(() => (
                               <Text style={{ textAlign: "center" }}>-</Text>
                             ))}
-                        </>
-                      ))
-                      .orDefault(
-                        <Text style={{ textAlign: "center" }}>-</Text>
-                      )}
-                  </Box>
-
-                  {/* Rewards */}
-                  <Box flex={2} className={columnContainer}>
-                    {rewardsAmountFormatted
-                      .map((v) => (
-                        <>
-                          <Text className={overflowText}>{v}</Text>
-
-                          <Text
-                            variant={{ weight: "normal" }}
-                            className={overflowText}
-                          >
-                            {rewardsAmountPriceFormatted
-                              .map((v) => <>{v}$</>)
-                              .orDefault(<span>-</span>)}
-                          </Text>
                         </>
                       ))
                       .orDefault(

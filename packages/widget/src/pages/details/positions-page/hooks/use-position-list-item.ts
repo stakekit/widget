@@ -5,7 +5,7 @@ import { getBaseToken } from "../../../../domain";
 import { getPositionTotalAmount } from "../../../../domain/types/positions";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
-import { defaultFormattedNumber } from "../../../../utils";
+import { formatNumber } from "../../../../utils";
 import { getRewardRateFormatted } from "../../../../utils/formatters";
 import type { usePositions } from "./use-positions";
 
@@ -75,7 +75,7 @@ export const usePositionListItem = (
   );
 
   const totalAmountFormatted = useMemo(
-    () => totalAmount.map(defaultFormattedNumber),
+    () => totalAmount.map((v) => formatNumber(v, 2)),
     [totalAmount]
   );
 

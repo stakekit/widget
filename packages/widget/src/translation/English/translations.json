@@ -153,7 +153,11 @@
         "rewards": "Rewards",
         "activity": "Activity"
       },
-      "positions_tooltip": "Positions are your yield-related balances on the network."
+      "positions_tooltip": "Positions are your yield-related balances on the network.",
+      "positions_yield": "Yield",
+      "positions_reward_rate": "Reward Rate",
+      "positions_amount": "Amount",
+      "positions_rewards": "Rewards"
     },
     "position_details_info": {
       "balances": "Balances"

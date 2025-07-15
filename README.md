@@ -97,7 +97,6 @@ type SettingsProps = {
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
-  hideChainModal?: boolean;
   whitelistedValidatorAddresses?: string[];
   tokenIconMapping?:
     | Record<TokenDto["symbol"], string>
@@ -105,6 +104,7 @@ type SettingsProps = {
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
+  hideAccountAndChainSelector?: boolean
 };
 ```
 
