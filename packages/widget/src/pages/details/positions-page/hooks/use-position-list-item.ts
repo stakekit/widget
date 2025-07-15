@@ -1,12 +1,13 @@
-import { equalTokens, getBaseToken } from "@sk-widget/domain";
-import { useYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
-import type { usePositions } from "@sk-widget/pages/details/positions-page/hooks/use-positions";
-import { defaultFormattedNumber } from "@sk-widget/utils";
-import { getRewardRateFormatted } from "@sk-widget/utils/formatters";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getBaseToken } from "../../../../domain";
+import { getPositionTotalAmount } from "../../../../domain/types/positions";
+import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useProvidersDetails } from "../../../../hooks/use-provider-details";
+import { formatNumber } from "../../../../utils";
+import { getRewardRateFormatted } from "../../../../utils/formatters";
+import type { usePositions } from "./use-positions";
 
 export const usePositionListItem = (
   item: ReturnType<typeof usePositions>["positionsData"]["data"][number]
@@ -62,28 +63,20 @@ export const usePositionListItem = (
     [integrationData]
   );
 
-  const amount = useMemo(
+  const totalAmount = useMemo(
     () =>
-      Maybe.fromRecord({
-        tokenToDisplay,
-        baseToken,
-      })
-        .map((val) =>
-          item.balancesWithAmount.reduce((acc, b) => {
-            if (b.token.isPoints) return acc;
+      tokenToDisplay.map((val) =>
+        getPositionTotalAmount({
+          token: val,
+          balances: item.balancesWithAmount,
+        })
+      ),
+    [item.balancesWithAmount, tokenToDisplay]
+  );
 
-            if (equalTokens(b.token, val.tokenToDisplay)) {
-              return new BigNumber(b.amount).plus(acc);
-            }
-
-            return new BigNumber(b.amount)
-              .times(b.pricePerShare)
-              .dividedBy(val.tokenToDisplay.pricePerShare)
-              .plus(acc);
-          }, new BigNumber(0))
-        )
-        .map(defaultFormattedNumber),
-    [item.balancesWithAmount, tokenToDisplay, baseToken]
+  const totalAmountFormatted = useMemo(
+    () => totalAmount.map((v) => formatNumber(v, 2)),
+    [totalAmount]
   );
 
   return {
@@ -91,6 +84,9 @@ export const usePositionListItem = (
     providersDetails,
     rewardRateAverage,
     inactiveValidator,
-    amount,
+    totalAmount,
+    totalAmountFormatted,
+    baseToken,
+    tokenToDisplay,
   };
 };

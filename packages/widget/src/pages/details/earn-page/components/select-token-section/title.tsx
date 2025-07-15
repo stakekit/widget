@@ -1,5 +1,10 @@
-import { Box, Spinner, Text } from "../../../../../components";
+import { Box } from "../../../../../components/atoms/box";
+import { Spinner } from "../../../../../components/atoms/spinner";
+import { Text } from "../../../../../components/atoms/typography/text";
+import { useSettings } from "../../../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
+import { selectTokenTitle } from "./styles.css";
 
 export const SelectTokenTitle = () => {
   const {
@@ -18,6 +23,8 @@ export const SelectTokenTitle = () => {
     selectValidatorIsLoading ||
     footerIsLoading;
 
+  const { variant } = useSettings();
+
   return (
     <Box display="flex" alignItems="center" my="1">
       {isLoading ? (
@@ -25,7 +32,14 @@ export const SelectTokenTitle = () => {
           <Spinner />
         </Box>
       ) : (
-        <Text>{yieldType}</Text>
+        <Text
+          className={combineRecipeWithVariant({
+            rec: selectTokenTitle,
+            variant,
+          })}
+        >
+          {yieldType}
+        </Text>
       )}
     </Box>
   );

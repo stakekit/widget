@@ -1,18 +1,19 @@
-import { Box, Text } from "@sk-widget/components";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { ListItem } from "@sk-widget/components/atoms/list/list-item";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import { useActionListItem } from "@sk-widget/pages/details/activity-page/hooks/use-action-list-item";
+import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
+import { List } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { ListItem } from "../../../../../components/atoms/list/list-item";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { Text } from "../../../../../components/atoms/typography/text";
+import { listItemContainer } from "../../../positions-page/style.css";
+import { useActionListItem } from "../../hooks/use-action-list-item";
 import {
   activityDetailsContainer,
   listItem,
   noWrap,
   viaText,
-} from "@sk-widget/pages/details/activity-page/style.css";
-import { listItemContainer } from "@sk-widget/pages/details/positions-page/style.css";
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
-import { List } from "purify-ts";
-import { useTranslation } from "react-i18next";
+} from "../../style.css";
 
 type ActionYieldDto = {
   actionData: ActionDto;
@@ -63,11 +64,7 @@ export const ActionListItem = ({
                   <Box className={activityDetailsContainer}>
                     <Text>{d.token.symbol}</Text>
 
-                    <Box
-                      className={listItemContainer({
-                        type: badgeColor,
-                      })}
-                    >
+                    <Box className={listItemContainer({ type: badgeColor })}>
                       <Text
                         variant={{
                           type: badgeColor ? "white" : "regular",

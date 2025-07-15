@@ -1,33 +1,4 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
-import { withRequestErrorRetry } from "@sk-widget/common/utils";
-import { config } from "@sk-widget/config";
-import {
-  isBittensorChain,
-  isEvmChain,
-  isSolanaChain,
-  isTonChain,
-  isTronChain,
-} from "@sk-widget/domain/types/chains";
-import {
-  bittensorPayloadCodec,
-  decodeAndPrepareEvmTransaction,
-  unsignedEVMTransactionCodec,
-  unsignedSolanaTransactionCodec,
-  unsignedTonTransactionCodec,
-  unsignedTronTransactionCodec,
-} from "@sk-widget/domain/types/transaction";
-import type {
-  BittensorTx,
-  SKTx,
-  TronTx,
-} from "@sk-widget/domain/types/wallets/generic-wallet";
-import { useCheckIsUnmounted } from "@sk-widget/hooks/use-check-is-unmounted";
-import { isSafeConnector } from "@sk-widget/providers/safe/safe-connector-meta";
-import {
-  SafeFailedError,
-  SendTransactionError,
-} from "@sk-widget/providers/sk-wallet/errors";
-import { useInit } from "@sk-widget/providers/sk-wallet/use-init";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
@@ -44,19 +15,48 @@ import {
   useSendTransaction,
   useSignMessage,
 } from "wagmi";
-import type { SKWallet } from "../../domain/types";
+import { withRequestErrorRetry } from "../../common/utils";
+import { config } from "../../config";
+import {
+  isBittensorChain,
+  isEvmChain,
+  isSolanaChain,
+  isTonChain,
+  isTronChain,
+} from "../../domain/types/chains";
+import {
+  bittensorPayloadCodec,
+  decodeAndPrepareEvmTransaction,
+  unsignedEVMTransactionCodec,
+  unsignedSolanaTransactionCodec,
+  unsignedTonTransactionCodec,
+  unsignedTronTransactionCodec,
+} from "../../domain/types/transaction";
+import type { SKWallet } from "../../domain/types/wallet";
+import type {
+  BittensorTx,
+  SKTx,
+  TronTx,
+} from "../../domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
+import { useCheckIsUnmounted } from "../../hooks/use-check-is-unmounted";
 import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isExternalProviderConnector } from "../external-provider";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
+import { isSafeConnector } from "../safe/safe-connector-meta";
 import { useWagmiConfig } from "../wagmi";
-import { TransactionDecodeError } from "./errors";
+import {
+  SafeFailedError,
+  SendTransactionError,
+  TransactionDecodeError,
+} from "./errors";
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { useConnectorChains } from "./use-connector-chains";
 import { useCosmosCW } from "./use-cosmos-cw";
+import { useInit } from "./use-init";
 import { useLedgerAccounts } from "./use-ledger-accounts";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 import { useSyncExternalProvider } from "./use-sync-external-provider";

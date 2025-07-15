@@ -1,13 +1,3 @@
-import { useNavigateWithScrollToTop } from "@sk-widget/hooks/navigation/use-navigate-with-scroll-to-top";
-import { useMaxMinYieldAmount } from "@sk-widget/hooks/use-max-min-yield-amount";
-import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
-import {
-  useEarnPageDispatch,
-  useEarnPageState,
-} from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { useInitYield } from "@sk-widget/pages/details/earn-page/state/use-init-yield";
-import { usePendingActionDeepLink } from "@sk-widget/pages/details/earn-page/state/use-pending-action-deep-link";
-import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import type {
   TokenBalanceScanResponseDto,
   TronResourceType,
@@ -29,10 +19,8 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import type {
-  NumberInputProps,
-  SelectModalProps,
-} from "../../../../components";
+import type { NumberInputProps } from "../../../../components/atoms/number-input";
+import type { SelectModalProps } from "../../../../components/atoms/select-modal";
 import {
   getTokenPriceInUSD,
   stakeTokenSameAsGasToken,
@@ -43,20 +31,24 @@ import {
   getExtendedYieldType,
   getYieldTypeLabels,
   getYieldTypesSortRank,
-} from "../../../../domain/types";
-import { useSavedRef, useTokensPrices } from "../../../../hooks";
-import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
+} from "../../../../domain/types/yields";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
+import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useBaseToken } from "../../../../hooks/use-base-token";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
+import { useSavedRef } from "../../../../hooks/use-saved-ref";
 import { useYieldType } from "../../../../hooks/use-yield-type";
+import { useEnterStakeStore } from "../../../../providers/enter-stake-store";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -64,7 +56,13 @@ import { useWagmiConfig } from "../../../../providers/wagmi";
 import { defaultFormattedNumber, formatNumber } from "../../../../utils";
 import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
 import type { SelectedStakeData } from "../types";
+import {
+  useEarnPageDispatch,
+  useEarnPageState,
+} from "./earn-page-state-context";
 import type { EarnPageContextType } from "./types";
+import { useInitYield } from "./use-init-yield";
+import { usePendingActionDeepLink } from "./use-pending-action-deep-link";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 
 const EarnPageContext = createContext<EarnPageContextType | undefined>(
@@ -486,12 +484,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake.extract()?.id
   ).isLoading;
 
-  const referralCode = useReferralCode();
-
   const appLoading =
     selectedToken.isNothing() ||
     !wagmiConfig.data ||
-    referralCode.isLoading ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
     isConnecting ||
@@ -617,10 +612,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     )
   );
 
-  const { referralCheck } = useSettings();
-
   const value = {
-    referralCheck,
     selectedTokenAvailableAmount,
     formattedPrice,
     symbol,

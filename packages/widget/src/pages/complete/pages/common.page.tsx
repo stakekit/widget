@@ -1,7 +1,3 @@
-import {
-  type ExtendedYieldType,
-  isEthenaUsdeStaking,
-} from "@sk-widget/domain/types";
 import type {
   ActionTypes,
   TokenDto,
@@ -11,15 +7,25 @@ import type {
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box, Heading, Text } from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
+import { Heading } from "../../../components/atoms/typography/heading";
+import { Text } from "../../../components/atoms/typography/text";
+import {
+  type ExtendedYieldType,
+  isEthenaUsdeStaking,
+} from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
-import { PageContainer } from "../../components";
+import { PageContainer } from "../../components/page-container";
 import { useComplete } from "../hooks/use-complete.hook";
+import {
+  CompleteCommonContextProvider,
+  useCompleteCommonContext,
+} from "../state";
 
 type Props = {
   token: Maybe<TokenDto>;
@@ -37,7 +43,7 @@ type Props = {
   integrationId: YieldDto["id"];
 };
 
-export const CompletePage = ({
+export const CompletePageComponent = ({
   amount,
   metadata,
   network,
@@ -50,7 +56,7 @@ export const CompletePage = ({
   const { t } = useTranslation();
 
   const { onViewTransactionClick, unstakeMatch, pendingActionMatch, urls } =
-    useComplete();
+    useCompleteCommonContext();
 
   return (
     <AnimationPage>
@@ -212,5 +218,13 @@ export const CompletePage = ({
         </Box>
       </PageContainer>
     </AnimationPage>
+  );
+};
+
+export const CompletePage = (props: Props) => {
+  return (
+    <CompleteCommonContextProvider value={useComplete()}>
+      <CompletePageComponent {...props} />
+    </CompleteCommonContextProvider>
   );
 };

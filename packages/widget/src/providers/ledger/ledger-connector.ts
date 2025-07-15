@@ -4,10 +4,6 @@ import {
   WalletAPIClient,
   WindowMessageTransport,
 } from "@ledgerhq/wallet-api-client";
-import {
-  ledgerChainPriority,
-  type SupportedLedgerLiveFamilies,
-} from "@sk-widget/domain/types/chains/ledger";
 import type {
   Chain,
   WalletDetailsParams,
@@ -21,6 +17,10 @@ import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
 import { skNormalizeChainId } from "../../domain";
 import type { SupportedSKChains } from "../../domain/types/chains";
+import {
+  ledgerChainPriority,
+  type SupportedLedgerLiveFamilies,
+} from "../../domain/types/chains/ledger";
 import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";

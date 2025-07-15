@@ -1,5 +1,6 @@
 import { createContainer, style } from "@vanilla-extract/css";
-import { atoms } from "./styles";
+import { recipe } from "@vanilla-extract/recipes";
+import { atoms } from "./styles/theme/atoms.css";
 import { minContainerWidth } from "./styles/tokens/breakpoints";
 
 const appContainerName = createContainer();
@@ -39,8 +40,22 @@ export const container = style([
   }),
 ]);
 
-export const appContainer = style({
-  minHeight: "800px",
-  containerType: "inline-size",
-  containerName: appContainerName,
+export const appContainer = recipe({
+  base: {
+    minHeight: "800px",
+    containerType: "inline-size",
+    containerName: appContainerName,
+  },
+  variants: {
+    variant: {
+      widget: {},
+      dashboard: {
+        display: "flex",
+        justifyContent: "center",
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "widget",
+  },
 });

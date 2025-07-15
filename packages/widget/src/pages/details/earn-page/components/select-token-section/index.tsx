@@ -1,22 +1,26 @@
-import { Box, NumberInput, Text } from "@sk-widget/components";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { Balance } from "@sk-widget/components/atoms/icons/balance";
-import { MaxButton } from "@sk-widget/components/atoms/max-button";
-import * as AmountToggle from "@sk-widget/components/molecules/amount-toggle";
-import { isUSDeToken } from "@sk-widget/domain/types";
+import clsx from "clsx";
+import { Just, Maybe } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { Balance } from "../../../../../components/atoms/icons/balance";
+import { MaxButton } from "../../../../../components/atoms/max-button";
+import { NumberInput } from "../../../../../components/atoms/number-input";
+import { Text } from "../../../../../components/atoms/typography/text";
+import * as AmountToggle from "../../../../../components/molecules/amount-toggle";
+import { isUSDeToken } from "../../../../../domain/types/tokens";
+import { useSettings } from "../../../../../providers/settings";
+import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
+import { useEarnPageContext } from "../../state/earn-page-context";
+import { SelectToken } from "./select-token";
 import {
   bottomBanner,
   bottomBannerBottomRadius,
   bottomBannerText,
   priceTxt,
-} from "@sk-widget/pages/details/earn-page/components/select-token-section/styles.css";
-import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
-import { useSettings } from "@sk-widget/providers/settings";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
-import clsx from "clsx";
-import { Just, Maybe } from "purify-ts";
-import { useTranslation } from "react-i18next";
-import { SelectToken } from "./select-token";
+  selectTokenSection,
+} from "./styles.css";
 import { SelectTokenTitle } from "./title";
 
 export const SelectTokenSection = () => {
@@ -117,12 +121,16 @@ export const SelectTokenSection = () => {
         px="4"
         borderStyle="solid"
         borderWidth={1}
-        borderColor={
-          submitted && stakeAmountIsZero ? "textDanger" : "transparent"
-        }
-        className={clsx({
-          [bottomBannerBottomRadius]: showBottomUSDeBanner,
-        })}
+        className={clsx(
+          {
+            [bottomBannerBottomRadius]: showBottomUSDeBanner,
+          },
+          combineRecipeWithVariant({
+            rec: selectTokenSection,
+            variant,
+            state: submitted && stakeAmountIsZero ? "danger" : "default",
+          })
+        )}
       >
         {variant === "zerion" && (
           <Box display="flex" justifyContent="space-between">

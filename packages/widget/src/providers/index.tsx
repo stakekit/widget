@@ -1,13 +1,8 @@
-import { EarnPageStateProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import { ActivityProvider } from "@sk-widget/providers/activity-provider";
-import { EnterStakeStoreProvider } from "@sk-widget/providers/enter-stake-store";
-import { ExitStakeStoreProvider } from "@sk-widget/providers/exit-stake-store";
-import { PendingActionStoreProvider } from "@sk-widget/providers/pending-action-store";
-import { i18nInstance } from "@sk-widget/translation";
 import type { ComponentProps, PropsWithChildren } from "react";
 import { StrictMode } from "react";
 import { I18nextProvider } from "react-i18next";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
+import { SummaryProvider } from "../hooks/use-summary";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
 import {
   FooterButtonProvider,
@@ -15,10 +10,16 @@ import {
 } from "../pages/components/footer-outlet/context";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
+import { EarnPageStateProvider } from "../pages/details/earn-page/state/earn-page-state-context";
+import { i18nInstance } from "../translation";
+import { ActivityProvider } from "./activity-provider";
 import { SKApiClientProvider } from "./api/api-client-provider";
+import { EnterStakeStoreProvider } from "./enter-stake-store";
+import { ExitStakeStoreProvider } from "./exit-stake-store";
 import { ListStateContextProvider } from "./list-state";
 import { SKLocationProvider } from "./location";
 import { MountAnimationProvider } from "./mount-animation";
+import { PendingActionStoreProvider } from "./pending-action-store";
 import { SKQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
 import { RootElementProvider } from "./root-element";
@@ -57,7 +58,9 @@ export const Providers = ({
                                                 <ExitStakeStoreProvider>
                                                   <PendingActionStoreProvider>
                                                     <ActivityProvider>
-                                                      {children}
+                                                      <SummaryProvider>
+                                                        {children}
+                                                      </SummaryProvider>
                                                     </ActivityProvider>
                                                   </PendingActionStoreProvider>
                                                 </ExitStakeStoreProvider>

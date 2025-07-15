@@ -1,4 +1,3 @@
-import { useUnstakeOrPendingActionParams } from "@sk-widget/hooks/navigation/use-unstake-or-pending-action-params";
 import type {
   ActionTypes,
   PendingActionDto,
@@ -14,6 +13,7 @@ import { config } from "../../../config";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
@@ -356,7 +356,9 @@ export const UnstakeOrPendingActionProvider = ({
 export const useUnstakeOrPendingActionState = () => {
   const state = useContext(UnstakeOrPendingActionContext);
   if (state === undefined) {
-    throw new Error("useState must be used within a UnstakeContextProvider");
+    throw new Error(
+      "useUnstakeOrPendingActionState must be used within a UnstakeContextProvider"
+    );
   }
 
   return state;
@@ -365,7 +367,9 @@ export const useUnstakeOrPendingActionState = () => {
 export const useUnstakeOrPendingActionDispatch = () => {
   const dispatch = useContext(UnstakeOrPendingActionDispatchContext);
   if (dispatch === undefined) {
-    throw new Error("useDispatch must be used within a UnstakeContextProvider");
+    throw new Error(
+      "useUnstakeOrPendingActionDispatch must be used within a UnstakeContextProvider"
+    );
   }
 
   return dispatch;

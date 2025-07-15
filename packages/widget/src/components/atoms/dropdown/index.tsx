@@ -1,8 +1,9 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Fragment } from "react";
+import { id } from "../../../styles/theme/ids";
 import { Box } from "../box";
-import { CaretDownIcon } from "../icons";
-import { Text } from "../typography";
+import { CaretDownIcon } from "../icons/caret-down";
+import { Text } from "../typography/text";
 import {
   dropdownContent,
   dropdownGroup,
@@ -45,32 +46,32 @@ export function Dropdown<T extends { label: string; value: string }>({
         </Box>
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Content
-        className={dropdownContent}
-        sideOffset={3}
-        align="start"
-      >
-        <DropdownMenu.RadioGroup
-          className={dropdownGroup}
-          value={selectedOption?.value}
-          onValueChange={onSelect}
-        >
-          {options.map((option, i) => (
-            <Fragment key={option.value}>
-              <DropdownMenu.RadioItem
-                className={dropdownItem}
-                value={option.value}
-              >
-                <Text>{option.label}</Text>
-              </DropdownMenu.RadioItem>
+      <DropdownMenu.Portal>
+        <Box data-rk={id}>
+          <DropdownMenu.Content className={dropdownContent} sideOffset={3}>
+            <DropdownMenu.RadioGroup
+              className={dropdownGroup}
+              value={selectedOption?.value}
+              onValueChange={onSelect}
+            >
+              {options.map((option, i) => (
+                <Fragment key={option.value}>
+                  <DropdownMenu.RadioItem
+                    className={dropdownItem}
+                    value={option.value}
+                  >
+                    <Text>{option.label}</Text>
+                  </DropdownMenu.RadioItem>
 
-              {i < options.length - 1 && (
-                <DropdownMenu.Separator className={separator} />
-              )}
-            </Fragment>
-          ))}
-        </DropdownMenu.RadioGroup>
-      </DropdownMenu.Content>
+                  {i < options.length - 1 && (
+                    <DropdownMenu.Separator className={separator} />
+                  )}
+                </Fragment>
+              ))}
+            </DropdownMenu.RadioGroup>
+          </DropdownMenu.Content>
+        </Box>
+      </DropdownMenu.Portal>
     </DropdownMenu.Root>
   );
 }

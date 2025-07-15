@@ -1,5 +1,6 @@
 import { keyframes, style } from "@vanilla-extract/css";
-import { atoms, vars } from "../../../styles";
+import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
 import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 const slideUp = keyframes({

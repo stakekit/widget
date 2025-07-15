@@ -3,7 +3,9 @@ import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../providers/settings";
-import { Box, CaretDownIcon, Text } from "../..";
+import { Box } from "../../atoms/box";
+import { CaretDownIcon } from "../../atoms/icons/caret-down";
+import { Text } from "../../atoms/typography/text";
 import { container, titleStyle } from "./styles.css";
 
 export const ChainModal = () => {

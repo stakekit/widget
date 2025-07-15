@@ -1,22 +1,21 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import { Box, CaretDownIcon, Text } from "@sk-widget/components";
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { Image } from "@sk-widget/components/atoms/image";
-import { ImageFallback } from "@sk-widget/components/atoms/image-fallback";
-import { SelectYield } from "@sk-widget/components/molecules/select-yield";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
-import { selectProviderTrigger } from "@sk-widget/pages/details/earn-page/components/select-provider/styles.css";
-import { useEarnPageContext } from "@sk-widget/pages/details/earn-page/state/earn-page-context";
+import { Maybe } from "purify-ts";
+import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
+import { Image } from "../../../../../components/atoms/image";
+import { ImageFallback } from "../../../../../components/atoms/image-fallback";
+import { Text } from "../../../../../components/atoms/typography/text";
+import { SelectYield } from "../../../../../components/molecules/select-yield";
+import { useMultiYields } from "../../../../../hooks/api/use-multi-yields";
+import { useEarnPageContext } from "../../state/earn-page-context";
 import {
   useEarnPageDispatch,
   useEarnPageState,
-} from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
-import {
-  breakWord,
-  validatorPill,
-} from "@sk-widget/pages/details/earn-page/styles.css";
-import { Maybe } from "purify-ts";
-import { useTranslation } from "react-i18next";
+} from "../../state/earn-page-state-context";
+import { breakWord, validatorPill } from "../../styles.css";
+import { selectProviderTrigger } from "./styles.css";
 
 export const SelectProvider = () => {
   const { selectedStake, selectedProviderYieldId } = useEarnPageState();

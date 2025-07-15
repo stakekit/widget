@@ -1,6 +1,6 @@
 import { Box } from "../box";
 import { WarningIcon } from "../icons/warning";
-import { Text } from "../typography";
+import { Text } from "../typography/text";
 
 export const WarningBox = ({ text }: { text: string }) => (
   <Box

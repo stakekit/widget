@@ -4,14 +4,15 @@ import type {
   TokenDto,
   TransactionDto,
   TransactionStatus,
-  TransactionType,
   YieldDto,
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, type Maybe, Right } from "purify-ts";
 import { normalizeChainId } from "wagmi";
-import type { Override } from "../types";
-import type { Prices, TokenString } from "./types";
+import type { Override } from "../types/utils";
+import type { TokenString } from "./types/tokens";
+
+export { getTokenPriceInUSD } from "./types/price";
 
 export const tokenString = (token: TokenDto): TokenString => {
   return `${token.network}-${token.address?.toLowerCase()}`;
@@ -19,43 +20,6 @@ export const tokenString = (token: TokenDto): TokenString => {
 
 export const equalTokens = (a: TokenDto, b: TokenDto) =>
   tokenString(a) === tokenString(b);
-
-export const getTokenPriceInUSD = ({
-  token,
-  baseToken,
-  amount,
-  prices,
-  pricePerShare,
-}: {
-  token: TokenDto;
-  baseToken: TokenDto | null;
-  amount: string | BigNumber;
-  pricePerShare: string | null;
-  prices: Prices;
-}): BigNumber => {
-  const amountBN = BigNumber(amount);
-
-  if (pricePerShare && baseToken) {
-    const baseTokenPrice = new BigNumber(
-      prices
-        .getByToken(baseToken)
-        .chainNullable((v) => v.price)
-        .orDefault(0)
-    );
-    const pricePerShareBN = BigNumber(pricePerShare);
-
-    return amountBN.times(baseTokenPrice).times(pricePerShareBN);
-  }
-
-  const tokenPrice = new BigNumber(
-    prices
-      .getByToken(token)
-      .chainNullable((v) => v.price)
-      .orDefault(0)
-  );
-
-  return amountBN.times(tokenPrice);
-};
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,
@@ -123,12 +87,6 @@ export const PAMultiValidatorsRequired = (pa: PendingActionDto) =>
 
 export const PASingleValidatorRequired = (pa: PendingActionDto) =>
   !!pa.args?.args?.validatorAddress?.required;
-
-export const transactionsForConstructOnlySet = new Set<TransactionType>([
-  "P2P_NODE_REQUEST",
-  "LUGANODES_PROVISION",
-  "LUGANODES_EXIT_REQUEST",
-]);
 
 export const skNormalizeChainId = (chainId: string) => {
   const cId = normalizeChainId(chainId);

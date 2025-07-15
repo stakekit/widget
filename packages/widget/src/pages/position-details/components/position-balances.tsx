@@ -2,8 +2,9 @@ import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Text } from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
+import { Text } from "../../../components/atoms/typography/text";
 import { defaultFormattedNumber } from "../../../utils";
 import { daysUntilDate } from "../../../utils/date";
 

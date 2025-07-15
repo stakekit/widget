@@ -1,9 +1,9 @@
 import { assignInlineVars } from "@vanilla-extract/dynamic";
-import type { Atoms } from "../../../styles";
+import type { Atoms } from "../../../styles/theme/atoms.css";
 import { getBackgroundColor } from "../../../utils";
 import { Box } from "../box";
-import { Text } from "../typography";
 import type { TextVariants } from "../typography/styles.css";
+import { Text } from "../typography/text";
 import { defaultColor, fallbackContainer } from "./styles.css";
 
 export const ImageFallback = ({

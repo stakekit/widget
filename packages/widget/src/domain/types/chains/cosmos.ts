@@ -1,6 +1,6 @@
-import type { CosmosChainsAssets } from "@sk-widget/providers/cosmos/chains/types";
 import { CosmosNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import type { CosmosChainsAssets } from "../../../providers/cosmos/chains/types";
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,

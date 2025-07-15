@@ -10,10 +10,11 @@ import { MaybeWindow } from "../../../utils/maybe-window";
 import { SKAnchor } from "../../atoms/anchor";
 import { Box } from "../../atoms/box";
 import { Button } from "../../atoms/button";
-import { HelpIcon } from "../../atoms/icons";
+import { HelpIcon } from "../../atoms/icons/help";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
-import { Heading, Text } from "../../atoms/typography";
+import { Heading } from "../../atoms/typography/heading";
+import { Text } from "../../atoms/typography/text";
 import { container, imageStyle } from "./style.css";
 
 type ModalType =

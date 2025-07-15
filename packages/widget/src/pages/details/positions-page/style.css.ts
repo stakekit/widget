@@ -1,10 +1,10 @@
+import { style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
 import {
   widgetContainerMaxWidth,
   widgetContainerName,
-} from "@sk-widget/style.css";
-import { style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
-import { atoms } from "../../../styles";
+} from "../../../style.css";
+import { atoms } from "../../../styles/theme/atoms.css";
 import { minContainerWidth } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
@@ -17,6 +17,48 @@ export const listItemContainer = recipe({
         background: "positionsActionRequiredBackground",
       }),
       pending: atoms({ background: "positionsPendingBackground" }),
+    },
+    variant: {
+      default: {},
+      utila: {},
+    },
+  },
+  compoundVariants: [
+    {
+      variants: {
+        variant: "utila",
+      },
+      style: {
+        background: "none",
+      },
+    },
+  ],
+
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+export const badgeText = recipe({
+  variants: {
+    type: {
+      regular: atoms({ color: "text" }),
+      white: atoms({ color: "white" }),
+    },
+  },
+});
+
+export const utilaBadgeText = recipe({
+  base: [
+    {
+      fontSize: "12px",
+    },
+  ],
+  variants: {
+    type: {
+      regular: atoms({ color: "text" }),
+      success: atoms({ color: "__internal__utila__badgeTextSuccess" }),
+      error: atoms({ color: "__internal__utila__badgeTextError" }),
     },
   },
 });

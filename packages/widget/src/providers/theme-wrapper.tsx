@@ -1,11 +1,13 @@
-import { rootSelector } from "@sk-widget/styles/theme/ids";
 import { assignInlineVars } from "@vanilla-extract/dynamic";
 import merge from "lodash.merge";
+import { Just } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
-import { vars } from "../styles";
+import { vars } from "../styles/theme/contract.css";
+import { rootSelector } from "../styles/theme/ids";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
-import type { RecursivePartial } from "../types";
+import { utilaLightThemeOverrides } from "../styles/theme/variant-overrides";
+import type { RecursivePartial } from "../types/utils";
 import { useSettings } from "./settings";
 
 export type ThemeWrapperTheme =
@@ -16,17 +18,31 @@ export type ThemeWrapperTheme =
     };
 
 export const ThemeWrapper = ({ children }: PropsWithChildren) => {
-  const { theme = { lightMode: lightTheme } } = useSettings();
+  const { theme = { lightMode: lightTheme }, variant } = useSettings();
 
   const finalLightTheme = useMemo(
     () =>
-      "lightMode" in theme
-        ? merge(structuredClone(lightTheme), theme.lightMode)
-        : theme
-          ? merge(structuredClone(lightTheme), theme)
-          : lightTheme,
-    [theme]
+      Just(variant)
+        .map((v) => (v === "utila" ? utilaLightThemeOverrides : {}))
+        .map((overrides) => {
+          if ("lightMode" in theme) {
+            return merge(
+              structuredClone(lightTheme),
+              theme.lightMode,
+              overrides
+            );
+          }
+
+          if (theme) {
+            return merge(structuredClone(lightTheme), theme, overrides);
+          }
+
+          return lightTheme;
+        })
+        .unsafeCoerce(),
+    [theme, variant]
   );
+
   const finalDarkTheme = useMemo(
     () =>
       "darkMode" in theme

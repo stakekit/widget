@@ -1,9 +1,9 @@
-import { tokenTokenBalancesScan } from "@sk-widget/common/private-api";
 import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
+import { tokenTokenBalancesScan } from "../../common/private-api";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 
@@ -95,7 +95,7 @@ export const useInvalidateTokenBalances = () => {
   );
 };
 
-export const getTokenTokenBalancesScanQueryKey = (
+const getTokenTokenBalancesScanQueryKey = (
   tokenBalanceScanDto: TokenBalanceScanDto
 ) => {
   return ["/v1/tokens/balances/scan", tokenBalanceScanDto] as const;

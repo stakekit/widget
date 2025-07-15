@@ -1,10 +1,10 @@
-import type { PositionsData } from "@sk-widget/domain/types/positions";
-import { getMinStakeAmount } from "@sk-widget/domain/types/stake";
 import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
+import type { PositionsData } from "../domain/types/positions";
+import { getMinStakeAmount } from "../domain/types/stake";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
 type Args = {

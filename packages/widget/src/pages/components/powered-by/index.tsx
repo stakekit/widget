@@ -1,7 +1,8 @@
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
-import { Box, Text } from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import { SKLogo } from "../../../components/atoms/icons/sk-logo";
+import { Text } from "../../../components/atoms/typography/text";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import createStateContext from "../../../utils/create-state-context";

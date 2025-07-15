@@ -1,6 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { images } from "../../../assets/images";
-import { Box, Button, Heading, SelectModal, Text } from "../../../components";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { SelectModal } from "../../../components/atoms/select-modal";
+import { Heading } from "../../../components/atoms/typography/heading";
+import { Text } from "../../../components/atoms/typography/text";
 import { unstakeSignContainer, unstakeSignImageStyle } from "../styles.css";
 
 export const UnstakeSignPopup = ({

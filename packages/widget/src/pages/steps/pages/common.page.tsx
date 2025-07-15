@@ -1,10 +1,12 @@
-import type { useProvidersDetails } from "@sk-widget/hooks/use-provider-details";
 import type { ActionDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Box, Button, Heading } from "../../../components";
+import { Box } from "../../../components/atoms/box";
+import { Button } from "../../../components/atoms/button";
+import { Heading } from "../../../components/atoms/typography/heading";
+import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { PageContainer } from "../../components";
+import { PageContainer } from "../../components/page-container";
 import { useSteps } from "../hooks/use-steps.hook";
 import { TxState } from "./tx-state";
 

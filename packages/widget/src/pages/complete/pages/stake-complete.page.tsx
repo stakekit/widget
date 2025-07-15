@@ -1,4 +1,3 @@
-import { useEnterStakeStore } from "@sk-widget/providers/enter-stake-store";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -6,6 +5,7 @@ import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
+import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { formatNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 

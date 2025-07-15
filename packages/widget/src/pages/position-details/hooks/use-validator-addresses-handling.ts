@@ -4,8 +4,8 @@ import type {
   YieldBalanceDto,
 } from "@stakekit/api-hooks";
 import { useCallback, useMemo, useReducer } from "react";
-import type { SelectModalProps } from "../../../components";
-import type { Action } from "../../../types";
+import type { SelectModalProps } from "../../../components/atoms/select-modal";
+import type { Action } from "../../../types/utils";
 
 type State = {
   selectedValidators: Set<ValidatorDto["address"]>;

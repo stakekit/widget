@@ -1,12 +1,14 @@
-import { Box, Heading, Text } from "@sk-widget/components";
-import { TokenIcon } from "@sk-widget/components/atoms/token-icon";
-import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
-import { headingStyles } from "@sk-widget/pages/review/pages/style.css";
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Box } from "../../../../../components/atoms/box";
+import { TokenIcon } from "../../../../../components/atoms/token-icon";
+import { Heading } from "../../../../../components/atoms/typography/heading";
+import { Text } from "../../../../../components/atoms/typography/text";
+import type { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
+import { headingStyles } from "../../style.css";
 
 type Props = {
   title: string;
@@ -24,6 +26,7 @@ const ReviewTopSection = ({
   rewardTokenDetailsProps,
 }: Props) => {
   const { t } = useTranslation();
+
   return (
     <Box marginBottom="4">
       <motion.div

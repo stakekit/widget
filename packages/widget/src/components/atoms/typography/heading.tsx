@@ -1,6 +1,6 @@
-import { Box, type BoxProps } from "@sk-widget/components";
 import classNames from "clsx";
 import type { JSX, PropsWithChildren } from "react";
+import { Box, type BoxProps } from "../box";
 import type { HeadingVariants } from "./styles.css";
 import { heading } from "./styles.css";
 

@@ -1,19 +1,17 @@
-import { SelectProvider } from "@sk-widget/pages/details/earn-page/components/select-provider";
-import { EarnPageStateUsageBoundaryProvider } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
-import { Text } from "../../../components/atoms/typography";
+import { Text } from "../../../components/atoms/typography/text";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
-import { PageContainer } from "../../components";
+import { PageContainer } from "../../components/page-container";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
-import { ReferralCode } from "./components/referral-code";
+import { SelectProvider } from "./components/select-provider";
 import { SelectTokenSection } from "./components/select-token-section";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
@@ -23,6 +21,7 @@ import {
   EarnPageContextProvider,
   useEarnPageContext,
 } from "./state/earn-page-context";
+import { EarnPageStateUsageBoundaryProvider } from "./state/earn-page-state-context";
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -31,10 +30,53 @@ const EarnPageComponent = () => {
 
   const { variant } = useSettings();
 
-  const { referralCheck, isError } = useEarnPageContext();
+  const { isError } = useEarnPageContext();
 
+  return (
+    <PageContainer>
+      <Box>
+        {variant !== "zerion" && <SelectTokenTitle />}
+
+        <ZerionChainModal />
+
+        <SelectTokenSection />
+
+        <SelectYieldSection />
+
+        <StakedVia />
+
+        <SelectProvider />
+
+        <SelectValidatorSection />
+
+        <ExtraArgsSelection />
+      </Box>
+
+      {isError && (
+        <Box display="flex" alignItems="center" justifyContent="center" my="4">
+          <Text variant={{ type: "danger" }} textAlign="center">
+            {t("shared.something_went_wrong")}
+          </Text>
+        </Box>
+      )}
+
+      <Box marginTop="4">
+        <Footer />
+      </Box>
+    </PageContainer>
+  );
+};
+
+export const EarnPage = () => (
+  <EarnPageStateUsageBoundaryProvider>
+    <EarnPageContextProvider>
+      <EarnPageComponent />
+    </EarnPageContextProvider>
+  </EarnPageStateUsageBoundaryProvider>
+);
+
+export const AnimatedEarnPage = () => {
   const { mountAnimationFinished, dispatch } = useMountAnimation();
-
   const { disableInitLayoutAnimation } = useSettings();
 
   const { animate, initial } = Just({
@@ -83,56 +125,7 @@ const EarnPageComponent = () => {
         dispatch({ type: "earnPage" });
       }}
     >
-      <PageContainer>
-        <Box>
-          {variant !== "zerion" && <SelectTokenTitle />}
-
-          <ZerionChainModal />
-
-          <SelectTokenSection />
-
-          <SelectYieldSection />
-
-          <StakedVia />
-
-          <SelectProvider />
-
-          <SelectValidatorSection />
-
-          <ExtraArgsSelection />
-        </Box>
-
-        {isError && (
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            my="4"
-          >
-            <Text variant={{ type: "danger" }} textAlign="center">
-              {t("shared.something_went_wrong")}
-            </Text>
-          </Box>
-        )}
-
-        <Box marginTop="4">
-          <Footer />
-        </Box>
-
-        {referralCheck && (
-          <Box marginTop="4">
-            <ReferralCode />
-          </Box>
-        )}
-      </PageContainer>
+      <EarnPage />
     </motion.div>
   );
 };
-
-export const EarnPage = () => (
-  <EarnPageStateUsageBoundaryProvider>
-    <EarnPageContextProvider>
-      <EarnPageComponent />
-    </EarnPageContextProvider>
-  </EarnPageStateUsageBoundaryProvider>
-);

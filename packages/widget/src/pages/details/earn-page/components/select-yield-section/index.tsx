@@ -1,8 +1,10 @@
-import { ContentLoaderSquare } from "@sk-widget/components/atoms/content-loader";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
-import { Box, Divider, Text } from "../../../../../components";
+import { Box } from "../../../../../components/atoms/box";
+import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
+import { Divider } from "../../../../../components/atoms/divider";
+import { ToolTip } from "../../../../../components/atoms/tooltip";
+import { Text } from "../../../../../components/atoms/typography/text";
 import { useSettings } from "../../../../../providers/settings";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { apyVariable, apyYield } from "../../styles.css";
@@ -45,7 +47,7 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            {variant !== "zerion" && (
+            {variant !== "zerion" && variant !== "utila" && (
               <Box my="2">
                 <Text>{t("details.earn")}</Text>
               </Box>

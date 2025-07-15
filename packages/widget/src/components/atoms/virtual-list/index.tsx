@@ -1,9 +1,3 @@
-import { Box, type BoxProps } from "@sk-widget/components/atoms/box";
-import { Spinner } from "@sk-widget/components/atoms/spinner";
-import { useSavedRef } from "@sk-widget/hooks";
-import { useObserveElementRect } from "@sk-widget/providers/virtual-scroll";
-import { breakpoints } from "@sk-widget/styles/tokens/breakpoints";
-import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import {
   useVirtualizer,
   type VirtualizerOptions,
@@ -11,6 +5,12 @@ import {
 import clsx from "clsx";
 import { List, Maybe } from "purify-ts";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useObserveElementRect } from "../../../providers/virtual-scroll";
+import { breakpoints } from "../../../styles/tokens/breakpoints";
+import { MaybeWindow } from "../../../utils/maybe-window";
+import { Box, type BoxProps } from "../box";
+import { Spinner } from "../spinner";
 import {
   absoluteWrapper,
   container,
@@ -97,6 +97,7 @@ export const VirtualList = <ItemData = unknown>({
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
           maxHeight: _maxHeight,
+          minHeight: "100px",
         }}
       >
         <Box

@@ -1,15 +1,12 @@
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import SafeSDK, { TransactionStatus } from "@safe-global/safe-apps-sdk";
-import {
-  configMeta,
-  type ExtraProps,
-} from "@sk-widget/providers/safe/safe-connector-meta";
-import { isIframe } from "@sk-widget/utils";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync, Maybe } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
 import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
+import { isIframe } from "../../utils";
+import { configMeta, type ExtraProps } from "./safe-connector-meta";
 
 function safe(parameters: { shimDisconnect?: boolean } = {}) {
   const { shimDisconnect = false } = parameters;

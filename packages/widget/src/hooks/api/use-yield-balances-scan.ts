@@ -1,4 +1,3 @@
-import { yieldYieldBalancesScan } from "@sk-widget/common/private-api";
 import type {
   YieldBalanceScanRequestDto,
   YieldBalancesWithIntegrationIdDto,
@@ -6,11 +5,11 @@ import type {
 import { useQuery } from "@tanstack/react-query";
 import { Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
+import { yieldYieldBalancesScan } from "../../common/private-api";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
-import { useLocalStorageValue } from "../use-local-storage-value";
 
 export const useYieldBalancesScan = <
   T = YieldBalancesWithIntegrationIdDto[],
@@ -24,10 +23,6 @@ export const useYieldBalancesScan = <
   const lastActionTimestamp = useMemo(
     () => actionHistoryData.map((v) => v.timestamp).extractNullable(),
     [actionHistoryData]
-  );
-
-  const customValidators = useLocalStorageValue(
-    "sk-widget@1//customValidators"
   );
 
   const param = useMemo(
@@ -45,10 +40,6 @@ export const useYieldBalancesScan = <
               additionalAddresses: val.additionalAddresses,
             },
             network: val.network,
-            customValidators: Maybe.fromNullable(customValidators)
-              .chainNullable((v) => v[val.network])
-              .chainNullable((v) => v[val.address])
-              .orDefault([]),
           },
         }),
         {
@@ -59,7 +50,7 @@ export const useYieldBalancesScan = <
           },
         }
       ),
-    [additionalAddresses, address, customValidators, network]
+    [additionalAddresses, address, network]
   );
 
   const res = useQuery({
@@ -101,7 +92,7 @@ export const useInvalidateYieldBalances = () => {
   );
 };
 
-export const getYieldYieldBalancesScanQueryKey = (
+const getYieldYieldBalancesScanQueryKey = (
   yieldBalanceScanRequestDto: YieldBalanceScanRequestDto
 ) => {
   return ["/v1/yields/balances/scan", yieldBalanceScanRequestDto] as const;

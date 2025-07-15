@@ -1,16 +1,18 @@
-import { Box, Divider, Text } from "@sk-widget/components";
-import { InfoIcon } from "@sk-widget/components/atoms/icons/info";
-import { ToolTip } from "@sk-widget/components/atoms/tooltip";
-import { useTrackEvent } from "@sk-widget/hooks/tracking/use-track-event";
-import { useActionReview } from "@sk-widget/pages/review/hooks/use-action-review.hook";
-import ReviewTopSection from "@sk-widget/pages/review/pages/common-page/components/review-top-section";
-import { pointerStyles } from "@sk-widget/pages/review/pages/style.css";
-import { capitalizeFirstLetters } from "@sk-widget/utils/formatters";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { Box } from "../../../components/atoms/box";
+import { Divider } from "../../../components/atoms/divider";
+import { InfoIcon } from "../../../components/atoms/icons/info";
+import { ToolTip } from "../../../components/atoms/tooltip";
+import { Text } from "../../../components/atoms/typography/text";
+import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { PageContainer } from "../../components";
+import { capitalizeFirstLetters } from "../../../utils/formatters";
+import { PageContainer } from "../../components/page-container";
+import { useActionReview } from "../hooks/use-action-review.hook";
+import ReviewTopSection from "./common-page/components/review-top-section";
+import { pointerStyles } from "./style.css";
 
 export const ActionReviewPage = () => {
   const { t } = useTranslation();

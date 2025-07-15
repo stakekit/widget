@@ -1,10 +1,3 @@
-import type { InitParams } from "@sk-widget/domain/types/init-params";
-import type { PositionsData } from "@sk-widget/domain/types/positions";
-import { canBeInitialYield } from "@sk-widget/domain/types/stake";
-import type { SKWallet } from "@sk-widget/domain/types/wallet";
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useSavedRef } from "@sk-widget/hooks/use-saved-ref";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { hashKey, type QueryClient, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
@@ -27,8 +20,15 @@ import {
   toArray,
 } from "rxjs";
 import { isSupportedChain } from "../../domain/types/chains";
+import type { InitParams } from "../../domain/types/init-params";
+import type { PositionsData } from "../../domain/types/positions";
+import { canBeInitialYield } from "../../domain/types/stake";
+import type { SKWallet } from "../../domain/types/wallet";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useSavedRef } from "../use-saved-ref";
+import { useWhitelistedValidators } from "../use-whitelisted-validators";
+import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 const multiYieldsStore = createStore({
   context: { data: new Map<string, Map<string, YieldDto>>() },

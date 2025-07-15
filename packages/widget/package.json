@@ -40,7 +40,7 @@
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
     "build": "pnpm lint && pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
-    "lint": "tsc && biome check .",
+    "lint": "biome check . && tsc",
     "test": "vitest -c vite/vite.config.dev.ts --retry 2 run",
     "format": "biome check --write . --unsafe",
     "build:website": "NODE_OPTIONS=--max-old-space-size=8192 vite -c vite/vite.config.website build",
@@ -50,7 +50,8 @@
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
-    "check-unused": "npx knip"
+    "check-unused": "npx knip",
+    "check-circular-deps": "skott ./src/index.package.ts -m 'raw' && pnpm lint"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -103,6 +104,8 @@
     "babel-plugin-react-compiler": "19.1.0-rc.2",
     "bignumber.js": "^9.3.0",
     "chain-registry": "1.69.221",
+    "chart.js": "^4.4.9",
+    "chartjs-plugin-annotation": "^3.1.0",
     "clsx": "^2.1.1",
     "cosmjs-types": "^0.9.0",
     "eventemitter3": "^5.0.1",
@@ -116,6 +119,7 @@
     "postcss": "^8.5.6",
     "purify-ts": "2.1.0",
     "react": "^19.1.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.5.3",
     "react-loading-skeleton": "^3.5.0",
@@ -123,6 +127,7 @@
     "reselect": "^5.1.1",
     "resize-observer-polyfill": "^1.5.1",
     "rxjs": "^7.8.2",
+    "skott": "^0.35.4",
     "tronweb": "^6.0.3",
     "typescript": "5.8.3",
     "unplugin-parcel-macros": "^0.1.1",

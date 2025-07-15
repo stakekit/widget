@@ -1,8 +1,6 @@
-import { getYieldOpportunity } from "@sk-widget/hooks/api/use-yield-opportunity";
-import { useWhitelistedValidators } from "@sk-widget/hooks/use-whitelisted-validators";
-import { useSKQueryClient } from "@sk-widget/providers/query-client";
-import { useSKWallet } from "@sk-widget/providers/sk-wallet";
 import {
+  type ActionDto,
+  type ActionList200,
   ActionStatus,
   actionList,
   getActionListQueryKey,
@@ -10,6 +8,10 @@ import {
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
+import { useSKQueryClient } from "../../providers/query-client";
+import { useSKWallet } from "../../providers/sk-wallet";
+import { useWhitelistedValidators } from "../use-whitelisted-validators";
+import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 export const useActivityActions = () => {
   const { address, network, isLedgerLive } = useSKWallet();
@@ -42,14 +44,17 @@ export const useActivityActions = () => {
           }))
           .chain(async (actionList) =>
             EitherAsync.all(
-              actionList.data.map((action) =>
+              (actionList.data as ActionList200["data"]).map((action) =>
                 getYieldOpportunity({
                   yieldId: action.integrationId,
                   queryClient,
                   isLedgerLive,
                   whitelistedValidatorAddresses,
                 })
-                  .map((yieldData) => ({ actionData: action, yieldData }))
+                  .map((yieldData) => ({
+                    actionData: action as typeof action & ActionDto,
+                    yieldData,
+                  }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
               )
             )

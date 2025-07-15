@@ -1,4 +1,4 @@
-import { vars } from "../../../styles";
+import { vars } from "../../../styles/theme/contract.css";
 
 export const CheckSteps = (props: { hw?: number; color?: string }) => (
   <svg

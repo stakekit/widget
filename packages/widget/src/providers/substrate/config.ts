@@ -1,10 +1,10 @@
-import {
-  type SubstrateChainsMap,
-  substrateChainsMap,
-} from "@sk-widget/domain/types/chains/substrate";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { config } from "../../config";
+import {
+  type SubstrateChainsMap,
+  substrateChainsMap,
+} from "../../domain/types/chains/substrate";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 

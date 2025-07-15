@@ -1,5 +1,3 @@
-import { tokenString } from "@sk-widget/domain";
-import type { PositionsData } from "@sk-widget/domain/types/positions";
 import type {
   AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
@@ -8,7 +6,9 @@ import type {
 import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
+import { tokenString } from "..";
 import type { InitParams } from "./init-params";
+import type { PositionsData } from "./positions";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);

@@ -1,13 +1,5 @@
 import type { GetType } from "purify-ts";
-import {
-  array,
-  boolean,
-  Codec,
-  Either,
-  Right,
-  record,
-  string,
-} from "purify-ts";
+import { boolean, Either, Right, record, string } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
 
@@ -16,20 +8,8 @@ const localStorageBuildKey = <K extends string>(key: K) =>
 
 const codecs = {
   [localStorageBuildKey("skPubKeys")]: record(string, string),
-  [localStorageBuildKey("customValidators")]: record(
-    string,
-    record(
-      string,
-      array(
-        Codec.interface({
-          integrationId: string,
-          validatorAddresses: array(string),
-        })
-      )
-    )
-  ),
-  [localStorageBuildKey("referralCode")]: string,
   [localStorageBuildKey("shimDisconnect/tron")]: boolean,
+  [localStorageBuildKey("tosAccepted")]: boolean,
 };
 
 export type LocalStorageKV = {
@@ -77,10 +57,9 @@ type Listener<K extends keyof LocalStorageKV = keyof LocalStorageKV> = (
 ) => void;
 
 const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
-  [localStorageBuildKey("customValidators")]: new Map(),
   [localStorageBuildKey("skPubKeys")]: new Map(),
-  [localStorageBuildKey("referralCode")]: new Map(),
   [localStorageBuildKey("shimDisconnect/tron")]: new Map(),
+  [localStorageBuildKey("tosAccepted")]: new Map(),
 };
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(

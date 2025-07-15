@@ -1,13 +1,13 @@
-import type { TokenString } from "@sk-widget/domain/types";
-import {
-  isSupportedChain,
-  type SupportedSKChains,
-} from "@sk-widget/domain/types/chains";
-import { useSettings } from "@sk-widget/providers/settings";
-import { MaybeWindow } from "@sk-widget/utils/maybe-window";
 import { ActionTypes } from "@stakekit/api-hooks";
 import { Codec, Left, Right, string } from "purify-ts";
 import { useMemo } from "react";
+import {
+  isSupportedChain,
+  type SupportedSKChains,
+} from "../domain/types/chains";
+import type { TokenString } from "../domain/types/tokens";
+import { useSettings } from "../providers/settings";
+import { MaybeWindow } from "../utils/maybe-window";
 
 export const useInitQueryParams = () => {
   const { externalProviders } = useSettings();
@@ -116,10 +116,6 @@ export const getAndValidateInitParams = ({
     pendingaction: safeParamCodec
       .decode(url.searchParams.get("pendingaction"))
       .chain(pendingActionCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-    referralCode: safeParamCodec
-      .decode(url.searchParams.get("ref"))
       .toMaybe()
       .extractNullable(),
     accountId: accountIdCodec // Not safeParamCodec as it maybe has ../ or ./

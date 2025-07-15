@@ -1,15 +1,13 @@
 import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { type JSX, type ReactNode, useMemo } from "react";
-import {
-  ArrowsLeftRightIcon,
-  Box,
-  ClockClockWiseIcon,
-  GifIcon,
-  Text,
-} from "../../../components";
+import { Box } from "../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { ArrowsLeftRightIcon } from "../../../components/atoms/icons/arrows-left-right";
+import { ClockClockWiseIcon } from "../../../components/atoms/icons/clock-clock-wise";
+import { GifIcon } from "../../../components/atoms/icons/gift";
 import { InfoIcon } from "../../../components/atoms/icons/info";
+import { Text } from "../../../components/atoms/typography/text";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 

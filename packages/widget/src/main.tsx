@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { SKApp } from "./App";
-import { darkTheme } from "./styles/theme/themes";
+import { lightTheme } from "./styles/theme/themes";
 import "./standalone.styles.css";
 
 const enableMocking = async () => {
@@ -15,9 +15,8 @@ enableMocking()
   .then(() => {
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <SKApp
-        theme={darkTheme}
+        theme={lightTheme}
         apiKey={import.meta.env.VITE_API_KEY}
-        referralCheck={import.meta.env.VITE_ENABLE_REFERRAL_CHECK === "true"}
         onMountAnimationComplete={() =>
           console.log("mount animation complete!")
         }
@@ -28,6 +27,9 @@ enableMocking()
         {...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
           tracking: { trackEvent: console.log, trackPageView: console.log },
         })}
+        dashboardVariant={import.meta.env.VITE_FORCE_DASHBOARD === "true"}
+        variant={import.meta.env.VITE_APP_VARIANT ?? "default"}
+        // hideAccountAndChainSelector
       />
     );
   })

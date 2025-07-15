@@ -1,16 +1,16 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { VirtualList } from "@sk-widget/components/atoms/virtual-list";
-import { SelectOpportunityListItem } from "@sk-widget/components/molecules/select-opportunity-list-item";
-import { useMultiYields } from "@sk-widget/hooks/api/use-multi-yields";
 import type { YieldDto } from "@stakekit/api-hooks";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useMultiYields } from "../../../hooks/api/use-multi-yields";
+import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import {
   SelectModal,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
+import { VirtualList } from "../../atoms/virtual-list";
+import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {

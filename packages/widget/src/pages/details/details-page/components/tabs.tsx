@@ -1,27 +1,86 @@
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
-import { Box, Divider } from "../../../../components";
+import { useNavigate } from "react-router";
+import { Box } from "../../../../components/atoms/box";
+import { Divider } from "../../../../components/atoms/divider";
+import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
+import { useSKLocation } from "../../../../providers/location";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
 import { divider } from "../styles.css";
 import { Tab } from "./tab";
 
-export type TabsList = "earn" | "positions" | "activity";
+type TabsList = "earn" | "positions" | "activity";
+
+const TABS_MAP = {
+  earn: "/",
+  positions: "/positions",
+  activity: "/activity",
+};
 
 export type TabsProps = {
-  selectedTab: TabsList;
-  onTabPress: (selected: TabsList) => void;
   pendingActionsCount?: number;
 };
 
-export const Tabs = ({
-  selectedTab,
-  onTabPress,
-  pendingActionsCount,
-}: TabsProps) => {
-  const { state } = useMountAnimation();
+export const Tabs = ({ pendingActionsCount }: TabsProps) => {
+  const trackEvent = useTrackEvent();
+  const navigate = useNavigate();
 
+  const { current } = useSKLocation();
+
+  const onTabPress = (selected: TabsList) => {
+    if (selectedTab === selected) return;
+
+    trackEvent("tabClicked", { selected });
+
+    navigate(TABS_MAP[selected]);
+  };
+
+  const selectedTab = current.pathname.startsWith("/positions")
+    ? "positions"
+    : current.pathname.startsWith("/activity")
+      ? "activity"
+      : "earn";
+
+  return (
+    <Box position="relative" display="flex" justifyContent="center">
+      <Box
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        data-rk="tabs-section"
+        zIndex="simple"
+      >
+        <Tab
+          isSelected={selectedTab === "earn"}
+          onTabPress={() => onTabPress("earn")}
+          variant="earn"
+        />
+
+        <Tab
+          isSelected={selectedTab === "positions"}
+          onTabPress={() => onTabPress("positions")}
+          variant="positions"
+          pendingActionsCount={pendingActionsCount}
+        />
+
+        <Tab
+          isSelected={selectedTab === "activity"}
+          onTabPress={() => onTabPress("activity")}
+          variant="activity"
+        />
+      </Box>
+
+      <Box className={divider}>
+        <Divider />
+      </Box>
+    </Box>
+  );
+};
+
+export const AnimatedTabs = (props: TabsProps) => {
+  const { state } = useMountAnimation();
   const { disableInitLayoutAnimation } = useSettings();
 
   const { animate, initial } = Just({ opacity: 1, translateY: 0 })
@@ -53,38 +112,7 @@ export const Tabs = ({
 
   return (
     <motion.div initial={initial} animate={animate}>
-      <Box position="relative" display="flex" justifyContent="center">
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          data-rk="tabs-section"
-          zIndex="simple"
-        >
-          <Tab
-            isSelected={selectedTab === "earn"}
-            onTabPress={() => onTabPress("earn")}
-            variant="earn"
-          />
-
-          <Tab
-            isSelected={selectedTab === "positions"}
-            onTabPress={() => onTabPress("positions")}
-            variant="positions"
-            pendingActionsCount={pendingActionsCount}
-          />
-
-          <Tab
-            isSelected={selectedTab === "activity"}
-            onTabPress={() => onTabPress("activity")}
-            variant="activity"
-          />
-        </Box>
-
-        <Box className={divider}>
-          <Divider />
-        </Box>
-      </Box>
+      <Tabs {...props} />
     </motion.div>
   );
 };

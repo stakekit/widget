@@ -1,23 +1,20 @@
-import {
-  type SupportedCosmosChains,
-  supportedCosmosChainsSet,
-} from "@sk-widget/domain/types/chains/cosmos";
+import { MiscNetworks, SubstrateNetworks } from "@stakekit/common";
+import { type SupportedCosmosChains, supportedCosmosChainsSet } from "./cosmos";
 import {
   type EvmChainIds,
   type SupportedEvmChain,
   supportedEVMChainsSet,
-} from "@sk-widget/domain/types/chains/evm";
+} from "./evm";
 import {
   type MiscChainIds,
   type SupportedMiscChains,
   supportedMiscChainsSet,
-} from "@sk-widget/domain/types/chains/misc";
+} from "./misc";
 import {
   type SubstrateChainIds,
   type SupportedSubstrateChains,
   supportedSubstrateChainsSet,
-} from "@sk-widget/domain/types/chains/substrate";
-import { MiscNetworks, SubstrateNetworks } from "@stakekit/common";
+} from "./substrate";
 
 export const isEvmChain = (chain: string): chain is SupportedEvmChain => {
   return supportedEVMChainsSet.has(chain as SupportedEvmChain);

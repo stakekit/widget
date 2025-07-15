@@ -1,4 +1,3 @@
-import { Box } from "@sk-widget/components/atoms/box";
 import {
   createContext,
   type Dispatch,
@@ -8,6 +7,7 @@ import {
   useContext,
   useState,
 } from "react";
+import { Box } from "../../atoms/box";
 
 type State = "full" | "short";
 
@@ -37,6 +37,16 @@ type AmountProps =
       children: (props: { state: State }) => ReactNode;
     };
 
+const useAmountContext = () => {
+  const ctx = useContext(Context);
+
+  if (!ctx) {
+    throw new Error("useAmountContext must be used within a Root");
+  }
+
+  return ctx;
+};
+
 const Amount = ({ fullAmount, shortAmount, children }: AmountProps) => {
   const [state, setState] = useAmountContext();
 
@@ -49,14 +59,4 @@ const Amount = ({ fullAmount, shortAmount, children }: AmountProps) => {
   );
 };
 
-const useAmountContext = () => {
-  const ctx = useContext(Context);
-
-  if (!ctx) {
-    throw new Error("useAmountContext must be used within a Root");
-  }
-
-  return ctx;
-};
-
-export { Root, Amount, useAmountContext };
+export { Root, Amount };

@@ -1,6 +1,3 @@
-import { isNetworkWithEnterMinBasedOnPosition } from "@sk-widget/domain/types/stake";
-import { usePositionsData } from "@sk-widget/hooks/use-positions-data";
-import { useTrackStateEvents } from "@sk-widget/pages/details/earn-page/state/use-track-state-events";
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
@@ -15,10 +12,12 @@ import {
   useReducer,
 } from "react";
 import { equalTokens } from "../../../../domain";
-import { useSavedRef } from "../../../../hooks";
+import { isNetworkWithEnterMinBasedOnPosition } from "../../../../domain/types/stake";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
+import { usePositionsData } from "../../../../hooks/use-positions-data";
+import { useSavedRef } from "../../../../hooks/use-saved-ref";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import type { Actions, ExtraData, State } from "./types";
 import { useAmountValidation } from "./use-amount-validation";
@@ -26,6 +25,7 @@ import { useGetInitYield } from "./use-get-init-yield";
 import { useInitToken } from "./use-init-token";
 import { useInitYield } from "./use-init-yield";
 import { useTokenBalance } from "./use-token-balance";
+import { useTrackStateEvents } from "./use-track-state-events";
 import { onYieldSelectState } from "./utils";
 
 const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(

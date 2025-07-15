@@ -7,12 +7,14 @@ import { useFirstMountState } from "../../../hooks/use-first-mount-state";
 import { useDisableTransitionDuration } from "../../../navigation/containers/animation-layout";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
-import { CaretDownIcon } from "../icons";
+import { CaretDownIcon } from "../icons/caret-down";
 import { caretContainer, rotate180deg, triggerContainer } from "./styles.css";
 
-type State = { collapsed: boolean; onClick: () => void };
+type State = { collapsed: boolean; onClick: () => void; initial?: never };
 
-type Props = PropsWithChildren<State | { collapsed?: never; onClick?: never }>;
+type Props = PropsWithChildren<
+  State | { initial?: boolean; collapsed?: never; onClick?: never }
+>;
 
 const CollapsibleContext = createContext<State | undefined>(undefined);
 
@@ -27,7 +29,7 @@ const useCollapsible = () => {
 };
 
 export const CollapsibleRoot = ({ children, ...controlledProps }: Props) => {
-  const internalState = useState(true);
+  const internalState = useState(controlledProps.initial ?? true);
 
   const value = useMemo<State>(
     () =>

@@ -1,4 +1,3 @@
-import { useEarnPageState } from "@sk-widget/pages/details/earn-page/state/earn-page-state-context";
 import type {
   ActionRequestDto,
   ValidatorDto,
@@ -6,8 +5,8 @@ import type {
 } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { useReferralCode } from "../../../../hooks/api/referral/use-referral-code";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useEarnPageState } from "./earn-page-state-context";
 
 export const useStakeEnterRequestDto = () => {
   const {
@@ -19,8 +18,6 @@ export const useStakeEnterRequestDto = () => {
     selectedProviderYieldId,
   } = useEarnPageState();
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
-
-  const referralcode = useReferralCode();
 
   return useMemo(
     () =>
@@ -73,7 +70,6 @@ export const useStakeEnterRequestDto = () => {
               additionalAddresses: additionalAddresses ?? undefined,
             },
             integrationId: selectedStake.id,
-            referralCode: referralcode.data?.code,
             args: {
               inputToken: selectedToken,
               ledgerWalletAPICompatible: isLedgerLive ?? undefined,
@@ -89,7 +85,6 @@ export const useStakeEnterRequestDto = () => {
       additionalAddresses,
       address,
       isLedgerLive,
-      referralcode.data?.code,
       selectedStake,
       selectedToken,
       selectedValidators,

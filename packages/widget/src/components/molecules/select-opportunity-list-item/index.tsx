@@ -1,12 +1,12 @@
-import { Box } from "@sk-widget/components/atoms/box";
-import { SelectModalItem } from "@sk-widget/components/atoms/select-modal";
-import { ProviderIcon } from "@sk-widget/components/atoms/token-icon/provider-icon";
-import { Text } from "@sk-widget/components/atoms/typography";
-import { selectItemText } from "@sk-widget/components/molecules/select-opportunity-list-item/styles.css";
-import { getRewardRateFormatted } from "@sk-widget/utils/formatters";
 import type { YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
+import { getRewardRateFormatted } from "../../../utils/formatters";
+import { Box } from "../../atoms/box";
+import { SelectModalItem } from "../../atoms/select-modal";
+import { ProviderIcon } from "../../atoms/token-icon/provider-icon";
+import { Text } from "../../atoms/typography/text";
+import { selectItemText } from "./styles.css";
 
 export const SelectOpportunityListItem = ({
   item,

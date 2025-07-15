@@ -1,13 +1,3 @@
-import type { RewardTokenDetails } from "@sk-widget/components/molecules/reward-token-details";
-import { useSavedRef, useTokensPrices } from "@sk-widget/hooks";
-import { useGasWarningCheck } from "@sk-widget/hooks/use-gas-warning-check";
-import { getRewardTokenSymbols } from "@sk-widget/hooks/use-reward-token-details/get-reward-token-symbols";
-import { useRegisterFooterButton } from "@sk-widget/pages/components/footer-outlet/context";
-import { useUnstakeMachine } from "@sk-widget/pages/position-details/hooks/use-unstake-machine";
-import type { MetaInfoProps } from "@sk-widget/pages/review/pages/common-page/common.page";
-import { useExitStakeStore } from "@sk-widget/providers/exit-stake-store";
-import { formatNumber } from "@sk-widget/utils";
-import { getGasFeeInUSD } from "@sk-widget/utils/formatters";
 import { useActionExitGasEstimate } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
@@ -16,6 +6,17 @@ import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
+import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
+import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
+import { useSavedRef } from "../../../hooks/use-saved-ref";
+import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import { formatNumber } from "../../../utils";
+import { getGasFeeInUSD } from "../../../utils/formatters";
+import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import { useUnstakeMachine } from "../../position-details/hooks/use-unstake-machine";
+import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const useUnstakeActionReview = () => {
   const exitRequest = useSelector(
