@@ -14,11 +14,11 @@
     "clean": "turbo run clean",
     "prepare": "husky",
     "check-unused": "npx knip",
-    "release": "changeset publish",
+    "release": "turbo --filter=@stakekit/widget build && changeset publish",
     "version": "changeset version"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.6",
+    "@biomejs/biome": "^2.1.1",
     "@changesets/cli": "^2.29.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",

@@ -22,12 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/composite_actions/initial_setup
+      - uses: jdx/mise-action@v2
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
 
-      - name: lint
+      - name: Lint
         run: pnpm lint
 
       - name: Test
