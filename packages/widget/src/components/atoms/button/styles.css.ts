@@ -11,6 +11,24 @@ export const pressAnimation = style({
   },
 });
 
+export const selectTokenButton = recipe({
+  variants: {
+    variant: {
+      default: [atoms({ background: "background" })],
+      utila: [atoms({ background: "background" })],
+      finery: [
+        atoms({ background: "__internal__finery__grey__two__" }),
+        {
+          boxShadow: "0px 15px 30px 0px #0000000D",
+          ":hover": {
+            background: vars.color.tokenSelectHoverBackground,
+          },
+        },
+      ],
+    },
+  },
+});
+
 export const buttonStyle = recipe({
   base: [
     { borderStyle: "solid" },

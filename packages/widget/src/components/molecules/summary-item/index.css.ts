@@ -1,6 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
 
 export const summaryContainer = recipe({
   base: atoms({
@@ -17,6 +18,9 @@ export const summaryContainer = recipe({
       ],
       utila: {
         gap: "24px",
+      },
+      finery: {
+        gap: "8px",
       },
     },
   },
@@ -39,17 +43,31 @@ export const summaryItem = recipe({
       isLoading: {},
     },
     variant: {
-      default: {
-        boxShadow: "0px 15px 30px 0px #0000000D",
-      },
+      default: [
+        atoms({
+          background: "background",
+        }),
+        {
+          boxShadow: "0px 15px 30px 0px #0000000D",
+        },
+      ],
       utila: [
         atoms({
-          borderColor: "__internal__utila__border",
+          background: "background",
+          borderColor: "__internal__utila__border__",
         }),
         {
           borderRadius: "8px",
           borderWidth: "1px",
           borderStyle: "solid",
+        },
+      ],
+      finery: [
+        atoms({
+          background: "__internal__finery__summary__item__background__",
+        }),
+        {
+          boxShadow: "0px 15px 30px 0px #0000000D",
         },
       ],
     },
@@ -73,6 +91,12 @@ export const summaryNumber = recipe({
           fontSize: "18px",
         },
       ],
+      finery: [
+        {
+          fontWeight: vars.fontWeight.normal,
+          fontSize: "24px",
+        },
+      ],
     },
   },
 });
@@ -87,6 +111,10 @@ export const summaryLabelContainer = recipe({
       utila: {
         borderRadius: "4px",
         padding: "2px 6px",
+      },
+      finery: {
+        borderRadius: "9px",
+        padding: "12px 10px",
       },
     },
     type: {
@@ -135,6 +163,36 @@ export const summaryLabelContainer = recipe({
         color: "#327C5F",
       },
     },
+    {
+      variants: {
+        variant: "finery",
+        type: "staked",
+      },
+      style: {
+        backgroundColor: vars.color.__internal__finery__purple__one__,
+        color: vars.color.__internal__finery__purple__two__,
+      },
+    },
+    {
+      variants: {
+        variant: "finery",
+        type: "rewards",
+      },
+      style: {
+        backgroundColor: vars.color.__internal__finery__blue__one__,
+        color: vars.color.__internal__finery__blue__two__,
+      },
+    },
+    {
+      variants: {
+        variant: "finery",
+        type: "available",
+      },
+      style: {
+        backgroundColor: vars.color.__internal__finery__green__three__,
+        color: vars.color.__internal__finery__green__one__,
+      },
+    },
   ],
 });
 
@@ -143,6 +201,10 @@ export const summaryLabel = recipe({
     variant: {
       default: {},
       utila: {
+        color: "inherit",
+        fontSize: "12px",
+      },
+      finery: {
         color: "inherit",
         fontSize: "12px",
       },

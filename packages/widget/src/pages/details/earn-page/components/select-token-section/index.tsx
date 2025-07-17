@@ -19,6 +19,7 @@ import {
   bottomBannerBottomRadius,
   bottomBannerText,
   priceTxt,
+  selectTokenBalance,
   selectTokenSection,
 } from "./styles.css";
 import { SelectTokenTitle } from "./title";
@@ -166,7 +167,15 @@ export const SelectTokenSection = () => {
           gap="1"
         >
           <Box className={priceTxt} display="flex">
-            <Text variant={{ type: "muted", weight: "normal" }}>
+            <Text
+              variant={{ type: "muted", weight: "normal" }}
+              className={clsx(
+                combineRecipeWithVariant({
+                  rec: selectTokenBalance,
+                  variant,
+                })
+              )}
+            >
               {formattedPrice}
             </Text>
           </Box>
@@ -184,6 +193,12 @@ export const SelectTokenSection = () => {
                   type: errorBalance ? "danger" : "muted",
                 }}
                 data-state={errorBalance ? "error" : "valid"}
+                className={clsx(
+                  combineRecipeWithVariant({
+                    rec: selectTokenBalance,
+                    variant,
+                  })
+                )}
               >
                 {selectedTokenAvailableAmount
                   .map((v) =>

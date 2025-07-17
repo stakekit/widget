@@ -1,6 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../styles/theme/atoms.css";
+import { vars } from "../../../../../styles/theme/contract.css";
 
 export const priceTxt = style({
   flexGrow: 999,
@@ -15,6 +16,7 @@ export const selectTokenSection = recipe({
       utila: {
         background: "transparent",
       },
+      finery: {},
     },
     state: {
       default: {},
@@ -45,7 +47,25 @@ export const selectTokenSection = recipe({
         variant: "utila",
       },
       style: atoms({
-        borderColor: "__internal__utila__selectTokenBorder",
+        borderColor: "__internal__utila__select__token__border__",
+      }),
+    },
+    {
+      variants: {
+        state: "danger",
+        variant: "finery",
+      },
+      style: atoms({
+        borderColor: "textDanger",
+      }),
+    },
+    {
+      variants: {
+        state: "default",
+        variant: "finery",
+      },
+      style: atoms({
+        borderColor: "__internal__finery__grey__two__",
       }),
     },
   ],
@@ -57,6 +77,18 @@ export const selectTokenTitle = recipe({
       default: {},
       utila: {
         fontSize: "16px",
+      },
+    },
+  },
+});
+
+export const selectTokenBalance = recipe({
+  variants: {
+    variant: {
+      default: {},
+      utila: {},
+      finery: {
+        color: vars.color.text,
       },
     },
   },

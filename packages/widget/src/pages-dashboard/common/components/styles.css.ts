@@ -22,6 +22,9 @@ export const wrapper = recipe({
       utila: {
         borderRadius: "8px",
       },
+      finery: {
+        borderRadius: "30px",
+      },
     },
   },
 });
@@ -69,7 +72,7 @@ export const tabPageDivider = recipe({
       ],
       utila: [
         atoms({
-          background: "__internal__utila__tabPageDivider",
+          background: "__internal__utila__tab__page__divider__",
         }),
       ],
     },

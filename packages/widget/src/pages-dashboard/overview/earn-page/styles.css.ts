@@ -15,7 +15,7 @@ export const container = style([
 
 export const changeButton = style([
   atoms({
-    color: "__internal__utila__primaryBlue",
+    color: "__internal__utila__primary__blue__",
   }),
   { cursor: "pointer" },
 ]);

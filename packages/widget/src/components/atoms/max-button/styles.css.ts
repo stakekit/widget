@@ -14,7 +14,7 @@ export const container = recipe({
       default: atoms({ background: "background", borderRadius: "xl" }),
       utila: [
         { borderRadius: "4px" },
-        atoms({ background: "__internal__utila__maxButtonBackground" }),
+        atoms({ background: "__internal__utila__max__button__background__" }),
       ],
     },
   },
@@ -28,7 +28,7 @@ export const text = recipe({
     variant: {
       default: atoms({ color: "text", fontWeight: "semibold" }),
       utila: atoms({
-        color: "__internal__utila__maxButtonText",
+        color: "__internal__utila__max__button__text__",
         fontWeight: "normal",
       }),
     },

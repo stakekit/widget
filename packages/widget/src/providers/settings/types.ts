@@ -18,7 +18,8 @@ export type VariantProps =
       }) => ReactNode;
     }
   | { variant: "utila" }
-  | { variant: "default" };
+  | { variant: "default" }
+  | { variant: "finery" };
 
 export type SettingsProps = {
   apiKey: string;

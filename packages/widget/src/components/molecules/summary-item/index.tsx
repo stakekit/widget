@@ -37,7 +37,6 @@ export const SummaryItem = ({
         rec: summaryItem,
         variant,
       })}
-      background="background"
     >
       {isLoading ? (
         <Spinner variant={{ size: "small" }} />

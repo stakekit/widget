@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { MorphoStarsIcon } from "../../../../../components/atoms/icons/morpho-stars";
@@ -10,7 +11,9 @@ import {
 } from "../../../../../components/molecules/reward-token-details";
 import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
 import { useSettings } from "../../../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
+import { selectYieldRewardsText } from "./styles.css";
 
 export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
@@ -135,10 +138,28 @@ const DefaultEarnYearlyOrMonthly = ({
         data-rk="estimated-reward__yearly"
         gap="2"
       >
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text
+          variant={{ type: "muted", weight: "normal" }}
+          className={clsx(
+            combineRecipeWithVariant({
+              rec: selectYieldRewardsText,
+              variant,
+            })
+          )}
+        >
           {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
         </Text>
-        <Text variant={{ type: "muted", weight: "normal" }}>{earnYearly}</Text>
+        <Text
+          variant={{ type: "muted", weight: "normal" }}
+          className={clsx(
+            combineRecipeWithVariant({
+              rec: selectYieldRewardsText,
+              variant,
+            })
+          )}
+        >
+          {earnYearly}
+        </Text>
       </Box>
 
       <Box
@@ -149,10 +170,28 @@ const DefaultEarnYearlyOrMonthly = ({
         data-rk="estimated-reward__monthly"
         gap="2"
       >
-        <Text variant={{ type: "muted", weight: "normal" }}>
+        <Text
+          variant={{ type: "muted", weight: "normal" }}
+          className={clsx(
+            combineRecipeWithVariant({
+              rec: selectYieldRewardsText,
+              variant,
+            })
+          )}
+        >
           {t("shared.monthly")}
         </Text>
-        <Text variant={{ type: "muted", weight: "normal" }}>{earnMonthly}</Text>
+        <Text
+          variant={{ type: "muted", weight: "normal" }}
+          className={clsx(
+            combineRecipeWithVariant({
+              rec: selectYieldRewardsText,
+              variant,
+            })
+          )}
+        >
+          {earnMonthly}
+        </Text>
       </Box>
     </>
   );

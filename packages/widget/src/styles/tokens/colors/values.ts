@@ -105,17 +105,33 @@ export const lightThemeColors: typeof colorsContract = {
     modalBackdrop: "rgba(0, 0, 0, 0.5)",
   },
 
-  __internal__utila__greyOne: "#F8F8F9",
-  __internal__utila__border: "#E7E8EB",
-  __internal__utila__selectTokenBorder: "#C9CFFF",
-  __internal__utila__primaryBlue: "#4A60FF",
-  __internal__utila__primaryBlueHover: "#5d70f7",
-  __internal__utila__primaryBlueActive: "#5d70f7",
-  __internal__utila__tabPageDivider: "#E7E8EB",
-  __internal__utila__maxButtonBackground: "#F4F5FF",
-  __internal__utila__maxButtonText: "#5C70FF",
-  __internal__utila__badgeTextSuccess: "#4BAA82",
-  __internal__utila__badgeTextError: "#E73F4A",
+  __internal__utila__grey__one__: "#F8F8F9",
+  __internal__utila__border__: "#E7E8EB",
+  __internal__utila__select__token__border__: "#C9CFFF",
+  __internal__utila__primary__blue__: "#4A60FF",
+  __internal__utila__primary__blue__hover__: "#5d70f7",
+  __internal__utila__primary__blue__active__: "#5d70f7",
+  __internal__utila__tab__page__divider__: "#E7E8EB",
+  __internal__utila__max__button__background__: "#F4F5FF",
+  __internal__utila__max__button__text__: "#5C70FF",
+  __internal__utila__badge__text__success__: "#4BAA82",
+  __internal__utila__badge__text__error__: "#E73F4A",
+
+  __internal__finery__grey__one__: "#FDFDFD",
+  __internal__finery__grey__two__: "#00000008",
+  __internal__finery__grey__three__: "#0000000f",
+
+  __internal__finery__green__one__: "#16C7B0",
+  __internal__finery__green__two__: "#16c7b0ed",
+  __internal__finery__green__three__: "#16C7B014",
+
+  __internal__finery__purple__one__: "#F0EDFA",
+  __internal__finery__purple__two__: "#5A36C0",
+
+  __internal__finery__blue__one__: "#EDF1F5",
+  __internal__finery__blue__two__: "#0059AB",
+
+  __internal__finery__summary__item__background__: "#FFFFFF",
 
   dashboardDetailsSectionBackground: "#00000005",
 };
@@ -224,17 +240,33 @@ export const darkThemeColors: typeof colorsContract = {
     modalBackdrop: "rgba(0, 0, 0, 0.5)",
   },
 
-  __internal__utila__greyOne: "#F8F8F9",
-  __internal__utila__border: "#E7E8EB",
-  __internal__utila__selectTokenBorder: "#C9CFFF",
-  __internal__utila__primaryBlue: "#4A60FF",
-  __internal__utila__primaryBlueHover: "#5d70f7",
-  __internal__utila__primaryBlueActive: "#5d70f7",
-  __internal__utila__tabPageDivider: "#E7E8EB",
-  __internal__utila__maxButtonBackground: "#F4F5FF",
-  __internal__utila__maxButtonText: "#5C70FF",
-  __internal__utila__badgeTextSuccess: "#4BAA82",
-  __internal__utila__badgeTextError: "#E73F4A",
+  __internal__utila__grey__one__: "#F8F8F9",
+  __internal__utila__border__: "#E7E8EB",
+  __internal__utila__select__token__border__: "#C9CFFF",
+  __internal__utila__primary__blue__: "#4A60FF",
+  __internal__utila__primary__blue__hover__: "#5d70f7",
+  __internal__utila__primary__blue__active__: "#5d70f7",
+  __internal__utila__tab__page__divider__: "#E7E8EB",
+  __internal__utila__max__button__background__: "#F4F5FF",
+  __internal__utila__max__button__text__: "#5C70FF",
+  __internal__utila__badge__text__success__: "#4BAA82",
+  __internal__utila__badge__text__error__: "#E73F4A",
+
+  __internal__finery__grey__one__: "#243034",
+  __internal__finery__grey__two__: "#FFFFFF14",
+  __internal__finery__grey__three__: "#FFFFFF28",
+
+  __internal__finery__green__one__: "#16C7B0",
+  __internal__finery__green__two__: "#16c7b0ed",
+  __internal__finery__green__three__: "#16C7B014",
+
+  __internal__finery__blue__one__: "#0059AB33",
+  __internal__finery__blue__two__: "#42A1F8",
+
+  __internal__finery__purple__one__: "#5A36C033",
+  __internal__finery__purple__two__: "#CEBDFF",
+
+  __internal__finery__summary__item__background__: "#FFFFFF14",
 
   dashboardDetailsSectionBackground: "#00000005",
 };

@@ -36,7 +36,7 @@ export const tab = recipe({
         state: "active",
         variant: "utila",
       },
-      style: [atoms({ background: "__internal__utila__greyOne" })],
+      style: [atoms({ background: "__internal__utila__grey__one__" })],
     },
   ],
 });
@@ -80,9 +80,8 @@ export const tabContainer = recipe({
 export const tabText = recipe({
   base: {
     fontWeight: "500",
-    fontSize: "18px",
+    fontSize: "16px",
     lineHeight: "125%",
-    letterSpacing: "1%",
     textAlign: "center",
   },
   variants: {
