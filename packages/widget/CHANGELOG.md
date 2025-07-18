@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.242
+
+### Patch Changes
+
+- f16624b: feat: finery variant
+
 ## 0.0.241
 
 ### Patch Changes
