@@ -6,7 +6,8 @@ import { useMemo } from "react";
 import { vars } from "../styles/theme/contract.css";
 import { rootSelector } from "../styles/theme/ids";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
-import { utilaLightThemeOverrides } from "../styles/theme/variant-overrides";
+import { fineryThemeOverrides } from "../styles/theme/variant-overrides/finery";
+import { utilaThemeOverrides } from "../styles/theme/variant-overrides/utila";
 import type { RecursivePartial } from "../types/utils";
 import { useSettings } from "./settings";
 
@@ -23,7 +24,17 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   const finalLightTheme = useMemo(
     () =>
       Just(variant)
-        .map((v) => (v === "utila" ? utilaLightThemeOverrides : {}))
+        .map((v) => {
+          if (v === "utila") {
+            return utilaThemeOverrides;
+          }
+
+          if (v === "finery") {
+            return fineryThemeOverrides;
+          }
+
+          return {};
+        })
         .map((overrides) => {
           if ("lightMode" in theme) {
             return merge(

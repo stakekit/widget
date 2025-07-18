@@ -18,7 +18,7 @@ export const TokenIconImage = ({
   <Image
     data-rk="token-logo"
     containerProps={{ hw: tokenLogoHw, "data-rk": "token-logo" }}
-    src={mainUrl}
+    src={mainUrl ?? fallbackUrl}
     fallback={
       <Image
         data-rk="token-logo"

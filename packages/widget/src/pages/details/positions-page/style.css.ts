@@ -57,8 +57,8 @@ export const utilaBadgeText = recipe({
   variants: {
     type: {
       regular: atoms({ color: "text" }),
-      success: atoms({ color: "__internal__utila__badgeTextSuccess" }),
-      error: atoms({ color: "__internal__utila__badgeTextError" }),
+      success: atoms({ color: "__internal__utila__badge__text__success__" }),
+      error: atoms({ color: "__internal__utila__badge__text__error__" }),
     },
   },
 });

@@ -9,7 +9,7 @@ export const divider = recipe({
   variants: {
     variant: {
       default: atoms({ background: "backgroundMuted" }),
-      utila: atoms({ background: "__internal__utila__tabPageDivider" }),
+      utila: atoms({ background: "__internal__utila__tab__page__divider__" }),
     },
   },
   defaultVariants: {

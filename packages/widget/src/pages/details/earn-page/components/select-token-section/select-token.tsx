@@ -1,15 +1,21 @@
 import { Trigger } from "@radix-ui/react-dialog";
+import clsx from "clsx";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
-import { pressAnimation } from "../../../../../components/atoms/button/styles.css";
+import {
+  pressAnimation,
+  selectTokenButton,
+} from "../../../../../components/atoms/button/styles.css";
 import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
 import { SelectModal } from "../../../../../components/atoms/select-modal";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import { useSettings } from "../../../../../providers/settings";
 import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
@@ -23,6 +29,8 @@ export const SelectToken = () => {
     onTokenSearch,
     tokenSearch,
   } = useEarnPageContext();
+
+  const { variant } = useSettings();
 
   const trackEvent = useTrackEvent();
 
@@ -58,12 +66,17 @@ export const SelectToken = () => {
             display="flex"
             justifyContent="center"
             alignItems="center"
-            background="background"
             borderRadius="2xl"
             px="2"
             py="1"
             data-testid="select-token"
-            className={pressAnimation}
+            className={clsx(
+              pressAnimation,
+              combineRecipeWithVariant({
+                variant,
+                rec: selectTokenButton,
+              })
+            )}
           >
             <Box
               marginRight="2"

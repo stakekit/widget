@@ -3,7 +3,9 @@ import { Maybe } from "purify-ts";
 import { useContext } from "react";
 import type { Address } from "viem";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
+import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import { Box } from "../../atoms/box";
 import { CaretDownIcon } from "../../atoms/icons/caret-down";
 import { Text } from "../../atoms/typography/text";
@@ -13,6 +15,8 @@ export const AccountModal = () => {
   const trackEvent = useTrackEvent();
 
   const { address } = useSKWallet();
+
+  const { variant } = useSettings();
 
   const AvatarComponent = useContext(AvatarContext);
 
@@ -28,7 +32,7 @@ export const AccountModal = () => {
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              className={container}
+              className={combineRecipeWithVariant({ variant, rec: container })}
               onClick={() => {
                 trackEvent("accountModalOpened");
                 openAccountModal();

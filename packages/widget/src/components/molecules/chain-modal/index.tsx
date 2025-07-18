@@ -3,6 +3,7 @@ import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import { Box } from "../../atoms/box";
 import { CaretDownIcon } from "../../atoms/icons/caret-down";
 import { Text } from "../../atoms/typography/text";
@@ -27,7 +28,7 @@ export const ChainModal = () => {
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              className={container}
+              className={combineRecipeWithVariant({ variant, rec: container })}
               onClick={() => {
                 trackEvent("chainModalOpened");
                 openChainModal();
