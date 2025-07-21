@@ -28,13 +28,18 @@ import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getEvmConfig } from "../ethereum/config";
+import {
+  fineryMMIWallets,
+  fineryOtherWallets,
+  fineryWCWallets,
+} from "../ethereum/finery-wallet-list";
 import { externalProviderConnector } from "../external-provider";
 import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
 import { useSKQueryClient } from "../query-client";
 import { getConfig as getSafeConnector } from "../safe/config";
 import { useSettings } from "../settings";
-import type { SettingsProps } from "../settings/types";
+import type { SettingsProps, VariantProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
@@ -59,6 +64,7 @@ const buildWagmiConfig = async (opts: {
   isSafe: boolean;
   whitelistedValidatorAddresses: Set<string> | null;
   chainIconMapping: SettingsProps["chainIconMapping"];
+  variant: VariantProps["variant"];
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -76,6 +82,7 @@ const buildWagmiConfig = async (opts: {
           getEvmConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
+            variant: opts.variant,
           }),
           getCosmosConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
@@ -163,30 +170,35 @@ const buildWagmiConfig = async (opts: {
             } as RainbowkitChain;
           };
 
-          return [
-            ...Object.values(evmConfig.evmChainsMap).map((val) =>
-              mapWagmiChain(val)
-            ),
-            ...Object.values(cosmosConfig.cosmosChainsMap).map((val) =>
-              mapWagmiChain(val)
-            ),
-            ...Object.values(miscConfig.miscChainsMap).map((val) =>
-              mapWagmiChain(val)
-            ),
-            ...Object.values(substrateConfig.substrateChainsMap).map((val) =>
-              mapWagmiChain(val)
-            ),
-          ] as [RainbowkitChain, ...RainbowkitChain[]];
+          if (opts.variant === "finery") {
+            return Object.values(evmConfig.evmChainsMap).map(mapWagmiChain) as [
+              RainbowkitChain,
+              ...RainbowkitChain[],
+            ];
+          }
+
+          return Object.values({
+            ...evmConfig.evmChainsMap,
+            ...cosmosConfig.cosmosChainsMap,
+            ...miscConfig.miscChainsMap,
+            ...substrateConfig.substrateChainsMap,
+          }).map(mapWagmiChain) as [RainbowkitChain, ...RainbowkitChain[]];
         })
-        .orDefaultLazy(
-          () =>
-            [
-              ...evmConfig.evmChains,
-              ...cosmosConfig.cosmosWagmiChains,
-              ...miscConfig.miscChains,
-              ...substrateConfig.substrateChains,
-            ] as [RainbowkitChain, ...RainbowkitChain[]]
-        );
+        .orDefaultLazy(() => {
+          if (opts.variant === "finery") {
+            return evmConfig.evmChains as [
+              RainbowkitChain,
+              ...RainbowkitChain[],
+            ];
+          }
+
+          return [
+            ...evmConfig.evmChains,
+            ...cosmosConfig.cosmosWagmiChains,
+            ...miscConfig.miscChains,
+            ...substrateConfig.substrateChains,
+          ] as [RainbowkitChain, ...RainbowkitChain[]];
+        });
 
       const multiInjectedProviderDiscovery =
         !opts.disableInjectedProviderDiscovery &&
@@ -195,6 +207,14 @@ const buildWagmiConfig = async (opts: {
         !val.safeConnector;
 
       const walletList: WalletList = (() => {
+        if (opts.variant === "finery") {
+          return [
+            { groupName: "Meta Mask Institutional", wallets: fineryMMIWallets },
+            { groupName: "Wallet Connect", wallets: fineryWCWallets },
+            { groupName: "Other", wallets: fineryOtherWallets },
+          ];
+        }
+
         if (opts.externalProviders) {
           return [externalProviderConnector(opts.externalProviders)];
         }
@@ -285,6 +305,7 @@ export const useWagmiConfig = () => {
     disableInjectedProviderDiscovery,
     mapWalletFn,
     chainIconMapping,
+    variant,
   } = useSettings();
 
   const queryClient = useSKQueryClient();
@@ -312,6 +333,7 @@ export const useWagmiConfig = () => {
         }),
         whitelistedValidatorAddresses,
         chainIconMapping,
+        variant,
       }),
   });
 };
