@@ -12,6 +12,7 @@ import { config } from "../../config";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { VariantProps } from "../settings/types";
 
 const queryFn = async ({
   queryClient,
@@ -19,6 +20,7 @@ const queryFn = async ({
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
+  variant: VariantProps["variant"];
 }): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
