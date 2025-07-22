@@ -1,4 +1,4 @@
-import type { WalletList } from "@stakekit/rainbowkit";
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
   metaMaskWallet,
@@ -6,6 +6,7 @@ import {
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
 import { Maybe } from "purify-ts";
+import { passCorrectChainsToWallet } from "../utils";
 import bitGoIcon from "./custom-wallet-icons/bitgo.svg";
 import cactusIcon from "./custom-wallet-icons/cactus.svg";
 import finoaIcon from "./custom-wallet-icons/finoa.svg";
@@ -103,43 +104,61 @@ const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
   }))
   .unsafeCoerce();
 
-export const fineryMMIWallets: WalletList[number]["wallets"] = [
-  bitgoWallet,
-  fireblocksWallet,
-  cactusWallet,
-  zodiaWallet,
-  mpcVaultWallet,
-  gk8Wallet,
-  qredoWallet,
-].map((w) => (props) => ({
-  ...metaMaskWallet(props),
-  ...w,
-  id: `${w.id}-mmi`,
-  rdns: `${w.rdns}-mmi`,
-}));
-
-export const fineryWCWallets: WalletList[number]["wallets"] = [
-  walletConnectWallet,
-  ...[
+export const createFineryWallets = (evmChains: Chain[]) => {
+  const fineryMMIWallets: WalletList[number]["wallets"] = [
     bitgoWallet,
     fireblocksWallet,
     cactusWallet,
     zodiaWallet,
     mpcVaultWallet,
     gk8Wallet,
-    utilaWallet,
-    finoaWallet,
-    safeWalletWC,
-  ].map((w): WalletList[number]["wallets"][number] => (props) => ({
-    ...walletConnectWallet(props),
-    ...w,
-    id: `${w.id}-wc`,
-    rdns: `${w.rdns}-wc`,
-  })),
-];
+    qredoWallet,
+  ].map((w) =>
+    passCorrectChainsToWallet(
+      (props) => ({
+        ...metaMaskWallet(props),
+        ...w,
+        id: `${w.id}-mmi`,
+        rdns: `${w.rdns}-mmi`,
+      }),
+      evmChains
+    )
+  );
 
-export const fineryOtherWallets: WalletList[number]["wallets"] = [
-  coinbaseWallet,
-  metaMaskWallet,
-  safeWallet,
-];
+  const fineryWCWallets: WalletList[number]["wallets"] = [
+    walletConnectWallet,
+    ...[
+      bitgoWallet,
+      fireblocksWallet,
+      cactusWallet,
+      zodiaWallet,
+      mpcVaultWallet,
+      gk8Wallet,
+      utilaWallet,
+      finoaWallet,
+      safeWalletWC,
+    ].map((w) =>
+      passCorrectChainsToWallet(
+        (props) => ({
+          ...walletConnectWallet(props),
+          ...w,
+          id: `${w.id}-wc`,
+          rdns: `${w.rdns}-wc`,
+        }),
+        evmChains
+      )
+    ),
+  ];
+
+  const fineryOtherWallets: WalletList[number]["wallets"] = [
+    coinbaseWallet,
+    metaMaskWallet,
+    safeWallet,
+  ].map((w) => passCorrectChainsToWallet(w, evmChains));
+
+  return {
+    fineryMMIWallets,
+    fineryWCWallets,
+    fineryOtherWallets,
+  };
+};

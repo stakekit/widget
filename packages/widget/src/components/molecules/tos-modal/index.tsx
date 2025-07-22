@@ -9,7 +9,7 @@ import {
 } from "@radix-ui/react-dialog";
 import type { PropsWithChildren, ReactNode } from "react";
 import { useContext, useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { TrackingContext } from "../../../providers/tracking";
 import { id } from "../../../styles/theme/ids";
 import { SKAnchor } from "../../atoms/anchor";
@@ -331,10 +331,10 @@ export const TosModal = ({
 
                 <Box className={sectionContainer}>
                   <TermsText>
-                    {t("tos_modal.complete_terms_link")}{" "}
-                    <SKAnchor href="https://docs.yield.xyz/docs/terms-of-use">
-                      https://docs.yield.xyz/docs/terms-of-use
-                    </SKAnchor>
+                    <Trans
+                      i18nKey="tos_modal.complete_terms_link"
+                      components={{ link0: <SKAnchor /> }}
+                    />
                   </TermsText>
                 </Box>
 

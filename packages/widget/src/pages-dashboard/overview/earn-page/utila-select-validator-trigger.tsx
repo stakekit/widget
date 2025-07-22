@@ -6,7 +6,7 @@ import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import { breakWord } from "../../../pages/details/earn-page/styles.css";
-import { changeButton } from "./styles.css";
+import { changeButton, nameOrAddressText } from "./styles.css";
 
 export const SelectValidatorTrigger = ({
   selectedValidatorsArr,
@@ -23,16 +23,18 @@ export const SelectValidatorTrigger = ({
       justifyContent="space-between"
       gap="2"
     >
-      <Text className={breakWord}>{t("details.earn_with")}</Text>
+      <Text flexShrink={0} className={breakWord}>
+        {t("details.earn_with")}
+      </Text>
 
-      <Box>
+      <Box flex={1} minWidth="0">
         {selectedValidatorsArr.map((v) => {
           const nameOrAddress = v.name ?? v.address;
 
           return (
             <Box key={v.address} display="flex" alignItems="center" gap="1">
               <Image
-                containerProps={{ hw: "5" }}
+                containerProps={{ hw: "5", marginLeft: "1" }}
                 imageProps={{ borderRadius: "full" }}
                 src={v.image}
                 fallback={
@@ -48,14 +50,19 @@ export const SelectValidatorTrigger = ({
                   </Box>
                 }
               />
-              <Text>{nameOrAddress}</Text>
+
+              <Text flex={1} minWidth="0" className={nameOrAddressText}>
+                {nameOrAddress}
+              </Text>
             </Box>
           );
         })}
       </Box>
 
       <Trigger asChild>
-        <Text className={changeButton}>{t("shared.change")}</Text>
+        <Text flexShrink={0} className={changeButton}>
+          {t("shared.change")}
+        </Text>
       </Trigger>
     </Box>
   );

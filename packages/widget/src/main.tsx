@@ -16,7 +16,7 @@ const dashboardVariant: SKAppProps["dashboardVariant"] =
   import.meta.env.VITE_FORCE_DASHBOARD === "true";
 
 const StandaloneApp = () => {
-  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");
+  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("light");
 
   useLayoutEffect(() => {
     document.body.className = rootClassName({ theme: themeVariant, variant });
@@ -24,6 +24,22 @@ const StandaloneApp = () => {
 
   const toggleTheme = () =>
     setThemeVariant(themeVariant === "dark" ? "light" : "dark");
+
+  const props: SKAppProps = {
+    variant,
+    dashboardVariant,
+    theme: themeVariant === "dark" ? darkTheme : lightTheme,
+    apiKey: import.meta.env.VITE_API_KEY,
+    onMountAnimationComplete: () => console.log("mount animation complete!"),
+    ...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
+      tracking: { trackEvent: console.log, trackPageView: console.log },
+    }),
+    ...(import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true" && {
+      wagmi: {
+        forceWalletConnectOnly: true,
+      },
+    }),
+  };
 
   return (
     <>
@@ -37,23 +53,7 @@ const StandaloneApp = () => {
         </button>
       </div>
 
-      <SKApp
-        theme={themeVariant === "dark" ? darkTheme : lightTheme}
-        apiKey={import.meta.env.VITE_API_KEY}
-        onMountAnimationComplete={() =>
-          console.log("mount animation complete!")
-        }
-        wagmi={{
-          forceWalletConnectOnly:
-            import.meta.env.VITE_FORCE_WALLET_CONNECT_ONLY === "true",
-        }}
-        {...(import.meta.env.VITE_ANALYTICS_LOGGING === "true" && {
-          tracking: { trackEvent: console.log, trackPageView: console.log },
-        })}
-        dashboardVariant={dashboardVariant}
-        variant={variant}
-        // hideAccountAndChainSelector
-      />
+      <SKApp {...props} />
     </>
   );
 };

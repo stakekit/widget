@@ -13,10 +13,13 @@ import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import type { VariantProps } from "../settings/types";
+import { createFineryWallets } from "./finery-wallet-list";
+import { passCorrectChainsToWallet } from "./utils";
 
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
+  variant,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
@@ -25,6 +28,7 @@ const queryFn = async ({
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
   connector: Maybe<WalletList[number]>;
+  fineryWallets: ReturnType<typeof createFineryWallets> | null;
 }> =>
   getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
@@ -41,7 +45,7 @@ const queryFn = async ({
 
       const connector: WalletList[number] = {
         groupName: "Ethereum",
-        wallets: forceWalletConnectOnly
+        wallets: (forceWalletConnectOnly
           ? [walletConnectWallet]
           : [
               metaMaskWallet,
@@ -49,13 +53,16 @@ const queryFn = async ({
               walletConnectWallet,
               rainbowWallet,
               coinbaseWallet,
-            ],
+            ]
+        ).map((w) => passCorrectChainsToWallet(w, evmChains)),
       };
 
       return Promise.resolve({
         evmChainsMap: filteredEvmChainsMap,
         evmChains,
         connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
+        fineryWallets:
+          variant === "finery" ? createFineryWallets(evmChains) : null,
       });
     },
     Left: (l) => Promise.reject(l),

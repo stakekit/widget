@@ -28,11 +28,6 @@ import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getEvmConfig } from "../ethereum/config";
-import {
-  fineryMMIWallets,
-  fineryOtherWallets,
-  fineryWCWallets,
-} from "../ethereum/finery-wallet-list";
 import { externalProviderConnector } from "../external-provider";
 import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
@@ -207,11 +202,20 @@ const buildWagmiConfig = async (opts: {
         !val.safeConnector;
 
       const walletList: WalletList = (() => {
-        if (opts.variant === "finery") {
+        if (evmConfig.fineryWallets) {
           return [
-            { groupName: "Meta Mask Institutional", wallets: fineryMMIWallets },
-            { groupName: "Wallet Connect", wallets: fineryWCWallets },
-            { groupName: "Other", wallets: fineryOtherWallets },
+            {
+              groupName: "Meta Mask Institutional",
+              wallets: evmConfig.fineryWallets.fineryMMIWallets,
+            },
+            {
+              groupName: "Wallet Connect",
+              wallets: evmConfig.fineryWallets.fineryWCWallets,
+            },
+            {
+              groupName: "Other",
+              wallets: evmConfig.fineryWallets.fineryOtherWallets,
+            },
           ];
         }
 
