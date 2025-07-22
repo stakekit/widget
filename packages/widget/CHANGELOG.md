@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## 0.0.242
+
+### Patch Changes
+
+- 2c8f4a7: chore: bump deps
+- 2c8f4a7: fix: utila layout
+- 38a1635: feat: finery connectors
+- f16624b: feat: finery variant
+
 ## 0.0.241
 
 ### Patch Changes
