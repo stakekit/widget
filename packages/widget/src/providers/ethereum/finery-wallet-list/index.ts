@@ -104,7 +104,11 @@ const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
   }))
   .unsafeCoerce();
 
-export const createFineryWallets = (evmChains: Chain[]) => {
+export const createFineryWallets: (evmChains: Chain[]) => {
+  fineryMMIWallets: WalletList[number]["wallets"];
+  fineryWCWallets: WalletList[number]["wallets"];
+  fineryOtherWallets: WalletList[number]["wallets"];
+} = (evmChains: Chain[]) => {
   const fineryMMIWallets: WalletList[number]["wallets"] = [
     bitgoWallet,
     fireblocksWallet,
