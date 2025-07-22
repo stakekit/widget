@@ -18,13 +18,13 @@
     "version": "changeset version"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.1",
+    "@biomejs/biome": "^2.1.2",
     "@changesets/cli": "^2.29.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "husky": "^9.1.7",
-    "knip": "^5.61.3",
-    "turbo": "^2.5.4"
+    "knip": "^5.62.0",
+    "turbo": "^2.5.5"
   },
   "packageManager": "pnpm@10.12.2",
   "pnpm": {

@@ -40,3 +40,9 @@ export const selectValidatorSectionContainer = recipe({
     },
   },
 });
+
+export const nameOrAddressText = style({
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
