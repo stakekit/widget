@@ -2,6 +2,7 @@ import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import {
   coinbaseWallet,
   injectedWallet,
+  ledgerWallet,
   metaMaskWallet,
   rainbowWallet,
   walletConnectWallet,
@@ -53,6 +54,7 @@ const queryFn = async ({
               walletConnectWallet,
               rainbowWallet,
               coinbaseWallet,
+              ledgerWallet,
             ]
         ).map((w) => passCorrectChainsToWallet(w, evmChains)),
       };
