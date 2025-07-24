@@ -46,6 +46,9 @@ export const fineryThemeOverrides: RecursivePartial<typeof lightTheme> = {
       profileActionHover: vars.color.__internal__finery__grey__three__,
     },
 
+    positionsClaimRewardsBackground:
+      vars.color.__internal__utila__badge__text__success__,
+
     skeletonLoaderBase: vars.color.__internal__finery__grey__two__,
     skeletonLoaderHighlight: vars.color.__internal__finery__grey__three__,
   },
