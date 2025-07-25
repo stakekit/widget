@@ -2,7 +2,10 @@ import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
-import { isEthenaUsdeStaking } from "../../../domain/types/yields";
+import {
+  isBittensorStaking,
+  isEthenaUsdeStaking,
+} from "../../../domain/types/yields";
 
 type Params = {
   yieldId: string;
@@ -76,7 +79,12 @@ const fn = ({
               name: y.metadata.name.replace(/staking/i, ""),
             },
           } satisfies YieldDto)
-        : y
+        : isBittensorStaking(y.id)
+          ? {
+              ...y,
+              validators: y.validators.filter((v) => v.name?.match(/yuma/i)),
+            }
+          : y
     )
     .mapLeft((e) => {
       console.log(e);
