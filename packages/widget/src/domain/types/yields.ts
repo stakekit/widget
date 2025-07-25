@@ -122,3 +122,6 @@ export const getYieldProviderYieldIds = (yieldDto: YieldDto) =>
 
 export const isEthenaUsdeStaking = (yieldId: string) =>
   yieldId === "ethena-usde-staking";
+
+export const isBittensorStaking = (yieldId: string) =>
+  yieldId === "bittensor-native-staking";

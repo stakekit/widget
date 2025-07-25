@@ -53,13 +53,15 @@ export const Image = ({
     imageProps?.onError?.(e);
   };
 
-  const showFallback = useMemo(
-    () =>
-      ((src && failLoadImages.has(src)) ||
-        (loadState.timeoutFallback && !loadState.loaded)) &&
-      isValidElement(fallback),
-    [fallback, loadState.loaded, loadState.timeoutFallback, src]
-  );
+  const showFallback = useMemo(() => {
+    if (!isValidElement(fallback)) return false;
+
+    return (
+      !src ||
+      failLoadImages.has(src) ||
+      (loadState.timeoutFallback && !loadState.loaded)
+    );
+  }, [fallback, loadState.loaded, loadState.timeoutFallback, src]);
 
   return (
     <Box
