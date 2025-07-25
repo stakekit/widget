@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.243
+
+### Patch Changes
+
+- 78d0f71: fix: finery activity label color
+- 78d0f71: fix: finery connectors revamp
+- 271bd1b: feat: yuma validator only
+
 ## 0.0.242
 
 ### Patch Changes
