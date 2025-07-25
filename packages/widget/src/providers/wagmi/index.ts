@@ -205,16 +205,12 @@ const buildWagmiConfig = async (opts: {
         if (evmConfig.fineryWallets) {
           return [
             {
-              groupName: "Meta Mask Institutional",
-              wallets: evmConfig.fineryWallets.fineryMMIWallets,
-            },
-            {
-              groupName: "Wallet Connect",
-              wallets: evmConfig.fineryWallets.fineryWCWallets,
+              groupName: "Primary",
+              wallets: evmConfig.fineryWallets.primaryWallets,
             },
             {
               groupName: "Other",
-              wallets: evmConfig.fineryWallets.fineryOtherWallets,
+              wallets: evmConfig.fineryWallets.otherWallets,
             },
           ];
         }

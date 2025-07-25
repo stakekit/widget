@@ -21,6 +21,7 @@ export const listItemContainer = recipe({
     variant: {
       default: {},
       utila: {},
+      finery: {},
     },
   },
   compoundVariants: [
