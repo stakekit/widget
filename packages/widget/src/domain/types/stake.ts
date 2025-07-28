@@ -7,8 +7,10 @@ import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { tokenString } from "..";
+import type { SupportedSKChains } from "./chains";
 import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
+import type { TokenString } from "./tokens";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -19,10 +21,16 @@ const hasYields = (val: TokenBalanceScanResponseDto) =>
 const hasYieldsAndAmount = (val: TokenBalanceScanResponseDto) =>
   hasYields(val) && amountGreaterThanZero(val);
 
+export type PreferredTokenYieldsPerNetwork = {
+  [Key in SupportedSKChains]?: Record<TokenString, "*" | (YieldDto["id"] & {})>;
+};
+
 export const getInitialToken = (args: {
   initQueryParams: Maybe<InitParams>;
   tokenBalances: TokenBalanceScanResponseDto[];
   defaultTokens: TokenBalanceScanResponseDto[];
+  network: SupportedSKChains | null;
+  preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
 }) =>
   /**
    * TB based on query params
@@ -36,6 +44,21 @@ export const getInitialToken = (args: {
           tokenString(t.token) === val.token,
         [...args.tokenBalances, ...args.defaultTokens]
       )
+    )
+    /**
+     * TB based on preferred token
+     */
+    .altLazy(() =>
+      Maybe.fromNullable(args.network)
+        .chain((n) =>
+          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork?.[n])
+        )
+        .chain((preferredTokens) =>
+          List.find(
+            (val) => !!preferredTokens[tokenString(val.token)],
+            [...args.tokenBalances, ...args.defaultTokens]
+          )
+        )
     )
     /**
      * TB based on first token with available yields and amount > 0

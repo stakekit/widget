@@ -28,7 +28,11 @@ export const useInitYield = ({
     isConnecting,
   } = useSKWallet();
   const queryClient = useSKQueryClient();
-  const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
+  const {
+    externalProviders,
+    tokensForEnabledYieldsOnly,
+    preferredTokenYieldsPerNetwork,
+  } = useSettings();
   const { data: positionsData } = usePositionsData();
 
   const whitelistedValidatorAddresses = useWhitelistedValidators();
@@ -80,6 +84,8 @@ export const useInitYield = ({
                   positionsData: positionsData,
                   tokenBalanceAmount: new BigNumber(val.amount),
                   whitelistedValidatorAddresses,
+                  preferredTokenYieldsPerNetwork:
+                    preferredTokenYieldsPerNetwork ?? null,
                 })
               )
             )
