@@ -1,6 +1,7 @@
 import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
 import type { ReactNode } from "react";
 import type { SupportedSKChains } from "../../domain/types/chains";
+import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import type { Languages, localResources } from "../../translation";
 import type { RecursivePartial } from "../../types/utils";
@@ -58,6 +59,7 @@ export type SettingsProps = {
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
   showUSDeBanner?: boolean;
+  preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

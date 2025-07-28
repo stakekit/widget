@@ -1,5 +1,6 @@
+import { Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
-import { createContext, useContext, useLayoutEffect } from "react";
+import { createContext, useContext, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { config } from "../../config";
 import utilaTranslations from "../../translation/English/utila-variant.json";
@@ -16,6 +17,27 @@ export const SettingsContextProvider = ({
   if (!config.env.isTestMode && rest.wagmi?.__customConnectors__) {
     rest.wagmi.__customConnectors__ = undefined;
   }
+
+  /**
+   * Convert to lower case to match token string
+   */
+  const preferredTokenYieldsPerNetwork = useMemo(() => {
+    return Maybe.fromNullable(rest.preferredTokenYieldsPerNetwork)
+      .map((value) => Object.entries(value))
+      .map((entries) =>
+        entries.map(([chain, value]) => [
+          chain,
+          Object.fromEntries(
+            Object.entries(value).map(([tokenString, innerValue]) => [
+              tokenString.toLowerCase(),
+              innerValue,
+            ])
+          ),
+        ])
+      )
+      .map((entries) => Object.fromEntries(entries))
+      .extract() as typeof rest.preferredTokenYieldsPerNetwork;
+  }, [rest.preferredTokenYieldsPerNetwork]);
 
   const { i18n } = useTranslation();
 
@@ -44,7 +66,11 @@ export const SettingsContextProvider = ({
   }, [rest.customTranslations, i18n, rest.variant]);
 
   return (
-    <SettingsContext.Provider value={rest}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider
+      value={{ ...rest, preferredTokenYieldsPerNetwork }}
+    >
+      {children}
+    </SettingsContext.Provider>
   );
 };
 

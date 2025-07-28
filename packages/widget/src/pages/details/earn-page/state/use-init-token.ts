@@ -30,7 +30,11 @@ export const useInitToken = () => {
   const queryClient = useSKQueryClient();
   const { data: positionsData } = usePositionsData();
 
-  const { externalProviders, tokensForEnabledYieldsOnly } = useSettings();
+  const {
+    externalProviders,
+    tokensForEnabledYieldsOnly,
+    preferredTokenYieldsPerNetwork,
+  } = useSettings();
 
   const whitelistedValidatorAddresses = useWhitelistedValidators();
 
@@ -61,6 +65,9 @@ export const useInitToken = () => {
           }).chain((initParams) =>
             EitherAsync.liftEither(
               getInitialToken({
+                network,
+                preferredTokenYieldsPerNetwork:
+                  preferredTokenYieldsPerNetwork ?? null,
                 defaultTokens: val.defaultTokens,
                 tokenBalances: val.tokenBalancesScan,
                 initQueryParams: Maybe.fromNullable(initParams),
@@ -82,6 +89,8 @@ export const useInitToken = () => {
                     positionsData: positionsData,
                     tokenBalanceAmount: new BigNumber(tokenBalance.amount),
                     whitelistedValidatorAddresses,
+                    preferredTokenYieldsPerNetwork:
+                      preferredTokenYieldsPerNetwork ?? null,
                   })
                 )
                 .map(() => token)

@@ -19,10 +19,17 @@ import {
   timer,
   toArray,
 } from "rxjs";
-import { isSupportedChain } from "../../domain/types/chains";
+import { tokenString } from "../../domain";
+import {
+  isSupportedChain,
+  type SupportedSKChains,
+} from "../../domain/types/chains";
 import type { InitParams } from "../../domain/types/init-params";
 import type { PositionsData } from "../../domain/types/positions";
-import { canBeInitialYield } from "../../domain/types/stake";
+import {
+  canBeInitialYield,
+  type PreferredTokenYieldsPerNetwork,
+} from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
@@ -178,6 +185,7 @@ const firstEligibleYield$ = (args: {
   positionsData: PositionsData;
   tokenBalanceAmount: BigNumber;
   whitelistedValidatorAddresses: Set<string> | null;
+  preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
 }) => {
   let defaultYield: YieldDto | null = null;
 
@@ -185,14 +193,23 @@ const firstEligibleYield$ = (args: {
     tap((v) => {
       defaultYield = v;
     }),
-    filter((y) =>
-      canBeInitialYield({
+    filter((y) => {
+      const preferredYieldId =
+        args.preferredTokenYieldsPerNetwork?.[
+          y.token.network as SupportedSKChains
+        ]?.[tokenString(y.token)];
+
+      if (preferredYieldId) {
+        return y.id === preferredYieldId || preferredYieldId === "*";
+      }
+
+      return canBeInitialYield({
         initQueryParams: Maybe.fromNullable(args.initParams),
         yieldDto: y,
         tokenBalanceAmount: args.tokenBalanceAmount,
         positionsData: args.positionsData,
-      })
-    ),
+      });
+    }),
     take(1),
     defaultIfEmpty(null)
   );
