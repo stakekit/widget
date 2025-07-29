@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.244
+
+### Patch Changes
+
+- 9933b86: feat: add preferred token yields per network support
+
 ## 0.0.243
 
 ### Patch Changes
