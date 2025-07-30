@@ -109,7 +109,7 @@ export const evmChainsMap: EvmChainsMap = {
   [EvmNetworks.Binance]: {
     type: "evm",
     skChainName: EvmNetworks.Binance,
-    wagmiChain: bsc,
+    wagmiChain: { ...bsc, name: "BNB Chain" },
   },
   [EvmNetworks.Base]: {
     type: "evm",
