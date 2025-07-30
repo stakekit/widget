@@ -75,6 +75,7 @@ export type EarnPageContextType = {
   }>;
   formattedPrice: string;
   symbol: string;
+  rewardsTokenSymbol: string;
   selectedStakeData: Maybe<SelectedStakeData>;
   selectedStake: ExtraData["selectedStake"];
   onYieldSelect: (yieldId: string) => void;

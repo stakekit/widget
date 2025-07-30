@@ -111,7 +111,10 @@ export const UnstakeOrPendingActionProvider = ({
     () =>
       stakedOrLiquidBalances
         .chain((balances) => List.head(balances))
-        .map((v) => v.token),
+        .map<TokenDto & { pricePerShare: string }>((v) => ({
+          ...v.token,
+          pricePerShare: v.pricePerShare,
+        })),
     [stakedOrLiquidBalances]
   );
 
@@ -124,6 +127,7 @@ export const UnstakeOrPendingActionProvider = ({
     yieldOpportunity: integrationData,
     type: "exit",
     availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
+    pricePerShare: unstakeToken.map((v) => v.pricePerShare).extractNullable(),
   });
 
   const canChangeUnstakeAmount = integrationData.map(
@@ -324,6 +328,7 @@ export const UnstakeOrPendingActionProvider = ({
       integrationData,
       unstakeAmountValid,
       unstakeIsGreaterOrLessIntegrationLimitError,
+      minUnstakeAmount: minEnterOrExitAmount,
     }),
     [
       canChangeUnstakeAmount,
@@ -341,6 +346,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountValid,
       pendingActionType,
       unstakeIsGreaterOrLessIntegrationLimitError,
+      minEnterOrExitAmount,
     ]
   );
 

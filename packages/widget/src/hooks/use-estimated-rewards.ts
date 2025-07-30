@@ -1,7 +1,8 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { isBittensorStaking } from "../domain/types/yields";
 import type { State } from "../pages/details/earn-page/state/types";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
@@ -24,6 +25,19 @@ export const useEstimatedRewards = ({
     selectedProviderYieldId,
   });
 
+  /**
+   * If the selected stake is a bittensor staking, we need to divide the stake amount by the price per share
+   * to convert to Alpha token
+   */
+  const correctAmount = useMemo(() => {
+    return selectedStake
+      .filter((val) => isBittensorStaking(val.id))
+      .chain(() => List.head([...selectedValidators.values()]))
+      .chainNullable((validator) => validator.pricePerShare)
+      .map((pps) => stakeAmount.dividedBy(pps))
+      .orDefault(stakeAmount);
+  }, [selectedStake, stakeAmount, selectedValidators]);
+
   return useMemo(
     () =>
       Maybe.fromRecord({ providersDetails, selectedStake })
@@ -43,18 +57,18 @@ export const useEstimatedRewards = ({
           }),
           yearly: val.rewardRateAverage.isGreaterThan(0)
             ? formatNumber(
-                stakeAmount.times(val.rewardRateAverage).decimalPlaces(5)
+                correctAmount.times(val.rewardRateAverage).decimalPlaces(5)
               )
             : "-",
           monthly: val.rewardRateAverage.isGreaterThan(0)
             ? formatNumber(
-                stakeAmount
+                correctAmount
                   .times(val.rewardRateAverage)
                   .dividedBy(12)
                   .decimalPlaces(5)
               )
             : "-",
         })),
-    [providersDetails, selectedStake, stakeAmount]
+    [providersDetails, selectedStake, correctAmount]
   );
 };

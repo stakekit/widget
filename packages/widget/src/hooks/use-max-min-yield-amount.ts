@@ -4,15 +4,15 @@ import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import type { PositionsData } from "../domain/types/positions";
-import { getMinStakeAmount } from "../domain/types/stake";
+import { getMinStakeAmount, getMinUnstakeAmount } from "../domain/types/stake";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
 type Args = {
   yieldOpportunity: Maybe<YieldDto>;
   availableAmount: Maybe<BigNumber>;
 } & (
-  | { type: "enter"; positionsData: PositionsData }
-  | { type: "exit"; positionsData?: never }
+  | { type: "enter"; positionsData: PositionsData; pricePerShare?: never }
+  | { type: "exit"; positionsData?: never; pricePerShare: string | null }
 );
 
 export const useMaxMinYieldAmount = ({
@@ -20,6 +20,7 @@ export const useMaxMinYieldAmount = ({
   yieldOpportunity,
   availableAmount,
   positionsData,
+  pricePerShare,
 }: Args) => {
   const isForceMax = useForceMaxAmount({
     type,
@@ -34,10 +35,17 @@ export const useMaxMinYieldAmount = ({
             .chainNullable((y) =>
               type === "enter"
                 ? getMinStakeAmount(y, positionsData)
-                : y.args.exit?.args?.amount?.minimum
+                : getMinUnstakeAmount(y, pricePerShare)
             )
             .map((a) => new BigNumber(a)),
-    [availableAmount, isForceMax, type, yieldOpportunity, positionsData]
+    [
+      availableAmount,
+      isForceMax,
+      type,
+      yieldOpportunity,
+      positionsData,
+      pricePerShare,
+    ]
   );
 
   const maxIntegrationAmount = useMemo(() => {

@@ -157,8 +157,8 @@ importers:
         specifier: ^9.1.0
         version: 9.1.0(bufferutil@4.0.9)(typescript@5.8.3)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@stakekit/api-hooks':
-        specifier: 0.0.107
-        version: 0.0.107(@faker-js/faker@9.9.0)(@tanstack/react-query@5.83.0(react@19.1.0))(msw@2.10.4(@types/node@24.0.15)(typescript@5.8.3))(react@19.1.0)
+        specifier: 0.0.108
+        version: 0.0.108(@faker-js/faker@9.9.0)(@tanstack/react-query@5.83.0(react@19.1.0))(msw@2.10.4(@types/node@24.0.15)(typescript@5.8.3))(react@19.1.0)
       '@stakekit/common':
         specifier: ^0.0.55
         version: 0.0.55
@@ -2807,8 +2807,8 @@ packages:
   '@stacks/transactions@6.17.0':
     resolution: {integrity: sha512-FUah2BRgV66ApLcEXGNGhwyFTRXqX5Zco3LpiM3essw8PF0NQlHwwdPgtDko5RfrJl3LhGXXe/30nwsfNnB3+g==}
 
-  '@stakekit/api-hooks@0.0.107':
-    resolution: {integrity: sha512-PEWjHE2sFHpywTfEbOWsnO/AMKTnQzPrjo/pWOahijGTJL9trun/mKGI8ax8vJTh65PWGp0SnKELxbuQ6Jd1BQ==}
+  '@stakekit/api-hooks@0.0.108':
+    resolution: {integrity: sha512-dJU2B2y5cBtljcuHcdJKxQKk0f1eHQr9VwAns16NEx5nnPf1EmfGOsvgYnd6tbEuYGbRwZlqjHid+/292qJqyQ==}
     peerDependencies:
       '@faker-js/faker': ^9
       '@tanstack/react-query': '>=5'
@@ -10436,7 +10436,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@stakekit/api-hooks@0.0.107(@faker-js/faker@9.9.0)(@tanstack/react-query@5.83.0(react@19.1.0))(msw@2.10.4(@types/node@24.0.15)(typescript@5.8.3))(react@19.1.0)':
+  '@stakekit/api-hooks@0.0.108(@faker-js/faker@9.9.0)(@tanstack/react-query@5.83.0(react@19.1.0))(msw@2.10.4(@types/node@24.0.15)(typescript@5.8.3))(react@19.1.0)':
     dependencies:
       react: 19.1.0
     optionalDependencies:

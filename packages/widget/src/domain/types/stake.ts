@@ -168,3 +168,20 @@ export const getMinStakeAmount = (
 
   return integrationMin;
 };
+
+export const getMinUnstakeAmount = (
+  yieldDto: YieldDto,
+  pricePerShare: string | null
+) => {
+  const integrationMin = new BigNumber(
+    yieldDto.args.exit?.args?.amount?.minimum ?? 0
+  );
+
+  const pricePerShareBN = new BigNumber(pricePerShare ?? 0);
+
+  if (pricePerShareBN.isZero()) {
+    return integrationMin;
+  }
+
+  return integrationMin.dividedBy(pricePerShareBN);
+};
