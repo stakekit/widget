@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.245
+
+### Patch Changes
+
+- 5e17989: feat: tao conversion
+
 ## 0.0.244
 
 ### Patch Changes
