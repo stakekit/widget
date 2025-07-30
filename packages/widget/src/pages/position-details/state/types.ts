@@ -59,4 +59,5 @@ export type ExtraData = {
   unstakeAmountError: boolean;
   canChangeUnstakeAmount: Maybe<boolean>;
   unstakeIsGreaterOrLessIntegrationLimitError: boolean;
+  minUnstakeAmount: BigNumber;
 };

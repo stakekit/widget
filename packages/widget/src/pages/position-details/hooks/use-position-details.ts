@@ -32,6 +32,7 @@ export const usePositionDetails = () => {
     unstakeAmountError,
     canChangeUnstakeAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
+    minUnstakeAmount,
   } = useUnstakeOrPendingActionState();
 
   const navigate = useNavigate();
@@ -53,9 +54,9 @@ export const usePositionDetails = () => {
       integrationData
         .chainNullable((val) => val.args.exit?.args?.amount)
         .filter((val) => !isForceMaxAmount(val))
-        .chainNullable((val) => val.minimum)
+        .map(() => minUnstakeAmount.toNumber())
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
-    [integrationData]
+    [integrationData, minUnstakeAmount]
   );
 
   const onClickHandler = useMutation({

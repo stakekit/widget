@@ -18,14 +18,15 @@ import { selectYieldRewardsText } from "./styles.css";
 export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
 
-  const { rewardToken, estimatedRewards, symbol } = useEarnPageContext();
+  const { rewardToken, estimatedRewards, rewardsTokenSymbol } =
+    useEarnPageContext();
 
   const earnYearly = estimatedRewards.mapOrDefault(
-    (e) => `${e.yearly} ${symbol}`,
+    (e) => `${e.yearly} ${rewardsTokenSymbol}`,
     ""
   );
   const earnMonthly = estimatedRewards.mapOrDefault(
-    (e) => `${e.monthly} ${symbol}`,
+    (e) => `${e.monthly} ${rewardsTokenSymbol}`,
     ""
   );
 

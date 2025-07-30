@@ -26,11 +26,13 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { bittensorAlphaToken } from "../../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
   getExtendedYieldType,
   getYieldTypeLabels,
   getYieldTypesSortRank,
+  isBittensorStaking,
 } from "../../../../domain/types/yields";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
@@ -127,6 +129,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   });
 
   const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
+
+  const rewardsTokenSymbol = useMemo(() => {
+    return selectedStake
+      .filter((val) => isBittensorStaking(val.id))
+      .map(() => bittensorAlphaToken.symbol)
+      .orDefault(symbol);
+  }, [selectedStake, symbol]);
 
   const formattedPrice = useMemo(
     () =>
@@ -664,6 +673,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     validatorSearch,
     hasNotYieldsForToken,
     isStakeTokenSameAsGasToken,
+    rewardsTokenSymbol,
   };
 
   return (
