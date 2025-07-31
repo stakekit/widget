@@ -97,7 +97,7 @@ export const ActionReviewPage = () => {
                     <a
                       target="_blank"
                       onClick={() => trackEvent("termsClicked")}
-                      href="https://docs.stakek.it/docs/terms-of-use"
+                      href="https://docs.yield.xyz/docs/terms-of-use"
                       className={pointerStyles}
                       rel="noreferrer"
                     />

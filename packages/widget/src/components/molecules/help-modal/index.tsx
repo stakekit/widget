@@ -183,8 +183,8 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
               i18nKey="help_modals.what_is_stakekit.description"
               components={{
                 br0: <br />,
-                link0: <SKAnchor href="https://www.stakek.it/" />,
-                link1: <SKAnchor href="https://docs.stakek.it/docs/faqs" />,
+                link0: <SKAnchor href="https://yield.xyz/" />,
+                link1: <SKAnchor href="https://docs.yield.xyz/docs/faqs" />,
               }}
             />
           ),
