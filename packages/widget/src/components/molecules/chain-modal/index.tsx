@@ -3,6 +3,7 @@ import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../providers/settings";
+import { useSKWallet } from "../../../providers/sk-wallet";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { Box } from "../../atoms/box";
 import { CaretDownIcon } from "../../atoms/icons/caret-down";
@@ -14,12 +15,14 @@ export const ChainModal = () => {
 
   const { t } = useTranslation();
 
+  const { chain: skChain } = useSKWallet();
+
   const { variant } = useSettings();
 
   return (
     <ConnectButton.Custom>
-      {({ chain, openChainModal }) =>
-        Maybe.fromNullable(chain)
+      {({ chain, openChainModal }) => {
+        return Maybe.fromNullable(chain)
           .map((c) => (
             <Box
               data-rk="chain-modal-container"
@@ -60,10 +63,10 @@ export const ChainModal = () => {
                       />
                     )}
 
-                    {c.name && (
+                    {skChain?.name && (
                       <>
                         <Box marginLeft="2">
-                          <Text className={titleStyle}>{c.name}</Text>
+                          <Text className={titleStyle}>{skChain.name}</Text>
                         </Box>
 
                         <Box mx="2">
@@ -75,8 +78,8 @@ export const ChainModal = () => {
                 ))}
             </Box>
           ))
-          .extractNullable()
-      }
+          .extractNullable();
+      }}
     </ConnectButton.Custom>
   );
 };
