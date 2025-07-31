@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.246
+
+### Patch Changes
+
+- 85a4185: fix: bnb chain naming
+- 2ab0bdf: fix: yield.xyz urls
+
 ## 0.0.245
 
 ### Patch Changes
