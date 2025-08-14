@@ -194,10 +194,17 @@ const firstEligibleYield$ = (args: {
       defaultYield = v;
     }),
     filter((y) => {
-      const preferredYieldId =
+      const preferredYieldId = Maybe.fromNullable(
         args.preferredTokenYieldsPerNetwork?.[
           y.token.network as SupportedSKChains
-        ]?.[tokenString(y.token)];
+        ]?.[tokenString(y.token)]
+      )
+        .altLazy(() =>
+          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
+            (v) => Object.values(v)[0][tokenString(y.token)]
+          )
+        )
+        .extractNullable();
 
       if (preferredYieldId) {
         return y.id === preferredYieldId || preferredYieldId === "*";
