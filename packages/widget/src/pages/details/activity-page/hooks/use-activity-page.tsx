@@ -1,6 +1,8 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
+import { Text } from "../../../../components/atoms/typography/text";
 import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
@@ -16,9 +18,25 @@ export const useActivityPage = () => {
 
   const allData = activityActions.allItems;
 
+  const { t } = useTranslation();
+
   const content = useMemo(() => {
     if (!isConnected && !isConnecting) {
-      return <FallbackContent type="not_connected" />;
+      return (
+        <Box
+          display="flex"
+          flex={1}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Text
+            variant={{ weight: "medium", size: "large" }}
+            textAlign="center"
+          >
+            {t("dashboard.details.activity_connect_wallet")}
+          </Text>
+        </Box>
+      );
     }
 
     if (isConnected && !allData?.length && !activityActions.isPending) {
@@ -50,6 +68,7 @@ export const useActivityPage = () => {
     allData,
     activityActions.isPending,
     activityActions.isFetchingNextPage,
+    t,
   ]);
 
   return {
