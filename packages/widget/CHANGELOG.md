@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.247
+
+### Patch Changes
+
+- 5ed49f3: feat: dashboard connect wallet info
+- 3d9e51a: feat: additional validator info
+- 45e02b2: feat: init token and yield when disconnected
+
 ## 0.0.246
 
 ### Patch Changes
