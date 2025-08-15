@@ -51,6 +51,7 @@
     "earn": "Earn",
     "estimated_reward": "Récompenses estimées",
     "earn_with": "Earn avec",
+    "restake_with": "Restake avec",
     "additional_info": "Infos supplémentaires",
     "rewards": {
       "receive": "Vous recevrez des <symbols1></symbols1> via",
@@ -66,6 +67,10 @@
     "no_opportunities": "Pas d'opportunité de yield pour ce token",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
+    "campaign_susd_description": "Après avoir staké sUSD, la position est bloquée jusqu'au 20 avril 2026.",
+    "campaign_susd_extra": "Les récompenses gagnées sont distribuées périodiquement sous forme de SNX et se débloquent linéairement sur 3 mois après la fin du programme.",
+    "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>",
+    "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>",
     "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>",
     "lockup_period": "La période de blocage minimum est de {{days}} jours",
     "native_staking": {
@@ -78,6 +83,7 @@
     },
     "vault": {
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
+      "description_ethena_usde": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}.",
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
       "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
@@ -121,6 +127,7 @@
     "opportunity_search_title": "Sélectionnez un rendement",
     "validator_search_title_one": "Sélectionnez un validateur",
     "validator_search_title_other": "Sélectionnez des validateurs",
+    "provider_search_title": "Sélectionnez un fournisseur",
     "reward_token": "Vous recevrez des <symbols1></symbols1> <highlight2>via {{providerName}}</highlight2>",
     "tabs": {
       "earn": "Earn",
@@ -137,7 +144,10 @@
     "validators_address": "Adresse",
     "validators_comission": "Commission",
     "validators_website": "Site web",
-    "validators_nominator_count": "Nombre de nominators"
+    "validators_nominator_count": "Nombre de nominators",
+    "validators_subnet_name": "Nom du sous-réseau",
+    "validators_market_cap": "Capitalisation boursière",
+    "validators_token_symbol": "Symbole du token"
   },
   "review": {
     "estimated_reward": "Récompenses estimées",
@@ -178,10 +188,13 @@
       "DEPOSIT": "DÉPÔT",
       "APPROVAL": "APPROBATION",
       "STAKE": "MISE",
+      "STAKE_ETHENA_USDE": "DÉPÔT",
       "CLAIM_UNSTAKED": "RÉCLAMER NON MIS",
+      "CLAIM_UNSTAKED_ETHENA_USDE": "RÉCLAMER",
       "CLAIM_REWARDS": "RÉCLAMER RÉCOMPENSES",
       "RESTAKE_REWARDS": "REMISE DES RÉCOMPENSES",
       "UNSTAKE": "RETIRER",
+      "UNSTAKE_ETHENA_USDE": "REFROIDISSEMENT",
       "SPLIT": "DIVISER",
       "MERGE": "FUSIONNER",
       "LOCK": "VERROUILLER",
@@ -215,7 +228,15 @@
       "INFSTONES_EXIT_REQUEST": "DEMANDE DE SORTIE INFSTONES",
       "INFSTONES_CLAIM_REQUEST": "DEMANDE DE RÉCLAMATION INFSTONES",
       "WRAP": "ENVELOPER",
-      "UNWRAP": "DÉENVELOPER"
+      "UNWRAP": "DÉENVELOPER",
+      "DELEGATE": "DÉLÉGUER",
+      "UNDELEGATE": "ANNULER DÉLÉGATION",
+      "VERIFY_WITHDRAW_CREDENTIALS": "VÉRIFIER IDENTIFIANTS RETRAIT",
+      "CREATE_EIGENPOD": "CRÉER EIGENPOD",
+      "START_CHECKPOINT": "DÉMARRER CHECKPOINT",
+      "VERIFY_CHECKPOINT_PROOFS": "VÉRIFIER PREUVES CHECKPOINT",
+      "QUEUE_WITHDRAWALS": "METTRE EN FILE RETRAITS",
+      "COMPLETE_QUEUED_WITHDRAWALS": "COMPLÉTER RETRAITS EN FILE"
     }
   },
   "complete": {
@@ -224,9 +245,11 @@
     "successfully_pending_action": "{{amount}} {{tokenNetwork}} {{pendingAction}} avec succès",
     "view_transaction": "Voir la transaction {{type}}",
     "via": "via {{providerName}}",
-    "continue": "Aller au tableau de bord Earn",
+    "continue": "Aller au tableau de bord Aperçu",
+    "continue_ledger": "Aller au tableau de bord Earn",
     "stake": {
       "staking": "staké",
+      "staking_ethena_usde": "déposé",
       "liquid-staking": "staké",
       "vault": "déposé",
       "lending": "fourni",
@@ -236,6 +259,7 @@
     },
     "unstake": {
       "staking": "déstaké",
+      "staking_ethena_usde": "retiré",
       "liquid-staking": "déstaké",
       "vault": "retiré",
       "lending": "retiré",
@@ -251,6 +275,7 @@
       "withdraw": "reitré",
       "restake": "restaké",
       "claim_unstaked": "déstakés réclamés",
+      "claim_unstaked_ethena_usde": "réclamé",
       "unlock_locked": "bloqués débloqués",
       "unlock_locked_legacy": "bloqués débloqués",
       "stake_locked": "bloqués stakés",
@@ -260,7 +285,15 @@
       "revote": "Revoter",
       "rebond": "Re-staker",
       "migrate": "Migrer",
-      "withdraw_all": "Retirer tout"
+      "withdraw_all": "Retirer tout",
+      "verify_withdraw_credentials": "identifiants de retrait vérifiés",
+      "delegate": "délégué",
+      "undelegate": "délégation annulée",
+      "create_eigenpod": "eigenpod créé",
+      "start_checkpoint": "checkpoint démarré",
+      "verify_checkpoint_proofs": "preuves de checkpoint vérifiées",
+      "queue_withdrawals": "retraits mis en file",
+      "complete_queued_withdrawals": "retraits en file complétés"
     }
   },
   "help_modals": {
@@ -396,6 +429,7 @@
       "withdraw_all": "Retirer tout",
       "restake": "Restaker",
       "claim_unstaked": "Réclamer les déstakés",
+      "claim_unstaked_ethena_usde": "Réclamer",
       "unlock_locked": "Débloquer",
       "unlock_locked_legacy": "Débloquer",
       "stake_locked": "Staker",
@@ -404,7 +438,15 @@
       "vote_locked": "Voter",
       "revote": "Revoter",
       "rebond": "Re-staker",
-      "migrate": "Migrer"
+      "migrate": "Migrer",
+      "verify_withdraw_credentials": "Vérifier identifiants de retrait",
+      "delegate": "Déléguer",
+      "undelegate": "Annuler délégation",
+      "create_eigenpod": "Créer eigenpod",
+      "start_checkpoint": "Démarrer checkpoint",
+      "verify_checkpoint_proofs": "Vérifier preuves checkpoint",
+      "queue_withdrawals": "Mettre en file retraits",
+      "complete_queued_withdrawals": "Compléter retraits en file"
     },
     "pending_action_button": {
       "stake": "Staker",
@@ -423,7 +465,9 @@
       "vote_locked": "Voter bloqué",
       "revote": "Revoter",
       "rebond": "Re-staker",
-      "migrate": "Migrer"
+      "migrate": "Migrer",
+      "verify_withdraw_credentials": "Vérifier identifiants de retrait",
+      "delegate": "Déléguer"
     },
     "unstake_sign": {
       "title": "Vérifier la propriété",
@@ -444,6 +488,7 @@
       "withdraw_all": "Retirer tout de {{providerName}}",
       "restake": "Restaker avec {{providerName}}",
       "claim_unstaked": "Réclamer le déstaké de {{providerName}}",
+      "claim_unstaked_ethena_usde": "Réclamer de {{providerName}}",
       "unlock_locked": "Débloquer le bloqué de {{providerName}}",
       "unlock_locked_legacy": "Débloquer le bloqué de {{providerName}}",
       "stake_locked": "Staker le bloqué avec {{providerName}}",
@@ -452,7 +497,9 @@
       "vote_locked": "Voter bloqué avec {{providerName}}",
       "revote": "Revoter avec {{providerName}}",
       "rebond": "Re-staker avec {{providerName}}",
-      "migrate": "Migrer de {{providerName}}"
+      "migrate": "Migrer de {{providerName}}",
+      "verify_withdraw_credentials": "Vérifier identifiants de retrait de {{providerName}}",
+      "delegate": "Déléguer avec {{providerName}}"
     }
   },
   "select_token": {
@@ -463,6 +510,7 @@
   "error_modal": {
     "solution": "Solution potentielle :"
   },
+  "chain_modal_disclaimer": "Alimenté par Yield.xyz",
   "dashboard": {
     "details": {
       "tabs": {
@@ -470,7 +518,13 @@
         "rewards": "Récompenses",
         "activity": "Activité"
       },
-      "positions_tooltip": "Les positions sont vos soldes actuellement stakés sur le réseau."
+      "positions_tooltip": "Les positions sont vos soldes liés au rendement sur le réseau.",
+      "positions_yield": "Rendement",
+      "positions_reward_rate": "Taux de récompense",
+      "positions_amount": "Montant",
+      "positions_rewards": "Récompenses",
+      "positions_connect_wallet": "Connectez un portefeuille pour voir vos positions",
+      "activity_connect_wallet": "Connectez un portefeuille pour voir votre activité"
     },
     "position_details_info": {
       "balances": "Soldes"

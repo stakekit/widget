@@ -21,6 +21,9 @@ export const useMetaInfo = ({
   rewardType,
   website,
   nominatorCount,
+  subnetName,
+  marketCap,
+  tokenSymbol,
 }: {
   [Key in keyof Pick<
     ValidatorDto,
@@ -30,6 +33,9 @@ export const useMetaInfo = ({
     | "address"
     | "website"
     | "nominatorCount"
+    | "subnetName"
+    | "marketCap"
+    | "tokenSymbol"
   >]: ValidatorDto[Key] | undefined;
 } & {
   stakedBalanceToken: YieldDto["token"] | undefined;
@@ -47,6 +53,9 @@ export const useMetaInfo = ({
       | "address"
       | "website"
       | "nominatorCount"
+      | "subnetName"
+      | "marketCap"
+      | "tokenSymbol"
     >]: { title: string; val: ReactNode } | null;
   }>(
     () => ({
@@ -115,6 +124,24 @@ export const useMetaInfo = ({
             ),
           }
         : null,
+      subnetName: subnetName
+        ? {
+            title: t("details.validators_subnet_name"),
+            val: subnetName,
+          }
+        : null,
+      marketCap: marketCap
+        ? {
+            title: t("details.validators_market_cap"),
+            val: formatNumber(marketCap, 2),
+          }
+        : null,
+      tokenSymbol: tokenSymbol
+        ? {
+            title: t("details.validators_token_symbol"),
+            val: tokenSymbol,
+          }
+        : null,
     }),
     [
       rewardRate,
@@ -127,6 +154,9 @@ export const useMetaInfo = ({
       address,
       website,
       nominatorCount,
+      subnetName,
+      marketCap,
+      tokenSymbol,
     ]
   );
 };

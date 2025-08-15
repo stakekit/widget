@@ -16,7 +16,7 @@ const originalConsoleError = console.error;
 const originalConsoleLog = console.log;
 
 const originalStdoutWrite = process.stdout.write.bind(process.stdout);
-//@ts-ignore
+//@ts-expect-error
 process.stdout.write = (chunk, encoding, callback) => {
   if (typeof chunk === "string" && chunk.includes("relay.walletconnect")) {
     return true;

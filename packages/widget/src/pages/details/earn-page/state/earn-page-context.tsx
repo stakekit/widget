@@ -26,7 +26,6 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import { bittensorAlphaToken } from "../../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
   getExtendedYieldType,
@@ -133,9 +132,10 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const rewardsTokenSymbol = useMemo(() => {
     return selectedStake
       .filter((val) => isBittensorStaking(val.id))
-      .map(() => bittensorAlphaToken.symbol)
+      .chain(() => List.head([...selectedValidators.values()]))
+      .map((validator) => validator.tokenSymbol ?? "")
       .orDefault(symbol);
-  }, [selectedStake, symbol]);
+  }, [selectedStake, symbol, selectedValidators]);
 
   const formattedPrice = useMemo(
     () =>
