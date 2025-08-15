@@ -144,7 +144,10 @@
     "validators_address": "Address",
     "validators_comission": "Commission",
     "validators_website": "Website",
-    "validators_nominator_count": "Nominator count"
+    "validators_nominator_count": "Nominator count",
+    "validators_subnet_name": "Subnet name",
+    "validators_market_cap": "Market cap",
+    "validators_token_symbol": "Token symbol"
   },
   "dashboard": {
     "details": {

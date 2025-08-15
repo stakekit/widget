@@ -44,10 +44,16 @@
         "noInferrableTypes": "error",
         "noUselessElse": "error"
       },
-      "suspicious": { "noArrayIndexKey": "off" },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off"
+      },
       "a11y": { "noSvgWithoutTitle": "off" },
-      "correctness": { "useJsxKeyInIterable": "off" },
-      "complexity": { "noForEach": "off" }
+      "correctness": {
+        "useJsxKeyInIterable": "off",
+        "useUniqueElementIds": "off"
+      },
+      "complexity": { "noForEach": "off", "useIndexOf": "off" }
     }
   },
   "javascript": {
