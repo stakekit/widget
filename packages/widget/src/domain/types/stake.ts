@@ -53,6 +53,11 @@ export const getInitialToken = (args: {
         .chain((n) =>
           Maybe.fromNullable(args.preferredTokenYieldsPerNetwork?.[n])
         )
+        .altLazy(() =>
+          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
+            (v) => Object.values(v)[0]
+          )
+        )
         .chain((preferredTokens) =>
           List.find(
             (val) => !!preferredTokens[tokenString(val.token)],
