@@ -10,7 +10,7 @@ import {
   gnosis,
   goerli,
   harmonyOne,
-  holesky,
+  hoodi,
   linea,
   mainnet,
   optimism,
@@ -20,6 +20,7 @@ import {
   unichain,
   viction,
 } from "viem/chains";
+import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
 
 const supportedEVMChains = [
@@ -33,7 +34,7 @@ const supportedEVMChains = [
   EvmNetworks.Optimism,
   EvmNetworks.Polygon,
   EvmNetworks.Viction,
-  EvmNetworks.EthereumHolesky,
+  EvmNetworks.EthereumHoodi,
   EvmNetworks.Base,
   EvmNetworks.Linea,
   EvmNetworks.Core,
@@ -142,10 +143,10 @@ export const evmChainsMap: EvmChainsMap = {
       iconUrl: getNetworkLogo(EvmNetworks.Sonic),
     },
   },
-  [EvmNetworks.EthereumHolesky]: {
+  [EvmNetworks.EthereumHoodi]: {
     type: "evm",
-    skChainName: EvmNetworks.EthereumHolesky,
-    wagmiChain: holesky,
+    skChainName: EvmNetworks.EthereumHoodi,
+    wagmiChain: hoodi,
   },
   [EvmNetworks.EthereumGoerli]: {
     type: "evm",
@@ -202,9 +203,15 @@ export enum EvmChainIds {
   Linea = 59_144,
   Core = 1116,
   Sonic = 146,
-  EthereumHolesky = 17000,
+  EthereumHoodi = 560048,
   EthereumGoerli = 5,
   EthereumSepolia = 11_155_111,
   Unichain = 130,
   Katana = 747474,
+  Gnosis = 100,
 }
+
+EvmChainIds satisfies Record<
+  Capitalize<KebabToCamelCase<SupportedEvmChain>>,
+  number
+>;

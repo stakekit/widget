@@ -1,5 +1,6 @@
 import { MiscNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import type { KebabToCamelCase } from "../../../types/utils";
 import { getTokenLogo } from "../../../utils";
 
 const supportedMiscChains = [
@@ -132,3 +133,8 @@ export enum MiscChainIds {
   Tron = 79,
   Ton = 3412,
 }
+
+MiscChainIds satisfies Record<
+  Capitalize<KebabToCamelCase<SupportedMiscChains>>,
+  number
+>;
