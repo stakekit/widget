@@ -47,6 +47,7 @@ export const viaText = style({
 
 export const container = style({
   minHeight: "300px",
+  height: "100%",
 });
 
 export const headerContainer = style({

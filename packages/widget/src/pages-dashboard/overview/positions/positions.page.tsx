@@ -20,12 +20,28 @@ export const PositionsPage = () => {
 
   const { isConnected, isConnecting } = useSKWallet();
 
+  const { t } = useTranslation();
+
   const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
       return <FallbackContent type="spinner" />;
     }
     if (!isConnected && !isConnecting) {
-      return <FallbackContent type="not_connected" />;
+      return (
+        <Box
+          display="flex"
+          flex={1}
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Text
+            variant={{ weight: "medium", size: "large" }}
+            textAlign="center"
+          >
+            {t("dashboard.details.positions_connect_wallet")}
+          </Text>
+        </Box>
+      );
     }
     if (positionsData.isError && !positionsData.data.length) {
       return <FallbackContent type="something_wrong" />;
@@ -39,9 +55,8 @@ export const PositionsPage = () => {
     positionsData.isError,
     positionsData.isFetching,
     positionsData.isLoading,
+    t,
   ]);
-
-  const { t } = useTranslation();
 
   return (
     <Box className={container} display="flex" flex={1} flexDirection="column">

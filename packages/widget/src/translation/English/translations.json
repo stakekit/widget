@@ -157,7 +157,9 @@
       "positions_yield": "Yield",
       "positions_reward_rate": "Reward Rate",
       "positions_amount": "Amount",
-      "positions_rewards": "Rewards"
+      "positions_rewards": "Rewards",
+      "positions_connect_wallet": "Connect wallet to see your positions",
+      "activity_connect_wallet": "Connect wallet to see your activity"
     },
     "position_details_info": {
       "balances": "Balances"
