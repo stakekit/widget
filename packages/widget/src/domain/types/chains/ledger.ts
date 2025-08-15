@@ -96,10 +96,10 @@ export const supportedLedgerFamiliesWithCurrency = {
       family: "ethereum",
       skChainName: EvmNetworks.AvalancheC,
     },
-    ethereum_holesky: {
-      currencyId: "ethereum_holesky",
+    ethereum_hoodi: {
+      currencyId: "ethereum_hoodi",
       family: "ethereum",
-      skChainName: EvmNetworks.EthereumHolesky,
+      skChainName: EvmNetworks.EthereumHoodi,
     },
     bsc: {
       currencyId: "bsc",

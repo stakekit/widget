@@ -19,3 +19,8 @@ export type Action<T extends string, D = void> = D extends void
   : { type: T; data: D };
 
 export type Nullable<T> = T | undefined | null;
+
+export type KebabToCamelCase<S extends string> =
+  S extends `${infer P1}-${infer P2}${infer P3}`
+    ? `${P1}${Capitalize<KebabToCamelCase<`${P2}${P3}`>>}`
+    : S;
