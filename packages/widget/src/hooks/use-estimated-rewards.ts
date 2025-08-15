@@ -27,7 +27,7 @@ export const useEstimatedRewards = ({
 
   /**
    * If the selected stake is a bittensor staking, we need to divide the stake amount by the price per share
-   * to convert to Alpha token
+   * to convert to subnet token
    */
   const correctAmount = useMemo(() => {
     return selectedStake
