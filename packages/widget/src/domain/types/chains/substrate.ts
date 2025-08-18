@@ -1,5 +1,6 @@
 import { SubstrateNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
+import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
 
 const supportedSubstrateChains = [
@@ -81,3 +82,8 @@ export enum SubstrateChainIds {
   Polkadot = 9999,
   Bittensor = 558,
 }
+
+SubstrateChainIds satisfies Record<
+  Capitalize<KebabToCamelCase<SupportedSubstrateChains>>,
+  number
+>;
