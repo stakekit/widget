@@ -94,7 +94,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const baseToken = useBaseToken(selectedStake);
 
-  const { externalProviders } = useSettings();
+  const { externalProviders, variant } = useSettings();
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
     useSKWallet();
@@ -326,8 +326,15 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             )
           )
           .alt(Maybe.of(ss.validators))
+          .map((validators) => {
+            if (variant === "utila") {
+              return validators.toSorted((a, b) => (b.apr ?? 0) - (a.apr ?? 0));
+            }
+
+            return validators;
+          })
       ),
-    [deferredValidatorSearch, selectedStake]
+    [deferredValidatorSearch, selectedStake, variant]
   );
 
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>
