@@ -8,6 +8,7 @@ import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { SelectYield } from "../../../../../components/molecules/select-yield";
+import { getYieldProviderYieldIds } from "../../../../../domain/types/yields";
 import { useMultiYields } from "../../../../../hooks/api/use-multi-yields";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import {
@@ -26,7 +27,7 @@ export const SelectProvider = () => {
 
   const providerYieldIdOptions = selectedStake
     .filter((ss) => !!ss.args.enter.args?.providerId?.required)
-    .chainNullable((ss) => ss.args.enter.args?.providerId?.options);
+    .map(getYieldProviderYieldIds);
 
   const yields = useMultiYields(providerYieldIdOptions.orDefault([]));
 

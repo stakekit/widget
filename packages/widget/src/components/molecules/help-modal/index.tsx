@@ -167,7 +167,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             title: t("help_modals.get_in_touch.button"),
             onClick: () =>
               MaybeWindow.ifJust((w) =>
-                w.open("https://twitter.com/stakekit", "_blank")
+                w.open("https://twitter.com/yield_xyz", "_blank")
               ),
           },
           description: "",
