@@ -235,7 +235,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
-        .map((val) => val.toSorted((a, b) => b.apy - a.apy))
+        .map((val) => [...val].sort((a, b) => b.apy - a.apy))
         .map((val) => val.filter((v) => v.apy > 0))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
@@ -259,7 +259,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
         .map(({ all, filteredDtos }) => {
-          const sorted = filteredDtos.toSorted(
+          const sorted = [...filteredDtos].sort(
             (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
           );
 
@@ -328,7 +328,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           .alt(Maybe.of(ss.validators))
           .map((validators) => {
             if (variant === "utila") {
-              return validators.toSorted((a, b) => (b.apr ?? 0) - (a.apr ?? 0));
+              return [...validators].sort(
+                (a, b) => (b.apr ?? 0) - (a.apr ?? 0)
+              );
             }
 
             return validators;

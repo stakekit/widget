@@ -134,7 +134,7 @@ const positionsTableDataSelector = createSelector(
       )
       .map((val) =>
         variant === "zerion"
-          ? val.toSorted((a, b) => {
+          ? [...val].sort((a, b) => {
               if (a.hasPendingClaimRewards) return -1;
               if (b.hasPendingClaimRewards) return 1;
               return 0;
