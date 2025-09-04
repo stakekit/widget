@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.248
+
+### Patch Changes
+
+- ffb2829: fix: use .sort instead of .toSorted
+- 46b7d23: feat: utila apy sort
+- f37db5b: feat: hoodi chain support
+
 ## 0.0.247
 
 ### Patch Changes
