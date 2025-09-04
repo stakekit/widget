@@ -28,8 +28,8 @@ const positionsDataSelector = createSelector(
     balancesData.reduce((acc, val) => {
       acc.set(val.integrationId, {
         integrationId: val.integrationId,
-        balanceData: val.balances
-          .toSorted((a, b) => (a.groupId ?? "").localeCompare(b.groupId ?? ""))
+        balanceData: [...val.balances]
+          .sort((a, b) => (a.groupId ?? "").localeCompare(b.groupId ?? ""))
           .reduce((acc, b) => {
             const prev = acc.get(b.groupId);
 

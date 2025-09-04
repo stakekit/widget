@@ -56,7 +56,7 @@ export const getWalletManager = ({
     )
     .map((val) => ({
       ...val,
-      chains: val.chains.toSorted((a) =>
+      chains: [...val.chains].sort((a) =>
         // Put cosmos first
         registryIdsToSKCosmosNetworks[a.chain_id] === CosmosNetworks.Cosmos
           ? -1
