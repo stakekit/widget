@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.250
+
+### Patch Changes
+
+- 0f9f806: fix: rainbowkit dialog root
+
 ## 0.0.249
 
 ### Patch Changes
