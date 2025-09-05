@@ -4,9 +4,7 @@
     "includes": [
       "**",
       "!**/node_modules",
-      "!**/node_modules/**",
       "!**/dist",
-      "!**/dist/**",
       "!**/.next",
       "!**/next",
       "!**/.turbo",
@@ -61,6 +59,12 @@
       "semicolons": "always",
       "arrowParentheses": "always",
       "trailingCommas": "es5"
+    }
+  },
+  "html": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space"
     }
   }
 }

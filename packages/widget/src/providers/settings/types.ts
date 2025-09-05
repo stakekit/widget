@@ -60,6 +60,7 @@ export type SettingsProps = {
   hideAccountAndChainSelector?: boolean;
   showUSDeBanner?: boolean;
   preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
+  portalContainer?: HTMLElement;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
