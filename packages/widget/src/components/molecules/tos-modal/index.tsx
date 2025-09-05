@@ -10,6 +10,7 @@ import {
 import type { PropsWithChildren, ReactNode } from "react";
 import { useContext, useEffect } from "react";
 import { Trans, useTranslation } from "react-i18next";
+import { useSettings } from "../../../providers/settings";
 import { TrackingContext } from "../../../providers/tracking";
 import { id } from "../../../styles/theme/ids";
 import { SKAnchor } from "../../atoms/anchor";
@@ -42,6 +43,7 @@ export const TosModal = ({
   isOpen,
 }: TosModalProps) => {
   const { t } = useTranslation();
+  const { portalContainer } = useSettings();
   const trackEvent = useContext(TrackingContext)?.trackEvent;
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export const TosModal = ({
     <Root open={isOpen}>
       {customTrigger && <Trigger asChild>{customTrigger}</Trigger>}
 
-      <Portal>
+      <Portal container={portalContainer}>
         <Box data-rk={id}>
           <Overlay className={overlay} />
           <Content className={content} aria-describedby={undefined}>
