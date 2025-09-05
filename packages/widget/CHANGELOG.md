@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.249
+
+### Patch Changes
+
+- 0568007: feat: portal container
+
 ## 0.0.248
 
 ### Patch Changes
