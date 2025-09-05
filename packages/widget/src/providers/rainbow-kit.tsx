@@ -29,6 +29,8 @@ export const RainbowKitProviderWithTheme = ({
 }: PropsWithChildren) => {
   const { connector, connectorChains } = useSKWallet();
 
+  const { portalContainer } = useSettings();
+
   const ledgerDisabledChains = useLedgerDisabledChain(connector);
 
   const trackEvent = useTrackEvent();
@@ -76,6 +78,7 @@ export const RainbowKitProviderWithTheme = ({
       showRecentTransactions={false}
       theme={finalTheme}
       hideDisconnect={hideDisconnect}
+      dialogRoot={portalContainer}
     >
       <DisabledChainHandling />
       {children}
