@@ -3,7 +3,7 @@ import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useSettings } from "../../../providers/settings";
+import { SettingsContext } from "../../../providers/settings";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../box";
 import { SearchIcon } from "../icons/search";
@@ -51,6 +51,7 @@ type SelectModalContextType = {
 
 export type SelectModalProps = SelectModalWithoutStateProps & {
   state?: SelectModalContextType;
+  portalContainer?: HTMLElement;
 };
 
 const SelectModalContext = createContext<SelectModalContextType | undefined>(
@@ -80,9 +81,9 @@ const SelectModalWithoutState = ({
   errorMessage,
   disableClose,
   hideTopBar,
+  portalContainer,
 }: SelectModalProps) => {
   const { isOpen, setOpen } = useSelectModalContext();
-  const { portalContainer } = useSettings();
 
   const onCloseRef = useSavedRef(onClose);
   const onOpenRef = useSavedRef(onOpen);
@@ -101,7 +102,11 @@ const SelectModalWithoutState = ({
     <Root open={isOpen} onOpenChange={setOpen}>
       {trigger}
 
-      <Portal container={portalContainer}>
+      <Portal
+        container={
+          useContext(SettingsContext)?.portalContainer ?? portalContainer
+        }
+      >
         <Box className={container} data-select-modal data-rk={id}>
           <Overlay onClick={() => setOpen(false)} className={overlay} />
 
