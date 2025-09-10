@@ -1,3 +1,9 @@
+import {
+  type Wallet as SolanaWallet,
+  useConnection as useSolanaConnection,
+  useWallet as useSolanaWallet,
+} from "@solana/wallet-adapter-react";
+import type { Connection } from "@solana/web3.js";
 import type { Networks } from "@stakekit/common";
 import type {
   Chain as RainbowkitChain,
@@ -60,6 +66,8 @@ const buildWagmiConfig = async (opts: {
   whitelistedValidatorAddresses: Set<string> | null;
   chainIconMapping: SettingsProps["chainIconMapping"];
   variant: VariantProps["variant"];
+  solanaWallets: SolanaWallet[];
+  solanaConnection: Connection;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -87,6 +95,8 @@ const buildWagmiConfig = async (opts: {
             enabledNetworks: networks,
             queryClient: opts.queryClient,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
+            solanaWallets: opts.solanaWallets,
+            solanaConnection: opts.solanaConnection,
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,
@@ -308,6 +318,9 @@ export const useWagmiConfig = () => {
     variant,
   } = useSettings();
 
+  const solanaWallets = useSolanaWallet();
+  const solanaConnection = useSolanaConnection();
+
   const queryClient = useSKQueryClient();
 
   const whitelistedValidatorAddresses = useWhitelistedValidators();
@@ -334,6 +347,8 @@ export const useWagmiConfig = () => {
         whitelistedValidatorAddresses,
         chainIconMapping,
         variant,
+        solanaWallets: solanaWallets.wallets,
+        solanaConnection: solanaConnection.connection,
       }),
   });
 };

@@ -131,3 +131,10 @@ globalStyle(
     height: 0,
   }
 );
+
+globalStyle(
+  '[data-rk="stakekit"][aria-labelledby="rk_connect_title"][aria-modal="true"][role="dialog"]',
+  {
+    zIndex: 990,
+  }
+);

@@ -1,3 +1,5 @@
+import type { Wallet } from "@solana/wallet-adapter-react";
+import type { Connection } from "@solana/web3.js";
 import type { Networks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
@@ -15,9 +17,13 @@ const staleTime = Number.POSITIVE_INFINITY;
 const queryFn = async ({
   enabledNetworks,
   forceWalletConnectOnly,
+  solanaWallets,
+  solanaConnection,
 }: {
   enabledNetworks: Set<Networks>;
   forceWalletConnectOnly: boolean;
+  solanaWallets: Wallet[];
+  solanaConnection: Connection;
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -42,6 +48,16 @@ const queryFn = async ({
       () =>
         MaybeAsync(() => import("./tron-connector")).map((v) =>
           v.getTronConnectors({ forceWalletConnectOnly })
+        )
+    ),
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.solana)).chain(
+      () =>
+        MaybeAsync(() => import("./solana-connector")).map((v) =>
+          v.getSolanaConnectors({
+            forceWalletConnectOnly,
+            wallets: solanaWallets,
+            connection: solanaConnection,
+          })
         )
     ),
   ]).then((connectors) => ({

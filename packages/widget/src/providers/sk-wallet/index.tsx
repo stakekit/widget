@@ -45,6 +45,7 @@ import { isLedgerDappBrowserProvider } from "../../utils";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isExternalProviderConnector } from "../external-provider";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
+import { isSolanaConnector } from "../misc/solana-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isSafeConnector } from "../safe/safe-connector-meta";
 import { useWagmiConfig } from "../wagmi";
@@ -320,6 +321,19 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   )
               )
               .map((val) => ({ signedTx: val, broadcasted: true }));
+          }
+
+          if (isSolanaConnector(conn)) {
+            return EitherAsync.liftEither(
+              unsignedSolanaTransactionCodec.decode(tx)
+            )
+              .mapLeft(() => new TransactionDecodeError())
+              .chain((decodedTx) =>
+                EitherAsync(() => conn.sendTransaction(decodedTx))
+                  .ifLeft((e) => console.log(e))
+                  .mapLeft(() => new SendTransactionError())
+              )
+              .map((res) => ({ signedTx: res, broadcasted: true }));
           }
 
           /**
