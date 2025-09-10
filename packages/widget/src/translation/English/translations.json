@@ -424,6 +424,7 @@
     }
   },
   "position_details": {
+    "trust_reallocate": "Relocate to Earn Up to 14.28% More.",
     "labels": {
       "hasFrozenV1": {
         "label": "Frozen 1.0",

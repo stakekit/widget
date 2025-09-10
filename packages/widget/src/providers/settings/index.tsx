@@ -6,7 +6,7 @@ import { config } from "../../config";
 import utilaTranslations from "../../translation/English/utila-variant.json";
 import type { SettingsContextType } from "./types";
 
-const SettingsContext = createContext<SettingsContextType | undefined>(
+export const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined
 );
 

@@ -38,3 +38,8 @@ export const columnContainer = style([
     minWidth: "0",
   },
 ]);
+
+export const bottomBannerBottomRadius = style({
+  borderBottomLeftRadius: 0,
+  borderBottomRightRadius: 0,
+});

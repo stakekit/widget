@@ -35,3 +35,9 @@ export const unstakeSignContainer = style({
 export const priceTxt = style({
   flexGrow: 999,
 });
+
+export const bottomBannerBottomRadius = style({
+  borderBottomLeftRadius: 0,
+  borderBottomRightRadius: 0,
+  borderBottomWidth: 0,
+});

@@ -39,6 +39,7 @@ const StandaloneApp = () => {
         forceWalletConnectOnly: true,
       },
     }),
+    isTrust: true,
   };
 
   return (
