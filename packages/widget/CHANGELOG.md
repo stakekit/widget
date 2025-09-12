@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.251
+
+### Patch Changes
+
+- 8175be9: fix: remove use context from select modal
+- 936296c: feat: solana connectors
+
 ## 0.0.250
 
 ### Patch Changes
