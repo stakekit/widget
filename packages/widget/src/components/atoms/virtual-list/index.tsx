@@ -9,7 +9,7 @@ import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useObserveElementRect } from "../../../providers/virtual-scroll";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import { MaybeWindow } from "../../../utils/maybe-window";
-import { Box, type BoxProps } from "../box";
+import { Box, type BoxDataAttributes, type BoxProps } from "../box";
 import { Spinner } from "../spinner";
 import {
   absoluteWrapper,
@@ -137,7 +137,8 @@ export const GroupedVirtualList = ({
   hasNextPage,
   isFetchingNextPage,
   fetchNextPage,
-}: VirtualGroupListProps) => {
+  ...rest
+}: VirtualGroupListProps & BoxDataAttributes) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
@@ -216,7 +217,7 @@ export const GroupedVirtualList = ({
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
 
   return (
-    <Box ref={innerRef} className={clsx([container, className])}>
+    <Box ref={innerRef} className={clsx([container, className])} {...rest}>
       <Box
         className={relativeWrapper}
         style={{
