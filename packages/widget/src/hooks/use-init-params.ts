@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SupportedSKChains } from "../domain/types/chains";
 import type { InitParams } from "../domain/types/init-params";
+import type { ValidatorsConfig } from "../domain/types/yields";
 import { useSKQueryClient } from "../providers/query-client";
 import { useSettings } from "../providers/settings";
 import type { SettingsContextType } from "../providers/settings/types";
 import { useSKWallet } from "../providers/sk-wallet";
 import { getYieldOpportunity } from "./api/use-yield-opportunity/get-yield-opportunity";
 import { getAndValidateInitParams } from "./use-init-query-params";
-import { useWhitelistedValidators } from "./use-whitelisted-validators";
+import { useValidatorsConfig } from "./use-validators-config";
 
 const queryKey = ["init-params"];
 const staleTime = 0;
@@ -21,7 +22,7 @@ export const useInitParams = <T = InitParams>(opts?: {
   const { isLedgerLive } = useSKWallet();
   const { externalProviders } = useSettings();
   const queryClient = useSKQueryClient();
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   return useQuery({
     queryKey,
@@ -32,7 +33,7 @@ export const useInitParams = <T = InitParams>(opts?: {
         isLedgerLive,
         queryClient,
         externalProviders,
-        whitelistedValidatorAddresses,
+        validatorsConfig,
       }),
     select: opts?.select,
   });
@@ -60,12 +61,12 @@ const fn = ({
   isLedgerLive,
   queryClient,
   externalProviders,
-  whitelistedValidatorAddresses,
+  validatorsConfig,
 }: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
   externalProviders: SettingsContextType["externalProviders"];
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
 }): EitherAsync<Error, InitParams> =>
   EitherAsync.liftEither(
     getAndValidateInitParams({
@@ -79,7 +80,7 @@ const fn = ({
         isLedgerLive,
         yieldId: yId,
         queryClient,
-        whitelistedValidatorAddresses,
+        validatorsConfig,
       })
         .map((yieldData) => ({
           ...val,

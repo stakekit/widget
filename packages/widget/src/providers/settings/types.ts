@@ -48,7 +48,14 @@ export type SettingsProps = {
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
-  whitelistedValidatorAddresses?: string[];
+  validatorsConfig?: {
+    [Key in SupportedSKChains]?: {
+      allowed?: string[];
+      blocked?: string[];
+      preferred?: string[];
+      mergePreferredWithDefault?: boolean;
+    };
+  };
   tokenIconMapping?:
     | Record<TokenDto["symbol"], string>
     | ((token: TokenDto) => string);

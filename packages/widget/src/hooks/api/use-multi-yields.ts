@@ -31,10 +31,11 @@ import {
   type PreferredTokenYieldsPerNetwork,
 } from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
+import type { ValidatorsConfig } from "../../domain/types/yields";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSavedRef } from "../use-saved-ref";
-import { useWhitelistedValidators } from "../use-whitelisted-validators";
+import { useValidatorsConfig } from "../use-validators-config";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 const multiYieldsStore = createStore({
@@ -67,13 +68,13 @@ export const useStreamMultiYields = (yieldIds: string[]) => {
 
   const hashedKey = useMemo(() => hashKey(yieldIds), [yieldIds]);
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   useEffect(() => {
     const sub = multipleYields$({
       ...argsRef.current,
       yieldIds,
-      whitelistedValidatorAddresses,
+      validatorsConfig,
     })
       .pipe(repeat({ delay: () => timer(1000 * 60 * 2) }))
       .subscribe({
@@ -85,7 +86,7 @@ export const useStreamMultiYields = (yieldIds: string[]) => {
       });
 
     return () => sub.unsubscribe();
-  }, [argsRef, yieldIds, hashedKey, whitelistedValidatorAddresses]);
+  }, [argsRef, yieldIds, hashedKey, validatorsConfig]);
 
   return useSelector(multiYieldsStore, (state) => {
     const map = state.context.data.get(hashedKey);
@@ -103,7 +104,7 @@ export const useMultiYields = <T = YieldDto[]>(
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   const argsRef = useSavedRef({
     isLedgerLive,
@@ -114,13 +115,13 @@ export const useMultiYields = <T = YieldDto[]>(
 
   return useQuery({
     enabled: yieldIds.length > 0 && opts?.enabled,
-    queryKey: ["multi-yields", yieldIds, whitelistedValidatorAddresses],
+    queryKey: ["multi-yields", yieldIds, validatorsConfig],
     queryFn: () =>
       firstValueFrom(
         multipleYields$({
           ...argsRef.current,
           yieldIds,
-          whitelistedValidatorAddresses,
+          validatorsConfig,
         }).pipe(toArray())
       ),
     select: opts?.select,
@@ -146,7 +147,7 @@ const multipleYields$ = (args: {
   isConnected: boolean;
   network: SKWallet["network"];
   yieldIds: string[];
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
 }) =>
   merge(
     ...args.yieldIds.map((v) =>
@@ -155,7 +156,7 @@ const multipleYields$ = (args: {
           isLedgerLive: args.isLedgerLive,
           yieldId: v,
           queryClient: args.queryClient,
-          whitelistedValidatorAddresses: args.whitelistedValidatorAddresses,
+          validatorsConfig: args.validatorsConfig,
         })
       )
     )
@@ -184,7 +185,7 @@ const firstEligibleYield$ = (args: {
   initParams: InitParams;
   positionsData: PositionsData;
   tokenBalanceAmount: BigNumber;
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
   preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
 }) => {
   let defaultYield: YieldDto | null = null;

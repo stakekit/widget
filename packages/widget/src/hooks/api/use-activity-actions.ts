@@ -10,14 +10,14 @@ import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { useWhitelistedValidators } from "../use-whitelisted-validators";
+import { useValidatorsConfig } from "../use-validators-config";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 export const useActivityActions = () => {
   const { address, network, isLedgerLive } = useSKWallet();
   const queryClient = useSKQueryClient();
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   const query = useInfiniteQuery({
     enabled: !!address && !!network,
@@ -49,7 +49,7 @@ export const useActivityActions = () => {
                   yieldId: action.integrationId,
                   queryClient,
                   isLedgerLive,
-                  whitelistedValidatorAddresses,
+                  validatorsConfig,
                 })
                   .map((yieldData) => ({
                     actionData: action as typeof action & ActionDto,
