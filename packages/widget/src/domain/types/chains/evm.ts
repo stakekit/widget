@@ -43,6 +43,7 @@ const supportedEVMChains = [
   EvmNetworks.Unichain,
   EvmNetworks.Katana,
   EvmNetworks.Gnosis,
+  EvmNetworks.HyperEVM,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -187,6 +188,25 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
+  [EvmNetworks.HyperEVM]: {
+    type: "evm",
+    skChainName: EvmNetworks.HyperEVM,
+    wagmiChain: {
+      id: 999,
+      name: "HyperEVM",
+      iconUrl: getNetworkLogo(EvmNetworks.HyperEVM),
+      nativeCurrency: {
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.hyperliquid.xyz/evm"],
+        },
+      },
+    },
+  },
 };
 
 export enum EvmChainIds {
@@ -209,6 +229,7 @@ export enum EvmChainIds {
   Unichain = 130,
   Katana = 747474,
   Gnosis = 100,
+  Hyperevm = 999,
 }
 
 EvmChainIds satisfies Record<
