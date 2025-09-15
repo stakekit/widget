@@ -147,7 +147,10 @@ export const evmChainsMap: EvmChainsMap = {
   [EvmNetworks.EthereumHoodi]: {
     type: "evm",
     skChainName: EvmNetworks.EthereumHoodi,
-    wagmiChain: hoodi,
+    wagmiChain: {
+      ...hoodi,
+      iconUrl: getNetworkLogo(EvmNetworks.EthereumHoodi),
+    },
   },
   [EvmNetworks.EthereumGoerli]: {
     type: "evm",
