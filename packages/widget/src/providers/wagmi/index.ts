@@ -175,13 +175,6 @@ const buildWagmiConfig = async (opts: {
             } as RainbowkitChain;
           };
 
-          if (opts.variant === "finery") {
-            return Object.values(evmConfig.evmChainsMap).map(mapWagmiChain) as [
-              RainbowkitChain,
-              ...RainbowkitChain[],
-            ];
-          }
-
           return Object.values({
             ...evmConfig.evmChainsMap,
             ...cosmosConfig.cosmosChainsMap,
@@ -190,13 +183,6 @@ const buildWagmiConfig = async (opts: {
           }).map(mapWagmiChain) as [RainbowkitChain, ...RainbowkitChain[]];
         })
         .orDefaultLazy(() => {
-          if (opts.variant === "finery") {
-            return evmConfig.evmChains as [
-              RainbowkitChain,
-              ...RainbowkitChain[],
-            ];
-          }
-
           return [
             ...evmConfig.evmChains,
             ...cosmosConfig.cosmosWagmiChains,
@@ -222,6 +208,7 @@ const buildWagmiConfig = async (opts: {
               groupName: "Other",
               wallets: evmConfig.fineryWallets.otherWallets,
             },
+            ...Maybe.catMaybes(miscConfig.connectors),
           ];
         }
 
