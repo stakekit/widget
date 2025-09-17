@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.252
+
+### Patch Changes
+
+- b9afcac: fix: finery solana connectors
+- b9f3558: feat: add hyperevm
+
 ## 0.0.251
 
 ### Patch Changes
