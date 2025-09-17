@@ -35,7 +35,7 @@ export const filterMapValidators = (
   );
 
   if (!valConfig) {
-    return { ...yieldDto, validators: yieldDto.validators };
+    return yieldDto;
   }
 
   const { allowed, blocked, preferred, mergePreferredWithDefault } = valConfig;
