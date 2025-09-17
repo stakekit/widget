@@ -5,6 +5,8 @@ import { createElement, forwardRef } from "react";
 import type { Atoms } from "../../../styles/theme/atoms.css";
 import { atoms } from "../../../styles/theme/atoms.css";
 
+export type BoxDataAttributes = { [dataAttibute: `data-${string}`]: string };
+
 export type BoxProps = PropsWithChildren<
   Omit<
     AllHTMLAttributes<HTMLElement>,
@@ -15,7 +17,9 @@ export type BoxProps = PropsWithChildren<
     | "color"
     | "width"
     | "cursor"
-  > & { [dataAttibute: `data-${string}`]: string } & Atoms & {
+  > &
+    BoxDataAttributes &
+    Atoms & {
       as?: ElementType;
       className?: Parameters<typeof classNames>[0];
     }

@@ -26,9 +26,10 @@ import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
 import type { SKExternalProviders } from "../../domain/types/wallets";
+import type { ValidatorsConfig } from "../../domain/types/yields";
 import { getInitParams } from "../../hooks/use-init-params";
 import { useSavedRef } from "../../hooks/use-saved-ref";
-import { useWhitelistedValidators } from "../../hooks/use-whitelisted-validators";
+import { useValidatorsConfig } from "../../hooks/use-validators-config";
 import type { GetEitherAsyncRight } from "../../types/utils";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
@@ -63,7 +64,7 @@ const buildWagmiConfig = async (opts: {
   queryClient: QueryClient;
   isLedgerLive: boolean;
   isSafe: boolean;
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
   chainIconMapping: SettingsProps["chainIconMapping"];
   variant: VariantProps["variant"];
   solanaWallets: SolanaWallet[];
@@ -105,7 +106,7 @@ const buildWagmiConfig = async (opts: {
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
             externalProviders: opts.externalProviders?.current,
-            whitelistedValidatorAddresses: opts.whitelistedValidatorAddresses,
+            validatorsConfig: opts.validatorsConfig,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
           evm.chain((e) =>
@@ -310,7 +311,7 @@ export const useWagmiConfig = () => {
 
   const queryClient = useSKQueryClient();
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   const externalProvidersRef = useSavedRef(externalProviders) as
     | RefObject<SKExternalProviders>
@@ -331,7 +332,7 @@ export const useWagmiConfig = () => {
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),
-        whitelistedValidatorAddresses,
+        validatorsConfig,
         chainIconMapping,
         variant,
         solanaWallets: solanaWallets.wallets,

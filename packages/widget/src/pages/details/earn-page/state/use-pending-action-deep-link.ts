@@ -12,9 +12,10 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../../domain";
+import type { ValidatorsConfig } from "../../../../domain/types/yields";
 import { getYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
 import { getInitParams } from "../../../../hooks/use-init-params";
-import { useWhitelistedValidators } from "../../../../hooks/use-whitelisted-validators";
+import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -29,7 +30,7 @@ export const usePendingActionDeepLink = () => {
 
   const { externalProviders } = useSettings();
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -49,7 +50,7 @@ export const usePendingActionDeepLink = () => {
             address: addr,
             queryClient,
             externalProviders,
-            whitelistedValidatorAddresses,
+            validatorsConfig,
           })
         )
       ).unsafeCoerce(),
@@ -62,20 +63,20 @@ const fn = ({
   address,
   queryClient,
   externalProviders,
-  whitelistedValidatorAddresses,
+  validatorsConfig,
 }: {
   isLedgerLive: boolean;
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
   externalProviders: ReturnType<typeof useSettings>["externalProviders"];
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
 }) =>
   getInitParams({
     isLedgerLive,
     queryClient,
     externalProviders,
-    whitelistedValidatorAddresses,
+    validatorsConfig,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
@@ -142,7 +143,7 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
-              whitelistedValidatorAddresses,
+              validatorsConfig,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<

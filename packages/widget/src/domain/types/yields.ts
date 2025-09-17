@@ -3,6 +3,7 @@ import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
+import type { SupportedSKChains } from "./chains";
 
 export type ExtendedYieldType = YieldType | "native_staking" | "pooled_staking";
 
@@ -12,6 +13,48 @@ type YieldTypeLabelsMap = {
     title: string;
     review: string;
     cta: string;
+  };
+};
+
+export type ValidatorsConfig = Map<
+  SupportedSKChains,
+  {
+    allowed?: Set<string>;
+    blocked?: Set<string>;
+    preferred?: Set<string>;
+    mergePreferredWithDefault?: boolean;
+  }
+>;
+
+export const filterMapValidators = (
+  validatorsConfig: ValidatorsConfig,
+  yieldDto: YieldDto
+): YieldDto => {
+  const valConfig = validatorsConfig.get(
+    yieldDto.token.network as SupportedSKChains
+  );
+
+  if (!valConfig) {
+    return yieldDto;
+  }
+
+  const { allowed, blocked, preferred, mergePreferredWithDefault } = valConfig;
+
+  return {
+    ...yieldDto,
+    validators: yieldDto.validators.flatMap((v) => {
+      if (allowed && !allowed.has(v.address)) return [];
+      if (blocked?.has(v.address)) return [];
+
+      return [
+        {
+          ...v,
+          preferred:
+            preferred?.has(v.address) ||
+            !!(mergePreferredWithDefault && v.preferred),
+        },
+      ];
+    }),
   };
 };
 

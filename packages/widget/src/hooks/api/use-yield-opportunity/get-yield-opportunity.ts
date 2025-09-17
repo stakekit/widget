@@ -3,14 +3,16 @@ import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
 import {
+  filterMapValidators,
   isBittensorStaking,
   isEthenaUsdeStaking,
+  type ValidatorsConfig,
 } from "../../../domain/types/yields";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
   signal?: AbortSignal;
 };
 
@@ -47,7 +49,7 @@ const fn = ({
   isLedgerLive,
   yieldId,
   signal,
-  whitelistedValidatorAddresses,
+  validatorsConfig,
 }: Params & {
   signal?: AbortSignal;
 }) =>
@@ -60,16 +62,7 @@ const fn = ({
       signal
     )
   )
-    .map((y) =>
-      whitelistedValidatorAddresses
-        ? {
-            ...y,
-            validators: y.validators.filter((v) =>
-              whitelistedValidatorAddresses.has(v.address)
-            ),
-          }
-        : y
-    )
+    .map((y) => filterMapValidators(validatorsConfig, y))
     .map((y) =>
       isEthenaUsdeStaking(y.id)
         ? ({

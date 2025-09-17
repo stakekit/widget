@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import type { ValidatorsConfig } from "../../../domain/types/yields";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { useWhitelistedValidators } from "../../use-whitelisted-validators";
+import { useValidatorsConfig } from "../../use-validators-config";
 import { queryFn } from "./get-yield-opportunity";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  whitelistedValidatorAddresses: Set<string> | null;
+  validatorsConfig: ValidatorsConfig;
   signal?: AbortSignal;
 };
 
@@ -20,15 +21,15 @@ const getKey = (params: Params) => [
 export const useYieldOpportunity = (integrationId: string | undefined) => {
   const { isLedgerLive } = useSKWallet();
 
-  const whitelistedValidatorAddresses = useWhitelistedValidators();
+  const validatorsConfig = useValidatorsConfig();
 
   const yieldId = integrationId ?? "";
 
   return useQuery({
-    queryKey: getKey({ yieldId, isLedgerLive, whitelistedValidatorAddresses }),
+    queryKey: getKey({ yieldId, isLedgerLive, validatorsConfig }),
     enabled: !!integrationId,
     staleTime,
     queryFn: ({ signal }) =>
-      queryFn({ yieldId, isLedgerLive, signal, whitelistedValidatorAddresses }),
+      queryFn({ yieldId, isLedgerLive, signal, validatorsConfig }),
   });
 };

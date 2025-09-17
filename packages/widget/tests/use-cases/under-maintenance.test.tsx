@@ -7,9 +7,7 @@ describe("Under maintenance", () => {
   it("Show under maintenance popup", async () => {
     server.use(
       http.get("*/v2/health", async () => {
-        return HttpResponse.json({
-          db: "FAIL",
-        });
+        return HttpResponse.json({ db: "FAIL" });
       })
     );
 

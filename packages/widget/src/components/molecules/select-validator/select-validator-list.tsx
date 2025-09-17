@@ -55,6 +55,7 @@ export const SelectValidatorList = ({
       increaseViewportBy={{ bottom: 50, top: 0 }}
       estimateSize={() => 60}
       groupCounts={groupCounts}
+      data-rk="select-validator-list"
       groupContent={(index) => {
         if (
           groupedItems[index].label === "view_more" ||
