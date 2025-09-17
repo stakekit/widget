@@ -72,14 +72,16 @@
     "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>",
     "campaign_susd": "En savoir plus sur le programme de staking sUSD <link0>ici</link0>",
     "campaign": "Les récompenses sont bloquées jusqu'au 28 mai 2026. Les retraits anticipés peuvent entraîner des pénalités. <link0>En savoir plus</link0>",
-    "lockup_period": "La période de blocage minimum est de {{days}} jours",
+    "lockup_period_one": "La période de blocage minimum est de {{count}} jour",
+    "lockup_period_other": "La période de blocage minimum est de {{count}} jours",
     "native_staking": {
       "earn_after_warmup_one": "Vous commencerez à être récompensé {{count}} jour après avoir fourni vos actifs",
       "earn_after_warmup_other": "Vous commencerez à être récompensé {{count}} jours après avoir fourni vos actifs",
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
       "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement. Vos gains se cumulent, si vous les réclamez et restakez rapidement",
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
-      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours"
+      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
+      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles"
     },
     "vault": {
       "description": "En déposant du {{stakeToken}} vous recevrez du {{depositToken}}. Vous pouvez trader cet actif liquide à tout moment",
@@ -89,7 +91,8 @@
       "earn_yield_auto": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et se cumule automatiquement",
       "earn_yield_manual": "Le yield gagné est mis à jour chaque {{rewardSchedule}} et doit être réclamé manuellement",
       "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
-      "withdrawn_time_days": "En les retirant, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
+      "withdrawn_time_one": "En les retirant, il faut {{count}} jour pour que vos actifs soient disponibles",
+      "withdrawn_time_other": "En les retirant, il faut {{count}} jours pour que vos actifs soient disponibles"
     },
     "lend": {
       "description": "En fournissant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez emprunter contre les actifs fournis sur {{providerName}}",
@@ -99,7 +102,8 @@
       "earn_interest_auto": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et se cumulent automatiquement",
       "earn_interest_manual": "Les intérêts gagnés sont distribués chaque {{rewardSchedule}} et doivent être réclamés manuellement",
       "withdrawn_time_immediately": "En les retirant, vos actifs seront disponibles immédiatement",
-      "withdrawn_time_days": "Après leur retrait, vos actifs seront disponibles sous {{cooldownPeriodDays}} jours"
+      "withdrawn_time_one": "Après leur retrait, vos actifs seront disponibles sous {{count}} jour",
+      "withdrawn_time_other": "Après leur retrait, vos actifs seront disponibles sous {{count}} jours"
     },
     "liquid_stake": {
       "description": "En stakant du {{stakeToken}} vous recevrez des {{rewardTokens}}. Vous pouvez trader cet actif liquide à tout moment",
@@ -108,8 +112,10 @@
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
       "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
-      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
-      "unstake_time_days_with_claim_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours. Vous devez les réclamer sous {{claimDays}} jours, sans quoi il faudra les staker à nouveau.",
+      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
+      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles",
+      "unstake_time_days_with_claim_one": "{{unstakeTime}}. Ils doivent être réclamés sous {{count}} jour, sans quoi il faudra les staker à nouveau.",
+      "unstake_time_days_with_claim_other": "{{unstakeTime}}. Ils doivent être réclamés sous {{count}} jours, sans quoi il faudra les staker à nouveau.",
       "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
     },
     "restake": {
@@ -119,7 +125,8 @@
       "earn_rewards_auto": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et cumulées à votre position automatiquement",
       "earn_rewards_manual": "Les récompenses gagnées sont distribuées chaque {{rewardSchedule}} et doivent être réclamées manuellement",
       "unstake_time_immediately": "En les déstakant, vos actifs seront disponibles immédiatement",
-      "unstake_time_days": "En les déstakant, vos tokens seront disponibles sous {{cooldownPeriodDays}} jours",
+      "unstake_time_one": "En les déstakant, il faut {{count}} jour pour que vos tokens soient disponibles",
+      "unstake_time_other": "En les déstakant, il faut {{count}} jours pour que vos tokens soient disponibles",
       "withdrawn_not_available": "Les retraits ne sont pas disponibles pour le moment. Pour liquider votre position, vous pouvez vendre {{rewardTokens}} à tout moment sur les DEXs"
     },
     "extra_tezos": "Vous pouvez utiliser ou envoyer des XTZ stakés normalement",

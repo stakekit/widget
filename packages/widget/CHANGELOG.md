@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.253
+
+### Patch Changes
+
+- 4d2ff10: feat: validators config
+- 7d2bc01: feat: add hoodi icon
+
 ## 0.0.252
 
 ### Patch Changes

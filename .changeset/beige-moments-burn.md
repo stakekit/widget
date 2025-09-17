@@ -2,4 +2,4 @@
 "@stakekit/widget": patch
 ---
 
-feat: validators config
+fix: translation plurals

@@ -72,14 +72,16 @@
     "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",
     "campaign_susd": "Learn more about sUSD staking program <link0>here</link0>",
     "campaign": "Rewards are locked until 28 May 2026. Early withdrawals may incur penalties. <link0>Learn more</link0>",
-    "lockup_period": "Minimum lock up time is {{days}} days",
+    "lockup_period_one": "Minimum lock up time is {{count}} day",
+    "lockup_period_other": "Minimum lock up time is {{count}} days",
     "native_staking": {
       "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually. Your earnings compound, if you claim and restake quickly",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available"
+      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
+      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available"
     },
     "vault": {
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
@@ -89,7 +91,8 @@
       "earn_yield_auto": "Earned yield is updated each {{rewardSchedule}} and accrues automatically",
       "earn_yield_manual": "Earned yield is updated each {{rewardSchedule}} and needs to be claimed manually",
       "withdrawn_time_immediately": "When withdrawing, your assets will be available immediately",
-      "withdrawn_time_days": "When withdrawing it takes {{cooldownPeriodDays}} days for your assets will be available"
+      "withdrawn_time_one": "When withdrawing it takes {{count}} day for your assets will be available",
+      "withdrawn_time_other": "When withdrawing it takes {{count}} days for your assets will be available"
     },
     "lend": {
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
@@ -99,7 +102,8 @@
       "earn_interest_auto": "Earned interest is distributed each {{rewardSchedule}} and accrues automatically",
       "earn_interest_manual": "Earned interest is distributed each {{rewardSchedule}} and needs to be claimed manually",
       "withdrawn_time_immediately": "Upon withdrawing, your assets will be available immediately",
-      "withdrawn_time_days": "After withdrawing, your assets will be available in {{cooldownPeriodDays}} days"
+      "withdrawn_time_one": "After withdrawing, your assets will be available in {{count}} day",
+      "withdrawn_time_other": "After withdrawing, your assets will be available in {{count}} days"
     },
     "liquid_stake": {
       "description": "When you liquid stake {{stakeToken}} you'll receive {{rewardTokens}}. You can trade this liquid asset at any time",
@@ -108,8 +112,10 @@
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
-      "unstake_time_days_with_claim_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available. They need to be claimed within {{claimDays}} days, otherwise they'll need to be staked again.",
+      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
+      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available",
+      "unstake_time_days_with_claim_one": "{{unstakeTime}}. They need to be claimed within {{count}} day, otherwise they'll need to be staked again.",
+      "unstake_time_days_with_claim_other": "{{unstakeTime}}. They need to be claimed within {{count}} days, otherwise they'll need to be staked again.",
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "restake": {
@@ -119,7 +125,8 @@
       "earn_rewards_auto": "Earned rewards are distributed each {{rewardSchedule}} and accrue to your position automatically",
       "earn_rewards_manual": "Earned rewards are distributed each {{rewardSchedule}} and need to be claimed manually",
       "unstake_time_immediately": "When unstaking, your assets will be available immediately",
-      "unstake_time_days": "When unstaking it takes {{cooldownPeriodDays}} days for your tokens to be available",
+      "unstake_time_one": "When unstaking it takes {{count}} day for your tokens to be available",
+      "unstake_time_other": "When unstaking it takes {{count}} days for your tokens to be available",
       "withdrawn_not_available": "Withdrawals aren't available at the moment. To exit your position you can sell {{rewardTokens}} any time on DEXs"
     },
     "extra_tezos": "You can use or send staked XTZ as normal",
