@@ -39,9 +39,19 @@ export const getInitialToken = (args: {
     .filter((val) => !!val.token)
     .chain((val) =>
       List.find(
-        (t) =>
-          (t.token.symbol === val.token && t.token.network === val.network) ||
-          tokenString(t.token) === val.token,
+        (t) => {
+          const tokenSymbolCompare =
+            val.token?.toLowerCase() === t.token.symbol.toLowerCase();
+
+          const tokenNetworkCompare =
+            val.network?.toLowerCase() === t.token.network.toLowerCase();
+
+          const tokenStringCompare = tokenString(t.token) === val.token;
+
+          return (
+            (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare
+          );
+        },
         [...args.tokenBalances, ...args.defaultTokens]
       )
     )
@@ -85,7 +95,8 @@ export const canBeInitialYield = (args: {
   args.initQueryParams
     .chain((queryParams) =>
       Maybe.fromFalsy(
-        !!queryParams.yieldId && queryParams.yieldId === args.yieldDto.id
+        !!queryParams.yieldId &&
+          queryParams.yieldId.toLowerCase() === args.yieldDto.id.toLowerCase()
       )
     )
     .altLazy(() =>
@@ -120,7 +131,9 @@ export const getInitSelectedValidators = (args: {
     .chainNullable((params) => params.validator)
     .chain((initV) =>
       List.find(
-        (val) => val.name === initV || val.address === initV,
+        (val) =>
+          val.name?.toLowerCase() === initV.toLowerCase() ||
+          val.address === initV,
         args.yieldDto.validators
       )
     )
