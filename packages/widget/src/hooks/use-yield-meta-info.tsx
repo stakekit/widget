@@ -110,7 +110,7 @@ export const useYieldMetaInfo = ({
           ) : null,
         lockupPeriod: y.metadata.lockupPeriod?.days
           ? t("details.lockup_period", {
-              days: y.metadata.lockupPeriod?.days,
+              count: y.metadata.lockupPeriod?.days,
             })
           : null,
         extra:
@@ -143,8 +143,8 @@ export const useYieldMetaInfo = ({
                   }),
             withdrawnTime:
               cooldownPeriodDays > 0
-                ? t("details.native_staking.unstake_time_days", {
-                    cooldownPeriodDays,
+                ? t("details.native_staking.unstake_time", {
+                    count: cooldownPeriodDays,
                   })
                 : t("details.native_staking.unstake_time_immediately"),
             withdrawnNotAvailable: null,
@@ -166,8 +166,8 @@ export const useYieldMetaInfo = ({
                 : t("details.lend.earn_interest_auto", { rewardSchedule }),
             withdrawnTime:
               cooldownPeriodDays > 0
-                ? t("details.lend.withdrawn_time_days", {
-                    cooldownPeriodDays,
+                ? t("details.lend.withdrawn_time", {
+                    count: cooldownPeriodDays,
                   })
                 : t("details.lend.withdrawn_time_immediately"),
             description: isCompound
@@ -203,7 +203,9 @@ export const useYieldMetaInfo = ({
                 : t("details.vault.earn_yield_auto", { rewardSchedule }),
             withdrawnTime:
               cooldownPeriodDays > 0
-                ? t("details.vault.withdrawn_time_days", { cooldownPeriodDays })
+                ? t("details.vault.withdrawn_time", {
+                    count: cooldownPeriodDays,
+                  })
                 : t("details.vault.withdrawn_time_immediately"),
             withdrawnNotAvailable: null,
             ...def,
@@ -231,14 +233,16 @@ export const useYieldMetaInfo = ({
                   }),
             withdrawnTime: y.status.exit
               ? cooldownPeriodDays > 0
-                ? t("details.liquid_stake.unstake_time_days", {
-                    cooldownPeriodDays,
-                    claimDays: y.metadata.withdrawPeriod?.days ?? 0,
-                    context:
-                      (y.metadata.withdrawPeriod?.days ?? 0) > 0
-                        ? "with_claim_days"
-                        : undefined,
-                  })
+                ? (y.metadata.withdrawPeriod?.days ?? 0) > 0
+                  ? t("details.liquid_stake.unstake_time_days_with_claim", {
+                      unstakeTime: t("details.liquid_stake.unstake_time", {
+                        count: cooldownPeriodDays,
+                      }),
+                      count: y.metadata.withdrawPeriod?.days,
+                    })
+                  : t("details.liquid_stake.unstake_time", {
+                      count: cooldownPeriodDays,
+                    })
                 : t("details.liquid_stake.unstake_time_immediately")
               : null,
             withdrawnNotAvailable: !y.status.exit
@@ -263,16 +267,12 @@ export const useYieldMetaInfo = ({
                 : null,
             earnRewards:
               rewardClaiming === "manual"
-                ? t("details.restake.earn_rewards_manual", {
-                    rewardSchedule,
-                  })
-                : t("details.restake.earn_rewards_auto", {
-                    rewardSchedule,
-                  }),
+                ? t("details.restake.earn_rewards_manual", { rewardSchedule })
+                : t("details.restake.earn_rewards_auto", { rewardSchedule }),
             withdrawnTime: y.status.exit
               ? cooldownPeriodDays > 0
-                ? t("details.restake.unstake_time_days", {
-                    cooldownPeriodDays,
+                ? t("details.restake.unstake_time", {
+                    count: cooldownPeriodDays,
                   })
                 : t("details.restake.unstake_time_immediately")
               : null,
