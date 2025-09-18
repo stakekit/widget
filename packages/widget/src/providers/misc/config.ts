@@ -50,15 +50,16 @@ const queryFn = async ({
           v.getTronConnectors({ forceWalletConnectOnly })
         )
     ),
-    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.solana)).chain(
-      () =>
-        MaybeAsync(() => import("./solana-connector")).map((v) =>
-          v.getSolanaConnectors({
-            forceWalletConnectOnly,
-            wallets: solanaWallets,
-            connection: solanaConnection,
-          })
-        )
+    MaybeAsync.liftMaybe(
+      Maybe.fromFalsy(filteredMiscChainsMap.solana && !config.env.isTestMode)
+    ).chain(() =>
+      MaybeAsync(() => import("./solana-connector")).map((v) =>
+        v.getSolanaConnectors({
+          forceWalletConnectOnly,
+          wallets: solanaWallets,
+          connection: solanaConnection,
+        })
+      )
     ),
   ]).then((connectors) => ({
     miscChainsMap: filteredMiscChainsMap,
