@@ -16,3 +16,5 @@ onlyBuiltDependencies:
   - sharp
   - tiny-secp256k1
   - utf-8-validate
+
+minimumReleaseAge: 4320

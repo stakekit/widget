@@ -7,7 +7,7 @@ import { usePrices } from "../../../../hooks/api/use-prices";
 import { useRewardsSummary } from "../../../../hooks/use-rewards-summary";
 import { usePositionListItem as useBasePositionListItem } from "../../../../pages/details/positions-page/hooks/use-position-list-item";
 import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
-import { formatNumber } from "../../../../utils";
+import { defaultFormattedNumber } from "../../../../utils";
 
 export const usePositionListItem = (
   item: ReturnType<typeof usePositions>["positionsData"]["data"][number]
@@ -46,7 +46,7 @@ export const usePositionListItem = (
     () =>
       rewardsSummary
         .map((val) => BigNumber(val.rewards.total))
-        .map((v) => formatNumber(v, 2)),
+        .map(defaultFormattedNumber),
     [rewardsSummary]
   );
 
@@ -67,7 +67,7 @@ export const usePositionListItem = (
             prices: val.prices,
           })
         )
-        .map((v) => formatNumber(v, 2)),
+        .map(defaultFormattedNumber),
     [totalAmount, baseToken, prices, tokenToDisplay]
   );
 
@@ -87,7 +87,7 @@ export const usePositionListItem = (
             prices: val.prices,
           })
         )
-        .map((v) => formatNumber(v, 2)),
+        .map(defaultFormattedNumber),
     [rewardsSummary, baseToken, prices]
   );
 
