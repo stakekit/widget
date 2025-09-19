@@ -1,5 +1,6 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Fragment } from "react";
+import { useSettings } from "../../../providers/settings";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../box";
 import { CaretDownIcon } from "../icons/caret-down";
@@ -27,6 +28,8 @@ export function Dropdown<T extends { label: string; value: string }>({
   placeholder,
   isError,
 }: DropdownProps<T>) {
+  const { portalContainer } = useSettings();
+
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
@@ -46,7 +49,7 @@ export function Dropdown<T extends { label: string; value: string }>({
         </Box>
       </DropdownMenu.Trigger>
 
-      <DropdownMenu.Portal>
+      <DropdownMenu.Portal container={portalContainer}>
         <Box data-rk={id}>
           <DropdownMenu.Content className={dropdownContent} sideOffset={3}>
             <DropdownMenu.RadioGroup
