@@ -1,5 +1,15 @@
 # @stakekit/widget
 
+## 0.0.254
+
+### Patch Changes
+
+- 665fd01: fix: translation plurals
+- a37aef7: fix: formatting
+- 86fd13d: fix: query params lowercase compare
+- d1e87c8: fix: portal container
+- 4d52c81: fix: styling
+
 ## 0.0.253
 
 ### Patch Changes
