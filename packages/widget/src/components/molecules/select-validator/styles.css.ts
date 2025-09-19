@@ -1,5 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../styles/theme/atoms.css";
+import { vars } from "../../../styles/theme/contract.css";
 
 export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
@@ -24,3 +25,11 @@ export const inactiveContainer = style([
 ]);
 
 export const noWrap = style({ whiteSpace: "nowrap" });
+
+export const addressParent = style({});
+
+export const addressHover = style({
+  selectors: {
+    [`${addressParent}:hover &`]: { color: vars.color.text },
+  },
+});

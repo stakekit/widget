@@ -112,3 +112,28 @@ export const bottomBanner = style([
 export const bottomBannerText = style({
   fontSize: "12px",
 });
+
+export const minMaxContainer = recipe({
+  base: [
+    atoms({
+      display: "flex",
+      justifyContent: "flex-end",
+      alignItems: "center",
+    }),
+  ],
+  variants: {
+    variant: {
+      default: atoms({
+        marginRight: "2",
+        marginTop: "2",
+      }),
+      utila: atoms({
+        marginTop: "2",
+      }),
+      zerion: {},
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});

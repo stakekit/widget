@@ -25,7 +25,9 @@ export const formatNumber = (
 ) =>
   Just(BigNumber(number))
     .map((v) =>
-      decimals ? v.decimalPlaces(decimals, BigNumber.ROUND_DOWN) : v
+      typeof decimals === "number"
+        ? v.decimalPlaces(decimals, BigNumber.ROUND_DOWN)
+        : v
     )
     .map((v) => v.toFormat())
     .unsafeCoerce();

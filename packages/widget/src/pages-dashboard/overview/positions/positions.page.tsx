@@ -9,9 +9,11 @@ import { ZerionChainModal } from "../../../components/molecules/zerion-chain-mod
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { FallbackContent } from "../../../pages/details/positions-page/components/fallback-content";
 import { usePositions } from "../../../pages/details/positions-page/hooks/use-positions";
+import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import { PositionsListItem } from "./components/positions-list-item";
-import { container, headerContainer } from "./styles.css";
+import { container, headerContainer, positionsTitle } from "./styles.css";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
@@ -21,6 +23,7 @@ export const PositionsPage = () => {
   const { isConnected, isConnecting } = useSKWallet();
 
   const { t } = useTranslation();
+  const { variant } = useSettings();
 
   const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
@@ -65,7 +68,14 @@ export const PositionsPage = () => {
       {showPositions && (
         <>
           <Box my="1" display="flex" alignItems="center" gap="1">
-            <Text variant={{ size: "medium" }}>Positions</Text>
+            <Text
+              className={combineRecipeWithVariant({
+                rec: positionsTitle,
+                variant,
+              })}
+            >
+              Positions
+            </Text>
 
             <ToolTip
               maxWidth={300}
@@ -105,13 +115,14 @@ export const PositionsPage = () => {
 function THead() {
   const { t } = useTranslation();
 
+  const { variant } = useSettings();
+
   return (
     <Box
-      className={headerContainer}
-      display="flex"
-      alignItems="center"
-      py="1"
-      gap="1"
+      className={combineRecipeWithVariant({
+        rec: headerContainer,
+        variant,
+      })}
     >
       <Text flex={5}>{t("dashboard.details.positions_yield")}</Text>
       <Text flex={3}>{t("dashboard.details.positions_reward_rate")}</Text>

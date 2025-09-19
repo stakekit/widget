@@ -8,7 +8,6 @@ import {
   CollapsibleRoot,
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
-import * as CopyText from "../../../components/atoms/copy-text";
 import { Divider } from "../../../components/atoms/divider";
 import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 import { Image } from "../../../components/atoms/image";
@@ -17,12 +16,7 @@ import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import type { GetMaybeJust } from "../../../types/utils";
-import {
-  addressHover,
-  addressParent,
-  inactiveContainer,
-  noWrap,
-} from "./styles.css";
+import { inactiveContainer, noWrap } from "./styles.css";
 
 export const ProviderDetails = ({
   stakeType,
@@ -149,28 +143,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
               <Text variant={{ weight: "normal" }}>{val.title}</Text>
 
               {key === "address" && props.address ? (
-                <CopyText.Provider text={props.address}>
-                  <CopyText.Root>
-                    <Box display="flex" gap="1" className={addressParent}>
-                      <Text
-                        variant={{ type: "muted", weight: "normal" }}
-                        className={addressHover}
-                      >
-                        {val.val}
-                      </Text>
-
-                      <CopyText.AnimatedContent>
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <CopyText.Icons hw={16} />
-                        </Box>
-                      </CopyText.AnimatedContent>
-                    </Box>
-                  </CopyText.Root>
-                </CopyText.Provider>
+                val.val
               ) : (
                 <Text variant={{ type: "muted", weight: "normal" }}>
                   {val.val}

@@ -4,12 +4,16 @@ import { Just } from "purify-ts";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import * as CopyText from "../../../components/atoms/copy-text";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
 import { SKAnchor } from "../../atoms/anchor";
+import { Box } from "../../atoms/box";
+import { Text } from "../../atoms/typography/text";
+import { addressHover, addressParent } from "./styles.css";
 
 export const useMetaInfo = ({
   commission,
@@ -108,7 +112,33 @@ export const useMetaInfo = ({
       address: address
         ? {
             title: t("details.validators_address"),
-            val: formatAddress(address, { leadingChars: 6, trailingChars: 6 }),
+            val: (
+              <CopyText.Provider text={address}>
+                <CopyText.Root>
+                  <Box display="flex" gap="1" className={addressParent}>
+                    <Text
+                      variant={{ type: "muted", weight: "normal" }}
+                      className={addressHover}
+                    >
+                      {formatAddress(address, {
+                        leadingChars: 8,
+                        trailingChars: 8,
+                      })}
+                    </Text>
+
+                    <CopyText.AnimatedContent>
+                      <Box
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        <CopyText.Icons hw={16} />
+                      </Box>
+                    </CopyText.AnimatedContent>
+                  </Box>
+                </CopyText.Root>
+              </CopyText.Provider>
+            ),
           }
         : null,
       website: website
