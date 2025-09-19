@@ -50,8 +50,41 @@ export const container = style({
   height: "100%",
 });
 
-export const headerContainer = style({
-  paddingLeft: "10px",
-  paddingRight: "10px",
-  textAlign: "left",
+export const headerContainer = recipe({
+  base: atoms({
+    display: "flex",
+    alignItems: "center",
+    gap: "1",
+    py: "1",
+    textAlign: "left",
+  }),
+  variants: {
+    variant: {
+      default: {
+        paddingLeft: "10px",
+        paddingRight: "10px",
+      },
+      utila: {},
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+});
+
+export const positionsTitle = recipe({
+  variants: {
+    variant: {
+      default: atoms({
+        fontSize: "md",
+      }),
+      utila: {
+        fontSize: "16px",
+      },
+      finery: {},
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
 });

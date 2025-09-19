@@ -18,6 +18,7 @@ import {
   bottomBanner,
   bottomBannerBottomRadius,
   bottomBannerText,
+  minMaxContainer,
   priceTxt,
   selectTokenBalance,
   selectTokenSection,
@@ -91,10 +92,10 @@ export const SelectTokenSection = () => {
     .filter((val) => val.some(Boolean))
     .map(([min, max]) => (
       <Box
-        display="flex"
-        justifyContent="flex-end"
-        alignItems="center"
-        {...(variant !== "zerion" && { marginRight: "2", marginTop: "2" })}
+        className={combineRecipeWithVariant({
+          rec: minMaxContainer,
+          variant,
+        })}
         data-rk="stake-token-section-min-max"
       >
         <Text

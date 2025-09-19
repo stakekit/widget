@@ -16,7 +16,7 @@ import { container } from "./styles.css";
 
 type CopyTextContextType = {
   showCopySuccess: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLElement>) => void;
 };
 
 const CopyTextContext = createContext<CopyTextContextType | undefined>(
@@ -42,10 +42,14 @@ export const Provider = ({
 }) => {
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
-  const onClick = useCallback(() => {
-    MaybeWindow.ifJust((w) => w.navigator.clipboard.writeText(text));
-    setShowCopySuccess(true);
-  }, [text]);
+  const onClick = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      e.stopPropagation();
+      MaybeWindow.ifJust((w) => w.navigator.clipboard.writeText(text));
+      setShowCopySuccess(true);
+    },
+    [text]
+  );
 
   useEffect(() => {
     if (!showCopySuccess) return;
