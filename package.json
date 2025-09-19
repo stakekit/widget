@@ -26,7 +26,7 @@
     "knip": "^5.62.0",
     "turbo": "^2.5.5"
   },
-  "packageManager": "pnpm@10.12.2",
+  "packageManager": "pnpm@10.17.0",
   "pnpm": {
     "overrides": {
       "@types/react": "19.0.10",
