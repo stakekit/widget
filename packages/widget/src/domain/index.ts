@@ -19,7 +19,7 @@ export const tokenString = (token: TokenDto): TokenString => {
 };
 
 export const equalTokens = (a: TokenDto, b: TokenDto) =>
-  tokenString(a) === tokenString(b);
+  tokenString(a) === tokenString(b) && a.symbol === b.symbol;
 
 export const stakeTokenSameAsGasToken = ({
   stakeToken,
