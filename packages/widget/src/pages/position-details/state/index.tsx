@@ -8,7 +8,14 @@ import type {
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
-import { createContext, useContext, useMemo, useReducer } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from "react";
 import { config } from "../../../config";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import { usePrices } from "../../../hooks/api/use-prices";
@@ -52,7 +59,27 @@ export const UnstakeOrPendingActionProvider = ({
 
   const baseToken = useBaseToken(integrationData);
 
-  const positionBalances = usePositionBalances({ balanceId, integrationId });
+  const positionBalancesRemote = usePositionBalances({
+    balanceId,
+    integrationId,
+  });
+
+  const lastExistingPositionBalances = useRef(positionBalancesRemote);
+
+  useEffect(() => {
+    if (positionBalancesRemote.data.isNothing()) {
+      return;
+    }
+
+    lastExistingPositionBalances.current = positionBalancesRemote;
+  }, [positionBalancesRemote]);
+
+  /**
+   * Prevent position balance being removed after unstake
+   */
+  const positionBalances = positionBalancesRemote.data.isJust()
+    ? positionBalancesRemote
+    : lastExistingPositionBalances.current;
 
   const positionBalancePrices = usePrices(
     useMemo(

@@ -201,5 +201,5 @@ export const getMinUnstakeAmount = (
     return integrationMin;
   }
 
-  return integrationMin.dividedBy(pricePerShareBN);
+  return integrationMin.dividedBy(pricePerShareBN).decimalPlaces(8);
 };
