@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.255
+
+### Patch Changes
+
+- 4ec5759: fix: dashboard unstake missing position
+- 40e49c3: fix: token equals
+
 ## 0.0.254
 
 ### Patch Changes
