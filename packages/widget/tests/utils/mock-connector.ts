@@ -31,6 +31,11 @@ export const rkMockWallet =
             ios: "https://fake-uri.com/ios",
             qrCode: "https://fake-uri.com/qr",
           },
+          chainGroup: {
+            id: "mock-wallet",
+            title: "Mock Wallet",
+            iconUrl: "https://my-image.xyz",
+          },
           createConnector: () => (config) => ({
             ...mockConnector({
               accounts,

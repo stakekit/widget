@@ -1,5 +1,5 @@
 import { SubstrateNetworks } from "@stakekit/common";
-import type { Chain } from "@stakekit/rainbowkit";
+import type { Chain, ChainGroup } from "@stakekit/rainbowkit";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
 
@@ -21,7 +21,7 @@ export type SubstrateChainsMap = {
   };
 };
 
-const polkadot = {
+export const polkadot = {
   id: 9999,
   name: "Polkadot",
   iconUrl: getNetworkLogo(SubstrateNetworks.Polkadot),
@@ -87,3 +87,9 @@ SubstrateChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedSubstrateChains>>,
   number
 >;
+
+export const polkadotChainGroup = {
+  iconUrl: getNetworkLogo(SubstrateNetworks.Polkadot),
+  title: "Polkadot",
+  id: "polkadot",
+} satisfies ChainGroup;

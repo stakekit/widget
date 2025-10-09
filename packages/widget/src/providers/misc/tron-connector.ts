@@ -1,5 +1,7 @@
+import { MiscNetworks } from "@stakekit/common";
 import type {
   Chain,
+  ChainGroup,
   WalletDetailsParams,
   WalletList,
 } from "@stakekit/rainbowkit";
@@ -16,7 +18,7 @@ import { images } from "../../assets/images";
 import { config } from "../../config";
 import { tron } from "../../domain/types/chains/misc";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { getTokenLogo } from "../../utils";
+import { getNetworkLogo, getTokenLogo } from "../../utils";
 import type { ExtraProps } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";
 
@@ -45,7 +47,8 @@ const createTronConnector = ({
       return {
         accounts: [adapter.address as Address],
         chainId: tron.id,
-      };
+        // biome-ignore lint: false
+      } as any;
     },
     disconnect: () => {
       setStorageItem("sk-widget@1//shimDisconnect/tron", false);
@@ -94,6 +97,7 @@ export const getTronConnectors = ({
     iconUrl: images.wcLogo,
     iconBackground: "#fff",
     installed: true,
+    chainGroup: tronChainGroup,
     createConnector: (walletDetailsParams) =>
       createTronConnector({
         walletDetailsParams,
@@ -111,6 +115,12 @@ export const getTronConnectors = ({
       }),
   });
 
+  const tronChainGroup = {
+    iconUrl: getNetworkLogo(MiscNetworks.Tron),
+    title: "Tron",
+    id: "tron",
+  } satisfies ChainGroup;
+
   return {
     groupName: "Tron",
     wallets: forceWalletConnectOnly
@@ -121,6 +131,7 @@ export const getTronConnectors = ({
             name: configMeta.tronLink.name,
             iconUrl: getTokenLogo("trx"),
             iconBackground: "#fff",
+            chainGroup: tronChainGroup,
             createConnector: (walletDetailsParams) =>
               createTronConnector({
                 walletDetailsParams,
@@ -134,6 +145,7 @@ export const getTronConnectors = ({
             name: configMeta.tronBg.name,
             iconUrl: images.bitget,
             iconBackground: "#fff",
+            chainGroup: tronChainGroup,
             createConnector: (walletDetailsParams) =>
               createTronConnector({
                 walletDetailsParams,
@@ -146,6 +158,7 @@ export const getTronConnectors = ({
             name: configMeta.tronLedger.name,
             iconUrl: images.ledgerLogo,
             iconBackground: "#fff",
+            chainGroup: tronChainGroup,
             createConnector: (walletDetailsParams) =>
               createTronConnector({
                 walletDetailsParams,

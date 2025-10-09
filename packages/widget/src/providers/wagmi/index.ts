@@ -13,6 +13,8 @@ import type {
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
+import uniqwith from "lodash.uniqwith";
+import { createStore } from "mipd";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import { createClient } from "viem";
@@ -21,6 +23,7 @@ import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
 import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { config } from "../../config";
+import { ethereumChainGroup } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
@@ -43,6 +46,8 @@ import { getConfig as getSafeConnector } from "../safe/config";
 import { useSettings } from "../settings";
 import type { SettingsProps, VariantProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
+
+const mipdStore = createStore();
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -77,9 +82,7 @@ const buildWagmiConfig = async (opts: {
   wagmiConfig: ReturnType<typeof createConfig>;
   queryParamsInitChainId: number | undefined;
 }> => {
-  return getEnabledNetworks({
-    queryClient: opts.queryClient,
-  })
+  return getEnabledNetworks({ queryClient: opts.queryClient })
     .chain((networks) =>
       EitherAsync.fromPromise(() =>
         Promise.all([
@@ -232,6 +235,7 @@ const buildWagmiConfig = async (opts: {
         return Maybe.catMaybes([
           evmConfig.connector,
           cosmosConfig.connector,
+          substrateConfig.connector,
           ...miscConfig.connectors,
         ]);
       })().map((val) => ({
@@ -268,18 +272,49 @@ const buildWagmiConfig = async (opts: {
         .map((c) => c.wagmiChain.id)
         .extract();
 
+      const wagmiConfig = createConfig({
+        chains,
+        client: ({ chain }) => createClient({ chain, transport: http() }),
+        multiInjectedProviderDiscovery: false,
+        connectors: connectorsForWallets(walletList, {
+          appName: config.appName,
+          appIcon: config.appIcon,
+          projectId: config.walletConnectV2.projectId,
+        }),
+      });
+
+      if (multiInjectedProviderDiscovery && evmConfig.evmChains.length > 0) {
+        wagmiConfig._internal.connectors.setState((prev) => [
+          ...prev,
+          ...uniqwith(
+            mipdStore.getProviders(),
+            (a, b) => a.info.rdns === b.info.rdns
+          ).map((p) => ({
+            rkDetails: { chainGroup: ethereumChainGroup },
+            ...wagmiConfig._internal.connectors.setup(
+              wagmiConfig._internal.connectors.providerDetailToConnector(p)
+            ),
+          })),
+        ]);
+
+        mipdStore.subscribe((providers) => {
+          wagmiConfig._internal.connectors.setState((prev) => [
+            ...prev,
+            ...uniqwith(providers, (a, b) => a.info.rdns === b.info.rdns).map(
+              (p) => ({
+                rkDetails: { chainGroup: ethereumChainGroup },
+                ...wagmiConfig._internal.connectors.setup(
+                  wagmiConfig._internal.connectors.providerDetailToConnector(p)
+                ),
+              })
+            ),
+          ]);
+        });
+      }
+
       return {
         ...val,
-        wagmiConfig: createConfig({
-          chains,
-          client: ({ chain }) => createClient({ chain, transport: http() }),
-          multiInjectedProviderDiscovery,
-          connectors: connectorsForWallets(walletList, {
-            appName: config.appName,
-            appIcon: config.appIcon,
-            projectId: config.walletConnectV2.projectId,
-          }),
-        }),
+        wagmiConfig,
         queryParamsInitChainId,
       };
     })
@@ -317,7 +352,7 @@ export const useWagmiConfig = () => {
     | RefObject<SKExternalProviders>
     | RefObject<undefined>;
 
-  return useQuery({
+  const wagmiConfigQuery = useQuery({
     staleTime,
     queryKey,
     queryFn: () =>
@@ -339,6 +374,8 @@ export const useWagmiConfig = () => {
         solanaConnection: solanaConnection.connection,
       }),
   });
+
+  return wagmiConfigQuery;
 };
 
 export const defaultConfig = createConfig({

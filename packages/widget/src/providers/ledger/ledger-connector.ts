@@ -395,6 +395,11 @@ export const ledgerLiveConnector = ({
       name: configMeta.name,
       iconUrl: images.ledgerLogo,
       iconBackground: "#fff",
+      chainGroup: {
+        id: configMeta.id,
+        title: configMeta.name,
+        iconUrl: images.ledgerLogo,
+      },
       hidden: () => !isLedgerDappBrowserProvider(),
       createConnector: (walletDetailsParams) =>
         createLedgerLiveConnector({

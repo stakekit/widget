@@ -199,7 +199,7 @@ describe("Select opportunity", () => {
     getByText("Connect Wallet").click();
 
     await waitFor(() =>
-      expect(getByText("Connect a Wallet")).toBeInTheDocument()
+      expect(getByText("Select a Chain")).toBeInTheDocument()
     );
 
     await getByTestId("select-opportunity").click();

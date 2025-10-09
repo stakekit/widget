@@ -128,7 +128,7 @@ export const unsignedTonTransactionCodec = oneOf([
 
 export type DecodedTonTransaction = GetType<typeof unsignedTonTransactionCodec>;
 
-export const bittensorPayloadCodec = Codec.interface({
+export const substratePayloadCodec = Codec.interface({
   tx: Codec.interface({
     address: string,
     assetId: optional(hexStringCodec),
@@ -152,4 +152,4 @@ export const bittensorPayloadCodec = Codec.interface({
   metadataRpc: hexStringCodec,
 });
 
-export type DecodedBittensorTransaction = GetType<typeof bittensorPayloadCodec>;
+export type DecodedSubstrateTransaction = GetType<typeof substratePayloadCodec>;

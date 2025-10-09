@@ -136,6 +136,11 @@ export const safeConnector = (): WalletList[number] => ({
       name: configMeta.name,
       iconUrl: "",
       iconBackground: "#fff",
+      chainGroup: {
+        id: configMeta.id,
+        title: configMeta.name,
+        iconUrl: "",
+      },
       createConnector: () => safe({ shimDisconnect: true }),
     }),
   ],

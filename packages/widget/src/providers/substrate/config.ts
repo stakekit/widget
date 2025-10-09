@@ -1,5 +1,6 @@
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
-import { EitherAsync } from "purify-ts";
+import { EitherAsync, Maybe } from "purify-ts";
 import { config } from "../../config";
 import {
   type SubstrateChainsMap,
@@ -7,11 +8,23 @@ import {
 } from "../../domain/types/chains/substrate";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
+import { getSubstrateConnectors } from "./substrate-connector";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
-const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
+const queryFn = async ({
+  queryClient,
+}: {
+  queryClient: QueryClient;
+}): Promise<{
+  substrateChainsMap: Partial<SubstrateChainsMap>;
+  substrateChains: Chain[];
+  connector: Maybe<{
+    groupName: string;
+    wallets: WalletList[number]["wallets"];
+  }>;
+}> =>
   getEnabledNetworks({ queryClient }).caseOf({
     Right: (networks) => {
       const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
@@ -28,6 +41,9 @@ const queryFn = async ({ queryClient }: { queryClient: QueryClient }) =>
       return Promise.resolve({
         substrateChainsMap: filteredSubstrateChainsMap,
         substrateChains,
+        connector: Maybe.fromFalsy(substrateChains.length > 0).map(() =>
+          getSubstrateConnectors(substrateChains)
+        ),
       });
     },
     Left: (l) => Promise.reject(l),

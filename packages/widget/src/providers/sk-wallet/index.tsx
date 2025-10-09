@@ -25,8 +25,8 @@ import {
   isTronChain,
 } from "../../domain/types/chains";
 import {
-  bittensorPayloadCodec,
   decodeAndPrepareEvmTransaction,
+  substratePayloadCodec,
   unsignedEVMTransactionCodec,
   unsignedSolanaTransactionCodec,
   unsignedTonTransactionCodec,
@@ -48,6 +48,7 @@ import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 import { isSolanaConnector } from "../misc/solana-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isSafeConnector } from "../safe/safe-connector-meta";
+import { isSubstrateConnector } from "../substrate/substrate-connector-meta";
 import { useWagmiConfig } from "../wagmi";
 import {
   SafeFailedError,
@@ -216,6 +217,22 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               .map((val) => ({ signedTx: val, broadcasted: true }));
           }
 
+          if (isSubstrateConnector(conn)) {
+            return EitherAsync.liftEither(
+              Either.encase(() => JSON.parse(tx))
+                .mapLeft(() => "Failed to parse tx")
+                .chain((val) => substratePayloadCodec.decode(val))
+            )
+              .chain((decodedPayload) =>
+                conn.signTransaction({ ...decodedPayload, rawTx: tx })
+              )
+              .map((signedTx) => ({ signedTx, broadcasted: false }))
+              .chainLeft((e) => {
+                console.log(e);
+                return EitherAsync.liftEither(Left(new SendTransactionError()));
+              });
+          }
+
           /**
            * Cosmos connector
            */
@@ -297,7 +314,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   if (isBittensorChain(network)) {
                     return Either.encase(() => JSON.parse(tx))
                       .mapLeft(() => "Failed to parse tx")
-                      .chain((val) => bittensorPayloadCodec.decode(val))
+                      .chain((val) => substratePayloadCodec.decode(val))
                       .map(
                         (v) => ({ type: "bittensor", tx: v }) as BittensorTx
                       );

@@ -1,5 +1,6 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
 import { type Connection, Transaction } from "@solana/web3.js";
+import { MiscNetworks } from "@stakekit/common";
 import type {
   Chain,
   WalletDetailsParams,
@@ -11,6 +12,7 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import { solana } from "../../domain/types/chains/misc";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
+import { getNetworkLogo } from "../../utils";
 import { type ExtraProps, getConfigMeta } from "./solana-connector-meta";
 
 const createSolanaConnector = ({
@@ -47,7 +49,8 @@ const createSolanaConnector = ({
       return {
         accounts: [solanaWallet.adapter.publicKey?.toBase58() as Address],
         chainId: solana.id,
-      };
+        // biome-ignore lint: false
+      } as any;
     },
     disconnect: () => {
       setStorageItem("sk-widget@1//shimDisconnect/solana", false);
@@ -106,6 +109,11 @@ export const getSolanaConnectors = ({
           name: w.adapter.name,
           iconUrl: w.adapter.icon,
           iconBackground: "#fff",
+          chainGroup: {
+            iconUrl: getNetworkLogo(MiscNetworks.Solana),
+            title: "Solana",
+            id: "solana",
+          },
           installed:
             w.readyState === "Installed" || w.readyState === "Loadable",
           ...getConfigMeta(w.adapter),

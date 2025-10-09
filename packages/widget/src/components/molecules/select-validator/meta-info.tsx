@@ -60,7 +60,7 @@ export const useMetaInfo = ({
       | "subnetName"
       | "marketCap"
       | "tokenSymbol"
-    >]: { title: string; val: ReactNode } | null;
+    >]: { title: string; val: ReactNode | string } | null;
   }>(
     () => ({
       rewardRate:
