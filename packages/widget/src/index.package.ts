@@ -7,4 +7,5 @@ export { MiscChainIds } from "./domain/types/chains/misc";
 export { SubstrateChainIds } from "./domain/types/chains/substrate";
 export type * from "./domain/types/wallets/generic-wallet";
 export { TrackingContextProvider } from "./providers/tracking";
+export { createWallet } from "./providers/wagmi/utils";
 export { darkTheme, lightTheme } from "./styles/theme/themes";

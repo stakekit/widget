@@ -13,7 +13,7 @@ import type {
 import { connectorsForWallets } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
+import { EitherAsync, Just, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
@@ -69,6 +69,7 @@ const buildWagmiConfig = async (opts: {
   variant: VariantProps["variant"];
   solanaWallets: SolanaWallet[];
   solanaConnection: Connection;
+  mapWalletListFn?: (val: WalletList) => WalletList;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -198,62 +199,70 @@ const buildWagmiConfig = async (opts: {
         !val.ledgerLiveConnector &&
         !val.safeConnector;
 
-      const walletList: WalletList = (() => {
-        if (evmConfig.fineryWallets) {
-          return [
-            {
-              groupName: "Primary",
-              wallets: evmConfig.fineryWallets.primaryWallets,
-            },
-            {
-              groupName: "Other",
-              wallets: evmConfig.fineryWallets.otherWallets,
-            },
-            ...Maybe.catMaybes(miscConfig.connectors),
-          ];
-        }
+      const walletList = Just(null)
+        .map(() => {
+          if (evmConfig.fineryWallets) {
+            return [
+              {
+                groupName: "Primary",
+                wallets: evmConfig.fineryWallets.primaryWallets,
+              },
+              {
+                groupName: "Other",
+                wallets: evmConfig.fineryWallets.otherWallets,
+              },
+              ...Maybe.catMaybes(miscConfig.connectors),
+            ];
+          }
 
-        if (opts.externalProviders) {
-          return [externalProviderConnector(opts.externalProviders)];
-        }
+          if (opts.externalProviders) {
+            return [externalProviderConnector(opts.externalProviders)];
+          }
 
-        if (val.safeConnector) {
-          return [val.safeConnector];
-        }
+          if (val.safeConnector) {
+            return [val.safeConnector];
+          }
 
-        if (ledgerLiveConnector) {
-          return [ledgerLiveConnector];
-        }
+          if (ledgerLiveConnector) {
+            return [ledgerLiveConnector];
+          }
 
-        if (opts.customConnectors) {
-          return opts.customConnectors(chains);
-        }
+          if (opts.customConnectors) {
+            return opts.customConnectors(chains);
+          }
 
-        return Maybe.catMaybes([
-          evmConfig.connector,
-          cosmosConfig.connector,
-          ...miscConfig.connectors,
-        ]);
-      })().map((val) => ({
-        ...val,
-        wallets: val.wallets.map((createWalletFn) => (createWalletParams) => {
-          const wallet = createWalletFn(createWalletParams);
+          return Maybe.catMaybes([
+            evmConfig.connector,
+            cosmosConfig.connector,
+            ...miscConfig.connectors,
+          ]);
+        })
+        .map((walletList) =>
+          walletList.map((val): WalletList[number] => ({
+            ...val,
+            wallets: val.wallets.map(
+              (createWalletFn) => (createWalletParams) => {
+                const wallet = createWalletFn(createWalletParams);
 
-          const maybeMapped = opts.mapWalletFn
-            ? ({
-                ...wallet,
-                ...opts.mapWalletFn({
-                  iconBackground: wallet.iconBackground,
-                  iconUrl: wallet.iconUrl,
-                  id: wallet.id,
-                  name: wallet.name,
-                }),
-              } satisfies Wallet)
-            : wallet;
+                const maybeMapped = opts.mapWalletFn
+                  ? ({
+                      ...wallet,
+                      ...opts.mapWalletFn({
+                        iconBackground: wallet.iconBackground,
+                        iconUrl: wallet.iconUrl,
+                        id: wallet.id,
+                        name: wallet.name,
+                      }),
+                    } satisfies Wallet)
+                  : wallet;
 
-          return maybeMapped;
-        }),
-      }));
+                return maybeMapped;
+              }
+            ),
+          }))
+        )
+        .map((walletList) => opts.mapWalletListFn?.(walletList) ?? walletList)
+        .orDefault([]);
 
       const queryParamsInitChainId = Maybe.fromNullable(val.queryParams.network)
         .chainNullable(
@@ -304,6 +313,7 @@ export const useWagmiConfig = () => {
     mapWalletFn,
     chainIconMapping,
     variant,
+    mapWalletListFn,
   } = useSettings();
 
   const solanaWallets = useSolanaWallet();
@@ -337,6 +347,7 @@ export const useWagmiConfig = () => {
         variant,
         solanaWallets: solanaWallets.wallets,
         solanaConnection: solanaConnection.connection,
+        mapWalletListFn,
       }),
   });
 };
