@@ -130,8 +130,7 @@ export const createCosmosConnector = ({
           return {
             accounts: [cw.address as Address],
             chainId: cw.chainId as unknown as number,
-            // biome-ignore lint: false
-          } as any;
+          };
         };
 
         const getAndSavePubKeyToStorage = async () => {

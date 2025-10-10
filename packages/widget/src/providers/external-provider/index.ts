@@ -79,8 +79,7 @@ export const externalProviderConnector = (
                 getChainId(),
               ]);
 
-              // biome-ignore lint: false
-              return { accounts, chainId } as any;
+              return { accounts, chainId };
             };
 
           const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =

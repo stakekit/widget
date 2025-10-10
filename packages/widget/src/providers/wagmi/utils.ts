@@ -5,7 +5,12 @@ export const createWallet =
   (
     params: Pick<
       Wallet,
-      "id" | "name" | "iconUrl" | "iconBackground" | "downloadUrls"
+      | "id"
+      | "name"
+      | "iconUrl"
+      | "iconBackground"
+      | "downloadUrls"
+      | "chainGroup"
     > & {
       createConnector: CreateConnectorFn;
     }
@@ -16,6 +21,7 @@ export const createWallet =
     iconUrl: params.iconUrl,
     iconBackground: params.iconBackground,
     downloadUrls: params.downloadUrls,
+    chainGroup: params.chainGroup,
     createConnector: (walletDetails) => (config) => {
       const connector = params.createConnector(config);
 

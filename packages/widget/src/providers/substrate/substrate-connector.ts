@@ -107,10 +107,9 @@ const createSubstrateConnector = ({
         setStorageItem("sk-widget@1//shimDisconnect/substrate", true);
 
         return {
-          accounts: accounts.map((a) => a.address),
+          accounts: accounts.map((a) => a.address) as Address[],
           chainId: $filteredChains.getValue()[0].id,
-          // biome-ignore lint: false
-        } as unknown as any;
+        };
       },
       disconnect: () => {
         setStorageItem("sk-widget@1//shimDisconnect/substrate", false);

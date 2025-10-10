@@ -49,8 +49,7 @@ const createSolanaConnector = ({
       return {
         accounts: [solanaWallet.adapter.publicKey?.toBase58() as Address],
         chainId: solana.id,
-        // biome-ignore lint: false
-      } as any;
+      };
     },
     disconnect: () => {
       setStorageItem("sk-widget@1//shimDisconnect/solana", false);

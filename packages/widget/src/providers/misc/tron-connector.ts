@@ -47,8 +47,7 @@ const createTronConnector = ({
       return {
         accounts: [adapter.address as Address],
         chainId: tron.id,
-        // biome-ignore lint: false
-      } as any;
+      };
     },
     disconnect: () => {
       setStorageItem("sk-widget@1//shimDisconnect/tron", false);
