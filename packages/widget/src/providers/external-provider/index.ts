@@ -42,6 +42,11 @@ export const externalProviderConnector = (
       name: configMeta.name,
       iconUrl: config.appIcon,
       iconBackground: "#fff",
+      chainGroup: {
+        id: configMeta.id,
+        title: configMeta.name,
+        iconUrl: config.appIcon,
+      },
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
           const $filteredChains = new BehaviorSubject(

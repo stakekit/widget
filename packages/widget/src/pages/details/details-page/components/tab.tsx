@@ -39,7 +39,9 @@ export const Tab = ({
 
           {!!pendingActionsCount && (
             <Box className={rewardsBadge}>
-              <Text style={{ fontSize: 8 }}>{pendingActionsCount}</Text>
+              <Text style={{ fontSize: 8 }} variant={{ type: "white" }}>
+                {pendingActionsCount}
+              </Text>
             </Box>
           )}
         </Box>

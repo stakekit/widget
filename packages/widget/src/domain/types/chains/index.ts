@@ -1,4 +1,6 @@
-import { MiscNetworks, SubstrateNetworks } from "@stakekit/common";
+import { EvmNetworks, MiscNetworks, SubstrateNetworks } from "@stakekit/common";
+import type { ChainGroup } from "@stakekit/rainbowkit";
+import { getNetworkLogo } from "../../../utils";
 import { type SupportedCosmosChains, supportedCosmosChainsSet } from "./cosmos";
 import {
   type EvmChainIds,
@@ -45,6 +47,12 @@ export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
     supportedMiscChainsSet.has(chain as SupportedMiscChains) ||
     supportedSubstrateChainsSet.has(chain as SupportedSubstrateChains)
   );
+};
+
+export const ethereumChainGroup: ChainGroup = {
+  iconUrl: getNetworkLogo(EvmNetworks.Ethereum),
+  title: "Ethereum",
+  id: "ethereum",
 };
 
 export type SupportedSKChainIds =

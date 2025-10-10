@@ -4,9 +4,9 @@ import type {
   TransactionDto,
 } from "@stakekit/api-hooks";
 import type {
-  DecodedBittensorTransaction,
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
+  DecodedSubstrateTransaction,
   DecodedTonTransaction,
   DecodedTronTransaction,
 } from "../../types/transaction";
@@ -33,7 +33,7 @@ export type TronTx = {
 
 export type BittensorTx = {
   type: "bittensor";
-  tx: DecodedBittensorTransaction;
+  tx: DecodedSubstrateTransaction;
 };
 
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;

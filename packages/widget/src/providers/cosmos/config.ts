@@ -80,7 +80,12 @@ const queryFn = async ({
         })
         .chain(({ cosmosChainsMap, cosmosWagmiChains }) =>
           EitherAsync(() => import("./wallet-manager"))
-            .mapLeft(() => new Error("Could not import cosmos wallet manager"))
+            .mapLeft(
+              (e) =>
+                new Error("Could not import cosmos wallet manager", {
+                  cause: e,
+                })
+            )
             .map((v) =>
               v.getWalletManager({ cosmosChainsMap, forceWalletConnectOnly })
             )

@@ -1,7 +1,7 @@
 import { vars } from "./contract.css";
 
 export const unresponsiveProperties = {
-  position: ["relative", "absolute", "sticky"],
+  position: ["relative", "absolute", "sticky", "fixed"],
   opacity: [0, 0.1, 0.5, 1],
   zIndex: vars.zIndices,
   fontWeight: vars.fontWeight,
@@ -21,10 +21,12 @@ export const unresponsiveProperties = {
 export const responsiveProperties = {
   display: ["block", "inline", "inline-block", "flex", "inline-flex", "none"],
   fontSize: vars.fontSize,
+  margin: vars.space,
   marginTop: vars.space,
   marginBottom: vars.space,
   marginRight: vars.space,
   marginLeft: vars.space,
+  padding: vars.space,
   paddingTop: vars.space,
   paddingBottom: vars.space,
   paddingRight: vars.space,

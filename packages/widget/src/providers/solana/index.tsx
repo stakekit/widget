@@ -4,7 +4,6 @@ import {
   WalletProvider,
 } from "@solana/wallet-adapter-react";
 import {
-  BitgetWalletAdapter,
   PhantomWalletAdapter,
   TrustWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
@@ -20,11 +19,7 @@ export const SolanaProvider = ({ children }: PropsWithChildren) => {
   const wallets = useMemo(() => {
     return config.env.isTestMode
       ? []
-      : [
-          new PhantomWalletAdapter(),
-          new BitgetWalletAdapter(),
-          new TrustWalletAdapter(),
-        ];
+      : [new PhantomWalletAdapter(), new TrustWalletAdapter()];
   }, []);
 
   return (

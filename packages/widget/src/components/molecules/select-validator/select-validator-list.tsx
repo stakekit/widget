@@ -17,6 +17,7 @@ import {
   SelectModalItem,
   SelectModalItemContainer,
 } from "../../atoms/select-modal";
+import { textStyles } from "../../atoms/typography/styles.css";
 import { Text } from "../../atoms/typography/text";
 import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { useMetaInfo } from "./meta-info";
@@ -251,9 +252,9 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
             >
               <Text variant={{ type: "muted" }}>{val.title}</Text>
 
-              <Text variant={{ type: "muted", weight: "normal" }}>
+              <Box className={textStyles({ type: "muted", weight: "normal" })}>
                 {val.val}
-              </Text>
+              </Box>
             </Box>
           );
         })}

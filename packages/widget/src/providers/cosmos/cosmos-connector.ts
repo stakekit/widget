@@ -6,6 +6,7 @@ import type {
   MainWalletBase,
 } from "@cosmos-kit/core";
 import type { WCClient } from "@cosmos-kit/walletconnect";
+import { CosmosNetworks } from "@stakekit/common";
 import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import EventEmitter from "eventemitter3";
@@ -16,7 +17,7 @@ import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
-import { waitForMs } from "../../utils";
+import { getNetworkLogo, waitForMs } from "../../utils";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
 
@@ -46,6 +47,12 @@ export const createCosmosConnector = ({
     qrCode: {
       getUri: (uri) => uri,
     },
+    chainGroup: {
+      iconUrl: getNetworkLogo(CosmosNetworks.Cosmos),
+      title: "Cosmos",
+      id: "cosmos",
+    },
+    installed: false,
     createConnector: (walletDetailsParams) =>
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
