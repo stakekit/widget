@@ -45,6 +45,7 @@ export type SettingsProps = {
   isSafe?: boolean;
   disableInjectedProviderDiscovery?: boolean;
   mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
+  mapWalletListFn?: Parameters<BuildWagmiConfig>[0]["mapWalletListFn"];
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
