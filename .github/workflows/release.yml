@@ -26,7 +26,6 @@ jobs:
       - name: Fix executable files for changesets
         run: |
           chmod -x .husky/commit-msg
-          chmod -x .husky/pre-commit
 
       - run: pnpm install --frozen-lockfile
 
@@ -36,8 +35,8 @@ jobs:
         with:
           publish: pnpm run release
           version: pnpm run version
-          commit: 'ci(changesets): version packages'
-          title: 'ci(changesets): version packages'
+          commit: "ci(changesets): version packages"
+          title: "ci(changesets): version packages"
           commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
