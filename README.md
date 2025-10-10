@@ -81,6 +81,7 @@ const App = () => {
 ```tsx
 type SettingsProps = {
   apiKey: string;
+  baseUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
@@ -94,17 +95,31 @@ type SettingsProps = {
   disableResizingInputFontSize?: boolean;
   disableAutoScrollToTop?: boolean;
   language?: Languages;
+  disableInjectedProviderDiscovery?: boolean;
+  mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
+  mapWalletListFn?: Parameters<BuildWagmiConfig>[0]["mapWalletListFn"];
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
-  whitelistedValidatorAddresses?: string[];
+  validatorsConfig?: {
+    [Key in SupportedSKChains]?: {
+      allowed?: string[];
+      blocked?: string[];
+      preferred?: string[];
+      mergePreferredWithDefault?: boolean;
+    };
+  };
   tokenIconMapping?:
     | Record<TokenDto["symbol"], string>
     | ((token: TokenDto) => string);
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
-  hideAccountAndChainSelector?: boolean
+  dashboardVariant?: boolean;
+  hideChainSelector?: boolean;
+  hideAccountAndChainSelector?: boolean;
+  preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
+  portalContainer?: HTMLElement;
 };
 ```
 
@@ -119,6 +134,34 @@ tokenIconMapping?:
 chainIconMapping?:
   | Record<SupportedSKChains, string>
   | ((chain: SupportedSKChains) => string);
+```
+
+### Wallet connectors mapping
+
+You can customize list of displayed wallet connectors.
+
+```tsx
+import { createWallet } from '@stakekit/widget'
+
+mapWalletListFn: (walletList) => [
+  {
+    groupName: "Primary",
+    wallets: [
+      createWallet({
+        id: "foo-bar",
+        name: "Foo Bar",
+        iconUrl: "https://foo-bar.com/icon.png",
+        iconBackground: "#fff",
+        downloadUrls: {
+          desktop: "https://foo-bar.com/download",
+          mobile: "https://foo-bar.com/download",
+          browserExtension: "https://foo-bar.com/download",
+        },
+        createConnector: fooBarCreateConnector(),
+      }),
+    ],
+  },
+]
 ```
 
 After this is done, you can start using the widget.
