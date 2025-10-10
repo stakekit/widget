@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.256
+
+### Patch Changes
+
+- a0338ae: feat: wallet connectors mapping
+
 ## 0.0.255
 
 ### Patch Changes
