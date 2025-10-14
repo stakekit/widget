@@ -34,6 +34,7 @@ type ReviewPageProps = {
   depositFee: Maybe<FeesBps>;
   managementFee: Maybe<FeesBps>;
   performanceFee: Maybe<FeesBps>;
+  commissionFee: Maybe<string>;
   feeConfigLoading?: boolean;
 } & MetaInfoProps;
 
@@ -50,6 +51,7 @@ export const ReviewPage = ({
   managementFee,
   performanceFee,
   feeConfigLoading = false,
+  commissionFee,
   ...rest
 }: ReviewPageProps) => {
   const trackEvent = useTrackEvent();
@@ -84,6 +86,10 @@ export const ReviewPage = ({
           price={fee}
           loading={isLoading}
         />
+
+        {commissionFee
+          .map((val) => <CommissionFee commissionFee={val} />)
+          .extractNullable()}
 
         {!isLoading && (
           <>
@@ -179,6 +185,28 @@ const GasFee = ({
           {price}
         </Text>
       )}
+    </Box>
+  );
+};
+const CommissionFee = ({ commissionFee }: { commissionFee: string }) => {
+  const { t } = useTranslation();
+  return (
+    <Box
+      display="flex"
+      justifyContent="space-between"
+      alignItems="center"
+      marginTop="2"
+      marginBottom="2"
+      data-testid="commission_fee"
+      height="4"
+    >
+      <Text variant={{ weight: "normal", type: "muted" }}>
+        {t("review.staking_fee")}
+      </Text>
+
+      <Text className={feeStyles} variant={{ type: "muted", weight: "normal" }}>
+        {commissionFee}
+      </Text>
     </Box>
   );
 };

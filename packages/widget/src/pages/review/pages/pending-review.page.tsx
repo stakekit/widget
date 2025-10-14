@@ -49,6 +49,7 @@ export const PendingReviewPage = () => {
       token={token}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
+      commissionFee={Maybe.empty()}
       {...metaInfo}
     />
   );
