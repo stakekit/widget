@@ -32,6 +32,11 @@ export const formatNumber = (
     .map((v) => v.toFormat())
     .unsafeCoerce();
 
+export const fromWei = (amount: string | BigNumber, decimals: number) =>
+  BigNumber(amount)
+    .dividedBy(10 ** decimals)
+    .toFixed();
+
 export const defaultFormattedNumber = (number: string | BigNumber) =>
   formatNumber(number, 6);
 

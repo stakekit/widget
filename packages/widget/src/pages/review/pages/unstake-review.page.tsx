@@ -54,6 +54,7 @@ export const UnstakeReviewPage = () => {
         token={token}
         isGasCheckError={isGasCheckWarning}
         loading={gasCheckLoading}
+        commissionFee={Maybe.empty()}
         {...metaInfo}
       />
       <UnstakeSignPopup
