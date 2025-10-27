@@ -24,6 +24,7 @@ export const StakeReviewPage = () => {
     managementFee,
     performanceFee,
     feeConfigLoading,
+    commissionFee,
   } = useStakeReview();
 
   const info = useMemo(
@@ -67,6 +68,7 @@ export const StakeReviewPage = () => {
       rewardTokenDetailsProps={rewardTokenDetailsProps}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
+      commissionFee={commissionFee}
       {...metaInfo}
     />
   );

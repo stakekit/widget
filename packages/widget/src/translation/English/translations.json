@@ -22,7 +22,8 @@
     "continue": "Continue",
     "powered_by": "Powered by <span0>{{name}}</span0>",
     "learn_more": "Learn more",
-    "change": "Change"
+    "change": "Change",
+    "fee": "Fee"
   },
   "chain_modal": {
     "disabled_chain_info": "Add account"
@@ -218,7 +219,8 @@
     "performance_fee": "Performance fee",
     "deposit_fee_explanation": "A flat fee deducted at deposit, reducing the principal.",
     "management_fee_explanation": "A flat annual fee deducted from vault deposits by minting new shares, diluting participants. Calculated based on time since the last harvest and applied during harvest.",
-    "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold."
+    "performance_fee_explanation": "A fee deducted from earnings when a vault harvests a strategy. It's only applied after surpassing a variable threshold.",
+    "staking_fee": "Staking fee"
   },
   "steps": {
     "title": "Follow Steps",

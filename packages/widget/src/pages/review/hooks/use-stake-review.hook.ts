@@ -20,7 +20,7 @@ import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
-import { formatNumber } from "../../../utils";
+import { APToPercentage, formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
@@ -188,6 +188,17 @@ export const useStakeReview = () => {
     [selectedStake, selectedToken, enterRequest.selectedValidators, variant]
   );
 
+  const commissionFee = useMemo(
+    () =>
+      selectedStake
+        .chainNullable((y) => y.metadata.commission)
+        .map((commission) =>
+          commission.reduce((acc, curr) => acc + curr.value, 0)
+        )
+        .map((val) => `${APToPercentage(val)}%`),
+    [selectedStake]
+  );
+
   return {
     token: selectedToken,
     amount,
@@ -204,6 +215,7 @@ export const useStakeReview = () => {
     managementFee,
     performanceFee,
     feeConfigLoading: feeConfigDto.isPending,
+    commissionFee,
   };
 };
 
