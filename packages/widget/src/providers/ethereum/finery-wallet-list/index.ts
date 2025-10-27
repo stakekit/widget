@@ -10,7 +10,7 @@ import {
 import { createStore } from "mipd";
 import { Maybe } from "purify-ts";
 import { injected } from "wagmi";
-import { ethereumChainGroup } from "../../../domain/types/chains";
+import { evmChainGroup } from "../../../domain/types/chains";
 import { MaybeWindow } from "../../../utils/maybe-window";
 import { passCorrectChainsToWallet } from "../utils";
 import bitGoIcon from "./custom-wallet-icons/bitgo.svg";
@@ -41,7 +41,7 @@ const bitgoWallet: CommonWalletOptions = {
   downloadUrls: {
     qrCode: "https://www.bitgo.com/",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 const fireblocksWallet: CommonWalletOptions = {
@@ -60,7 +60,7 @@ const fireblocksWallet: CommonWalletOptions = {
     chrome:
       "https://chromewebstore.google.com/detail/fireblocks-defi-extension/mpmfkenmdhemcjnkfndoiagglhpenolg",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 const cactusWallet: CommonWalletOptions = {
@@ -76,7 +76,7 @@ const cactusWallet: CommonWalletOptions = {
       "https://chromewebstore.google.com/detail/cactus-link/chiilpgkfmcopocdffapngjcbggdehmj",
     qrCode: "https://mycactus.com/",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 const mpcVaultWallet: CommonWalletOptions = {
@@ -95,7 +95,7 @@ const mpcVaultWallet: CommonWalletOptions = {
       "https://chromewebstore.google.com/detail/mpcvault/jgfmfplofjigjfokigdiaiibhonfnedj",
     qrCode: "https://mpcvault.com/",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 const utilaWallet: CommonWalletOptions = {
@@ -109,7 +109,7 @@ const utilaWallet: CommonWalletOptions = {
     ios: "https://apps.apple.com/us/app/utila/id6443589681",
     qrCode: "https://utila.io/",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 const finoaWallet: CommonWalletOptions = {
@@ -121,7 +121,7 @@ const finoaWallet: CommonWalletOptions = {
   downloadUrls: {
     qrCode: "https://finoa.io/",
   },
-  chainGroup: ethereumChainGroup,
+  chainGroup: evmChainGroup,
 };
 
 // const copperConnectWallet: CommonWalletOptions = {
@@ -151,7 +151,7 @@ const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
         downloadUrls: {
           qrCode: "https://app.safe.global/",
         },
-        chainGroup: ethereumChainGroup,
+        chainGroup: evmChainGroup,
       }) satisfies CommonWalletOptions
   )
   .unsafeCoerce();

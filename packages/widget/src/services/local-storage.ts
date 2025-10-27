@@ -11,6 +11,7 @@ const codecs = {
   [localStorageBuildKey("shimDisconnect/tron")]: boolean,
   [localStorageBuildKey("shimDisconnect/solana")]: boolean,
   [localStorageBuildKey("shimDisconnect/substrate")]: boolean,
+  [localStorageBuildKey("substrateConnectors/lastConnectedId")]: string,
   [localStorageBuildKey("tosAccepted")]: boolean,
 };
 
@@ -63,6 +64,7 @@ const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
   [localStorageBuildKey("shimDisconnect/tron")]: new Map(),
   [localStorageBuildKey("shimDisconnect/solana")]: new Map(),
   [localStorageBuildKey("shimDisconnect/substrate")]: new Map(),
+  [localStorageBuildKey("substrateConnectors/lastConnectedId")]: new Map(),
   [localStorageBuildKey("tosAccepted")]: new Map(),
 };
 

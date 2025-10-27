@@ -1,3 +1,4 @@
+import type { Chain as LunoKitChain } from "@luno-kit/core/chains";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
@@ -6,7 +7,11 @@ import {
   type SubstrateChainsMap,
   substrateChainsMap,
 } from "../../domain/types/chains/substrate";
-import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
+import {
+  getNetworkLogo,
+  typeSafeObjectEntries,
+  typeSafeObjectFromEntries,
+} from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import { getSubstrateConnectors } from "./substrate-connector";
 
@@ -15,8 +20,10 @@ const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
   queryClient,
+  forceWalletConnectOnly,
 }: {
   queryClient: QueryClient;
+  forceWalletConnectOnly: boolean;
 }): Promise<{
   substrateChainsMap: Partial<SubstrateChainsMap>;
   substrateChains: Chain[];
@@ -38,11 +45,31 @@ const queryFn = async ({
         (val) => val.wagmiChain
       );
 
+      const lunoKitChains = Object.values(filteredSubstrateChainsMap).map(
+        (val): LunoKitChain => ({
+          ...val.wagmiChain,
+          rpcUrls: {
+            webSocket: [],
+          },
+          testnet: false,
+          chainIconUrl:
+            typeof val.wagmiChain.iconUrl === "string"
+              ? val.wagmiChain.iconUrl
+              : getNetworkLogo(val.skChainName),
+          genesisHash: val.genesisHash,
+          ss58Format: val.ss58Format,
+        })
+      );
+
       return Promise.resolve({
         substrateChainsMap: filteredSubstrateChainsMap,
         substrateChains,
         connector: Maybe.fromFalsy(substrateChains.length > 0).map(() =>
-          getSubstrateConnectors(substrateChains)
+          getSubstrateConnectors(
+            substrateChains,
+            lunoKitChains,
+            forceWalletConnectOnly
+          )
         ),
       });
     },

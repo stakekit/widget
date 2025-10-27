@@ -97,6 +97,9 @@ export const getTronConnectors = ({
     iconBackground: "#fff",
     installed: true,
     chainGroup: tronChainGroup,
+    qrCode: {
+      getUri: (uri) => uri,
+    },
     createConnector: (walletDetailsParams) =>
       createTronConnector({
         walletDetailsParams,

@@ -10,7 +10,7 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import { config } from "../../config";
-import { ethereumChainGroup } from "../../domain/types/chains";
+import { evmChainGroup } from "../../domain/types/chains";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
@@ -61,7 +61,7 @@ const queryFn = async ({
           .map((w) => passCorrectChainsToWallet(w, evmChains))
           .map((w) => (props) => ({
             ...w(props),
-            chainGroup: ethereumChainGroup,
+            chainGroup: evmChainGroup,
           })),
       };
 
