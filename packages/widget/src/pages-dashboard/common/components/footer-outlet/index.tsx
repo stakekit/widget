@@ -1,6 +1,6 @@
+import { useEffect } from "react";
 import { Box } from "../../../../components/atoms/box";
 import { Button } from "../../../../components/atoms/button";
-import { useIsomorphicEffect } from "../../../../hooks/use-isomorphic-effect";
 import {
   type FooterButtonVal,
   useFooterButton,
@@ -45,7 +45,7 @@ export const FooterOutlet = () => {
 
   const { containerRef } = useSyncFooterHeight();
 
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     !val && setFooterHeight(0);
   }, [setFooterHeight, val]);
 

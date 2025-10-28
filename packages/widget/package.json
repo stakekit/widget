@@ -81,7 +81,7 @@
     "@solana/web3.js": "^1.98.4",
     "@stakekit/api-hooks": "0.0.111",
     "@stakekit/common": "^0.0.57",
-    "@stakekit/rainbowkit": "^2.2.8",
+    "@stakekit/rainbowkit": "^2.2.9",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-virtual": "^3.13.12",
     "@testing-library/dom": "^10.4.0",

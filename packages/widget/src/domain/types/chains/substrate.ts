@@ -18,6 +18,8 @@ export type SubstrateChainsMap = {
     type: "substrate";
     skChainName: Key;
     wagmiChain: Chain;
+    genesisHash: string;
+    ss58Format: number;
   };
 };
 
@@ -70,11 +72,17 @@ export const substrateChainsMap: SubstrateChainsMap = {
     type: "substrate",
     skChainName: SubstrateNetworks.Polkadot,
     wagmiChain: polkadot,
+    genesisHash:
+      "0x91b171bb158e2d3848fa23a9f1c25182fb8e20313b2c1eb49219da7a70ce90c3",
+    ss58Format: 0,
   },
   [SubstrateNetworks.Bittensor]: {
     type: "substrate",
     skChainName: SubstrateNetworks.Bittensor,
     wagmiChain: bittensor,
+    genesisHash:
+      "0x2f0555cc76fc2840a25a6ea3b9637146806f1f44b090c175ffde2a7e5ab36c03",
+    ss58Format: 0,
   },
 };
 

@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MaybeWindow } from "../utils/maybe-window";
-import { useIsomorphicEffect } from "./use-isomorphic-effect";
 
 const getCurrentColorScheme = () =>
   MaybeWindow.map((w) => {
@@ -24,7 +23,7 @@ export const usePrefersColorScheme = () => {
     return { force: false, theme: scheme };
   });
 
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     if (preferredColorSchema.force) return;
 
     const w = MaybeWindow.extractNullable();

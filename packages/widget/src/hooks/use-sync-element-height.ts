@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { useIsomorphicEffect } from "./use-isomorphic-effect";
+import { useEffect, useRef } from "react";
 import { useSavedRef } from "./use-saved-ref";
 
 export const useSyncElementHeight = (
@@ -8,7 +7,7 @@ export const useSyncElementHeight = (
   const containerRef = useRef<HTMLDivElement>(null);
   const setCurrentHeightRef = useSavedRef(setCurrentHeight);
 
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     if (!containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {

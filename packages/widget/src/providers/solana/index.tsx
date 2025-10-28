@@ -6,6 +6,7 @@ import {
 import {
   PhantomWalletAdapter,
   TrustWalletAdapter,
+  WalletConnectWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl } from "@solana/web3.js";
 import { type PropsWithChildren, useMemo } from "react";
@@ -19,7 +20,14 @@ export const SolanaProvider = ({ children }: PropsWithChildren) => {
   const wallets = useMemo(() => {
     return config.env.isTestMode
       ? []
-      : [new PhantomWalletAdapter(), new TrustWalletAdapter()];
+      : [
+          new PhantomWalletAdapter(),
+          new TrustWalletAdapter(),
+          new WalletConnectWalletAdapter({
+            network: WalletAdapterNetwork.Mainnet,
+            options: { projectId: config.walletConnectV2.projectId },
+          }),
+        ];
   }, []);
 
   return (

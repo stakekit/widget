@@ -49,10 +49,10 @@ export const isSupportedChain = (chain: string): chain is SupportedSKChains => {
   );
 };
 
-export const ethereumChainGroup: ChainGroup = {
+export const evmChainGroup: ChainGroup = {
   iconUrl: getNetworkLogo(EvmNetworks.Ethereum),
-  title: "Ethereum",
-  id: "ethereum",
+  title: "EVM",
+  id: "evm",
 };
 
 export type SupportedSKChainIds =

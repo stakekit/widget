@@ -23,7 +23,7 @@ import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
 import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { config } from "../../config";
-import { ethereumChainGroup } from "../../domain/types/chains";
+import { evmChainGroup } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
@@ -105,6 +105,7 @@ const buildWagmiConfig = async (opts: {
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,
+            forceWalletConnectOnly: opts.forceWalletConnectOnly,
           }),
           getInitParams({
             isLedgerLive: opts.isLedgerLive,
@@ -239,7 +240,7 @@ const buildWagmiConfig = async (opts: {
             cosmosConfig.connector,
             substrateConfig.connector,
             ...miscConfig.connectors,
-          ]);
+          ]).filter((v) => v.wallets.length > 0);
         })
         .map((walletList) =>
           walletList.map((val): WalletList[number] => ({
@@ -266,6 +267,29 @@ const buildWagmiConfig = async (opts: {
           }))
         )
         .map((walletList) => opts.mapWalletListFn?.(walletList) ?? walletList)
+        .map((walletList) => {
+          return walletList.map((wg) => ({
+            ...wg,
+            wallets: wg.wallets.map(
+              (createWalletFn): typeof createWalletFn =>
+                (details) => {
+                  const wallet = createWalletFn(details);
+
+                  return {
+                    ...wallet,
+                    createConnector: (walletDetails) => (config) =>
+                      wallet.createConnector(walletDetails)({
+                        ...config,
+                        chains:
+                          wallet.chainGroup.id === evmChainGroup.id
+                            ? (evmConfig.evmChains as [Chain, ...Chain[]])
+                            : config.chains,
+                      }),
+                  };
+                }
+            ),
+          }));
+        })
         .orDefault([]);
 
       const queryParamsInitChainId = Maybe.fromNullable(val.queryParams.network)
@@ -299,7 +323,7 @@ const buildWagmiConfig = async (opts: {
             mipdStore.getProviders(),
             (a, b) => a.info.rdns === b.info.rdns
           ).map((p) => ({
-            rkDetails: { chainGroup: ethereumChainGroup },
+            rkDetails: { chainGroup: evmChainGroup },
             ...wagmiConfig._internal.connectors.setup(
               wagmiConfig._internal.connectors.providerDetailToConnector(p)
             ),
@@ -311,7 +335,7 @@ const buildWagmiConfig = async (opts: {
             ...prev,
             ...uniqwith(providers, (a, b) => a.info.rdns === b.info.rdns).map(
               (p) => ({
-                rkDetails: { chainGroup: ethereumChainGroup },
+                rkDetails: { chainGroup: evmChainGroup },
                 ...wagmiConfig._internal.connectors.setup(
                   wagmiConfig._internal.connectors.providerDetailToConnector(p)
                 ),
