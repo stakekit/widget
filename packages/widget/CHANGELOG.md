@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.257
+
+### Patch Changes
+
+- f6b809c: fix: substrate polishing, pass wallet
+- 466c0fb: feat: chain groups, substrate connector
+
 ## 0.0.256
 
 ### Patch Changes
