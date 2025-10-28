@@ -2,6 +2,7 @@ export type { SKAppProps } from "./App";
 export { SKApp } from "./App";
 export { HelpModal } from "./components/molecules/help-modal";
 export type { SupportedSKChainIds } from "./domain/types/chains";
+export { evmChainGroup } from "./domain/types/chains";
 export { EvmChainIds } from "./domain/types/chains/evm";
 export { MiscChainIds } from "./domain/types/chains/misc";
 export { SubstrateChainIds } from "./domain/types/chains/substrate";

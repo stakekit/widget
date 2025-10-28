@@ -6,7 +6,6 @@ import { Header } from "./components/molecules/header";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 import { useInitParams } from "./hooks/use-init-params";
-import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { usePrevious } from "./hooks/use-previous";
 import { useSavedRef } from "./hooks/use-saved-ref";
 import { useUnderMaintenance } from "./hooks/use-under-maintenance";
@@ -55,7 +54,7 @@ export const Widget = () => {
   /**
    * On chain change, navigate to home page
    */
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     if (
       pathnameRef.current !== "/" &&
       pathnameRef.current !== "/positions" &&

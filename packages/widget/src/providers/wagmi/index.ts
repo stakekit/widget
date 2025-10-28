@@ -267,6 +267,29 @@ const buildWagmiConfig = async (opts: {
           }))
         )
         .map((walletList) => opts.mapWalletListFn?.(walletList) ?? walletList)
+        .map((walletList) => {
+          return walletList.map((wg) => ({
+            ...wg,
+            wallets: wg.wallets.map(
+              (createWalletFn): typeof createWalletFn =>
+                (details) => {
+                  const wallet = createWalletFn(details);
+
+                  return {
+                    ...wallet,
+                    createConnector: (walletDetails) => (config) =>
+                      wallet.createConnector(walletDetails)({
+                        ...config,
+                        chains:
+                          wallet.chainGroup.id === evmChainGroup.id
+                            ? (evmConfig.evmChains as [Chain, ...Chain[]])
+                            : config.chains,
+                      }),
+                  };
+                }
+            ),
+          }));
+        })
         .orDefault([]);
 
       const queryParamsInitChainId = Maybe.fromNullable(val.queryParams.network)

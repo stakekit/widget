@@ -40,7 +40,6 @@ import type {
 } from "../../domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { useCheckIsUnmounted } from "../../hooks/use-check-is-unmounted";
-import { useIsomorphicEffect } from "../../hooks/use-isomorphic-effect";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isExternalProviderConnector } from "../external-provider";
@@ -154,11 +153,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   /**
    * Network missmatch, disconnect
    */
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     if (!isConnecting && _isConnected && !isConnected) {
       disconnect();
     }
-  }, [_isConnected, disconnect, isConnected]);
+  }, [isConnecting, _isConnected, disconnect, isConnected]);
 
   const connectorDetails = useMemo(
     () =>

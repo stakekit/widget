@@ -9,7 +9,6 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { preloadImages } from "./assets/images";
 import { Box } from "./components/atoms/box";
 import { Dashboard } from "./Dashboard";
-import { useIsomorphicEffect } from "./hooks/use-isomorphic-effect";
 import { useToggleTheme } from "./hooks/use-toggle-theme";
 import { Providers } from "./providers";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
@@ -29,13 +28,11 @@ const App = () => {
   return dashboardVariant ? <Dashboard /> : <Widget />;
 };
 
-const Root = () => {
-  const [showChild, setShowChild] = useState(false);
-
-  useIsomorphicEffect(() => setShowChild(true), []); // ssr disabled
-
-  return <Providers>{showChild && <App />}</Providers>;
-};
+const Root = () => (
+  <Providers>
+    <App />
+  </Providers>
+);
 
 export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
 

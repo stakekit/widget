@@ -1,10 +1,9 @@
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
 import { Just } from "purify-ts";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
-import { useIsomorphicEffect } from "../../../hooks/use-isomorphic-effect";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
 import type { FooterButtonVal } from "./context";
@@ -114,7 +113,7 @@ export const AnimatedFooterContent = () => {
 
   const [, setFooterHeight] = useFooterHeight();
 
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     !val && setFooterHeight(0);
   }, [setFooterHeight, val]);
 
@@ -130,7 +129,7 @@ export const FooterContent = () => {
 
   const [, setFooterHeight] = useFooterHeight();
 
-  useIsomorphicEffect(() => {
+  useEffect(() => {
     !val && setFooterHeight(0);
   }, [setFooterHeight, val]);
 

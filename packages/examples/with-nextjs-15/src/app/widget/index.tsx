@@ -1,9 +1,7 @@
-"use-client";
+"use client";
 
-import "@stakekit/widget/style.css";
-import { darkTheme, SKApp } from "@stakekit/widget";
-import { config } from "@/config";
+import dynamic from "next/dynamic";
 
-export const Widget = () => {
-  return <SKApp apiKey={config.apiKey} theme={darkTheme} />;
-};
+export default dynamic(() => import("./widget").then((mod) => mod.Widget), {
+  ssr: false,
+});
