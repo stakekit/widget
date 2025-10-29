@@ -14,6 +14,7 @@ import {
   linea,
   mainnet,
   optimism,
+  plasmaTestnet,
   polygon,
   sepolia,
   sonic,
@@ -44,6 +45,7 @@ const supportedEVMChains = [
   EvmNetworks.Katana,
   EvmNetworks.Gnosis,
   EvmNetworks.HyperEVM,
+  EvmNetworks.Plasma,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -172,6 +174,21 @@ export const evmChainsMap: EvmChainsMap = {
     skChainName: EvmNetworks.Gnosis,
     wagmiChain: gnosis,
   },
+  [EvmNetworks.Plasma]: {
+    type: "evm",
+    skChainName: EvmNetworks.Plasma,
+    wagmiChain: {
+      id: 9746,
+      name: "Plasma",
+      iconUrl: getNetworkLogo(EvmNetworks.Plasma),
+      nativeCurrency: plasmaTestnet.nativeCurrency,
+      rpcUrls: {
+        default: {
+          http: ["https://rpc.plasma.to"],
+        },
+      },
+    },
+  },
   [EvmNetworks.Katana]: {
     type: "evm",
     skChainName: EvmNetworks.Katana,
@@ -233,6 +250,7 @@ export enum EvmChainIds {
   Katana = 747474,
   Gnosis = 100,
   Hyperevm = 999,
+  Plasma = 9746,
 }
 
 EvmChainIds satisfies Record<

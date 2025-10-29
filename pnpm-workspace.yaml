@@ -22,3 +22,4 @@ minimumReleaseAge: 4320
 minimumReleaseAgeExclude:
   - "@stakekit/rainbowkit"
   - "@stakekit/api-hooks"
+  - "@stakekit/common"
