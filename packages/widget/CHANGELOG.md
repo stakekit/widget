@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.258
+
+### Patch Changes
+
+- 9718d76: fix: plasma chain id
+- 6df32b9: feat: add plasma
+
 ## 0.0.257
 
 ### Patch Changes
