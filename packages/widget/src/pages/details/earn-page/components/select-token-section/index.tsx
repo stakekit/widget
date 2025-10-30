@@ -117,7 +117,6 @@ export const SelectTokenSection = () => {
       <Box
         data-rk="stake-token-section"
         background="stakeSectionBackground"
-        borderRadius="xl"
         marginTop="2"
         py="4"
         px="4"
@@ -195,10 +194,7 @@ export const SelectTokenSection = () => {
                 }}
                 data-state={errorBalance ? "error" : "valid"}
                 className={clsx(
-                  combineRecipeWithVariant({
-                    rec: selectTokenBalance,
-                    variant,
-                  })
+                  combineRecipeWithVariant({ rec: selectTokenBalance, variant })
                 )}
               >
                 {selectedTokenAvailableAmount

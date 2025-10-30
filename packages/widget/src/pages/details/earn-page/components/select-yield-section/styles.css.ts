@@ -27,6 +27,7 @@ export const selectOpportunityButton = recipe({
           },
         },
       ],
+      porto: atoms({ background: "__internal__porto__grey__two__" }),
     },
   },
   defaultVariants: {
@@ -41,6 +42,21 @@ export const selectYieldRewardsText = recipe({
       utila: {},
       finery: {
         color: vars.color.text,
+      },
+      porto: {},
+    },
+  },
+});
+
+export const selectYieldSection = recipe({
+  base: atoms({
+    borderRadius: "xl",
+  }),
+  variants: {
+    variant: {
+      default: {},
+      porto: {
+        borderRadius: "8px",
       },
     },
   },

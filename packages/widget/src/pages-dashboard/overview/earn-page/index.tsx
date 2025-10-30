@@ -37,7 +37,7 @@ export const EarnPage = () => {
 
             <SelectTokenSection />
 
-            {variant === "utila" && (
+            {(variant === "utila" || variant === "porto") && (
               <Box
                 className={combineRecipeWithVariant({
                   rec: selectValidatorSectionContainer,
@@ -52,12 +52,14 @@ export const EarnPage = () => {
 
             <StakedVia />
 
-            {variant !== "utila" && <SelectValidatorSection />}
+            {variant !== "utila" && variant !== "porto" && (
+              <SelectValidatorSection />
+            )}
 
             <ExtraArgsSelection />
           </Box>
 
-          {variant === "utila" && <Divider />}
+          {(variant === "utila" || variant === "porto") && <Divider />}
 
           <Box>
             <Footer />

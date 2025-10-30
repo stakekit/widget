@@ -6,10 +6,12 @@ import { Divider } from "../../../../../components/atoms/divider";
 import { ToolTip } from "../../../../../components/atoms/tooltip";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { useSettings } from "../../../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { apyVariable, apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
+import { selectYieldSection } from "./styles.css";
 import { useAnimateYieldPercent } from "./use-animate-yield-percent";
 
 export const SelectYieldSection = () => {
@@ -47,11 +49,13 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            {variant !== "zerion" && variant !== "utila" && (
-              <Box my="2">
-                <Text>{t("details.earn")}</Text>
-              </Box>
-            )}
+            {variant !== "zerion" &&
+              variant !== "utila" &&
+              variant !== "porto" && (
+                <Box my="2">
+                  <Text>{t("details.earn")}</Text>
+                </Box>
+              )}
 
             <Box
               data-rk="stake-yield-section"
@@ -60,6 +64,10 @@ export const SelectYieldSection = () => {
               marginTop="2"
               py="4"
               px="4"
+              className={combineRecipeWithVariant({
+                rec: selectYieldSection,
+                variant,
+              })}
             >
               {variant === "zerion" && (
                 <Box my="1">

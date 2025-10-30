@@ -6,6 +6,8 @@ import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import { breakWord } from "../../../pages/details/earn-page/styles.css";
+import { useSettings } from "../../../providers/settings";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import { changeButton, nameOrAddressText } from "./styles.css";
 
 export const SelectValidatorTrigger = ({
@@ -14,6 +16,8 @@ export const SelectValidatorTrigger = ({
   selectedValidatorsArr: ValidatorDto[];
 }) => {
   const { t } = useTranslation();
+
+  const { variant } = useSettings();
 
   return (
     <Box
@@ -60,7 +64,10 @@ export const SelectValidatorTrigger = ({
       </Box>
 
       <Trigger asChild>
-        <Text flexShrink={0} className={changeButton}>
+        <Text
+          flexShrink={0}
+          className={combineRecipeWithVariant({ rec: changeButton, variant })}
+        >
           {t("shared.change")}
         </Text>
       </Trigger>

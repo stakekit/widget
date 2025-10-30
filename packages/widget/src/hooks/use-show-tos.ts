@@ -9,5 +9,9 @@ export const useShowTOS = () => {
 
   const { variant } = useSettings();
 
-  return { onAccept, tosAccepted, enabled: variant === "utila" };
+  return {
+    onAccept,
+    tosAccepted,
+    enabled: variant === "utila",
+  };
 };

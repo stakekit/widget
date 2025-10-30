@@ -96,6 +96,8 @@ const baseColorsContract = {
   disabledButtonActiveOutline: "",
 
   dashboardDetailsSectionBackground: "",
+
+  summaryItemBackground: "",
 };
 
 export const colorsContract: typeof baseColorsContract & {
@@ -127,6 +129,14 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__finery__blue__two__: string;
 
   __internal__finery__summary__item__background__: string;
+
+  __internal__porto__grey__one__: string;
+  __internal__porto__grey__two__: string;
+  __internal__porto__grey__three__: string;
+  __internal__porto__grey__four__: string;
+  __internal__porto__primary__purple__: string;
+  __internal__porto__primary__purple__hover__: string;
+  __internal__porto__primary__purple__active__: string;
 } = {
   ...baseColorsContract,
   __internal__utila__grey__one__: "",
@@ -151,6 +161,13 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__finery__blue__one__: "",
   __internal__finery__blue__two__: "",
   __internal__finery__summary__item__background__: "",
+  __internal__porto__grey__one__: "",
+  __internal__porto__grey__two__: "",
+  __internal__porto__grey__three__: "",
+  __internal__porto__grey__four__: "",
+  __internal__porto__primary__purple__: "",
+  __internal__porto__primary__purple__hover__: "",
+  __internal__porto__primary__purple__active__: "",
   connectKit: {
     accentColor: "",
     accentColorForeground: "",

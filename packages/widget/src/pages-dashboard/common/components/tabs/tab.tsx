@@ -43,13 +43,14 @@ export const Tab = ({ isSelected, variant, onTabPress }: Props) => {
           className={combineRecipeWithVariant({
             rec: tabText,
             variant: appVariant,
+            state: isSelected ? "selected" : undefined,
           })}
         >
           {t(`dashboard.details.tabs.${variant}`, variant)}
         </Text>
       </Box>
 
-      {isSelected && appVariant !== "utila" ? (
+      {isSelected && appVariant !== "utila" && appVariant !== "porto" ? (
         <motion.div
           className={tabBorder}
           layoutId="underline"
