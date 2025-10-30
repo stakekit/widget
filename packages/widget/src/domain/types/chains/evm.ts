@@ -178,7 +178,7 @@ export const evmChainsMap: EvmChainsMap = {
     type: "evm",
     skChainName: EvmNetworks.Plasma,
     wagmiChain: {
-      id: 9746,
+      id: 9745,
       name: "Plasma",
       iconUrl: getNetworkLogo(EvmNetworks.Plasma),
       nativeCurrency: plasmaTestnet.nativeCurrency,
@@ -250,7 +250,7 @@ export enum EvmChainIds {
   Katana = 747474,
   Gnosis = 100,
   Hyperevm = 999,
-  Plasma = 9746,
+  Plasma = 9745,
 }
 
 EvmChainIds satisfies Record<
