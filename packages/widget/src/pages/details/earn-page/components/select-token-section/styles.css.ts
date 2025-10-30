@@ -8,6 +8,9 @@ export const priceTxt = style({
 });
 
 export const selectTokenSection = recipe({
+  base: atoms({
+    borderRadius: "xl",
+  }),
   variants: {
     variant: {
       default: atoms({
@@ -17,6 +20,9 @@ export const selectTokenSection = recipe({
         background: "transparent",
       },
       finery: {},
+      porto: {
+        borderRadius: "8px",
+      },
     },
     state: {
       default: {},
@@ -68,6 +74,24 @@ export const selectTokenSection = recipe({
         borderColor: "__internal__finery__grey__two__",
       }),
     },
+    {
+      variants: {
+        state: "danger",
+        variant: "porto",
+      },
+      style: atoms({
+        borderColor: "textDanger",
+      }),
+    },
+    {
+      variants: {
+        state: "default",
+        variant: "porto",
+      },
+      style: atoms({
+        borderColor: "__internal__porto__primary__purple__",
+      }),
+    },
   ],
 });
 
@@ -76,6 +100,9 @@ export const selectTokenTitle = recipe({
     variant: {
       default: {},
       utila: {
+        fontSize: "16px",
+      },
+      porto: {
         fontSize: "16px",
       },
     },
@@ -90,6 +117,7 @@ export const selectTokenBalance = recipe({
       finery: {
         color: vars.color.text,
       },
+      porto: {},
     },
   },
 });
@@ -128,6 +156,9 @@ export const minMaxContainer = recipe({
         marginTop: "2",
       }),
       utila: atoms({
+        marginTop: "2",
+      }),
+      porto: atoms({
         marginTop: "2",
       }),
       zerion: {},

@@ -79,7 +79,7 @@ export const ActionListItem = ({
                     <Box className={activityDetailsContainer}>
                       <Text>{d.token.symbol}</Text>
 
-                      {variant !== "utila" && (
+                      {variant !== "utila" && variant !== "porto" && (
                         <Badge
                           badgeColor={badgeColor}
                           badgeLabel={badgeLabel}
@@ -104,7 +104,7 @@ export const ActionListItem = ({
                   </Box>
                 </Box>
 
-                {variant === "utila" && (
+                {(variant === "utila" || variant === "porto") && (
                   <Badge badgeColor={badgeColor} badgeLabel={badgeLabel} />
                 )}
               </Box>
@@ -152,7 +152,7 @@ const Badge = ({
         type: badgeColor,
       })}
     >
-      {variant === "utila" ? (
+      {variant === "utila" || variant === "porto" ? (
         <Text
           className={utilaBadgeText({
             type:

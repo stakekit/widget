@@ -18,6 +18,7 @@ export const rootClassName = recipe({
       default: {},
       finery: {},
       utila: {},
+      porto: {},
     },
     theme: {
       dark: {},
@@ -25,15 +26,6 @@ export const rootClassName = recipe({
     },
   },
   compoundVariants: [
-    {
-      variants: {
-        theme: "dark",
-        variant: "finery",
-      },
-      style: {
-        background: "#1A2022",
-      },
-    },
     {
       variants: {
         theme: "light",
@@ -48,6 +40,33 @@ export const rootClassName = recipe({
       },
       style: {
         background: "#211f25",
+      },
+    },
+    {
+      variants: {
+        theme: "dark",
+        variant: "finery",
+      },
+      style: {
+        background: "#1A2022",
+      },
+    },
+    {
+      variants: {
+        theme: "light",
+        variant: "porto",
+      },
+      style: {
+        background: "#171717",
+      },
+    },
+    {
+      variants: {
+        theme: "dark",
+        variant: "porto",
+      },
+      style: {
+        background: "#000000",
       },
     },
   ],

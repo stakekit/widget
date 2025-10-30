@@ -25,6 +25,9 @@ export const wrapper = recipe({
       finery: {
         borderRadius: "30px",
       },
+      porto: {
+        borderRadius: "8px",
+      },
     },
   },
 });
@@ -39,6 +42,9 @@ export const outletWrapper = recipe({
         paddingBottom: "24px",
       },
       utila: {
+        padding: "24px",
+      },
+      porto: {
         padding: "24px",
       },
     },

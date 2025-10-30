@@ -1,6 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../styles/theme/atoms.css";
+import { vars } from "../../../../styles/theme/contract.css";
 
 export const divider = style({
   position: "absolute",
@@ -25,6 +26,12 @@ export const tab = recipe({
           padding: "8px 16px",
         },
       ],
+      porto: [
+        {
+          borderRadius: "8px",
+          padding: "8px 16px",
+        },
+      ],
     },
     state: {
       active: {},
@@ -37,6 +44,13 @@ export const tab = recipe({
         variant: "utila",
       },
       style: [atoms({ background: "__internal__utila__grey__one__" })],
+    },
+    {
+      variants: {
+        state: "active",
+        variant: "porto",
+      },
+      style: [atoms({ background: "white" })],
     },
   ],
 });
@@ -60,16 +74,14 @@ export const tabContainer = recipe({
     display: "flex",
     flexDirection: "column",
     position: "relative",
-    height: "80px",
   },
   variants: {
     variant: {
       default: {
         width: "200px",
       },
-      utila: {
-        height: "32px",
-      },
+      utila: {},
+      porto: {},
     },
   },
   defaultVariants: {
@@ -85,6 +97,9 @@ export const tabText = recipe({
     textAlign: "center",
   },
   variants: {
+    state: {
+      selected: {},
+    },
     variant: {
       utila: [
         atoms({ fontWeight: "semibold" }),
@@ -92,8 +107,26 @@ export const tabText = recipe({
           fontSize: "14px",
         },
       ],
+      porto: [
+        atoms({ fontWeight: "semibold" }),
+        {
+          color: vars.color.__internal__porto__grey__four__,
+          fontSize: "14px",
+        },
+      ],
     },
   },
+  compoundVariants: [
+    {
+      variants: {
+        variant: "porto",
+        state: "selected",
+      },
+      style: {
+        color: vars.color.__internal__porto__grey__one__,
+      },
+    },
+  ],
 });
 
 export const tabsContainer = recipe({
@@ -104,9 +137,7 @@ export const tabsContainer = recipe({
       alignItems: "center",
       justifyContent: "center",
     }),
-    {
-      gap: "24px",
-    },
+    { gap: "24px" },
   ],
   variants: {
     variant: {
@@ -115,6 +146,10 @@ export const tabsContainer = recipe({
         padding: "8px",
         paddingLeft: "24px",
         paddingRight: "24px",
+      },
+      porto: {
+        gap: "15px",
+        padding: "16px 24px",
       },
     },
   },
@@ -147,6 +182,9 @@ export const tabsWrapper = recipe({
         justifyContent: "center",
       },
       utila: {
+        justifyContent: "flex-start",
+      },
+      porto: {
         justifyContent: "flex-start",
       },
     },

@@ -65,6 +65,7 @@ export const headerContainer = recipe({
         paddingRight: "10px",
       },
       utila: {},
+      porto: {},
     },
   },
   defaultVariants: {
@@ -82,6 +83,9 @@ export const positionsTitle = recipe({
         fontSize: "16px",
       },
       finery: {},
+      porto: {
+        fontSize: "16px",
+      },
     },
   },
   defaultVariants: {

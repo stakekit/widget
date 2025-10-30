@@ -3,7 +3,7 @@ import type { PropsWithChildren, ReactNode } from "react";
 import { useSettings } from "../../../providers/settings";
 import { id } from "../../../styles/theme/ids";
 import { Text } from "../typography/text";
-import { tooltipContent, triggerWrapper } from "./style.css";
+import { tooltipArrow, tooltipContent, triggerWrapper } from "./style.css";
 
 export const ToolTip = ({
   children,
@@ -39,7 +39,7 @@ export const ToolTip = ({
             ) : (
               label
             )}
-            <Tooltip.Arrow />
+            <Tooltip.Arrow className={tooltipArrow} />
           </Tooltip.Content>
         </Tooltip.Portal>
       </Tooltip.Root>

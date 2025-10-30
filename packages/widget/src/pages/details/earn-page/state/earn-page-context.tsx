@@ -327,7 +327,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           )
           .alt(Maybe.of(ss.validators))
           .map((validators) => {
-            if (variant === "utila") {
+            if (variant === "utila" || variant === "porto") {
               return [...validators].sort(
                 (a, b) => (b.apr ?? 0) - (a.apr ?? 0)
               );

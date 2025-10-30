@@ -22,6 +22,9 @@ export const summaryContainer = recipe({
       finery: {
         gap: "8px",
       },
+      porto: {
+        gap: "24px",
+      },
     },
   },
 });
@@ -45,7 +48,7 @@ export const summaryItem = recipe({
     variant: {
       default: [
         atoms({
-          background: "background",
+          background: "summaryItemBackground",
         }),
         {
           boxShadow: "0px 15px 30px 0px #0000000D",
@@ -53,7 +56,7 @@ export const summaryItem = recipe({
       ],
       utila: [
         atoms({
-          background: "background",
+          background: "summaryItemBackground",
           borderColor: "__internal__utila__border__",
         }),
         {
@@ -68,6 +71,17 @@ export const summaryItem = recipe({
         }),
         {
           boxShadow: "0px 15px 30px 0px #0000000D",
+        },
+      ],
+      porto: [
+        atoms({
+          background: "summaryItemBackground",
+          borderColor: "transparent",
+        }),
+        {
+          borderRadius: "8px",
+          borderWidth: "1px",
+          borderStyle: "solid",
         },
       ],
     },
@@ -97,6 +111,14 @@ export const summaryNumber = recipe({
           fontSize: "24px",
         },
       ],
+      porto: [
+        atoms({
+          fontWeight: "medium",
+        }),
+        {
+          fontSize: "18px",
+        },
+      ],
     },
   },
 });
@@ -116,18 +138,22 @@ export const summaryLabelContainer = recipe({
         borderRadius: "9px",
         padding: "12px 10px",
       },
+      porto: {
+        borderRadius: "4px",
+        padding: "4px 8px",
+      },
     },
     type: {
       staked: {
-        backgroundColor: "#F0EDFA",
+        background: "#F0EDFA",
         color: "#5A36C0",
       },
       rewards: {
-        backgroundColor: "#EDF1F5",
+        background: "#EDF1F5",
         color: "#0059AB",
       },
       available: {
-        backgroundColor: "#EDF6F3",
+        background: "#EDF6F3",
         color: "#00794E",
       },
     },
@@ -139,7 +165,7 @@ export const summaryLabelContainer = recipe({
         type: "staked",
       },
       style: {
-        backgroundColor: "#F6F0FF",
+        background: "#F6F0FF",
         color: "#5A36C0",
       },
     },
@@ -149,7 +175,7 @@ export const summaryLabelContainer = recipe({
         type: "rewards",
       },
       style: {
-        backgroundColor: "#F7ECFA",
+        background: "#F7ECFA",
         color: "#CA6CBD",
       },
     },
@@ -159,7 +185,7 @@ export const summaryLabelContainer = recipe({
         type: "available",
       },
       style: {
-        backgroundColor: "#EEF7F3",
+        background: "#EEF7F3",
         color: "#327C5F",
       },
     },
@@ -169,7 +195,7 @@ export const summaryLabelContainer = recipe({
         type: "staked",
       },
       style: {
-        backgroundColor: vars.color.__internal__finery__purple__one__,
+        background: vars.color.__internal__finery__purple__one__,
         color: vars.color.__internal__finery__purple__two__,
       },
     },
@@ -179,7 +205,7 @@ export const summaryLabelContainer = recipe({
         type: "rewards",
       },
       style: {
-        backgroundColor: vars.color.__internal__finery__blue__one__,
+        background: vars.color.__internal__finery__blue__one__,
         color: vars.color.__internal__finery__blue__two__,
       },
     },
@@ -189,9 +215,45 @@ export const summaryLabelContainer = recipe({
         type: "available",
       },
       style: {
-        backgroundColor: vars.color.__internal__finery__green__three__,
+        background: vars.color.__internal__finery__green__three__,
         color: vars.color.__internal__finery__green__one__,
       },
+    },
+    {
+      variants: {
+        variant: "porto",
+        type: "staked",
+      },
+      style: [
+        {
+          color: "white",
+          background: vars.color.__internal__porto__grey__three__,
+        },
+      ],
+    },
+    {
+      variants: {
+        variant: "porto",
+        type: "rewards",
+      },
+      style: [
+        {
+          color: "white",
+          background: vars.color.__internal__porto__grey__three__,
+        },
+      ],
+    },
+    {
+      variants: {
+        variant: "porto",
+        type: "available",
+      },
+      style: [
+        {
+          color: "white",
+          background: vars.color.__internal__porto__grey__three__,
+        },
+      ],
     },
   ],
 });
@@ -208,6 +270,13 @@ export const summaryLabel = recipe({
         color: "inherit",
         fontSize: "12px",
       },
+      porto: [
+        {
+          color: "inherit",
+          fontSize: "12px",
+          fontWeight: "lighter",
+        },
+      ],
     },
   },
 });

@@ -66,15 +66,15 @@ export const SummaryItem = ({
                     )}
                   </Text>
 
-                  <Text variant={{ type: "white" }}>
-                    <ul style={{ paddingLeft: "15px" }}>
+                  <ul style={{ paddingLeft: "15px" }}>
+                    <Text variant={{ type: "white" }}>
                       {enabledRewardsSummaryYieldNames.map((v) => (
                         <li style={{ marginTop: "5px" }} key={v}>
                           {t(v)}
                         </li>
                       ))}
-                    </ul>
-                  </Text>
+                    </Text>
+                  </ul>
                 </Box>
               )
             }

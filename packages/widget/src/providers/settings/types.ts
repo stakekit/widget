@@ -20,7 +20,8 @@ export type VariantProps =
     }
   | { variant: "utila" }
   | { variant: "default" }
-  | { variant: "finery" };
+  | { variant: "finery" }
+  | { variant: "porto" };
 
 export type SettingsProps = {
   apiKey: string;

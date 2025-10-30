@@ -21,6 +21,10 @@ export const container = recipe({
         background: vars.color.__internal__finery__summary__item__background__,
         boxShadow: "0px 15px 30px 0px #0000000D",
       },
+      porto: {
+        background: vars.color.__internal__porto__grey__two__,
+      },
+      utila: {},
     },
   },
 });
