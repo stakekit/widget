@@ -22,12 +22,21 @@ export const listItemContainer = recipe({
       default: {},
       utila: {},
       finery: {},
+      porto: {},
     },
   },
   compoundVariants: [
     {
       variants: {
         variant: "utila",
+      },
+      style: {
+        background: "none",
+      },
+    },
+    {
+      variants: {
+        variant: "porto",
       },
       style: {
         background: "none",

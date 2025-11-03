@@ -7,6 +7,7 @@ import { vars } from "../styles/theme/contract.css";
 import { rootSelector } from "../styles/theme/ids";
 import { darkTheme, lightTheme } from "../styles/theme/themes";
 import { fineryThemeOverrides } from "../styles/theme/variant-overrides/finery";
+import { portoThemeOverrides } from "../styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../styles/theme/variant-overrides/utila";
 import type { RecursivePartial } from "../types/utils";
 import { useSettings } from "./settings";
@@ -31,6 +32,10 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
 
           if (v === "finery") {
             return fineryThemeOverrides;
+          }
+
+          if (v === "porto") {
+            return portoThemeOverrides;
           }
 
           return {};

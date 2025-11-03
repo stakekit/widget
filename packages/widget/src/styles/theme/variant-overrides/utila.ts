@@ -12,6 +12,7 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
     },
   },
   color: {
+    summaryItemBackground: vars.color.__internal__utila__grey__one__,
     backgroundMuted: vars.color.__internal__utila__grey__one__,
     stakeSectionBackground: vars.color.__internal__utila__grey__one__,
     tokenSelectBackground: vars.color.__internal__utila__grey__one__,

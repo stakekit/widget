@@ -2,12 +2,15 @@
 import { Outlet } from "react-router";
 import { Box } from "../../components/atoms/box";
 import { AnimationPage } from "../../navigation/containers/animation-page";
+import { useSettings } from "../../providers/settings";
+import { combineRecipeWithVariant } from "../../utils/styles";
 import { VerticalDivider } from "../common/components/divider";
 import { TabPageContainer } from "../common/components/tab-page-container";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";
 
 export const ActivityTabPage = () => {
+  const { variant } = useSettings();
   return (
     <AnimationPage>
       <Box display="flex" flexDirection="column" gap="4">
@@ -18,7 +21,14 @@ export const ActivityTabPage = () => {
 
           <VerticalDivider />
 
-          <Box flex={1} width="0" className={activityDetailsContainer}>
+          <Box
+            flex={1}
+            width="0"
+            className={combineRecipeWithVariant({
+              rec: activityDetailsContainer,
+              variant,
+            })}
+          >
             <Outlet />
           </Box>
         </TabPageContainer>

@@ -102,7 +102,7 @@ export const SelectYieldRewardDetails = () => {
             ))
             .extractNullable()}
 
-        {variant === "utila" ? (
+        {variant === "utila" || variant === "porto" ? (
           <UtilaEarnYearlyOrMonthly
             earnMonthly={earnMonthly}
             earnYearly={earnYearly}
