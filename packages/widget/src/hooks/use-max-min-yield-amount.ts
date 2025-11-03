@@ -57,7 +57,8 @@ export const useMaxMinYieldAmount = ({
               (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
                 ?.maximum
           )
-          .map((a) => new BigNumber(a));
+          .map((a) => new BigNumber(a))
+          .filter((v) => v.isGreaterThan(0));
   }, [availableAmount, isForceMax, type, yieldOpportunity]);
 
   const maxEnterOrExitAmount = useMemo(

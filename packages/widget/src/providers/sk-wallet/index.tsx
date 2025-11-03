@@ -44,6 +44,7 @@ import { isLedgerDappBrowserProvider } from "../../utils";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isExternalProviderConnector } from "../external-provider";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
+import { isCardanoConnector } from "../misc/cardano-connector-meta";
 import { isSolanaConnector } from "../misc/solana-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isSafeConnector } from "../safe/safe-connector-meta";
@@ -350,6 +351,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   .mapLeft(() => new SendTransactionError())
               )
               .map((res) => ({ signedTx: res, broadcasted: true }));
+          }
+
+          if (isCardanoConnector(conn)) {
+            return conn
+              .signTransaction(tx)
+              .mapLeft(() => new SendTransactionError())
+              .map((res) => ({ signedTx: res, broadcasted: false }));
           }
 
           /**

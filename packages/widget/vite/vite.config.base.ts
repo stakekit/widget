@@ -46,7 +46,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
           },
         }),
         vanillaExtractPlugin(),
-        nodePolyfills({ include: ["buffer"] }),
+        nodePolyfills({ include: ["buffer", "crypto"] }),
       ],
       css: {
         postcss: {
