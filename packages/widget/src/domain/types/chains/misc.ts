@@ -9,6 +9,7 @@ const supportedMiscChains = [
   MiscNetworks.Solana,
   MiscNetworks.Tron,
   MiscNetworks.Ton,
+  MiscNetworks.Cardano,
 ] as const;
 
 export const supportedMiscChainsSet = new Set(supportedMiscChains);
@@ -98,6 +99,21 @@ export const ton = {
   },
 } as const satisfies Chain;
 
+export const cardano = {
+  id: 2000,
+  name: "Cardano",
+  iconUrl: getTokenLogo("ada"),
+  nativeCurrency: {
+    decimals: 18,
+    name: "Cardano",
+    symbol: "ADA",
+  },
+  rpcUrls: {
+    public: { http: ["https://rpc.cardano.org"] },
+    default: { http: ["https://rpc.cardano.org"] },
+  },
+} as const satisfies Chain;
+
 export const miscChainsMap: MiscChainsMap = {
   [MiscNetworks.Near]: {
     type: "misc",
@@ -124,6 +140,11 @@ export const miscChainsMap: MiscChainsMap = {
     skChainName: MiscNetworks.Ton,
     wagmiChain: ton,
   },
+  [MiscNetworks.Cardano]: {
+    type: "misc",
+    skChainName: MiscNetworks.Cardano,
+    wagmiChain: cardano,
+  },
 };
 
 export enum MiscChainIds {
@@ -132,6 +153,7 @@ export enum MiscChainIds {
   Solana = 501,
   Tron = 79,
   Ton = 3412,
+  Cardano = 2000,
 }
 
 MiscChainIds satisfies Record<

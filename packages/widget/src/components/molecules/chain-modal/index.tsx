@@ -22,7 +22,10 @@ export const ChainModal = () => {
   return (
     <ConnectButton.Custom>
       {({ chain, openChainModal }) => {
-        return Maybe.fromNullable(chain)
+        return Maybe.fromRecord({
+          chain: Maybe.fromNullable(chain),
+          skChain: Maybe.fromNullable(skChain),
+        })
           .map((c) => (
             <Box
               data-rk="chain-modal-container"
@@ -37,7 +40,7 @@ export const ChainModal = () => {
                 openChainModal();
               }}
             >
-              {Maybe.fromFalsy(c.unsupported && variant !== "zerion")
+              {Maybe.fromFalsy(c.chain.unsupported && variant !== "zerion")
                 .map(() => (
                   <Box px="2" py="2">
                     <Text variant={{ type: "danger" }}>
@@ -54,19 +57,19 @@ export const ChainModal = () => {
                     paddingLeft="2"
                     py="2"
                   >
-                    {c.iconUrl && (
+                    {c.chain.iconUrl && (
                       <Box
                         as="img"
                         borderRadius="full"
                         hw="6"
-                        src={c.iconUrl}
+                        src={c.chain.iconUrl}
                       />
                     )}
 
-                    {skChain?.name && (
+                    {c.skChain.name && (
                       <>
                         <Box marginLeft="2">
-                          <Text className={titleStyle}>{skChain.name}</Text>
+                          <Text className={titleStyle}>{c.skChain.name}</Text>
                         </Box>
 
                         <Box mx="2">

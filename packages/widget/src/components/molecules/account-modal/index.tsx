@@ -23,7 +23,10 @@ export const AccountModal = () => {
   return (
     <ConnectButton.Custom>
       {({ account, openAccountModal }) =>
-        Maybe.fromNullable(account)
+        Maybe.fromRecord({
+          account: Maybe.fromNullable(account),
+          address: Maybe.fromNullable(address),
+        })
           .map((a) => (
             <Box
               data-rk="account-modal-container"
@@ -46,8 +49,13 @@ export const AccountModal = () => {
                 paddingLeft="2"
                 py="2"
               >
-                {a.ensAvatar ? (
-                  <Box as="img" src={a.ensAvatar} hw="6" borderRadius="half" />
+                {a.account.ensAvatar ? (
+                  <Box
+                    as="img"
+                    src={a.account.ensAvatar}
+                    hw="6"
+                    borderRadius="half"
+                  />
                 ) : (
                   <>
                     <Box
@@ -64,7 +72,7 @@ export const AccountModal = () => {
                     </Box>
 
                     <Text className={titleStyle}>
-                      {a.ensName ?? a.displayName}
+                      {a.account.ensName ?? a.account.displayName}
                     </Text>
                   </>
                 )}

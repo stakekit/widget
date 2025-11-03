@@ -61,6 +61,12 @@ const queryFn = async ({
         })
       )
     ),
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.cardano)).chain(
+      () =>
+        MaybeAsync(() => import("./cardano-connector")).map((v) =>
+          v.getCardanoConnectors()
+        )
+    ),
   ]).then((connectors) => ({
     miscChainsMap: filteredMiscChainsMap,
     miscChains,
