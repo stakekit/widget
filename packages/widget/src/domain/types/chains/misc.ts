@@ -104,13 +104,13 @@ export const cardano = {
   name: "Cardano",
   iconUrl: getTokenLogo("ada"),
   nativeCurrency: {
-    decimals: 18,
+    decimals: 6,
     name: "Cardano",
     symbol: "ADA",
   },
   rpcUrls: {
-    public: { http: ["https://rpc.cardano.org"] },
-    default: { http: ["https://rpc.cardano.org"] },
+    public: { http: [] },
+    default: { http: [] },
   },
 } as const satisfies Chain;
 

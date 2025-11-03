@@ -1,5 +1,13 @@
 import type { GetType } from "purify-ts";
-import { boolean, Codec, Either, Right, record, string } from "purify-ts";
+import {
+  boolean,
+  Codec,
+  Either,
+  nullable,
+  Right,
+  record,
+  string,
+} from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
 
@@ -13,11 +21,12 @@ const codecs = {
   [localStorageBuildKey("shimDisconnect/substrate")]: boolean,
   [localStorageBuildKey("shimDisconnect/cardano")]: boolean,
   [localStorageBuildKey("substrateConnectors/lastConnectedId")]: string,
-  [localStorageBuildKey("cardanoConnectors/lastConnectedWallet")]:
+  [localStorageBuildKey("cardanoConnectors/lastConnectedWallet")]: nullable(
     Codec.interface({
       address: string,
       id: string,
-    }),
+    })
+  ),
   [localStorageBuildKey("tosAccepted")]: boolean,
 };
 

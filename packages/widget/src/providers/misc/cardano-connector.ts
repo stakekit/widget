@@ -60,13 +60,18 @@ const createCardanoConnector = ({
       },
       disconnect: async () => {
         setStorageItem("sk-widget@1//shimDisconnect/cardano", false);
+        setStorageItem(
+          "sk-widget@1//cardanoConnectors/lastConnectedWallet",
+          null
+        );
+        connectedWallet = null;
       },
       getAccounts: async () => {
         if (!connectedWallet) throw new Error("No wallet connected");
 
         return connectedWallet
           .getUsedAddress()
-          .then((address) => [address.toBase58() as Address]);
+          .then((address) => [address.toBech32() as Address]);
       },
       switchChain: async () => cardano,
       getChainId: async () => cardano.id,
