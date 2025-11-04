@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## 0.0.258
+
+### Patch Changes
+
+- 9718d76: fix: plasma chain id
+- 6df32b9: feat: add plasma
+- 1e40c3d: feat: porto variant
+- 190807a: feat: add cardano connector
+
 ## 0.0.257
 
 ### Patch Changes
