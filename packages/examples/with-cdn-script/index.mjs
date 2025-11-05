@@ -28,7 +28,7 @@ shadowBody.appendChild(shadowContainer);
 renderSKWidget({
   container: shadowContainer,
   theme: lightTheme,
-  apiKey: "e2d627cf-2ae3-4775-9fbc-76819c7cae38",
+  apiKey: "__YOUR_API_KEY__",
   portalContainer: shadowContainer,
   dashboardVariant: true,
 });

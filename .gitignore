@@ -260,3 +260,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
