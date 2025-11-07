@@ -179,6 +179,7 @@
       "summary": {
         "total_staked": "Total staked",
         "total_rewards": "Total rewards",
+        "average_apy": "Average APY",
         "available_balance": "Available"
       }
     },
@@ -192,10 +193,6 @@
     },
     "activity_details": {
       "your_position": "Your Position"
-    },
-    "summary_item": {
-      "rewards_summary_zero_tooltip": "Reward summary not available – rewards may still be accruing",
-      "rewards_summary_current_enabled_tooltip": "Reward summary currently available for:"
     },
     "enabled_rewards_summary_yield_names": {
       "polkadot_dot_validator_staking": "DOT native staking",

@@ -148,7 +148,7 @@ export const summaryLabelContainer = recipe({
         background: "#F0EDFA",
         color: "#5A36C0",
       },
-      rewards: {
+      apy: {
         background: "#EDF1F5",
         color: "#0059AB",
       },
@@ -172,7 +172,7 @@ export const summaryLabelContainer = recipe({
     {
       variants: {
         variant: "utila",
-        type: "rewards",
+        type: "apy",
       },
       style: {
         background: "#F7ECFA",
@@ -202,7 +202,7 @@ export const summaryLabelContainer = recipe({
     {
       variants: {
         variant: "finery",
-        type: "rewards",
+        type: "apy",
       },
       style: {
         background: vars.color.__internal__finery__blue__one__,
@@ -234,7 +234,7 @@ export const summaryLabelContainer = recipe({
     {
       variants: {
         variant: "porto",
-        type: "rewards",
+        type: "apy",
       },
       style: [
         {
