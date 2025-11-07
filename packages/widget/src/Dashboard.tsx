@@ -19,10 +19,11 @@ import { OverviewPage } from "./pages-dashboard/overview";
 import { EarnPage } from "./pages-dashboard/overview/earn-page";
 import { PositionDetailsPage } from "./pages-dashboard/position-details";
 import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
+import { DashboardProvider } from "./pages-dashboard/providers/dashboard-context";
 
 export const Dashboard = () => {
   return (
-    <>
+    <DashboardProvider>
       <Routes>
         <Route element={<DashboardWrapper />}>
           {/* Overview Tab */}
@@ -78,6 +79,6 @@ export const Dashboard = () => {
       </Routes>
 
       <GlobalModals />
-    </>
+    </DashboardProvider>
   );
 };

@@ -46,7 +46,7 @@ export const PositionDetailsInfo = () => {
         flex={1}
         display="flex"
         flexDirection="column"
-        background="backgroundMuted"
+        background="stakeSectionBackground"
         borderRadius="xl"
         px="4"
         py="4"

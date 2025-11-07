@@ -10,6 +10,7 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     baseContract: {
       xl: "8px",
       primaryButton: "8px",
+      secondaryButton: "8px",
     },
   },
   fontWeight: {

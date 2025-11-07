@@ -1,4 +1,5 @@
 import { style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
 import { vars } from "../../../styles/theme/contract.css";
 
 export const stepsAfter = style({
@@ -30,3 +31,18 @@ export const stepsBeforeMuted = style([
 ]);
 
 export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
+
+export const stepsHeadingContainer = recipe({
+  variants: {
+    variant: {
+      widget: {},
+      dashboard: {
+        position: "absolute",
+        top: "-35px",
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "widget",
+  },
+});
