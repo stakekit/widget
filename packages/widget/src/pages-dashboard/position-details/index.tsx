@@ -3,6 +3,7 @@ import { Box } from "../../components/atoms/box";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { usePositionDetails } from "../../pages/position-details/hooks/use-position-details";
 import { UnstakeOrPendingActionProvider } from "../../pages/position-details/state";
+import { useSKLocation } from "../../providers/location";
 import {
   BackButton,
   BackButtonProvider,
@@ -19,10 +20,18 @@ const PositionDetailsPageComponent = () => {
     usePositionDetails()
   );
 
+  const location = useSKLocation();
+
+  const isStepsPage = location.current.pathname.includes("/steps");
+
   return (
     <AnimationPage>
       <Box display="flex" flexDirection="column" gap="4">
-        <Box className={headerContainer}>
+        <Box
+          className={headerContainer({
+            page: isStepsPage ? "steps" : "default",
+          })}
+        >
           <BackButtonProvider>
             <BackButton />
           </BackButtonProvider>

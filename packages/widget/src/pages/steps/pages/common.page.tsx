@@ -6,8 +6,10 @@ import { Button } from "../../../components/atoms/button";
 import { Heading } from "../../../components/atoms/typography/heading";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
+import { useIsDashboard } from "../../../pages-dashboard/providers/dashboard-context";
 import { PageContainer } from "../../components/page-container";
 import { useSteps } from "../hooks/use-steps.hook";
+import { stepsHeadingContainer } from "./styles.css";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
@@ -21,6 +23,7 @@ export const StepsPage = ({
   onSignSuccess,
   providersDetails,
 }: StepsPageProps) => {
+  const isDashboard = useIsDashboard();
   const { retry, txStates } = useSteps({
     session,
     onSignSuccess,
@@ -32,8 +35,13 @@ export const StepsPage = ({
   return (
     <AnimationPage>
       <motion.div layout="position">
-        <PageContainer>
-          <Box marginBottom="2">
+        <PageContainer position="relative">
+          <Box
+            marginBottom="2"
+            className={stepsHeadingContainer({
+              variant: isDashboard ? "dashboard" : "widget",
+            })}
+          >
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
           </Box>
 
