@@ -45,6 +45,7 @@ const SummaryContext = createContext<
         },
         StakeKitErrorDto
       >;
+      averageApyQuery: UseQueryResult<BigNumber, StakeKitErrorDto>;
       availableBalanceSumQuery: UseQueryResult<BigNumber, StakeKitErrorDto>;
     }
   | undefined
@@ -245,6 +246,82 @@ export const SummaryProvider = ({
     }
   );
 
+  const averageApyQuery = usePrices(
+    {
+      currency: config.currency,
+      tokenList: useMemo(() => {
+        if (!multiYieldsMapQuery.data) return [];
+
+        return positionsData.data.flatMap((v) => {
+          const yieldDto = multiYieldsMapQuery.data.get(v.integrationId);
+
+          if (!yieldDto) return [];
+
+          const baseToken = getBaseToken(yieldDto);
+
+          return [...v.allBalances.map((b) => b.token), baseToken];
+        });
+      }, [multiYieldsMapQuery.data, positionsData.data]),
+    },
+    {
+      enabled: !multiYieldsMapQuery.isLoading,
+      select: useCallback(
+        (prices: Prices) => {
+          if (!positionsData.data || !multiYieldsMapQuery.data) {
+            return new BigNumber(0);
+          }
+
+          const { totalWeightedApy, totalValue } = positionsData.data.reduce(
+            (acc, p) => {
+              const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
+
+              if (!yieldDto) return acc;
+
+              const baseToken = getBaseToken(yieldDto);
+
+              const pricePerShare = "1";
+
+              const positionTotalAmount = getPositionTotalAmount({
+                token: { ...baseToken, pricePerShare },
+                balances: p.balancesWithAmount,
+              });
+
+              const usdAmount = getTokenPriceInUSD({
+                baseToken,
+                amount: positionTotalAmount,
+                pricePerShare,
+                token: baseToken,
+                prices,
+              });
+
+              if (yieldDto.apy > 0 && usdAmount.gt(0)) {
+                return {
+                  totalWeightedApy: acc.totalWeightedApy.plus(
+                    usdAmount.times(yieldDto.apy * 100)
+                  ),
+                  totalValue: acc.totalValue.plus(usdAmount),
+                };
+              }
+
+              return acc;
+            },
+            {
+              totalWeightedApy: new BigNumber(0),
+              totalValue: new BigNumber(0),
+            }
+          );
+
+          if (totalValue.gt(0)) {
+            return totalWeightedApy.div(totalValue);
+          }
+
+          return new BigNumber(0);
+        },
+        [multiYieldsMapQuery.data, positionsData.data]
+      ),
+    }
+  );
+
   const tokenBalancesScan = useTokenBalancesScan();
 
   const tokenList = useMemo(
@@ -288,9 +365,15 @@ export const SummaryProvider = ({
     () => ({
       allPositionsQuery,
       rewardsPositionsQuery,
+      averageApyQuery,
       availableBalanceSumQuery,
     }),
-    [allPositionsQuery, rewardsPositionsQuery, availableBalanceSumQuery]
+    [
+      allPositionsQuery,
+      rewardsPositionsQuery,
+      averageApyQuery,
+      availableBalanceSumQuery,
+    ]
   );
 
   return (

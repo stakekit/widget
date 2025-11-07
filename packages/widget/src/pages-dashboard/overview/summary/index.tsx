@@ -7,7 +7,7 @@ import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 
 export const Summary = () => {
-  const { allPositionsQuery, rewardsPositionsQuery, availableBalanceSumQuery } =
+  const { allPositionsQuery, averageApyQuery, availableBalanceSumQuery } =
     useSummary();
 
   const { t } = useTranslation();
@@ -26,10 +26,10 @@ export const Summary = () => {
       />
 
       <SummaryItem
-        type="rewards"
-        label={t("dashboard.overview.summary.total_rewards")}
-        value={rewardsPositionsQuery.data?.rewardsPositionsTotalSum}
-        isLoading={rewardsPositionsQuery.isLoading}
+        type="apy"
+        label={t("dashboard.overview.summary.average_apy")}
+        value={averageApyQuery.data}
+        isLoading={averageApyQuery.isLoading}
       />
 
       <SummaryItem

@@ -57,10 +57,6 @@ const enabledRewardsSummaryYieldIds = {
   }[]
 >;
 
-export const enabledRewardsSummaryYieldNames = Object.values(
-  enabledRewardsSummaryYieldIds
-).flatMap((v) => v.map((v) => v.name));
-
 const enabledRewardsSummaryYieldIdsSet = new Set(
   Object.values(enabledRewardsSummaryYieldIds).flatMap((v) =>
     v.map((v) => v.id)
