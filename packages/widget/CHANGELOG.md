@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.259
+
+### Patch Changes
+
+- 182bc49: feat: preferred validators
+- bdc4a1e: feat: average apy
+- 5b75b31: fix: dashboard steps page layout
+
 ## 0.0.258
 
 ### Patch Changes
