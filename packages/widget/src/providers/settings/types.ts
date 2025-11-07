@@ -51,11 +51,12 @@ export type SettingsProps = {
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;
   validatorsConfig?: {
-    [Key in SupportedSKChains]?: {
+    [Key in SupportedSKChains | "*"]?: {
       allowed?: string[];
       blocked?: string[];
       preferred?: string[];
       mergePreferredWithDefault?: boolean;
+      preferredOnly?: boolean;
     };
   };
   tokenIconMapping?:

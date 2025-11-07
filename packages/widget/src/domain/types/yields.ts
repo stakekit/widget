@@ -17,12 +17,13 @@ type YieldTypeLabelsMap = {
 };
 
 export type ValidatorsConfig = Map<
-  SupportedSKChains,
+  SupportedSKChains | "*",
   {
     allowed?: Set<string>;
     blocked?: Set<string>;
     preferred?: Set<string>;
-    mergePreferredWithDefault?: boolean;
+    mergePreferredWithDefault: boolean;
+    preferredOnly: boolean;
   }
 >;
 
@@ -30,15 +31,23 @@ export const filterMapValidators = (
   validatorsConfig: ValidatorsConfig,
   yieldDto: YieldDto
 ): YieldDto => {
-  const valConfig = validatorsConfig.get(
-    yieldDto.token.network as SupportedSKChains
-  );
+  const valConfig = Maybe.fromNullable(
+    validatorsConfig.get(yieldDto.token.network as SupportedSKChains)
+  )
+    .altLazy(() => Maybe.fromNullable(validatorsConfig.get("*")))
+    .extractNullable();
 
   if (!valConfig) {
     return yieldDto;
   }
 
-  const { allowed, blocked, preferred, mergePreferredWithDefault } = valConfig;
+  const {
+    allowed,
+    blocked,
+    preferred,
+    mergePreferredWithDefault,
+    preferredOnly,
+  } = valConfig;
 
   return {
     ...yieldDto,
@@ -46,14 +55,15 @@ export const filterMapValidators = (
       if (allowed && !allowed.has(v.address)) return [];
       if (blocked?.has(v.address)) return [];
 
-      return [
-        {
-          ...v,
-          preferred:
-            preferred?.has(v.address) ||
-            !!(mergePreferredWithDefault && v.preferred),
-        },
-      ];
+      const isPreferred =
+        preferred?.has(v.address) ||
+        !!(mergePreferredWithDefault && v.preferred);
+
+      if (preferredOnly) {
+        return isPreferred ? [{ ...v, preferred: true }] : [];
+      }
+
+      return [{ ...v, preferred: isPreferred }];
     }),
   };
 };
