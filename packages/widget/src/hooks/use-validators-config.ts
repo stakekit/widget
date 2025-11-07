@@ -16,9 +16,10 @@ export const useValidatorsConfig = (): ValidatorsConfig => {
             blocked: val.blocked && new Set(val.blocked),
             preferred: val.preferred && new Set(val.preferred),
             mergePreferredWithDefault: val.mergePreferredWithDefault ?? true,
+            preferredOnly: val.preferredOnly ?? false,
           },
         ])
-      ),
+      ) satisfies ValidatorsConfig,
     [validatorsConfig]
   );
 };
