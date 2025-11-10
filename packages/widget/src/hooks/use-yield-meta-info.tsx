@@ -39,6 +39,8 @@ export const useYieldMetaInfo = ({
     >(({ selectedStake: y, tokenDto }) => {
       const sv = validatorsFormatted.extract();
 
+      const haveFeeConfigurationEnabled = y.feeConfigurations.length > 0;
+
       const stakeToken = tokenDto.symbol;
       const rewardTokens =
         y.metadata.rewardTokens
@@ -179,6 +181,9 @@ export const useYieldMetaInfo = ({
                   stakeToken,
                   rewardTokens,
                   providerName,
+                  context: haveFeeConfigurationEnabled
+                    ? "with_fee_configuration"
+                    : undefined,
                 }),
             withdrawnNotAvailable: null,
             ...def,
@@ -189,7 +194,11 @@ export const useYieldMetaInfo = ({
             description: t("details.vault.description", {
               stakeToken,
               depositToken: rewardTokens,
-              context: isEthenaUsdeStaking(y.id) ? "ethena_usde" : undefined,
+              context: haveFeeConfigurationEnabled
+                ? "with_fee_configuration"
+                : isEthenaUsdeStaking(y.id)
+                  ? "ethena_usde"
+                  : undefined,
             }),
             earnPeriod:
               warmupPeriodDays > 0
