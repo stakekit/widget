@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.260
+
+### Patch Changes
+
+- 5bf8b8f: fix: ll polkadot currency id
+
 ## 0.0.259
 
 ### Patch Changes
