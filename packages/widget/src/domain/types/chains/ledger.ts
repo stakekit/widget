@@ -58,7 +58,7 @@ export const supportedLedgerFamiliesWithCurrency = {
   },
   polkadot: {
     "*": {
-      currencyId: "polkadot",
+      currencyId: "assethub_polkadot",
       family: "polkadot",
       skChainName: SubstrateNetworks.Polkadot,
     },
