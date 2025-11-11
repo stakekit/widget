@@ -86,6 +86,7 @@
     },
     "vault": {
       "description": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. You can trade this liquid asset at any time",
+      "description_with_fee_configuration": "When you deposit {{stakeToken}} you'll receive {{depositToken}}. This token accumulates yield and represents your share in the vault.",
       "description_ethena_usde": "When you deposit {{stakeToken}} you'll receive {{depositToken}}.",
       "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
@@ -97,6 +98,7 @@
     },
     "lend": {
       "description": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. You can borrow against the supplied assets on {{providerName}}",
+      "description_with_fee_configuration": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}. This token accumulates yield and represents your share in the vault.",
       "description_compound": "When you supply {{stakeToken}} you'll receive {{rewardTokens}}",
       "earn_after_warmup_one": "You'll start earning {{count}} day after you supply your assets",
       "earn_after_warmup_other": "You'll start earning {{count}} days after you supply your assets",
