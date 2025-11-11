@@ -35,14 +35,14 @@ export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
 export const stepsHeadingContainer = recipe({
   variants: {
     variant: {
-      widget: {},
-      dashboard: {
+      default: {},
+      absolute: {
         position: "absolute",
         top: "-35px",
       },
     },
   },
   defaultVariants: {
-    variant: "widget",
+    variant: "absolute",
   },
 });

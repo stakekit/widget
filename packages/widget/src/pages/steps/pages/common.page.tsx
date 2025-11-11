@@ -8,6 +8,7 @@ import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { useIsDashboard } from "../../../pages-dashboard/providers/dashboard-context";
 import { PageContainer } from "../../components/page-container";
+import { useIsUnstakeOrPendingAction } from "../../position-details/state";
 import { useSteps } from "../hooks/use-steps.hook";
 import { stepsHeadingContainer } from "./styles.css";
 import { TxState } from "./tx-state";
@@ -23,7 +24,9 @@ export const StepsPage = ({
   onSignSuccess,
   providersDetails,
 }: StepsPageProps) => {
+  const isUnstakeOrPendingAction = useIsUnstakeOrPendingAction();
   const isDashboard = useIsDashboard();
+
   const { retry, txStates } = useSteps({
     session,
     onSignSuccess,
@@ -39,7 +42,10 @@ export const StepsPage = ({
           <Box
             marginBottom="2"
             className={stepsHeadingContainer({
-              variant: isDashboard ? "dashboard" : "widget",
+              variant:
+                isDashboard && isUnstakeOrPendingAction
+                  ? "absolute"
+                  : "default",
             })}
           >
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
