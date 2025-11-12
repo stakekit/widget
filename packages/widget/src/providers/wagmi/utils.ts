@@ -1,7 +1,12 @@
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { walletConnectWallet } from "@stakekit/rainbowkit/wallets";
 import type { CreateConnectorFn } from "wagmi";
+import { evmChainGroup } from "../../index.package";
 
+/**
+ *
+ * @description Only for EVM wallets
+ */
 export const createWallet =
   (
     params: Pick<
@@ -11,7 +16,8 @@ export const createWallet =
       | "iconUrl"
       | "iconBackground"
       | "downloadUrls"
-      | "chainGroup"
+      | "mobile"
+      | "qrCode"
     > &
       (
         | { isWalletConnect: true; projectId: string }
@@ -29,17 +35,15 @@ export const createWallet =
       iconUrl: params.iconUrl,
       iconBackground: params.iconBackground,
       downloadUrls: params.downloadUrls,
-      chainGroup: params.chainGroup,
+      chainGroup: evmChainGroup,
+      mobile: params.mobile,
+      qrCode: params.qrCode,
     };
 
     if (params.isWalletConnect) {
-      const wc = walletConnectWallet({ projectId: params.projectId });
-
       return {
-        ...wc,
+        ...walletConnectWallet({ projectId: params.projectId }),
         ...def,
-        qrCode: { getUri: (uri) => uri },
-        createConnector: wc.createConnector,
       };
     }
 
