@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.261
+
+### Patch Changes
+
+- 15bad32: fix: layout margin on steps page
+- 2901e6f: fix: yield description with fee configuration
+- c031e5e: feat: improve custom connector
+
 ## 0.0.260
 
 ### Patch Changes
