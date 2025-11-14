@@ -82,6 +82,9 @@ export const tabContainer = recipe({
       },
       utila: {},
       porto: {},
+      finery: {
+        height: "80px",
+      },
     },
   },
   defaultVariants: {
@@ -141,6 +144,7 @@ export const tabsContainer = recipe({
   ],
   variants: {
     variant: {
+      default: {},
       utila: {
         gap: "15px",
         padding: "8px",
@@ -152,6 +156,9 @@ export const tabsContainer = recipe({
         padding: "16px 24px",
       },
     },
+  },
+  defaultVariants: {
+    variant: "default",
   },
 });
 
