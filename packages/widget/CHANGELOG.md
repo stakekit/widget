@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.262
+
+### Patch Changes
+
+- 624d0d6: fix: header height
+
 ## 0.0.261
 
 ### Patch Changes
