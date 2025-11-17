@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.262
+
+### Patch Changes
+
+- 624d0d6: fix: header height
+- 1440cd0: feat: porto connector
+
 ## 0.0.261
 
 ### Patch Changes
