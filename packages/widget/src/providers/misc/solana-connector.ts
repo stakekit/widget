@@ -1,4 +1,5 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
+import { WalletConnectWalletAdapter } from "@solana/wallet-adapter-wallets";
 import { type Connection, Transaction } from "@solana/web3.js";
 import { MiscNetworks } from "@stakekit/common";
 import type {
@@ -10,9 +11,11 @@ import { Maybe } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
+import portoIcon from "../../assets/images/porto.svg";
 import { solana } from "../../domain/types/chains/misc";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo } from "../../utils";
+import type { VariantProps } from "../settings/types";
 import { type ExtraProps, getConfigMeta } from "./solana-connector-meta";
 
 const createSolanaConnector = ({
@@ -94,34 +97,42 @@ export const getSolanaConnectors = ({
   wallets,
   forceWalletConnectOnly,
   connection,
+  variant,
 }: {
   wallets: Wallet[];
   forceWalletConnectOnly: boolean;
   connection: Connection;
+  variant: VariantProps["variant"];
 }): WalletList[number] => {
   return {
     groupName: "Solana",
     wallets: forceWalletConnectOnly
       ? []
-      : wallets.map((w) => () => ({
-          id: w.adapter.name,
-          name: w.adapter.name,
-          iconUrl: w.adapter.icon,
-          iconBackground: "#fff",
-          chainGroup: {
-            iconUrl: getNetworkLogo(MiscNetworks.Solana),
-            title: "Solana",
-            id: "solana",
-          },
-          installed:
-            w.readyState === "Installed" || w.readyState === "Loadable",
-          ...getConfigMeta(w.adapter),
-          createConnector: (walletDetailsParams) =>
-            createSolanaConnector({
-              solanaWallet: w,
-              walletDetailsParams,
-              connection,
-            }),
-        })),
+      : wallets
+          .filter((w) =>
+            variant === "porto"
+              ? w.adapter instanceof WalletConnectWalletAdapter
+              : true
+          )
+          .map((w) => () => ({
+            id: w.adapter.name,
+            name: variant === "porto" ? "Porto" : w.adapter.name,
+            iconUrl: variant === "porto" ? portoIcon : w.adapter.icon,
+            iconBackground: variant === "porto" ? "#000" : "#fff",
+            chainGroup: {
+              iconUrl: getNetworkLogo(MiscNetworks.Solana),
+              title: "Solana",
+              id: "solana",
+            },
+            installed:
+              w.readyState === "Installed" || w.readyState === "Loadable",
+            ...getConfigMeta(w.adapter),
+            createConnector: (walletDetailsParams) =>
+              createSolanaConnector({
+                solanaWallet: w,
+                walletDetailsParams,
+                connection,
+              }),
+          })),
   };
 };

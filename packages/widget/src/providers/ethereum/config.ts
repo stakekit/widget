@@ -4,11 +4,11 @@ import {
   injectedWallet,
   ledgerWallet,
   metaMaskWallet,
-  rainbowWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
+import portoIcon from "../../assets/images/porto.svg";
 import { config } from "../../config";
 import { evmChainGroup } from "../../domain/types/chains";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
@@ -45,24 +45,32 @@ const queryFn = async ({
         (val) => val.wagmiChain
       );
 
+      const portoWallet: WalletList[number]["wallets"][number] = (args) => ({
+        ...walletConnectWallet(args),
+        iconUrl: portoIcon,
+        iconBackground: "#000",
+        name: "Porto",
+      });
+
+      const wallets: WalletList[number]["wallets"] = (
+        variant === "porto"
+          ? [portoWallet]
+          : forceWalletConnectOnly
+            ? [walletConnectWallet]
+            : [
+                metaMaskWallet,
+                injectedWallet,
+                walletConnectWallet,
+                coinbaseWallet,
+                ledgerWallet,
+              ]
+      )
+        .map((w) => passCorrectChainsToWallet(w, evmChains))
+        .map((w) => (props) => ({ ...w(props), chainGroup: evmChainGroup }));
+
       const connector: WalletList[number] = {
         groupName: "Ethereum",
-        wallets: (forceWalletConnectOnly
-          ? [walletConnectWallet]
-          : [
-              metaMaskWallet,
-              injectedWallet,
-              walletConnectWallet,
-              rainbowWallet,
-              coinbaseWallet,
-              ledgerWallet,
-            ]
-        )
-          .map((w) => passCorrectChainsToWallet(w, evmChains))
-          .map((w) => (props) => ({
-            ...w(props),
-            chainGroup: evmChainGroup,
-          })),
+        wallets,
       };
 
       return Promise.resolve({

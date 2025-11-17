@@ -102,6 +102,7 @@ const buildWagmiConfig = async (opts: {
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             solanaWallets: opts.solanaWallets,
             solanaConnection: opts.solanaConnection,
+            variant: opts.variant,
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,
@@ -201,7 +202,8 @@ const buildWagmiConfig = async (opts: {
         !opts.disableInjectedProviderDiscovery &&
         !opts.externalProviders &&
         !val.ledgerLiveConnector &&
-        !val.safeConnector;
+        !val.safeConnector &&
+        opts.variant !== "porto";
 
       const walletList = Just(null)
         .map(() => {

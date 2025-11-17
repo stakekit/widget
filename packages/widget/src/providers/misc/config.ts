@@ -10,6 +10,7 @@ import {
   miscChainsMap,
 } from "../../domain/types/chains/misc";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
+import type { VariantProps } from "../settings/types";
 
 const queryKey = [config.appPrefix, "misc-config"];
 const staleTime = Number.POSITIVE_INFINITY;
@@ -19,11 +20,13 @@ const queryFn = async ({
   forceWalletConnectOnly,
   solanaWallets,
   solanaConnection,
+  variant,
 }: {
   enabledNetworks: Set<Networks>;
   forceWalletConnectOnly: boolean;
   solanaWallets: Wallet[];
   solanaConnection: Connection;
+  variant: VariantProps["variant"];
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -58,6 +61,7 @@ const queryFn = async ({
           forceWalletConnectOnly,
           wallets: solanaWallets,
           connection: solanaConnection,
+          variant,
         })
       )
     ),
