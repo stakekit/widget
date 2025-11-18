@@ -235,8 +235,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
-        .map((val) => [...val].sort((a, b) => b.apy - a.apy))
-        .map((val) => val.filter((v) => v.apy > 0))
+        .map((val) => [...val].sort((a, b) => b.rewardRate - a.rewardRate))
+        .map((val) => val.filter((v) => v.rewardRate > 0))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
             .chain((val) =>

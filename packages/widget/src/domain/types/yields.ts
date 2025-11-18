@@ -2,7 +2,7 @@ import type { YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import type { SupportedSKChains } from "./chains";
 
 export type ExtendedYieldType = YieldType | "native_staking" | "pooled_staking";
@@ -178,3 +178,19 @@ export const isEthenaUsdeStaking = (yieldId: string) =>
 
 export const isBittensorStaking = (yieldId: string) =>
   yieldId === "bittensor-native-staking";
+
+export const getComputedRewardRate = (yieldDto: YieldDto) => {
+  const liveFeeConfigurations = yieldDto.feeConfigurations.filter(
+    (fc) => fc.status === "LIVE"
+  );
+
+  const firstLiveFeeConfiguration = List.head(
+    liveFeeConfigurations
+  ).extractNullable();
+
+  if (liveFeeConfigurations.length === 1 && firstLiveFeeConfiguration) {
+    return firstLiveFeeConfiguration.computedRewardRate;
+  }
+
+  return yieldDto.rewardRate;
+};
