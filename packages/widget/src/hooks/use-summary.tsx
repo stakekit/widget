@@ -294,10 +294,10 @@ export const SummaryProvider = ({
                 prices,
               });
 
-              if (yieldDto.apy > 0 && usdAmount.gt(0)) {
+              if (yieldDto.rewardRate > 0 && usdAmount.gt(0)) {
                 return {
                   totalWeightedApy: acc.totalWeightedApy.plus(
-                    usdAmount.times(yieldDto.apy * 100)
+                    usdAmount.times(yieldDto.rewardRate * 100)
                   ),
                   totalValue: acc.totalValue.plus(usdAmount),
                 };

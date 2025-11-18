@@ -4,6 +4,7 @@ import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
 import {
   filterMapValidators,
+  getComputedRewardRate,
   isBittensorStaking,
   isEthenaUsdeStaking,
   type ValidatorsConfig,
@@ -67,6 +68,7 @@ const fn = ({
       isEthenaUsdeStaking(y.id)
         ? ({
             ...y,
+            rewardRate: getComputedRewardRate(y),
             metadata: {
               ...y.metadata,
               name: y.metadata.name.replace(/staking/i, ""),
