@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.263
+
+### Patch Changes
+
+- f01c510: fix: computed reward rate
+
 ## 0.0.262
 
 ### Patch Changes
