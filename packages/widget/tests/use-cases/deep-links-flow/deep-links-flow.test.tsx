@@ -1,8 +1,7 @@
-import userEvent from "@testing-library/user-event";
 import { numberToHex } from "viem";
 import { describe, expect, it } from "vitest";
 import { APToPercentage } from "../../../src/utils";
-import { renderApp, waitFor } from "../../utils/test-utils";
+import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Deep links flow", () => {
@@ -17,64 +16,63 @@ describe("Deep links flow", () => {
 
     setUrl({ accountId: account, yieldId: avaxLiquidStaking.id });
 
-    const withAvaxLiquidStakingApp = renderApp({
+    const withAvaxLiquidStakingApp = await renderApp({
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await waitFor(() =>
-      expect(
-        withAvaxLiquidStakingApp.getByText("Liquid Staking")
-      ).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(
-        withAvaxLiquidStakingApp.getByText(`You'll receive`)
-      ).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(
-        withAvaxLiquidStakingApp.getByText(
-          `${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`
-        )
-      ).toBeInTheDocument()
-    );
-    expect(
-      withAvaxLiquidStakingApp.getByText(
-        `via ${avaxLiquidStaking.metadata.provider.name}`
+    await expect
+      .element(withAvaxLiquidStakingApp.getByText("Liquid Staking"))
+      .toBeInTheDocument();
+
+    await expect
+      .element(withAvaxLiquidStakingApp.getByText(`You'll receive`).first())
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        withAvaxLiquidStakingApp
+          .getByText(`${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`)
+          .first()
       )
-    ).toBeInTheDocument();
+      .toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        withAvaxLiquidStakingApp.getByText(
-          `${APToPercentage(avaxLiquidStaking.rewardRate)}%`
-        )
-      ).toBeInTheDocument()
-    );
+    await expect
+      .element(
+        withAvaxLiquidStakingApp
+          .getByText(`via ${avaxLiquidStaking.metadata.provider.name}`)
+          .first()
+      )
+      .toBeInTheDocument();
 
-    withAvaxLiquidStakingApp.unmount();
+    await expect
+      .element(
+        withAvaxLiquidStakingApp
+          .getByText(`${APToPercentage(avaxLiquidStaking.rewardRate)}%`)
+          .first()
+      )
+      .toBeInTheDocument();
+
+    await withAvaxLiquidStakingApp.unmount();
 
     setUrl({ accountId: account, yieldId: avaxNativeStaking.id });
 
-    const withAvaxNativeStakingApp = renderApp({
+    const withAvaxNativeStakingApp = await renderApp({
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await waitFor(() =>
-      expect(
-        withAvaxNativeStakingApp.getAllByText("Stake")
-      ).length.greaterThanOrEqual(1)
-    );
+    await expect
+      .element(withAvaxNativeStakingApp.getByText("Stake").first())
+      .toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        withAvaxNativeStakingApp.getByText(
-          `${APToPercentage(avaxNativeStaking.rewardRate)}%`
-        )
-      ).toBeInTheDocument()
-    );
+    await expect
+      .element(
+        withAvaxNativeStakingApp
+          .getByText(`${APToPercentage(avaxNativeStaking.rewardRate)}%`)
+          .first()
+      )
+      .toBeInTheDocument();
 
-    withAvaxNativeStakingApp.unmount();
+    await withAvaxNativeStakingApp.unmount();
   });
 
   it("Works correctly with pending action query param without validator address requirement", async () => {
@@ -87,43 +85,37 @@ describe("Deep links flow", () => {
       pendingaction: "CLAIM_REWARDS",
     });
 
-    const app = renderApp({
+    const app = await renderApp({
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await waitFor(() => expect(app.getByText("Claim")).toBeInTheDocument());
+    await expect.element(app.getByText("Claim")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
+    await expect
+      .element(
         app.getByText("By clicking confirm you agree to", { exact: false })
-      ).toBeInTheDocument()
-    );
+      )
+      .toBeInTheDocument();
 
-    await waitFor(() => expect(app.getByText("Confirm")).toBeInTheDocument());
+    await expect.element(app.getByText("Confirm").last()).toBeInTheDocument();
 
-    const user = userEvent.setup();
+    await app.getByText("Confirm").last().click();
 
-    await user.click(app.getByText("Confirm"));
+    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(app.getByText("Follow Steps")).toBeInTheDocument()
-    );
-
-    await waitFor(() =>
-      expect(requestFn).toHaveBeenCalledWith({
+    await expect
+      .poll(() => requestFn, { timeout: 1000 * 5 })
+      .toHaveBeenCalledWith({
         method: "eth_sendTransaction",
         params: expect.anything(),
-      })
-    );
-    await waitFor(() =>
-      expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" })
-    );
+      });
 
-    await waitFor(() =>
-      expect(
-        app.getByText("Successfully claimed rewards", { exact: false })
-      ).toBeInTheDocument()
-    );
+    expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" });
+
+    await expect
+      .element(app.getByText("Successfully claimed rewards", { exact: false }))
+      .toBeInTheDocument();
+
     expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
 
     app.unmount();
@@ -139,58 +131,55 @@ describe("Deep links flow", () => {
       pendingaction: "CLAIM_REWARDS",
     });
 
-    const app = renderApp({
+    const app = await renderApp({
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await waitFor(() =>
-      expect(app.getByText(avaxLiquidStaking.metadata.name)).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(
-        app.getByTestId(avaxLiquidStaking.validators[0].address)
-      ).toBeInTheDocument()
-    );
+    await expect
+      .element(app.getByText(avaxLiquidStaking.metadata.name))
+      .toBeInTheDocument();
 
-    const user = userEvent.setup();
+    await expect
+      .element(app.getByTestId(avaxLiquidStaking.validators[0].address))
+      .toBeInTheDocument();
 
-    await user.click(app.getByTestId(avaxLiquidStaking.validators[0].address));
-    await user.click(app.getByText("Submit"));
+    await app.getByTestId(avaxLiquidStaking.validators[0].address).click();
+    await app.getByText("Submit").click();
 
-    await waitFor(() => expect(app.getByText("Claim")).toBeInTheDocument());
+    await expect.element(app.getByText("Claim")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
+    await expect
+      .element(
         app.getByText("By clicking confirm you agree to", { exact: false })
-      ).toBeInTheDocument()
-    );
+      )
+      .toBeInTheDocument();
 
-    expect(app.getByText("Confirm")).toBeInTheDocument();
+    await expect
+      .element(app.getByRole("button", { name: "Confirm" }))
+      .toBeInTheDocument();
 
-    await user.click(app.getByText("Confirm"));
+    await app.getByRole("button", { name: "Confirm" }).click();
 
-    await waitFor(() =>
-      expect(app.getByText("Follow Steps")).toBeInTheDocument()
-    );
+    await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(requestFn).toHaveBeenCalledWith({
+    await expect
+      .poll(() => requestFn, { timeout: 1000 * 5 })
+      .toHaveBeenCalledWith({
         method: "eth_sendTransaction",
         params: expect.anything(),
-      })
-    );
-    await waitFor(() =>
-      expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" })
-    );
+      });
 
-    await waitFor(() =>
-      expect(
-        app.getByText("Successfully claimed rewards", { exact: false })
-      ).toBeInTheDocument()
-    );
-    expect(app.getByText("View Claim rewards transaction")).toBeInTheDocument();
+    expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" });
 
-    app.unmount();
+    await expect
+      .element(app.getByText("Successfully claimed rewards", { exact: false }))
+      .toBeInTheDocument();
+
+    await expect
+      .element(app.getByText("View Claim rewards transaction"))
+      .toBeInTheDocument();
+
+    await app.unmount();
   });
 
   it("Handles init network correctly", async () => {
@@ -200,17 +189,19 @@ describe("Deep links flow", () => {
     expect(getCurrentChainId()).not.toBe(1);
     setUrl({ network: "ethereum" });
 
-    const app = renderApp({
+    const app = await renderApp({
       wagmi: { __customConnectors__: customConnectors },
     });
 
-    await waitFor(() => expect(app.getByText("Ethereum")).toBeInTheDocument());
+    await expect.element(app.getByText("Ethereum")).toBeInTheDocument();
 
-    expect(requestFn).toHaveBeenCalledWith({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: numberToHex(1) }],
-    });
+    await expect
+      .poll(() => requestFn, { timeout: 1000 * 5 })
+      .toHaveBeenCalledWith({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: numberToHex(1) }],
+      });
 
-    app.unmount();
+    await app.unmount();
   });
 });

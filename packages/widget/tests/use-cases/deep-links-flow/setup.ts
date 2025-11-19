@@ -1,14 +1,10 @@
 import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
-import {
-  getActionControllerPendingResponseMock,
-  getTransactionControllerGetGasForNetworkResponseMock,
-  getYieldV2ControllerGetYieldByIdResponseMock,
-} from "@stakekit/api-hooks/msw";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
-import { server } from "../../mocks/server";
+import { pendingActionFixture, yieldFixture } from "../../fixtures";
+import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 import { setUrl as _setUrl } from "./utils";
 
@@ -37,26 +33,20 @@ export const setup = async (opts?: {
 
   const amount = "6.367499123588739454";
 
-  const avaxNativeStaking = Just(getYieldV2ControllerGetYieldByIdResponseMock())
+  const avaxNativeStaking = Just(yieldFixture())
     .map(
       (def): YieldDto => ({
         ...def,
         id: "avalanche-avax-native-staking",
         token,
         tokens: [token],
-        apy: 0.08486613028450002,
-        rewardRate: 0.08486613028450002,
-        rewardType: "apy",
-        status: { enter: true, exit: true },
-        args: { enter: { args: { nfts: undefined } } },
         metadata: { ...def.metadata, type: "staking" },
-        feeConfigurations: [],
         validators: [],
       })
     )
     .unsafeCoerce();
 
-  const avaxLiquidStaking = Just(getYieldV2ControllerGetYieldByIdResponseMock())
+  const avaxLiquidStaking = Just(yieldFixture())
     .map(
       (def) =>
         ({
@@ -64,12 +54,6 @@ export const setup = async (opts?: {
           id: "avalanche-avax-liquid-staking",
           token,
           tokens: [token],
-          status: { enter: true, exit: true },
-          args: { enter: { args: { nfts: undefined } } },
-          rewardRate: 0.05766578328258792,
-          apy: 0.05766578328258792,
-          rewardType: "apy",
-          feeConfigurations: [],
           metadata: {
             ...def.metadata,
             name: "AVAX Liquid Staking",
@@ -136,7 +120,7 @@ export const setup = async (opts?: {
     },
   ];
 
-  const pendingAction = Just(getActionControllerPendingResponseMock())
+  const pendingAction = Just(pendingActionFixture())
     .map((def): typeof def => ({
       ...def,
       type: "CLAIM_REWARDS",
@@ -152,7 +136,7 @@ export const setup = async (opts?: {
     }))
     .unsafeCoerce();
 
-  server.use(
+  worker.use(
     http.get("*/v1/tokens", async () => {
       await delay();
 
@@ -229,15 +213,6 @@ export const setup = async (opts?: {
       await delay();
       return HttpResponse.json(avaxLiquidStakingBalances);
     }),
-    http.get(
-      `*/v1/transactions/gas/${avaxLiquidStaking.token.network}`,
-      async () => {
-        await delay();
-        return HttpResponse.json(
-          getTransactionControllerGetGasForNetworkResponseMock()
-        );
-      }
-    ),
     http.post("*/v1/actions/pending", async (info) => {
       const data = (await info.request.json()) as { integrationId: string };
       await delay();

@@ -62,7 +62,7 @@ const createLedgerLiveConnector = ({
     transport.connect();
     const walletApiClient = new WalletAPIClient(transport);
 
-    const connect: ReturnType<CreateConnectorFn>["connect"] = async () => {
+    const connect: ReturnType<CreateConnectorFn>["connect"] = async (args) => {
       config.emitter.emit("message", { type: "connecting" });
 
       /**
@@ -187,9 +187,11 @@ const createLedgerLiveConnector = ({
         onChainChanged(defaultChain.chain.id.toString());
 
         return {
-          accounts: [noAccountPlaceholder as Address],
+          accounts: args?.withCapabilities
+            ? [{ address: noAccountPlaceholder as Address, capabilities: {} }]
+            : [noAccountPlaceholder as Address],
           chainId: defaultChain.chain.id,
-        };
+        } as never;
       }
 
       const preferredAccount = Maybe.fromNullable(queryParams.accountId).chain(
@@ -235,9 +237,16 @@ const createLedgerLiveConnector = ({
       onChainChanged(currentChain.chain.id.toString());
 
       return {
-        accounts: [accountWithChain.account.address as Address],
+        accounts: args?.withCapabilities
+          ? [
+              {
+                address: accountWithChain.account.address as Address,
+                capabilities: {},
+              },
+            ]
+          : [accountWithChain.account.address as Address],
         chainId: currentChain.chain.id,
-      };
+      } as never;
     };
 
     const getAccountsOnCurrentChain = () =>

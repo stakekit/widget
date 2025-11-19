@@ -13,10 +13,13 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import portoIcon from "../../assets/images/porto.svg";
 import { solana } from "../../domain/types/chains/misc";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo } from "../../utils";
 import type { VariantProps } from "../settings/types";
-import { type ExtraProps, getConfigMeta } from "./solana-connector-meta";
+import {
+  type ExtraProps,
+  getConfigMeta,
+  type StorageItem,
+} from "./solana-connector-meta";
 
 const createSolanaConnector = ({
   solanaWallet,
@@ -27,7 +30,7 @@ const createSolanaConnector = ({
   walletDetailsParams: WalletDetailsParams;
   connection: Connection;
 }) =>
-  createConnector<unknown, ExtraProps>((config) => ({
+  createConnector<unknown, ExtraProps, StorageItem>((config) => ({
     ...walletDetailsParams,
     isSolanaConnector: true,
     id: solanaWallet.adapter.name,
@@ -42,20 +45,27 @@ const createSolanaConnector = ({
       );
       return signed;
     },
-    connect: async () => {
+    connect: async (args) => {
       config.emitter.emit("message", { type: "connecting" });
 
-      setStorageItem("sk-widget@1//shimDisconnect/solana", true);
+      config.storage?.removeItem("solana.disconnected");
 
       await solanaWallet.adapter.connect();
 
       return {
-        accounts: [solanaWallet.adapter.publicKey?.toBase58() as Address],
+        accounts: args?.withCapabilities
+          ? [
+              {
+                address: solanaWallet.adapter.publicKey?.toBase58() as Address,
+                capabilities: {},
+              },
+            ]
+          : [solanaWallet.adapter.publicKey?.toBase58() as Address],
         chainId: solana.id,
-      };
+      } as never;
     },
     disconnect: () => {
-      setStorageItem("sk-widget@1//shimDisconnect/solana", false);
+      config.storage?.setItem("solana.disconnected", true);
       return solanaWallet.adapter.disconnect();
     },
     getAccounts: async () => {
@@ -65,17 +75,19 @@ const createSolanaConnector = ({
     },
     switchChain: async () => solana,
     getChainId: async () => solana.id,
-    isAuthorized: async () =>
-      getStorageItem("sk-widget@1//shimDisconnect/solana")
-        .map(
-          (val) =>
-            !!(
-              val &&
-              solanaWallet.adapter.connected &&
-              solanaWallet.adapter.publicKey?.toBase58()
-            )
-        )
-        .orDefault(false),
+    isAuthorized: async () => {
+      const isDisconnected = await config.storage?.getItem(
+        "solana.disconnected"
+      );
+
+      if (isDisconnected) return false;
+
+      return !!(
+        solanaWallet.adapter.connected &&
+        solanaWallet.adapter.publicKey?.toBase58()
+      );
+    },
+
     onAccountsChanged: (accounts: string[]) => {
       if (accounts.length === 0) {
         config.emitter.emit("disconnect");
@@ -84,7 +96,9 @@ const createSolanaConnector = ({
       }
     },
     onChainChanged: (chainId) => {
-      config.emitter.emit("change", { chainId: chainId as unknown as number });
+      config.emitter.emit("change", {
+        chainId: chainId as unknown as number,
+      });
     },
     onDisconnect: () => {
       config.emitter.emit("disconnect");

@@ -17,9 +17,8 @@ import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
 import { config } from "../../config";
 import { tron } from "../../domain/types/chains/misc";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo, getTokenLogo } from "../../utils";
-import type { ExtraProps } from "./tron-connector-meta";
+import type { ExtraProps, StorageItem } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";
 
 const createTronConnector = ({
@@ -31,26 +30,28 @@ const createTronConnector = ({
   adapter: Adapter;
   walletDetailsParams: WalletDetailsParams;
 }) =>
-  createConnector<unknown, ExtraProps>((config) => ({
+  createConnector<unknown, ExtraProps, StorageItem>((config) => ({
     ...walletDetailsParams,
     id: configMeta[metaConfig].id,
     name: configMeta[metaConfig].name,
     type: configMeta[metaConfig].type,
     signTransaction: adapter.signTransaction.bind(adapter),
-    connect: async () => {
+    connect: async (args) => {
       config.emitter.emit("message", { type: "connecting" });
 
       await adapter.connect();
 
-      setStorageItem("sk-widget@1//shimDisconnect/tron", true);
+      config.storage?.removeItem("tron.disconnected");
 
       return {
-        accounts: [adapter.address as Address],
+        accounts: args?.withCapabilities
+          ? [{ address: adapter.address as Address, capabilities: {} }]
+          : ([adapter.address as Address] as readonly Address[]),
         chainId: tron.id,
-      };
+      } as never;
     },
     disconnect: () => {
-      setStorageItem("sk-widget@1//shimDisconnect/tron", false);
+      config.storage?.setItem("tron.disconnected", true);
       return adapter.disconnect();
     },
     getAccounts: async () => {
@@ -64,10 +65,13 @@ const createTronConnector = ({
     },
     switchChain: async () => tron,
     getChainId: async () => tron.id,
-    isAuthorized: async () =>
-      getStorageItem("sk-widget@1//shimDisconnect/tron")
-        .map((val) => !!(val && adapter.connected && adapter.address))
-        .orDefault(false),
+    isAuthorized: async () => {
+      const isDisconnected = await config.storage?.getItem("tron.disconnected");
+
+      if (isDisconnected) return false;
+
+      return !!(adapter.connected && adapter.address);
+    },
     onAccountsChanged: (accounts: string[]) => {
       if (accounts.length === 0) {
         config.emitter.emit("disconnect");
@@ -76,7 +80,9 @@ const createTronConnector = ({
       }
     },
     onChainChanged: (chainId) => {
-      config.emitter.emit("change", { chainId: chainId as unknown as number });
+      config.emitter.emit("change", {
+        chainId: chainId as unknown as number,
+      });
     },
     onDisconnect: () => {
       config.emitter.emit("disconnect");
