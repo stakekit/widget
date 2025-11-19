@@ -11,6 +11,7 @@ import type { SupportedSKChains } from "./chains";
 import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { TokenString } from "./tokens";
+import { isBittensorStaking } from "./yields";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -197,9 +198,9 @@ export const getMinUnstakeAmount = (
 
   const pricePerShareBN = new BigNumber(pricePerShare ?? 0);
 
-  if (pricePerShareBN.isZero()) {
+  if (pricePerShareBN.isZero() || !isBittensorStaking(yieldDto.id)) {
     return integrationMin;
   }
 
-  return integrationMin.dividedBy(pricePerShareBN).decimalPlaces(8);
+  return integrationMin.dividedBy(pricePerShareBN).decimalPlaces(16);
 };

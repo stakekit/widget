@@ -18,6 +18,7 @@ import {
 } from "react";
 import { config } from "../../../config";
 import { isForceMaxAmount } from "../../../domain/types/stake";
+import { isERC4626 } from "../../../domain/types/yields";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
@@ -158,7 +159,8 @@ export const UnstakeOrPendingActionProvider = ({
   });
 
   const canChangeUnstakeAmount = integrationData.map(
-    (d) => !!(!isForceMax && d.args.exit?.args?.amount?.required)
+    (d) =>
+      !!(!isForceMax && (d.args.exit?.args?.amount?.required || isERC4626(d)))
   );
 
   const positionBalancesByTypePendingActions = useMemo(
