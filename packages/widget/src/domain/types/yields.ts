@@ -194,3 +194,6 @@ export const getComputedRewardRate = (yieldDto: YieldDto) => {
 
   return yieldDto.rewardRate;
 };
+
+export const isERC4626 = (yieldDto: YieldDto) =>
+  yieldDto.metadata.supportedStandards?.includes("ERC4626") ?? false;
