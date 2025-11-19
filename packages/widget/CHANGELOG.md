@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.264
+
+### Patch Changes
+
+- 3af0655: fix: unstake limits for ERC4626
+
 ## 0.0.263
 
 ### Patch Changes
