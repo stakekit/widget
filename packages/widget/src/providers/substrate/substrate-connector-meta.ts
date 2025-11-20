@@ -13,6 +13,11 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   }) => EitherAsync<Error, string>;
 };
 
+export type StorageItem = {
+  "substrate.disconnected": boolean;
+  "substrate.lastConnectedId": string;
+};
+
 type SubstrateConnector = Connector & ExtraProps;
 
 export const isSubstrateConnector = (

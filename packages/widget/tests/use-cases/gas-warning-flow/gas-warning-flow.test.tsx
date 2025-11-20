@@ -1,8 +1,8 @@
 import type { YieldDto } from "@stakekit/api-hooks";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
+import { userEvent } from "vitest/browser";
 import { formatAddress } from "../../../src/utils";
-import { renderApp, waitFor, within } from "../../utils/test-utils";
+import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Gas warning flow", () => {
@@ -17,57 +17,55 @@ describe("Gas warning flow", () => {
     yieldDto: YieldDto;
     withWarning: boolean;
   } & Pick<ReturnType<typeof setup>, "account" | "customConnectors">) => {
-    const app = renderApp({
+    const app = await renderApp({
       wagmi: {
         __customConnectors__: customConnectors,
         forceWalletConnectOnly: false,
       },
     });
 
-    await waitFor(() =>
-      expect(app.getByText(formatAddress(account))).toBeInTheDocument()
-    );
+    await expect
+      .element(app.getByText(formatAddress(account)))
+      .toBeInTheDocument();
 
-    await waitFor(() => app.getByTestId("select-opportunity").click());
+    await app.getByTestId("select-opportunity").click();
 
-    const selectContainer = await waitFor(() =>
-      app.getByTestId("select-modal__container")
-    );
+    const selectContainer = app.getByTestId("select-modal__container");
 
-    within(selectContainer)
-      .getByTestId(`select-opportunity__item_${yieldDto.id}`, { exact: false })
+    await selectContainer
+      .getByTestId(new RegExp(`^select-opportunity__item_${yieldDto.id}`))
       .click();
 
-    await waitFor(() => {
-      const trigger = app.getByTestId("select-opportunity");
-
-      return expect(
-        within(trigger).getByText(yieldDto.token.symbol)
-      ).toBeInTheDocument();
-    });
+    await expect
+      .poll(
+        () =>
+          app.getByTestId("select-opportunity").getByText(yieldDto.token.symbol)
+            .length
+      )
+      .greaterThan(0);
 
     const stakeAmount = availableAmount.toString();
 
-    const user = userEvent.setup();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard(stakeAmount);
 
-    await user.click(app.getByTestId("number-input"));
-    await user.keyboard(stakeAmount);
-
-    expect(app.getByRole("button", { name: "Stake" })).toBeInTheDocument();
-    user.click(app.getByRole("button", { name: "Stake" }));
+    await expect
+      .element(app.getByRole("button", { name: "Stake" }))
+      .toBeInTheDocument();
+    await userEvent.click(app.getByRole("button", { name: "Stake" }));
 
     if (withWarning) {
-      await waitFor(() =>
-        expect(
+      await expect
+        .element(
           app.getByText("This action is unlikely to succeed", { exact: false })
-        ).toBeInTheDocument()
-      );
+        )
+        .toBeInTheDocument();
     } else {
-      await waitFor(() =>
-        expect(
+      await expect
+        .element(
           app.getByText("This action is unlikely to succeed", { exact: false })
-        ).not.toBeInTheDocument()
-      );
+        )
+        .not.toBeInTheDocument();
     }
     app.unmount();
   };
@@ -79,27 +77,19 @@ describe("Gas warning flow", () => {
         customConnectors,
         yieldWithSameGasAndStakeToken,
         setTxGas,
-        setAvailableAmount,
-      } = await setup();
+        setAvalanceCTokenAmount,
+      } = setup();
 
-      const totalTxGas =
-        yieldWithSameGasAndStakeToken.actionDto.transactions.reduce(
-          (acc, tx) => {
-            setTxGas({
-              yieldId: yieldWithSameGasAndStakeToken.yieldDto.id,
-              txId: tx.id,
-              amount: "3",
-            });
-
-            return acc + 3;
-          },
-          0
-        );
-
+      const totalTxGas = 4;
       const availableAmount = totalTxGas - 1;
-      setAvailableAmount(availableAmount);
 
-      testFn({
+      setTxGas({
+        yieldId: yieldWithSameGasAndStakeToken.yieldDto.id,
+        amount: totalTxGas.toString(),
+      });
+      setAvalanceCTokenAmount(availableAmount);
+
+      await testFn({
         availableAmount: availableAmount.toString(),
         withWarning: true,
         yieldDto: yieldWithSameGasAndStakeToken.yieldDto,
@@ -114,23 +104,19 @@ describe("Gas warning flow", () => {
         customConnectors,
         yieldWithSameGasAndStakeToken,
         setTxGas,
-        setAvailableAmount,
-      } = await setup();
+        setAvalanceCTokenAmount,
+      } = setup();
 
-      let totalTxGas = 0;
-      yieldWithSameGasAndStakeToken.actionDto.transactions.forEach((tx) => {
-        totalTxGas += 3;
-        setTxGas({
-          yieldId: yieldWithSameGasAndStakeToken.yieldDto.id,
-          txId: tx.id,
-          amount: "3",
-        });
-      });
-
+      const totalTxGas = 4;
       const availableAmount = totalTxGas + 1;
-      setAvailableAmount(availableAmount);
 
-      testFn({
+      setTxGas({
+        yieldId: yieldWithSameGasAndStakeToken.yieldDto.id,
+        amount: totalTxGas.toString(),
+      });
+      setAvalanceCTokenAmount(availableAmount);
+
+      await testFn({
         availableAmount: availableAmount.toString(),
         withWarning: false,
         yieldDto: yieldWithSameGasAndStakeToken.yieldDto,
@@ -147,27 +133,19 @@ describe("Gas warning flow", () => {
         customConnectors,
         yieldWithDifferentGasAndStakeToken,
         setTxGas,
-        setAvailableAmount,
-      } = await setup();
+        setUsdcTokenAmount,
+      } = setup();
 
-      const totalTxGas =
-        yieldWithDifferentGasAndStakeToken.actionDto.transactions.reduce(
-          (acc, tx) => {
-            setTxGas({
-              yieldId: yieldWithDifferentGasAndStakeToken.yieldDto.id,
-              txId: tx.id,
-              amount: "3",
-            });
+      const totalTxGas = 4;
+      const availableAmount = totalTxGas - 1;
 
-            return acc + 3;
-          },
-          0
-        );
+      setTxGas({
+        yieldId: yieldWithDifferentGasAndStakeToken.yieldDto.id,
+        amount: totalTxGas.toString(),
+      });
+      setUsdcTokenAmount(availableAmount);
 
-      const availableAmount = totalTxGas + 1;
-      setAvailableAmount(availableAmount);
-
-      testFn({
+      await testFn({
         availableAmount: availableAmount.toString(),
         withWarning: true,
         yieldDto: yieldWithDifferentGasAndStakeToken.yieldDto,
@@ -182,27 +160,19 @@ describe("Gas warning flow", () => {
         customConnectors,
         yieldWithDifferentGasAndStakeToken,
         setTxGas,
-        setAvailableAmount,
-      } = await setup();
+        setUsdcTokenAmount,
+      } = setup();
 
-      const totalTxGas =
-        yieldWithDifferentGasAndStakeToken.actionDto.transactions.reduce(
-          (acc, tx) => {
-            setTxGas({
-              yieldId: yieldWithDifferentGasAndStakeToken.yieldDto.id,
-              txId: tx.id,
-              amount: "3",
-            });
+      const totalTxGas = 4;
+      const availableAmount = totalTxGas + 1;
 
-            return acc + 3;
-          },
-          0
-        );
+      setTxGas({
+        yieldId: yieldWithDifferentGasAndStakeToken.yieldDto.id,
+        amount: totalTxGas.toString(),
+      });
+      setUsdcTokenAmount(availableAmount);
 
-      const availableAmount = totalTxGas - 1;
-      setAvailableAmount(availableAmount);
-
-      testFn({
+      await testFn({
         availableAmount: availableAmount.toString(),
         withWarning: false,
         yieldDto: yieldWithDifferentGasAndStakeToken.yieldDto,

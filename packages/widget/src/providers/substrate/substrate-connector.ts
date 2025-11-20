@@ -16,9 +16,12 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { config } from "../../config";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo } from "../../utils";
-import { configMeta, type ExtraProps } from "./substrate-connector-meta";
+import {
+  configMeta,
+  type ExtraProps,
+  type StorageItem,
+} from "./substrate-connector-meta";
 
 const createSubstrateConnector = ({
   id,
@@ -37,7 +40,7 @@ const createSubstrateConnector = ({
   chains: ReadonlyArray<Chain>;
   lunoKitChains: LunoKitChain[];
 }) =>
-  createConnector<unknown, ExtraProps>((config) => {
+  createConnector<unknown, ExtraProps, StorageItem>((config) => {
     const $filteredChains = new BehaviorSubject<Chain[]>(chains as Chain[]);
 
     return {
@@ -101,7 +104,7 @@ const createSubstrateConnector = ({
           .mapLeft(
             (e) => new Error("Failed to sign transaction", { cause: e })
           ),
-      connect: async () => {
+      connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
         baseConnector.once("get_uri", (uri: string) =>
@@ -110,22 +113,23 @@ const createSubstrateConnector = ({
 
         const accounts = await baseConnector.connect(name, lunoKitChains);
 
-        if (!accounts || accounts.length === 0)
+        if (!accounts || accounts.length === 0) {
           throw new Error("No accounts found");
+        }
 
-        setStorageItem("sk-widget@1//shimDisconnect/substrate", true);
-        setStorageItem(
-          "sk-widget@1//substrateConnectors/lastConnectedId",
-          baseConnector.id
-        );
+        config.storage?.removeItem("substrate.disconnected");
+        config.storage?.setItem("substrate.lastConnectedId", baseConnector.id);
 
         return {
-          accounts: accounts.map((a) => a.address) as Address[],
+          accounts: args?.withCapabilities
+            ? accounts.map((a) => ({ address: a.address, capabilities: {} }))
+            : (accounts.map((a) => a.address) as Address[]),
           chainId: $filteredChains.getValue()[0].id,
-        };
+        } as never;
       },
       disconnect: () => {
-        setStorageItem("sk-widget@1//shimDisconnect/substrate", false);
+        config.storage?.setItem("substrate.disconnected", true);
+        config.storage?.removeItem("substrate.lastConnectedId");
         return baseConnector.disconnect();
       },
       getAccounts: () =>
@@ -145,19 +149,17 @@ const createSubstrateConnector = ({
       },
       getChainId: async () => $filteredChains.getValue()[0].id,
       isAuthorized: async () => {
-        const isAvailable = getStorageItem(
-          "sk-widget@1//shimDisconnect/substrate"
-        )
-          .map((val) => !!val)
-          .orDefault(false);
+        const isDisconnected = await config.storage?.getItem(
+          "substrate.disconnected"
+        );
 
-        if (!isAvailable) return false;
+        if (isDisconnected) return false;
 
-        return getStorageItem(
-          "sk-widget@1//substrateConnectors/lastConnectedId"
-        )
-          .map((val) => val === baseConnector.id)
-          .orDefault(false);
+        const lastConnectedId = await config.storage?.getItem(
+          "substrate.lastConnectedId"
+        );
+
+        return !!(lastConnectedId && lastConnectedId === baseConnector.id);
       },
       onAccountsChanged: (accounts: string[]) => {
         if (accounts.length === 0) {

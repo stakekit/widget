@@ -22,12 +22,28 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
     const $filteredChains = new BehaviorSubject<Chain[]>([]);
     const sdk = new SafeSDK();
 
+    const getProvider = async () => {
+      // Only allowed in iframe context
+      if (!isIframe()) return;
+
+      if (!provider_) {
+        // `getInfo` hangs when not used in Safe App iFrame
+        // https://github.com/safe-global/safe-apps-sdk/issues/263#issuecomment-1029835840
+        const safe = await withTimeout(() => sdk.safe.getInfo(), {
+          timeout: 10,
+        });
+        if (!safe) throw new Error("Could not load Safe information");
+        provider_ = new SafeAppProvider(safe, sdk);
+      }
+      return provider_;
+    };
+
     return {
       id: configMeta.id,
       name: configMeta.name,
       type: configMeta.type,
-      async connect() {
-        const provider = await this.getProvider();
+      async connect(args) {
+        const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
 
         const accounts = await this.getAccounts();
@@ -47,10 +63,15 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
         if (shimDisconnect)
           await config.storage?.removeItem("safe.disconnected");
 
-        return { accounts, chainId };
+        return {
+          accounts: args?.withCapabilities
+            ? accounts.map((acc) => ({ address: acc, capabilities: {} }))
+            : accounts,
+          chainId,
+        } as never;
       },
       async disconnect() {
-        const provider = await this.getProvider();
+        const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
 
         if (disconnect) {
@@ -63,7 +84,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
           await config.storage?.setItem("safe.disconnected", true);
       },
       async getAccounts() {
-        const provider = await this.getProvider();
+        const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
         return (await provider.request({ method: "eth_accounts" })).map(
           getAddress
@@ -85,7 +106,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
         return provider_;
       },
       async getChainId() {
-        const provider = await this.getProvider();
+        const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
         return Number(provider.chainId);
       },

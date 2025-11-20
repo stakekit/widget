@@ -1,13 +1,5 @@
 import type { GetType } from "purify-ts";
-import {
-  boolean,
-  Codec,
-  Either,
-  nullable,
-  Right,
-  record,
-  string,
-} from "purify-ts";
+import { boolean, Either, Right, record, string } from "purify-ts";
 import { config } from "../config";
 import { MaybeWindow } from "../utils/maybe-window";
 
@@ -16,17 +8,6 @@ const localStorageBuildKey = <K extends string>(key: K) =>
 
 const codecs = {
   [localStorageBuildKey("skPubKeys")]: record(string, string),
-  [localStorageBuildKey("shimDisconnect/tron")]: boolean,
-  [localStorageBuildKey("shimDisconnect/solana")]: boolean,
-  [localStorageBuildKey("shimDisconnect/substrate")]: boolean,
-  [localStorageBuildKey("shimDisconnect/cardano")]: boolean,
-  [localStorageBuildKey("substrateConnectors/lastConnectedId")]: string,
-  [localStorageBuildKey("cardanoConnectors/lastConnectedWallet")]: nullable(
-    Codec.interface({
-      address: string,
-      id: string,
-    })
-  ),
   [localStorageBuildKey("tosAccepted")]: boolean,
 };
 
@@ -76,13 +57,7 @@ type Listener<K extends keyof LocalStorageKV = keyof LocalStorageKV> = (
 
 const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
   [localStorageBuildKey("skPubKeys")]: new Map(),
-  [localStorageBuildKey("shimDisconnect/tron")]: new Map(),
-  [localStorageBuildKey("shimDisconnect/solana")]: new Map(),
-  [localStorageBuildKey("shimDisconnect/substrate")]: new Map(),
-  [localStorageBuildKey("shimDisconnect/cardano")]: new Map(),
-  [localStorageBuildKey("substrateConnectors/lastConnectedId")]: new Map(),
   [localStorageBuildKey("tosAccepted")]: new Map(),
-  [localStorageBuildKey("cardanoConnectors/lastConnectedWallet")]: new Map(),
 };
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(

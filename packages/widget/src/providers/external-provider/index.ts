@@ -70,17 +70,23 @@ export const externalProviderConnector = (
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
             async () => $filteredChains.getValue()[0].id;
 
-          const connect: ReturnType<CreateConnectorFn>["connect"] =
-            async () => {
-              connectorConfig.emitter.emit("message", { type: "connecting" });
+          const connect: ReturnType<CreateConnectorFn>["connect"] = async (
+            args
+          ) => {
+            connectorConfig.emitter.emit("message", { type: "connecting" });
 
-              const [accounts, chainId] = await Promise.all([
-                getAccounts(),
-                getChainId(),
-              ]);
+            const [accounts, chainId] = await Promise.all([
+              getAccounts(),
+              getChainId(),
+            ]);
 
-              return { accounts, chainId };
-            };
+            return {
+              accounts: args?.withCapabilities
+                ? [{ address: accounts[0] as Address, capabilities: {} }]
+                : (accounts as Address[]),
+              chainId,
+            } as never;
+          };
 
           const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =
             async ({ chainId }) => {

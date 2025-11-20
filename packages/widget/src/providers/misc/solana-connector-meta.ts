@@ -44,6 +44,8 @@ export type ExtraProps = ConnectorWithFilteredChains & {
   sendTransaction: (tx: DecodedSolanaTransaction) => Promise<string>;
 };
 
+export type StorageItem = { "solana.disconnected": boolean };
+
 type SolanaConnector = Connector & ExtraProps;
 
 export const isSolanaConnector = (

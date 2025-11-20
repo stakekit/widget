@@ -1,10 +1,11 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
-import { server } from "../mocks/server";
-import { renderApp, waitFor, within } from "../utils/test-utils";
+import { userEvent } from "vitest/browser";
+import { yieldFixture } from "../fixtures";
+import { worker } from "../mocks/worker";
+import { renderApp } from "../utils/test-utils";
 
 describe("Select opportunity", () => {
   // This loads cosmos wagmi config, which takes some time, so we need to increase the timeout
@@ -18,7 +19,7 @@ describe("Select opportunity", () => {
       logoURI: "https://assets.stakek.it/tokens/eth.svg",
     };
 
-    server.use(
+    worker.use(
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
 
@@ -89,8 +90,7 @@ describe("Select opportunity", () => {
         const integrationId = info.params.integrationId as string;
         await delay();
 
-        return Just(getYieldV2ControllerGetYieldByIdResponseMock())
-          .map((val) => ({ ...val, feeConfigurations: [] }) as YieldDto)
+        return Just(yieldFixture())
           .map((mock) => {
             const rewardToken = (() => {
               switch (integrationId) {
@@ -125,100 +125,79 @@ describe("Select opportunity", () => {
       })
     );
 
-    const { getByTestId, getByText, unmount } = renderApp();
+    const app = await renderApp();
 
-    await waitFor(() => getByTestId("select-opportunity").click());
+    await app.getByTestId("select-opportunity").click();
 
-    let selectContainer = await waitFor(() =>
-      getByTestId("select-modal__container")
-    );
+    let selectContainer = app.getByTestId("select-modal__container");
 
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByTestId("select-modal__search-input")
-      ).toBeInTheDocument()
-    );
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByTestId("select-modal__title")
-      ).toBeInTheDocument()
-    );
+    await expect
+      .element(selectContainer.getByTestId("select-modal__search-input"))
+      .toBeInTheDocument();
+    await expect
+      .element(selectContainer.getByTestId("select-modal__title"))
+      .toBeInTheDocument();
 
-    selectContainer = await waitFor(() =>
-      getByTestId("select-modal__container")
-    );
+    selectContainer = app.getByTestId("select-modal__container");
 
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByText("Liquid Staking")
-      ).toBeInTheDocument()
-    );
+    await expect
+      .element(selectContainer.getByText("Liquid Staking"))
+      .toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByTestId(
-          "select-opportunity__item_ethereum-eth-lido-staking",
-          { exact: false }
+    await expect
+      .element(
+        selectContainer.getByTestId(
+          /^select-opportunity__item_ethereum-eth-lido-staking/
         )
-      ).toBeInTheDocument()
-    );
+      )
+      .toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        within(selectContainer).getByTestId(
-          "select-opportunity__item_ethereum-eth-reth-staking",
-          { exact: false }
+    await expect
+      .element(
+        selectContainer.getByTestId(
+          /^select-opportunity__item_ethereum-eth-reth-staking/
         )
-      ).toBeInTheDocument()
-    );
+      )
+      .toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(
-        within(selectContainer).queryByTestId(
-          "select-opportunity__item_ethereum-eth-stakewise-staking",
-          { exact: false }
+    await expect
+      .element(
+        selectContainer.getByTestId(
+          /^select-opportunity__item_ethereum-eth-stakewise-staking/
         )
-      ).not.toBeInTheDocument()
-    );
+      )
+      .not.toBeInTheDocument();
 
-    within(selectContainer)
-      .getByTestId("select-opportunity__item_ethereum-eth-reth-staking", {
-        exact: false,
-      })
+    await selectContainer
+      .getByTestId(/^select-opportunity__item_ethereum-eth-reth-staking/)
       .click();
 
-    await waitFor(() =>
-      expect(getByText("You'll receive")).toBeInTheDocument()
-    );
-    await waitFor(() => expect(getByText("rETH")).toBeInTheDocument());
+    await expect
+      .element(app.getByText("You'll receive").first())
+      .toBeInTheDocument();
+    await expect.element(app.getByText("rETH").first()).toBeInTheDocument();
 
-    await waitFor(() =>
-      expect(getByText("Connect Wallet")).toBeInTheDocument()
-    );
+    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
 
-    getByText("Connect Wallet").click();
+    await app.getByText("Connect Wallet").click();
 
-    await waitFor(() =>
-      expect(getByText("Select a Chain")).toBeInTheDocument()
-    );
+    await expect.element(app.getByText("Select a Chain")).toBeInTheDocument();
 
-    await getByTestId("select-opportunity").click();
+    await userEvent.keyboard("[Escape]");
 
-    selectContainer = await waitFor(() =>
-      getByTestId("select-modal__container")
-    );
+    await app.getByTestId("select-opportunity").click();
 
-    within(selectContainer)
-      .getByTestId("select-opportunity__item_ethereum-eth-lido-staking", {
-        exact: false,
-      })
+    selectContainer = app.getByTestId("select-modal__container");
+
+    await selectContainer
+      .getByTestId(/^select-opportunity__item_ethereum-eth-lido-staking/)
       .click();
 
-    await waitFor(() =>
-      expect(getByText("You'll receive")).toBeInTheDocument()
-    );
-    await waitFor(() => expect(getByText("stETH")).toBeInTheDocument());
+    await expect
+      .element(app.getByText("You'll receive").first())
+      .toBeInTheDocument();
+    await expect.element(app.getByText("stETH").first()).toBeInTheDocument();
 
-    unmount();
+    app.unmount();
   });
 });

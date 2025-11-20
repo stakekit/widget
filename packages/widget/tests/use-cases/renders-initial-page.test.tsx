@@ -1,10 +1,10 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
-import { getYieldV2ControllerGetYieldByIdResponseMock } from "@stakekit/api-hooks/msw";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
-import { server } from "../mocks/server";
-import { renderApp, waitFor } from "../utils/test-utils";
+import { yieldFixture } from "../fixtures";
+import { worker } from "../mocks/worker";
+import { renderApp } from "../utils/test-utils";
 
 describe("Renders initial page", () => {
   it("Works as expected", async () => {
@@ -26,9 +26,7 @@ describe("Renders initial page", () => {
       logoURI: "https://assets.stakek.it/tokens/eth.svg",
     };
 
-    const avalancheAvaxNativeStaking = Just(
-      getYieldV2ControllerGetYieldByIdResponseMock()
-    )
+    const avalancheAvaxNativeStaking = Just(yieldFixture())
       .map(
         (val) =>
           ({
@@ -36,9 +34,6 @@ describe("Renders initial page", () => {
             id: "avalanche-avax-native-staking",
             token: avalancheCToken,
             tokens: [avalancheCToken],
-            status: { enter: true, exit: true },
-            args: { enter: { args: { nfts: undefined } } },
-            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -48,9 +43,7 @@ describe("Renders initial page", () => {
       )
       .unsafeCoerce();
 
-    const etherNativeStaking = Just(
-      getYieldV2ControllerGetYieldByIdResponseMock()
-    )
+    const etherNativeStaking = Just(yieldFixture())
       .map(
         (val) =>
           ({
@@ -58,9 +51,6 @@ describe("Renders initial page", () => {
             id: "ethereum-eth-etherfi-staking",
             token: ether,
             tokens: [ether],
-            status: { enter: true, exit: true },
-            args: { enter: { args: { nfts: undefined } } },
-            feeConfigurations: [],
             metadata: {
               ...val.metadata,
               type: "staking",
@@ -70,7 +60,7 @@ describe("Renders initial page", () => {
       )
       .unsafeCoerce();
 
-    server.use(
+    worker.use(
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
         return HttpResponse.json([
@@ -103,13 +93,12 @@ describe("Renders initial page", () => {
       })
     );
 
-    const { queryByText, queryByTestId, unmount } = renderApp();
+    const app = await renderApp();
 
-    await waitFor(() =>
-      expect(queryByTestId("number-input")).toBeInTheDocument()
-    );
-    expect(queryByText("Manage")).toBeInTheDocument();
-    expect(queryByText("Connect Wallet")).toBeInTheDocument();
-    unmount();
+    await expect.element(app.getByTestId("number-input")).toBeInTheDocument();
+    await expect.element(app.getByText("Manage")).toBeInTheDocument();
+    await expect.element(app.getByText("Connect Wallet")).toBeInTheDocument();
+
+    app.unmount();
   });
 });

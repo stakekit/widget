@@ -5,16 +5,16 @@ import type {
   TransactionDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import {
-  getActionControllerEnterResponseMock,
-  getTransactionControllerConstructResponseMock,
-  getYieldV2ControllerGetYieldByIdResponseMock,
-} from "@stakekit/api-hooks/msw";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
-import { server } from "../../mocks/server";
+import {
+  enterResponseFixture,
+  transactionConstructFixture,
+  yieldFixture,
+} from "../../fixtures";
+import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
 export const setup = () => {
@@ -36,18 +36,13 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/usdc.svg",
   };
 
-  const yieldWithSameGasAndStakeToken = Just(
-    getYieldV2ControllerGetYieldByIdResponseMock()
-  )
+  const yieldWithSameGasAndStakeToken = Just(yieldFixture())
     .map((val) => ({
       yieldDto: {
         ...val,
         id: "avalanche-avax-native-staking",
         token: avalancheCToken,
         tokens: [avalancheCToken],
-        status: { enter: true, exit: true },
-        args: { enter: { args: { nfts: undefined } } },
-        feeConfigurations: [],
         metadata: {
           ...val.metadata,
           type: "staking",
@@ -58,17 +53,17 @@ export const setup = () => {
     .map((val) => ({
       ...val,
       actionDto: {
-        ...getActionControllerEnterResponseMock(),
+        ...enterResponseFixture(),
         integrationId: val.yieldDto.id,
         transactions: [
           {
-            ...getTransactionControllerConstructResponseMock(),
+            ...transactionConstructFixture(),
             status: "CREATED",
             stakeId: val.yieldDto.id,
             gasEstimate: null,
           },
           {
-            ...getTransactionControllerConstructResponseMock(),
+            ...transactionConstructFixture(),
             status: "CREATED",
             stakeId: val.yieldDto.id,
             gasEstimate: null,
@@ -78,18 +73,13 @@ export const setup = () => {
     }))
     .unsafeCoerce();
 
-  const yieldWithDifferentGasAndStakeToken = Just(
-    getYieldV2ControllerGetYieldByIdResponseMock()
-  )
+  const yieldWithDifferentGasAndStakeToken = Just(yieldFixture())
     .map((val) => ({
       yieldDto: {
         ...val,
         id: "avalanche-c-usdc-aave-v3-lending",
         token: usdcToken,
         tokens: [usdcToken],
-        status: { enter: true, exit: true },
-        args: { enter: { args: { nfts: undefined } } },
-        feeConfigurations: [],
         metadata: {
           ...val.metadata,
           type: "staking",
@@ -99,17 +89,17 @@ export const setup = () => {
     }))
     .map((val) => ({
       ...val,
-      actionDto: getActionControllerEnterResponseMock({
+      actionDto: enterResponseFixture({
         integrationId: val.yieldDto.id,
         transactions: [
           {
-            ...getTransactionControllerConstructResponseMock(),
+            ...transactionConstructFixture(),
             stakeId: val.yieldDto.id,
             status: "CREATED",
             gasEstimate: null,
           },
           {
-            ...getTransactionControllerConstructResponseMock(),
+            ...transactionConstructFixture(),
             stakeId: val.yieldDto.id,
             status: "CREATED",
             gasEstimate: null,
@@ -119,28 +109,28 @@ export const setup = () => {
     }))
     .unsafeCoerce();
 
-  let availableAmount = "5";
+  let avalancheCTokenAmount = "0";
+  let usdcTokenAmount = "0";
 
-  const setAvailableAmount = (amount: number) => {
-    availableAmount = amount.toString();
+  const setAvalanceCTokenAmount = (amount: number) => {
+    avalancheCTokenAmount = amount.toString();
   };
 
-  const yieldsTxGasAmountMap = new Map<
-    `${YieldDto["id"]}-${TransactionDto["id"]}`,
-    string
-  >([]);
+  const setUsdcTokenAmount = (amount: number) => {
+    usdcTokenAmount = amount.toString();
+  };
+
+  const yieldsTxGasAmountMap = new Map<YieldDto["id"], string>([]);
 
   const setTxGas = ({
-    txId,
     yieldId,
     amount,
   }: {
     yieldId: YieldDto["id"];
-    txId: TransactionDto["id"];
     amount: string;
-  }) => yieldsTxGasAmountMap.set(`${yieldId}-${txId}`, amount);
+  }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
-  server.use(
+  worker.use(
     http.get("*/v1/yields/enabled/networks", async () => {
       await delay();
       return HttpResponse.json([avalancheCToken.network]);
@@ -166,12 +156,12 @@ export const setup = () => {
       return HttpResponse.json([
         {
           token: avalancheCToken,
-          amount: availableAmount,
+          amount: avalancheCTokenAmount,
           availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
         },
         {
           token: usdcToken,
-          amount: availableAmount,
+          amount: usdcTokenAmount,
           availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
         },
       ]);
@@ -182,11 +172,11 @@ export const setup = () => {
       return HttpResponse.json([
         {
           token: avalancheCToken,
-          amount: availableAmount,
+          amount: avalancheCTokenAmount,
         },
         {
           token: usdcToken,
-          amount: availableAmount,
+          amount: usdcTokenAmount,
         },
       ]);
     }),
@@ -253,6 +243,17 @@ export const setup = () => {
             ) ?? "0",
         },
       } satisfies TransactionDto);
+    }),
+    http.post("*/v1/actions/enter/estimate-gas", async (info) => {
+      await delay();
+
+      const body = (await info.request.json()) as ActionRequestDto;
+
+      return HttpResponse.json({
+        amount: yieldsTxGasAmountMap.get(body.integrationId) ?? "0",
+        token: avalancheCToken,
+        gasLimit: "",
+      });
     })
   );
 
@@ -280,6 +281,7 @@ export const setup = () => {
     yieldWithSameGasAndStakeToken,
     yieldWithDifferentGasAndStakeToken,
     setTxGas,
-    setAvailableAmount,
+    setAvalanceCTokenAmount,
+    setUsdcTokenAmount,
   };
 };

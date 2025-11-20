@@ -91,7 +91,9 @@ export const createCosmosConnector = ({
             check();
           });
 
-        const connect: ReturnType<CreateConnectorFn>["connect"] = async () => {
+        const connect: ReturnType<CreateConnectorFn>["connect"] = async (
+          args
+        ) => {
           config.emitter.emit("message", { type: "connecting" });
 
           const cw = $chainWallet.getValue();
@@ -102,9 +104,11 @@ export const createCosmosConnector = ({
             }
 
             return {
-              accounts: [cw.address as Address],
+              accounts: args?.withCapabilities
+                ? [{ address: cw.address as Address, capabilities: {} }]
+                : [cw.address as Address],
               chainId: cw.chainId as unknown as number,
-            };
+            } as never;
           }
 
           const checkForQRCode = async (timesCheck: number) => {
@@ -128,9 +132,11 @@ export const createCosmosConnector = ({
           await getAndSavePubKeyToStorage();
 
           return {
-            accounts: [cw.address as Address],
+            accounts: args?.withCapabilities
+              ? [{ address: cw.address as Address, capabilities: {} }]
+              : [cw.address as Address],
             chainId: cw.chainId as unknown as number,
-          };
+          } as never;
         };
 
         const getAndSavePubKeyToStorage = async () => {

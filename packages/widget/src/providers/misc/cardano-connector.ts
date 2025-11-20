@@ -6,9 +6,12 @@ import { BehaviorSubject } from "rxjs";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
 import { cardano } from "../../domain/types/chains/misc";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo } from "../../utils";
-import { configMeta, type ExtraProps } from "./cardano-connector-meta";
+import {
+  configMeta,
+  type ExtraProps,
+  type StorageItem,
+} from "./cardano-connector-meta";
 
 type MeshWallet = Awaited<
   ReturnType<(typeof BrowserWallet)["getAvailableWallets"]>
@@ -21,7 +24,7 @@ const createCardanoConnector = ({
   wallet: MeshWallet;
   walletDetailsParams: WalletDetailsParams;
 }) =>
-  createConnector<unknown, ExtraProps>((config) => {
+  createConnector<unknown, ExtraProps, StorageItem>((config) => {
     let connectedWallet: BrowserWallet | null = null;
 
     return {
@@ -37,10 +40,10 @@ const createCardanoConnector = ({
 
           return connectedWallet.signTx(tx);
         }),
-      connect: async () => {
+      connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
-        setStorageItem("sk-widget@1//shimDisconnect/cardano", true);
+        config.storage?.removeItem("cardano.disconnected");
 
         connectedWallet = await BrowserWallet.enable(wallet.id);
 
@@ -48,22 +51,21 @@ const createCardanoConnector = ({
           .getUsedAddress()
           .then((address) => address.toBech32());
 
-        setStorageItem("sk-widget@1//cardanoConnectors/lastConnectedWallet", {
+        config.storage?.setItem("cardano.lastConnectedWallet", {
           address,
           id: wallet.id,
         });
 
         return {
-          accounts: [address as Address],
+          accounts: args?.withCapabilities
+            ? [{ address: address as Address, capabilities: {} }]
+            : [address as Address],
           chainId: cardano.id,
-        };
+        } as never;
       },
       disconnect: async () => {
-        setStorageItem("sk-widget@1//shimDisconnect/cardano", false);
-        setStorageItem(
-          "sk-widget@1//cardanoConnectors/lastConnectedWallet",
-          null
-        );
+        config.storage?.setItem("cardano.disconnected", true);
+        config.storage?.removeItem("cardano.lastConnectedWallet");
         connectedWallet = null;
       },
       getAccounts: async () => {
@@ -76,19 +78,19 @@ const createCardanoConnector = ({
       switchChain: async () => cardano,
       getChainId: async () => cardano.id,
       isAuthorized: async () => {
-        const [shimDisconnect, lastConnectedWallet] = [
-          getStorageItem("sk-widget@1//shimDisconnect/cardano"),
-          getStorageItem("sk-widget@1//cardanoConnectors/lastConnectedWallet"),
-        ];
+        const isDisconnected = await config.storage?.getItem(
+          "cardano.disconnected"
+        );
 
-        if (shimDisconnect.isRight() && lastConnectedWallet.isRight()) {
-          const shimDisconnectValue = shimDisconnect.extract();
-          const lastConnectedWalletValue = lastConnectedWallet.extract();
+        if (isDisconnected) return false;
 
-          return !!(shimDisconnectValue && lastConnectedWalletValue);
-        }
+        const lastConnectedWallet = await config.storage?.getItem(
+          "cardano.lastConnectedWallet"
+        );
 
-        return false;
+        if (!lastConnectedWallet) return false;
+
+        return lastConnectedWallet.id === wallet.id;
       },
       onAccountsChanged: (accounts: string[]) => {
         if (accounts.length === 0) {

@@ -130,11 +130,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   });
 
   const isConnecting =
-    isLoading ||
-    _isConnecting ||
-    isReconnecting ||
-    wagmiConfig.isLoading ||
-    additionalAddresses.isLoading;
+    isLoading || _isConnecting || isReconnecting || wagmiConfig.isLoading;
 
   const trackEvent = useTrackEvent();
 

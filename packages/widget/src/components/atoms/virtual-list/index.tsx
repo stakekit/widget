@@ -6,7 +6,6 @@ import clsx from "clsx";
 import { List, Maybe } from "purify-ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useObserveElementRect } from "../../../providers/virtual-scroll";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
 import { MaybeWindow } from "../../../utils/maybe-window";
 import { Box, type BoxDataAttributes, type BoxProps } from "../box";
@@ -59,7 +58,6 @@ export const VirtualList = <ItemData = unknown>({
 }: VirtualListProps<ItemData>) => {
   const innerRef = useRef<HTMLDivElement>(null);
 
-  const observeElementRect = useObserveElementRect();
   const isTabletOrBigger = useIsTabletOrBigger();
 
   const rowVirtualizer = useVirtualizer({
@@ -67,7 +65,6 @@ export const VirtualList = <ItemData = unknown>({
     getScrollElement: () => innerRef.current,
     estimateSize,
     overscan: 10,
-    ...(observeElementRect && { observeElementRect }),
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -142,7 +139,6 @@ export const GroupedVirtualList = ({
   const innerRef = useRef<HTMLDivElement>(null);
 
   const isTabletOrBigger = useIsTabletOrBigger();
-  const observeElementRect = useObserveElementRect();
 
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
@@ -154,7 +150,6 @@ export const GroupedVirtualList = ({
     overscan: 10,
     paddingStart: increaseViewportBy?.top,
     paddingEnd: increaseViewportBy?.bottom,
-    ...(observeElementRect && { observeElementRect }),
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();

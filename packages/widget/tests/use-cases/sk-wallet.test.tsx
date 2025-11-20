@@ -9,8 +9,8 @@ import { SettingsContextProvider } from "../../src/providers/settings";
 import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
-import { server } from "../mocks/server";
-import { renderHook, waitFor } from "../utils/test-utils";
+import { worker } from "../mocks/worker";
+import { renderHook } from "../utils/test-utils";
 
 const renderHookWithExternalProvider = (
   externalProviders: SKExternalProviders
@@ -40,14 +40,14 @@ describe("SK Wallet", () => {
     const switchChainSpy = vi.fn(async (_: number) => {});
     const sendTransactionSpy = vi.fn(async () => "hash");
 
-    server.use(
+    worker.use(
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
         return HttpResponse.json([MiscNetworks.Solana]);
       })
     );
 
-    const solanaWallet = renderHookWithExternalProvider({
+    const solanaWallet = await renderHookWithExternalProvider({
       type: "generic",
       currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
       currentChain: solana.id,
@@ -58,9 +58,8 @@ describe("SK Wallet", () => {
         sendTransaction: sendTransactionSpy,
       },
     });
-    await waitFor(() =>
-      expect(solanaWallet.result.current.isConnected).toBe(true)
-    );
+
+    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       network: "solana",
@@ -118,14 +117,14 @@ describe("SK Wallet", () => {
     const switchChainSpy = vi.fn(async (_: number) => {});
     const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
 
-    server.use(
+    worker.use(
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
         return HttpResponse.json([MiscNetworks.Ton]);
       })
     );
 
-    const tonWallet = renderHookWithExternalProvider({
+    const tonWallet = await renderHookWithExternalProvider({
       type: "generic",
       currentAddress: "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy",
       currentChain: ton.id,
@@ -136,9 +135,7 @@ describe("SK Wallet", () => {
         sendTransaction: sendTransactionSpy,
       },
     });
-    await waitFor(() =>
-      expect(tonWallet.result.current.isConnected).toBe(true)
-    );
+    await expect.poll(() => tonWallet.result.current.isConnected).toBe(true);
 
     const tonRes = await tonWallet.result.current.signTransaction({
       network: "ton",

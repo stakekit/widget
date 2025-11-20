@@ -30,6 +30,8 @@ export type ExtraProps = ConnectorWithFilteredChains &
 
 type TronConnector = Connector & ExtraProps;
 
+export type StorageItem = { "tron.disconnected": boolean };
+
 export const isTronConnector = (
   connector: Connector
 ): connector is TronConnector =>

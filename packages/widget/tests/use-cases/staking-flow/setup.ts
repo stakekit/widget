@@ -10,7 +10,7 @@ import { delay, HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import { waitForMs } from "../../../src/utils";
-import { server } from "../../mocks/server";
+import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
 export const setup = async () => {
@@ -192,7 +192,7 @@ export const setup = async () => {
     createdAt: "2023-12-28T14:36:21.700Z",
   };
 
-  server.use(
+  worker.use(
     http.get("*/v1/yields/enabled/networks", async () => {
       await delay();
       return HttpResponse.json(["avalanche-c"]);

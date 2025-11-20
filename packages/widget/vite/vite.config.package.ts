@@ -1,13 +1,6 @@
 import path from "node:path";
 import { defineConfig } from "vite";
-import type { InlineConfig } from "vitest";
 import { getConfig } from "./vite.config.base";
-
-declare module "vite" {
-  interface UserConfig {
-    test?: InlineConfig;
-  }
-}
 
 const config = getConfig({
   build: {
@@ -23,7 +16,7 @@ const config = getConfig({
     },
     copyPublicDir: false,
     outDir: "dist/package",
-    sourcemap: true,
+    sourcemap: false,
   },
 });
 
