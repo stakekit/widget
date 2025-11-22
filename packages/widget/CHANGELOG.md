@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.265
+
+### Patch Changes
+
+- 0954aa7: feat: add monad
+
 ## 0.0.264
 
 ### Patch Changes
