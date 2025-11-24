@@ -13,6 +13,7 @@ import {
   hoodi,
   linea,
   mainnet,
+  monadTestnet,
   optimism,
   plasmaTestnet,
   polygon,
@@ -46,6 +47,8 @@ const supportedEVMChains = [
   EvmNetworks.Gnosis,
   EvmNetworks.HyperEVM,
   EvmNetworks.Plasma,
+  EvmNetworks.Monad,
+  EvmNetworks.MonadTestnet,
 ] as const;
 
 export const supportedEVMChainsSet = new Set(supportedEVMChains);
@@ -227,6 +230,35 @@ export const evmChainsMap: EvmChainsMap = {
       },
     },
   },
+  [EvmNetworks.MonadTestnet]: {
+    type: "evm",
+    skChainName: EvmNetworks.MonadTestnet,
+    wagmiChain: {
+      ...monadTestnet,
+      iconUrl: getNetworkLogo(EvmNetworks.MonadTestnet),
+    },
+  },
+  [EvmNetworks.Monad]: {
+    type: "evm",
+    skChainName: EvmNetworks.Monad,
+    wagmiChain: {
+      id: 143,
+      name: "Monad",
+      iconUrl: getNetworkLogo(EvmNetworks.Monad),
+      nativeCurrency: {
+        name: "Monad",
+        symbol: "MON",
+        decimals: 18,
+      },
+      rpcUrls: {
+        default: {
+          http: [
+            "https://rpc-mainnet.monadinfra.com/rpc/wibIOSEgRVbSCBJwHBho3mLEQODJvzd2",
+          ],
+        },
+      },
+    },
+  },
 };
 
 export enum EvmChainIds {
@@ -251,6 +283,8 @@ export enum EvmChainIds {
   Gnosis = 100,
   Hyperevm = 999,
   Plasma = 9745,
+  Monad = 143,
+  MonadTestnet = 10143,
 }
 
 EvmChainIds satisfies Record<
