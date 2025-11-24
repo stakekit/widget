@@ -46,6 +46,7 @@ import { isExternalProviderConnector } from "../external-provider";
 import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 import { isCardanoConnector } from "../misc/cardano-connector-meta";
 import { isSolanaConnector } from "../misc/solana-connector-meta";
+import { isTonConnector } from "../misc/ton-connector-meta";
 import { isTronConnector } from "../misc/tron-connector-meta";
 import { isSafeConnector } from "../safe/safe-connector-meta";
 import { isSubstrateConnector } from "../substrate/substrate-connector-meta";
@@ -354,6 +355,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               .signTransaction(tx)
               .mapLeft(() => new SendTransactionError())
               .map((res) => ({ signedTx: res, broadcasted: false }));
+          }
+
+          if (isTonConnector(conn)) {
+            return conn
+              .signTransaction(tx)
+              .mapLeft(() => new SendTransactionError())
+              .map((res) => ({ signedTx: res, broadcasted: true }));
           }
 
           /**

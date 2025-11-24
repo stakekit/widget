@@ -71,6 +71,11 @@ const queryFn = async ({
           v.getCardanoConnectors()
         )
     ),
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.ton)).chain(() =>
+      MaybeAsync(() => import("./ton-connector")).map((v) =>
+        v.getTonConnectors()
+      )
+    ),
   ]).then((connectors) => ({
     miscChainsMap: filteredMiscChainsMap,
     miscChains,
