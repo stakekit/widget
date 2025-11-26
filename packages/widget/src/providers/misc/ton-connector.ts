@@ -25,13 +25,12 @@ import {
 
 const createTonConnector = (
   walletDetailsParams: WalletDetailsParams,
-  manifestUrl?: string
+  manifestUrl: string | undefined
 ) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
     const tonconnectUI = new TonConnectUI({
       manifestUrl:
-        manifestUrl ??
-        "https://raw.githubusercontent.com/stakekit/widget/refs/heads/feat/ton-connector/packages/widget/public/tonconnect-manifest.json",
+        manifestUrl ?? "https://dapp.stakek.it/tonconnect-manifest.json",
     });
 
     let deferred: {
@@ -174,7 +173,11 @@ const createTonConnector = (
     };
   });
 
-export const getTonConnectors = (): WalletList[number] => ({
+export const getTonConnectors = ({
+  tonConnectManifestUrl,
+}: {
+  tonConnectManifestUrl: string | undefined;
+}): WalletList[number] => ({
   groupName: "Ton",
   wallets: [
     () => ({
@@ -187,7 +190,8 @@ export const getTonConnectors = (): WalletList[number] => ({
         title: "Ton",
         iconUrl: getNetworkLogo(MiscNetworks.Ton),
       },
-      createConnector: createTonConnector,
+      createConnector: (walletDetailsParams) =>
+        createTonConnector(walletDetailsParams, tonConnectManifestUrl),
     }),
   ],
 });

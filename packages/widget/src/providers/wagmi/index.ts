@@ -75,6 +75,7 @@ const buildWagmiConfig = async (opts: {
   solanaWallets: SolanaWallet[];
   solanaConnection: Connection;
   mapWalletListFn?: (val: WalletList) => WalletList;
+  tonConnectManifestUrl: string | undefined;
 }): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
@@ -103,6 +104,7 @@ const buildWagmiConfig = async (opts: {
             solanaWallets: opts.solanaWallets,
             solanaConnection: opts.solanaConnection,
             variant: opts.variant,
+            tonConnectManifestUrl: opts.tonConnectManifestUrl,
           }),
           getSubstrateConfig({
             queryClient: opts.queryClient,
@@ -375,6 +377,7 @@ export const useWagmiConfig = () => {
     chainIconMapping,
     variant,
     mapWalletListFn,
+    tonConnectManifestUrl,
   } = useSettings();
 
   const solanaWallets = useSolanaWallet();
@@ -409,6 +412,7 @@ export const useWagmiConfig = () => {
         solanaWallets: solanaWallets.wallets,
         solanaConnection: solanaConnection.connection,
         mapWalletListFn,
+        tonConnectManifestUrl,
       }),
   });
 
