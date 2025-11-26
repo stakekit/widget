@@ -26,10 +26,10 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm -F @stakekit/widget exec playwright install
+
       - run: pnpm build
 
       - run: pnpm lint
 
       - run: pnpm test
-
-

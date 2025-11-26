@@ -12,6 +12,14 @@ export type ExtraProps = ConnectorWithFilteredChains & {
 
 type CardanoConnector = Connector & ExtraProps;
 
+export type StorageItem = {
+  "cardano.disconnected": boolean;
+  "cardano.lastConnectedWallet": {
+    address: string;
+    id: string;
+  } | null;
+};
+
 export const isCardanoConnector = (
   connector: Connector
 ): connector is CardanoConnector => connector.type === "cardanoWallet";

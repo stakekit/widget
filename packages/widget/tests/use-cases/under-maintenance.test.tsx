@@ -1,21 +1,22 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
-import { server } from "../mocks/server";
-import { renderApp, waitFor } from "../utils/test-utils";
+import { worker } from "../mocks/worker";
+import { renderApp } from "../utils/test-utils";
 
 describe("Under maintenance", () => {
   it("Show under maintenance popup", async () => {
-    server.use(
+    worker.use(
       http.get("*/v2/health", async () => {
         return HttpResponse.json({ db: "FAIL" });
       })
     );
 
-    const { unmount, getByTestId } = renderApp();
+    const app = await renderApp();
 
-    await waitFor(() =>
-      expect(getByTestId("under-maintenance")).toBeInTheDocument()
-    );
-    unmount();
+    await expect
+      .element(app.getByTestId("under-maintenance"))
+      .toBeInTheDocument();
+
+    app.unmount();
   });
 });

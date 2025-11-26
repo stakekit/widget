@@ -1,9 +1,9 @@
-import { setupServer } from "msw/node";
+import { setupWorker } from "msw/browser";
 import { handlers } from "./handlers";
 
-export const server = setupServer(...handlers);
+export const worker = setupWorker(...handlers);
 
-server.events.on("response:mocked", (req) => {
+worker.events.on("response:mocked", (req) => {
   req.response.headers.set("Access-Control-Allow-Origin", "*");
   req.response.headers.set("Access-Control-Allow-Headers", "*");
 });

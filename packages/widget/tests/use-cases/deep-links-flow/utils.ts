@@ -31,17 +31,10 @@ export const setUrl = ({
     searchParams.set("pendingaction", pendingaction);
   }
 
-  const url = new URL("http://localhost:5173/");
+  const url = new URL(window.location.href);
   url.search = searchParams.toString();
 
-  Object.defineProperty(window, "location", {
-    value: {
-      href: url.href,
-      hostname: url.hostname,
-      origin: url.origin,
-      search: url.search,
-    },
-  });
+  window.history.pushState({}, "", url);
 
   return {
     origin: url.origin,

@@ -56,7 +56,7 @@ const queryFn = async ({
             typeof val.wagmiChain.iconUrl === "string"
               ? val.wagmiChain.iconUrl
               : getNetworkLogo(val.skChainName),
-          genesisHash: val.genesisHash,
+          genesisHash: val.genesisHash as `0x${string}`,
           ss58Format: val.ss58Format,
         })
       );
