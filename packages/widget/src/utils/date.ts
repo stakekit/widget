@@ -1,15 +1,45 @@
-export const daysUntilDate = (futureDate: Date) => {
-  const now = new Date();
-  const _MS_PER_DAY = 1000 * 60 * 60 * 24;
+import {
+  type FormatDurationOptions,
+  formatDuration,
+  intervalToDuration,
+} from "date-fns";
 
-  const utc1 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const utc2 = Date.UTC(
-    futureDate.getFullYear(),
-    futureDate.getMonth(),
-    futureDate.getDate()
+const getFormat = ({
+  days,
+  hours,
+  minutes,
+}: {
+  days: number;
+  hours: number;
+  minutes: number;
+}): FormatDurationOptions["format"] => {
+  if (days >= 1) {
+    return ["days"];
+  }
+  if (hours >= 1) {
+    return ["hours"];
+  }
+  if (minutes >= 1) {
+    return ["minutes"];
+  }
+  return ["seconds"];
+};
+
+export const formatDurationUntilDate = (futureDate: Date) => {
+  const {
+    days = 0,
+    hours = 0,
+    minutes = 0,
+    seconds = 0,
+  } = intervalToDuration({
+    start: new Date(),
+    end: futureDate,
+  });
+
+  return formatDuration(
+    { days, hours, minutes, seconds },
+    { format: getFormat({ days, hours, minutes }) }
   );
-
-  return Math.floor((utc2 - utc1) / _MS_PER_DAY);
 };
 
 export const dateOlderThen7Days = (date: string): boolean => {

@@ -425,8 +425,7 @@
       "locked": "Bloqué",
       "unlocking": "En cours de déblocage"
     },
-    "unstaking_days_one": "{{count}} jour restant",
-    "unstaking_days_other": "{{count}} jours restants",
+    "unstaking_duration": "{{duration}} restant",
     "pending_action": {
       "stake": "Staker",
       "unstake": "Déstaker",

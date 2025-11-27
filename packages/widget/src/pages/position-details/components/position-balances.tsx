@@ -6,7 +6,7 @@ import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import { defaultFormattedNumber } from "../../../utils";
-import { daysUntilDate } from "../../../utils/date";
+import { formatDurationUntilDate } from "../../../utils/date";
 
 export const PositionBalances = ({
   yieldBalance,
@@ -17,13 +17,16 @@ export const PositionBalances = ({
 }) => {
   const { t } = useTranslation();
 
-  const daysRemaining = useMemo(() => {
-    return (yieldBalance.type === "unstaking" ||
-      yieldBalance.type === "unlocking" ||
-      yieldBalance.type === "preparing") &&
-      yieldBalance.date
-      ? daysUntilDate(new Date(yieldBalance.date))
-      : null;
+  const durationUntilDate = useMemo(() => {
+    if (
+      yieldBalance.date &&
+      (yieldBalance.type === "unstaking" ||
+        yieldBalance.type === "unlocking" ||
+        yieldBalance.type === "preparing")
+    ) {
+      return formatDurationUntilDate(new Date(yieldBalance.date));
+    }
+    return null;
   }, [yieldBalance.date, yieldBalance.type]);
 
   const yieldType = integrationData.metadata.type;
@@ -68,10 +71,10 @@ export const PositionBalances = ({
           </Text>
         </Box>
 
-        {typeof daysRemaining === "number" && (
+        {!!durationUntilDate && (
           <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("position_details.unstaking_days", {
-              count: daysRemaining,
+            {t("position_details.unstaking_duration", {
+              duration: durationUntilDate,
             })}
           </Text>
         )}
