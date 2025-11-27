@@ -1,5 +1,6 @@
 import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
+import { isPast } from "date-fns";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -19,15 +20,28 @@ export const PositionBalances = ({
 
   const durationUntilDate = useMemo(() => {
     if (
-      yieldBalance.date &&
-      (yieldBalance.type === "unstaking" ||
-        yieldBalance.type === "unlocking" ||
-        yieldBalance.type === "preparing")
+      !yieldBalance.date ||
+      (yieldBalance.type !== "unstaking" &&
+        yieldBalance.type !== "unlocking" &&
+        yieldBalance.type !== "preparing")
     ) {
-      return formatDurationUntilDate(new Date(yieldBalance.date));
+      return null;
     }
-    return null;
-  }, [yieldBalance.date, yieldBalance.type]);
+
+    const date = new Date(yieldBalance.date);
+
+    if (isPast(date)) {
+      return t("position_details.unstaking_imminent");
+    }
+
+    const duration = formatDurationUntilDate(date);
+
+    if (!duration) {
+      return null;
+    }
+
+    return t("position_details.unstaking_duration", { duration });
+  }, [yieldBalance.date, yieldBalance.type, t]);
 
   const yieldType = integrationData.metadata.type;
 
@@ -73,9 +87,7 @@ export const PositionBalances = ({
 
         {!!durationUntilDate && (
           <Text variant={{ type: "muted", weight: "normal" }}>
-            {t("position_details.unstaking_duration", {
-              duration: durationUntilDate,
-            })}
+            {durationUntilDate}
           </Text>
         )}
       </Box>

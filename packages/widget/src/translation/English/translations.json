@@ -476,6 +476,7 @@
       "unlocking": "Unlocking"
     },
     "unstaking_duration": "{{duration}} remaining",
+    "unstaking_imminent": "Imminent",
     "pending_action": {
       "stake": "Stake",
       "unstake": "Unstake",

@@ -426,6 +426,7 @@
       "unlocking": "En cours de déblocage"
     },
     "unstaking_duration": "{{duration}} restant",
+    "unstaking_imminent": "Prochain",
     "pending_action": {
       "stake": "Staker",
       "unstake": "Déstaker",

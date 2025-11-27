@@ -31,10 +31,7 @@ export const formatDurationUntilDate = (futureDate: Date) => {
     hours = 0,
     minutes = 0,
     seconds = 0,
-  } = intervalToDuration({
-    start: new Date(),
-    end: futureDate,
-  });
+  } = intervalToDuration({ start: new Date(), end: futureDate });
 
   return formatDuration(
     { days, hours, minutes, seconds },
