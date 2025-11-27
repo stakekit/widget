@@ -112,11 +112,13 @@ export type DecodedSolanaTransaction = GetType<
   typeof unsignedSolanaTransactionCodec
 >;
 
+export const unsignedTonTransactionTonConnectCodec = Codec.interface({
+  seqno: bigintCodec,
+  message: string,
+});
+
 export const unsignedTonTransactionCodec = oneOf([
-  Codec.interface({
-    seqno: bigintCodec,
-    message: string,
-  }),
+  unsignedTonTransactionTonConnectCodec,
   array(
     Codec.interface({
       address: string,

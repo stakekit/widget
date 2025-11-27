@@ -71,6 +71,7 @@ export type SettingsProps = {
   showUSDeBanner?: boolean;
   preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
+  tonConnectManifestUrl?: string;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;

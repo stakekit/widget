@@ -15,7 +15,7 @@ export const yieldFixture = (overrides?: Partial<YieldDto>) =>
     .map(
       (val) =>
         ({
-          ...getYieldV2ControllerGetYieldByIdResponseMock(),
+          ...val,
           rewardRate: apyFaker(),
           rewardType: "apy",
           apy: apyFaker(),

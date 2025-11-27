@@ -21,12 +21,14 @@ const queryFn = async ({
   solanaWallets,
   solanaConnection,
   variant,
+  tonConnectManifestUrl,
 }: {
   enabledNetworks: Set<Networks>;
   forceWalletConnectOnly: boolean;
   solanaWallets: Wallet[];
   solanaConnection: Connection;
   variant: VariantProps["variant"];
+  tonConnectManifestUrl: string | undefined;
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
@@ -70,6 +72,11 @@ const queryFn = async ({
         MaybeAsync(() => import("./cardano-connector")).map((v) =>
           v.getCardanoConnectors()
         )
+    ),
+    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.ton)).chain(() =>
+      MaybeAsync(() => import("./ton-connector")).map((v) =>
+        v.getTonConnectors({ tonConnectManifestUrl })
+      )
     ),
   ]).then((connectors) => ({
     miscChainsMap: filteredMiscChainsMap,
