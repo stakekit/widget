@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.265
+
+### Patch Changes
+
+- 0954aa7: feat: add monad
+- 6ddc7db: feat: ton connector
+- ff30b32: feat: deps bump, migrate test to browser mode
+
 ## 0.0.264
 
 ### Patch Changes
