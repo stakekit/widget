@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.266
+
+### Patch Changes
+
+- 403bfe8: feat: unstaking time format improved
+
 ## 0.0.265
 
 ### Patch Changes
