@@ -28,6 +28,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
           "vite-plugin-node-polyfills/shims/process",
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
+          "date-fns/locale",
         ],
       },
       test: {

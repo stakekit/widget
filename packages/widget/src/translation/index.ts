@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
+import { setDefaultOptions } from "date-fns";
+import { enUS as dateFnsEN, fr as dateFnsFR } from "date-fns/locale";
 import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { EitherAsync } from "purify-ts";
@@ -25,7 +27,16 @@ i18nInstance
     fallbackLng: "en",
     interpolation: { escapeValue: false },
     detection: { order: ["navigator", "localStorage"] },
+  })
+  .then(() => {
+    setDefaultOptions({
+      locale: i18nInstance.language === "fr" ? dateFnsFR : dateFnsEN,
+    });
   });
+
+i18nInstance.on("languageChanged", (lng) => {
+  setDefaultOptions({ locale: lng === "fr" ? dateFnsFR : dateFnsEN });
+});
 
 i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
   value.toLowerCase()
