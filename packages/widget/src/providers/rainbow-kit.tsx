@@ -37,7 +37,7 @@ export const RainbowKitProviderWithTheme = ({
 
   const onDisabledChainClick = useAddLedgerAccount();
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const { hideAccountAndChainSelector } = useSettings();
 
@@ -63,6 +63,14 @@ export const RainbowKitProviderWithTheme = ({
     [connector]
   );
 
+  const locale = useMemo(() => {
+    if (i18n.language === "fr" || i18n.language === "fr-FR") {
+      return i18n.language;
+    }
+
+    return "en";
+  }, [i18n.language]);
+
   return (
     <RainbowKitProvider
       chainIdsToUse={chainIdsToUse}
@@ -73,6 +81,7 @@ export const RainbowKitProviderWithTheme = ({
         trackEvent("addLedgerAccountClicked");
         onDisabledChainClick.mutate(disabledChain);
       }}
+      locale={locale}
       appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
       {...(hideAccountAndChainSelector && { avatar: null })}
       showRecentTransactions={false}
