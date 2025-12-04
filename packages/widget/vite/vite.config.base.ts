@@ -1,4 +1,5 @@
 import path from "node:path";
+import replace from "@rollup/plugin-replace";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
@@ -14,6 +15,8 @@ declare module "vite" {
     test?: InlineConfig;
   }
 }
+
+const emptyPolyfill = path.resolve(__dirname, "..", "polyfills", "empty.js");
 
 export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
   defineConfig(({ mode }) => {
@@ -68,12 +71,30 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
       },
       resolve: {
         alias: {
-          crypto: path.resolve(__dirname, "..", "polyfills", "empty.js"),
-          stream: path.resolve(__dirname, "..", "polyfills", "empty.js"),
+          crypto: emptyPolyfill,
+          stream: emptyPolyfill,
+          ws: emptyPolyfill,
+          "@emotion/is-prop-valid": emptyPolyfill,
+          "@react-native-async-storage/async-storage": emptyPolyfill,
         },
       },
       build: {
         sourcemap: false,
+        commonjsOptions: {
+          transformMixedEsModules: true,
+        },
+        rollupOptions: {
+          plugins: [
+            replace({
+              values: {
+                'require("@emotion/is-prop-valid")':
+                  "({ default: () => true })",
+              },
+              preventAssignment: true,
+              delimiters: ["", ""],
+            }),
+          ],
+        },
       },
     } satisfies UserConfig);
   });

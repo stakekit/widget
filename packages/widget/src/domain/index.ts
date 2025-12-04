@@ -8,7 +8,6 @@ import type {
 } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, type Maybe, Right } from "purify-ts";
-import { normalizeChainId } from "wagmi";
 import type { Override } from "../types/utils";
 import type { TokenString } from "./types/tokens";
 
@@ -89,7 +88,7 @@ export const PASingleValidatorRequired = (pa: PendingActionDto) =>
   !!pa.args?.args?.validatorAddress?.required;
 
 export const skNormalizeChainId = (chainId: string) => {
-  const cId = normalizeChainId(chainId);
+  const cId = Number(chainId);
 
   return Number.isNaN(cId) ? (chainId as unknown as number) : cId;
 };

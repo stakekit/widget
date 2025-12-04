@@ -1,5 +1,5 @@
 {
-  "name": "@stakekit/with-nextjs-15",
+  "name": "@stakekit/with-nextjs",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,13 +10,13 @@
   },
   "dependencies": {
     "@stakekit/widget": "workspace:*",
-    "next": "^15.4.2",
+    "next": "^16.0.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
-    "@types/react": "19.2.5",
+    "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "typescript": "^5.9.3"
   }
