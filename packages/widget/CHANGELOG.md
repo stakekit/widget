@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## 0.0.266
+
+### Patch Changes
+
+- 9ed31a5: feat: rainbowkit force en locale
+- 552c226: chore: bump deps
+- 403bfe8: feat: unstaking time format improved
+
 ## 0.0.265
 
 ### Patch Changes
