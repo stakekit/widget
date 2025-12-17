@@ -87,7 +87,7 @@ const createTronConnector = ({
     onDisconnect: () => {
       config.emitter.emit("disconnect");
     },
-    getProvider: async () => ({}),
+    getProvider: async () => adapter,
     $filteredChains: new BehaviorSubject<Chain[]>([tron]).asObservable(),
   }));
 
