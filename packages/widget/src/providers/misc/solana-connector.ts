@@ -45,9 +45,7 @@ const createSolanaConnector = ({
       const base64Decoded = Buffer.from(tx, "base64");
       const isBase64 = base64Decoded.toString("base64") === tx;
 
-      const buffer = isBase64
-        ? base64Decoded
-        : Buffer.from(tx, "hex");
+      const buffer = isBase64 ? base64Decoded : Buffer.from(tx, "hex");
 
       let solanaTx: Transaction | VersionedTransaction;
       let versionedError: unknown;
