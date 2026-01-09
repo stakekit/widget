@@ -50,10 +50,18 @@ const createSolanaConnector = ({
         : Buffer.from(tx, "hex");
 
       let solanaTx: Transaction | VersionedTransaction;
+      let versionedError: unknown;
       try {
         solanaTx = VersionedTransaction.deserialize(buffer);
-      } catch {
-        solanaTx = Transaction.from(buffer);
+      } catch (err) {
+        versionedError = err;
+        try {
+          solanaTx = Transaction.from(buffer);
+        } catch (legacyErr) {
+          throw new Error(
+            `Failed to deserialize Solana transaction. VersionedTransaction error: ${versionedError instanceof Error ? versionedError.message : String(versionedError)}. Legacy Transaction error: ${legacyErr instanceof Error ? legacyErr.message : String(legacyErr)}`
+          );
+        }
       }
 
       const signed = await solanaWallet.adapter.sendTransaction(
