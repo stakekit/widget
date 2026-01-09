@@ -1,6 +1,10 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
 import { WalletConnectWalletAdapter } from "@solana/wallet-adapter-wallets";
-import { type Connection, Transaction } from "@solana/web3.js";
+import {
+  type Connection,
+  Transaction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import { MiscNetworks } from "@stakekit/common";
 import type {
   Chain,
@@ -38,7 +42,20 @@ const createSolanaConnector = ({
     type: solanaWallet.adapter.name,
     showQrModal: false,
     sendTransaction: async (tx) => {
-      const solanaTx = Transaction.from(Buffer.from(tx, "hex"));
+      const base64Decoded = Buffer.from(tx, "base64");
+      const isBase64 = base64Decoded.toString("base64") === tx;
+
+      const buffer = isBase64
+        ? base64Decoded
+        : Buffer.from(tx, "hex");
+
+      let solanaTx: Transaction | VersionedTransaction;
+      try {
+        solanaTx = VersionedTransaction.deserialize(buffer);
+      } catch {
+        solanaTx = Transaction.from(buffer);
+      }
+
       const signed = await solanaWallet.adapter.sendTransaction(
         solanaTx,
         connection
