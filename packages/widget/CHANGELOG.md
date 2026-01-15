@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.267
+
+### Patch Changes
+
+- 49a255d: chore: bump deps
+- dd99d8c: feat: solana versioned transactions support
+
 ## 0.0.266
 
 ### Patch Changes
