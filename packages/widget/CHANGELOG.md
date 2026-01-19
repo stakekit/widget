@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.268
+
+### Patch Changes
+
+- d0cbb29: fix: remove divider
+
 ## 0.0.267
 
 ### Patch Changes
