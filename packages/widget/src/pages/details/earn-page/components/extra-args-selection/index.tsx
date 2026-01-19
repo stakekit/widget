@@ -4,6 +4,7 @@ import { Box } from "../../../../../components/atoms/box";
 import { Divider } from "../../../../../components/atoms/divider";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { useIsDashboard } from "../../../../../pages-dashboard/providers/dashboard-context";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const ExtraArgsSelection = () => {
@@ -11,6 +12,8 @@ export const ExtraArgsSelection = () => {
     useEarnPageContext();
 
   const { t } = useTranslation();
+
+  const isDashboard = useIsDashboard();
 
   return selectedStake
     .chainNullable((ss) => ss.args.enter.args?.tronResource)
@@ -46,9 +49,11 @@ export const ExtraArgsSelection = () => {
             isError={isError}
           />
 
-          <Box marginTop="3">
-            <Divider />
-          </Box>
+          {!isDashboard && (
+            <Box marginTop="3">
+              <Divider />
+            </Box>
+          )}
         </Box>
       );
     })
