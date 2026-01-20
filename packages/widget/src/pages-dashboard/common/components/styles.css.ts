@@ -36,10 +36,7 @@ export const outletWrapper = recipe({
   variants: {
     variant: {
       default: {
-        paddingTop: "24px",
-        paddingLeft: "30px",
-        paddingRight: "30px",
-        paddingBottom: "24px",
+        padding: "24px",
       },
       utila: {
         padding: "24px",
