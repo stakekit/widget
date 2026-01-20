@@ -104,6 +104,9 @@ export const tabText = recipe({
       selected: {},
     },
     variant: {
+      default: {
+        marginBottom: "16px",
+      },
       utila: [
         atoms({ fontWeight: "semibold" }),
         {
@@ -130,6 +133,9 @@ export const tabText = recipe({
       },
     },
   ],
+  defaultVariants: {
+    variant: "default",
+  },
 });
 
 export const tabsContainer = recipe({
@@ -144,7 +150,10 @@ export const tabsContainer = recipe({
   ],
   variants: {
     variant: {
-      default: {},
+      default: {
+        gap: "15px",
+        paddingTop: "16px",
+      },
       utila: {
         gap: "15px",
         padding: "8px",
