@@ -1,5 +1,11 @@
 # @stakekit/widget
 
+## 0.0.269
+
+### Patch Changes
+
+- 2988649: fix: dashboard layout
+
 ## 0.0.268
 
 ### Patch Changes
