@@ -1,6 +1,9 @@
 import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
 import type { ReactNode } from "react";
-import type { SupportedSKChains } from "../../domain/types/chains";
+import type {
+  SupportedSKChainIds,
+  SupportedSKChains,
+} from "../../domain/types/chains";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import type { Languages, localResources } from "../../translation";
@@ -72,6 +75,7 @@ export type SettingsProps = {
   preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
   tonConnectManifestUrl?: string;
+  initialChain?: SupportedSKChainIds;
 };
 
 export type SettingsContextType = SettingsProps & VariantProps;
