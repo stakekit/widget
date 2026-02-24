@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## 0.0.270
+
+### Patch Changes
+
+- cc64fae: feat: initial chain to connect
+- f2f32f5: fix(yields): allow whitelisted zero-rate yields
+
 ## 0.0.269
 
 ### Patch Changes
