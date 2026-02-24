@@ -39,7 +39,7 @@ export const RainbowKitProviderWithTheme = ({
 
   const { t, i18n } = useTranslation();
 
-  const { hideAccountAndChainSelector } = useSettings();
+  const { hideAccountAndChainSelector, initialChain } = useSettings();
 
   const chainIdsToUse = useMemo(
     () => new Set(connectorChains.map((c) => c.id)),
@@ -85,6 +85,7 @@ export const RainbowKitProviderWithTheme = ({
       appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
       {...(hideAccountAndChainSelector && { avatar: null })}
       showRecentTransactions={false}
+      initialChain={initialChain}
       theme={finalTheme}
       hideDisconnect={hideDisconnect}
       dialogRoot={portalContainer}
