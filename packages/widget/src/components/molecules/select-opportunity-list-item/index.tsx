@@ -9,7 +9,7 @@ import { Box } from "../../atoms/box";
 import { SelectModalItem } from "../../atoms/select-modal";
 import { ProviderIcon } from "../../atoms/token-icon/provider-icon";
 import { Text } from "../../atoms/typography/text";
-import { selectItemText } from "./styles.css";
+import { noWrap, selectItemText } from "./styles.css";
 
 export const SelectOpportunityListItem = ({
   item,
@@ -53,7 +53,7 @@ export const SelectOpportunityListItem = ({
           </Box>
 
           <Box>
-            <Text>
+            <Text className={noWrap}>
               {getRewardRateFormatted({
                 rewardRate: item.rewardRate,
                 rewardType: item.rewardType,

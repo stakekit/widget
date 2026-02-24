@@ -7,3 +7,7 @@ export const selectItemText = style([
     fontWeight: "tokenSelect",
   }),
 ]);
+
+export const noWrap = style({
+  whiteSpace: "nowrap",
+});

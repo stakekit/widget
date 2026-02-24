@@ -179,6 +179,14 @@ export const isEthenaUsdeStaking = (yieldId: string) =>
 export const isBittensorStaking = (yieldId: string) =>
   yieldId === "bittensor-native-staking";
 
+const zeroRewardRateYieldIdWhitelist = new Set<string>([
+  "optimism-usdc-gtusdcb-0x4ffc4e5f1f1f5c43dc9bc27b53728da13b02be35-4626-vault",
+]);
+
+export const isNonZeroRewardRateYield = (
+  yieldDto: Pick<YieldDto, "id" | "rewardRate">
+) => yieldDto.rewardRate > 0 || zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
+
 export const getComputedRewardRate = (yieldDto: YieldDto) => {
   const liveFeeConfigurations = yieldDto.feeConfigurations.filter(
     (fc) => fc.status === "LIVE"
