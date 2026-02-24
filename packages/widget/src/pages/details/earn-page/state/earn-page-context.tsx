@@ -32,6 +32,7 @@ import {
   getYieldTypeLabels,
   getYieldTypesSortRank,
   isBittensorStaking,
+  isNonZeroRewardRateYield,
 } from "../../../../domain/types/yields";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
@@ -236,7 +237,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       Maybe.of(multiYields)
         .map((val) => [...val].sort((a, b) => b.rewardRate - a.rewardRate))
-        .map((val) => val.filter((v) => v.rewardRate > 0))
+        .map((val) => val.filter(isNonZeroRewardRateYield))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
             .chain((val) =>

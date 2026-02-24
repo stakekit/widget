@@ -31,7 +31,10 @@ import {
   type PreferredTokenYieldsPerNetwork,
 } from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
-import type { ValidatorsConfig } from "../../domain/types/yields";
+import {
+  isNonZeroRewardRateYield,
+  type ValidatorsConfig,
+} from "../../domain/types/yields";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSavedRef } from "../use-saved-ref";
@@ -192,7 +195,9 @@ const firstEligibleYield$ = (args: {
 
   const successStream = multipleYields$(args).pipe(
     tap((v) => {
-      defaultYield = v;
+      if (isNonZeroRewardRateYield(v) || !defaultYield) {
+        defaultYield = v;
+      }
     }),
     filter((y) => {
       const preferredYieldId = Maybe.fromNullable(
