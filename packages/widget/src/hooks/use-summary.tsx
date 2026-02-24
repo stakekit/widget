@@ -8,7 +8,6 @@ import { getBaseToken, getTokenPriceInUSD } from "../domain";
 import { getPositionTotalAmount } from "../domain/types/positions";
 import type { Prices } from "../domain/types/price";
 import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
-import { isNonZeroRewardRateYield } from "../domain/types/yields";
 import { usePositions } from "../pages/details/positions-page/hooks/use-positions";
 import { useMultiYields } from "./api/use-multi-yields";
 import { usePrices } from "./api/use-prices";
@@ -295,7 +294,7 @@ export const SummaryProvider = ({
                 prices,
               });
 
-              if (isNonZeroRewardRateYield(yieldDto) && usdAmount.gt(0)) {
+              if (yieldDto.rewardRate > 0 && usdAmount.gt(0)) {
                 return {
                   totalWeightedApy: acc.totalWeightedApy.plus(
                     usdAmount.times(yieldDto.rewardRate * 100)
