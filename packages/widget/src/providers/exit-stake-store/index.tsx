@@ -8,13 +8,14 @@ import { createStore } from "@xstate/store";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { YieldTokenDto } from "../yield-api-client-provider/types";
 
 type InitData = {
   requestDto: ActionRequestDto;
   gasFeeToken: YieldDto["token"];
   unstakeAmount: BigNumber;
   integrationData: YieldDto;
-  unstakeToken: TokenDto;
+  unstakeToken: TokenDto | YieldTokenDto;
 };
 
 type Store = Maybe<InitData & { actionDto: Maybe<ActionDto> }>;

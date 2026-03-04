@@ -18,9 +18,8 @@ export const usePositionListItem = (
     rewardRateAverage,
     inactiveValidator,
     baseToken,
-    totalAmount,
+    totalAmountUsd,
     totalAmountFormatted,
-    tokenToDisplay,
   } = useBasePositionListItem(item);
 
   const rewardsSummaryQuery = useRewardsSummary(item.integrationId);
@@ -37,7 +36,6 @@ export const usePositionListItem = (
     currency: config.currency,
     tokenList: [
       ...baseToken.mapOrDefault((v) => [v], []),
-      ...tokenToDisplay.mapOrDefault((v) => [v], []),
       ...rewardsSummary.mapOrDefault((v) => [v.token], []),
     ],
   });
@@ -52,23 +50,10 @@ export const usePositionListItem = (
 
   const totalAmountPriceFormatted = useMemo(
     () =>
-      Maybe.fromRecord({
-        totalAmount,
-        baseToken,
-        prices: Maybe.fromNullable(prices.data),
-        tokenToDisplay,
-      })
-        .map((val) =>
-          getTokenPriceInUSD({
-            baseToken: val.baseToken,
-            amount: val.totalAmount,
-            pricePerShare: val.tokenToDisplay.pricePerShare,
-            token: val.tokenToDisplay,
-            prices: val.prices,
-          })
-        )
-        .map(defaultFormattedNumber),
-    [totalAmount, baseToken, prices, tokenToDisplay]
+      totalAmountUsd.gt(0)
+        ? Maybe.of(defaultFormattedNumber(totalAmountUsd))
+        : (Maybe.empty() as Maybe<string>),
+    [totalAmountUsd]
   );
 
   const rewardsAmountPriceFormatted = useMemo(

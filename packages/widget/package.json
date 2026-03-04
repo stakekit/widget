@@ -55,7 +55,8 @@
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
     "check-unused": "npx knip",
-    "check-circular-deps": "skott ./src/index.package.ts -m 'raw' && pnpm lint"
+    "check-circular-deps": "skott ./src/index.package.ts -m 'raw' && pnpm lint",
+    "gen:yield-api": "openapi-typescript https://docs.yield.xyz/openapi/appsyield-apiswagger-docsopenapi.yaml -o src/types/yield-api-schema.d.ts"
   },
   "peerDependencies": {
     "react": ">=18",
@@ -130,6 +131,9 @@
     "mixpanel-browser": "^2.72.0",
     "motion": "12.23.26",
     "msw": "^2.12.4",
+    "openapi-fetch": "^0.17.0",
+    "openapi-react-query": "^0.5.4",
+    "openapi-typescript": "^7.13.0",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "purify-ts": "2.1.0",

@@ -4,7 +4,7 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { equalTokens, getTokenPriceInUSD } from "../../../domain";
+import { equalTokens } from "../../../domain";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
@@ -90,14 +90,6 @@ export const usePositionDetails = () => {
 
   const _unstakeAmountError = onClickHandler.isError || unstakeAmountError;
 
-  const positionLabel = useMemo(
-    () =>
-      positionBalances.data.chainNullable(
-        (b) => b.balances.find((b) => b.label)?.label
-      ),
-    [positionBalances.data]
-  );
-
   const dispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
@@ -119,27 +111,10 @@ export const usePositionDetails = () => {
 
   const unstakeFormattedAmount = useMemo(
     () =>
-      Maybe.fromRecord({
-        prices: Maybe.fromNullable(positionBalancePrices.data),
-        reducedStakedOrLiquidBalance,
-        baseToken,
-      })
-        .map((val) =>
-          getTokenPriceInUSD({
-            amount: unstakeAmount,
-            token: val.reducedStakedOrLiquidBalance.token,
-            prices: val.prices,
-            pricePerShare: val.reducedStakedOrLiquidBalance.pricePerShare,
-            baseToken: val.baseToken,
-          })
-        )
+      reducedStakedOrLiquidBalance
+        .map((val) => val.amountUsd)
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [
-      positionBalancePrices.data,
-      reducedStakedOrLiquidBalance,
-      unstakeAmount,
-      baseToken,
-    ]
+    [reducedStakedOrLiquidBalance]
   );
 
   const onMaxClick = () => {
@@ -175,14 +150,14 @@ export const usePositionDetails = () => {
             .filter(
               (yb) =>
                 !yb.token.isPoints &&
-                yb.pricePerShare &&
+                !!yb.validator?.pricePerShare &&
                 !equalTokens(yb.token, v.baseToken)
             )
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                  new BigNumber(yb.pricePerShare)
+                  new BigNumber(yb.validator?.pricePerShare ?? 0)
                 )} ${v.baseToken.symbol}`
               );
             });
@@ -221,7 +196,6 @@ export const usePositionDetails = () => {
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
-    positionLabel,
     unstakeAmountError: _unstakeAmountError,
     unstakeMaxAmount,
     unstakeMinAmount,

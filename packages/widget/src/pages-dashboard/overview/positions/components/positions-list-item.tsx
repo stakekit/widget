@@ -165,28 +165,20 @@ export const PositionsListItem = memo(
 
                   {/* Staked */}
                   <Box flex={2} className={columnContainer}>
-                    {totalAmountFormatted
-                      .map((v) => (
-                        <>
-                          <Text className={overflowText}>{v}</Text>
+                    <Text className={overflowText}>{totalAmountFormatted}</Text>
 
-                          {totalAmountPriceFormatted
-                            .map((v) => (
-                              <Text
-                                variant={{ weight: "normal" }}
-                                className={overflowText}
-                              >
-                                {v}$
-                              </Text>
-                            ))
-                            .orDefaultLazy(() => (
-                              <Text style={{ textAlign: "center" }}>-</Text>
-                            ))}
-                        </>
+                    {totalAmountPriceFormatted
+                      .map((v) => (
+                        <Text
+                          variant={{ weight: "normal" }}
+                          className={overflowText}
+                        >
+                          {v}$
+                        </Text>
                       ))
-                      .orDefault(
+                      .orDefaultLazy(() => (
                         <Text style={{ textAlign: "center" }}>-</Text>
-                      )}
+                      ))}
                   </Box>
                 </Box>
 

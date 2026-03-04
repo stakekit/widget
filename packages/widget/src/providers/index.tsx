@@ -29,6 +29,7 @@ import { ActionHistoryContextProvider } from "./stake-history";
 import { ThemeWrapper } from "./theme-wrapper";
 import { TrackingContextProviderWithProps } from "./tracking";
 import { WagmiConfigProvider } from "./wagmi/provider";
+import { YieldApiClientProvider } from "./yield-api-client-provider";
 
 export const Providers = ({
   children,
@@ -38,53 +39,55 @@ export const Providers = ({
       <RootElementProvider>
         <I18nextProvider i18n={i18nInstance}>
           <SKApiClientProvider>
-            <SKQueryClientProvider>
-              <SKLocationProvider>
-                <MountAnimationProvider>
-                  <WagmiConfigProvider>
-                    <SolanaProvider>
-                      <TrackingContextProviderWithProps>
-                        <SKWalletProvider>
-                          <RainbowProvider>
-                            <ActionHistoryContextProvider>
-                              <EarnPageStateProvider>
-                                <ThemeWrapper>
-                                  <ListStateContextProvider>
-                                    <CurrentLayoutProvider>
-                                      <HeaderHeightProvider>
-                                        <FooterHeightProvider>
-                                          <FooterButtonProvider>
-                                            <PoweredByHeightProvider>
-                                              <DisableTransitionDurationProvider>
-                                                <EnterStakeStoreProvider>
-                                                  <ExitStakeStoreProvider>
-                                                    <PendingActionStoreProvider>
-                                                      <ActivityProvider>
-                                                        <SummaryProvider>
-                                                          {children}
-                                                        </SummaryProvider>
-                                                      </ActivityProvider>
-                                                    </PendingActionStoreProvider>
-                                                  </ExitStakeStoreProvider>
-                                                </EnterStakeStoreProvider>
-                                              </DisableTransitionDurationProvider>
-                                            </PoweredByHeightProvider>
-                                          </FooterButtonProvider>
-                                        </FooterHeightProvider>
-                                      </HeaderHeightProvider>
-                                    </CurrentLayoutProvider>
-                                  </ListStateContextProvider>
-                                </ThemeWrapper>
-                              </EarnPageStateProvider>
-                            </ActionHistoryContextProvider>
-                          </RainbowProvider>
-                        </SKWalletProvider>
-                      </TrackingContextProviderWithProps>
-                    </SolanaProvider>
-                  </WagmiConfigProvider>
-                </MountAnimationProvider>
-              </SKLocationProvider>
-            </SKQueryClientProvider>
+            <YieldApiClientProvider>
+              <SKQueryClientProvider>
+                <SKLocationProvider>
+                  <MountAnimationProvider>
+                    <WagmiConfigProvider>
+                      <SolanaProvider>
+                        <TrackingContextProviderWithProps>
+                          <SKWalletProvider>
+                            <RainbowProvider>
+                              <ActionHistoryContextProvider>
+                                <EarnPageStateProvider>
+                                  <ThemeWrapper>
+                                    <ListStateContextProvider>
+                                      <CurrentLayoutProvider>
+                                        <HeaderHeightProvider>
+                                          <FooterHeightProvider>
+                                            <FooterButtonProvider>
+                                              <PoweredByHeightProvider>
+                                                <DisableTransitionDurationProvider>
+                                                  <EnterStakeStoreProvider>
+                                                    <ExitStakeStoreProvider>
+                                                      <PendingActionStoreProvider>
+                                                        <ActivityProvider>
+                                                          <SummaryProvider>
+                                                            {children}
+                                                          </SummaryProvider>
+                                                        </ActivityProvider>
+                                                      </PendingActionStoreProvider>
+                                                    </ExitStakeStoreProvider>
+                                                  </EnterStakeStoreProvider>
+                                                </DisableTransitionDurationProvider>
+                                              </PoweredByHeightProvider>
+                                            </FooterButtonProvider>
+                                          </FooterHeightProvider>
+                                        </HeaderHeightProvider>
+                                      </CurrentLayoutProvider>
+                                    </ListStateContextProvider>
+                                  </ThemeWrapper>
+                                </EarnPageStateProvider>
+                              </ActionHistoryContextProvider>
+                            </RainbowProvider>
+                          </SKWalletProvider>
+                        </TrackingContextProviderWithProps>
+                      </SolanaProvider>
+                    </WagmiConfigProvider>
+                  </MountAnimationProvider>
+                </SKLocationProvider>
+              </SKQueryClientProvider>
+            </YieldApiClientProvider>
           </SKApiClientProvider>
         </I18nextProvider>
       </RootElementProvider>

@@ -1,14 +1,13 @@
-import type {
-  BalanceTypes,
-  TokenDto,
-  YieldBalanceDto,
-  YieldBalancesWithIntegrationIdDto,
-} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { equalTokens } from "..";
+import type {
+  YieldBalanceDto,
+  YieldBalancesByYieldDto,
+  YieldBalanceType,
+} from "../../providers/yield-api-client-provider/types";
+import type { components } from "../../types/yield-api-schema";
 
 export type PositionBalancesByType = Map<
-  BalanceTypes,
+  YieldBalanceType,
   (YieldBalanceDto & {
     tokenPriceInUsd: BigNumber;
   })[]
@@ -16,12 +15,18 @@ export type PositionBalancesByType = Map<
 
 export type PositionDetailsLabelType = "hasFrozenV1";
 
+type BalanceType = "validators" | "default";
+
+export type BalanceDataKey =
+  | BalanceType
+  | `validator::${components["schemas"]["ValidatorDto"]["address"]}`;
+
 export type PositionsData = Map<
-  YieldBalancesWithIntegrationIdDto["integrationId"],
+  YieldBalancesByYieldDto["yieldId"],
   {
-    integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
+    yieldId: YieldBalancesByYieldDto["yieldId"];
     balanceData: Map<
-      YieldBalanceDto["groupId"],
+      BalanceDataKey,
       { balances: YieldBalanceDto[] } & (
         | { type: "validators"; validatorsAddresses: string[] }
         | { type: "default" }
@@ -30,22 +35,29 @@ export type PositionsData = Map<
   }
 >;
 
-export const getPositionTotalAmount = ({
-  token,
-  balances,
-}: {
-  token: TokenDto & { pricePerShare: YieldBalanceDto["pricePerShare"] };
-  balances: YieldBalanceDto[];
-}) =>
-  balances.reduce((acc, b) => {
-    if (b.token.isPoints) return acc;
+export const getPositionBalanceDataKey = (
+  balance: YieldBalanceDto
+): BalanceDataKey => {
+  if (Array.isArray(balance.validators) && balance.validators.length > 1) {
+    return "validators";
+  }
 
-    if (equalTokens(b.token, token)) {
-      return BigNumber(b.amount).plus(acc);
-    }
+  if (balance.validator?.address) {
+    return `validator::${balance.validator.address}` as BalanceDataKey;
+  }
 
-    return BigNumber(b.amount)
-      .times(b.pricePerShare)
-      .dividedBy(token.pricePerShare)
-      .plus(acc);
-  }, new BigNumber(0));
+  return "default";
+};
+
+export const getPositionTotalAmount = (balances: YieldBalanceDto[]) =>
+  balances.reduce(
+    (acc, b) => {
+      if (b.token.isPoints) return acc;
+
+      acc.amount = BigNumber(b.amount).plus(acc.amount);
+      acc.amountUsd = BigNumber(b.amountUsd ?? 0).plus(acc.amountUsd);
+
+      return acc;
+    },
+    { amount: new BigNumber(0), amountUsd: new BigNumber(0) }
+  );

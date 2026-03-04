@@ -1,9 +1,10 @@
-import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
+import type { YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Text } from "../../components/atoms/typography/text";
+import type { YieldBalanceDto } from "../../providers/yield-api-client-provider/types";
 import { defaultFormattedNumber } from "../../utils";
 
 export const PositionBalances = ({

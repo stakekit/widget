@@ -3,9 +3,10 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { config } from "../../../../../config";
 import { useSettings } from "../../../../../providers/settings";
+import type { YieldTokenDto } from "../../../../../providers/yield-api-client-provider/types";
 
 export const useVariantTokenUrls = (
-  token: TokenDto,
+  token: TokenDto | YieldTokenDto,
   metadata?: YieldMetadataDto
 ): {
   mainUrl: string | undefined;
@@ -35,7 +36,7 @@ export const useVariantTokenUrls = (
     const tokenMappingResult = Maybe.fromNullable(tokenIconMapping)
       .chainNullable((mapping) => {
         if (typeof mapping === "function") {
-          return mapping(token);
+          return mapping(token as TokenDto);
         }
 
         return mapping[token.symbol];

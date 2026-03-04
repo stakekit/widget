@@ -453,7 +453,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 type: val.maxFeePerGas ? "eip1559" : "legacy",
               })
             )
-              .mapLeft(() => new SendTransactionError())
+              .mapLeft((e) => new SendTransactionError(e))
               .map((val) => ({ signedTx: val, broadcasted: true }))
           );
         }),

@@ -463,6 +463,15 @@
       "restaking": "Unstake"
     },
     "balance_type": {
+      "active": "Active",
+      "active_yearn_or_deposit": "Deposited",
+      "entering": "Entering",
+      "entering_yearn_or_deposit": "Depositing",
+      "exiting": "Exiting",
+      "exiting_yearn_or_deposit": "Withdrawing",
+      "withdrawable": "Withdrawable",
+      "withdrawable_yearn_or_deposit": "Available to withdraw",
+      "claimable": "Claimable",
       "available": "Available",
       "staked": "Staked",
       "staked_yearn_or_deposit": "Deposited",

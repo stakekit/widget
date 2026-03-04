@@ -15,6 +15,8 @@ export const config = {
   appPrefix: "sk-widget",
   env: {
     apiUrl: import.meta.env.VITE_API_URL ?? "https://api.stakek.it/",
+    yieldsApiUrl:
+      import.meta.env.VITE_YIELDS_API_URL ?? "https://api.yield.xyz",
     isTestMode: import.meta.env.MODE === "test",
     isDevMode: import.meta.env.MODE === "development",
     forceAddress: import.meta.env.VITE_FORCE_ADDRESS,

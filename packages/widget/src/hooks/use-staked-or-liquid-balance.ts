@@ -8,9 +8,7 @@ export const useStakedOrLiquidBalance = (
   return useMemo(
     () =>
       positionBalancesByType.chain((pbbt) =>
-        Maybe.fromNullable(pbbt.get("staked")).altLazy(() =>
-          Maybe.fromNullable(pbbt.get("available"))
-        )
+        Maybe.fromNullable(pbbt.get("active"))
       ),
     [positionBalancesByType]
   );

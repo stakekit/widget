@@ -1,5 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { BalanceDataKey } from "../domain/types/positions";
 import { usePositionData } from "./use-position-data";
 
 export const usePositionBalances = ({
@@ -15,9 +16,11 @@ export const usePositionBalances = ({
     () =>
       Maybe.fromRecord({
         positionData: data,
-        balanceId: Maybe.fromNullable(balanceId),
-      }).chainNullable((val) =>
-        val.positionData.balanceData.get(val.balanceId)
+        balanceId: Maybe.fromNullable(balanceId as BalanceDataKey),
+      }).chainNullable(
+        (val) =>
+          val.positionData.balanceData.get(val.balanceId) ??
+          val.positionData.balanceData.values().next().value
       ),
     [balanceId, data]
   );

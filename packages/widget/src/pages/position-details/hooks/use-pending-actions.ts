@@ -1,9 +1,4 @@
-import type {
-  PendingActionDto,
-  ValidatorDto,
-  YieldBalanceDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
+import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, List, Maybe, Right } from "purify-ts";
 import { useEffect, useMemo, useRef } from "react";
@@ -13,12 +8,17 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../domain";
+import { isPendingActionAmountRequired } from "../../../domain/types/pending-action";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import type {
+  YieldBalanceDto,
+  YieldPendingActionDto,
+} from "../../../providers/yield-api-client-provider/types";
 import { defaultFormattedNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
@@ -54,8 +54,8 @@ export const usePendingActions = () => {
           val.flatMap((balance) =>
             balance.pendingActions.map((pa) => {
               const amount = Maybe.fromPredicate(
-                (v) => !!v,
-                pa.args?.args?.amount?.required
+                (v) => v,
+                isPendingActionAmountRequired(pa)
               ).chain(() =>
                 Maybe.fromNullable(
                   pendingActionsState.get(
@@ -79,7 +79,7 @@ export const usePendingActions = () => {
                     amount: val.amount,
                     token: val.reducedStakedOrLiquidBalance.token,
                     prices: val.prices,
-                    pricePerShare: balance.pricePerShare,
+                    pricePerShare: null,
                     baseToken: val.baseToken,
                   })
                 )
@@ -150,7 +150,7 @@ export const usePendingActions = () => {
     yieldBalance,
     pendingActionDto,
   }: {
-    pendingActionDto: PendingActionDto;
+    pendingActionDto: YieldPendingActionDto;
     yieldBalance: YieldBalanceDto;
   }) => {
     trackEvent("pendingActionClicked", {
@@ -235,7 +235,7 @@ export const usePendingActions = () => {
     selectedValidators,
   }: {
     integrationData: YieldDto;
-    pendingActionDto: PendingActionDto;
+    pendingActionDto: YieldPendingActionDto;
     yieldBalance: YieldBalanceDto;
     selectedValidators: ValidatorDto["address"][];
   }) => {

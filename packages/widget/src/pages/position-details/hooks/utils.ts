@@ -1,15 +1,31 @@
 import type {
-  PendingActionDto,
+  PendingActionDto as LegacyPendingActionDto,
+  YieldBalanceDto as LegacyYieldBalanceDto,
   PendingActionRequestDto,
   ValidatorDto,
-  YieldBalanceDto,
   YieldDto,
 } from "@stakekit/api-hooks";
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
+import {
+  type AnyPendingActionDto,
+  isPendingActionAmountRequired,
+  isPendingActionValidatorAddressesRequired,
+  isPendingActionValidatorAddressRequired,
+} from "../../../domain/types/pending-action";
 import type { SKWallet } from "../../../domain/types/wallet";
+import type {
+  YieldBalanceDto,
+  YieldTokenDto,
+} from "../../../providers/yield-api-client-provider/types";
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
+
+type AnyYieldBalanceDto = {
+  amount: string;
+  token: YieldTokenDto;
+  type: LegacyYieldBalanceDto["type"] | YieldBalanceDto["type"];
+};
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,
@@ -23,8 +39,8 @@ export const preparePendingActionRequestDto = ({
   pendingActionsState: State["pendingActions"];
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
-  pendingActionDto: PendingActionDto;
-  yieldBalance: YieldBalanceDto;
+  pendingActionDto: AnyPendingActionDto;
+  yieldBalance: AnyYieldBalanceDto;
   integration: YieldDto;
   selectedValidators: ValidatorDto["address"][];
 }): Either<
@@ -45,14 +61,15 @@ export const preparePendingActionRequestDto = ({
       const args: PendingActionRequestDto["args"] = {
         amount: Maybe.fromPredicate(
           Boolean,
-          pendingActionDto.args?.args?.amount?.required
+          isPendingActionAmountRequired(pendingActionDto)
         )
           .chainNullable(() =>
             pendingActionsState.get(
               getBalanceTokenActionType({
-                balanceType: yieldBalance.type,
+                balanceType: yieldBalance.type as YieldBalanceDto["type"],
                 token: yieldBalance.token,
-                actionType: pendingActionDto.type,
+                actionType:
+                  pendingActionDto.type as LegacyPendingActionDto["type"],
               })
             )
           )
@@ -62,9 +79,9 @@ export const preparePendingActionRequestDto = ({
       };
 
       if (selectedValidators.length) {
-        if (pendingActionDto.args?.args?.validatorAddresses?.required) {
+        if (isPendingActionValidatorAddressesRequired(pendingActionDto)) {
           args.validatorAddresses = selectedValidators;
-        } else if (pendingActionDto.args?.args?.validatorAddress?.required) {
+        } else if (isPendingActionValidatorAddressRequired(pendingActionDto)) {
           args.validatorAddress = List.head(selectedValidators).orDefault("");
         }
       }
@@ -74,7 +91,7 @@ export const preparePendingActionRequestDto = ({
           args,
           integrationId: integration.id,
           passthrough: pendingActionDto.passthrough,
-          type: pendingActionDto.type,
+          type: pendingActionDto.type as LegacyPendingActionDto["type"],
         },
         address: val,
         additionalAddresses: additionalAddresses ?? undefined,

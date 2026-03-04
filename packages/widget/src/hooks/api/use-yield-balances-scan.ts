@@ -1,22 +1,22 @@
-import type {
-  YieldBalanceScanRequestDto,
-  YieldBalancesWithIntegrationIdDto,
-} from "@stakekit/api-hooks";
-import { useQuery } from "@tanstack/react-query";
-import { Just, Maybe } from "purify-ts";
+import type { UseQueryResult } from "@tanstack/react-query";
+import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
-import { yieldYieldBalancesScan } from "../../common/private-api";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
+import { useYieldApiClient } from "../../providers/yield-api-client-provider";
+import type {
+  YieldBalancesByYieldDto,
+  YieldBalancesRequestDto,
+} from "../../providers/yield-api-client-provider/types";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
 
-export const useYieldBalancesScan = <
-  T = YieldBalancesWithIntegrationIdDto[],
->(opts?: {
-  select?: (data: YieldBalancesWithIntegrationIdDto[]) => T;
-}) => {
-  const { network, address, additionalAddresses } = useSKWallet();
+export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
+  select?: (data: YieldBalancesByYieldDto[]) => T;
+  // biome-ignore lint/suspicious/noExplicitAny: fix later
+}): UseQueryResult<T, any> => {
+  const yieldApi = useYieldApiClient();
+  const { network, address } = useSKWallet();
 
   const actionHistoryData = useActionHistoryData();
 
@@ -28,38 +28,51 @@ export const useYieldBalancesScan = <
   const param = useMemo(
     () =>
       Maybe.fromRecord({
-        additionalAddresses: Just(additionalAddresses ?? undefined),
         address: Maybe.fromNullable(address),
         network: Maybe.fromNullable(network),
-      }).mapOrDefault<{ dto: YieldBalanceScanRequestDto; enabled: boolean }>(
+      }).mapOrDefault<{ dto: YieldBalancesRequestDto; enabled: boolean }>(
         (val) => ({
           enabled: true,
           dto: {
-            addresses: {
-              address: val.address,
-              additionalAddresses: val.additionalAddresses,
-            },
-            network: val.network,
+            queries: [
+              {
+                address: val.address,
+                network:
+                  val.network as YieldBalancesRequestDto["queries"][number]["network"],
+              },
+            ],
           },
         }),
         {
           enabled: false,
           dto: {
-            addresses: { address: "", additionalAddresses: undefined },
-            network: "ethereum",
+            queries: [{ address: "", network: "ethereum" }],
           },
         }
       ),
-    [additionalAddresses, address, network]
+    [address, network]
   );
 
-  const res = useQuery({
-    queryKey: getYieldYieldBalancesScanQueryKey(param.dto),
-    queryFn: () => yieldYieldBalancesScan(param.dto),
-    enabled: param.enabled,
-    select: opts?.select,
-    refetchInterval: 1000 * 60,
-  });
+  const res = yieldApi.useQuery(
+    "post",
+    "/v1/yields/balances",
+    {
+      body: param.dto,
+    },
+    {
+      enabled: param.enabled,
+      refetchInterval: 1000 * 60,
+      select: (data) => {
+        const items = data.items as YieldBalancesByYieldDto[];
+
+        if (opts?.select) {
+          return opts.select(items);
+        }
+
+        return items as T;
+      },
+    }
+  );
 
   /**
    * This is a hack to make sure that the yield balances are updated after a transaction
@@ -67,7 +80,7 @@ export const useYieldBalancesScan = <
   useInvalidateQueryNTimes({
     enabled: !!lastActionTimestamp,
     key: ["yield-balances-refetch", lastActionTimestamp],
-    queryKey: [getYieldYieldBalancesScanQueryKey(param.dto)[0]],
+    queryKey: getYieldYieldBalancesScanQueryKey(),
     waitMs: 4000,
     shouldRefetch: () =>
       !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
@@ -82,18 +95,11 @@ export const useInvalidateYieldBalances = () => {
   return useCallback(
     () =>
       queryClient.invalidateQueries({
-        queryKey: [
-          getYieldYieldBalancesScanQueryKey(
-            {} as YieldBalanceScanRequestDto
-          )[0],
-        ],
+        queryKey: getYieldYieldBalancesScanQueryKey(),
       }),
     [queryClient]
   );
 };
 
-const getYieldYieldBalancesScanQueryKey = (
-  yieldBalanceScanRequestDto: YieldBalanceScanRequestDto
-) => {
-  return ["/v1/yields/balances/scan", yieldBalanceScanRequestDto] as const;
-};
+const getYieldYieldBalancesScanQueryKey = () =>
+  ["post", "/v1/yields/balances"] as const;

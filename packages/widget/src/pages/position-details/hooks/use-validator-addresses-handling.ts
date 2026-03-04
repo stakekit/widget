@@ -1,10 +1,11 @@
-import type {
-  PendingActionDto,
-  ValidatorDto,
-  YieldBalanceDto,
-} from "@stakekit/api-hooks";
+import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useCallback, useMemo, useReducer } from "react";
 import type { SelectModalProps } from "../../../components/atoms/select-modal";
+import { isPendingActionValidatorAddressesRequired } from "../../../domain/types/pending-action";
+import type {
+  YieldBalanceDto,
+  YieldPendingActionDto,
+} from "../../../providers/yield-api-client-provider/types";
 import type { Action } from "../../../types/utils";
 
 type State = {
@@ -14,7 +15,7 @@ type State = {
   | {
       showValidatorsModal: true;
       yieldBalance: YieldBalanceDto;
-      pendingActionDto: PendingActionDto;
+      pendingActionDto: YieldPendingActionDto;
     }
   | {
       showValidatorsModal: false;
@@ -25,7 +26,7 @@ type State = {
 
 type ValidatorOpenAction = Action<
   "validator/open",
-  { yieldBalance: YieldBalanceDto; pendingActionDto: PendingActionDto }
+  { yieldBalance: YieldBalanceDto; pendingActionDto: YieldPendingActionDto }
 >;
 type ValidatorCloseAction = Action<"validator/close">;
 type ValidatorMultiSelectAction = Action<
@@ -82,15 +83,18 @@ const reducer = (state: State, action: Actions): State => {
     }
 
     case "validator/open": {
-      const newSelectedValidators: State["selectedValidators"] = new Set(
-        action.data.yieldBalance.validatorAddresses
-      );
+      const newSelectedValidators: State["selectedValidators"] = new Set([
+        ...(action.data.yieldBalance.validators?.map((v) => v.address) ?? []),
+        ...(action.data.yieldBalance.validator?.address
+          ? [action.data.yieldBalance.validator.address]
+          : []),
+      ]);
 
       return {
         ...state,
-        multiSelect:
-          !!action.data.pendingActionDto.args?.args?.validatorAddresses
-            ?.required,
+        multiSelect: isPendingActionValidatorAddressesRequired(
+          action.data.pendingActionDto
+        ),
         selectedValidators: newSelectedValidators,
         pendingActionDto: action.data.pendingActionDto,
         yieldBalance: action.data.yieldBalance,
@@ -122,7 +126,7 @@ export const useValidatorAddressesHandling = () => {
   const openModal = useCallback(
     (args: {
       yieldBalance: YieldBalanceDto;
-      pendingActionDto: PendingActionDto;
+      pendingActionDto: YieldPendingActionDto;
     }) => dispatch({ type: "validator/open", data: args }),
     []
   );

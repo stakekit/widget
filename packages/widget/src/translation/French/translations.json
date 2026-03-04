@@ -413,6 +413,15 @@
       "restaking": "Déstaker"
     },
     "balance_type": {
+      "active": "Actif",
+      "active_yearn_or_deposit": "Déposé",
+      "entering": "En cours d'entrée",
+      "entering_yearn_or_deposit": "En cours de dépôt",
+      "exiting": "En cours de sortie",
+      "exiting_yearn_or_deposit": "En cours de retrait",
+      "withdrawable": "Retirable",
+      "withdrawable_yearn_or_deposit": "Disponible au retrait",
+      "claimable": "Réclamable",
       "available": "Disponible",
       "staked": "Staké",
       "staked_yearn_or_deposit": "Déposé",

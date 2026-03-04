@@ -12,6 +12,7 @@ import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
+import type { YieldTokenDto } from "../../../../providers/yield-api-client-provider/types";
 import { MetaInfo } from "../../../components/meta-info";
 import { PageContainer } from "../../../components/page-container";
 import type { FeesBps } from "../../types";
@@ -25,7 +26,7 @@ export type MetaInfoProps =
 type ReviewPageProps = {
   fee: string;
   title: string;
-  token: Maybe<TokenDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
   metadata: Maybe<YieldMetadataDto>;
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
