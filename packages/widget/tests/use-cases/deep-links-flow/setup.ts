@@ -236,7 +236,10 @@ export const setup = async (opts?: {
     }),
     http.post(`*/v1/yields/${avaxLiquidStaking.id}/balances`, async () => {
       await delay();
-      return HttpResponse.json(avaxLiquidStakingBalances);
+      return HttpResponse.json({
+        yieldId: avaxLiquidStaking.id,
+        balances: avaxLiquidStakingBalancesV2,
+      });
     }),
     http.post("*/v1/actions/pending", async (info) => {
       const data = (await info.request.json()) as { integrationId: string };
