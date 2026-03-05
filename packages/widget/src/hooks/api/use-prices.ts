@@ -3,6 +3,7 @@ import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
 import { useCallback } from "react";
 import { createSelector } from "reselect";
 import type { Prices } from "../../domain/types/price";
+import type { YieldTokenDto } from "../../providers/yield-api-client-provider/types";
 import { priceResponseDtoToPrices } from "../../utils/mappers";
 
 const defaultParam: PriceRequestDto = {
@@ -17,14 +18,29 @@ const pricesSelector = createSelector(
   (val) => priceResponseDtoToPrices(val)
 );
 
+type PriceRequestInput = Omit<PriceRequestDto, "tokenList"> & {
+  tokenList: (PriceRequestDto["tokenList"][number] | YieldTokenDto)[];
+};
+
 export const usePrices = <T = Prices>(
-  priceRequestDto: PriceRequestDto | null | undefined,
+  priceRequestDto: PriceRequestInput | null | undefined,
   opts?: {
     enabled?: boolean;
     select?: (val: Prices) => T;
   }
 ) => {
-  return useTokenGetTokenPrices(priceRequestDto ?? defaultParam, {
+  const requestDto = priceRequestDto
+    ? ({
+        ...priceRequestDto,
+        tokenList: priceRequestDto.tokenList.map((token) => ({
+          ...token,
+          network:
+            token.network as PriceRequestDto["tokenList"][number]["network"],
+        })),
+      } satisfies PriceRequestDto)
+    : defaultParam;
+
+  return useTokenGetTokenPrices(requestDto, {
     query: {
       enabled: !!priceRequestDto && opts?.enabled,
       select: useCallback(

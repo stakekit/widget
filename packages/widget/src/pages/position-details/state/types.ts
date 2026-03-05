@@ -1,9 +1,4 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  YieldBalanceDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
+import type { ActionTypes, TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import type { PositionBalancesByType } from "../../../domain/types/positions";
@@ -13,19 +8,23 @@ import type { usePrices } from "../../../hooks/api/use-prices";
 import type { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import type { usePositionBalances } from "../../../hooks/use-position-balances";
 import type { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
+import type {
+  YieldBalanceType,
+  YieldTokenDto,
+} from "../../../providers/yield-api-client-provider/types";
 import type { Action } from "../../../types/utils";
 
 type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
 type UnstakeAmountMax = Action<"unstake/amount/max">;
 
 export type BalanceTokenActionType =
-  `${YieldBalanceDto["type"]}-${TokenString}-${ActionTypes}`;
+  `${YieldBalanceType}-${TokenString}-${ActionTypes}`;
 
 export type PendingActionAmountChange = Action<
   "pendingAction/amount/change",
   {
-    balanceType: YieldBalanceDto["type"];
-    token: TokenDto;
+    balanceType: YieldBalanceType;
+    token: TokenDto | YieldTokenDto;
     actionType: ActionTypes;
     amount: BigNumber;
   }
@@ -50,12 +49,12 @@ export type ExtraData = {
   stakedOrLiquidBalances: ReturnType<typeof useStakedOrLiquidBalance>;
   reducedStakedOrLiquidBalance: Maybe<{
     amount: BigNumber;
-    token: TokenDto;
-    pricePerShare: string;
+    amountUsd: BigNumber;
+    token: TokenDto | YieldTokenDto;
   }>;
   positionBalancePrices: ReturnType<typeof usePrices<Prices>>;
   unstakeAmountValid: boolean;
-  unstakeToken: Maybe<TokenDto>;
+  unstakeToken: Maybe<TokenDto | YieldTokenDto>;
   unstakeAmountError: boolean;
   canChangeUnstakeAmount: Maybe<boolean>;
   unstakeIsGreaterOrLessIntegrationLimitError: boolean;

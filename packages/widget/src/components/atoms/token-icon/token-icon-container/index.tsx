@@ -1,12 +1,13 @@
 import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
 import type { ReactElement } from "react";
+import type { YieldTokenDto } from "../../../../providers/yield-api-client-provider/types";
 import { Box } from "../../box";
 import { useVariantNetworkUrls } from "./hooks/use-variant-network-urls";
 import { useVariantTokenUrls } from "./hooks/use-variant-token-urls";
 
 type TokenIconContainerProps = {
-  token: TokenDto;
+  token: TokenDto | YieldTokenDto;
   metadata?: YieldMetadataDto;
   hideNetwork?: boolean;
   children: (props: TokenIconContainerReturnType) => ReactElement;

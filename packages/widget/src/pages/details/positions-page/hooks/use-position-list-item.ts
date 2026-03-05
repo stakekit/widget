@@ -63,15 +63,17 @@ export const usePositionListItem = (
     [integrationData]
   );
 
-  const totalAmount = useMemo(
+  const amounts = useMemo(
     () =>
-      tokenToDisplay.map((val) =>
-        getPositionTotalAmount({
-          token: val,
-          balances: item.balancesWithAmount,
-        })
-      ),
-    [item.balancesWithAmount, tokenToDisplay]
+      baseToken.map((b) => getPositionTotalAmount(item.balancesWithAmount, b)),
+    [item.balancesWithAmount, baseToken]
+  );
+
+  const totalAmount = useMemo(() => amounts.map((v) => v.amount), [amounts]);
+
+  const totalAmountUsd = useMemo(
+    () => amounts.map((v) => v.amountUsd),
+    [amounts]
   );
 
   const totalAmountFormatted = useMemo(
@@ -85,6 +87,7 @@ export const usePositionListItem = (
     rewardRateAverage,
     inactiveValidator,
     totalAmount,
+    totalAmountUsd,
     totalAmountFormatted,
     baseToken,
     tokenToDisplay,

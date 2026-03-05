@@ -1,9 +1,9 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  YieldBalanceDto,
-} from "@stakekit/api-hooks";
+import type { ActionTypes, TokenDto } from "@stakekit/api-hooks";
 import { tokenString } from "../../../domain";
+import type {
+  YieldBalanceType,
+  YieldTokenDto,
+} from "../../../providers/yield-api-client-provider/types";
 import type { BalanceTokenActionType } from "./types";
 
 export const getBalanceTokenActionType = ({
@@ -11,8 +11,8 @@ export const getBalanceTokenActionType = ({
   balanceType,
   token,
 }: {
-  balanceType: YieldBalanceDto["type"];
-  token: TokenDto;
+  balanceType: YieldBalanceType;
+  token: TokenDto | YieldTokenDto;
   actionType: ActionTypes;
 }): BalanceTokenActionType =>
   `${balanceType}-${tokenString(token)}-${actionType}`;

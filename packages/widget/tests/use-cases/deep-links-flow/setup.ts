@@ -120,6 +120,19 @@ export const setup = async (opts?: {
     },
   ];
 
+  const avaxLiquidStakingBalancesV2 = [
+    {
+      address: account,
+      type: "claimable",
+      amount: "0.019258000000000000",
+      amountRaw: "19258000000000000",
+      pendingActions: avaxLiquidStakingBalances[0].pendingActions,
+      token: avaxLiquidStaking.token,
+      amountUsd: "0.84",
+      isEarning: false,
+    },
+  ];
+
   const pendingAction = Just(pendingActionFixture())
     .map((def): typeof def => ({
       ...def,
@@ -202,6 +215,18 @@ export const setup = async (opts?: {
         },
       ]);
     }),
+    http.post("*/v1/yields/balances", async () => {
+      await delay();
+      return HttpResponse.json({
+        items: [
+          {
+            yieldId: avaxLiquidStaking.id,
+            balances: avaxLiquidStakingBalancesV2,
+          },
+        ],
+        errors: [],
+      });
+    }),
     http.post(`*/v1/yields/${avaxNativeStaking.id}/balances/scan`, async () => {
       await delay();
       return HttpResponse.json({
@@ -211,7 +236,10 @@ export const setup = async (opts?: {
     }),
     http.post(`*/v1/yields/${avaxLiquidStaking.id}/balances`, async () => {
       await delay();
-      return HttpResponse.json(avaxLiquidStakingBalances);
+      return HttpResponse.json({
+        yieldId: avaxLiquidStaking.id,
+        balances: avaxLiquidStakingBalancesV2,
+      });
     }),
     http.post("*/v1/actions/pending", async (info) => {
       const data = (await info.request.json()) as { integrationId: string };

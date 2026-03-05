@@ -3,7 +3,6 @@ import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { Button } from "../../components/atoms/button";
-import { InfoIcon } from "../../components/atoms/icons/info";
 import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Heading } from "../../components/atoms/typography/heading";
@@ -43,7 +42,6 @@ const PositionDetails = () => {
     unstakeToken,
     canUnstake,
     unstakeAmountError,
-    positionLabel,
     unstakeMaxAmount,
     unstakeMinAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
@@ -105,42 +103,6 @@ const PositionDetails = () => {
                         <Text variant={{ type: "muted" }}>{t.symbol}</Text>
                       </Box>
                     </>
-                  ))
-                  .extractNullable()}
-
-                {positionLabel
-                  .map((l) => (
-                    <Box
-                      background="stakeSectionBackground"
-                      borderRadius="xl"
-                      marginTop="2"
-                      py="4"
-                      px="4"
-                    >
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="flex-start"
-                        gap="1"
-                      >
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <InfoIcon />
-                        </Box>
-
-                        <Text variant={{ type: "muted", size: "small" }}>
-                          {
-                            t(
-                              `position_details.labels.${l.type}.details`,
-                              l.params
-                            ) as string
-                          }
-                        </Text>
-                      </Box>
-                    </Box>
                   ))
                   .extractNullable()}
 

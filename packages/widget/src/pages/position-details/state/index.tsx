@@ -1,10 +1,4 @@
-import type {
-  ActionTypes,
-  PendingActionDto,
-  PriceRequestDto,
-  TokenDto,
-  YieldBalanceDto,
-} from "@stakekit/api-hooks";
+import type { ActionTypes } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
@@ -17,7 +11,7 @@ import {
   useRef,
 } from "react";
 import { config } from "../../../config";
-import { isForceMaxAmount } from "../../../domain/types/stake";
+import { getPendingActionAmountConfig } from "../../../domain/types/pending-action";
 import { isERC4626 } from "../../../domain/types/yields";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
@@ -27,6 +21,11 @@ import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
+import type {
+  YieldBalanceDto,
+  YieldPendingActionDto,
+  YieldTokenDto,
+} from "../../../providers/yield-api-client-provider/types";
 import type {
   Actions,
   BalanceTokenActionType,
@@ -89,7 +88,7 @@ export const UnstakeOrPendingActionProvider = ({
           positionBalances: positionBalances.data,
           baseToken,
         })
-          .map<PriceRequestDto>((val) => ({
+          .map((val) => ({
             currency: config.currency,
             tokenList: [
               val.baseToken,
@@ -105,9 +104,7 @@ export const UnstakeOrPendingActionProvider = ({
    * @summary Position balance by type
    */
   const positionBalancesByType = usePositionBalanceByType({
-    baseToken,
     positionBalancesData: positionBalances.data,
-    prices: positionBalancePrices,
   });
 
   const stakedOrLiquidBalances = useStakedOrLiquidBalance(
@@ -120,15 +117,17 @@ export const UnstakeOrPendingActionProvider = ({
         b.reduce(
           (acc, next) => {
             acc.amount = acc.amount.plus(new BigNumber(next.amount));
+            acc.amountUsd = acc.amountUsd.plus(
+              new BigNumber(next.amountUsd ?? 0)
+            );
             acc.token = next.token;
-            acc.pricePerShare = next.pricePerShare;
 
             return acc;
           },
           {
+            amountUsd: new BigNumber(0),
             amount: new BigNumber(0),
             token: b[0].token,
-            pricePerShare: b[0].pricePerShare,
           }
         )
       ),
@@ -139,10 +138,7 @@ export const UnstakeOrPendingActionProvider = ({
     () =>
       stakedOrLiquidBalances
         .chain((balances) => List.head(balances))
-        .map<TokenDto & { pricePerShare: string }>((v) => ({
-          ...v.token,
-          pricePerShare: v.pricePerShare,
-        })),
+        .map((v) => v.token),
     [stakedOrLiquidBalances]
   );
 
@@ -155,7 +151,7 @@ export const UnstakeOrPendingActionProvider = ({
     yieldOpportunity: integrationData,
     type: "exit",
     availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
-    pricePerShare: unstakeToken.map((v) => v.pricePerShare).extractNullable(),
+    pricePerShare: null,
   });
 
   const canChangeUnstakeAmount = integrationData.map(
@@ -167,7 +163,7 @@ export const UnstakeOrPendingActionProvider = ({
     () =>
       new Map<
         BalanceTokenActionType,
-        { pendingAction: PendingActionDto; balance: YieldBalanceDto }
+        { pendingAction: YieldPendingActionDto; balance: YieldBalanceDto }
       >(
         positionBalancesByType
           .map((pbbt) =>
@@ -201,7 +197,7 @@ export const UnstakeOrPendingActionProvider = ({
   }: {
     state: State["pendingActions"];
     balanceType: YieldBalanceDto["type"];
-    token: TokenDto;
+    token: YieldTokenDto;
     actionType: ActionTypes;
     amount: BigNumber;
   }) => {
@@ -213,20 +209,13 @@ export const UnstakeOrPendingActionProvider = ({
       const newMap = new Map(state);
       newMap.set(key, amount);
 
+      const amountConfig = getPendingActionAmountConfig(val.pendingAction);
       const max = new BigNumber(
-        val.pendingAction.args?.args?.amount?.maximum ??
-          Number.POSITIVE_INFINITY
+        amountConfig?.maximum ?? Number.POSITIVE_INFINITY
       );
-      const min = new BigNumber(
-        val.pendingAction.args?.args?.amount?.minimum ?? 0
-      );
+      const min = new BigNumber(amountConfig?.minimum ?? 0);
 
-      if (
-        Maybe.fromNullable(val.pendingAction.args?.args?.amount).mapOrDefault(
-          isForceMaxAmount,
-          false
-        )
-      ) {
+      if (amountConfig?.forceMax) {
         newMap.set(key, new BigNumber(val.balance.amount));
       } else if (amount.isLessThan(min)) {
         newMap.set(key, min);

@@ -9,13 +9,14 @@ import type {
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { YieldTokenDto } from "../yield-api-client-provider/types";
 
 type InitData = {
   requestDto: PendingActionRequestDto;
   addresses: AddressesDto;
   pendingActionType: ActionTypes;
   integrationData: YieldDto;
-  interactedToken: TokenDto;
+  interactedToken: TokenDto | YieldTokenDto;
   gasFeeToken: TokenDto;
 };
 

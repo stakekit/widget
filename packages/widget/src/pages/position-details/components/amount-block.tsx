@@ -14,6 +14,7 @@ import {
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
+import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
 import { priceTxt } from "../styles.css";
 
@@ -27,11 +28,11 @@ type AmountBlockProps = {
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
-  balance: { amount: BigNumber; token: TokenDto } | null;
+  balance: { amount: BigNumber; token: TokenDto | YieldTokenDto } | null;
 } & (
   | {
       variant: "unstake";
-      unstakeToken: TokenDto;
+      unstakeToken: TokenDto | YieldTokenDto;
       yieldDto: YieldDto;
       validators: {
         [Key in keyof Pick<
@@ -221,7 +222,7 @@ const UnstakeInfo = ({
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: TokenDto;
+  unstakeToken: TokenDto | YieldTokenDto;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
     useYieldMetaInfo({

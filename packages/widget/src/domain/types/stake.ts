@@ -174,7 +174,7 @@ export const getMinStakeAmount = (
     const hasStaked = Maybe.fromNullable(positionsData.get(yieldDto.id))
       .map((val) => [...val.balanceData.values()])
       .map((val) =>
-        val.some((v) => v.balances.some((b) => b.type === "staked"))
+        val.some((v) => v.balances.some((b) => b.type === "active"))
       )
       .orDefault(false);
 

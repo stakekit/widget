@@ -3,8 +3,6 @@ import {
   type TokenBalanceScanDto,
   type TokenBalanceScanResponseDto,
   type ValidatorSearchResultDto,
-  type YieldBalanceScanRequestDto,
-  type YieldBalancesWithIntegrationIdDto,
   type YieldDto,
 } from "@stakekit/api-hooks";
 
@@ -21,23 +19,6 @@ export const tokenTokenBalancesScan = (
     method: "POST",
     headers: { "Content-Type": "application/json" },
     data: tokenBalanceScanDto,
-    signal,
-  });
-};
-
-/**
- * Scans for yield balances among enabled yields.
- * @summary Scan for yield balances
- */
-export const yieldYieldBalancesScan = (
-  yieldBalanceScanRequestDto: YieldBalanceScanRequestDto,
-  signal?: AbortSignal
-) => {
-  return customFetch<YieldBalancesWithIntegrationIdDto[]>({
-    url: "/v1/yields/balances/scan",
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    data: yieldBalanceScanRequestDto,
     signal,
   });
 };

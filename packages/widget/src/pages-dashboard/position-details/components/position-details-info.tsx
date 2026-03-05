@@ -7,7 +7,6 @@ import {
   CollapsibleRoot,
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
-import { InfoIcon } from "../../../components/atoms/icons/info";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
 import { PositionBalances } from "../../../pages/position-details/components/position-balances";
@@ -21,7 +20,6 @@ export const PositionDetailsInfo = () => {
     integrationData,
     positionBalancesByType,
     providersDetails,
-    positionLabel,
     liquidTokensToNativeConversion,
   } = usePositionDetails();
 
@@ -51,38 +49,6 @@ export const PositionDetailsInfo = () => {
         px="4"
         py="4"
       >
-        {positionLabel
-          .map((l) => (
-            <Box
-              background="stakeSectionBackground"
-              borderRadius="xl"
-              marginTop="2"
-              py="4"
-              px="4"
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="flex-start"
-                gap="1"
-              >
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <InfoIcon />
-                </Box>
-
-                <Text variant={{ type: "muted", size: "small" }}>
-                  {
-                    t(
-                      `position_details.labels.${l.type}.details`,
-                      l.params
-                    ) as string
-                  }
-                </Text>
-              </Box>
-            </Box>
-          ))
-          .extractNullable()}
-
         <Box display="flex" flexDirection="column" gap="2">
           {providersDetails
             .map((pd) =>

@@ -3,6 +3,7 @@ import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
+import type { YieldTokenDto } from "../providers/yield-api-client-provider/types";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
 
 export const formatCountryCode = ({
@@ -79,7 +80,7 @@ export const getFeesInUSD = ({
   token,
 }: {
   amount: Maybe<BigNumber>;
-  token: Maybe<TokenDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
   prices: Maybe<Prices>;
 }) =>
   Maybe.fromRecord({ token, amount })

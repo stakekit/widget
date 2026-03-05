@@ -19,6 +19,7 @@ import {
   isEthenaUsdeStaking,
 } from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
+import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
 import { useComplete } from "../hooks/use-complete.hook";
@@ -28,7 +29,7 @@ import {
 } from "../state";
 
 type Props = {
-  token: Maybe<TokenDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
   metadata: Maybe<YieldMetadataDto>;
   network: string;
   amount: string;

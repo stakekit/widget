@@ -5,6 +5,7 @@ import { type ReactNode, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { SKAnchor } from "../components/atoms/anchor";
 import { isEthenaUsdeStaking } from "../domain/types/yields";
+import type { YieldTokenDto } from "../providers/yield-api-client-provider/types";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
@@ -16,7 +17,7 @@ export const useYieldMetaInfo = ({
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  tokenDto: Maybe<TokenDto>;
+  tokenDto: Maybe<TokenDto | YieldTokenDto>;
 }) => {
   const { t } = useTranslation();
 

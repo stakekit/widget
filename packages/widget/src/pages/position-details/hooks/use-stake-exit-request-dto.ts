@@ -27,26 +27,29 @@ export const useStakeExitRequestDto = () => {
           >(() => {
             if (val.integrationData.metadata.isIntegrationAggregator) {
               return List.find(
-                (b) => !!b.providerId,
+                (b) => !!b.validator?.providerId,
                 val.stakedOrLiquidBalances
               ).map((b) => ({
-                providerId: b.providerId,
-                validatorAddress: b.validatorAddress,
+                providerId: b.validator?.providerId,
+                validatorAddress: b.validator?.address,
               }));
             }
             if (
               val.integrationData.args.exit?.args?.validatorAddresses?.required
             ) {
               return List.find(
-                (b) => !!b.validatorAddresses,
+                (b) => !!b.validators?.length,
                 val.stakedOrLiquidBalances
-              ).map((b) => ({ validatorAddresses: b.validatorAddresses }));
+              ).map((b) => ({
+                validatorAddresses:
+                  b.validators?.map((validator) => validator.address) ?? [],
+              }));
             }
             if (
               val.integrationData.args.exit?.args?.validatorAddress?.required
             ) {
               return List.find(
-                (b) => !!b.validatorAddress,
+                (b) => !!b.validator?.address,
                 val.stakedOrLiquidBalances
               ).map((b) => {
                 const subnetId = Maybe.fromNullable(
@@ -54,14 +57,14 @@ export const useStakeExitRequestDto = () => {
                 )
                   .chainNullable(() =>
                     val.integrationData.validators.find(
-                      (v) => v.address === b.validatorAddress
+                      (v) => v.address === b.validator?.address
                     )
                   )
                   .map((validator) => validator.subnetId)
                   .extract();
 
                 return {
-                  validatorAddress: b.validatorAddress,
+                  validatorAddress: b.validator?.address,
                   subnetId,
                 };
               });

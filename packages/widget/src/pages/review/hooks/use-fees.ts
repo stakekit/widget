@@ -4,6 +4,7 @@ import { Just, type Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Prices } from "../../../domain/types/price";
+import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
 import { bpsToAmount, bpsToPercentage } from "../../../utils";
 import { getFeesInUSD } from "../../../utils/formatters";
 import type { FeesBps } from "../types";
@@ -15,7 +16,7 @@ export const useFees = ({
   token,
 }: {
   prices: Maybe<Prices>;
-  token: Maybe<TokenDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
   amount: BigNumber;
   feeConfigDto: Maybe<FeeConfigurationDto>;
 }): {
