@@ -1,3 +1,4 @@
+import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type {
   YieldBalanceDto,
@@ -5,6 +6,7 @@ import type {
   YieldBalanceType,
 } from "../../providers/yield-api-client-provider/types";
 import type { components } from "../../types/yield-api-schema";
+import { equalTokens } from "..";
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,
@@ -49,15 +51,50 @@ export const getPositionBalanceDataKey = (
   return "default";
 };
 
-export const getPositionTotalAmount = (balances: YieldBalanceDto[]) =>
-  balances.reduce(
+export const getPositionTotalAmount = (
+  balances: YieldBalanceDto[],
+  baseToken: TokenDto
+) => {
+  const baseTokenBalance = balances.find((b) =>
+    equalTokens(b.token, baseToken)
+  );
+
+  const baseTokenPriceInUsd = (() => {
+    if (!baseTokenBalance?.amountUsd) return null;
+
+    const amount = BigNumber(baseTokenBalance.amount);
+    if (amount.lte(0)) return null;
+
+    return BigNumber(baseTokenBalance.amountUsd).dividedBy(amount);
+  })();
+
+  return balances.reduce(
     (acc, b) => {
       if (b.token.isPoints) return acc;
 
-      acc.amount = BigNumber(b.amount).plus(acc.amount);
-      acc.amountUsd = BigNumber(b.amountUsd ?? 0).plus(acc.amountUsd);
+      if (baseTokenBalance && equalTokens(b.token, baseTokenBalance.token)) {
+        return {
+          amount: acc.amount.plus(b.amount),
+          amountUsd: acc.amountUsd.plus(b.amountUsd ?? 0),
+        };
+      }
 
-      return acc;
+      const balanceAmountUsd = BigNumber(b.amountUsd ?? 0);
+
+      if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
+        return {
+          amount: acc.amount.plus(
+            balanceAmountUsd.dividedBy(baseTokenPriceInUsd)
+          ),
+          amountUsd: acc.amountUsd.plus(balanceAmountUsd),
+        };
+      }
+
+      return {
+        amount: acc.amount.plus(b.amount),
+        amountUsd: acc.amountUsd.plus(balanceAmountUsd),
+      };
     },
     { amount: new BigNumber(0), amountUsd: new BigNumber(0) }
   );
+};

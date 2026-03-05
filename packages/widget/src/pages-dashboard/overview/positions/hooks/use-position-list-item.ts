@@ -50,9 +50,9 @@ export const usePositionListItem = (
 
   const totalAmountPriceFormatted = useMemo(
     () =>
-      totalAmountUsd.gt(0)
-        ? Maybe.of(defaultFormattedNumber(totalAmountUsd))
-        : (Maybe.empty() as Maybe<string>),
+      totalAmountUsd
+        .filter((v) => v.isGreaterThan(0))
+        .map(defaultFormattedNumber),
     [totalAmountUsd]
   );
 

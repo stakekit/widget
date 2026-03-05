@@ -63,13 +63,21 @@ export const usePositionListItem = (
     [integrationData]
   );
 
-  const { amount: totalAmount, amountUsd: totalAmountUsd } = useMemo(
-    () => getPositionTotalAmount(item.balancesWithAmount),
-    [item.balancesWithAmount]
+  const amounts = useMemo(
+    () =>
+      baseToken.map((b) => getPositionTotalAmount(item.balancesWithAmount, b)),
+    [item.balancesWithAmount, baseToken]
+  );
+
+  const totalAmount = useMemo(() => amounts.map((v) => v.amount), [amounts]);
+
+  const totalAmountUsd = useMemo(
+    () => amounts.map((v) => v.amountUsd),
+    [amounts]
   );
 
   const totalAmountFormatted = useMemo(
-    () => (totalAmount.gt(0) ? defaultFormattedNumber(totalAmount) : "-"),
+    () => totalAmount.map(defaultFormattedNumber),
     [totalAmount]
   );
 

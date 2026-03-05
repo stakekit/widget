@@ -104,7 +104,10 @@ export const SummaryProvider = ({
 
       if (!yieldDto) return [];
 
-      const positionTotalAmount = getPositionTotalAmount(p.balancesWithAmount);
+      const positionTotalAmount = getPositionTotalAmount(
+        p.balancesWithAmount,
+        getBaseToken(yieldDto)
+      );
 
       const yields = [...multiYieldsMapQuery.data.values()];
 
@@ -236,7 +239,8 @@ export const SummaryProvider = ({
         if (!yieldDto) return acc;
 
         const positionTotalAmount = getPositionTotalAmount(
-          p.balancesWithAmount
+          p.balancesWithAmount,
+          getBaseToken(yieldDto)
         );
 
         const usdAmount = positionTotalAmount.amountUsd;
