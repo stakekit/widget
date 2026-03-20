@@ -43,7 +43,9 @@ export const SelectOpportunityListItem = ({
   });
 
   const primaryRateFormatted = getRewardRateFormatted({
-    rewardRate: campaignRate ? item.rewardRate - campaignRate.rate : item.rewardRate,
+    rewardRate: campaignRate
+      ? item.rewardRate - campaignRate.rate
+      : item.rewardRate,
     rewardType: item.rewardType,
   });
 
