@@ -9,12 +9,16 @@ export type YieldBalanceType = components["schemas"]["BalanceType"];
 
 export type YieldPendingActionDto = components["schemas"]["PendingActionDto"];
 export type YieldTokenDto = components["schemas"]["TokenDto"];
+export type YieldRewardDto = components["schemas"]["RewardDto"];
 export type YieldRewardRateDto = components["schemas"]["RewardRateDto"];
 export type YieldActionArgumentsDto =
   components["schemas"]["ActionArgumentsDto"];
 export type YieldCreateActionDto = components["schemas"]["CreateActionDto"];
 export type YieldCreateManageActionDto =
   components["schemas"]["CreateManageActionDto"];
+export type YieldPendingActionType =
+  | YieldPendingActionDto["type"]
+  | NonNullable<YieldCreateManageActionDto["action"]>;
 
 export type YieldValidatorDto = components["schemas"]["ValidatorDto"];
 

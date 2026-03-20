@@ -24,7 +24,10 @@ export const ProviderDetails = ({
   integrationData,
   logo,
   ...providerDetails
-}: {
+}: Omit<
+  GetMaybeJust<ReturnType<typeof useProvidersDetails>>[0],
+  "rewardType"
+> & {
   isFirst: boolean;
   stakeType: string;
   integrationData: YieldDto;
@@ -32,8 +35,8 @@ export const ProviderDetails = ({
   name: string;
   rewardRateFormatted: string;
   rewardRate: number | undefined;
-  rewardType: RewardTypes;
-} & GetMaybeJust<ReturnType<typeof useProvidersDetails>>[0]) => {
+  rewardType?: RewardTypes;
+}) => {
   const { t } = useTranslation();
 
   const nameOrAddress = providerDetails.name ?? providerDetails ?? "";

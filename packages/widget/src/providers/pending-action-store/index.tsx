@@ -1,6 +1,5 @@
 import type {
   ActionDto,
-  ActionTypes,
   AddressesDto,
   TokenDto,
   YieldDto,
@@ -10,13 +9,14 @@ import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import type {
   YieldCreateManageActionDto,
+  YieldPendingActionType,
   YieldTokenDto,
 } from "../yield-api-client-provider/types";
 
 type InitData = {
   requestDto: YieldCreateManageActionDto;
   addresses: AddressesDto;
-  pendingActionType: ActionTypes;
+  pendingActionType: YieldPendingActionType;
   integrationData: YieldDto;
   interactedToken: TokenDto | YieldTokenDto;
   gasFeeToken: TokenDto;

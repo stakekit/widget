@@ -1,9 +1,4 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  YieldDto,
-  YieldMetadataDto,
-} from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -19,7 +14,10 @@ import {
   isEthenaUsdeStaking,
 } from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
+import type {
+  YieldPendingActionType,
+  YieldTokenDto,
+} from "../../../providers/yield-api-client-provider/types";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
 import { useComplete } from "../hooks/use-complete.hook";
@@ -33,7 +31,7 @@ type Props = {
   metadata: Maybe<YieldMetadataDto>;
   network: string;
   amount: string;
-  pendingActionType?: ActionTypes;
+  pendingActionType?: YieldPendingActionType;
   providersDetails: Maybe<
     {
       logo: string | undefined;
@@ -134,7 +132,7 @@ export const CompletePageComponent = ({
                     tokenNetwork: network,
                     pendingAction: t(
                       `complete.pending_action.${
-                        pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
+                        pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
                       }` as const,
                       {
                         context: isEthenaUsdeStaking(integrationId)

@@ -17,11 +17,20 @@ export const usePositionBalances = ({
       Maybe.fromRecord({
         positionData: data,
         balanceId: Maybe.fromNullable(balanceId as BalanceDataKey),
-      }).chainNullable(
-        (val) =>
+      }).chainNullable((val) => {
+        const balanceData =
           val.positionData.balanceData.get(val.balanceId) ??
-          val.positionData.balanceData.values().next().value
-      ),
+          val.positionData.balanceData.values().next().value;
+
+        if (!balanceData) {
+          return undefined;
+        }
+
+        return {
+          ...balanceData,
+          rewardRate: val.positionData.rewardRate,
+        };
+      }),
     [balanceId, data]
   );
 

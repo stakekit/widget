@@ -1,4 +1,4 @@
-import type { ActionTypes, TokenDto, YieldDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import type { PositionBalancesByType } from "../../../domain/types/positions";
@@ -10,6 +10,7 @@ import type { usePositionBalances } from "../../../hooks/use-position-balances";
 import type { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import type {
   YieldBalanceType,
+  YieldPendingActionType,
   YieldTokenDto,
 } from "../../../providers/yield-api-client-provider/types";
 import type { Action } from "../../../types/utils";
@@ -18,14 +19,14 @@ type UnstakeAmountChange = Action<"unstake/amount/change", BigNumber>;
 type UnstakeAmountMax = Action<"unstake/amount/max">;
 
 export type BalanceTokenActionType =
-  `${YieldBalanceType}-${TokenString}-${ActionTypes}`;
+  `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
 
 export type PendingActionAmountChange = Action<
   "pendingAction/amount/change",
   {
     balanceType: YieldBalanceType;
     token: TokenDto | YieldTokenDto;
-    actionType: ActionTypes;
+    actionType: YieldPendingActionType;
     amount: BigNumber;
   }
 >;
@@ -41,7 +42,7 @@ export type State = {
 };
 
 export type ExtraData = {
-  pendingActionType: Maybe<ActionTypes>;
+  pendingActionType: Maybe<YieldPendingActionType>;
   integrationData: Maybe<YieldDto>;
   positionBalances: ReturnType<typeof usePositionBalances>;
   yieldOpportunity: ReturnType<typeof useYieldOpportunity>;

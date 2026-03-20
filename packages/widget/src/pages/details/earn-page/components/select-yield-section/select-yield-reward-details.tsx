@@ -5,10 +5,12 @@ import { MorphoStarsIcon } from "../../../../../components/atoms/icons/morpho-st
 import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { RewardRateBreakdown } from "../../../../../components/molecules/reward-rate-breakdown";
 import {
   isMorphoProvider,
   RewardTokenDetails,
 } from "../../../../../components/molecules/reward-token-details";
+import { getYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
 import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
@@ -17,9 +19,14 @@ import { selectYieldRewardsText } from "./styles.css";
 
 export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
+  const { t } = useTranslation();
 
-  const { rewardToken, estimatedRewards, rewardsTokenSymbol } =
+  const { rewardToken, estimatedRewards, rewardsTokenSymbol, selectedStake } =
     useEarnPageContext();
+
+  const rewardRateDetails = selectedStake.chainNullable(
+    getYieldRewardRateDetails
+  );
 
   const earnYearly = estimatedRewards.mapOrDefault(
     (e) => `${e.yearly} ${rewardsTokenSymbol}`,
@@ -113,6 +120,17 @@ export const SelectYieldRewardDetails = () => {
             earnYearly={earnYearly}
           />
         )}
+
+        {rewardRateDetails
+          .map((rewardRate) => (
+            <RewardRateBreakdown
+              rewardRate={rewardRate}
+              showUpToCampaign
+              title={t("details.apy_composition.title")}
+              testId="reward-rate-breakdown"
+            />
+          ))
+          .extractNullable()}
       </Box>
     </Box>
   );

@@ -1,4 +1,3 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
@@ -15,6 +14,7 @@ import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
 import { createManageAction } from "../../../providers/yield-api-client-provider/actions";
+import type { YieldPendingActionType } from "../../../providers/yield-api-client-provider/types";
 import { formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
@@ -92,7 +92,7 @@ export const usePendingActionReview = () => {
       Maybe.of(
         t(
           `position_details.pending_action_button.${
-            pendingRequest.requestDto.action.toLowerCase() as Lowercase<ActionTypes>
+            pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
           }` as const
         )
       ),

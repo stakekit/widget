@@ -10,10 +10,48 @@ import { Just } from "purify-ts";
 import type {
   YieldActionArgumentsDto,
   YieldActionDto,
+  YieldDto as YieldApiYieldDto,
+  YieldBalanceDto,
+  YieldRewardRateDto,
   YieldTransactionDto,
 } from "../../src/providers/yield-api-client-provider/types";
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
+
+export const yieldRewardRateFixture = (
+  overrides?: Partial<YieldRewardRateDto>
+): YieldRewardRateDto => ({
+  total: apyFaker(),
+  rateType: "APY",
+  components: [],
+  ...overrides,
+});
+
+export const yieldApiYieldFixture = (
+  overrides?: Partial<YieldApiYieldDto>
+): YieldApiYieldDto =>
+  ({
+    ...getYieldV2ControllerGetYieldByIdResponseMock(),
+    rewardRate: yieldRewardRateFixture(),
+    ...overrides,
+  }) as YieldApiYieldDto;
+
+export const yieldBalanceFixture = (
+  overrides?: Partial<YieldBalanceDto>
+): YieldBalanceDto => {
+  const token = overrides?.token ?? yieldApiYieldFixture().token;
+
+  return {
+    address: faker.finance.ethereumAddress(),
+    type: "active",
+    amount: "1",
+    amountRaw: "1000000000000000000",
+    pendingActions: [],
+    token,
+    isEarning: true,
+    ...overrides,
+  } as YieldBalanceDto;
+};
 
 export const yieldFixture = (overrides?: Partial<YieldDto>) =>
   Just(getYieldV2ControllerGetYieldByIdResponseMock())

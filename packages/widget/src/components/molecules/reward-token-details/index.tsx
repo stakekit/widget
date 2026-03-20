@@ -1,8 +1,8 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import type { YieldPendingActionType } from "../../../providers/yield-api-client-provider/types";
 import { Box } from "../../atoms/box";
 import { MorphoStarsIcon } from "../../atoms/icons/morpho-stars";
 import { Image } from "../../atoms/image";
@@ -19,7 +19,7 @@ export const RewardTokenDetails = ({
   | { type: "stake" | "unstake"; pendingAction?: never }
   | {
       type: "pendingAction";
-      pendingAction: ActionTypes;
+      pendingAction: YieldPendingActionType;
     }
 )) => {
   const i18nKey: ComponentProps<typeof Trans>["i18nKey"] = (() => {
@@ -29,7 +29,7 @@ export const RewardTokenDetails = ({
 
     if (rest.type === "pendingAction") {
       return `pending_action_review.pending_action_type.${
-        rest.pendingAction.toLowerCase() as Lowercase<ActionTypes>
+        rest.pendingAction.toLowerCase() as Lowercase<YieldPendingActionType>
       }` as const;
     }
 

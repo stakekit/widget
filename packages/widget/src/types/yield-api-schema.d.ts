@@ -84,6 +84,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/v1/yields/{yieldId}/balances/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get historical balance snapshots for a yield
+     * @description Returns a chronological time series of balance snapshots for a wallet address within a yield. Each entry reflects the position at a specific timestamp or block. Supports configurable sampling intervals and point-in-time queries. Only available for ERC4626 vaults with indexed transfer history.
+     */
+    get: operations["YieldsController_getBalanceHistory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/v1/yields/{yieldId}/balances": {
     parameters: {
       query?: never;
@@ -98,6 +118,66 @@ export interface paths {
      * @description Retrieve all balances associated with a yield opportunity for a specific wallet address, including active, pending, claimable, and withdrawable balances. The network is automatically determined from the yield configuration.
      */
     post: operations["YieldsController_getYieldBalances"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/yields/{yieldId}/rewards/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get reward history
+     * @description Retrieve a chronological list of on-chain reward events for an indexed yield. Each record includes timestamp, token metadata, amount, reward source, and transaction reference.
+     */
+    get: operations["YieldsController_getYieldRewards"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/yields/{yieldId}/reward-rate/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get historical reward rate snapshots for a yield
+     * @description Returns a chronological time series of reward rate snapshots for the specified yield, suitable for charting and analytics. Supports configurable time ranges, sampling intervals (day/week/month), and pagination.
+     */
+    get: operations["YieldsController_getYieldRewardRateHistory"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/v1/yields/{yieldId}/tvl/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get historical TVL snapshots for a yield
+     * @description Returns a chronological time series of Total Value Locked for the specified yield, expressed in underlying token units. Supports configurable time ranges, sampling intervals (day/week/month), and pagination.
+     */
+    get: operations["YieldsController_getYieldTvlHistory"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -532,6 +612,7 @@ export interface components {
         | "staking"
         | "restaking"
         | "protocol_incentive"
+        | "campaign_incentive"
         | "points"
         | "lending_interest"
         | "mev"
@@ -1364,6 +1445,8 @@ export interface components {
         | "STAKE"
         | "UNSTAKE"
         | "CLAIM_REWARDS"
+        | "AUTO_SWEEP_UNSTAKE_REWARDS"
+        | "AUTO_SWEEP_WITHDRAW_REWARDS"
         | "RESTAKE_REWARDS"
         | "WITHDRAW"
         | "WITHDRAW_ALL"
@@ -1387,7 +1470,7 @@ export interface components {
       /** @description Argument schema required to execute this action */
       arguments?: components["schemas"]["ArgumentSchemaDto"] | null;
       /**
-       * @description Amount involved in the action
+       * @description Amount involved in the action, in human-readable token units (not the smallest denomination).
        * @example 0.1
        */
       amount?: string | null;
@@ -1725,6 +1808,8 @@ export interface components {
       balances: components["schemas"]["BalanceDto"][];
       /** @description Balance for the output token */
       outputTokenBalance?: components["schemas"]["BalanceDto"] | null;
+      /** @description Personalized reward rate breakdown for this balance position */
+      rewardRate?: components["schemas"]["RewardRateDto"] | null;
     };
     YieldErrorDto: {
       /**
@@ -1856,6 +1941,16 @@ export interface components {
        * @example P-avax1...
        */
       pAddressBech?: string;
+      /**
+       * @description Day of month when auto-sweep window starts (used by Solana auto-sweep balance actions)
+       * @example 20
+       */
+      autoSweepDayOfMonth?: number;
+      /**
+       * @description IANA timezone used to evaluate auto-sweep window day (e.g. Europe/London)
+       * @example Europe/London
+       */
+      autoSweepTimezone?: string;
     };
     BalancesQueryDto: {
       /**
@@ -1875,7 +1970,7 @@ export interface components {
     };
     BalancesRequestDto: {
       /**
-       * @description Array of balance queries
+       * @description Array of balance queries (maximum 25 queries per request)
        * @example [
        *       {
        *         "yieldId": "ethereum-eth-lido-staking",
@@ -2110,7 +2205,8 @@ export interface components {
         | "LUGANODES_EXIT_REQUEST"
         | "INFSTONES_PROVISION"
         | "INFSTONES_EXIT_REQUEST"
-        | "INFSTONES_CLAIM_REQUEST";
+        | "INFSTONES_CLAIM_REQUEST"
+        | "BATCH";
       /**
        * @description Transaction hash (available after broadcast)
        * @example 0x1234567890abcdef...
@@ -2175,15 +2271,15 @@ export interface components {
     };
     ActionArgumentsDto: {
       /**
-       * @description Amount to stake/unstake
-       * @example 1000000000000000000
+       * @description Amount in human-readable token units, not the smallest denomination. For example, "1.500000" for 1.5 USDC (6 decimals) or "0.01" for 0.01 ETH (18 decimals). Precision up to the token's decimal places is supported.
+       * @example 1.500000
        */
       amount?: string;
       /**
-       * @description Amounts to stake/unstake
+       * @description Amounts in human-readable token units, not the smallest denomination. Precision up to the token's decimal places is supported.
        * @example [
-       *       "1000000000000000000",
-       *       "2000000000000000000"
+       *       "1.500000",
+       *       "2.000000"
        *     ]
        */
       amounts?: string[];
@@ -2531,6 +2627,8 @@ export interface components {
         | "STAKE"
         | "UNSTAKE"
         | "CLAIM_REWARDS"
+        | "AUTO_SWEEP_UNSTAKE_REWARDS"
+        | "AUTO_SWEEP_WITHDRAW_REWARDS"
         | "RESTAKE_REWARDS"
         | "WITHDRAW"
         | "WITHDRAW_ALL"
@@ -2557,12 +2655,12 @@ export interface components {
        */
       address: string;
       /**
-       * @description Amount involved in the action
-       * @example 1000000000000000000
+       * @description Amount involved in the action, in human-readable token units (not the smallest denomination).
+       * @example 1.0
        */
       amount: string | null;
       /**
-       * @description Raw wei amount (full precision)
+       * @description Raw smallest-denomination amount (full precision)
        * @example 1000000000000000000
        */
       amountRaw: string | null;
@@ -2832,6 +2930,143 @@ export interface components {
       /** Format: date-time */
       updatedAt: string;
     };
+    BalanceHistorySnapshotDto: {
+      /**
+       * @description Timestamp of this snapshot (ISO 8601)
+       * @example 2025-07-12T00:00:00.000Z
+       */
+      timestamp: string;
+      /**
+       * @description Block number closest to this snapshot
+       * @example 20540000
+       */
+      blockNumber: number;
+      /**
+       * @description Unique identifier of the yield
+       * @example ethereum-eth-lido-staking
+       */
+      yieldId: string;
+      /** @description Balance entries at this point in time */
+      balances: components["schemas"]["BalanceDto"][];
+    };
+    RewardEventDto: {
+      /**
+       * @description Timestamp of this reward event (ISO 8601)
+       * @example 2025-07-12T00:00:00.000Z
+       */
+      timestamp: string;
+      /**
+       * @description Block number when the reward was earned
+       * @example 20540000
+       */
+      blockNumber: number;
+      /**
+       * @description Unique identifier of the yield
+       * @example ethereum-usdc-morpho-vault
+       */
+      yieldId: string;
+      /** @description Token metadata for the reward */
+      token: components["schemas"]["TokenDto"];
+      /**
+       * @description Human-readable reward amount
+       * @example 1.4
+       */
+      amount: string;
+      /**
+       * @description Raw reward amount in base units (wei)
+       * @example 1400000
+       */
+      amountRaw: string;
+      /**
+       * @description Source of the reward derived from yield type
+       * @example vault_yield
+       */
+      yieldSource: string;
+      /**
+       * @description Transaction hash where the reward was earned
+       * @example 0xabc123...
+       */
+      transactionHash?: string | null;
+    };
+    RewardRateSnapshotDto: {
+      /**
+       * @description Timestamp of this snapshot (ISO 8601)
+       * @example 2025-07-10T00:00:00.000Z
+       */
+      timestamp: string;
+      /**
+       * @description Reward rate as a decimal string
+       * @example 0.0312
+       */
+      rewardRate: string;
+    };
+    RewardRateHistoryResponseDto: {
+      /**
+       * @description Unique identifier of the yield
+       * @example ethereum-eth-lido-staking
+       */
+      yieldId: string;
+      /**
+       * @description Sampling interval used for this response
+       * @example day
+       * @enum {string}
+       */
+      interval: "day" | "week" | "month";
+      /**
+       * @description Start of the returned date range (ISO 8601)
+       * @example 2025-06-01T00:00:00.000Z
+       */
+      from: string;
+      /**
+       * @description End of the returned date range (ISO 8601)
+       * @example 2025-07-10T00:00:00.000Z
+       */
+      to: string;
+      /** @description Chronological reward rate snapshots (most recent first) */
+      series: components["schemas"]["RewardRateSnapshotDto"][];
+    };
+    TvlSnapshotDto: {
+      /**
+       * @description Timestamp of this snapshot (ISO 8601)
+       * @example 2025-07-11T00:00:00.000Z
+       */
+      timestamp: string;
+      /**
+       * @description Total value locked in token units (human-readable)
+       * @example 512340000.12
+       */
+      tvl: string;
+      /**
+       * @description Total value locked in smallest token unit (wei)
+       * @example 512340000120000
+       */
+      tvlRaw: string;
+    };
+    TvlHistoryResponseDto: {
+      /**
+       * @description Unique identifier of the yield
+       * @example ethereum-usdc-aave-v3
+       */
+      yieldId: string;
+      /**
+       * @description Sampling interval used for this response
+       * @example day
+       * @enum {string}
+       */
+      interval: "day" | "week" | "month";
+      /**
+       * @description Start of the returned date range (ISO 8601)
+       * @example 2025-06-12T00:00:00.000Z
+       */
+      from: string;
+      /**
+       * @description End of the returned date range (ISO 8601)
+       * @example 2025-07-12T00:00:00.000Z
+       */
+      to: string;
+      /** @description Chronological TVL snapshots (most recent first) */
+      series: components["schemas"]["TvlSnapshotDto"][];
+    };
     CreateActionDto: {
       /**
        * @description Yield ID to perform the action on
@@ -2868,6 +3103,8 @@ export interface components {
         | "STAKE"
         | "UNSTAKE"
         | "CLAIM_REWARDS"
+        | "AUTO_SWEEP_UNSTAKE_REWARDS"
+        | "AUTO_SWEEP_WITHDRAW_REWARDS"
         | "RESTAKE_REWARDS"
         | "WITHDRAW"
         | "WITHDRAW_ALL"
@@ -2932,6 +3169,8 @@ export interface components {
         | "STAKE"
         | "UNSTAKE"
         | "CLAIM_REWARDS"
+        | "AUTO_SWEEP_UNSTAKE_REWARDS"
+        | "AUTO_SWEEP_WITHDRAW_REWARDS"
         | "RESTAKE_REWARDS"
         | "WITHDRAW"
         | "WITHDRAW_ALL"
@@ -3739,6 +3978,150 @@ export interface operations {
       };
     };
   };
+  YieldsController_getBalanceHistory: {
+    parameters: {
+      query: {
+        /**
+         * @description Wallet address to fetch history for
+         * @example 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
+         */
+        address: string;
+        /**
+         * @description Start of time range (ISO 8601)
+         * @example 2025-01-01T00:00:00Z
+         */
+        from?: string;
+        /**
+         * @description End of time range (ISO 8601). Defaults to now.
+         * @example 2025-07-12T00:00:00Z
+         */
+        to?: string;
+        /**
+         * @description Block number for a point-in-time snapshot. When provided, from/to/interval are ignored.
+         * @example 20540000
+         */
+        blockNumber?: number;
+        /** @description Sampling resolution for the time series */
+        interval?: "block" | "hour" | "day" | "week";
+        /** @description Sort order by timestamp. Defaults to most recent first (desc). */
+        sort?: "asc" | "desc";
+        /**
+         * @description Maximum number of items to return (default 30, max 100)
+         * @example 30
+         */
+        limit?: number;
+        /**
+         * @description Pagination offset
+         * @example 0
+         */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        /**
+         * @description The unique identifier of the yield
+         * @example ethereum-eth-lido-staking
+         */
+        yieldId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns a paginated time series of balance snapshots */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedResponseDto"] & {
+            items?: components["schemas"]["BalanceHistorySnapshotDto"][];
+          };
+        };
+      };
+      /** @description Invalid request parameters */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Validation failed */
+            message?: string;
+            /** @example Bad Request */
+            error?: string;
+            /** @example 400 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Invalid or missing API key */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Invalid API key */
+            message?: string;
+            /** @example Unauthorized */
+            error?: string;
+            /** @example 401 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Yield not found with the specified ID */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rate limit exceeded */
+      429: {
+        headers: {
+          /** @description Request limit per window */
+          "x-ratelimit-limit"?: string;
+          /** @description Remaining requests (will be 0) */
+          "x-ratelimit-remaining"?: string;
+          /** @description Unix timestamp when window resets */
+          "x-ratelimit-reset"?: string;
+          /** @description Seconds to wait before retrying */
+          "retry-after"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Rate limit exceeded */
+            message?: string;
+            /** @example Too Many Requests */
+            error?: string;
+            /** @example 429 */
+            statusCode?: number;
+            /** @example 30 */
+            retryAfter?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Internal server error */
+            message?: string;
+            /** @example Internal Server Error */
+            error?: string;
+            /** @example 500 */
+            statusCode?: number;
+          };
+        };
+      };
+    };
+  };
   YieldsController_getYieldBalances: {
     parameters: {
       query?: never;
@@ -3766,6 +4149,393 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["YieldBalancesDto"];
+        };
+      };
+      /** @description Invalid request parameters */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Validation failed */
+            message?: string;
+            /** @example Bad Request */
+            error?: string;
+            /** @example 400 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Invalid or missing API key */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Invalid API key */
+            message?: string;
+            /** @example Unauthorized */
+            error?: string;
+            /** @example 401 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Yield not found with the specified ID */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rate limit exceeded */
+      429: {
+        headers: {
+          /** @description Request limit per window */
+          "x-ratelimit-limit"?: string;
+          /** @description Remaining requests (will be 0) */
+          "x-ratelimit-remaining"?: string;
+          /** @description Unix timestamp when window resets */
+          "x-ratelimit-reset"?: string;
+          /** @description Seconds to wait before retrying */
+          "retry-after"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Rate limit exceeded */
+            message?: string;
+            /** @example Too Many Requests */
+            error?: string;
+            /** @example 429 */
+            statusCode?: number;
+            /** @example 30 */
+            retryAfter?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Internal server error */
+            message?: string;
+            /** @example Internal Server Error */
+            error?: string;
+            /** @example 500 */
+            statusCode?: number;
+          };
+        };
+      };
+    };
+  };
+  YieldsController_getYieldRewards: {
+    parameters: {
+      query: {
+        /**
+         * @description Wallet address to fetch rewards for
+         * @example 0x742d35Cc6634C0532925a3b844Bc454e4438f44e
+         */
+        address: string;
+        /**
+         * @description Start of time range (ISO 8601)
+         * @example 2025-01-01T00:00:00Z
+         */
+        from?: string;
+        /**
+         * @description End of time range (ISO 8601)
+         * @example 2025-07-12T00:00:00Z
+         */
+        to?: string;
+        /** @description Sort order by timestamp (default: desc) */
+        sort?: "asc" | "desc";
+        /**
+         * @description Maximum number of items to return (default: 100, max: 100)
+         * @example 100
+         */
+        limit?: number;
+        /**
+         * @description Pagination offset (default: 0)
+         * @example 0
+         */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        /**
+         * @description The unique identifier of the yield
+         * @example ethereum-usdc-morpho-vault
+         */
+        yieldId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Paginated reward events */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PaginatedResponseDto"];
+        };
+      };
+      /** @description Invalid request parameters */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Validation failed */
+            message?: string;
+            /** @example Bad Request */
+            error?: string;
+            /** @example 400 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Invalid or missing API key */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Invalid API key */
+            message?: string;
+            /** @example Unauthorized */
+            error?: string;
+            /** @example 401 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Reward history not available for this yield (not indexed) */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rate limit exceeded */
+      429: {
+        headers: {
+          /** @description Request limit per window */
+          "x-ratelimit-limit"?: string;
+          /** @description Remaining requests (will be 0) */
+          "x-ratelimit-remaining"?: string;
+          /** @description Unix timestamp when window resets */
+          "x-ratelimit-reset"?: string;
+          /** @description Seconds to wait before retrying */
+          "retry-after"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Rate limit exceeded */
+            message?: string;
+            /** @example Too Many Requests */
+            error?: string;
+            /** @example 429 */
+            statusCode?: number;
+            /** @example 30 */
+            retryAfter?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Internal server error */
+            message?: string;
+            /** @example Internal Server Error */
+            error?: string;
+            /** @example 500 */
+            statusCode?: number;
+          };
+        };
+      };
+    };
+  };
+  YieldsController_getYieldRewardRateHistory: {
+    parameters: {
+      query?: {
+        /**
+         * @description Start of time range (ISO 8601). Overrides period when provided.
+         * @example 2025-01-01T00:00:00Z
+         */
+        from?: string;
+        /**
+         * @description End of time range (ISO 8601). Defaults to now.
+         * @example 2025-07-10T00:00:00Z
+         */
+        to?: string;
+        /** @description Predefined time window. Ignored when from/to are provided. Default: 30d. */
+        period?: "1d" | "7d" | "30d" | "90d" | "1y" | "all";
+        /** @description Sampling resolution (day/week/month). Default: day. */
+        interval?: "day" | "week" | "month";
+        /** @description Maximum number of data points to return (default 100, max 365) */
+        limit?: number;
+        /** @description Pagination offset */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        /**
+         * @description The unique identifier of the yield
+         * @example ethereum-eth-lido-staking
+         */
+        yieldId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns a time series of reward rate snapshots */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RewardRateHistoryResponseDto"];
+        };
+      };
+      /** @description Invalid request parameters */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Validation failed */
+            message?: string;
+            /** @example Bad Request */
+            error?: string;
+            /** @example 400 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Invalid or missing API key */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Invalid API key */
+            message?: string;
+            /** @example Unauthorized */
+            error?: string;
+            /** @example 401 */
+            statusCode?: number;
+          };
+        };
+      };
+      /** @description Yield not found with the specified ID */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Rate limit exceeded */
+      429: {
+        headers: {
+          /** @description Request limit per window */
+          "x-ratelimit-limit"?: string;
+          /** @description Remaining requests (will be 0) */
+          "x-ratelimit-remaining"?: string;
+          /** @description Unix timestamp when window resets */
+          "x-ratelimit-reset"?: string;
+          /** @description Seconds to wait before retrying */
+          "retry-after"?: string;
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Rate limit exceeded */
+            message?: string;
+            /** @example Too Many Requests */
+            error?: string;
+            /** @example 429 */
+            statusCode?: number;
+            /** @example 30 */
+            retryAfter?: number;
+          };
+        };
+      };
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": {
+            /** @example Internal server error */
+            message?: string;
+            /** @example Internal Server Error */
+            error?: string;
+            /** @example 500 */
+            statusCode?: number;
+          };
+        };
+      };
+    };
+  };
+  YieldsController_getYieldTvlHistory: {
+    parameters: {
+      query?: {
+        /**
+         * @description Start of time range (ISO 8601). Overrides period when provided.
+         * @example 2025-01-01T00:00:00Z
+         */
+        from?: string;
+        /**
+         * @description End of time range (ISO 8601). Defaults to now.
+         * @example 2025-07-10T00:00:00Z
+         */
+        to?: string;
+        /** @description Predefined time window. Ignored when from/to are provided. Default: 30d. */
+        period?: "1d" | "7d" | "30d" | "90d" | "1y" | "all";
+        /** @description Sampling resolution (day/week/month). Default: day. */
+        interval?: "day" | "week" | "month";
+        /** @description Maximum number of data points to return (default 100, max 365) */
+        limit?: number;
+        /** @description Pagination offset */
+        offset?: number;
+      };
+      header?: never;
+      path: {
+        /**
+         * @description The unique identifier of the yield
+         * @example ethereum-usdc-aave-v3-lending
+         */
+        yieldId: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Returns a time series of TVL snapshots in token units */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TvlHistoryResponseDto"];
         };
       };
       /** @description Invalid request parameters */
@@ -3879,7 +4649,7 @@ export interface operations {
       path: {
         /**
          * @description The unique identifier of the yield
-         * @example cosmos-staking
+         * @example solana-sol-native-multivalidator-staking
          */
         yieldId: string;
       };
@@ -4008,6 +4778,8 @@ export interface operations {
           | "STAKE"
           | "UNSTAKE"
           | "CLAIM_REWARDS"
+          | "AUTO_SWEEP_UNSTAKE_REWARDS"
+          | "AUTO_SWEEP_WITHDRAW_REWARDS"
           | "RESTAKE_REWARDS"
           | "WITHDRAW"
           | "WITHDRAW_ALL"

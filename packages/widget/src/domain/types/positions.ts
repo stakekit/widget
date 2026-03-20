@@ -4,6 +4,7 @@ import type {
   YieldBalanceDto,
   YieldBalancesByYieldDto,
   YieldBalanceType,
+  YieldRewardRateDto,
 } from "../../providers/yield-api-client-provider/types";
 import type { components } from "../../types/yield-api-schema";
 import { equalTokens } from "..";
@@ -27,6 +28,7 @@ export type PositionsData = Map<
   YieldBalancesByYieldDto["yieldId"],
   {
     yieldId: YieldBalancesByYieldDto["yieldId"];
+    rewardRate?: YieldRewardRateDto | null;
     balanceData: Map<
       BalanceDataKey,
       { balances: YieldBalanceDto[] } & (

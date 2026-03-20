@@ -116,6 +116,14 @@ export const usePositionDetails = () => {
     validatorsData: Maybe.fromNullable(yieldValidators.data),
   });
 
+  const personalizedRewardRate = useMemo(
+    () =>
+      positionBalances.data
+        .map((balanceData) => balanceData.rewardRate)
+        .extractNullable(),
+    [positionBalances.data]
+  );
+
   const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
 
   const onUnstakeAmountChange = (value: BigNumber) =>
@@ -204,6 +212,7 @@ export const usePositionDetails = () => {
     isLoading,
     onPendingActionClick,
     providersDetails,
+    personalizedRewardRate,
     pendingActions,
     liquidTokensToNativeConversion,
     validatorAddressesHandling,

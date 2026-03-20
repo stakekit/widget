@@ -1,4 +1,3 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import type { Dispatch, PropsWithChildren } from "react";
@@ -24,6 +23,7 @@ import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-ba
 import type {
   YieldBalanceDto,
   YieldPendingActionDto,
+  YieldPendingActionType,
   YieldTokenDto,
 } from "../../../providers/yield-api-client-provider/types";
 import type {
@@ -198,7 +198,7 @@ export const UnstakeOrPendingActionProvider = ({
     state: State["pendingActions"];
     balanceType: YieldBalanceDto["type"];
     token: YieldTokenDto;
-    actionType: ActionTypes;
+    actionType: YieldPendingActionType;
     amount: BigNumber;
   }) => {
     const key = getBalanceTokenActionType({ actionType, balanceType, token });

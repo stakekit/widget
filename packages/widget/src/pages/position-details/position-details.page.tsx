@@ -1,4 +1,3 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
@@ -7,9 +6,13 @@ import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Heading } from "../../components/atoms/typography/heading";
 import { Text } from "../../components/atoms/typography/text";
+import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
+import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
+import type { YieldPendingActionType } from "../../providers/yield-api-client-provider/types";
+import { getRewardRateFormatted } from "../../utils/formatters";
 import { PageContainer } from "../components/page-container";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
@@ -46,6 +49,7 @@ const PositionDetails = () => {
     unstakeMaxAmount,
     unstakeMinAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
+    personalizedRewardRate,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -107,6 +111,39 @@ const PositionDetails = () => {
                   ))
                   .extractNullable()}
 
+                {personalizedRewardRate ? (
+                  <Box marginTop="4">
+                    <Box
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      gap="3"
+                    >
+                      <Text variant={{ type: "muted", weight: "normal" }}>
+                        {t("position_details.personalized_apy")}
+                      </Text>
+
+                      <Heading
+                        variant={{ level: "h4" }}
+                        data-testid="personalized-reward-rate"
+                      >
+                        {getRewardRateFormatted({
+                          rewardRate: personalizedRewardRate.total,
+                          rewardType: getRewardTypeFromRateType(
+                            personalizedRewardRate.rateType
+                          ),
+                        })}
+                      </Heading>
+                    </Box>
+
+                    <RewardRateBreakdown
+                      rewardRate={personalizedRewardRate}
+                      title={t("details.apy_composition.title")}
+                      testId="personalized-reward-rate-breakdown"
+                    />
+                  </Box>
+                ) : null}
+
                 <Box marginTop="4">
                   {providersDetails
                     .map((pd) =>
@@ -115,6 +152,12 @@ const PositionDetails = () => {
                           {...p}
                           key={p.address ?? idx}
                           isFirst={idx === 0}
+                          rewardRate={
+                            personalizedRewardRate ? undefined : p.rewardRate
+                          }
+                          rewardType={
+                            personalizedRewardRate ? undefined : p.rewardType
+                          }
                           stakeType={t(
                             `position_details.stake_type.${integrationData.metadata.type}`
                           )}
@@ -192,7 +235,7 @@ const PositionDetails = () => {
                             }
                             label={t(
                               `position_details.pending_action_button.${
-                                val.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                                val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
                               }`
                             )}
                             onMaxClick={null}

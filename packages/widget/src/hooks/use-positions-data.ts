@@ -33,6 +33,7 @@ const positionsDataSelector = createSelector(
     normalizeYieldBalancesForPosition(balancesData).reduce((acc, val) => {
       acc.set(val.yieldId, {
         yieldId: val.yieldId,
+        rewardRate: val.rewardRate,
         balanceData: [...val.balances]
           .sort((a, b) =>
             getPositionBalanceDataKey(a).localeCompare(

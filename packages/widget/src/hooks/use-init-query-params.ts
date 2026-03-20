@@ -1,4 +1,3 @@
-import { ActionTypes } from "@stakekit/api-hooks";
 import { Codec, Left, Right, string } from "purify-ts";
 import { useMemo } from "react";
 import {
@@ -7,6 +6,7 @@ import {
 } from "../domain/types/chains";
 import type { TokenString } from "../domain/types/tokens";
 import { useSettings } from "../providers/settings";
+import type { YieldPendingActionType } from "../providers/yield-api-client-provider/types";
 import { MaybeWindow } from "../utils/maybe-window";
 
 export const useInitQueryParams = () => {
@@ -21,13 +21,13 @@ export const useInitQueryParams = () => {
   );
 };
 
-const pendingActionCodec = Codec.custom<ActionTypes>({
+const pendingActionCodec = Codec.custom<YieldPendingActionType>({
   decode: (val) =>
     string
       .decode(val)
       .chain((v) =>
-        v in ActionTypes
-          ? Right(v as ActionTypes)
+        /^[A-Z_]+$/.test(v)
+          ? Right(v as YieldPendingActionType)
           : Left("invalid pending action")
       ),
   encode: (val) => val,

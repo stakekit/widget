@@ -299,6 +299,7 @@ export const adaptYieldDto = ({
     tokens: tokens.length ? tokens : (legacyYieldDto?.tokens ?? [token]),
     metadata: getMetadata({ yieldDto, legacyYieldDto }),
     rewardRate,
+    rewardRateDetails: yieldDto.rewardRate,
     rewardType: getRewardType({ yieldDto, legacyYieldDto }),
     status: {
       ...(legacyYieldDto?.status ?? {}),

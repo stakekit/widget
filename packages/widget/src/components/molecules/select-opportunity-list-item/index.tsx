@@ -3,6 +3,10 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  getRewardRateBreakdown,
+  getYieldRewardRateDetails,
+} from "../../../domain/types/reward-rate";
 import { APToPercentage, formatNumber, fromWei } from "../../../utils";
 import { getRewardRateFormatted } from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
@@ -29,6 +33,20 @@ export const SelectOpportunityListItem = ({
 
   const { t } = useTranslation();
 
+  const campaignRate = getRewardRateBreakdown(
+    getYieldRewardRateDetails(item)
+  ).find((rewardRate) => rewardRate.key === "campaign");
+
+  const totalRateFormatted = getRewardRateFormatted({
+    rewardRate: item.rewardRate,
+    rewardType: item.rewardType,
+  });
+
+  const primaryRateFormatted = getRewardRateFormatted({
+    rewardRate: campaignRate ? item.rewardRate - campaignRate.rate : item.rewardRate,
+    rewardType: item.rewardType,
+  });
+
   return (
     <SelectModalItem testId={testId} onItemClick={onItemClick}>
       <ProviderIcon metadata={item.metadata} token={item.token} />
@@ -52,13 +70,16 @@ export const SelectOpportunityListItem = ({
             </Text>
           </Box>
 
-          <Box>
-            <Text className={noWrap}>
-              {getRewardRateFormatted({
-                rewardRate: item.rewardRate,
-                rewardType: item.rewardType,
-              })}
-            </Text>
+          <Box textAlign="end">
+            <Text className={noWrap}>{primaryRateFormatted}</Text>
+
+            {campaignRate ? (
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t("details.apy_composition.up_to", {
+                  value: totalRateFormatted,
+                })}
+              </Text>
+            ) : null}
           </Box>
         </Box>
 
