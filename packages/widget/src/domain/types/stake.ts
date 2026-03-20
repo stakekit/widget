@@ -1,6 +1,7 @@
 import type {
   AmountArgumentOptionsDto,
   TokenBalanceScanResponseDto,
+  ValidatorDto,
   YieldDto,
 } from "@stakekit/api-hooks";
 import { Networks } from "@stakekit/common";
@@ -126,7 +127,7 @@ const balanceValidForYield = ({
 
 export const getInitSelectedValidators = (args: {
   initQueryParams: Maybe<InitParams>;
-  yieldDto: YieldDto;
+  validators: ValidatorDto[];
 }) =>
   args.initQueryParams
     .chainNullable((params) => params.validator)
@@ -135,10 +136,10 @@ export const getInitSelectedValidators = (args: {
         (val) =>
           val.name?.toLowerCase() === initV.toLowerCase() ||
           val.address === initV,
-        args.yieldDto.validators
+        args.validators
       )
     )
-    .altLazy(() => List.head(args.yieldDto.validators))
+    .altLazy(() => List.head(args.validators))
     .map((v) => new Map([[v.address, v]]))
     .orDefault(new Map());
 

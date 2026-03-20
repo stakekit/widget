@@ -12,7 +12,7 @@ type SelectValidatorProps = PropsWithChildren<
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;
     onViewMoreClick?: () => void;
-    validators: YieldDto["validators"];
+    validators: ValidatorDto[];
     selectedStake: YieldDto;
     multiSelect: boolean;
   } & (

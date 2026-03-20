@@ -1,8 +1,5 @@
 import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
-import {
-  actionExit,
-  transactionGetTransactionVerificationMessageForNetwork,
-} from "@stakekit/api-hooks";
+import { transactionGetTransactionVerificationMessageForNetwork } from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
 import type { SnapshotFromStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
@@ -15,6 +12,8 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
+import { createExitAction } from "../../../providers/yield-api-client-provider/actions";
 import type { GetMaybeJust } from "../../../types/utils";
 
 export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
@@ -26,20 +25,31 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
     (state) => state.context.data
   ).unsafeCoerce();
 
+  const yieldApiFetchClient = useYieldApiFetchClient();
   const { network, address, additionalAddresses, signMessage } = useSKWallet();
 
   const machineParams = useSavedRef({
     onDone,
     trackEvent,
     exitStore,
-    actionExit,
+    yieldApiFetchClient,
     signMessage,
     transactionGetTransactionVerificationMessageForNetwork,
     getData: () =>
       Maybe.fromRecord({
         network: Maybe.fromNullable(network),
         address: Maybe.fromNullable(address),
-      }).map((val) => ({ ...val, ...exitRequest, additionalAddresses })),
+      }).map((val) => ({
+        ...val,
+        ...exitRequest,
+        addresses: {
+          ...exitRequest.addresses,
+          additionalAddresses:
+            exitRequest.addresses.additionalAddresses ??
+            additionalAddresses ??
+            undefined,
+        },
+      })),
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -52,6 +62,7 @@ const getMachine = (
       exitStore: ReturnType<typeof useExitStakeStore>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       trackEvent: ReturnType<typeof useTrackEvent>;
+      yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
       getData: () => Maybe<
         GetMaybeJust<
           SnapshotFromStore<
@@ -60,7 +71,6 @@ const getMachine = (
         > & {
           network: NonNullable<SKWallet["network"]>;
           address: NonNullable<SKWallet["address"]>;
-          additionalAddresses: SKWallet["additionalAddresses"];
         }
       >;
     }>
@@ -126,7 +136,7 @@ const getMachine = (
             Just: (val) => {
               ref.current.trackEvent("unstakeClicked", {
                 yieldId: val.integrationData.id,
-                amount: val.requestDto.args.amount,
+                amount: val.requestDto.arguments?.amount,
               });
 
               if (
@@ -172,9 +182,9 @@ const getMachine = (
                       val.network,
                       {
                         addresses: {
-                          address: val.address,
+                          address: val.addresses.address,
                           additionalAddresses:
-                            val.additionalAddresses ?? undefined,
+                            val.addresses.additionalAddresses ?? undefined,
                         },
                       }
                     )
@@ -270,40 +280,55 @@ const getMachine = (
             }) =>
               EitherAsync.liftEither(
                 data
-                  .map((val) => val.requestDto)
-                  .map((requestDto) =>
+                  .map((val) =>
                     Maybe.fromRecord({
+                      data: Maybe.of(val),
+                      requestDto: Maybe.of(val.requestDto),
                       transactionVerificationMessageDto,
                       signedMessage,
                     })
-                      .map<typeof requestDto>(
+                      .map(
                         (val) =>
                           ({
-                            ...requestDto,
-                            args: {
-                              ...requestDto.args,
-                              signatureVerification: {
-                                message:
-                                  val.transactionVerificationMessageDto.message,
-                                signed: val.signedMessage,
-                              },
+                            ...val.data,
+                            requestDto: {
+                              ...val.requestDto,
+                              address: val.data.addresses.address,
+                              arguments: {
+                                ...(val.requestDto.arguments ?? {}),
+                                // The backend still accepts this legacy verification bag
+                                // even though the checked-in schema does not expose it yet.
+                                signatureVerification: {
+                                  message:
+                                    val.transactionVerificationMessageDto
+                                      .message,
+                                  signed: val.signedMessage,
+                                },
+                              } as typeof val.requestDto.arguments,
                             },
-                          }) satisfies typeof requestDto
+                          }) as typeof val.data
                       )
-                      .orDefault(requestDto)
+                      .orDefault(val)
                   )
                   .toEither(new Error("Missing params"))
               )
                 .chain((val) =>
-                  EitherAsync(() => actionExit(val))
+                  EitherAsync(() =>
+                    createExitAction({
+                      addresses: val.addresses,
+                      fetchClient: ref.current.yieldApiFetchClient,
+                      requestDto: val.requestDto,
+                      yieldDto: val.integrationData,
+                    })
+                  )
                     .mapLeft(() => new Error("Stake exit error"))
                     .chain((actionDto) =>
                       EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
                     )
-                    .ifRight((val) =>
+                    .ifRight((result) =>
                       ref.current.exitStore.send({
                         type: "setActionDto",
-                        data: val,
+                        data: result,
                       })
                     )
                 )

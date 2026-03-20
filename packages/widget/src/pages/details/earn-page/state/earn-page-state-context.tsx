@@ -14,7 +14,6 @@ import {
 import { equalTokens } from "../../../../domain";
 import { isNetworkWithEnterMinBasedOnPosition } from "../../../../domain/types/stake";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
-import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useSavedRef } from "../../../../hooks/use-saved-ref";
@@ -56,7 +55,6 @@ const getInitialState = (): State => ({
 });
 
 export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
-  const initParams = useInitParams();
   const { network, isConnected } = useSKWallet();
 
   const getInitYield = useGetInitYield();
@@ -75,7 +73,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
             getInitYield({ selectedToken: action.data })
               .map<ReturnType<typeof onYieldSelectState> | null>((val) =>
                 onYieldSelectState({
-                  initParams: Maybe.fromNullable(initParams.data),
                   yieldDto: val,
                   positionsData: positionsData.data,
                 })
@@ -96,7 +93,6 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         )
           .map(() =>
             onYieldSelectState({
-              initParams: Maybe.fromNullable(initParams.data),
               yieldDto: action.data,
               positionsData: positionsData.data,
             })

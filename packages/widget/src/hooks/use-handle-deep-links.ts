@@ -63,7 +63,7 @@ export const useHandleDeepLinks = () => {
             gasFeeToken: val.pendingActionDto.gasFeeToken,
             integrationData: val.pendingActionDto.integrationData,
             interactedToken: val.balance.token,
-            pendingActionType: val.pendingActionDto.requestDto.type,
+            pendingActionType: val.pendingActionDto.requestDto.action,
           },
         });
         navigateRef.current(

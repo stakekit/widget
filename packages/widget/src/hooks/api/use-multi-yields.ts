@@ -37,6 +37,7 @@ import {
 } from "../../domain/types/yields";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../../providers/yield-api-client-provider";
 import { useSavedRef } from "../use-saved-ref";
 import { useValidatorsConfig } from "../use-validators-config";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
@@ -61,10 +62,12 @@ const multiYieldsStore = createStore({
 
 export const useStreamMultiYields = (yieldIds: string[]) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const argsRef = useSavedRef({
     isLedgerLive,
     queryClient: useSKQueryClient(),
+    yieldApiFetchClient,
     network,
     isConnected,
   });
@@ -106,12 +109,14 @@ export const useMultiYields = <T = YieldDto[]>(
   }
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const validatorsConfig = useValidatorsConfig();
 
   const argsRef = useSavedRef({
     isLedgerLive,
     queryClient: useSKQueryClient(),
+    yieldApiFetchClient,
     network,
     isConnected,
   });
@@ -147,6 +152,7 @@ export const getFirstEligibleYield = (
 const multipleYields$ = (args: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
+  yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   isConnected: boolean;
   network: SKWallet["network"];
   yieldIds: string[];
@@ -159,7 +165,7 @@ const multipleYields$ = (args: {
           isLedgerLive: args.isLedgerLive,
           yieldId: v,
           queryClient: args.queryClient,
-          validatorsConfig: args.validatorsConfig,
+          yieldApiFetchClient: args.yieldApiFetchClient,
         })
       )
     )
@@ -182,6 +188,7 @@ const multipleYields$ = (args: {
 const firstEligibleYield$ = (args: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
+  yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   isConnected: boolean;
   network: SKWallet["network"];
   yieldIds: string[];

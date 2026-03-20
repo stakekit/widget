@@ -12,6 +12,7 @@ import type { FeesBps } from "../types";
 export const useFees = ({
   amount,
   feeConfigDto,
+  yieldFee,
   prices,
   token,
 }: {
@@ -19,6 +20,11 @@ export const useFees = ({
   token: Maybe<TokenDto | YieldTokenDto>;
   amount: BigNumber;
   feeConfigDto: Maybe<FeeConfigurationDto>;
+  yieldFee?: {
+    deposit?: string;
+    management?: string;
+    performance?: string;
+  } | null;
 }): {
   depositFee: Maybe<FeesBps>;
   managementFee: Maybe<FeesBps>;
@@ -41,6 +47,21 @@ export const useFees = ({
     []
   );
 
+  const getPercentAmount = useCallback(
+    (val: string) => amount.multipliedBy(val).dividedBy(100),
+    [amount]
+  );
+
+  const getPercentInUsd = useCallback(
+    (val: string) =>
+      getFeesInUSD({
+        amount: Just(getPercentAmount(val)),
+        prices,
+        token,
+      }),
+    [getPercentAmount, prices, token]
+  );
+
   const depositFee = useMemo(
     () =>
       feeConfigDto
@@ -50,8 +71,25 @@ export const useFees = ({
           inPercentage: getBpsInPercentage(val),
           explanation: t("review.deposit_fee_explanation"),
           label: t("review.deposit_fee"),
-        })),
-    [feeConfigDto, getFeeInUSD, getBpsInPercentage, t]
+        }))
+        .altLazy(() =>
+          Just(yieldFee?.deposit)
+            .chainNullable((v) => v)
+            .map<FeesBps>((val) => ({
+              inUSD: getPercentInUsd(val),
+              inPercentage: `${val}%`,
+              explanation: t("review.deposit_fee_explanation"),
+              label: t("review.deposit_fee"),
+            }))
+        ),
+    [
+      feeConfigDto,
+      getFeeInUSD,
+      getBpsInPercentage,
+      getPercentInUsd,
+      t,
+      yieldFee,
+    ]
   );
 
   const managementFee = useMemo(
@@ -63,8 +101,25 @@ export const useFees = ({
           inPercentage: getBpsInPercentage(val),
           explanation: t("review.management_fee_explanation"),
           label: t("review.management_fee"),
-        })),
-    [feeConfigDto, getFeeInUSD, getBpsInPercentage, t]
+        }))
+        .altLazy(() =>
+          Just(yieldFee?.management)
+            .chainNullable((v) => v)
+            .map<FeesBps>((val) => ({
+              inUSD: getPercentInUsd(val),
+              inPercentage: `${val}%`,
+              explanation: t("review.management_fee_explanation"),
+              label: t("review.management_fee"),
+            }))
+        ),
+    [
+      feeConfigDto,
+      getFeeInUSD,
+      getBpsInPercentage,
+      getPercentInUsd,
+      t,
+      yieldFee,
+    ]
   );
 
   const performanceFee = useMemo(
@@ -76,8 +131,25 @@ export const useFees = ({
           inPercentage: getBpsInPercentage(val),
           explanation: t("review.performance_fee_explanation"),
           label: t("review.performance_fee"),
-        })),
-    [feeConfigDto, getFeeInUSD, getBpsInPercentage, t]
+        }))
+        .altLazy(() =>
+          Just(yieldFee?.performance)
+            .chainNullable((v) => v)
+            .map<FeesBps>((val) => ({
+              inUSD: getPercentInUsd(val),
+              inPercentage: `${val}%`,
+              explanation: t("review.performance_fee_explanation"),
+              label: t("review.performance_fee"),
+            }))
+        ),
+    [
+      feeConfigDto,
+      getFeeInUSD,
+      getBpsInPercentage,
+      getPercentInUsd,
+      t,
+      yieldFee,
+    ]
   );
 
   return { depositFee, managementFee, performanceFee };

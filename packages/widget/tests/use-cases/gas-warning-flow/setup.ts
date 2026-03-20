@@ -1,6 +1,5 @@
 import type {
   ActionDto,
-  ActionRequestDto,
   TokenDto,
   TransactionDto,
   YieldDto,
@@ -8,11 +7,15 @@ import type {
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
+import type { YieldCreateActionDto } from "../../../src/providers/yield-api-client-provider/types";
 import { waitForMs } from "../../../src/utils";
 import {
   enterResponseFixture,
   transactionConstructFixture,
+  yieldApiActionFixture,
+  yieldApiTransactionFixture,
   yieldFixture,
+  yieldValidatorsFixture,
 } from "../../fixtures";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
@@ -43,6 +46,7 @@ export const setup = () => {
         id: "avalanche-avax-native-staking",
         token: avalancheCToken,
         tokens: [avalancheCToken],
+        validators: [],
         metadata: {
           ...val.metadata,
           type: "staking",
@@ -80,6 +84,7 @@ export const setup = () => {
         id: "avalanche-c-usdc-aave-v3-lending",
         token: usdcToken,
         tokens: [usdcToken],
+        validators: [],
         metadata: {
           ...val.metadata,
           type: "staking",
@@ -197,62 +202,51 @@ export const setup = () => {
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
       }
     ),
+    http.get("*/v1/yields/:yieldId/validators", async (info) => {
+      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validators =
+        yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
+          ? yieldValidatorsFixture(
+              yieldWithSameGasAndStakeToken.yieldDto.validators
+            )
+          : yieldValidatorsFixture(
+              yieldWithDifferentGasAndStakeToken.yieldDto.validators
+            );
+
+      return HttpResponse.json({
+        items: validators,
+        total: validators.length,
+      });
+    }),
     http.post("*/v1/actions/enter", async (info) => {
       await delay();
 
-      const body = (await info.request.json()) as ActionRequestDto;
+      const body = (await info.request.json()) as YieldCreateActionDto;
+      const selectedYield =
+        body.yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
+          ? yieldWithSameGasAndStakeToken
+          : yieldWithDifferentGasAndStakeToken;
+      const gasAmount = yieldsTxGasAmountMap.get(body.yieldId) ?? "0";
 
       return HttpResponse.json({
-        ...(body.integrationId === yieldWithSameGasAndStakeToken.yieldDto.id
-          ? yieldWithSameGasAndStakeToken.actionDto
-          : yieldWithDifferentGasAndStakeToken.actionDto),
-        amount: body.args.amount,
-      } as ActionDto);
-    }),
-    http.patch("*/v1/transactions/:transactionId", async (info) => {
-      const transactionId = info.params.transactionId as string;
-
-      const yieldWithAction = [
-        yieldWithSameGasAndStakeToken,
-        yieldWithDifferentGasAndStakeToken,
-      ].find((val) =>
-        val.actionDto.transactions.some((tx) => tx.id === transactionId)
-      );
-
-      if (!yieldWithAction) {
-        return new HttpResponse(null, { status: 400 });
-      }
-
-      const tx = yieldWithAction.actionDto.transactions.find(
-        (tx) => tx.id === transactionId
-      );
-
-      if (!tx) {
-        return new HttpResponse(null, { status: 400 });
-      }
-
-      await delay();
-
-      return HttpResponse.json({
-        ...tx,
-        gasEstimate: {
-          token: yieldWithAction.yieldDto.token,
-          amount:
-            yieldsTxGasAmountMap.get(
-              `${yieldWithAction.yieldDto.id}-${tx.id}`
-            ) ?? "0",
-        },
-      } satisfies TransactionDto);
-    }),
-    http.post("*/v1/actions/enter/estimate-gas", async (info) => {
-      await delay();
-
-      const body = (await info.request.json()) as ActionRequestDto;
-
-      return HttpResponse.json({
-        amount: yieldsTxGasAmountMap.get(body.integrationId) ?? "0",
-        token: avalancheCToken,
-        gasLimit: "",
+        ...yieldApiActionFixture({
+          action: selectedYield.actionDto as ActionDto,
+          address: body.address,
+          rawArguments: body.arguments ?? null,
+          transactions: selectedYield.actionDto.transactions.map((tx, index) =>
+            yieldApiTransactionFixture(tx as TransactionDto, {
+              gasEstimate: gasAmount,
+              status: "CREATED",
+              stepIndex: index,
+            })
+          ),
+          overrides: {
+            amount: body.arguments?.amount ?? null,
+            amountRaw: body.arguments?.amount ?? null,
+          },
+        }),
       });
     })
   );

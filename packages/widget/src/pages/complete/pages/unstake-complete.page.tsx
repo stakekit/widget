@@ -45,8 +45,8 @@ export const UnstakeCompletePage = () => {
   const metadata = integrationData.map((d) => d.metadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
-    () => formatNumber(exitRequest.requestDto.args.amount),
-    [exitRequest.requestDto.args.amount]
+    () => formatNumber(exitRequest.requestDto.arguments?.amount ?? 0),
+    [exitRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

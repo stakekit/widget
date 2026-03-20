@@ -2,7 +2,6 @@ import {
   customFetch,
   type TokenBalanceScanDto,
   type TokenBalanceScanResponseDto,
-  type ValidatorSearchResultDto,
   type YieldDto,
 } from "@stakekit/api-hooks";
 
@@ -36,28 +35,6 @@ export const yieldYieldOpportunity = (
     url: `/v1/yields/${integrationId}`,
     method: "GET",
     headers: { "Content-Type": "application/json" },
-    params,
-    signal,
-  });
-};
-
-export type YieldFindValidatorsParams = {
-  ledgerWalletAPICompatible?: boolean;
-  network?: string;
-  query?: string;
-};
-
-/**
- * Returns a list of available validators to specify when providing a `validatorAddress` property.
- * @summary Get validators
- */
-export const yieldFindValidators = (
-  params?: YieldFindValidatorsParams,
-  signal?: AbortSignal
-) => {
-  return customFetch<ValidatorSearchResultDto[]>({
-    url: "/v1/yields/validators",
-    method: "GET",
     params,
     signal,
   });

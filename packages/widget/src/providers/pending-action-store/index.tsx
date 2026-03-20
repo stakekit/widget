@@ -2,17 +2,19 @@ import type {
   ActionDto,
   ActionTypes,
   AddressesDto,
-  PendingActionRequestDto,
   TokenDto,
   YieldDto,
 } from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
-import type { YieldTokenDto } from "../yield-api-client-provider/types";
+import type {
+  YieldCreateManageActionDto,
+  YieldTokenDto,
+} from "../yield-api-client-provider/types";
 
 type InitData = {
-  requestDto: PendingActionRequestDto;
+  requestDto: YieldCreateManageActionDto;
   addresses: AddressesDto;
   pendingActionType: ActionTypes;
   integrationData: YieldDto;

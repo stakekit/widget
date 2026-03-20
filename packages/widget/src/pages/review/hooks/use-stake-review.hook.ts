@@ -1,17 +1,10 @@
-import {
-  actionEnter,
-  useActionEnterGasEstimation,
-  useYieldGetFeeConfiguration,
-} from "@stakekit/api-hooks";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
-import { isAxiosError } from "axios";
 import BigNumber from "bignumber.js";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { getValidStakeSessionTx } from "../../../domain";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
@@ -20,6 +13,8 @@ import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
+import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
+import { createEnterAction } from "../../../providers/yield-api-client-provider/actions";
 import { APToPercentage, formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
@@ -34,30 +29,47 @@ export const useStakeReview = () => {
     (state) => state.context.data
   ).unsafeCoerce();
 
-  const integrationId = enterRequest.requestDto.integrationId;
-  const feeConfigDto = useYieldGetFeeConfiguration(integrationId);
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const stakeAmount = useMemo(
-    () => new BigNumber(enterRequest.requestDto.args.amount),
+    () => new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0),
     [enterRequest]
   );
 
-  const actionEnterGasEstimation = useActionEnterGasEstimation(
-    enterRequest.requestDto,
-    { query: { staleTime: 0, gcTime: 0 } }
-  );
+  const actionPreviewQuery = useQuery({
+    enabled: !!enterRequest,
+    queryKey: ["stake-review-action-preview", enterRequest.requestDto],
+    retry: false,
+    queryFn: () =>
+      createEnterAction({
+        addresses: enterRequest.addresses,
+        fetchClient: yieldApiFetchClient,
+        inputToken: enterRequest.selectedToken,
+        requestDto: enterRequest.requestDto,
+        yieldDto: enterRequest.selectedStake,
+      }),
+  });
 
   const stakeEnterTxGas = useMemo(
     () =>
-      Maybe.fromNullable(actionEnterGasEstimation.data?.amount).map(BigNumber),
-    [actionEnterGasEstimation.data]
+      Maybe.fromNullable(actionPreviewQuery.data)
+        .map((actionDto) =>
+          actionDto.transactions.reduce(
+            (acc, transaction) =>
+              acc.plus(transaction.gasEstimate?.amount ?? 0),
+            new BigNumber(0)
+          )
+        )
+        .map((value) => (value.isZero() ? null : value))
+        .chainNullable((value) => value),
+    [actionPreviewQuery.data]
   );
 
   const gasCheckWarning = useGasWarningCheck({
     gasAmount: stakeEnterTxGas,
     gasFeeToken: enterRequest.gasFeeToken,
-    address: enterRequest.requestDto.addresses.address,
-    additionalAddresses: enterRequest.requestDto.addresses.additionalAddresses,
+    address: enterRequest.addresses.address,
+    additionalAddresses: enterRequest.addresses.additionalAddresses,
     isStake: true,
     stakeAmount,
     stakeToken: enterRequest.selectedToken,
@@ -73,8 +85,8 @@ export const useStakeReview = () => {
   );
 
   const selectedProviderYieldId = useMemo(
-    () => Maybe.fromNullable(enterRequest.requestDto.args.providerId),
-    [enterRequest.requestDto.args.providerId]
+    () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
+    [enterRequest.requestDto.arguments?.providerId]
   );
 
   const rewardToken = useRewardTokenDetails(selectedStake);
@@ -113,9 +125,21 @@ export const useStakeReview = () => {
   const { depositFee, managementFee, performanceFee } = useFees({
     amount: stakeAmount,
     token: selectedToken,
-    feeConfigDto: useMemo(
-      () => Maybe.fromNullable(feeConfigDto.data),
-      [feeConfigDto.data]
+    feeConfigDto: Maybe.empty(),
+    yieldFee: useMemo(
+      () =>
+        (
+          enterRequest.selectedStake as typeof enterRequest.selectedStake & {
+            mechanics?: {
+              fee?: {
+                deposit?: string;
+                management?: string;
+                performance?: string;
+              };
+            };
+          }
+        ).mechanics?.fee ?? null,
+      [enterRequest.selectedStake]
     ),
     prices: useMemo(
       () => Maybe.fromNullable(pricesState.data),
@@ -129,24 +153,9 @@ export const useStakeReview = () => {
 
   const enterMutation = useMutation({
     mutationFn: async () =>
-      (
-        await EitherAsync(() => actionEnter(enterRequest.requestDto))
-          .mapLeft<StakingNotAllowedError | Error>((e) => {
-            if (
-              isAxiosError(e) &&
-              StakingNotAllowedError.isStakingNotAllowedErrorDto(
-                e.response?.data
-              )
-            ) {
-              return new StakingNotAllowedError();
-            }
-
-            return new Error("Stake enter error");
-          })
-          .chain((actionDto) =>
-            EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
-          )
-      ).unsafeCoerce(),
+      actionPreviewQuery.data ??
+      (await actionPreviewQuery.refetch()).data ??
+      Promise.reject(new Error("Stake enter error")),
     onSuccess: (data) => {
       enterStore.send({ type: "setActionDto", data });
       navigate("/steps");
@@ -210,23 +219,13 @@ export const useStakeReview = () => {
     metaInfo,
     isGasCheckWarning: !!gasCheckWarning.data,
     gasCheckLoading:
-      actionEnterGasEstimation.isLoading || gasCheckWarning.isLoading,
+      actionPreviewQuery.isLoading ||
+      actionPreviewQuery.isFetching ||
+      gasCheckWarning.isLoading,
     depositFee,
     managementFee,
     performanceFee,
-    feeConfigLoading: feeConfigDto.isPending,
+    feeConfigLoading: actionPreviewQuery.isLoading,
     commissionFee,
   };
 };
-
-class StakingNotAllowedError extends Error {
-  static isStakingNotAllowedErrorDto = (e: unknown) => {
-    const dto = e as undefined | { type: string; code: number };
-
-    return dto && dto.code === 422 && dto.type === "STAKING_ERROR";
-  };
-
-  constructor() {
-    super("Staking not allowed, needs unstaking and trying again");
-  }
-}

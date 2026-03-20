@@ -3,7 +3,6 @@ import BigNumber from "bignumber.js";
 import { compare, Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
-import type { YieldFindValidatorsParams } from "../../../../common/private-api";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useSettings } from "../../../../providers/settings";
 import type { SettingsContextType } from "../../../../providers/settings/types";
@@ -139,10 +138,4 @@ const priorityOrder: Record<YieldBalanceType, number> = {
   withdrawable: 4,
   claimable: 5,
   locked: 6,
-};
-
-export const getYieldFindValidatorsQueryKey = (
-  params?: YieldFindValidatorsParams
-) => {
-  return ["/v1/yields/validators", ...(params ? [params] : [])] as const;
 };

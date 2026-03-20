@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { equalTokens } from "../../../domain";
 import { isForceMaxAmount } from "../../../domain/types/stake";
+import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
@@ -72,6 +73,7 @@ export const usePositionDetails = () => {
         exitStore.send({
           type: "initFlow",
           data: {
+            addresses: val.stakeExitRequestDto.addresses,
             gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
             integrationData: val.integrationData,
             requestDto: val.stakeExitRequestDto.dto,
@@ -96,12 +98,22 @@ export const usePositionDetails = () => {
 
   const baseToken = useBaseToken(integrationData);
 
+  const yieldValidators = useYieldValidators({
+    enabled: integrationData.isJust(),
+    yieldId:
+      integrationData.map((val) => val.id).extractNullable() ?? undefined,
+    network:
+      integrationData.map((val) => val.token.network).extractNullable() ??
+      undefined,
+  });
+
   const providersDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: positionBalances.data.map((b) => {
       return b.type === "validators" ? b.validatorsAddresses : [];
     }),
     selectedProviderYieldId: Maybe.empty(),
+    validatorsData: Maybe.fromNullable(yieldValidators.data),
   });
 
   const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
@@ -173,10 +185,12 @@ export const usePositionDetails = () => {
   const isLoading =
     positionBalances.isLoading ||
     positionBalancePrices.isLoading ||
-    yieldOpportunity.isLoading;
+    yieldOpportunity.isLoading ||
+    yieldValidators.isLoading;
 
   return {
     integrationData,
+    validatorsData: yieldValidators.data ?? [],
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     canUnstake,

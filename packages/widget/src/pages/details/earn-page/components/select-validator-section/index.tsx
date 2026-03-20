@@ -27,7 +27,7 @@ export const SelectValidatorSection = () => {
     </Box>
   ) : (
     Maybe.fromRecord({ selectedStake, validatorsData })
-      .filter((val) => !!val.selectedStake.validators.length)
+      .filter((val) => !!val.validatorsData.length)
       .map((val) => {
         const selectedValidatorsArr = [...selectedValidators.values()];
 

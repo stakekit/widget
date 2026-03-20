@@ -16,7 +16,8 @@ import { useQuery } from "@tanstack/react-query";
 import uniqwith from "lodash.uniqwith";
 import { createStore } from "mipd";
 import { EitherAsync, Just, Left, Maybe, Right } from "purify-ts";
-import type { RefObject } from "react";
+import { type RefObject, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
@@ -29,10 +30,8 @@ import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
 import type { SKExternalProviders } from "../../domain/types/wallets";
-import type { ValidatorsConfig } from "../../domain/types/yields";
 import { getInitParams } from "../../hooks/use-init-params";
 import { useSavedRef } from "../../hooks/use-saved-ref";
-import { useValidatorsConfig } from "../../hooks/use-validators-config";
 import type { GetEitherAsyncRight } from "../../types/utils";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
@@ -46,6 +45,7 @@ import { getConfig as getSafeConnector } from "../safe/config";
 import { useSettings } from "../settings";
 import type { SettingsProps, VariantProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
+import { createYieldApiFetchClient } from "../yield-api-client-provider";
 
 const mipdStore = createStore();
 
@@ -67,9 +67,9 @@ const buildWagmiConfig = async (opts: {
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
+  yieldApiFetchClient: ReturnType<typeof createYieldApiFetchClient>;
   isLedgerLive: boolean;
   isSafe: boolean;
-  validatorsConfig: ValidatorsConfig;
   chainIconMapping: SettingsProps["chainIconMapping"];
   variant: VariantProps["variant"];
   solanaWallets: SolanaWallet[];
@@ -113,8 +113,8 @@ const buildWagmiConfig = async (opts: {
           getInitParams({
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
+            yieldApiFetchClient: opts.yieldApiFetchClient,
             externalProviders: opts.externalProviders?.current,
-            validatorsConfig: opts.validatorsConfig,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
           evm.chain((e) =>
@@ -378,14 +378,24 @@ export const useWagmiConfig = () => {
     variant,
     mapWalletListFn,
     tonConnectManifestUrl,
+    apiKey,
+    yieldsApiUrl,
   } = useSettings();
+  const { i18n } = useTranslation();
 
   const solanaWallets = useSolanaWallet();
   const solanaConnection = useSolanaConnection();
 
   const queryClient = useSKQueryClient();
-
-  const validatorsConfig = useValidatorsConfig();
+  const yieldApiFetchClient = useMemo(
+    () =>
+      createYieldApiFetchClient({
+        apiKey,
+        i18n,
+        url: yieldsApiUrl ?? config.env.yieldsApiUrl,
+      }),
+    [apiKey, i18n, yieldsApiUrl]
+  );
 
   const externalProvidersRef = useSavedRef(externalProviders) as
     | RefObject<SKExternalProviders>
@@ -401,12 +411,12 @@ export const useWagmiConfig = () => {
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
         queryClient,
+        yieldApiFetchClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         isSafe: !!isSafe,
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),
-        validatorsConfig,
         chainIconMapping,
         variant,
         solanaWallets: solanaWallets.wallets,

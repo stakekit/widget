@@ -1,4 +1,4 @@
-import type { YieldDto, YieldType } from "@stakekit/api-hooks";
+import type { ValidatorDto, YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
@@ -27,45 +27,55 @@ export type ValidatorsConfig = Map<
   }
 >;
 
-export const filterMapValidators = (
-  validatorsConfig: ValidatorsConfig,
-  yieldDto: YieldDto
-): YieldDto => {
+export const filterValidators = ({
+  validatorsConfig,
+  validators,
+  network,
+  yieldId,
+}: {
+  validatorsConfig: ValidatorsConfig;
+  validators: ValidatorDto[];
+  network: YieldDto["token"]["network"];
+  yieldId?: YieldDto["id"];
+}) => {
   const valConfig = Maybe.fromNullable(
-    validatorsConfig.get(yieldDto.token.network as SupportedSKChains)
+    validatorsConfig.get(network as SupportedSKChains)
   )
     .altLazy(() => Maybe.fromNullable(validatorsConfig.get("*")))
     .extractNullable();
 
-  if (!valConfig) {
-    return yieldDto;
+  const filtered = !valConfig
+    ? validators
+    : (() => {
+        const {
+          allowed,
+          blocked,
+          preferred,
+          mergePreferredWithDefault,
+          preferredOnly,
+        } = valConfig;
+
+        return validators.flatMap((v) => {
+          if (allowed && !allowed.has(v.address)) return [];
+          if (blocked?.has(v.address)) return [];
+
+          const isPreferred =
+            preferred?.has(v.address) ||
+            !!(mergePreferredWithDefault && v.preferred);
+
+          if (preferredOnly) {
+            return isPreferred ? [{ ...v, preferred: true }] : [];
+          }
+
+          return [{ ...v, preferred: isPreferred }];
+        });
+      })();
+
+  if (yieldId && isBittensorStaking(yieldId)) {
+    return filtered.filter((validator) => validator.name?.match(/yuma/i));
   }
 
-  const {
-    allowed,
-    blocked,
-    preferred,
-    mergePreferredWithDefault,
-    preferredOnly,
-  } = valConfig;
-
-  return {
-    ...yieldDto,
-    validators: yieldDto.validators.flatMap((v) => {
-      if (allowed && !allowed.has(v.address)) return [];
-      if (blocked?.has(v.address)) return [];
-
-      const isPreferred =
-        preferred?.has(v.address) ||
-        !!(mergePreferredWithDefault && v.preferred);
-
-      if (preferredOnly) {
-        return isPreferred ? [{ ...v, preferred: true }] : [];
-      }
-
-      return [{ ...v, preferred: isPreferred }];
-    }),
-  };
+  return filtered;
 };
 
 export const getExtendedYieldType = (yieldDto: YieldDto) =>

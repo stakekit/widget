@@ -1,6 +1,6 @@
 import type {
   ActionDto,
-  ActionRequestDto,
+  AddressesDto,
   TokenDto,
   ValidatorDto,
   YieldDto,
@@ -8,9 +8,11 @@ import type {
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { YieldCreateActionDto } from "../yield-api-client-provider/types";
 
 type InitData = {
-  requestDto: ActionRequestDto;
+  requestDto: YieldCreateActionDto;
+  addresses: AddressesDto;
   gasFeeToken: YieldDto["token"];
   selectedStake: YieldDto;
   selectedValidators: Map<string, ValidatorDto>;

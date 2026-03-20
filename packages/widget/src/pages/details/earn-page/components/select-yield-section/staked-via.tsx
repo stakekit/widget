@@ -15,7 +15,8 @@ export const StakedVia = () => {
       (val) =>
         !!(
           val.metadata.type === "staking" &&
-          !val.validators.length &&
+          !val.args.enter.args?.validatorAddress?.required &&
+          !val.args.enter.args?.validatorAddresses?.required &&
           val.metadata.provider
         )
     )

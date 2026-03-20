@@ -10,10 +10,8 @@ import {
   PASingleValidatorRequired,
 } from "../../../../domain";
 import { getPositionBalanceDataKey } from "../../../../domain/types/positions";
-import type { ValidatorsConfig } from "../../../../domain/types/yields";
 import { getYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
 import { getInitParams } from "../../../../hooks/use-init-params";
-import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -34,8 +32,6 @@ export const usePendingActionDeepLink = () => {
 
   const { externalProviders } = useSettings();
 
-  const validatorsConfig = useValidatorsConfig();
-
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
@@ -55,7 +51,6 @@ export const usePendingActionDeepLink = () => {
             queryClient,
             yieldApiFetchClient,
             externalProviders,
-            validatorsConfig,
           })
         )
       ).unsafeCoerce(),
@@ -69,7 +64,6 @@ const fn = ({
   queryClient,
   yieldApiFetchClient,
   externalProviders,
-  validatorsConfig,
 }: {
   isLedgerLive: boolean;
   address: string;
@@ -77,13 +71,12 @@ const fn = ({
   queryClient: QueryClient;
   yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   externalProviders: ReturnType<typeof useSettings>["externalProviders"];
-  validatorsConfig: ValidatorsConfig;
 }) =>
   getInitParams({
     isLedgerLive,
     queryClient,
+    yieldApiFetchClient,
     externalProviders,
-    validatorsConfig,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
@@ -163,7 +156,7 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
-              validatorsConfig,
+              yieldApiFetchClient,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<

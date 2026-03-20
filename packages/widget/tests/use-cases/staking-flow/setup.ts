@@ -1,6 +1,5 @@
 import type {
   ActionDto,
-  ActionRequestDto,
   AddressesDto,
   TokenDto,
   TransactionDto,
@@ -9,7 +8,13 @@ import type {
 import { delay, HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
+import type { YieldCreateActionDto } from "../../../src/providers/yield-api-client-provider/types";
 import { waitForMs } from "../../../src/utils";
+import {
+  yieldApiActionFixture,
+  yieldApiTransactionFixture,
+  yieldValidatorsFixture,
+} from "../../fixtures";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
@@ -245,6 +250,20 @@ export const setup = async () => {
       await delay();
       return HttpResponse.json(yieldOp);
     }),
+    http.get("*/v1/yields/:yieldId/validators", async (info) => {
+      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validators =
+        yieldId === yieldOp.id
+          ? yieldValidatorsFixture(yieldOp.validators)
+          : [];
+
+      return HttpResponse.json({
+        items: validators,
+        total: validators.length,
+      });
+    }),
     http.get("*/v1/transactions/gas/avalanche-c", async () => {
       await delay();
       return HttpResponse.json({
@@ -286,46 +305,57 @@ export const setup = async () => {
         },
       });
     }),
-    http.post("*/v1/actions/enter/estimate-gas", async () => {
-      await delay();
-      return HttpResponse.json({
-        amount: "0.002828600000000000",
-        token: {
-          network: "polygon",
-          coinGeckoId: "matic-network",
-          name: "Polygon",
-          decimals: 18,
-          symbol: "MATIC",
-          logoURI: "https://assets.stakek.it/tokens/matic.svg",
-        },
-        gasLimit: "",
-      });
-    }),
     http.post("*/v1/actions/enter", async (info) => {
       await delay();
 
-      const body = (await info.request.json()) as ActionRequestDto;
+      const body = (await info.request.json()) as YieldCreateActionDto;
 
-      return HttpResponse.json({ ...enterAction, amount: body.args.amount });
+      return HttpResponse.json(
+        yieldApiActionFixture({
+          action: enterAction,
+          address: body.address,
+          rawArguments: body.arguments ?? null,
+          transactions: [
+            yieldApiTransactionFixture(transactionConstruct, {
+              id: enterAction.transactions[0].id,
+              status: "CREATED",
+              type: "STAKE",
+              gasEstimate:
+                transactionConstruct.gasEstimate?.amount ?? undefined,
+              stepIndex: 0,
+            }),
+          ],
+          overrides: {
+            amount: body.arguments?.amount ?? null,
+            amountRaw: body.arguments?.amount ?? null,
+          },
+        })
+      );
     }),
-    http.patch("*/v1/transactions/:transactionId", async (info) => {
+    http.put("*/v1/transactions/:transactionId/submit-hash", async (info) => {
       const transactionId = info.params.transactionId as string;
 
       await delay();
 
-      return HttpResponse.json({ ...transactionConstruct, id: transactionId });
+      return HttpResponse.json(
+        yieldApiTransactionFixture(transactionConstruct, {
+          id: transactionId,
+          hash: "transaction_hash",
+          status: "BROADCASTED",
+        })
+      );
     }),
-    http.post("*/v1/transactions/:transactionId/submit_hash", async () => {
-      await delay(1000);
-      return new HttpResponse(null, { status: 201 });
-    }),
-    http.get("*/v1/transactions/:transactionId/status", async () => {
-      return HttpResponse.json({
-        url: "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        network: "avalanche-c",
-        hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        status: "CONFIRMED",
-      });
+    http.get("*/v1/transactions/:transactionId", async (info) => {
+      const transactionId = info.params.transactionId as string;
+      return HttpResponse.json(
+        yieldApiTransactionFixture(transactionConstruct, {
+          id: transactionId,
+          explorerUrl:
+            "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          status: "CONFIRMED",
+        })
+      );
     })
   );
 

@@ -8,6 +8,7 @@ import {
 import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useMultiYields } from "./api/use-multi-yields";
+import { useYieldValidators } from "./api/use-yield-validators";
 
 type Res = Maybe<{
   logo: string | undefined;
@@ -29,11 +30,13 @@ export const getProviderDetails = ({
   validatorAddress,
   yields,
   selectedProviderYieldId,
+  validatorsData,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorAddress: Maybe<string>;
   yields: Maybe<YieldDto[]>;
   selectedProviderYieldId: Maybe<string>;
+  validatorsData?: ValidatorDto[];
 }): Res => {
   const def = integrationData.chain((val) => {
     const rewardRate = val.rewardRate;
@@ -70,7 +73,7 @@ export const getProviderDetails = ({
       .chain<GetMaybeJust<Res>>((addr) =>
         List.find(
           (v) => v.address === addr || v.providerId === addr,
-          yieldDto.validators
+          validatorsData ?? []
         ).map((validator) => {
           const { rewardRate, rewardType } = Maybe.fromRecord({
             _: Maybe.fromFalsy(isYieldWithProviderOptions(yieldDto)),
@@ -115,13 +118,49 @@ export const useProvidersDetails = ({
   integrationData,
   validatorsAddresses,
   selectedProviderYieldId,
+  validatorsData,
 }: {
   integrationData: Maybe<YieldDto>;
   validatorsAddresses: Maybe<string[] | Map<string, ValidatorDto>>;
   selectedProviderYieldId: Maybe<string>;
+  validatorsData?: Maybe<ValidatorDto[]>;
 }) => {
   const yields = useMultiYields(
     integrationData.map(getYieldProviderYieldIds).orDefault([])
+  );
+
+  const shouldFetchValidators = validatorsAddresses
+    .filter((val): val is string[] => !(val instanceof Map))
+    .map((val) => val.length > 0)
+    .chain((val) =>
+      validatorsData?.isJust() ? Maybe.of(false) : Maybe.of(val)
+    )
+    .orDefault(false);
+
+  const yieldValidators = useYieldValidators({
+    enabled: shouldFetchValidators,
+    yieldId:
+      integrationData.map((val) => val.id).extractNullable() ?? undefined,
+    network:
+      integrationData.map((val) => val.token.network).extractNullable() ??
+      undefined,
+  });
+
+  const resolvedValidatorsData = useMemo(
+    () =>
+      validatorsData?.altLazy(() =>
+        validatorsAddresses.chain((val) =>
+          val instanceof Map
+            ? Maybe.of([...val.values()])
+            : Maybe.fromNullable(yieldValidators.data)
+        )
+      ) ??
+      validatorsAddresses.chain((val) =>
+        val instanceof Map
+          ? Maybe.of([...val.values()])
+          : Maybe.fromNullable(yieldValidators.data)
+      ),
+    [validatorsAddresses, validatorsData, yieldValidators.data]
   );
 
   return useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
@@ -137,6 +176,8 @@ export const useProvidersDetails = ({
               validatorAddress: Maybe.of(v),
               yields: Maybe.fromNullable(yields.data),
               selectedProviderYieldId,
+              validatorsData:
+                resolvedValidatorsData.extractNullable() ?? undefined,
             })
           )
         ).chain((val) =>
@@ -150,6 +191,12 @@ export const useProvidersDetails = ({
               }).map((v) => [v])
         )
       ),
-    [integrationData, validatorsAddresses, yields.data, selectedProviderYieldId]
+    [
+      integrationData,
+      validatorsAddresses,
+      yields.data,
+      selectedProviderYieldId,
+      resolvedValidatorsData,
+    ]
   );
 };

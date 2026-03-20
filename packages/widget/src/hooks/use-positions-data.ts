@@ -9,7 +9,10 @@ import type {
   YieldBalanceDto,
   YieldBalancesByYieldDto,
 } from "../providers/yield-api-client-provider/types";
-import { useYieldBalancesScan } from "./api/use-yield-balances-scan";
+import {
+  normalizeYieldBalancesForPosition,
+  useYieldBalancesScan,
+} from "./api/use-yield-balances-scan";
 
 export const usePositionsData = () => {
   const { data, ...rest } = useYieldBalancesScan({
@@ -27,7 +30,7 @@ export const usePositionsData = () => {
 const positionsDataSelector = createSelector(
   (balancesData: YieldBalancesByYieldDto[]) => balancesData,
   (balancesData) =>
-    balancesData.reduce((acc, val) => {
+    normalizeYieldBalancesForPosition(balancesData).reduce((acc, val) => {
       acc.set(val.yieldId, {
         yieldId: val.yieldId,
         balanceData: [...val.balances]

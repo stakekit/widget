@@ -1,7 +1,7 @@
 import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
-import { yieldFixture } from "../../fixtures";
+import { yieldFixture, yieldValidatorsFixture } from "../../fixtures";
 import { worker } from "../../mocks/worker";
 
 export const setup = () => {
@@ -49,6 +49,7 @@ export const setup = () => {
           id: "avalanche-avax-native-staking",
           token: avalancheCToken,
           tokens: [avalancheCToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
@@ -66,6 +67,7 @@ export const setup = () => {
           id: "ethereum-eth-etherfi-staking",
           token: ether,
           tokens: [ether],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
@@ -83,6 +85,7 @@ export const setup = () => {
           id: "solana-sol-native-staking",
           token: solanaToken,
           tokens: [solanaToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
@@ -100,6 +103,7 @@ export const setup = () => {
           id: "ton-native-staking",
           token: tonToken,
           tokens: [tonToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
@@ -179,6 +183,25 @@ export const setup = () => {
       await delay();
 
       return HttpResponse.json(tonNativeStaking);
+    }),
+    http.get("*/v1/yields/:yieldId/validators", async (info) => {
+      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validatorsByYieldId = new Map<string, YieldDto["validators"]>([
+        [etherNativeStaking.id, etherNativeStaking.validators],
+        [avalancheAvaxNativeStaking.id, avalancheAvaxNativeStaking.validators],
+        [solanaNativeStaking.id, solanaNativeStaking.validators],
+        [tonNativeStaking.id, tonNativeStaking.validators],
+      ]);
+      const validators = yieldValidatorsFixture(
+        validatorsByYieldId.get(yieldId) ?? []
+      );
+
+      return HttpResponse.json({
+        items: validators,
+        total: validators.length,
+      });
     })
   );
 };

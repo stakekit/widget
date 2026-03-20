@@ -1,7 +1,6 @@
 import type {
   PendingActionDto as LegacyPendingActionDto,
   YieldBalanceDto as LegacyYieldBalanceDto,
-  PendingActionRequestDto,
   ValidatorDto,
   YieldDto,
 } from "@stakekit/api-hooks";
@@ -14,8 +13,10 @@ import {
   isPendingActionValidatorAddressRequired,
 } from "../../../domain/types/pending-action";
 import type { SKWallet } from "../../../domain/types/wallet";
+import { withAdditionalAddresses } from "../../../providers/yield-api-client-provider/request-helpers";
 import type {
   YieldBalanceDto,
+  YieldCreateManageActionDto,
   YieldTokenDto,
 } from "../../../providers/yield-api-client-provider/types";
 import type { State } from "../state/types";
@@ -46,7 +47,7 @@ export const preparePendingActionRequestDto = ({
 }): Either<
   Error,
   {
-    requestDto: PendingActionRequestDto;
+    requestDto: YieldCreateManageActionDto;
     integrationData: YieldDto;
     gasFeeToken: YieldDto["token"];
     address: NonNullable<SKWallet["address"]>;
@@ -58,7 +59,7 @@ export const preparePendingActionRequestDto = ({
   Maybe.fromNullable(address)
     .toEither(new Error("missing address"))
     .map((val) => {
-      const args: PendingActionRequestDto["args"] = {
+      const args: NonNullable<YieldCreateManageActionDto["arguments"]> = {
         amount: Maybe.fromPredicate(
           Boolean,
           isPendingActionAmountRequired(pendingActionDto)
@@ -88,10 +89,14 @@ export const preparePendingActionRequestDto = ({
 
       return {
         requestDto: {
-          args,
-          integrationId: integration.id,
+          action: pendingActionDto.type as LegacyPendingActionDto["type"],
+          address: val,
+          arguments: withAdditionalAddresses({
+            additionalAddresses,
+            argumentsDto: args,
+          }),
           passthrough: pendingActionDto.passthrough,
-          type: pendingActionDto.type as LegacyPendingActionDto["type"],
+          yieldId: integration.id,
         },
         address: val,
         additionalAddresses: additionalAddresses ?? undefined,

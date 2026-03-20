@@ -1,58 +1,57 @@
-import {
-  type ActionDto,
-  type ActionList200,
-  ActionStatus,
-  actionList,
-  getActionListQueryKey,
-} from "@stakekit/api-hooks";
+import { type ActionDto, ActionStatus } from "@stakekit/api-hooks";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { useValidatorsConfig } from "../use-validators-config";
+import { useYieldApiFetchClient } from "../../providers/yield-api-client-provider";
+import { listActions } from "../../providers/yield-api-client-provider/actions";
+import { adaptActionDto } from "../../providers/yield-api-client-provider/compat";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
-export const useActivityActions = () => {
-  const { address, network, isLedgerLive } = useSKWallet();
-  const queryClient = useSKQueryClient();
+const PAGE_SIZE = 20;
 
-  const validatorsConfig = useValidatorsConfig();
+export const useActivityActions = () => {
+  const { address, isLedgerLive } = useSKWallet();
+  const queryClient = useSKQueryClient();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const query = useInfiniteQuery({
-    enabled: !!address && !!network,
-    queryKey: getActionListQueryKey({
-      network: network!,
-      walletAddress: address!,
-    }),
-    queryFn: async ({ pageParam = 1 }) => {
+    enabled: !!address,
+    queryKey: ["activity-actions", address],
+    queryFn: async ({ pageParam = 0 }) => {
       return (
         await EitherAsync(() =>
-          actionList({
-            page: pageParam,
-            walletAddress: address!,
-            network: network!,
-            sort: "createdAtDesc",
+          listActions({
+            address: address!,
+            fetchClient: yieldApiFetchClient,
+            limit: PAGE_SIZE,
+            offset: pageParam,
           })
         )
           .mapLeft(() => new Error("Could not get action list"))
           .map((actionList) => ({
             ...actionList,
-            data: actionList.data.filter(
+            data: (actionList.items ?? []).filter(
               (x) => x.status !== ActionStatus.CREATED
             ),
           }))
           .chain(async (actionList) =>
             EitherAsync.all(
-              (actionList.data as ActionList200["data"]).map((action) =>
+              actionList.data.map((action) =>
                 getYieldOpportunity({
-                  yieldId: action.integrationId,
+                  yieldId: action.yieldId,
                   queryClient,
                   isLedgerLive,
-                  validatorsConfig,
+                  yieldApiFetchClient,
                 })
                   .map((yieldData) => ({
-                    actionData: action as typeof action & ActionDto,
+                    actionData: adaptActionDto({
+                      actionDto: action,
+                      addresses: { address: action.address },
+                      gasFeeToken: yieldData.metadata.gasFeeToken,
+                      yieldDto: yieldData,
+                    }) as ActionDto,
                     yieldData,
                   }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
@@ -64,9 +63,10 @@ export const useActivityActions = () => {
           )
       ).unsafeCoerce();
     },
-    initialPageParam: 1,
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
-      return lastPage.hasNextPage ? lastPage.page + 1 : undefined;
+      const nextOffset = (lastPage.offset ?? 0) + (lastPage.limit ?? PAGE_SIZE);
+      return nextOffset < (lastPage.total ?? 0) ? nextOffset : undefined;
     },
   });
 

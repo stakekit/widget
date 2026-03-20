@@ -1,23 +1,20 @@
-import {
-  type ActionTypes,
-  actionPending,
-  useActionPendingGasEstimate,
-} from "@stakekit/api-hooks";
-import { useMutation } from "@tanstack/react-query";
+import type { ActionTypes } from "@stakekit/api-hooks";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
-import { getValidStakeSessionTx } from "../../../domain";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
+import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
+import { createManageAction } from "../../../providers/yield-api-client-provider/actions";
 import { formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
@@ -25,26 +22,44 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
   const pendingActionStore = usePendingActionStore();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const pendingRequest = useSelector(
     pendingActionStore,
     (state) => state.context.data
   ).unsafeCoerce();
 
-  const actionPendingGasEstimate = useActionPendingGasEstimate(
-    pendingRequest.requestDto,
-    { query: { staleTime: 0, gcTime: 0 } }
-  );
+  const actionPreviewQuery = useQuery({
+    enabled: !!pendingRequest,
+    queryKey: ["pending-review-action-preview", pendingRequest.requestDto],
+    retry: false,
+    queryFn: () =>
+      createManageAction({
+        addresses: pendingRequest.addresses,
+        fetchClient: yieldApiFetchClient,
+        requestDto: pendingRequest.requestDto,
+        yieldDto: pendingRequest.integrationData,
+      }),
+  });
 
   const pendingTxGas = useMemo(
     () =>
-      Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
-    [actionPendingGasEstimate.data]
+      Maybe.fromNullable(actionPreviewQuery.data)
+        .map((actionDto) =>
+          actionDto.transactions.reduce(
+            (acc, transaction) =>
+              acc.plus(transaction.gasEstimate?.amount ?? 0),
+            new BigNumber(0)
+          )
+        )
+        .map((value) => (value.isZero() ? null : value))
+        .chainNullable((value) => value),
+    [actionPreviewQuery.data]
   );
 
   const amount = useMemo(
-    () => new BigNumber(pendingRequest.requestDto.args?.amount ?? 0),
-    [pendingRequest.requestDto.args?.amount]
+    () => new BigNumber(pendingRequest.requestDto.arguments?.amount ?? 0),
+    [pendingRequest.requestDto.arguments?.amount]
   );
 
   const interactedToken = useMemo(
@@ -77,11 +92,11 @@ export const usePendingActionReview = () => {
       Maybe.of(
         t(
           `position_details.pending_action_button.${
-            pendingRequest.requestDto.type.toLowerCase() as Lowercase<ActionTypes>
+            pendingRequest.requestDto.action.toLowerCase() as Lowercase<ActionTypes>
           }` as const
         )
       ),
-    [pendingRequest.requestDto.type, t]
+    [pendingRequest.requestDto.action, t]
   );
 
   const navigate = useNavigate();
@@ -98,13 +113,9 @@ export const usePendingActionReview = () => {
 
   const actionPendingMutation = useMutation({
     mutationFn: async () =>
-      (
-        await EitherAsync(() => actionPending(pendingRequest.requestDto))
-          .mapLeft(() => new Error("Pending actions error"))
-          .chain((actionDto) =>
-            EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
-          )
-      ).unsafeCoerce(),
+      actionPreviewQuery.data ??
+      (await actionPreviewQuery.refetch()).data ??
+      Promise.reject(new Error("Pending actions error")),
     onSuccess: (data) => {
       pendingActionStore.send({ type: "setActionDto", data });
       navigate("../steps", { relative: "path" });
@@ -131,11 +142,11 @@ export const usePendingActionReview = () => {
 
           return {
             type: "pendingAction",
-            pendingAction: pendingRequest.requestDto.type,
+            pendingAction: pendingRequest.requestDto.action,
             rewardToken,
           } satisfies ComponentProps<typeof RewardTokenDetails>;
         }),
-    [integrationData, pendingRequest.requestDto.type]
+    [integrationData, pendingRequest.requestDto.action]
   );
 
   const onClickRef = useSavedRef(onClick);
@@ -166,6 +177,8 @@ export const usePendingActionReview = () => {
     metaInfo,
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
-      actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
+      actionPreviewQuery.isLoading ||
+      actionPreviewQuery.isFetching ||
+      gasWarningCheck.isLoading,
   };
 };

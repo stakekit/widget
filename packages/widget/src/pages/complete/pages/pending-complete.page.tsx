@@ -48,10 +48,10 @@ export const PendingCompletePage = () => {
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(pendingRequest.requestDto.args?.amount)
+      Maybe.fromNullable(pendingRequest.requestDto.arguments?.amount)
         .map((val) => new BigNumber(val ?? 0))
         .mapOrDefault((v) => formatNumber(v), ""),
-    [pendingRequest.requestDto.args?.amount]
+    [pendingRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

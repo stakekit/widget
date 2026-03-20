@@ -32,15 +32,18 @@ export const StakeCompletePage = () => {
   const network = selectedToken.mapOrDefault((y) => y.symbol, "");
 
   const amount = useMemo(
-    () => formatNumber(new BigNumber(enterRequest.requestDto.args.amount)),
-    [enterRequest.requestDto.args.amount]
+    () =>
+      formatNumber(
+        new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0)
+      ),
+    [enterRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
   const selectedProviderYieldId = useMemo(
-    () => Maybe.fromNullable(enterRequest.requestDto.args.providerId),
-    [enterRequest.requestDto.args.providerId]
+    () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
+    [enterRequest.requestDto.arguments?.providerId]
   );
 
   const providerDetails = useProvidersDetails({

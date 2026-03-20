@@ -1,11 +1,9 @@
-import type {
-  ActionRequestDto,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
+import type { AddressesDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { withAdditionalAddresses } from "../../../../providers/yield-api-client-provider/request-helpers";
+import type { YieldCreateActionDto } from "../../../../providers/yield-api-client-provider/types";
 import { useEarnPageState } from "./earn-page-state-context";
 
 export const useStakeEnterRequestDto = () => {
@@ -26,16 +24,23 @@ export const useStakeEnterRequestDto = () => {
         selectedStake,
         selectedToken,
       }).map<{
+        addresses: AddressesDto;
         gasFeeToken: YieldDto["token"];
-        dto: ActionRequestDto;
+        dto: YieldCreateActionDto;
         selectedValidators: Map<string, ValidatorDto>;
         selectedStake: YieldDto;
       }>(({ address, selectedStake, selectedToken }) => {
         const validatorsOrProvider = Just(selectedStake)
           .chain<
-            | Pick<ActionRequestDto["args"], "validatorAddresses">
-            | Pick<ActionRequestDto["args"], "validatorAddress" | "subnetId">
-            | Pick<ActionRequestDto["args"], "providerId">
+            | Pick<
+                NonNullable<YieldCreateActionDto["arguments"]>,
+                "validatorAddresses"
+              >
+            | Pick<
+                NonNullable<YieldCreateActionDto["arguments"]>,
+                "validatorAddress" | "subnetId"
+              >
+            | Pick<NonNullable<YieldCreateActionDto["arguments"]>, "providerId">
           >((val) => {
             const validators = [...selectedValidators.values()];
 
@@ -64,20 +69,24 @@ export const useStakeEnterRequestDto = () => {
           selectedValidators,
           selectedStake: selectedStake,
           gasFeeToken: selectedStake.metadata.gasFeeToken,
+          addresses: {
+            address,
+            additionalAddresses: additionalAddresses ?? undefined,
+          },
           dto: {
-            addresses: {
-              address: address,
-              additionalAddresses: additionalAddresses ?? undefined,
-            },
-            integrationId: selectedStake.id,
-            args: {
-              inputToken: selectedToken,
-              ledgerWalletAPICompatible: isLedgerLive ?? undefined,
-              tronResource: tronResource.extract(),
-              amount: stakeAmount.toString(10),
-              providerId: selectedProviderYieldId.extract(),
-              ...validatorsOrProvider,
-            },
+            address,
+            yieldId: selectedStake.id,
+            arguments: withAdditionalAddresses({
+              additionalAddresses,
+              argumentsDto: {
+                inputToken: selectedToken.address,
+                ledgerWalletApiCompatible: isLedgerLive ?? undefined,
+                tronResource: tronResource.extract(),
+                amount: stakeAmount.toString(10),
+                providerId: selectedProviderYieldId.extract(),
+                ...validatorsOrProvider,
+              },
+            }),
           },
         };
       }),

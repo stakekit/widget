@@ -23,6 +23,7 @@ const PositionDetails = () => {
   const {
     onPendingActionAmountChange,
     integrationData,
+    validatorsData,
     isLoading,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
@@ -262,7 +263,7 @@ const PositionDetails = () => {
                       onValidatorsSubmit([val.address]);
                     }}
                     selectedStake={integrationData}
-                    validators={integrationData.validators}
+                    validators={validatorsData}
                     multiSelect={validatorAddressesHandling.multiSelect}
                     state={validatorAddressesHandling.modalState}
                   >

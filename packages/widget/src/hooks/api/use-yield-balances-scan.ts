@@ -6,6 +6,7 @@ import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { useYieldApiClient } from "../../providers/yield-api-client-provider";
 import type {
+  YieldBalanceDto,
   YieldBalancesByYieldDto,
   YieldBalancesRequestDto,
 } from "../../providers/yield-api-client-provider/types";
@@ -103,3 +104,21 @@ export const useInvalidateYieldBalances = () => {
 
 const getYieldYieldBalancesScanQueryKey = () =>
   ["post", "/v1/yields/balances"] as const;
+
+const normalizeYieldBalanceForPosition = (
+  balance: YieldBalanceDto
+): YieldBalanceDto => ({
+  ...balance,
+  amount: balance.shareAmount ?? balance.amount,
+});
+
+export const normalizeYieldBalancesForPosition = (
+  balances: YieldBalancesByYieldDto[]
+): YieldBalancesByYieldDto[] =>
+  balances.map((balanceByYield) => ({
+    ...balanceByYield,
+    balances: balanceByYield.balances.map(normalizeYieldBalanceForPosition),
+    outputTokenBalance: balanceByYield.outputTokenBalance
+      ? normalizeYieldBalanceForPosition(balanceByYield.outputTokenBalance)
+      : balanceByYield.outputTokenBalance,
+  }));

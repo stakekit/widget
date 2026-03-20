@@ -34,6 +34,7 @@ export const PositionDetailsActions = () => {
   const {
     isLoading,
     integrationData,
+    validatorsData,
     positionBalancesByType,
     unstakeToken,
     providersDetails,
@@ -173,7 +174,7 @@ export const PositionDetailsActions = () => {
               onValidatorsSubmit([val.address]);
             }}
             selectedStake={v.integrationData}
-            validators={v.integrationData.validators}
+            validators={validatorsData}
             multiSelect={validatorAddressesHandling.multiSelect}
             state={validatorAddressesHandling.modalState}
           >

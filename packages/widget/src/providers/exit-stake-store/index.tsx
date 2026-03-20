@@ -1,6 +1,6 @@
 import type {
   ActionDto,
-  ActionRequestDto,
+  AddressesDto,
   TokenDto,
   YieldDto,
 } from "@stakekit/api-hooks";
@@ -8,10 +8,14 @@ import { createStore } from "@xstate/store";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
-import type { YieldTokenDto } from "../yield-api-client-provider/types";
+import type {
+  YieldCreateActionDto,
+  YieldTokenDto,
+} from "../yield-api-client-provider/types";
 
 type InitData = {
-  requestDto: ActionRequestDto;
+  requestDto: YieldCreateActionDto;
+  addresses: AddressesDto;
   gasFeeToken: YieldDto["token"];
   unstakeAmount: BigNumber;
   integrationData: YieldDto;
