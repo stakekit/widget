@@ -20,6 +20,7 @@ export type State = {
   >;
   selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
   stakeAmount: BigNumber;
+  useMaxAmount: boolean;
   tronResource: Maybe<TronResourceType>;
   selectedProviderYieldId: Maybe<YieldDto["id"]>;
 };

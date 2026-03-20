@@ -1,190 +1,281 @@
 import { HttpResponse, http } from "msw";
 import { setupWorker } from "msw/browser";
 
-// const validAddressAndNetwork = {
-//   address: "akash12z0hpqxj3txaf85zlla7zqffp7n9sl8wc3hlzh",
-//   network: "akash",
-// };
+const yieldId = "ethereum-matic-native-staking";
+
+const maticToken = {
+  address: "0x0000000000000000000000000000000000001010",
+  symbol: "POL",
+  name: "Polygon Ecosystem Token",
+  decimals: 18,
+  network: "ethereum",
+  coinGeckoId: "matic-network",
+  logoURI: "https://assets.stakek.it/tokens/matic.svg",
+  isPoints: false,
+};
+
+const morphoToken = {
+  address: "0x58d97b57bb95320f9a05dc918aef65434969c2b3",
+  symbol: "MORPHO",
+  name: "Morpho Token",
+  decimals: 18,
+  network: "ethereum",
+  isPoints: false,
+};
+
+const campaignToken = {
+  address: "0x58d97b57bb95320f9a05dc918aef65434969c2b2",
+  symbol: "U",
+  name: "United Stables",
+  decimals: 18,
+  network: "ethereum",
+  isPoints: false,
+};
+
+const discoveryRewardRate = {
+  total: 0.045507546653006034,
+  rateType: "APY",
+  components: [
+    {
+      rate: 0.0028386677110199426,
+      rateType: "APR",
+      token: morphoToken,
+      yieldSource: "protocol_incentive",
+      description: "MORPHO rewards",
+    },
+    {
+      rate: 0.002,
+      rateType: "APR",
+      token: campaignToken,
+      yieldSource: "campaign_incentive",
+      description: "U rewards",
+    },
+    {
+      rate: 0.042668878941986094,
+      rateType: "APY",
+      token: campaignToken,
+      yieldSource: "staking",
+      description: "Native staking APY",
+    },
+  ],
+};
+
+const personalizedRewardRate = {
+  total: 0.04530754665300604,
+  rateType: "APY",
+  components: [
+    {
+      rate: 0.0028386677110199426,
+      rateType: "APR",
+      token: morphoToken,
+      yieldSource: "protocol_incentive",
+      description: "MORPHO rewards",
+    },
+    {
+      rate: 0.0018,
+      rateType: "APR",
+      token: campaignToken,
+      yieldSource: "campaign_incentive",
+      description: "U rewards",
+    },
+    {
+      rate: 0.042668878941986094,
+      rateType: "APY",
+      token: campaignToken,
+      yieldSource: "staking",
+      description: "Native staking APY",
+    },
+  ],
+};
+
+const legacyYieldDto = {
+  id: yieldId,
+  token: maticToken,
+  tokens: [maticToken],
+  rewardRate: discoveryRewardRate.total,
+  rewardType: "apy",
+  apy: discoveryRewardRate.total,
+  feeConfigurations: [],
+  args: {
+    enter: {
+      addresses: {
+        address: {
+          required: true,
+          network: "ethereum",
+        },
+      },
+      args: {
+        amount: {
+          required: true,
+          minimum: 0,
+        },
+      },
+    },
+    exit: {
+      addresses: {
+        address: {
+          required: true,
+          network: "ethereum",
+        },
+      },
+      args: {
+        amount: {
+          required: true,
+          minimum: 0,
+        },
+      },
+    },
+  },
+  metadata: {
+    name: "Trust POL Staking",
+    description: "Local mock for campaign APY QA",
+    documentation: "https://trustwallet.com",
+    logoURI: "https://assets.stakek.it/tokens/matic.svg",
+    type: "staking",
+    token: maticToken,
+    tokens: [maticToken],
+    rewardTokens: [campaignToken, morphoToken],
+    rewardClaiming: "auto",
+    rewardSchedule: "day",
+    gasFeeToken: maticToken,
+    fee: {
+      enabled: false,
+      depositFee: false,
+      managementFee: false,
+      performanceFee: false,
+    },
+    provider: {
+      id: "benqi",
+      name: "Trust",
+      description: "",
+      externalLink: "https://trustwallet.com",
+      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+    },
+    supportsLedgerWalletApi: true,
+    supportsMultipleValidators: false,
+  },
+  status: {
+    enter: true,
+    exit: true,
+  },
+  validators: [],
+};
+
+const yieldApiYieldDto = {
+  id: yieldId,
+  token: maticToken,
+  tokens: [maticToken],
+  inputTokens: [maticToken],
+  outputToken: maticToken,
+  network: "ethereum",
+  chainId: "1",
+  providerId: "benqi",
+  rewardRate: discoveryRewardRate,
+  metadata: {
+    name: "Trust POL Staking",
+    description: "Local mock for campaign APY QA",
+    documentation: "https://trustwallet.com",
+    logoURI: "https://assets.stakek.it/tokens/matic.svg",
+  },
+  mechanics: {
+    type: "staking",
+    gasFeeToken: maticToken,
+    rewardClaiming: "auto",
+    rewardSchedule: "day",
+    supportsLedgerWalletApi: true,
+    requiresValidatorSelection: false,
+    arguments: {
+      enter: {
+        fields: [
+          {
+            name: "amount",
+            type: "string",
+            label: "Amount",
+            required: true,
+            minimum: "0",
+          },
+        ],
+      },
+      exit: {
+        fields: [
+          {
+            name: "amount",
+            type: "string",
+            label: "Amount",
+            required: true,
+            minimum: "0",
+          },
+        ],
+      },
+    },
+  },
+  status: {
+    enter: true,
+    exit: true,
+  },
+};
 
 export const worker = setupWorker(
+  http.get("*/v1/yields/ethereum-matic-native-staking", async ({ request }) => {
+    const url = new URL(request.url);
+
+    return HttpResponse.json(
+      url.searchParams.has("ledgerWalletAPICompatible")
+        ? legacyYieldDto
+        : yieldApiYieldDto
+    );
+  }),
+  http.post("*/v1/yields/balances", async () => {
+    return HttpResponse.json({
+      items: [
+        {
+          yieldId,
+          balances: [
+            {
+              address: "0x15775b23340c0f50e0428d674478b0e9d3d0a759",
+              amount: "1000251.8279906842",
+              amountRaw: "10002518279906842",
+              type: "active",
+              token: maticToken,
+              pendingActions: [],
+              amountUsd: "1000355.009527",
+              isEarning: true,
+            },
+          ],
+          rewardRate: personalizedRewardRate,
+        },
+      ],
+      errors: [],
+    });
+  }),
+  http.post("*/v1/balances", async () => {
+    return HttpResponse.json({
+      items: [
+        {
+          yieldId,
+          balances: [
+            {
+              address: "0x15775b23340c0f50e0428d674478b0e9d3d0a759",
+              amount: "1000251.8279906842",
+              amountRaw: "10002518279906842",
+              type: "active",
+              token: maticToken,
+              pendingActions: [],
+              amountUsd: "1000355.009527",
+              isEarning: true,
+            },
+          ],
+          rewardRate: personalizedRewardRate,
+        },
+      ],
+      errors: [],
+    });
+  }),
   http.post("*/v1/actions/enter/estimate-gas", async () => {
     return HttpResponse.json({
       amount: "0.1",
-      token: {
-        network: "polygon",
-        coinGeckoId: "matic-network",
-        name: "Polygon",
-        decimals: 18,
-        symbol: "MATIC",
-        logoURI: "https://assets.stakek.it/tokens/matic.svg",
-      },
+      token: maticToken,
       gasLimit: "",
     });
   })
-  // http.get("*/v1/yields/celo-celo-native-staking", async () => {
-  //   await delay();
-
-  //   return HttpResponse.json({
-  //     id: "celo-celo-native-staking",
-  //     token: {
-  //       name: "Celo",
-  //       symbol: "CELO",
-  //       decimals: 18,
-  //       address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
-  //       network: "celo",
-  //       coinGeckoId: "celo",
-  //       logoURI: "https://assets.stakek.it/tokens/celo.svg",
-  //     },
-  //     tokens: [
-  //       {
-  //         name: "Celo",
-  //         symbol: "CELO",
-  //         decimals: 18,
-  //         address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
-  //         network: "celo",
-  //         coinGeckoId: "celo",
-  //         logoURI: "https://assets.stakek.it/tokens/celo.svg",
-  //       },
-  //     ],
-  //     args: {
-  //       enter: {
-  //         addresses: {
-  //           address: {
-  //             required: true,
-  //             network: "celo",
-  //           },
-  //         },
-  //         args: {
-  //           amount: {
-  //             required: true,
-  //             minimum: 0,
-  //           },
-  //           validatorAddress: {
-  //             required: true,
-  //           },
-  //         },
-  //       },
-  //       exit: {
-  //         addresses: {
-  //           address: {
-  //             required: true,
-  //             network: "celo",
-  //           },
-  //         },
-  //         args: {
-  //           amount: {
-  //             required: true,
-  //             minimum: 0,
-  //           },
-  //           validatorAddress: {
-  //             required: true,
-  //           },
-  //           signatureVerification: {
-  //             required: true,
-  //           },
-  //         },
-  //       },
-  //     },
-  //     status: {
-  //       enter: true,
-  //       exit: true,
-  //     },
-  //     apy: 0.03992371968603679,
-  //     rewardRate: 0.03992371968603679,
-  //     rewardType: "apy",
-  //     metadata: {
-  //       cooldownPeriod: {
-  //         days: 3,
-  //       },
-  //       defaultValidator: "0xdadbd6cfb29b054adc9c4c2ef0f21f0bbdb44871",
-  //       description: "Stake your CELO natively",
-  //       fee: {
-  //         enabled: false,
-  //       },
-  //       gasFeeToken: {
-  //         name: "Celo",
-  //         symbol: "CELO",
-  //         decimals: 18,
-  //         address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
-  //         network: "celo",
-  //         coinGeckoId: "celo",
-  //         logoURI: "https://assets.stakek.it/tokens/celo.svg",
-  //       },
-  //       id: "celo-celo-native-staking",
-  //       logoURI: "https://assets.stakek.it/tokens/celo.svg",
-  //       minimumStake: 0,
-  //       name: "CELO Native Staking",
-  //       revshare: {
-  //         enabled: true,
-  //       },
-  //       rewardClaiming: "auto",
-  //       rewardSchedule: "day",
-  //       supportsMultipleValidators: true,
-  //       token: {
-  //         name: "Celo",
-  //         symbol: "CELO",
-  //         decimals: 18,
-  //         address: "0x471EcE3750Da237f93B8E339c536989b8978a438",
-  //         network: "celo",
-  //         coinGeckoId: "celo",
-  //         logoURI: "https://assets.stakek.it/tokens/celo.svg",
-  //       },
-  //       type: "staking",
-  //       warmupPeriod: {
-  //         days: 1,
-  //       },
-  //       documentation: "https://docs.stakek.it/docs/celo-celo-native-staking",
-  //       supportsLedgerWalletApi: true,
-  //       isUnderMaintenance: false,
-  //       ledgerClearSigning: true,
-  //       contractAddresses: [
-  //         "0x7d21685C17607338b313a7174bAb6620baD0aaB7",
-  //         "0x8D6677192144292870907E3Fa8A5527fE55A7ff6",
-  //         "0x6cC083Aed9e3ebe302A6336dBC7c921C9f03349E",
-  //       ],
-  //     },
-  //     validators: [
-  //       {
-  //         address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
-  //         status: "active",
-  //         name: "Stakely",
-  //         image: "https://assets.stakek.it/validators/stakely.png",
-  //         website: "https://stakely.io/",
-  //         apr: 0.0393,
-  //         commission: 0.1,
-  //         stakedBalance: "2263157",
-  //         votingPower: 0.0090962642447408,
-  //         preferred: true,
-  //       },
-  //       {
-  //         address: "0x81cef0668e15639d0b101bdc3067699309d73bed",
-  //         status: "active",
-  //         name: "Chorus One",
-  //         image: "https://assets.stakek.it/validators/chorus_one.png",
-  //         website: "https://chorus.one/",
-  //         apr: 0.04015260366943412,
-  //         commission: 0.075,
-  //         stakedBalance: "4056456",
-  //         votingPower: 0.0163040370920639,
-  //         preferred: true,
-  //       },
-  //     ],
-  //     isAvailable: true,
-  //   });
-  // })
 );
-
-// http.post("*/v1/actions/enter", async () => {
-//   await delay();
-//   return HttpResponse.json(
-//     {
-//       message: "YieldUnderMaintenanceError",
-//       details: { yieldId: "optimism-op-aave-v3-lending" },
-//     },
-//     { status: 400 }
-//   );
-// }),
-
-// http.all("*", () => {
-//   return passthrough();
-// })

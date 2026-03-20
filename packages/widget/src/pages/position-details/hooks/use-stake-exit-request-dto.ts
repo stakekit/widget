@@ -8,8 +8,12 @@ import { useUnstakeOrPendingActionState } from "../state";
 
 export const useStakeExitRequestDto = () => {
   const { address, additionalAddresses } = useSKWallet();
-  const { unstakeAmount, integrationData, stakedOrLiquidBalances } =
-    useUnstakeOrPendingActionState();
+  const {
+    unstakeAmount,
+    unstakeUseMaxAmount,
+    integrationData,
+    stakedOrLiquidBalances,
+  } = useUnstakeOrPendingActionState();
 
   return useMemo(
     () =>
@@ -92,6 +96,7 @@ export const useStakeExitRequestDto = () => {
               additionalAddresses,
               argumentsDto: {
                 amount: unstakeAmount.toString(10),
+                useMaxAmount: unstakeUseMaxAmount || undefined,
                 ...validatorsOrProvider,
               },
             }),
@@ -104,6 +109,7 @@ export const useStakeExitRequestDto = () => {
       stakedOrLiquidBalances,
       integrationData,
       unstakeAmount,
+      unstakeUseMaxAmount,
     ]
   );
 };

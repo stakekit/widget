@@ -10,6 +10,7 @@ export const useStakeEnterRequestDto = () => {
   const {
     selectedStake,
     stakeAmount,
+    useMaxAmount,
     selectedValidators,
     tronResource,
     selectedToken,
@@ -83,6 +84,7 @@ export const useStakeEnterRequestDto = () => {
                 ledgerWalletApiCompatible: isLedgerLive ?? undefined,
                 tronResource: tronResource.extract(),
                 amount: stakeAmount.toString(10),
+                useMaxAmount: useMaxAmount || undefined,
                 providerId: selectedProviderYieldId.extract(),
                 ...validatorsOrProvider,
               },
@@ -98,6 +100,7 @@ export const useStakeEnterRequestDto = () => {
       selectedToken,
       selectedValidators,
       stakeAmount,
+      useMaxAmount,
       tronResource,
       selectedProviderYieldId,
     ]

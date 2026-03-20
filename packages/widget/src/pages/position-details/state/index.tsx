@@ -233,6 +233,7 @@ export const UnstakeOrPendingActionProvider = ({
         return {
           ...state,
           unstakeAmount: action.data,
+          unstakeUseMaxAmount: false,
         };
       }
 
@@ -240,6 +241,7 @@ export const UnstakeOrPendingActionProvider = ({
         return {
           ...state,
           unstakeAmount: maxEnterOrExitAmount,
+          unstakeUseMaxAmount: true,
         };
       }
 
@@ -260,10 +262,15 @@ export const UnstakeOrPendingActionProvider = ({
 
   const [state, dispatch] = useReducer(reducer, {
     unstakeAmount: minEnterOrExitAmount,
+    unstakeUseMaxAmount: false,
     pendingActions: new Map(),
   });
 
-  const { pendingActions, unstakeAmount: _ustankeAmount } = state;
+  const {
+    pendingActions,
+    unstakeAmount: _ustankeAmount,
+    unstakeUseMaxAmount,
+  } = state;
 
   const unstakeAmount = useMemo(
     () =>
@@ -335,6 +342,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountError,
       unstakeToken,
       unstakeAmount,
+      unstakeUseMaxAmount,
       pendingActions,
       positionBalancePrices,
       reducedStakedOrLiquidBalance,
@@ -353,6 +361,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeAmountError,
       unstakeToken,
       unstakeAmount,
+      unstakeUseMaxAmount,
       pendingActions,
       positionBalancePrices,
       reducedStakedOrLiquidBalance,

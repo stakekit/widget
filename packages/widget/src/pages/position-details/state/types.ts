@@ -38,6 +38,7 @@ export type Actions =
 
 export type State = {
   unstakeAmount: BigNumber;
+  unstakeUseMaxAmount: boolean;
   pendingActions: Map<BalanceTokenActionType, BigNumber>;
 };
 

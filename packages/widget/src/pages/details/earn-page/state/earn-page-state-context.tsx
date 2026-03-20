@@ -50,6 +50,7 @@ const getInitialState = (): State => ({
   selectedStakeId: Maybe.empty(),
   selectedValidators: new Map(),
   stakeAmount: new BigNumber(0),
+  useMaxAmount: false,
   tronResource: Maybe.empty(),
   selectedProviderYieldId: Maybe.empty(),
 });
@@ -150,6 +151,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         return {
           ...state,
           stakeAmount: action.data,
+          useMaxAmount: false,
         };
       }
 
@@ -157,6 +159,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         return {
           ...state,
           stakeAmount: action.data,
+          useMaxAmount: true,
         };
       }
 
@@ -180,6 +183,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     selectedStakeId,
     selectedValidators,
     stakeAmount: _stakeAmount,
+    useMaxAmount,
     tronResource,
     selectedProviderYieldId,
   } = state;
@@ -340,6 +344,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       selectedStake,
       selectedValidators,
       stakeAmount,
+      useMaxAmount,
       actions,
       tronResource,
       stakeAmountGreaterThanAvailableAmount,
@@ -358,6 +363,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       selectedToken,
       selectedValidators,
       stakeAmount,
+      useMaxAmount,
       actions,
       tronResource,
       stakeAmountGreaterThanAvailableAmount,
