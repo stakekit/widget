@@ -6,6 +6,7 @@ import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { supportedCosmosChains } from "../../domain/types/chains/cosmos";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { YieldApiFetchClient } from "../yield-api-client-provider/types";
 import { getWagmiChain } from "./chains";
 
 const queryKey = [config.appPrefix, "cosmos-config"];
@@ -14,11 +15,13 @@ const staleTime = Number.POSITIVE_INFINITY;
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
+  yieldApiFetchClient,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
+  yieldApiFetchClient: YieldApiFetchClient;
 }) =>
-  getEnabledNetworks({ queryClient })
+  getEnabledNetworks({ queryClient, yieldApiFetchClient })
     .chain<
       Error,
       {

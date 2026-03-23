@@ -1,5 +1,4 @@
 import type { i18n } from "i18next";
-import type { Client } from "openapi-fetch";
 import createFetchClient from "openapi-fetch";
 import type { OpenapiQueryClient } from "openapi-react-query";
 import createClient from "openapi-react-query";
@@ -12,11 +11,12 @@ import { handleGeoBlockResponse } from "../../hooks/use-geo-block";
 import { handleRichErrorResponse } from "../../hooks/use-rich-errors";
 import type { paths } from "../../types/yield-api-schema";
 import { useSettings } from "../settings";
+import type { YieldApiFetchClient } from "./types";
 
 const QueryContext = createContext<OpenapiQueryClient<paths> | undefined>(
   undefined
 );
-const FetchContext = createContext<Client<paths> | undefined>(undefined);
+const FetchContext = createContext<YieldApiFetchClient | undefined>(undefined);
 
 export const createYieldApiFetchClient = ({
   apiKey,

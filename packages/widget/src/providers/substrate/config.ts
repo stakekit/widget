@@ -13,6 +13,7 @@ import {
   typeSafeObjectFromEntries,
 } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { YieldApiFetchClient } from "../yield-api-client-provider/types";
 import { getSubstrateConnectors } from "./substrate-connector";
 
 const queryKey = [config.appPrefix, "substrate-config"];
@@ -21,9 +22,11 @@ const staleTime = Number.POSITIVE_INFINITY;
 const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
+  yieldApiFetchClient,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
+  yieldApiFetchClient: YieldApiFetchClient;
 }): Promise<{
   substrateChainsMap: Partial<SubstrateChainsMap>;
   substrateChains: Chain[];
@@ -32,7 +35,7 @@ const queryFn = async ({
     wallets: WalletList[number]["wallets"];
   }>;
 }> =>
-  getEnabledNetworks({ queryClient }).caseOf({
+  getEnabledNetworks({ queryClient, yieldApiFetchClient }).caseOf({
     Right: (networks) => {
       const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(

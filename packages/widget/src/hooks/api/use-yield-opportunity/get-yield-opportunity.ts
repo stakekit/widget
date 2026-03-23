@@ -1,17 +1,16 @@
 import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
-import type { Client } from "openapi-fetch";
 import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
 import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import { adaptYieldDto } from "../../../providers/yield-api-client-provider/compat";
 import { getResponseData } from "../../../providers/yield-api-client-provider/request-helpers";
-import type { paths } from "../../../types/yield-api-schema";
+import type { YieldApiFetchClient } from "../../../providers/yield-api-client-provider/types";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  yieldApiFetchClient: Client<paths>;
+  yieldApiFetchClient: YieldApiFetchClient;
   signal?: AbortSignal;
 };
 

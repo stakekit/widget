@@ -84,7 +84,10 @@ const buildWagmiConfig = async (opts: {
   wagmiConfig: ReturnType<typeof createConfig>;
   queryParamsInitChainId: number | undefined;
 }> => {
-  return getEnabledNetworks({ queryClient: opts.queryClient })
+  return getEnabledNetworks({
+    queryClient: opts.queryClient,
+    yieldApiFetchClient: opts.yieldApiFetchClient,
+  })
     .chain((networks) =>
       EitherAsync.fromPromise(() =>
         Promise.all([
@@ -92,10 +95,12 @@ const buildWagmiConfig = async (opts: {
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
             variant: opts.variant,
+            yieldApiFetchClient: opts.yieldApiFetchClient,
           }),
           getCosmosConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
+            yieldApiFetchClient: opts.yieldApiFetchClient,
           }),
           getMiscConfig({
             enabledNetworks: networks,
@@ -109,6 +114,7 @@ const buildWagmiConfig = async (opts: {
           getSubstrateConfig({
             queryClient: opts.queryClient,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
+            yieldApiFetchClient: opts.yieldApiFetchClient,
           }),
           getInitParams({
             isLedgerLive: opts.isLedgerLive,

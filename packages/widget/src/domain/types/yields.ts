@@ -2,7 +2,7 @@ import type { ValidatorDto, YieldDto, YieldType } from "@stakekit/api-hooks";
 import { EvmNetworks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import type { SupportedSKChains } from "./chains";
 
 export type ExtendedYieldType = YieldType | "native_staking" | "pooled_staking";
@@ -196,22 +196,6 @@ const zeroRewardRateYieldIdWhitelist = new Set<string>([
 export const isNonZeroRewardRateYield = (
   yieldDto: Pick<YieldDto, "id" | "rewardRate">
 ) => yieldDto.rewardRate > 0 || zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
-
-export const getComputedRewardRate = (yieldDto: YieldDto) => {
-  const liveFeeConfigurations = yieldDto.feeConfigurations.filter(
-    (fc) => fc.status === "LIVE"
-  );
-
-  const firstLiveFeeConfiguration = List.head(
-    liveFeeConfigurations
-  ).extractNullable();
-
-  if (liveFeeConfigurations.length === 1 && firstLiveFeeConfiguration) {
-    return firstLiveFeeConfiguration.computedRewardRate;
-  }
-
-  return yieldDto.rewardRate;
-};
 
 export const isERC4626 = (yieldDto: YieldDto) =>
   yieldDto.metadata.supportedStandards?.includes("ERC4626") ?? false;

@@ -4,11 +4,13 @@ import type {
   TokenDto,
   YieldDto,
 } from "@stakekit/api-hooks";
-import type { Client } from "openapi-fetch";
-import type { paths } from "../../types/yield-api-schema";
 import { adaptActionDto } from "./compat";
 import { getResponseData } from "./request-helpers";
-import type { YieldCreateActionDto, YieldCreateManageActionDto } from "./types";
+import type {
+  YieldApiFetchClient,
+  YieldCreateActionDto,
+  YieldCreateManageActionDto,
+} from "./types";
 
 export const createEnterAction = async ({
   addresses,
@@ -18,7 +20,7 @@ export const createEnterAction = async ({
   yieldDto,
 }: {
   addresses: AddressesDto;
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   inputToken: TokenDto;
   requestDto: YieldCreateActionDto;
   yieldDto: YieldDto;
@@ -45,7 +47,7 @@ export const createExitAction = async ({
   yieldDto,
 }: {
   addresses: AddressesDto;
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateActionDto;
   yieldDto: YieldDto;
 }): Promise<LegacyActionDto> => {
@@ -70,7 +72,7 @@ export const createManageAction = async ({
   yieldDto,
 }: {
   addresses: AddressesDto;
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateManageActionDto;
   yieldDto: YieldDto;
 }): Promise<LegacyActionDto> => {
@@ -95,7 +97,7 @@ export const listActions = async ({
   offset,
 }: {
   address: string;
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   limit: number;
   offset: number;
 }) =>
@@ -115,7 +117,7 @@ export const getTransaction = async ({
   fetchClient,
   transactionId,
 }: {
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   transactionId: string;
 }) =>
   getResponseData(
@@ -133,7 +135,7 @@ export const submitTransaction = async ({
   signedTransaction,
   transactionId,
 }: {
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   signedTransaction: string;
   transactionId: string;
 }) =>
@@ -155,7 +157,7 @@ export const submitTransactionHash = async ({
   hash,
   transactionId,
 }: {
-  fetchClient: Client<paths>;
+  fetchClient: YieldApiFetchClient;
   hash: string;
   transactionId: string;
 }) =>

@@ -1,4 +1,7 @@
-import type { components } from "../../types/yield-api-schema";
+import type { Client } from "openapi-fetch";
+import type { components, paths } from "../../types/yield-api-schema";
+
+export type YieldApiFetchClient = Client<paths>;
 
 export type YieldDto = components["schemas"]["YieldDto"];
 export type YieldBalancesRequestDto =
