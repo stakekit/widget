@@ -12,13 +12,13 @@ import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportuni
 const PAGE_SIZE = 20;
 
 export const useActivityActions = () => {
-  const { address, isLedgerLive } = useSKWallet();
+  const { address, isLedgerLive, network } = useSKWallet();
   const queryClient = useSKQueryClient();
   const yieldApiFetchClient = useYieldApiFetchClient();
 
   const query = useInfiniteQuery({
     enabled: !!address,
-    queryKey: ["activity-actions", address],
+    queryKey: ["activity-actions", address, network],
     queryFn: async ({ pageParam = 0 }) => {
       return (
         await EitherAsync(() =>
@@ -33,7 +33,10 @@ export const useActivityActions = () => {
           .map((actionList) => ({
             ...actionList,
             data: (actionList.items ?? []).filter(
-              (x) => x.status !== ActionStatus.CREATED
+              (action) =>
+                action.status !== ActionStatus.CREATED &&
+                (!network ||
+                  action.transactions.some((tx) => tx.network === network))
             ),
           }))
           .chain(async (actionList) =>
