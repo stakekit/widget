@@ -7,6 +7,10 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import {
+  getYieldMetadata,
+  getYieldProviderDetails,
+} from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
@@ -23,7 +27,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const useUnstakeActionReview = () => {
   const exitRequest = useSelector(
     useExitStakeStore(),
-    (state) => state.context.data
+    (state) => state.context.data,
   ).unsafeCoerce();
 
   const yieldApiFetchClient = useYieldApiFetchClient();
@@ -46,24 +50,23 @@ export const useUnstakeActionReview = () => {
       Maybe.fromNullable(actionPreviewQuery.data)
         .map((actionDto) =>
           actionDto.transactions.reduce(
-            (acc, transaction) =>
-              acc.plus(transaction.gasEstimate?.amount ?? 0),
-            new BigNumber(0)
-          )
+            (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
+            new BigNumber(0),
+          ),
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),
-    [actionPreviewQuery.data]
+    [actionPreviewQuery.data],
   );
 
   const interactedToken = useMemo(
     () => Maybe.of(exitRequest.unstakeToken),
-    [exitRequest.unstakeToken]
+    [exitRequest.unstakeToken],
   );
 
   const integrationData = useMemo(
     () => Maybe.of(exitRequest.integrationData),
-    [exitRequest.integrationData]
+    [exitRequest.integrationData],
   );
 
   const pricesState = useTokensPrices({
@@ -73,7 +76,7 @@ export const useUnstakeActionReview = () => {
 
   const amount = useMemo(
     () => new BigNumber(exitRequest.requestDto.arguments?.amount ?? 0),
-    [exitRequest.requestDto.arguments?.amount]
+    [exitRequest.requestDto.arguments?.amount],
   );
 
   const gasWarningCheck = useGasWarningCheck({
@@ -89,7 +92,7 @@ export const useUnstakeActionReview = () => {
   const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
 
   const title: Maybe<string> = integrationData.map((d) => {
-    switch (d.metadata.type) {
+    switch (getYieldMetadata(d).type) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake") as string;
@@ -108,13 +111,15 @@ export const useUnstakeActionReview = () => {
         prices: Maybe.fromNullable(pricesState.data),
         yieldDto: integrationData,
       }),
-    [integrationData, pricesState.data, stakeExitTxGas]
+    [integrationData, pricesState.data, stakeExitTxGas],
   );
 
   const rewardTokenDetailsProps = integrationData
-    .chainNullable((v) =>
-      v.metadata.provider ? { provider: v.metadata.provider, rest: v } : null
-    )
+    .chainNullable((v) => {
+      const provider = getYieldProviderDetails(v);
+
+      return provider ? { provider, rest: v } : null;
+    })
     .map((v) => {
       const rewardToken = Maybe.of({
         logoUri: v.provider.logoURI,
@@ -162,8 +167,8 @@ export const useUnstakeActionReview = () => {
         disabled: false,
         isLoading: unstakeIsLoading,
       }),
-      [onClickRef, t, unstakeIsLoading]
-    )
+      [onClickRef, t, unstakeIsLoading],
+    ),
   );
 
   return {

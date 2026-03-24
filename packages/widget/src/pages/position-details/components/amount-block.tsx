@@ -1,4 +1,3 @@
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -13,8 +12,10 @@ import {
 } from "../../../components/atoms/number-input";
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import type { Yield } from "../../../domain/types/yields";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
-import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
 import { priceTxt } from "../styles.css";
 
@@ -33,7 +34,7 @@ type AmountBlockProps = {
   | {
       variant: "unstake";
       unstakeToken: TokenDto | YieldTokenDto;
-      yieldDto: YieldDto;
+      yieldDto: Yield;
       validators: {
         [Key in keyof Pick<
           ValidatorDto,
@@ -65,7 +66,7 @@ export const AmountBlock = ({
 
   const minMaxUnstakeAmount = Maybe.fromPredicate(
     (v) => v.variant === "unstake",
-    rest as Extract<AmountBlockProps, { variant: "unstake" }>
+    rest as Extract<AmountBlockProps, { variant: "unstake" }>,
   )
     .map(
       (val) =>
@@ -73,17 +74,17 @@ export const AmountBlock = ({
           val.unstakeMinAmount
             .map(
               (v) =>
-                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
+                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`,
             )
             .extractNullable(),
           val.unstakeMaxAmount
             .map(
               (v) =>
-                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
+                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`,
             )
             .extractNullable(),
           val.unstakeIsGreaterOrLessIntegrationLimitError,
-        ] as const
+        ] as const,
     )
     .filter((val) => val.some(Boolean))
     .map(([min, max, error]) => (
@@ -218,7 +219,7 @@ const UnstakeInfo = ({
   yieldDto,
   unstakeToken,
 }: {
-  yieldDto: YieldDto;
+  yieldDto: Yield;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
@@ -256,6 +257,6 @@ const UnstakeInfo = ({
           </Box>
         ))
         .extractNullable(),
-    [withdrawnTime, withdrawnNotAvailable, positionLocked]
+    [withdrawnTime, withdrawnNotAvailable, positionLocked],
   );
 };

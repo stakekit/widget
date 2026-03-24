@@ -23,7 +23,7 @@ export const useHeader = () => {
   const showDisconnect = useMemo(
     () =>
       Maybe.fromNullable(connector).map(shouldShowDisconnect).orDefault(false),
-    [connector]
+    [connector],
   );
 
   const wagmiConfig = useWagmiConfig();

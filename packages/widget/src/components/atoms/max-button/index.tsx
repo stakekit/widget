@@ -30,7 +30,7 @@ export const MaxButton = ({
       className={clsx(
         pressAnimation,
         combineRecipeWithVariant({ rec: container, variant }),
-        className
+        className,
       )}
       {...rest}
     >

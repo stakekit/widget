@@ -49,6 +49,6 @@ export type StorageItem = { "solana.disconnected": boolean };
 type SolanaConnector = Connector & ExtraProps;
 
 export const isSolanaConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is SolanaConnector =>
   !!("isSolanaConnector" in connector && connector.isSolanaConnector);

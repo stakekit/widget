@@ -39,7 +39,7 @@ export const useInitParams = <T = InitParams>(opts?: {
 };
 
 export const getInitParams = (
-  params: Parameters<typeof fn>[0] & { queryClient: QueryClient }
+  params: Parameters<typeof fn>[0] & { queryClient: QueryClient },
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
@@ -47,7 +47,7 @@ export const getInitParams = (
       staleTime,
       gcTime: cacheTime,
       queryFn: () => queryFn(params),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get init query params");
@@ -70,7 +70,7 @@ const fn = ({
   EitherAsync.liftEither(
     getAndValidateInitParams({
       externalProviderInitToken: externalProviders?.initToken,
-    }).toEither(new Error("missing query params"))
+    }).toEither(new Error("missing query params")),
   ).chain<Error, InitParams>((val) => {
     const yId = val.yieldId;
 

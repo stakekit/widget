@@ -5,7 +5,7 @@ import { isLedgerLiveConnector } from "../ledger/ledger-live-connector-meta";
 
 export const useLedgerCurrentAccountId = (connector?: Connector) => {
   const [subject] = useState(
-    () => new BehaviorSubject<string | undefined>(undefined)
+    () => new BehaviorSubject<string | undefined>(undefined),
   );
 
   const subscribe = useCallback(
@@ -21,7 +21,7 @@ export const useLedgerCurrentAccountId = (connector?: Connector) => {
 
       return () => sub.unsubscribe();
     },
-    [connector, subject]
+    [connector, subject],
   );
 
   const getSnapshot = useCallback(() => subject.value, [subject]);

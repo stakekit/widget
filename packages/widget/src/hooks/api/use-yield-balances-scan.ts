@@ -1,14 +1,14 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
+import type {
+  YieldBalancesByYieldDto,
+  YieldBalancesRequestDto,
+} from "../../domain/types/positions";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
 import { useYieldApiClient } from "../../providers/yield-api-client-provider";
-import type {
-  YieldBalancesByYieldDto,
-  YieldBalancesRequestDto,
-} from "../../providers/yield-api-client-provider/types";
 import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
 
 export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
@@ -22,7 +22,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
 
   const lastActionTimestamp = useMemo(
     () => actionHistoryData.map((v) => v.timestamp).extractNullable(),
-    [actionHistoryData]
+    [actionHistoryData],
   );
 
   const param = useMemo(
@@ -48,9 +48,9 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
           dto: {
             queries: [{ address: "", network: "ethereum" }],
           },
-        }
+        },
       ),
-    [address, network]
+    [address, network],
   );
 
   const res = yieldApi.useQuery(
@@ -71,7 +71,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
 
         return items as T;
       },
-    }
+    },
   );
 
   /**
@@ -97,7 +97,7 @@ export const useInvalidateYieldBalances = () => {
       queryClient.invalidateQueries({
         queryKey: getYieldYieldBalancesScanQueryKey(),
       }),
-    [queryClient]
+    [queryClient],
   );
 };
 

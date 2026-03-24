@@ -1,6 +1,5 @@
 import {
   type AddressesDto,
-  type YieldDto,
   type YieldRewardsSummaryResponseDto,
   yieldGetSingleYieldRewardsSummary,
 } from "@stakekit/api-hooks";
@@ -10,16 +9,17 @@ import {
   type EnabledRewardsSummaryYieldId,
   isValidYieldIdForRewardsSummary,
 } from "../domain/types/rewards";
+import type { Yield } from "../domain/types/yields";
 import { useSKQueryClient } from "../providers/query-client";
 import { useSKWallet } from "../providers/sk-wallet";
 
 export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
-  yieldIds: YieldDto["id"][],
-  opts?: { select?: (val: RewardsSummaryResult) => T }
+  yieldIds: Yield["id"][],
+  opts?: { select?: (val: RewardsSummaryResult) => T },
 ) => {
   const filteredYieldIds = useMemo(
     () => yieldIds.filter(isValidYieldIdForRewardsSummary),
-    [yieldIds]
+    [yieldIds],
   );
 
   const { address, additionalAddresses } = useSKWallet();
@@ -46,25 +46,24 @@ export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
               address: address!,
               additionalAddresses: additionalAddresses ?? undefined,
             },
-          }).then((res) => ({ yieldId: id, data: res }))
-        )
+          }).then((res) => ({ yieldId: id, data: res })),
+        ),
       ).then((res) =>
         res.reduce(
           (acc, next) => {
-            acc[next.yieldId] =
-              next.data as unknown as YieldRewardsSummaryResponseDto;
+            acc[next.yieldId] = next.data;
             return acc;
           },
           {} as Record<
             EnabledRewardsSummaryYieldId,
             YieldRewardsSummaryResponseDto
-          >
-        )
+          >,
+        ),
       ),
   });
 };
 
-export const useRewardsSummary = (yieldId: YieldDto["id"]) => {
+export const useRewardsSummary = (yieldId: Yield["id"]) => {
   const { address, additionalAddresses } = useSKWallet();
 
   const queryClient = useSKQueryClient();

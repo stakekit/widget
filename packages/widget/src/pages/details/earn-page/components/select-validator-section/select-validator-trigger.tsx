@@ -1,5 +1,4 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { Divider } from "../../../../../components/atoms/divider";
@@ -11,6 +10,7 @@ import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
+import type { ValidatorDto } from "../../../../../domain/types/validators";
 import { noWrap } from "../../../../details/positions-page/components/styles.css";
 import {
   addValidatorButton,
@@ -101,7 +101,7 @@ export const SelectValidatorTrigger = ({
                             {t(
                               sv.status === "jailed"
                                 ? "details.validators_jailed"
-                                : "details.validators_inactive"
+                                : "details.validators_inactive",
                             )}
                           </Text>
                         </Box>

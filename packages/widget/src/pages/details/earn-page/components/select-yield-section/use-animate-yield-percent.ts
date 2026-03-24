@@ -4,7 +4,7 @@ import { config } from "../../../../../config";
 import type { EarnPageContextType } from "../../state/types";
 
 export const useAnimateYieldPercent = (
-  estimatedRewards: EarnPageContextType["estimatedRewards"]
+  estimatedRewards: EarnPageContextType["estimatedRewards"],
 ) => {
   const perReward = estimatedRewards
     .map((val) => {
@@ -33,7 +33,7 @@ export const useAnimateYieldPercent = (
 
   const transformedMotionValue = useTransform(
     rewardPercMotionValue,
-    (val) => `${val.toFixed(2)}%`
+    (val) => `${val.toFixed(2)}%`,
   );
 
   return typeof perReward === "string" || config.env.isTestMode

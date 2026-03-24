@@ -57,14 +57,14 @@ const createSolanaConnector = ({
           solanaTx = Transaction.from(buffer);
         } catch (legacyErr) {
           throw new Error(
-            `Failed to deserialize Solana transaction. VersionedTransaction error: ${versionedError instanceof Error ? versionedError.message : String(versionedError)}. Legacy Transaction error: ${legacyErr instanceof Error ? legacyErr.message : String(legacyErr)}`
+            `Failed to deserialize Solana transaction. VersionedTransaction error: ${versionedError instanceof Error ? versionedError.message : String(versionedError)}. Legacy Transaction error: ${legacyErr instanceof Error ? legacyErr.message : String(legacyErr)}`,
           );
         }
       }
 
       const signed = await solanaWallet.adapter.sendTransaction(
         solanaTx,
-        connection
+        connection,
       );
       return signed;
     },
@@ -100,7 +100,7 @@ const createSolanaConnector = ({
     getChainId: async () => solana.id,
     isAuthorized: async () => {
       const isDisconnected = await config.storage?.getItem(
-        "solana.disconnected"
+        "solana.disconnected",
       );
 
       if (isDisconnected) return false;
@@ -149,7 +149,7 @@ export const getSolanaConnectors = ({
           .filter((w) =>
             variant === "porto"
               ? w.adapter instanceof WalletConnectWalletAdapter
-              : true
+              : true,
           )
           .map((w) => () => ({
             id: w.adapter.name,

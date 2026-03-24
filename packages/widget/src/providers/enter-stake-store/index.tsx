@@ -1,20 +1,20 @@
-import type {
-  ActionDto,
-  AddressesDto,
-  TokenDto,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
-import type { YieldCreateActionDto } from "../yield-api-client-provider/types";
+import type {
+  ActionDto,
+  YieldCreateActionDto,
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { TokenDto } from "../../domain/types/tokens";
+import type { ValidatorDto } from "../../domain/types/validators";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
   requestDto: YieldCreateActionDto;
   addresses: AddressesDto;
-  gasFeeToken: YieldDto["token"];
-  selectedStake: YieldDto;
+  gasFeeToken: Yield["token"];
+  selectedStake: Yield;
   selectedValidators: Map<string, ValidatorDto>;
   selectedToken: TokenDto;
 };
@@ -37,7 +37,7 @@ const store = createStore({
 });
 
 const EnterStakeStoreContext = createContext<typeof store | undefined>(
-  undefined
+  undefined,
 );
 
 export const EnterStakeStoreProvider = ({ children }: PropsWithChildren) => {
@@ -53,7 +53,7 @@ export const useEnterStakeStore = () => {
 
   if (!value) {
     throw new Error(
-      "useEnterStakeStore must be used within a EnterStakeStoreProvider"
+      "useEnterStakeStore must be used within a EnterStakeStoreProvider",
     );
   }
 

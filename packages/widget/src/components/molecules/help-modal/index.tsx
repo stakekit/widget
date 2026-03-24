@@ -36,7 +36,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
   const { t, i18n } = useTranslation();
 
   const getContent = (
-    modal: ModalType
+    modal: ModalType,
   ): {
     title: string;
     description: string | ReactNode;
@@ -167,7 +167,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
             title: t("help_modals.get_in_touch.button"),
             onClick: () =>
               MaybeWindow.ifJust((w) =>
-                w.open("https://twitter.com/yield_xyz", "_blank")
+                w.open("https://twitter.com/yield_xyz", "_blank"),
               ),
           },
           description: "",

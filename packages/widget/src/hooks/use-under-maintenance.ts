@@ -34,7 +34,7 @@ export const useUnderMaintenance = () => {
 class YieldApiResponseError extends Error {
   constructor(
     readonly status: number,
-    override readonly cause?: unknown
+    override readonly cause?: unknown,
   ) {
     super("Yield API health request failed");
   }

@@ -20,7 +20,7 @@ type CopyTextContextType = {
 };
 
 const CopyTextContext = createContext<CopyTextContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const useCopyText = () => {
@@ -48,7 +48,7 @@ export const Provider = ({
       MaybeWindow.ifJust((w) => w.navigator.clipboard.writeText(text));
       setShowCopySuccess(true);
     },
-    [text]
+    [text],
   );
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export const Provider = ({
 
   const value = useMemo<CopyTextContextType>(
     () => ({ showCopySuccess, onClick }),
-    [onClick, showCopySuccess]
+    [onClick, showCopySuccess],
   );
 
   return (

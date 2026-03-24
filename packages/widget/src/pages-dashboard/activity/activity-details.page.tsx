@@ -1,10 +1,6 @@
-import {
-  ActionStatus,
-  ActionTypes,
-  type TransactionType,
-} from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import { Box } from "../../components/atoms/box";
+import { ActionStatus, type TransactionType } from "../../domain/types/action";
 import { useActivityComplete } from "../../pages/complete/hooks/use-activity-complete.hook";
 import { useComplete } from "../../pages/complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "../../pages/complete/pages/common.page";
@@ -17,12 +13,12 @@ export const ActivityDetailsPage = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction
+    (state) => state.context.selectedAction,
   ).extractNullable();
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield
+    (state) => state.context.selectedYield,
   ).extractNullable();
 
   if (!selectedYield || !selectedAction) {
@@ -77,10 +73,9 @@ const ActivityCompletePage = () => {
       value={{
         urls,
         onViewTransactionClick,
-        unstakeMatch: selectedAction.type === ActionTypes.UNSTAKE,
+        unstakeMatch: selectedAction.type === "UNSTAKE",
         pendingActionMatch:
-          selectedAction.type !== ActionTypes.STAKE &&
-          selectedAction.type !== ActionTypes.UNSTAKE,
+          selectedAction.type !== "STAKE" && selectedAction.type !== "UNSTAKE",
       }}
     >
       <CompletePageComponent
@@ -91,7 +86,7 @@ const ActivityCompletePage = () => {
         network={network}
         amount={amount}
         pendingActionType={selectedAction.type}
-        integrationId={selectedAction.integrationId}
+        integrationId={selectedAction.yieldId}
       />
     </CompleteCommonContextProvider>
   );

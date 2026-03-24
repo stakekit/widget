@@ -10,7 +10,7 @@ import type { usePositions } from "../../../../pages/details/positions-page/hook
 import { defaultFormattedNumber } from "../../../../utils";
 
 export const usePositionListItem = (
-  item: ReturnType<typeof usePositions>["positionsData"]["data"][number]
+  item: ReturnType<typeof usePositions>["positionsData"]["data"][number],
 ) => {
   const {
     integrationData,
@@ -27,9 +27,9 @@ export const usePositionListItem = (
   const rewardsSummary = useMemo(
     () =>
       Maybe.fromNullable(rewardsSummaryQuery.data?.data).filter((val) =>
-        BigNumber(val.rewards.total).gt(0)
+        BigNumber(val.rewards.total).gt(0),
       ),
-    [rewardsSummaryQuery.data]
+    [rewardsSummaryQuery.data],
   );
 
   const prices = usePrices({
@@ -45,7 +45,7 @@ export const usePositionListItem = (
       rewardsSummary
         .map((val) => BigNumber(val.rewards.total))
         .map(defaultFormattedNumber),
-    [rewardsSummary]
+    [rewardsSummary],
   );
 
   const totalAmountPriceFormatted = useMemo(
@@ -53,7 +53,7 @@ export const usePositionListItem = (
       totalAmountUsd
         .filter((v) => v.isGreaterThan(0))
         .map(defaultFormattedNumber),
-    [totalAmountUsd]
+    [totalAmountUsd],
   );
 
   const rewardsAmountPriceFormatted = useMemo(
@@ -70,10 +70,10 @@ export const usePositionListItem = (
             pricePerShare: null,
             token: val.rewardsSummary.token,
             prices: val.prices,
-          })
+          }),
         )
         .map(defaultFormattedNumber),
-    [rewardsSummary, baseToken, prices]
+    [rewardsSummary, baseToken, prices],
   );
 
   return {

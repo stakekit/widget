@@ -10,6 +10,7 @@ import { TokenIcon } from "../../../components/atoms/token-icon";
 import { ToolTip } from "../../../components/atoms/tooltip";
 import { Text } from "../../../components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "../../../domain/types/positions";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import {
   columnContainer,
   listItem,
@@ -60,11 +61,11 @@ export const PositionsListItem = memo(
                   >
                     {item.token.mapOrDefault(
                       (val) => (
-                        <TokenIcon metadata={d.metadata} token={val} />
+                        <TokenIcon metadata={getYieldMetadata(d)} token={val} />
                       ),
                       <Box display="flex" marginRight="2">
                         <Spinner />
-                      </Box>
+                      </Box>,
                     )}
 
                     <Box className={columnContainer}>
@@ -83,7 +84,7 @@ export const PositionsListItem = memo(
                                   `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
                                   label.params as
                                     | Record<string, string>
-                                    | undefined
+                                    | undefined,
                                 )}
                               >
                                 <Box
@@ -96,7 +97,7 @@ export const PositionsListItem = memo(
                                     className={noWrap}
                                   >
                                     {t(
-                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`
+                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`,
                                     )}
                                   </Text>
                                 </Box>
@@ -128,7 +129,7 @@ export const PositionsListItem = memo(
                                     ? inactiveValidator === "jailed"
                                       ? "details.validators_jailed"
                                       : "details.validators_inactive"
-                                    : "positions.claim_rewards"
+                                    : "positions.claim_rewards",
                               )}
                             </Text>
                           </Box>
@@ -149,7 +150,7 @@ export const PositionsListItem = memo(
                                 count: Math.max(val.length - 1, 1),
                               })}
                             </Text>
-                          ))
+                          )),
                         )
                         .extractNullable()}
                     </Box>
@@ -178,13 +179,13 @@ export const PositionsListItem = memo(
                             {rewardsAmountPriceFormatted
                               .map((v) => <>{v}$</>)
                               .orDefault(
-                                <Text style={{ textAlign: "center" }}>-</Text>
+                                <Text style={{ textAlign: "center" }}>-</Text>,
                               )}
                           </Text>
                         </>
                       ))
                       .orDefault(
-                        <Text style={{ textAlign: "center" }}>-</Text>
+                        <Text style={{ textAlign: "center" }}>-</Text>,
                       )}
                   </Box>
                 </Box>
@@ -222,10 +223,10 @@ export const PositionsListItem = memo(
                 )}
               </ListItem>
             ),
-            <ContentLoaderSquare heightPx={60} />
+            <ContentLoaderSquare heightPx={60} />,
           )}
         </Box>
       </SKLink>
     );
-  }
+  },
 );

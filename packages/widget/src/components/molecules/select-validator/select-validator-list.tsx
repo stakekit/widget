@@ -1,7 +1,8 @@
-import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import { getYieldRewardType, type Yield } from "../../../domain/types/yields";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -44,7 +45,7 @@ export const SelectValidatorList = ({
   selectedValidators: Set<ValidatorDto["address"]>;
   onItemClick: (item: ValidatorDto) => void;
   onViewMoreClick: () => void;
-  selectedStake: YieldDto;
+  selectedStake: Yield;
   tableData: ValidatorDto[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
@@ -80,7 +81,7 @@ export const SelectValidatorList = ({
 
             <Box marginRight="4">
               <Text variant={{ weight: "normal", type: "muted" }}>
-                {getRewardTypeFormatted(selectedStake.rewardType)}
+                {getRewardTypeFormatted(getYieldRewardType(selectedStake))}
               </Text>
             </Box>
           </Box>
@@ -190,7 +191,7 @@ export const SelectValidatorList = ({
                               {t(
                                 status === "jailed"
                                   ? "details.validators_jailed"
-                                  : "details.validators_inactive"
+                                  : "details.validators_inactive",
                               )}
                             </Text>
                           </Box>
@@ -201,7 +202,7 @@ export const SelectValidatorList = ({
                         <Text variant={{ size: "large" }}>
                           {getRewardRateFormatted({
                             rewardRate: item.apr,
-                            rewardType: selectedStake.rewardType,
+                            rewardType: getYieldRewardType(selectedStake),
                           })}
                         </Text>
                       </Box>
@@ -240,7 +241,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
       {Object.entries(metaInfo)
         .filter(
           (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1]
+            !!val[1],
         )
         .map(([key, val]) => {
           return (

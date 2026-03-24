@@ -21,7 +21,7 @@ const responsiveAtomicProperties = defineProperties({
 
       return acc;
     },
-    {} as { [Key in Breakpoint]: { "@media"?: string } }
+    {} as { [Key in Breakpoint]: { "@media"?: string } },
   ),
 
   defaultCondition: "mobile",
@@ -51,7 +51,7 @@ const colorAtomicProperties = defineProperties({
 export const atoms = createSprinkles(
   unresponsiveAtomicProperties,
   responsiveAtomicProperties,
-  colorAtomicProperties
+  colorAtomicProperties,
 );
 
 export type Atoms = Parameters<typeof atoms>[0];

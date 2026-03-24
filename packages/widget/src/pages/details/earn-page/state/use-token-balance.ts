@@ -1,8 +1,8 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { tokenString } from "../../../../domain";
+import type { TokenDto } from "../../../../domain/types/tokens";
 import { useTokenBalancesMap } from "./use-token-balances-map";
 
 export const useTokenBalance = ({
@@ -15,19 +15,19 @@ export const useTokenBalance = ({
   const tokenBalance = useMemo(
     () =>
       selectedToken.chainNullable((val) =>
-        tokenBalancesMap.get(tokenString(val))
+        tokenBalancesMap.get(tokenString(val)),
       ),
-    [selectedToken, tokenBalancesMap]
+    [selectedToken, tokenBalancesMap],
   );
 
   const availableAmount = useMemo(
     () => tokenBalance.map((v) => new BigNumber(v.amount)),
-    [tokenBalance]
+    [tokenBalance],
   );
 
   const availableYields = useMemo(
     () => tokenBalance.map((v) => v.availableYields),
-    [tokenBalance]
+    [tokenBalance],
   );
 
   return {

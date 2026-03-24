@@ -47,7 +47,7 @@ export const SelectToken = () => {
             tokenBalancesData.map((v) => v.filtered).extract() ?? [],
         }))
         .extractNullable(),
-    [selectedToken, tokenBalancesData]
+    [selectedToken, tokenBalancesData],
   );
 
   if (!data) return null;
@@ -75,7 +75,7 @@ export const SelectToken = () => {
               combineRecipeWithVariant({
                 variant,
                 rec: selectTokenButton,
-              })
+              }),
             )}
           >
             <Box

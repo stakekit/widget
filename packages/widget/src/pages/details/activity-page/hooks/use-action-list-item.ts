@@ -1,20 +1,15 @@
-import {
-  type ActionDto,
-  ActionStatus,
-  type YieldDto,
-} from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ActionStatus,
+  getActionValidatorAddresses,
+} from "../../../../domain/types/action";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
 import { dateOlderThen7Days } from "../../../../utils/date";
 import { capitalizeFirstLetters } from "../../../../utils/formatters";
-
-type ActionYieldDto = {
-  actionData: ActionDto;
-  yieldData: YieldDto;
-};
+import type { ActionYieldDto } from "../types";
 
 type ListItemContainerType = "claim" | "pending" | "actionRequired" | undefined;
 
@@ -33,12 +28,14 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const integrationData = useMemo(
     () => Maybe.fromNullable(action.yieldData),
-    [action.yieldData]
+    [action.yieldData],
   );
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: Maybe.of(action.actionData.validatorAddresses ?? []),
+    validatorsAddresses: Maybe.of(
+      getActionValidatorAddresses(action.actionData) ?? [],
+    ),
     selectedProviderYieldId: Maybe.empty(),
   });
 
@@ -48,7 +45,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
         .map((t) => t.replaceAll("_", " "))
         .map(capitalizeFirstLetters)
         .extract(),
-    [action]
+    [action],
   );
 
   const actionOlderThan7Days = useMemo(
@@ -56,7 +53,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
       Maybe.of(action.actionData.createdAt)
         .map(dateOlderThen7Days)
         .orDefault(false),
-    [action]
+    [action],
   );
 
   const badgeLabel = useMemo(
@@ -73,7 +70,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
         .map((status) => status.replaceAll("_", " "))
         .map(capitalizeFirstLetters)
         .extract(),
-    [action, t, actionOlderThan7Days]
+    [action, t, actionOlderThan7Days],
   );
 
   const badgeColor = useMemo(
@@ -90,13 +87,13 @@ export const useActionListItem = (action: ActionYieldDto) => {
         })
         .map((status) => BADGE_BG_MAP[status])
         .extract(),
-    [action, actionOlderThan7Days]
+    [action, actionOlderThan7Days],
   );
 
   const amount = useMemo(
     () =>
       Maybe.fromNullable(action.actionData.amount).map(defaultFormattedNumber),
-    [action]
+    [action],
   );
 
   return {

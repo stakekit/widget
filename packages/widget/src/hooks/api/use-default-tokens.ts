@@ -1,11 +1,9 @@
-import type {
-  TokenBalanceScanResponseDto,
-  TokenGetTokensParams,
-} from "@stakekit/api-hooks";
 import { getTokenGetTokensQueryKey, tokenGetTokens } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import type { TokenBalanceScanResponseDto } from "../../domain/types/token-balance";
+import type { TokenGetTokensParams } from "../../domain/types/tokens";
 import { useSettings } from "../../providers/settings";
 import { useSKWallet } from "../../providers/sk-wallet";
 
@@ -27,7 +25,7 @@ export const useDefaultTokens = () => {
 };
 
 export const getDefaultTokens = (
-  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient },
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
@@ -35,7 +33,7 @@ export const getDefaultTokens = (
         network: params.network ?? undefined,
       }),
       queryFn: async () => (await queryFn(params)).unsafeCoerce(),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get multi yields");
@@ -49,7 +47,7 @@ const queryFn = ({
     tokenGetTokens({
       network,
       enabledYieldsOnly: enabledYieldsOnly || undefined,
-    })
+    }),
   ).map((val) =>
-    val.map<TokenBalanceScanResponseDto>((v) => ({ ...v, amount: "0" }))
+    val.map<TokenBalanceScanResponseDto>((v) => ({ ...v, amount: "0" })),
   );

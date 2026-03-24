@@ -77,7 +77,7 @@ export const SelectTokenSection = () => {
         !!showUSDeBanner &&
         isLedgerLive &&
         val.selectedTokenAvailableAmount.amount.isZero() &&
-        isUSDeToken(val.selectedToken)
+        isUSDeToken(val.selectedToken),
     )
     .isJust();
 
@@ -130,7 +130,7 @@ export const SelectTokenSection = () => {
             rec: selectTokenSection,
             variant,
             state: submitted && stakeAmountIsZero ? "danger" : "default",
-          })
+          }),
         )}
       >
         {variant === "zerion" && (
@@ -173,7 +173,7 @@ export const SelectTokenSection = () => {
                 combineRecipeWithVariant({
                   rec: selectTokenBalance,
                   variant,
-                })
+                }),
               )}
             >
               {formattedPrice}
@@ -194,7 +194,10 @@ export const SelectTokenSection = () => {
                 }}
                 data-state={errorBalance ? "error" : "valid"}
                 className={clsx(
-                  combineRecipeWithVariant({ rec: selectTokenBalance, variant })
+                  combineRecipeWithVariant({
+                    rec: selectTokenBalance,
+                    variant,
+                  }),
                 )}
               >
                 {selectedTokenAvailableAmount
@@ -226,7 +229,7 @@ export const SelectTokenSection = () => {
                           )}
                         </AmountToggle.Amount>
                       </AmountToggle.Root>
-                    )
+                    ),
                   )
                   .extractNullable()}
               </Text>

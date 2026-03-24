@@ -1,11 +1,12 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { yieldFixture, yieldValidatorsFixture } from "../../fixtures";
 import { worker } from "../../mocks/worker";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 export const setup = () => {
-  const avalancheCToken: TokenDto = {
+  const avalancheCToken: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -14,7 +15,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/avax.svg",
   };
 
-  const ether: TokenDto = {
+  const ether: LegacyTokenDto = {
     network: "ethereum",
     name: "Ethereum",
     symbol: "ETH",
@@ -23,7 +24,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };
 
-  const solanaToken: TokenDto = {
+  const solanaToken: LegacyTokenDto = {
     network: "solana",
     name: "Solana",
     symbol: "SOL",
@@ -32,7 +33,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/sol.svg",
   };
 
-  const tonToken: TokenDto = {
+  const tonToken: LegacyTokenDto = {
     network: "ton",
     name: "Toncoin",
     symbol: "TON",
@@ -55,7 +56,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: avalancheCToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>,
     )
     .unsafeCoerce();
 
@@ -73,7 +74,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: ether,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>,
     )
     .unsafeCoerce();
 
@@ -91,7 +92,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: solanaToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>,
     )
     .unsafeCoerce();
 
@@ -109,7 +110,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: tonToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>,
     )
     .unsafeCoerce();
 
@@ -188,20 +189,23 @@ export const setup = () => {
       await delay();
 
       const yieldId = info.params.yieldId as string;
-      const validatorsByYieldId = new Map<string, YieldDto["validators"]>([
+      const validatorsByYieldId = new Map<
+        string,
+        ReturnType<typeof yieldFixture>["validators"]
+      >([
         [etherNativeStaking.id, etherNativeStaking.validators],
         [avalancheAvaxNativeStaking.id, avalancheAvaxNativeStaking.validators],
         [solanaNativeStaking.id, solanaNativeStaking.validators],
         [tonNativeStaking.id, tonNativeStaking.validators],
       ]);
       const validators = yieldValidatorsFixture(
-        validatorsByYieldId.get(yieldId) ?? []
+        validatorsByYieldId.get(yieldId) ?? [],
       );
 
       return HttpResponse.json({
         items: validators,
         total: validators.length,
       });
-    })
+    }),
   );
 };

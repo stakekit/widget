@@ -1,4 +1,3 @@
-import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, List, Maybe, Right } from "purify-ts";
 import { useEffect, useMemo, useRef } from "react";
@@ -9,6 +8,8 @@ import {
   PASingleValidatorRequired,
 } from "../../../domain";
 import { isPendingActionAmountRequired } from "../../../domain/types/pending-action";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import type { Yield } from "../../../domain/types/yields";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
@@ -55,7 +56,7 @@ export const usePendingActions = () => {
             balance.pendingActions.map((pa) => {
               const amount = Maybe.fromPredicate(
                 (v) => v,
-                isPendingActionAmountRequired(pa)
+                isPendingActionAmountRequired(pa),
               ).chain(() =>
                 Maybe.fromNullable(
                   pendingActionsState.get(
@@ -63,9 +64,9 @@ export const usePendingActions = () => {
                       balanceType: balance.type,
                       token: balance.token,
                       actionType: pa.type,
-                    })
-                  )
-                ).altLazy(() => Maybe.of(new BigNumber(0)))
+                    }),
+                  ),
+                ).altLazy(() => Maybe.of(new BigNumber(0))),
               );
 
               const formattedAmount = Maybe.fromRecord({
@@ -81,7 +82,7 @@ export const usePendingActions = () => {
                     prices: val.prices,
                     pricePerShare: null,
                     baseToken: val.baseToken,
-                  })
+                  }),
                 )
                 .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, "");
 
@@ -91,9 +92,9 @@ export const usePendingActions = () => {
                 pendingActionDto: pa,
                 yieldBalance: balance,
               };
-            })
-          )
-        )
+            }),
+          ),
+        ),
       ),
     [
       pendingActionsState,
@@ -101,11 +102,11 @@ export const usePendingActions = () => {
       positionBalancesByType,
       reducedStakedOrLiquidBalance,
       baseToken,
-    ]
+    ],
   );
 
   const onPendingActionAmountChange = (
-    data: PendingActionAmountChange["data"]
+    data: PendingActionAmountChange["data"],
   ) => {
     pendingActionDispatch({ type: "pendingAction/amount/change", data });
   };
@@ -133,9 +134,9 @@ export const usePendingActions = () => {
                 PAMultiValidatorsRequired(p.pendingActionDto) ||
                 PASingleValidatorRequired(p.pendingActionDto)
               ),
-            pa
-          )
-        )
+            pa,
+          ),
+        ),
       )
       .ifJust((val) => {
         selectValidatorModalShown.current = true;
@@ -175,7 +176,7 @@ export const usePendingActions = () => {
           pendingActionDto,
           yieldBalance,
           selectedValidators: [],
-        })
+        }),
       );
   };
 
@@ -185,7 +186,7 @@ export const usePendingActions = () => {
       .chain((val) => {
         if (!validatorAddressesHandling.showValidatorsModal) {
           return Left(
-            new Error("missing validatorAddressesHandling.showValidatorsModal")
+            new Error("missing validatorAddressesHandling.showValidatorsModal"),
           );
         }
         if (!selectedValidators.length) {
@@ -217,7 +218,7 @@ export const usePendingActions = () => {
             yieldBalance,
             selectedValidators,
           });
-        }
+        },
       );
   };
 
@@ -234,7 +235,7 @@ export const usePendingActions = () => {
     yieldBalance,
     selectedValidators,
   }: {
-    integrationData: YieldDto;
+    integrationData: Yield;
     pendingActionDto: YieldPendingActionDto;
     yieldBalance: YieldBalanceDto;
     selectedValidators: ValidatorDto["address"][];

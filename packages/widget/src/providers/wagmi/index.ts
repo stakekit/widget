@@ -133,13 +133,13 @@ const buildWagmiConfig = async (opts: {
                     miscConfig: m,
                     substrateConfig: s,
                     queryParams: qp,
-                  }))
-                )
-              )
-            )
-          )
-        )
-      )
+                  })),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     )
     .chain((val) =>
       getLedgerLiveConfig({
@@ -151,13 +151,13 @@ const buildWagmiConfig = async (opts: {
         },
         queryClient: opts.queryClient,
         queryParams: val.queryParams,
-      }).map((l) => ({ ...val, ledgerLiveConnector: l }))
+      }).map((l) => ({ ...val, ledgerLiveConnector: l })),
     )
     .chain((val) =>
       EitherAsync.liftEither(Maybe.fromFalsy(opts.isSafe).toEither(null))
         .chain(() => getSafeConnector({ queryClient: opts.queryClient }))
         .chainLeft((e) => EitherAsync.liftEither(e ? Left(e) : Right(null)))
-        .map((s) => ({ ...val, safeConnector: s }))
+        .map((s) => ({ ...val, safeConnector: s })),
     )
     .map((val) => {
       const {
@@ -272,9 +272,9 @@ const buildWagmiConfig = async (opts: {
                   : wallet;
 
                 return maybeMapped;
-              }
+              },
             ),
-          }))
+          })),
         )
         .map((walletList) => opts.mapWalletListFn?.(walletList) ?? walletList)
         .map((walletList) => {
@@ -296,7 +296,7 @@ const buildWagmiConfig = async (opts: {
                             : config.chains,
                       }),
                   };
-                }
+                },
             ),
           }));
         })
@@ -310,7 +310,7 @@ const buildWagmiConfig = async (opts: {
             val.miscConfig.miscChainsMap[n as keyof MiscChainsMap] ??
             val.substrateConfig.substrateChainsMap[
               n as keyof SubstrateChainsMap
-            ]
+            ],
         )
         .map((c) => c.wagmiChain.id)
         .extract();
@@ -331,11 +331,11 @@ const buildWagmiConfig = async (opts: {
           ...prev,
           ...uniqwith(
             mipdStore.getProviders(),
-            (a, b) => a.info.rdns === b.info.rdns
+            (a, b) => a.info.rdns === b.info.rdns,
           ).map((p) => ({
             rkDetails: { chainGroup: evmChainGroup },
             ...wagmiConfig._internal.connectors.setup(
-              wagmiConfig._internal.connectors.providerDetailToConnector(p)
+              wagmiConfig._internal.connectors.providerDetailToConnector(p),
             ),
           })),
         ]);
@@ -347,9 +347,9 @@ const buildWagmiConfig = async (opts: {
               (p) => ({
                 rkDetails: { chainGroup: evmChainGroup },
                 ...wagmiConfig._internal.connectors.setup(
-                  wagmiConfig._internal.connectors.providerDetailToConnector(p)
+                  wagmiConfig._internal.connectors.providerDetailToConnector(p),
                 ),
-              })
+              }),
             ),
           ]);
         });
@@ -400,7 +400,7 @@ export const useWagmiConfig = () => {
         i18n,
         url: yieldsApiUrl ?? config.env.yieldsApiUrl,
       }),
-    [apiKey, i18n, yieldsApiUrl]
+    [apiKey, i18n, yieldsApiUrl],
   );
 
   const externalProvidersRef = useSavedRef(externalProviders) as

@@ -8,7 +8,7 @@ describe("Under maintenance", () => {
     worker.use(
       http.get("*/v2/health", async () => {
         return HttpResponse.json({ db: "FAIL" });
-      })
+      }),
     );
 
     const app = await renderApp();

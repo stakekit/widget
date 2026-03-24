@@ -121,11 +121,11 @@ export const NumberInput = memo(
             <span ref={spanRef} className={spanStyle}>
               {localState}
             </span>,
-            rootElement
+            rootElement,
           )}
       </motion.div>
     );
-  }
+  },
 );
 
 const stringToBigNumber = (str: string) =>

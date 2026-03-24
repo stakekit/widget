@@ -3,7 +3,7 @@ const cachedResSymbol = Symbol("cachedRes");
 type CacheMap<T> = Map<unknown, { cachedRes: T } | CacheMap<T>>;
 
 export const memoize = <Args extends unknown[], Res>(
-  fn: (...args: Args) => Res
+  fn: (...args: Args) => Res,
 ) => {
   const cache: CacheMap<ReturnType<typeof fn>> = new Map();
 

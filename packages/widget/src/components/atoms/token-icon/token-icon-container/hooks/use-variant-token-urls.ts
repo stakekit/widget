@@ -1,13 +1,16 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { config } from "../../../../../config";
+import type {
+  TokenDto,
+  YieldTokenDto,
+} from "../../../../../domain/types/tokens";
+import type { YieldMetadata } from "../../../../../domain/types/yields";
 import { useSettings } from "../../../../../providers/settings";
-import type { YieldTokenDto } from "../../../../../providers/yield-api-client-provider/types";
 
 export const useVariantTokenUrls = (
   token: TokenDto | YieldTokenDto,
-  metadata?: YieldMetadataDto
+  metadata?: YieldMetadata,
 ): {
   mainUrl: string | undefined;
   fallbackUrl: string | undefined;
@@ -20,7 +23,7 @@ export const useVariantTokenUrls = (
     if (metadata) {
       const mainUrl = Maybe.fromFalsy(variant === "zerion")
         .filter(() =>
-          skETHIconUrlsSuffix.some((v) => metadata.logoURI.endsWith(v))
+          skETHIconUrlsSuffix.some((v) => metadata.logoURI.endsWith(v)),
         )
         .map(() => zerionETHIcon)
         .orDefault(metadata.logoURI);
@@ -36,7 +39,7 @@ export const useVariantTokenUrls = (
     const tokenMappingResult = Maybe.fromNullable(tokenIconMapping)
       .chainNullable((mapping) => {
         if (typeof mapping === "function") {
-          return mapping(token as TokenDto);
+          return mapping(token as Parameters<typeof mapping>[0]);
         }
 
         return mapping[token.symbol];

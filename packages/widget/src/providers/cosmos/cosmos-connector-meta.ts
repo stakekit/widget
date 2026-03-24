@@ -22,5 +22,5 @@ export type ExtraProps = ConnectorWithFilteredChains & {
 export type CosmosConnector = Connector & ExtraProps;
 
 export const isCosmosConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is CosmosConnector => connector.type === configMeta.type;

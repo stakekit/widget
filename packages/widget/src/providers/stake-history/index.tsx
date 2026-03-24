@@ -27,7 +27,7 @@ export const ActionHistoryContextProvider = ({
 
   const value = useMemo(
     () => [data, setActionHistoryData] as const,
-    [data, setActionHistoryData]
+    [data, setActionHistoryData],
   );
 
   return (
@@ -42,7 +42,7 @@ const useActionHistory = () => {
 
   if (context === undefined) {
     throw new Error(
-      "useActionHistory must be used within a ActionHistoryContextProvider"
+      "useActionHistory must be used within a ActionHistoryContextProvider",
     );
   }
 

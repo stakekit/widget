@@ -1,9 +1,3 @@
-import type {
-  ActionDto,
-  TokenDto,
-  TransactionDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
@@ -20,8 +14,10 @@ import {
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 export const setup = () => {
-  const avalancheCToken: TokenDto = {
+  const avalancheCToken: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -29,7 +25,7 @@ export const setup = () => {
     coinGeckoId: "avalanche-2",
     logoURI: "https://assets.stakek.it/tokens/avax.svg",
   };
-  const usdcToken: TokenDto = {
+  const usdcToken: LegacyTokenDto = {
     network: "avalanche-c",
     symbol: "USDC",
     name: "USD Coin",
@@ -52,7 +48,7 @@ export const setup = () => {
           type: "staking",
           gasFeeToken: avalancheCToken,
         },
-      } satisfies YieldDto,
+      } satisfies ReturnType<typeof yieldFixture>,
     }))
     .map((val) => ({
       ...val,
@@ -73,7 +69,7 @@ export const setup = () => {
             gasEstimate: null,
           },
         ],
-      } satisfies ActionDto,
+      } satisfies ReturnType<typeof enterResponseFixture>,
     }))
     .unsafeCoerce();
 
@@ -90,7 +86,7 @@ export const setup = () => {
           type: "staking",
           gasFeeToken: avalancheCToken,
         },
-      } satisfies YieldDto,
+      } satisfies ReturnType<typeof yieldFixture>,
     }))
     .map((val) => ({
       ...val,
@@ -125,13 +121,16 @@ export const setup = () => {
     usdcTokenAmount = amount.toString();
   };
 
-  const yieldsTxGasAmountMap = new Map<YieldDto["id"], string>([]);
+  const yieldsTxGasAmountMap = new Map<
+    ReturnType<typeof yieldFixture>["id"],
+    string
+  >([]);
 
   const setTxGas = ({
     yieldId,
     amount,
   }: {
-    yieldId: YieldDto["id"];
+    yieldId: ReturnType<typeof yieldFixture>["id"];
     amount: string;
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
@@ -192,7 +191,7 @@ export const setup = () => {
         await delay();
 
         return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
-      }
+      },
     ),
     http.get(
       `*/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`,
@@ -200,7 +199,7 @@ export const setup = () => {
         await delay();
 
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
-      }
+      },
     ),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
       await delay();
@@ -209,10 +208,10 @@ export const setup = () => {
       const validators =
         yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
           ? yieldValidatorsFixture(
-              yieldWithSameGasAndStakeToken.yieldDto.validators
+              yieldWithSameGasAndStakeToken.yieldDto.validators,
             )
           : yieldValidatorsFixture(
-              yieldWithDifferentGasAndStakeToken.yieldDto.validators
+              yieldWithDifferentGasAndStakeToken.yieldDto.validators,
             );
 
       return HttpResponse.json({
@@ -232,15 +231,20 @@ export const setup = () => {
 
       return HttpResponse.json({
         ...yieldApiActionFixture({
-          action: selectedYield.actionDto as ActionDto,
+          action: selectedYield.actionDto as ReturnType<
+            typeof enterResponseFixture
+          >,
           address: body.address,
           rawArguments: body.arguments ?? null,
           transactions: selectedYield.actionDto.transactions.map((tx, index) =>
-            yieldApiTransactionFixture(tx as TransactionDto, {
-              gasEstimate: gasAmount,
-              status: "CREATED",
-              stepIndex: index,
-            })
+            yieldApiTransactionFixture(
+              tx as ReturnType<typeof transactionConstructFixture>,
+              {
+                gasEstimate: gasAmount,
+                status: "CREATED",
+                stepIndex: index,
+              },
+            ),
           ),
           overrides: {
             amount: body.arguments?.amount ?? null,
@@ -248,7 +252,7 @@ export const setup = () => {
           },
         }),
       });
-    })
+    }),
   );
 
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";

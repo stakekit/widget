@@ -1,9 +1,9 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import { getTokenBalances } from "../../../../common/get-token-balances";
 import { tokenString } from "../../../../domain";
+import type { TokenDto } from "../../../../domain/types/tokens";
 import { getFirstEligibleYield } from "../../../../hooks/api/use-multi-yields";
 import { getInitParams } from "../../../../hooks/use-init-params";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
@@ -53,7 +53,7 @@ export const useInitYield = ({
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
-          selectedToken.toEither(new Error("no token selected"))
+          selectedToken.toEither(new Error("no token selected")),
         ).chain((token) =>
           getTokenBalances({
             additionalAddresses,
@@ -65,9 +65,9 @@ export const useInitYield = ({
             .chain((val) =>
               EitherAsync.liftEither(
                 Maybe.fromNullable(
-                  getTokenBalancesMap(val).get(tokenString(token))
-                ).toEither(new Error("could not get token balance"))
-              )
+                  getTokenBalancesMap(val).get(tokenString(token)),
+                ).toEither(new Error("could not get token balance")),
+              ),
             )
             .chain((val) =>
               getInitParams({
@@ -89,9 +89,9 @@ export const useInitYield = ({
                   validatorsConfig,
                   preferredTokenYieldsPerNetwork:
                     preferredTokenYieldsPerNetwork ?? null,
-                })
-              )
-            )
+                }),
+              ),
+            ),
         )
       ).unsafeCoerce(),
   });

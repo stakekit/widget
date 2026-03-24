@@ -1,4 +1,3 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
@@ -6,9 +5,11 @@ import { yieldFixture } from "../fixtures";
 import { worker } from "../mocks/worker";
 import { renderApp } from "../utils/test-utils";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 describe("Renders initial page", () => {
   it("Works as expected", async () => {
-    const avalancheCToken: TokenDto = {
+    const avalancheCToken: LegacyTokenDto = {
       name: "Avalanche C Chain",
       symbol: "AVAX",
       decimals: 18,
@@ -17,7 +18,7 @@ describe("Renders initial page", () => {
       logoURI: "https://assets.stakek.it/tokens/avax.svg",
     };
 
-    const ether: TokenDto = {
+    const ether: LegacyTokenDto = {
       network: "ethereum",
       name: "Ethereum",
       symbol: "ETH",
@@ -39,7 +40,7 @@ describe("Renders initial page", () => {
               type: "staking",
               gasFeeToken: avalancheCToken,
             },
-          }) satisfies YieldDto
+          }) satisfies ReturnType<typeof yieldFixture>,
       )
       .unsafeCoerce();
 
@@ -56,7 +57,7 @@ describe("Renders initial page", () => {
               type: "staking",
               gasFeeToken: ether,
             },
-          }) satisfies YieldDto
+          }) satisfies ReturnType<typeof yieldFixture>,
       )
       .unsafeCoerce();
 
@@ -90,7 +91,7 @@ describe("Renders initial page", () => {
         await delay();
 
         return HttpResponse.json(avalancheAvaxNativeStaking);
-      })
+      }),
     );
 
     const app = await renderApp();

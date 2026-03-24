@@ -15,7 +15,7 @@ export const usePositionData = ({
         id: Maybe.fromNullable(integrationId),
         data: Maybe.fromNullable(data),
       }).chainNullable((val) => val.data.get(val.id)),
-    [integrationId, data]
+    [integrationId, data],
   );
 
   return { data: val, ...rest };

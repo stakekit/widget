@@ -1,4 +1,3 @@
-import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
@@ -15,12 +14,14 @@ import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 import { setUrl as _setUrl } from "./utils";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 export const setup = async (opts?: {
   withValidatorAddressesRequired?: boolean;
 }) => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
-  const ether: TokenDto = {
+  const ether: LegacyTokenDto = {
     network: "ethereum",
     name: "Ethereum",
     symbol: "ETH",
@@ -29,7 +30,7 @@ export const setup = async (opts?: {
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };
 
-  const token: TokenDto = {
+  const token: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -42,34 +43,35 @@ export const setup = async (opts?: {
 
   const avaxNativeStaking = Just(yieldFixture())
     .map(
-      (def): YieldDto => ({
+      (def): ReturnType<typeof yieldFixture> => ({
         ...def,
         id: "avalanche-avax-native-staking",
         token,
         tokens: [token],
         metadata: { ...def.metadata, type: "staking" },
         validators: [],
-      })
+      }),
     )
     .unsafeCoerce();
 
-  const avaxLiquidStakingValidators: YieldDto["validators"] =
-    opts?.withValidatorAddressesRequired
-      ? [
-          {
-            address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
-            status: "active",
-            name: "Stakely",
-            image: "https://assets.stakek.it/validators/stakely.png",
-            website: "https://stakely.io/",
-            apr: 0.0393,
-            commission: 0.1,
-            stakedBalance: "2263157",
-            votingPower: 0.0090962642447408,
-            preferred: true,
-          },
-        ]
-      : [];
+  const avaxLiquidStakingValidators: ReturnType<
+    typeof yieldFixture
+  >["validators"] = opts?.withValidatorAddressesRequired
+    ? [
+        {
+          address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
+          status: "active",
+          name: "Stakely",
+          image: "https://assets.stakek.it/validators/stakely.png",
+          website: "https://stakely.io/",
+          apr: 0.0393,
+          commission: 0.1,
+          stakedBalance: "2263157",
+          votingPower: 0.0090962642447408,
+          preferred: true,
+        },
+      ]
+    : [];
 
   const avaxLiquidStaking = Just(yieldFixture())
     .map(
@@ -102,11 +104,11 @@ export const setup = async (opts?: {
             ],
           },
           validators: avaxLiquidStakingValidators,
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>,
     )
     .unsafeCoerce();
 
-  const avaxLiquidStakingBalances: YieldBalanceDto[] = [
+  const avaxLiquidStakingBalances = [
     {
       groupId: "b4684f63-fe54-540d-b0ae-06a2c2ecdb9e",
       type: "rewards",
@@ -317,7 +319,7 @@ export const setup = async (opts?: {
           status: "CONFIRMED",
         }),
       });
-    })
+    }),
   );
 
   let currentChainId = 43114;
@@ -348,7 +350,7 @@ export const setup = async (opts?: {
         default:
           throw new Error("unhandled method");
       }
-    }
+    },
   );
 
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });

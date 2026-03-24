@@ -24,21 +24,21 @@ describe("Trust incentive APY", () => {
     await expect.element(app.getByText("APY composition")).toBeInTheDocument();
     await expect
       .element(
-        app.getByTestId("reward-rate-breakdown__native").getByText("4.27%")
+        app.getByTestId("reward-rate-breakdown__native").getByText("4.27%"),
       )
       .toBeInTheDocument();
     await expect
       .element(
         app
           .getByTestId("reward-rate-breakdown__protocol-incentive")
-          .getByText("0.28%")
+          .getByText("0.28%"),
       )
       .toBeInTheDocument();
     await expect
       .element(
         app
           .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.20%")
+          .getByText("Up to 0.20%"),
       )
       .toBeInTheDocument();
 
@@ -82,21 +82,21 @@ describe("Trust incentive APY", () => {
       .element(
         app
           .getByTestId("personalized-reward-rate-breakdown__native")
-          .getByText("4.27%")
+          .getByText("4.27%"),
       )
       .toBeInTheDocument();
     await expect
       .element(
         app
           .getByTestId("personalized-reward-rate-breakdown__protocol-incentive")
-          .getByText("0.28%")
+          .getByText("0.28%"),
       )
       .toBeInTheDocument();
     await expect
       .element(
         app
           .getByTestId("personalized-reward-rate-breakdown__campaign")
-          .getByText("0.18%")
+          .getByText("0.18%"),
       )
       .toBeInTheDocument();
 

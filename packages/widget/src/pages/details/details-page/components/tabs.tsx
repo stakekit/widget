@@ -106,7 +106,7 @@ export const AnimatedTabs = (props: TabsProps) => {
           .map((val) => ({
             animate: { ...animateTo, transition: val.transition },
             initial: val.initial,
-          }))
+          })),
     )
     .unsafeCoerce();
 

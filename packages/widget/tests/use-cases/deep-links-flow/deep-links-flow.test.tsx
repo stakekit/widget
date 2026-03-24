@@ -32,7 +32,7 @@ describe("Deep links flow", () => {
       .element(
         withAvaxLiquidStakingApp
           .getByText(`${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`)
-          .first()
+          .first(),
       )
       .toBeInTheDocument();
 
@@ -40,7 +40,7 @@ describe("Deep links flow", () => {
       .element(
         withAvaxLiquidStakingApp
           .getByText(`via ${avaxLiquidStaking.metadata.provider.name}`)
-          .first()
+          .first(),
       )
       .toBeInTheDocument();
 
@@ -48,7 +48,7 @@ describe("Deep links flow", () => {
       .element(
         withAvaxLiquidStakingApp
           .getByText(`${APToPercentage(avaxLiquidStaking.rewardRate)}%`)
-          .first()
+          .first(),
       )
       .toBeInTheDocument();
 
@@ -68,7 +68,7 @@ describe("Deep links flow", () => {
       .element(
         withAvaxNativeStakingApp
           .getByText(`${APToPercentage(avaxNativeStaking.rewardRate)}%`)
-          .first()
+          .first(),
       )
       .toBeInTheDocument();
 
@@ -93,7 +93,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By clicking confirm you agree to", { exact: false }),
       )
       .toBeInTheDocument();
 
@@ -150,7 +150,7 @@ describe("Deep links flow", () => {
 
     await expect
       .element(
-        app.getByText("By clicking confirm you agree to", { exact: false })
+        app.getByText("By clicking confirm you agree to", { exact: false }),
       )
       .toBeInTheDocument();
 

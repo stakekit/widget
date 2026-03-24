@@ -1,4 +1,3 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -13,6 +12,8 @@ import {
 } from "react";
 import { equalTokens } from "../../../../domain";
 import { isNetworkWithEnterMinBasedOnPosition } from "../../../../domain/types/stake";
+import type { TokenDto } from "../../../../domain/types/tokens";
+import type { Yield } from "../../../../domain/types/yields";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
@@ -28,10 +29,10 @@ import { useTrackStateEvents } from "./use-track-state-events";
 import { onYieldSelectState } from "./utils";
 
 const EarnPageStateContext = createContext<(State & ExtraData) | undefined>(
-  undefined
+  undefined,
 );
 const EarnPageDispatchContext = createContext<Dispatch<Actions> | undefined>(
-  undefined
+  undefined,
 );
 const EarnPageStateUsageBoundary = createContext<boolean>(false);
 
@@ -68,7 +69,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         return Maybe.fromFalsy(
           state.selectedToken
             .map((v) => !equalTokens(v, action.data))
-            .orDefault(true)
+            .orDefault(true),
         )
           .chain(() =>
             getInitYield({ selectedToken: action.data })
@@ -76,9 +77,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
                 onYieldSelectState({
                   yieldDto: val,
                   positionsData: positionsData.data,
-                })
+                }),
               )
-              .alt(Maybe.of(null))
+              .alt(Maybe.of(null)),
           )
           .map((val) => ({
             ...getInitialState(),
@@ -90,13 +91,15 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
       case "yield/select": {
         return Maybe.fromFalsy(
-          state.selectedStakeId.map((v) => v !== action.data.id).orDefault(true)
+          state.selectedStakeId
+            .map((v) => v !== action.data.id)
+            .orDefault(true),
         )
           .map(() =>
             onYieldSelectState({
               yieldDto: action.data,
               positionsData: positionsData.data,
-            })
+            }),
           )
           .map((val) => ({
             ...getInitialState(),
@@ -191,13 +194,13 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const initTokenRes = useInitToken();
   const initToken = useMemo(
     () => Maybe.fromNullable(initTokenRes.data),
-    [initTokenRes.data]
+    [initTokenRes.data],
   );
 
   const initYieldRes = useInitYield({ selectedToken });
   const initYield = useMemo(
     () => Maybe.fromNullable(initYieldRes.data),
-    [initYieldRes.data]
+    [initYieldRes.data],
   );
 
   const { availableAmount, availableYields } = useTokenBalance({
@@ -216,7 +219,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
 
   const selectedStake = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
-    [yieldOpportunity.data]
+    [yieldOpportunity.data],
   );
 
   /**
@@ -224,17 +227,17 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
    */
   const stakeAmount = useMemo(
     () => (isForceMax ? maxEnterOrExitAmount : _stakeAmount),
-    [isForceMax, maxEnterOrExitAmount, _stakeAmount]
+    [isForceMax, maxEnterOrExitAmount, _stakeAmount],
   );
 
   const setToken = useCallback(
     (token: TokenDto) => dispatch({ type: "token/select", data: token }),
-    []
+    [],
   );
 
   const setYield = useCallback(
-    (yieldDto: YieldDto) => dispatch({ type: "yield/select", data: yieldDto }),
-    []
+    (yieldDto: Yield) => dispatch({ type: "yield/select", data: yieldDto }),
+    [],
   );
 
   /**
@@ -270,10 +273,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
         .filter(
           (it) =>
             isNetworkWithEnterMinBasedOnPosition(it.network as Networks) &&
-            positionsData.isPending
+            positionsData.isPending,
         )
         .isJust(),
-    [initToken, positionsData]
+    [initToken, positionsData],
   );
 
   /**
@@ -312,7 +315,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
    */
   useEffect(() => {
     initToken.ifNothing(() =>
-      selectedToken.ifJust(() => dispatch({ type: "state/reset" }))
+      selectedToken.ifJust(() => dispatch({ type: "state/reset" })),
     );
   }, [initToken, selectedToken]);
 
@@ -323,7 +326,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       onMaxClick: () =>
         dispatch({ type: "stakeAmount/max", data: maxEnterOrExitAmount }),
     }),
-    [maxEnterOrExitAmount]
+    [maxEnterOrExitAmount],
   );
 
   const {
@@ -374,7 +377,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       availableYields,
       hasNotYieldsForToken,
       selectedProviderYieldId,
-    ]
+    ],
   );
 
   return (

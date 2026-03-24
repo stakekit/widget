@@ -1,4 +1,3 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -10,9 +9,10 @@ import { ToolTip } from "../../../../components/atoms/tooltip";
 import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
+import type { TokenDto, YieldTokenDto } from "../../../../domain/types/tokens";
+import type { YieldMetadata } from "../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
-import type { YieldTokenDto } from "../../../../providers/yield-api-client-provider/types";
 import { MetaInfo } from "../../../components/meta-info";
 import { PageContainer } from "../../../components/page-container";
 import type { FeesBps } from "../../types";
@@ -27,7 +27,7 @@ type ReviewPageProps = {
   fee: string;
   title: string;
   token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<YieldMetadataDto>;
+  metadata: Maybe<YieldMetadata>;
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;

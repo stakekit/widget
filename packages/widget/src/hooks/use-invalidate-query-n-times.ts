@@ -35,8 +35,8 @@ export const useInvalidateQueryNTimes = ({
           EitherAsync(async () => {
             await waitForMs(waitMs);
             await queryClient.invalidateQueries({ queryKey });
-          }).chainLeft(async () => Right(null))
-        )
+          }).chainLeft(async () => Right(null)),
+        ),
       );
 
       return null;

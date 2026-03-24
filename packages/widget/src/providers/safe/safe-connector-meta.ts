@@ -25,5 +25,5 @@ export type ExtraProps = ConnectorWithFilteredChains & {
 type SafeConnector = Connector & ExtraProps;
 
 export const isSafeConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is SafeConnector => connector.id === configMeta.id;

@@ -1,10 +1,10 @@
 import { Trigger } from "@radix-ui/react-dialog";
-import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
+import type { ValidatorDto } from "../../../domain/types/validators";
 import { breakWord } from "../../../pages/details/earn-page/styles.css";
 import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";

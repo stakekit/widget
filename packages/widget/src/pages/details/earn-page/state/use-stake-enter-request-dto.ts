@@ -1,9 +1,16 @@
-import type { AddressesDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { YieldCreateActionDto } from "../../../../domain/types/action";
+import type { AddressesDto } from "../../../../domain/types/addresses";
+import type { ValidatorDto } from "../../../../domain/types/validators";
+import {
+  getYieldActionArg,
+  getYieldGasFeeToken,
+  isYieldIntegrationAggregator,
+  type Yield,
+} from "../../../../domain/types/yields";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { withAdditionalAddresses } from "../../../../providers/yield-api-client-provider/request-helpers";
-import type { YieldCreateActionDto } from "../../../../providers/yield-api-client-provider/types";
 import { useEarnPageState } from "./earn-page-state-context";
 
 export const useStakeEnterRequestDto = () => {
@@ -26,10 +33,10 @@ export const useStakeEnterRequestDto = () => {
         selectedToken,
       }).map<{
         addresses: AddressesDto;
-        gasFeeToken: YieldDto["token"];
+        gasFeeToken: Yield["token"];
         dto: YieldCreateActionDto;
         selectedValidators: Map<string, ValidatorDto>;
-        selectedStake: YieldDto;
+        selectedStake: Yield;
       }>(({ address, selectedStake, selectedToken }) => {
         const validatorsOrProvider = Just(selectedStake)
           .chain<
@@ -45,19 +52,24 @@ export const useStakeEnterRequestDto = () => {
           >((val) => {
             const validators = [...selectedValidators.values()];
 
-            if (val.metadata.isIntegrationAggregator) {
+            if (isYieldIntegrationAggregator(val)) {
               return List.head(validators).map((v) => ({
                 providerId: v.providerId,
               }));
             }
-            if (val.args.enter.args?.validatorAddresses?.required) {
+            if (
+              getYieldActionArg(val, "enter", "validatorAddresses")?.required
+            ) {
               return Just({
                 validatorAddresses: validators.map((v) => v.address),
               });
             }
 
-            const subnetIdRequired =
-              !!selectedStake.args.enter.args?.subnetId?.required;
+            const subnetIdRequired = !!getYieldActionArg(
+              selectedStake,
+              "enter",
+              "subnetId",
+            )?.required;
 
             return List.head(validators).map((v) => ({
               validatorAddress: v.address,
@@ -69,7 +81,7 @@ export const useStakeEnterRequestDto = () => {
         return {
           selectedValidators,
           selectedStake: selectedStake,
-          gasFeeToken: selectedStake.metadata.gasFeeToken,
+          gasFeeToken: getYieldGasFeeToken(selectedStake),
           addresses: {
             address,
             additionalAddresses: additionalAddresses ?? undefined,
@@ -103,6 +115,6 @@ export const useStakeEnterRequestDto = () => {
       useMaxAmount,
       tronResource,
       selectedProviderYieldId,
-    ]
+    ],
   );
 };

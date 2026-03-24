@@ -3,13 +3,13 @@ import { useMemo } from "react";
 import type { PositionBalancesByType } from "../domain/types/positions";
 
 export const useStakedOrLiquidBalance = (
-  positionBalancesByType: Maybe<PositionBalancesByType>
+  positionBalancesByType: Maybe<PositionBalancesByType>,
 ) => {
   return useMemo(
     () =>
       positionBalancesByType.chain((pbbt) =>
-        Maybe.fromNullable(pbbt.get("active"))
+        Maybe.fromNullable(pbbt.get("active")),
       ),
-    [positionBalancesByType]
+    [positionBalancesByType],
   );
 };

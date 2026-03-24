@@ -1,4 +1,3 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
@@ -7,10 +6,12 @@ import { yieldFixture } from "../fixtures";
 import { worker } from "../mocks/worker";
 import { renderApp } from "../utils/test-utils";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 describe("Select opportunity", () => {
   // This loads cosmos wagmi config, which takes some time, so we need to increase the timeout
   it("Works as expected", { timeout: 20000 }, async () => {
-    const token: TokenDto = {
+    const token: LegacyTokenDto = {
       network: "ethereum",
       name: "Ethereum",
       symbol: "ETH",
@@ -118,11 +119,11 @@ describe("Select opportunity", () => {
                 ...mock.status,
                 enter: integrationId !== "ethereum-eth-stakewise-staking",
               },
-            } as YieldDto;
+            } as ReturnType<typeof yieldFixture>;
           })
           .map((val) => HttpResponse.json(val))
           .unsafeCoerce();
-      })
+      }),
     );
 
     const app = await renderApp();
@@ -147,24 +148,24 @@ describe("Select opportunity", () => {
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-lido-staking/
-        )
+          /^select-opportunity__item_ethereum-eth-lido-staking/,
+        ),
       )
       .toBeInTheDocument();
 
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-reth-staking/
-        )
+          /^select-opportunity__item_ethereum-eth-reth-staking/,
+        ),
       )
       .toBeInTheDocument();
 
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-stakewise-staking/
-        )
+          /^select-opportunity__item_ethereum-eth-stakewise-staking/,
+        ),
       )
       .not.toBeInTheDocument();
 

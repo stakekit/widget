@@ -1,12 +1,10 @@
-import type {
-  TokenBalanceScanResponseDto,
-  TokenDto,
-  TronResourceType,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
+import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
+import type { TokenDto } from "../../../../domain/types/tokens";
+import type { TronResourceType } from "../../../../domain/types/tron";
+import type { ValidatorDto } from "../../../../domain/types/validators";
+import type { Yield } from "../../../../domain/types/yields";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -14,7 +12,7 @@ import type { Action } from "../../../../types/utils";
 import type { SelectedStakeData } from "../types";
 
 export type State = {
-  selectedToken: Maybe<TokenBalanceScanResponseDto["token"]>;
+  selectedToken: Maybe<TokenDto>;
   selectedStakeId: Maybe<
     TokenBalanceScanResponseDto["availableYields"][number]
   >;
@@ -22,11 +20,11 @@ export type State = {
   stakeAmount: BigNumber;
   useMaxAmount: boolean;
   tronResource: Maybe<TronResourceType>;
-  selectedProviderYieldId: Maybe<YieldDto["id"]>;
+  selectedProviderYieldId: Maybe<Yield["id"]>;
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
-type YieldSelectAction = Action<"yield/select", YieldDto>;
+type YieldSelectAction = Action<"yield/select", Yield>;
 
 type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
 type StakeAmountMaxAction = Action<"stakeAmount/max", BigNumber>;
@@ -40,7 +38,7 @@ type SelectTronResourceAction = Action<"tronResource/select", TronResourceType>;
 
 type ProviderYieldIdSelectAction = Action<
   "providerYieldId/select",
-  YieldDto["id"]
+  Yield["id"]
 >;
 
 export type Actions =
@@ -57,7 +55,7 @@ export type Actions =
 
 export type ExtraData = {
   actions: { onMaxClick: () => void };
-  selectedStake: Maybe<YieldDto>;
+  selectedStake: Maybe<Yield>;
   stakeAmountLessThanMin: boolean;
   stakeAmountGreaterThanMax: boolean;
   stakeAmountGreaterThanAvailableAmount: boolean;
@@ -128,7 +126,7 @@ export type EarnPageContextType = {
       stakeAmountIsZero: boolean;
     };
   };
-  pointsRewardTokens: Maybe<TokenDto[]>;
+  pointsRewardTokens: Maybe<(TokenDto & { isPoints?: boolean })[]>;
   selectTokenIsLoading: boolean;
   selectYieldIsLoading: boolean;
   selectValidatorIsLoading: boolean;

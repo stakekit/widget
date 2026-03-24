@@ -1,8 +1,8 @@
 import type { ChainWalletBase } from "@cosmos-kit/core";
-import type { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import type { Connector } from "wagmi";
+import type { AddressWithTokenDtoAdditionalAddresses } from "../../domain/types/addresses";
 import { getStorageItem } from "../../services/local-storage";
 import type { CosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
@@ -49,7 +49,7 @@ const getAdditionalAddresses = (args: {
     return getCosmosPubKey(args).map(
       (pubKey): AddressWithTokenDtoAdditionalAddresses => ({
         cosmosPubKey: pubKey,
-      })
+      }),
     );
   }
 
@@ -67,8 +67,8 @@ const getCosmosPubKey = (args: {
       return EitherAsync(() => args.connector.getAccounts())
         .chain((accs) =>
           EitherAsync.liftEither(
-            List.head(accs).toEither(new Error("no account"))
-          )
+            List.head(accs).toEither(new Error("no account")),
+          ),
         )
         .chain((acc) => {
           const skPubKey = prevSkPubKeys[acc];
@@ -82,7 +82,7 @@ const getCosmosPubKey = (args: {
     })
     .chainLeft(() =>
       EitherAsync(() =>
-        args.chainWallet.client.getAccount!(args.chainWallet.chainId)
+        args.chainWallet.client.getAccount?.(args.chainWallet.chainId),
       )
         .mapLeft((e) => {
           console.log("missing account error: ", e);
@@ -90,5 +90,5 @@ const getCosmosPubKey = (args: {
         })
         .map((account) => {
           return args.connector.toBase64(account.pubkey);
-        })
+        }),
     );

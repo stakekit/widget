@@ -26,7 +26,7 @@ export const getConfig = (opts: { queryClient: QueryClient }) =>
       staleTime,
       queryKey,
       queryFn: () => queryFn(),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get safe config");

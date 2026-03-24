@@ -18,7 +18,7 @@ export const useAmountValidation = ({
       availableAmount
         .map(() => stakeAmount.isLessThan(minEnterOrExitAmount))
         .orDefault(false),
-    [availableAmount, stakeAmount, minEnterOrExitAmount]
+    [availableAmount, stakeAmount, minEnterOrExitAmount],
   );
 
   const stakeAmountGreaterThanMax = useMemo(
@@ -26,12 +26,12 @@ export const useAmountValidation = ({
       availableAmount
         .map(() => stakeAmount.isGreaterThan(maxEnterOrExitAmount))
         .orDefault(false),
-    [availableAmount, stakeAmount, maxEnterOrExitAmount]
+    [availableAmount, stakeAmount, maxEnterOrExitAmount],
   );
 
   const stakeAmountIsZero = useMemo(
     () => availableAmount.map(() => stakeAmount.isZero()).orDefault(false),
-    [stakeAmount, availableAmount]
+    [stakeAmount, availableAmount],
   );
 
   const stakeAmountGreaterThanAvailableAmount = useMemo(
@@ -39,7 +39,7 @@ export const useAmountValidation = ({
       availableAmount
         .map((val) => stakeAmount.isGreaterThan(val))
         .orDefault(false),
-    [availableAmount, stakeAmount]
+    [availableAmount, stakeAmount],
   );
 
   return {

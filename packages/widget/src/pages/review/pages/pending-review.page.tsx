@@ -1,5 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
@@ -21,7 +22,7 @@ export const PendingReviewPage = () => {
 
   const info = useMemo(
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
-    [amount, token]
+    [amount, token],
   );
 
   const { depositFee, managementFee, performanceFee, feeConfigLoading } =
@@ -32,7 +33,7 @@ export const PendingReviewPage = () => {
         performanceFee: Maybe.empty(),
         feeConfigLoading: false,
       }),
-      []
+      [],
     );
 
   return (
@@ -45,7 +46,7 @@ export const PendingReviewPage = () => {
       performanceFee={performanceFee}
       feeConfigLoading={feeConfigLoading}
       info={info}
-      metadata={integrationData.map((val) => val.metadata)}
+      metadata={integrationData.map(getYieldMetadata)}
       token={token}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}

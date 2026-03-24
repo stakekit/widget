@@ -1,5 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { UnstakeSignPopup } from "../../position-details/components/unstake-sign-popup";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
@@ -25,7 +26,7 @@ export const UnstakeReviewPage = () => {
 
   const info = useMemo(
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
-    [amount, token]
+    [amount, token],
   );
 
   const { depositFee, managementFee, performanceFee, feeConfigLoading } =
@@ -36,7 +37,7 @@ export const UnstakeReviewPage = () => {
         performanceFee: Maybe.empty(),
         feeConfigLoading: false,
       }),
-      []
+      [],
     );
 
   return (
@@ -50,7 +51,7 @@ export const UnstakeReviewPage = () => {
         performanceFee={performanceFee}
         feeConfigLoading={feeConfigLoading}
         info={info}
-        metadata={integrationData.map((d) => d.metadata)}
+        metadata={integrationData.map(getYieldMetadata)}
         token={token}
         isGasCheckError={isGasCheckWarning}
         loading={gasCheckLoading}

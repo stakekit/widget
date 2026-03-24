@@ -55,7 +55,7 @@ export type SelectModalProps = SelectModalWithoutStateProps & {
 };
 
 const SelectModalContext = createContext<SelectModalContextType | undefined>(
-  undefined
+  undefined,
 );
 
 const useSelectModalContext = () => {
@@ -209,7 +209,7 @@ export const SelectModal = ({ state, ...props }: SelectModalProps) => {
         isOpen,
         setOpen: (val) => setOpen(val),
       },
-    [isOpen, state]
+    [isOpen, state],
   );
 
   return (

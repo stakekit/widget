@@ -11,7 +11,7 @@ import {
  */
 export const tokenTokenBalancesScan = (
   tokenBalanceScanDto: TokenBalanceScanDto,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) => {
   return customFetch<TokenBalanceScanResponseDto[]>({
     url: "/v1/tokens/balances/scan",
@@ -29,7 +29,7 @@ export const tokenTokenBalancesScan = (
 export const yieldYieldOpportunity = (
   integrationId: string,
   params?: { ledgerWalletAPICompatible?: boolean },
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ) => {
   return customFetch<YieldDto>({
     url: `/v1/yields/${integrationId}`,

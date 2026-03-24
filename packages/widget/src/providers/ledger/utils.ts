@@ -46,7 +46,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 
       return acc;
     },
-    { accountsFamilies: new Set(), accountsCurrencies: new Set() }
+    { accountsFamilies: new Set(), accountsCurrencies: new Set() },
   );
 
   const v = typeSafeObjectEntries(supportedLedgerFamiliesWithCurrency).reduce(
@@ -82,7 +82,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
 
         if (
           ledgerChainPriority.has(
-            item.skChainName as unknown as SupportedSKChains
+            item.skChainName as unknown as SupportedSKChains,
           )
         ) {
           // biome-ignore lint: false
@@ -95,7 +95,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
       // biome-ignore lint: false
       return { ...acc, [k]: filtered };
     },
-    {} as MappedSupportedLedgerFamiliesWithCurrency
+    {} as MappedSupportedLedgerFamiliesWithCurrency,
   );
 
   type V = typeof v;
@@ -129,7 +129,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
           enabled: boolean;
         }
       >
-    >()
+    >(),
   );
 };
 
@@ -151,9 +151,9 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
   EitherAsync(() =>
     walletAPIClient.currency.list({
       currencyIds: Object.values(supportedLedgerFamiliesWithCurrency).flatMap(
-        (chain) => Object.values(chain).map((currency) => currency.currencyId)
+        (chain) => Object.values(chain).map((currency) => currency.currencyId),
       ),
-    })
+    }),
   )
     .map((val) => {
       return val.reduce(
@@ -169,7 +169,7 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
         { cryptoCurrency: new Map(), tokenCurrency: [] } as {
           cryptoCurrency: Map<Currency["id"], CryptoCurrency["family"]>;
           tokenCurrency: ERC20TokenCurrency[];
-        }
+        },
       );
     })
     .map((v) => {

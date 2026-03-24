@@ -17,5 +17,5 @@ export type StorageItem = {
 };
 
 export const isTonConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is TonConnector => connector.type === "tonWallet";

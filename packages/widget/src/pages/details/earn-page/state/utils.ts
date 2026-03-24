@@ -1,14 +1,14 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import { List, Maybe } from "purify-ts";
 import type { PositionsData } from "../../../../domain/types/positions";
 import { getMinStakeAmount } from "../../../../domain/types/stake";
+import { getYieldActionArg, type Yield } from "../../../../domain/types/yields";
 import type { State } from "./types";
 
 export const onYieldSelectState = ({
   yieldDto,
   positionsData,
 }: {
-  yieldDto: YieldDto;
+  yieldDto: Yield;
   positionsData: PositionsData;
 }): Pick<
   State,
@@ -22,11 +22,11 @@ export const onYieldSelectState = ({
   stakeAmount: getMinStakeAmount(yieldDto, positionsData),
   selectedValidators: new Map(),
   tronResource: Maybe.fromFalsy(
-    yieldDto.args.enter.args?.tronResource?.required
+    getYieldActionArg(yieldDto, "enter", "tronResource")?.required,
   ).map(() => "ENERGY"),
   selectedProviderYieldId: Maybe.fromNullable(
-    yieldDto.args.enter.args?.providerId
+    getYieldActionArg(yieldDto, "enter", "providerId"),
   )
-    .filter((val) => val.required)
-    .chain((val) => List.head(val.options)),
+    .filter((val) => !!val.required && !!val.options?.length)
+    .chain((val) => List.head(val.options ?? [])),
 });

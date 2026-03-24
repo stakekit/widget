@@ -20,7 +20,7 @@ type LocalStorageValue<K extends keyof LocalStorageKV> = GetType<
 >;
 
 export const getStorageItem = <K extends keyof LocalStorageKV>(
-  key: K
+  key: K,
 ): Either<Error, LocalStorageValue<K> | null> => {
   const w = MaybeWindow.extractNullable();
 
@@ -36,23 +36,23 @@ export const getStorageItem = <K extends keyof LocalStorageKV>(
       codecs[key]
         .decode(parsedVal)
         .map((val) => val as LocalStorageValue<K>)
-        .mapLeft((e) => new Error(e))
+        .mapLeft((e) => new Error(e)),
     );
 };
 
 export const setStorageItem = <K extends keyof LocalStorageKV>(
   key: K,
-  value: GetType<(typeof codecs)[K]>
+  value: GetType<(typeof codecs)[K]>,
 ) => {
   const w = MaybeWindow.extractNullable();
 
   return Either.encase(() =>
-    w?.localStorage.setItem(key, JSON.stringify(value))
+    w?.localStorage.setItem(key, JSON.stringify(value)),
   ).ifRight(() => notify(key));
 };
 
 type Listener<K extends keyof LocalStorageKV = keyof LocalStorageKV> = (
-  val: GetType<(typeof codecs)[K]>
+  val: GetType<(typeof codecs)[K]>,
 ) => void;
 
 const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
@@ -62,7 +62,7 @@ const listeners: { [Key in keyof LocalStorageKV]: Map<Listener, Listener> } = {
 
 export const addLocalStorageListener = <K extends keyof LocalStorageKV>(
   key: K,
-  listener: Listener<K>
+  listener: Listener<K>,
 ) => {
   listeners[key].set(listener, listener);
 
@@ -73,6 +73,6 @@ const notify = (key: keyof LocalStorageKV) => {
   getStorageItem(key).ifRight((val) =>
     listeners[key].forEach((listener) => {
       listener(val as GetType<(typeof codecs)[typeof key]>);
-    })
+    }),
   );
 };

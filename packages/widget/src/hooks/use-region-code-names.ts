@@ -11,8 +11,8 @@ export const useRegionCodeName = (regionCode: Nullable<string>) => {
       (
         await EitherAsync.liftEither(
           Maybe.fromNullable(regionCode).toEither(
-            new Error("missing regionCode")
-          )
+            new Error("missing regionCode"),
+          ),
         ).chain((region) =>
           EitherAsync(() => import("../utils/region-iso-3166-codes"))
             .mapLeft(() => new Error("Failed to load region-iso-3166-codes"))
@@ -20,10 +20,10 @@ export const useRegionCodeName = (regionCode: Nullable<string>) => {
               EitherAsync.liftEither(
                 Maybe.fromNullable(
                   val.countries[region as keyof typeof val.countries]
-                    .subdivisionName
-                ).toEither(new Error("region not found"))
-              )
-            )
+                    .subdivisionName,
+                ).toEither(new Error("region not found")),
+              ),
+            ),
         )
       ).unsafeCoerce(),
   });

@@ -1,19 +1,18 @@
-import type {
-  ActionDto,
-  TokenDto,
-  TransactionDto,
-  TransactionStatus,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, type Maybe, Right } from "purify-ts";
 import type { Override } from "../types/utils";
+import type {
+  ActionDto,
+  TransactionDto,
+  TransactionStatus,
+} from "./types/action";
 import type { AnyPendingActionDto } from "./types/pending-action";
 import {
   isPendingActionValidatorAddressesRequired,
   isPendingActionValidatorAddressRequired,
 } from "./types/pending-action";
-import type { TokenString } from "./types/tokens";
+import type { TokenDto, TokenString } from "./types/tokens";
+import { getYieldGasFeeToken, type Yield } from "./types/yields";
 
 export { getTokenPriceInUSD } from "./types/price";
 
@@ -34,7 +33,7 @@ export const stakeTokenSameAsGasToken = ({
   yieldDto,
 }: {
   stakeToken: TokenDto;
-  yieldDto: YieldDto;
+  yieldDto: Yield;
 }) => equalTokens(stakeToken, getGasFeeToken(yieldDto));
 
 export const getMaxAmount = ({
@@ -49,15 +48,15 @@ export const getMaxAmount = ({
   return BigNumber.max(
     BigNumber.min(
       integrationMaxLimit.orDefault(BigNumber(Number.POSITIVE_INFINITY)),
-      availableAmount.minus(gasEstimateTotal)
+      availableAmount.minus(gasEstimateTotal),
     ),
-    new BigNumber(0)
+    new BigNumber(0),
   );
 };
 
-export const getBaseToken = (yieldDto: YieldDto) => yieldDto.metadata.token;
-export const getGasFeeToken = (yieldDto: YieldDto) =>
-  yieldDto.metadata.gasFeeToken;
+export const getBaseToken = (yieldDto: Yield) => yieldDto.token;
+export const getGasFeeToken = (yieldDto: Yield) =>
+  getYieldGasFeeToken(yieldDto);
 
 /**
  *
@@ -69,7 +68,7 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
     ...stakeDto,
     transactions: stakeDto.transactions.filter(
       (
-        tx
+        tx,
       ): tx is Override<
         TransactionDto,
         {
@@ -78,7 +77,7 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
             Exclude<TransactionDto["status"], "SKIPPED">
           >;
         }
-      > => tx.status !== "SKIPPED"
+      > => tx.status !== "SKIPPED",
     ),
   };
 

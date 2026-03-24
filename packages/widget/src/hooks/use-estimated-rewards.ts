@@ -1,8 +1,11 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { isBittensorStaking } from "../domain/types/yields";
+import {
+  getYieldRewardType,
+  isBittensorStaking,
+  type Yield,
+} from "../domain/types/yields";
 import type { State } from "../pages/details/earn-page/state/types";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
@@ -14,7 +17,7 @@ export const useEstimatedRewards = ({
   selectedValidators,
   selectedProviderYieldId,
 }: {
-  selectedStake: Maybe<YieldDto>;
+  selectedStake: Maybe<Yield>;
   stakeAmount: State["stakeAmount"];
   selectedValidators: State["selectedValidators"];
   selectedProviderYieldId: State["selectedProviderYieldId"];
@@ -46,18 +49,18 @@ export const useEstimatedRewards = ({
           rewardRateAverage: val.providersDetails
             .reduce(
               (acc, val) => acc.plus(new BigNumber(val.rewardRate ?? 0)),
-              new BigNumber(0)
+              new BigNumber(0),
             )
             .dividedBy(val.providersDetails.length),
         }))
         .map((val) => ({
           percentage: getRewardRateFormatted({
             rewardRate: val.rewardRateAverage.toNumber(),
-            rewardType: val.selectedStake.rewardType,
+            rewardType: getYieldRewardType(val.selectedStake),
           }),
           yearly: val.rewardRateAverage.isGreaterThan(0)
             ? formatNumber(
-                correctAmount.times(val.rewardRateAverage).decimalPlaces(5)
+                correctAmount.times(val.rewardRateAverage).decimalPlaces(5),
               )
             : "-",
           monthly: val.rewardRateAverage.isGreaterThan(0)
@@ -65,10 +68,10 @@ export const useEstimatedRewards = ({
                 correctAmount
                   .times(val.rewardRateAverage)
                   .dividedBy(12)
-                  .decimalPlaces(5)
+                  .decimalPlaces(5),
               )
             : "-",
         })),
-    [providersDetails, selectedStake, correctAmount]
+    [providersDetails, selectedStake, correctAmount],
   );
 };

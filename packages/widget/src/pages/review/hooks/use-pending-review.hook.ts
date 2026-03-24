@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
@@ -26,7 +27,7 @@ export const usePendingActionReview = () => {
 
   const pendingRequest = useSelector(
     pendingActionStore,
-    (state) => state.context.data
+    (state) => state.context.data,
   ).unsafeCoerce();
 
   const actionPreviewQuery = useQuery({
@@ -47,29 +48,28 @@ export const usePendingActionReview = () => {
       Maybe.fromNullable(actionPreviewQuery.data)
         .map((actionDto) =>
           actionDto.transactions.reduce(
-            (acc, transaction) =>
-              acc.plus(transaction.gasEstimate?.amount ?? 0),
-            new BigNumber(0)
-          )
+            (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
+            new BigNumber(0),
+          ),
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),
-    [actionPreviewQuery.data]
+    [actionPreviewQuery.data],
   );
 
   const amount = useMemo(
     () => new BigNumber(pendingRequest.requestDto.arguments?.amount ?? 0),
-    [pendingRequest.requestDto.arguments?.amount]
+    [pendingRequest.requestDto.arguments?.amount],
   );
 
   const interactedToken = useMemo(
     () => Maybe.of(pendingRequest.interactedToken),
-    [pendingRequest.interactedToken]
+    [pendingRequest.interactedToken],
   );
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),
-    [pendingRequest.integrationData]
+    [pendingRequest.integrationData],
   );
 
   const pricesState = useTokensPrices({
@@ -93,10 +93,10 @@ export const usePendingActionReview = () => {
         t(
           `position_details.pending_action_button.${
             pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
-          }` as const
-        )
+          }` as const,
+        ),
       ),
-    [pendingRequest.requestDto.action, t]
+    [pendingRequest.requestDto.action, t],
   );
 
   const navigate = useNavigate();
@@ -108,7 +108,7 @@ export const usePendingActionReview = () => {
         prices: Maybe.fromNullable(pricesState.data),
         yieldDto: integrationData,
       }),
-    [integrationData, pendingTxGas, pricesState.data]
+    [integrationData, pendingTxGas, pricesState.data],
   );
 
   const actionPendingMutation = useMutation({
@@ -127,11 +127,11 @@ export const usePendingActionReview = () => {
   const rewardTokenDetailsProps = useMemo(
     () =>
       integrationData
-        .chainNullable((v) =>
-          v.metadata.provider
-            ? { provider: v.metadata.provider, rest: v }
-            : null
-        )
+        .chainNullable((v) => {
+          const provider = getYieldProviderDetails(v);
+
+          return provider ? { provider, rest: v } : null;
+        })
         .map((v) => {
           const rewardToken = Maybe.of({
             logoUri: v.provider.logoURI,
@@ -146,7 +146,7 @@ export const usePendingActionReview = () => {
             rewardToken,
           } satisfies ComponentProps<typeof RewardTokenDetails>;
         }),
-    [integrationData, pendingRequest.requestDto.action]
+    [integrationData, pendingRequest.requestDto.action],
   );
 
   const onClickRef = useSavedRef(onClick);
@@ -159,8 +159,8 @@ export const usePendingActionReview = () => {
         disabled: false,
         isLoading: actionPendingMutation.isPending,
       }),
-      [onClickRef, t, actionPendingMutation.isPending]
-    )
+      [onClickRef, t, actionPendingMutation.isPending],
+    ),
   );
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);

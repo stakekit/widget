@@ -4,6 +4,7 @@ import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Spinner } from "../../../components/atoms/spinner";
 import { SelectValidator } from "../../../components/molecules/select-validator";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { AmountBlock } from "../../../pages/position-details/components/amount-block";
 import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
@@ -11,7 +12,7 @@ import type { YieldPendingActionType } from "../../../providers/yield-api-client
 import { container } from "./styles.css";
 
 export const positionDetailsActionsHasContent = (
-  val: ReturnType<typeof usePositionDetails>
+  val: ReturnType<typeof usePositionDetails>,
 ) =>
   Maybe.fromRecord({
     integrationData: val.integrationData,
@@ -26,7 +27,7 @@ export const positionDetailsActionsHasContent = (
             canChangeUnstakeAmount: val.canChangeUnstakeAmount,
             unstakeToken: val.unstakeToken,
           }).map(() => true),
-        ]).length > 0
+        ]).length > 0,
     )
     .isJust();
 
@@ -104,7 +105,7 @@ export const PositionDetailsActions = () => {
                     label={t(
                       `position_details.pending_action_button.${
                         val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                      }`
+                      }`,
                     )}
                     onMaxClick={null}
                     formattedAmount={val.formattedAmount}
@@ -117,8 +118,8 @@ export const PositionDetailsActions = () => {
                     onPendingActionClick={onPendingActionClick}
                     yieldId={v.integrationData.id}
                   />
-                )
-              )
+                ),
+              ),
             )
             .extractNullable()}
 
@@ -151,14 +152,14 @@ export const PositionDetailsActions = () => {
                   unstakeAmountError={unstakeAmountError}
                   onMaxClick={onMaxClick}
                   label={t(
-                    `position_details.unstake_label.${v.integrationData.metadata.type}`
+                    `position_details.unstake_label.${getYieldMetadata(v.integrationData).type}`,
                   )}
                   formattedAmount={unstakeFormattedAmount}
                   balance={reducedStakedOrLiquidBalance}
                   yieldDto={v.integrationData}
                   validators={providersDetails.orDefault([])}
                 />
-              )
+              ),
             )
             .extractNullable()}
         </Box>

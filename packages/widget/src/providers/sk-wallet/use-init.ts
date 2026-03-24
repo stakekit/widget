@@ -43,16 +43,16 @@ export const useInit = () => {
             return EitherAsync.liftEither(
               List.find(
                 (c) => c.id === "injected" || c.id === safeConfigMeta.id,
-                config.connectors as Connector[]
-              ).toEither(new Error("Could not find injected connector"))
+                config.connectors as Connector[],
+              ).toEither(new Error("Could not find injected connector")),
             )
               .chain((injConnector) =>
                 EitherAsync(() =>
                   connect(config, {
                     connector: injConnector,
                     chainId: queryParamsInitChainId,
-                  })
-                )
+                  }),
+                ),
               )
               .chainLeft(async () => Right(null));
           })
@@ -65,7 +65,7 @@ export const useInit = () => {
               config.state.chainId !== queryParamsInitChainId
             ) {
               return EitherAsync(() =>
-                switchChain(config, { chainId: queryParamsInitChainId })
+                switchChain(config, { chainId: queryParamsInitChainId }),
               ).chainLeft(async () => Right(null));
             }
 

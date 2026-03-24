@@ -6,6 +6,7 @@ import { Divider } from "../../../components/atoms/divider";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { ToolTip } from "../../../components/atoms/tooltip";
 import { Text } from "../../../components/atoms/typography/text";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLetters } from "../../../utils/formatters";
@@ -32,7 +33,7 @@ export const ActionReviewPage = () => {
       Maybe.fromNullable(selectedYield.token)
         .map((val) => `${amount} ${val.symbol}`)
         .extractNullable(),
-    [amount, selectedYield.token]
+    [amount, selectedYield.token],
   );
 
   return (
@@ -40,7 +41,7 @@ export const ActionReviewPage = () => {
       <PageContainer>
         <ReviewTopSection
           info={info}
-          metadata={Maybe.of(selectedYield.metadata)}
+          metadata={Maybe.of(getYieldMetadata(selectedYield))}
           token={inputToken}
           title={title}
         />
@@ -81,7 +82,7 @@ export const ActionReviewPage = () => {
                     .extractNullable()}
                 </Box>
               </Box>
-            ))
+            )),
           )
           .extractNullable()}
         <Divider my="2" />

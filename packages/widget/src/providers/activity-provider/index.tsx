@@ -1,19 +1,20 @@
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { ActionDto } from "../../domain/types/action";
+import type { Yield } from "../../domain/types/yields";
 
 const store = createStore({
   context: {
     selectedAction: Maybe.empty() as Maybe<ActionDto>,
-    selectedYield: Maybe.empty() as Maybe<YieldDto>,
+    selectedYield: Maybe.empty() as Maybe<Yield>,
   },
   on: {
     setSelectedAction: (
       _,
       event: {
-        data: Maybe<{ selectedAction: ActionDto; selectedYield: YieldDto }>;
-      }
+        data: Maybe<{ selectedAction: ActionDto; selectedYield: Yield }>;
+      },
     ) => ({
       selectedAction: event.data.map(({ selectedAction }) => selectedAction),
       selectedYield: event.data.map(({ selectedYield }) => selectedYield),
@@ -36,7 +37,7 @@ export const useActivityContext = () => {
 
   if (!value) {
     throw new Error(
-      "useActivityContext must be used within a ActivityProvider"
+      "useActivityContext must be used within a ActivityProvider",
     );
   }
 

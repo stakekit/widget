@@ -1,5 +1,5 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { tokenString } from "../../../domain";
+import type { TokenDto } from "../../../domain/types/tokens";
 import type {
   YieldBalanceType,
   YieldPendingActionType,

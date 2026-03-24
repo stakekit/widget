@@ -18,7 +18,7 @@ export const usePositionsData = () => {
 
   const val = useMemo<NonNullable<typeof data>>(
     () => data ?? new Map(),
-    [data]
+    [data],
   );
 
   return { data: val, ...rest };
@@ -34,8 +34,8 @@ const positionsDataSelector = createSelector(
         balanceData: [...val.balances]
           .sort((a, b) =>
             getPositionBalanceDataKey(a).localeCompare(
-              getPositionBalanceDataKey(b)
-            )
+              getPositionBalanceDataKey(b),
+            ),
           )
           .reduce((acc, b) => {
             const key = getPositionBalanceDataKey(b);
@@ -70,7 +70,7 @@ const positionsDataSelector = createSelector(
       });
 
       return acc;
-    }, new Map() as PositionsData)
+    }, new Map() as PositionsData),
 );
 
 const getBalanceValidatorAddresses = (balance: YieldBalanceDto) =>

@@ -6,12 +6,12 @@ import {
 } from "../services/local-storage";
 
 export const useLocalStorageValue = <K extends keyof LocalStorageKV>(
-  key: K
+  key: K,
 ) => {
   const [init] = useState(() =>
     getStorageItem(key)
       .mapLeft(() => null)
-      .extract()
+      .extract(),
   );
 
   const value = useRef(init);
@@ -26,9 +26,9 @@ export const useLocalStorageValue = <K extends keyof LocalStorageKV>(
 
         return () => removeListener();
       },
-      [key]
+      [key],
     ),
     useCallback(() => value.current, []),
-    useCallback(() => null, [])
+    useCallback(() => null, []),
   );
 };

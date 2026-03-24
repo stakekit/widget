@@ -34,7 +34,7 @@ export const heading = recipe({
               { fontSize: typeof vars.heading.h1.mobile.fontSize }
             >;
           }
-        >
+        >,
       ),
     },
     weight: {
@@ -96,7 +96,7 @@ export const textStyles = recipe({
               { fontSize: typeof vars.text.small.mobile.fontSize }
             >;
           }
-        >
+        >,
       ),
     },
   },

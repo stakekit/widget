@@ -1,4 +1,3 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
@@ -7,6 +6,13 @@ import {
   getRewardRateBreakdown,
   getYieldRewardRateDetails,
 } from "../../../domain/types/reward-rate";
+import {
+  getYieldMetadata,
+  getYieldRewardRate,
+  getYieldRewardTokens,
+  getYieldRewardType,
+  type Yield,
+} from "../../../domain/types/yields";
 import { APToPercentage, formatNumber, fromWei } from "../../../utils";
 import { getRewardRateFormatted } from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
@@ -20,8 +26,8 @@ export const SelectOpportunityListItem = ({
   onYieldSelect,
   testId,
 }: {
-  item: YieldDto;
-  onYieldSelect: (item: YieldDto) => void;
+  item: Yield;
+  onYieldSelect: (item: Yield) => void;
   testId?: string;
 }) => {
   const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
@@ -34,24 +40,30 @@ export const SelectOpportunityListItem = ({
   const { t } = useTranslation();
 
   const campaignRate = getRewardRateBreakdown(
-    getYieldRewardRateDetails(item)
+    getYieldRewardRateDetails(item),
   ).find((rewardRate) => rewardRate.key === "campaign");
 
   const totalRateFormatted = getRewardRateFormatted({
-    rewardRate: item.rewardRate,
-    rewardType: item.rewardType,
+    rewardRate: getYieldRewardRate(item),
+    rewardType: getYieldRewardType(item),
   });
 
   const primaryRateFormatted = getRewardRateFormatted({
     rewardRate: campaignRate
-      ? item.rewardRate - campaignRate.rate
-      : item.rewardRate,
-    rewardType: item.rewardType,
+      ? getYieldRewardRate(item) - campaignRate.rate
+      : getYieldRewardRate(item),
+    rewardType: getYieldRewardType(item),
   });
+
+  const metadata = getYieldMetadata(item);
+  const rewardTokens = getYieldRewardTokens(item);
 
   return (
     <SelectModalItem testId={testId} onItemClick={onItemClick}>
-      <ProviderIcon metadata={item.metadata} token={item.token} />
+      <ProviderIcon
+        metadata={metadata as Parameters<typeof ProviderIcon>[0]["metadata"]}
+        token={item.token as Parameters<typeof ProviderIcon>[0]["token"]}
+      />
 
       <Box
         display="flex"
@@ -68,7 +80,7 @@ export const SelectOpportunityListItem = ({
         >
           <Box>
             <Text className={selectItemText} variant={{ weight: "bold" }}>
-              {item.metadata.name}
+              {metadata.name}
             </Text>
           </Box>
 
@@ -88,25 +100,25 @@ export const SelectOpportunityListItem = ({
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex" marginTop="1" flexWrap="wrap" gap="1">
             <Text variant={{ type: "muted" }}>
-              {Maybe.fromNullable(item.metadata.rewardTokens)
+              {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
                 .map((rt) => rt.map((t) => t.symbol).join(", "))
                 .altLazy(() =>
-                  Maybe.fromNullable(item.metadata.tvl)
+                  Maybe.fromNullable(metadata.tvl)
                     .map((tvl) =>
                       tvl.reduce(
                         (acc, curr) => acc.plus(curr.value),
-                        BigNumber(0)
-                      )
+                        BigNumber(0),
+                      ),
                     )
                     .map(
                       (tvl) =>
-                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`
-                    )
+                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`,
+                    ),
                 )
                 .orDefault(item.token.symbol)}
             </Text>
 
-            {Maybe.fromNullable(item.metadata.rewardTokens)
+            {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
               .map((): ReactNode | string => (
                 <Box background="background" borderRadius="2xl" px="2">
                   <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
@@ -115,11 +127,11 @@ export const SelectOpportunityListItem = ({
               .extractNullable()}
           </Box>
 
-          {Maybe.fromNullable(item.metadata.commission)
+          {Maybe.fromNullable(metadata.commission)
             .map((commission) =>
               APToPercentage(
-                commission.reduce((acc, curr) => acc + curr.value, 0)
-              )
+                commission.reduce((acc, curr) => acc + curr.value, 0),
+              ),
             )
             .map((commission) => (
               <Text

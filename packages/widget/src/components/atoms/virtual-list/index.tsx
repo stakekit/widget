@@ -74,7 +74,7 @@ export const VirtualList = <ItemData = unknown>({
       List.head([...virtualItems].reverse())
         .filter((item) => item.index >= data.length - 1)
         .isJust(),
-    [virtualItems, data.length]
+    [virtualItems, data.length],
   );
 
   const fetchNextPageRef = useSavedRef(fetchNextPage);
@@ -143,7 +143,7 @@ export const GroupedVirtualList = ({
   const rowVirtualizer = useVirtualizer({
     count: groupCounts.reduce(
       (acc, numChildren) => acc + numChildren,
-      groupCounts.length
+      groupCounts.length,
     ),
     getScrollElement: () => innerRef.current,
     estimateSize,
@@ -182,17 +182,17 @@ export const GroupedVirtualList = ({
                   type: "child",
                   index: acc.childIndex + i,
                   parentIndex: parentIndex,
-                }) satisfies ChildResult
-            )
+                }) satisfies ChildResult,
+            ),
           );
 
           acc.childIndex += numChildren;
 
           return acc;
         },
-        { resultArray: [] as ResultsArray[], childIndex: 0 }
+        { resultArray: [] as ResultsArray[], childIndex: 0 },
       ),
-    [groupCounts]
+    [groupCounts],
   );
 
   const isEndReached = useMemo(
@@ -200,7 +200,7 @@ export const GroupedVirtualList = ({
       List.head([...virtualItems].reverse())
         .filter((item) => item.index >= resultArray.length - 1)
         .isJust(),
-    [virtualItems, resultArray.length]
+    [virtualItems, resultArray.length],
   );
 
   useEffect(() => {
@@ -257,7 +257,7 @@ export const GroupedVirtualList = ({
 
 const useIsTabletOrBigger = () => {
   const [windowWidth] = useState(() =>
-    MaybeWindow.map((w) => w.innerWidth).orDefault(0)
+    MaybeWindow.map((w) => w.innerWidth).orDefault(0),
   );
 
   return windowWidth >= breakpoints.tablet;

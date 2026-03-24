@@ -1,15 +1,13 @@
 import type {
-  ActionDto,
-  RewardTypes,
-  TransactionDto,
-} from "@stakekit/api-hooks";
-import type {
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
   DecodedSubstrateTransaction,
   DecodedTonTransaction,
   DecodedTronTransaction,
 } from "../../types/transaction";
+import type { ActionDto, TransactionDto } from "../action";
+import type { RewardTypes } from "../reward-rate";
+import type { TokenDto, YieldTokenDto } from "../tokens";
 
 type EVMTx = {
   type: "evm";
@@ -42,7 +40,7 @@ export type ActionMeta = {
   actionId: ActionDto["id"];
   actionType: ActionDto["type"];
   amount: ActionDto["amount"];
-  inputToken: ActionDto["inputToken"];
+  inputToken: TokenDto | YieldTokenDto | undefined;
   providersDetails: {
     name: string;
     address: string | undefined;
@@ -64,7 +62,7 @@ export type SKWallet = {
   getTransactionReceipt?(txHash: string): Promise<{ transactionHash?: string }>;
   sendTransaction(
     tx: SKTx,
-    txMeta: SKTxMeta
+    txMeta: SKTxMeta,
   ): Promise<
     | string
     | { type: "success"; txHash: string }

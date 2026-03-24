@@ -14,6 +14,6 @@ export const useNavigateWithScrollToTop = () => {
       }
       return navigate(to, options);
     },
-    [navigate, disableAutoScrollToTop]
+    [navigate, disableAutoScrollToTop],
   );
 };

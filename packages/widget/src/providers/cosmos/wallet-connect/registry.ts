@@ -41,7 +41,7 @@ export const walletConnectInfo: Wallet = {
       appUrl: string,
       wcUri: string,
       _os: OS | undefined,
-      _name: string
+      _name: string,
     ): string => {
       const plainAppUrl = appUrl.replaceAll("/", "").replaceAll(":", "");
       const encodedWcUrl = encodeURIComponent(wcUri);

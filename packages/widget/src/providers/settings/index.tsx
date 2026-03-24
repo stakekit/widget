@@ -7,7 +7,7 @@ import utilaTranslations from "../../translation/English/utila-variant.json";
 import type { SettingsContextType } from "./types";
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const SettingsContextProvider = ({
@@ -31,9 +31,9 @@ export const SettingsContextProvider = ({
             Object.entries(value).map(([tokenString, innerValue]) => [
               tokenString.toLowerCase(),
               innerValue,
-            ])
+            ]),
           ),
-        ])
+        ]),
       )
       .map((entries) => Object.fromEntries(entries))
       .extract() as typeof rest.preferredTokenYieldsPerNetwork;
@@ -54,7 +54,7 @@ export const SettingsContextProvider = ({
         "translation",
         utilaTranslations,
         true,
-        true
+        true,
       );
     }
 
@@ -79,7 +79,7 @@ export const useSettings = () => {
 
   if (!context) {
     throw new Error(
-      "useSettings must be used within a SettingsContextProvider"
+      "useSettings must be used within a SettingsContextProvider",
     );
   }
 

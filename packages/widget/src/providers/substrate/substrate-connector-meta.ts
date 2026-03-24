@@ -21,5 +21,5 @@ export type StorageItem = {
 type SubstrateConnector = Connector & ExtraProps;
 
 export const isSubstrateConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is SubstrateConnector => connector.type === configMeta.type;

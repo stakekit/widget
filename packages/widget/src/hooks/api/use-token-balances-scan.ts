@@ -1,9 +1,9 @@
-import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { tokenTokenBalancesScan } from "../../common/private-api";
+import type { TokenBalanceScanDto } from "../../domain/types/token-balance";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 
@@ -38,9 +38,9 @@ export const useTokenBalancesScan = () => {
             addresses: { address: "", additionalAddresses: undefined },
             network: "ethereum",
           },
-        }
+        },
       ),
-    [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network]
+    [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network],
   );
 
   return useQuery({
@@ -57,13 +57,13 @@ export const useTokenBalancesScan = () => {
 };
 
 export const getTokenBalancesScan = (
-  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
+  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient },
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
       queryKey: getTokenTokenBalancesScanQueryKey(params.tokenBalanceScanDto),
       queryFn: async () => (await queryFn(params)).unsafeCoerce(),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get multi yields");
@@ -78,7 +78,7 @@ const queryFn = ({
     (e) => {
       console.log(e);
       return new Error("could not get token balances");
-    }
+    },
   );
 
 export const useInvalidateTokenBalances = () => {
@@ -91,12 +91,12 @@ export const useInvalidateTokenBalances = () => {
           getTokenTokenBalancesScanQueryKey({} as TokenBalanceScanDto)[0],
         ],
       }),
-    [queryClient]
+    [queryClient],
   );
 };
 
 const getTokenTokenBalancesScanQueryKey = (
-  tokenBalanceScanDto: TokenBalanceScanDto
+  tokenBalanceScanDto: TokenBalanceScanDto,
 ) => {
   return ["/v1/tokens/balances/scan", tokenBalanceScanDto] as const;
 };

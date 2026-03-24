@@ -1,13 +1,22 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import type {
-  YieldBalanceDto,
-  YieldBalancesByYieldDto,
-  YieldBalanceType,
-  YieldRewardRateDto,
-} from "../../providers/yield-api-client-provider/types";
 import type { components } from "../../types/yield-api-schema";
 import { equalTokens } from "..";
+import type { YieldRewardRateDto } from "./reward-rate";
+import type { TokenDto } from "./tokens";
+
+export type YieldBalanceType = components["schemas"]["BalanceType"];
+export type YieldBalanceDto = components["schemas"]["BalanceDto"];
+export type YieldBalancesByYieldDto = components["schemas"]["YieldBalancesDto"];
+export type YieldBalancesRequestDto =
+  components["schemas"]["BalancesRequestDto"];
+export type YieldSingleBalancesRequestDto =
+  components["schemas"]["YieldBalancesRequestDto"];
+export type YieldSingleBalancesResponseDto =
+  components["schemas"]["YieldBalancesDto"];
+export type YieldBalancesResponseDto =
+  components["schemas"]["BalancesResponseDto"];
+export type YieldPaginatedResponseDto =
+  components["schemas"]["PaginatedResponseDto"];
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,
@@ -40,7 +49,7 @@ export type PositionsData = Map<
 >;
 
 export const getPositionBalanceDataKey = (
-  balance: YieldBalanceDto
+  balance: YieldBalanceDto,
 ): BalanceDataKey => {
   if (Array.isArray(balance.validators) && balance.validators.length > 1) {
     return "validators";
@@ -55,10 +64,10 @@ export const getPositionBalanceDataKey = (
 
 export const getPositionTotalAmount = (
   balances: YieldBalanceDto[],
-  baseToken: TokenDto
+  baseToken: TokenDto,
 ) => {
   const baseTokenBalance = balances.find((b) =>
-    equalTokens(b.token, baseToken)
+    equalTokens(b.token, baseToken),
   );
 
   const baseTokenPriceInUsd = (() => {
@@ -86,7 +95,7 @@ export const getPositionTotalAmount = (
       if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
         return {
           amount: acc.amount.plus(
-            balanceAmountUsd.dividedBy(baseTokenPriceInUsd)
+            balanceAmountUsd.dividedBy(baseTokenPriceInUsd),
           ),
           amountUsd: acc.amountUsd.plus(balanceAmountUsd),
         };
@@ -97,6 +106,6 @@ export const getPositionTotalAmount = (
         amountUsd: acc.amountUsd.plus(balanceAmountUsd),
       };
     },
-    { amount: new BigNumber(0), amountUsd: new BigNumber(0) }
+    { amount: new BigNumber(0), amountUsd: new BigNumber(0) },
   );
 };

@@ -27,7 +27,7 @@ export const useConnectorChains = ({
 
       return () => sub.unsubscribe();
     },
-    [connector, subject]
+    [connector, subject],
   );
 
   const getSnapshot = useCallback(() => {

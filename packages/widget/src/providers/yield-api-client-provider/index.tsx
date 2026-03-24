@@ -7,14 +7,14 @@ import { createContext, useContext, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { waitForDelayedApiRequests } from "../../common/delay-api-requests";
 import { config } from "../../config";
+import type { YieldApiFetchClient } from "../../domain/types/yield-api";
 import { handleGeoBlockResponse } from "../../hooks/use-geo-block";
 import { handleRichErrorResponse } from "../../hooks/use-rich-errors";
 import type { paths } from "../../types/yield-api-schema";
 import { useSettings } from "../settings";
-import type { YieldApiFetchClient } from "./types";
 
 const QueryContext = createContext<OpenapiQueryClient<paths> | undefined>(
-  undefined
+  undefined,
 );
 const FetchContext = createContext<YieldApiFetchClient | undefined>(undefined);
 
@@ -104,7 +104,7 @@ export const useYieldApiClient = () => {
 
   if (!value) {
     throw new Error(
-      "useYieldApiClient must be used within a YieldApiClientProvider"
+      "useYieldApiClient must be used within a YieldApiClientProvider",
     );
   }
 
@@ -116,7 +116,7 @@ export const useYieldApiFetchClient = () => {
 
   if (!value) {
     throw new Error(
-      "useYieldApiFetchClient must be used within a YieldApiClientProvider"
+      "useYieldApiFetchClient must be used within a YieldApiClientProvider",
     );
   }
 

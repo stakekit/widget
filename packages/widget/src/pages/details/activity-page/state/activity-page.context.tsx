@@ -1,8 +1,3 @@
-import {
-  ActionStatus,
-  ActionTypes,
-  type TransactionType,
-} from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
@@ -13,6 +8,10 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import {
+  ActionStatus,
+  type TransactionType,
+} from "../../../../domain/types/action";
 import { useActivityActions } from "../../../../hooks/api/use-activity-actions";
 import { useActivityContext } from "../../../../providers/activity-provider";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -51,13 +50,13 @@ export const ActivityPageContextProvider = ({
       const urls = data.actionData.transactions
         .map((val) => ({ type: val.type, url: val.explorerUrl }))
         .filter(
-          (val): val is { type: TransactionType; url: string } => !!val.url
+          (val): val is { type: TransactionType; url: string } => !!val.url,
         );
 
       const path =
-        data.actionData.type === ActionTypes.UNSTAKE
+        data.actionData.type === "UNSTAKE"
           ? "unstake"
-          : data.actionData.type === ActionTypes.STAKE
+          : data.actionData.type === "STAKE"
             ? "stake"
             : "pending";
 
@@ -91,26 +90,26 @@ export const ActivityPageContextProvider = ({
 
   const actions = useMemo(
     () => Maybe.fromNullable(activityActions.allItems),
-    [activityActions.allItems]
+    [activityActions.allItems],
   );
 
   const groupedDates = useMemo(
     () => actions.map((action) => action.map((a) => a.actionData.createdAt)),
-    [actions]
+    [actions],
   );
 
   const [labels, counts] = useMemo(
     () => groupDateStrings(groupedDates.extract() ?? [], i18n),
-    [groupedDates, i18n]
+    [groupedDates, i18n],
   );
 
   const bulletLines = useMemo(
     () =>
       counts.reduce<ItemBulletType[]>(
         (acc, val) => acc.concat(createSubArray(val)),
-        []
+        [],
       ),
-    [counts]
+    [counts],
   );
 
   const value = {
@@ -133,7 +132,7 @@ export const useActivityPageContext = () => {
 
   if (!context) {
     throw new Error(
-      "useActivityPageContext must be used within a ActivityPageContext"
+      "useActivityPageContext must be used within a ActivityPageContext",
     );
   }
 

@@ -17,7 +17,7 @@ import { headerContainer, posistionDetailsInfoContainer } from "./styles.css";
 
 const PositionDetailsPageComponent = () => {
   const shouldShowActions = positionDetailsActionsHasContent(
-    usePositionDetails()
+    usePositionDetails(),
   );
 
   const location = useSKLocation();

@@ -1,12 +1,9 @@
-import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
-import type {
-  YieldRewardDto,
-  YieldRewardRateDto,
-} from "../../providers/yield-api-client-provider/types";
+import type { components } from "../../types/yield-api-schema";
+import type { Yield } from "./yields";
 
-type YieldDtoWithRewardRateDetails = YieldDto & {
-  rewardRateDetails?: YieldRewardRateDto;
-};
+export type RewardTypes = "apr" | "apy" | "variable";
+export type YieldRewardDto = components["schemas"]["RewardDto"];
+export type YieldRewardRateDto = components["schemas"]["RewardRateDto"];
 
 export type RewardRateBreakdownKey =
   | "native"
@@ -27,7 +24,7 @@ const breakdownOrder: RewardRateBreakdownKey[] = [
 ];
 
 export const getRewardTypeFromRateType = (
-  rateType: string | null | undefined
+  rateType: string | null | undefined,
 ): RewardTypes => {
   const normalized = rateType?.toLowerCase();
 
@@ -39,7 +36,7 @@ export const getRewardTypeFromRateType = (
 };
 
 const getBreakdownKey = (
-  yieldSource: YieldRewardDto["yieldSource"]
+  yieldSource: YieldRewardDto["yieldSource"],
 ): RewardRateBreakdownKey =>
   yieldSource === "campaign_incentive"
     ? "campaign"
@@ -48,16 +45,14 @@ const getBreakdownKey = (
       : "native";
 
 export const getYieldRewardRateDetails = (
-  yieldDto: YieldDto | null | undefined
-): YieldRewardRateDto | undefined =>
-  (yieldDto as YieldDtoWithRewardRateDetails | null | undefined)
-    ?.rewardRateDetails;
+  yieldDto: Yield | null | undefined,
+): YieldRewardRateDto | undefined => yieldDto?.rewardRate;
 
 export const getRewardRateBreakdown = (
   rewardRate: YieldRewardRateDto | null | undefined,
   opts?: {
     showUpToCampaign?: boolean;
-  }
+  },
 ): RewardRateBreakdownItem[] => {
   if (!rewardRate?.components?.length) {
     return [];

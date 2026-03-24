@@ -73,12 +73,12 @@ export const useInitToken = () => {
                 defaultTokens: val.defaultTokens,
                 tokenBalances: val.tokenBalancesScan,
                 initQueryParams: Maybe.fromNullable(initParams),
-              }).toEither(new Error("could not get initial token"))
+              }).toEither(new Error("could not get initial token")),
             ).chain((token) =>
               EitherAsync.liftEither(
                 Maybe.fromNullable(
-                  getTokenBalancesMap(val).get(tokenString(token))
-                ).toEither(new Error("could not get token balance"))
+                  getTokenBalancesMap(val).get(tokenString(token)),
+                ).toEither(new Error("could not get token balance")),
               )
                 .chain((tokenBalance) =>
                   getFirstEligibleYield({
@@ -94,11 +94,11 @@ export const useInitToken = () => {
                     validatorsConfig,
                     preferredTokenYieldsPerNetwork:
                       preferredTokenYieldsPerNetwork ?? null,
-                  })
+                  }),
                 )
-                .map(() => token)
-            )
-          )
+                .map(() => token),
+            ),
+          ),
         )
       ).unsafeCoerce(),
   });

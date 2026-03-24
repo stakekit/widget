@@ -2,6 +2,7 @@ import { Just, Maybe } from "purify-ts";
 import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
 import { topHeaderYieldName } from "./styles.css";
 
@@ -18,7 +19,7 @@ export const TopHeader = () => {
             <>
               <Box display="flex" justifyContent="center" alignItems="center">
                 <TokenIcon
-                  metadata={val.integrationData.metadata}
+                  metadata={getYieldMetadata(val.integrationData)}
                   token={t}
                   tokenLogoHw="24"
                   tokenNetworkLogoHw="6"
@@ -36,7 +37,7 @@ export const TopHeader = () => {
                   variant={{ weight: "normal" }}
                   textAlign="center"
                 >
-                  {val.integrationData.metadata.name}
+                  {getYieldMetadata(val.integrationData).name}
                 </Text>
 
                 <Text variant={{ type: "muted" }}>{t.symbol}</Text>

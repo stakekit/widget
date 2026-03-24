@@ -1,10 +1,12 @@
-import type { RewardTypes, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as CopyText from "../../../components/atoms/copy-text";
+import type { RewardTypes } from "../../../domain/types/reward-rate";
+import type { TokenDto } from "../../../domain/types/tokens";
+import type { ValidatorDto } from "../../../domain/types/validators";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
   getRewardRateFormatted,
@@ -42,7 +44,7 @@ export const useMetaInfo = ({
     | "tokenSymbol"
   >]: ValidatorDto[Key] | undefined;
 } & {
-  stakedBalanceToken: YieldDto["token"] | undefined;
+  stakedBalanceToken: TokenDto | undefined;
   rewardRate: number | undefined;
   rewardType: RewardTypes | undefined;
 }) => {
@@ -80,7 +82,7 @@ export const useMetaInfo = ({
               val: Just(new BigNumber(stakedBalance))
                 .filter((v) => !v.isNaN())
                 .map(
-                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`
+                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`,
                 )
                 .orDefault("-"),
             }
@@ -187,6 +189,6 @@ export const useMetaInfo = ({
       subnetName,
       marketCap,
       tokenSymbol,
-    ]
+    ],
   );
 };

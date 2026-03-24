@@ -1,4 +1,3 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { formatAddress } from "../../../src/utils";
@@ -14,7 +13,9 @@ describe("Gas warning flow", () => {
     customConnectors,
   }: {
     availableAmount: string;
-    yieldDto: YieldDto;
+    yieldDto: ReturnType<
+      typeof setup
+    >["yieldWithSameGasAndStakeToken"]["yieldDto"];
     withWarning: boolean;
   } & Pick<ReturnType<typeof setup>, "account" | "customConnectors">) => {
     const app = await renderApp({
@@ -40,7 +41,7 @@ describe("Gas warning flow", () => {
       .poll(
         () =>
           app.getByTestId("select-opportunity").getByText(yieldDto.token.symbol)
-            .length
+            .length,
       )
       .greaterThan(0);
 
@@ -57,13 +58,13 @@ describe("Gas warning flow", () => {
     if (withWarning) {
       await expect
         .element(
-          app.getByText("This action is unlikely to succeed", { exact: false })
+          app.getByText("This action is unlikely to succeed", { exact: false }),
         )
         .toBeInTheDocument();
     } else {
       await expect
         .element(
-          app.getByText("This action is unlikely to succeed", { exact: false })
+          app.getByText("This action is unlikely to succeed", { exact: false }),
         )
         .not.toBeInTheDocument();
     }

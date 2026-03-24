@@ -1,11 +1,9 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
-import { isEthenaUsdeStaking } from "../../../domain/types/yields";
-import { adaptYieldDto } from "../../../providers/yield-api-client-provider/compat";
+import type { YieldApiFetchClient } from "../../../domain/types/yield-api";
+import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
 import { getResponseData } from "../../../providers/yield-api-client-provider/request-helpers";
-import type { YieldApiFetchClient } from "../../../providers/yield-api-client-provider/types";
 
 type Params = {
   yieldId: string;
@@ -24,14 +22,14 @@ const getKey = (params: Params) => [
 export const getYieldOpportunity = (
   params: Params & {
     queryClient: QueryClient;
-  }
+  },
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
       queryKey: getKey(params),
       staleTime,
       queryFn: () => queryFn(params),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunity");
@@ -40,7 +38,7 @@ export const getYieldOpportunity = (
 export const queryFn = async (
   params: Params & {
     signal?: AbortSignal;
-  }
+  },
 ) => (await fn(params)).unsafeCoerce();
 
 const fn = ({
@@ -51,13 +49,8 @@ const fn = ({
 }: Params & {
   signal?: AbortSignal;
 }) => {
-  const stripValidators = (yieldDto: YieldDto): YieldDto => ({
-    ...yieldDto,
-    validators: [],
-  });
-
   return EitherAsync(async () => {
-    const [newYieldResult, legacyYieldResult] = await Promise.allSettled([
+    const [newYieldResult, legacyYieldResult] = await Promise.all([
       getResponseData(
         yieldApiFetchClient.GET("/v1/yields/{yieldId}", {
           params: {
@@ -66,32 +59,19 @@ const fn = ({
             },
           },
           signal,
-        })
+        }),
       ),
       yieldYieldOpportunity(
         yieldId,
         { ledgerWalletAPICompatible: isLedgerLive },
-        signal
+        signal,
       ),
     ]);
 
-    if (newYieldResult.status === "rejected") {
-      if (legacyYieldResult.status === "fulfilled") {
-        return stripValidators(legacyYieldResult.value);
-      }
-
-      throw newYieldResult.reason;
-    }
-
-    const merged = adaptYieldDto({
-      yieldDto: newYieldResult.value,
-      legacyYieldDto:
-        legacyYieldResult.status === "fulfilled"
-          ? legacyYieldResult.value
-          : null,
-    });
-
-    return stripValidators(merged);
+    return {
+      ...newYieldResult,
+      __fallback__: legacyYieldResult,
+    } satisfies Yield;
   })
     .map((y) =>
       isEthenaUsdeStaking(y.id)
@@ -101,8 +81,8 @@ const fn = ({
               ...y.metadata,
               name: y.metadata.name.replace(/staking/i, ""),
             },
-          } satisfies YieldDto)
-        : y
+          } satisfies Yield)
+        : y,
     )
     .mapLeft((e) => {
       console.log(e);

@@ -43,7 +43,7 @@ export const RainbowKitProviderWithTheme = ({
 
   const chainIdsToUse = useMemo(
     () => new Set(connectorChains.map((c) => c.id)),
-    [connectorChains]
+    [connectorChains],
   );
 
   const disabledChains = useMemo(
@@ -52,7 +52,7 @@ export const RainbowKitProviderWithTheme = ({
         ...c,
         info: t("chain_modal.disabled_chain_info"),
       })),
-    [ledgerDisabledChains, t]
+    [ledgerDisabledChains, t],
   );
 
   const hideDisconnect = useMemo(
@@ -60,7 +60,7 @@ export const RainbowKitProviderWithTheme = ({
       Maybe.fromNullable(connector)
         .map((c) => !shouldShowDisconnect(c))
         .orDefault(true),
-    [connector]
+    [connector],
   );
 
   const locale = useMemo(() => {

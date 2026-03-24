@@ -54,7 +54,7 @@ const scale = ({
     const descendingFontSizes = getDescendingFontSizes(inputEl);
 
     let currentFontSize = Number.parseFloat(
-      w.getComputedStyle(spanEl).fontSize
+      w.getComputedStyle(spanEl).fontSize,
     );
 
     for (const fs of descendingFontSizes) {
@@ -72,8 +72,8 @@ const convertRemToPixels = (rem: number) =>
   rem *
   Number.parseFloat(
     MaybeDocument.map(
-      (doc) => getComputedStyle(doc.documentElement).fontSize
-    ).orDefault("0")
+      (doc) => getComputedStyle(doc.documentElement).fontSize,
+    ).orDefault("0"),
   );
 
 const getDescendingFontSizes = (el: HTMLElement) =>
@@ -89,8 +89,8 @@ const getDescendingFontSizes = (el: HTMLElement) =>
         Number.parseFloat(
           w
             .getComputedStyle(el)
-            .getPropertyValue(fs.replace(/(var\()|(\))/g, ""))
-        )
-      )
-    )
+            .getPropertyValue(fs.replace(/(var\()|(\))/g, "")),
+        ),
+      ),
+    ),
   ).orDefault([]);

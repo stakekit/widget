@@ -1,23 +1,20 @@
-import type {
-  ActionDto,
-  AddressesDto,
-  TokenDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import type {
+  ActionDto,
   YieldCreateManageActionDto,
-  YieldPendingActionType,
-  YieldTokenDto,
-} from "../yield-api-client-provider/types";
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { YieldPendingActionType } from "../../domain/types/pending-action";
+import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
   requestDto: YieldCreateManageActionDto;
   addresses: AddressesDto;
   pendingActionType: YieldPendingActionType;
-  integrationData: YieldDto;
+  integrationData: Yield;
   interactedToken: TokenDto | YieldTokenDto;
   gasFeeToken: TokenDto;
 };
@@ -40,7 +37,7 @@ const store = createStore({
 });
 
 const PendingActionStoreContext = createContext<typeof store | undefined>(
-  undefined
+  undefined,
 );
 
 export const PendingActionStoreProvider = ({ children }: PropsWithChildren) => {
@@ -56,7 +53,7 @@ export const usePendingActionStore = () => {
 
   if (!value) {
     throw new Error(
-      "usePendingActionStore must be used within a PendingActionProvider"
+      "usePendingActionStore must be used within a PendingActionProvider",
     );
   }
 

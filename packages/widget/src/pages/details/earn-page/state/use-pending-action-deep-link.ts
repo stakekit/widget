@@ -1,7 +1,3 @@
-import type {
-  AddressWithTokenDtoAdditionalAddresses,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
@@ -9,7 +5,9 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../../domain";
+import type { AddressWithTokenDtoAdditionalAddresses } from "../../../../domain/types/addresses";
 import { getPositionBalanceDataKey } from "../../../../domain/types/positions";
+import type { Yield } from "../../../../domain/types/yields";
 import { getYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
 import { getInitParams } from "../../../../hooks/use-init-params";
 import { useSKQueryClient } from "../../../../providers/query-client";
@@ -41,8 +39,8 @@ export const usePendingActionDeepLink = () => {
       (
         await EitherAsync.liftEither(
           Maybe.fromNullable(address).toEither(
-            new Error("missing wagmi config")
-          )
+            new Error("missing wagmi config"),
+          ),
         ).chain((addr) =>
           fn({
             isLedgerLive,
@@ -51,7 +49,7 @@ export const usePendingActionDeepLink = () => {
             queryClient,
             yieldApiFetchClient,
             externalProviders,
-          })
+          }),
         )
       ).unsafeCoerce(),
   });
@@ -81,11 +79,11 @@ const fn = ({
     const initQueryParams = Maybe.of(val)
       .filter(
         (
-          v
+          v,
         ): v is Override<
           typeof val,
           { yieldId: string; pendingaction: string }
-        > => !!v.yieldId && !!v.pendingaction
+        > => !!v.yieldId && !!v.pendingaction,
       )
       .toEither(new Error("missing yieldId or pendingaction"));
 
@@ -103,14 +101,14 @@ const fn = ({
             body: {
               address,
             },
-          })
+          }),
         )
           .chain((response) =>
             EitherAsync.liftEither(
               Maybe.fromNullable(response.data).toEither(
-                new Error("could not get yield balances")
-              )
-            )
+                new Error("could not get yield balances"),
+              ),
+            ),
           )
           .map((val) => ({
             yieldId: initQueryParams.yieldId,
@@ -119,7 +117,7 @@ const fn = ({
             singleYieldBalances: val.balances,
             address: address,
             additionalAddresses: additionalAddresses ?? undefined,
-          }))
+          })),
       )
       .chain((data) =>
         EitherAsync.liftEither(
@@ -129,14 +127,14 @@ const fn = ({
                 data.validatorAddress &&
                 balance.validator?.address !== data.validatorAddress &&
                 !balance.validators?.some(
-                  (validator) => validator.address === data.validatorAddress
+                  (validator) => validator.address === data.validatorAddress,
                 )
               ) {
                 continue;
               }
 
               const pendingAction = balance.pendingActions.find(
-                (pa) => pa.type === data.pendingaction
+                (pa) => pa.type === data.pendingaction,
               );
 
               if (pendingAction) {
@@ -149,7 +147,7 @@ const fn = ({
             }
 
             return Left(new Error("no pending action found"));
-          })
+          }),
         )
           .chain((val) =>
             getYieldOpportunity({
@@ -157,20 +155,20 @@ const fn = ({
               yieldId: data.yieldId,
               queryClient,
               yieldApiFetchClient,
-            }).map((yieldOp) => ({ ...val, yieldOp }))
+            }).map((yieldOp) => ({ ...val, yieldOp })),
           )
           .chain<
             Error,
             | {
                 type: "positionDetails";
-                yieldOp: YieldDto;
+                yieldOp: Yield;
                 pendingAction: YieldPendingActionDto;
                 balance: YieldBalanceDto;
                 balanceId: string;
               }
             | {
                 type: "review";
-                yieldOp: YieldDto;
+                yieldOp: Yield;
                 balance: YieldBalanceDto;
                 balanceId: string;
                 pendingActionDto: GetEitherRight<
@@ -181,7 +179,7 @@ const fn = ({
             PAMultiValidatorsRequired(val.pendingAction) ||
             PASingleValidatorRequired(val.pendingAction)
               ? EitherAsync.liftEither(
-                  Right({ type: "positionDetails", ...val })
+                  Right({ type: "positionDetails", ...val }),
                 )
               : EitherAsync.liftEither(
                   preparePendingActionRequestDto({
@@ -193,14 +191,14 @@ const fn = ({
                     yieldBalance: val.balance,
                     pendingActionDto: val.pendingAction,
                     selectedValidators: [],
-                  })
+                  }),
                 ).map((res) => ({
                   yieldOp: val.yieldOp,
                   pendingActionDto: res,
                   type: "review",
                   balanceId: val.balanceId,
                   balance: val.balance,
-                }))
-          )
+                })),
+          ),
       );
   });

@@ -1,24 +1,21 @@
-import type {
-  ActionDto,
-  AddressesDto,
-  TokenDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import type {
+  ActionDto,
   YieldCreateActionDto,
-  YieldTokenDto,
-} from "../yield-api-client-provider/types";
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
   requestDto: YieldCreateActionDto;
   addresses: AddressesDto;
-  gasFeeToken: YieldDto["token"];
+  gasFeeToken: Yield["token"];
   unstakeAmount: BigNumber;
-  integrationData: YieldDto;
+  integrationData: Yield;
   unstakeToken: TokenDto | YieldTokenDto;
 };
 
@@ -40,7 +37,7 @@ const store = createStore({
 });
 
 const ExitStakeStoreContext = createContext<typeof store | undefined>(
-  undefined
+  undefined,
 );
 
 export const ExitStakeStoreProvider = ({ children }: PropsWithChildren) => {
@@ -56,7 +53,7 @@ export const useExitStakeStore = () => {
 
   if (!value) {
     throw new Error(
-      "useExitStakeStore must be used within a ExitStakeStoreProvider"
+      "useExitStakeStore must be used within a ExitStakeStoreProvider",
     );
   }
 

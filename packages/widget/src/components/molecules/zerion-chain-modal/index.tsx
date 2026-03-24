@@ -12,7 +12,7 @@ export const ZerionChainModal = () => {
 
   const chainIds = useMemo(
     () => connectorChains.map((c) => c.id),
-    [connectorChains]
+    [connectorChains],
   );
 
   const switchChain = connector?.switchChain;
@@ -30,7 +30,7 @@ export const ZerionChainModal = () => {
       chainIds,
       selectedChainId: chain.id,
       onSwitchChain,
-    })
+    }),
   )
     .map((elem) => (
       <Box minHeight="8" data-rk="chain-modal">

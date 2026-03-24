@@ -1,43 +1,32 @@
 import type {
-  AddressesDto,
-  ActionDto as LegacyActionDto,
-  TokenDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
-import { adaptActionDto } from "./compat";
-import { getResponseData } from "./request-helpers";
-import type {
-  YieldApiFetchClient,
+  ActionDto,
   YieldCreateActionDto,
   YieldCreateManageActionDto,
-} from "./types";
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { YieldApiFetchClient } from "../../domain/types/yield-api";
+import type { Yield } from "../../domain/types/yields";
+import { getResponseData } from "./request-helpers";
 
 export const createEnterAction = async ({
   addresses,
   fetchClient,
-  inputToken,
   requestDto,
   yieldDto,
 }: {
   addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
-  inputToken: TokenDto;
   requestDto: YieldCreateActionDto;
-  yieldDto: YieldDto;
-}): Promise<LegacyActionDto> => {
-  const actionDto = await getResponseData(
+  yieldDto: Yield;
+}): Promise<ActionDto> => {
+  void addresses;
+  void yieldDto;
+
+  return getResponseData(
     fetchClient.POST("/v1/actions/enter", {
       body: requestDto,
-    })
+    }),
   );
-
-  return adaptActionDto({
-    actionDto,
-    addresses,
-    gasFeeToken: yieldDto.metadata.gasFeeToken,
-    inputToken,
-    yieldDto,
-  });
 };
 
 export const createExitAction = async ({
@@ -49,20 +38,16 @@ export const createExitAction = async ({
   addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateActionDto;
-  yieldDto: YieldDto;
-}): Promise<LegacyActionDto> => {
-  const actionDto = await getResponseData(
+  yieldDto: Yield;
+}): Promise<ActionDto> => {
+  void addresses;
+  void yieldDto;
+
+  return getResponseData(
     fetchClient.POST("/v1/actions/exit", {
       body: requestDto,
-    })
+    }),
   );
-
-  return adaptActionDto({
-    actionDto,
-    addresses,
-    gasFeeToken: yieldDto.metadata.gasFeeToken,
-    yieldDto,
-  });
 };
 
 export const createManageAction = async ({
@@ -74,20 +59,16 @@ export const createManageAction = async ({
   addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateManageActionDto;
-  yieldDto: YieldDto;
-}): Promise<LegacyActionDto> => {
-  const actionDto = await getResponseData(
+  yieldDto: Yield;
+}): Promise<ActionDto> => {
+  void addresses;
+  void yieldDto;
+
+  return getResponseData(
     fetchClient.POST("/v1/actions/manage", {
       body: requestDto,
-    })
+    }),
   );
-
-  return adaptActionDto({
-    actionDto,
-    addresses,
-    gasFeeToken: yieldDto.metadata.gasFeeToken,
-    yieldDto,
-  });
 };
 
 export const listActions = async ({
@@ -110,7 +91,7 @@ export const listActions = async ({
           limit,
         },
       },
-    })
+    }),
   );
 
 export const getTransaction = async ({
@@ -127,7 +108,7 @@ export const getTransaction = async ({
           transactionId,
         },
       },
-    })
+    }),
   );
 
 export const submitTransaction = async ({
@@ -149,7 +130,7 @@ export const submitTransaction = async ({
       body: {
         signedTransaction,
       },
-    })
+    }),
   );
 
 export const submitTransactionHash = async ({
@@ -171,5 +152,5 @@ export const submitTransactionHash = async ({
       body: {
         hash,
       },
-    })
+    }),
   );

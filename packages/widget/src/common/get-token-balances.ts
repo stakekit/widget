@@ -26,7 +26,7 @@ export const getTokenBalances = ({
         enabledYieldsOnly: tokensForEnabledYieldsOnly,
       }),
       EitherAsync.liftEither(
-        Right({ additionalAddresses, address, network })
+        Right({ additionalAddresses, address, network }),
       ).chain(async (params) => {
         if (!params.address || !params.network) {
           return Right([]);
@@ -48,7 +48,7 @@ export const getTokenBalances = ({
         tokenBalances.map((b) => ({
           defaultTokens: d,
           tokenBalancesScan: b,
-        }))
-      )
-    )
+        })),
+      ),
+    ),
   ).mapLeft(() => new Error("could not get tokens"));

@@ -1,5 +1,5 @@
-import type { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
-import type { YieldActionArgumentsDto } from "./types";
+import type { YieldActionArgumentsDto } from "../../domain/types/action";
+import type { AddressWithTokenDtoAdditionalAddresses } from "../../domain/types/addresses";
 
 export const withAdditionalAddresses = ({
   additionalAddresses,
@@ -22,7 +22,7 @@ export const getResponseData = async <
     error?: unknown;
   },
 >(
-  promise: Promise<TResponse>
+  promise: Promise<TResponse>,
 ): Promise<NonNullable<TResponse["data"]>> => {
   const response = await promise;
 

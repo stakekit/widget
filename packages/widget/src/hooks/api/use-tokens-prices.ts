@@ -1,8 +1,8 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { config } from "../../config";
-import type { YieldTokenDto } from "../../providers/yield-api-client-provider/types";
+import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
+import type { Yield } from "../../domain/types/yields";
 import { useBaseToken } from "../use-base-token";
 import { useGasFeeToken } from "../use-gas-fee-token";
 import { usePrices } from "./use-prices";
@@ -15,7 +15,7 @@ export const useTokensPrices = ({
   yieldDto,
 }: {
   token: Maybe<TokenDto | YieldTokenDto>;
-  yieldDto: Maybe<YieldDto>;
+  yieldDto: Maybe<Yield>;
 }) => {
   const baseToken = useBaseToken(yieldDto);
   const gasFeeToken = useGasFeeToken(yieldDto);
@@ -28,7 +28,7 @@ export const useTokensPrices = ({
           tokenList: [val.token, val.baseToken, val.gasFeeToken],
         }))
         .extractNullable(),
-    [baseToken, gasFeeToken, token]
+    [baseToken, gasFeeToken, token],
   );
 
   return usePrices(priceRequestDto);

@@ -1,9 +1,10 @@
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import type { TFunction } from "i18next";
+import type { ActionDto } from "../../../domain/types/action";
+import type { Yield } from "../../../domain/types/yields";
 
 export type ActionYieldDto = {
   actionData: ActionDto;
-  yieldData: YieldDto;
+  yieldData: Yield;
 };
 
 type DateGroupLabels = "today" | "yesterday" | string;

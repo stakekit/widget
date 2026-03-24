@@ -5,6 +5,7 @@ import { ContentLoaderSquare } from "../../../../../components/atoms/content-loa
 import { Divider } from "../../../../../components/atoms/divider";
 import { ToolTip } from "../../../../../components/atoms/tooltip";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { getYieldRewardType } from "../../../../../domain/types/yields";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
@@ -85,7 +86,7 @@ export const SelectYieldSection = () => {
                     data-testid="estimated-reward__percent"
                   >
                     {selectedStake
-                      .filter((pd) => pd.rewardType === "variable")
+                      .filter((pd) => getYieldRewardType(pd) === "variable")
                       .map(() => (
                         <ToolTip
                           asChild

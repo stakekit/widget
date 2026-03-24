@@ -9,6 +9,7 @@ import { Text } from "../../components/atoms/typography/text";
 import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
+import { getYieldMetadata } from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import type { YieldPendingActionType } from "../../providers/yield-api-client-provider/types";
@@ -90,7 +91,11 @@ const PositionDetails = () => {
                         alignItems="center"
                       >
                         <TokenIcon
-                          metadata={integrationData.metadata}
+                          metadata={
+                            getYieldMetadata(integrationData) as Parameters<
+                              typeof TokenIcon
+                            >[0]["metadata"]
+                          }
                           token={t}
                           tokenLogoHw="14"
                         />
@@ -130,7 +135,7 @@ const PositionDetails = () => {
                         {getRewardRateFormatted({
                           rewardRate: personalizedRewardRate.total,
                           rewardType: getRewardTypeFromRateType(
-                            personalizedRewardRate.rateType
+                            personalizedRewardRate.rateType,
                           ),
                         })}
                       </Heading>
@@ -159,11 +164,11 @@ const PositionDetails = () => {
                             personalizedRewardRate ? undefined : p.rewardType
                           }
                           stakeType={t(
-                            `position_details.stake_type.${integrationData.metadata.type}`
+                            `position_details.stake_type.${getYieldMetadata(integrationData).type}`,
                           )}
                           integrationData={integrationData}
                         />
-                      ))
+                      )),
                     )
                     .extractNullable()}
                 </Box>
@@ -177,7 +182,7 @@ const PositionDetails = () => {
                           integrationData={integrationData}
                           yieldBalance={yb}
                         />
-                      ))
+                      )),
                   )}
                 </Box>
                 {liquidTokensToNativeConversion
@@ -236,7 +241,7 @@ const PositionDetails = () => {
                             label={t(
                               `position_details.pending_action_button.${
                                 val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                              }`
+                              }`,
                             )}
                             onMaxClick={null}
                             formattedAmount={val.formattedAmount}
@@ -249,8 +254,8 @@ const PositionDetails = () => {
                             onPendingActionClick={onPendingActionClick}
                             yieldId={integrationData.id}
                           />
-                        )
-                      )
+                        ),
+                      ),
                     )
                     .extractNullable()}
                   {/* Unstake */}
@@ -282,14 +287,14 @@ const PositionDetails = () => {
                           unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
-                            `position_details.unstake_label.${integrationData.metadata.type}`
+                            `position_details.unstake_label.${getYieldMetadata(integrationData).type}`,
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}
                           yieldDto={integrationData}
                           validators={providersDetails.orDefault([])}
                         />
-                      )
+                      ),
                     )
                     .extractNullable()}
                 </Box>

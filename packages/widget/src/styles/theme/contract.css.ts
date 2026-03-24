@@ -31,5 +31,5 @@ export const vars = createGlobalThemeContract(
     `sk-${path
       .join("-")
       .replace(/([a-z])([A-Z])/g, "$1-$2")
-      .toLowerCase()}`
+      .toLowerCase()}`,
 );

@@ -1,7 +1,7 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Yield } from "../../../domain/types/yields";
 import { useMultiYields } from "../../../hooks/api/use-multi-yields";
 import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
@@ -14,8 +14,8 @@ import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {
-    onItemClick: (yieldDto: YieldDto) => void;
-    providerYieldIds: YieldDto["id"][];
+    onItemClick: (yieldDto: Yield) => void;
+    providerYieldIds: Yield["id"][];
   }
 >;
 

@@ -17,5 +17,5 @@ export const preloadImages = () =>
     Object.values(images).forEach((src) => {
       const img = new Image();
       img.src = src;
-    })
+    }),
   );

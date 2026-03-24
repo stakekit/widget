@@ -79,13 +79,13 @@ const createCardanoConnector = ({
       getChainId: async () => cardano.id,
       isAuthorized: async () => {
         const isDisconnected = await config.storage?.getItem(
-          "cardano.disconnected"
+          "cardano.disconnected",
         );
 
         if (isDisconnected) return false;
 
         const lastConnectedWallet = await config.storage?.getItem(
-          "cardano.lastConnectedWallet"
+          "cardano.lastConnectedWallet",
         );
 
         if (!lastConnectedWallet) return false;

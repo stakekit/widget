@@ -15,9 +15,9 @@ describe("Geo block", () => {
             regionCode: "AT-9",
             type: "GEO_LOCATION",
           },
-          { status: 403 }
+          { status: 403 },
         );
-      })
+      }),
     );
 
     const app = await renderApp();

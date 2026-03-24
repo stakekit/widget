@@ -4,7 +4,7 @@ import { rootSelector } from "../../styles/theme/ids";
 import { MaybeDocument } from "../../utils/maybe-document";
 
 const RootElementContext = createContext<HTMLElement | null | undefined>(
-  undefined
+  undefined,
 );
 
 export const RootElementProvider = ({ children }: PropsWithChildren) => {
@@ -12,7 +12,7 @@ export const RootElementProvider = ({ children }: PropsWithChildren) => {
 
   useLayoutEffect(() => {
     MaybeDocument.chainNullable(
-      (doc) => doc.querySelector(rootSelector) as HTMLElement
+      (doc) => doc.querySelector(rootSelector) as HTMLElement,
     ).ifJust((el) => setRootElement(el));
   }, []);
 

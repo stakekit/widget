@@ -5,7 +5,7 @@ import { useSavedRef } from "../use-saved-ref";
 
 export const useTrackPage = (
   pageName: TrackPageKey,
-  properties?: Properties
+  properties?: Properties,
 ) => {
   const { trackPageView } = useTracking();
 

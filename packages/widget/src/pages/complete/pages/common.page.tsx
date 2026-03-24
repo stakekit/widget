@@ -1,4 +1,3 @@
-import type { TokenDto, YieldDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -9,15 +8,14 @@ import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
+import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
+  type YieldMetadata,
 } from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import type {
-  YieldPendingActionType,
-  YieldTokenDto,
-} from "../../../providers/yield-api-client-provider/types";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
 import { useComplete } from "../hooks/use-complete.hook";
@@ -28,7 +26,7 @@ import {
 
 type Props = {
   token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<YieldMetadataDto>;
+  metadata: Maybe<YieldMetadata>;
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
@@ -39,7 +37,7 @@ type Props = {
     }[]
   >;
   yieldType: Maybe<ExtendedYieldType>;
-  integrationId: YieldDto["id"];
+  integrationId: string;
 };
 
 export const CompletePageComponent = ({
@@ -126,7 +124,7 @@ export const CompletePageComponent = ({
                                 ? "ethena_usde"
                                 : undefined,
                             }),
-                      ""
+                      "",
                     ),
                     amount,
                     tokenNetwork: network,
@@ -138,9 +136,9 @@ export const CompletePageComponent = ({
                         context: isEthenaUsdeStaking(integrationId)
                           ? "ethena_usde"
                           : undefined,
-                      }
+                      },
                     ),
-                  }
+                  },
                 )}
               </Heading>
             </motion.div>
@@ -174,7 +172,7 @@ export const CompletePageComponent = ({
                           {t("complete.via", { providerName: v.name })}
                         </Text>
                       </Box>
-                    ))
+                    )),
                   )
                   .extractNullable()
               : null}
@@ -200,12 +198,16 @@ export const CompletePageComponent = ({
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
                     type: Just(val.type)
-                      .map((v) =>
-                        t(`steps.tx_type.${v}`, {
-                          context: isEthenaUsdeStaking(integrationId)
-                            ? "ETHENA_USDE"
-                            : undefined,
-                        })
+                      .map(
+                        (v) =>
+                          t(
+                            `steps.tx_type.${v}` as never,
+                            {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ETHENA_USDE"
+                                : undefined,
+                            } as never,
+                          ) as unknown as string,
                       )
                       .map(capitalizeFirstLowerRest)
                       .extract(),

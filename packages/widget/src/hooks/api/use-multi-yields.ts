@@ -1,4 +1,3 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import { hashKey, type QueryClient, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/react";
 import { createStore } from "@xstate/store";
@@ -32,8 +31,10 @@ import {
 } from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
 import {
+  hasYieldNftsArg,
   isNonZeroRewardRateYield,
   type ValidatorsConfig,
+  type Yield,
 } from "../../domain/types/yields";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
@@ -43,11 +44,11 @@ import { useValidatorsConfig } from "../use-validators-config";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
 const multiYieldsStore = createStore({
-  context: { data: new Map<string, Map<string, YieldDto>>() },
+  context: { data: new Map<string, Map<string, Yield>>() },
   on: {
     "yield-opportunity": (
       context,
-      event: { data: { key: string; yieldDto: YieldDto } }
+      event: { data: { key: string; yieldDto: Yield } },
     ) => {
       const newMap = new Map(context.data);
       const prev = newMap.get(event.data.key) ?? new Map();
@@ -101,12 +102,12 @@ export const useStreamMultiYields = (yieldIds: string[]) => {
   });
 };
 
-export const useMultiYields = <T = YieldDto[]>(
+export const useMultiYields = <T = Yield[]>(
   yieldIds: string[],
   opts?: {
-    select?: (val: YieldDto[]) => T;
+    select?: (val: Yield[]) => T;
     enabled?: boolean;
-  }
+  },
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
   const yieldApiFetchClient = useYieldApiFetchClient();
@@ -130,20 +131,20 @@ export const useMultiYields = <T = YieldDto[]>(
           ...argsRef.current,
           yieldIds,
           validatorsConfig,
-        }).pipe(toArray())
+        }).pipe(toArray()),
       ),
     select: opts?.select,
   });
 };
 
 export const getFirstEligibleYield = (
-  params: Parameters<typeof firstEligibleYield$>[0]
+  params: Parameters<typeof firstEligibleYield$>[0],
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
       queryKey: getFirstEligibleYieldQueryKey(params.yieldIds),
       queryFn: () => firstValueFrom(firstEligibleYield$(params)),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get first eligible yield");
@@ -166,13 +167,13 @@ const multipleYields$ = (args: {
           yieldId: v,
           queryClient: args.queryClient,
           yieldApiFetchClient: args.yieldApiFetchClient,
-        })
-      )
-    )
+        }),
+      ),
+    ),
   ).pipe(
     map((v) => (v.isRight() ? v.extract() : null)),
     filter(
-      (v): v is YieldDto =>
+      (v): v is Yield =>
         !!(
           v &&
           defaultFiltered({
@@ -181,8 +182,8 @@ const multipleYields$ = (args: {
             network: args.network,
             isLedgerLive: args.isLedgerLive,
           }).length > 0
-        )
-    )
+        ),
+    ),
   );
 
 const firstEligibleYield$ = (args: {
@@ -198,7 +199,7 @@ const firstEligibleYield$ = (args: {
   validatorsConfig: ValidatorsConfig;
   preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
 }) => {
-  let defaultYield: YieldDto | null = null;
+  let defaultYield: Yield | null = null;
 
   const successStream = multipleYields$(args).pipe(
     tap((v) => {
@@ -210,12 +211,12 @@ const firstEligibleYield$ = (args: {
       const preferredYieldId = Maybe.fromNullable(
         args.preferredTokenYieldsPerNetwork?.[
           y.token.network as SupportedSKChains
-        ]?.[tokenString(y.token)]
+        ]?.[tokenString(y.token)],
       )
         .altLazy(() =>
           Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
-            (v) => Object.values(v)[0][tokenString(y.token)]
-          )
+            (v) => Object.values(v)[0][tokenString(y.token)],
+          ),
         )
         .extractNullable();
 
@@ -231,10 +232,10 @@ const firstEligibleYield$ = (args: {
       });
     }),
     take(1),
-    defaultIfEmpty(null)
+    defaultIfEmpty(null),
   );
 
-  return new Observable<YieldDto | null>((subscriber) => {
+  return new Observable<Yield | null>((subscriber) => {
     successStream.subscribe({
       complete: () => subscriber.complete(),
       next: (v) => subscriber.next(v ?? defaultYield),
@@ -244,7 +245,7 @@ const firstEligibleYield$ = (args: {
 };
 
 type SelectorInputData = {
-  data: YieldDto[];
+  data: Yield[];
   isConnected: boolean;
   network: SKWallet["network"];
   isLedgerLive: boolean;
@@ -261,7 +262,7 @@ const defaultFiltered = createSelector(
   (data, isConnected, network) =>
     data.filter((o) => {
       const defaultFilter =
-        !o.args.enter.args?.nfts &&
+        !hasYieldNftsArg(o) &&
         o.id !== "binance-bnb-native-staking" &&
         o.id !== "binance-testnet-bnb-native-staking" &&
         o.id !== "avax-native-staking" &&
@@ -271,7 +272,7 @@ const defaultFiltered = createSelector(
       if (!isConnected) return defaultFilter;
 
       return network === o.token.network && defaultFilter;
-    })
+    }),
 );
 
 const getFirstEligibleYieldQueryKey = (yieldIds: string[]) => [
@@ -287,5 +288,5 @@ export const getCachedFirstEligibleYield = ({
   yieldIds: string[];
 }) =>
   Maybe.fromNullable(
-    queryClient.getQueryData<YieldDto>(getFirstEligibleYieldQueryKey(yieldIds))
+    queryClient.getQueryData<Yield>(getFirstEligibleYieldQueryKey(yieldIds)),
   );

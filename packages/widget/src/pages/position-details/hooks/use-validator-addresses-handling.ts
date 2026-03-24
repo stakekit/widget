@@ -1,7 +1,7 @@
-import type { ValidatorDto } from "@stakekit/api-hooks";
 import { useCallback, useMemo, useReducer } from "react";
 import type { SelectModalProps } from "../../../components/atoms/select-modal";
 import { isPendingActionValidatorAddressesRequired } from "../../../domain/types/pending-action";
+import type { ValidatorDto } from "../../../domain/types/validators";
 import type {
   YieldBalanceDto,
   YieldPendingActionDto,
@@ -93,7 +93,7 @@ const reducer = (state: State, action: Actions): State => {
       return {
         ...state,
         multiSelect: isPendingActionValidatorAddressesRequired(
-          action.data.pendingActionDto
+          action.data.pendingActionDto,
         ),
         selectedValidators: newSelectedValidators,
         pendingActionDto: action.data.pendingActionDto,
@@ -120,7 +120,7 @@ export const useValidatorAddressesHandling = () => {
 
   const closeModal = useCallback(
     () => dispatch({ type: "validator/close" }),
-    []
+    [],
   );
 
   const openModal = useCallback(
@@ -128,13 +128,13 @@ export const useValidatorAddressesHandling = () => {
       yieldBalance: YieldBalanceDto;
       pendingActionDto: YieldPendingActionDto;
     }) => dispatch({ type: "validator/open", data: args }),
-    []
+    [],
   );
 
   const onItemClick = useCallback(
     (validator: ValidatorDto["address"]) =>
       dispatch({ type: "validator/multiselect", data: validator }),
-    []
+    [],
   );
 
   const modalState: SelectModalProps["state"] = useMemo(
@@ -142,7 +142,7 @@ export const useValidatorAddressesHandling = () => {
       isOpen: state.showValidatorsModal,
       setOpen: (value) => !value && closeModal(),
     }),
-    [closeModal, state.showValidatorsModal]
+    [closeModal, state.showValidatorsModal],
   );
 
   return {

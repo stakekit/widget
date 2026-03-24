@@ -40,12 +40,12 @@ const queryFn = async ({
       const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(
           typeSafeObjectEntries<SubstrateChainsMap>(substrateChainsMap).filter(
-            ([_, v]) => networks.has(v.skChainName)
-          )
+            ([_, v]) => networks.has(v.skChainName),
+          ),
         );
 
       const substrateChains = Object.values(filteredSubstrateChainsMap).map(
-        (val) => val.wagmiChain
+        (val) => val.wagmiChain,
       );
 
       const lunoKitChains = Object.values(filteredSubstrateChainsMap).map(
@@ -61,7 +61,7 @@ const queryFn = async ({
               : getNetworkLogo(val.skChainName),
           genesisHash: val.genesisHash as `0x${string}`,
           ss58Format: val.ss58Format,
-        })
+        }),
       );
 
       return Promise.resolve({
@@ -71,8 +71,8 @@ const queryFn = async ({
           getSubstrateConnectors(
             substrateChains,
             lunoKitChains,
-            forceWalletConnectOnly
-          )
+            forceWalletConnectOnly,
+          ),
         ),
       });
     },
@@ -85,7 +85,7 @@ export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
       staleTime,
       queryKey,
       queryFn: () => queryFn(opts),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get substrate config");

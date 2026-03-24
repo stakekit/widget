@@ -1,4 +1,3 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
@@ -6,6 +5,8 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { equalTokens } from "../../../domain";
 import { isForceMaxAmount } from "../../../domain/types/stake";
+import type { TokenDto } from "../../../domain/types/tokens";
+import { getYieldActionArg } from "../../../domain/types/yields";
 import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useBaseToken } from "../../../hooks/use-base-token";
@@ -44,20 +45,20 @@ export const usePositionDetails = () => {
   const unstakeMaxAmount = useMemo(
     () =>
       integrationData
-        .chainNullable((val) => val.args.exit?.args?.amount)
+        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
         .filter((val) => !isForceMaxAmount(val))
         .chainNullable((val) => val.maximum),
-    [integrationData]
+    [integrationData],
   );
 
   const unstakeMinAmount = useMemo(
     () =>
       integrationData
-        .chainNullable((val) => val.args.exit?.args?.amount)
+        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
         .filter((val) => !isForceMaxAmount(val))
         .map(() => minUnstakeAmount.toNumber())
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
-    [integrationData, minUnstakeAmount]
+    [integrationData, minUnstakeAmount],
   );
 
   const onClickHandler = useMutation({
@@ -121,10 +122,10 @@ export const usePositionDetails = () => {
       positionBalances.data
         .map((balanceData) => balanceData.rewardRate)
         .extractNullable(),
-    [positionBalances.data]
+    [positionBalances.data],
   );
 
-  const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
+  const canUnstake = integrationData.filter((d) => !!d.status.exit).isJust();
 
   const onUnstakeAmountChange = (value: BigNumber) =>
     dispatch({ type: "unstake/amount/change", data: value });
@@ -134,7 +135,7 @@ export const usePositionDetails = () => {
       reducedStakedOrLiquidBalance
         .map((val) => val.amountUsd)
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [reducedStakedOrLiquidBalance]
+    [reducedStakedOrLiquidBalance],
   );
 
   const onMaxClick = () => {
@@ -147,7 +148,7 @@ export const usePositionDetails = () => {
 
   const unstakeAvailable = integrationData.mapOrDefault(
     (d) => d.status.exit,
-    false
+    false,
   );
 
   const {
@@ -171,21 +172,21 @@ export const usePositionDetails = () => {
               (yb) =>
                 !yb.token.isPoints &&
                 !!yb.validator?.pricePerShare &&
-                !equalTokens(yb.token, v.baseToken)
+                !equalTokens(yb.token, v.baseToken),
             )
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                  new BigNumber(yb.validator?.pricePerShare ?? 0)
-                )} ${v.baseToken.symbol}`
+                  new BigNumber(yb.validator?.pricePerShare ?? 0),
+                )} ${v.baseToken.symbol}`,
               );
             });
 
           return acc;
-        }, new Map<TokenDto["symbol"], string>())
+        }, new Map<TokenDto["symbol"], string>()),
       ),
-    [integrationData, positionBalancesByType, baseToken]
+    [integrationData, positionBalancesByType, baseToken],
   );
 
   const unstakeDisabled = yieldOpportunity.isLoading || !unstakeAvailable;

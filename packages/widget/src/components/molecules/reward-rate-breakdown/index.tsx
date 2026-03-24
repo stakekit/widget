@@ -36,6 +36,8 @@ export const RewardRateBreakdown = ({
     showUpToCampaign,
   });
 
+  console.log({ items });
+
   if (!items.length) {
     return null;
   }

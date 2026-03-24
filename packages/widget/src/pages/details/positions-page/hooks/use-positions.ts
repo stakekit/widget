@@ -1,8 +1,8 @@
-import type { YieldBalanceLabelDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { compare, Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
+import type { YieldBalanceLabelDto } from "../../../../domain/types/token-balance";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useSettings } from "../../../../providers/settings";
 import type { SettingsContextType } from "../../../../providers/settings/types";
@@ -22,7 +22,7 @@ export const usePositions = () => {
         positionsData: _positionsData.data,
         variant,
       }),
-    [_positionsData.data, variant]
+    [_positionsData.data, variant],
   );
 
   const positionsData = { ..._positionsData, data: positionsDataMapped };
@@ -36,7 +36,7 @@ export const usePositions = () => {
 
   const listData = useMemo(
     () => ["header" as const, ...positionsData.data],
-    [positionsData.data]
+    [positionsData.data],
   );
 
   return {
@@ -64,8 +64,8 @@ const positionsTableDataSelector = createSelector(
                 value.balances.filter((v) =>
                   Just(new BigNumber(v.amount))
                     .filter((v) => !v.isZero() && !v.isNaN())
-                    .isJust()
-                )
+                    .isJust(),
+                ),
               )
                 .filter((v) => !!v.length)
                 .ifJust((v) =>
@@ -80,11 +80,11 @@ const positionsTableDataSelector = createSelector(
                       List.sort(
                         (a, b) =>
                           compare(priorityOrder[a.type], priorityOrder[b.type]),
-                        value.balances
-                      )
+                        value.balances,
+                      ),
                     ).map((v) => v.token),
                     actionRequired: v.some(
-                      (b) => b.type === "locked" || b.type === "claimable"
+                      (b) => b.type === "locked" || b.type === "claimable",
                     ),
                     pointsRewardTokenBalances: v
                       .filter((v) => !!v.token.isPoints)
@@ -94,10 +94,10 @@ const positionsTableDataSelector = createSelector(
                       })),
                     hasPendingClaimRewards: v.some((balance) =>
                       balance.pendingActions.some(
-                        (action) => action.type === "CLAIM_REWARDS"
-                      )
+                        (action) => action.type === "CLAIM_REWARDS",
+                      ),
                     ),
-                  })
+                  }),
                 );
             });
 
@@ -116,8 +116,8 @@ const positionsTableDataSelector = createSelector(
           } & (
             | { type: "validators"; validatorsAddresses: string[] }
             | { type: "default" }
-          ))[]
-        )
+          ))[],
+        ),
       )
       .map((val) =>
         variant === "zerion"
@@ -126,9 +126,9 @@ const positionsTableDataSelector = createSelector(
               if (b.hasPendingClaimRewards) return 1;
               return 0;
             })
-          : val
+          : val,
       )
-      .unsafeCoerce()
+      .unsafeCoerce(),
 );
 
 const priorityOrder: Record<YieldBalanceType, number> = {

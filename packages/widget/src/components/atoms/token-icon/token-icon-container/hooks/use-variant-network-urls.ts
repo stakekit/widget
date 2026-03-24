@@ -35,6 +35,6 @@ export const useVariantNetworkUrls = (network: Networks) => {
 
   return useMemo(
     () => getVariantNetworkUrl({ chainIconMapping, network }),
-    [chainIconMapping, network]
+    [chainIconMapping, network],
   );
 };

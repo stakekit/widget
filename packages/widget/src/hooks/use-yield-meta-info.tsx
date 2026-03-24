@@ -1,11 +1,17 @@
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import { MiscNetworks } from "@stakekit/common";
 import { List, Maybe } from "purify-ts";
 import { type ReactNode, useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { SKAnchor } from "../components/atoms/anchor";
-import { isEthenaUsdeStaking } from "../domain/types/yields";
-import type { YieldTokenDto } from "../providers/yield-api-client-provider/types";
+import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
+import type { ValidatorDto } from "../domain/types/validators";
+import {
+  getYieldMetadata,
+  getYieldRewardType,
+  hasYieldFeeConfigurationEnabled,
+  isEthenaUsdeStaking,
+  type Yield,
+} from "../domain/types/yields";
 import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
@@ -13,7 +19,7 @@ export const useYieldMetaInfo = ({
   validators,
   tokenDto,
 }: {
-  selectedStake: Maybe<YieldDto>;
+  selectedStake: Maybe<Yield>;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
@@ -29,9 +35,9 @@ export const useYieldMetaInfo = ({
           t("details.selected_validators", {
             providerName: v.name ?? v.address,
             count: validators.length - 1,
-          })
+          }),
         ),
-    [validators, t]
+    [validators, t],
   );
 
   return useMemo(() => {
@@ -39,27 +45,27 @@ export const useYieldMetaInfo = ({
       typeof ifNotFound
     >(({ selectedStake: y, tokenDto }) => {
       const sv = validatorsFormatted.extract();
+      const metadata = getYieldMetadata(y);
 
-      const haveFeeConfigurationEnabled = y.feeConfigurations.length > 0;
+      const haveFeeConfigurationEnabled = hasYieldFeeConfigurationEnabled(y);
 
       const stakeToken = tokenDto.symbol;
       const rewardTokens =
-        y.metadata.rewardTokens
+        metadata.rewardTokens
           ?.filter((t) => !t.isPoints)
           .map((t) => t.symbol)
           .join(", ") ?? "";
       const providerName =
-        sv ??
-        (y.metadata.provider ? y.metadata.provider.name : y.metadata.name);
-      const rewardSchedule = y.metadata.rewardSchedule;
-      const cooldownPeriodDays = y.metadata.cooldownPeriod?.days ?? 0;
-      const warmupPeriodDays = y.metadata.warmupPeriod?.days ?? 0;
-      const rewardClaiming = y.metadata.rewardClaiming;
+        sv ?? (metadata.provider ? metadata.provider.name : metadata.name);
+      const rewardSchedule = metadata.rewardSchedule;
+      const cooldownPeriodDays = metadata.cooldownPeriod?.days ?? 0;
+      const warmupPeriodDays = metadata.warmupPeriod?.days ?? 0;
+      const rewardClaiming = metadata.rewardClaiming;
 
       const isCompound = providerName.includes("Compound");
 
       if (
-        y.metadata.rewardSchedule === "campaign" &&
+        metadata.rewardSchedule === "campaign" &&
         stakeToken.toUpperCase() === "SUSD"
       ) {
         return {
@@ -99,7 +105,7 @@ export const useYieldMetaInfo = ({
 
       const def = {
         campaign:
-          y.metadata.rewardSchedule === "campaign" ? (
+          metadata.rewardSchedule === "campaign" ? (
             <Trans
               i18nKey="details.campaign"
               components={{
@@ -111,22 +117,22 @@ export const useYieldMetaInfo = ({
               }}
             />
           ) : null,
-        lockupPeriod: y.metadata.lockupPeriod?.days
+        lockupPeriod: metadata.lockupPeriod?.days
           ? t("details.lockup_period", {
-              count: y.metadata.lockupPeriod?.days,
+              count: metadata.lockupPeriod?.days,
             })
           : null,
         extra:
-          y.rewardType === "variable"
+          getYieldRewardType(y) === "variable"
             ? t("details.reward_type_varialbe", {
                 symbol: capitalizeFirstLowerRest(y.token.symbol),
               })
-            : y.metadata.token.network === MiscNetworks.Tezos
+            : metadata.token.network === MiscNetworks.Tezos
               ? t("details.extra_tezos")
               : undefined,
       };
 
-      switch (y.metadata.type) {
+      switch (metadata.type) {
         case "staking": {
           return {
             description: null,
@@ -243,12 +249,12 @@ export const useYieldMetaInfo = ({
                   }),
             withdrawnTime: y.status.exit
               ? cooldownPeriodDays > 0
-                ? (y.metadata.withdrawPeriod?.days ?? 0) > 0
+                ? (metadata.withdrawPeriod?.days ?? 0) > 0
                   ? t("details.liquid_stake.unstake_time_days_with_claim", {
                       unstakeTime: t("details.liquid_stake.unstake_time", {
                         count: cooldownPeriodDays,
                       }),
-                      count: y.metadata.withdrawPeriod?.days,
+                      count: metadata.withdrawPeriod?.days,
                     })
                   : t("details.liquid_stake.unstake_time", {
                       count: cooldownPeriodDays,

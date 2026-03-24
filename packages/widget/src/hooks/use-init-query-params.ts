@@ -17,7 +17,7 @@ export const useInitQueryParams = () => {
       getAndValidateInitParams({
         externalProviderInitToken: externalProviders?.initToken,
       }),
-    [externalProviders?.initToken]
+    [externalProviders?.initToken],
   );
 };
 
@@ -28,7 +28,7 @@ const pendingActionCodec = Codec.custom<YieldPendingActionType>({
       .chain((v) =>
         /^[A-Z_]+$/.test(v)
           ? Right(v as YieldPendingActionType)
-          : Left("invalid pending action")
+          : Left("invalid pending action"),
       ),
   encode: (val) => val,
 });
@@ -48,7 +48,7 @@ const safeParamCodec = Codec.custom<string>({
     string
       .decode(val)
       .chain((v) =>
-        safeString.test(v) ? Right(v) : Left("invalid string value")
+        safeString.test(v) ? Right(v) : Left("invalid string value"),
       ),
   encode: (val) => val,
 });
@@ -90,8 +90,8 @@ export const getAndValidateInitParams = ({
         safeParamCodec.decode(url.searchParams.get("token")).chain((val) =>
           val.includes("-")
             ? Right(val.split("-").slice(0, -1).join("-")) // network is first part of TokenString
-            : Left("invalid TokenString")
-        )
+            : Left("invalid TokenString"),
+        ),
       )
       .chain(skSupportedChainsCodec.decode)
       .toMaybe()

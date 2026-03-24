@@ -5,6 +5,7 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
@@ -26,14 +27,14 @@ export const useStakeReview = () => {
 
   const enterRequest = useSelector(
     enterStore,
-    (state) => state.context.data
+    (state) => state.context.data,
   ).unsafeCoerce();
 
   const yieldApiFetchClient = useYieldApiFetchClient();
 
   const stakeAmount = useMemo(
     () => new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0),
-    [enterRequest]
+    [enterRequest],
   );
 
   const actionPreviewQuery = useQuery({
@@ -44,7 +45,6 @@ export const useStakeReview = () => {
       createEnterAction({
         addresses: enterRequest.addresses,
         fetchClient: yieldApiFetchClient,
-        inputToken: enterRequest.selectedToken,
         requestDto: enterRequest.requestDto,
         yieldDto: enterRequest.selectedStake,
       }),
@@ -55,14 +55,13 @@ export const useStakeReview = () => {
       Maybe.fromNullable(actionPreviewQuery.data)
         .map((actionDto) =>
           actionDto.transactions.reduce(
-            (acc, transaction) =>
-              acc.plus(transaction.gasEstimate?.amount ?? 0),
-            new BigNumber(0)
-          )
+            (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
+            new BigNumber(0),
+          ),
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),
-    [actionPreviewQuery.data]
+    [actionPreviewQuery.data],
   );
 
   const gasCheckWarning = useGasWarningCheck({
@@ -77,16 +76,16 @@ export const useStakeReview = () => {
 
   const selectedStake = useMemo(
     () => Maybe.of(enterRequest.selectedStake),
-    [enterRequest.selectedStake]
+    [enterRequest.selectedStake],
   );
   const selectedToken = useMemo(
     () => Maybe.of(enterRequest.selectedToken),
-    [enterRequest.selectedToken]
+    [enterRequest.selectedToken],
   );
 
   const selectedProviderYieldId = useMemo(
     () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
-    [enterRequest.requestDto.arguments?.providerId]
+    [enterRequest.requestDto.arguments?.providerId],
   );
 
   const rewardToken = useRewardTokenDetails(selectedStake);
@@ -98,13 +97,13 @@ export const useStakeReview = () => {
   });
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.review,
-    ""
+    "",
   );
 
   const amount = useMemo(() => formatNumber(stakeAmount), [stakeAmount]);
   const interestRate = useMemo(
     () => estimatedRewards.mapOrDefault((r) => r.percentage.toString(), ""),
-    [estimatedRewards]
+    [estimatedRewards],
   );
 
   const pricesState = useTokensPrices({
@@ -119,7 +118,7 @@ export const useStakeReview = () => {
         prices: Maybe.fromNullable(pricesState.data),
         yieldDto: selectedStake,
       }),
-    [pricesState.data, selectedStake, stakeEnterTxGas]
+    [pricesState.data, selectedStake, stakeEnterTxGas],
   );
 
   const { depositFee, managementFee, performanceFee } = useFees({
@@ -139,15 +138,15 @@ export const useStakeReview = () => {
             };
           }
         ).mechanics?.fee ?? null,
-      [enterRequest.selectedStake]
+      [enterRequest.selectedStake],
     ),
     prices: useMemo(
       () => Maybe.fromNullable(pricesState.data),
-      [pricesState.data]
+      [pricesState.data],
     ),
   });
 
-  const metadata = selectedStake.map((y) => y.metadata);
+  const metadata = selectedStake.map(getYieldMetadata);
 
   const navigate = useNavigate();
 
@@ -176,8 +175,8 @@ export const useStakeReview = () => {
         label: t("shared.confirm"),
         onClick: () => onClickRef.current(),
       }),
-      [onClickRef, t, enterMutation.isPending]
-    )
+      [onClickRef, t, enterMutation.isPending],
+    ),
   );
 
   const { variant } = useSettings();
@@ -194,18 +193,18 @@ export const useStakeReview = () => {
             },
           }
         : { showMetaInfo: false }) satisfies MetaInfoProps,
-    [selectedStake, selectedToken, enterRequest.selectedValidators, variant]
+    [selectedStake, selectedToken, enterRequest.selectedValidators, variant],
   );
 
   const commissionFee = useMemo(
     () =>
       selectedStake
-        .chainNullable((y) => y.metadata.commission)
+        .chainNullable((y) => getYieldMetadata(y).commission)
         .map((commission) =>
-          commission.reduce((acc, curr) => acc + curr.value, 0)
+          commission.reduce<number>((acc, curr) => acc + curr.value, 0),
         )
         .map((val) => `${APToPercentage(val)}%`),
-    [selectedStake]
+    [selectedStake],
   );
 
   return {

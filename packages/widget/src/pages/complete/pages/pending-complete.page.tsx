@@ -2,6 +2,7 @@ import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
@@ -21,17 +22,17 @@ export const PendingCompletePage = () => {
 
   const pendingRequest = useSelector(
     usePendingActionStore(),
-    (state) => state.context.data
+    (state) => state.context.data,
   ).unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),
-    [pendingRequest.integrationData]
+    [pendingRequest.integrationData],
   );
 
   const token = useMemo(
     () => Maybe.of(pendingRequest.interactedToken),
-    [pendingRequest.interactedToken]
+    [pendingRequest.interactedToken],
   );
 
   useTrackPage("pendingActionCompelete");
@@ -39,19 +40,19 @@ export const PendingCompletePage = () => {
   const providerDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : []
+      p.type === "validators" ? p.validatorsAddresses : [],
     ),
     selectedProviderYieldId: Maybe.empty(),
   });
 
-  const metadata = integrationData.map((d) => d.metadata);
+  const metadata = integrationData.map(getYieldMetadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
       Maybe.fromNullable(pendingRequest.requestDto.arguments?.amount)
         .map((val) => new BigNumber(val ?? 0))
         .mapOrDefault((v) => formatNumber(v), ""),
-    [pendingRequest.requestDto.arguments?.amount]
+    [pendingRequest.requestDto.arguments?.amount],
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

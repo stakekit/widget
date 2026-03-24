@@ -1,4 +1,3 @@
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import clsx from "clsx";
 import { List } from "purify-ts";
 import { useTranslation } from "react-i18next";
@@ -7,7 +6,9 @@ import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useActionListItem } from "../../../pages/details/activity-page/hooks/use-action-list-item";
+import type { ActionYieldDto } from "../../../pages/details/activity-page/types";
 import {
   badgeText,
   listItemContainer,
@@ -21,11 +22,6 @@ import {
   noWrap,
   viaText,
 } from "./style.css";
-
-type ActionYieldDto = {
-  actionData: ActionDto;
-  yieldData: YieldDto;
-};
 
 export const ActionListItem = ({
   action,
@@ -68,7 +64,7 @@ export const ActionListItem = ({
                   justifyContent="flex-start"
                   alignItems="center"
                 >
-                  <TokenIcon metadata={d.metadata} token={d.token} />
+                  <TokenIcon metadata={getYieldMetadata(d)} token={d.token} />
                   <Box
                     display="flex"
                     flexDirection="column"
@@ -98,7 +94,7 @@ export const ActionListItem = ({
                               count: Math.max(val.length - 1, 1),
                             })}
                           </Text>
-                        ))
+                        )),
                       )
                       .extractNullable()}
                   </Box>
@@ -129,7 +125,7 @@ export const ActionListItem = ({
             </Box>
           </ListItem>
         ),
-        <ContentLoaderSquare heightPx={60} />
+        <ContentLoaderSquare heightPx={60} />,
       )}
     </Box>
   );
@@ -175,7 +171,7 @@ const Badge = ({
             noWrap,
             badgeText({
               type: badgeColor ? "white" : "regular",
-            })
+            }),
           )}
         >
           {badgeLabel}

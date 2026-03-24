@@ -1,6 +1,6 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { YieldMetadata } from "../../../domain/types/yields";
 import { useSettings } from "../../../providers/settings";
-import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
 import type { Atoms } from "../../../styles/theme/atoms.css";
 import { NetworkLogoImage } from "./network-icon-image";
 import { TokenIconContainer } from "./token-icon-container";
@@ -14,7 +14,7 @@ export const TokenIcon = ({
   hideNetwork,
 }: {
   token: TokenDto | YieldTokenDto;
-  metadata?: YieldMetadataDto;
+  metadata?: YieldMetadata;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];
   hideNetwork?: boolean;

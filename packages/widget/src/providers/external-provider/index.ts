@@ -29,11 +29,11 @@ type ExtraProps = ConnectorWithFilteredChains &
 type ExternalConnector = Connector & ExtraProps;
 
 export const isExternalProviderConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is ExternalConnector => connector.id === configMeta.id;
 
 export const externalProviderConnector = (
-  variant: RefObject<SKExternalProviders>
+  variant: RefObject<SKExternalProviders>,
 ): WalletList[number] => ({
   groupName: "External Providers",
   wallets: [
@@ -54,8 +54,8 @@ export const externalProviderConnector = (
               .map((val) => new Set(val))
               .mapOrDefault(
                 (val) => connectorConfig.chains.filter((c) => val.has(c.id)),
-                connectorConfig.chains as [Chain, ...Chain[]]
-              )
+                connectorConfig.chains as [Chain, ...Chain[]],
+              ),
           );
 
           if ($filteredChains.getValue().length === 0) {
@@ -71,7 +71,7 @@ export const externalProviderConnector = (
             async () => $filteredChains.getValue()[0].id;
 
           const connect: ReturnType<CreateConnectorFn>["connect"] = async (
-            args
+            args,
           ) => {
             connectorConfig.emitter.emit("message", { type: "connecting" });
 
@@ -94,11 +94,11 @@ export const externalProviderConnector = (
                 await EitherAsync.liftEither(
                   List.find(
                     (c) => c.id === chainId,
-                    connectorConfig.chains as unknown as Array<Chain>
-                  ).toEither(new Error("Chain not found"))
+                    connectorConfig.chains as unknown as Array<Chain>,
+                  ).toEither(new Error("Chain not found")),
                 )
                   .chain((chain) =>
-                    provider.switchChain({ chainId }).map(() => chain)
+                    provider.switchChain({ chainId }).map(() => chain),
                   )
                   .ifRight((chain) => onChainChanged(chain.id.toString()))
               ).unsafeCoerce();
@@ -140,8 +140,8 @@ export const externalProviderConnector = (
                   .mapOrDefault(
                     (val) =>
                       connectorConfig.chains.filter((c) => val.has(c.id)),
-                    connectorConfig.chains as [Chain, ...Chain[]]
-                  )
+                    connectorConfig.chains as [Chain, ...Chain[]],
+                  ),
               );
 
               // If the current chain is not in the supported chains, switch to the first supported chain
@@ -149,7 +149,7 @@ export const externalProviderConnector = (
                 $filteredChains.getValue().every((c) => c.id !== currentChainId)
               ) {
                 getChainId().then((chainId) =>
-                  onChainChanged(chainId.toString())
+                  onChainChanged(chainId.toString()),
                 );
               }
             };

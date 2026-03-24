@@ -1,5 +1,5 @@
-import type { TransactionType } from "@stakekit/api-hooks";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { TransactionType } from "../../../domain/types/action";
 
 type CompleteCommonContextType = {
   urls: {
@@ -36,7 +36,7 @@ export const useCompleteCommonContext = () => {
 
   if (!context) {
     throw new Error(
-      "useCompleteCommonContext must be used within a CompleteCommonContextProvider"
+      "useCompleteCommonContext must be used within a CompleteCommonContextProvider",
     );
   }
 

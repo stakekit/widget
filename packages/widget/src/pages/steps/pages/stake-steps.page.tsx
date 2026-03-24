@@ -14,7 +14,7 @@ export const StakeStepsPage = () => {
 
   const enterRequest = useSelector(
     useEnterStakeStore(),
-    (state) => state.context.data
+    (state) => state.context.data,
   ).unsafeCoerce();
 
   const onSignSuccess = () =>
@@ -26,17 +26,18 @@ export const StakeStepsPage = () => {
   const providersDetails = useProvidersDetails({
     integrationData: useMemo(
       () => Maybe.of(enterRequest.selectedStake),
-      [enterRequest.selectedStake]
+      [enterRequest.selectedStake],
     ),
     validatorsAddresses: useMemo(
       () => Maybe.of(enterRequest.selectedValidators),
-      [enterRequest.selectedValidators]
+      [enterRequest.selectedValidators],
     ),
     selectedProviderYieldId: Maybe.empty(),
   });
 
   return (
     <StepsPage
+      inputToken={enterRequest.selectedToken}
       session={enterRequest.actionDto.unsafeCoerce()}
       onSignSuccess={onSignSuccess}
       providersDetails={providersDetails}

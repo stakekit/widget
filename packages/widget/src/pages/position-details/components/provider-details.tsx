@@ -1,4 +1,3 @@
-import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -14,6 +13,8 @@ import { Image } from "../../../components/atoms/image";
 import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
+import type { RewardTypes } from "../../../domain/types/reward-rate";
+import type { Yield } from "../../../domain/types/yields";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import type { GetMaybeJust } from "../../../types/utils";
 import { inactiveContainer, noWrap } from "../styles.css";
@@ -30,7 +31,7 @@ export const ProviderDetails = ({
 > & {
   isFirst: boolean;
   stakeType: string;
-  integrationData: YieldDto;
+  integrationData: Yield;
   logo: string | undefined;
   name: string;
   rewardRateFormatted: string;
@@ -96,7 +97,7 @@ export const ProviderDetails = ({
                   {t(
                     providerDetails.status === "jailed"
                       ? "details.validators_jailed"
-                      : "details.validators_inactive"
+                      : "details.validators_inactive",
                   )}
                 </Text>
               </Box>
@@ -135,7 +136,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
       {Object.entries(metaInfo)
         .filter(
           (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1]
+            !!val[1],
         )
         .map(([key, val]) => {
           return (

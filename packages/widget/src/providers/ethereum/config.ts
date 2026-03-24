@@ -40,12 +40,12 @@ const queryFn = async ({
       const filteredEvmChainsMap: Partial<EvmChainsMap> =
         typeSafeObjectFromEntries(
           typeSafeObjectEntries<EvmChainsMap>(evmChainsMap).filter(([_, v]) =>
-            networks.has(v.skChainName)
-          )
+            networks.has(v.skChainName),
+          ),
         );
 
       const evmChains = Object.values(filteredEvmChainsMap).map(
-        (val) => val.wagmiChain
+        (val) => val.wagmiChain,
       );
 
       const portoWallet: WalletList[number]["wallets"][number] = (args) => ({
@@ -93,7 +93,7 @@ export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
       staleTime: Number.POSITIVE_INFINITY,
       queryKey: [config.appPrefix, "evm-config"],
       queryFn: () => queryFn(opts),
-    })
+    }),
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get evm config");

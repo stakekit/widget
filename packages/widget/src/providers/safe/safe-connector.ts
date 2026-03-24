@@ -51,7 +51,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
         $filteredChains.next(
           Maybe.fromNullable(config.chains.find((c) => c.id === chainId))
             .map((c) => [c])
-            .orDefault([])
+            .orDefault([]),
         );
 
         if (!disconnect) {
@@ -87,7 +87,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
         const provider = await getProvider();
         if (!provider) throw new ProviderNotFoundError();
         return (await provider.request({ method: "eth_accounts" })).map(
-          getAddress
+          getAddress,
         );
       },
       async getProvider() {
@@ -136,13 +136,13 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
       $filteredChains,
       getTxStatus(txHash) {
         return EitherAsync(() => sdk.txs.getBySafeTxHash(txHash)).mapLeft(
-          () => new Error("Could not get transaction status")
+          () => new Error("Could not get transaction status"),
         );
       },
       txStatus: TransactionStatus,
       sendTransactions(args) {
         return EitherAsync(() => sdk.txs.send(args)).mapLeft(
-          () => new Error("Could not send transactions")
+          () => new Error("Could not send transactions"),
         );
       },
     };

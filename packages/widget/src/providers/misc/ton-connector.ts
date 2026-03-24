@@ -25,7 +25,7 @@ import {
 
 const createTonConnector = (
   walletDetailsParams: WalletDetailsParams,
-  manifestUrl: string | undefined
+  manifestUrl: string | undefined,
 ) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
     const tonconnectUI = new TonConnectUI({
@@ -67,10 +67,10 @@ const createTonConnector = (
             Either.encase(() => JSON.parse(tx)).chain((val) =>
               unsignedTonTransactionTonConnectCodec
                 .decode(val)
-                .mapLeft((e) => new Error(e))
-            )
+                .mapLeft((e) => new Error(e)),
+            ),
           ).then(({ message }) =>
-            loadMessageRelaxed(Cell.fromBase64(message).beginParse())
+            loadMessageRelaxed(Cell.fromBase64(message).beginParse()),
           );
 
           const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
@@ -104,7 +104,7 @@ const createTonConnector = (
               () =>
                 new Promise<Wallet>((resolve, reject) => {
                   deferred = { resolve, reject };
-                })
+                }),
             )
             .then((wallet) => {
               deferred = null;
@@ -112,7 +112,7 @@ const createTonConnector = (
             }));
 
         const userFriendlyAddress = toUserFriendlyAddress(
-          wallet.account.address
+          wallet.account.address,
         );
 
         return {

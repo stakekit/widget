@@ -6,7 +6,7 @@ const createStateContext = <T>(defaultInitialValue: T) => {
   >(undefined);
   const providerFactory = (
     props: { value: [T, React.Dispatch<React.SetStateAction<T>>] },
-    children: React.ReactNode
+    children: React.ReactNode,
   ) => createElement(context.Provider, props, children);
 
   const StateProvider = ({
@@ -17,7 +17,7 @@ const createStateContext = <T>(defaultInitialValue: T) => {
     initialValue?: T;
   }) => {
     const state = useState<T>(
-      initialValue !== undefined ? initialValue : defaultInitialValue
+      initialValue !== undefined ? initialValue : defaultInitialValue,
     );
     return providerFactory({ value: state }, children);
   };

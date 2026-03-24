@@ -42,7 +42,7 @@ export const CollapsibleRoot = ({ children, ...controlledProps }: Props) => {
             collapsed: internalState[0],
             onClick: () => internalState[1]((prev) => !prev),
           },
-    [controlledProps.onClick, controlledProps.collapsed, internalState]
+    [controlledProps.onClick, controlledProps.collapsed, internalState],
   );
 
   return (

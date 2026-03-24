@@ -1,8 +1,11 @@
-import type { PriceRequestDto, PriceResponseDto } from "@stakekit/api-hooks";
 import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
 import { useCallback } from "react";
 import { createSelector } from "reselect";
-import type { Prices } from "../../domain/types/price";
+import type {
+  PriceRequestDto,
+  PriceResponseDto,
+  Prices,
+} from "../../domain/types/price";
 import type { YieldTokenDto } from "../../providers/yield-api-client-provider/types";
 import { priceResponseDtoToPrices } from "../../utils/mappers";
 
@@ -15,7 +18,7 @@ const defaultParam: PriceRequestDto = {
 
 const pricesSelector = createSelector(
   (val: PriceResponseDto) => val,
-  (val) => priceResponseDtoToPrices(val)
+  (val) => priceResponseDtoToPrices(val),
 );
 
 type PriceRequestInput = Omit<PriceRequestDto, "tokenList"> & {
@@ -27,7 +30,7 @@ export const usePrices = <T = Prices>(
   opts?: {
     enabled?: boolean;
     select?: (val: Prices) => T;
-  }
+  },
 ) => {
   const requestDto = priceRequestDto
     ? ({
@@ -53,7 +56,7 @@ export const usePrices = <T = Prices>(
 
           return mapped as T;
         },
-        [opts?.select]
+        [opts?.select],
       ),
     },
   });

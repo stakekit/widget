@@ -74,7 +74,7 @@ type TrackingContextType = {
 };
 
 export const TrackingContext = createContext<TrackingContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const TrackingContextProvider = ({
@@ -90,10 +90,10 @@ export const TrackingContextProvider = ({
       tracking?.trackEvent?.(trackEventMap[event], ...(props ? [props] : []));
       variantTracking?.trackEvent?.(
         trackEventMap[event],
-        ...(props ? [props] : [])
+        ...(props ? [props] : []),
       );
     },
-    [tracking, variantTracking]
+    [tracking, variantTracking],
   );
 
   const trackPageView = useCallback<TrackingContextType["trackPageView"]>(
@@ -101,15 +101,15 @@ export const TrackingContextProvider = ({
       tracking?.trackPageView?.(trackPageMap[page], ...(props ? [props] : []));
       variantTracking?.trackPageView?.(
         trackPageMap[page],
-        ...(props ? [props] : [])
+        ...(props ? [props] : []),
       );
     },
-    [tracking, variantTracking]
+    [tracking, variantTracking],
   );
 
   const value = useMemo(
     () => ({ trackEvent, trackPageView }),
-    [trackEvent, trackPageView]
+    [trackEvent, trackPageView],
   );
 
   return (

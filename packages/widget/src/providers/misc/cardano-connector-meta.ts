@@ -21,5 +21,5 @@ export type StorageItem = {
 };
 
 export const isCardanoConnector = (
-  connector: Connector
+  connector: Connector,
 ): connector is CardanoConnector => connector.type === "cardanoWallet";

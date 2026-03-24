@@ -1,4 +1,3 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
@@ -16,6 +15,8 @@ import {
 } from "../../fixtures";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
+
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
 
 const setUrl = ({
   accountId,
@@ -48,7 +49,7 @@ const setUrl = ({
 export const setup = async () => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
-  const token: TokenDto = {
+  const token: LegacyTokenDto = {
     name: "USDA",
     symbol: "USDA",
     decimals: 18,
@@ -57,7 +58,7 @@ export const setup = async () => {
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const rewardToken: TokenDto = {
+  const rewardToken: LegacyTokenDto = {
     name: "United Stables",
     symbol: "U",
     decimals: 18,
@@ -66,7 +67,7 @@ export const setup = async () => {
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const morphoToken: TokenDto = {
+  const morphoToken: LegacyTokenDto = {
     name: "Morpho Token",
     symbol: "MORPHO",
     decimals: 18,
@@ -137,7 +138,7 @@ export const setup = async () => {
   const legacyYieldBase = yieldFixture();
   const rawYieldBase = yieldApiYieldFixture();
 
-  const legacyYield: YieldDto = {
+  const legacyYield: ReturnType<typeof yieldFixture> = {
     ...legacyYieldBase,
     id: yieldId,
     token,
@@ -283,7 +284,7 @@ export const setup = async () => {
       return HttpResponse.json(
         url.searchParams.has("ledgerWalletAPICompatible")
           ? legacyYield
-          : rawYield
+          : rawYield,
       );
     }),
     http.get("*/v1/yields/:yieldId/validators", async () => {
@@ -305,7 +306,7 @@ export const setup = async () => {
         ],
         errors: [],
       });
-    })
+    }),
   );
 
   const requestFn = vitest.fn(async ({ method }: { method: string }) => {

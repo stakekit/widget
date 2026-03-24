@@ -18,9 +18,9 @@ export const usePositionBalanceByType = ({
       positionBalancesData.map((val) =>
         getPositionBalanceByTypeWithUsd({
           pvd: val.balances,
-        })
+        }),
       ),
-    [positionBalancesData]
+    [positionBalancesData],
   );
 };
 
@@ -38,7 +38,7 @@ export const getPositionBalanceByTypeWithUsd = createSelector(
       if (amount.isZero() || amount.isNaN()) return acc;
 
       const tokenPriceInUsd = new BigNumber(
-        String(cur.amountUsd ?? 0).replace(/,/g, "")
+        String(cur.amountUsd ?? 0).replace(/,/g, ""),
       );
 
       const prev = acc.get(cur.type);
@@ -46,5 +46,5 @@ export const getPositionBalanceByTypeWithUsd = createSelector(
       acc.set(cur.type, [...(prev ?? []), { ...cur, tokenPriceInUsd }]);
 
       return acc;
-    }, new Map() as PositionBalancesByType)
+    }, new Map() as PositionBalancesByType),
 );

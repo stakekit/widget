@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import type { ActionDto, TransactionDto, YieldDto } from "@stakekit/api-hooks";
 import {
   getActionControllerEnterResponseMock,
   getActionControllerPendingResponseMock,
@@ -16,10 +15,18 @@ import type {
   YieldTransactionDto,
 } from "../../src/providers/yield-api-client-provider/types";
 
+type LegacyActionDto = ReturnType<typeof getActionControllerEnterResponseMock>;
+type LegacyTransactionDto = ReturnType<
+  typeof getTransactionControllerConstructResponseMock
+>;
+type LegacyYieldDto = ReturnType<
+  typeof getYieldV2ControllerGetYieldByIdResponseMock
+>;
+
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
 export const yieldRewardRateFixture = (
-  overrides?: Partial<YieldRewardRateDto>
+  overrides?: Partial<YieldRewardRateDto>,
 ): YieldRewardRateDto => ({
   total: apyFaker(),
   rateType: "APY",
@@ -28,7 +35,7 @@ export const yieldRewardRateFixture = (
 });
 
 export const yieldApiYieldFixture = (
-  overrides?: Partial<YieldApiYieldDto>
+  overrides?: Partial<YieldApiYieldDto>,
 ): YieldApiYieldDto =>
   ({
     ...getYieldV2ControllerGetYieldByIdResponseMock(),
@@ -37,7 +44,7 @@ export const yieldApiYieldFixture = (
   }) as YieldApiYieldDto;
 
 export const yieldBalanceFixture = (
-  overrides?: Partial<YieldBalanceDto>
+  overrides?: Partial<YieldBalanceDto>,
 ): YieldBalanceDto => {
   const token = overrides?.token ?? yieldApiYieldFixture().token;
 
@@ -53,7 +60,7 @@ export const yieldBalanceFixture = (
   } as YieldBalanceDto;
 };
 
-export const yieldFixture = (overrides?: Partial<YieldDto>) =>
+export const yieldFixture = (overrides?: Partial<LegacyYieldDto>) =>
   Just(getYieldV2ControllerGetYieldByIdResponseMock())
     .map(
       (val) =>
@@ -74,36 +81,38 @@ export const yieldFixture = (overrides?: Partial<YieldDto>) =>
           status: { enter: true, exit: true },
           validators: val.validators.map((v) => ({ ...v, apr: apyFaker() })),
           ...overrides,
-        }) satisfies YieldDto
+        }) satisfies LegacyYieldDto,
     )
     .unsafeCoerce();
 
-export const yieldValidatorsFixture = (validators?: YieldDto["validators"]) =>
+export const yieldValidatorsFixture = (
+  validators?: LegacyYieldDto["validators"],
+) =>
   (validators ?? yieldFixture().validators).map((validator) => ({
     ...validator,
     apr: validator.apr ?? apyFaker(),
   }));
 
-export const enterResponseFixture = (overrides?: Partial<ActionDto>) => ({
+export const enterResponseFixture = (overrides?: Partial<LegacyActionDto>) => ({
   ...getActionControllerEnterResponseMock(),
   ...overrides,
 });
 
 export const transactionConstructFixture = (
-  overrides?: Partial<TransactionDto>
+  overrides?: Partial<LegacyTransactionDto>,
 ) => ({
   ...getTransactionControllerConstructResponseMock(),
   ...overrides,
 });
 
-export const pendingActionFixture = (overrides?: Partial<ActionDto>) => ({
+export const pendingActionFixture = (overrides?: Partial<LegacyActionDto>) => ({
   ...getActionControllerPendingResponseMock(),
   ...overrides,
 });
 
 export const yieldApiTransactionFixture = (
-  tx: TransactionDto,
-  overrides?: Partial<YieldTransactionDto>
+  tx: LegacyTransactionDto,
+  overrides?: Partial<YieldTransactionDto>,
 ) =>
   ({
     id: tx.id || faker.string.uuid(),
@@ -133,7 +142,7 @@ export const yieldApiActionFixture = ({
   transactions,
   overrides,
 }: {
-  action: ActionDto;
+  action: LegacyActionDto;
   address: string;
   rawArguments?: YieldActionArgumentsDto | null;
   transactions?: YieldTransactionDto[];

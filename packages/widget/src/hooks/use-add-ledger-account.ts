@@ -16,10 +16,10 @@ export const useAddLedgerAccount = () => {
         await EitherAsync.liftEither(
           connector && isLedgerLiveConnector(connector)
             ? Right(connector)
-            : Left(new Error("Only Ledger Live is supported"))
+            : Left(new Error("Only Ledger Live is supported")),
         )
           .chain((ledgerLiveConnector) =>
-            ledgerLiveConnector.requestAndSwitchAccount(chain)
+            ledgerLiveConnector.requestAndSwitchAccount(chain),
           )
           .ifRight(closeChainModal)
       ).unsafeCoerce();

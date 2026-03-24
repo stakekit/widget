@@ -1,7 +1,10 @@
+import type { PriceRequestDto, PriceResponseDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { tokenString } from "..";
 import type { TokenString } from "./tokens";
+
+export type { PriceRequestDto, PriceResponseDto };
 
 type PriceToken = {
   symbol: string;
@@ -42,7 +45,7 @@ export const getTokenPriceInUSD = ({
       prices
         .getByToken(baseToken)
         .chainNullable((v) => v.price)
-        .orDefault(0)
+        .orDefault(0),
     );
     const pricePerShareBN = BigNumber(pricePerShare);
 
@@ -53,7 +56,7 @@ export const getTokenPriceInUSD = ({
     prices
       .getByToken(token)
       .chainNullable((v) => v.price)
-      .orDefault(0)
+      .orDefault(0),
   );
 
   return amountBN.times(tokenPrice);

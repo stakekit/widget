@@ -1,4 +1,3 @@
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { type JSX, type ReactNode, useMemo } from "react";
 import { Box } from "../../../components/atoms/box";
@@ -8,12 +7,15 @@ import { ClockClockWiseIcon } from "../../../components/atoms/icons/clock-clock-
 import { GifIcon } from "../../../components/atoms/icons/gift";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { Text } from "../../../components/atoms/typography/text";
+import type { TokenDto } from "../../../domain/types/tokens";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import type { Yield } from "../../../domain/types/yields";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 
 type Props = {
   isLoading?: boolean;
-  selectedStake: Maybe<YieldDto>;
+  selectedStake: Maybe<Yield>;
   selectedValidators: Map<string, ValidatorDto>;
   selectedToken: Maybe<TokenDto>;
 };
@@ -52,7 +54,7 @@ export const MetaInfo = ({
         { text: lockupPeriod, icon: <InfoIcon /> },
       ].filter(
         (val): val is { text: string | ReactNode; icon: JSX.Element } =>
-          !!val.text
+          !!val.text,
       ),
     [
       campaign,
@@ -63,7 +65,7 @@ export const MetaInfo = ({
       withdrawnTime,
       extra,
       lockupPeriod,
-    ]
+    ],
   );
 
   return isLoading ? (

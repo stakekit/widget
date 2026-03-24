@@ -1,7 +1,12 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import {
+  getActionInputToken,
+  getActionValidatorAddresses,
+} from "../../../domain/types/action";
+import type { TokenDto } from "../../../domain/types/tokens";
+import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -15,7 +20,7 @@ export const useActivityComplete = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction
+    (state) => state.context.selectedAction,
   ).unsafeCoerce();
 
   const amount = useMemo(
@@ -23,32 +28,40 @@ export const useActivityComplete = () => {
       Maybe.fromNullable(selectedAction.amount)
         .map(defaultFormattedNumber)
         .unsafeCoerce(),
-    [selectedAction]
+    [selectedAction],
   );
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield
+    (state) => state.context.selectedYield,
   );
 
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
 
   const inputToken = useMemo(
-    () => Maybe.fromNullable(selectedAction).map((y) => y.inputToken),
-    [selectedAction]
+    () =>
+      Maybe.fromNullable(
+        getActionInputToken({
+          actionDto: selectedAction,
+          yieldDto: selectedYield.extractNullable() ?? undefined,
+        }),
+      ),
+    [selectedAction, selectedYield],
   ) as Maybe<TokenDto>;
 
   const metadata = useMemo(
-    () => selectedYield.map((y) => y.metadata),
-    [selectedYield]
+    () => selectedYield.map(getYieldMetadata),
+    [selectedYield],
   );
 
   const network = inputToken.mapOrDefault((y) => y.symbol, "");
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
-    validatorsAddresses: Maybe.of(selectedAction.validatorAddresses ?? []),
-    selectedProviderYieldId: Maybe.of(selectedAction.integrationId),
+    validatorsAddresses: Maybe.of(
+      getActionValidatorAddresses(selectedAction) ?? [],
+    ),
+    selectedProviderYieldId: Maybe.of(selectedAction.yieldId),
   });
 
   return {

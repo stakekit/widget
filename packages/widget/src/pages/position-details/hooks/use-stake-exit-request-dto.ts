@@ -1,9 +1,15 @@
-import type { AddressesDto, YieldDto } from "@stakekit/api-hooks";
 import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { YieldCreateActionDto } from "../../../domain/types/action";
+import type { AddressesDto } from "../../../domain/types/addresses";
+import {
+  getYieldActionArg,
+  getYieldGasFeeToken,
+  isYieldIntegrationAggregator,
+  type Yield,
+} from "../../../domain/types/yields";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { withAdditionalAddresses } from "../../../providers/yield-api-client-provider/request-helpers";
-import type { YieldCreateActionDto } from "../../../providers/yield-api-client-provider/types";
 import { useUnstakeOrPendingActionState } from "../state";
 
 export const useStakeExitRequestDto = () => {
@@ -23,7 +29,7 @@ export const useStakeExitRequestDto = () => {
         stakedOrLiquidBalances,
       }).map<{
         addresses: AddressesDto;
-        gasFeeToken: YieldDto["token"];
+        gasFeeToken: Yield["token"];
         dto: YieldCreateActionDto;
       }>((val) => {
         const validatorsOrProvider = Just(null)
@@ -38,35 +44,41 @@ export const useStakeExitRequestDto = () => {
               >
             | Pick<NonNullable<YieldCreateActionDto["arguments"]>, "providerId">
           >(() => {
-            if (val.integrationData.metadata.isIntegrationAggregator) {
+            if (isYieldIntegrationAggregator(val.integrationData)) {
               return List.find(
                 (b) => !!b.validator?.providerId,
-                val.stakedOrLiquidBalances
+                val.stakedOrLiquidBalances,
               ).map((b) => ({
                 providerId: b.validator?.providerId,
                 validatorAddress: b.validator?.address,
               }));
             }
             if (
-              val.integrationData.args.exit?.args?.validatorAddresses?.required
+              getYieldActionArg(
+                val.integrationData,
+                "exit",
+                "validatorAddresses",
+              )?.required
             ) {
               return List.find(
                 (b) => !!b.validators?.length,
-                val.stakedOrLiquidBalances
+                val.stakedOrLiquidBalances,
               ).map((b) => ({
                 validatorAddresses:
                   b.validators?.map((validator) => validator.address) ?? [],
               }));
             }
             if (
-              val.integrationData.args.exit?.args?.validatorAddress?.required
+              getYieldActionArg(val.integrationData, "exit", "validatorAddress")
+                ?.required
             ) {
               return List.find(
                 (b) => !!b.validator?.address,
-                val.stakedOrLiquidBalances
+                val.stakedOrLiquidBalances,
               ).map((b) => {
                 const subnetId = Maybe.fromNullable(
-                  val.integrationData.args.exit?.args?.subnetId?.required
+                  getYieldActionArg(val.integrationData, "exit", "subnetId")
+                    ?.required,
                 )
                   .chainNullable(() => b.validator)
                   .map((validator) => validator.subnetId)
@@ -84,7 +96,7 @@ export const useStakeExitRequestDto = () => {
           .orDefault({});
 
         return {
-          gasFeeToken: val.integrationData.metadata.gasFeeToken,
+          gasFeeToken: getYieldGasFeeToken(val.integrationData),
           addresses: {
             address: val.address,
             additionalAddresses: additionalAddresses ?? undefined,
@@ -110,6 +122,6 @@ export const useStakeExitRequestDto = () => {
       integrationData,
       unstakeAmount,
       unstakeUseMaxAmount,
-    ]
+    ],
   );
 };

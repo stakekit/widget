@@ -1,10 +1,10 @@
-import type { FeeConfigurationDto, TokenDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, type Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { FeeConfigurationDto } from "../../../domain/types/fees";
 import type { Prices } from "../../../domain/types/price";
-import type { YieldTokenDto } from "../../../providers/yield-api-client-provider/types";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import { bpsToAmount, bpsToPercentage } from "../../../utils";
 import { getFeesInUSD } from "../../../utils/formatters";
 import type { FeesBps } from "../types";
@@ -39,17 +39,17 @@ export const useFees = ({
         prices,
         token,
       }),
-    [amount, token, prices]
+    [amount, token, prices],
   );
 
   const getBpsInPercentage = useCallback(
     (val: number) => `${bpsToPercentage(val)}%`,
-    []
+    [],
   );
 
   const getPercentAmount = useCallback(
     (val: string) => amount.multipliedBy(val).dividedBy(100),
-    [amount]
+    [amount],
   );
 
   const getPercentInUsd = useCallback(
@@ -59,7 +59,7 @@ export const useFees = ({
         prices,
         token,
       }),
-    [getPercentAmount, prices, token]
+    [getPercentAmount, prices, token],
   );
 
   const depositFee = useMemo(
@@ -80,7 +80,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.deposit_fee_explanation"),
               label: t("review.deposit_fee"),
-            }))
+            })),
         ),
     [
       feeConfigDto,
@@ -89,7 +89,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ]
+    ],
   );
 
   const managementFee = useMemo(
@@ -110,7 +110,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.management_fee_explanation"),
               label: t("review.management_fee"),
-            }))
+            })),
         ),
     [
       feeConfigDto,
@@ -119,7 +119,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ]
+    ],
   );
 
   const performanceFee = useMemo(
@@ -140,7 +140,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.performance_fee_explanation"),
               label: t("review.performance_fee"),
-            }))
+            })),
         ),
     [
       feeConfigDto,
@@ -149,7 +149,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ]
+    ],
   );
 
   return { depositFee, managementFee, performanceFee };

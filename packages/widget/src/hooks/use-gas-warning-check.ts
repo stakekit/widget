@@ -1,4 +1,3 @@
-import type { AddressesDto, TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import type BigNumber from "bignumber.js";
 import { EitherAsync, type Maybe } from "purify-ts";
@@ -8,6 +7,8 @@ import {
   GasTokenMissingError,
   NotEnoughGasTokenError,
 } from "../common/check-gas-amount";
+import type { AddressesDto } from "../domain/types/addresses";
+import type { TokenDto } from "../domain/types/tokens";
 
 export const useGasWarningCheck = (
   props: {
@@ -19,7 +20,7 @@ export const useGasWarningCheck = (
   } & (
     | { isStake: true; stakeAmount: BigNumber; stakeToken: TokenDto }
     | { isStake: false }
-  )
+  ),
 ) => {
   const requestData = useMemo(
     () =>
@@ -34,7 +35,7 @@ export const useGasWarningCheck = (
             }
           : { isStake: props.isStake },
       })),
-    [props]
+    [props],
   );
 
   return useQuery({
@@ -44,27 +45,31 @@ export const useGasWarningCheck = (
     queryFn: async () => {
       return (
         await EitherAsync.liftEither(
-          requestData.toEither(new Error("Request data is missing"))
+          requestData.toEither(new Error("Request data is missing")),
         )
           .chain((val) =>
             checkGasAmount({
               gasEstimate: {
                 amount: val.gasAmount,
-                token: val.gasFeeToken,
+                token: val.gasFeeToken as NonNullable<
+                  Parameters<typeof checkGasAmount>[0]["gasEstimate"]
+                >["token"],
               },
               addressWithTokenDto: {
                 address: val.address,
                 additionalAddresses: val.additionalAddresses,
-                network: val.gasFeeToken.network,
+                network: val.gasFeeToken.network as Parameters<
+                  typeof checkGasAmount
+                >[0]["addressWithTokenDto"]["network"],
                 tokenAddress: val.gasFeeToken.address,
               },
               ...val.stakeData,
-            })
+            }),
           )
           .map(
             (val) =>
               val instanceof NotEnoughGasTokenError ||
-              val instanceof GasTokenMissingError
+              val instanceof GasTokenMissingError,
           )
       ).unsafeCoerce();
     },
