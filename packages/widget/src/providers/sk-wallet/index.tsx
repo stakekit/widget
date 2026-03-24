@@ -445,7 +445,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 data: val.data,
                 to: val.to,
                 value: val.value,
-                nonce: val.nonce,
+                // nonce: val.nonce,
                 maxFeePerGas: val.maxFeePerGas,
                 maxPriorityFeePerGas: val.maxPriorityFeePerGas,
                 chainId: val.chainId,

@@ -169,7 +169,6 @@ const getMetadata = ({
     real_world_asset: "vault",
   } as const;
   const type =
-    fallbackMetadata?.type ??
     yieldTypeMap[(mechanics?.type ?? "vault") as keyof typeof yieldTypeMap] ??
     "vault";
 
