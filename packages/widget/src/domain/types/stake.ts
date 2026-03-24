@@ -86,6 +86,7 @@ export const getInitialToken = (args: {
      */
     .altLazy(() => List.find(hasYields, args.tokenBalances))
     .altLazy(() => List.find(hasYields, args.defaultTokens))
+    .altLazy(() => List.head(args.defaultTokens))
     .map((val) => val.token);
 
 export const canBeInitialYield = (args: {
