@@ -7,6 +7,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
+import { getTransactionGasEstimate } from "../../../domain/types/action";
 import {
   getYieldMetadata,
   getYieldProviderDetails,
@@ -47,10 +48,11 @@ export const useUnstakeActionReview = () => {
     () =>
       Maybe.fromNullable(actionPreviewQuery.data)
         .map((actionDto) =>
-          actionDto.transactions.reduce(
-            (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
-            new BigNumber(0)
-          )
+          actionDto.transactions.reduce((acc, transaction) => {
+            const decoded = getTransactionGasEstimate(transaction);
+
+            return acc.plus(decoded?.amount ?? 0);
+          }, new BigNumber(0))
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),

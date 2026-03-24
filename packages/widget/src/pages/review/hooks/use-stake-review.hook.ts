@@ -5,6 +5,7 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getYieldMetadata } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
@@ -52,15 +53,18 @@ export const useStakeReview = () => {
     () =>
       Maybe.fromNullable(actionPreviewQuery.data)
         .map((actionDto) =>
-          actionDto.transactions.reduce(
-            (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
-            new BigNumber(0)
-          )
+          actionDto.transactions.reduce((acc, transaction) => {
+            const decoded = getTransactionGasEstimate(transaction);
+
+            return acc.plus(decoded?.amount ?? 0);
+          }, new BigNumber(0))
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),
     [actionPreviewQuery.data]
   );
+
+  console.log({ stakeEnterTxGas });
 
   const gasCheckWarning = useGasWarningCheck({
     gasAmount: stakeEnterTxGas,

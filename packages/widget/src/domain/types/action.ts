@@ -146,13 +146,9 @@ export const getActionCurrentStepIndex = (actionDto: ActionDto) => {
   return Math.max(actionDto.transactions.length - 1, 0);
 };
 
-export const getTransactionGasEstimate = ({
-  transactionDto,
-  gasFeeToken,
-}: {
-  transactionDto: TransactionDto;
-  gasFeeToken?: TokenDto;
-}): TransactionGasEstimate => {
+export const getTransactionGasEstimate = (
+  transactionDto: TransactionDto
+): TransactionGasEstimate => {
   const gasEstimate = transactionDto.gasEstimate;
 
   if (!gasEstimate) {
@@ -163,18 +159,11 @@ export const getTransactionGasEstimate = ({
     const parsed = JSON.parse(gasEstimate) as EncodedGasEstimate | null;
 
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      if (!gasFeeToken) {
-        return null;
-      }
-
-      return {
-        amount: gasEstimate,
-        token: gasFeeToken,
-      };
+      return null;
     }
 
     const amount = parsed.amount ?? null;
-    const token = parsed.token ?? gasFeeToken;
+    const token = parsed.token;
 
     if (!amount || !token) {
       return null;
@@ -183,17 +172,9 @@ export const getTransactionGasEstimate = ({
     return {
       amount,
       token,
-      ...(parsed.gasLimit ? { gasLimit: parsed.gasLimit } : {}),
     };
   } catch {
-    if (!gasFeeToken) {
-      return null;
-    }
-
-    return {
-      amount: gasEstimate,
-      token: gasFeeToken,
-    };
+    return null;
   }
 };
 
