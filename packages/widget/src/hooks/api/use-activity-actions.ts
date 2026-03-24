@@ -1,18 +1,14 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
-import {
-  type ActionDto,
-  ActionStatus,
-  getActionInputToken,
-} from "../../domain/types/action";
+import { type ActionDto, getActionInputToken } from "../../domain/types/action";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useYieldApiFetchClient } from "../../providers/yield-api-client-provider";
 import { listActions } from "../../providers/yield-api-client-provider/actions";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 50;
 
 export const useActivityActions = () => {
   const { address, isLedgerLive, network } = useSKWallet();
@@ -20,7 +16,7 @@ export const useActivityActions = () => {
   const yieldApiFetchClient = useYieldApiFetchClient();
 
   const query = useInfiniteQuery({
-    enabled: !!address,
+    enabled: !!address && !!network,
     queryKey: ["activity-actions", address, network],
     queryFn: async ({ pageParam = 0 }) => {
       return (
@@ -30,21 +26,13 @@ export const useActivityActions = () => {
             fetchClient: yieldApiFetchClient,
             limit: PAGE_SIZE,
             offset: pageParam,
+            network: network!,
           })
         )
           .mapLeft(() => new Error("Could not get action list"))
-          .map((actionList) => ({
-            ...actionList,
-            data: (actionList.items ?? []).filter(
-              (action) =>
-                action.status !== ActionStatus.CREATED &&
-                (!network ||
-                  action.transactions.some((tx) => tx.network === network))
-            ),
-          }))
           .chain(async (actionList) =>
             EitherAsync.all(
-              actionList.data.map((action) =>
+              (actionList.items ?? []).map((action) =>
                 getYieldOpportunity({
                   yieldId: action.yieldId,
                   queryClient,

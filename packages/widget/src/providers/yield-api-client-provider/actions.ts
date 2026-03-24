@@ -3,6 +3,7 @@ import type {
   YieldCreateActionDto,
   YieldCreateManageActionDto,
 } from "../../domain/types/action";
+import type { SupportedSKChains } from "../../domain/types/chains";
 import type { YieldApiFetchClient } from "../../domain/types/yield-api";
 import { getResponseData } from "./request-helpers";
 
@@ -53,11 +54,13 @@ export const listActions = async ({
   fetchClient,
   limit,
   offset,
+  network,
 }: {
   address: string;
   fetchClient: YieldApiFetchClient;
   limit: number;
   offset: number;
+  network: SupportedSKChains;
 }) =>
   getResponseData(
     fetchClient.GET("/v1/actions", {
@@ -66,6 +69,7 @@ export const listActions = async ({
           address,
           offset,
           limit,
+          network,
         },
       },
     })

@@ -2585,6 +2585,8 @@ export interface components {
        * @example false
        */
       skipPrechecks?: boolean;
+      /** @description Receiver wallet address: ERC4626 vault flows, or on Solana the address for tokens after an optional post-exit swap */
+      receiverAddress?: string;
       /**
        * @description Minimum price bound for concentrated liquidity pools (as decimal string). Must be non-negative (can be 0) and less than rangeMax.
        * @example 0.0
@@ -2892,14 +2894,16 @@ export interface components {
       /** @description Search by yield name */
       search?: string;
       /**
-       * @description Sort by yield status
+       * @description Sort by yield status or reward rate
        * @enum {string}
        */
       sort?:
         | "statusEnterAsc"
         | "statusEnterDesc"
         | "statusExitAsc"
-        | "statusExitDesc";
+        | "statusExitDesc"
+        | "rewardRateAsc"
+        | "rewardRateDesc";
     };
     PaginationQueryDto: {
       /**
@@ -3191,6 +3195,110 @@ export interface components {
        * @example ethereum-eth-lido-staking
        */
       yieldId?: string;
+      /**
+       * @description Filter by network
+       * @enum {string}
+       */
+      network?:
+        | "ethereum"
+        | "ethereum-goerli"
+        | "ethereum-holesky"
+        | "ethereum-sepolia"
+        | "ethereum-hoodi"
+        | "arbitrum"
+        | "base"
+        | "base-sepolia"
+        | "gnosis"
+        | "optimism"
+        | "polygon"
+        | "polygon-amoy"
+        | "starknet"
+        | "zksync"
+        | "linea"
+        | "unichain"
+        | "monad-testnet"
+        | "monad"
+        | "avalanche-c"
+        | "avalanche-c-atomic"
+        | "avalanche-p"
+        | "binance"
+        | "celo"
+        | "fantom"
+        | "harmony"
+        | "moonriver"
+        | "okc"
+        | "viction"
+        | "core"
+        | "sonic"
+        | "plasma"
+        | "katana"
+        | "hyperevm"
+        | "agoric"
+        | "akash"
+        | "axelar"
+        | "band-protocol"
+        | "bitsong"
+        | "canto"
+        | "chihuahua"
+        | "comdex"
+        | "coreum"
+        | "cosmos"
+        | "crescent"
+        | "cronos"
+        | "cudos"
+        | "desmos"
+        | "dydx"
+        | "evmos"
+        | "fetch-ai"
+        | "gravity-bridge"
+        | "injective"
+        | "irisnet"
+        | "juno"
+        | "kava"
+        | "ki-network"
+        | "mars-protocol"
+        | "nym"
+        | "okex-chain"
+        | "onomy"
+        | "osmosis"
+        | "persistence"
+        | "quicksilver"
+        | "regen"
+        | "secret"
+        | "sentinel"
+        | "sommelier"
+        | "stafi"
+        | "stargaze"
+        | "stride"
+        | "teritori"
+        | "tgrade"
+        | "umee"
+        | "sei"
+        | "mantra"
+        | "celestia"
+        | "saga"
+        | "zetachain"
+        | "dymension"
+        | "humansai"
+        | "neutron"
+        | "polkadot"
+        | "kusama"
+        | "westend"
+        | "bittensor"
+        | "aptos"
+        | "binancebeacon"
+        | "cardano"
+        | "near"
+        | "solana"
+        | "solana-devnet"
+        | "stellar"
+        | "stellar-testnet"
+        | "sui"
+        | "tezos"
+        | "tron"
+        | "ton"
+        | "ton-testnet"
+        | "hyperliquid";
     };
     SubmitHashDto: {
       /**
@@ -3565,12 +3673,14 @@ export interface operations {
         providers?: string[];
         /** @description Search by yield name */
         search?: string;
-        /** @description Sort by yield status */
+        /** @description Sort by yield status or reward rate */
         sort?:
           | "statusEnterAsc"
           | "statusEnterDesc"
           | "statusExitAsc"
-          | "statusExitDesc";
+          | "statusExitDesc"
+          | "rewardRateAsc"
+          | "rewardRateDesc";
       };
       header?: never;
       path?: never;
@@ -4800,6 +4910,107 @@ export interface operations {
          * @example ethereum-eth-lido-staking
          */
         yieldId?: string;
+        /** @description Filter by network */
+        network?:
+          | "ethereum"
+          | "ethereum-goerli"
+          | "ethereum-holesky"
+          | "ethereum-sepolia"
+          | "ethereum-hoodi"
+          | "arbitrum"
+          | "base"
+          | "base-sepolia"
+          | "gnosis"
+          | "optimism"
+          | "polygon"
+          | "polygon-amoy"
+          | "starknet"
+          | "zksync"
+          | "linea"
+          | "unichain"
+          | "monad-testnet"
+          | "monad"
+          | "avalanche-c"
+          | "avalanche-c-atomic"
+          | "avalanche-p"
+          | "binance"
+          | "celo"
+          | "fantom"
+          | "harmony"
+          | "moonriver"
+          | "okc"
+          | "viction"
+          | "core"
+          | "sonic"
+          | "plasma"
+          | "katana"
+          | "hyperevm"
+          | "agoric"
+          | "akash"
+          | "axelar"
+          | "band-protocol"
+          | "bitsong"
+          | "canto"
+          | "chihuahua"
+          | "comdex"
+          | "coreum"
+          | "cosmos"
+          | "crescent"
+          | "cronos"
+          | "cudos"
+          | "desmos"
+          | "dydx"
+          | "evmos"
+          | "fetch-ai"
+          | "gravity-bridge"
+          | "injective"
+          | "irisnet"
+          | "juno"
+          | "kava"
+          | "ki-network"
+          | "mars-protocol"
+          | "nym"
+          | "okex-chain"
+          | "onomy"
+          | "osmosis"
+          | "persistence"
+          | "quicksilver"
+          | "regen"
+          | "secret"
+          | "sentinel"
+          | "sommelier"
+          | "stafi"
+          | "stargaze"
+          | "stride"
+          | "teritori"
+          | "tgrade"
+          | "umee"
+          | "sei"
+          | "mantra"
+          | "celestia"
+          | "saga"
+          | "zetachain"
+          | "dymension"
+          | "humansai"
+          | "neutron"
+          | "polkadot"
+          | "kusama"
+          | "westend"
+          | "bittensor"
+          | "aptos"
+          | "binancebeacon"
+          | "cardano"
+          | "near"
+          | "solana"
+          | "solana-devnet"
+          | "stellar"
+          | "stellar-testnet"
+          | "sui"
+          | "tezos"
+          | "tron"
+          | "ton"
+          | "ton-testnet"
+          | "hyperliquid";
       };
       header?: never;
       path?: never;
