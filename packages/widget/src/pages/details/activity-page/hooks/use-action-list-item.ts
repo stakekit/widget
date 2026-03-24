@@ -28,13 +28,13 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const integrationData = useMemo(
     () => Maybe.fromNullable(action.yieldData),
-    [action.yieldData],
+    [action.yieldData]
   );
 
   const providersDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: Maybe.of(
-      getActionValidatorAddresses(action.actionData) ?? [],
+      getActionValidatorAddresses(action.actionData) ?? []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });
@@ -45,7 +45,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
         .map((t) => t.replaceAll("_", " "))
         .map(capitalizeFirstLetters)
         .extract(),
-    [action],
+    [action]
   );
 
   const actionOlderThan7Days = useMemo(
@@ -53,7 +53,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
       Maybe.of(action.actionData.createdAt)
         .map(dateOlderThen7Days)
         .orDefault(false),
-    [action],
+    [action]
   );
 
   const badgeLabel = useMemo(
@@ -70,7 +70,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
         .map((status) => status.replaceAll("_", " "))
         .map(capitalizeFirstLetters)
         .extract(),
-    [action, t, actionOlderThan7Days],
+    [action, t, actionOlderThan7Days]
   );
 
   const badgeColor = useMemo(
@@ -87,13 +87,13 @@ export const useActionListItem = (action: ActionYieldDto) => {
         })
         .map((status) => BADGE_BG_MAP[status])
         .extract(),
-    [action, actionOlderThan7Days],
+    [action, actionOlderThan7Days]
   );
 
   const amount = useMemo(
     () =>
       Maybe.fromNullable(action.actionData.amount).map(defaultFormattedNumber),
-    [action],
+    [action]
   );
 
   return {

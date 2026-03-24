@@ -13,13 +13,13 @@ export const useGetInitYield = () => {
   return useCallback(
     ({ selectedToken }: { selectedToken: TokenDto }) =>
       Maybe.fromNullable(
-        tokenBalancesMap.get(tokenString(selectedToken)),
+        tokenBalancesMap.get(tokenString(selectedToken))
       ).chain((val) =>
         getCachedFirstEligibleYield({
           queryClient,
           yieldIds: val.availableYields,
-        }),
+        })
       ),
-    [queryClient, tokenBalancesMap],
+    [queryClient, tokenBalancesMap]
   );
 };

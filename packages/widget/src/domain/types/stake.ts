@@ -55,8 +55,8 @@ export const getInitialToken = (args: {
             (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare
           );
         },
-        [...args.tokenBalances, ...args.defaultTokens],
-      ),
+        [...args.tokenBalances, ...args.defaultTokens]
+      )
     )
     /**
      * TB based on preferred token
@@ -64,19 +64,19 @@ export const getInitialToken = (args: {
     .altLazy(() =>
       Maybe.fromNullable(args.network)
         .chain((n) =>
-          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork?.[n]),
+          Maybe.fromNullable(args.preferredTokenYieldsPerNetwork?.[n])
         )
         .altLazy(() =>
           Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
-            (v) => Object.values(v)[0],
-          ),
+            (v) => Object.values(v)[0]
+          )
         )
         .chain((preferredTokens) =>
           List.find(
             (val) => !!preferredTokens[tokenString(val.token)],
-            [...args.tokenBalances, ...args.defaultTokens],
-          ),
-        ),
+            [...args.tokenBalances, ...args.defaultTokens]
+          )
+        )
     )
     /**
      * TB based on first token with available yields and amount > 0
@@ -100,8 +100,8 @@ export const canBeInitialYield = (args: {
     .chain((queryParams) =>
       Maybe.fromFalsy(
         !!queryParams.yieldId &&
-          queryParams.yieldId.toLowerCase() === args.yieldDto.id.toLowerCase(),
-      ),
+          queryParams.yieldId.toLowerCase() === args.yieldDto.id.toLowerCase()
+      )
     )
     .altLazy(() =>
       Maybe.fromFalsy(
@@ -109,8 +109,8 @@ export const canBeInitialYield = (args: {
           tokenBalanceAmount: args.tokenBalanceAmount,
           yieldDto: args.yieldDto,
           positionsData: args.positionsData,
-        }),
-      ),
+        })
+      )
     )
     .isJust();
 
@@ -124,7 +124,7 @@ const balanceValidForYield = ({
   positionsData: PositionsData;
 }) =>
   tokenBalanceAmount.isGreaterThanOrEqualTo(
-    getMinStakeAmount(yieldDto, positionsData),
+    getMinStakeAmount(yieldDto, positionsData)
   );
 
 export const getInitSelectedValidators = (args: {
@@ -138,15 +138,15 @@ export const getInitSelectedValidators = (args: {
         (val) =>
           val.name?.toLowerCase() === initV.toLowerCase() ||
           val.address === initV,
-        args.validators,
-      ),
+        args.validators
+      )
     )
     .altLazy(() => List.head(args.validators))
     .map((v) => new Map([[v.address, v]]))
     .orDefault(new Map());
 
 export const isForceMaxAmount = (
-  args: { minimum?: number | null; maximum?: number | null } | null | undefined,
+  args: { minimum?: number | null; maximum?: number | null } | null | undefined
 ) => args?.minimum === -1 && args?.maximum === -1;
 
 const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
@@ -159,25 +159,25 @@ export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
 const isYieldWithEnterMinBasedOnPosition = (yieldDto: Yield) =>
   Maybe.fromNullable(
     yieldsWithEnterMinBasedOnPosition.get(
-      getYieldGasFeeToken(yieldDto).network as Networks,
-    ),
+      getYieldGasFeeToken(yieldDto).network as Networks
+    )
   )
     .filter((set) => set.has(yieldDto.id))
     .isJust();
 
 export const getMinStakeAmount = (
   yieldDto: Yield,
-  positionsData: PositionsData,
+  positionsData: PositionsData
 ) => {
   const integrationMin = new BigNumber(
-    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0,
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
   );
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
     const hasStaked = Maybe.fromNullable(positionsData.get(yieldDto.id))
       .map((val) => [...val.balanceData.values()])
       .map((val) =>
-        val.some((v) => v.balances.some((b) => b.type === "active")),
+        val.some((v) => v.balances.some((b) => b.type === "active"))
       )
       .orDefault(false);
 
@@ -193,10 +193,10 @@ export const getMinStakeAmount = (
 
 export const getMinUnstakeAmount = (
   yieldDto: Yield,
-  pricePerShare: string | null,
+  pricePerShare: string | null
 ) => {
   const integrationMin = new BigNumber(
-    getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? 0,
+    getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? 0
   );
 
   const pricePerShareBN = new BigNumber(pricePerShare ?? 0);

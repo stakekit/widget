@@ -74,7 +74,7 @@ import { usePendingActionDeepLink } from "./use-pending-action-deep-link";
 import { useStakeEnterRequestDto } from "./use-stake-enter-request-dto";
 
 const EarnPageContext = createContext<EarnPageContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
@@ -109,7 +109,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.title,
-    "",
+    ""
   );
 
   const initYieldRes = useInitYield({ selectedToken });
@@ -127,7 +127,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       selectedStake
         .map(getYieldRewardTokens)
         .map((val) => val.filter((rt) => rt.isPoints)),
-    [selectedStake],
+    [selectedStake]
   );
 
   const pricesState = useTokensPrices({
@@ -159,10 +159,10 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             token: val.selectedToken,
             prices: val.prices,
             pricePerShare: null,
-          }),
+          })
         )
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [baseToken, pricesState.data, selectedToken, stakeAmount],
+    [baseToken, pricesState.data, selectedToken, stakeAmount]
   );
 
   const selectedTokenAvailableAmount = useMemo(
@@ -173,7 +173,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         fullFormattedAmount: formatNumber(am),
         amount: am,
       })),
-    [availableAmount, symbol],
+    [availableAmount, symbol]
   );
 
   const [stakeSearch, setStakeSearch] = useState("");
@@ -184,7 +184,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const deferredValidatorSearch = useDeferredValue(validatorSearch);
 
   const multiYields = useStreamMultiYields(
-    useMemo(() => availableYields.orDefault([]), [availableYields]),
+    useMemo(() => availableYields.orDefault([]), [availableYields])
   );
 
   const tokenBalancesScan = useTokenBalancesScan();
@@ -213,7 +213,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
               tbSet: new Set<string>(),
               tbWithAmount: [] as TokenBalanceScanResponseDto[],
               tbWithoutAmount: [] as TokenBalanceScanResponseDto[],
-            },
+            }
           );
 
           return [
@@ -225,34 +225,32 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         .chain((tb) =>
           Maybe.of(deferredTokenSearch)
             .chain((val) =>
-              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty(),
+              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
             )
             .map((lowerSearch) => ({
               all: tb,
               filtered: tb.filter(
                 (t) =>
                   t.token.name.toLowerCase().includes(lowerSearch) ||
-                  t.token.symbol.toLowerCase().includes(lowerSearch),
+                  t.token.symbol.toLowerCase().includes(lowerSearch)
               ),
             }))
-            .alt(Maybe.of({ all: tb, filtered: tb })),
+            .alt(Maybe.of({ all: tb, filtered: tb }))
         ),
-    [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data],
+    [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
         .map((val) =>
-          [...val].sort(
-            (a, b) => getYieldRewardRate(b) - getYieldRewardRate(a),
-          ),
+          [...val].sort((a, b) => getYieldRewardRate(b) - getYieldRewardRate(a))
         )
         .map((val) => val.filter(isNonZeroRewardRateYield))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
             .chain((val) =>
-              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty(),
+              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
             )
             .map((lowerSearch) => ({
               all: yieldDtos,
@@ -264,15 +262,15 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   getYieldRewardTokens(d).some(
                     (rt) =>
                       rt.name.toLowerCase().includes(lowerSearch) ||
-                      rt.symbol.toLowerCase().includes(lowerSearch),
-                  ),
+                      rt.symbol.toLowerCase().includes(lowerSearch)
+                  )
               ),
             }))
-            .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos })),
+            .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
         .map(({ all, filteredDtos }) => {
           const sorted = [...filteredDtos].sort(
-            (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b),
+            (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
           );
 
           const groupsWithCounts = [
@@ -299,7 +297,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                     title: ReturnType<typeof getYieldTypeLabels>["title"];
                     items: Yield[];
                   }
-                >(),
+                >()
               )
               .values(),
           ].reduce(
@@ -313,10 +311,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
               return acc;
             },
 
-            new Map<
-              ExtendedYieldType,
-              { itemsLength: number; title: string }
-            >(),
+            new Map<ExtendedYieldType, { itemsLength: number; title: string }>()
           );
 
           return {
@@ -325,7 +320,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             groupsWithCounts,
           };
         }),
-    [deferredStakeSearch, multiYields, t],
+    [deferredStakeSearch, multiYields, t]
   );
 
   const yieldValidators = useYieldValidators({
@@ -366,7 +361,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             isYieldIntegrationAggregator(stake) ||
             isYieldActionArgRequired(stake, "enter", "validatorAddress") ||
             isYieldActionArgRequired(stake, "enter", "validatorAddresses")
-          ),
+          )
       )
       .orDefault(false);
 
@@ -408,20 +403,20 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             return validators.filter(
               (validator) =>
                 validator.name?.toLowerCase().includes(searchInput) ||
-                validator.address.toLowerCase().includes(searchInput),
+                validator.address.toLowerCase().includes(searchInput)
             );
           })
           .map((validators) => {
             if (variant === "utila" || variant === "porto") {
               return [...validators].sort(
-                (a, b) => (b.apr ?? 0) - (a.apr ?? 0),
+                (a, b) => (b.apr ?? 0) - (a.apr ?? 0)
               );
             }
 
             return validators;
-          }),
+          })
       ),
-    [deferredValidatorSearch, selectedStake, variant, yieldValidators.data],
+    [deferredValidatorSearch, selectedStake, variant, yieldValidators.data]
   );
 
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>
@@ -436,7 +431,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const onTokenBalanceSelect = useCallback(
     (tokenBalance: TokenBalanceScanResponseDto) =>
       dispatch({ type: "token/select", data: tokenBalance.token }),
-    [dispatch],
+    [dispatch]
   );
 
   const onYieldSelect = (yieldId: string) => {
@@ -449,7 +444,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     selectedStake.ifJust((ss) =>
       isYieldActionArgRequired(ss, "enter", "validatorAddresses")
         ? dispatch({ type: "validator/multiselect", data: item })
-        : dispatch({ type: "validator/select", data: item }),
+        : dispatch({ type: "validator/select", data: item })
     );
 
   const onValidatorRemove = (item: ValidatorDto) =>
@@ -563,7 +558,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       selectedStake
         .filter(() => maxIntegrationAmount.isJust() && !isForceMax)
         .map(() => maxEnterOrExitAmount.toNumber()),
-    [maxEnterOrExitAmount, maxIntegrationAmount, isForceMax, selectedStake],
+    [maxEnterOrExitAmount, maxIntegrationAmount, isForceMax, selectedStake]
   );
 
   const stakeMinAmount = useMemo(
@@ -572,7 +567,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         .filter(() => minIntegrationAmount.isJust() && !isForceMax)
         .map(() => minEnterOrExitAmount.toNumber())
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
-    [minEnterOrExitAmount, minIntegrationAmount, isForceMax, selectedStake],
+    [minEnterOrExitAmount, minIntegrationAmount, isForceMax, selectedStake]
   );
 
   const onSelectOpportunityClose = () => setStakeSearch("");
@@ -585,7 +580,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const { state } = useMountAnimation();
 
   const yieldOpportunityLoading = useYieldOpportunity(
-    selectedStake.extract()?.id,
+    selectedStake.extract()?.id
   ).isLoading;
 
   const appLoading =
@@ -608,7 +603,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
     (v) => v.cta,
-    "",
+    ""
   );
 
   const providersDetails = useProvidersDetails({
@@ -649,9 +644,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             stakeToken: val.selectedToken,
             yieldDto: val.selectedStake,
           }),
-        false,
+        false
       ),
-    [selectedStake, selectedToken],
+    [selectedStake, selectedToken]
   );
 
   const selectTokenIsLoading =
@@ -698,7 +693,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   label: t(
                     isLedgerLiveAccountPlaceholder
                       ? "init.ledger_add_account"
-                      : "init.connect_wallet",
+                      : "init.connect_wallet"
                   ),
                   onClick: () => connectClickRef.current(),
                 },
@@ -714,8 +709,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         isFetching,
         t,
         hasNotYieldsForToken,
-      ],
-    ),
+      ]
+    )
   );
 
   const value = {

@@ -38,25 +38,25 @@ const queryFn = async ({
   }>[];
 }> => {
   const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>(
-    miscChainsMap,
+    miscChainsMap
   ).filter(([_, v]) => enabledNetworks.has(v.skChainName));
 
   const filteredMiscChainsMap: Partial<MiscChainsMap> =
     typeSafeObjectFromEntries(miscChainsEntries);
 
   const miscChains = Object.values(filteredMiscChainsMap).map(
-    (val) => val.wagmiChain,
+    (val) => val.wagmiChain
   );
 
   return Promise.all([
     MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.tron)).chain(
       () =>
         MaybeAsync(() => import("./tron-connector")).map((v) =>
-          v.getTronConnectors({ forceWalletConnectOnly }),
-        ),
+          v.getTronConnectors({ forceWalletConnectOnly })
+        )
     ),
     MaybeAsync.liftMaybe(
-      Maybe.fromFalsy(filteredMiscChainsMap.solana && !config.env.isTestMode),
+      Maybe.fromFalsy(filteredMiscChainsMap.solana && !config.env.isTestMode)
     ).chain(() =>
       MaybeAsync(() => import("./solana-connector")).map((v) =>
         v.getSolanaConnectors({
@@ -64,19 +64,19 @@ const queryFn = async ({
           wallets: solanaWallets,
           connection: solanaConnection,
           variant,
-        }),
-      ),
+        })
+      )
     ),
     MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.cardano)).chain(
       () =>
         MaybeAsync(() => import("./cardano-connector")).map((v) =>
-          v.getCardanoConnectors(),
-        ),
+          v.getCardanoConnectors()
+        )
     ),
     MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.ton)).chain(() =>
       MaybeAsync(() => import("./ton-connector")).map((v) =>
-        v.getTonConnectors({ tonConnectManifestUrl }),
-      ),
+        v.getTonConnectors({ tonConnectManifestUrl })
+      )
     ),
   ]).then((connectors) => ({
     miscChainsMap: filteredMiscChainsMap,
@@ -86,14 +86,14 @@ const queryFn = async ({
 };
 
 export const getConfig = (
-  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient },
+  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
 ) =>
   EitherAsync(() =>
     opts.queryClient.fetchQuery({
       staleTime,
       queryKey,
       queryFn: () => queryFn(opts),
-    }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get misc config");

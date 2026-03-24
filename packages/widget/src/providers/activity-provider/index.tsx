@@ -14,7 +14,7 @@ const store = createStore({
       _,
       event: {
         data: Maybe<{ selectedAction: ActionDto; selectedYield: Yield }>;
-      },
+      }
     ) => ({
       selectedAction: event.data.map(({ selectedAction }) => selectedAction),
       selectedYield: event.data.map(({ selectedYield }) => selectedYield),
@@ -37,7 +37,7 @@ export const useActivityContext = () => {
 
   if (!value) {
     throw new Error(
-      "useActivityContext must be used within a ActivityProvider",
+      "useActivityContext must be used within a ActivityProvider"
     );
   }
 

@@ -23,7 +23,7 @@ export const StakedVia = () => {
           !isYieldActionArgRequired(val, "enter", "validatorAddress") &&
           !isYieldActionArgRequired(val, "enter", "validatorAddresses") &&
           getYieldProviderDetails(val)
-        ),
+        )
     )
     .chainNullable((val) => getYieldProviderDetails(val))
     .map((val) => (

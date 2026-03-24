@@ -33,7 +33,7 @@ export const useSKQueryClient = () => {
 
   if (!queryClient) {
     throw new Error(
-      "useSKQueryClient must be used within a QueryClientContextProvider",
+      "useSKQueryClient must be used within a QueryClientContextProvider"
     );
   }
 

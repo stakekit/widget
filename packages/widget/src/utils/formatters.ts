@@ -73,7 +73,7 @@ export const getGasFeeInUSD = ({
             ? ` ($${defaultFormattedNumber(val.gasFeeInUSD)})`
             : ""
         }`,
-      "",
+      ""
     );
 
 export const getFeesInUSD = ({
@@ -103,7 +103,7 @@ export const getFeesInUSD = ({
             ? ` ($${defaultFormattedNumber(val.feeInUSD)})`
             : ""
         }`,
-      "",
+      ""
     );
 
 export const capitalizeFirstLetters = (text: string): string =>
@@ -112,8 +112,8 @@ export const capitalizeFirstLetters = (text: string): string =>
       t
         .split(" ")
         .map(
-          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
         )
-        .join(" "),
+        .join(" ")
     )
     .orDefault("");

@@ -36,7 +36,7 @@ export const useCompleteCommonContext = () => {
 
   if (!context) {
     throw new Error(
-      "useCompleteCommonContext must be used within a CompleteCommonContextProvider",
+      "useCompleteCommonContext must be used within a CompleteCommonContextProvider"
     );
   }
 

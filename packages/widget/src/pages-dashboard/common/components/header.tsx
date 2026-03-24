@@ -44,7 +44,7 @@ export const Header = () => {
               gap="2"
             >
               {Maybe.fromFalsy(
-                (isConnected || isConnecting) && chain && account,
+                (isConnected || isConnecting) && chain && account
               )
                 .map(() => (
                   <>

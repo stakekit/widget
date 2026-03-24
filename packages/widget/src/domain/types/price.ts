@@ -45,7 +45,7 @@ export const getTokenPriceInUSD = ({
       prices
         .getByToken(baseToken)
         .chainNullable((v) => v.price)
-        .orDefault(0),
+        .orDefault(0)
     );
     const pricePerShareBN = BigNumber(pricePerShare);
 
@@ -56,7 +56,7 @@ export const getTokenPriceInUSD = ({
     prices
       .getByToken(token)
       .chainNullable((v) => v.price)
-      .orDefault(0),
+      .orDefault(0)
   );
 
   return amountBN.times(tokenPrice);

@@ -15,8 +15,8 @@ export const useGetTokenBalancesMap = () =>
       new Map<TokenString, TokenBalanceScanResponseDto>([
         ...(defaultTokens ?? []).map((v) => [tokenString(v.token), v] as const),
         ...(tokenBalancesScan ?? []).map(
-          (v) => [tokenString(v.token), v] as const,
+          (v) => [tokenString(v.token), v] as const
         ),
       ]),
-    [],
+    []
   );

@@ -22,7 +22,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
 
   const lastActionTimestamp = useMemo(
     () => actionHistoryData.map((v) => v.timestamp).extractNullable(),
-    [actionHistoryData],
+    [actionHistoryData]
   );
 
   const param = useMemo(
@@ -48,9 +48,9 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
           dto: {
             queries: [{ address: "", network: "ethereum" }],
           },
-        },
+        }
       ),
-    [address, network],
+    [address, network]
   );
 
   const res = yieldApi.useQuery(
@@ -71,7 +71,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
 
         return items as T;
       },
-    },
+    }
   );
 
   /**
@@ -97,7 +97,7 @@ export const useInvalidateYieldBalances = () => {
       queryClient.invalidateQueries({
         queryKey: getYieldYieldBalancesScanQueryKey(),
       }),
-    [queryClient],
+    [queryClient]
   );
 };
 

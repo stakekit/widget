@@ -11,6 +11,6 @@ export const minMediaQuery = (breakpoint: Breakpoint) =>
 
 export const minContainerWidth = (
   containerName: string,
-  breakpoint: Breakpoint | number,
+  breakpoint: Breakpoint | number
 ) =>
   `${containerName} (min-width: ${typeof breakpoint === "number" ? breakpoint : breakpoints[breakpoint]}px)`;

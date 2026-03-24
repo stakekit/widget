@@ -1,6 +1,8 @@
-import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { createSelector } from "reselect";
+import { tokenGetTokenPrices } from "../../common/private-api";
+import type { StakeKitErrorDto } from "../../domain/types/errors";
 import type {
   PriceRequestDto,
   PriceResponseDto,
@@ -18,19 +20,22 @@ const defaultParam: PriceRequestDto = {
 
 const pricesSelector = createSelector(
   (val: PriceResponseDto) => val,
-  (val) => priceResponseDtoToPrices(val),
+  (val) => priceResponseDtoToPrices(val)
 );
 
 type PriceRequestInput = Omit<PriceRequestDto, "tokenList"> & {
   tokenList: (PriceRequestDto["tokenList"][number] | YieldTokenDto)[];
 };
 
+const getTokenGetTokenPricesQueryKey = (priceRequestDto: PriceRequestDto) =>
+  ["/v1/tokens/prices", priceRequestDto] as const;
+
 export const usePrices = <T = Prices>(
   priceRequestDto: PriceRequestInput | null | undefined,
   opts?: {
     enabled?: boolean;
     select?: (val: Prices) => T;
-  },
+  }
 ) => {
   const requestDto = priceRequestDto
     ? ({
@@ -43,21 +48,21 @@ export const usePrices = <T = Prices>(
       } satisfies PriceRequestDto)
     : defaultParam;
 
-  return useTokenGetTokenPrices(requestDto, {
-    query: {
-      enabled: !!priceRequestDto && opts?.enabled,
-      select: useCallback(
-        (res: PriceResponseDto): T => {
-          const mapped = pricesSelector(res);
+  return useQuery<PriceResponseDto, StakeKitErrorDto, T>({
+    queryKey: getTokenGetTokenPricesQueryKey(requestDto),
+    queryFn: () => tokenGetTokenPrices(requestDto),
+    enabled: !!priceRequestDto && opts?.enabled,
+    select: useCallback(
+      (res: PriceResponseDto): T => {
+        const mapped = pricesSelector(res);
 
-          if (opts?.select) {
-            return opts.select(mapped);
-          }
+        if (opts?.select) {
+          return opts.select(mapped);
+        }
 
-          return mapped as T;
-        },
-        [opts?.select],
-      ),
-    },
+        return mapped as T;
+      },
+      [opts?.select]
+    ),
   });
 };

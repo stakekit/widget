@@ -66,7 +66,7 @@ export const AmountBlock = ({
 
   const minMaxUnstakeAmount = Maybe.fromPredicate(
     (v) => v.variant === "unstake",
-    rest as Extract<AmountBlockProps, { variant: "unstake" }>,
+    rest as Extract<AmountBlockProps, { variant: "unstake" }>
   )
     .map(
       (val) =>
@@ -74,17 +74,17 @@ export const AmountBlock = ({
           val.unstakeMinAmount
             .map(
               (v) =>
-                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`,
+                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
             )
             .extractNullable(),
           val.unstakeMaxAmount
             .map(
               (v) =>
-                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`,
+                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
             )
             .extractNullable(),
           val.unstakeIsGreaterOrLessIntegrationLimitError,
-        ] as const,
+        ] as const
     )
     .filter((val) => val.some(Boolean))
     .map(([min, max, error]) => (
@@ -257,6 +257,6 @@ const UnstakeInfo = ({
           </Box>
         ))
         .extractNullable(),
-    [withdrawnTime, withdrawnNotAvailable, positionLocked],
+    [withdrawnTime, withdrawnNotAvailable, positionLocked]
   );
 };

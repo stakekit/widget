@@ -60,7 +60,7 @@ export const createCosmosConnector = ({
 
         const initCw = wallet.chainWalletMap.get(
           cosmosChainsMap.cosmos?.chain.chain_name ??
-            Object.values(cosmosChainsMap)[0].chain.chain_name,
+            Object.values(cosmosChainsMap)[0].chain.chain_name
         );
 
         if (!initCw) throw new Error("Chain wallet not found");
@@ -92,7 +92,7 @@ export const createCosmosConnector = ({
           });
 
         const connect: ReturnType<CreateConnectorFn>["connect"] = async (
-          args,
+          args
         ) => {
           config.emitter.emit("message", { type: "connecting" });
 
@@ -168,7 +168,7 @@ export const createCosmosConnector = ({
             };
 
             const newCw = wallet.getChainWallet(
-              cosmosChain.cosmosChainName,
+              cosmosChain.cosmosChainName
             ) as ChainWalletBase;
 
             if (!newCw) throw new Error("Chain wallet not found");
@@ -232,11 +232,11 @@ export const createCosmosConnector = ({
           tx: string;
         }) =>
           EitherAsync(() =>
-            cw.client.signDirect?.(
+            cw.client.signDirect!(
               cw.chainId,
               cw.address!,
-              SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc, // accountNumber bigint/Long issue
-            ),
+              SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
+            )
           )
             .mapLeft((e) => {
               console.log(e);
@@ -248,8 +248,8 @@ export const createCosmosConnector = ({
                   authInfoBytes: val.signed.authInfoBytes,
                   bodyBytes: val.signed.bodyBytes,
                   signatures: [decodeSignature(val.signature).signature],
-                }).finish(),
-              ),
+                }).finish()
+              )
             );
 
         const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =

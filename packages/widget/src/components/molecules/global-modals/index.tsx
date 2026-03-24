@@ -9,7 +9,7 @@ import { TosModal } from "../tos-modal";
 export const GlobalModals = () => {
   const geoBlock = useGeoBlock();
   const regionCodeName = useRegionCodeName(
-    geoBlock ? geoBlock.regionCode : undefined,
+    geoBlock ? geoBlock.regionCode : undefined
   );
 
   const [hideGeoBlock, setHideGeoBlock] = useState(false);

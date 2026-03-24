@@ -13,7 +13,7 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
     .map((v) =>
       v
         .filter((a) => a.address !== address)
-        .map((a) => formatAddress(a.address) as Address),
+        .map((a) => formatAddress(a.address) as Address)
     )
     .orDefault([]);
 
@@ -25,8 +25,8 @@ export const RainbowProvider = ({ children }: PropsWithChildren) => {
           Maybe.fromNullable(ledgerAccounts).ifJust((accounts) =>
             List.find(
               (acc) => formatAddress(acc.address) === address,
-              accounts,
-            ).ifJust((acc) => onLedgerAccountChange?.(acc)),
+              accounts
+            ).ifJust((acc) => onLedgerAccountChange?.(acc))
           ),
       }}
     >

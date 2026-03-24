@@ -90,7 +90,7 @@ export const SelectValidator = ({
           items: [] as ValidatorDto[],
           label: t("details.validators_other"),
         },
-      },
+      }
     );
 
     // If we do not have preferred validators, show all other

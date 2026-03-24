@@ -33,7 +33,7 @@ export const UtilaSelectValidatorSection = () => {
         const multiSelect = isYieldActionArgRequired(
           val.selectedStake,
           "enter",
-          "validatorAddresses",
+          "validatorAddresses"
         );
 
         return (

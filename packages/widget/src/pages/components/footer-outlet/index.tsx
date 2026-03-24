@@ -51,7 +51,7 @@ const AnimatedFooterButton = (props: NonNullable<FooterButtonVal>) => {
 
   const { state } = useMountAnimation();
   const [initAnimationFinished, setInitAnimationFinished] = useState(
-    state.layout,
+    state.layout
   );
 
   const { disableInitLayoutAnimation } = useSettings();
@@ -86,7 +86,7 @@ const AnimatedFooterButton = (props: NonNullable<FooterButtonVal>) => {
             animate: {},
             initial: { opacity: 0, translateY: "-40px" },
           };
-        }),
+        })
     )
     .unsafeCoerce();
 

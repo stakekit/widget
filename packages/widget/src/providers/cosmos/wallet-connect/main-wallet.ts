@@ -7,7 +7,7 @@ import { WalletConnectClient } from "./client";
 export class WalletConnectWallet extends WCWallet {
   constructor(
     walletInfo: Wallet,
-    preferredEndpoints?: EndpointOptions["endpoints"],
+    preferredEndpoints?: EndpointOptions["endpoints"]
   ) {
     super(walletInfo, ChainWalletConnect, WalletConnectClient);
     this.preferredEndpoints = preferredEndpoints;

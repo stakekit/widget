@@ -39,7 +39,7 @@ export const SelectProvider = () => {
     selectedProviderYieldId,
     yields: Maybe.fromNullable(yields.data),
   }).chainNullable((val) =>
-    val.yields.find((v) => v.id === val.selectedProviderYieldId),
+    val.yields.find((v) => v.id === val.selectedProviderYieldId)
   );
 
   const providerSelection = Maybe.fromRecord({
@@ -51,8 +51,8 @@ export const SelectProvider = () => {
       (provider) => ({
         ...val,
         provider,
-      }),
-    ),
+      })
+    )
   );
 
   return appLoading ? (

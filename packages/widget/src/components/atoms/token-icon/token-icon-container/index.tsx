@@ -25,7 +25,7 @@ export const TokenIconContainer = ({
 }: TokenIconContainerProps) => {
   const { mainUrl, fallbackUrl, name, providerIcon } = useVariantTokenUrls(
     token,
-    metadata,
+    metadata
   );
 
   const networkLogoUri = useVariantNetworkUrls(token.network as Networks);

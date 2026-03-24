@@ -8,12 +8,12 @@ const priceDtoToPrice = (priceDto: PriceResponseDto[string]): Price => ({
 });
 
 export const priceResponseDtoToPrices = (
-  priceResponseDto: PriceResponseDto,
+  priceResponseDto: PriceResponseDto
 ): Prices =>
   new Prices(
     Object.keys(priceResponseDto).reduce<Prices["value"]>((acc, key) => {
       acc.set(key as TokenString, priceDtoToPrice(priceResponseDto[key]));
 
       return acc;
-    }, new Map()),
+    }, new Map())
   );

@@ -48,9 +48,9 @@ export const getMaxAmount = ({
   return BigNumber.max(
     BigNumber.min(
       integrationMaxLimit.orDefault(BigNumber(Number.POSITIVE_INFINITY)),
-      availableAmount.minus(gasEstimateTotal),
+      availableAmount.minus(gasEstimateTotal)
     ),
-    new BigNumber(0),
+    new BigNumber(0)
   );
 };
 
@@ -68,7 +68,7 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
     ...stakeDto,
     transactions: stakeDto.transactions.filter(
       (
-        tx,
+        tx
       ): tx is Override<
         TransactionDto,
         {
@@ -77,7 +77,7 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
             Exclude<TransactionDto["status"], "SKIPPED">
           >;
         }
-      > => tx.status !== "SKIPPED",
+      > => tx.status !== "SKIPPED"
     ),
   };
 

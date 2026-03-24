@@ -36,7 +36,7 @@ export const handleRichErrorResponse = ({
 
 export const attachRichErrorsInterceptor = (
   apiClient: AxiosInstance,
-  i18n: i18n,
+  i18n: i18n
 ) =>
   apiClient.interceptors.response.use(undefined, (error) => {
     handleRichErrorResponse({
@@ -58,7 +58,7 @@ export const useRichErrors = () => {
       };
     }, []),
     useCallback(() => $richError.value, []),
-    useCallback(() => $richError.value, []),
+    useCallback(() => $richError.value, [])
   );
 
   const resetError = () => $richError.next(null);

@@ -111,7 +111,7 @@ export const AnimatedEarnPage = () => {
           .map((val) => ({
             animate: { ...animateTo, transition: val.transition },
             initial: val.initial,
-          })),
+          }))
     )
     .unsafeCoerce();
 

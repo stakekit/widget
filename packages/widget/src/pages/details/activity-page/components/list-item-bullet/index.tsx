@@ -36,8 +36,8 @@ const ListItemBullet = ({
           height="3"
           borderRadius="full"
           background="tokenSelectBackground"
-        />,
-      ),
+        />
+      )
     )
     .extractNullable();
 

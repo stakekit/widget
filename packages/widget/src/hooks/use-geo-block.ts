@@ -68,5 +68,5 @@ export const useGeoBlock = () =>
       };
     }, []),
     useCallback(() => _isGeoBlocked, []),
-    useCallback(() => _isGeoBlocked, []),
+    useCallback(() => _isGeoBlocked, [])
   );

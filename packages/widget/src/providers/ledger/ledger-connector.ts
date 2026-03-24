@@ -45,7 +45,7 @@ const createLedgerLiveConnector = ({
     const $currentAccount = new BehaviorSubject<Account | undefined>(undefined);
 
     const $currentAccountId = $currentAccount.pipe(
-      map((v) => v?.parentAccountId ?? v?.id),
+      map((v) => v?.parentAccountId ?? v?.id)
     );
     let ledgerAccounts: Account[] = [];
     const $accountsOnCurrentChain = new BehaviorSubject<Account[]>([]);
@@ -79,7 +79,7 @@ const createLedgerLiveConnector = ({
           .map((val) => ({
             accounts: val,
             accountsMap: new Map<Account["id"], Account>(
-              val.map((v) => [v.id, v]),
+              val.map((v) => [v.id, v])
             ),
           }))
           .map((val) =>
@@ -91,8 +91,8 @@ const createLedgerLiveConnector = ({
                       currency: parentAcc.currency,
                     }))
                     .orDefault(acc)
-                : acc,
-            ),
+                : acc
+            )
           )
           .mapLeft((e) => {
             console.log(e);
@@ -111,8 +111,8 @@ const createLedgerLiveConnector = ({
 
       filteredSkSupportedChainsToCurrencyIdMap = new Map(
         [...filteredSupportedLedgerFamiliesWithCurrency.values()].flatMap((v) =>
-          [...v.values()].map((v) => [v.chain.id, v.currencyId]),
-        ),
+          [...v.values()].map((v) => [v.chain.id, v.currencyId])
+        )
       );
 
       filteredSkSupportedChainsValues =
@@ -132,7 +132,7 @@ const createLedgerLiveConnector = ({
 
           return acc;
         },
-        { enabled: [] as Chain[], disabled: [] as Chain[] },
+        { enabled: [] as Chain[], disabled: [] as Chain[] }
       );
 
       // Set chains to expose for switcher
@@ -147,7 +147,7 @@ const createLedgerLiveConnector = ({
             if (!family) return acc;
 
             const itemMap = filteredSupportedLedgerFamiliesWithCurrency.get(
-              family as SupportedLedgerLiveFamilies,
+              family as SupportedLedgerLiveFamilies
             );
 
             if (!family || !itemMap) return acc;
@@ -160,7 +160,7 @@ const createLedgerLiveConnector = ({
 
             return acc;
           },
-          [] as { account: Account; chainItem: ChainItem }[],
+          [] as { account: Account; chainItem: ChainItem }[]
         )
         .sort((a, b) => {
           const aPriority =
@@ -175,7 +175,7 @@ const createLedgerLiveConnector = ({
         const defaultChain = Maybe.fromNullable(
           filteredSupportedLedgerFamiliesWithCurrency
             .get("ethereum")
-            ?.get("ethereum"),
+            ?.get("ethereum")
         ).extractNullable();
 
         if (!defaultChain) throw new Error("Default chain not found");
@@ -204,7 +204,7 @@ const createLedgerLiveConnector = ({
             }
 
             return { type: "accountId", accountId: accId } as const;
-          }),
+          })
       );
 
       const accountWithChain = preferredAccount
@@ -215,15 +215,15 @@ const createLedgerLiveConnector = ({
             }
 
             return v.account.id === pa.accountId;
-          }, accountsWithChain),
+          }, accountsWithChain)
         )
         .altLazy(() =>
           Maybe.fromNullable(queryParams.network).chain((network) =>
             List.find(
               (v) => v.chainItem.skChainName === network,
-              accountsWithChain,
-            ),
-          ),
+              accountsWithChain
+            )
+          )
         )
         .altLazy(() => List.head(accountsWithChain))
         .toEither(new Error("Account not found"))
@@ -253,7 +253,7 @@ const createLedgerLiveConnector = ({
       Maybe.fromNullable(currentChain)
         .toEither(new Error("Current chain not found"))
         .map((val) =>
-          ledgerAccounts.filter((a) => a.currency === val.currencyId),
+          ledgerAccounts.filter((a) => a.currency === val.currencyId)
         );
 
     const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
@@ -266,7 +266,7 @@ const createLedgerLiveConnector = ({
       };
 
     const onChainChanged: ReturnType<CreateConnectorFn>["onChainChanged"] = (
-      chainId,
+      chainId
     ) => {
       config.emitter.emit("change", { chainId: skNormalizeChainId(chainId) });
     };
@@ -304,22 +304,22 @@ const createLedgerLiveConnector = ({
     const requestAndSwitchAccount = (chain: Chain) =>
       EitherAsync.liftEither(
         Maybe.fromNullable(
-          filteredSkSupportedChainsToCurrencyIdMap?.get(chain.id),
-        ).toEither(new Error("Chain not found")),
+          filteredSkSupportedChainsToCurrencyIdMap?.get(chain.id)
+        ).toEither(new Error("Chain not found"))
       )
         .chain((currencyId) =>
           EitherAsync(() =>
-            walletApiClient.account.request({ currencyIds: [currencyId] }),
+            walletApiClient.account.request({ currencyIds: [currencyId] })
           ).mapLeft((e) => {
             console.log(e);
             return new Error("could not request account");
-          }),
+          })
         )
         .chain((account) => {
           ledgerAccounts.push(account);
           $filteredChains.next([...$filteredChains.value, chain]);
           $disabledChains.next(
-            $disabledChains.value.filter((c) => c.id !== chain.id),
+            $disabledChains.value.filter((c) => c.id !== chain.id)
           );
           return EitherAsync(() => switchChain({ chainId: chain.id }));
         })

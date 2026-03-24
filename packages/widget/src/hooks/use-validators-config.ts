@@ -18,8 +18,8 @@ export const useValidatorsConfig = (): ValidatorsConfig => {
             mergePreferredWithDefault: val.mergePreferredWithDefault ?? true,
             preferredOnly: val.preferredOnly ?? false,
           },
-        ]),
+        ])
       ) satisfies ValidatorsConfig,
-    [validatorsConfig],
+    [validatorsConfig]
   );
 };

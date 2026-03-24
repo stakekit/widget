@@ -22,14 +22,14 @@ const getKey = (params: Params) => [
 export const getYieldOpportunity = (
   params: Params & {
     queryClient: QueryClient;
-  },
+  }
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
       queryKey: getKey(params),
       staleTime,
       queryFn: () => queryFn(params),
-    }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunity");
@@ -38,7 +38,7 @@ export const getYieldOpportunity = (
 export const queryFn = async (
   params: Params & {
     signal?: AbortSignal;
-  },
+  }
 ) => (await fn(params)).unsafeCoerce();
 
 const fn = ({
@@ -59,12 +59,12 @@ const fn = ({
             },
           },
           signal,
-        }),
+        })
       ),
       yieldYieldOpportunity(
         yieldId,
         { ledgerWalletAPICompatible: isLedgerLive },
-        signal,
+        signal
       ),
     ]);
 
@@ -82,7 +82,7 @@ const fn = ({
               name: y.metadata.name.replace(/staking/i, ""),
             },
           } satisfies Yield)
-        : y,
+        : y
     )
     .mapLeft((e) => {
       console.log(e);

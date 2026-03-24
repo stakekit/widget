@@ -31,7 +31,7 @@ export const usePositionBalances = ({
           rewardRate: val.positionData.rewardRate,
         };
       }),
-    [balanceId, data],
+    [balanceId, data]
   );
 
   return { data: value, ...rest };

@@ -82,7 +82,7 @@ export const useMetaInfo = ({
               val: Just(new BigNumber(stakedBalance))
                 .filter((v) => !v.isNaN())
                 .map(
-                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`,
+                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`
                 )
                 .orDefault("-"),
             }
@@ -189,6 +189,6 @@ export const useMetaInfo = ({
       subnetName,
       marketCap,
       tokenSymbol,
-    ],
+    ]
   );
 };

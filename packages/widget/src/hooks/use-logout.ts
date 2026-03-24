@@ -10,7 +10,7 @@ export const useLogout = () => {
       await EitherAsync(disconnect)
         .chain(() => EitherAsync(() => indexedDB.databases()))
         .ifRight((dbs) =>
-          dbs.forEach((db) => db.name && indexedDB.deleteDatabase(db.name)),
+          dbs.forEach((db) => db.name && indexedDB.deleteDatabase(db.name))
         );
 
       return null;

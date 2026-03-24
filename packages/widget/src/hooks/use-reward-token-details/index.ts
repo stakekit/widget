@@ -8,7 +8,7 @@ import type { ExtraData } from "../../pages/details/earn-page/state/types";
 import { getRewardTokenSymbols } from "./get-reward-token-symbols";
 
 export const useRewardTokenDetails = (
-  yieldOpportunity: ExtraData["selectedStake"],
+  yieldOpportunity: ExtraData["selectedStake"]
 ) => {
   return useMemo(
     () =>
@@ -17,7 +17,7 @@ export const useRewardTokenDetails = (
           Maybe.fromNullable(getYieldProviderDetails(y)).map((p) => ({
             p,
             rt: getYieldRewardTokens(y),
-          })),
+          }))
         )
         .map(({ p, rt }) => ({
           logoUri: p.logoURI ?? null,
@@ -25,6 +25,6 @@ export const useRewardTokenDetails = (
           symbols: getRewardTokenSymbols(rt),
           providerName: p.name ?? null,
         })),
-    [yieldOpportunity],
+    [yieldOpportunity]
   );
 };

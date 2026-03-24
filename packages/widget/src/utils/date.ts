@@ -35,7 +35,7 @@ export const formatDurationUntilDate = (futureDate: Date) => {
 
   return formatDuration(
     { days, hours, minutes, seconds },
-    { format: getFormat({ days, hours, minutes }) },
+    { format: getFormat({ days, hours, minutes }) }
   );
 };
 

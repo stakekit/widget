@@ -58,7 +58,7 @@ globalStyle(
         margin: "0",
       },
     },
-  },
+  }
 );
 
 globalStyle(`${rootSelector} input[type=number]`, {
@@ -78,7 +78,7 @@ globalStyle(
         height: "auto",
       },
     },
-  },
+  }
 );
 
 globalStyle("button.simple-display-wallet-button", {
@@ -105,7 +105,7 @@ globalStyle(
   {
     maxHeight: "80vh",
     overflow: "scroll",
-  },
+  }
 );
 
 globalStyle(
@@ -113,7 +113,7 @@ globalStyle(
   {
     width: 0,
     height: 0,
-  },
+  }
 );
 
 globalStyle(
@@ -121,7 +121,7 @@ globalStyle(
   {
     width: 0,
     height: 0,
-  },
+  }
 );
 
 globalStyle(
@@ -129,12 +129,12 @@ globalStyle(
   {
     width: 0,
     height: 0,
-  },
+  }
 );
 
 globalStyle(
   '[data-rk="stakekit"][aria-labelledby="rk_connect_title"][aria-modal="true"][role="dialog"]',
   {
     zIndex: 990,
-  },
+  }
 );

@@ -94,7 +94,7 @@ export const ActionListItem = ({
                               count: Math.max(val.length - 1, 1),
                             })}
                           </Text>
-                        )),
+                        ))
                       )
                       .extractNullable()}
                   </Box>
@@ -125,7 +125,7 @@ export const ActionListItem = ({
             </Box>
           </ListItem>
         ),
-        <ContentLoaderSquare heightPx={60} />,
+        <ContentLoaderSquare heightPx={60} />
       )}
     </Box>
   );
@@ -171,7 +171,7 @@ const Badge = ({
             noWrap,
             badgeText({
               type: badgeColor ? "white" : "regular",
-            }),
+            })
           )}
         >
           {badgeLabel}

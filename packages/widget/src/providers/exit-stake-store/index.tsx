@@ -37,7 +37,7 @@ const store = createStore({
 });
 
 const ExitStakeStoreContext = createContext<typeof store | undefined>(
-  undefined,
+  undefined
 );
 
 export const ExitStakeStoreProvider = ({ children }: PropsWithChildren) => {
@@ -53,7 +53,7 @@ export const useExitStakeStore = () => {
 
   if (!value) {
     throw new Error(
-      "useExitStakeStore must be used within a ExitStakeStoreProvider",
+      "useExitStakeStore must be used within a ExitStakeStoreProvider"
     );
   }
 

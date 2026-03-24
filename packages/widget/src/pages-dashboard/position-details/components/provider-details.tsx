@@ -90,7 +90,7 @@ export const ProviderDetails = ({
                   {t(
                     providerDetails.status === "jailed"
                       ? "details.validators_jailed"
-                      : "details.validators_inactive",
+                      : "details.validators_inactive"
                   )}
                 </Text>
               </Box>
@@ -129,7 +129,7 @@ const ValidatorMeta = memo((props: Parameters<typeof useMetaInfo>[0]) => {
       {Object.entries(metaInfo)
         .filter(
           (val): val is [keyof typeof metaInfo, NonNullable<(typeof val)[1]>] =>
-            !!val[1],
+            !!val[1]
         )
         .map(([key, val]) => {
           return (

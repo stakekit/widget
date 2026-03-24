@@ -56,7 +56,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: avalancheCToken,
           },
-        }) satisfies ReturnType<typeof yieldFixture>,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -74,7 +74,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: ether,
           },
-        }) satisfies ReturnType<typeof yieldFixture>,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -92,7 +92,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: solanaToken,
           },
-        }) satisfies ReturnType<typeof yieldFixture>,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -110,7 +110,7 @@ export const setup = () => {
             type: "staking",
             gasFeeToken: tonToken,
           },
-        }) satisfies ReturnType<typeof yieldFixture>,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -199,13 +199,13 @@ export const setup = () => {
         [tonNativeStaking.id, tonNativeStaking.validators],
       ]);
       const validators = yieldValidatorsFixture(
-        validatorsByYieldId.get(yieldId) ?? [],
+        validatorsByYieldId.get(yieldId) ?? []
       );
 
       return HttpResponse.json({
         items: validators,
         total: validators.length,
       });
-    }),
+    })
   );
 };

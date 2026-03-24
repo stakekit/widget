@@ -124,7 +124,7 @@ export const CompletePageComponent = ({
                                 ? "ethena_usde"
                                 : undefined,
                             }),
-                      "",
+                      ""
                     ),
                     amount,
                     tokenNetwork: network,
@@ -136,9 +136,9 @@ export const CompletePageComponent = ({
                         context: isEthenaUsdeStaking(integrationId)
                           ? "ethena_usde"
                           : undefined,
-                      },
+                      }
                     ),
-                  },
+                  }
                 )}
               </Heading>
             </motion.div>
@@ -172,7 +172,7 @@ export const CompletePageComponent = ({
                           {t("complete.via", { providerName: v.name })}
                         </Text>
                       </Box>
-                    )),
+                    ))
                   )
                   .extractNullable()
               : null}
@@ -206,8 +206,8 @@ export const CompletePageComponent = ({
                               context: isEthenaUsdeStaking(integrationId)
                                 ? "ETHENA_USDE"
                                 : undefined,
-                            } as never,
-                          ) as unknown as string,
+                            } as never
+                          ) as unknown as string
                       )
                       .map(capitalizeFirstLowerRest)
                       .extract(),

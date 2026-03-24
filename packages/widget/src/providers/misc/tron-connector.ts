@@ -58,8 +58,8 @@ const createTronConnector = ({
       return (
         await EitherAsync.liftEither(
           Maybe.fromNullable([adapter.address as Address]).toEither(
-            new Error("No account found"),
-          ),
+            new Error("No account found")
+          )
         )
       ).unsafeCoerce();
     },

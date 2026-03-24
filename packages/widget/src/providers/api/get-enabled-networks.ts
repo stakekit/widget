@@ -19,8 +19,8 @@ export const getEnabledNetworks = ({
       queryFn: async () =>
         new Set(
           (await getResponseData(yieldApiFetchClient.GET("/v1/networks"))).map(
-            (network) => network.id as Networks,
-          ),
+            (network) => network.id as Networks
+          )
         ),
-    }),
+    })
   ).mapLeft(() => new Error("Could not get enabled networks"));

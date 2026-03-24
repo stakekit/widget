@@ -13,7 +13,7 @@ export const UnstakeStepsPage = () => {
 
   const exitRequest = useSelector(
     useExitStakeStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const { plain } = useUnstakeOrPendingActionParams();
@@ -25,10 +25,10 @@ export const UnstakeStepsPage = () => {
   const providersDetails = useProvidersDetails({
     integrationData: useMemo(
       () => Maybe.of(exitRequest.integrationData),
-      [exitRequest.integrationData],
+      [exitRequest.integrationData]
     ),
     validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : [],
+      p.type === "validators" ? p.validatorsAddresses : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

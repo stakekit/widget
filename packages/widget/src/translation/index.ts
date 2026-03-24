@@ -39,7 +39,7 @@ i18nInstance.on("languageChanged", (lng) => {
 });
 
 i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
-  value.toLowerCase(),
+  value.toLowerCase()
 );
 
 export const useLoadErrorTranslations = () => {
@@ -57,12 +57,12 @@ export const useLoadErrorTranslations = () => {
       (
         await EitherAsync(() =>
           apiClient.get<Record<string, unknown>>(
-            `https://i18n.stakek.it/locales/${lng}/errors.json`,
-          ),
+            `https://i18n.stakek.it/locales/${lng}/errors.json`
+          )
         ).ifRight((res) =>
           i18n.addResourceBundle(i18n.language, "translation", {
             errors: res.data,
-          }),
+          })
         )
       ).unsafeCoerce(),
   });

@@ -166,13 +166,13 @@ const registryIdsToSKCosmosNetworks: Record<string, SupportedCosmosChains> =
     supportedCosmosChains.map((key) => [
       skCosmosNetworksToRegistryIds[key],
       key,
-    ]),
+    ])
   );
 
 const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
 
 const chainMapper = <T extends AssetList | CosmosChain>(
-  val: T,
+  val: T
 ): WithWagmiName<T> => {
   let wagmiName = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
 
@@ -202,7 +202,7 @@ const chainMapper = <T extends AssetList | CosmosChain>(
 };
 
 const assetMapper = (
-  val: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>,
+  val: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>
 ) => {
   if (val.chain_id === "comdex-1") {
     val.assets[1].coingecko_id = "harbor-2";
@@ -223,7 +223,7 @@ export const getRegistryIdsToSKCosmosNetworks =
   (): typeof registryIdsToSKCosmosNetworks => registryIdsToSKCosmosNetworks;
 
 const filteredCosmosChainNames = new Map(
-  cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id]),
+  cosmosRegistryChains.map((c) => [c.chain_name, c.chain_id])
 );
 
 const filterMissingChainName = (val: AssetList) => !!val.chain_name;

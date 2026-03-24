@@ -29,12 +29,12 @@ export const useActionReview = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction,
+    (state) => state.context.selectedAction
   ).unsafeCoerce();
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield,
+    (state) => state.context.selectedYield
   ).unsafeCoerce();
 
   const inputToken = useMemo(
@@ -43,9 +43,9 @@ export const useActionReview = () => {
         getActionInputToken({
           actionDto: selectedAction,
           yieldDto: selectedYield,
-        }),
+        })
       ),
-    [selectedAction, selectedYield],
+    [selectedAction, selectedYield]
   ) as Maybe<TokenDto>;
 
   const transactions = useMemo(
@@ -53,9 +53,9 @@ export const useActionReview = () => {
       Maybe.fromNullable(selectedAction)
         .map((a) => a.transactions)
         .map((tx) =>
-          tx.sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0)),
+          tx.sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0))
         ),
-    [selectedAction],
+    [selectedAction]
   );
 
   const onViewTransactionClick = (url: string) =>
@@ -65,7 +65,7 @@ export const useActionReview = () => {
 
   const stakeTitle = useYieldType(Maybe.of(selectedYield)).mapOrDefault(
     (y) => y.review,
-    "",
+    ""
   );
 
   const unstakeTitle = useMemo(() => {
@@ -84,9 +84,9 @@ export const useActionReview = () => {
       t(
         `position_details.pending_action_button.${
           selectedAction.type.toLowerCase() as Lowercase<ActionType>
-        }` as never,
+        }` as never
       ) as string,
-    [selectedAction.type, t],
+    [selectedAction.type, t]
   );
 
   const title = useMemo(
@@ -96,7 +96,7 @@ export const useActionReview = () => {
         : selectedAction.type === ActionTypes.UNSTAKE
           ? unstakeTitle
           : pendingActionTitle,
-    [selectedAction, stakeTitle, unstakeTitle, pendingActionTitle],
+    [selectedAction, stakeTitle, unstakeTitle, pendingActionTitle]
   );
 
   const amount = useMemo(
@@ -104,7 +104,7 @@ export const useActionReview = () => {
       Maybe.fromNullable(selectedAction.amount)
         .map(defaultFormattedNumber)
         .extractNullable(),
-    [selectedAction],
+    [selectedAction]
   );
 
   const path = useMemo(
@@ -114,7 +114,7 @@ export const useActionReview = () => {
         : selectedAction.type === ActionTypes.STAKE
           ? "stake"
           : "pending",
-    [selectedAction],
+    [selectedAction]
   );
 
   const labelKey: LabelKey = useMemo(
@@ -123,16 +123,16 @@ export const useActionReview = () => {
         .chain((txs) =>
           List.find(
             (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
-            txs,
+            txs
           ).chain((tx) =>
-            List.indexOf(tx, txs)
+            List.findIndex((val) => val.id === tx.id, txs)
               .chainNullable((index) => txs[index - 1])
               .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
-              .map(() => "continue" as LabelKey),
-          ),
+              .map(() => "continue" as LabelKey)
+          )
         )
         .orDefault("retry"),
-    [transactions],
+    [transactions]
   );
 
   const actionOlderThan7Days = useMemo(
@@ -140,7 +140,7 @@ export const useActionReview = () => {
       Maybe.of(selectedAction.createdAt)
         .map(dateOlderThen7Days)
         .orDefault(false),
-    [selectedAction],
+    [selectedAction]
   );
 
   useRegisterFooterButton(
@@ -152,8 +152,8 @@ export const useActionReview = () => {
         isLoading: false,
         hide: actionOlderThan7Days,
       }),
-      [navigate, path, labelKey, actionOlderThan7Days, t],
-    ),
+      [navigate, path, labelKey, actionOlderThan7Days, t]
+    )
   );
 
   return {

@@ -28,9 +28,9 @@ export const useSyncExternalProvider = ({
     () =>
       List.find(
         (c) => isExternalProviderConnector(c),
-        connectors as Connector[],
+        connectors as Connector[]
       ).filter(isExternalProviderConnector),
-    [connectors],
+    [connectors]
   );
 
   const connectRef = useSavedRef(connect);
@@ -46,7 +46,7 @@ export const useSyncExternalProvider = ({
     }
 
     externalProviderConnector.ifJust((val) =>
-      connectRef.current({ connector: val }),
+      connectRef.current({ connector: val })
     );
   }, [
     isConnected,
@@ -59,7 +59,7 @@ export const useSyncExternalProvider = ({
   useUpdateEffect(() => {
     connectorRef.current
       .chain((conn) =>
-        Maybe.fromNullable(chainRef.current).map((c) => ({ c, conn })),
+        Maybe.fromNullable(chainRef.current).map((c) => ({ c, conn }))
       )
       .ifJust((val) => {
         val.conn.onSupportedChainsChanged({

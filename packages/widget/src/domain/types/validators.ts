@@ -5,7 +5,7 @@ export type YieldValidatorDto = components["schemas"]["ValidatorDto"];
 export type ValidatorDto = LegacyValidatorDto;
 
 export const toValidatorDto = (
-  validatorDto: YieldValidatorDto | ValidatorDto,
+  validatorDto: YieldValidatorDto | ValidatorDto
 ): ValidatorDto => {
   const legacyValidator = validatorDto as ValidatorDto;
   const rewardRate =

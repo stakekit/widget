@@ -53,7 +53,7 @@ export const useInitYield = ({
     queryFn: async () =>
       (
         await EitherAsync.liftEither(
-          selectedToken.toEither(new Error("no token selected")),
+          selectedToken.toEither(new Error("no token selected"))
         ).chain((token) =>
           getTokenBalances({
             additionalAddresses,
@@ -65,9 +65,9 @@ export const useInitYield = ({
             .chain((val) =>
               EitherAsync.liftEither(
                 Maybe.fromNullable(
-                  getTokenBalancesMap(val).get(tokenString(token)),
-                ).toEither(new Error("could not get token balance")),
-              ),
+                  getTokenBalancesMap(val).get(tokenString(token))
+                ).toEither(new Error("could not get token balance"))
+              )
             )
             .chain((val) =>
               getInitParams({
@@ -89,9 +89,9 @@ export const useInitYield = ({
                   validatorsConfig,
                   preferredTokenYieldsPerNetwork:
                     preferredTokenYieldsPerNetwork ?? null,
-                }),
-              ),
-            ),
+                })
+              )
+            )
         )
       ).unsafeCoerce(),
   });

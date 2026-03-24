@@ -152,7 +152,7 @@ const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
           qrCode: "https://app.safe.global/",
         },
         chainGroup: evmChainGroup,
-      }) satisfies CommonWalletOptions,
+      }) satisfies CommonWalletOptions
   )
   .unsafeCoerce();
 
@@ -194,7 +194,7 @@ export const createFineryWallets: (evmChains: Chain[]) => {
       // copperConnectProvider: (typeof providers)[number] | undefined;
       mpcVaultProvider: (typeof providers)[number] | undefined;
       cactusProvider: (typeof providers)[number] | undefined;
-    },
+    }
   );
 
   const cactusLinkWallet: WalletList[number]["wallets"][number] = () => ({
@@ -286,8 +286,8 @@ export const createFineryWallets: (evmChains: Chain[]) => {
         id: `${w.id}-wc`,
         rdns: `${w.rdns}-wc`,
       }),
-      evmChains,
-    ),
+      evmChains
+    )
   );
 
   const primaryWallets: WalletList[number]["wallets"] = [

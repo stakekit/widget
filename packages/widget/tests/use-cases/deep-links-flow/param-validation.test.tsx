@@ -11,7 +11,7 @@ describe("Deep link param validation", () => {
   it("Should validate yieldId param", async () => {
     const setAndAssertIsValidYieldIdParam = async (
       yieldId: string,
-      valid: boolean,
+      valid: boolean
     ) => {
       _setUrl({ yieldId });
 
@@ -27,14 +27,14 @@ describe("Deep link param validation", () => {
       });
 
       expect(result.result.current.map((v) => v.yieldId).extract()).toEqual(
-        valid ? yieldId : null,
+        valid ? yieldId : null
       );
     };
 
     await setAndAssertIsValidYieldIdParam("ethereum-eth-native-staking", true);
     await setAndAssertIsValidYieldIdParam(
       "../ethereum-eth-native-staking",
-      false,
+      false
     );
     await setAndAssertIsValidYieldIdParam("..", false);
     await setAndAssertIsValidYieldIdParam("..%2f", false);
@@ -42,26 +42,26 @@ describe("Deep link param validation", () => {
     await setAndAssertIsValidYieldIdParam("AAA-%2f..%2f..%2f-whatever", false);
     await setAndAssertIsValidYieldIdParam(
       "./ethereum-eth-native-staking",
-      false,
+      false
     );
     await setAndAssertIsValidYieldIdParam(
       "ethereum-../eth-native-staking",
-      false,
+      false
     );
     await setAndAssertIsValidYieldIdParam(
       "ethereum-eth-native-staking../",
-      false,
+      false
     );
     await setAndAssertIsValidYieldIdParam(
       "ethereum-eth-native-staking/../",
-      false,
+      false
     );
   });
 
   it("Should validate pendingAction param", async () => {
     const setAndAssertIsValidPendingActionParam = async (
       pendingaction: ActionType | (string & {}),
-      valid: boolean,
+      valid: boolean
     ) => {
       _setUrl({ pendingaction });
 
@@ -77,7 +77,7 @@ describe("Deep link param validation", () => {
       });
 
       expect(result.current.map((v) => v.pendingaction).extract()).toEqual(
-        valid ? pendingaction : null,
+        valid ? pendingaction : null
       );
     };
 

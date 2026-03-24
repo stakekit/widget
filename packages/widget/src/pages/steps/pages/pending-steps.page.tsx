@@ -13,7 +13,7 @@ export const PendingStepsPage = () => {
 
   const pendingRequest = useSelector(
     usePendingActionStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const { plain } = useUnstakeOrPendingActionParams();
@@ -26,10 +26,10 @@ export const PendingStepsPage = () => {
   const providersDetails = useProvidersDetails({
     integrationData: useMemo(
       () => Maybe.of(pendingRequest.integrationData),
-      [pendingRequest.integrationData],
+      [pendingRequest.integrationData]
     ),
     validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : [],
+      p.type === "validators" ? p.validatorsAddresses : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

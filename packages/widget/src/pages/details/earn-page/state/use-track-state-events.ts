@@ -24,7 +24,7 @@ export const useTrackStateEvents = ({
         tokenName: v.token.name,
         tokenAddress: v.token.address,
         tokenSymbol: v.token.symbol,
-      }),
+      })
     );
   }, [initYield, trackEvent]);
 
@@ -39,7 +39,7 @@ export const useTrackStateEvents = ({
         address: v.address,
         symbol: v.symbol,
         decimals: v.decimals,
-      }),
+      })
     );
   }, [initToken, trackEvent]);
 };

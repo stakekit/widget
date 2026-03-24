@@ -20,12 +20,12 @@ export const UnstakeCompletePage = () => {
 
   const exitRequest = useSelector(
     useExitStakeStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(exitRequest.integrationData),
-    [exitRequest.integrationData],
+    [exitRequest.integrationData]
   );
 
   useTrackPage("unstakeComplete");
@@ -33,21 +33,21 @@ export const UnstakeCompletePage = () => {
   const providerDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : [],
+      p.type === "validators" ? p.validatorsAddresses : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });
 
   const token = useMemo(
     () => Maybe.of(exitRequest.unstakeToken),
-    [exitRequest.unstakeToken],
+    [exitRequest.unstakeToken]
   );
 
   const metadata = integrationData.map(getYieldMetadata);
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () => formatNumber(exitRequest.requestDto.arguments?.amount ?? 0),
-    [exitRequest.requestDto.arguments?.amount],
+    [exitRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

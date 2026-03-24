@@ -35,9 +35,9 @@ export const useYieldMetaInfo = ({
           t("details.selected_validators", {
             providerName: v.name ?? v.address,
             count: validators.length - 1,
-          }),
+          })
         ),
-    [validators, t],
+    [validators, t]
   );
 
   return useMemo(() => {

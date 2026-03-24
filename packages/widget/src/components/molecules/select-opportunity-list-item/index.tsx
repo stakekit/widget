@@ -40,7 +40,7 @@ export const SelectOpportunityListItem = ({
   const { t } = useTranslation();
 
   const campaignRate = getRewardRateBreakdown(
-    getYieldRewardRateDetails(item),
+    getYieldRewardRateDetails(item)
   ).find((rewardRate) => rewardRate.key === "campaign");
 
   const totalRateFormatted = getRewardRateFormatted({
@@ -107,13 +107,13 @@ export const SelectOpportunityListItem = ({
                     .map((tvl) =>
                       tvl.reduce(
                         (acc, curr) => acc.plus(curr.value),
-                        BigNumber(0),
-                      ),
+                        BigNumber(0)
+                      )
                     )
                     .map(
                       (tvl) =>
-                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`,
-                    ),
+                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`
+                    )
                 )
                 .orDefault(item.token.symbol)}
             </Text>
@@ -130,8 +130,8 @@ export const SelectOpportunityListItem = ({
           {Maybe.fromNullable(metadata.commission)
             .map((commission) =>
               APToPercentage(
-                commission.reduce((acc, curr) => acc + curr.value, 0),
-              ),
+                commission.reduce((acc, curr) => acc + curr.value, 0)
+              )
             )
             .map((commission) => (
               <Text

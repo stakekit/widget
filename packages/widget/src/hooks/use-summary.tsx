@@ -66,13 +66,13 @@ export const SummaryProvider = ({
 
   const yieldIds = useMemo(
     () => [...new Set(positionsData.data.map((p) => p.integrationId)).values()],
-    [positionsData.data],
+    [positionsData.data]
   );
 
   const multiYieldsMapQuery = useMultiYields(yieldIds, {
     select: useCallback(
       (val: Yield[]) => new Map(val.map((y) => [y.id, y])),
-      [],
+      []
     ),
   });
 
@@ -88,7 +88,7 @@ export const SummaryProvider = ({
 
           return acc;
         }, {} as RewardsSummaryResult),
-      [],
+      []
     ),
   });
 
@@ -107,7 +107,7 @@ export const SummaryProvider = ({
 
       const positionTotalAmount = getPositionTotalAmount(
         p.balancesWithAmount,
-        getBaseToken(yieldDto),
+        getBaseToken(yieldDto)
       );
 
       const yields = [...multiYieldsMapQuery.data.values()];
@@ -131,7 +131,7 @@ export const SummaryProvider = ({
 
     const allPositionsSum = allPositions.reduce(
       (acc, p) => acc.plus(p.usdAmount),
-      new BigNumber(0),
+      new BigNumber(0)
     );
 
     return {
@@ -149,7 +149,7 @@ export const SummaryProvider = ({
       currency: config.currency,
       tokenList: useMemo(
         () => Object.values(rewardsSummaryQuery.data ?? {}).map((v) => v.token),
-        [rewardsSummaryQuery.data],
+        [rewardsSummaryQuery.data]
       ),
     },
     {
@@ -166,7 +166,7 @@ export const SummaryProvider = ({
           }
 
           const rewardsPositions = Object.entries(
-            rewardsSummaryQuery.data,
+            rewardsSummaryQuery.data
           ).flatMap(([integrationId, rewardSummary]) => {
             const yieldDto = multiYieldsMapQuery.data.get(integrationId);
 
@@ -200,17 +200,17 @@ export const SummaryProvider = ({
 
           const rewardsPositionsTotalSum = rewardsPositions.reduce(
             (acc, p) => acc.plus(p.total),
-            new BigNumber(0),
+            new BigNumber(0)
           );
 
           const rewardsPositionsLastMonthSum = rewardsPositions.reduce(
             (acc, p) => acc.plus(p.lastMonth),
-            new BigNumber(0),
+            new BigNumber(0)
           );
 
           const rewardsPositionsLastWeekSum = rewardsPositions.reduce(
             (acc, p) => acc.plus(p.lastWeek),
-            new BigNumber(0),
+            new BigNumber(0)
           );
 
           return {
@@ -220,9 +220,9 @@ export const SummaryProvider = ({
             rewardsPositionsLastWeekSum,
           };
         },
-        [multiYieldsMapQuery.data, rewardsSummaryQuery.data],
+        [multiYieldsMapQuery.data, rewardsSummaryQuery.data]
       ),
-    },
+    }
   );
 
   const averageApyQuery = useMemo(() => {
@@ -241,7 +241,7 @@ export const SummaryProvider = ({
 
         const positionTotalAmount = getPositionTotalAmount(
           p.balancesWithAmount,
-          getBaseToken(yieldDto),
+          getBaseToken(yieldDto)
         );
 
         const usdAmount = positionTotalAmount.amountUsd;
@@ -251,7 +251,7 @@ export const SummaryProvider = ({
         if (rewardRate > 0 && usdAmount.gt(0)) {
           return {
             totalWeightedApy: acc.totalWeightedApy.plus(
-              usdAmount.times(rewardRate * 100),
+              usdAmount.times(rewardRate * 100)
             ),
             totalValue: acc.totalValue.plus(usdAmount),
           };
@@ -262,7 +262,7 @@ export const SummaryProvider = ({
       {
         totalWeightedApy: new BigNumber(0),
         totalValue: new BigNumber(0),
-      },
+      }
     );
 
     const data = totalValue.gt(0)
@@ -280,7 +280,7 @@ export const SummaryProvider = ({
 
   const tokenList = useMemo(
     () => tokenBalancesScan.data?.map((tb) => tb.token),
-    [tokenBalancesScan.data],
+    [tokenBalancesScan.data]
   );
 
   const availableBalanceSumQuery = usePrices(
@@ -305,14 +305,14 @@ export const SummaryProvider = ({
                   baseToken: tb.token,
                   token: tb.token,
                   prices,
-                }),
+                })
               ),
-            BigNumber(0),
+            BigNumber(0)
           );
         },
-        [tokenBalancesScan.data],
+        [tokenBalancesScan.data]
       ),
-    },
+    }
   );
 
   const value = useMemo(
@@ -327,7 +327,7 @@ export const SummaryProvider = ({
       rewardsPositionsQuery,
       averageApyQuery,
       availableBalanceSumQuery,
-    ],
+    ]
   );
 
   return (

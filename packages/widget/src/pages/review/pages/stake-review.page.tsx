@@ -46,12 +46,12 @@ export const StakeReviewPage = () => {
           />
         ))
         .extractNullable(),
-    [amount, interestRate, token],
+    [amount, interestRate, token]
   );
 
   const rewardTokenDetailsProps = useMemo(
     () => Maybe.of({ rewardToken, type: "stake" as const }),
-    [rewardToken],
+    [rewardToken]
   );
 
   return (

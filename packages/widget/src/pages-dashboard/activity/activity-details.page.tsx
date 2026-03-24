@@ -13,12 +13,12 @@ export const ActivityDetailsPage = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction,
+    (state) => state.context.selectedAction
   ).extractNullable();
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield,
+    (state) => state.context.selectedYield
   ).extractNullable();
 
   if (!selectedYield || !selectedAction) {

@@ -50,7 +50,7 @@ export const setup = async (opts?: {
         tokens: [token],
         metadata: { ...def.metadata, type: "staking" },
         validators: [],
-      }),
+      })
     )
     .unsafeCoerce();
 
@@ -104,7 +104,7 @@ export const setup = async (opts?: {
             ],
           },
           validators: avaxLiquidStakingValidators,
-        }) satisfies ReturnType<typeof yieldFixture>,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -319,7 +319,7 @@ export const setup = async (opts?: {
           status: "CONFIRMED",
         }),
       });
-    }),
+    })
   );
 
   let currentChainId = 43114;
@@ -350,7 +350,7 @@ export const setup = async (opts?: {
         default:
           throw new Error("unhandled method");
       }
-    },
+    }
   );
 
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });

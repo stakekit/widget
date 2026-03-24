@@ -13,7 +13,7 @@ import { worker } from "../mocks/worker";
 import { renderHook } from "../utils/test-utils";
 
 const renderHookWithExternalProvider = (
-  externalProviders: SKExternalProviders,
+  externalProviders: SKExternalProviders
 ) =>
   renderHook(useSKWallet, {
     wrapper: ({ children }) => (
@@ -44,7 +44,7 @@ describe("SK Wallet", () => {
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
         return HttpResponse.json([MiscNetworks.Solana]);
-      }),
+      })
     );
 
     const solanaWallet = await renderHookWithExternalProvider({
@@ -109,7 +109,7 @@ describe("SK Wallet", () => {
         structuredTransaction: null,
         annotatedTransaction: null,
         providersDetails: [],
-      },
+      }
     );
   });
 
@@ -121,7 +121,7 @@ describe("SK Wallet", () => {
       http.get("*/v1/yields/enabled/networks", async () => {
         await delay();
         return HttpResponse.json([MiscNetworks.Ton]);
-      }),
+      })
     );
 
     const tonWallet = await renderHookWithExternalProvider({
@@ -185,7 +185,7 @@ describe("SK Wallet", () => {
         structuredTransaction: null,
         annotatedTransaction: null,
         providersDetails: [],
-      },
+      }
     );
   });
 });

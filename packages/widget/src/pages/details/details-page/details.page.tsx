@@ -15,7 +15,7 @@ export const Details = () => {
 
         return acc;
       }, 0),
-    [positionsData.data],
+    [positionsData.data]
   );
 
   return (

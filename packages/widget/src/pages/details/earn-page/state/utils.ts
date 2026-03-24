@@ -22,10 +22,10 @@ export const onYieldSelectState = ({
   stakeAmount: getMinStakeAmount(yieldDto, positionsData),
   selectedValidators: new Map(),
   tronResource: Maybe.fromFalsy(
-    getYieldActionArg(yieldDto, "enter", "tronResource")?.required,
+    getYieldActionArg(yieldDto, "enter", "tronResource")?.required
   ).map(() => "ENERGY"),
   selectedProviderYieldId: Maybe.fromNullable(
-    getYieldActionArg(yieldDto, "enter", "providerId"),
+    getYieldActionArg(yieldDto, "enter", "providerId")
   )
     .filter((val) => !!val.required && !!val.options?.length)
     .chain((val) => List.head(val.options ?? [])),

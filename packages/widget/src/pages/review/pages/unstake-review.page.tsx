@@ -26,7 +26,7 @@ export const UnstakeReviewPage = () => {
 
   const info = useMemo(
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
-    [amount, token],
+    [amount, token]
   );
 
   const { depositFee, managementFee, performanceFee, feeConfigLoading } =
@@ -37,7 +37,7 @@ export const UnstakeReviewPage = () => {
         performanceFee: Maybe.empty(),
         feeConfigLoading: false,
       }),
-      [],
+      []
     );
 
   return (

@@ -22,7 +22,7 @@ export const PendingReviewPage = () => {
 
   const info = useMemo(
     () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
-    [amount, token],
+    [amount, token]
   );
 
   const { depositFee, managementFee, performanceFee, feeConfigLoading } =
@@ -33,7 +33,7 @@ export const PendingReviewPage = () => {
         performanceFee: Maybe.empty(),
         feeConfigLoading: false,
       }),
-      [],
+      []
     );
 
   return (

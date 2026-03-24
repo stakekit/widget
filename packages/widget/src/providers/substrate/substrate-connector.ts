@@ -57,13 +57,13 @@ const createSubstrateConnector = ({
           .chain((signer) =>
             EitherAsync.liftEither(
               Maybe.fromNullable(signer?.signPayload?.bind(signer)).toEither(
-                new Error("signer missing"),
-              ),
+                new Error("signer missing")
+              )
             )
               .chain((signPayload) =>
                 EitherAsync(() =>
-                  signPayload({ ...payload.tx, withSignedTransaction: true }),
-                ),
+                  signPayload({ ...payload.tx, withSignedTransaction: true })
+                )
               )
               .chain((res) => {
                 if (res.signedTransaction) {
@@ -71,8 +71,8 @@ const createSubstrateConnector = ({
                     Right(
                       typeof res.signedTransaction === "string"
                         ? res.signedTransaction
-                        : u8aToHex(res.signedTransaction),
-                    ),
+                        : u8aToHex(res.signedTransaction)
+                    )
                   );
                 }
 
@@ -81,34 +81,34 @@ const createSubstrateConnector = ({
                     const registry = new TypeRegistry();
 
                     registry.setMetadata(
-                      registry.createType("Metadata", payload.metadataRpc),
+                      registry.createType("Metadata", payload.metadataRpc)
                     );
 
                     const extrinsic = registry.createType(
                       "Extrinsic",
                       { method: payload.tx.method },
-                      { version: payload.tx.version },
+                      { version: payload.tx.version }
                     );
 
                     extrinsic.addSignature(
                       payload.tx.address,
                       res.signature,
-                      payload.tx,
+                      payload.tx
                     );
 
                     return u8aToHex(extrinsic.toU8a());
-                  }),
+                  })
                 );
-              }),
+              })
           )
           .mapLeft(
-            (e) => new Error("Failed to sign transaction", { cause: e }),
+            (e) => new Error("Failed to sign transaction", { cause: e })
           ),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
         baseConnector.once("get_uri", (uri: string) =>
-          baseConnector.emit("display_uri", uri),
+          baseConnector.emit("display_uri", uri)
         );
 
         const accounts = await baseConnector.connect(name, lunoKitChains);
@@ -150,13 +150,13 @@ const createSubstrateConnector = ({
       getChainId: async () => $filteredChains.getValue()[0].id,
       isAuthorized: async () => {
         const isDisconnected = await config.storage?.getItem(
-          "substrate.disconnected",
+          "substrate.disconnected"
         );
 
         if (isDisconnected) return false;
 
         const lastConnectedId = await config.storage?.getItem(
-          "substrate.lastConnectedId",
+          "substrate.lastConnectedId"
         );
 
         return !!(lastConnectedId && lastConnectedId === baseConnector.id);
@@ -184,7 +184,7 @@ const createSubstrateConnector = ({
 export const getSubstrateConnectors = (
   chains: ReadonlyArray<Chain>,
   lunoKitChains: LunoKitChain[],
-  forceWalletConnectOnly: boolean,
+  forceWalletConnectOnly: boolean
 ): WalletList[number] => {
   const subwallet = subwalletConnector();
   const talisman = talismanConnector();

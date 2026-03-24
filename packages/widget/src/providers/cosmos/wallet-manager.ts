@@ -51,8 +51,8 @@ export const getWalletManager = ({
         {
           cosmosWagmiChains: [] as Chain[],
           chains: [] as CosmosChainsAssets[],
-        },
-      ),
+        }
+      )
     )
     .map((val) => ({
       ...val,
@@ -60,7 +60,7 @@ export const getWalletManager = ({
         // Put cosmos first
         registryIdsToSKCosmosNetworks[a.chain_id] === CosmosNetworks.Cosmos
           ? -1
-          : 1,
+          : 1
       ),
     }))
     .unsafeCoerce();
@@ -73,7 +73,7 @@ export const getWalletManager = ({
           wallet: w,
           cosmosChainsMap,
           cosmosWagmiChains,
-        }),
+        })
     ),
   };
 
@@ -93,7 +93,7 @@ export const getWalletManager = ({
           projectId: config.walletConnectV2.projectId,
           customStoragePrefix: "cosmoswalletconnect_",
         },
-      },
+      }
     ),
   };
 };

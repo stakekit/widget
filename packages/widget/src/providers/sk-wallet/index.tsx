@@ -116,10 +116,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             miscChainsMap: val.wagmiConfig.miscConfig.miscChainsMap,
             substrateChainsMap:
               val.wagmiConfig.substrateConfig.substrateChainsMap,
-          }),
+          })
         )
         .extractNullable(),
-    [chain, wagmiConfig.data],
+    [chain, wagmiConfig.data]
   );
 
   const isConnected = _isConnected && !!address && !!connector && !!network;
@@ -162,9 +162,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       EitherAsync.liftEither(
         !isConnected || !network || !connector || !address
           ? Left(new Error("No wallet connected"))
-          : Right({ conn: connector, network, address }),
+          : Right({ conn: connector, network, address })
       ),
-    [connector, isConnected, network, address],
+    [connector, isConnected, network, address]
   );
 
   const signTransaction = useCallback<SKWallet["signTransaction"]>(
@@ -181,23 +181,21 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           if (isLedgerLiveConnector(conn)) {
             return EitherAsync.liftEither(
               Maybe.fromNullable(ledgerCurrentAccountId).toEither(
-                new SendTransactionError(),
-              ),
+                new SendTransactionError()
+              )
             )
               .chain((val) =>
                 EitherAsync.liftEither(
                   Either.encase(() => JSON.parse(tx))
 
                     .chain((parsedTx) =>
-                      Either.encase(() =>
-                        conn.deserializeTransaction(parsedTx),
-                      ),
+                      Either.encase(() => conn.deserializeTransaction(parsedTx))
                     )
-                    .mapLeft(() => new TransactionDecodeError()),
+                    .mapLeft(() => new TransactionDecodeError())
                 ).map((deserializedTransaction) => ({
                   accountId: val,
                   deserializedTransaction,
-                })),
+                }))
               )
               .chain(({ accountId, deserializedTransaction }) =>
                 EitherAsync(() =>
@@ -206,12 +204,12 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                     deserializedTransaction,
                     Maybe.fromNullable(ledgerHwAppId)
                       .map((v) => ({ hwAppId: v }))
-                      .extract(),
-                  ),
+                      .extract()
+                  )
                 ).mapLeft((e) => {
                   console.log(e);
                   return new SendTransactionError();
-                }),
+                })
               )
               .map((val) => ({ signedTx: val, broadcasted: true }));
           }
@@ -220,10 +218,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             return EitherAsync.liftEither(
               Either.encase(() => JSON.parse(tx))
                 .mapLeft(() => "Failed to parse tx")
-                .chain((val) => substratePayloadCodec.decode(val)),
+                .chain((val) => substratePayloadCodec.decode(val))
             )
               .chain((decodedPayload) =>
-                conn.signTransaction({ ...decodedPayload, rawTx: tx }),
+                conn.signTransaction({ ...decodedPayload, rawTx: tx })
               )
               .map((signedTx) => ({ signedTx, broadcasted: false }))
               .chainLeft((e) => {
@@ -238,14 +236,14 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           if (isCosmosConnector(conn)) {
             return EitherAsync.liftEither(
               Maybe.fromNullable(cosmosCW).toEither(
-                new Error("cosmosCW missing"),
-              ),
+                new Error("cosmosCW missing")
+              )
             )
               .chain((cw) =>
                 // We need to sign + broadcast as `walletconnect` cosmos client does not support `sendTx`
                 conn
                   .signTransaction({ cw, tx })
-                  .map((val) => ({ signedTx: val, broadcasted: false })),
+                  .map((val) => ({ signedTx: val, broadcasted: false }))
               )
               .mapLeft(() => new SendTransactionError());
           }
@@ -260,13 +258,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 .mapLeft((e) => {
                   console.log(e);
                   return new TransactionDecodeError();
-                }),
+                })
             )
               .chain((val) =>
                 EitherAsync(() => conn.signTransaction(val)).mapLeft((e) => {
                   console.log(e);
                   return new SendTransactionError();
-                }),
+                })
               )
               .map((val) => ({
                 signedTx: JSON.stringify(val),
@@ -285,7 +283,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                     return Either.encase(() => JSON.parse(tx))
                       .mapLeft(() => "Failed to parse tx")
                       .chain((val) =>
-                        decodeAndPrepareEvmTransaction({ address, input: val }),
+                        decodeAndPrepareEvmTransaction({ address, input: val })
                       )
                       .map((v) => ({ type: "evm", tx: v }));
                   }
@@ -315,7 +313,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                       .mapLeft(() => "Failed to parse tx")
                       .chain((val) => substratePayloadCodec.decode(val))
                       .map(
-                        (v) => ({ type: "bittensor", tx: v }) as BittensorTx,
+                        (v) => ({ type: "bittensor", tx: v }) as BittensorTx
                       );
                   }
 
@@ -324,7 +322,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 .mapLeft((e) => {
                   console.log(e);
                   return new TransactionDecodeError();
-                }),
+                })
             )
               .chain((val) =>
                 conn
@@ -332,22 +330,22 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   .mapLeft(
                     (e) =>
                       new SendTransactionError(
-                        typeof e === "string" ? e : undefined,
-                      ),
-                  ),
+                        typeof e === "string" ? e : undefined
+                      )
+                  )
               )
               .map((val) => ({ signedTx: val, broadcasted: true }));
           }
 
           if (isSolanaConnector(conn)) {
             return EitherAsync.liftEither(
-              unsignedSolanaTransactionCodec.decode(tx),
+              unsignedSolanaTransactionCodec.decode(tx)
             )
               .mapLeft(() => new TransactionDecodeError())
               .chain((decodedTx) =>
                 EitherAsync(() => conn.sendTransaction(decodedTx))
                   .ifLeft((e) => console.log(e))
-                  .mapLeft(() => new SendTransactionError()),
+                  .mapLeft(() => new SendTransactionError())
               )
               .map((res) => ({ signedTx: res, broadcasted: true }));
           }
@@ -373,9 +371,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             return EitherAsync.liftEither(
               Either.encase(() => JSON.parse(tx))
                 .chain((val) =>
-                  decodeAndPrepareEvmTransaction({ address, input: val }),
+                  decodeAndPrepareEvmTransaction({ address, input: val })
                 )
-                .mapLeft(() => new TransactionDecodeError()),
+                .mapLeft(() => new TransactionDecodeError())
             )
               .chain((tx) =>
                 conn
@@ -388,7 +386,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                       },
                     ],
                   })
-                  .map((res) => res.safeTxHash),
+                  .map((res) => res.safeTxHash)
               )
               .chain((safeTxHash) =>
                 withRequestErrorRetry({
@@ -403,11 +401,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                                   res.txStatus === conn.txStatus.FAILED ||
                                     res.txStatus === conn.txStatus.CANCELLED
                                     ? "FAILED"
-                                    : "NOT_READY",
-                                ),
-                              ),
+                                    : "NOT_READY"
+                                )
+                              )
                             )
-                          : EitherAsync.liftEither(Right(res.txHash)),
+                          : EitherAsync.liftEither(Right(res.txHash))
                       )
                       .run()
                       .then((res) => res.unsafeCoerce()),
@@ -416,13 +414,13 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                       .chainNullable((e) =>
                         (e as SafeFailedError)._tag === "SafeFailedError"
                           ? (e as SafeFailedError)
-                          : null,
+                          : null
                       )
                       .filter((e) => e.type !== "FAILED" && !checkIsUnmounted())
                       .map(() => retryCount < 120)
                       .orDefault(false),
                   retryWaitForMs: () => 7000,
-                }),
+                })
               )
               .mapLeft(() => new SendTransactionError())
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
@@ -437,7 +435,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
               .mapLeft((e) => {
                 console.log(e);
                 return new TransactionDecodeError();
-              }),
+              })
           ).chain((val) =>
             EitherAsync(() =>
               /**
@@ -453,10 +451,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 chainId: val.chainId,
                 gas: val.gasLimit,
                 type: val.maxFeePerGas ? "eip1559" : "legacy",
-              }),
+              })
             )
               .mapLeft((e) => new SendTransactionError(e))
-              .map((val) => ({ signedTx: val, broadcasted: true })),
+              .map((val) => ({ signedTx: val, broadcasted: true }))
           );
         }),
     [
@@ -465,7 +463,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
       ledgerCurrentAccountId,
       sendTransactionAsync,
       checkIsUnmounted,
-    ],
+    ]
   );
 
   const signMessage = useCallback<SKWallet["signMessage"]>(
@@ -482,7 +480,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
           console.log(e);
           return new Error("sign failed");
         }),
-    [connectorDetails, signMessageAsync],
+    [connectorDetails, signMessageAsync]
   );
 
   const onLedgerAccountChange = useCallback(
@@ -491,7 +489,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         connector.switchAccount(account);
       }
     },
-    [connector],
+    [connector]
   );
 
   const value = useMemo((): SKWallet => {

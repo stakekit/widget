@@ -66,7 +66,7 @@ export const useStepsMachine = ({
   const sortedTransactions = useMemo(
     () =>
       [...transactions].sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0)),
-    [transactions],
+    [transactions]
   );
 
   const machineParams = useSavedRef({
@@ -93,11 +93,11 @@ const getMachine = (
       actionMeta: ActionMeta;
       yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
     }>
-  >,
+  >
 ) => {
   const initContext = getInitContext(
     ref.current.transactions,
-    ref.current.yieldId,
+    ref.current.yieldId
   );
 
   return setup({
@@ -175,8 +175,8 @@ const getMachine = (
                                 signedTx: event.val.data.signedTx,
                               },
                             }
-                          : val,
-                      ),
+                          : val
+                      )
                     )
                     .orDefault(context.txStates),
               }),
@@ -199,8 +199,8 @@ const getMachine = (
                               signError: event.val,
                             },
                           }
-                        : val,
-                    ),
+                        : val
+                    )
                   )
                   .orDefault(context.txStates),
             }),
@@ -211,7 +211,7 @@ const getMachine = (
           EitherAsync.liftEither(
             context.currentTxMeta
               .chainNullable((v) => context.txStates[v.idx].tx)
-              .toEither(new SignError({ network: "unknown", txId: "unknown" })),
+              .toEither(new SignError({ network: "unknown", txId: "unknown" }))
           )
             .chain<
               SendTransactionError | TransactionDecodeError | SignError,
@@ -227,8 +227,8 @@ const getMachine = (
                     new SignError({
                       network: tx.network,
                       txId: tx.id,
-                    }),
-                  ),
+                    })
+                  )
                 );
               }
 
@@ -249,7 +249,7 @@ const getMachine = (
                       new SignError({
                         network: tx.network,
                         txId: tx.id,
-                      }),
+                      })
                   );
               }
 
@@ -283,7 +283,7 @@ const getMachine = (
                     txId: tx.id,
                     network: tx.network,
                     yieldId: context.yieldId,
-                  }),
+                  })
                 )
                 .map((val) => ({ type: "regular", data: val }));
             })
@@ -325,8 +325,8 @@ const getMachine = (
                               signError: null,
                             },
                           }
-                        : val,
-                    ),
+                        : val
+                    )
                   )
                   .orDefault(context.txStates),
             }),
@@ -347,8 +347,8 @@ const getMachine = (
                               signError: null,
                             },
                           }
-                        : val,
-                    ),
+                        : val
+                    )
                   )
                   .orDefault(context.txStates),
             }),
@@ -358,7 +358,7 @@ const getMachine = (
           EitherAsync.liftEither(
             context.currentTxMeta
               .chainNullable((v) => context.txStates[v.idx])
-              .toEither(new Error("missing tx")),
+              .toEither(new Error("missing tx"))
           )
             .chain((currentTx) => {
               if (currentTx.meta.broadcasted) {
@@ -367,7 +367,7 @@ const getMachine = (
                     fetchClient: ref.current.yieldApiFetchClient,
                     hash: currentTx.meta.signedTx!,
                     transactionId: currentTx.tx.id,
-                  }),
+                  })
                 )
                   .mapLeft(() => new SubmitHashError())
                   .ifRight(() => {
@@ -385,7 +385,7 @@ const getMachine = (
                   fetchClient: ref.current.yieldApiFetchClient,
                   signedTransaction: currentTx.meta.signedTx!,
                   transactionId: currentTx.tx.id,
-                }),
+                })
               )
                 .mapLeft(() => new SubmitError())
                 .ifRight(() => {
@@ -441,8 +441,8 @@ const getMachine = (
                               signError: null,
                             },
                           }
-                        : val,
-                    ),
+                        : val
+                    )
                   )
                   .orDefault(context.txStates),
             }),
@@ -453,14 +453,14 @@ const getMachine = (
           EitherAsync.liftEither(
             context.currentTxMeta
               .chainNullable((v) => context.txStates[v.idx])
-              .toEither(new Error("missing tx")),
+              .toEither(new Error("missing tx"))
           )
             .chain((currentTx) =>
               EitherAsync(() =>
                 getTransaction({
                   fetchClient: ref.current.yieldApiFetchClient,
                   transactionId: currentTx.tx.id,
-                }),
+                })
               )
                 .map((res) => ({
                   url: res.explorerUrl,
@@ -474,14 +474,14 @@ const getMachine = (
                           new SignError({
                             txId: currentTx.tx.id,
                             network: currentTx.tx.network,
-                          }),
+                          })
                         )
                       : Right({
                           url: val.url,
                           isConfirmed: val.status === "CONFIRMED",
-                        }),
-                  ),
-                ),
+                        })
+                  )
+                )
             )
             .caseOf({
               Left: (l) => {
@@ -512,14 +512,14 @@ const getMachine = (
                                 done: true,
                               },
                             }
-                          : val,
-                      ),
+                          : val
+                      )
                     )
                     .orDefault(context.txStates);
 
                   const newCurrentTxMeta = List.findIndex(
                     (val) => !val.meta.done,
-                    newTxStates,
+                    newTxStates
                   )
                     .map((idx) => ({
                       idx,
@@ -577,7 +577,7 @@ const getMachine = (
 
 const getInitContext = (
   transactions: ActionDto["transactions"],
-  yieldId: ActionDto["yieldId"],
+  yieldId: ActionDto["yieldId"]
 ) => {
   if (!transactions.length) {
     return {

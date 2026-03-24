@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSavedRef } from "./use-saved-ref";
 
 export const useSyncElementHeight = (
-  setCurrentHeight: (height: number) => void,
+  setCurrentHeight: (height: number) => void
 ) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const setCurrentHeightRef = useSavedRef(setCurrentHeight);

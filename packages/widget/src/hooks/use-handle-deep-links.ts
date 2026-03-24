@@ -23,10 +23,10 @@ export const useHandleDeepLinks = () => {
   useEffect(() => {
     initQueryParams
       .filter((val) =>
-        Boolean(val.yieldId && val.balanceId && !val.pendingaction && appReady),
+        Boolean(val.yieldId && val.balanceId && !val.pendingaction && appReady)
       )
       .ifJust((val) =>
-        navigateRef.current(`positions/${val.yieldId}/${val.balanceId}`),
+        navigateRef.current(`positions/${val.yieldId}/${val.balanceId}`)
       );
   }, [initQueryParams, navigateRef, appReady]);
 
@@ -35,12 +35,12 @@ export const useHandleDeepLinks = () => {
     Maybe.fromNullable(pendingActionDeepLinkCheck.data)
       .filter(
         (val): val is Extract<typeof val, { type: "positionDetails" }> =>
-          appReady && val.type === "positionDetails",
+          appReady && val.type === "positionDetails"
       )
       .ifJust((val) =>
         navigateRef.current(
-          `positions/${val.yieldOp.id}/${val.balanceId}/select-validator/${val.pendingAction.type}`,
-        ),
+          `positions/${val.yieldOp.id}/${val.balanceId}/select-validator/${val.pendingAction.type}`
+        )
       );
   }, [navigateRef, pendingActionDeepLinkCheck.data, appReady]);
 
@@ -49,7 +49,7 @@ export const useHandleDeepLinks = () => {
     Maybe.fromNullable(pendingActionDeepLinkCheck.data)
       .filter(
         (val): val is Extract<typeof val, { type: "review" }> =>
-          appReady && val.type === "review",
+          appReady && val.type === "review"
       )
       .ifJust((val) => {
         pendignActionStore.send({
@@ -67,7 +67,7 @@ export const useHandleDeepLinks = () => {
           },
         });
         navigateRef.current(
-          `positions/${val.yieldOp.id}/${val.balanceId}/pending-action/review`,
+          `positions/${val.yieldOp.id}/${val.balanceId}/pending-action/review`
         );
       });
   }, [

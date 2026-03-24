@@ -49,7 +49,7 @@ export type PositionsData = Map<
 >;
 
 export const getPositionBalanceDataKey = (
-  balance: YieldBalanceDto,
+  balance: YieldBalanceDto
 ): BalanceDataKey => {
   if (Array.isArray(balance.validators) && balance.validators.length > 1) {
     return "validators";
@@ -64,10 +64,10 @@ export const getPositionBalanceDataKey = (
 
 export const getPositionTotalAmount = (
   balances: YieldBalanceDto[],
-  baseToken: TokenDto,
+  baseToken: TokenDto
 ) => {
   const baseTokenBalance = balances.find((b) =>
-    equalTokens(b.token, baseToken),
+    equalTokens(b.token, baseToken)
   );
 
   const baseTokenPriceInUsd = (() => {
@@ -95,7 +95,7 @@ export const getPositionTotalAmount = (
       if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
         return {
           amount: acc.amount.plus(
-            balanceAmountUsd.dividedBy(baseTokenPriceInUsd),
+            balanceAmountUsd.dividedBy(baseTokenPriceInUsd)
           ),
           amountUsd: acc.amountUsd.plus(balanceAmountUsd),
         };
@@ -106,6 +106,6 @@ export const getPositionTotalAmount = (
         amountUsd: acc.amountUsd.plus(balanceAmountUsd),
       };
     },
-    { amount: new BigNumber(0), amountUsd: new BigNumber(0) },
+    { amount: new BigNumber(0), amountUsd: new BigNumber(0) }
   );
 };

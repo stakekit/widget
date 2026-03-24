@@ -10,7 +10,7 @@ import { useSettings } from "../../../../../providers/settings";
 
 export const useVariantTokenUrls = (
   token: TokenDto | YieldTokenDto,
-  metadata?: YieldMetadata,
+  metadata?: YieldMetadata
 ): {
   mainUrl: string | undefined;
   fallbackUrl: string | undefined;
@@ -23,7 +23,7 @@ export const useVariantTokenUrls = (
     if (metadata) {
       const mainUrl = Maybe.fromFalsy(variant === "zerion")
         .filter(() =>
-          skETHIconUrlsSuffix.some((v) => metadata.logoURI.endsWith(v)),
+          skETHIconUrlsSuffix.some((v) => metadata.logoURI.endsWith(v))
         )
         .map(() => zerionETHIcon)
         .orDefault(metadata.logoURI);

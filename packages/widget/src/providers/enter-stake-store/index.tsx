@@ -37,7 +37,7 @@ const store = createStore({
 });
 
 const EnterStakeStoreContext = createContext<typeof store | undefined>(
-  undefined,
+  undefined
 );
 
 export const EnterStakeStoreProvider = ({ children }: PropsWithChildren) => {
@@ -53,7 +53,7 @@ export const useEnterStakeStore = () => {
 
   if (!value) {
     throw new Error(
-      "useEnterStakeStore must be used within a EnterStakeStoreProvider",
+      "useEnterStakeStore must be used within a EnterStakeStoreProvider"
     );
   }
 

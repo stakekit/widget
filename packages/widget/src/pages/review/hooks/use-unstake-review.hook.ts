@@ -27,7 +27,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const useUnstakeActionReview = () => {
   const exitRequest = useSelector(
     useExitStakeStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const yieldApiFetchClient = useYieldApiFetchClient();
@@ -38,10 +38,8 @@ export const useUnstakeActionReview = () => {
     retry: false,
     queryFn: () =>
       createExitAction({
-        addresses: exitRequest.addresses,
         fetchClient: yieldApiFetchClient,
         requestDto: exitRequest.requestDto,
-        yieldDto: exitRequest.integrationData,
       }),
   });
 
@@ -51,22 +49,22 @@ export const useUnstakeActionReview = () => {
         .map((actionDto) =>
           actionDto.transactions.reduce(
             (acc, transaction) => acc.plus(transaction.gasEstimate ?? 0),
-            new BigNumber(0),
-          ),
+            new BigNumber(0)
+          )
         )
         .map((value) => (value.isZero() ? null : value))
         .chainNullable((value) => value),
-    [actionPreviewQuery.data],
+    [actionPreviewQuery.data]
   );
 
   const interactedToken = useMemo(
     () => Maybe.of(exitRequest.unstakeToken),
-    [exitRequest.unstakeToken],
+    [exitRequest.unstakeToken]
   );
 
   const integrationData = useMemo(
     () => Maybe.of(exitRequest.integrationData),
-    [exitRequest.integrationData],
+    [exitRequest.integrationData]
   );
 
   const pricesState = useTokensPrices({
@@ -76,7 +74,7 @@ export const useUnstakeActionReview = () => {
 
   const amount = useMemo(
     () => new BigNumber(exitRequest.requestDto.arguments?.amount ?? 0),
-    [exitRequest.requestDto.arguments?.amount],
+    [exitRequest.requestDto.arguments?.amount]
   );
 
   const gasWarningCheck = useGasWarningCheck({
@@ -111,7 +109,7 @@ export const useUnstakeActionReview = () => {
         prices: Maybe.fromNullable(pricesState.data),
         yieldDto: integrationData,
       }),
-    [integrationData, pricesState.data, stakeExitTxGas],
+    [integrationData, pricesState.data, stakeExitTxGas]
   );
 
   const rewardTokenDetailsProps = integrationData
@@ -167,8 +165,8 @@ export const useUnstakeActionReview = () => {
         disabled: false,
         isLoading: unstakeIsLoading,
       }),
-      [onClickRef, t, unstakeIsLoading],
-    ),
+      [onClickRef, t, unstakeIsLoading]
+    )
   );
 
   return {

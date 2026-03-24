@@ -31,7 +31,7 @@ export const getRewardTokenSymbols = (rewardTokens: TokenDto[]) =>
           str: val.symbol,
         })}
       </React.Fragment>
-    ),
+    )
   );
 
 const maybeAddComma = ({

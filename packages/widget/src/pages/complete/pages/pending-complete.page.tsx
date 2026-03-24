@@ -22,17 +22,17 @@ export const PendingCompletePage = () => {
 
   const pendingRequest = useSelector(
     usePendingActionStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),
-    [pendingRequest.integrationData],
+    [pendingRequest.integrationData]
   );
 
   const token = useMemo(
     () => Maybe.of(pendingRequest.interactedToken),
-    [pendingRequest.interactedToken],
+    [pendingRequest.interactedToken]
   );
 
   useTrackPage("pendingActionCompelete");
@@ -40,7 +40,7 @@ export const PendingCompletePage = () => {
   const providerDetails = useProvidersDetails({
     integrationData,
     validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : [],
+      p.type === "validators" ? p.validatorsAddresses : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });
@@ -52,7 +52,7 @@ export const PendingCompletePage = () => {
       Maybe.fromNullable(pendingRequest.requestDto.arguments?.amount)
         .map((val) => new BigNumber(val ?? 0))
         .mapOrDefault((v) => formatNumber(v), ""),
-    [pendingRequest.requestDto.arguments?.amount],
+    [pendingRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

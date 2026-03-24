@@ -66,7 +66,7 @@ export const PositionsListItem = memo(
                       ),
                       <Box display="flex" marginRight="2">
                         <Spinner />
-                      </Box>,
+                      </Box>
                     )}
 
                     <Box className={columnContainer}>
@@ -83,7 +83,7 @@ export const PositionsListItem = memo(
                                   `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
                                   label.params as
                                     | Record<string, string>
-                                    | undefined,
+                                    | undefined
                                 )}
                               >
                                 <Box
@@ -96,7 +96,7 @@ export const PositionsListItem = memo(
                                     className={noWrap}
                                   >
                                     {t(
-                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`,
+                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`
                                     )}
                                   </Text>
                                 </Box>
@@ -128,7 +128,7 @@ export const PositionsListItem = memo(
                                     ? inactiveValidator === "jailed"
                                       ? "details.validators_jailed"
                                       : "details.validators_inactive"
-                                    : "positions.claim_rewards",
+                                    : "positions.claim_rewards"
                               )}
                             </Text>
                           </Box>
@@ -149,7 +149,7 @@ export const PositionsListItem = memo(
                                 count: Math.max(val.length - 1, 1),
                               })}
                             </Text>
-                          )),
+                          ))
                         )
                         .extractNullable()}
                     </Box>
@@ -186,7 +186,7 @@ export const PositionsListItem = memo(
                         </>
                       ))
                       .orDefault(
-                        <Text style={{ textAlign: "center" }}>-</Text>,
+                        <Text style={{ textAlign: "center" }}>-</Text>
                       )}
                   </Box>
                 </Box>
@@ -224,10 +224,10 @@ export const PositionsListItem = memo(
                 )}
               </ListItem>
             ),
-            <ContentLoaderSquare heightPx={60} />,
+            <ContentLoaderSquare heightPx={60} />
           )}
         </Box>
       </SKLink>
     );
-  },
+  }
 );

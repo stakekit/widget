@@ -26,7 +26,7 @@ export const createWallet =
             isWalletConnect?: never;
             projectId?: never;
           }
-      ),
+      )
   ): WalletList[number]["wallets"][number] =>
   () => {
     const def = {

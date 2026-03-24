@@ -44,5 +44,5 @@ export const Box = forwardRef<unknown, BoxProps>(
       ref,
       ...nativeProps,
     });
-  },
+  }
 );

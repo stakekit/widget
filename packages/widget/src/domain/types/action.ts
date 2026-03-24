@@ -125,7 +125,7 @@ export const getActionInputToken = ({
 };
 
 export const getActionValidatorAddresses = (
-  actionDto: ActionDto,
+  actionDto: ActionDto
 ): string[] | null =>
   actionDto.rawArguments?.validatorAddresses ??
   (actionDto.rawArguments?.validatorAddress
@@ -136,7 +136,7 @@ export const getActionCurrentStepIndex = (actionDto: ActionDto) => {
   const idx = actionDto.transactions.findIndex(
     (transaction) =>
       transaction.status !== TransactionStatus.CONFIRMED &&
-      transaction.status !== TransactionStatus.SKIPPED,
+      transaction.status !== TransactionStatus.SKIPPED
   );
 
   if (idx >= 0) {
@@ -199,7 +199,7 @@ export const getTransactionGasEstimate = ({
 
 export const getActionGasFeeToken = (
   yieldDto: Yield,
-  gasFeeToken?: TokenDto,
+  gasFeeToken?: TokenDto
 ): TokenDto => gasFeeToken ?? getYieldGasFeeToken(yieldDto);
 
 export type ActionDtoWithGasEstimate = {

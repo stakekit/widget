@@ -10,7 +10,7 @@ export type ConnectorWithFilteredChains = {
 };
 
 export const isConnectorWithFilteredChains = (
-  connector: Connector,
+  connector: Connector
 ): connector is Connector & ConnectorWithFilteredChains => {
   return !!(connector as unknown as ConnectorWithFilteredChains)
     .$filteredChains;

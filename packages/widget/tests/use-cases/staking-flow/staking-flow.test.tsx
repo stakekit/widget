@@ -38,7 +38,7 @@ describe("Staking flow", () => {
 
     await expect
       .poll(
-        () => app.getByTestId("select-opportunity").getByText("AVAX").length,
+        () => app.getByTestId("select-opportunity").getByText("AVAX").length
       )
       .greaterThan(0);
 
@@ -61,7 +61,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__yearly")
-          .getByText(`0.00508 ${yieldOp.token.symbol}`),
+          .getByText(`0.00508 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -69,7 +69,7 @@ describe("Staking flow", () => {
       .element(
         app
           .getByTestId("estimated-reward__monthly")
-          .getByText(`0.00042 ${yieldOp.token.symbol}`),
+          .getByText(`0.00042 ${yieldOp.token.symbol}`)
       )
       .toBeInTheDocument();
 
@@ -78,8 +78,8 @@ describe("Staking flow", () => {
         useRewardTokenDetails(
           Just(yieldOp) as unknown as Parameters<
             typeof useRewardTokenDetails
-          >[0],
-        ),
+          >[0]
+        )
       )
     ).result.current.unsafeCoerce();
 
@@ -88,7 +88,7 @@ describe("Staking flow", () => {
       .toBeInTheDocument();
     await expect
       .element(
-        app.getByText(`${rewardTokenDetails.rewardTokens[0].symbol}`).first(),
+        app.getByText(`${rewardTokenDetails.rewardTokens[0].symbol}`).first()
       )
       .toBeInTheDocument();
 
@@ -97,7 +97,7 @@ describe("Staking flow", () => {
     await userEvent.click(app.getByText("Stake").last());
 
     const totalGasFee = new BigNumber(
-      transactionConstruct.gasEstimate?.amount ?? 0,
+      transactionConstruct.gasEstimate?.amount ?? 0
     );
 
     await expect
@@ -106,8 +106,8 @@ describe("Staking flow", () => {
           .getByTestId("estimated_gas_fee")
           .getByText(
             `${formatNumber(totalGasFee, 10)} ${yieldOp.token.symbol}`,
-            { exact: false },
-          ),
+            { exact: false }
+          )
       )
       .toBeInTheDocument();
 
@@ -145,8 +145,8 @@ describe("Staking flow", () => {
     await expect
       .element(
         app.getByText(
-          `Successfully staked ${stakeAmount} ${yieldOp.token.symbol}`,
-        ),
+          `Successfully staked ${stakeAmount} ${yieldOp.token.symbol}`
+        )
       )
       .toBeInTheDocument();
     await expect

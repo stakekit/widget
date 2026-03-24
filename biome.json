@@ -1,53 +1,70 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
   "files": {
-    "ignoreUnknown": false,
     "includes": [
       "**",
       "!**/node_modules",
       "!**/dist",
+      "!**/.next",
+      "!**/next",
       "!**/.turbo",
-      "!**/.vscode",
-      "!**/routeTree.gen.ts",
-      "!**/client-factory.ts",
-      "!**/api-schemas.ts",
-      "!**/opensrc"
+      "!**/node_modules",
+      "!**/dist",
+      "!**/.next",
+      "!**/.turbo",
+      "!**/region-iso-3166-codes.ts",
+      "!**/mockServiceWorker.js",
+      "!**/package.json"
     ]
   },
   "formatter": {
     "enabled": true,
-    "indentStyle": "space"
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
   },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "linter": {
     "enabled": true,
     "rules": {
       "recommended": true,
-      "complexity": {
-        "noBannedTypes": "off"
-      }
-    }
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
+      "style": {
+        "noNonNullAssertion": "off",
+        "noParameterAssign": "error",
+        "useAsConstAssertion": "error",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useSelfClosingElements": "error",
+        "useSingleVarDeclarator": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useNumberNamespace": "error",
+        "noInferrableTypes": "error",
+        "noUselessElse": "error"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "useIterableCallbackReturn": "off"
+      },
+      "a11y": { "noSvgWithoutTitle": "off" },
+      "correctness": {
+        "useJsxKeyInIterable": "off",
+        "useUniqueElementIds": "off"
+      },
+      "complexity": { "noForEach": "off", "useIndexOf": "off" }
     }
   },
   "javascript": {
     "formatter": {
-      "quoteStyle": "double"
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "trailingCommas": "es5"
     }
   },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
+  "html": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space"
     }
   }
 }

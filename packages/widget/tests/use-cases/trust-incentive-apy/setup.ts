@@ -284,7 +284,7 @@ export const setup = async () => {
       return HttpResponse.json(
         url.searchParams.has("ledgerWalletAPICompatible")
           ? legacyYield
-          : rawYield,
+          : rawYield
       );
     }),
     http.get("*/v1/yields/:yieldId/validators", async () => {
@@ -306,7 +306,7 @@ export const setup = async () => {
         ],
         errors: [],
       });
-    }),
+    })
   );
 
   const requestFn = vitest.fn(async ({ method }: { method: string }) => {

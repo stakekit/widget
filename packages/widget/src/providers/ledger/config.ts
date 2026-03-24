@@ -20,12 +20,12 @@ const queryFn = async ({
   wallets: WalletList[number]["wallets"];
 } | null> => {
   return EitherAsync.liftEither(
-    Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null),
+    Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null)
   )
     .chain(() =>
       EitherAsync(() => import("./ledger-connector"))
         .mapLeft(() => new Error("Could not import ledger-connector"))
-        .map((v) => v.ledgerLiveConnector({ enabledChainsMap, queryParams })),
+        .map((v) => v.ledgerLiveConnector({ enabledChainsMap, queryParams }))
     )
     .chainLeft((e) => EitherAsync.liftEither(e ? Left(e) : Right(null)))
     .caseOf({
@@ -35,14 +35,14 @@ const queryFn = async ({
 };
 
 export const getConfig = (
-  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient },
+  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
 ) =>
   EitherAsync(() =>
     opts.queryClient.fetchQuery({
       staleTime,
       queryKey,
       queryFn: () => queryFn(opts),
-    }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get ledger live config");

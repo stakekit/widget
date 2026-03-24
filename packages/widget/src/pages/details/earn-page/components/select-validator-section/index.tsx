@@ -37,7 +37,7 @@ export const SelectValidatorSection = () => {
         const multiSelect = isYieldActionArgRequired(
           val.selectedStake,
           "enter",
-          "validatorAddresses",
+          "validatorAddresses"
         );
 
         return (
@@ -48,7 +48,7 @@ export const SelectValidatorSection = () => {
                 selectedValidatorsArr={selectedValidatorsArr}
                 multiSelect={multiSelect}
                 isWithProviderOptions={isYieldWithProviderOptions(
-                  val.selectedStake,
+                  val.selectedStake
                 )}
               />
             }

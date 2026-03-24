@@ -47,10 +47,10 @@ export const SelectOpportunity = () => {
               groups: val.map((v) => v.title),
               groupCounts: val.map((v) => v.itemsLength),
             };
-          }),
+          })
         )
         .extractNullable(),
-    [selectedStake, selectedStakeData],
+    [selectedStake, selectedStakeData]
   );
 
   const { variant } = useSettings();
@@ -73,7 +73,7 @@ export const SelectOpportunity = () => {
                 rec: selectOpportunityButton,
                 variant,
               }),
-              pressAnimation,
+              pressAnimation
             )}
             data-testid="select-opportunity"
           >

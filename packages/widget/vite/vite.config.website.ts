@@ -7,5 +7,5 @@ export default defineConfig(
       outDir: "dist/website",
       sourcemap: true,
     },
-  }),
+  })
 );

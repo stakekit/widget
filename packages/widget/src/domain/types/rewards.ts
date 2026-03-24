@@ -59,14 +59,14 @@ const enabledRewardsSummaryYieldIds = {
 
 const enabledRewardsSummaryYieldIdsSet = new Set(
   Object.values(enabledRewardsSummaryYieldIds).flatMap((v) =>
-    v.map((v) => v.id),
-  ),
+    v.map((v) => v.id)
+  )
 );
 
 export type EnabledRewardsSummaryYieldId =
   (typeof enabledRewardsSummaryYieldIds)[keyof typeof enabledRewardsSummaryYieldIds][number]["id"];
 
 export const isValidYieldIdForRewardsSummary = (
-  yieldId: string,
+  yieldId: string
 ): yieldId is EnabledRewardsSummaryYieldId =>
   enabledRewardsSummaryYieldIdsSet.has(yieldId as EnabledRewardsSummaryYieldId);

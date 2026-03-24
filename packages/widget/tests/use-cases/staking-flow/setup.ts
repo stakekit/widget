@@ -329,7 +329,7 @@ export const setup = async () => {
             amount: body.arguments?.amount ?? null,
             amountRaw: body.arguments?.amount ?? null,
           },
-        }),
+        })
       );
     }),
     http.put("*/v1/transactions/:transactionId/submit-hash", async (info) => {
@@ -342,7 +342,7 @@ export const setup = async () => {
           id: transactionId,
           hash: "transaction_hash",
           status: "BROADCASTED",
-        }),
+        })
       );
     }),
     http.get("*/v1/transactions/:transactionId", async (info) => {
@@ -354,9 +354,9 @@ export const setup = async () => {
             "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
           hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
           status: "CONFIRMED",
-        }),
+        })
       );
-    }),
+    })
   );
 
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";

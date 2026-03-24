@@ -50,7 +50,7 @@ export const ActivityPageContextProvider = ({
       const urls = data.actionData.transactions
         .map((val) => ({ type: val.type, url: val.explorerUrl }))
         .filter(
-          (val): val is { type: TransactionType; url: string } => !!val.url,
+          (val): val is { type: TransactionType; url: string } => !!val.url
         );
 
       const path =
@@ -90,26 +90,26 @@ export const ActivityPageContextProvider = ({
 
   const actions = useMemo(
     () => Maybe.fromNullable(activityActions.allItems),
-    [activityActions.allItems],
+    [activityActions.allItems]
   );
 
   const groupedDates = useMemo(
     () => actions.map((action) => action.map((a) => a.actionData.createdAt)),
-    [actions],
+    [actions]
   );
 
   const [labels, counts] = useMemo(
     () => groupDateStrings(groupedDates.extract() ?? [], i18n),
-    [groupedDates, i18n],
+    [groupedDates, i18n]
   );
 
   const bulletLines = useMemo(
     () =>
       counts.reduce<ItemBulletType[]>(
         (acc, val) => acc.concat(createSubArray(val)),
-        [],
+        []
       ),
-    [counts],
+    [counts]
   );
 
   const value = {
@@ -132,7 +132,7 @@ export const useActivityPageContext = () => {
 
   if (!context) {
     throw new Error(
-      "useActivityPageContext must be used within a ActivityPageContext",
+      "useActivityPageContext must be used within a ActivityPageContext"
     );
   }
 

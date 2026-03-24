@@ -26,7 +26,7 @@ type LegacyYieldDto = ReturnType<
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
 export const yieldRewardRateFixture = (
-  overrides?: Partial<YieldRewardRateDto>,
+  overrides?: Partial<YieldRewardRateDto>
 ): YieldRewardRateDto => ({
   total: apyFaker(),
   rateType: "APY",
@@ -35,7 +35,7 @@ export const yieldRewardRateFixture = (
 });
 
 export const yieldApiYieldFixture = (
-  overrides?: Partial<YieldApiYieldDto>,
+  overrides?: Partial<YieldApiYieldDto>
 ): YieldApiYieldDto =>
   ({
     ...getYieldV2ControllerGetYieldByIdResponseMock(),
@@ -44,7 +44,7 @@ export const yieldApiYieldFixture = (
   }) as YieldApiYieldDto;
 
 export const yieldBalanceFixture = (
-  overrides?: Partial<YieldBalanceDto>,
+  overrides?: Partial<YieldBalanceDto>
 ): YieldBalanceDto => {
   const token = overrides?.token ?? yieldApiYieldFixture().token;
 
@@ -81,12 +81,12 @@ export const yieldFixture = (overrides?: Partial<LegacyYieldDto>) =>
           status: { enter: true, exit: true },
           validators: val.validators.map((v) => ({ ...v, apr: apyFaker() })),
           ...overrides,
-        }) satisfies LegacyYieldDto,
+        }) satisfies LegacyYieldDto
     )
     .unsafeCoerce();
 
 export const yieldValidatorsFixture = (
-  validators?: LegacyYieldDto["validators"],
+  validators?: LegacyYieldDto["validators"]
 ) =>
   (validators ?? yieldFixture().validators).map((validator) => ({
     ...validator,
@@ -99,7 +99,7 @@ export const enterResponseFixture = (overrides?: Partial<LegacyActionDto>) => ({
 });
 
 export const transactionConstructFixture = (
-  overrides?: Partial<LegacyTransactionDto>,
+  overrides?: Partial<LegacyTransactionDto>
 ) => ({
   ...getTransactionControllerConstructResponseMock(),
   ...overrides,
@@ -112,7 +112,7 @@ export const pendingActionFixture = (overrides?: Partial<LegacyActionDto>) => ({
 
 export const yieldApiTransactionFixture = (
   tx: LegacyTransactionDto,
-  overrides?: Partial<YieldTransactionDto>,
+  overrides?: Partial<YieldTransactionDto>
 ) =>
   ({
     id: tx.id || faker.string.uuid(),

@@ -222,7 +222,7 @@ export const worker = setupWorker(
     return HttpResponse.json(
       url.searchParams.has("ledgerWalletAPICompatible")
         ? legacyYieldDto
-        : yieldApiYieldDto,
+        : yieldApiYieldDto
     );
   }),
   http.post("*/v1/yields/balances", async () => {
@@ -277,5 +277,5 @@ export const worker = setupWorker(
       token: maticToken,
       gasLimit: "",
     });
-  }),
+  })
 );

@@ -40,7 +40,7 @@ describe("Renders initial page", () => {
               type: "staking",
               gasFeeToken: avalancheCToken,
             },
-          }) satisfies ReturnType<typeof yieldFixture>,
+          }) satisfies ReturnType<typeof yieldFixture>
       )
       .unsafeCoerce();
 
@@ -57,7 +57,7 @@ describe("Renders initial page", () => {
               type: "staking",
               gasFeeToken: ether,
             },
-          }) satisfies ReturnType<typeof yieldFixture>,
+          }) satisfies ReturnType<typeof yieldFixture>
       )
       .unsafeCoerce();
 
@@ -91,7 +91,7 @@ describe("Renders initial page", () => {
         await delay();
 
         return HttpResponse.json(avalancheAvaxNativeStaking);
-      }),
+      })
     );
 
     const app = await renderApp();

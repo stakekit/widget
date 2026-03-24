@@ -33,7 +33,7 @@ export const ActionReviewPage = () => {
       Maybe.fromNullable(selectedYield.token)
         .map((val) => `${amount} ${val.symbol}`)
         .extractNullable(),
-    [amount, selectedYield.token],
+    [amount, selectedYield.token]
   );
 
   return (
@@ -82,7 +82,7 @@ export const ActionReviewPage = () => {
                     .extractNullable()}
                 </Box>
               </Box>
-            )),
+            ))
           )
           .extractNullable()}
         <Divider my="2" />

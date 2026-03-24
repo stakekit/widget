@@ -48,7 +48,7 @@ const multiYieldsStore = createStore({
   on: {
     "yield-opportunity": (
       context,
-      event: { data: { key: string; yieldDto: Yield } },
+      event: { data: { key: string; yieldDto: Yield } }
     ) => {
       const newMap = new Map(context.data);
       const prev = newMap.get(event.data.key) ?? new Map();
@@ -107,7 +107,7 @@ export const useMultiYields = <T = Yield[]>(
   opts?: {
     select?: (val: Yield[]) => T;
     enabled?: boolean;
-  },
+  }
 ) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
   const yieldApiFetchClient = useYieldApiFetchClient();
@@ -131,20 +131,20 @@ export const useMultiYields = <T = Yield[]>(
           ...argsRef.current,
           yieldIds,
           validatorsConfig,
-        }).pipe(toArray()),
+        }).pipe(toArray())
       ),
     select: opts?.select,
   });
 };
 
 export const getFirstEligibleYield = (
-  params: Parameters<typeof firstEligibleYield$>[0],
+  params: Parameters<typeof firstEligibleYield$>[0]
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
       queryKey: getFirstEligibleYieldQueryKey(params.yieldIds),
       queryFn: () => firstValueFrom(firstEligibleYield$(params)),
-    }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("could not get first eligible yield");
@@ -167,9 +167,9 @@ const multipleYields$ = (args: {
           yieldId: v,
           queryClient: args.queryClient,
           yieldApiFetchClient: args.yieldApiFetchClient,
-        }),
-      ),
-    ),
+        })
+      )
+    )
   ).pipe(
     map((v) => (v.isRight() ? v.extract() : null)),
     filter(
@@ -182,8 +182,8 @@ const multipleYields$ = (args: {
             network: args.network,
             isLedgerLive: args.isLedgerLive,
           }).length > 0
-        ),
-    ),
+        )
+    )
   );
 
 const firstEligibleYield$ = (args: {
@@ -211,12 +211,12 @@ const firstEligibleYield$ = (args: {
       const preferredYieldId = Maybe.fromNullable(
         args.preferredTokenYieldsPerNetwork?.[
           y.token.network as SupportedSKChains
-        ]?.[tokenString(y.token)],
+        ]?.[tokenString(y.token)]
       )
         .altLazy(() =>
           Maybe.fromNullable(args.preferredTokenYieldsPerNetwork).chainNullable(
-            (v) => Object.values(v)[0][tokenString(y.token)],
-          ),
+            (v) => Object.values(v)[0][tokenString(y.token)]
+          )
         )
         .extractNullable();
 
@@ -232,7 +232,7 @@ const firstEligibleYield$ = (args: {
       });
     }),
     take(1),
-    defaultIfEmpty(null),
+    defaultIfEmpty(null)
   );
 
   return new Observable<Yield | null>((subscriber) => {
@@ -272,7 +272,7 @@ const defaultFiltered = createSelector(
       if (!isConnected) return defaultFilter;
 
       return network === o.token.network && defaultFilter;
-    }),
+    })
 );
 
 const getFirstEligibleYieldQueryKey = (yieldIds: string[]) => [
@@ -288,5 +288,5 @@ export const getCachedFirstEligibleYield = ({
   yieldIds: string[];
 }) =>
   Maybe.fromNullable(
-    queryClient.getQueryData<Yield>(getFirstEligibleYieldQueryKey(yieldIds)),
+    queryClient.getQueryData<Yield>(getFirstEligibleYieldQueryKey(yieldIds))
   );

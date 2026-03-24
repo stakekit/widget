@@ -4,7 +4,7 @@ import { createConnector } from "wagmi";
 export const passCorrectChainsToWallet =
   (
     wallet: WalletList[number]["wallets"][number],
-    chains: Chain[],
+    chains: Chain[]
   ): WalletList[number]["wallets"][number] =>
   (props) => {
     const w = wallet(props);
@@ -16,7 +16,7 @@ export const passCorrectChainsToWallet =
           w.createConnector(walletDetails)({
             ...config,
             chains: chains as [Chain, ...Chain[]],
-          }),
+          })
         ),
     };
   };

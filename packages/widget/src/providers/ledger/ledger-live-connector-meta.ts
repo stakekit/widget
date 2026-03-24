@@ -30,5 +30,5 @@ export type ExtraProps = ConnectorWithFilteredChains & {
 type LedgerLiveConnector = Connector & ExtraProps;
 
 export const isLedgerLiveConnector = (
-  connector: Connector,
+  connector: Connector
 ): connector is LedgerLiveConnector => connector.id === configMeta.id;

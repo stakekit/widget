@@ -31,7 +31,7 @@ const queryFn = async ({
       }
     >((networks) => {
       const chainsToUse = supportedCosmosChains.filter((chain) =>
-        networks.has(chain),
+        networks.has(chain)
       );
 
       if (!chainsToUse.length) {
@@ -40,7 +40,7 @@ const queryFn = async ({
             cosmosChainsMap: {},
             cosmosWagmiChains: [],
             connector: Maybe.empty(),
-          }),
+          })
         );
       }
 
@@ -70,14 +70,14 @@ const queryFn = async ({
                       wagmiChain: getWagmiChain(next),
                     },
                   };
-                }, {} as CosmosChainsMap),
-              ).filter(([_, v]) => networks.has(v.skChainName)),
+                }, {} as CosmosChainsMap)
+              ).filter(([_, v]) => networks.has(v.skChainName))
             );
 
           return {
             cosmosChainsMap,
             cosmosWagmiChains: Object.values(cosmosChainsMap).map(
-              (val) => val.wagmiChain,
+              (val) => val.wagmiChain
             ),
           };
         })
@@ -87,12 +87,12 @@ const queryFn = async ({
               (e) =>
                 new Error("Could not import cosmos wallet manager", {
                   cause: e,
-                }),
+                })
             )
             .map((v) =>
-              v.getWalletManager({ cosmosChainsMap, forceWalletConnectOnly }),
+              v.getWalletManager({ cosmosChainsMap, forceWalletConnectOnly })
             )
-            .map((val) => ({ ...val, cosmosWagmiChains, cosmosChainsMap })),
+            .map((val) => ({ ...val, cosmosWagmiChains, cosmosChainsMap }))
         )
         .chain((v) =>
           EitherAsync(() => v.walletManager.onMounted())
@@ -100,7 +100,7 @@ const queryFn = async ({
               EitherAsync(() => {
                 // @ts-expect-error
                 return cosmosWalletManager._restoreAccounts().catch(() => {});
-              }),
+              })
             )
             .mapLeft((e) => {
               console.log(e);
@@ -112,9 +112,9 @@ const queryFn = async ({
               cosmosWagmiChains: v.cosmosWagmiChains,
               connector: Maybe.fromPredicate(
                 () => !!v.cosmosWagmiChains.length,
-                v.connector,
+                v.connector
               ),
-            })),
+            }))
         );
     })
     .caseOf({
@@ -128,7 +128,7 @@ export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
       staleTime,
       queryKey,
       queryFn: () => queryFn(opts),
-    }),
+    })
   ).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get cosmos config");

@@ -20,7 +20,7 @@ export const useGasWarningCheck = (
   } & (
     | { isStake: true; stakeAmount: BigNumber; stakeToken: TokenDto }
     | { isStake: false }
-  ),
+  )
 ) => {
   const requestData = useMemo(
     () =>
@@ -35,7 +35,7 @@ export const useGasWarningCheck = (
             }
           : { isStake: props.isStake },
       })),
-    [props],
+    [props]
   );
 
   return useQuery({
@@ -45,7 +45,7 @@ export const useGasWarningCheck = (
     queryFn: async () => {
       return (
         await EitherAsync.liftEither(
-          requestData.toEither(new Error("Request data is missing")),
+          requestData.toEither(new Error("Request data is missing"))
         )
           .chain((val) =>
             checkGasAmount({
@@ -64,12 +64,12 @@ export const useGasWarningCheck = (
                 tokenAddress: val.gasFeeToken.address,
               },
               ...val.stakeData,
-            }),
+            })
           )
           .map(
             (val) =>
               val instanceof NotEnoughGasTokenError ||
-              val instanceof GasTokenMissingError,
+              val instanceof GasTokenMissingError
           )
       ).unsafeCoerce();
     },

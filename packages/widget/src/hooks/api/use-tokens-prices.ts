@@ -28,7 +28,7 @@ export const useTokensPrices = ({
           tokenList: [val.token, val.baseToken, val.gasFeeToken],
         }))
         .extractNullable(),
-    [baseToken, gasFeeToken, token],
+    [baseToken, gasFeeToken, token]
   );
 
   return usePrices(priceRequestDto);

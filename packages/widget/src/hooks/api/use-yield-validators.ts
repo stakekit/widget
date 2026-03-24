@@ -45,20 +45,20 @@ export const getYieldValidatorsQueryFn = async ({
           },
         },
         signal,
-      }),
+      })
     );
 
   const firstPage = await fetchPage(0);
 
   const remainingOffsets = Array.from(
     { length: Math.ceil(firstPage.total / PAGE_SIZE) - 1 },
-    (_, index) => (index + 1) * PAGE_SIZE,
+    (_, index) => (index + 1) * PAGE_SIZE
   );
 
   const remainingPages = await Promise.all(
     remainingOffsets.map((offset) =>
-      fetchPage(offset).catch(() => ({ items: [] })),
-    ),
+      fetchPage(offset).catch(() => ({ items: [] }))
+    )
   );
 
   const validators = [firstPage, ...remainingPages]

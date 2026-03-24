@@ -34,12 +34,12 @@ export const CurrentLayoutProvider = ({ children }: PropsWithChildren) => {
 
       setState({ pathname, height });
     },
-    [currentPathnameRef],
+    [currentPathnameRef]
   );
 
   const value = useMemo(
     () => ({ state, setState: _setState }),
-    [_setState, state],
+    [_setState, state]
   );
 
   return (
@@ -54,7 +54,7 @@ export const useCurrentLayout = () => {
 
   if (!value) {
     throw new Error(
-      "useCurrentLayout must be used within a CurrentLayoutContextProvider",
+      "useCurrentLayout must be used within a CurrentLayoutContextProvider"
     );
   }
 

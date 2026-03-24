@@ -25,12 +25,12 @@ export const SelectTokenListItem = memo(
 
     const formattedAmount = useMemo(
       () => defaultFormattedNumber(amount),
-      [amount],
+      [amount]
     );
 
     const amountGreaterThanZero = useMemo(
       () => amount.isGreaterThan(0),
-      [amount],
+      [amount]
     );
 
     const trackEvent = useTrackEvent();
@@ -80,5 +80,5 @@ export const SelectTokenListItem = memo(
         </SelectModalItem>
       </SelectModalItemContainer>
     );
-  },
+  }
 );

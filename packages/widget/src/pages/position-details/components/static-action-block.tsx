@@ -58,7 +58,7 @@ export const StaticActionBlock = ({
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ethena_usde"
                     : undefined,
-                },
+                }
               ),
             }}
             components={{
@@ -91,7 +91,7 @@ export const StaticActionBlock = ({
             {t(
               `position_details.pending_action_button.${
                 pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
-              }`,
+              }`
             )}
           </Text>
         </Button>

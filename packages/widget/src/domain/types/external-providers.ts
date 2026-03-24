@@ -9,13 +9,13 @@ export class ExternalProvider {
   sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
     return EitherAsync.liftEither(
       Maybe.fromNullable(
-        this.variantProvider.current.provider.sendTransaction,
-      ).toEither(new Error("Invalid provider type")),
+        this.variantProvider.current.provider.sendTransaction
+      ).toEither(new Error("Invalid provider type"))
     )
       .chain((_sendTransaction) =>
         EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft(
-          () => new Error("Failed to send transaction, unknown error"),
-        ),
+          () => new Error("Failed to send transaction, unknown error")
+        )
       )
       .chain((res) => {
         if (typeof res === "string") {
@@ -32,7 +32,7 @@ export class ExternalProvider {
 
   switchChain({ chainId }: { chainId: number }) {
     return EitherAsync(() =>
-      this.variantProvider.current.provider.switchChain(chainId),
+      this.variantProvider.current.provider.switchChain(chainId)
     ).mapLeft((e) => {
       console.error(e);
       return new Error("Failed to switch chain");
@@ -41,7 +41,7 @@ export class ExternalProvider {
 
   signMessage(messageHash: string) {
     return EitherAsync(() =>
-      this.variantProvider.current.provider.signMessage(messageHash),
+      this.variantProvider.current.provider.signMessage(messageHash)
     ).mapLeft((e) => {
       console.error(e);
       return new Error("Failed to sign message");

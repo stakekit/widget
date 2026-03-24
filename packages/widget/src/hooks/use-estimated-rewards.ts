@@ -49,7 +49,7 @@ export const useEstimatedRewards = ({
           rewardRateAverage: val.providersDetails
             .reduce(
               (acc, val) => acc.plus(new BigNumber(val.rewardRate ?? 0)),
-              new BigNumber(0),
+              new BigNumber(0)
             )
             .dividedBy(val.providersDetails.length),
         }))
@@ -60,7 +60,7 @@ export const useEstimatedRewards = ({
           }),
           yearly: val.rewardRateAverage.isGreaterThan(0)
             ? formatNumber(
-                correctAmount.times(val.rewardRateAverage).decimalPlaces(5),
+                correctAmount.times(val.rewardRateAverage).decimalPlaces(5)
               )
             : "-",
           monthly: val.rewardRateAverage.isGreaterThan(0)
@@ -68,10 +68,10 @@ export const useEstimatedRewards = ({
                 correctAmount
                   .times(val.rewardRateAverage)
                   .dividedBy(12)
-                  .decimalPlaces(5),
+                  .decimalPlaces(5)
               )
             : "-",
         })),
-    [providersDetails, selectedStake, correctAmount],
+    [providersDetails, selectedStake, correctAmount]
   );
 };

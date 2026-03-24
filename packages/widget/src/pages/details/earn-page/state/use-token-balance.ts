@@ -15,19 +15,19 @@ export const useTokenBalance = ({
   const tokenBalance = useMemo(
     () =>
       selectedToken.chainNullable((val) =>
-        tokenBalancesMap.get(tokenString(val)),
+        tokenBalancesMap.get(tokenString(val))
       ),
-    [selectedToken, tokenBalancesMap],
+    [selectedToken, tokenBalancesMap]
   );
 
   const availableAmount = useMemo(
     () => tokenBalance.map((v) => new BigNumber(v.amount)),
-    [tokenBalance],
+    [tokenBalance]
   );
 
   const availableYields = useMemo(
     () => tokenBalance.map((v) => v.availableYields),
-    [tokenBalance],
+    [tokenBalance]
   );
 
   return {

@@ -20,7 +20,7 @@ export const useActivityComplete = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction,
+    (state) => state.context.selectedAction
   ).unsafeCoerce();
 
   const amount = useMemo(
@@ -28,12 +28,12 @@ export const useActivityComplete = () => {
       Maybe.fromNullable(selectedAction.amount)
         .map(defaultFormattedNumber)
         .unsafeCoerce(),
-    [selectedAction],
+    [selectedAction]
   );
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield,
+    (state) => state.context.selectedYield
   );
 
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
@@ -44,14 +44,14 @@ export const useActivityComplete = () => {
         getActionInputToken({
           actionDto: selectedAction,
           yieldDto: selectedYield.extractNullable() ?? undefined,
-        }),
+        })
       ),
-    [selectedAction, selectedYield],
+    [selectedAction, selectedYield]
   ) as Maybe<TokenDto>;
 
   const metadata = useMemo(
     () => selectedYield.map(getYieldMetadata),
-    [selectedYield],
+    [selectedYield]
   );
 
   const network = inputToken.mapOrDefault((y) => y.symbol, "");
@@ -59,7 +59,7 @@ export const useActivityComplete = () => {
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
     validatorsAddresses: Maybe.of(
-      getActionValidatorAddresses(selectedAction) ?? [],
+      getActionValidatorAddresses(selectedAction) ?? []
     ),
     selectedProviderYieldId: Maybe.of(selectedAction.yieldId),
   });

@@ -32,7 +32,7 @@ describe("External Provider", () => {
 
     await expect
       .element(
-        app.getByText(formatAddress(skProps.externalProviders.currentAddress)),
+        app.getByText(formatAddress(skProps.externalProviders.currentAddress))
       )
       .toBeInTheDocument();
 
@@ -45,8 +45,8 @@ describe("External Provider", () => {
 
     const chainText = app.getByText(
       new RegExp(
-        `${chainNames.eth}|${chainNames.avalanche}|${chainNames.solana}|${chainNames.ton}`,
-      ),
+        `${chainNames.eth}|${chainNames.avalanche}|${chainNames.solana}|${chainNames.ton}`
+      )
     );
 
     await expect.element(chainText).toBeInTheDocument();
@@ -78,17 +78,17 @@ describe("External Provider", () => {
           ...skProps.externalProviders,
           supportedChainIds: [avalanche.id, ton.id],
         }}
-      />,
+      />
     );
 
     await expect
       .poll(() =>
-        app.getByText(new RegExp(`${chainNames.avalanche}|${chainNames.ton}`)),
+        app.getByText(new RegExp(`${chainNames.avalanche}|${chainNames.ton}`))
       )
       .toBeTruthy();
 
     const chainButton = app.getByText(
-      new RegExp(`${chainNames.avalanche}|${chainNames.ton}`),
+      new RegExp(`${chainNames.avalanche}|${chainNames.ton}`)
     );
 
     await chainButton.click();
@@ -117,12 +117,12 @@ describe("External Provider", () => {
           ...skProps.externalProviders,
           supportedChainIds: [avalanche.id, ton.id],
         }}
-      />,
+      />
     );
 
     await expect
       .element(
-        app.getByText(formatAddress(skProps.externalProviders.currentAddress)),
+        app.getByText(formatAddress(skProps.externalProviders.currentAddress))
       )
       .toBeInTheDocument();
 
@@ -136,7 +136,7 @@ describe("External Provider", () => {
           ...skProps.externalProviders,
           supportedChainIds: [avalanche.id, ton.id],
         }}
-      />,
+      />
     );
 
     await expect
@@ -153,12 +153,12 @@ describe("External Provider", () => {
           ...skProps.externalProviders,
           supportedChainIds: [avalanche.id, ton.id],
         }}
-      />,
+      />
     );
 
     await expect
       .element(
-        app.getByText(formatAddress(skProps.externalProviders.currentAddress)),
+        app.getByText(formatAddress(skProps.externalProviders.currentAddress))
       )
       .toBeInTheDocument();
     app.unmount();

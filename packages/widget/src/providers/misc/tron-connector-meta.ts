@@ -33,6 +33,6 @@ type TronConnector = Connector & ExtraProps;
 export type StorageItem = { "tron.disconnected": boolean };
 
 export const isTronConnector = (
-  connector: Connector,
+  connector: Connector
 ): connector is TronConnector =>
   Object.values(configMeta).some((val) => val.id === connector.id);

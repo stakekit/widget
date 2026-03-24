@@ -43,7 +43,7 @@ export const SKApp = (props: SKAppProps) => {
       : { variant: props.variant ?? "default" };
 
   const [router] = useState(() =>
-    createMemoryRouter([{ path: "*", Component: Root }]),
+    createMemoryRouter([{ path: "*", Component: Root }])
   );
 
   return (

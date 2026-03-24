@@ -25,16 +25,16 @@ export const SelectYieldRewardDetails = () => {
     useEarnPageContext();
 
   const rewardRateDetails = selectedStake.chainNullable(
-    getYieldRewardRateDetails,
+    getYieldRewardRateDetails
   );
 
   const earnYearly = estimatedRewards.mapOrDefault(
     (e) => `${e.yearly} ${rewardsTokenSymbol}`,
-    "",
+    ""
   );
   const earnMonthly = estimatedRewards.mapOrDefault(
     (e) => `${e.monthly} ${rewardsTokenSymbol}`,
-    "",
+    ""
   );
 
   return (
@@ -163,7 +163,7 @@ const DefaultEarnYearlyOrMonthly = ({
             combineRecipeWithVariant({
               rec: selectYieldRewardsText,
               variant,
-            }),
+            })
           )}
         >
           {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
@@ -174,7 +174,7 @@ const DefaultEarnYearlyOrMonthly = ({
             combineRecipeWithVariant({
               rec: selectYieldRewardsText,
               variant,
-            }),
+            })
           )}
         >
           {earnYearly}
@@ -195,7 +195,7 @@ const DefaultEarnYearlyOrMonthly = ({
             combineRecipeWithVariant({
               rec: selectYieldRewardsText,
               variant,
-            }),
+            })
           )}
         >
           {t("shared.monthly")}
@@ -206,7 +206,7 @@ const DefaultEarnYearlyOrMonthly = ({
             combineRecipeWithVariant({
               rec: selectYieldRewardsText,
               variant,
-            }),
+            })
           )}
         >
           {earnMonthly}

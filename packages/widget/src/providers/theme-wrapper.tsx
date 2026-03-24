@@ -45,7 +45,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
             return merge(
               structuredClone(lightTheme),
               theme.lightMode,
-              overrides,
+              overrides
             );
           }
 
@@ -56,7 +56,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
           return lightTheme;
         })
         .unsafeCoerce(),
-    [theme, variant],
+    [theme, variant]
   );
 
   const finalDarkTheme = useMemo(
@@ -64,7 +64,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
       "darkMode" in theme
         ? merge(structuredClone(darkTheme), theme.darkMode)
         : null,
-    [theme],
+    [theme]
   );
 
   return (
@@ -80,7 +80,7 @@ export const ThemeWrapper = ({ children }: PropsWithChildren) => {
             finalDarkTheme
               ? `@media (prefers-color-scheme: dark) { ${rootSelector} {${assignInlineVars(
                   vars,
-                  finalDarkTheme,
+                  finalDarkTheme
                 )}} }`
               : null,
           ].join(""),

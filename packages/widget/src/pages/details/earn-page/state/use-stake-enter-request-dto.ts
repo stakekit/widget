@@ -68,7 +68,7 @@ export const useStakeEnterRequestDto = () => {
             const subnetIdRequired = !!getYieldActionArg(
               selectedStake,
               "enter",
-              "subnetId",
+              "subnetId"
             )?.required;
 
             return List.head(validators).map((v) => ({
@@ -115,6 +115,6 @@ export const useStakeEnterRequestDto = () => {
       useMaxAmount,
       tronResource,
       selectedProviderYieldId,
-    ],
+    ]
   );
 };

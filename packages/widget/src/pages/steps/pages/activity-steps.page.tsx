@@ -17,19 +17,19 @@ export const ActivityStepsPage = () => {
 
   const selectedAction = useSelector(
     activityContext,
-    (state) => state.context.selectedAction,
+    (state) => state.context.selectedAction
   ).unsafeCoerce();
 
   const selectedYield = useSelector(
     activityContext,
-    (state) => state.context.selectedYield,
+    (state) => state.context.selectedYield
   ).unsafeCoerce();
 
   const providersDetails = useProvidersDetails({
     integrationData: useMemo(() => Maybe.of(selectedYield), [selectedYield]),
     validatorsAddresses: useMemo(
       () => Maybe.of(getActionValidatorAddresses(selectedAction) ?? []),
-      [selectedAction],
+      [selectedAction]
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

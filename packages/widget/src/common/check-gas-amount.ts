@@ -1,10 +1,10 @@
-import { tokenGetTokenBalances } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
 import { equalTokens } from "../domain";
 import type { ActionDtoWithGasEstimate } from "../domain/types/action";
 import type { AddressWithTokenDto } from "../domain/types/addresses";
 import type { TokenDto } from "../domain/types/tokens";
+import { tokenGetTokenBalances } from "./private-api";
 
 type CheckGasAmountIfStake =
   | { isStake: true; stakeToken: TokenDto; stakeAmount: BigNumber }
@@ -19,10 +19,10 @@ export const checkGasAmount = ({
   gasEstimate: ActionDtoWithGasEstimate["gasEstimate"];
 } & CheckGasAmountIfStake) =>
   EitherAsync.liftEither(
-    Maybe.fromNullable(gasEstimate).toEither(new GasTokenMissingError()),
+    Maybe.fromNullable(gasEstimate).toEither(new GasTokenMissingError())
   ).chain((gasEstimate) =>
     EitherAsync(() =>
-      tokenGetTokenBalances({ addresses: [addressWithTokenDto] }),
+      tokenGetTokenBalances({ addresses: [addressWithTokenDto] })
     )
       .mapLeft(() => new GetGasTokenError())
       .chain((res) =>
@@ -32,7 +32,7 @@ export const checkGasAmount = ({
               ...val,
               amount: new BigNumber(val.amount ?? 0),
             }))
-            .toEither(new GasTokenMissingError()),
+            .toEither(new GasTokenMissingError())
         ).chain(async (gasTokenBalance) => {
           const amount =
             rest.isStake && equalTokens(gasTokenBalance.token, rest.stakeToken)
@@ -44,9 +44,9 @@ export const checkGasAmount = ({
           }
 
           return Right(null);
-        }),
+        })
       )
-      .chainLeft(async (e) => Right(e)),
+      .chainLeft(async (e) => Right(e))
   );
 
 export class NotEnoughGasTokenError extends Error {

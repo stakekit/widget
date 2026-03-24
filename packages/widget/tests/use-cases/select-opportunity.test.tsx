@@ -123,7 +123,7 @@ describe("Select opportunity", () => {
           })
           .map((val) => HttpResponse.json(val))
           .unsafeCoerce();
-      }),
+      })
     );
 
     const app = await renderApp();
@@ -148,24 +148,24 @@ describe("Select opportunity", () => {
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-lido-staking/,
-        ),
+          /^select-opportunity__item_ethereum-eth-lido-staking/
+        )
       )
       .toBeInTheDocument();
 
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-reth-staking/,
-        ),
+          /^select-opportunity__item_ethereum-eth-reth-staking/
+        )
       )
       .toBeInTheDocument();
 
     await expect
       .element(
         selectContainer.getByTestId(
-          /^select-opportunity__item_ethereum-eth-stakewise-staking/,
-        ),
+          /^select-opportunity__item_ethereum-eth-stakewise-staking/
+        )
       )
       .not.toBeInTheDocument();
 

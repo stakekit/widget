@@ -35,7 +35,7 @@ export const isTronChain = (chain: string): chain is SupportedMiscChains => {
 };
 
 export const isBittensorChain = (
-  chain: string,
+  chain: string
 ): chain is SupportedSubstrateChains => {
   return chain === SubstrateNetworks.Bittensor;
 };

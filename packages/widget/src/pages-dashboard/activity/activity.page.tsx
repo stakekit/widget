@@ -138,7 +138,7 @@ const _ActivityPage = () => {
 
   const selectedAction = useSelector(
     activityStore,
-    (state) => state.context.selectedAction,
+    (state) => state.context.selectedAction
   );
 
   // biome-ignore lint: false
@@ -171,7 +171,7 @@ const _ActivityPage = () => {
           selectedAction: val.actionData,
           selectedYield: val.yieldData,
         }),
-      }),
+      })
     );
   }, [selectedAction, activityStore, value.activityActions.allItems]);
 

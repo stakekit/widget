@@ -24,7 +24,7 @@ const breakdownOrder: RewardRateBreakdownKey[] = [
 ];
 
 export const getRewardTypeFromRateType = (
-  rateType: string | null | undefined,
+  rateType: string | null | undefined
 ): RewardTypes => {
   const normalized = rateType?.toLowerCase();
 
@@ -36,7 +36,7 @@ export const getRewardTypeFromRateType = (
 };
 
 const getBreakdownKey = (
-  yieldSource: YieldRewardDto["yieldSource"],
+  yieldSource: YieldRewardDto["yieldSource"]
 ): RewardRateBreakdownKey =>
   yieldSource === "campaign_incentive"
     ? "campaign"
@@ -45,14 +45,14 @@ const getBreakdownKey = (
       : "native";
 
 export const getYieldRewardRateDetails = (
-  yieldDto: Yield | null | undefined,
+  yieldDto: Yield | null | undefined
 ): YieldRewardRateDto | undefined => yieldDto?.rewardRate;
 
 export const getRewardRateBreakdown = (
   rewardRate: YieldRewardRateDto | null | undefined,
   opts?: {
     showUpToCampaign?: boolean;
-  },
+  }
 ): RewardRateBreakdownItem[] => {
   if (!rewardRate?.components?.length) {
     return [];

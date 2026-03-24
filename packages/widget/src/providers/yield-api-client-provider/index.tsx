@@ -14,7 +14,7 @@ import type { paths } from "../../types/yield-api-schema";
 import { useSettings } from "../settings";
 
 const QueryContext = createContext<OpenapiQueryClient<paths> | undefined>(
-  undefined,
+  undefined
 );
 const FetchContext = createContext<YieldApiFetchClient | undefined>(undefined);
 
@@ -104,7 +104,7 @@ export const useYieldApiClient = () => {
 
   if (!value) {
     throw new Error(
-      "useYieldApiClient must be used within a YieldApiClientProvider",
+      "useYieldApiClient must be used within a YieldApiClientProvider"
     );
   }
 
@@ -116,7 +116,7 @@ export const useYieldApiFetchClient = () => {
 
   if (!value) {
     throw new Error(
-      "useYieldApiFetchClient must be used within a YieldApiClientProvider",
+      "useYieldApiFetchClient must be used within a YieldApiClientProvider"
     );
   }
 

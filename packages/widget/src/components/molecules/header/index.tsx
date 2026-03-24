@@ -63,7 +63,7 @@ export const Header = () => {
         </Box>
 
         {Maybe.fromFalsy(
-          !wagmiConfig.isLoading && wagmiConfig.data && variant !== "zerion",
+          !wagmiConfig.isLoading && wagmiConfig.data && variant !== "zerion"
         )
           .map(() => (
             <ConnectButton.Custom>
@@ -74,7 +74,7 @@ export const Header = () => {
                     aria-hidden={!mounted}
                   >
                     {Maybe.fromFalsy(
-                      (isConnected || isConnecting) && chain && account,
+                      (isConnected || isConnecting) && chain && account
                     )
                       .map(() => (
                         <motion.div

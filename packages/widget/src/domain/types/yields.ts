@@ -66,7 +66,7 @@ export const filterValidators = ({
   yieldId?: Yield["id"];
 }) => {
   const valConfig = Maybe.fromNullable(
-    validatorsConfig.get(network as SupportedSKChains),
+    validatorsConfig.get(network as SupportedSKChains)
   )
     .altLazy(() => Maybe.fromNullable(validatorsConfig.get("*")))
     .extractNullable();
@@ -122,14 +122,14 @@ const secondsToDays = (seconds: number | undefined) => {
 
 const isSameToken = (
   left: Pick<YieldTokenDto, "network" | "symbol" | "address">,
-  right: Pick<YieldTokenDto, "network" | "symbol" | "address">,
+  right: Pick<YieldTokenDto, "network" | "symbol" | "address">
 ) =>
   left.network === right.network &&
   left.symbol === right.symbol &&
   (left.address?.toLowerCase() ?? "") === (right.address?.toLowerCase() ?? "");
 
 const mapMechanicsType = (
-  type: Yield["mechanics"]["type"],
+  type: Yield["mechanics"]["type"]
 ): Exclude<
   ExtendedYieldType,
   "liquid-staking" | "native_staking" | "pooled_staking"
@@ -149,7 +149,7 @@ const mapMechanicsType = (
 };
 
 const getBaseYieldType = (
-  yieldDto: Yield,
+  yieldDto: Yield
 ): LegacyYieldType | "liquid-staking" => {
   if (
     yieldDto.mechanics.type === "staking" &&
@@ -166,7 +166,7 @@ const getBaseYieldType = (
 const getFallbackActionArg = (
   yieldDto: Yield,
   type: YieldActionType,
-  name: YieldArgumentName,
+  name: YieldArgumentName
 ) => {
   const legacyArgs = yieldDto.__fallback__.args?.[type]?.args as
     | Record<string, YieldArgumentConfig>
@@ -187,10 +187,10 @@ const getFallbackActionArg = (
 export const getYieldActionArg = (
   yieldDto: Yield,
   type: YieldActionType,
-  name: YieldArgumentName,
+  name: YieldArgumentName
 ): YieldArgumentConfig | null => {
   const field = yieldDto.mechanics.arguments?.[type]?.fields?.find(
-    (item) => item.name === name,
+    (item) => item.name === name
   );
   const legacyField = getFallbackActionArg(yieldDto, type, name);
 
@@ -214,7 +214,7 @@ export const getYieldActionArg = (
 export const isYieldActionArgRequired = (
   yieldDto: Yield,
   type: YieldActionType,
-  name: YieldArgumentName,
+  name: YieldArgumentName
 ) => !!getYieldActionArg(yieldDto, type, name)?.required;
 
 export const getYieldRewardRate = (yieldDto: Yield) =>
@@ -249,7 +249,7 @@ const uniqTokens = (tokens: (YieldTokenDto | null | undefined)[]) => {
 
 export const getYieldRewardTokens = (yieldDto: Yield) => {
   const derived = uniqTokens(
-    yieldDto.rewardRate?.components?.map((component) => component.token) ?? [],
+    yieldDto.rewardRate?.components?.map((component) => component.token) ?? []
   );
 
   if (derived.length) {
@@ -345,7 +345,7 @@ export const getExtendedYieldType = (yieldDto: Yield) =>
 
 export const getYieldTypeLabels = (
   yieldDto: Yield,
-  t: TFunction,
+  t: TFunction
 ): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
   const map = {
     staking: {
@@ -425,12 +425,12 @@ const isNativeStaking = (yieldDto: Yield) =>
   Maybe.fromFalsy(isEthereumStaking(yieldDto))
     .chain(() =>
       Maybe.fromFalsy(
-        isYieldActionArgRequired(yieldDto, "enter", "amount"),
+        isYieldActionArgRequired(yieldDto, "enter", "amount")
       ).chain(() =>
         Maybe.fromNullable(
-          getYieldActionArg(yieldDto, "enter", "amount")?.minimum,
-        ),
-      ),
+          getYieldActionArg(yieldDto, "enter", "amount")?.minimum
+        )
+      )
     )
     .map(BigNumber)
     .filter((v) => v.isEqualTo(32))
@@ -462,7 +462,7 @@ const zeroRewardRateYieldIdWhitelist = new Set<string>([
 ]);
 
 export const isNonZeroRewardRateYield = (
-  yieldDto: Pick<Yield, "id" | "rewardRate">,
+  yieldDto: Pick<Yield, "id" | "rewardRate">
 ) =>
   (yieldDto.rewardRate?.total ?? 0) > 0 ||
   zeroRewardRateYieldIdWhitelist.has(yieldDto.id);

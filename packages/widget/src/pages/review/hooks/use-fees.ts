@@ -39,17 +39,17 @@ export const useFees = ({
         prices,
         token,
       }),
-    [amount, token, prices],
+    [amount, token, prices]
   );
 
   const getBpsInPercentage = useCallback(
     (val: number) => `${bpsToPercentage(val)}%`,
-    [],
+    []
   );
 
   const getPercentAmount = useCallback(
     (val: string) => amount.multipliedBy(val).dividedBy(100),
-    [amount],
+    [amount]
   );
 
   const getPercentInUsd = useCallback(
@@ -59,7 +59,7 @@ export const useFees = ({
         prices,
         token,
       }),
-    [getPercentAmount, prices, token],
+    [getPercentAmount, prices, token]
   );
 
   const depositFee = useMemo(
@@ -80,7 +80,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.deposit_fee_explanation"),
               label: t("review.deposit_fee"),
-            })),
+            }))
         ),
     [
       feeConfigDto,
@@ -89,7 +89,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ],
+    ]
   );
 
   const managementFee = useMemo(
@@ -110,7 +110,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.management_fee_explanation"),
               label: t("review.management_fee"),
-            })),
+            }))
         ),
     [
       feeConfigDto,
@@ -119,7 +119,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ],
+    ]
   );
 
   const performanceFee = useMemo(
@@ -140,7 +140,7 @@ export const useFees = ({
               inPercentage: `${val}%`,
               explanation: t("review.performance_fee_explanation"),
               label: t("review.performance_fee"),
-            })),
+            }))
         ),
     [
       feeConfigDto,
@@ -149,7 +149,7 @@ export const useFees = ({
       getPercentInUsd,
       t,
       yieldFee,
-    ],
+    ]
   );
 
   return { depositFee, managementFee, performanceFee };

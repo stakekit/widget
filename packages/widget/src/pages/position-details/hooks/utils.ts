@@ -59,7 +59,7 @@ export const preparePendingActionRequestDto = ({
       const args: NonNullable<YieldCreateManageActionDto["arguments"]> = {
         amount: Maybe.fromPredicate(
           Boolean,
-          isPendingActionAmountRequired(pendingActionDto),
+          isPendingActionAmountRequired(pendingActionDto)
         )
           .chainNullable(() =>
             pendingActionsState.get(
@@ -67,8 +67,8 @@ export const preparePendingActionRequestDto = ({
                 balanceType: yieldBalance.type as YieldBalanceDto["type"],
                 token: yieldBalance.token,
                 actionType: pendingActionDto.type as YieldPendingActionType,
-              }),
-            ),
+              })
+            )
           )
           .map((v) => v.toString())
           .alt(Maybe.of(yieldBalance.amount))

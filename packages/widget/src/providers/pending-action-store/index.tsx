@@ -37,7 +37,7 @@ const store = createStore({
 });
 
 const PendingActionStoreContext = createContext<typeof store | undefined>(
-  undefined,
+  undefined
 );
 
 export const PendingActionStoreProvider = ({ children }: PropsWithChildren) => {
@@ -53,7 +53,7 @@ export const usePendingActionStore = () => {
 
   if (!value) {
     throw new Error(
-      "usePendingActionStore must be used within a PendingActionProvider",
+      "usePendingActionStore must be used within a PendingActionProvider"
     );
   }
 

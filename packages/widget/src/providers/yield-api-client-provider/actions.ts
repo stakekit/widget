@@ -3,71 +3,48 @@ import type {
   YieldCreateActionDto,
   YieldCreateManageActionDto,
 } from "../../domain/types/action";
-import type { AddressesDto } from "../../domain/types/addresses";
 import type { YieldApiFetchClient } from "../../domain/types/yield-api";
-import type { Yield } from "../../domain/types/yields";
 import { getResponseData } from "./request-helpers";
 
 export const createEnterAction = async ({
-  addresses,
   fetchClient,
   requestDto,
-  yieldDto,
 }: {
-  addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateActionDto;
-  yieldDto: Yield;
 }): Promise<ActionDto> => {
-  void addresses;
-  void yieldDto;
-
   return getResponseData(
     fetchClient.POST("/v1/actions/enter", {
       body: requestDto,
-    }),
+    })
   );
 };
 
 export const createExitAction = async ({
-  addresses,
   fetchClient,
   requestDto,
-  yieldDto,
 }: {
-  addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateActionDto;
-  yieldDto: Yield;
 }): Promise<ActionDto> => {
-  void addresses;
-  void yieldDto;
-
   return getResponseData(
     fetchClient.POST("/v1/actions/exit", {
       body: requestDto,
-    }),
+    })
   );
 };
 
 export const createManageAction = async ({
-  addresses,
   fetchClient,
   requestDto,
-  yieldDto,
 }: {
-  addresses: AddressesDto;
   fetchClient: YieldApiFetchClient;
   requestDto: YieldCreateManageActionDto;
-  yieldDto: Yield;
 }): Promise<ActionDto> => {
-  void addresses;
-  void yieldDto;
-
   return getResponseData(
     fetchClient.POST("/v1/actions/manage", {
       body: requestDto,
-    }),
+    })
   );
 };
 
@@ -91,7 +68,7 @@ export const listActions = async ({
           limit,
         },
       },
-    }),
+    })
   );
 
 export const getTransaction = async ({
@@ -108,7 +85,7 @@ export const getTransaction = async ({
           transactionId,
         },
       },
-    }),
+    })
   );
 
 export const submitTransaction = async ({
@@ -130,7 +107,7 @@ export const submitTransaction = async ({
       body: {
         signedTransaction,
       },
-    }),
+    })
   );
 
 export const submitTransactionHash = async ({
@@ -152,5 +129,5 @@ export const submitTransactionHash = async ({
       body: {
         hash,
       },
-    }),
+    })
   );

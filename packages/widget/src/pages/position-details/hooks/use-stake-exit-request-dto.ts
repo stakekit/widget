@@ -47,7 +47,7 @@ export const useStakeExitRequestDto = () => {
             if (isYieldIntegrationAggregator(val.integrationData)) {
               return List.find(
                 (b) => !!b.validator?.providerId,
-                val.stakedOrLiquidBalances,
+                val.stakedOrLiquidBalances
               ).map((b) => ({
                 providerId: b.validator?.providerId,
                 validatorAddress: b.validator?.address,
@@ -57,12 +57,12 @@ export const useStakeExitRequestDto = () => {
               getYieldActionArg(
                 val.integrationData,
                 "exit",
-                "validatorAddresses",
+                "validatorAddresses"
               )?.required
             ) {
               return List.find(
                 (b) => !!b.validators?.length,
-                val.stakedOrLiquidBalances,
+                val.stakedOrLiquidBalances
               ).map((b) => ({
                 validatorAddresses:
                   b.validators?.map((validator) => validator.address) ?? [],
@@ -74,11 +74,11 @@ export const useStakeExitRequestDto = () => {
             ) {
               return List.find(
                 (b) => !!b.validator?.address,
-                val.stakedOrLiquidBalances,
+                val.stakedOrLiquidBalances
               ).map((b) => {
                 const subnetId = Maybe.fromNullable(
                   getYieldActionArg(val.integrationData, "exit", "subnetId")
-                    ?.required,
+                    ?.required
                 )
                   .chainNullable(() => b.validator)
                   .map((validator) => validator.subnetId)
@@ -122,6 +122,6 @@ export const useStakeExitRequestDto = () => {
       integrationData,
       unstakeAmount,
       unstakeUseMaxAmount,
-    ],
+    ]
   );
 };

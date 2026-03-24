@@ -54,7 +54,7 @@ export const MetaInfo = ({
         { text: lockupPeriod, icon: <InfoIcon /> },
       ].filter(
         (val): val is { text: string | ReactNode; icon: JSX.Element } =>
-          !!val.text,
+          !!val.text
       ),
     [
       campaign,
@@ -65,7 +65,7 @@ export const MetaInfo = ({
       withdrawnTime,
       extra,
       lockupPeriod,
-    ],
+    ]
   );
 
   return isLoading ? (

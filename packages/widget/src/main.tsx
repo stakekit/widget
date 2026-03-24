@@ -69,7 +69,7 @@ const enableMocking = async () => {
 enableMocking()
   .then(() => {
     ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-      <StandaloneApp />,
+      <StandaloneApp />
     );
   })
   .catch((e) => {

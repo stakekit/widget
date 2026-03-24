@@ -68,7 +68,7 @@ export const TxState = ({ txState, position, count, session }: Props) => {
                   context: isEthenaUsdeStaking(session.yieldId)
                     ? "ETHENA_USDE"
                     : undefined,
-                } as never,
+                } as never
               ) as unknown as string,
             })}
           </Text>

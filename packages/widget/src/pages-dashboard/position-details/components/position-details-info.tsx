@@ -58,11 +58,11 @@ export const PositionDetailsInfo = () => {
                   {...p}
                   key={p.address ?? idx}
                   stakeType={t(
-                    `position_details.stake_type.${getYieldMetadata(val.integrationData).type}`,
+                    `position_details.stake_type.${getYieldMetadata(val.integrationData).type}`
                   )}
                   integrationData={val.integrationData}
                 />
-              )),
+              ))
             )
             .extractNullable()}
         </Box>
@@ -97,7 +97,7 @@ export const PositionDetailsInfo = () => {
                         integrationData={val.integrationData}
                         yieldBalance={yb}
                       />
-                    )),
+                    ))
                 )}
               </Box>
 

@@ -101,7 +101,7 @@ export const SelectValidatorTrigger = ({
                             {t(
                               sv.status === "jailed"
                                 ? "details.validators_jailed"
-                                : "details.validators_inactive",
+                                : "details.validators_inactive"
                             )}
                           </Text>
                         </Box>

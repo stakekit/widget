@@ -1,10 +1,10 @@
-import { transactionGetTransactionVerificationMessageForNetwork } from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
 import type { SnapshotFromStore } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import { EitherAsync, Maybe } from "purify-ts";
 import { type RefObject, useState } from "react";
 import { assign, setup } from "xstate";
+import { transactionGetTransactionVerificationMessageForNetwork } from "../../../common/private-api";
 import { getValidStakeSessionTx } from "../../../domain";
 import type { TransactionVerificationMessageDto } from "../../../domain/types/transaction";
 import type { SKWallet } from "../../../domain/types/wallet";
@@ -22,7 +22,7 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const exitStore = useExitStakeStore();
   const exitRequest = useSelector(
     useExitStakeStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const yieldApiFetchClient = useYieldApiFetchClient();
@@ -34,7 +34,6 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
     exitStore,
     yieldApiFetchClient,
     signMessage,
-    transactionGetTransactionVerificationMessageForNetwork,
     getData: () =>
       Maybe.fromRecord({
         network: Maybe.fromNullable(network),
@@ -74,7 +73,7 @@ const getMachine = (
         }
       >;
     }>
-  >,
+  >
 ) =>
   setup({
     types: {
@@ -174,7 +173,7 @@ const getMachine = (
           loading: {
             entry: ({ self, context }) =>
               EitherAsync.liftEither(
-                context.data.toEither(new Error("Missing init values")),
+                context.data.toEither(new Error("Missing init values"))
               )
                 .chain((val) =>
                   EitherAsync(() =>
@@ -186,11 +185,11 @@ const getMachine = (
                           additionalAddresses:
                             val.addresses.additionalAddresses ?? undefined,
                         },
-                      },
-                    ),
+                      }
+                    )
                   ).mapLeft(
-                    () => new Error("Failed to get verification message"),
-                  ),
+                    () => new Error("Failed to get verification message")
+                  )
                 )
                 .caseOf({
                   Right(v) {
@@ -242,8 +241,8 @@ const getMachine = (
             entry: ({ self, context }) =>
               EitherAsync.liftEither(
                 context.transactionVerificationMessageDto.toEither(
-                  new Error("Missing transaction verification message"),
-                ),
+                  new Error("Missing transaction verification message")
+                )
               )
                 .chain((val) => ref.current.signMessage(val.message))
                 .caseOf({
@@ -306,31 +305,29 @@ const getMachine = (
                                 },
                               } as typeof val.requestDto.arguments,
                             },
-                          }) as typeof val.data,
+                          }) as typeof val.data
                       )
-                      .orDefault(val),
+                      .orDefault(val)
                   )
-                  .toEither(new Error("Missing params")),
+                  .toEither(new Error("Missing params"))
               )
                 .chain((val) =>
                   EitherAsync(() =>
                     createExitAction({
-                      addresses: val.addresses,
                       fetchClient: ref.current.yieldApiFetchClient,
                       requestDto: val.requestDto,
-                      yieldDto: val.integrationData,
-                    }),
+                    })
                   )
                     .mapLeft(() => new Error("Stake exit error"))
                     .chain((actionDto) =>
-                      EitherAsync.liftEither(getValidStakeSessionTx(actionDto)),
+                      EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
                     )
                     .ifRight((result) =>
                       ref.current.exitStore.send({
                         type: "setActionDto",
                         data: result,
-                      }),
-                    ),
+                      })
+                    )
                 )
                 .caseOf({
                   Right() {

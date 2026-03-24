@@ -127,7 +127,7 @@ export const unsignedTonTransactionCodec = oneOf([
       address: string,
       amount: string,
       payload: string,
-    }),
+    })
   ),
 ]);
 

@@ -66,8 +66,8 @@ export const useComplete = () => {
         onClick: () => onClickRef.current(),
         hide: !!activityReviewMatch,
       }),
-      [onClickRef, t, activityReviewMatch, isLedgerLive],
-    ),
+      [onClickRef, t, activityReviewMatch, isLedgerLive]
+    )
   );
 
   return {

@@ -21,7 +21,7 @@ export const useLedgerDisabledChain = (connector?: Nullable<Connector>) => {
 
       return () => sub.unsubscribe();
     },
-    [connector, subject],
+    [connector, subject]
   );
 
   const getSnapshot = useCallback(() => subject.value, [subject]);

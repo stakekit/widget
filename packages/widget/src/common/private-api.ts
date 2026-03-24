@@ -1,8 +1,18 @@
 import {
+  type BalanceResponseDto,
+  type BalancesRequestDto,
   customFetch,
+  type PriceRequestDto,
+  type PriceResponseDto,
   type TokenBalanceScanDto,
   type TokenBalanceScanResponseDto,
+  type TokenGetTokensParams,
+  type TokenWithAvailableYieldsDto,
+  type TransactionVerificationMessageDto,
+  type TransactionVerificationMessageRequestDto,
   type YieldDto,
+  type YieldRewardsSummaryRequestDto,
+  type YieldRewardsSummaryResponseDto,
 } from "@stakekit/api-hooks";
 
 /**
@@ -11,7 +21,7 @@ import {
  */
 export const tokenTokenBalancesScan = (
   tokenBalanceScanDto: TokenBalanceScanDto,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ) => {
   return customFetch<TokenBalanceScanResponseDto[]>({
     url: "/v1/tokens/balances/scan",
@@ -29,7 +39,7 @@ export const tokenTokenBalancesScan = (
 export const yieldYieldOpportunity = (
   integrationId: string,
   params?: { ledgerWalletAPICompatible?: boolean },
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ) => {
   return customFetch<YieldDto>({
     url: `/v1/yields/${integrationId}`,
@@ -39,3 +49,52 @@ export const yieldYieldOpportunity = (
     signal,
   });
 };
+
+export const tokenGetTokens = (
+  params?: TokenGetTokensParams,
+  signal?: AbortSignal
+) =>
+  customFetch<TokenWithAvailableYieldsDto[]>({
+    url: "/v1/tokens",
+    method: "GET",
+    params,
+    signal,
+  });
+
+export const tokenGetTokenPrices = (priceRequestDto: PriceRequestDto) =>
+  customFetch<PriceResponseDto>({
+    url: "/v1/tokens/prices",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: priceRequestDto,
+  });
+
+export const tokenGetTokenBalances = (balancesRequestDto: BalancesRequestDto) =>
+  customFetch<BalanceResponseDto[]>({
+    url: "/v1/tokens/balances",
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: balancesRequestDto,
+  });
+
+export const yieldGetSingleYieldRewardsSummary = (
+  integrationId: string,
+  yieldRewardsSummaryRequestDto: YieldRewardsSummaryRequestDto
+) =>
+  customFetch<YieldRewardsSummaryResponseDto>({
+    url: `/v1/yields/${integrationId}/rewards-summary`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: yieldRewardsSummaryRequestDto,
+  });
+
+export const transactionGetTransactionVerificationMessageForNetwork = (
+  network: string,
+  transactionVerificationMessageRequestDto: TransactionVerificationMessageRequestDto
+) =>
+  customFetch<TransactionVerificationMessageDto>({
+    url: `/v1/transactions/verification/${network}`,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    data: transactionVerificationMessageRequestDto,
+  });

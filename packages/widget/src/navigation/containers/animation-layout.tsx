@@ -49,7 +49,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
           }
           return { duration: 0.6, delay: 0.3 };
         })
-        .map((transition) => ({ height, transition })),
+        .map((transition) => ({ height, transition }))
     )
     .unsafeCoerce();
 

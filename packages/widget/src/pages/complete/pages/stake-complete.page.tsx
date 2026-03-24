@@ -15,17 +15,17 @@ export const StakeCompletePage = () => {
 
   const enterRequest = useSelector(
     useEnterStakeStore(),
-    (state) => state.context.data,
+    (state) => state.context.data
   ).unsafeCoerce();
 
   const selectedStake = useMemo(
     () => Maybe.of(enterRequest.selectedStake),
-    [enterRequest.selectedStake],
+    [enterRequest.selectedStake]
   );
 
   const selectedToken = useMemo(
     () => Maybe.of(enterRequest.selectedToken),
-    [enterRequest.selectedToken],
+    [enterRequest.selectedToken]
   );
 
   const metadata = selectedStake.map(getYieldMetadata);
@@ -35,16 +35,16 @@ export const StakeCompletePage = () => {
   const amount = useMemo(
     () =>
       formatNumber(
-        new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0),
+        new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0)
       ),
-    [enterRequest.requestDto.arguments?.amount],
+    [enterRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
   const selectedProviderYieldId = useMemo(
     () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
-    [enterRequest.requestDto.arguments?.providerId],
+    [enterRequest.requestDto.arguments?.providerId]
   );
 
   const providerDetails = useProvidersDetails({

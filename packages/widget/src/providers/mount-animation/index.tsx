@@ -45,21 +45,21 @@ type ContextValue = {
 };
 
 const MountAnimationContext = createContext<ContextValue | undefined>(
-  undefined,
+  undefined
 );
 
 const removeDelay = delayAPIRequests();
 
 export const MountAnimationProvider = ({ children }: PropsWithChildren) => {
   const onMountAnimationCompleteRef = useSavedRef(
-    useSettings().onMountAnimationComplete,
+    useSettings().onMountAnimationComplete
   );
 
   const { dashboardVariant } = useSettings();
 
   const [state, dispatch] = useReducer(
     reducer,
-    dashboardVariant ? { earnPage: true, layout: true } : initialState(),
+    dashboardVariant ? { earnPage: true, layout: true } : initialState()
   );
 
   useEffect(() => {
@@ -81,7 +81,7 @@ export const MountAnimationProvider = ({ children }: PropsWithChildren) => {
 
   const value = useMemo(
     () => ({ dispatch, state, mountAnimationFinished }) satisfies ContextValue,
-    [mountAnimationFinished, state],
+    [mountAnimationFinished, state]
   );
 
   return (
@@ -96,7 +96,7 @@ export const useMountAnimation = () => {
 
   if (!context) {
     throw new Error(
-      "useMountAnimation must be used within a MountAnimationProvider",
+      "useMountAnimation must be used within a MountAnimationProvider"
     );
   }
 

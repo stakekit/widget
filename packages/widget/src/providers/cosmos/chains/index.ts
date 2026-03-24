@@ -6,7 +6,7 @@ import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import type { CosmosChainsAssets } from "./types";
 
 export const getWagmiChain = (
-  chain: CosmosChainsAssets,
+  chain: CosmosChainsAssets
 ): Chain & { cosmosChainName: string } => ({
   id: chain.chain_id as unknown as number,
   iconUrl: Just(chain.chain_id)

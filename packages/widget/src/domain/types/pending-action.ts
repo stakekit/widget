@@ -23,19 +23,19 @@ export type PendingActionAmountConfig = {
 };
 
 export const isPendingActionAmountRequired = (
-  pendingAction: AnyPendingActionDto,
+  pendingAction: AnyPendingActionDto
 ) => !!getPendingActionAmountConfig(pendingAction)?.required;
 
 export const isPendingActionValidatorAddressRequired = (
-  pendingAction: AnyPendingActionDto,
+  pendingAction: AnyPendingActionDto
 ) => !!getPendingActionArgument(pendingAction, "validatorAddress")?.required;
 
 export const isPendingActionValidatorAddressesRequired = (
-  pendingAction: AnyPendingActionDto,
+  pendingAction: AnyPendingActionDto
 ) => !!getPendingActionArgument(pendingAction, "validatorAddresses")?.required;
 
 export const getPendingActionAmountConfig = (
-  pendingAction: AnyPendingActionDto,
+  pendingAction: AnyPendingActionDto
 ): PendingActionAmountConfig | null => {
   const amountArg = getPendingActionArgument(pendingAction, "amount");
 
@@ -56,14 +56,14 @@ export const getPendingActionAmountConfig = (
 
 const getPendingActionArgument = (
   pendingAction: AnyPendingActionDto,
-  name: PendingActionArgName,
+  name: PendingActionArgName
 ) => {
   const v2Field = (
     pendingAction as YieldPendingActionDto
   ).arguments?.fields?.find(
     (
-      field: NonNullable<YieldPendingActionDto["arguments"]>["fields"][number],
-    ) => field.name === name,
+      field: NonNullable<YieldPendingActionDto["arguments"]>["fields"][number]
+    ) => field.name === name
   );
 
   if (v2Field) {

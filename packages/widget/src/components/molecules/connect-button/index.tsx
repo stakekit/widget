@@ -32,7 +32,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
       {t(
         isLedgerLiveAccountPlaceholder
           ? "init.ledger_add_account"
-          : "init.connect_wallet",
+          : "init.connect_wallet"
       )}
     </Button>
   );

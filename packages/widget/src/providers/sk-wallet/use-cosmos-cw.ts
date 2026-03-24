@@ -6,7 +6,7 @@ import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";
 
 export const useCosmosCW = (connector?: Connector) => {
   const [subject] = useState(
-    () => new BehaviorSubject<ChainWalletBase | null>(null),
+    () => new BehaviorSubject<ChainWalletBase | null>(null)
   );
 
   const subscribe = useCallback(
@@ -22,7 +22,7 @@ export const useCosmosCW = (connector?: Connector) => {
 
       return () => sub.unsubscribe();
     },
-    [connector, subject],
+    [connector, subject]
   );
 
   const getSnapshot = useCallback(() => subject.value, [subject]);

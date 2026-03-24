@@ -30,7 +30,7 @@ export const useActivityActions = () => {
             fetchClient: yieldApiFetchClient,
             limit: PAGE_SIZE,
             offset: pageParam,
-          }),
+          })
         )
           .mapLeft(() => new Error("Could not get action list"))
           .map((actionList) => ({
@@ -39,7 +39,7 @@ export const useActivityActions = () => {
               (action) =>
                 action.status !== ActionStatus.CREATED &&
                 (!network ||
-                  action.transactions.some((tx) => tx.network === network)),
+                  action.transactions.some((tx) => tx.network === network))
             ),
           }))
           .chain(async (actionList) =>
@@ -55,8 +55,8 @@ export const useActivityActions = () => {
                     actionData: action as ActionDto,
                     yieldData,
                   }))
-                  .chainLeft(() => EitherAsync(() => Promise.resolve(null))),
-              ),
+                  .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
+              )
             )
               .map((res) => res.filter((x) => x !== null))
               .map((res) =>
@@ -65,10 +65,10 @@ export const useActivityActions = () => {
                     !!getActionInputToken({
                       actionDto: x.actionData,
                       yieldDto: x.yieldData,
-                    }),
-                ),
+                    })
+                )
               )
-              .map((data) => ({ ...actionList, data })),
+              .map((data) => ({ ...actionList, data }))
           )
       ).unsafeCoerce();
     },
@@ -81,7 +81,7 @@ export const useActivityActions = () => {
 
   const allItems = useMemo(
     () => query.data?.pages.flatMap((page) => page.data),
-    [query.data],
+    [query.data]
   );
 
   return {

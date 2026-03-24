@@ -22,7 +22,7 @@ export const getResponseData = async <
     error?: unknown;
   },
 >(
-  promise: Promise<TResponse>,
+  promise: Promise<TResponse>
 ): Promise<NonNullable<TResponse["data"]>> => {
   const response = await promise;
 

@@ -35,7 +35,7 @@ export const useMaxMinYieldAmount = ({
             .chainNullable((y) =>
               type === "enter"
                 ? getMinStakeAmount(y, positionsData)
-                : getMinUnstakeAmount(y, pricePerShare),
+                : getMinUnstakeAmount(y, pricePerShare)
             )
             .map((a) => new BigNumber(a)),
     [
@@ -45,7 +45,7 @@ export const useMaxMinYieldAmount = ({
       yieldOpportunity,
       positionsData,
       pricePerShare,
-    ],
+    ]
   );
 
   const maxIntegrationAmount = useMemo(() => {
@@ -64,12 +64,12 @@ export const useMaxMinYieldAmount = ({
         gasEstimateTotal: new BigNumber(0),
         integrationMaxLimit: maxIntegrationAmount,
       }),
-    [maxIntegrationAmount, availableAmount],
+    [maxIntegrationAmount, availableAmount]
   );
 
   const minEnterOrExitAmount = useMemo(
     () => minIntegrationAmount.orDefault(new BigNumber(0)),
-    [minIntegrationAmount],
+    [minIntegrationAmount]
   );
 
   return useMemo(
@@ -88,6 +88,6 @@ export const useMaxMinYieldAmount = ({
       minEnterOrExitAmount,
       maxIntegrationAmount,
       isForceMax,
-    ],
+    ]
   );
 };

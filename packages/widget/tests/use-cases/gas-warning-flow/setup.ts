@@ -191,7 +191,7 @@ export const setup = () => {
         await delay();
 
         return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
-      },
+      }
     ),
     http.get(
       `*/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`,
@@ -199,7 +199,7 @@ export const setup = () => {
         await delay();
 
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
-      },
+      }
     ),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
       await delay();
@@ -208,10 +208,10 @@ export const setup = () => {
       const validators =
         yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
           ? yieldValidatorsFixture(
-              yieldWithSameGasAndStakeToken.yieldDto.validators,
+              yieldWithSameGasAndStakeToken.yieldDto.validators
             )
           : yieldValidatorsFixture(
-              yieldWithDifferentGasAndStakeToken.yieldDto.validators,
+              yieldWithDifferentGasAndStakeToken.yieldDto.validators
             );
 
       return HttpResponse.json({
@@ -243,8 +243,8 @@ export const setup = () => {
                 gasEstimate: gasAmount,
                 status: "CREATED",
                 stepIndex: index,
-              },
-            ),
+              }
+            )
           ),
           overrides: {
             amount: body.arguments?.amount ?? null,
@@ -252,7 +252,7 @@ export const setup = () => {
           },
         }),
       });
-    }),
+    })
   );
 
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
