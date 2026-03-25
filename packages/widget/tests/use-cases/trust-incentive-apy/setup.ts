@@ -47,7 +47,13 @@ const setUrl = ({
   window.history.pushState({}, "", url);
 };
 
-export const setup = async () => {
+export const setup = async ({
+  personalizedRewardRate: providedPersonalizedRewardRate,
+  useRewardRateWithoutCampaign,
+}: {
+  personalizedRewardRate?: YieldRewardRateDto;
+  useRewardRateWithoutCampaign?: boolean;
+} = {}) => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
   const token: LegacyTokenDto = {
@@ -105,33 +111,62 @@ export const setup = async () => {
     ],
   });
 
-  const personalizedRewardRate: YieldRewardRateDto = yieldRewardRateFixture({
-    total: 0.04530754665300604,
-    rateType: "APY",
-    components: [
-      {
-        rate: 0.0028386677110199426,
-        rateType: "APR",
-        token: morphoToken,
-        yieldSource: "protocol_incentive",
-        description: "MORPHO rewards",
-      },
-      {
-        rate: 0.0018,
-        rateType: "APR",
-        token: rewardToken,
-        yieldSource: "campaign_incentive",
-        description: "U rewards",
-      },
-      {
-        rate: 0.042668878941986094,
-        rateType: "APY",
-        token: rewardToken,
-        yieldSource: "vault",
-        description: "Supply APY",
-      },
-    ],
-  });
+  const defaultPersonalizedRewardRate: YieldRewardRateDto =
+    yieldRewardRateFixture({
+      total: 0.04530754665300604,
+      rateType: "APY",
+      components: [
+        {
+          rate: 0.0028386677110199426,
+          rateType: "APR",
+          token: morphoToken,
+          yieldSource: "protocol_incentive",
+          description: "MORPHO rewards",
+        },
+        {
+          rate: 0.0018,
+          rateType: "APR",
+          token: rewardToken,
+          yieldSource: "campaign_incentive",
+          description: "U rewards",
+        },
+        {
+          rate: 0.042668878941986094,
+          rateType: "APY",
+          token: rewardToken,
+          yieldSource: "vault",
+          description: "Supply APY",
+        },
+      ],
+    });
+
+  const personalizedRewardRateWithoutCampaign: YieldRewardRateDto =
+    yieldRewardRateFixture({
+      total: 0.04530754665300604,
+      rateType: "APY",
+      components: [
+        {
+          rate: 0.0028386677110199426,
+          rateType: "APR",
+          token: morphoToken,
+          yieldSource: "protocol_incentive",
+          description: "MORPHO rewards",
+        },
+        {
+          rate: 0.042668878941986094,
+          rateType: "APY",
+          token: rewardToken,
+          yieldSource: "vault",
+          description: "Supply APY",
+        },
+      ],
+    });
+
+  const personalizedRewardRate =
+    providedPersonalizedRewardRate ??
+    (useRewardRateWithoutCampaign
+      ? personalizedRewardRateWithoutCampaign
+      : defaultPersonalizedRewardRate);
 
   const yieldId =
     "avalanche-c-usda-trust-0xbeefa1abfebe621df50ceaef9f54fdb73648c92c-vault";

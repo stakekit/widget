@@ -102,4 +102,35 @@ describe("Trust incentive APY", () => {
 
     app.unmount();
   });
+
+  it("hides personalized APY when the balance has no campaign component", async () => {
+    const { account, customConnectors, legacyYield, setUrl } = await setup({
+      useRewardRateWithoutCampaign: true,
+    });
+
+    setUrl({
+      accountId: account,
+      balanceId: "default",
+      yieldId: legacyYield.id,
+    });
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: customConnectors,
+      },
+    });
+
+    await expect.poll(() => app.getByText("Personalized APY").length).toBe(0);
+    await expect
+      .poll(() => app.getByTestId("personalized-reward-rate").length)
+      .toBe(0);
+    await expect
+      .poll(
+        () =>
+          app.getByTestId("personalized-reward-rate-breakdown__campaign").length
+      )
+      .toBe(0);
+
+    app.unmount();
+  });
 });

@@ -4,6 +4,7 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { equalTokens } from "../../../domain";
+import { getRewardRateBreakdown } from "../../../domain/types/reward-rate";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import type { TokenDto } from "../../../domain/types/tokens";
 import { getYieldActionArg } from "../../../domain/types/yields";
@@ -121,6 +122,12 @@ export const usePositionDetails = () => {
     () =>
       positionBalances.data
         .map((balanceData) => balanceData.rewardRate)
+        .filter(
+          (rewardRate) =>
+            !!getRewardRateBreakdown(rewardRate).find(
+              (item) => item.key === "campaign"
+            )
+        )
         .extractNullable(),
     [positionBalances.data]
   );
