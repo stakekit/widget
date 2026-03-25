@@ -2,6 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 import { type ActionDto, getActionInputToken } from "../../domain/types/action";
+import type { Yield } from "../../domain/types/yields";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useYieldApiFetchClient } from "../../providers/yield-api-client-provider";
@@ -10,7 +11,16 @@ import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportuni
 
 const PAGE_SIZE = 50;
 
-export const useActivityActions = () => {
+type ActivityActionItem = {
+  actionData: ActionDto;
+  yieldData: Yield;
+};
+
+type UseActivityActionsResult = ReturnType<typeof useInfiniteQuery> & {
+  allItems: ActivityActionItem[] | undefined;
+};
+
+export const useActivityActions = (): UseActivityActionsResult => {
   const { address, isLedgerLive, network } = useSKWallet();
   const queryClient = useSKQueryClient();
   const yieldApiFetchClient = useYieldApiFetchClient();
