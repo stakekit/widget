@@ -31,19 +31,15 @@ export const useMetaInfo = ({
   marketCap,
   tokenSymbol,
 }: {
-  [Key in keyof Pick<
-    ValidatorDto,
-    | "stakedBalance"
-    | "votingPower"
-    | "commission"
-    | "address"
-    | "website"
-    | "nominatorCount"
-    | "subnetName"
-    | "marketCap"
-    | "tokenSymbol"
-  >]: ValidatorDto[Key] | undefined;
-} & {
+  commission?: ValidatorDto["commission"];
+  stakedBalance?: ValidatorDto["tvl"];
+  votingPower?: ValidatorDto["votingPower"];
+  address?: ValidatorDto["address"];
+  website?: ValidatorDto["website"];
+  nominatorCount?: ValidatorDto["nominatorCount"];
+  subnetName?: ValidatorDto["subnetName"];
+  marketCap?: ValidatorDto["marketCap"];
+  tokenSymbol?: ValidatorDto["tokenSymbol"];
   stakedBalanceToken: TokenDto | undefined;
   rewardRate: number | undefined;
   rewardType: RewardTypes | undefined;
@@ -51,18 +47,16 @@ export const useMetaInfo = ({
   const { t } = useTranslation();
 
   return useMemo<{
-    [Key in keyof Pick<
-      ValidatorDto,
-      | "stakedBalance"
-      | "votingPower"
-      | "commission"
-      | "address"
-      | "website"
-      | "nominatorCount"
-      | "subnetName"
-      | "marketCap"
-      | "tokenSymbol"
-    >]: { title: string; val: ReactNode | string } | null;
+    stakedBalance: { title: string; val: ReactNode | string } | null;
+    votingPower: { title: string; val: ReactNode | string } | null;
+    commission: { title: string; val: ReactNode | string } | null;
+    address: { title: string; val: ReactNode | string } | null;
+    website: { title: string; val: ReactNode | string } | null;
+    nominatorCount: { title: string; val: ReactNode | string } | null;
+    subnetName: { title: string; val: ReactNode | string } | null;
+    marketCap: { title: string; val: ReactNode | string } | null;
+    tokenSymbol: { title: string; val: ReactNode | string } | null;
+    rewardRate: { title: string; val: ReactNode | string } | null;
   }>(
     () => ({
       rewardRate:

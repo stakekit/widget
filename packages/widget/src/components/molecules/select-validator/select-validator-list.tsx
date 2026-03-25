@@ -146,7 +146,7 @@ export const SelectValidatorList = ({
                   <Image
                     containerProps={{ hw: "9" }}
                     imageProps={{ borderRadius: "full" }}
-                    src={item.image}
+                    src={item.logoURI}
                     fallback={
                       <ImageFallback
                         name={item.name || item.address}
@@ -201,7 +201,7 @@ export const SelectValidatorList = ({
                       <Box>
                         <Text variant={{ size: "large" }}>
                           {getRewardRateFormatted({
-                            rewardRate: item.apr,
+                            rewardRate: item.rewardRate?.total,
                             rewardType: getYieldRewardType(selectedStake),
                           })}
                         </Text>
@@ -213,7 +213,7 @@ export const SelectValidatorList = ({
                 <ValidatorMeta
                   address={item.address}
                   commission={item.commission}
-                  stakedBalance={item.stakedBalance}
+                  stakedBalance={item.tvl}
                   votingPower={item.votingPower}
                   nominatorCount={item.nominatorCount}
                   subnetName={item.subnetName}

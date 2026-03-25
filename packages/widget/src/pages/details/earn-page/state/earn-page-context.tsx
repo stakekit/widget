@@ -408,7 +408,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           .map((validators) => {
             if (variant === "utila" || variant === "porto") {
               return [...validators].sort(
-                (a, b) => (b.apr ?? 0) - (a.apr ?? 0)
+                (a, b) =>
+                  (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
               );
             }
 

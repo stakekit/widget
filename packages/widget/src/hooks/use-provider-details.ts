@@ -21,7 +21,7 @@ type Res = Maybe<{
   rewardRate: number | undefined;
   rewardType: RewardTypes;
   address?: string;
-  stakedBalance?: ValidatorDto["stakedBalance"];
+  stakedBalance?: ValidatorDto["tvl"];
   votingPower?: ValidatorDto["votingPower"];
   commission?: ValidatorDto["commission"];
   website?: ValidatorDto["website"];
@@ -78,7 +78,10 @@ export const getProviderDetails = ({
     validatorAddress
       .chain<GetMaybeJust<Res>>((addr) =>
         List.find(
-          (v) => v.address === addr || v.providerId === addr,
+          (v) =>
+            v.address === addr ||
+            v.providerId === addr ||
+            v.provider?.id === addr,
           validatorsData ?? []
         ).map((validator) => {
           const { rewardRate, rewardType } = Maybe.fromRecord({
@@ -96,12 +99,12 @@ export const getProviderDetails = ({
               })
             )
             .orDefault({
-              rewardRate: validator.apr,
+              rewardRate: validator.rewardRate?.total,
               rewardType: getYieldRewardType(yieldDto),
             });
 
           return {
-            logo: validator.image,
+            logo: validator.logoURI,
             name: validator.name ?? validator.address,
             rewardRateFormatted: getRewardRateFormatted({
               rewardRate,
@@ -110,7 +113,7 @@ export const getProviderDetails = ({
             rewardRate,
             rewardType: getYieldRewardType(yieldDto),
             address: validator.address,
-            stakedBalance: validator.stakedBalance,
+            stakedBalance: validator.tvl,
             votingPower: validator.votingPower,
             commission: validator.commission,
             status: validator.status,

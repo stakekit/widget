@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  toValidatorDto,
-  type ValidatorDto,
-} from "../../domain/types/validators";
+import type { ValidatorDto } from "../../domain/types/validators";
 import type { ValidatorsConfig } from "../../domain/types/yields";
 import { filterValidators, type Yield } from "../../domain/types/yields";
 import { useYieldApiFetchClient } from "../../providers/yield-api-client-provider";
@@ -61,9 +58,9 @@ const getYieldValidatorsQueryFn = async ({
     )
   );
 
-  const validators = [firstPage, ...remainingPages]
-    .flatMap((page) => page.items ?? [])
-    .map(toValidatorDto);
+  const validators = [firstPage, ...remainingPages].flatMap(
+    (page) => page.items ?? []
+  );
 
   return network
     ? filterValidators({

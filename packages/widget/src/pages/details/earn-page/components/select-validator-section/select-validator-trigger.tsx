@@ -62,7 +62,7 @@ export const SelectValidatorTrigger = ({
                         <Image
                           containerProps={{ hw: "5" }}
                           imageProps={{ borderRadius: "full" }}
-                          src={sv.image}
+                          src={sv.logoURI}
                           fallback={
                             <Box marginRight="1">
                               <ImageFallback

@@ -13,6 +13,7 @@ import type {
   YieldBalanceDto,
   YieldRewardRateDto,
   YieldTransactionDto,
+  YieldValidatorDto,
 } from "../../src/providers/yield-api-client-provider/types";
 import type { components } from "../../src/types/yield-api-schema";
 
@@ -23,6 +24,7 @@ type LegacyTransactionDto = ReturnType<
 type LegacyYieldDto = ReturnType<
   typeof getYieldV2ControllerGetYieldByIdResponseMock
 >;
+type LegacyValidatorDto = NonNullable<LegacyYieldDto["validators"]>[number];
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 type YieldArgumentFieldName = components["schemas"]["ArgumentFieldDto"]["name"];
@@ -75,6 +77,34 @@ export const yieldApiYieldFixture = (
     rewardRate: yieldRewardRateFixture(),
     ...overrides,
   }) as YieldApiYieldDto;
+
+const mapLegacyValidatorToYieldValidator = (
+  validator: LegacyValidatorDto
+): YieldValidatorDto => ({
+  address: validator.address,
+  commission: validator.commission,
+  logoURI: validator.image,
+  minimumStake: validator.minimumStake,
+  name: validator.name,
+  nominatorCount: validator.nominatorCount,
+  preferred: validator.preferred,
+  pricePerShare: validator.pricePerShare,
+  providerId: validator.providerId,
+  remainingPossibleStake: validator.remainingPossibleStake,
+  remainingSlots: validator.remainingSlots,
+  rewardRate: {
+    total: validator.apr ?? apyFaker(),
+    rateType: "APR",
+    components: [],
+  },
+  status: validator.status,
+  subnetId: validator.subnetId,
+  subnetName: validator.subnetName,
+  tvl: validator.stakedBalance,
+  tokenSymbol: validator.tokenSymbol,
+  votingPower: validator.votingPower,
+  website: validator.website,
+});
 
 const mapYieldArgumentFields = (
   args?: Record<
@@ -162,7 +192,7 @@ export const yieldApiYieldFixtureFromLegacy = ({
         legacyYield.metadata.type === "liquid-staking"
           ? "staking"
           : legacyYield.metadata.type,
-      requiresValidatorSelection: legacyYield.validators.length > 0,
+      requiresValidatorSelection: (legacyYield.validators?.length ?? 0) > 0,
       rewardSchedule: legacyYield.metadata.rewardSchedule ?? "day",
       rewardClaiming: legacyYield.metadata.rewardClaiming ?? "auto",
       gasFeeToken: legacyYield.metadata.gasFeeToken ?? legacyYield.token,
@@ -198,7 +228,8 @@ export const yieldApiYieldFixtureFromLegacy = ({
       },
     },
     providerId: legacyYield.metadata.provider?.id ?? "unknown",
-    validators: legacyYield.validators,
+    validators:
+      legacyYield.validators?.map(mapLegacyValidatorToYieldValidator) ?? [],
     ...overrides,
   }) as YieldApiYieldDto;
 
@@ -246,11 +277,10 @@ export const yieldFixture = (overrides?: Partial<LegacyYieldDto>) =>
 
 export const yieldValidatorsFixture = (
   validators?: LegacyYieldDto["validators"]
-) =>
-  (validators ?? yieldFixture().validators).map((validator) => ({
-    ...validator,
-    apr: validator.apr ?? apyFaker(),
-  }));
+): YieldValidatorDto[] =>
+  (validators ?? yieldFixture().validators).map((validator) =>
+    mapLegacyValidatorToYieldValidator(validator)
+  );
 
 export const enterResponseFixture = (overrides?: Partial<LegacyActionDto>) => ({
   ...getActionControllerEnterResponseMock(),
