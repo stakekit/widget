@@ -8,6 +8,7 @@ import { transactionGetTransactionVerificationMessageForNetwork } from "../../..
 import { getValidStakeSessionTx } from "../../../domain";
 import type { TransactionVerificationMessageDto } from "../../../domain/types/transaction";
 import type { SKWallet } from "../../../domain/types/wallet";
+import { hasYieldExitSignatureVerification } from "../../../domain/types/yields";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useExitStakeStore } from "../../../providers/exit-stake-store";
@@ -138,10 +139,7 @@ const getMachine = (
                 amount: val.requestDto.arguments?.amount,
               });
 
-              if (
-                val.integrationData.__fallback__.args.exit?.args
-                  ?.signatureVerification?.required
-              ) {
+              if (hasYieldExitSignatureVerification(val.integrationData)) {
                 self.send({ type: "__GET_VERIFICATION_MESSAGE__", val });
               } else {
                 self.send({ type: "__SUBMIT__", val });

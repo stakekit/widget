@@ -6,8 +6,14 @@ import { SKAnchor } from "../components/atoms/anchor";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
 import type { ValidatorDto } from "../domain/types/validators";
 import {
-  getYieldMetadata,
+  getBaseYieldType,
+  getYieldCooldownPeriod,
+  getYieldLockupPeriod,
+  getYieldProviderDetails,
+  getYieldRewardTokens,
   getYieldRewardType,
+  getYieldWarmupPeriod,
+  getYieldWithdrawPeriod,
   hasYieldFeeConfigurationEnabled,
   isEthenaUsdeStaking,
   type Yield,
@@ -45,27 +51,26 @@ export const useYieldMetaInfo = ({
       typeof ifNotFound
     >(({ selectedStake: y, tokenDto }) => {
       const sv = validatorsFormatted.extract();
-      const metadata = getYieldMetadata(y);
-
       const haveFeeConfigurationEnabled = hasYieldFeeConfigurationEnabled(y);
-
       const stakeToken = tokenDto.symbol;
-      const rewardTokens =
-        metadata.rewardTokens
-          ?.filter((t) => !t.isPoints)
-          .map((t) => t.symbol)
-          .join(", ") ?? "";
-      const providerName =
-        sv ?? (metadata.provider ? metadata.provider.name : metadata.name);
-      const rewardSchedule = metadata.rewardSchedule;
-      const cooldownPeriodDays = metadata.cooldownPeriod?.days ?? 0;
-      const warmupPeriodDays = metadata.warmupPeriod?.days ?? 0;
-      const rewardClaiming = metadata.rewardClaiming;
+      const rewardTokens = getYieldRewardTokens(y)
+        .filter((t) => !t.isPoints)
+        .map((t) => t.symbol)
+        .join(", ");
+      const provider = getYieldProviderDetails(y);
+      const providerName = sv ?? (provider ? provider.name : y.metadata.name);
+      const rewardSchedule = y.mechanics.rewardSchedule;
+      const cooldownPeriodDays = getYieldCooldownPeriod(y)?.days ?? 0;
+      const warmupPeriodDays = getYieldWarmupPeriod(y)?.days ?? 0;
+      const rewardClaiming = y.mechanics.rewardClaiming;
+      const lockupPeriodDays = getYieldLockupPeriod(y)?.days;
+      const yieldType = getBaseYieldType(y);
+      const withdrawPeriodDays = getYieldWithdrawPeriod(y)?.days ?? 0;
 
       const isCompound = providerName.includes("Compound");
 
       if (
-        metadata.rewardSchedule === "campaign" &&
+        rewardSchedule === "campaign" &&
         stakeToken.toUpperCase() === "SUSD"
       ) {
         return {
@@ -105,7 +110,7 @@ export const useYieldMetaInfo = ({
 
       const def = {
         campaign:
-          metadata.rewardSchedule === "campaign" ? (
+          rewardSchedule === "campaign" ? (
             <Trans
               i18nKey="details.campaign"
               components={{
@@ -117,9 +122,9 @@ export const useYieldMetaInfo = ({
               }}
             />
           ) : null,
-        lockupPeriod: metadata.lockupPeriod?.days
+        lockupPeriod: lockupPeriodDays
           ? t("details.lockup_period", {
-              count: metadata.lockupPeriod?.days,
+              count: lockupPeriodDays,
             })
           : null,
         extra:
@@ -127,12 +132,12 @@ export const useYieldMetaInfo = ({
             ? t("details.reward_type_varialbe", {
                 symbol: capitalizeFirstLowerRest(y.token.symbol),
               })
-            : metadata.token.network === MiscNetworks.Tezos
+            : y.token.network === MiscNetworks.Tezos
               ? t("details.extra_tezos")
               : undefined,
       };
 
-      switch (metadata.type) {
+      switch (yieldType) {
         case "staking": {
           return {
             description: null,
@@ -249,12 +254,12 @@ export const useYieldMetaInfo = ({
                   }),
             withdrawnTime: y.status.exit
               ? cooldownPeriodDays > 0
-                ? (metadata.withdrawPeriod?.days ?? 0) > 0
+                ? withdrawPeriodDays > 0
                   ? t("details.liquid_stake.unstake_time_days_with_claim", {
                       unstakeTime: t("details.liquid_stake.unstake_time", {
                         count: cooldownPeriodDays,
                       }),
-                      count: metadata.withdrawPeriod?.days,
+                      count: withdrawPeriodDays,
                     })
                   : t("details.liquid_stake.unstake_time", {
                       count: cooldownPeriodDays,

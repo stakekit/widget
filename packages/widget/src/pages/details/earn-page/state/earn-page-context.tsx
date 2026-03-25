@@ -28,7 +28,6 @@ import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
   type ExtendedYieldType,
   getExtendedYieldType,
-  getYieldRewardRate,
   getYieldRewardTokens,
   getYieldTypeLabels,
   getYieldTypesSortRank,
@@ -244,7 +243,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     () =>
       Maybe.of(multiYields)
         .map((val) =>
-          [...val].sort((a, b) => getYieldRewardRate(b) - getYieldRewardRate(a))
+          [...val].sort((a, b) => b.rewardRate.total - a.rewardRate.total)
         )
         .map((val) => val.filter(isNonZeroRewardRateYield))
         .chain((yieldDtos) =>

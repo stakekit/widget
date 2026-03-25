@@ -3,10 +3,8 @@ import { useMemo } from "react";
 import type { RewardTypes } from "../domain/types/reward-rate";
 import type { ValidatorDto } from "../domain/types/validators";
 import {
-  getYieldMetadata,
   getYieldProviderDetails,
   getYieldProviderYieldIds,
-  getYieldRewardRate,
   getYieldRewardType,
   isYieldWithProviderOptions,
   type Yield,
@@ -45,9 +43,8 @@ export const getProviderDetails = ({
   validatorsData?: ValidatorDto[];
 }): Res => {
   const def = integrationData.chain((val) => {
-    const rewardRate = getYieldRewardRate(val);
+    const rewardRate = val.rewardRate.total;
     const rewardType = getYieldRewardType(val);
-    const metadata = getYieldMetadata(val);
     const provider = getYieldProviderDetails(val);
 
     const rewardRateFormatted = getRewardRateFormatted({
@@ -67,8 +64,8 @@ export const getProviderDetails = ({
       }))
       .altLazy(() =>
         Maybe.of({
-          logo: metadata.logoURI,
-          name: metadata.name,
+          logo: val.metadata.logoURI,
+          name: val.metadata.name,
           rewardRateFormatted,
           rewardRate,
           rewardType,
@@ -91,7 +88,7 @@ export const getProviderDetails = ({
             .chain(({ selectedProviderYieldId }) =>
               yields.chain(List.find((v) => v.id === selectedProviderYieldId))
             )
-            .map((v) => getYieldRewardRate(v) + getYieldRewardRate(v))
+            .map((v) => v.rewardRate.total + v.rewardRate.total)
             .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
               (res) => ({
                 rewardRate: res,

@@ -4,7 +4,7 @@ import { Box } from "../../components/atoms/box";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Text } from "../../components/atoms/typography/text";
 import type { YieldBalanceDto } from "../../domain/types/positions";
-import { getYieldMetadata, type Yield } from "../../domain/types/yields";
+import { getBaseYieldType, type Yield } from "../../domain/types/yields";
 import { defaultFormattedNumber } from "../../utils";
 
 export const PositionBalances = ({
@@ -16,7 +16,7 @@ export const PositionBalances = ({
 }) => {
   const { t } = useTranslation();
 
-  const yieldType = getYieldMetadata(integrationData).type;
+  const yieldType = getBaseYieldType(integrationData);
 
   const balanceTypeContext =
     yieldType === "vault" || yieldType === "lending"

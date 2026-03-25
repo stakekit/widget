@@ -4,7 +4,6 @@ import { config } from "../../config";
 import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
 import type { Yield } from "../../domain/types/yields";
 import { useBaseToken } from "../use-base-token";
-import { useGasFeeToken } from "../use-gas-fee-token";
 import { usePrices } from "./use-prices";
 
 /**
@@ -18,17 +17,20 @@ export const useTokensPrices = ({
   yieldDto: Maybe<Yield>;
 }) => {
   const baseToken = useBaseToken(yieldDto);
-  const gasFeeToken = useGasFeeToken(yieldDto);
 
   const priceRequestDto = useMemo(
     () =>
-      Maybe.fromRecord({ baseToken, gasFeeToken, token })
+      Maybe.fromRecord({ baseToken, yieldDto, token })
         .map((val) => ({
           currency: config.currency,
-          tokenList: [val.token, val.baseToken, val.gasFeeToken],
+          tokenList: [
+            val.token,
+            val.baseToken,
+            val.yieldDto.mechanics.gasFeeToken,
+          ],
         }))
         .extractNullable(),
-    [baseToken, gasFeeToken, token]
+    [baseToken, yieldDto, token]
   );
 
   return usePrices(priceRequestDto);

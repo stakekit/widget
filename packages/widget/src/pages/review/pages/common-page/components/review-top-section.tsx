@@ -11,13 +11,12 @@ import type {
   TokenDto,
   YieldTokenDto,
 } from "../../../../../domain/types/tokens";
-import type { YieldMetadata } from "../../../../../domain/types/yields";
 import { headingStyles } from "../../style.css";
 
 type Props = {
   title: string;
   token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<YieldMetadata>;
+  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
   info: ReactNode;
   rewardTokenDetailsProps?: Maybe<ComponentProps<typeof RewardTokenDetails>>;
 };

@@ -4,7 +4,7 @@ import { Image } from "../../../../../components/atoms/image";
 import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import {
-  getYieldMetadata,
+  getBaseYieldType,
   getYieldProviderDetails,
   isYieldActionArgRequired,
 } from "../../../../../domain/types/yields";
@@ -19,7 +19,7 @@ export const StakedVia = () => {
     .filter(
       (val) =>
         !!(
-          getYieldMetadata(val).type === "staking" &&
+          getBaseYieldType(val) === "staking" &&
           !isYieldActionArgRequired(val, "enter", "validatorAddress") &&
           !isYieldActionArgRequired(val, "enter", "validatorAddresses") &&
           getYieldProviderDetails(val)

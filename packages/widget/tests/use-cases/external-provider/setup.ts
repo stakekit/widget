@@ -1,6 +1,11 @@
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
-import { yieldFixture, yieldValidatorsFixture } from "../../fixtures";
+import {
+  yieldApiYieldFixtureFromLegacy,
+  yieldFixture,
+  yieldValidatorsFixture,
+} from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 
 type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
@@ -114,14 +119,27 @@ export const setup = () => {
     )
     .unsafeCoerce();
 
+  const etherNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: etherNativeStaking,
+  });
+  const avalancheAvaxNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avalancheAvaxNativeStaking,
+  });
+  const solanaNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: solanaNativeStaking,
+  });
+  const tonNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: tonNativeStaking,
+  });
+
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
       return HttpResponse.json([
-        etherNativeStaking.token.network,
-        avalancheAvaxNativeStaking.token.network,
-        solanaNativeStaking.token.network,
-        tonNativeStaking.token.network,
+        { id: etherNativeStaking.token.network },
+        { id: avalancheAvaxNativeStaking.token.network },
+        { id: solanaNativeStaking.token.network },
+        { id: tonNativeStaking.token.network },
       ]);
     }),
 
@@ -165,25 +183,60 @@ export const setup = () => {
       ]);
     }),
 
-    http.get(`*/v1/yields/${etherNativeStaking.id}`, async () => {
+    http.get(
+      legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(etherNativeStaking);
+      }
+    ),
+    http.get(yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`), async () => {
       await delay();
 
-      return HttpResponse.json(etherNativeStaking);
+      return HttpResponse.json(etherNativeStakingYieldApi);
     }),
-    http.get(`*/v1/yields/${avalancheAvaxNativeStaking.id}`, async () => {
-      await delay();
+    http.get(
+      legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+      async () => {
+        await delay();
 
-      return HttpResponse.json(avalancheAvaxNativeStaking);
-    }),
-    http.get(`*/v1/yields/${solanaNativeStaking.id}`, async () => {
-      await delay();
+        return HttpResponse.json(avalancheAvaxNativeStaking);
+      }
+    ),
+    http.get(
+      yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+      async () => {
+        await delay();
 
-      return HttpResponse.json(solanaNativeStaking);
-    }),
-    http.get(`*/v1/yields/${tonNativeStaking.id}`, async () => {
+        return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
+      }
+    ),
+    http.get(
+      legacyApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(solanaNativeStaking);
+      }
+    ),
+    http.get(
+      yieldApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(solanaNativeStakingYieldApi);
+      }
+    ),
+    http.get(legacyApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
       await delay();
 
       return HttpResponse.json(tonNativeStaking);
+    }),
+    http.get(yieldApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
+      await delay();
+
+      return HttpResponse.json(tonNativeStakingYieldApi);
     }),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
       await delay();

@@ -1,5 +1,6 @@
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
@@ -13,7 +14,6 @@ import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
-  type YieldMetadata,
 } from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
@@ -26,7 +26,7 @@ import {
 
 type Props = {
   token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<YieldMetadata>;
+  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;

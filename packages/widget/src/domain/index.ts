@@ -12,7 +12,7 @@ import {
   isPendingActionValidatorAddressRequired,
 } from "./types/pending-action";
 import type { TokenDto, TokenString } from "./types/tokens";
-import { getYieldGasFeeToken, type Yield } from "./types/yields";
+import type { Yield } from "./types/yields";
 
 export { getTokenPriceInUSD } from "./types/price";
 
@@ -34,7 +34,7 @@ export const stakeTokenSameAsGasToken = ({
 }: {
   stakeToken: TokenDto;
   yieldDto: Yield;
-}) => equalTokens(stakeToken, getGasFeeToken(yieldDto));
+}) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
 
 export const getMaxAmount = ({
   availableAmount,
@@ -55,8 +55,6 @@ export const getMaxAmount = ({
 };
 
 export const getBaseToken = (yieldDto: Yield) => yieldDto.token;
-export const getGasFeeToken = (yieldDto: Yield) =>
-  getYieldGasFeeToken(yieldDto);
 
 /**
  *

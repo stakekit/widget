@@ -5,38 +5,25 @@ export type YieldValidatorDto = components["schemas"]["ValidatorDto"];
 export type ValidatorDto = LegacyValidatorDto;
 
 export const toValidatorDto = (
-  validatorDto: YieldValidatorDto | ValidatorDto
+  validatorDto: YieldValidatorDto
 ): ValidatorDto => {
-  const legacyValidator = validatorDto as ValidatorDto;
-  const rewardRate =
-    "rewardRate" in validatorDto ? validatorDto.rewardRate : undefined;
-  const providerId =
-    "provider" in validatorDto
-      ? (validatorDto.provider?.id ?? validatorDto.providerId)
-      : validatorDto.providerId;
-  const image =
-    "logoURI" in validatorDto ? validatorDto.logoURI : legacyValidator.image;
-  const stakedBalance =
-    "tvl" in validatorDto ? validatorDto.tvl : legacyValidator.stakedBalance;
-
   return {
     address: validatorDto.address,
-    apr: "apr" in validatorDto ? validatorDto.apr : rewardRate?.total,
+    apr: validatorDto.rewardRate?.total,
     commission: validatorDto.commission,
-    image,
+    image: validatorDto.logoURI,
     minimumStake: validatorDto.minimumStake,
     name: validatorDto.name,
     nominatorCount: validatorDto.nominatorCount,
     preferred: validatorDto.preferred,
     pricePerShare: validatorDto.pricePerShare,
-    providerId,
+    providerId: validatorDto.provider?.id,
     remainingPossibleStake: validatorDto.remainingPossibleStake,
     remainingSlots: validatorDto.remainingSlots,
-    stakedBalance,
+    stakedBalance: validatorDto.tvl,
     status: validatorDto.status as ValidatorDto["status"],
     subnetId: validatorDto.subnetId,
-    subnetName:
-      "subnetName" in validatorDto ? validatorDto.subnetName : undefined,
+    subnetName: validatorDto.subnetName,
     tokenSymbol: validatorDto.tokenSymbol,
     votingPower: validatorDto.votingPower,
     website: validatorDto.website,

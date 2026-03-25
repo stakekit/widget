@@ -6,7 +6,7 @@ import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { ListItem } from "../../../components/atoms/list/list-item";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useActionListItem } from "../../../pages/details/activity-page/hooks/use-action-list-item";
 import type { ActionYieldDto } from "../../../pages/details/activity-page/types";
 import {
@@ -64,7 +64,14 @@ export const ActionListItem = ({
                   justifyContent="flex-start"
                   alignItems="center"
                 >
-                  <TokenIcon metadata={getYieldMetadata(d)} token={d.token} />
+                  <TokenIcon
+                    metadata={{
+                      logoURI: d.metadata.logoURI,
+                      name: d.metadata.name,
+                      provider: getYieldProviderDetails(d) ?? undefined,
+                    }}
+                    token={d.token}
+                  />
                   <Box
                     display="flex"
                     flexDirection="column"

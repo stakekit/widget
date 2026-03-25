@@ -9,7 +9,7 @@ import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import {
-  getYieldMetadata,
+  getBaseYieldType,
   getYieldProviderDetails,
 } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
@@ -92,7 +92,7 @@ export const useUnstakeActionReview = () => {
   const formattedAmount = useMemo(() => formatNumber(amount), [amount]);
 
   const title: Maybe<string> = integrationData.map((d) => {
-    switch (getYieldMetadata(d).type) {
+    switch (getBaseYieldType(d)) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake") as string;

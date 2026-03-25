@@ -14,6 +14,7 @@ import type {
   YieldRewardRateDto,
   YieldTransactionDto,
 } from "../../src/providers/yield-api-client-provider/types";
+import type { components } from "../../src/types/yield-api-schema";
 
 type LegacyActionDto = ReturnType<typeof getActionControllerEnterResponseMock>;
 type LegacyTransactionDto = ReturnType<
@@ -24,6 +25,38 @@ type LegacyYieldDto = ReturnType<
 >;
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
+type YieldArgumentFieldName = components["schemas"]["ArgumentFieldDto"]["name"];
+type YieldArgumentFieldType = components["schemas"]["ArgumentFieldDto"]["type"];
+
+const yieldArgumentFieldNames = new Set<YieldArgumentFieldName>([
+  "amount",
+  "amounts",
+  "validatorAddress",
+  "validatorAddresses",
+  "receiverAddress",
+  "providerId",
+  "duration",
+  "inputToken",
+  "inputTokenNetwork",
+  "outputToken",
+  "outputTokenNetwork",
+  "subnetId",
+  "tronResource",
+  "feeConfigurationId",
+  "cosmosPubKey",
+  "tezosPubKey",
+  "cAddressBech",
+  "pAddressBech",
+  "executionMode",
+  "ledgerWalletApiCompatible",
+  "useMaxAmount",
+  "useInstantExecution",
+  "rangeMin",
+  "rangeMax",
+  "percentage",
+  "tokenId",
+  "skipPrechecks",
+]);
 
 export const yieldRewardRateFixture = (
   overrides?: Partial<YieldRewardRateDto>
@@ -40,6 +73,132 @@ export const yieldApiYieldFixture = (
   ({
     ...getYieldV2ControllerGetYieldByIdResponseMock(),
     rewardRate: yieldRewardRateFixture(),
+    ...overrides,
+  }) as YieldApiYieldDto;
+
+const mapYieldArgumentFields = (
+  args?: Record<
+    string,
+    {
+      required?: boolean;
+      minimum?: number | null;
+      maximum?: number | null;
+      options?: string[];
+    }
+  >
+) =>
+  Object.entries(args ?? {}).flatMap(([name, config]) => {
+    if (!yieldArgumentFieldNames.has(name as YieldArgumentFieldName)) {
+      return [];
+    }
+
+    const type: YieldArgumentFieldType = (() => {
+      if (name === "validatorAddress" || name === "validatorAddresses") {
+        return "address";
+      }
+
+      if (config?.options?.length) {
+        return "enum";
+      }
+
+      return "string";
+    })();
+
+    return [
+      {
+        name: name as YieldArgumentFieldName,
+        type,
+        label: name,
+        required: config?.required,
+        minimum:
+          config?.minimum === null || config?.minimum === undefined
+            ? undefined
+            : String(config.minimum),
+        maximum:
+          config?.maximum === null || config?.maximum === undefined
+            ? undefined
+            : String(config.maximum),
+        options: config?.options,
+        isArray: name === "validatorAddresses" ? true : undefined,
+      },
+    ];
+  });
+
+export const yieldApiYieldFixtureFromLegacy = ({
+  legacyYield,
+  overrides,
+}: {
+  legacyYield: LegacyYieldDto;
+  overrides?: Partial<YieldApiYieldDto>;
+}): YieldApiYieldDto =>
+  ({
+    id: legacyYield.id,
+    network: legacyYield.token.network,
+    inputTokens: legacyYield.tokens?.length
+      ? legacyYield.tokens
+      : [legacyYield.token],
+    outputToken: legacyYield.metadata.rewardTokens?.[0] ?? legacyYield.token,
+    token: legacyYield.token,
+    tokens: legacyYield.tokens,
+    rewardRate: yieldRewardRateFixture({
+      total:
+        typeof legacyYield.rewardRate === "number"
+          ? legacyYield.rewardRate
+          : apyFaker(),
+      rateType: legacyYield.rewardType?.toUpperCase() === "APR" ? "APR" : "APY",
+    }),
+    status: legacyYield.status,
+    metadata: {
+      name: legacyYield.metadata.name,
+      description: legacyYield.metadata.description ?? "",
+      documentation: legacyYield.metadata.documentation ?? "",
+      logoURI: legacyYield.metadata.logoURI ?? "",
+      underMaintenance: false,
+      deprecated: false,
+      supportedStandards: [],
+    },
+    mechanics: {
+      type:
+        legacyYield.metadata.type === "liquid-staking"
+          ? "staking"
+          : legacyYield.metadata.type,
+      requiresValidatorSelection: legacyYield.validators.length > 0,
+      rewardSchedule: legacyYield.metadata.rewardSchedule ?? "day",
+      rewardClaiming: legacyYield.metadata.rewardClaiming ?? "auto",
+      gasFeeToken: legacyYield.metadata.gasFeeToken ?? legacyYield.token,
+      fee: legacyYield.metadata.fee,
+      supportsLedgerWalletApi: legacyYield.metadata.supportsLedgerWalletApi,
+      arguments: {
+        enter: {
+          fields: mapYieldArgumentFields(
+            legacyYield.args.enter?.args as Record<
+              string,
+              {
+                required?: boolean;
+                minimum?: number | null;
+                maximum?: number | null;
+                options?: string[];
+              }
+            >
+          ),
+        },
+        exit: {
+          fields: mapYieldArgumentFields(
+            legacyYield.args.exit?.args as Record<
+              string,
+              {
+                required?: boolean;
+                minimum?: number | null;
+                maximum?: number | null;
+                options?: string[];
+              }
+            >
+          ),
+        },
+      },
+    },
+    providerId: legacyYield.metadata.provider?.id ?? "unknown",
+    validators: legacyYield.validators,
     ...overrides,
   }) as YieldApiYieldDto;
 

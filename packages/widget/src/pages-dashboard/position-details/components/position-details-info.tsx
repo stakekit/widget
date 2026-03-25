@@ -9,7 +9,7 @@ import {
 } from "../../../components/atoms/collapsible";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { PositionBalances } from "../../../pages/position-details/components/position-balances";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
 import { ProviderDetails } from "./provider-details";
@@ -58,7 +58,7 @@ export const PositionDetailsInfo = () => {
                   {...p}
                   key={p.address ?? idx}
                   stakeType={t(
-                    `position_details.stake_type.${getYieldMetadata(val.integrationData).type}`
+                    `position_details.stake_type.${getBaseYieldType(val.integrationData)}`
                   )}
                   integrationData={val.integrationData}
                 />

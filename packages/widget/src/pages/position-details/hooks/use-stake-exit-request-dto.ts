@@ -4,7 +4,6 @@ import type { YieldCreateActionDto } from "../../../domain/types/action";
 import type { AddressesDto } from "../../../domain/types/addresses";
 import {
   getYieldActionArg,
-  getYieldGasFeeToken,
   isYieldIntegrationAggregator,
   type Yield,
 } from "../../../domain/types/yields";
@@ -96,7 +95,7 @@ export const useStakeExitRequestDto = () => {
           .orDefault({});
 
         return {
-          gasFeeToken: getYieldGasFeeToken(val.integrationData),
+          gasFeeToken: val.integrationData.mechanics.gasFeeToken,
           addresses: {
             address: val.address,
             additionalAddresses: additionalAddresses ?? undefined,

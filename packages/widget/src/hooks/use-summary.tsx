@@ -8,7 +8,7 @@ import type { StakeKitErrorDto } from "../domain/types/errors";
 import { getPositionTotalAmount } from "../domain/types/positions";
 import type { Prices } from "../domain/types/price";
 import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
-import { getYieldRewardRate, type Yield } from "../domain/types/yields";
+import type { Yield } from "../domain/types/yields";
 import { usePositions } from "../pages/details/positions-page/hooks/use-positions";
 import { useMultiYields } from "./api/use-multi-yields";
 import { usePrices } from "./api/use-prices";
@@ -246,7 +246,7 @@ export const SummaryProvider = ({
 
         const usdAmount = positionTotalAmount.amountUsd;
 
-        const rewardRate = getYieldRewardRate(yieldDto);
+        const rewardRate = yieldDto.rewardRate.total;
 
         if (rewardRate > 0 && usdAmount.gt(0)) {
           return {

@@ -10,7 +10,6 @@ import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
 import type { TokenDto, YieldTokenDto } from "../../../../domain/types/tokens";
-import type { YieldMetadata } from "../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { MetaInfo } from "../../../components/meta-info";
@@ -27,7 +26,7 @@ type ReviewPageProps = {
   fee: string;
   title: string;
   token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<YieldMetadata>;
+  metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;

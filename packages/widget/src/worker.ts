@@ -1,7 +1,13 @@
 import { HttpResponse, http } from "msw";
 import { setupWorker } from "msw/browser";
+import { config } from "./config";
 
 const yieldId = "ethereum-matic-native-staking";
+const getApiRoute = (baseUrl: string, path: string) =>
+  new URL(path.startsWith("/") ? path : `/${path}`, baseUrl).toString();
+const legacyApiRoute = (path: string) => getApiRoute(config.env.apiUrl, path);
+const yieldApiRoute = (path: string) =>
+  getApiRoute(config.env.yieldsApiUrl, path);
 
 const maticToken = {
   address: "0x0000000000000000000000000000000000001010",
@@ -216,15 +222,12 @@ const yieldApiYieldDto = {
 };
 
 export const worker = setupWorker(
-  http.get("*/v1/yields/ethereum-matic-native-staking", async ({ request }) => {
-    const url = new URL(request.url);
-
-    return HttpResponse.json(
-      url.searchParams.has("ledgerWalletAPICompatible")
-        ? legacyYieldDto
-        : yieldApiYieldDto
-    );
-  }),
+  http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () =>
+    HttpResponse.json(legacyYieldDto)
+  ),
+  http.get(yieldApiRoute(`/v1/yields/${yieldId}`), async () =>
+    HttpResponse.json(yieldApiYieldDto)
+  ),
   http.post("*/v1/yields/balances", async () => {
     return HttpResponse.json({
       items: [

@@ -5,7 +5,6 @@ import type { AddressesDto } from "../../../../domain/types/addresses";
 import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
   getYieldActionArg,
-  getYieldGasFeeToken,
   isYieldIntegrationAggregator,
   type Yield,
 } from "../../../../domain/types/yields";
@@ -81,7 +80,7 @@ export const useStakeEnterRequestDto = () => {
         return {
           selectedValidators,
           selectedStake: selectedStake,
-          gasFeeToken: getYieldGasFeeToken(selectedStake),
+          gasFeeToken: selectedStake.mechanics.gasFeeToken,
           addresses: {
             address,
             additionalAddresses: additionalAddresses ?? undefined,

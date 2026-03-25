@@ -1,6 +1,7 @@
 import { animate, useMotionValue, useTransform } from "motion/react";
 import { useEffect } from "react";
 import { config } from "../../../../../config";
+import { APToPercentage } from "../../../../../utils";
 import type { EarnPageContextType } from "../../state/types";
 
 export const useAnimateYieldPercent = (
@@ -8,11 +9,14 @@ export const useAnimateYieldPercent = (
 ) => {
   const perReward = estimatedRewards
     .map((val) => {
-      const parsedNum = Number.parseFloat(val.percentage);
+      if (
+        val.rewardType === "variable" ||
+        !val.rewardRateAverage.isPositive()
+      ) {
+        return "- %";
+      }
 
-      if (Number.isNaN(parsedNum)) return val.percentage;
-
-      return parsedNum;
+      return val.rewardRateAverage.toNumber();
     })
     .extractNullable();
 
@@ -33,7 +37,7 @@ export const useAnimateYieldPercent = (
 
   const transformedMotionValue = useTransform(
     rewardPercMotionValue,
-    (val) => `${val.toFixed(2)}%`
+    (val) => `${APToPercentage(val)}%`
   );
 
   return typeof perReward === "string" || config.env.isTestMode

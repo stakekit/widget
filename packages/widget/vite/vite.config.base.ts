@@ -37,6 +37,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
       test: {
         browser: {
           enabled: true,
+          screenshotFailures: false,
           provider: playwright(),
           instances: [{ browser: "chromium" }],
           viewport: { width: 800, height: 900 },

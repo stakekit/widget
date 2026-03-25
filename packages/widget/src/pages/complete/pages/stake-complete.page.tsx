@@ -2,7 +2,7 @@ import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -28,7 +28,11 @@ export const StakeCompletePage = () => {
     [enterRequest.selectedToken]
   );
 
-  const metadata = selectedStake.map(getYieldMetadata);
+  const metadata = selectedStake.map((yieldDto) => ({
+    logoURI: yieldDto.metadata.logoURI,
+    name: yieldDto.metadata.name,
+    provider: getYieldProviderDetails(yieldDto) ?? undefined,
+  }));
 
   const network = selectedToken.mapOrDefault((y) => y.symbol, "");
 

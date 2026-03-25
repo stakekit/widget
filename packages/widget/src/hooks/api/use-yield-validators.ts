@@ -25,7 +25,7 @@ const getYieldValidatorsQueryKey = ({ yieldId }: Pick<Params, "yieldId">) => [
   yieldId,
 ];
 
-export const getYieldValidatorsQueryFn = async ({
+const getYieldValidatorsQueryFn = async ({
   yieldId,
   network,
   validatorsConfig,

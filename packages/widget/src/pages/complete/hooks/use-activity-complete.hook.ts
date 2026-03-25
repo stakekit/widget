@@ -6,7 +6,7 @@ import {
   getActionValidatorAddresses,
 } from "../../../domain/types/action";
 import type { TokenDto } from "../../../domain/types/tokens";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -50,7 +50,12 @@ export const useActivityComplete = () => {
   ) as Maybe<TokenDto>;
 
   const metadata = useMemo(
-    () => selectedYield.map(getYieldMetadata),
+    () =>
+      selectedYield.map((yieldDto) => ({
+        logoURI: yieldDto.metadata.logoURI,
+        name: yieldDto.metadata.name,
+        provider: getYieldProviderDetails(yieldDto) ?? undefined,
+      })),
     [selectedYield]
   );
 

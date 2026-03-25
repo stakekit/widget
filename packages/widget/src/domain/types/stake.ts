@@ -8,12 +8,7 @@ import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { TokenString } from "./tokens";
 import type { ValidatorDto } from "./validators";
-import {
-  getYieldActionArg,
-  getYieldGasFeeToken,
-  isBittensorStaking,
-  type Yield,
-} from "./yields";
+import { getYieldActionArg, isBittensorStaking, type Yield } from "./yields";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -159,7 +154,7 @@ export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
 const isYieldWithEnterMinBasedOnPosition = (yieldDto: Yield) =>
   Maybe.fromNullable(
     yieldsWithEnterMinBasedOnPosition.get(
-      getYieldGasFeeToken(yieldDto).network as Networks
+      yieldDto.mechanics.gasFeeToken.network as Networks
     )
   )
     .filter((set) => set.has(yieldDto.id))

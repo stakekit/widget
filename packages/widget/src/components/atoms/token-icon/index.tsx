@@ -14,7 +14,7 @@ export const TokenIcon = ({
   hideNetwork,
 }: {
   token: TokenDto | YieldTokenDto;
-  metadata?: YieldMetadata;
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];
   hideNetwork?: boolean;

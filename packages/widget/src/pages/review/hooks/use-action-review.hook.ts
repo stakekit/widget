@@ -10,7 +10,7 @@ import {
   TransactionStatus,
 } from "../../../domain/types/action";
 import type { TokenDto } from "../../../domain/types/tokens";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useActivityContext } from "../../../providers/activity-provider";
@@ -69,7 +69,7 @@ export const useActionReview = () => {
   );
 
   const unstakeTitle = useMemo(() => {
-    switch (getYieldMetadata(selectedYield).type) {
+    switch (getBaseYieldType(selectedYield)) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake") as string;

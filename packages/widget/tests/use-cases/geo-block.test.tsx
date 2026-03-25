@@ -1,12 +1,13 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { yieldApiRoute } from "../mocks/api-routes";
 import { worker } from "../mocks/worker";
 import { renderApp } from "../utils/test-utils";
 
 describe("Geo block", () => {
   it("Show geo block popup", async () => {
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         return HttpResponse.json(
           {
             code: 403,

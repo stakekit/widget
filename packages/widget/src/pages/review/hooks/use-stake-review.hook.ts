@@ -6,7 +6,10 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import {
+  getYieldCommission,
+  getYieldProviderDetails,
+} from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
@@ -63,8 +66,6 @@ export const useStakeReview = () => {
         .chainNullable((value) => value),
     [actionPreviewQuery.data]
   );
-
-  console.log({ stakeEnterTxGas });
 
   const gasCheckWarning = useGasWarningCheck({
     gasAmount: stakeEnterTxGas,
@@ -148,7 +149,11 @@ export const useStakeReview = () => {
     ),
   });
 
-  const metadata = selectedStake.map(getYieldMetadata);
+  const metadata = selectedStake.map((yieldDto) => ({
+    logoURI: yieldDto.metadata.logoURI,
+    name: yieldDto.metadata.name,
+    provider: getYieldProviderDetails(yieldDto) ?? undefined,
+  }));
 
   const navigate = useNavigate();
 
@@ -201,7 +206,7 @@ export const useStakeReview = () => {
   const commissionFee = useMemo(
     () =>
       selectedStake
-        .chainNullable((y) => getYieldMetadata(y).commission)
+        .chainNullable(getYieldCommission)
         .map((commission) =>
           commission.reduce<number>((acc, curr) => acc + curr.value, 0)
         )

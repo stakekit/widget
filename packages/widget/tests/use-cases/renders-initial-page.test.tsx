@@ -1,7 +1,8 @@
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { describe, expect, it } from "vitest";
-import { yieldFixture } from "../fixtures";
+import { yieldApiYieldFixtureFromLegacy, yieldFixture } from "../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { worker } from "../mocks/worker";
 import { renderApp } from "../utils/test-utils";
 
@@ -61,12 +62,19 @@ describe("Renders initial page", () => {
       )
       .unsafeCoerce();
 
+    const avalancheAvaxNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+      legacyYield: avalancheAvaxNativeStaking,
+    });
+    const etherNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+      legacyYield: etherNativeStaking,
+    });
+
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
         return HttpResponse.json([
-          etherNativeStaking.token.network,
-          avalancheAvaxNativeStaking.token.network,
+          { id: etherNativeStaking.token.network },
+          { id: avalancheAvaxNativeStaking.token.network },
         ]);
       }),
 
@@ -82,16 +90,38 @@ describe("Renders initial page", () => {
         ]);
       }),
 
-      http.get(`*/v1/yields/${etherNativeStaking.id}`, async () => {
-        await delay();
+      http.get(
+        legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+        async () => {
+          await delay();
 
-        return HttpResponse.json(etherNativeStaking);
-      }),
-      http.get(`*/v1/yields/${avalancheAvaxNativeStaking.id}`, async () => {
-        await delay();
+          return HttpResponse.json(etherNativeStaking);
+        }
+      ),
+      http.get(
+        yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+        async () => {
+          await delay();
 
-        return HttpResponse.json(avalancheAvaxNativeStaking);
-      })
+          return HttpResponse.json(etherNativeStakingYieldApi);
+        }
+      ),
+      http.get(
+        legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+        async () => {
+          await delay();
+
+          return HttpResponse.json(avalancheAvaxNativeStaking);
+        }
+      ),
+      http.get(
+        yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+        async () => {
+          await delay();
+
+          return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
+        }
+      )
     );
 
     const app = await renderApp();

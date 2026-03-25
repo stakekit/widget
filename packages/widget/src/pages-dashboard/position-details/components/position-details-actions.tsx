@@ -4,7 +4,7 @@ import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Spinner } from "../../../components/atoms/spinner";
 import { SelectValidator } from "../../../components/molecules/select-validator";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { AmountBlock } from "../../../pages/position-details/components/amount-block";
 import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
@@ -152,7 +152,7 @@ export const PositionDetailsActions = () => {
                   unstakeAmountError={unstakeAmountError}
                   onMaxClick={onMaxClick}
                   label={t(
-                    `position_details.unstake_label.${getYieldMetadata(v.integrationData).type}`
+                    `position_details.unstake_label.${getBaseYieldType(v.integrationData)}`
                   )}
                   formattedAmount={unstakeFormattedAmount}
                   balance={reducedStakedOrLiquidBalance}

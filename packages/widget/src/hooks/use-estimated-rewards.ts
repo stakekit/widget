@@ -54,6 +54,8 @@ export const useEstimatedRewards = ({
             .dividedBy(val.providersDetails.length),
         }))
         .map((val) => ({
+          rewardRateAverage: val.rewardRateAverage,
+          rewardType: getYieldRewardType(val.selectedStake),
           percentage: getRewardRateFormatted({
             rewardRate: val.rewardRateAverage.toNumber(),
             rewardType: getYieldRewardType(val.selectedStake),

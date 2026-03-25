@@ -13,7 +13,7 @@ import { ProviderIcon } from "../../../../../components/atoms/token-icon/provide
 import { Text } from "../../../../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { SelectOpportunityListItem } from "../../../../../components/molecules/select-opportunity-list-item";
-import { getYieldMetadata } from "../../../../../domain/types/yields";
+import { getYieldProviderDetails } from "../../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
@@ -85,7 +85,11 @@ export const SelectOpportunity = () => {
             >
               <ProviderIcon
                 token={data.ss.token}
-                metadata={getYieldMetadata(data.ss)}
+                metadata={{
+                  logoURI: data.ss.metadata.logoURI,
+                  name: data.ss.metadata.name,
+                  provider: getYieldProviderDetails(data.ss) ?? undefined,
+                }}
               />
               <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
             </Box>

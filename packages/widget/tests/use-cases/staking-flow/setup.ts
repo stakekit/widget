@@ -13,8 +13,10 @@ import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiYieldFixtureFromLegacy,
   yieldValidatorsFixture,
 } from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
@@ -124,7 +126,9 @@ export const setup = async () => {
     validators: [],
     isAvailable: true,
   };
-
+  const yieldApiYieldOp = yieldApiYieldFixtureFromLegacy({
+    legacyYield: yieldOp,
+  });
   const enterAction: ActionDto = {
     id: "18bdda99-346a-4694-af71-58dfea68d542",
     integrationId: "avalanche-avax-liquid-staking",
@@ -198,9 +202,9 @@ export const setup = async () => {
   };
 
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json(["avalanche-c"]);
+      return HttpResponse.json([{ id: "avalanche-c" }]);
     }),
 
     http.get("*/v1/tokens", async () => {
@@ -246,10 +250,20 @@ export const setup = async () => {
         },
       });
     }),
-    http.get("*/v1/yields/avalanche-avax-liquid-staking", async () => {
-      await delay();
-      return HttpResponse.json(yieldOp);
-    }),
+    http.get(
+      legacyApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
+      async () => {
+        await delay();
+        return HttpResponse.json(yieldOp);
+      }
+    ),
+    http.get(
+      yieldApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
+      async () => {
+        await delay();
+        return HttpResponse.json(yieldApiYieldOp);
+      }
+    ),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
       await delay();
 
@@ -320,8 +334,9 @@ export const setup = async () => {
               id: enterAction.transactions[0].id,
               status: "CREATED",
               type: "STAKE",
-              gasEstimate:
-                transactionConstruct.gasEstimate?.amount ?? undefined,
+              gasEstimate: transactionConstruct.gasEstimate
+                ? JSON.stringify(transactionConstruct.gasEstimate)
+                : undefined,
               stepIndex: 0,
             }),
           ],
@@ -378,10 +393,14 @@ export const setup = async () => {
   });
 
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const mergedYieldOp = {
+    ...yieldApiYieldOp,
+    __fallback__: yieldOp,
+  };
 
   return {
     customConnectors,
-    yieldOp,
+    yieldOp: mergedYieldOp,
     enterAction,
     transactionConstruct,
     account,

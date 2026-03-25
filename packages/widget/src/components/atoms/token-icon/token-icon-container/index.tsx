@@ -8,7 +8,7 @@ import { useVariantTokenUrls } from "./hooks/use-variant-token-urls";
 
 type TokenIconContainerProps = {
   token: TokenDto | YieldTokenDto;
-  metadata?: YieldMetadata;
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   hideNetwork?: boolean;
   children: (props: TokenIconContainerReturnType) => ReactElement;
 };

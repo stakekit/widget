@@ -1,7 +1,7 @@
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { getYieldMetadata } from "../../../domain/types/yields";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
@@ -43,7 +43,11 @@ export const UnstakeCompletePage = () => {
     [exitRequest.unstakeToken]
   );
 
-  const metadata = integrationData.map(getYieldMetadata);
+  const metadata = integrationData.map((yieldDto) => ({
+    logoURI: yieldDto.metadata.logoURI,
+    name: yieldDto.metadata.name,
+    provider: getYieldProviderDetails(yieldDto) ?? undefined,
+  }));
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () => formatNumber(exitRequest.requestDto.arguments?.amount ?? 0),

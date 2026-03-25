@@ -10,7 +10,7 @@ import { useSettings } from "../../../../../providers/settings";
 
 export const useVariantTokenUrls = (
   token: TokenDto | YieldTokenDto,
-  metadata?: YieldMetadata
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
 ): {
   mainUrl: string | undefined;
   fallbackUrl: string | undefined;

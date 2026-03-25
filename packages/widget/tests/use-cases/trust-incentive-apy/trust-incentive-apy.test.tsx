@@ -38,7 +38,7 @@ describe("Trust incentive APY", () => {
       .element(
         app
           .getByTestId("reward-rate-breakdown__campaign")
-          .getByText("Up to 0.20%")
+          .getByText("Up to 0.2%")
       )
       .toBeInTheDocument();
 
@@ -53,7 +53,7 @@ describe("Trust incentive APY", () => {
       .element(selectContainer.getByText("4.55%"))
       .toBeInTheDocument();
     await expect
-      .element(selectContainer.getByText("Up to 0.20%"))
+      .element(selectContainer.getByText("Up to 4.55%"))
       .toBeInTheDocument();
 
     app.unmount();

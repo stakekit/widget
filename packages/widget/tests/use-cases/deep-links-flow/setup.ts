@@ -7,9 +7,11 @@ import {
   pendingActionFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiYieldFixtureFromLegacy,
   yieldFixture,
   yieldValidatorsFixture,
 } from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 import { setUrl as _setUrl } from "./utils";
@@ -108,6 +110,13 @@ export const setup = async (opts?: {
     )
     .unsafeCoerce();
 
+  const avaxNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avaxNativeStaking,
+  });
+  const avaxLiquidStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avaxLiquidStaking,
+  });
+
   const avaxLiquidStakingBalances = [
     {
       groupId: "b4684f63-fe54-540d-b0ae-06a2c2ecdb9e",
@@ -180,9 +189,9 @@ export const setup = async (opts?: {
         { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json([token.network, ether.network]);
+      return HttpResponse.json([{ id: token.network }, { id: ether.network }]);
     }),
 
     http.post("*/v1/tokens/balances/scan", async () => {
@@ -210,13 +219,21 @@ export const setup = async (opts?: {
         },
       });
     }),
-    http.get(`*/v1/yields/${avaxNativeStaking.id}`, async () => {
+    http.get(legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
       await delay();
       return HttpResponse.json(avaxNativeStaking);
     }),
-    http.get(`*/v1/yields/${avaxLiquidStaking.id}`, async () => {
+    http.get(yieldApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
+      await delay();
+      return HttpResponse.json(avaxNativeStakingYieldApi);
+    }),
+    http.get(legacyApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
       await delay();
       return HttpResponse.json(avaxLiquidStaking);
+    }),
+    http.get(yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
+      await delay();
+      return HttpResponse.json(avaxLiquidStakingYieldApi);
     }),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
       await delay();

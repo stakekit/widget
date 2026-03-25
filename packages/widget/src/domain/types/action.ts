@@ -1,8 +1,7 @@
 import type BigNumber from "bignumber.js";
 import type { components } from "../../types/yield-api-schema";
 import type { TokenDto } from "./tokens";
-import type { Yield } from "./yields";
-import { getYieldGasFeeToken } from "./yields";
+import { getYieldMetadataTokens, type Yield } from "./yields";
 export type ActionDto = components["schemas"]["ActionDto"];
 export type TransactionDto = components["schemas"]["TransactionDto"];
 export type TransactionType = TransactionDto["type"];
@@ -109,7 +108,7 @@ export const getActionInputToken = ({
     [
       yieldDto.token,
       ...(yieldDto.tokens ?? []),
-      ...(yieldDto.__fallback__.metadata.tokens ?? []),
+      ...getYieldMetadataTokens(yieldDto),
     ].find((token) => {
       const address = token.address ? toLower(token.address) : null;
 
@@ -181,7 +180,7 @@ export const getTransactionGasEstimate = (
 export const getActionGasFeeToken = (
   yieldDto: Yield,
   gasFeeToken?: TokenDto
-): TokenDto => gasFeeToken ?? getYieldGasFeeToken(yieldDto);
+): TokenDto => gasFeeToken ?? yieldDto.mechanics.gasFeeToken;
 
 export type ActionDtoWithGasEstimate = {
   gasEstimate: {

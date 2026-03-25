@@ -4,7 +4,7 @@ import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
 import type { RewardTypes } from "../domain/types/reward-rate";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
-import { getYieldGasFeeToken, type Yield } from "../domain/types/yields";
+import type { Yield } from "../domain/types/yields";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
 
 export const formatCountryCode = ({
@@ -61,14 +61,14 @@ export const getGasFeeInUSD = ({
       gasFeeInUSD: getTokenPriceInUSD({
         amount: val.gas.toString(),
         prices: prices.orDefault(new Prices(new Map())),
-        token: getYieldGasFeeToken(val.yieldDto),
+        token: val.yieldDto.mechanics.gasFeeToken,
         pricePerShare: null,
         baseToken: null,
       }),
     }))
     .mapOrDefault(
       (val) =>
-        `${formatNumber(val.gas, 10)} ${getYieldGasFeeToken(val.yieldDto).symbol} ${
+        `${formatNumber(val.gas, 10)} ${val.yieldDto.mechanics.gasFeeToken.symbol} ${
           val.gasFeeInUSD.isGreaterThan(0)
             ? ` ($${defaultFormattedNumber(val.gasFeeInUSD)})`
             : ""

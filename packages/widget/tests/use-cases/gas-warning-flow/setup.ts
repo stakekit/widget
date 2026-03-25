@@ -8,9 +8,11 @@ import {
   transactionConstructFixture,
   yieldApiActionFixture,
   yieldApiTransactionFixture,
+  yieldApiYieldFixtureFromLegacy,
   yieldFixture,
   yieldValidatorsFixture,
 } from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
@@ -110,6 +112,14 @@ export const setup = () => {
     }))
     .unsafeCoerce();
 
+  const yieldWithSameGasAndStakeTokenYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: yieldWithSameGasAndStakeToken.yieldDto,
+  });
+  const yieldWithDifferentGasAndStakeTokenYieldApi =
+    yieldApiYieldFixtureFromLegacy({
+      legacyYield: yieldWithDifferentGasAndStakeToken.yieldDto,
+    });
+
   let avalancheCTokenAmount = "0";
   let usdcTokenAmount = "0";
 
@@ -135,9 +145,9 @@ export const setup = () => {
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json([avalancheCToken.network]);
+      return HttpResponse.json([{ id: avalancheCToken.network }]);
     }),
 
     http.get("*/v1/tokens", async () => {
@@ -186,7 +196,7 @@ export const setup = () => {
     }),
 
     http.get(
-      `*/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`,
+      legacyApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
       async () => {
         await delay();
 
@@ -194,11 +204,31 @@ export const setup = () => {
       }
     ),
     http.get(
-      `*/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`,
+      yieldApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(yieldWithSameGasAndStakeTokenYieldApi);
+      }
+    ),
+    http.get(
+      legacyApiRoute(
+        `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
+      ),
       async () => {
         await delay();
 
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
+      }
+    ),
+    http.get(
+      yieldApiRoute(
+        `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
+      ),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(yieldWithDifferentGasAndStakeTokenYieldApi);
       }
     ),
     http.get("*/v1/yields/:yieldId/validators", async (info) => {
@@ -240,7 +270,10 @@ export const setup = () => {
             yieldApiTransactionFixture(
               tx as ReturnType<typeof transactionConstructFixture>,
               {
-                gasEstimate: gasAmount,
+                gasEstimate: JSON.stringify({
+                  amount: gasAmount,
+                  token: avalancheCToken,
+                }),
                 status: "CREATED",
                 stepIndex: index,
               }

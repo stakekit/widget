@@ -9,7 +9,10 @@ import { Text } from "../../components/atoms/typography/text";
 import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
-import { getYieldMetadata } from "../../domain/types/yields";
+import {
+  getBaseYieldType,
+  getYieldProviderDetails,
+} from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import type { YieldPendingActionType } from "../../providers/yield-api-client-provider/types";
@@ -91,11 +94,13 @@ const PositionDetails = () => {
                         alignItems="center"
                       >
                         <TokenIcon
-                          metadata={
-                            getYieldMetadata(integrationData) as Parameters<
-                              typeof TokenIcon
-                            >[0]["metadata"]
-                          }
+                          metadata={{
+                            logoURI: integrationData.metadata.logoURI,
+                            name: integrationData.metadata.name,
+                            provider:
+                              getYieldProviderDetails(integrationData) ??
+                              undefined,
+                          }}
                           token={t}
                           tokenLogoHw="14"
                         />
@@ -164,7 +169,7 @@ const PositionDetails = () => {
                             personalizedRewardRate ? undefined : p.rewardType
                           }
                           stakeType={t(
-                            `position_details.stake_type.${getYieldMetadata(integrationData).type}`
+                            `position_details.stake_type.${getBaseYieldType(integrationData)}`
                           )}
                           integrationData={integrationData}
                         />
@@ -287,7 +292,7 @@ const PositionDetails = () => {
                           unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
-                            `position_details.unstake_label.${getYieldMetadata(integrationData).type}`
+                            `position_details.unstake_label.${getBaseYieldType(integrationData)}`
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}

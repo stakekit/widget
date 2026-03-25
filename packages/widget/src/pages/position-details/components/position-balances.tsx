@@ -6,7 +6,7 @@ import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
-import { getYieldMetadata, type Yield } from "../../../domain/types/yields";
+import { getBaseYieldType, type Yield } from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
 import { formatDurationUntilDate } from "../../../utils/date";
 
@@ -42,7 +42,7 @@ export const PositionBalances = ({
     return t("position_details.unstaking_duration", { duration });
   }, [yieldBalance.date, yieldBalance.type, t]);
 
-  const yieldType = getYieldMetadata(integrationData).type;
+  const yieldType = getBaseYieldType(integrationData);
 
   const balanceTypeContext =
     yieldType === "vault" || yieldType === "lending"

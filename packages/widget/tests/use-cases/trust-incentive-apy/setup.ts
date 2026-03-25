@@ -13,6 +13,7 @@ import {
   yieldFixture,
   yieldRewardRateFixture,
 } from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 
@@ -235,9 +236,9 @@ export const setup = async () => {
   });
 
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json([token.network]);
+      return HttpResponse.json([{ id: token.network }]);
     }),
     http.get("*/v1/tokens", async () => {
       await delay();
@@ -276,16 +277,13 @@ export const setup = async () => {
         },
       });
     }),
-    http.get(`*/v1/yields/${yieldId}`, async ({ request }) => {
+    http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () => {
       await delay();
-
-      const url = new URL(request.url);
-
-      return HttpResponse.json(
-        url.searchParams.has("ledgerWalletAPICompatible")
-          ? legacyYield
-          : rawYield
-      );
+      return HttpResponse.json(legacyYield);
+    }),
+    http.get(yieldApiRoute(`/v1/yields/${yieldId}`), async () => {
+      await delay();
+      return HttpResponse.json(rawYield);
     }),
     http.get("*/v1/yields/:yieldId/validators", async () => {
       await delay();
