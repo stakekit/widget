@@ -1,85 +1,66 @@
-import type { HTMLProps, ReactNode } from "react";
-import { isValidElement, useEffect, useMemo, useState } from "react";
+import type { HTMLProps } from "react";
+import { useMemo } from "react";
+import { getBackgroundColor } from "../../../utils";
 import type { BoxProps } from "../box";
 import { Box } from "../box";
 
-const failLoadImages = new Set<string>();
-
 type ImageProps = {
-  src: string | undefined;
-  fallback: string | ReactNode;
-  containerProps?: Omit<BoxProps, "as">;
-  imageProps?: Omit<BoxProps, "as" | "src">;
+  src?: string;
+  fallbackName?: string;
+  wrapperProps?: Omit<BoxProps, "as">;
+  imgProps?: Omit<BoxProps, "as" | "src">;
 };
 
 export const Image = ({
-  fallback,
   src,
-  containerProps,
-  imageProps,
+  fallbackName,
+  wrapperProps,
+  imgProps,
 }: ImageProps) => {
-  const [loadState, setLoadState] = useState(() => ({
-    src,
-    loaded: false,
-    timeoutFallback: false,
-  }));
-
-  /**
-   * Reset on src change
-   */
-  if (loadState.src !== src) {
-    setLoadState({ src, loaded: false, timeoutFallback: false });
-  }
-
-  useEffect(() => {
-    if (src && failLoadImages.has(src)) return;
-
-    const id = setTimeout(() => {
-      setLoadState((prev) => ({ ...prev, timeoutFallback: true }));
-    }, 500);
-
-    return () => clearTimeout(id);
-  }, [src]);
-
-  const onLoad: HTMLProps<HTMLImageElement>["onLoad"] = (e) => {
-    setLoadState((prev) => ({ ...prev, loaded: true }));
-    imageProps?.onLoad?.(e);
-  };
+  const generatedFallbackSrc = useMemo(
+    () => createMonogramImageSrc(fallbackName),
+    [fallbackName]
+  );
 
   const onError: HTMLProps<HTMLImageElement>["onError"] = (e) => {
-    if (src) {
-      failLoadImages.add(src);
+    if (generatedFallbackSrc) {
+      e.currentTarget.src = generatedFallbackSrc;
     }
-    imageProps?.onError?.(e);
+    imgProps?.onError?.(e);
   };
-
-  const showFallback = useMemo(() => {
-    if (!isValidElement(fallback)) return false;
-
-    return (
-      !src ||
-      failLoadImages.has(src) ||
-      (loadState.timeoutFallback && !loadState.loaded)
-    );
-  }, [fallback, loadState.loaded, loadState.timeoutFallback, src]);
 
   return (
     <Box
-      {...containerProps}
+      {...wrapperProps}
       position="relative"
       display="flex"
       justifyContent="center"
     >
-      {showFallback && <Box position="absolute">{fallback}</Box>}
-      {!!(src && !failLoadImages.has(src)) && (
-        <Box
-          {...imageProps}
-          src={src}
-          as="img"
-          onLoad={onLoad}
-          onError={onError}
-        />
-      )}
+      <Box
+        {...imgProps}
+        src={src ?? generatedFallbackSrc}
+        as="img"
+        onError={onError}
+      />
     </Box>
   );
 };
+
+const createMonogramImageSrc = (name?: string) => {
+  if (!name) return undefined;
+
+  const initial = escapeForSvg(name.charAt(0).toUpperCase());
+  const backgroundColor = getBackgroundColor(name);
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="${backgroundColor}" /><text x="50" y="50" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="48" font-weight="700" text-anchor="middle" dominant-baseline="central">${initial}</text></svg>`;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+};
+
+const escapeForSvg = (value: string) =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&apos;");

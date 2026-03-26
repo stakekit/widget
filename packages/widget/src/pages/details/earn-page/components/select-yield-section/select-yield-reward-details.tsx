@@ -3,7 +3,6 @@ import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { MorphoStarsIcon } from "../../../../../components/atoms/icons/morpho-stars";
 import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { RewardRateBreakdown } from "../../../../../components/molecules/reward-rate-breakdown";
 import {
@@ -83,15 +82,10 @@ export const SelectYieldRewardDetails = () => {
                       gap="1"
                     >
                       <Image
-                        imageProps={{ borderRadius: "full" }}
-                        containerProps={{ hw: "5" }}
+                        imgProps={{ borderRadius: "full" }}
+                        wrapperProps={{ hw: "5" }}
                         src={rt.logoUri}
-                        fallback={
-                          <ImageFallback
-                            name={rt.providerName}
-                            tokenLogoHw="5"
-                          />
-                        }
+                        fallbackName={rt.providerName}
                       />
 
                       {isMorphoProvider(rt.providerName) && (

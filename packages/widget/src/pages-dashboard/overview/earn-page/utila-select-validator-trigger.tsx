@@ -2,7 +2,6 @@ import { Trigger } from "@radix-ui/react-dialog";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import type { ValidatorDto } from "../../../domain/types/validators";
 import { breakWord } from "../../../pages/details/earn-page/styles.css";
@@ -38,21 +37,10 @@ export const SelectValidatorTrigger = ({
           return (
             <Box key={v.address} display="flex" alignItems="center" gap="1">
               <Image
-                containerProps={{ hw: "5", marginLeft: "1" }}
-                imageProps={{ borderRadius: "full" }}
+                wrapperProps={{ hw: "5", marginLeft: "1" }}
+                imgProps={{ borderRadius: "full" }}
                 src={v.logoURI}
-                fallback={
-                  <Box marginRight="1">
-                    <ImageFallback
-                      name={nameOrAddress}
-                      tokenLogoHw="5"
-                      textVariant={{
-                        type: "white",
-                        weight: "bold",
-                      }}
-                    />
-                  </Box>
-                }
+                fallbackName={nameOrAddress}
               />
 
               <Text flex={1} minWidth="0" className={nameOrAddressText}>

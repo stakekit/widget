@@ -6,7 +6,6 @@ import type { YieldPendingActionType } from "../../../providers/yield-api-client
 import { Box } from "../../atoms/box";
 import { MorphoStarsIcon } from "../../atoms/icons/morpho-stars";
 import { Image } from "../../atoms/image";
-import { ImageFallback } from "../../atoms/image-fallback";
 import { Text } from "../../atoms/typography/text";
 import { inlineText } from "./style.css";
 
@@ -51,12 +50,10 @@ export const RewardTokenDetails = ({
                 alignSelf="flex-start"
               >
                 <Image
-                  imageProps={{ borderRadius: "full" }}
-                  containerProps={{ hw: "5" }}
+                  imgProps={{ borderRadius: "full" }}
+                  wrapperProps={{ hw: "5" }}
                   src={logoUri}
-                  fallback={
-                    <ImageFallback name={rt.providerName} tokenLogoHw="5" />
-                  }
+                  fallbackName={rt.providerName}
                 />
 
                 <Box width="5" height="5">

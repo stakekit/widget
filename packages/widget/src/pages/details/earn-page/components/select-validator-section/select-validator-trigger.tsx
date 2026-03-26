@@ -7,7 +7,6 @@ import { PlusIcon } from "../../../../../components/atoms/icons/plus";
 import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { inactiveContainer } from "../../../../../components/molecules/select-validator/styles.css";
 import type { ValidatorDto } from "../../../../../domain/types/validators";
@@ -60,21 +59,10 @@ export const SelectValidatorTrigger = ({
                     >
                       <Box marginRight="2">
                         <Image
-                          containerProps={{ hw: "5" }}
-                          imageProps={{ borderRadius: "full" }}
+                          wrapperProps={{ hw: "5" }}
+                          imgProps={{ borderRadius: "full" }}
                           src={sv.logoURI}
-                          fallback={
-                            <Box marginRight="1">
-                              <ImageFallback
-                                name={nameOrAddress}
-                                tokenLogoHw="5"
-                                textVariant={{
-                                  type: "white",
-                                  weight: "bold",
-                                }}
-                              />
-                            </Box>
-                          }
+                          fallbackName={nameOrAddress}
                         />
                       </Box>
 

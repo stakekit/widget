@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
@@ -157,15 +156,10 @@ export const CompletePageComponent = ({
                       >
                         {v.logo && (
                           <Image
-                            imageProps={{ borderRadius: "full" }}
-                            containerProps={{ hw: "5" }}
+                            imgProps={{ borderRadius: "full" }}
+                            wrapperProps={{ hw: "5" }}
                             src={v.logo}
-                            fallback={
-                              <ImageFallback
-                                name={v.name || v.logo}
-                                tokenLogoHw="5"
-                              />
-                            }
+                            fallbackName={v.name || v.logo}
                           />
                         )}
                         <Text variant={{ type: "muted" }}>

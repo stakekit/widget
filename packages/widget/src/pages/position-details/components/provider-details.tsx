@@ -10,7 +10,6 @@ import {
 import { Divider } from "../../../components/atoms/divider";
 import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
 import type { RewardTypes } from "../../../domain/types/reward-rate";
@@ -56,18 +55,10 @@ export const ProviderDetails = ({
           <Box display="flex" justifyContent="flex-start" alignItems="center">
             <Box marginRight="2">
               <Image
-                containerProps={{ hw: "8" }}
-                imageProps={{ borderRadius: "full" }}
+                wrapperProps={{ hw: "8" }}
+                imgProps={{ borderRadius: "full" }}
                 src={logo}
-                fallback={
-                  <Box marginRight="1">
-                    <ImageFallback
-                      name={nameOrAddress}
-                      tokenLogoHw="8"
-                      textVariant={{ type: "white", weight: "bold" }}
-                    />
-                  </Box>
-                }
+                fallbackName={nameOrAddress}
               />
             </Box>
 

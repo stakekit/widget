@@ -5,7 +5,6 @@ import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
 import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { SelectYield } from "../../../../../components/molecules/select-yield";
 import {
@@ -84,21 +83,10 @@ export const SelectProvider = () => {
                   >
                     <Box marginRight="2">
                       <Image
-                        containerProps={{ hw: "5" }}
-                        imageProps={{ borderRadius: "full" }}
+                        wrapperProps={{ hw: "5" }}
+                        imgProps={{ borderRadius: "full" }}
                         src={val.provider.logoURI}
-                        fallback={
-                          <Box marginRight="1">
-                            <ImageFallback
-                              name={val.provider.name}
-                              tokenLogoHw="5"
-                              textVariant={{
-                                type: "white",
-                                weight: "bold",
-                              }}
-                            />
-                          </Box>
-                        }
+                        fallbackName={val.provider.name}
                       />
                     </Box>
 

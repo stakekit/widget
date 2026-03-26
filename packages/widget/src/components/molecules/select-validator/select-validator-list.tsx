@@ -13,7 +13,6 @@ import { Button } from "../../atoms/button";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { PreferredIcon } from "../../atoms/icons/preferred";
 import { Image } from "../../atoms/image";
-import { ImageFallback } from "../../atoms/image-fallback";
 import {
   SelectModalItem,
   SelectModalItemContainer,
@@ -144,16 +143,10 @@ export const SelectValidatorList = ({
                   )}
 
                   <Image
-                    containerProps={{ hw: "9" }}
-                    imageProps={{ borderRadius: "full" }}
+                    wrapperProps={{ hw: "9" }}
+                    imgProps={{ borderRadius: "full" }}
                     src={item.logoURI}
-                    fallback={
-                      <ImageFallback
-                        name={item.name || item.address}
-                        tokenLogoHw="9"
-                        textVariant={{ type: "white", weight: "bold" }}
-                      />
-                    }
+                    fallbackName={item.name || item.address}
                   />
 
                   <Box
