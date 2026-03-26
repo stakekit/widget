@@ -105,6 +105,16 @@ const createSolanaConnector = ({
 
       if (isDisconnected) return false;
 
+      const recentConnectorId =
+        await config.storage?.getItem("recentConnectorId");
+
+      if (
+        recentConnectorId &&
+        recentConnectorId === solanaWallet.adapter.name
+      ) {
+        await solanaWallet.adapter.autoConnect();
+      }
+
       return !!(
         solanaWallet.adapter.connected &&
         solanaWallet.adapter.publicKey?.toBase58()
