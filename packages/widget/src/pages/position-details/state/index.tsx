@@ -15,7 +15,6 @@ import { getYieldActionArg, isERC4626 } from "../../../domain/types/yields";
 import { usePrices } from "../../../hooks/api/use-prices";
 import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
-import { useBaseToken } from "../../../hooks/use-base-token";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
@@ -57,7 +56,7 @@ export const UnstakeOrPendingActionProvider = ({
     [yieldOpportunity.data]
   );
 
-  const baseToken = useBaseToken(integrationData);
+  const baseToken = integrationData.map((val) => val.token);
 
   const positionBalancesRemote = usePositionBalances({
     balanceId,

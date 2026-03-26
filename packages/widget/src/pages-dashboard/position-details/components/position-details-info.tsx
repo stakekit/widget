@@ -21,7 +21,7 @@ export const PositionDetailsInfo = () => {
     integrationData,
     positionBalancesByType,
     providersDetails,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
   } = usePositionDetails();
 
   const { t } = useTranslation();
@@ -101,7 +101,7 @@ export const PositionDetailsInfo = () => {
                 )}
               </Box>
 
-              {liquidTokensToNativeConversion
+              {shareToAmountConversions
                 .filter((val) => val.size > 0)
                 .map((val) => (
                   <Box

@@ -3,14 +3,12 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { equalTokens } from "../../../domain";
 import { getRewardRateBreakdown } from "../../../domain/types/reward-rate";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import type { TokenDto } from "../../../domain/types/tokens";
 import { getYieldActionArg } from "../../../domain/types/yields";
 import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useBaseToken } from "../../../hooks/use-base-token";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
@@ -98,7 +96,7 @@ export const usePositionDetails = () => {
 
   const trackEvent = useTrackEvent();
 
-  const baseToken = useBaseToken(integrationData);
+  const baseToken = integrationData.map((val) => val.token);
 
   const yieldValidators = useYieldValidators({
     enabled: integrationData.isJust(),
@@ -166,7 +164,7 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
   } = usePendingActions();
 
-  const liquidTokensToNativeConversion = useMemo(
+  const shareToAmountConversions = useMemo(
     () =>
       Maybe.fromRecord({
         integrationData,
@@ -175,18 +173,15 @@ export const usePositionDetails = () => {
       }).map((v) =>
         [...v.positionBalancesByType.values()].reduce((acc, curr) => {
           curr
-            .filter(
-              (yb) =>
-                !yb.token.isPoints &&
-                !!yb.validator?.pricePerShare &&
-                !equalTokens(yb.token, v.baseToken)
-            )
+            .filter((yb) => yb.shareAmount && yb.amount && !yb.token.isPoints)
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                  new BigNumber(yb.validator?.pricePerShare ?? 0)
-                )} ${v.baseToken.symbol}`
+                  new BigNumber(yb.shareAmount ?? 0).dividedBy(
+                    new BigNumber(yb.amount ?? 0)
+                  )
+                )} ${yb.shareToken?.symbol}`
               );
             });
 
@@ -222,7 +217,7 @@ export const usePositionDetails = () => {
     providersDetails,
     personalizedRewardRate,
     pendingActions,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
     validatorAddressesHandling,
     onValidatorsSubmit,
     onPendingActionAmountChange,

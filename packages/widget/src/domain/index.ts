@@ -54,8 +54,6 @@ export const getMaxAmount = ({
   );
 };
 
-export const getBaseToken = (yieldDto: Yield) => yieldDto.token;
-
 /**
  *
  * @summary Get stake transactions available for signing or tx status check.

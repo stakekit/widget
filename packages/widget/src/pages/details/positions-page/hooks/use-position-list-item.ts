@@ -1,7 +1,6 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { getBaseToken } from "../../../../domain";
 import { getPositionTotalAmount } from "../../../../domain/types/positions";
 import { getYieldRewardType } from "../../../../domain/types/yields";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
@@ -60,7 +59,7 @@ export const usePositionListItem = (
 
   const tokenToDisplay = item.token;
   const baseToken = useMemo(
-    () => integrationData.map((y) => getBaseToken(y)),
+    () => integrationData.map((y) => y.token),
     [integrationData]
   );
 

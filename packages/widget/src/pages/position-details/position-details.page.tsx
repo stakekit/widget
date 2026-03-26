@@ -44,7 +44,7 @@ const PositionDetails = () => {
     onPendingActionClick,
     pendingActions,
     providersDetails,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
     validatorAddressesHandling,
     onValidatorsSubmit,
     unstakeToken,
@@ -190,7 +190,7 @@ const PositionDetails = () => {
                       ))
                   )}
                 </Box>
-                {liquidTokensToNativeConversion
+                {shareToAmountConversions
                   .map((val) => (
                     <Box
                       my="2"

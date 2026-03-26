@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { config } from "../../config";
 import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
 import type { Yield } from "../../domain/types/yields";
-import { useBaseToken } from "../use-base-token";
 import { usePrices } from "./use-prices";
 
 /**
@@ -16,21 +15,15 @@ export const useTokensPrices = ({
   token: Maybe<TokenDto | YieldTokenDto>;
   yieldDto: Maybe<Yield>;
 }) => {
-  const baseToken = useBaseToken(yieldDto);
-
   const priceRequestDto = useMemo(
     () =>
-      Maybe.fromRecord({ baseToken, yieldDto, token })
+      Maybe.fromRecord({ yieldDto, token })
         .map((val) => ({
           currency: config.currency,
-          tokenList: [
-            val.token,
-            val.baseToken,
-            val.yieldDto.mechanics.gasFeeToken,
-          ],
+          tokenList: [val.token, val.token, val.yieldDto.mechanics.gasFeeToken],
         }))
         .extractNullable(),
-    [baseToken, yieldDto, token]
+    [yieldDto, token]
   );
 
   return usePrices(priceRequestDto);

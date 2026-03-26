@@ -46,7 +46,6 @@ import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
-import { useBaseToken } from "../../../../hooks/use-base-token";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
@@ -99,8 +98,6 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const { t } = useTranslation();
   const initParams = useInitParams();
 
-  const baseToken = useBaseToken(selectedStake);
-
   const { externalProviders, variant } = useSettings();
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
@@ -149,11 +146,11 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       Maybe.fromRecord({
         prices: Maybe.fromNullable(pricesState.data),
         selectedToken,
-        baseToken,
+        selectedStake,
       })
         .map((val) =>
           getTokenPriceInUSD({
-            baseToken: val.baseToken,
+            baseToken: val.selectedStake.token,
             amount: stakeAmount,
             token: val.selectedToken,
             prices: val.prices,
@@ -161,7 +158,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           })
         )
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [baseToken, pricesState.data, selectedToken, stakeAmount]
+    [pricesState.data, selectedToken, stakeAmount, selectedStake]
   );
 
   const selectedTokenAvailableAmount = useMemo(

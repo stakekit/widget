@@ -12,7 +12,6 @@ import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useBaseToken } from "../../../hooks/use-base-token";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
@@ -40,7 +39,7 @@ export const usePendingActions = () => {
     positionBalancePrices,
   } = useUnstakeOrPendingActionState();
 
-  const baseToken = useBaseToken(integrationData);
+  const baseToken = integrationData.map((val) => val.token);
 
   const pendingActionDispatch = useUnstakeOrPendingActionDispatch();
 

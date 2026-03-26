@@ -3,7 +3,7 @@ import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { config } from "../config";
-import { getBaseToken, getTokenPriceInUSD } from "../domain";
+import { getTokenPriceInUSD } from "../domain";
 import type { StakeKitErrorDto } from "../domain/types/errors";
 import { getPositionTotalAmount } from "../domain/types/positions";
 import type { Prices } from "../domain/types/price";
@@ -107,7 +107,7 @@ export const SummaryProvider = ({
 
       const positionTotalAmount = getPositionTotalAmount(
         p.balancesWithAmount,
-        getBaseToken(yieldDto)
+        yieldDto.token
       );
 
       const yields = [...multiYieldsMapQuery.data.values()];
@@ -172,11 +172,9 @@ export const SummaryProvider = ({
 
             if (!yieldDto) return [];
 
-            const baseToken = getBaseToken(yieldDto);
-
             const common = {
               pricePerShare: "1",
-              baseToken,
+              baseToken: yieldDto.token,
               token: rewardSummary.token,
               prices,
             };
@@ -241,7 +239,7 @@ export const SummaryProvider = ({
 
         const positionTotalAmount = getPositionTotalAmount(
           p.balancesWithAmount,
-          getBaseToken(yieldDto)
+          yieldDto.token
         );
 
         const usdAmount = positionTotalAmount.amountUsd;
