@@ -1,6 +1,5 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "dangerouslyDisablePackageManagerCheck": true,
   "tasks": {
     "build": {
       "outputs": ["dist/**", ".next"],
