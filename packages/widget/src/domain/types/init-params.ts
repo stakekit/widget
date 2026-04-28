@@ -1,6 +1,6 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { SupportedSKChains } from "./chains";
 import type { TokenString } from "./tokens";
+import type { Yield } from "./yields";
 
 export type InitParams = {
   network: SupportedSKChains | null;
@@ -8,7 +8,7 @@ export type InitParams = {
   yieldId: string | null;
   validator: string | null;
   pendingaction: string | null;
-  yieldData: YieldDto | null;
+  yieldData: Yield | null;
   accountId: string | null;
   tab: "earn" | "positions" | null;
 };

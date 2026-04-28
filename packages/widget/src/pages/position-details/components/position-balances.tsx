@@ -1,4 +1,3 @@
-import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { isPast } from "date-fns";
 import { useMemo } from "react";
@@ -6,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
+import type { YieldBalanceDto } from "../../../domain/types/positions";
+import { getBaseYieldType, type Yield } from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
 import { formatDurationUntilDate } from "../../../utils/date";
 
@@ -14,16 +15,14 @@ export const PositionBalances = ({
   integrationData,
 }: {
   yieldBalance: YieldBalanceDto & { tokenPriceInUsd: BigNumber };
-  integrationData: YieldDto;
+  integrationData: Yield;
 }) => {
   const { t } = useTranslation();
 
   const durationUntilDate = useMemo(() => {
     if (
       !yieldBalance.date ||
-      (yieldBalance.type !== "unstaking" &&
-        yieldBalance.type !== "unlocking" &&
-        yieldBalance.type !== "preparing")
+      (yieldBalance.type !== "entering" && yieldBalance.type !== "exiting")
     ) {
       return null;
     }
@@ -43,7 +42,7 @@ export const PositionBalances = ({
     return t("position_details.unstaking_duration", { duration });
   }, [yieldBalance.date, yieldBalance.type, t]);
 
-  const yieldType = integrationData.metadata.type;
+  const yieldType = getBaseYieldType(integrationData);
 
   const balanceTypeContext =
     yieldType === "vault" || yieldType === "lending"

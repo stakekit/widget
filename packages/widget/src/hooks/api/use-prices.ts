@@ -1,8 +1,14 @@
-import type { PriceRequestDto, PriceResponseDto } from "@stakekit/api-hooks";
-import { useTokenGetTokenPrices } from "@stakekit/api-hooks";
+import { useQuery } from "@tanstack/react-query";
 import { useCallback } from "react";
 import { createSelector } from "reselect";
-import type { Prices } from "../../domain/types/price";
+import { tokenGetTokenPrices } from "../../common/private-api";
+import type { StakeKitErrorDto } from "../../domain/types/errors";
+import type {
+  PriceRequestDto,
+  PriceResponseDto,
+  Prices,
+} from "../../domain/types/price";
+import type { YieldTokenDto } from "../../providers/yield-api-client-provider/types";
 import { priceResponseDtoToPrices } from "../../utils/mappers";
 
 const defaultParam: PriceRequestDto = {
@@ -17,28 +23,46 @@ const pricesSelector = createSelector(
   (val) => priceResponseDtoToPrices(val)
 );
 
+type PriceRequestInput = Omit<PriceRequestDto, "tokenList"> & {
+  tokenList: (PriceRequestDto["tokenList"][number] | YieldTokenDto)[];
+};
+
+const getTokenGetTokenPricesQueryKey = (priceRequestDto: PriceRequestDto) =>
+  ["/v1/tokens/prices", priceRequestDto] as const;
+
 export const usePrices = <T = Prices>(
-  priceRequestDto: PriceRequestDto | null | undefined,
+  priceRequestDto: PriceRequestInput | null | undefined,
   opts?: {
     enabled?: boolean;
     select?: (val: Prices) => T;
   }
 ) => {
-  return useTokenGetTokenPrices(priceRequestDto ?? defaultParam, {
-    query: {
-      enabled: !!priceRequestDto && opts?.enabled,
-      select: useCallback(
-        (res: PriceResponseDto): T => {
-          const mapped = pricesSelector(res);
+  const requestDto = priceRequestDto
+    ? ({
+        ...priceRequestDto,
+        tokenList: priceRequestDto.tokenList.map((token) => ({
+          ...token,
+          network:
+            token.network as PriceRequestDto["tokenList"][number]["network"],
+        })),
+      } satisfies PriceRequestDto)
+    : defaultParam;
 
-          if (opts?.select) {
-            return opts.select(mapped);
-          }
+  return useQuery<PriceResponseDto, StakeKitErrorDto, T>({
+    queryKey: getTokenGetTokenPricesQueryKey(requestDto),
+    queryFn: () => tokenGetTokenPrices(requestDto),
+    enabled: !!priceRequestDto && opts?.enabled,
+    select: useCallback(
+      (res: PriceResponseDto): T => {
+        const mapped = pricesSelector(res);
 
-          return mapped as T;
-        },
-        [opts?.select]
-      ),
-    },
+        if (opts?.select) {
+          return opts.select(mapped);
+        }
+
+        return mapped as T;
+      },
+      [opts?.select]
+    ),
   });
 };

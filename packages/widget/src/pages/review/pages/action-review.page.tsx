@@ -6,6 +6,7 @@ import { Divider } from "../../../components/atoms/divider";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { ToolTip } from "../../../components/atoms/tooltip";
 import { Text } from "../../../components/atoms/typography/text";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLetters } from "../../../utils/formatters";
@@ -40,7 +41,11 @@ export const ActionReviewPage = () => {
       <PageContainer>
         <ReviewTopSection
           info={info}
-          metadata={Maybe.of(selectedYield.metadata)}
+          metadata={Maybe.of({
+            logoURI: selectedYield.metadata.logoURI,
+            name: selectedYield.metadata.name,
+            provider: getYieldProviderDetails(selectedYield) ?? undefined,
+          })}
           token={inputToken}
           title={title}
         />

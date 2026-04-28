@@ -445,7 +445,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 data: val.data,
                 to: val.to,
                 value: val.value,
-                nonce: val.nonce,
+                // nonce: val.nonce,
                 maxFeePerGas: val.maxFeePerGas,
                 maxPriorityFeePerGas: val.maxPriorityFeePerGas,
                 chainId: val.chainId,
@@ -453,7 +453,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 type: val.maxFeePerGas ? "eip1559" : "legacy",
               })
             )
-              .mapLeft(() => new SendTransactionError())
+              .mapLeft((e) => new SendTransactionError(e))
               .map((val) => ({ signedTx: val, broadcasted: true }))
           );
         }),

@@ -1,21 +1,21 @@
-import type {
-  ActionDto,
-  ActionTypes,
-  AddressesDto,
-  PendingActionRequestDto,
-  TokenDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type {
+  ActionDto,
+  YieldCreateManageActionDto,
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { YieldPendingActionType } from "../../domain/types/pending-action";
+import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
-  requestDto: PendingActionRequestDto;
+  requestDto: YieldCreateManageActionDto;
   addresses: AddressesDto;
-  pendingActionType: ActionTypes;
-  integrationData: YieldDto;
-  interactedToken: TokenDto;
+  pendingActionType: YieldPendingActionType;
+  integrationData: Yield;
+  interactedToken: TokenDto | YieldTokenDto;
   gasFeeToken: TokenDto;
 };
 

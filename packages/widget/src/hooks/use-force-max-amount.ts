@@ -1,6 +1,6 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { isForceMaxAmount } from "../domain/types/stake";
+import { getYieldActionArg, type Yield } from "../domain/types/yields";
 
 /**
  * Check if we need to use max amount for staking/unstaking
@@ -11,11 +11,9 @@ export const useForceMaxAmount = ({
   integration,
 }: {
   type: "enter" | "exit";
-  integration: Maybe<YieldDto>;
+  integration: Maybe<Yield>;
 }) =>
   integration
-    .chainNullable((v) =>
-      type === "enter" ? v.args.enter.args?.amount : v.args.exit?.args?.amount
-    )
+    .chainNullable((v) => getYieldActionArg(v, type, "amount"))
     .map(isForceMaxAmount)
     .orDefault(false);

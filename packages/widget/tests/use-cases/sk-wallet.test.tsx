@@ -9,6 +9,7 @@ import { SettingsContextProvider } from "../../src/providers/settings";
 import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
+import { yieldApiRoute } from "../mocks/api-routes";
 import { worker } from "../mocks/worker";
 import { renderHook } from "../utils/test-utils";
 
@@ -41,9 +42,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
-        return HttpResponse.json([MiscNetworks.Solana]);
+        return HttpResponse.json([{ id: MiscNetworks.Solana }]);
       })
     );
 
@@ -118,9 +119,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
 
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
-        return HttpResponse.json([MiscNetworks.Ton]);
+        return HttpResponse.json([{ id: MiscNetworks.Ton }]);
       })
     );
 

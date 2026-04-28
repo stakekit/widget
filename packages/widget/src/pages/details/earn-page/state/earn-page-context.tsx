@@ -1,9 +1,3 @@
-import type {
-  TokenBalanceScanResponseDto,
-  TronResourceType,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
@@ -16,6 +10,7 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,24 +21,33 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { getInitSelectedValidators } from "../../../../domain/types/stake";
+import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
+import type { TronResourceType } from "../../../../domain/types/tron";
+import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
   type ExtendedYieldType,
   getExtendedYieldType,
+  getYieldRewardTokens,
   getYieldTypeLabels,
   getYieldTypesSortRank,
   isBittensorStaking,
   isNonZeroRewardRateYield,
+  isYieldActionArgRequired,
+  isYieldIntegrationAggregator,
+  type Yield,
 } from "../../../../domain/types/yields";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
-import { useBaseToken } from "../../../../hooks/use-base-token";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
+import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
@@ -92,8 +96,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const dispatch = useEarnPageDispatch();
 
   const { t } = useTranslation();
-
-  const baseToken = useBaseToken(selectedStake);
+  const initParams = useInitParams();
 
   const { externalProviders, variant } = useSettings();
 
@@ -118,7 +121,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const pointsRewardTokens = useMemo(
     () =>
       selectedStake
-        .chainNullable((val) => val.metadata.rewardTokens)
+        .map(getYieldRewardTokens)
         .map((val) => val.filter((rt) => rt.isPoints)),
     [selectedStake]
   );
@@ -143,11 +146,11 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       Maybe.fromRecord({
         prices: Maybe.fromNullable(pricesState.data),
         selectedToken,
-        baseToken,
+        selectedStake,
       })
         .map((val) =>
           getTokenPriceInUSD({
-            baseToken: val.baseToken,
+            baseToken: val.selectedStake.token,
             amount: stakeAmount,
             token: val.selectedToken,
             prices: val.prices,
@@ -155,7 +158,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           })
         )
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [baseToken, pricesState.data, selectedToken, stakeAmount]
+    [pricesState.data, selectedToken, stakeAmount, selectedStake]
   );
 
   const selectedTokenAvailableAmount = useMemo(
@@ -236,7 +239,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
-        .map((val) => [...val].sort((a, b) => b.rewardRate - a.rewardRate))
+        .map((val) =>
+          [...val].sort((a, b) => b.rewardRate.total - a.rewardRate.total)
+        )
         .map((val) => val.filter(isNonZeroRewardRateYield))
         .chain((yieldDtos) =>
           Maybe.of(deferredStakeSearch)
@@ -250,7 +255,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   d.token.name.toLowerCase().includes(lowerSearch) ||
                   d.token.symbol.toLowerCase().includes(lowerSearch) ||
                   d.metadata.name.toLowerCase().includes(lowerSearch) ||
-                  d.metadata.rewardTokens?.some(
+                  getYieldRewardTokens(d).some(
                     (rt) =>
                       rt.name.toLowerCase().includes(lowerSearch) ||
                       rt.symbol.toLowerCase().includes(lowerSearch)
@@ -276,7 +281,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                       items: [curr],
                     });
                   } else {
-                    acc.get(extendedYieldType)!.items.push(curr);
+                    acc.get(extendedYieldType)?.items.push(curr);
                   }
 
                   return acc;
@@ -286,7 +291,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
                   {
                     type: ExtendedYieldType;
                     title: ReturnType<typeof getYieldTypeLabels>["title"];
-                    items: YieldDto[];
+                    items: Yield[];
                   }
                 >()
               )
@@ -314,30 +319,101 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [deferredStakeSearch, multiYields, t]
   );
 
+  const yieldValidators = useYieldValidators({
+    enabled: selectedStake.isJust(),
+    yieldId: selectedStake.extract()?.id,
+    network: selectedStake.extract()?.token.network,
+  });
+
+  const initialValidatorSelectionYieldIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const currentYieldId = selectedStake.map((val) => val.id).extractNullable();
+
+    if (!currentYieldId) {
+      initialValidatorSelectionYieldIdRef.current = null;
+      return;
+    }
+
+    if (selectedValidators.size > 0) {
+      initialValidatorSelectionYieldIdRef.current = currentYieldId;
+      return;
+    }
+
+    if (initialValidatorSelectionYieldIdRef.current === currentYieldId) {
+      return;
+    }
+
+    if (!yieldValidators.isFetched && !yieldValidators.isError) {
+      return;
+    }
+
+    initialValidatorSelectionYieldIdRef.current = currentYieldId;
+
+    const shouldSelectDefaultValidator = selectedStake
+      .map(
+        (stake) =>
+          !!(
+            isYieldIntegrationAggregator(stake) ||
+            isYieldActionArgRequired(stake, "enter", "validatorAddress") ||
+            isYieldActionArgRequired(stake, "enter", "validatorAddresses")
+          )
+      )
+      .orDefault(false);
+
+    if (!shouldSelectDefaultValidator) {
+      return;
+    }
+
+    const nextValidator = List.head([
+      ...getInitSelectedValidators({
+        initQueryParams: Maybe.fromNullable(initParams.data),
+        validators: yieldValidators.data ?? [],
+      }).values(),
+    ]).extractNullable();
+
+    if (nextValidator) {
+      dispatch({ type: "validator/select", data: nextValidator });
+    }
+  }, [
+    dispatch,
+    initParams.data,
+    selectedStake,
+    selectedValidators,
+    yieldValidators.data,
+    yieldValidators.isError,
+    yieldValidators.isFetched,
+  ]);
+
   const validatorsData = useMemo(
     () =>
-      selectedStake.chain((ss) =>
-        Maybe.fromNullable(deferredValidatorSearch)
-          .map((val) => val.toLowerCase())
-          .map((searchInput) =>
-            ss.validators.filter(
+      selectedStake.chain(() =>
+        Maybe.fromNullable(yieldValidators.data)
+          .map((validators) => {
+            const searchInput = deferredValidatorSearch.toLowerCase();
+
+            if (!searchInput) {
+              return validators;
+            }
+
+            return validators.filter(
               (validator) =>
                 validator.name?.toLowerCase().includes(searchInput) ||
                 validator.address.toLowerCase().includes(searchInput)
-            )
-          )
-          .alt(Maybe.of(ss.validators))
+            );
+          })
           .map((validators) => {
             if (variant === "utila" || variant === "porto") {
               return [...validators].sort(
-                (a, b) => (b.apr ?? 0) - (a.apr ?? 0)
+                (a, b) =>
+                  (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
               );
             }
 
             return validators;
           })
       ),
-    [deferredValidatorSearch, selectedStake, variant]
+    [deferredValidatorSearch, selectedStake, variant, yieldValidators.data]
   );
 
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>
@@ -363,7 +439,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const onValidatorSelect = (item: ValidatorDto) =>
     selectedStake.ifJust((ss) =>
-      ss.args.enter.args?.validatorAddresses?.required
+      isYieldActionArgRequired(ss, "enter", "validatorAddresses")
         ? dispatch({ type: "validator/multiselect", data: item })
         : dispatch({ type: "validator/select", data: item })
     );
@@ -395,6 +471,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       enterStakeStore.send({
         type: "initFlow",
         data: {
+          addresses: val.stakeEnterRequestDto.addresses,
           requestDto: val.stakeEnterRequestDto.dto,
           selectedToken: val.selectedToken,
           gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
@@ -430,7 +507,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
     selectedStake.ifJust((ss) => {
       if (
-        ss.args.enter.args?.tronResource?.required &&
+        isYieldActionArgRequired(ss, "enter", "tronResource") &&
         tronResource.isNothing()
       ) {
         val.errors.tronResource = true;
@@ -583,7 +660,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     defaultTokensIsLoading ||
     tokenBalancesScanLoading ||
     initYieldRes.isLoading ||
-    yieldOpportunityLoading;
+    yieldOpportunityLoading ||
+    yieldValidators.isLoading ||
+    yieldValidators.isFetching;
 
   const footerIsLoading =
     defaultTokensIsLoading ||

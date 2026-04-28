@@ -1,23 +1,22 @@
-import {
-  type ActionTypes,
-  actionPending,
-  useActionPendingGasEstimate,
-} from "@stakekit/api-hooks";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
-import { getValidStakeSessionTx } from "../../../domain";
+import { getTransactionGasEstimate } from "../../../domain/types/action";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
+import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
+import { createManageAction } from "../../../providers/yield-api-client-provider/actions";
+import type { YieldPendingActionType } from "../../../providers/yield-api-client-provider/types";
 import { formatNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
@@ -25,26 +24,42 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
   const pendingActionStore = usePendingActionStore();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const pendingRequest = useSelector(
     pendingActionStore,
     (state) => state.context.data
   ).unsafeCoerce();
 
-  const actionPendingGasEstimate = useActionPendingGasEstimate(
-    pendingRequest.requestDto,
-    { query: { staleTime: 0, gcTime: 0 } }
-  );
+  const actionPreviewQuery = useQuery({
+    enabled: !!pendingRequest,
+    queryKey: ["pending-review-action-preview", pendingRequest.requestDto],
+    retry: false,
+    queryFn: () =>
+      createManageAction({
+        fetchClient: yieldApiFetchClient,
+        requestDto: pendingRequest.requestDto,
+      }),
+  });
 
   const pendingTxGas = useMemo(
     () =>
-      Maybe.fromNullable(actionPendingGasEstimate.data?.amount).map(BigNumber),
-    [actionPendingGasEstimate.data]
+      Maybe.fromNullable(actionPreviewQuery.data)
+        .map((actionDto) =>
+          actionDto.transactions.reduce((acc, transaction) => {
+            const decoded = getTransactionGasEstimate(transaction);
+
+            return acc.plus(decoded?.amount ?? 0);
+          }, new BigNumber(0))
+        )
+        .map((value) => (value.isZero() ? null : value))
+        .chainNullable((value) => value),
+    [actionPreviewQuery.data]
   );
 
   const amount = useMemo(
-    () => new BigNumber(pendingRequest.requestDto.args?.amount ?? 0),
-    [pendingRequest.requestDto.args?.amount]
+    () => new BigNumber(pendingRequest.requestDto.arguments?.amount ?? 0),
+    [pendingRequest.requestDto.arguments?.amount]
   );
 
   const interactedToken = useMemo(
@@ -77,11 +92,11 @@ export const usePendingActionReview = () => {
       Maybe.of(
         t(
           `position_details.pending_action_button.${
-            pendingRequest.requestDto.type.toLowerCase() as Lowercase<ActionTypes>
+            pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
           }` as const
         )
       ),
-    [pendingRequest.requestDto.type, t]
+    [pendingRequest.requestDto.action, t]
   );
 
   const navigate = useNavigate();
@@ -98,13 +113,9 @@ export const usePendingActionReview = () => {
 
   const actionPendingMutation = useMutation({
     mutationFn: async () =>
-      (
-        await EitherAsync(() => actionPending(pendingRequest.requestDto))
-          .mapLeft(() => new Error("Pending actions error"))
-          .chain((actionDto) =>
-            EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
-          )
-      ).unsafeCoerce(),
+      actionPreviewQuery.data ??
+      (await actionPreviewQuery.refetch()).data ??
+      Promise.reject(new Error("Pending actions error")),
     onSuccess: (data) => {
       pendingActionStore.send({ type: "setActionDto", data });
       navigate("../steps", { relative: "path" });
@@ -116,11 +127,11 @@ export const usePendingActionReview = () => {
   const rewardTokenDetailsProps = useMemo(
     () =>
       integrationData
-        .chainNullable((v) =>
-          v.metadata.provider
-            ? { provider: v.metadata.provider, rest: v }
-            : null
-        )
+        .chainNullable((v) => {
+          const provider = getYieldProviderDetails(v);
+
+          return provider ? { provider, rest: v } : null;
+        })
         .map((v) => {
           const rewardToken = Maybe.of({
             logoUri: v.provider.logoURI,
@@ -131,11 +142,11 @@ export const usePendingActionReview = () => {
 
           return {
             type: "pendingAction",
-            pendingAction: pendingRequest.requestDto.type,
+            pendingAction: pendingRequest.requestDto.action,
             rewardToken,
           } satisfies ComponentProps<typeof RewardTokenDetails>;
         }),
-    [integrationData, pendingRequest.requestDto.type]
+    [integrationData, pendingRequest.requestDto.action]
   );
 
   const onClickRef = useSavedRef(onClick);
@@ -166,6 +177,8 @@ export const usePendingActionReview = () => {
     metaInfo,
     isGasCheckWarning: !!gasWarningCheck.data,
     gasCheckLoading:
-      actionPendingGasEstimate.isLoading || gasWarningCheck.isLoading,
+      actionPreviewQuery.isLoading ||
+      actionPreviewQuery.isFetching ||
+      gasWarningCheck.isLoading,
   };
 };

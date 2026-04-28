@@ -15,6 +15,7 @@ import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getEnabledNetworks } from "../api/get-enabled-networks";
 import type { VariantProps } from "../settings/types";
+import type { YieldApiFetchClient } from "../yield-api-client-provider/types";
 import { createFineryWallets } from "./finery-wallet-list";
 import { passCorrectChainsToWallet } from "./utils";
 
@@ -22,17 +23,19 @@ const queryFn = async ({
   queryClient,
   forceWalletConnectOnly,
   variant,
+  yieldApiFetchClient,
 }: {
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
   variant: VariantProps["variant"];
+  yieldApiFetchClient: YieldApiFetchClient;
 }): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
   connector: Maybe<WalletList[number]>;
   fineryWallets: ReturnType<typeof createFineryWallets> | null;
 }> =>
-  getEnabledNetworks({ queryClient }).caseOf({
+  getEnabledNetworks({ queryClient, yieldApiFetchClient }).caseOf({
     Right: (networks) => {
       const filteredEvmChainsMap: Partial<EvmChainsMap> =
         typeSafeObjectFromEntries(

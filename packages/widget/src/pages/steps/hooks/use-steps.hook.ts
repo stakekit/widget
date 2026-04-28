@@ -1,7 +1,8 @@
-import type { ActionDto, TransactionType } from "@stakekit/api-hooks";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import type { ActionDto, TransactionType } from "../../../domain/types/action";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
 import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
 import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
@@ -14,12 +15,14 @@ import type { TxState } from "./use-steps-machine.hook";
 import { useStepsMachine } from "./use-steps-machine.hook";
 
 export const useSteps = ({
+  inputToken,
   session,
   onSignSuccess,
   providersDetails,
 }: {
   onSignSuccess?: () => void;
   session: ActionDto;
+  inputToken?: TokenDto | YieldTokenDto;
   providersDetails: ReturnType<typeof useProvidersDetails>;
 }) => {
   const navigate = useNavigate();
@@ -31,7 +34,7 @@ export const useSteps = ({
       actionId: session.id,
       actionType: session.type,
       amount: session.amount,
-      inputToken: session.inputToken,
+      inputToken,
       providersDetails: providersDetails
         .map((providerDetail) =>
           providerDetail.map((v) => ({
@@ -45,12 +48,12 @@ export const useSteps = ({
         )
         .orDefault([]),
     }),
-    [session, providersDetails]
+    [session, providersDetails, inputToken]
   );
 
   const [machineState, send, actorRef] = useStepsMachine({
     transactions: session.transactions,
-    integrationId: session.integrationId,
+    yieldId: session.yieldId,
     actionMeta,
   });
 

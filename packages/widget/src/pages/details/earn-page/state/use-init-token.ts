@@ -11,6 +11,7 @@ import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../../../../providers/yield-api-client-provider";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
 /**
@@ -28,6 +29,7 @@ export const useInitToken = () => {
     isConnecting,
   } = useSKWallet();
   const queryClient = useSKQueryClient();
+  const yieldApiFetchClient = useYieldApiFetchClient();
   const { data: positionsData } = usePositionsData();
 
   const {
@@ -60,8 +62,8 @@ export const useInitToken = () => {
           getInitParams({
             isLedgerLive,
             queryClient,
+            yieldApiFetchClient,
             externalProviders,
-            validatorsConfig,
           }).chain((initParams) =>
             EitherAsync.liftEither(
               getInitialToken({
@@ -83,6 +85,7 @@ export const useInitToken = () => {
                     isConnected,
                     isLedgerLive,
                     queryClient,
+                    yieldApiFetchClient,
                     network,
                     yieldIds: tokenBalance.availableYields,
                     initParams: initParams,

@@ -1,10 +1,11 @@
-import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
 import type { ReactNode } from "react";
 import type {
   SupportedSKChainIds,
   SupportedSKChains,
 } from "../../domain/types/chains";
+import type { TransactionFormat } from "../../domain/types/settings";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
+import type { TokenDto } from "../../domain/types/tokens";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import type { Languages, localResources } from "../../translation";
 import type { RecursivePartial } from "../../types/utils";
@@ -29,6 +30,7 @@ export type VariantProps =
 export type SettingsProps = {
   apiKey: string;
   baseUrl?: string;
+  yieldsApiUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;

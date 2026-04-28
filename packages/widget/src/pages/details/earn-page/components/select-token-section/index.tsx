@@ -194,7 +194,10 @@ export const SelectTokenSection = () => {
                 }}
                 data-state={errorBalance ? "error" : "valid"}
                 className={clsx(
-                  combineRecipeWithVariant({ rec: selectTokenBalance, variant })
+                  combineRecipeWithVariant({
+                    rec: selectTokenBalance,
+                    variant,
+                  })
                 )}
               >
                 {selectedTokenAvailableAmount

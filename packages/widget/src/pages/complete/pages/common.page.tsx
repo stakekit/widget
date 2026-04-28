@@ -1,19 +1,15 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  YieldDto,
-  YieldMetadataDto,
-} from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { Just, Maybe } from "purify-ts";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { CheckCircleIcon } from "../../../components/atoms/icons/check-circle";
 import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
+import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
@@ -28,11 +24,11 @@ import {
 } from "../state";
 
 type Props = {
-  token: Maybe<TokenDto>;
-  metadata: Maybe<YieldMetadataDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
+  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
   network: string;
   amount: string;
-  pendingActionType?: ActionTypes;
+  pendingActionType?: YieldPendingActionType;
   providersDetails: Maybe<
     {
       logo: string | undefined;
@@ -40,7 +36,7 @@ type Props = {
     }[]
   >;
   yieldType: Maybe<ExtendedYieldType>;
-  integrationId: YieldDto["id"];
+  integrationId: string;
 };
 
 export const CompletePageComponent = ({
@@ -133,7 +129,7 @@ export const CompletePageComponent = ({
                     tokenNetwork: network,
                     pendingAction: t(
                       `complete.pending_action.${
-                        pendingActionType?.toLowerCase() as Lowercase<ActionTypes>
+                        pendingActionType?.toLowerCase() as Lowercase<YieldPendingActionType>
                       }` as const,
                       {
                         context: isEthenaUsdeStaking(integrationId)
@@ -160,15 +156,10 @@ export const CompletePageComponent = ({
                       >
                         {v.logo && (
                           <Image
-                            imageProps={{ borderRadius: "full" }}
-                            containerProps={{ hw: "5" }}
+                            imgProps={{ borderRadius: "full" }}
+                            wrapperProps={{ hw: "5" }}
                             src={v.logo}
-                            fallback={
-                              <ImageFallback
-                                name={v.name || v.logo}
-                                tokenLogoHw="5"
-                              />
-                            }
+                            fallbackName={v.name || v.logo}
                           />
                         )}
                         <Text variant={{ type: "muted" }}>
@@ -201,12 +192,16 @@ export const CompletePageComponent = ({
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
                     type: Just(val.type)
-                      .map((v) =>
-                        t(`steps.tx_type.${v}`, {
-                          context: isEthenaUsdeStaking(integrationId)
-                            ? "ETHENA_USDE"
-                            : undefined,
-                        })
+                      .map(
+                        (v) =>
+                          t(
+                            `steps.tx_type.${v}` as never,
+                            {
+                              context: isEthenaUsdeStaking(integrationId)
+                                ? "ETHENA_USDE"
+                                : undefined,
+                            } as never
+                          ) as unknown as string
                       )
                       .map(capitalizeFirstLowerRest)
                       .extract(),

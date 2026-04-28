@@ -1,19 +1,14 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { yieldYieldOpportunity } from "../../../common/private-api";
-import {
-  filterMapValidators,
-  getComputedRewardRate,
-  isBittensorStaking,
-  isEthenaUsdeStaking,
-  type ValidatorsConfig,
-} from "../../../domain/types/yields";
+import type { YieldApiFetchClient } from "../../../domain/types/yield-api";
+import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
+import { getResponseData } from "../../../providers/yield-api-client-provider/request-helpers";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  validatorsConfig: ValidatorsConfig;
+  yieldApiFetchClient: YieldApiFetchClient;
   signal?: AbortSignal;
 };
 
@@ -50,38 +45,47 @@ const fn = ({
   isLedgerLive,
   yieldId,
   signal,
-  validatorsConfig,
+  yieldApiFetchClient,
 }: Params & {
   signal?: AbortSignal;
-}) =>
-  EitherAsync(() =>
-    yieldYieldOpportunity(
-      yieldId,
-      {
-        ledgerWalletAPICompatible: isLedgerLive,
-      },
-      signal
-    )
-  )
-    .map((y) => filterMapValidators(validatorsConfig, y))
+}) => {
+  return EitherAsync(async () => {
+    const [newYieldResult, legacyYieldResult] = await Promise.all([
+      getResponseData(
+        yieldApiFetchClient.GET("/v1/yields/{yieldId}", {
+          params: {
+            path: {
+              yieldId,
+            },
+          },
+          signal,
+        })
+      ),
+      yieldYieldOpportunity(
+        yieldId,
+        { ledgerWalletAPICompatible: isLedgerLive },
+        signal
+      ),
+    ]);
+
+    return {
+      ...newYieldResult,
+      __fallback__: legacyYieldResult,
+    } satisfies Yield;
+  })
     .map((y) =>
       isEthenaUsdeStaking(y.id)
         ? ({
             ...y,
-            rewardRate: getComputedRewardRate(y),
             metadata: {
               ...y.metadata,
               name: y.metadata.name.replace(/staking/i, ""),
             },
-          } satisfies YieldDto)
-        : isBittensorStaking(y.id)
-          ? {
-              ...y,
-              validators: y.validators.filter((v) => v.name?.match(/yuma/i)),
-            }
-          : y
+          } satisfies Yield)
+        : y
     )
     .mapLeft((e) => {
       console.log(e);
       return new Error("Could not get yield opportunity");
     });
+};

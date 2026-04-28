@@ -1,13 +1,14 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Spinner } from "../../../components/atoms/spinner";
 import { SelectValidator } from "../../../components/molecules/select-validator";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { AmountBlock } from "../../../pages/position-details/components/amount-block";
 import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import type { YieldPendingActionType } from "../../../providers/yield-api-client-provider/types";
 import { container } from "./styles.css";
 
 export const positionDetailsActionsHasContent = (
@@ -34,6 +35,7 @@ export const PositionDetailsActions = () => {
   const {
     isLoading,
     integrationData,
+    validatorsData,
     positionBalancesByType,
     unstakeToken,
     providersDetails,
@@ -102,7 +104,7 @@ export const PositionDetailsActions = () => {
                     }
                     label={t(
                       `position_details.pending_action_button.${
-                        val.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                        val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
                       }`
                     )}
                     onMaxClick={null}
@@ -150,7 +152,7 @@ export const PositionDetailsActions = () => {
                   unstakeAmountError={unstakeAmountError}
                   onMaxClick={onMaxClick}
                   label={t(
-                    `position_details.unstake_label.${v.integrationData.metadata.type}`
+                    `position_details.unstake_label.${getBaseYieldType(v.integrationData)}`
                   )}
                   formattedAmount={unstakeFormattedAmount}
                   balance={reducedStakedOrLiquidBalance}
@@ -173,7 +175,7 @@ export const PositionDetailsActions = () => {
               onValidatorsSubmit([val.address]);
             }}
             selectedStake={v.integrationData}
-            validators={v.integrationData.validators}
+            validators={validatorsData}
             multiSelect={validatorAddressesHandling.multiSelect}
             state={validatorAddressesHandling.modalState}
           >

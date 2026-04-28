@@ -1,14 +1,14 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
 import type { PositionsData } from "../domain/types/positions";
 import { getMinStakeAmount, getMinUnstakeAmount } from "../domain/types/stake";
+import { getYieldActionArg, type Yield } from "../domain/types/yields";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
 type Args = {
-  yieldOpportunity: Maybe<YieldDto>;
+  yieldOpportunity: Maybe<Yield>;
   availableAmount: Maybe<BigNumber>;
 } & (
   | { type: "enter"; positionsData: PositionsData; pricePerShare?: never }
@@ -52,11 +52,7 @@ export const useMaxMinYieldAmount = ({
     return isForceMax
       ? availableAmount
       : yieldOpportunity
-          .chainNullable(
-            (y) =>
-              (type === "enter" ? y.args.enter : y.args.exit)?.args?.amount
-                ?.maximum
-          )
+          .chainNullable((y) => getYieldActionArg(y, type, "amount")?.maximum)
           .map((a) => new BigNumber(a))
           .filter((v) => v.isGreaterThan(0));
   }, [availableAmount, isForceMax, type, yieldOpportunity]);

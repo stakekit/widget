@@ -1,13 +1,17 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { equalTokens, getTokenPriceInUSD } from "../../../domain";
+import {
+  getRewardRateBreakdown,
+  type YieldRewardRateDto,
+} from "../../../domain/types/reward-rate";
 import { isForceMaxAmount } from "../../../domain/types/stake";
+import type { TokenDto } from "../../../domain/types/tokens";
+import { getYieldActionArg } from "../../../domain/types/yields";
+import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useBaseToken } from "../../../hooks/use-base-token";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
@@ -17,6 +21,11 @@ import {
 } from "../state";
 import { usePendingActions } from "./use-pending-actions";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
+
+const hasCampaignRewardRate = (
+  rewardRate: YieldRewardRateDto | null | undefined
+) =>
+  !!getRewardRateBreakdown(rewardRate).find((item) => item.key === "campaign");
 
 export const usePositionDetails = () => {
   const {
@@ -43,7 +52,7 @@ export const usePositionDetails = () => {
   const unstakeMaxAmount = useMemo(
     () =>
       integrationData
-        .chainNullable((val) => val.args.exit?.args?.amount)
+        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
         .filter((val) => !isForceMaxAmount(val))
         .chainNullable((val) => val.maximum),
     [integrationData]
@@ -52,7 +61,7 @@ export const usePositionDetails = () => {
   const unstakeMinAmount = useMemo(
     () =>
       integrationData
-        .chainNullable((val) => val.args.exit?.args?.amount)
+        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
         .filter((val) => !isForceMaxAmount(val))
         .map(() => minUnstakeAmount.toNumber())
         .filter((val) => new BigNumber(val).isGreaterThan(0)),
@@ -72,6 +81,7 @@ export const usePositionDetails = () => {
         exitStore.send({
           type: "initFlow",
           data: {
+            addresses: val.stakeExitRequestDto.addresses,
             gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
             integrationData: val.integrationData,
             requestDto: val.stakeExitRequestDto.dto,
@@ -90,19 +100,20 @@ export const usePositionDetails = () => {
 
   const _unstakeAmountError = onClickHandler.isError || unstakeAmountError;
 
-  const positionLabel = useMemo(
-    () =>
-      positionBalances.data.chainNullable(
-        (b) => b.balances.find((b) => b.label)?.label
-      ),
-    [positionBalances.data]
-  );
-
   const dispatch = useUnstakeOrPendingActionDispatch();
 
   const trackEvent = useTrackEvent();
 
-  const baseToken = useBaseToken(integrationData);
+  const baseToken = integrationData.map((val) => val.token);
+
+  const yieldValidators = useYieldValidators({
+    enabled: integrationData.isJust(),
+    yieldId:
+      integrationData.map((val) => val.id).extractNullable() ?? undefined,
+    network:
+      integrationData.map((val) => val.token.network).extractNullable() ??
+      undefined,
+  });
 
   const providersDetails = useProvidersDetails({
     integrationData,
@@ -110,36 +121,42 @@ export const usePositionDetails = () => {
       return b.type === "validators" ? b.validatorsAddresses : [];
     }),
     selectedProviderYieldId: Maybe.empty(),
+    validatorsData: Maybe.fromNullable(yieldValidators.data),
   });
 
-  const canUnstake = integrationData.filter((d) => !!d.args.exit).isJust();
+  const personalizedRewardRate = useMemo(
+    () =>
+      positionBalances.data
+        .map((balanceData) => balanceData.rewardRate)
+        .filter(hasCampaignRewardRate)
+        .extractNullable(),
+    [positionBalances.data]
+  );
+
+  const fallbackRewardRate = useMemo(
+    () =>
+      integrationData
+        .map((yieldData) => yieldData.rewardRate)
+        .filter(hasCampaignRewardRate)
+        .extractNullable(),
+    [integrationData]
+  );
+
+  const apyCompositionRewardRate = personalizedRewardRate ?? fallbackRewardRate;
+  const apyCompositionShowsUpToCampaign =
+    !personalizedRewardRate && !!fallbackRewardRate;
+
+  const canUnstake = integrationData.filter((d) => !!d.status.exit).isJust();
 
   const onUnstakeAmountChange = (value: BigNumber) =>
     dispatch({ type: "unstake/amount/change", data: value });
 
   const unstakeFormattedAmount = useMemo(
     () =>
-      Maybe.fromRecord({
-        prices: Maybe.fromNullable(positionBalancePrices.data),
-        reducedStakedOrLiquidBalance,
-        baseToken,
-      })
-        .map((val) =>
-          getTokenPriceInUSD({
-            amount: unstakeAmount,
-            token: val.reducedStakedOrLiquidBalance.token,
-            prices: val.prices,
-            pricePerShare: val.reducedStakedOrLiquidBalance.pricePerShare,
-            baseToken: val.baseToken,
-          })
-        )
+      reducedStakedOrLiquidBalance
+        .map((val) => val.amountUsd)
         .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [
-      positionBalancePrices.data,
-      reducedStakedOrLiquidBalance,
-      unstakeAmount,
-      baseToken,
-    ]
+    [reducedStakedOrLiquidBalance]
   );
 
   const onMaxClick = () => {
@@ -163,7 +180,7 @@ export const usePositionDetails = () => {
     validatorAddressesHandling,
   } = usePendingActions();
 
-  const liquidTokensToNativeConversion = useMemo(
+  const shareToAmountConversions = useMemo(
     () =>
       Maybe.fromRecord({
         integrationData,
@@ -172,18 +189,15 @@ export const usePositionDetails = () => {
       }).map((v) =>
         [...v.positionBalancesByType.values()].reduce((acc, curr) => {
           curr
-            .filter(
-              (yb) =>
-                !yb.token.isPoints &&
-                yb.pricePerShare &&
-                !equalTokens(yb.token, v.baseToken)
-            )
+            .filter((yb) => yb.shareAmount && yb.amount && !yb.token.isPoints)
             .forEach((yb) => {
               acc.set(
                 yb.token.symbol,
                 `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                  new BigNumber(yb.pricePerShare)
-                )} ${v.baseToken.symbol}`
+                  new BigNumber(yb.shareAmount ?? 0).dividedBy(
+                    new BigNumber(yb.amount ?? 0)
+                  )
+                )} ${yb.shareToken?.symbol}`
               );
             });
 
@@ -198,10 +212,12 @@ export const usePositionDetails = () => {
   const isLoading =
     positionBalances.isLoading ||
     positionBalancePrices.isLoading ||
-    yieldOpportunity.isLoading;
+    yieldOpportunity.isLoading ||
+    yieldValidators.isLoading;
 
   return {
     integrationData,
+    validatorsData: yieldValidators.data ?? [],
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     canUnstake,
@@ -215,13 +231,15 @@ export const usePositionDetails = () => {
     isLoading,
     onPendingActionClick,
     providersDetails,
+    personalizedRewardRate,
+    apyCompositionRewardRate,
+    apyCompositionShowsUpToCampaign,
     pendingActions,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
     validatorAddressesHandling,
     onValidatorsSubmit,
     onPendingActionAmountChange,
     unstakeToken,
-    positionLabel,
     unstakeAmountError: _unstakeAmountError,
     unstakeMaxAmount,
     unstakeMinAmount,

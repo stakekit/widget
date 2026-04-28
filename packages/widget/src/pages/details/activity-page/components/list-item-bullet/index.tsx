@@ -1,8 +1,8 @@
-import { ActionStatus } from "@stakekit/api-hooks";
 import { Just, Nothing } from "purify-ts";
 import { Box } from "../../../../../components/atoms/box";
 import { UtilaFailIcon } from "../../../../../components/atoms/icons/utila/fail";
 import { UtilaSuccessIcon } from "../../../../../components/atoms/icons/utila/success";
+import { ActionStatus } from "../../../../../domain/types/action";
 import { useSettings } from "../../../../../providers/settings";
 
 const ListItemBullet = ({

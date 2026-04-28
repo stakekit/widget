@@ -10,17 +10,40 @@ interface RichError {
 
 const $richError = new BehaviorSubject<RichError | null>(null);
 
+const isRichError = (error: unknown): error is RichError =>
+  typeof error === "object" &&
+  error !== null &&
+  "message" in error &&
+  typeof error.message === "string";
+
+export const handleRichErrorResponse = ({
+  data,
+  i18n,
+  url,
+}: {
+  data: unknown;
+  i18n: i18n;
+  url?: string;
+}) => {
+  if (!isRichError(data)) {
+    return;
+  }
+
+  if (i18n.exists(`errors.${data.message}`) && !url?.includes("gas-estimate")) {
+    $richError.next(data);
+  }
+};
+
 export const attachRichErrorsInterceptor = (
   apiClient: AxiosInstance,
   i18n: i18n
 ) =>
   apiClient.interceptors.response.use(undefined, (error) => {
-    if (
-      i18n.exists(`errors.${error?.response?.data?.message}`) &&
-      !error?.config?.url.includes("gas-estimate") // temp ignore gas estimate errors
-    ) {
-      $richError.next(error.response.data);
-    }
+    handleRichErrorResponse({
+      data: error?.response?.data,
+      i18n,
+      url: error?.config?.url,
+    });
 
     return Promise.reject(error);
   });

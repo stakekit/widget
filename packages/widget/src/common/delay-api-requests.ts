@@ -26,9 +26,11 @@ const checkDelay = () => {
   }).then(() => unsub());
 };
 
+export const waitForDelayedApiRequests = () => checkDelay();
+
 export const attachDelayInterceptor = (apiClient: AxiosInstance) =>
   apiClient.interceptors.response.use(async (response) => {
-    await checkDelay();
+    await waitForDelayedApiRequests();
 
     return response;
   });

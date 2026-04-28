@@ -2,7 +2,10 @@ import { Maybe } from "purify-ts";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { SelectValidator } from "../../../../../components/molecules/select-validator";
-import { isYieldWithProviderOptions } from "../../../../../domain/types/yields";
+import {
+  isYieldActionArgRequired,
+  isYieldWithProviderOptions,
+} from "../../../../../domain/types/yields";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";
 
@@ -27,12 +30,15 @@ export const SelectValidatorSection = () => {
     </Box>
   ) : (
     Maybe.fromRecord({ selectedStake, validatorsData })
-      .filter((val) => !!val.selectedStake.validators.length)
+      .filter((val) => !!val.validatorsData.length)
       .map((val) => {
         const selectedValidatorsArr = [...selectedValidators.values()];
 
-        const multiSelect =
-          !!val.selectedStake.args.enter.args?.validatorAddresses?.required;
+        const multiSelect = isYieldActionArgRequired(
+          val.selectedStake,
+          "enter",
+          "validatorAddresses"
+        );
 
         return (
           <SelectValidator

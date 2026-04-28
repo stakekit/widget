@@ -10,6 +10,7 @@ import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { ToolTip } from "../../../../components/atoms/tooltip";
 import { Text } from "../../../../components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "../../../../domain/types/positions";
+import { getYieldProviderDetails } from "../../../../domain/types/yields";
 import {
   columnContainer,
   listItem,
@@ -61,7 +62,14 @@ export const PositionsListItem = memo(
                   >
                     {item.token.mapOrDefault(
                       (val) => (
-                        <TokenIcon metadata={d.metadata} token={val} />
+                        <TokenIcon
+                          metadata={{
+                            logoURI: d.metadata.logoURI,
+                            name: d.metadata.name,
+                            provider: getYieldProviderDetails(d) ?? undefined,
+                          }}
+                          token={val}
+                        />
                       ),
                       <Box display="flex" marginRight="2">
                         <Spinner />

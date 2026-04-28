@@ -1,16 +1,22 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { Just, Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { Button } from "../../components/atoms/button";
-import { InfoIcon } from "../../components/atoms/icons/info";
 import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Heading } from "../../components/atoms/typography/heading";
 import { Text } from "../../components/atoms/typography/text";
+import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
+import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
+import {
+  getBaseYieldType,
+  getYieldProviderDetails,
+} from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
+import type { YieldPendingActionType } from "../../providers/yield-api-client-provider/types";
+import { getRewardRateFormatted } from "../../utils/formatters";
 import { PageContainer } from "../components/page-container";
 import { AmountBlock } from "./components/amount-block";
 import { PositionBalances } from "./components/position-balances";
@@ -24,6 +30,7 @@ const PositionDetails = () => {
   const {
     onPendingActionAmountChange,
     integrationData,
+    validatorsData,
     isLoading,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
@@ -37,16 +44,18 @@ const PositionDetails = () => {
     onPendingActionClick,
     pendingActions,
     providersDetails,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
     validatorAddressesHandling,
     onValidatorsSubmit,
     unstakeToken,
     canUnstake,
     unstakeAmountError,
-    positionLabel,
     unstakeMaxAmount,
     unstakeMinAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
+    personalizedRewardRate,
+    apyCompositionRewardRate,
+    apyCompositionShowsUpToCampaign,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -87,7 +96,13 @@ const PositionDetails = () => {
                         alignItems="center"
                       >
                         <TokenIcon
-                          metadata={integrationData.metadata}
+                          metadata={{
+                            logoURI: integrationData.metadata.logoURI,
+                            name: integrationData.metadata.name,
+                            provider:
+                              getYieldProviderDetails(integrationData) ??
+                              undefined,
+                          }}
                           token={t}
                           tokenLogoHw="14"
                         />
@@ -108,41 +123,49 @@ const PositionDetails = () => {
                   ))
                   .extractNullable()}
 
-                {positionLabel
-                  .map((l) => (
+                {personalizedRewardRate ? (
+                  <Box marginTop="4">
                     <Box
-                      background="stakeSectionBackground"
-                      borderRadius="xl"
-                      marginTop="2"
-                      py="4"
-                      px="4"
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      gap="3"
                     >
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="flex-start"
-                        gap="1"
-                      >
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <InfoIcon />
-                        </Box>
+                      <Text variant={{ type: "muted", weight: "normal" }}>
+                        {t("position_details.personalized_apy")}
+                      </Text>
 
-                        <Text variant={{ type: "muted", size: "small" }}>
-                          {
-                            t(
-                              `position_details.labels.${l.type}.details`,
-                              l.params
-                            ) as string
-                          }
-                        </Text>
-                      </Box>
+                      <Heading
+                        variant={{ level: "h4" }}
+                        data-testid="personalized-reward-rate"
+                      >
+                        {getRewardRateFormatted({
+                          rewardRate: personalizedRewardRate.total,
+                          rewardType: getRewardTypeFromRateType(
+                            personalizedRewardRate.rateType
+                          ),
+                        })}
+                      </Heading>
                     </Box>
-                  ))
-                  .extractNullable()}
+
+                    <RewardRateBreakdown
+                      rewardRate={personalizedRewardRate}
+                      title={t("details.apy_composition.title")}
+                      testId="personalized-reward-rate-breakdown"
+                    />
+                  </Box>
+                ) : null}
+
+                {!personalizedRewardRate && apyCompositionRewardRate ? (
+                  <Box marginTop="4">
+                    <RewardRateBreakdown
+                      rewardRate={apyCompositionRewardRate}
+                      showUpToCampaign={apyCompositionShowsUpToCampaign}
+                      title={t("details.apy_composition.title")}
+                      testId="reward-rate-breakdown"
+                    />
+                  </Box>
+                ) : null}
 
                 <Box marginTop="4">
                   {providersDetails
@@ -152,8 +175,14 @@ const PositionDetails = () => {
                           {...p}
                           key={p.address ?? idx}
                           isFirst={idx === 0}
+                          rewardRate={
+                            personalizedRewardRate ? undefined : p.rewardRate
+                          }
+                          rewardType={
+                            personalizedRewardRate ? undefined : p.rewardType
+                          }
                           stakeType={t(
-                            `position_details.stake_type.${integrationData.metadata.type}`
+                            `position_details.stake_type.${getBaseYieldType(integrationData)}`
                           )}
                           integrationData={integrationData}
                         />
@@ -174,7 +203,7 @@ const PositionDetails = () => {
                       ))
                   )}
                 </Box>
-                {liquidTokensToNativeConversion
+                {shareToAmountConversions
                   .map((val) => (
                     <Box
                       my="2"
@@ -229,7 +258,7 @@ const PositionDetails = () => {
                             }
                             label={t(
                               `position_details.pending_action_button.${
-                                val.pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                                val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
                               }`
                             )}
                             onMaxClick={null}
@@ -276,7 +305,7 @@ const PositionDetails = () => {
                           unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
-                            `position_details.unstake_label.${integrationData.metadata.type}`
+                            `position_details.unstake_label.${getBaseYieldType(integrationData)}`
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}
@@ -300,7 +329,7 @@ const PositionDetails = () => {
                       onValidatorsSubmit([val.address]);
                     }}
                     selectedStake={integrationData}
-                    validators={integrationData.validators}
+                    validators={validatorsData}
                     multiSelect={validatorAddressesHandling.multiSelect}
                     state={validatorAddressesHandling.modalState}
                   >

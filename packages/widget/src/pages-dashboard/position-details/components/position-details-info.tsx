@@ -7,9 +7,9 @@ import {
   CollapsibleRoot,
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
-import { InfoIcon } from "../../../components/atoms/icons/info";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { PositionBalances } from "../../../pages/position-details/components/position-balances";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
 import { ProviderDetails } from "./provider-details";
@@ -21,8 +21,7 @@ export const PositionDetailsInfo = () => {
     integrationData,
     positionBalancesByType,
     providersDetails,
-    positionLabel,
-    liquidTokensToNativeConversion,
+    shareToAmountConversions,
   } = usePositionDetails();
 
   const { t } = useTranslation();
@@ -51,38 +50,6 @@ export const PositionDetailsInfo = () => {
         px="4"
         py="4"
       >
-        {positionLabel
-          .map((l) => (
-            <Box
-              background="stakeSectionBackground"
-              borderRadius="xl"
-              marginTop="2"
-              py="4"
-              px="4"
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="flex-start"
-                gap="1"
-              >
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <InfoIcon />
-                </Box>
-
-                <Text variant={{ type: "muted", size: "small" }}>
-                  {
-                    t(
-                      `position_details.labels.${l.type}.details`,
-                      l.params
-                    ) as string
-                  }
-                </Text>
-              </Box>
-            </Box>
-          ))
-          .extractNullable()}
-
         <Box display="flex" flexDirection="column" gap="2">
           {providersDetails
             .map((pd) =>
@@ -91,7 +58,7 @@ export const PositionDetailsInfo = () => {
                   {...p}
                   key={p.address ?? idx}
                   stakeType={t(
-                    `position_details.stake_type.${val.integrationData.metadata.type}`
+                    `position_details.stake_type.${getBaseYieldType(val.integrationData)}`
                   )}
                   integrationData={val.integrationData}
                 />
@@ -134,7 +101,7 @@ export const PositionDetailsInfo = () => {
                 )}
               </Box>
 
-              {liquidTokensToNativeConversion
+              {shareToAmountConversions
                 .filter((val) => val.size > 0)
                 .map((val) => (
                   <Box

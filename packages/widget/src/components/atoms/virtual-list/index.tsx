@@ -104,11 +104,7 @@ export const VirtualList = <ItemData = unknown>({
           }}
         >
           {virtualItems.map((virtualItem) => (
-            <Box
-              key={virtualItem.key}
-              data-index={virtualItem.index}
-              ref={rowVirtualizer.measureElement}
-            >
+            <Box key={virtualItem.key} data-index={virtualItem.index}>
               {itemContent(virtualItem.index, data[virtualItem.index])}
             </Box>
           ))}
@@ -233,11 +229,7 @@ export const GroupedVirtualList = ({
             const type = item.type;
 
             return (
-              <Box
-                ref={rowVirtualizer.measureElement}
-                data-index={virtualItem.index}
-                key={virtualItem.index}
-              >
+              <Box data-index={virtualItem.index} key={virtualItem.index}>
                 {type === "child"
                   ? itemContent(item.index, item.parentIndex)
                   : groupContent(item.index)}

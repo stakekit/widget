@@ -1,9 +1,10 @@
-import type { YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Text } from "../../components/atoms/typography/text";
+import type { YieldBalanceDto } from "../../domain/types/positions";
+import { getBaseYieldType, type Yield } from "../../domain/types/yields";
 import { defaultFormattedNumber } from "../../utils";
 
 export const PositionBalances = ({
@@ -11,11 +12,11 @@ export const PositionBalances = ({
   integrationData,
 }: {
   yieldBalance: YieldBalanceDto & { tokenPriceInUsd: BigNumber };
-  integrationData: YieldDto;
+  integrationData: Yield;
 }) => {
   const { t } = useTranslation();
 
-  const yieldType = integrationData.metadata.type;
+  const yieldType = getBaseYieldType(integrationData);
 
   const balanceTypeContext =
     yieldType === "vault" || yieldType === "lending"

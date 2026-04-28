@@ -1,8 +1,11 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { isBittensorStaking } from "../domain/types/yields";
+import {
+  getYieldRewardType,
+  isBittensorStaking,
+  type Yield,
+} from "../domain/types/yields";
 import type { State } from "../pages/details/earn-page/state/types";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
@@ -14,7 +17,7 @@ export const useEstimatedRewards = ({
   selectedValidators,
   selectedProviderYieldId,
 }: {
-  selectedStake: Maybe<YieldDto>;
+  selectedStake: Maybe<Yield>;
   stakeAmount: State["stakeAmount"];
   selectedValidators: State["selectedValidators"];
   selectedProviderYieldId: State["selectedProviderYieldId"];
@@ -51,9 +54,11 @@ export const useEstimatedRewards = ({
             .dividedBy(val.providersDetails.length),
         }))
         .map((val) => ({
+          rewardRateAverage: val.rewardRateAverage,
+          rewardType: getYieldRewardType(val.selectedStake),
           percentage: getRewardRateFormatted({
             rewardRate: val.rewardRateAverage.toNumber(),
-            rewardType: val.selectedStake.rewardType,
+            rewardType: getYieldRewardType(val.selectedStake),
           }),
           yearly: val.rewardRateAverage.isGreaterThan(0)
             ? formatNumber(

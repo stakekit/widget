@@ -1,4 +1,3 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { formatAddress } from "../../../src/utils";
@@ -14,7 +13,9 @@ describe("Gas warning flow", () => {
     customConnectors,
   }: {
     availableAmount: string;
-    yieldDto: YieldDto;
+    yieldDto: ReturnType<
+      typeof setup
+    >["yieldWithSameGasAndStakeToken"]["yieldDto"];
     withWarning: boolean;
   } & Pick<ReturnType<typeof setup>, "account" | "customConnectors">) => {
     const app = await renderApp({

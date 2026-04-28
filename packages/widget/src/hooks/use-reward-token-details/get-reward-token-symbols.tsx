@@ -1,7 +1,7 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import React from "react";
 import { Box } from "../../components/atoms/box";
 import { tokenString } from "../../domain";
+import type { TokenDto } from "../../domain/types/tokens";
 import { symbolIcon } from "./style.css";
 
 export const getRewardTokenSymbols = (rewardTokens: TokenDto[]) =>

@@ -2,6 +2,7 @@ import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
@@ -44,14 +45,18 @@ export const PendingCompletePage = () => {
     selectedProviderYieldId: Maybe.empty(),
   });
 
-  const metadata = integrationData.map((d) => d.metadata);
+  const metadata = integrationData.map((yieldDto) => ({
+    logoURI: yieldDto.metadata.logoURI,
+    name: yieldDto.metadata.name,
+    provider: getYieldProviderDetails(yieldDto) ?? undefined,
+  }));
   const network = token.mapOrDefault((t) => t.symbol, "");
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(pendingRequest.requestDto.args?.amount)
+      Maybe.fromNullable(pendingRequest.requestDto.arguments?.amount)
         .map((val) => new BigNumber(val ?? 0))
         .mapOrDefault((v) => formatNumber(v), ""),
-    [pendingRequest.requestDto.args?.amount]
+    [pendingRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(integrationData).map((v) => v.type);

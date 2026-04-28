@@ -1,5 +1,4 @@
-import type { PriceResponseDto } from "@stakekit/api-hooks";
-import type { Price } from "../domain/types/price";
+import type { Price, PriceResponseDto } from "../domain/types/price";
 import { Prices } from "../domain/types/price";
 import type { TokenString } from "../domain/types/tokens";
 

@@ -1,27 +1,26 @@
-import type {
-  ActionTypes,
-  PendingActionDto,
-  YieldBalanceDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Text } from "../../../components/atoms/typography/text";
-import { isEthenaUsdeStaking } from "../../../domain/types/yields";
+import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
+import type {
+  YieldBalanceDto,
+  YieldPendingActionDto,
+  YieldPendingActionType,
+} from "../../../providers/yield-api-client-provider/types";
 import { formatNumber } from "../../../utils";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
-  pendingActionDto: PendingActionDto;
+  pendingActionDto: YieldPendingActionDto;
   yieldBalance: YieldBalanceDto & {
     tokenPriceInUsd: BigNumber;
   };
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
-  yieldId: YieldDto["id"];
+  yieldId: Yield["id"];
 };
 
 export const StaticActionBlock = ({
@@ -53,7 +52,7 @@ export const StaticActionBlock = ({
               symbol: yieldBalance.token.symbol,
               pendingAction: t(
                 `position_details.pending_action.${
-                  pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                  pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
                 }`,
                 {
                   context: isEthenaUsdeStaking(yieldId)
@@ -91,7 +90,7 @@ export const StaticActionBlock = ({
           <Text>
             {t(
               `position_details.pending_action_button.${
-                pendingActionDto.type.toLowerCase() as Lowercase<ActionTypes>
+                pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
               }`
             )}
           </Text>

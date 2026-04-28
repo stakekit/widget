@@ -1,3 +1,4 @@
+import type { TransactionVerificationMessageDto } from "@stakekit/api-hooks";
 import type { GetType } from "purify-ts";
 import {
   array,
@@ -14,6 +15,8 @@ import {
 } from "purify-ts";
 import { type Address, type Hex, numberToHex } from "viem";
 import type { GetEitherRight } from "../../types/utils";
+
+export type { TransactionVerificationMessageDto };
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {

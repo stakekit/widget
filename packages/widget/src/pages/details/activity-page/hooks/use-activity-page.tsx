@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
@@ -7,8 +7,22 @@ import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
 import { useActivityPageContext } from "../state/activity-page.context";
+import type { ItemBulletType } from "../state/types";
+import type { ActionYieldDto } from "../types";
 
-export const useActivityPage = () => {
+type UseActivityPageResult = {
+  content: ReactNode;
+  onActionSelect: (val: ActionYieldDto) => void;
+  labels: string[];
+  counts: number[];
+  bulletLines: ItemBulletType[];
+  allData: ReturnType<
+    typeof useActivityPageContext
+  >["activityActions"]["allItems"];
+  activityActions: ReturnType<typeof useActivityPageContext>["activityActions"];
+};
+
+export const useActivityPage = (): UseActivityPageResult => {
   useTrackPage("activity");
 
   const { isConnected, isConnecting } = useSKWallet();

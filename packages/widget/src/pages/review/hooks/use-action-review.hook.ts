@@ -1,13 +1,16 @@
-import {
-  ActionTypes,
-  type TokenDto,
-  TransactionStatus,
-} from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import {
+  type ActionType,
+  ActionTypes,
+  getActionInputToken,
+  TransactionStatus,
+} from "../../../domain/types/action";
+import type { TokenDto } from "../../../domain/types/tokens";
+import { getBaseYieldType } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useActivityContext } from "../../../providers/activity-provider";
@@ -29,21 +32,29 @@ export const useActionReview = () => {
     (state) => state.context.selectedAction
   ).unsafeCoerce();
 
-  const inputToken = useMemo(
-    () => Maybe.of(selectedAction.inputToken),
-    [selectedAction]
-  ) as Maybe<TokenDto>;
-
   const selectedYield = useSelector(
     activityContext,
     (state) => state.context.selectedYield
   ).unsafeCoerce();
 
+  const inputToken = useMemo(
+    () =>
+      Maybe.fromNullable(
+        getActionInputToken({
+          actionDto: selectedAction,
+          yieldDto: selectedYield,
+        })
+      ),
+    [selectedAction, selectedYield]
+  ) as Maybe<TokenDto>;
+
   const transactions = useMemo(
     () =>
       Maybe.fromNullable(selectedAction)
         .map((a) => a.transactions)
-        .map((tx) => tx.sort((a, b) => a.stepIndex - b.stepIndex)),
+        .map((tx) =>
+          tx.sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0))
+        ),
     [selectedAction]
   );
 
@@ -58,7 +69,7 @@ export const useActionReview = () => {
   );
 
   const unstakeTitle = useMemo(() => {
-    switch (selectedYield.metadata.type) {
+    switch (getBaseYieldType(selectedYield)) {
       case "staking":
       case "liquid-staking":
         return t("position_details.unstake") as string;
@@ -72,9 +83,9 @@ export const useActionReview = () => {
     () =>
       t(
         `position_details.pending_action_button.${
-          selectedAction.type.toLowerCase() as Lowercase<ActionTypes>
-        }` as const
-      ),
+          selectedAction.type.toLowerCase() as Lowercase<ActionType>
+        }` as never
+      ) as string,
     [selectedAction.type, t]
   );
 
@@ -114,7 +125,7 @@ export const useActionReview = () => {
             (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
             txs
           ).chain((tx) =>
-            List.findIndex((i) => i === tx, txs)
+            List.findIndex((val) => val.id === tx.id, txs)
               .chainNullable((index) => txs[index - 1])
               .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
               .map(() => "continue" as LabelKey)

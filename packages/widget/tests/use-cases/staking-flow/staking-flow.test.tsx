@@ -74,7 +74,13 @@ describe("Staking flow", () => {
       .toBeInTheDocument();
 
     const rewardTokenDetails = (
-      await renderHook(() => useRewardTokenDetails(Just(yieldOp)))
+      await renderHook(() =>
+        useRewardTokenDetails(
+          Just(yieldOp) as unknown as Parameters<
+            typeof useRewardTokenDetails
+          >[0]
+        )
+      )
     ).result.current.unsafeCoerce();
 
     await expect

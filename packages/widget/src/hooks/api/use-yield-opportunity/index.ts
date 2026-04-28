@@ -1,13 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import type { ValidatorsConfig } from "../../../domain/types/yields";
 import { useSKWallet } from "../../../providers/sk-wallet";
-import { useValidatorsConfig } from "../../use-validators-config";
+import { useYieldApiFetchClient } from "../../../providers/yield-api-client-provider";
 import { queryFn } from "./get-yield-opportunity";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  validatorsConfig: ValidatorsConfig;
+  yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   signal?: AbortSignal;
 };
 
@@ -20,16 +19,24 @@ const getKey = (params: Params) => [
 
 export const useYieldOpportunity = (integrationId: string | undefined) => {
   const { isLedgerLive } = useSKWallet();
-
-  const validatorsConfig = useValidatorsConfig();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const yieldId = integrationId ?? "";
 
   return useQuery({
-    queryKey: getKey({ yieldId, isLedgerLive, validatorsConfig }),
+    queryKey: getKey({
+      yieldId,
+      isLedgerLive,
+      yieldApiFetchClient,
+    }),
     enabled: !!integrationId,
     staleTime,
     queryFn: ({ signal }) =>
-      queryFn({ yieldId, isLedgerLive, signal, validatorsConfig }),
+      queryFn({
+        yieldId,
+        isLedgerLive,
+        signal,
+        yieldApiFetchClient,
+      }),
   });
 };

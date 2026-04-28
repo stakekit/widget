@@ -1,7 +1,8 @@
-import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import { getYieldRewardType, type Yield } from "../../../domain/types/yields";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -12,7 +13,6 @@ import { Button } from "../../atoms/button";
 import { CheckSteps } from "../../atoms/icons/check-steps";
 import { PreferredIcon } from "../../atoms/icons/preferred";
 import { Image } from "../../atoms/image";
-import { ImageFallback } from "../../atoms/image-fallback";
 import {
   SelectModalItem,
   SelectModalItemContainer,
@@ -44,7 +44,7 @@ export const SelectValidatorList = ({
   selectedValidators: Set<ValidatorDto["address"]>;
   onItemClick: (item: ValidatorDto) => void;
   onViewMoreClick: () => void;
-  selectedStake: YieldDto;
+  selectedStake: Yield;
   tableData: ValidatorDto[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
@@ -80,7 +80,7 @@ export const SelectValidatorList = ({
 
             <Box marginRight="4">
               <Text variant={{ weight: "normal", type: "muted" }}>
-                {getRewardTypeFormatted(selectedStake.rewardType)}
+                {getRewardTypeFormatted(getYieldRewardType(selectedStake))}
               </Text>
             </Box>
           </Box>
@@ -143,16 +143,10 @@ export const SelectValidatorList = ({
                   )}
 
                   <Image
-                    containerProps={{ hw: "9" }}
-                    imageProps={{ borderRadius: "full" }}
-                    src={item.image}
-                    fallback={
-                      <ImageFallback
-                        name={item.name || item.address}
-                        tokenLogoHw="9"
-                        textVariant={{ type: "white", weight: "bold" }}
-                      />
-                    }
+                    wrapperProps={{ hw: "9" }}
+                    imgProps={{ borderRadius: "full" }}
+                    src={item.logoURI}
+                    fallbackName={item.name || item.address}
                   />
 
                   <Box
@@ -200,8 +194,8 @@ export const SelectValidatorList = ({
                       <Box>
                         <Text variant={{ size: "large" }}>
                           {getRewardRateFormatted({
-                            rewardRate: item.apr,
-                            rewardType: selectedStake.rewardType,
+                            rewardRate: item.rewardRate?.total,
+                            rewardType: getYieldRewardType(selectedStake),
                           })}
                         </Text>
                       </Box>
@@ -212,7 +206,7 @@ export const SelectValidatorList = ({
                 <ValidatorMeta
                   address={item.address}
                   commission={item.commission}
-                  stakedBalance={item.stakedBalance}
+                  stakedBalance={item.tvl}
                   votingPower={item.votingPower}
                   nominatorCount={item.nominatorCount}
                   subnetName={item.subnetName}

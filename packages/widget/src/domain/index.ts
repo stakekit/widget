@@ -1,23 +1,31 @@
-import type {
-  ActionDto,
-  PendingActionDto,
-  TokenDto,
-  TransactionDto,
-  TransactionStatus,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Left, type Maybe, Right } from "purify-ts";
 import type { Override } from "../types/utils";
-import type { TokenString } from "./types/tokens";
+import type {
+  ActionDto,
+  TransactionDto,
+  TransactionStatus,
+} from "./types/action";
+import type { AnyPendingActionDto } from "./types/pending-action";
+import {
+  isPendingActionValidatorAddressesRequired,
+  isPendingActionValidatorAddressRequired,
+} from "./types/pending-action";
+import type { TokenDto, TokenString } from "./types/tokens";
+import type { Yield } from "./types/yields";
 
 export { getTokenPriceInUSD } from "./types/price";
 
-export const tokenString = (token: TokenDto): TokenString => {
-  return `${token.network}-${token.address?.toLowerCase()}`;
+type TokenLike = Pick<TokenDto, "symbol"> & {
+  network: string;
+  address?: string;
 };
 
-export const equalTokens = (a: TokenDto, b: TokenDto) =>
+export const tokenString = (token: TokenLike): TokenString => {
+  return `${token.network}-${token.address?.toLowerCase() ?? ""}` as TokenString;
+};
+
+export const equalTokens = (a: TokenLike, b: TokenLike) =>
   tokenString(a) === tokenString(b) && a.symbol === b.symbol;
 
 export const stakeTokenSameAsGasToken = ({
@@ -25,8 +33,8 @@ export const stakeTokenSameAsGasToken = ({
   yieldDto,
 }: {
   stakeToken: TokenDto;
-  yieldDto: YieldDto;
-}) => equalTokens(stakeToken, getGasFeeToken(yieldDto));
+  yieldDto: Yield;
+}) => equalTokens(stakeToken, yieldDto.mechanics.gasFeeToken);
 
 export const getMaxAmount = ({
   availableAmount,
@@ -45,10 +53,6 @@ export const getMaxAmount = ({
     new BigNumber(0)
   );
 };
-
-export const getBaseToken = (yieldDto: YieldDto) => yieldDto.metadata.token;
-export const getGasFeeToken = (yieldDto: YieldDto) =>
-  yieldDto.metadata.gasFeeToken;
 
 /**
  *
@@ -81,11 +85,11 @@ export const getValidStakeSessionTx = (stakeDto: ActionDto) => {
 export const isTxError = (txStatus: TransactionStatus) =>
   txStatus === "FAILED" || txStatus === "BLOCKED";
 
-export const PAMultiValidatorsRequired = (pa: PendingActionDto) =>
-  !!pa.args?.args?.validatorAddresses?.required;
+export const PAMultiValidatorsRequired = (pa: AnyPendingActionDto) =>
+  isPendingActionValidatorAddressesRequired(pa);
 
-export const PASingleValidatorRequired = (pa: PendingActionDto) =>
-  !!pa.args?.args?.validatorAddress?.required;
+export const PASingleValidatorRequired = (pa: AnyPendingActionDto) =>
+  isPendingActionValidatorAddressRequired(pa);
 
 export const skNormalizeChainId = (chainId: string) => {
   const cId = Number(chainId);

@@ -1,6 +1,6 @@
-import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { useCallback } from "react";
 import { tokenString } from "../../../../domain";
+import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TokenString } from "../../../../domain/types/tokens";
 
 export const useGetTokenBalancesMap = () =>

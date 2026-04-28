@@ -37,6 +37,7 @@ export const StakeStepsPage = () => {
 
   return (
     <StepsPage
+      inputToken={enterRequest.selectedToken}
       session={enterRequest.actionDto.unsafeCoerce()}
       onSignSuccess={onSignSuccess}
       providersDetails={providersDetails}

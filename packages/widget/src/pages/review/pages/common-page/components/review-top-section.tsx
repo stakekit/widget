@@ -1,4 +1,3 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
@@ -8,12 +7,16 @@ import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Heading } from "../../../../../components/atoms/typography/heading";
 import { Text } from "../../../../../components/atoms/typography/text";
 import type { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
+import type {
+  TokenDto,
+  YieldTokenDto,
+} from "../../../../../domain/types/tokens";
 import { headingStyles } from "../../style.css";
 
 type Props = {
   title: string;
-  token: Maybe<TokenDto>;
-  metadata: Maybe<YieldMetadataDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
+  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
   info: ReactNode;
   rewardTokenDetailsProps?: Maybe<ComponentProps<typeof RewardTokenDetails>>;
 };

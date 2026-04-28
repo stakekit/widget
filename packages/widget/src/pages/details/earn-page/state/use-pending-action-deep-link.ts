@@ -1,10 +1,3 @@
-import {
-  type AddressWithTokenDtoAdditionalAddresses,
-  type PendingActionDto,
-  type YieldBalanceDto,
-  type YieldDto,
-  yieldGetSingleYieldBalances,
-} from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, Maybe, Right } from "purify-ts";
@@ -12,13 +5,19 @@ import {
   PAMultiValidatorsRequired,
   PASingleValidatorRequired,
 } from "../../../../domain";
-import type { ValidatorsConfig } from "../../../../domain/types/yields";
+import type { AddressWithTokenDtoAdditionalAddresses } from "../../../../domain/types/addresses";
+import { getPositionBalanceDataKey } from "../../../../domain/types/positions";
+import type { Yield } from "../../../../domain/types/yields";
 import { getYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
 import { getInitParams } from "../../../../hooks/use-init-params";
-import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../../../../providers/yield-api-client-provider";
+import type {
+  YieldBalanceDto,
+  YieldPendingActionDto,
+} from "../../../../providers/yield-api-client-provider/types";
 import type { GetEitherRight, Override } from "../../../../types/utils";
 import { preparePendingActionRequestDto } from "../../../position-details/hooks/utils";
 
@@ -27,10 +26,9 @@ export const usePendingActionDeepLink = () => {
     useSKWallet();
 
   const queryClient = useSKQueryClient();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   const { externalProviders } = useSettings();
-
-  const validatorsConfig = useValidatorsConfig();
 
   return useQuery({
     staleTime: Number.POSITIVE_INFINITY,
@@ -49,8 +47,8 @@ export const usePendingActionDeepLink = () => {
             additionalAddresses,
             address: addr,
             queryClient,
+            yieldApiFetchClient,
             externalProviders,
-            validatorsConfig,
           })
         )
       ).unsafeCoerce(),
@@ -62,21 +60,21 @@ const fn = ({
   additionalAddresses,
   address,
   queryClient,
+  yieldApiFetchClient,
   externalProviders,
-  validatorsConfig,
 }: {
   isLedgerLive: boolean;
   address: string;
   additionalAddresses: AddressWithTokenDtoAdditionalAddresses | null;
   queryClient: QueryClient;
+  yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   externalProviders: ReturnType<typeof useSettings>["externalProviders"];
-  validatorsConfig: ValidatorsConfig;
 }) =>
   getInitParams({
     isLedgerLive,
     queryClient,
+    yieldApiFetchClient,
     externalProviders,
-    validatorsConfig,
   }).chain((val) => {
     const initQueryParams = Maybe.of(val)
       .filter(
@@ -94,19 +92,29 @@ const fn = ({
     return EitherAsync.liftEither(initQueryParams)
       .chain((initQueryParams) =>
         EitherAsync(() =>
-          yieldGetSingleYieldBalances(initQueryParams.yieldId, {
-            addresses: {
+          yieldApiFetchClient.POST("/v1/yields/{yieldId}/balances", {
+            params: {
+              path: {
+                yieldId: initQueryParams.yieldId,
+              },
+            },
+            body: {
               address,
-              additionalAddresses: additionalAddresses ?? undefined,
             },
           })
         )
-          .mapLeft(() => new Error("could not get yield balances"))
+          .chain((response) =>
+            EitherAsync.liftEither(
+              Maybe.fromNullable(response.data).toEither(
+                new Error("could not get yield balances")
+              )
+            )
+          )
           .map((val) => ({
             yieldId: initQueryParams.yieldId,
             pendingaction: initQueryParams.pendingaction,
             validatorAddress: initQueryParams.validator,
-            singleYieldBalances: val,
+            singleYieldBalances: val.balances,
             address: address,
             additionalAddresses: additionalAddresses ?? undefined,
           }))
@@ -117,7 +125,10 @@ const fn = ({
             for (const balance of balances) {
               if (
                 data.validatorAddress &&
-                balance.validatorAddress !== data.validatorAddress
+                balance.validator?.address !== data.validatorAddress &&
+                !balance.validators?.some(
+                  (validator) => validator.address === data.validatorAddress
+                )
               ) {
                 continue;
               }
@@ -130,7 +141,7 @@ const fn = ({
                 return Right({
                   pendingAction,
                   balance,
-                  balanceId: balance.groupId ?? "default",
+                  balanceId: getPositionBalanceDataKey(balance),
                 });
               }
             }
@@ -143,21 +154,21 @@ const fn = ({
               isLedgerLive,
               yieldId: data.yieldId,
               queryClient,
-              validatorsConfig,
+              yieldApiFetchClient,
             }).map((yieldOp) => ({ ...val, yieldOp }))
           )
           .chain<
             Error,
             | {
                 type: "positionDetails";
-                yieldOp: YieldDto;
-                pendingAction: PendingActionDto;
+                yieldOp: Yield;
+                pendingAction: YieldPendingActionDto;
                 balance: YieldBalanceDto;
                 balanceId: string;
               }
             | {
                 type: "review";
-                yieldOp: YieldDto;
+                yieldOp: Yield;
                 balance: YieldBalanceDto;
                 balanceId: string;
                 pendingActionDto: GetEitherRight<

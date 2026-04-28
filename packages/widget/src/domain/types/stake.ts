@@ -1,8 +1,4 @@
-import type {
-  AmountArgumentOptionsDto,
-  TokenBalanceScanResponseDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
+import type { TokenBalanceScanResponseDto } from "@stakekit/api-hooks";
 import { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
@@ -11,7 +7,8 @@ import type { SupportedSKChains } from "./chains";
 import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { TokenString } from "./tokens";
-import { isBittensorStaking } from "./yields";
+import type { ValidatorDto } from "./validators";
+import { getYieldActionArg, isBittensorStaking, type Yield } from "./yields";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -23,7 +20,7 @@ const hasYieldsAndAmount = (val: TokenBalanceScanResponseDto) =>
   hasYields(val) && amountGreaterThanZero(val);
 
 export type PreferredTokenYieldsPerNetwork = {
-  [Key in SupportedSKChains]?: Record<TokenString, "*" | (YieldDto["id"] & {})>;
+  [Key in SupportedSKChains]?: Record<TokenString, "*" | (Yield["id"] & {})>;
 };
 
 export const getInitialToken = (args: {
@@ -85,11 +82,12 @@ export const getInitialToken = (args: {
      */
     .altLazy(() => List.find(hasYields, args.tokenBalances))
     .altLazy(() => List.find(hasYields, args.defaultTokens))
+    .altLazy(() => List.head(args.defaultTokens))
     .map((val) => val.token);
 
 export const canBeInitialYield = (args: {
   initQueryParams: Maybe<InitParams>;
-  yieldDto: YieldDto;
+  yieldDto: Yield;
   tokenBalanceAmount: BigNumber;
   positionsData: PositionsData;
 }) =>
@@ -117,7 +115,7 @@ const balanceValidForYield = ({
   positionsData,
 }: {
   tokenBalanceAmount: BigNumber;
-  yieldDto: YieldDto;
+  yieldDto: Yield;
   positionsData: PositionsData;
 }) =>
   tokenBalanceAmount.isGreaterThanOrEqualTo(
@@ -126,7 +124,7 @@ const balanceValidForYield = ({
 
 export const getInitSelectedValidators = (args: {
   initQueryParams: Maybe<InitParams>;
-  yieldDto: YieldDto;
+  validators: ValidatorDto[];
 }) =>
   args.initQueryParams
     .chainNullable((params) => params.validator)
@@ -135,46 +133,46 @@ export const getInitSelectedValidators = (args: {
         (val) =>
           val.name?.toLowerCase() === initV.toLowerCase() ||
           val.address === initV,
-        args.yieldDto.validators
+        args.validators
       )
     )
-    .altLazy(() => List.head(args.yieldDto.validators))
+    .altLazy(() => List.head(args.validators))
     .map((v) => new Map([[v.address, v]]))
     .orDefault(new Map());
 
-export const isForceMaxAmount = (args: AmountArgumentOptionsDto) =>
-  args.minimum === -1 && args.maximum === -1;
+export const isForceMaxAmount = (
+  args: { minimum?: number | null; maximum?: number | null } | null | undefined
+) => args?.minimum === -1 && args?.maximum === -1;
 
-const yieldsWithEnterMinBasedOnPosition = new Map<
-  Networks,
-  Set<YieldDto["id"]>
->([[Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])]]);
+const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
+  [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
+]);
 
 export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
   yieldsWithEnterMinBasedOnPosition.has(network);
 
-const isYieldWithEnterMinBasedOnPosition = (yieldDto: YieldDto) =>
+const isYieldWithEnterMinBasedOnPosition = (yieldDto: Yield) =>
   Maybe.fromNullable(
     yieldsWithEnterMinBasedOnPosition.get(
-      yieldDto.metadata.gasFeeToken.network as Networks
+      yieldDto.mechanics.gasFeeToken.network as Networks
     )
   )
     .filter((set) => set.has(yieldDto.id))
     .isJust();
 
 export const getMinStakeAmount = (
-  yieldDto: YieldDto,
+  yieldDto: Yield,
   positionsData: PositionsData
 ) => {
   const integrationMin = new BigNumber(
-    yieldDto.args.enter.args?.amount?.minimum ?? 0
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum ?? 0
   );
 
   if (isYieldWithEnterMinBasedOnPosition(yieldDto)) {
     const hasStaked = Maybe.fromNullable(positionsData.get(yieldDto.id))
       .map((val) => [...val.balanceData.values()])
       .map((val) =>
-        val.some((v) => v.balances.some((b) => b.type === "staked"))
+        val.some((v) => v.balances.some((b) => b.type === "active"))
       )
       .orDefault(false);
 
@@ -189,11 +187,11 @@ export const getMinStakeAmount = (
 };
 
 export const getMinUnstakeAmount = (
-  yieldDto: YieldDto,
+  yieldDto: Yield,
   pricePerShare: string | null
 ) => {
   const integrationMin = new BigNumber(
-    yieldDto.args.exit?.args?.amount?.minimum ?? 0
+    getYieldActionArg(yieldDto, "exit", "amount")?.minimum ?? 0
   );
 
   const pricePerShareBN = new BigNumber(pricePerShare ?? 0);

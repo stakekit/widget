@@ -1,17 +1,16 @@
-import type {
-  YieldBalanceDto,
-  YieldBalanceLabelDto,
-  YieldBalancesWithIntegrationIdDto,
-} from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
-import { compare, Just, List, type Maybe } from "purify-ts";
+import { compare, Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
-import type { YieldFindValidatorsParams } from "../../../../common/private-api";
+import type { YieldBalanceLabelDto } from "../../../../domain/types/token-balance";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
 import { useSettings } from "../../../../providers/settings";
 import type { SettingsContextType } from "../../../../providers/settings/types";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import type {
+  YieldBalanceDto,
+  YieldBalanceType,
+} from "../../../../providers/yield-api-client-provider/types";
 import { defaultFormattedNumber } from "../../../../utils";
 
 export const usePositions = () => {
@@ -72,26 +71,20 @@ const positionsTableDataSelector = createSelector(
                 .ifJust((v) =>
                   acc.push({
                     ...value,
-                    integrationId: val.integrationId,
+                    integrationId: val.yieldId,
                     balancesWithAmount: v,
                     balanceId: id,
                     allBalances: value.balances,
-                    yieldLabelDto: List.find(
-                      (b) => !!b.label,
-                      value.balances
-                    ).chainNullable((v) => v.label),
+                    yieldLabelDto: Maybe.empty() as Maybe<YieldBalanceLabelDto>,
                     token: List.head(
                       List.sort(
                         (a, b) =>
                           compare(priorityOrder[a.type], priorityOrder[b.type]),
                         value.balances
                       )
-                    ).map((v) => ({
-                      ...v.token,
-                      pricePerShare: v.pricePerShare,
-                    })),
+                    ).map((v) => v.token),
                     actionRequired: v.some(
-                      (b) => b.type === "locked" || b.type === "unstaked"
+                      (b) => b.type === "locked" || b.type === "claimable"
                     ),
                     pointsRewardTokenBalances: v
                       .filter((v) => !!v.token.isPoints)
@@ -99,17 +92,11 @@ const positionsTableDataSelector = createSelector(
                         ...v,
                         amount: defaultFormattedNumber(v.amount),
                       })),
-                    hasPendingClaimRewards: List.find(
-                      (b) => b.type === "rewards",
-                      v
-                    )
-                      .chain((b) =>
-                        List.find(
-                          (a) => a.type === "CLAIM_REWARDS",
-                          b.pendingActions
-                        )
+                    hasPendingClaimRewards: v.some((balance) =>
+                      balance.pendingActions.some(
+                        (action) => action.type === "CLAIM_REWARDS"
                       )
-                      .isJust(),
+                    ),
                   })
                 );
             });
@@ -117,14 +104,14 @@ const positionsTableDataSelector = createSelector(
             return acc;
           },
           [] as ({
-            integrationId: YieldBalancesWithIntegrationIdDto["integrationId"];
+            integrationId: string;
             balancesWithAmount: YieldBalanceDto[];
             allBalances: YieldBalanceDto[];
-            balanceId: YieldBalanceDto["groupId"];
+            balanceId: string;
             actionRequired: boolean;
             pointsRewardTokenBalances: YieldBalanceDto[];
             hasPendingClaimRewards: boolean;
-            token: Maybe<YieldBalanceDto["token"] & { pricePerShare: string }>;
+            token: Maybe<YieldBalanceDto["token"]>;
             yieldLabelDto: Maybe<YieldBalanceLabelDto>;
           } & (
             | { type: "validators"; validatorsAddresses: string[] }
@@ -144,19 +131,11 @@ const positionsTableDataSelector = createSelector(
       .unsafeCoerce()
 );
 
-const priorityOrder: { [key in YieldBalanceDto["type"]]: number } = {
-  available: 1,
-  staked: 2,
-  unstaking: 3,
-  unstaked: 4,
-  preparing: 5,
+const priorityOrder: Record<YieldBalanceType, number> = {
+  active: 1,
+  entering: 2,
+  exiting: 3,
+  withdrawable: 4,
+  claimable: 5,
   locked: 6,
-  unlocking: 7,
-  rewards: 8,
-};
-
-export const getYieldFindValidatorsQueryKey = (
-  params?: YieldFindValidatorsParams
-) => {
-  return ["/v1/yields/validators", ...(params ? [params] : [])] as const;
 };

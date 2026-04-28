@@ -1,9 +1,9 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { EitherAsync, Maybe } from "purify-ts";
 import { getTokenBalances } from "../../../../common/get-token-balances";
 import { tokenString } from "../../../../domain";
+import type { TokenDto } from "../../../../domain/types/tokens";
 import { getFirstEligibleYield } from "../../../../hooks/api/use-multi-yields";
 import { getInitParams } from "../../../../hooks/use-init-params";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
@@ -11,6 +11,7 @@ import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../../../../providers/yield-api-client-provider";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
 export const useInitYield = ({
@@ -28,6 +29,7 @@ export const useInitYield = ({
     isConnecting,
   } = useSKWallet();
   const queryClient = useSKQueryClient();
+  const yieldApiFetchClient = useYieldApiFetchClient();
   const {
     externalProviders,
     tokensForEnabledYieldsOnly,
@@ -71,13 +73,14 @@ export const useInitYield = ({
               getInitParams({
                 isLedgerLive,
                 queryClient,
+                yieldApiFetchClient,
                 externalProviders,
-                validatorsConfig,
               }).chain((initParams) =>
                 getFirstEligibleYield({
                   isConnected,
                   isLedgerLive,
                   queryClient,
+                  yieldApiFetchClient,
                   network,
                   yieldIds: val.availableYields,
                   initParams: initParams,

@@ -15,9 +15,8 @@ export const NetworkLogoImage = ({
   <Box className={logoContainer} data-rk="token-network-logo">
     <Image
       src={networkLogoUri}
-      fallback={null}
-      containerProps={{ hw: tokenNetworkLogoHw }}
-      imageProps={{ className: logoImage }}
+      wrapperProps={{ hw: tokenNetworkLogoHw }}
+      imgProps={{ hw: tokenNetworkLogoHw, className: logoImage }}
     />
   </Box>
 );

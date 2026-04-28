@@ -1,7 +1,8 @@
-import type { ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import type { PropsWithChildren } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import type { Yield } from "../../../domain/types/yields";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
 import type { GroupedItem } from "./select-validator-list";
@@ -12,8 +13,8 @@ type SelectValidatorProps = PropsWithChildren<
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;
     onViewMoreClick?: () => void;
-    validators: YieldDto["validators"];
-    selectedStake: YieldDto;
+    validators: ValidatorDto[];
+    selectedStake: Yield;
     multiSelect: boolean;
   } & (
       | { onSearch: (value: string) => void; searchValue: string }

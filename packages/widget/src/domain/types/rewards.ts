@@ -1,4 +1,3 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import {
   CosmosNetworks,
   EvmNetworks,
@@ -6,6 +5,7 @@ import {
   SubstrateNetworks,
 } from "@stakekit/common";
 import type { Resources } from "i18next";
+import type { Yield } from "./yields";
 
 const enabledRewardsSummaryYieldIds = {
   [SubstrateNetworks.Polkadot]: [
@@ -52,7 +52,7 @@ const enabledRewardsSummaryYieldIds = {
   | MiscNetworks.BinanceBeacon
   | MiscNetworks.Tron,
   {
-    id: YieldDto["id"];
+    id: Yield["id"];
     name: `dashboard.enabled_rewards_summary_yield_names.${keyof Resources["translation"]["dashboard"]["enabled_rewards_summary_yield_names"]}`;
   }[]
 >;

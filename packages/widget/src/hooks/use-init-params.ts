@@ -3,14 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SupportedSKChains } from "../domain/types/chains";
 import type { InitParams } from "../domain/types/init-params";
-import type { ValidatorsConfig } from "../domain/types/yields";
 import { useSKQueryClient } from "../providers/query-client";
 import { useSettings } from "../providers/settings";
 import type { SettingsContextType } from "../providers/settings/types";
 import { useSKWallet } from "../providers/sk-wallet";
+import { useYieldApiFetchClient } from "../providers/yield-api-client-provider";
 import { getYieldOpportunity } from "./api/use-yield-opportunity/get-yield-opportunity";
 import { getAndValidateInitParams } from "./use-init-query-params";
-import { useValidatorsConfig } from "./use-validators-config";
 
 const queryKey = ["init-params"];
 const staleTime = 0;
@@ -22,7 +21,7 @@ export const useInitParams = <T = InitParams>(opts?: {
   const { isLedgerLive } = useSKWallet();
   const { externalProviders } = useSettings();
   const queryClient = useSKQueryClient();
-  const validatorsConfig = useValidatorsConfig();
+  const yieldApiFetchClient = useYieldApiFetchClient();
 
   return useQuery({
     queryKey,
@@ -32,8 +31,8 @@ export const useInitParams = <T = InitParams>(opts?: {
       queryFn({
         isLedgerLive,
         queryClient,
+        yieldApiFetchClient,
         externalProviders,
-        validatorsConfig,
       }),
     select: opts?.select,
   });
@@ -60,13 +59,13 @@ const queryFn = async (params: Parameters<typeof fn>[0]) =>
 const fn = ({
   isLedgerLive,
   queryClient,
+  yieldApiFetchClient,
   externalProviders,
-  validatorsConfig,
 }: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
+  yieldApiFetchClient: ReturnType<typeof useYieldApiFetchClient>;
   externalProviders: SettingsContextType["externalProviders"];
-  validatorsConfig: ValidatorsConfig;
 }): EitherAsync<Error, InitParams> =>
   EitherAsync.liftEither(
     getAndValidateInitParams({
@@ -80,7 +79,7 @@ const fn = ({
         isLedgerLive,
         yieldId: yId,
         queryClient,
-        validatorsConfig,
+        yieldApiFetchClient,
       })
         .map((yieldData) => ({
           ...val,

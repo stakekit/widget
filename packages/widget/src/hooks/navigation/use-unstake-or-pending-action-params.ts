@@ -1,6 +1,6 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { YieldPendingActionType } from "../../providers/yield-api-client-provider/types";
 import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
 import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
 
@@ -16,7 +16,7 @@ export const useUnstakeOrPendingActionParams = () => {
       {};
 
     const pendingActionType = pendingActionSelectValidatorMatch?.params
-      .pendingActionType as ActionTypes | undefined;
+      .pendingActionType as YieldPendingActionType | undefined;
 
     return {
       balanceId: Maybe.fromNullable(balanceId),

@@ -1,11 +1,17 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
-import { yieldFixture } from "../../fixtures";
+import {
+  yieldApiYieldFixtureFromLegacy,
+  yieldFixture,
+  yieldValidatorsFixture,
+} from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
+
 export const setup = () => {
-  const avalancheCToken: TokenDto = {
+  const avalancheCToken: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -14,7 +20,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/avax.svg",
   };
 
-  const ether: TokenDto = {
+  const ether: LegacyTokenDto = {
     network: "ethereum",
     name: "Ethereum",
     symbol: "ETH",
@@ -23,7 +29,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };
 
-  const solanaToken: TokenDto = {
+  const solanaToken: LegacyTokenDto = {
     network: "solana",
     name: "Solana",
     symbol: "SOL",
@@ -32,7 +38,7 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/sol.svg",
   };
 
-  const tonToken: TokenDto = {
+  const tonToken: LegacyTokenDto = {
     network: "ton",
     name: "Toncoin",
     symbol: "TON",
@@ -49,12 +55,13 @@ export const setup = () => {
           id: "avalanche-avax-native-staking",
           token: avalancheCToken,
           tokens: [avalancheCToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
             gasFeeToken: avalancheCToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -66,12 +73,13 @@ export const setup = () => {
           id: "ethereum-eth-etherfi-staking",
           token: ether,
           tokens: [ether],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
             gasFeeToken: ether,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -83,12 +91,13 @@ export const setup = () => {
           id: "solana-sol-native-staking",
           token: solanaToken,
           tokens: [solanaToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
             gasFeeToken: solanaToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
@@ -100,23 +109,37 @@ export const setup = () => {
           id: "ton-native-staking",
           token: tonToken,
           tokens: [tonToken],
+          validators: [],
           metadata: {
             ...val.metadata,
             type: "staking",
             gasFeeToken: tonToken,
           },
-        }) satisfies YieldDto
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
+  const etherNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: etherNativeStaking,
+  });
+  const avalancheAvaxNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avalancheAvaxNativeStaking,
+  });
+  const solanaNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: solanaNativeStaking,
+  });
+  const tonNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: tonNativeStaking,
+  });
+
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
       return HttpResponse.json([
-        etherNativeStaking.token.network,
-        avalancheAvaxNativeStaking.token.network,
-        solanaNativeStaking.token.network,
-        tonNativeStaking.token.network,
+        { id: etherNativeStaking.token.network },
+        { id: avalancheAvaxNativeStaking.token.network },
+        { id: solanaNativeStaking.token.network },
+        { id: tonNativeStaking.token.network },
       ]);
     }),
 
@@ -160,25 +183,82 @@ export const setup = () => {
       ]);
     }),
 
-    http.get(`*/v1/yields/${etherNativeStaking.id}`, async () => {
+    http.get(
+      legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(etherNativeStaking);
+      }
+    ),
+    http.get(yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`), async () => {
       await delay();
 
-      return HttpResponse.json(etherNativeStaking);
+      return HttpResponse.json(etherNativeStakingYieldApi);
     }),
-    http.get(`*/v1/yields/${avalancheAvaxNativeStaking.id}`, async () => {
-      await delay();
+    http.get(
+      legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+      async () => {
+        await delay();
 
-      return HttpResponse.json(avalancheAvaxNativeStaking);
-    }),
-    http.get(`*/v1/yields/${solanaNativeStaking.id}`, async () => {
-      await delay();
+        return HttpResponse.json(avalancheAvaxNativeStaking);
+      }
+    ),
+    http.get(
+      yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+      async () => {
+        await delay();
 
-      return HttpResponse.json(solanaNativeStaking);
-    }),
-    http.get(`*/v1/yields/${tonNativeStaking.id}`, async () => {
+        return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
+      }
+    ),
+    http.get(
+      legacyApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(solanaNativeStaking);
+      }
+    ),
+    http.get(
+      yieldApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(solanaNativeStakingYieldApi);
+      }
+    ),
+    http.get(legacyApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
       await delay();
 
       return HttpResponse.json(tonNativeStaking);
+    }),
+    http.get(yieldApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
+      await delay();
+
+      return HttpResponse.json(tonNativeStakingYieldApi);
+    }),
+    http.get("*/v1/yields/:yieldId/validators", async (info) => {
+      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validatorsByYieldId = new Map<
+        string,
+        ReturnType<typeof yieldFixture>["validators"]
+      >([
+        [etherNativeStaking.id, etherNativeStaking.validators],
+        [avalancheAvaxNativeStaking.id, avalancheAvaxNativeStaking.validators],
+        [solanaNativeStaking.id, solanaNativeStaking.validators],
+        [tonNativeStaking.id, tonNativeStaking.validators],
+      ]);
+      const validators = yieldValidatorsFixture(
+        validatorsByYieldId.get(yieldId) ?? []
+      );
+
+      return HttpResponse.json({
+        items: validators,
+        total: validators.length,
+      });
     })
   );
 };

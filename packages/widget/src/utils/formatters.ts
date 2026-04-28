@@ -1,8 +1,10 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
+import type { RewardTypes } from "../domain/types/reward-rate";
+import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
+import type { Yield } from "../domain/types/yields";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
 
 export const formatCountryCode = ({
@@ -15,9 +17,10 @@ export const formatCountryCode = ({
   return new Intl.DisplayNames([language], { type: "region" }).of(countryCode);
 };
 
-export const getRewardRateFormatted = (
-  opts: Pick<YieldDto, "rewardType"> & { rewardRate: number | undefined }
-) => {
+export const getRewardRateFormatted = (opts: {
+  rewardType: RewardTypes;
+  rewardRate: number | undefined;
+}) => {
   const { rewardRate, rewardType } = opts;
 
   if (rewardType === "variable" || !rewardRate) {
@@ -27,7 +30,7 @@ export const getRewardRateFormatted = (
   return `${APToPercentage(rewardRate)}%`;
 };
 
-export const getRewardTypeFormatted = (rewardType: YieldDto["rewardType"]) => {
+export const getRewardTypeFormatted = (rewardType: RewardTypes) => {
   switch (rewardType) {
     case "apr":
       return "APR";
@@ -45,7 +48,7 @@ export const getGasFeeInUSD = ({
   gas,
   prices,
 }: {
-  yieldDto: Maybe<YieldDto>;
+  yieldDto: Maybe<Yield>;
   gas: Maybe<BigNumber>;
   prices: Maybe<Prices>;
 }) =>
@@ -58,14 +61,14 @@ export const getGasFeeInUSD = ({
       gasFeeInUSD: getTokenPriceInUSD({
         amount: val.gas.toString(),
         prices: prices.orDefault(new Prices(new Map())),
-        token: val.yieldDto.metadata.gasFeeToken,
+        token: val.yieldDto.mechanics.gasFeeToken,
         pricePerShare: null,
         baseToken: null,
       }),
     }))
     .mapOrDefault(
       (val) =>
-        `${formatNumber(val.gas, 10)} ${val.yieldDto.metadata.gasFeeToken.symbol} ${
+        `${formatNumber(val.gas, 10)} ${val.yieldDto.mechanics.gasFeeToken.symbol} ${
           val.gasFeeInUSD.isGreaterThan(0)
             ? ` ($${defaultFormattedNumber(val.gasFeeInUSD)})`
             : ""
@@ -79,7 +82,7 @@ export const getFeesInUSD = ({
   token,
 }: {
   amount: Maybe<BigNumber>;
-  token: Maybe<TokenDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
   prices: Maybe<Prices>;
 }) =>
   Maybe.fromRecord({ token, amount })

@@ -1,4 +1,13 @@
-import { EvmNetworks, type TokenDto } from "@stakekit/api-hooks";
+import {
+  EvmNetworks,
+  type TokenDto as LegacyTokenDto,
+  type TokenGetTokensParams,
+} from "@stakekit/api-hooks";
+import type { components } from "../../types/yield-api-schema";
+
+export type YieldTokenDto = components["schemas"]["TokenDto"];
+export type TokenDto = LegacyTokenDto | YieldTokenDto;
+export type { TokenGetTokensParams };
 
 export type TokenString = `${TokenDto["network"]}-${TokenDto["address"]}`;
 

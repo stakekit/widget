@@ -1,4 +1,3 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -10,6 +9,7 @@ import { ToolTip } from "../../../../components/atoms/tooltip";
 import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
+import type { TokenDto, YieldTokenDto } from "../../../../domain/types/tokens";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { MetaInfo } from "../../../components/meta-info";
@@ -25,8 +25,8 @@ export type MetaInfoProps =
 type ReviewPageProps = {
   fee: string;
   title: string;
-  token: Maybe<TokenDto>;
-  metadata: Maybe<YieldMetadataDto>;
+  token: Maybe<TokenDto | YieldTokenDto>;
+  metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
   isGasCheckError: boolean;

@@ -1,8 +1,8 @@
 import type { ChainWalletBase } from "@cosmos-kit/core";
-import type { AddressWithTokenDtoAdditionalAddresses } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Left, List, Right } from "purify-ts";
 import type { Connector } from "wagmi";
+import type { AddressWithTokenDtoAdditionalAddresses } from "../../domain/types/addresses";
 import { getStorageItem } from "../../services/local-storage";
 import type { CosmosConnector } from "../cosmos/cosmos-connector-meta";
 import { isCosmosConnector } from "../cosmos/cosmos-connector-meta";

@@ -1,9 +1,10 @@
-import type { ActionDto } from "@stakekit/api-hooks";
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Heading } from "../../../components/atoms/typography/heading";
+import type { ActionDto } from "../../../domain/types/action";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { useIsDashboard } from "../../../pages-dashboard/providers/dashboard-context";
@@ -15,12 +16,14 @@ import { TxState } from "./tx-state";
 
 type StepsPageProps = {
   session: ActionDto;
+  inputToken?: TokenDto | YieldTokenDto;
   onSignSuccess?: () => void;
   providersDetails: ReturnType<typeof useProvidersDetails>;
 };
 
 export const StepsPage = ({
   session,
+  inputToken,
   onSignSuccess,
   providersDetails,
 }: StepsPageProps) => {
@@ -28,6 +31,7 @@ export const StepsPage = ({
   const isDashboard = useIsDashboard();
 
   const { retry, txStates } = useSteps({
+    inputToken,
     session,
     onSignSuccess,
     providersDetails,

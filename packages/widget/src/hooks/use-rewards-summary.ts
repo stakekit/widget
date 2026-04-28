@@ -1,20 +1,20 @@
-import {
-  type AddressesDto,
-  type YieldDto,
-  type YieldRewardsSummaryResponseDto,
-  yieldGetSingleYieldRewardsSummary,
+import type {
+  AddressesDto,
+  YieldRewardsSummaryResponseDto,
 } from "@stakekit/api-hooks";
 import { type QueryClient, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { yieldGetSingleYieldRewardsSummary } from "../common/private-api";
 import {
   type EnabledRewardsSummaryYieldId,
   isValidYieldIdForRewardsSummary,
 } from "../domain/types/rewards";
+import type { Yield } from "../domain/types/yields";
 import { useSKQueryClient } from "../providers/query-client";
 import { useSKWallet } from "../providers/sk-wallet";
 
 export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
-  yieldIds: YieldDto["id"][],
+  yieldIds: Yield["id"][],
   opts?: { select?: (val: RewardsSummaryResult) => T }
 ) => {
   const filteredYieldIds = useMemo(
@@ -51,8 +51,7 @@ export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
       ).then((res) =>
         res.reduce(
           (acc, next) => {
-            acc[next.yieldId] =
-              next.data as unknown as YieldRewardsSummaryResponseDto;
+            acc[next.yieldId] = next.data;
             return acc;
           },
           {} as Record<
@@ -64,7 +63,7 @@ export const useMultiRewardsSummary = <T = RewardsSummaryResult>(
   });
 };
 
-export const useRewardsSummary = (yieldId: YieldDto["id"]) => {
+export const useRewardsSummary = (yieldId: Yield["id"]) => {
   const { address, additionalAddresses } = useSKWallet();
 
   const queryClient = useSKQueryClient();

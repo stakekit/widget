@@ -1,13 +1,14 @@
-import type {
-  TokenBalanceScanResponseDto,
-  TokenGetTokensParams,
-} from "@stakekit/api-hooks";
-import { getTokenGetTokensQueryKey, tokenGetTokens } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
+import { tokenGetTokens } from "../../common/private-api";
+import type { TokenBalanceScanResponseDto } from "../../domain/types/token-balance";
+import type { TokenGetTokensParams } from "../../domain/types/tokens";
 import { useSettings } from "../../providers/settings";
 import { useSKWallet } from "../../providers/sk-wallet";
+
+const getTokenGetTokensQueryKey = (params?: TokenGetTokensParams) =>
+  ["/v1/tokens", ...(params ? [params] : [])] as const;
 
 export const useDefaultTokens = () => {
   const { network } = useSKWallet();

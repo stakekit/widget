@@ -1,19 +1,29 @@
-import type { TokenDto, YieldBalanceDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
+import type { YieldCreateManageActionDto } from "../../../src/providers/yield-api-client-provider/types";
 import { waitForMs } from "../../../src/utils";
-import { pendingActionFixture, yieldFixture } from "../../fixtures";
+import {
+  pendingActionFixture,
+  yieldApiActionFixture,
+  yieldApiTransactionFixture,
+  yieldApiYieldFixtureFromLegacy,
+  yieldFixture,
+  yieldValidatorsFixture,
+} from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { worker } from "../../mocks/worker";
 import { rkMockWallet } from "../../utils/mock-connector";
 import { setUrl as _setUrl } from "./utils";
+
+type LegacyTokenDto = ReturnType<typeof yieldFixture>["token"];
 
 export const setup = async (opts?: {
   withValidatorAddressesRequired?: boolean;
 }) => {
   const account = "0xB6c5273e79E2aDD234EBC07d87F3824e0f94B2F7";
 
-  const ether: TokenDto = {
+  const ether: LegacyTokenDto = {
     network: "ethereum",
     name: "Ethereum",
     symbol: "ETH",
@@ -22,7 +32,7 @@ export const setup = async (opts?: {
     logoURI: "https://assets.stakek.it/tokens/eth.svg",
   };
 
-  const token: TokenDto = {
+  const token: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -35,7 +45,7 @@ export const setup = async (opts?: {
 
   const avaxNativeStaking = Just(yieldFixture())
     .map(
-      (def): YieldDto => ({
+      (def): ReturnType<typeof yieldFixture> => ({
         ...def,
         id: "avalanche-avax-native-staking",
         token,
@@ -45,6 +55,25 @@ export const setup = async (opts?: {
       })
     )
     .unsafeCoerce();
+
+  const avaxLiquidStakingValidators: ReturnType<
+    typeof yieldFixture
+  >["validators"] = opts?.withValidatorAddressesRequired
+    ? [
+        {
+          address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
+          status: "active",
+          name: "Stakely",
+          image: "https://assets.stakek.it/validators/stakely.png",
+          website: "https://stakely.io/",
+          apr: 0.0393,
+          commission: 0.1,
+          stakedBalance: "2263157",
+          votingPower: 0.0090962642447408,
+          preferred: true,
+        },
+      ]
+    : [];
 
   const avaxLiquidStaking = Just(yieldFixture())
     .map(
@@ -76,27 +105,19 @@ export const setup = async (opts?: {
               },
             ],
           },
-          validators: opts?.withValidatorAddressesRequired
-            ? [
-                {
-                  address: "0xe92b7ba8497486e94bb59c51f595b590c4a5f894",
-                  status: "active",
-                  name: "Stakely",
-                  image: "https://assets.stakek.it/validators/stakely.png",
-                  website: "https://stakely.io/",
-                  apr: 0.0393,
-                  commission: 0.1,
-                  stakedBalance: "2263157",
-                  votingPower: 0.0090962642447408,
-                  preferred: true,
-                },
-              ]
-            : [],
-        }) satisfies YieldDto
+          validators: avaxLiquidStakingValidators,
+        }) satisfies ReturnType<typeof yieldFixture>
     )
     .unsafeCoerce();
 
-  const avaxLiquidStakingBalances: YieldBalanceDto[] = [
+  const avaxNativeStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avaxNativeStaking,
+  });
+  const avaxLiquidStakingYieldApi = yieldApiYieldFixtureFromLegacy({
+    legacyYield: avaxLiquidStaking,
+  });
+
+  const avaxLiquidStakingBalances = [
     {
       groupId: "b4684f63-fe54-540d-b0ae-06a2c2ecdb9e",
       type: "rewards",
@@ -117,6 +138,19 @@ export const setup = async (opts?: {
       ],
       pricePerShare: "1",
       token: avaxLiquidStaking.token,
+    },
+  ];
+
+  const avaxLiquidStakingBalancesV2 = [
+    {
+      address: account,
+      type: "claimable",
+      amount: "0.019258000000000000",
+      amountRaw: "19258000000000000",
+      pendingActions: avaxLiquidStakingBalances[0].pendingActions,
+      token: avaxLiquidStaking.token,
+      amountUsd: "0.84",
+      isEarning: false,
     },
   ];
 
@@ -155,9 +189,9 @@ export const setup = async (opts?: {
         { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json([token.network, ether.network]);
+      return HttpResponse.json([{ id: token.network }, { id: ether.network }]);
     }),
 
     http.post("*/v1/tokens/balances/scan", async () => {
@@ -185,13 +219,37 @@ export const setup = async (opts?: {
         },
       });
     }),
-    http.get(`*/v1/yields/${avaxNativeStaking.id}`, async () => {
+    http.get(legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
       await delay();
       return HttpResponse.json(avaxNativeStaking);
     }),
-    http.get(`*/v1/yields/${avaxLiquidStaking.id}`, async () => {
+    http.get(yieldApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
+      await delay();
+      return HttpResponse.json(avaxNativeStakingYieldApi);
+    }),
+    http.get(legacyApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
       await delay();
       return HttpResponse.json(avaxLiquidStaking);
+    }),
+    http.get(yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
+      await delay();
+      return HttpResponse.json(avaxLiquidStakingYieldApi);
+    }),
+    http.get("*/v1/yields/:yieldId/validators", async (info) => {
+      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validators =
+        yieldId === avaxLiquidStaking.id
+          ? yieldValidatorsFixture(avaxLiquidStakingValidators)
+          : yieldId === avaxNativeStaking.id
+            ? yieldValidatorsFixture(avaxNativeStaking.validators)
+            : [];
+
+      return HttpResponse.json({
+        items: validators,
+        total: validators.length,
+      });
     }),
     http.post("*/v1/yields/balances/scan", async () => {
       await delay();
@@ -202,6 +260,18 @@ export const setup = async (opts?: {
         },
       ]);
     }),
+    http.post("*/v1/yields/balances", async () => {
+      await delay();
+      return HttpResponse.json({
+        items: [
+          {
+            yieldId: avaxLiquidStaking.id,
+            balances: avaxLiquidStakingBalancesV2,
+          },
+        ],
+        errors: [],
+      });
+    }),
     http.post(`*/v1/yields/${avaxNativeStaking.id}/balances/scan`, async () => {
       await delay();
       return HttpResponse.json({
@@ -211,40 +281,60 @@ export const setup = async (opts?: {
     }),
     http.post(`*/v1/yields/${avaxLiquidStaking.id}/balances`, async () => {
       await delay();
-      return HttpResponse.json(avaxLiquidStakingBalances);
-    }),
-    http.post("*/v1/actions/pending", async (info) => {
-      const data = (await info.request.json()) as { integrationId: string };
-      await delay();
       return HttpResponse.json({
-        ...pendingAction,
-        integrationId: data.integrationId,
-      } satisfies typeof pendingAction);
+        yieldId: avaxLiquidStaking.id,
+        balances: avaxLiquidStakingBalancesV2,
+      });
     }),
-    http.patch("*/v1/transactions/:transactionId", async (info) => {
+    http.post("*/v1/actions/manage", async (info) => {
+      const data = (await info.request.json()) as YieldCreateManageActionDto;
+      await delay();
+
+      return HttpResponse.json({
+        ...yieldApiActionFixture({
+          action: pendingAction,
+          address: data.address,
+          rawArguments: data.arguments ?? null,
+          transactions: [
+            yieldApiTransactionFixture(pendingAction.transactions[0], {
+              type: "CLAIM_REWARDS",
+              status: "CREATED",
+              unsignedTransaction:
+                '{"from":"0xcaA141ece9fEE66D15f0257F5c6C48E26784345C","gasLimit":"0x0193e0","to":"0x7D2382b1f8Af621229d33464340541Db362B4907","data":"0x00f714ce00000000000000000000000000000000000000000000000000037cb07e6e4276000000000000000000000000caa141ece9fee66d15f0257f5c6c48e26784345c","nonce":89,"type":2,"maxFeePerGas":"0xbfa6de","maxPriorityFeePerGas":"0x0f4240","chainId":43114}',
+            }),
+          ],
+          overrides: {
+            yieldId: data.yieldId,
+          },
+        }),
+      });
+    }),
+    http.put("*/v1/transactions/:transactionId/submit-hash", async (info) => {
       await delay();
 
       const transactionId = info.params.transactionId as string;
 
       return HttpResponse.json({
-        ...pendingAction.transactions[0],
-        type: "CLAIM_REWARDS",
-        status: "WAITING_FOR_SIGNATURE",
-        id: transactionId,
-        unsignedTransaction:
-          '{"from":"0xcaA141ece9fEE66D15f0257F5c6C48E26784345C","gasLimit":"0x0193e0","to":"0x7D2382b1f8Af621229d33464340541Db362B4907","data":"0x00f714ce00000000000000000000000000000000000000000000000000037cb07e6e4276000000000000000000000000caa141ece9fee66d15f0257f5c6c48e26784345c","nonce":89,"type":2,"maxFeePerGas":"0xbfa6de","maxPriorityFeePerGas":"0x0f4240","chainId":43114}',
+        ...yieldApiTransactionFixture(pendingAction.transactions[0], {
+          type: "CLAIM_REWARDS",
+          status: "BROADCASTED",
+          id: transactionId,
+          hash: "transaction_hash",
+        }),
       });
     }),
-    http.post("*/v1/transactions/:transactionId/submit_hash", async () => {
-      await delay(1000);
-      return new HttpResponse(null, { status: 201 });
-    }),
-    http.get("*/v1/transactions/:transactionId/status", async () => {
+    http.get("*/v1/transactions/:transactionId", async (info) => {
+      const transactionId = info.params.transactionId as string;
       return HttpResponse.json({
-        url: "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        network: avaxLiquidStaking.token.network,
-        hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        status: "CONFIRMED",
+        ...yieldApiTransactionFixture(pendingAction.transactions[0], {
+          id: transactionId,
+          type: "CLAIM_REWARDS",
+          explorerUrl:
+            "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          network: avaxLiquidStaking.token.network,
+          hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          status: "CONFIRMED",
+        }),
       });
     })
   );

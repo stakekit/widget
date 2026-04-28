@@ -2,6 +2,7 @@ import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -27,20 +28,27 @@ export const StakeCompletePage = () => {
     [enterRequest.selectedToken]
   );
 
-  const metadata = selectedStake.map((y) => y.metadata);
+  const metadata = selectedStake.map((yieldDto) => ({
+    logoURI: yieldDto.metadata.logoURI,
+    name: yieldDto.metadata.name,
+    provider: getYieldProviderDetails(yieldDto) ?? undefined,
+  }));
 
   const network = selectedToken.mapOrDefault((y) => y.symbol, "");
 
   const amount = useMemo(
-    () => formatNumber(new BigNumber(enterRequest.requestDto.args.amount)),
-    [enterRequest.requestDto.args.amount]
+    () =>
+      formatNumber(
+        new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0)
+      ),
+    [enterRequest.requestDto.arguments?.amount]
   );
 
   const yieldType = useYieldType(selectedStake).map((v) => v.type);
 
   const selectedProviderYieldId = useMemo(
-    () => Maybe.fromNullable(enterRequest.requestDto.args.providerId),
-    [enterRequest.requestDto.args.providerId]
+    () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
+    [enterRequest.requestDto.arguments?.providerId]
   );
 
   const providerDetails = useProvidersDetails({

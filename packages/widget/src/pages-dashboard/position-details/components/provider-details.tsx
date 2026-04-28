@@ -1,4 +1,3 @@
-import type { RewardTypes, YieldDto } from "@stakekit/api-hooks";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -11,9 +10,10 @@ import {
 import { Divider } from "../../../components/atoms/divider";
 import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 import { Image } from "../../../components/atoms/image";
-import { ImageFallback } from "../../../components/atoms/image-fallback";
 import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
+import type { RewardTypes } from "../../../domain/types/reward-rate";
+import type { Yield } from "../../../domain/types/yields";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import type { GetMaybeJust } from "../../../types/utils";
 import { inactiveContainer, noWrap } from "./styles.css";
@@ -25,7 +25,7 @@ export const ProviderDetails = ({
   ...providerDetails
 }: {
   stakeType: string;
-  integrationData: YieldDto;
+  integrationData: Yield;
   logo: string | undefined;
   name: string;
   rewardRateFormatted: string;
@@ -48,18 +48,10 @@ export const ProviderDetails = ({
           <Box display="flex" justifyContent="flex-start" alignItems="center">
             <Box marginRight="2">
               <Image
-                containerProps={{ hw: "8" }}
-                imageProps={{ borderRadius: "full" }}
+                wrapperProps={{ hw: "8" }}
+                imgProps={{ borderRadius: "full" }}
                 src={logo}
-                fallback={
-                  <Box marginRight="1">
-                    <ImageFallback
-                      name={nameOrAddress}
-                      tokenLogoHw="8"
-                      textVariant={{ type: "white", weight: "bold" }}
-                    />
-                  </Box>
-                }
+                fallbackName={nameOrAddress}
               />
             </Box>
 

@@ -5,10 +5,13 @@ import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
 import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { SelectYield } from "../../../../../components/molecules/select-yield";
-import { getYieldProviderYieldIds } from "../../../../../domain/types/yields";
+import {
+  getYieldProviderDetails,
+  getYieldProviderYieldIds,
+  isYieldWithProviderOptions,
+} from "../../../../../domain/types/yields";
 import { useMultiYields } from "../../../../../hooks/api/use-multi-yields";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import {
@@ -26,7 +29,7 @@ export const SelectProvider = () => {
   const { t } = useTranslation();
 
   const providerYieldIdOptions = selectedStake
-    .filter((ss) => !!ss.args.enter.args?.providerId?.required)
+    .filter(isYieldWithProviderOptions)
     .map(getYieldProviderYieldIds);
 
   const yields = useMultiYields(providerYieldIdOptions.orDefault([]));
@@ -38,16 +41,25 @@ export const SelectProvider = () => {
     val.yields.find((v) => v.id === val.selectedProviderYieldId)
   );
 
+  const providerSelection = Maybe.fromRecord({
+    selectedStake,
+    providerYieldIdOptions,
+    selectedProviderYield,
+  }).chain((val) =>
+    Maybe.fromNullable(getYieldProviderDetails(val.selectedProviderYield)).map(
+      (provider) => ({
+        ...val,
+        provider,
+      })
+    )
+  );
+
   return appLoading ? (
     <Box marginTop="2">
       <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
     </Box>
   ) : (
-    Maybe.fromRecord({
-      selectedStake,
-      providerYieldIdOptions,
-      selectedProviderYield,
-    })
+    providerSelection
       .map((val) => (
         <SelectYield
           onItemClick={(yieldDto) =>
@@ -71,32 +83,15 @@ export const SelectProvider = () => {
                   >
                     <Box marginRight="2">
                       <Image
-                        containerProps={{ hw: "5" }}
-                        imageProps={{ borderRadius: "full" }}
-                        src={
-                          val.selectedProviderYield.metadata.provider?.logoURI
-                        }
-                        fallback={
-                          <Box marginRight="1">
-                            <ImageFallback
-                              name={
-                                val.selectedProviderYield.metadata.provider
-                                  ?.name ??
-                                val.selectedProviderYield.metadata.name
-                              }
-                              tokenLogoHw="5"
-                              textVariant={{
-                                type: "white",
-                                weight: "bold",
-                              }}
-                            />
-                          </Box>
-                        }
+                        wrapperProps={{ hw: "5" }}
+                        imgProps={{ borderRadius: "full" }}
+                        src={val.provider.logoURI}
+                        fallbackName={val.provider.name}
                       />
                     </Box>
 
                     <Text className={breakWord} variant={{ weight: "bold" }}>
-                      {val.selectedProviderYield.metadata.provider?.name}
+                      {val.provider.name}
                     </Text>
                   </Box>
 
