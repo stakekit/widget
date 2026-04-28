@@ -80,6 +80,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
         },
       },
       build: {
+        reportCompressedSize: false,
         sourcemap: false,
         commonjsOptions: {
           transformMixedEsModules: true,
