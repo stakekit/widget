@@ -3,7 +3,10 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
-import { getRewardRateBreakdown } from "../../../domain/types/reward-rate";
+import {
+  getRewardRateBreakdown,
+  type YieldRewardRateDto,
+} from "../../../domain/types/reward-rate";
 import { isForceMaxAmount } from "../../../domain/types/stake";
 import type { TokenDto } from "../../../domain/types/tokens";
 import { getYieldActionArg } from "../../../domain/types/yields";
@@ -18,6 +21,11 @@ import {
 } from "../state";
 import { usePendingActions } from "./use-pending-actions";
 import { useStakeExitRequestDto } from "./use-stake-exit-request-dto";
+
+const hasCampaignRewardRate = (
+  rewardRate: YieldRewardRateDto | null | undefined
+) =>
+  !!getRewardRateBreakdown(rewardRate).find((item) => item.key === "campaign");
 
 export const usePositionDetails = () => {
   const {
@@ -120,15 +128,23 @@ export const usePositionDetails = () => {
     () =>
       positionBalances.data
         .map((balanceData) => balanceData.rewardRate)
-        .filter(
-          (rewardRate) =>
-            !!getRewardRateBreakdown(rewardRate).find(
-              (item) => item.key === "campaign"
-            )
-        )
+        .filter(hasCampaignRewardRate)
         .extractNullable(),
     [positionBalances.data]
   );
+
+  const fallbackRewardRate = useMemo(
+    () =>
+      integrationData
+        .map((yieldData) => yieldData.rewardRate)
+        .filter(hasCampaignRewardRate)
+        .extractNullable(),
+    [integrationData]
+  );
+
+  const apyCompositionRewardRate = personalizedRewardRate ?? fallbackRewardRate;
+  const apyCompositionShowsUpToCampaign =
+    !personalizedRewardRate && !!fallbackRewardRate;
 
   const canUnstake = integrationData.filter((d) => !!d.status.exit).isJust();
 
@@ -216,6 +232,8 @@ export const usePositionDetails = () => {
     onPendingActionClick,
     providersDetails,
     personalizedRewardRate,
+    apyCompositionRewardRate,
+    apyCompositionShowsUpToCampaign,
     pendingActions,
     shareToAmountConversions,
     validatorAddressesHandling,

@@ -54,6 +54,8 @@ const PositionDetails = () => {
     unstakeMinAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
     personalizedRewardRate,
+    apyCompositionRewardRate,
+    apyCompositionShowsUpToCampaign,
   } = usePositionDetails();
 
   useTrackPage("positionDetails", {
@@ -150,6 +152,17 @@ const PositionDetails = () => {
                       rewardRate={personalizedRewardRate}
                       title={t("details.apy_composition.title")}
                       testId="personalized-reward-rate-breakdown"
+                    />
+                  </Box>
+                ) : null}
+
+                {!personalizedRewardRate && apyCompositionRewardRate ? (
+                  <Box marginTop="4">
+                    <RewardRateBreakdown
+                      rewardRate={apyCompositionRewardRate}
+                      showUpToCampaign={apyCompositionShowsUpToCampaign}
+                      title={t("details.apy_composition.title")}
+                      testId="reward-rate-breakdown"
                     />
                   </Box>
                 ) : null}

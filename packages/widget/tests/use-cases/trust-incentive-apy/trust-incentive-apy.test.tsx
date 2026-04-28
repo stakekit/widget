@@ -103,7 +103,7 @@ describe("Trust incentive APY", () => {
     app.unmount();
   });
 
-  it("hides personalized APY when the balance has no campaign component", async () => {
+  it("falls back to yield APY composition when the balance has no campaign component", async () => {
     const { account, customConnectors, legacyYield, setUrl } = await setup({
       useRewardRateWithoutCampaign: true,
     });
@@ -130,6 +130,26 @@ describe("Trust incentive APY", () => {
           app.getByTestId("personalized-reward-rate-breakdown__campaign").length
       )
       .toBe(0);
+    await expect.element(app.getByText("APY composition")).toBeInTheDocument();
+    await expect
+      .element(
+        app.getByTestId("reward-rate-breakdown__native").getByText("4.27%")
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app
+          .getByTestId("reward-rate-breakdown__protocol-incentive")
+          .getByText("0.28%")
+      )
+      .toBeInTheDocument();
+    await expect
+      .element(
+        app
+          .getByTestId("reward-rate-breakdown__campaign")
+          .getByText("Up to 0.2%")
+      )
+      .toBeInTheDocument();
 
     app.unmount();
   });
