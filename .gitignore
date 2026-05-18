@@ -267,3 +267,5 @@ next-env.d.ts
 *.pfx
 *.crt
 *.cer
+
+.pnpm-store

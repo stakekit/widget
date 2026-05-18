@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - curl https://mise.run | MISE_VERSION=v2026.5.6 sh
+        - export PATH="$HOME/.local/bin:$PATH"
+        - export PATH="$HOME/.local/share/mise/shims:$PATH"
+        - mise install
+        - pnpm install --frozen-lockfile
+        - echo "VITE_YIELDS_API_URL=$VITE_YIELDS_API_URL" >> packages/widget/.env
+        - echo "VITE_API_URL=$VITE_API_URL" >> packages/widget/.env
+        - echo "VITE_API_KEY=$VITE_API_KEY" >> packages/widget/.env
+
+    build:
+      commands:
+        - pnpm --filter=@stakekit/widget build:website
+
+  artifacts:
+    baseDirectory: packages/widget/dist/website
+    files:
+      - "**/*"
