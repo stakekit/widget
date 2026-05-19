@@ -47,12 +47,12 @@ export const getSolanaTxDecodingCandidates = (
       encoding: "hex",
       buffer: Buffer.from(withoutHexPrefix, "hex"),
     });
+  } else {
+    candidates.push({
+      encoding: "base64",
+      buffer: Buffer.from(normalizedTx, "base64"),
+    });
   }
-
-  candidates.push({
-    encoding: "base64",
-    buffer: Buffer.from(normalizedTx, "base64"),
-  });
 
   return candidates;
 };

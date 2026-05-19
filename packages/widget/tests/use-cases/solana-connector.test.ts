@@ -75,6 +75,7 @@ describe("solana connector", () => {
   it("supports hex payloads with 0x prefix", () => {
     const candidates = getSolanaTxDecodingCandidates("0x01020304");
 
+    expect(candidates).toHaveLength(1);
     expect(candidates[0]?.encoding).toBe("hex");
     expect(candidates[0]?.buffer.equals(Buffer.from([1, 2, 3, 4]))).toBe(true);
   });
