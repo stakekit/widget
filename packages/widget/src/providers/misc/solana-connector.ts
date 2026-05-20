@@ -25,6 +25,90 @@ import {
   type StorageItem,
 } from "./solana-connector-meta";
 
+type DecodingCandidate = {
+  encoding: "base64" | "hex";
+  buffer: Buffer;
+};
+
+const isHexString = (value: string): boolean =>
+  /^[0-9a-fA-F]+$/.test(value) && value.length % 2 === 0;
+
+export const getSolanaTxDecodingCandidates = (
+  tx: string
+): DecodingCandidate[] => {
+  const normalizedTx = tx.trim();
+  const withoutHexPrefix = normalizedTx.startsWith("0x")
+    ? normalizedTx.slice(2)
+    : normalizedTx;
+
+  const candidates: DecodingCandidate[] = [];
+  if (isHexString(withoutHexPrefix)) {
+    candidates.push({
+      encoding: "hex",
+      buffer: Buffer.from(withoutHexPrefix, "hex"),
+    });
+  } else {
+    candidates.push({
+      encoding: "base64",
+      buffer: Buffer.from(normalizedTx, "base64"),
+    });
+  }
+
+  return candidates;
+};
+
+const deserializeCandidate = (candidate: DecodingCandidate) => {
+  let versionedError: unknown;
+  try {
+    return {
+      tx: VersionedTransaction.deserialize(candidate.buffer),
+      error: null,
+    };
+  } catch (error) {
+    versionedError = error;
+  }
+
+  try {
+    return {
+      tx: Transaction.from(candidate.buffer),
+      error: null,
+    };
+  } catch (legacyError) {
+    return {
+      tx: null,
+      error: `encoding=${candidate.encoding} bufferLength=${candidate.buffer.length} VersionedTransaction error: ${
+        versionedError instanceof Error
+          ? versionedError.message
+          : String(versionedError)
+      }. Legacy Transaction error: ${
+        legacyError instanceof Error ? legacyError.message : String(legacyError)
+      }`,
+    };
+  }
+};
+
+export const deserializeSolanaTransaction = (
+  tx: string
+): Transaction | VersionedTransaction => {
+  const candidates = getSolanaTxDecodingCandidates(tx);
+  const attemptErrors: string[] = [];
+
+  for (const candidate of candidates) {
+    const deserialized = deserializeCandidate(candidate);
+    if (deserialized.tx) {
+      return deserialized.tx;
+    }
+
+    if (deserialized.error) {
+      attemptErrors.push(deserialized.error);
+    }
+  }
+
+  throw new Error(
+    `Failed to deserialize Solana transaction. Tried ${attemptErrors.length} candidate(s). ${attemptErrors.join(" | ")}`
+  );
+};
+
 const createSolanaConnector = ({
   solanaWallet,
   walletDetailsParams,
@@ -42,25 +126,7 @@ const createSolanaConnector = ({
     type: solanaWallet.adapter.name,
     showQrModal: false,
     sendTransaction: async (tx) => {
-      const base64Decoded = Buffer.from(tx, "base64");
-      const isBase64 = base64Decoded.toString("base64") === tx;
-
-      const buffer = isBase64 ? base64Decoded : Buffer.from(tx, "hex");
-
-      let solanaTx: Transaction | VersionedTransaction;
-      let versionedError: unknown;
-      try {
-        solanaTx = VersionedTransaction.deserialize(buffer);
-      } catch (err) {
-        versionedError = err;
-        try {
-          solanaTx = Transaction.from(buffer);
-        } catch (legacyErr) {
-          throw new Error(
-            `Failed to deserialize Solana transaction. VersionedTransaction error: ${versionedError instanceof Error ? versionedError.message : String(versionedError)}. Legacy Transaction error: ${legacyErr instanceof Error ? legacyErr.message : String(legacyErr)}`
-          );
-        }
-      }
+      const solanaTx = deserializeSolanaTransaction(tx);
 
       const signed = await solanaWallet.adapter.sendTransaction(
         solanaTx,
