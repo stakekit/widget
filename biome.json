@@ -14,7 +14,8 @@
       "!**/.turbo",
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
-      "!**/package.json"
+      "!**/package.json",
+      "!**/repos"
     ]
   },
   "formatter": {
@@ -24,7 +25,13 @@
     "indentWidth": 2,
     "lineWidth": 80
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
   "linter": {
     "enabled": true,
     "rules": {
@@ -46,12 +53,22 @@
         "noArrayIndexKey": "off",
         "useIterableCallbackReturn": "off"
       },
-      "a11y": { "noSvgWithoutTitle": "off" },
+      "a11y": {
+        "noSvgWithoutTitle": "off"
+      },
       "correctness": {
         "useJsxKeyInIterable": "off",
         "useUniqueElementIds": "off"
       },
-      "complexity": { "noForEach": "off", "useIndexOf": "off" }
+      "complexity": {
+        "noForEach": "off",
+        "useIndexOf": "off"
+      }
+    },
+    "domains": {
+      "next": "recommended",
+      "react": "recommended",
+      "test": "recommended"
     }
   },
   "javascript": {

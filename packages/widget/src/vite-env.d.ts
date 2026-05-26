@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_FORCE_ADDRESS: string | undefined;
   readonly VITE_FORCE_DASHBOARD: string;
   readonly VITE_APP_VARIANT: "utila" | undefined;
+  readonly VITE_YIELDS_API_URL: string;
 }
 
 interface ImportMeta {

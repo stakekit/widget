@@ -1,20 +1,15 @@
-import {
-  type ActionDto,
-  ActionStatus,
-  type YieldDto,
-} from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  ActionStatus,
+  getActionValidatorAddresses,
+} from "../../../../domain/types/action";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
 import { dateOlderThen7Days } from "../../../../utils/date";
 import { capitalizeFirstLetters } from "../../../../utils/formatters";
-
-type ActionYieldDto = {
-  actionData: ActionDto;
-  yieldData: YieldDto;
-};
+import type { ActionYieldDto } from "../types";
 
 type ListItemContainerType = "claim" | "pending" | "actionRequired" | undefined;
 
@@ -38,7 +33,9 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: Maybe.of(action.actionData.validatorAddresses ?? []),
+    validatorsAddresses: Maybe.of(
+      getActionValidatorAddresses(action.actionData) ?? []
+    ),
     selectedProviderYieldId: Maybe.empty(),
   });
 

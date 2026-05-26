@@ -1,24 +1,23 @@
-import type {
-  ActionDto,
-  ActionRequestDto,
-  TokenDto,
-  TransactionDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
-import { Just } from "purify-ts";
 import { vitest } from "vitest";
+import type { YieldCreateActionDto } from "../../../src/domain/types/action";
 import { waitForMs } from "../../../src/utils";
 import {
-  enterResponseFixture,
-  transactionConstructFixture,
-  yieldFixture,
+  legacyYieldFixture,
+  yieldApiActionFixture,
+  yieldApiNetworkFixture,
+  yieldApiTransactionFixture,
+  yieldApiValidatorsFixture,
+  yieldApiYieldFixture,
 } from "../../fixtures";
-import { worker } from "../../mocks/worker";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { rkMockWallet } from "../../utils/mock-connector";
+import type { TestWorker } from "../../utils/test-extend";
 
-export const setup = () => {
-  const avalancheCToken: TokenDto = {
+type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
+
+export const setup = (worker: TestWorker) => {
+  const avalancheCToken: LegacyTokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
     decimals: 18,
@@ -26,7 +25,7 @@ export const setup = () => {
     coinGeckoId: "avalanche-2",
     logoURI: "https://assets.stakek.it/tokens/avax.svg",
   };
-  const usdcToken: TokenDto = {
+  const usdcToken: LegacyTokenDto = {
     network: "avalanche-c",
     symbol: "USDC",
     name: "USD Coin",
@@ -36,78 +35,96 @@ export const setup = () => {
     logoURI: "https://assets.stakek.it/tokens/usdc.svg",
   };
 
-  const yieldWithSameGasAndStakeToken = Just(yieldFixture())
-    .map((val) => ({
-      yieldDto: {
-        ...val,
-        id: "avalanche-avax-native-staking",
-        token: avalancheCToken,
-        tokens: [avalancheCToken],
-        metadata: {
-          ...val.metadata,
-          type: "staking",
-          gasFeeToken: avalancheCToken,
-        },
-      } satisfies YieldDto,
-    }))
-    .map((val) => ({
-      ...val,
-      actionDto: {
-        ...enterResponseFixture(),
-        integrationId: val.yieldDto.id,
-        transactions: [
-          {
-            ...transactionConstructFixture(),
-            status: "CREATED",
-            stakeId: val.yieldDto.id,
-            gasEstimate: null,
-          },
-          {
-            ...transactionConstructFixture(),
-            status: "CREATED",
-            stakeId: val.yieldDto.id,
-            gasEstimate: null,
-          },
-        ],
-      } satisfies ActionDto,
-    }))
-    .unsafeCoerce();
+  const legacyYieldBase = legacyYieldFixture();
+  const yieldApiYieldBase = yieldApiYieldFixture();
+  const createLegacyYield = ({
+    id,
+    token,
+    gasFeeToken,
+  }: {
+    id: string;
+    token: LegacyTokenDto;
+    gasFeeToken: LegacyTokenDto;
+  }) =>
+    legacyYieldFixture({
+      id,
+      token,
+      tokens: [token],
+      validators: [],
+      metadata: {
+        ...legacyYieldBase.metadata,
+        type: "staking",
+        gasFeeToken,
+      },
+    });
+  const createYieldApiYield = ({
+    id,
+    token,
+    gasFeeToken,
+  }: {
+    id: string;
+    token: LegacyTokenDto;
+    gasFeeToken: LegacyTokenDto;
+  }) =>
+    yieldApiYieldFixture({
+      id,
+      network: token.network,
+      token,
+      tokens: [token],
+      inputTokens: [token],
+      outputToken: token,
+      mechanics: {
+        ...yieldApiYieldBase.mechanics,
+        type: "staking",
+        gasFeeToken,
+      },
+    });
+  const createYieldApiAction = (yieldId: string) =>
+    yieldApiActionFixture({
+      yieldId,
+      transactions: [
+        yieldApiTransactionFixture({
+          id: `${yieldId}-transaction-0`,
+          network: "avalanche-c",
+          type: "STAKE",
+          status: "CREATED",
+        }),
+        yieldApiTransactionFixture({
+          id: `${yieldId}-transaction-1`,
+          network: "avalanche-c",
+          type: "STAKE",
+          status: "CREATED",
+        }),
+      ],
+    });
 
-  const yieldWithDifferentGasAndStakeToken = Just(yieldFixture())
-    .map((val) => ({
-      yieldDto: {
-        ...val,
-        id: "avalanche-c-usdc-aave-v3-lending",
-        token: usdcToken,
-        tokens: [usdcToken],
-        metadata: {
-          ...val.metadata,
-          type: "staking",
-          gasFeeToken: avalancheCToken,
-        },
-      } satisfies YieldDto,
-    }))
-    .map((val) => ({
-      ...val,
-      actionDto: enterResponseFixture({
-        integrationId: val.yieldDto.id,
-        transactions: [
-          {
-            ...transactionConstructFixture(),
-            stakeId: val.yieldDto.id,
-            status: "CREATED",
-            gasEstimate: null,
-          },
-          {
-            ...transactionConstructFixture(),
-            stakeId: val.yieldDto.id,
-            status: "CREATED",
-            gasEstimate: null,
-          },
-        ],
-      }),
-    }))
-    .unsafeCoerce();
+  const yieldWithSameGasAndStakeToken = {
+    yieldDto: createLegacyYield({
+      id: "avalanche-avax-native-staking",
+      token: avalancheCToken,
+      gasFeeToken: avalancheCToken,
+    }),
+    yieldApiDto: createYieldApiYield({
+      id: "avalanche-avax-native-staking",
+      token: avalancheCToken,
+      gasFeeToken: avalancheCToken,
+    }),
+    actionDto: createYieldApiAction("avalanche-avax-native-staking"),
+  };
+
+  const yieldWithDifferentGasAndStakeToken = {
+    yieldDto: createLegacyYield({
+      id: "avalanche-c-usdc-aave-v3-lending",
+      token: usdcToken,
+      gasFeeToken: avalancheCToken,
+    }),
+    yieldApiDto: createYieldApiYield({
+      id: "avalanche-c-usdc-aave-v3-lending",
+      token: usdcToken,
+      gasFeeToken: avalancheCToken,
+    }),
+    actionDto: createYieldApiAction("avalanche-c-usdc-aave-v3-lending"),
+  };
 
   let avalancheCTokenAmount = "0";
   let usdcTokenAmount = "0";
@@ -120,23 +137,28 @@ export const setup = () => {
     usdcTokenAmount = amount.toString();
   };
 
-  const yieldsTxGasAmountMap = new Map<YieldDto["id"], string>([]);
+  const yieldsTxGasAmountMap = new Map<
+    ReturnType<typeof legacyYieldFixture>["id"],
+    string
+  >([]);
 
   const setTxGas = ({
     yieldId,
     amount,
   }: {
-    yieldId: YieldDto["id"];
+    yieldId: ReturnType<typeof legacyYieldFixture>["id"];
     amount: string;
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json([avalancheCToken.network]);
+      return HttpResponse.json([
+        yieldApiNetworkFixture({ id: avalancheCToken.network }),
+      ]);
     }),
 
-    http.get("*/v1/tokens", async () => {
+    http.get(legacyApiRoute("/v1/tokens"), async () => {
       await delay();
 
       return HttpResponse.json([
@@ -151,7 +173,7 @@ export const setup = () => {
       ]);
     }),
 
-    http.post("*/v1/tokens/balances/scan", async () => {
+    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
       await delay();
       return HttpResponse.json([
         {
@@ -167,22 +189,24 @@ export const setup = () => {
       ]);
     }),
 
-    http.post("*/v1/tokens/balances", async () => {
+    http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await delay();
       return HttpResponse.json([
         {
           token: avalancheCToken,
           amount: avalancheCTokenAmount,
+          availableYields: [yieldWithSameGasAndStakeToken.yieldDto.id],
         },
         {
           token: usdcToken,
           amount: usdcTokenAmount,
+          availableYields: [yieldWithDifferentGasAndStakeToken.yieldDto.id],
         },
       ]);
     }),
 
     http.get(
-      `*/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`,
+      legacyApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
       async () => {
         await delay();
 
@@ -190,69 +214,88 @@ export const setup = () => {
       }
     ),
     http.get(
-      `*/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`,
+      yieldApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
+      async () => {
+        await delay();
+
+        return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldApiDto);
+      }
+    ),
+    http.get(
+      legacyApiRoute(
+        `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
+      ),
       async () => {
         await delay();
 
         return HttpResponse.json(yieldWithDifferentGasAndStakeToken.yieldDto);
       }
     ),
-    http.post("*/v1/actions/enter", async (info) => {
-      await delay();
+    http.get(
+      yieldApiRoute(
+        `/v1/yields/${yieldWithDifferentGasAndStakeToken.yieldDto.id}`
+      ),
+      async () => {
+        await delay();
 
-      const body = (await info.request.json()) as ActionRequestDto;
-
-      return HttpResponse.json({
-        ...(body.integrationId === yieldWithSameGasAndStakeToken.yieldDto.id
-          ? yieldWithSameGasAndStakeToken.actionDto
-          : yieldWithDifferentGasAndStakeToken.actionDto),
-        amount: body.args.amount,
-      } as ActionDto);
-    }),
-    http.patch("*/v1/transactions/:transactionId", async (info) => {
-      const transactionId = info.params.transactionId as string;
-
-      const yieldWithAction = [
-        yieldWithSameGasAndStakeToken,
-        yieldWithDifferentGasAndStakeToken,
-      ].find((val) =>
-        val.actionDto.transactions.some((tx) => tx.id === transactionId)
-      );
-
-      if (!yieldWithAction) {
-        return new HttpResponse(null, { status: 400 });
+        return HttpResponse.json(
+          yieldWithDifferentGasAndStakeToken.yieldApiDto
+        );
       }
-
-      const tx = yieldWithAction.actionDto.transactions.find(
-        (tx) => tx.id === transactionId
-      );
-
-      if (!tx) {
-        return new HttpResponse(null, { status: 400 });
-      }
-
+    ),
+    http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
       await delay();
 
+      const yieldId = info.params.yieldId as string;
+      const validators =
+        yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
+          ? yieldApiValidatorsFixture([])
+          : yieldApiValidatorsFixture([]);
+
       return HttpResponse.json({
-        ...tx,
-        gasEstimate: {
-          token: yieldWithAction.yieldDto.token,
-          amount:
-            yieldsTxGasAmountMap.get(
-              `${yieldWithAction.yieldDto.id}-${tx.id}`
-            ) ?? "0",
-        },
-      } satisfies TransactionDto);
+        items: validators,
+        total: validators.length,
+        offset: 0,
+        limit: 20,
+      });
     }),
-    http.post("*/v1/actions/enter/estimate-gas", async (info) => {
+    http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await delay();
 
-      const body = (await info.request.json()) as ActionRequestDto;
+      const body = (await info.request.json()) as YieldCreateActionDto;
+      const selectedYield =
+        body.yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
+          ? yieldWithSameGasAndStakeToken
+          : yieldWithDifferentGasAndStakeToken;
+      const gasAmount = yieldsTxGasAmountMap.get(body.yieldId) ?? "0";
 
       return HttpResponse.json({
-        amount: yieldsTxGasAmountMap.get(body.integrationId) ?? "0",
-        token: avalancheCToken,
-        gasLimit: "",
+        ...yieldApiActionFixture({
+          id: selectedYield.actionDto.id,
+          yieldId: selectedYield.actionDto.yieldId,
+          type: selectedYield.actionDto.type,
+          address: body.address,
+          amount: body.arguments?.amount ?? null,
+          amountRaw: body.arguments?.amount ?? null,
+          transactions: selectedYield.actionDto.transactions.map((tx, index) =>
+            yieldApiTransactionFixture({
+              id: tx.id,
+              network: tx.network,
+              type: tx.type,
+              unsignedTransaction: tx.unsignedTransaction ?? null,
+              gasEstimate: JSON.stringify({
+                amount: gasAmount,
+                token: avalancheCToken,
+              }),
+              status: "CREATED",
+              stepIndex: index,
+            })
+          ),
+          rawArguments: body.arguments ?? null,
+          createdAt: selectedYield.actionDto.createdAt,
+          completedAt: selectedYield.actionDto.completedAt,
+          status: selectedYield.actionDto.status,
+        }),
       });
     })
   );

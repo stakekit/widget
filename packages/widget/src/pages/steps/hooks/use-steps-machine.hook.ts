@@ -1,27 +1,13 @@
-import type {
-  ActionDto,
-  TransactionDto,
-  TransactionFormat,
-} from "@stakekit/api-hooks";
-import {
-  transactionConstruct,
-  transactionGetTransaction,
-  transactionGetTransactionStatusFromId,
-  transactionSubmit,
-  transactionSubmitHash,
-} from "@stakekit/api-hooks";
 import { useMachine } from "@xstate/react";
-import { isAxiosError } from "axios";
 import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
 import { type RefObject, useMemo, useState } from "react";
 import { assign, emit, setup } from "xstate";
-import { getAverageGasMode } from "../../../common/get-gas-mode-value";
-import { withRequestErrorRetry } from "../../../common/utils";
 import { isTxError } from "../../../domain";
+import type { ActionDto, TransactionDto } from "../../../domain/types/action";
 import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useSettings } from "../../../providers/settings";
+import { useApiClient } from "../../../providers/api/api-client-provider";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import type {
   SendTransactionError,
@@ -32,7 +18,6 @@ import {
   SignError,
   SubmitError,
   SubmitHashError,
-  TransactionConstructError,
   TXCheckError,
 } from "./errors";
 
@@ -40,11 +25,7 @@ type TxMeta = {
   url: string | null;
   signedTx: string | null;
   broadcasted: boolean | null;
-  signError:
-    | SendTransactionError
-    | TransactionDecodeError
-    | TransactionConstructError
-    | null;
+  signError: SendTransactionError | TransactionDecodeError | null;
   txCheckError: GetStakeSessionError | null;
   done: boolean;
 };
@@ -66,31 +47,31 @@ type SignRes =
 
 export const useStepsMachine = ({
   transactions,
-  integrationId,
+  yieldId,
   actionMeta,
 }: {
   transactions: ActionDto["transactions"];
-  integrationId: ActionDto["integrationId"];
+  yieldId: ActionDto["yieldId"];
   actionMeta: ActionMeta;
 }) => {
-  const { signTransaction, signMessage, isLedgerLive } = useSKWallet();
-  const { preferredTransactionFormat } = useSettings();
+  const { signTransaction, signMessage } = useSKWallet();
+  const apiClient = useApiClient();
   const trackEvent = useTrackEvent();
 
   const sortedTransactions = useMemo(
-    () => transactions.sort((a, b) => a.stepIndex - b.stepIndex),
+    () =>
+      [...transactions].sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0)),
     [transactions]
   );
 
   const machineParams = useSavedRef({
     transactions: sortedTransactions,
-    integrationId,
-    isLedgerLive,
+    yieldId,
     trackEvent,
     signMessage,
     signTransaction,
     actionMeta,
-    preferredTransactionFormat,
+    apiClient,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -100,26 +81,18 @@ const getMachine = (
   ref: Readonly<
     RefObject<{
       transactions: ActionDto["transactions"];
-      integrationId: ActionDto["integrationId"];
-      isLedgerLive: boolean;
+      yieldId: ActionDto["yieldId"];
       trackEvent: ReturnType<typeof useTrackEvent>;
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
       actionMeta: ActionMeta;
-      preferredTransactionFormat?: TransactionFormat;
+      apiClient: ReturnType<typeof useApiClient>;
     }>
   >
 ) => {
-  const txConstruct = (...params: Parameters<typeof transactionConstruct>) =>
-    withRequestErrorRetry({
-      fn: () => transactionConstruct(...params),
-      shouldRetry: (e, retryCount) =>
-        retryCount <= 3 && isAxiosError(e) && e.response?.status === 404,
-    }).mapLeft(() => new Error("Transaction construct error"));
-
   const initContext = getInitContext(
     ref.current.transactions,
-    ref.current.integrationId
+    ref.current.yieldId
   );
 
   return setup({
@@ -139,11 +112,7 @@ const getMachine = (
           }
         | {
             type: "__SIGN_ERROR__";
-            val:
-              | SendTransactionError
-              | TransactionDecodeError
-              | TransactionConstructError
-              | SignError;
+            val: SendTransactionError | TransactionDecodeError | SignError;
           }
         | { type: "__BROADCAST_SUCCESS__" }
         | { type: "__BROADCAST_ERROR__"; val: Error | SubmitHashError }
@@ -237,94 +206,83 @@ const getMachine = (
           EitherAsync.liftEither(
             context.currentTxMeta
               .chainNullable((v) => context.txStates[v.idx].tx)
-              .toEither(new TransactionConstructError("missing tx"))
+              .toEither(new SignError({ network: "unknown", txId: "unknown" }))
           )
             .chain<
-              | TransactionConstructError
-              | SendTransactionError
-              | TransactionDecodeError
-              | SignError,
+              SendTransactionError | TransactionDecodeError | SignError,
               SignRes
-            >((tx) =>
-              getAverageGasMode({ network: tx.network })
-                .chainLeft(async () => Right(null))
-                .chain((gas) =>
-                  txConstruct(tx.id, {
-                    gasArgs: gas?.gasArgs,
-                    ledgerWalletAPICompatible: ref.current.isLedgerLive,
-                    ...(!!ref.current.preferredTransactionFormat && {
-                      transactionFormat: ref.current.preferredTransactionFormat,
-                    }),
-                  }).mapLeft(() => new TransactionConstructError())
-                )
-                .chain<
-                  | TransactionConstructError
-                  | SendTransactionError
-                  | TransactionDecodeError
-                  | SignError,
-                  SignRes
-                >((constructedTx) => {
-                  if (
-                    constructedTx.status === "BROADCASTED" ||
-                    constructedTx.status === "CONFIRMED"
-                  ) {
-                    return EitherAsync.liftEither(
-                      Right({ type: "broadcasted" })
-                    );
-                  }
+            >((tx) => {
+              if (tx.status === "BROADCASTED" || tx.status === "CONFIRMED") {
+                return EitherAsync.liftEither(Right({ type: "broadcasted" }));
+              }
 
-                  if (!constructedTx.unsignedTransaction) {
-                    return EitherAsync.liftEither(
-                      Left(new TransactionConstructError())
-                    );
-                  }
-
-                  if (constructedTx.isMessage) {
-                    return ref.current
-                      .signMessage(constructedTx.unsignedTransaction)
-                      .map((val) => ({
-                        type: "regular" as const,
-                        data: { signedTx: val, broadcasted: false },
-                      }))
-                      .mapLeft(
-                        () =>
-                          new SignError({
-                            network: constructedTx.network,
-                            txId: constructedTx.id,
-                          })
-                      );
-                  }
-
-                  return ref.current
-                    .signTransaction({
-                      tx: constructedTx.unsignedTransaction,
-                      ledgerHwAppId: constructedTx.ledgerHwAppId,
-                      txMeta: {
-                        ...ref.current.actionMeta,
-                        txId: constructedTx.id,
-                        txType: constructedTx.type,
-                        annotatedTransaction:
-                          constructedTx.annotatedTransaction,
-                        structuredTransaction:
-                          constructedTx.structuredTransaction,
-                      },
-                      network: constructedTx.network,
+              if (!tx.unsignedTransaction) {
+                return EitherAsync.liftEither(
+                  Left(
+                    new SignError({
+                      network: tx.network,
+                      txId: tx.id,
                     })
-                    .map((val) => ({
-                      ...val,
-                      network: constructedTx.network,
-                      txId: constructedTx.id,
-                    }))
-                    .ifRight(() =>
-                      ref.current.trackEvent("txSigned", {
-                        txId: constructedTx.id,
-                        network: constructedTx.network,
-                        yieldId: context.yieldId,
+                  )
+                );
+              }
+
+              if (tx.isMessage) {
+                const unsignedMessage =
+                  typeof tx.unsignedTransaction === "string"
+                    ? tx.unsignedTransaction
+                    : JSON.stringify(tx.unsignedTransaction);
+
+                return ref.current
+                  .signMessage(unsignedMessage)
+                  .map((val) => ({
+                    type: "regular" as const,
+                    data: { signedTx: val, broadcasted: false },
+                  }))
+                  .mapLeft(
+                    () =>
+                      new SignError({
+                        network: tx.network,
+                        txId: tx.id,
                       })
-                    )
-                    .map((val) => ({ type: "regular", data: val }));
+                  );
+              }
+
+              const unsignedTransaction =
+                typeof tx.unsignedTransaction === "string"
+                  ? tx.unsignedTransaction
+                  : JSON.stringify(tx.unsignedTransaction);
+
+              return ref.current
+                .signTransaction({
+                  tx: unsignedTransaction,
+                  ledgerHwAppId: null,
+                  txMeta: {
+                    ...ref.current.actionMeta,
+                    txId: tx.id,
+                    txType: tx.type,
+                    annotatedTransaction: tx.annotatedTransaction,
+                    gasEstimate: tx.gasEstimate,
+                    structuredTransaction: tx.structuredTransaction,
+                  },
+                  network: tx.network as Parameters<
+                    typeof ref.current.signTransaction
+                  >[0]["network"],
                 })
-            )
+                .map((val) => ({
+                  ...val,
+                  network: tx.network,
+                  txId: tx.id,
+                }))
+                .ifRight(() =>
+                  ref.current.trackEvent("txSigned", {
+                    txId: tx.id,
+                    network: tx.network,
+                    yieldId: context.yieldId,
+                  })
+                )
+                .map((val) => ({ type: "regular", data: val }));
+            })
             .caseOf({
               Left: (l) => {
                 console.log(l);
@@ -401,9 +359,10 @@ const getMachine = (
             .chain((currentTx) => {
               if (currentTx.meta.broadcasted) {
                 return EitherAsync(() =>
-                  transactionSubmitHash(currentTx.tx.id, {
-                    hash: currentTx.meta.signedTx!,
-                  })
+                  ref.current.apiClient.yield.TransactionsControllerSubmitTransactionHash(
+                    currentTx.tx.id,
+                    { payload: { hash: currentTx.meta.signedTx! } }
+                  )
                 )
                   .mapLeft(() => new SubmitHashError())
                   .ifRight(() => {
@@ -417,9 +376,14 @@ const getMachine = (
               }
 
               return EitherAsync(() =>
-                transactionSubmit(currentTx.tx.id, {
-                  signedTransaction: currentTx.meta.signedTx!,
-                })
+                ref.current.apiClient.yield.TransactionsControllerSubmitTransaction(
+                  currentTx.tx.id,
+                  {
+                    payload: {
+                      signedTransaction: currentTx.meta.signedTx!,
+                    },
+                  }
+                )
               )
                 .mapLeft(() => new SubmitError())
                 .ifRight(() => {
@@ -490,23 +454,16 @@ const getMachine = (
               .toEither(new Error("missing tx"))
           )
             .chain((currentTx) =>
-              withRequestErrorRetry({
-                fn: () =>
-                  transactionGetTransactionStatusFromId(currentTx.tx.id),
-                shouldRetry: (e, retryCount) =>
-                  retryCount <= 3 &&
-                  isAxiosError(e) &&
-                  e.response?.status === 404,
-              })
-                .map((res) => ({ url: res.url, status: res.status }))
-                .chainLeft(() =>
-                  EitherAsync(() =>
-                    transactionGetTransaction(currentTx.tx.id)
-                  ).map((res) => ({
-                    url: res.explorerUrl,
-                    status: res.status,
-                  }))
+              EitherAsync(() =>
+                ref.current.apiClient.yield.TransactionsControllerGetTransaction(
+                  currentTx.tx.id,
+                  undefined
                 )
+              )
+                .map((res) => ({
+                  url: res.explorerUrl,
+                  status: res.status,
+                }))
                 .mapLeft(() => new TXCheckError())
                 .chain((val) =>
                   EitherAsync.liftEither(
@@ -549,7 +506,7 @@ const getMachine = (
                                 ...val.meta,
                                 signError: null,
                                 txCheckError: null,
-                                url: v.url,
+                                url: v.url ?? null,
                                 done: true,
                               },
                             }
@@ -618,7 +575,7 @@ const getMachine = (
 
 const getInitContext = (
   transactions: ActionDto["transactions"],
-  integrationId: ActionDto["integrationId"]
+  yieldId: ActionDto["yieldId"]
 ) => {
   if (!transactions.length) {
     return {
@@ -632,16 +589,28 @@ const getInitContext = (
   const txStates = transactions.map<TxState>((dto) => ({
     tx: dto,
     meta: {
-      broadcasted: null,
+      broadcasted:
+        dto.status === "BROADCASTED" || dto.status === "CONFIRMED"
+          ? true
+          : null,
       signedTx: null,
-      url: null,
+      url: dto.explorerUrl ?? null,
       signError: null,
       txCheckError: null,
-      done: false,
+      done: dto.status === "CONFIRMED" || dto.status === "SKIPPED",
     },
   }));
 
-  const currentTxIdx = 0;
+  const currentTxIdx = txStates.findIndex((txState) => !txState.meta.done);
+
+  if (currentTxIdx === -1) {
+    return {
+      enabled: false,
+      txStates,
+      currentTxMeta: null,
+      yieldId,
+    };
+  }
 
   const currentTxMeta = {
     idx: currentTxIdx,
@@ -652,6 +621,6 @@ const getInitContext = (
     enabled: true,
     txStates,
     currentTxMeta,
-    yieldId: integrationId,
+    yieldId,
   };
 };

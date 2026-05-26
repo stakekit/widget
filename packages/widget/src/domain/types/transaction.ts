@@ -13,7 +13,10 @@ import {
   unknown,
 } from "purify-ts";
 import { type Address, type Hex, numberToHex } from "viem";
+import type { TransactionVerificationMessageDto } from "../../generated/api/legacy";
 import type { GetEitherRight } from "../../types/utils";
+
+export type { TransactionVerificationMessageDto };
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {
@@ -52,6 +55,7 @@ export const unsignedEVMTransactionCodec = Codec.interface({
   value: optional(bigintCodec),
   nonce: number,
   type: number,
+  gasPrice: optional(bigintCodec),
   maxFeePerGas: optional(bigintCodec),
   maxPriorityFeePerGas: optional(bigintCodec),
   chainId: number,
@@ -80,7 +84,12 @@ export const decodeAndPrepareEvmTransaction = ({
             ? numberToHex(decodedTx.maxPriorityFeePerGas)
             : undefined,
         }
-      : { type: "0x1" as const }),
+      : {
+          type: "0x1" as const,
+          gasPrice: decodedTx.gasPrice
+            ? numberToHex(decodedTx.gasPrice)
+            : undefined,
+        }),
   }));
 
 export type DecodedEVMTransaction = GetEitherRight<

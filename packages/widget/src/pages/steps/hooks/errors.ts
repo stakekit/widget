@@ -14,14 +14,6 @@ export class SignError extends Error {
 export class GetStakeSessionError extends Error {
   name = "GetStakeSessionError";
 }
-export class TransactionConstructError extends Error {
-  _tag = "TransactionConstructError";
-
-  constructor(message?: string) {
-    super(message);
-    this._tag = "TransactionConstructError";
-  }
-}
 export class TXCheckError extends Error {
   name = "TXCheckError";
 }

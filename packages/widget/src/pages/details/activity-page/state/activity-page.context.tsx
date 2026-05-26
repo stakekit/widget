@@ -1,8 +1,3 @@
-import {
-  ActionStatus,
-  ActionTypes,
-  type TransactionType,
-} from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
 import {
@@ -13,12 +8,17 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import {
+  ActionStatus,
+  type TransactionType,
+} from "../../../../domain/types/action";
 import { useActivityActions } from "../../../../hooks/api/use-activity-actions";
 import { useActivityContext } from "../../../../providers/activity-provider";
 import { useSKWallet } from "../../../../providers/sk-wallet";
-import { createSubArray, groupDateStrings } from "../../../../utils";
+import { groupDateStrings } from "../../../../utils";
+import { createSubArray, type ItemBulletType } from "../item-bullet-type";
 import type { ActionYieldDto } from "../types";
-import type { ActivityPageContextType, ItemBulletType } from "./types";
+import type { ActivityPageContextType } from "./types";
 
 export const ActivityPageContext = createContext<
   ActivityPageContextType | undefined
@@ -55,9 +55,9 @@ export const ActivityPageContextProvider = ({
         );
 
       const path =
-        data.actionData.type === ActionTypes.UNSTAKE
+        data.actionData.type === "UNSTAKE"
           ? "unstake"
-          : data.actionData.type === ActionTypes.STAKE
+          : data.actionData.type === "STAKE"
             ? "stake"
             : "pending";
 

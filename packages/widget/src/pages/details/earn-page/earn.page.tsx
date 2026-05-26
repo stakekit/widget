@@ -67,7 +67,7 @@ const EarnPageComponent = () => {
   );
 };
 
-export const EarnPage = () => (
+const EarnPage = () => (
   <EarnPageStateUsageBoundaryProvider>
     <EarnPageContextProvider>
       <EarnPageComponent />

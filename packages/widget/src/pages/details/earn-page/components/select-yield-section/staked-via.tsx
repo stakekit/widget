@@ -1,8 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { Image } from "../../../../../components/atoms/image";
-import { ImageFallback } from "../../../../../components/atoms/image-fallback";
 import { Text } from "../../../../../components/atoms/typography/text";
+import {
+  getBaseYieldType,
+  getYieldProviderDetails,
+  isYieldActionArgRequired,
+} from "../../../../../domain/types/yields";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
 export const StakedVia = () => {
@@ -14,12 +18,13 @@ export const StakedVia = () => {
     .filter(
       (val) =>
         !!(
-          val.metadata.type === "staking" &&
-          !val.validators.length &&
-          val.metadata.provider
+          getBaseYieldType(val) === "staking" &&
+          !isYieldActionArgRequired(val, "enter", "validatorAddress") &&
+          !isYieldActionArgRequired(val, "enter", "validatorAddresses") &&
+          getYieldProviderDetails(val)
         )
     )
-    .chainNullable((val) => val.metadata.provider)
+    .chainNullable((val) => getYieldProviderDetails(val))
     .map((val) => (
       <Box
         display="flex"
@@ -37,9 +42,9 @@ export const StakedVia = () => {
         </Text>
 
         <Image
-          containerProps={{ hw: "7" }}
+          wrapperProps={{ hw: "7" }}
           src={val.logoURI}
-          fallback={<ImageFallback name={val.name} tokenLogoHw="7" />}
+          fallbackName={val.name}
         />
       </Box>
     ))

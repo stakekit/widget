@@ -1,15 +1,13 @@
 import type {
-  ActionDto,
-  RewardTypes,
-  TransactionDto,
-} from "@stakekit/api-hooks";
-import type {
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
   DecodedSubstrateTransaction,
   DecodedTonTransaction,
   DecodedTronTransaction,
 } from "../../types/transaction";
+import type { ActionDto, TransactionDto } from "../action";
+import type { RewardTypes } from "../reward-rate";
+import type { TokenDto, YieldTokenDto } from "../tokens";
 
 type EVMTx = {
   type: "evm";
@@ -41,8 +39,12 @@ export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 export type ActionMeta = {
   actionId: ActionDto["id"];
   actionType: ActionDto["type"];
+  address?: ActionDto["address"];
   amount: ActionDto["amount"];
-  inputToken: ActionDto["inputToken"];
+  amountRaw?: ActionDto["amountRaw"];
+  rawArguments?: ActionDto["rawArguments"];
+  yieldId?: ActionDto["yieldId"];
+  inputToken: TokenDto | YieldTokenDto | undefined;
   providersDetails: {
     name: string;
     address: string | undefined;
@@ -56,7 +58,10 @@ export type ActionMeta = {
 export type SKTxMeta = ActionMeta & {
   txId: TransactionDto["id"];
   txType: TransactionDto["type"];
-} & Pick<TransactionDto, "structuredTransaction" | "annotatedTransaction">;
+} & Pick<
+    TransactionDto,
+    "structuredTransaction" | "annotatedTransaction" | "gasEstimate"
+  >;
 
 export type SKWallet = {
   signMessage: (message: string) => Promise<string>;

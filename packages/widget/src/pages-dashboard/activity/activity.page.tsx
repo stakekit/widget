@@ -1,4 +1,3 @@
-import { ActionStatus } from "@stakekit/api-hooks";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useSelector } from "@xstate/store/react";
 import { List, Maybe } from "purify-ts";
@@ -7,14 +6,15 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { Text } from "../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../components/atoms/virtual-list";
+import { ActionStatus } from "../../domain/types/action";
 import ListItemBullet from "../../pages/details/activity-page/components/list-item-bullet";
 import { useActivityPage } from "../../pages/details/activity-page/hooks/use-activity-page";
+import { ItemBulletType } from "../../pages/details/activity-page/item-bullet-type";
 import {
   ActivityPageContext,
   ActivityPageContextProvider,
   useActivityPageContext,
 } from "../../pages/details/activity-page/state/activity-page.context";
-import { ItemBulletType } from "../../pages/details/activity-page/state/types";
 import {
   type ActionYieldDto,
   dateGroupLabels,

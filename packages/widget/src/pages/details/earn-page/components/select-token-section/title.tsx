@@ -12,7 +12,6 @@ export const SelectTokenTitle = () => {
     yieldType,
     selectTokenIsLoading,
     selectYieldIsLoading,
-    selectValidatorIsLoading,
     footerIsLoading,
   } = useEarnPageContext();
 
@@ -20,7 +19,6 @@ export const SelectTokenTitle = () => {
     appLoading ||
     selectTokenIsLoading ||
     selectYieldIsLoading ||
-    selectValidatorIsLoading ||
     footerIsLoading;
 
   const { variant } = useSettings();

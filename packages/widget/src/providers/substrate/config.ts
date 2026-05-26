@@ -2,6 +2,7 @@ import type { Chain as LunoKitChain } from "@luno-kit/core/chains";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
+import { getEnabledNetworks } from "../../common/get-enabled-networks";
 import { config } from "../../config";
 import {
   type SubstrateChainsMap,
@@ -12,16 +13,17 @@ import {
   typeSafeObjectEntries,
   typeSafeObjectFromEntries,
 } from "../../utils";
-import { getEnabledNetworks } from "../api/get-enabled-networks";
-import { getSubstrateConnectors } from "./substrate-connector";
+import type { ApiClient } from "../api/api-client";
 
 const queryKey = [config.appPrefix, "substrate-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
+  apiClient,
   queryClient,
   forceWalletConnectOnly,
 }: {
+  apiClient: ApiClient;
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
 }): Promise<{
@@ -32,8 +34,8 @@ const queryFn = async ({
     wallets: WalletList[number]["wallets"];
   }>;
 }> =>
-  getEnabledNetworks({ queryClient }).caseOf({
-    Right: (networks) => {
+  getEnabledNetworks({ apiClient, queryClient }).caseOf({
+    Right: async (networks) => {
       const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
         typeSafeObjectFromEntries(
           typeSafeObjectEntries<SubstrateChainsMap>(substrateChainsMap).filter(
@@ -61,17 +63,21 @@ const queryFn = async ({
         })
       );
 
-      return Promise.resolve({
+      const connector = substrateChains.length
+        ? Maybe.of(
+            (await import("./substrate-connector")).getSubstrateConnectors(
+              substrateChains,
+              lunoKitChains,
+              forceWalletConnectOnly
+            )
+          )
+        : Maybe.empty();
+
+      return {
         substrateChainsMap: filteredSubstrateChainsMap,
         substrateChains,
-        connector: Maybe.fromFalsy(substrateChains.length > 0).map(() =>
-          getSubstrateConnectors(
-            substrateChains,
-            lunoKitChains,
-            forceWalletConnectOnly
-          )
-        ),
-      });
+        connector,
+      };
     },
     Left: (l) => Promise.reject(l),
   });

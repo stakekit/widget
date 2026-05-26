@@ -1,22 +1,30 @@
-import { getStakeKitMock } from "@stakekit/api-hooks/msw";
 import { delay, HttpResponse, http, passthrough } from "msw";
+import { getExternalApiMock } from "./external-api-handlers";
+import { getLegacyApiMock } from "./legacy-api-handlers";
+import { getYieldApiMock } from "./yield-api-handlers";
 
 export const handlers = [
-  http.get("*/v1/actions/:actionId/gas-estimate", async () => {
+  ...getExternalApiMock(),
+  ...getLegacyApiMock(),
+  ...getYieldApiMock(),
+  http.all("*", async ({ request }) => {
+    const url = new URL(request.url);
+    const isAppApiPath =
+      url.pathname === "/health" ||
+      url.pathname.startsWith("/v1/") ||
+      url.pathname.startsWith("/v2/");
+
+    if (url.origin === window.location.origin && !isAppApiPath) {
+      return passthrough();
+    }
+
     await delay();
 
-    return new HttpResponse(null, { status: 400 });
+    return HttpResponse.json(
+      {
+        message: `Unhandled test request: ${request.method} ${request.url}`,
+      },
+      { status: 500 }
+    );
   }),
-  http.get("https://i18n.stakek.it/locales/en/errors.json", async () => {
-    await delay();
-
-    return HttpResponse.json({});
-  }),
-  http.get("*relay.walletconnect*", async () => {
-    await delay();
-
-    return new HttpResponse(null, { status: 500 });
-  }),
-  http.all("*", passthrough),
-  ...getStakeKitMock(),
 ];

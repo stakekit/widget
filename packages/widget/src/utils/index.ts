@@ -1,9 +1,8 @@
-import type { Networks } from "@stakekit/common";
 import BigNumber from "bignumber.js";
 import type { i18n } from "i18next";
 import { Just } from "purify-ts";
 import { config } from "../config";
-import { ItemBulletType } from "../pages/details/activity-page/state/types";
+import type { Networks } from "../domain/types/chains/networks";
 import { MaybeWindow } from "./maybe-window";
 
 BigNumber.config({
@@ -22,25 +21,33 @@ BigNumber.config({
 export const formatNumber = (
   number: string | BigNumber | number,
   decimals?: number
-) =>
-  Just(BigNumber(number))
-    .map((v) =>
-      typeof decimals === "number"
-        ? v.decimalPlaces(decimals, BigNumber.ROUND_DOWN)
-        : v
-    )
+) => {
+  const value = BigNumber(number);
+
+  return Just(value)
+    .map((v) => {
+      if (typeof decimals !== "number") return v;
+
+      const formattedValue = v.decimalPlaces(decimals, BigNumber.ROUND_DOWN);
+
+      return decimals > 0 && !v.isZero() && formattedValue.isZero()
+        ? v.precision(decimals, BigNumber.ROUND_DOWN)
+        : formattedValue;
+    })
     .map((v) => v.toFormat())
     .unsafeCoerce();
+};
 
 export const fromWei = (amount: string | BigNumber, decimals: number) =>
   BigNumber(amount)
     .dividedBy(10 ** decimals)
     .toFixed();
 
-export const defaultFormattedNumber = (number: string | BigNumber) =>
+export const defaultFormattedNumber = (number: string | BigNumber | number) =>
   formatNumber(number, 6);
 
-export const APToPercentage = (ap: number) => (ap * 100).toFixed(2);
+export const APToPercentage = (ap: number) =>
+  formatNumber((ap * 100).toFixed(2));
 
 const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
 
@@ -197,13 +204,4 @@ export const groupDateStrings = (
   const counts = Object.values(countMap);
 
   return [labels, counts];
-};
-
-export const createSubArray = (val: number): ItemBulletType[] => {
-  return Array.from({ length: val }, (_, i) => {
-    if (val === 1) return ItemBulletType.ALONE;
-    if (i === 0) return ItemBulletType.FIRST;
-    if (i === val - 1) return ItemBulletType.LAST;
-    return ItemBulletType.MIDDLE;
-  });
 };

@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import { useSettings } from "../../../providers/settings";
 import { formatNumber } from "../../../utils";
 import { combineRecipeWithVariant } from "../../../utils/styles";

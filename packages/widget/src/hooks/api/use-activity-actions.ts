@@ -1,72 +1,87 @@
-import {
-  type ActionDto,
-  type ActionList200,
-  ActionStatus,
-  actionList,
-  getActionListQueryKey,
-} from "@stakekit/api-hooks";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
+import { type ActionDto, getActionInputToken } from "../../domain/types/action";
+import type { Yield } from "../../domain/types/yields";
+import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { useValidatorsConfig } from "../use-validators-config";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
 
-export const useActivityActions = () => {
-  const { address, network, isLedgerLive } = useSKWallet();
-  const queryClient = useSKQueryClient();
+const PAGE_SIZE = 50;
 
-  const validatorsConfig = useValidatorsConfig();
+type ActivityActionItem = {
+  actionData: ActionDto;
+  yieldData: Yield;
+};
+
+type UseActivityActionsResult = ReturnType<typeof useInfiniteQuery> & {
+  allItems: ActivityActionItem[] | undefined;
+};
+
+export const useActivityActions = (): UseActivityActionsResult => {
+  const { address, isLedgerLive, network } = useSKWallet();
+  const queryClient = useSKQueryClient();
+  const apiClient = useApiClient();
 
   const query = useInfiniteQuery({
     enabled: !!address && !!network,
-    queryKey: getActionListQueryKey({
-      network: network!,
-      walletAddress: address!,
-    }),
-    queryFn: async ({ pageParam = 1 }) => {
+    queryKey: ["activity-actions", address, network],
+    queryFn: async ({ pageParam = 0 }) => {
       return (
         await EitherAsync(() =>
-          actionList({
-            page: pageParam,
-            walletAddress: address!,
-            network: network!,
-            sort: "createdAtDesc",
+          apiClient.yield.ActionsControllerGetActions({
+            params: {
+              address: address!,
+              limit: PAGE_SIZE,
+              offset: pageParam,
+              network: network!,
+              statuses: [
+                "SUCCESS",
+                "FAILED",
+                "CANCELED",
+                "PROCESSING",
+                "STALE",
+                "WAITING_FOR_NEXT",
+              ],
+            },
           })
         )
           .mapLeft(() => new Error("Could not get action list"))
-          .map((actionList) => ({
-            ...actionList,
-            data: actionList.data.filter(
-              (x) => x.status !== ActionStatus.CREATED
-            ),
-          }))
           .chain(async (actionList) =>
             EitherAsync.all(
-              (actionList.data as ActionList200["data"]).map((action) =>
+              (actionList.items ?? []).map((action) =>
                 getYieldOpportunity({
-                  yieldId: action.integrationId,
+                  yieldId: action.yieldId,
                   queryClient,
                   isLedgerLive,
-                  validatorsConfig,
+                  apiClient,
                 })
                   .map((yieldData) => ({
-                    actionData: action as typeof action & ActionDto,
+                    actionData: action as ActionDto,
                     yieldData,
                   }))
                   .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
               )
             )
               .map((res) => res.filter((x) => x !== null))
-              .map((res) => res.filter((x) => !!x.actionData.inputToken))
+              .map((res) =>
+                res.filter(
+                  (x) =>
+                    !!getActionInputToken({
+                      actionDto: x.actionData,
+                      yieldDto: x.yieldData,
+                    })
+                )
+              )
               .map((data) => ({ ...actionList, data }))
           )
       ).unsafeCoerce();
     },
-    initialPageParam: 1,
+    initialPageParam: 0,
     getNextPageParam: (lastPage) => {
-      return lastPage.hasNextPage ? lastPage.page + 1 : undefined;
+      const nextOffset = (lastPage.offset ?? 0) + (lastPage.limit ?? PAGE_SIZE);
+      return nextOffset < (lastPage.total ?? 0) ? nextOffset : undefined;
     },
   });
 

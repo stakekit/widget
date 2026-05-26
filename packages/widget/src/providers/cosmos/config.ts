@@ -1,24 +1,27 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, Right } from "purify-ts";
+import { getEnabledNetworks } from "../../common/get-enabled-networks";
 import { config } from "../../config";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { supportedCosmosChains } from "../../domain/types/chains/cosmos";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { ApiClient } from "../api/api-client";
 import { getWagmiChain } from "./chains";
 
 const queryKey = [config.appPrefix, "cosmos-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async ({
+  apiClient,
   queryClient,
   forceWalletConnectOnly,
 }: {
+  apiClient: ApiClient;
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks({ queryClient })
+  getEnabledNetworks({ apiClient, queryClient })
     .chain<
       Error,
       {

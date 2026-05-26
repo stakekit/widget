@@ -36,6 +36,7 @@ export const PendingStepsPage = () => {
 
   return (
     <StepsPage
+      inputToken={pendingRequest.interactedToken}
       session={pendingRequest.actionDto.unsafeCoerce()}
       providersDetails={providersDetails}
     />

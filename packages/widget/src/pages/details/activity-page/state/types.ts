@@ -1,4 +1,5 @@
 import type { useActivityActions } from "../../../../hooks/api/use-activity-actions";
+import type { ItemBulletType } from "../item-bullet-type";
 import type { ActionYieldDto } from "../types";
 
 export type ActivityPageContextType = {
@@ -8,13 +9,3 @@ export type ActivityPageContextType = {
   counts: number[];
   bulletLines: ItemBulletType[];
 };
-
-export const ItemBulletType = {
-  ALONE: "alone",
-  FIRST: "first",
-  MIDDLE: "middle",
-  LAST: "last",
-};
-
-export type ItemBulletType =
-  (typeof ItemBulletType)[keyof typeof ItemBulletType];

@@ -1,5 +1,5 @@
-import type { TransactionType } from "@stakekit/api-hooks";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type { TransactionType } from "../../../domain/types/action";
 
 type CompleteCommonContextType = {
   urls: {
@@ -11,7 +11,7 @@ type CompleteCommonContextType = {
   onViewTransactionClick: (url: string) => void;
 };
 
-export const CompleteCommonContext = createContext<CompleteCommonContextType>({
+const CompleteCommonContext = createContext<CompleteCommonContextType>({
   urls: [],
   unstakeMatch: false,
   pendingActionMatch: false,

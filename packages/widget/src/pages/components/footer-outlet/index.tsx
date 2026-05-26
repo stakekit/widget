@@ -121,23 +121,3 @@ export const AnimatedFooterContent = () => {
 
   return <AnimatedFooterButton {...val} />;
 };
-
-export const FooterContent = () => {
-  const [val] = useFooterButton();
-
-  const { containerRef } = useSyncFooterHeight();
-
-  const [, setFooterHeight] = useFooterHeight();
-
-  useEffect(() => {
-    !val && setFooterHeight(0);
-  }, [setFooterHeight, val]);
-
-  if (!val) return null;
-
-  return (
-    <Box ref={containerRef}>
-      <FooterButton {...val} />
-    </Box>
-  );
-};

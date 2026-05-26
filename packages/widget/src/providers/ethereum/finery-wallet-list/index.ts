@@ -9,6 +9,7 @@ import {
 } from "@stakekit/rainbowkit/wallets";
 import { createStore } from "mipd";
 import { Maybe } from "purify-ts";
+import type { EIP1193Provider } from "viem";
 import { injected } from "wagmi";
 import { evmChainGroup } from "../../../domain/types/chains";
 import { MaybeWindow } from "../../../utils/maybe-window";
@@ -156,6 +157,10 @@ const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
   )
   .unsafeCoerce();
 
+const asEip1193Provider = (
+  provider: Record<string, unknown> | undefined
+): EIP1193Provider | undefined => provider as EIP1193Provider | undefined;
+
 export const createFineryWallets: (evmChains: Chain[]) => {
   primaryWallets: WalletList[number]["wallets"];
   otherWallets: WalletList[number]["wallets"];
@@ -209,7 +214,7 @@ export const createFineryWallets: (evmChains: Chain[]) => {
         target: {
           id: "cactusLink",
           name: "Cactus Link",
-          provider: cactusProvider?.provider as typeof window.ethereum,
+          provider: () => asEip1193Provider(cactusProvider?.provider),
           icon: cactusProvider?.info.icon ?? cactusIcon,
         },
       })(config),
@@ -228,7 +233,7 @@ export const createFineryWallets: (evmChains: Chain[]) => {
         target: {
           id: "mpcvaultPlugin",
           name: "MPC Vault",
-          provider: mpcVaultProvider?.provider as typeof window.ethereum,
+          provider: () => asEip1193Provider(mpcVaultProvider?.provider),
           icon: mpcVaultProvider?.info.icon ?? mpcVaultIcon,
         },
       })(config),
@@ -266,7 +271,7 @@ export const createFineryWallets: (evmChains: Chain[]) => {
         target: {
           id: "fireblocks",
           name: "Fireblocks",
-          provider: fireblocksProvider?.provider as typeof window.ethereum,
+          provider: () => asEip1193Provider(fireblocksProvider?.provider),
           icon: fireblocksProvider?.info.icon ?? fireblocksIcon,
         },
       })(config),

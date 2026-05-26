@@ -1,15 +1,17 @@
-import { MiscNetworks } from "@stakekit/common";
 import { delay, HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
 import { solana, ton } from "../../src/domain/types/chains/misc";
+import { MiscNetworks } from "../../src/domain/types/chains/networks";
 import type { SKExternalProviders } from "../../src/domain/types/wallets";
 import { SKApiClientProvider } from "../../src/providers/api/api-client-provider";
 import { SKQueryClientProvider } from "../../src/providers/query-client";
 import { SettingsContextProvider } from "../../src/providers/settings";
 import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
+import { SolanaProvider } from "../../src/providers/solana";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
-import { worker } from "../mocks/worker";
+import { yieldApiNetworkFixture } from "../fixtures";
+import { yieldApiRoute } from "../mocks/api-routes";
+import { describe, expect, it, vi } from "../utils/test-extend";
 import { renderHook } from "../utils/test-utils";
 
 const renderHookWithExternalProvider = (
@@ -24,11 +26,13 @@ const renderHookWithExternalProvider = (
       >
         <SKApiClientProvider>
           <SKQueryClientProvider>
-            <WagmiConfigProvider>
-              <TrackingContextProviderWithProps>
-                <SKWalletProvider>{children}</SKWalletProvider>
-              </TrackingContextProviderWithProps>
-            </WagmiConfigProvider>
+            <SolanaProvider>
+              <WagmiConfigProvider>
+                <TrackingContextProviderWithProps>
+                  <SKWalletProvider>{children}</SKWalletProvider>
+                </TrackingContextProviderWithProps>
+              </WagmiConfigProvider>
+            </SolanaProvider>
           </SKQueryClientProvider>
         </SKApiClientProvider>
       </SettingsContextProvider>
@@ -36,14 +40,16 @@ const renderHookWithExternalProvider = (
   });
 
 describe("SK Wallet", () => {
-  it("should work with solana external provider", async () => {
+  it("should work with solana external provider", async ({ worker }) => {
     const switchChainSpy = vi.fn(async (_: number) => {});
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
-        return HttpResponse.json([MiscNetworks.Solana]);
+        return HttpResponse.json([
+          yieldApiNetworkFixture({ id: MiscNetworks.Solana }),
+        ]);
       })
     );
 
@@ -113,14 +119,16 @@ describe("SK Wallet", () => {
     );
   });
 
-  it("should work with ton external provider", async () => {
+  it("should work with ton external provider", async ({ worker }) => {
     const switchChainSpy = vi.fn(async (_: number) => {});
     const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
 
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
-        return HttpResponse.json([MiscNetworks.Ton]);
+        return HttpResponse.json([
+          yieldApiNetworkFixture({ id: MiscNetworks.Ton }),
+        ]);
       })
     );
 

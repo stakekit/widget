@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
@@ -6,9 +6,23 @@ import { Text } from "../../../../components/atoms/typography/text";
 import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
+import type { ItemBulletType } from "../item-bullet-type";
 import { useActivityPageContext } from "../state/activity-page.context";
+import type { ActionYieldDto } from "../types";
 
-export const useActivityPage = () => {
+type UseActivityPageResult = {
+  content: ReactNode;
+  onActionSelect: (val: ActionYieldDto) => void;
+  labels: string[];
+  counts: number[];
+  bulletLines: ItemBulletType[];
+  allData: ReturnType<
+    typeof useActivityPageContext
+  >["activityActions"]["allItems"];
+  activityActions: ReturnType<typeof useActivityPageContext>["activityActions"];
+};
+
+export const useActivityPage = (): UseActivityPageResult => {
   useTrackPage("activity");
 
   const { isConnected, isConnecting } = useSKWallet();
@@ -26,15 +40,24 @@ export const useActivityPage = () => {
         <Box
           display="flex"
           flex={1}
-          justifyContent="center"
-          alignItems="center"
+          flexDirection="column"
+          justifyContent="flex-end"
         >
-          <Text
-            variant={{ weight: "medium", size: "large" }}
-            textAlign="center"
+          <Box
+            display="flex"
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
           >
-            {t("dashboard.details.activity_connect_wallet")}
-          </Text>
+            <Text
+              variant={{ weight: "medium", size: "large" }}
+              textAlign="center"
+            >
+              {t("dashboard.details.activity_connect_wallet")}
+            </Text>
+          </Box>
+
+          <FallbackContent type="not_connected" />
         </Box>
       );
     }

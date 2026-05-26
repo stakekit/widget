@@ -1,7 +1,8 @@
-import type { GeolocationError } from "@stakekit/api-hooks";
-import { GeolocationErrorType } from "@stakekit/api-hooks";
-import type { AxiosInstance } from "axios";
 import { useCallback, useSyncExternalStore } from "react";
+import {
+  type GeolocationError,
+  GeolocationErrorType,
+} from "../domain/types/errors";
 
 let _isGeoBlocked:
   | false
@@ -19,26 +20,32 @@ const subscribe = (callback: (val: typeof _isGeoBlocked) => void) => {
   return () => subs.delete(callback);
 };
 
-export const attachGeoBlockInterceptor = (apiClient: AxiosInstance) =>
-  apiClient.interceptors.response.use(undefined, (error) => {
-    if (
-      error?.response?.status === 403 &&
-      error.response.data?.type === GeolocationErrorType.GEO_LOCATION
-    ) {
-      const geoLocationErr = error.response.data as GeolocationError;
+const isGeoLocationError = (data: unknown): data is GeolocationError =>
+  typeof data === "object" &&
+  data !== null &&
+  "type" in data &&
+  data.type === GeolocationErrorType.GEO_LOCATION;
 
-      const regionCode = (geoLocationErr.regionCode as unknown as string) ?? ""; // wrong type in API
+export const handleGeoBlockResponse = ({
+  data,
+  status,
+}: {
+  data: unknown;
+  status?: number;
+}) => {
+  if (status !== 403 || !isGeoLocationError(data)) {
+    return;
+  }
 
-      _isGeoBlocked = {
-        tags: new Set(geoLocationErr.tags ?? []),
-        countryCode: geoLocationErr.countryCode ?? "",
-        regionCode,
-      };
-      notify();
-    }
+  const regionCode = (data.regionCode as unknown as string) ?? ""; // wrong type in API
 
-    return Promise.reject(error);
-  });
+  _isGeoBlocked = {
+    tags: new Set(data.tags ?? []),
+    countryCode: data.countryCode ?? "",
+    regionCode,
+  };
+  notify();
+};
 
 export const useGeoBlock = () =>
   useSyncExternalStore(

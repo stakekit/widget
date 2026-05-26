@@ -1,7 +1,7 @@
-import { SubstrateNetworks } from "@stakekit/common";
-import type { Chain, ChainGroup } from "@stakekit/rainbowkit";
+import type { Chain } from "@stakekit/rainbowkit";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
+import { SubstrateNetworks } from "./networks";
 
 const supportedSubstrateChains = [
   SubstrateNetworks.Polkadot,
@@ -23,7 +23,7 @@ export type SubstrateChainsMap = {
   };
 };
 
-export const polkadot = {
+const polkadot = {
   id: 9999,
   name: "Polkadot",
   iconUrl: getNetworkLogo(SubstrateNetworks.Polkadot),
@@ -50,7 +50,7 @@ export const polkadot = {
   },
 } as const satisfies Chain;
 
-export const bittensor = {
+const bittensor = {
   id: 558,
   name: "Bittensor",
   iconUrl: getNetworkLogo(SubstrateNetworks.Bittensor),
@@ -95,9 +95,3 @@ SubstrateChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedSubstrateChains>>,
   number
 >;
-
-export const polkadotChainGroup = {
-  iconUrl: getNetworkLogo(SubstrateNetworks.Polkadot),
-  title: "Polkadot",
-  id: "polkadot",
-} satisfies ChainGroup;

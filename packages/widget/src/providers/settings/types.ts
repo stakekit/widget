@@ -1,16 +1,21 @@
-import type { TokenDto, TransactionFormat } from "@stakekit/api-hooks";
+import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { ReactNode } from "react";
 import type {
   SupportedSKChainIds,
   SupportedSKChains,
 } from "../../domain/types/chains";
+import type { TransactionFormat } from "../../domain/types/settings";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
+import type { TokenDto } from "../../domain/types/tokens";
 import type { SKExternalProviders } from "../../domain/types/wallets";
-import type { Languages, localResources } from "../../translation";
+import type { Languages, localResources } from "../../translation/resources";
 import type { RecursivePartial } from "../../types/utils";
-import type { ThemeWrapperTheme } from "../theme-wrapper";
-import type { Properties, TrackEventVal, TrackPageVal } from "../tracking";
-import type { BuildWagmiConfig } from "../wagmi";
+import type { ThemeWrapperTheme } from "../theme-wrapper-types";
+import type {
+  Properties,
+  TrackEventVal,
+  TrackPageVal,
+} from "../tracking/types";
 
 export type VariantProps =
   | {
@@ -29,6 +34,7 @@ export type VariantProps =
 export type SettingsProps = {
   apiKey: string;
   baseUrl?: string;
+  yieldsApiUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
     trackEvent?: (event: TrackEventVal, properties?: Properties) => void;
@@ -37,7 +43,7 @@ export type SettingsProps = {
   onMountAnimationComplete?: () => void;
   wagmi?: {
     forceWalletConnectOnly?: boolean;
-    __customConnectors__?: Parameters<BuildWagmiConfig>[0]["customConnectors"];
+    __customConnectors__?: (chains: Chain[]) => WalletList;
   };
   externalProviders?: SKExternalProviders;
   disableGasCheck?: boolean;
@@ -48,8 +54,17 @@ export type SettingsProps = {
   language?: Languages;
   isSafe?: boolean;
   disableInjectedProviderDiscovery?: boolean;
-  mapWalletFn?: Parameters<BuildWagmiConfig>[0]["mapWalletFn"];
-  mapWalletListFn?: Parameters<BuildWagmiConfig>[0]["mapWalletListFn"];
+  mapWalletFn?: (props: {
+    id: string;
+    iconUrl: string | (() => Promise<string>);
+    name: string;
+    iconBackground: string;
+  }) => {
+    iconUrl: string | (() => Promise<string>);
+    name: string;
+    iconBackground: string;
+  };
+  mapWalletListFn?: (val: WalletList) => WalletList;
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
   preferredTransactionFormat?: TransactionFormat;

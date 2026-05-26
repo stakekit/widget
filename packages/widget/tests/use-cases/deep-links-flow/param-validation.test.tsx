@@ -1,9 +1,9 @@
-import type { ActionTypes } from "@stakekit/api-hooks";
 import { I18nextProvider } from "react-i18next";
-import { describe, expect, it } from "vitest";
+import type { ActionType } from "../../../src/domain/types/action";
 import { useInitQueryParams } from "../../../src/hooks/use-init-query-params";
 import { SettingsContextProvider } from "../../../src/providers/settings";
 import { i18nInstance } from "../../../src/translation";
+import { describe, expect, it } from "../../utils/test-extend";
 import { renderHook } from "../../utils/test-utils";
 import { setUrl as _setUrl } from "./utils";
 
@@ -60,7 +60,7 @@ describe("Deep link param validation", () => {
 
   it("Should validate pendingAction param", async () => {
     const setAndAssertIsValidPendingActionParam = async (
-      pendingaction: ActionTypes | (string & {}),
+      pendingaction: ActionType | (string & {}),
       valid: boolean
     ) => {
       _setUrl({ pendingaction });

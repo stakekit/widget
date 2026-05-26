@@ -59,4 +59,4 @@ const Amount = ({ fullAmount, shortAmount, children }: AmountProps) => {
   );
 };
 
-export { Root, Amount };
+export { Amount, Root };

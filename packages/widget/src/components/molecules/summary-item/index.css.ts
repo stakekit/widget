@@ -1,4 +1,3 @@
-import { style } from "@vanilla-extract/css";
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
@@ -284,12 +283,3 @@ export const summaryLabel = recipe({
 export type SummaryLabelContainerVariants = RecipeVariants<
   typeof summaryLabelContainer
 >;
-
-export const loader = style({
-  flex: 1,
-});
-
-export const loaderContainer = style({
-  minHeight: "50px",
-  padding: "8px 16px",
-});

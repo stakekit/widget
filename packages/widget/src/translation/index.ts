@@ -5,18 +5,9 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { EitherAsync } from "purify-ts";
 import { initReactI18next, useTranslation } from "react-i18next";
-import { useApiClient } from "../providers/api/api-client-provider";
-import translationEN from "./English/translations.json";
-import translationFR from "./French/translations.json";
+import { localResources } from "./resources";
 
 export const i18nInstance: ReturnType<typeof createInstance> = createInstance();
-
-export const localResources = {
-  en: { translation: translationEN },
-  fr: { translation: translationFR },
-} as const;
-
-export type Languages = keyof typeof localResources;
 
 i18nInstance
   .use(initReactI18next)
@@ -43,8 +34,6 @@ i18nInstance.services.formatter?.add("lowercase", (value, _, __) =>
 );
 
 export const useLoadErrorTranslations = () => {
-  const apiClient = useApiClient();
-
   const { i18n } = useTranslation();
 
   const [lng] = i18n.language.split("-");
@@ -55,13 +44,19 @@ export const useLoadErrorTranslations = () => {
     gcTime: Number.POSITIVE_INFINITY,
     queryFn: async () =>
       (
-        await EitherAsync(() =>
-          apiClient.get<Record<string, unknown>>(
+        await EitherAsync(async () => {
+          const response = await fetch(
             `https://i18n.stakek.it/locales/${lng}/errors.json`
-          )
-        ).ifRight((res) =>
+          );
+
+          if (!response.ok) {
+            throw new Error("Could not load error translations");
+          }
+
+          return response.json() as Promise<Record<string, unknown>>;
+        }).ifRight((errors) =>
           i18n.addResourceBundle(i18n.language, "translation", {
-            errors: res.data,
+            errors,
           })
         )
       ).unsafeCoerce(),

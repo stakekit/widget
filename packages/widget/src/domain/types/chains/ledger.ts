@@ -1,11 +1,11 @@
 import type { Currency, Families } from "@ledgerhq/wallet-api-client";
+import type { SupportedSKChains } from "./";
 import {
   CosmosNetworks,
   EvmNetworks,
   MiscNetworks,
   SubstrateNetworks,
-} from "@stakekit/common";
-import type { SupportedSKChains } from "./";
+} from "./networks";
 
 export type SupportedLedgerLiveFamilies = Extract<
   Families,

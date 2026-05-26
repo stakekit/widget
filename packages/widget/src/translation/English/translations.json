@@ -63,6 +63,16 @@
       "label": "Resource",
       "placeholder": "Select resource"
     },
+    "risk": {
+      "title": "Risk rating",
+      "rated_by": "Rated by {{source}}",
+      "tooltip": "Risk ratings are provided by third-party risk assessment providers.",
+      "info_aria_label": "Risk rating details",
+      "sources": {
+        "credora": "Credora",
+        "staking_rewards": "Staking Rewards"
+      }
+    },
     "reward_rate_estimate_tooltip": "Reward rate can't be accurately estimated",
     "unstake_before": "You already have delegated your balance to a validator. Unstake and try again",
     "no_opportunities": "No yield opportunities for this token",
@@ -157,7 +167,14 @@
     "validators_nominator_count": "Nominator count",
     "validators_subnet_name": "Subnet name",
     "validators_market_cap": "Market cap",
-    "validators_token_symbol": "Token symbol"
+    "validators_token_symbol": "Token symbol",
+    "apy_composition": {
+      "title": "APY composition",
+      "native": "Native APY",
+      "protocol_incentive": "Protocol incentive APY",
+      "campaign": "Campaign APY",
+      "up_to": "Up to {{value}}"
+    }
   },
   "dashboard": {
     "details": {
@@ -328,6 +345,8 @@
       "stake": "staked",
       "unstake": "unstaked",
       "claim_rewards": "claimed rewards",
+      "auto_sweep_unstake_rewards": "unstaked rewards",
+      "auto_sweep_withdraw_rewards": "withdrew rewards",
       "restake_rewards": "restaked rewards",
       "withdraw": "withdrawn",
       "restake": "restaked",
@@ -384,6 +403,7 @@
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} more",
     "connect_wallet": "Connect wallet",
+    "connect_wallet_manage": "Connect wallet to manage your positions",
     "no_current_positions": "No active positions",
     "claim_rewards": "Claim rewards",
     "action_required": "Action required",
@@ -445,6 +465,7 @@
     "unstake": "Unstake",
     "withdraw": "Withdraw",
     "available": "{{amount}} {{symbol}} available",
+    "personalized_apy": "Personalized APY",
     "select_validators": {
       "submit": "Submit"
     },
@@ -463,6 +484,15 @@
       "restaking": "Unstake"
     },
     "balance_type": {
+      "active": "Active",
+      "active_yearn_or_deposit": "Deposited",
+      "entering": "Entering",
+      "entering_yearn_or_deposit": "Depositing",
+      "exiting": "Exiting",
+      "exiting_yearn_or_deposit": "Withdrawing",
+      "withdrawable": "Withdrawable",
+      "withdrawable_yearn_or_deposit": "Available to withdraw",
+      "claimable": "Claimable",
       "available": "Available",
       "staked": "Staked",
       "staked_yearn_or_deposit": "Deposited",
@@ -481,6 +511,8 @@
       "stake": "Stake",
       "unstake": "Unstake",
       "claim_rewards": "Claim rewards",
+      "auto_sweep_unstake_rewards": "Unstake rewards",
+      "auto_sweep_withdraw_rewards": "Withdraw rewards",
       "restake_rewards": "Restake rewards",
       "withdraw": "Withdraw",
       "withdraw_all": "Withdraw all",
@@ -509,6 +541,8 @@
       "stake": "Stake",
       "unstake": "Unstake",
       "claim_rewards": "Claim",
+      "auto_sweep_unstake_rewards": "Unstake rewards",
+      "auto_sweep_withdraw_rewards": "Withdraw rewards",
       "restake_rewards": "Restake",
       "withdraw": "Withdraw",
       "withdraw_all": "Withdraw all",
@@ -540,6 +574,8 @@
       "stake": "Stake with {{providerName}}",
       "unstake": "Unstake from {{providerName}}",
       "claim_rewards": "Claim rewards from {{providerName}}",
+      "auto_sweep_unstake_rewards": "Unstake rewards from {{providerName}}",
+      "auto_sweep_withdraw_rewards": "Withdraw rewards from {{providerName}}",
       "restake_rewards": "Restake rewards with {{providerName}}",
       "withdraw": "Withdraw from {{providerName}}",
       "withdraw_all": "Withdraw all from {{providerName}}",

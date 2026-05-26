@@ -1,15 +1,26 @@
-import type {
-  PendingActionDto,
-  PendingActionRequestDto,
-  ValidatorDto,
-  YieldBalanceDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
+import type { YieldCreateManageActionDto } from "../../../domain/types/action";
+import {
+  type AnyPendingActionDto,
+  isPendingActionAmountRequired,
+  isPendingActionValidatorAddressesRequired,
+  isPendingActionValidatorAddressRequired,
+  type YieldPendingActionType,
+} from "../../../domain/types/pending-action";
+import type { YieldBalanceDto } from "../../../domain/types/positions";
+import type { YieldTokenDto } from "../../../domain/types/tokens";
+import type { ValidatorDto } from "../../../domain/types/validators";
 import type { SKWallet } from "../../../domain/types/wallet";
+import type { Yield } from "../../../domain/types/yields";
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
+
+type AnyYieldBalanceDto = {
+  amount: string;
+  token: YieldTokenDto;
+  type: YieldBalanceDto["type"];
+};
 
 export const preparePendingActionRequestDto = ({
   pendingActionsState,
@@ -23,16 +34,16 @@ export const preparePendingActionRequestDto = ({
   pendingActionsState: State["pendingActions"];
   address: SKWallet["address"];
   additionalAddresses: SKWallet["additionalAddresses"];
-  pendingActionDto: PendingActionDto;
-  yieldBalance: YieldBalanceDto;
-  integration: YieldDto;
+  pendingActionDto: AnyPendingActionDto;
+  yieldBalance: AnyYieldBalanceDto;
+  integration: Yield;
   selectedValidators: ValidatorDto["address"][];
 }): Either<
   Error,
   {
-    requestDto: PendingActionRequestDto;
-    integrationData: YieldDto;
-    gasFeeToken: YieldDto["token"];
+    requestDto: YieldCreateManageActionDto;
+    integrationData: Yield;
+    gasFeeToken: Yield["token"];
     address: NonNullable<SKWallet["address"]>;
     additionalAddresses:
       | NonNullable<SKWallet["additionalAddresses"]>
@@ -42,43 +53,49 @@ export const preparePendingActionRequestDto = ({
   Maybe.fromNullable(address)
     .toEither(new Error("missing address"))
     .map((val) => {
-      const args: PendingActionRequestDto["args"] = {
+      const validatorArgs =
+        selectedValidators.length &&
+        isPendingActionValidatorAddressesRequired(pendingActionDto)
+          ? { validatorAddresses: selectedValidators }
+          : selectedValidators.length &&
+              isPendingActionValidatorAddressRequired(pendingActionDto)
+            ? { validatorAddress: List.head(selectedValidators).orDefault("") }
+            : {};
+
+      const args = {
         amount: Maybe.fromPredicate(
           Boolean,
-          pendingActionDto.args?.args?.amount?.required
+          isPendingActionAmountRequired(pendingActionDto)
         )
           .chainNullable(() =>
             pendingActionsState.get(
               getBalanceTokenActionType({
-                balanceType: yieldBalance.type,
+                balanceType: yieldBalance.type as YieldBalanceDto["type"],
                 token: yieldBalance.token,
-                actionType: pendingActionDto.type,
+                actionType: pendingActionDto.type as YieldPendingActionType,
               })
             )
           )
           .map((v) => v.toString())
           .alt(Maybe.of(yieldBalance.amount))
           .extract(),
-      };
-
-      if (selectedValidators.length) {
-        if (pendingActionDto.args?.args?.validatorAddresses?.required) {
-          args.validatorAddresses = selectedValidators;
-        } else if (pendingActionDto.args?.args?.validatorAddress?.required) {
-          args.validatorAddress = List.head(selectedValidators).orDefault("");
-        }
-      }
+        ...validatorArgs,
+      } satisfies NonNullable<YieldCreateManageActionDto["arguments"]>;
 
       return {
         requestDto: {
-          args,
-          integrationId: integration.id,
+          action: pendingActionDto.type as YieldPendingActionType,
+          address: val,
+          arguments: {
+            ...args,
+            ...(additionalAddresses ?? {}),
+          },
           passthrough: pendingActionDto.passthrough,
-          type: pendingActionDto.type,
+          yieldId: integration.id,
         },
         address: val,
         additionalAddresses: additionalAddresses ?? undefined,
-        gasFeeToken: integration.metadata.gasFeeToken,
+        gasFeeToken: integration.mechanics.gasFeeToken,
         integrationData: integration,
       };
     });

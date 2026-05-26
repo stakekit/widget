@@ -1,4 +1,3 @@
-import type { AddressesDto, TokenDto } from "@stakekit/api-hooks";
 import { useQuery } from "@tanstack/react-query";
 import type BigNumber from "bignumber.js";
 import { EitherAsync, type Maybe } from "purify-ts";
@@ -8,6 +7,9 @@ import {
   GasTokenMissingError,
   NotEnoughGasTokenError,
 } from "../common/check-gas-amount";
+import type { AddressesDto } from "../domain/types/addresses";
+import type { TokenDto } from "../domain/types/tokens";
+import { useApiClient } from "../providers/api/api-client-provider";
 
 export const useGasWarningCheck = (
   props: {
@@ -21,6 +23,7 @@ export const useGasWarningCheck = (
     | { isStake: false }
   )
 ) => {
+  const apiClient = useApiClient();
   const requestData = useMemo(
     () =>
       props.gasAmount.map((v) => ({
@@ -48,14 +51,21 @@ export const useGasWarningCheck = (
         )
           .chain((val) =>
             checkGasAmount({
+              apiClient,
               gasEstimate: {
                 amount: val.gasAmount,
-                token: val.gasFeeToken,
+                token: val.gasFeeToken as NonNullable<
+                  Parameters<typeof checkGasAmount>[0]["gasEstimate"]
+                >["token"],
               },
               addressWithTokenDto: {
                 address: val.address,
-                additionalAddresses: val.additionalAddresses,
-                network: val.gasFeeToken.network,
+                additionalAddresses: val.additionalAddresses as Parameters<
+                  typeof checkGasAmount
+                >[0]["addressWithTokenDto"]["additionalAddresses"],
+                network: val.gasFeeToken.network as Parameters<
+                  typeof checkGasAmount
+                >[0]["addressWithTokenDto"]["network"],
                 tokenAddress: val.gasFeeToken.address,
               },
               ...val.stakeData,

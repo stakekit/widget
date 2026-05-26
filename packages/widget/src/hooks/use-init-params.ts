@@ -1,20 +1,17 @@
-import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Right } from "purify-ts";
-import type { SupportedSKChains } from "../domain/types/chains";
 import type { InitParams } from "../domain/types/init-params";
-import type { ValidatorsConfig } from "../domain/types/yields";
+import { useApiClient } from "../providers/api/api-client-provider";
 import { useSKQueryClient } from "../providers/query-client";
 import { useSettings } from "../providers/settings";
-import type { SettingsContextType } from "../providers/settings/types";
 import { useSKWallet } from "../providers/sk-wallet";
-import { getYieldOpportunity } from "./api/use-yield-opportunity/get-yield-opportunity";
-import { getAndValidateInitParams } from "./use-init-query-params";
-import { useValidatorsConfig } from "./use-validators-config";
+import {
+  initParamsCacheTime,
+  initParamsQueryKey,
+  initParamsStaleTime,
+  queryInitParams,
+} from "./get-init-params";
 
-const queryKey = ["init-params"];
-const staleTime = 0;
-const cacheTime = 0;
+export { getInitParams } from "./get-init-params";
 
 export const useInitParams = <T = InitParams>(opts?: {
   select: (val: InitParams) => T;
@@ -22,74 +19,19 @@ export const useInitParams = <T = InitParams>(opts?: {
   const { isLedgerLive } = useSKWallet();
   const { externalProviders } = useSettings();
   const queryClient = useSKQueryClient();
-  const validatorsConfig = useValidatorsConfig();
+  const apiClient = useApiClient();
 
   return useQuery({
-    queryKey,
-    staleTime,
-    gcTime: cacheTime,
+    queryKey: initParamsQueryKey,
+    staleTime: initParamsStaleTime,
+    gcTime: initParamsCacheTime,
     queryFn: () =>
-      queryFn({
+      queryInitParams({
         isLedgerLive,
         queryClient,
+        apiClient,
         externalProviders,
-        validatorsConfig,
       }),
     select: opts?.select,
   });
 };
-
-export const getInitParams = (
-  params: Parameters<typeof fn>[0] & { queryClient: QueryClient }
-) =>
-  EitherAsync(() =>
-    params.queryClient.fetchQuery({
-      queryKey,
-      staleTime,
-      gcTime: cacheTime,
-      queryFn: () => queryFn(params),
-    })
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("could not get init query params");
-  });
-
-const queryFn = async (params: Parameters<typeof fn>[0]) =>
-  (await fn(params)).unsafeCoerce();
-
-const fn = ({
-  isLedgerLive,
-  queryClient,
-  externalProviders,
-  validatorsConfig,
-}: {
-  isLedgerLive: boolean;
-  queryClient: QueryClient;
-  externalProviders: SettingsContextType["externalProviders"];
-  validatorsConfig: ValidatorsConfig;
-}): EitherAsync<Error, InitParams> =>
-  EitherAsync.liftEither(
-    getAndValidateInitParams({
-      externalProviderInitToken: externalProviders?.initToken,
-    }).toEither(new Error("missing query params"))
-  ).chain<Error, InitParams>((val) => {
-    const yId = val.yieldId;
-
-    if (yId) {
-      return getYieldOpportunity({
-        isLedgerLive,
-        yieldId: yId,
-        queryClient,
-        validatorsConfig,
-      })
-        .map((yieldData) => ({
-          ...val,
-          network: yieldData.token.network as SupportedSKChains,
-          token: yieldData.token.symbol,
-          yieldData,
-        }))
-        .chainLeft(async () => Right({ ...val, yieldData: null }));
-    }
-
-    return EitherAsync.liftEither(Right({ ...val, yieldData: null }));
-  });

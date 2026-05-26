@@ -6,7 +6,6 @@ import type {
   MainWalletBase,
 } from "@cosmos-kit/core";
 import type { WCClient } from "@cosmos-kit/walletconnect";
-import { CosmosNetworks } from "@stakekit/common";
 import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import EventEmitter from "eventemitter3";
@@ -16,10 +15,19 @@ import type { Address, Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
+import { CosmosNetworks } from "../../domain/types/chains/networks";
 import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo, waitForMs } from "../../utils";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
+
+const getCosmosWalletInstalled = (
+  wallet: MainWalletBase
+): boolean | undefined => {
+  if (wallet.walletInfo.mode !== "extension") return undefined;
+
+  return wallet.clientMutable.state === "Done" && !!wallet.client;
+};
 
 export const createCosmosConnector = ({
   wallet,
@@ -52,7 +60,7 @@ export const createCosmosConnector = ({
       title: "Cosmos",
       id: "cosmos",
     },
-    installed: false,
+    installed: getCosmosWalletInstalled(wallet),
     createConnector: (walletDetailsParams) =>
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
@@ -97,18 +105,32 @@ export const createCosmosConnector = ({
           config.emitter.emit("message", { type: "connecting" });
 
           const cw = $chainWallet.getValue();
+          const getConnectResult = (chainWallet: ChainWalletBase) => {
+            if (!chainWallet.address || !chainWallet.chainId) {
+              throw new Error(
+                chainWallet.message ?? "Cosmos wallet did not return an account"
+              );
+            }
+
+            return {
+              accounts: args?.withCapabilities
+                ? [
+                    {
+                      address: chainWallet.address as Address,
+                      capabilities: {},
+                    },
+                  ]
+                : [chainWallet.address as Address],
+              chainId: chainWallet.chainId as unknown as number,
+            } as never;
+          };
 
           if (cw.address && cw.chainId) {
             if (cw.walletInfo.mode === "wallet-connect") {
               await (cw.client as WCClient).init();
             }
 
-            return {
-              accounts: args?.withCapabilities
-                ? [{ address: cw.address as Address, capabilities: {} }]
-                : [cw.address as Address],
-              chainId: cw.chainId as unknown as number,
-            } as never;
+            return getConnectResult(cw);
           }
 
           const checkForQRCode = async (timesCheck: number) => {
@@ -129,14 +151,11 @@ export const createCosmosConnector = ({
 
           await cw.connect();
 
+          const result = getConnectResult(cw);
+
           await getAndSavePubKeyToStorage();
 
-          return {
-            accounts: args?.withCapabilities
-              ? [{ address: cw.address as Address, capabilities: {} }]
-              : [cw.address as Address],
-            chainId: cw.chainId as unknown as number,
-          } as never;
+          return result;
         };
 
         const getAndSavePubKeyToStorage = async () => {
@@ -212,7 +231,9 @@ export const createCosmosConnector = ({
 
         const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
           async () => {
-            return [$chainWallet.getValue().address as Address];
+            const address = $chainWallet.getValue().address;
+
+            return address ? [address as Address] : [];
           };
 
         const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =

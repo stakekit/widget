@@ -1,21 +1,21 @@
 import BigNumber from "bignumber.js";
 import { Just } from "purify-ts";
-import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
 import { formatAddress, formatNumber } from "../../../src/utils";
+import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp, renderHook } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Staking flow", () => {
-  it("Works as expected", async () => {
+  it("Works as expected", async ({ worker }) => {
     const {
       customConnectors,
       yieldOp,
       transactionConstruct,
       account,
       requestFn,
-    } = await setup();
+    } = await setup(worker);
 
     const app = await renderApp({
       wagmi: {
@@ -74,7 +74,13 @@ describe("Staking flow", () => {
       .toBeInTheDocument();
 
     const rewardTokenDetails = (
-      await renderHook(() => useRewardTokenDetails(Just(yieldOp)))
+      await renderHook(() =>
+        useRewardTokenDetails(
+          Just(yieldOp) as unknown as Parameters<
+            typeof useRewardTokenDetails
+          >[0]
+        )
+      )
     ).result.current.unsafeCoerce();
 
     await expect

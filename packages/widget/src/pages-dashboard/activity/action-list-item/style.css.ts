@@ -1,10 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { atoms } from "../../../styles/theme/atoms.css";
 
-export const container = style({
-  minHeight: "300px",
-});
-
 export const viaText = style({
   textOverflow: "ellipsis",
   overflow: "hidden",
@@ -30,11 +26,3 @@ export const listItem = style([
 export const noWrap = style({
   whiteSpace: "nowrap",
 });
-
-export const listItemWrapper = style([
-  atoms({
-    display: "flex",
-    gap: "3",
-    paddingLeft: "1",
-  }),
-]);

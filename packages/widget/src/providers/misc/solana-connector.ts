@@ -5,7 +5,6 @@ import {
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
-import { MiscNetworks } from "@stakekit/common";
 import type {
   Chain,
   WalletDetailsParams,
@@ -17,6 +16,7 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import portoIcon from "../../assets/images/porto.svg";
 import { solana } from "../../domain/types/chains/misc";
+import { MiscNetworks } from "../../domain/types/chains/networks";
 import { getNetworkLogo } from "../../utils";
 import type { VariantProps } from "../settings/types";
 import {
@@ -170,6 +170,16 @@ const createSolanaConnector = ({
       );
 
       if (isDisconnected) return false;
+
+      const recentConnectorId =
+        await config.storage?.getItem("recentConnectorId");
+
+      if (
+        recentConnectorId &&
+        recentConnectorId === solanaWallet.adapter.name
+      ) {
+        await solanaWallet.adapter.autoConnect();
+      }
 
       return !!(
         solanaWallet.adapter.connected &&

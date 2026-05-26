@@ -1,6 +1,7 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import type { Maybe } from "purify-ts";
 import { useEffect } from "react";
+import type { TokenDto } from "../../../../domain/types/tokens";
+import type { Yield } from "../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 
 export const useTrackStateEvents = ({
@@ -8,7 +9,7 @@ export const useTrackStateEvents = ({
   initYield,
 }: {
   initToken: Maybe<TokenDto>;
-  initYield: Maybe<YieldDto>;
+  initYield: Maybe<Yield>;
 }) => {
   const trackEvent = useTrackEvent();
 

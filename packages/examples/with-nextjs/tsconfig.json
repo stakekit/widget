@@ -1,5 +1,5 @@
 {
-  "extends": "../../../tsconfig.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "plugins": [
       {
@@ -11,7 +11,8 @@
     },
     "esModuleInterop": true,
     "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "esnext"]
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
   "exclude": ["node_modules"]

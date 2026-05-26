@@ -1,11 +1,33 @@
-import { type HealthStatusDto, useHealthHealthV2 } from "@stakekit/api-hooks";
-import type { AxiosError } from "axios";
+import { useQuery } from "@tanstack/react-query";
+import type { HealthStatusDto } from "../generated/api/yield";
+import { useApiClient } from "../providers/api/api-client-provider";
 
 export const useUnderMaintenance = () => {
-  const { data, error } = useHealthHealthV2<HealthStatusDto, AxiosError>({
-    query: { refetchInterval: 1000 * 30 },
+  const apiClient = useApiClient();
+  const { data, error } = useQuery<HealthStatusDto>({
+    queryKey: ["yield-api-health"],
+    queryFn: ({ signal }) =>
+      apiClient
+        .withRunOptions({ signal })
+        .yield.HealthControllerHealth(undefined),
+    refetchInterval: 1000 * 30,
   });
 
-  if (error?.status === 500 || (data?.db && data.db !== "OK")) return true;
+  const status =
+    error instanceof Error &&
+    "response" in error &&
+    typeof error.response === "object" &&
+    error.response !== null &&
+    "status" in error.response &&
+    typeof error.response.status === "number"
+      ? error.response.status
+      : undefined;
+  const isServiceUnavailable = status !== undefined && status >= 500;
+  const isUnhealthy = data?.status !== undefined && data.status !== "OK";
+
+  if (isServiceUnavailable || isUnhealthy) {
+    return true;
+  }
+
   return false;
 };

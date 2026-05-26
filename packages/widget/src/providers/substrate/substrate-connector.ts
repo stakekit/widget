@@ -8,7 +8,6 @@ import {
 import { TypeRegistry } from "@polkadot/types";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
-import { SubstrateNetworks } from "@stakekit/common";
 import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { Either, EitherAsync, Maybe, Right } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
@@ -16,6 +15,7 @@ import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { config } from "../../config";
+import { SubstrateNetworks } from "../../domain/types/chains/networks";
 import { getNetworkLogo } from "../../utils";
 import {
   configMeta,

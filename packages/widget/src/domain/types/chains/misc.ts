@@ -1,7 +1,7 @@
-import { MiscNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getTokenLogo } from "../../../utils";
+import { MiscNetworks } from "./networks";
 
 const supportedMiscChains = [
   MiscNetworks.Near,

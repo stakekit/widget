@@ -1,6 +1,5 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
-import type { Networks } from "@stakekit/common";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
@@ -9,6 +8,7 @@ import {
   type MiscChainsMap,
   miscChainsMap,
 } from "../../domain/types/chains/misc";
+import type { Networks } from "../../domain/types/chains/networks";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import type { VariantProps } from "../settings/types";
 

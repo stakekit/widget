@@ -1,12 +1,16 @@
-import type { TokenDto, YieldMetadataDto } from "@stakekit/api-hooks";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { config } from "../../../../../config";
+import type {
+  TokenDto,
+  YieldTokenDto,
+} from "../../../../../domain/types/tokens";
+import type { YieldMetadata } from "../../../../../domain/types/yields";
 import { useSettings } from "../../../../../providers/settings";
 
 export const useVariantTokenUrls = (
-  token: TokenDto,
-  metadata?: YieldMetadataDto
+  token: TokenDto | YieldTokenDto,
+  metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
 ): {
   mainUrl: string | undefined;
   fallbackUrl: string | undefined;
@@ -35,7 +39,7 @@ export const useVariantTokenUrls = (
     const tokenMappingResult = Maybe.fromNullable(tokenIconMapping)
       .chainNullable((mapping) => {
         if (typeof mapping === "function") {
-          return mapping(token);
+          return mapping(token as Parameters<typeof mapping>[0]);
         }
 
         return mapping[token.symbol];

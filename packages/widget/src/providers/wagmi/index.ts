@@ -4,7 +4,6 @@ import {
   useWallet as useSolanaWallet,
 } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
-import type { Networks } from "@stakekit/common";
 import type {
   Chain as RainbowkitChain,
   Wallet,
@@ -21,21 +20,22 @@ import { createClient } from "viem";
 import { createConfig, http } from "wagmi";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
+import { getEnabledNetworks } from "../../common/get-enabled-networks";
 import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { config } from "../../config";
 import { evmChainGroup } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
+import type { Networks } from "../../domain/types/chains/networks";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
 import type { SKExternalProviders } from "../../domain/types/wallets";
-import type { ValidatorsConfig } from "../../domain/types/yields";
-import { getInitParams } from "../../hooks/use-init-params";
+import { getInitParams } from "../../hooks/get-init-params";
 import { useSavedRef } from "../../hooks/use-saved-ref";
-import { useValidatorsConfig } from "../../hooks/use-validators-config";
 import type { GetEitherAsyncRight } from "../../types/utils";
 import { isLedgerDappBrowserProvider } from "../../utils";
-import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { ApiClient } from "../api/api-client";
+import { useApiClient } from "../api/api-client-provider";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { externalProviderConnector } from "../external-provider";
@@ -48,6 +48,17 @@ import type { SettingsProps, VariantProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
 
 const mipdStore = createStore();
+
+const omitEnsUniversalResolver = <T extends RainbowkitChain>(chain: T): T => {
+  if (!chain.contracts?.ensUniversalResolver) return chain;
+
+  const { ensUniversalResolver: _ensUniversalResolver, ...contracts } =
+    chain.contracts;
+
+  // RainbowKit resolves ENS profiles whenever mainnet exposes this contract.
+  // We do not render ENS data, and viem's default mainnet RPC is eth.merkle.io.
+  return { ...chain, contracts } as T;
+};
 
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
@@ -67,9 +78,9 @@ const buildWagmiConfig = async (opts: {
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
   queryClient: QueryClient;
+  apiClient: ApiClient;
   isLedgerLive: boolean;
   isSafe: boolean;
-  validatorsConfig: ValidatorsConfig;
   chainIconMapping: SettingsProps["chainIconMapping"];
   variant: VariantProps["variant"];
   solanaWallets: SolanaWallet[];
@@ -84,7 +95,10 @@ const buildWagmiConfig = async (opts: {
   wagmiConfig: ReturnType<typeof createConfig>;
   queryParamsInitChainId: number | undefined;
 }> => {
-  return getEnabledNetworks({ queryClient: opts.queryClient })
+  return getEnabledNetworks({
+    apiClient: opts.apiClient,
+    queryClient: opts.queryClient,
+  })
     .chain((networks) =>
       EitherAsync.fromPromise(() =>
         Promise.all([
@@ -92,10 +106,12 @@ const buildWagmiConfig = async (opts: {
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
             variant: opts.variant,
+            apiClient: opts.apiClient,
           }),
           getCosmosConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
             queryClient: opts.queryClient,
+            apiClient: opts.apiClient,
           }),
           getMiscConfig({
             enabledNetworks: networks,
@@ -109,12 +125,13 @@ const buildWagmiConfig = async (opts: {
           getSubstrateConfig({
             queryClient: opts.queryClient,
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
+            apiClient: opts.apiClient,
           }),
           getInitParams({
             isLedgerLive: opts.isLedgerLive,
             queryClient: opts.queryClient,
+            apiClient: opts.apiClient,
             externalProviders: opts.externalProviders?.current,
-            validatorsConfig: opts.validatorsConfig,
           }),
         ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
           evm.chain((e) =>
@@ -199,6 +216,10 @@ const buildWagmiConfig = async (opts: {
             ...substrateConfig.substrateChains,
           ] as [RainbowkitChain, ...RainbowkitChain[]];
         });
+
+      const chainsWithoutEnsProfileLookups = chains.map(
+        omitEnsUniversalResolver
+      ) as [RainbowkitChain, ...RainbowkitChain[]];
 
       const multiInjectedProviderDiscovery =
         !opts.disableInjectedProviderDiscovery &&
@@ -310,7 +331,7 @@ const buildWagmiConfig = async (opts: {
         .extract();
 
       const wagmiConfig = createConfig({
-        chains,
+        chains: chainsWithoutEnsProfileLookups,
         client: ({ chain }) => createClient({ chain, transport: http() }),
         multiInjectedProviderDiscovery: false,
         connectors: connectorsForWallets(walletList, {
@@ -379,13 +400,11 @@ export const useWagmiConfig = () => {
     mapWalletListFn,
     tonConnectManifestUrl,
   } = useSettings();
-
   const solanaWallets = useSolanaWallet();
   const solanaConnection = useSolanaConnection();
 
   const queryClient = useSKQueryClient();
-
-  const validatorsConfig = useValidatorsConfig();
+  const apiClient = useApiClient();
 
   const externalProvidersRef = useSavedRef(externalProviders) as
     | RefObject<SKExternalProviders>
@@ -401,12 +420,12 @@ export const useWagmiConfig = () => {
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
         queryClient,
+        apiClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         isSafe: !!isSafe,
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),
-        validatorsConfig,
         chainIconMapping,
         variant,
         solanaWallets: solanaWallets.wallets,
@@ -420,7 +439,7 @@ export const useWagmiConfig = () => {
 };
 
 export const defaultConfig = createConfig({
-  chains: [mainnet],
+  chains: [omitEnsUniversalResolver(mainnet)],
   client: ({ chain }) =>
     createClient({
       chain,
