@@ -1,7 +1,6 @@
-import type { AxiosInstance } from "axios";
-import type { i18n } from "i18next";
 import { useCallback, useSyncExternalStore } from "react";
 import { BehaviorSubject } from "rxjs";
+import { config } from "../config";
 
 interface RichError {
   message: string;
@@ -10,20 +9,38 @@ interface RichError {
 
 const $richError = new BehaviorSubject<RichError | null>(null);
 
-export const attachRichErrorsInterceptor = (
-  apiClient: AxiosInstance,
-  i18n: i18n
-) =>
-  apiClient.interceptors.response.use(undefined, (error) => {
-    if (
-      i18n.exists(`errors.${error?.response?.data?.message}`) &&
-      !error?.config?.url.includes("gas-estimate") // temp ignore gas estimate errors
-    ) {
-      $richError.next(error.response.data);
-    }
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
-    return Promise.reject(error);
-  });
+const isRichError = (error: unknown): error is RichError =>
+  isRecord(error) &&
+  "message" in error &&
+  typeof error.message === "string" &&
+  error.type !== "GEO_LOCATION";
+
+const resetRichError = () => $richError.next(null);
+
+const allowedUrls = [config.env.apiUrl, config.env.yieldsApiUrl];
+
+export const handleRichErrorResponse = ({
+  data,
+  url,
+}: {
+  data: unknown;
+  url?: string;
+}) => {
+  if (
+    !isRichError(data) ||
+    !url ||
+    !allowedUrls.some((allowedUrl) => url.startsWith(allowedUrl))
+  ) {
+    return;
+  }
+
+  if (!url?.includes("gas-estimate")) {
+    $richError.next(data);
+  }
+};
 
 export const useRichErrors = () => {
   const error = useSyncExternalStore(
@@ -38,7 +55,5 @@ export const useRichErrors = () => {
     useCallback(() => $richError.value, [])
   );
 
-  const resetError = () => $richError.next(null);
-
-  return { error, resetError };
+  return { error, resetError: resetRichError };
 };

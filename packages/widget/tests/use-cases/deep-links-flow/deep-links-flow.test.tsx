@@ -1,18 +1,18 @@
 import { numberToHex } from "viem";
-import { describe, expect, it } from "vitest";
 import { APToPercentage } from "../../../src/utils";
+import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("Deep links flow", () => {
-  it("Loads app with correct yield opportunity", async () => {
+  it("Loads app with correct yield opportunity", async ({ worker }) => {
     const {
       customConnectors,
       setUrl,
       account,
       avaxLiquidStaking,
       avaxNativeStaking,
-    } = await setup();
+    } = await setup(worker);
 
     setUrl({ accountId: account, yieldId: avaxLiquidStaking.id });
 
@@ -31,7 +31,7 @@ describe("Deep links flow", () => {
     await expect
       .element(
         withAvaxLiquidStakingApp
-          .getByText(`${avaxLiquidStaking.metadata.rewardTokens[0].symbol}`)
+          .getByText(`${avaxLiquidStaking.metadata.rewardTokens![0].symbol}`)
           .first()
       )
       .toBeInTheDocument();
@@ -39,7 +39,7 @@ describe("Deep links flow", () => {
     await expect
       .element(
         withAvaxLiquidStakingApp
-          .getByText(`via ${avaxLiquidStaking.metadata.provider.name}`)
+          .getByText(`via ${avaxLiquidStaking.metadata.provider!.name}`)
           .first()
       )
       .toBeInTheDocument();
@@ -75,9 +75,11 @@ describe("Deep links flow", () => {
     await withAvaxNativeStakingApp.unmount();
   });
 
-  it("Works correctly with pending action query param without validator address requirement", async () => {
+  it("Works correctly with pending action query param without validator address requirement", async ({
+    worker,
+  }) => {
     const { customConnectors, setUrl, account, avaxLiquidStaking, requestFn } =
-      await setup();
+      await setup(worker);
 
     setUrl({
       accountId: account,
@@ -121,9 +123,11 @@ describe("Deep links flow", () => {
     app.unmount();
   });
 
-  it("Works correctly with pending action query param with validator address requirement", async () => {
+  it("Works correctly with pending action query param with validator address requirement", async ({
+    worker,
+  }) => {
     const { customConnectors, setUrl, account, avaxLiquidStaking, requestFn } =
-      await setup({ withValidatorAddressesRequired: true });
+      await setup(worker, { withValidatorAddressesRequired: true });
 
     setUrl({
       accountId: account,
@@ -182,9 +186,9 @@ describe("Deep links flow", () => {
     await app.unmount();
   });
 
-  it("Handles init network correctly", async () => {
+  it("Handles init network correctly", async ({ worker }) => {
     const { setUrl, customConnectors, requestFn, getCurrentChainId } =
-      await setup();
+      await setup(worker);
 
     expect(getCurrentChainId()).not.toBe(1);
     setUrl({ network: "ethereum" });

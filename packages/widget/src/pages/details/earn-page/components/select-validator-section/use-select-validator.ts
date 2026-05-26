@@ -1,4 +1,4 @@
-import type { ValidatorDto } from "@stakekit/api-hooks";
+import type { ValidatorDto } from "../../../../../domain/types/validators";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 

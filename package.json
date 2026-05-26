@@ -13,27 +13,21 @@
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky",
-    "check-unused": "npx knip",
-    "release": "turbo --filter=@stakekit/widget build && changeset publish",
-    "version": "changeset version"
+    "check-hygiene": "rev-dep config run --list-all-issues"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.3.8",
-    "@changesets/cli": "^2.29.8",
-    "@commitlint/cli": "^20.2.0",
-    "@commitlint/config-conventional": "^20.2.0",
-    "husky": "^9.1.7",
-    "knip": "^5.73.4",
-    "turbo": "^2.6.3"
+    "@biomejs/biome": "catalog:",
+    "@commitlint/cli": "catalog:",
+    "@commitlint/config-conventional": "catalog:",
+    "husky": "catalog:",
+    "rev-dep": "catalog:",
+    "turbo": "catalog:"
   },
-  "packageManager": "pnpm@10.24.0",
   "pnpm": {
-    "overrides": {
-      "@types/react": "19.0.10",
-      "@types/react-dom": "19.0.4"
-    },
     "patchedDependencies": {
-      "purify-ts": "patches/purify-ts.patch"
+      "purify-ts": "patches/purify-ts.patch",
+      "@stakekit/rainbowkit@2.2.11": "patches/@stakekit__rainbowkit@2.2.11.patch",
+      "vite-plugin-node-polyfills@0.26.0": "patches/vite-plugin-node-polyfills@0.26.0.patch"
     }
   }
 }

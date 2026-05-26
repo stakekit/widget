@@ -1,14 +1,18 @@
-import type { TokenDto, YieldDto } from "@stakekit/api-hooks";
 import { delay, HttpResponse, http } from "msw";
-import { Just } from "purify-ts";
-import { describe, expect, it } from "vitest";
-import { yieldFixture } from "../fixtures";
-import { worker } from "../mocks/worker";
+import {
+  legacyYieldFixture,
+  yieldApiNetworkFixture,
+  yieldApiYieldFixture,
+} from "../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
+import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
+type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
+
 describe("Renders initial page", () => {
-  it("Works as expected", async () => {
-    const avalancheCToken: TokenDto = {
+  it("Works as expected", async ({ worker }) => {
+    const avalancheCToken: LegacyTokenDto = {
       name: "Avalanche C Chain",
       symbol: "AVAX",
       decimals: 18,
@@ -17,7 +21,7 @@ describe("Renders initial page", () => {
       logoURI: "https://assets.stakek.it/tokens/avax.svg",
     };
 
-    const ether: TokenDto = {
+    const ether: LegacyTokenDto = {
       network: "ethereum",
       name: "Ethereum",
       symbol: "ETH",
@@ -26,50 +30,68 @@ describe("Renders initial page", () => {
       logoURI: "https://assets.stakek.it/tokens/eth.svg",
     };
 
-    const avalancheAvaxNativeStaking = Just(yieldFixture())
-      .map(
-        (val) =>
-          ({
-            ...val,
-            id: "avalanche-avax-native-staking",
-            token: avalancheCToken,
-            tokens: [avalancheCToken],
-            metadata: {
-              ...val.metadata,
-              type: "staking",
-              gasFeeToken: avalancheCToken,
-            },
-          }) satisfies YieldDto
-      )
-      .unsafeCoerce();
+    const legacyYieldBase = legacyYieldFixture();
+    const yieldApiYieldBase = yieldApiYieldFixture();
+    const avalancheAvaxNativeStaking = legacyYieldFixture({
+      id: "avalanche-avax-native-staking",
+      token: avalancheCToken,
+      tokens: [avalancheCToken],
+      metadata: {
+        ...legacyYieldBase.metadata,
+        type: "staking",
+        gasFeeToken: avalancheCToken,
+      },
+    });
+    const etherNativeStaking = legacyYieldFixture({
+      id: "ethereum-eth-etherfi-staking",
+      token: ether,
+      tokens: [ether],
+      metadata: {
+        ...legacyYieldBase.metadata,
+        type: "staking",
+        gasFeeToken: ether,
+      },
+    });
 
-    const etherNativeStaking = Just(yieldFixture())
-      .map(
-        (val) =>
-          ({
-            ...val,
-            id: "ethereum-eth-etherfi-staking",
-            token: ether,
-            tokens: [ether],
-            metadata: {
-              ...val.metadata,
-              type: "staking",
-              gasFeeToken: ether,
-            },
-          }) satisfies YieldDto
-      )
-      .unsafeCoerce();
+    const avalancheAvaxNativeStakingYieldApi = yieldApiYieldFixture({
+      id: avalancheAvaxNativeStaking.id,
+      network: avalancheCToken.network,
+      token: avalancheCToken,
+      tokens: [avalancheCToken],
+      inputTokens: [avalancheCToken],
+      outputToken: avalancheCToken,
+      mechanics: {
+        ...yieldApiYieldBase.mechanics,
+        type: "staking",
+        gasFeeToken: avalancheCToken,
+      },
+    });
+    const etherNativeStakingYieldApi = yieldApiYieldFixture({
+      id: etherNativeStaking.id,
+      network: ether.network,
+      token: ether,
+      tokens: [ether],
+      inputTokens: [ether],
+      outputToken: ether,
+      mechanics: {
+        ...yieldApiYieldBase.mechanics,
+        type: "staking",
+        gasFeeToken: ether,
+      },
+    });
 
     worker.use(
-      http.get("*/v1/yields/enabled/networks", async () => {
+      http.get(yieldApiRoute("/v1/networks"), async () => {
         await delay();
         return HttpResponse.json([
-          etherNativeStaking.token.network,
-          avalancheAvaxNativeStaking.token.network,
+          yieldApiNetworkFixture({ id: etherNativeStaking.token.network }),
+          yieldApiNetworkFixture({
+            id: avalancheAvaxNativeStaking.token.network,
+          }),
         ]);
       }),
 
-      http.get("*/v1/tokens", async () => {
+      http.get(legacyApiRoute("/v1/tokens"), async () => {
         await delay();
 
         return HttpResponse.json([
@@ -81,16 +103,38 @@ describe("Renders initial page", () => {
         ]);
       }),
 
-      http.get(`*/v1/yields/${etherNativeStaking.id}`, async () => {
-        await delay();
+      http.get(
+        legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+        async () => {
+          await delay();
 
-        return HttpResponse.json(etherNativeStaking);
-      }),
-      http.get(`*/v1/yields/${avalancheAvaxNativeStaking.id}`, async () => {
-        await delay();
+          return HttpResponse.json(etherNativeStaking);
+        }
+      ),
+      http.get(
+        yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`),
+        async () => {
+          await delay();
 
-        return HttpResponse.json(avalancheAvaxNativeStaking);
-      })
+          return HttpResponse.json(etherNativeStakingYieldApi);
+        }
+      ),
+      http.get(
+        legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+        async () => {
+          await delay();
+
+          return HttpResponse.json(avalancheAvaxNativeStaking);
+        }
+      ),
+      http.get(
+        yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
+        async () => {
+          await delay();
+
+          return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
+        }
+      )
     );
 
     const app = await renderApp();

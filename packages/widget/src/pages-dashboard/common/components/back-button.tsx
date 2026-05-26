@@ -3,7 +3,7 @@ import { Box } from "../../../components/atoms/box";
 import { CaretLeftIcon } from "../../../components/atoms/icons/caret-left";
 import { useHeader } from "../../../components/molecules/header/use-header";
 
-export const BackButtonContext = createContext<boolean>(false);
+const BackButtonContext = createContext<boolean>(false);
 
 export const BackButtonProvider = ({ children }: PropsWithChildren) => {
   return (

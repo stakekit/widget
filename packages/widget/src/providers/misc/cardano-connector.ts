@@ -1,11 +1,11 @@
 import { BrowserWallet } from "@meshsdk/wallet";
-import { MiscNetworks } from "@stakekit/common";
 import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
 import { EitherAsync } from "purify-ts";
 import { BehaviorSubject } from "rxjs";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
 import { cardano } from "../../domain/types/chains/misc";
+import { MiscNetworks } from "../../domain/types/chains/networks";
 import { getNetworkLogo } from "../../utils";
 import {
   configMeta,

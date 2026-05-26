@@ -1,7 +1,7 @@
-import type { TransactionType } from "@stakekit/api-hooks";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
+import type { TransactionType } from "../../../domain/types/action";
 import { useActivityPendingActionMatch } from "../../../hooks/navigation/use-activity-pending-action-match";
 import { useActivityReviewMatch } from "../../../hooks/navigation/use-activity-review.match";
 import { useActivityUnstakeActionMatch } from "../../../hooks/navigation/use-activity-unstake.match";

@@ -128,5 +128,10 @@ export const NumberInput = memo(
   }
 );
 
-const stringToBigNumber = (str: string) =>
-  new BigNumber(str.replace(/,/g, "."));
+const stringToBigNumber = (str: string) => {
+  const normalizedValue = /^\d{1,3}(,\d{3})+(\.\d+)?$/.test(str)
+    ? str.replace(/,/g, "")
+    : str.replace(/,/g, ".");
+
+  return new BigNumber(normalizedValue);
+};

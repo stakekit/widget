@@ -1,18 +1,48 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "dangerouslyDisablePackageManagerCheck": true,
+  "globalDependencies": [
+    "biome.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.base.json",
+    "tsconfig.json",
+    "turbo.json"
+  ],
   "tasks": {
     "build": {
       "outputs": ["dist/**", ".next"],
       "dependsOn": ["^build"]
     },
     "lint": {
-      "inputs": ["src/**", "tests/**"]
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "tsconfig*.json",
+        "vite/**/*.ts",
+        "vite.config.*",
+        "package.json"
+      ]
     },
     "format": {
-      "inputs": ["src/**", "tests/**"]
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "tsconfig*.json",
+        "vite/**/*.ts",
+        "vite.config.*",
+        "package.json"
+      ]
     },
     "test": {
-      "inputs": ["src/**", "tests/**"]
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "tsconfig*.json",
+        "vite/**/*.ts",
+        "vite.config.*",
+        "package.json"
+      ]
     }
   }
 }

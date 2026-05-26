@@ -1,0 +1,42 @@
+diff --git a/dist/wallets/walletConnectors/chunk-GGASEKUC.js b/dist/wallets/walletConnectors/chunk-GGASEKUC.js
+index 1655964e16e8a6b02bf4a136310816326bc924df..09c8a4145e9522f8a9dbdb12e943843751c9058f 100644
+--- a/dist/wallets/walletConnectors/chunk-GGASEKUC.js
++++ b/dist/wallets/walletConnectors/chunk-GGASEKUC.js
+@@ -1,11 +1,12 @@
+ "use client";
++import {
++  getInjectedConnector
++} from "./chunk-WXICAEA2.js";
+ import {
+   evmChainGroup
+ } from "./chunk-ZRHKARGH.js";
+ 
+ // src/wallets/walletConnectors/geminiWallet/geminiWallet.ts
+-import { createConnector } from "wagmi";
+-import { gemini } from "wagmi/connectors";
+ var geminiWallet = ({
+   appName,
+   appIcon
+@@ -72,18 +73,10 @@ var geminiWallet = ({
+         ]
+       }
+     },
+-    createConnector: (walletDetails) => {
+-      const connector = gemini({
+-        appMetadata: {
+-          name: appName,
+-          icon: appIcon
+-        }
+-      });
+-      return createConnector((config) => ({
+-        ...connector(config),
+-        ...walletDetails
+-      }));
+-    }
++    createConnector: getInjectedConnector({
++      flag: "isGemini",
++      namespace: "gemini.ethereum"
++    })
+   };
+ };
+ 

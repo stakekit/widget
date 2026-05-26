@@ -1,6 +1,8 @@
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
+import { Text } from "../../../components/atoms/typography/text";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -12,19 +14,44 @@ import { PositionsListItem } from "./components/positions-list-item";
 import { usePositions } from "./hooks/use-positions";
 import { container } from "./style.css";
 
-export const PositionsPage = () => {
+const PositionsPage = () => {
   useTrackPage("positions");
 
   const { positionsData, listData, showPositions } = usePositions();
 
   const { isConnected, isConnecting } = useSKWallet();
 
+  const { t } = useTranslation();
+
   const content = useMemo(() => {
     if (positionsData.isLoading && positionsData.isFetching && isConnected) {
       return <FallbackContent type="spinner" />;
     }
     if (!isConnected && !isConnecting) {
-      return <FallbackContent type="not_connected" />;
+      return (
+        <Box
+          display="flex"
+          flex={1}
+          flexDirection="column"
+          justifyContent="flex-end"
+        >
+          <Box
+            display="flex"
+            flex={1}
+            justifyContent="center"
+            alignItems="center"
+          >
+            <Text
+              variant={{ weight: "medium", size: "large" }}
+              textAlign="center"
+            >
+              {t("positions.connect_wallet_manage")}
+            </Text>
+          </Box>
+
+          <FallbackContent type="not_connected" />
+        </Box>
+      );
     }
     if (positionsData.isError && !positionsData.data.length) {
       return <FallbackContent type="something_wrong" />;
@@ -38,6 +65,7 @@ export const PositionsPage = () => {
     positionsData.isError,
     positionsData.isFetching,
     positionsData.isLoading,
+    t,
   ]);
 
   return (

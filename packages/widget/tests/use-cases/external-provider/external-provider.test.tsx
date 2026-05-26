@@ -1,15 +1,17 @@
 import { avalanche, mainnet } from "viem/chains";
-import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import { SKApp, type SKAppProps } from "../../../src/App";
 import { solana, ton } from "../../../src/domain/types/chains/misc";
 import { formatAddress } from "../../../src/utils";
+import { describe, expect, it, vi } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
 describe("External Provider", () => {
-  it("Handles changing address and supported chains correctly", async () => {
-    setup();
+  it("Handles changing address and supported chains correctly", async ({
+    worker,
+  }) => {
+    setup(worker);
 
     const switchChainSpy = vi.fn(async (_: number) => {});
     const sendTransactionSpy = vi.fn(async () => "hash");

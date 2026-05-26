@@ -9,15 +9,7 @@ import { darkTheme, lightTheme } from "../styles/theme/themes";
 import { fineryThemeOverrides } from "../styles/theme/variant-overrides/finery";
 import { portoThemeOverrides } from "../styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../styles/theme/variant-overrides/utila";
-import type { RecursivePartial } from "../types/utils";
 import { useSettings } from "./settings";
-
-export type ThemeWrapperTheme =
-  | RecursivePartial<typeof lightTheme>
-  | {
-      lightMode?: RecursivePartial<typeof lightTheme>;
-      darkMode?: RecursivePartial<typeof darkTheme>;
-    };
 
 export const ThemeWrapper = ({ children }: PropsWithChildren) => {
   const { theme = { lightMode: lightTheme }, variant } = useSettings();

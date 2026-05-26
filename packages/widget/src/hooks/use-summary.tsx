@@ -1,13 +1,14 @@
-import type { StakeKitErrorDto, YieldDto } from "@stakekit/api-hooks";
 import type { UseQueryResult } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { config } from "../config";
-import { getBaseToken, getTokenPriceInUSD } from "../domain";
+import { getTokenPriceInUSD } from "../domain";
+import type { StakeKitErrorDto } from "../domain/types/errors";
 import { getPositionTotalAmount } from "../domain/types/positions";
 import type { Prices } from "../domain/types/price";
 import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
+import type { Yield } from "../domain/types/yields";
 import { usePositions } from "../pages/details/positions-page/hooks/use-positions";
 import { useMultiYields } from "./api/use-multi-yields";
 import { usePrices } from "./api/use-prices";
@@ -20,17 +21,19 @@ import {
 
 const SummaryContext = createContext<
   | {
-      allPositionsQuery: UseQueryResult<
-        {
-          allPositions: {
-            yieldName: string;
-            usdAmount: number;
-            providerDetails: ReturnType<typeof getProviderDetails>;
-          }[];
-          allPositionsSum: BigNumber;
-        },
-        StakeKitErrorDto
-      >;
+      allPositionsQuery: {
+        data:
+          | {
+              allPositions: {
+                yieldName: string;
+                usdAmount: number;
+                providerDetails: ReturnType<typeof getProviderDetails>;
+              }[];
+              allPositionsSum: BigNumber;
+            }
+          | undefined;
+        isLoading: boolean;
+      };
       rewardsPositionsQuery: UseQueryResult<
         {
           rewardsPositions: {
@@ -45,7 +48,10 @@ const SummaryContext = createContext<
         },
         StakeKitErrorDto
       >;
-      averageApyQuery: UseQueryResult<BigNumber, StakeKitErrorDto>;
+      averageApyQuery: {
+        data: BigNumber | undefined;
+        isLoading: boolean;
+      };
       availableBalanceSumQuery: UseQueryResult<BigNumber, StakeKitErrorDto>;
     }
   | undefined
@@ -65,7 +71,7 @@ export const SummaryProvider = ({
 
   const multiYieldsMapQuery = useMultiYields(yieldIds, {
     select: useCallback(
-      (val: YieldDto[]) => new Map(val.map((y) => [y.id, y])),
+      (val: Yield[]) => new Map(val.map((y) => [y.id, y])),
       []
     ),
   });
@@ -86,84 +92,57 @@ export const SummaryProvider = ({
     ),
   });
 
-  const allPositionsQuery = usePrices(
-    {
-      currency: config.currency,
-      tokenList: useMemo(() => {
-        if (!multiYieldsMapQuery.data) return [];
-
-        return positionsData.data.flatMap((v) => {
-          const yieldDto = multiYieldsMapQuery.data.get(v.integrationId);
-
-          if (!yieldDto) return [];
-
-          const baseToken = getBaseToken(yieldDto);
-
-          return [...v.allBalances.map((b) => b.token), baseToken];
-        });
-      }, [multiYieldsMapQuery.data, positionsData.data]),
-    },
-    {
-      enabled: !multiYieldsMapQuery.isLoading,
-      select: useCallback(
-        (prices: Prices) => {
-          if (!positionsData.data || !multiYieldsMapQuery.data) {
-            return { allPositions: [], allPositionsSum: new BigNumber(0) };
-          }
-
-          const allPositions = positionsData.data.flatMap((p) => {
-            const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
-
-            if (!yieldDto) return [];
-
-            const baseToken = getBaseToken(yieldDto);
-
-            const pricePerShare = "1";
-
-            const positionTotalAmount = getPositionTotalAmount({
-              token: { ...baseToken, pricePerShare },
-              balances: p.balancesWithAmount,
-            });
-
-            const yields = [...multiYieldsMapQuery.data.values()];
-
-            const providerDetails = getProviderDetails({
-              integrationData: Maybe.of(yieldDto),
-              validatorAddress:
-                p.type === "validators"
-                  ? List.head(p.validatorsAddresses)
-                  : Maybe.empty(),
-              selectedProviderYieldId: Maybe.empty(),
-              yields: Maybe.of(yields),
-            });
-
-            return {
-              yieldName: yieldDto.metadata.name,
-              providerDetails,
-              usdAmount: getTokenPriceInUSD({
-                baseToken,
-                amount: positionTotalAmount,
-                pricePerShare,
-                token: baseToken,
-                prices,
-              }).toNumber(),
-            };
-          });
-
-          const allPositionsSum = allPositions.reduce(
-            (acc, p) => acc.plus(p.usdAmount),
-            new BigNumber(0)
-          );
-
-          return {
-            allPositions,
-            allPositionsSum,
-          };
-        },
-        [multiYieldsMapQuery.data, positionsData.data]
-      ),
+  const allPositionsQuery = useMemo(() => {
+    if (!multiYieldsMapQuery.data) {
+      return {
+        data: undefined as undefined,
+        isLoading: multiYieldsMapQuery.isLoading,
+      };
     }
-  );
+
+    const allPositions = positionsData.data.flatMap((p) => {
+      const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
+
+      if (!yieldDto) return [];
+
+      const positionTotalAmount = getPositionTotalAmount(
+        p.balancesWithAmount,
+        yieldDto.token
+      );
+
+      const yields = [...multiYieldsMapQuery.data.values()];
+
+      const providerDetails = getProviderDetails({
+        integrationData: Maybe.of(yieldDto),
+        validatorAddress:
+          p.type === "validators"
+            ? List.head(p.validatorsAddresses)
+            : Maybe.empty(),
+        selectedProviderYieldId: Maybe.empty(),
+        yields: Maybe.of(yields),
+      });
+
+      return {
+        yieldName: yieldDto.metadata.name,
+        providerDetails,
+        usdAmount: positionTotalAmount.amountUsd.toNumber(),
+      };
+    });
+
+    const allPositionsSum = allPositions.reduce(
+      (acc, p) => acc.plus(p.usdAmount),
+      new BigNumber(0)
+    );
+
+    return {
+      data: { allPositions, allPositionsSum },
+      isLoading: false as const,
+    };
+  }, [
+    multiYieldsMapQuery.data,
+    multiYieldsMapQuery.isLoading,
+    positionsData.data,
+  ]);
 
   const rewardsPositionsQuery = usePrices(
     {
@@ -193,11 +172,9 @@ export const SummaryProvider = ({
 
             if (!yieldDto) return [];
 
-            const baseToken = getBaseToken(yieldDto);
-
             const common = {
               pricePerShare: "1",
-              baseToken,
+              baseToken: yieldDto.token,
               token: rewardSummary.token,
               prices,
             };
@@ -246,81 +223,56 @@ export const SummaryProvider = ({
     }
   );
 
-  const averageApyQuery = usePrices(
-    {
-      currency: config.currency,
-      tokenList: useMemo(() => {
-        if (!multiYieldsMapQuery.data) return [];
-
-        return positionsData.data.flatMap((v) => {
-          const yieldDto = multiYieldsMapQuery.data.get(v.integrationId);
-
-          if (!yieldDto) return [];
-
-          const baseToken = getBaseToken(yieldDto);
-
-          return [...v.allBalances.map((b) => b.token), baseToken];
-        });
-      }, [multiYieldsMapQuery.data, positionsData.data]),
-    },
-    {
-      enabled: !multiYieldsMapQuery.isLoading,
-      select: useCallback(
-        (prices: Prices) => {
-          if (!positionsData.data || !multiYieldsMapQuery.data) {
-            return new BigNumber(0);
-          }
-
-          const { totalWeightedApy, totalValue } = positionsData.data.reduce(
-            (acc, p) => {
-              const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
-
-              if (!yieldDto) return acc;
-
-              const baseToken = getBaseToken(yieldDto);
-
-              const pricePerShare = "1";
-
-              const positionTotalAmount = getPositionTotalAmount({
-                token: { ...baseToken, pricePerShare },
-                balances: p.balancesWithAmount,
-              });
-
-              const usdAmount = getTokenPriceInUSD({
-                baseToken,
-                amount: positionTotalAmount,
-                pricePerShare,
-                token: baseToken,
-                prices,
-              });
-
-              if (yieldDto.rewardRate > 0 && usdAmount.gt(0)) {
-                return {
-                  totalWeightedApy: acc.totalWeightedApy.plus(
-                    usdAmount.times(yieldDto.rewardRate * 100)
-                  ),
-                  totalValue: acc.totalValue.plus(usdAmount),
-                };
-              }
-
-              return acc;
-            },
-            {
-              totalWeightedApy: new BigNumber(0),
-              totalValue: new BigNumber(0),
-            }
-          );
-
-          if (totalValue.gt(0)) {
-            return totalWeightedApy.div(totalValue);
-          }
-
-          return new BigNumber(0);
-        },
-        [multiYieldsMapQuery.data, positionsData.data]
-      ),
+  const averageApyQuery = useMemo(() => {
+    if (!multiYieldsMapQuery.data) {
+      return {
+        data: undefined as undefined,
+        isLoading: multiYieldsMapQuery.isLoading,
+      };
     }
-  );
+
+    const { totalWeightedApy, totalValue } = positionsData.data.reduce(
+      (acc, p) => {
+        const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
+
+        if (!yieldDto) return acc;
+
+        const positionTotalAmount = getPositionTotalAmount(
+          p.balancesWithAmount,
+          yieldDto.token
+        );
+
+        const usdAmount = positionTotalAmount.amountUsd;
+
+        const rewardRate = yieldDto.rewardRate.total;
+
+        if (rewardRate > 0 && usdAmount.gt(0)) {
+          return {
+            totalWeightedApy: acc.totalWeightedApy.plus(
+              usdAmount.times(rewardRate * 100)
+            ),
+            totalValue: acc.totalValue.plus(usdAmount),
+          };
+        }
+
+        return acc;
+      },
+      {
+        totalWeightedApy: new BigNumber(0),
+        totalValue: new BigNumber(0),
+      }
+    );
+
+    const data = totalValue.gt(0)
+      ? totalWeightedApy.div(totalValue)
+      : new BigNumber(0);
+
+    return { data, isLoading: false as const };
+  }, [
+    multiYieldsMapQuery.data,
+    multiYieldsMapQuery.isLoading,
+    positionsData.data,
+  ]);
 
   const tokenBalancesScan = useTokenBalancesScan();
 

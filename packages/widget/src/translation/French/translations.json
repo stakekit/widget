@@ -62,6 +62,16 @@
       "label": "Ressource",
       "placeholder": "Sélectionnez une ressource"
     },
+    "risk": {
+      "title": "Note de risque",
+      "rated_by": "Évalué par {{source}}",
+      "tooltip": "Les notes de risque sont fournies par des prestataires tiers d'évaluation du risque.",
+      "info_aria_label": "Détails de la note de risque",
+      "sources": {
+        "credora": "Credora",
+        "staking_rewards": "Staking Rewards"
+      }
+    },
     "reward_rate_estimate_tooltip": "Le taux de récompense ne peut pas être estimé de façon précise",
     "unstake_before": "Vous avez déjà délégué vos fonds à un validateur. Déstakez et réessayez",
     "no_opportunities": "Pas d'opportunité de yield pour ce token",
@@ -154,7 +164,14 @@
     "validators_nominator_count": "Nombre de nominators",
     "validators_subnet_name": "Nom du sous-réseau",
     "validators_market_cap": "Capitalisation boursière",
-    "validators_token_symbol": "Symbole du token"
+    "validators_token_symbol": "Symbole du token",
+    "apy_composition": {
+      "title": "Composition de l'APY",
+      "native": "APY natif",
+      "protocol_incentive": "APY d'incitation protocolaire",
+      "campaign": "APY de campagne",
+      "up_to": "Jusqu'a {{value}}"
+    }
   },
   "review": {
     "estimated_reward": "Récompenses estimées",
@@ -278,6 +295,8 @@
       "stake": "staké",
       "unstake": "déstaké",
       "claim_rewards": "récompenses réclamées",
+      "auto_sweep_unstake_rewards": "récompenses retirées",
+      "auto_sweep_withdraw_rewards": "récompenses retirées",
       "restake_rewards": "récompenses restakées",
       "withdraw": "reitré",
       "restake": "restaké",
@@ -334,6 +353,7 @@
     "via_one": "via {{providerName}}",
     "via_other": "via {{providerName}} + {{count}} autres",
     "connect_wallet": "Connecter un portefeuille",
+    "connect_wallet_manage": "Connectez un portefeuille pour gérer vos positions",
     "no_current_positions": "Aucune position",
     "claim_rewards": "Réclamer les récompenses",
     "action_required": "Action requise",
@@ -395,6 +415,7 @@
     "unstake": "Déstaker",
     "withdraw": "Retirer",
     "available": "{{amount}} {{symbol}} disponibles",
+    "personalized_apy": "APY personnalise",
     "select_validators": {
       "submit": "Envoyer"
     },
@@ -413,6 +434,15 @@
       "restaking": "Déstaker"
     },
     "balance_type": {
+      "active": "Actif",
+      "active_yearn_or_deposit": "Déposé",
+      "entering": "En cours d'entrée",
+      "entering_yearn_or_deposit": "En cours de dépôt",
+      "exiting": "En cours de sortie",
+      "exiting_yearn_or_deposit": "En cours de retrait",
+      "withdrawable": "Retirable",
+      "withdrawable_yearn_or_deposit": "Disponible au retrait",
+      "claimable": "Réclamable",
       "available": "Disponible",
       "staked": "Staké",
       "staked_yearn_or_deposit": "Déposé",
@@ -431,6 +461,8 @@
       "stake": "Staker",
       "unstake": "Déstaker",
       "claim_rewards": "Réclamer les récompenses",
+      "auto_sweep_unstake_rewards": "Retirer les récompenses",
+      "auto_sweep_withdraw_rewards": "Retirer les récompenses",
       "restake_rewards": "Restaker les récompenses",
       "withdraw": "Retirer",
       "withdraw_all": "Retirer tout",
@@ -459,6 +491,8 @@
       "stake": "Staker",
       "unstake": "Déstaker",
       "claim_rewards": "Réclamer",
+      "auto_sweep_unstake_rewards": "Retirer les récompenses",
+      "auto_sweep_withdraw_rewards": "Retirer les récompenses",
       "restake_rewards": "Restaker",
       "withdraw": "Retirer",
       "withdraw_all": "Retirer tout",
@@ -490,6 +524,8 @@
       "stake": "Staker avec {{providerName}}",
       "unstake": "Déstaker de {{providerName}}",
       "claim_rewards": "Réclamer les récompenses de {{providerName}}",
+      "auto_sweep_unstake_rewards": "Retirer les récompenses de {{providerName}}",
+      "auto_sweep_withdraw_rewards": "Retirer les récompenses de {{providerName}}",
       "restake_rewards": "Restaker les récompenses avec {{providerName}}",
       "withdraw": "Retirer de {{providerName}}",
       "withdraw_all": "Retirer tout de {{providerName}}",

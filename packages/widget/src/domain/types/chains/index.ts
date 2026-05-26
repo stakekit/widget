@@ -1,4 +1,3 @@
-import { EvmNetworks, MiscNetworks, SubstrateNetworks } from "@stakekit/common";
 import type { ChainGroup } from "@stakekit/rainbowkit";
 import { getNetworkLogo } from "../../../utils";
 import { type SupportedCosmosChains, supportedCosmosChainsSet } from "./cosmos";
@@ -12,6 +11,7 @@ import {
   type SupportedMiscChains,
   supportedMiscChainsSet,
 } from "./misc";
+import { EvmNetworks, MiscNetworks, SubstrateNetworks } from "./networks";
 import {
   type SubstrateChainIds,
   type SupportedSubstrateChains,

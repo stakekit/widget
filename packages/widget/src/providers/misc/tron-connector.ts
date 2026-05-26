@@ -1,4 +1,3 @@
-import { MiscNetworks } from "@stakekit/common";
 import type {
   Chain,
   ChainGroup,
@@ -17,6 +16,7 @@ import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
 import { config } from "../../config";
 import { tron } from "../../domain/types/chains/misc";
+import { MiscNetworks } from "../../domain/types/chains/networks";
 import { getNetworkLogo, getTokenLogo } from "../../utils";
 import type { ExtraProps, StorageItem } from "./tron-connector-meta";
 import { configMeta } from "./tron-connector-meta";

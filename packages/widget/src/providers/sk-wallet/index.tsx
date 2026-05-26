@@ -1,4 +1,6 @@
 import type { Account } from "@ledgerhq/wallet-api-client";
+import type { GatewayTransactionDetails } from "@safe-global/safe-apps-sdk";
+import { Effect, Schedule } from "effect";
 import { Either, EitherAsync, Left, Maybe, Right } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
@@ -15,7 +17,6 @@ import {
   useSendTransaction,
   useSignMessage,
 } from "wagmi";
-import { withRequestErrorRetry } from "../../common/utils";
 import { config } from "../../config";
 import {
   isBittensorChain,
@@ -186,10 +187,16 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
             )
               .chain((val) =>
                 EitherAsync.liftEither(
-                  Either.encase(() => JSON.parse(tx))
-
-                    .chain((parsedTx) =>
-                      Either.encase(() => conn.deserializeTransaction(parsedTx))
+                  conn
+                    .prepareTransaction({
+                      network,
+                      tx,
+                      txMeta,
+                    })
+                    .chain((preparedTx) =>
+                      Either.encase(() =>
+                        conn.deserializeTransaction(preparedTx)
+                      )
                     )
                     .mapLeft(() => new TransactionDecodeError())
                 ).map((deserializedTransaction) => ({
@@ -389,38 +396,54 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   .map((res) => res.safeTxHash)
               )
               .chain((safeTxHash) =>
-                withRequestErrorRetry({
-                  fn: () =>
-                    conn
-                      .getTxStatus(safeTxHash)
-                      .chain((res) =>
-                        !res.txHash || res.txStatus !== conn.txStatus.SUCCESS
-                          ? EitherAsync.liftEither(
-                              Left(
-                                new SafeFailedError(
-                                  res.txStatus === conn.txStatus.FAILED ||
-                                    res.txStatus === conn.txStatus.CANCELLED
-                                    ? "FAILED"
-                                    : "NOT_READY"
-                                )
-                              )
-                            )
-                          : EitherAsync.liftEither(Right(res.txHash))
+                EitherAsync(() =>
+                  Effect.gen(function* () {
+                    const txStatusResult = yield* Effect.tryPromise({
+                      try: () => conn.getTxStatus(safeTxHash).run(),
+                      catch: (error) =>
+                        error instanceof Error
+                          ? error
+                          : new Error("Could not get Safe transaction status", {
+                              cause: error,
+                            }),
+                    });
+
+                    if (txStatusResult.isLeft()) {
+                      return yield* Effect.fail(
+                        txStatusResult.extract() as Error
+                      );
+                    }
+
+                    const txStatus =
+                      txStatusResult.extract() as GatewayTransactionDetails;
+
+                    if (
+                      txStatus.txHash &&
+                      txStatus.txStatus === conn.txStatus.SUCCESS
+                    ) {
+                      return txStatus.txHash;
+                    }
+
+                    return yield* Effect.fail(
+                      new SafeFailedError(
+                        txStatus.txStatus === conn.txStatus.FAILED ||
+                          txStatus.txStatus === conn.txStatus.CANCELLED
+                          ? "FAILED"
+                          : "NOT_READY"
                       )
-                      .run()
-                      .then((res) => res.unsafeCoerce()),
-                  shouldRetry: (error, retryCount) =>
-                    Maybe.fromNullable(error)
-                      .chainNullable((e) =>
-                        (e as SafeFailedError)._tag === "SafeFailedError"
-                          ? (e as SafeFailedError)
-                          : null
-                      )
-                      .filter((e) => e.type !== "FAILED" && !checkIsUnmounted())
-                      .map(() => retryCount < 120)
-                      .orDefault(false),
-                  retryWaitForMs: () => 7000,
-                })
+                    );
+                  }).pipe(
+                    Effect.retry({
+                      schedule: Schedule.spaced("7 seconds"),
+                      times: 120,
+                      while: (error) =>
+                        error instanceof SafeFailedError &&
+                        error.type !== "FAILED" &&
+                        !checkIsUnmounted(),
+                    }),
+                    Effect.runPromise
+                  )
+                )
               )
               .mapLeft(() => new SendTransactionError())
               .map((val) => ({ signedTx: val as Hash, broadcasted: true }));
@@ -437,23 +460,32 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                 return new TransactionDecodeError();
               })
           ).chain((val) =>
-            EitherAsync(() =>
+            EitherAsync(() => {
               /**
                * Params need to be in strict format, don't spread the object(val)!
                */
-              sendTransactionAsync({
+              const tx = {
                 data: val.data,
                 to: val.to,
                 value: val.value,
-                nonce: val.nonce,
-                maxFeePerGas: val.maxFeePerGas,
-                maxPriorityFeePerGas: val.maxPriorityFeePerGas,
                 chainId: val.chainId,
                 gas: val.gasLimit,
-                type: val.maxFeePerGas ? "eip1559" : "legacy",
-              })
-            )
-              .mapLeft(() => new SendTransactionError())
+              };
+
+              return val.maxFeePerGas !== undefined
+                ? sendTransactionAsync({
+                    ...tx,
+                    type: "eip1559",
+                    maxFeePerGas: val.maxFeePerGas,
+                    maxPriorityFeePerGas: val.maxPriorityFeePerGas,
+                  })
+                : sendTransactionAsync({
+                    ...tx,
+                    type: "legacy",
+                    gasPrice: val.gasPrice,
+                  });
+            })
+              .mapLeft((e) => new SendTransactionError(e))
               .map((val) => ({ signedTx: val, broadcasted: true }))
           );
         }),

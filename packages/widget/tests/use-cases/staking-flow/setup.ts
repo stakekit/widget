@@ -1,19 +1,27 @@
+import { delay, HttpResponse, http } from "msw";
+import { avalanche } from "viem/chains";
+import { vitest } from "vitest";
+import type { YieldCreateActionDto } from "../../../src/domain/types/action";
 import type {
   ActionDto,
-  ActionRequestDto,
   AddressesDto,
   TokenDto,
   TransactionDto,
   YieldDto,
-} from "@stakekit/api-hooks";
-import { delay, HttpResponse, http } from "msw";
-import { avalanche } from "viem/chains";
-import { vitest } from "vitest";
+} from "../../../src/generated/api/legacy";
 import { waitForMs } from "../../../src/utils";
-import { worker } from "../../mocks/worker";
+import {
+  yieldApiActionFixture,
+  yieldApiNetworkFixture,
+  yieldApiTransactionFixture,
+  yieldApiValidatorsFixture,
+  yieldApiYieldFixture,
+} from "../../fixtures";
+import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { rkMockWallet } from "../../utils/mock-connector";
+import type { TestWorker } from "../../utils/test-extend";
 
-export const setup = async () => {
+export const setup = async (worker: TestWorker) => {
   const token: TokenDto = {
     name: "Avalanche C Chain",
     symbol: "AVAX",
@@ -119,8 +127,34 @@ export const setup = async () => {
     validators: [],
     isAvailable: true,
   };
-
-  const enterAction: ActionDto = {
+  const yieldApiYieldBase = yieldApiYieldFixture();
+  const yieldApiYieldOp = yieldApiYieldFixture({
+    id: yieldOp.id,
+    network: token.network,
+    token,
+    tokens: [token],
+    inputTokens: [token],
+    outputToken: yieldOp.metadata.rewardTokens?.[0] ?? token,
+    rewardRate: {
+      ...yieldApiYieldBase.rewardRate,
+      total: yieldOp.rewardRate,
+    },
+    status: yieldOp.status,
+    metadata: {
+      ...yieldApiYieldBase.metadata,
+      name: yieldOp.metadata.name,
+      description: yieldOp.metadata.description ?? "",
+      documentation: yieldOp.metadata.documentation ?? "",
+      logoURI: yieldOp.metadata.logoURI ?? "",
+    },
+    mechanics: {
+      ...yieldApiYieldBase.mechanics,
+      type: "staking",
+      gasFeeToken: token,
+      supportsLedgerWalletApi: yieldOp.metadata.supportsLedgerWalletApi,
+    },
+  });
+  const enterAction = {
     id: "18bdda99-346a-4694-af71-58dfea68d542",
     integrationId: "avalanche-avax-liquid-staking",
     status: "CREATED",
@@ -157,9 +191,9 @@ export const setup = async () => {
       },
     ],
     addresses: null as unknown as AddressesDto,
-  };
+  } as unknown as ActionDto;
 
-  const transactionConstruct: TransactionDto = {
+  const transactionConstruct = {
     id: "",
     network: token.network,
     status: "WAITING_FOR_SIGNATURE",
@@ -190,15 +224,15 @@ export const setup = async () => {
     isMessage: false,
     broadcastedAt: null,
     createdAt: "2023-12-28T14:36:21.700Z",
-  };
+  } as unknown as TransactionDto;
 
   worker.use(
-    http.get("*/v1/yields/enabled/networks", async () => {
+    http.get(yieldApiRoute("/v1/networks"), async () => {
       await delay();
-      return HttpResponse.json(["avalanche-c"]);
+      return HttpResponse.json([yieldApiNetworkFixture({ id: "avalanche-c" })]);
     }),
 
-    http.get("*/v1/tokens", async () => {
+    http.get(legacyApiRoute("/v1/tokens"), async () => {
       await delay();
 
       return HttpResponse.json([
@@ -216,7 +250,7 @@ export const setup = async () => {
       ]);
     }),
 
-    http.post("*/v1/tokens/balances/scan", async () => {
+    http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
       await delay();
       return HttpResponse.json([
         {
@@ -227,12 +261,18 @@ export const setup = async () => {
       ]);
     }),
 
-    http.post("*/v1/tokens/balances", async () => {
+    http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
       await delay();
-      return HttpResponse.json([{ token, amount }]);
+      return HttpResponse.json([
+        {
+          token,
+          amount,
+          availableYields: ["avalanche-avax-liquid-staking"],
+        },
+      ]);
     }),
 
-    http.post("*/v1/tokens/prices", async () => {
+    http.post(legacyApiRoute("/v1/tokens/prices"), async () => {
       await delay();
       return HttpResponse.json({
         "avalanche-c-undefined": {
@@ -241,91 +281,107 @@ export const setup = async () => {
         },
       });
     }),
-    http.get("*/v1/yields/avalanche-avax-liquid-staking", async () => {
+    http.get(
+      legacyApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
+      async () => {
+        await delay();
+        return HttpResponse.json(yieldOp);
+      }
+    ),
+    http.get(
+      yieldApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
+      async () => {
+        await delay();
+        return HttpResponse.json(yieldApiYieldOp);
+      }
+    ),
+    http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
       await delay();
-      return HttpResponse.json(yieldOp);
-    }),
-    http.get("*/v1/transactions/gas/avalanche-c", async () => {
-      await delay();
+
+      const yieldId = info.params.yieldId as string;
+      const validators =
+        yieldId === yieldOp.id ? yieldApiValidatorsFixture([]) : [];
+
       return HttpResponse.json({
-        customisable: true,
-        modes: {
-          denom: "gwei",
-          values: [
-            {
-              name: "slow",
-              value: "40",
-              gasArgs: {
-                denom: "wei",
-                type: 2,
-                maxFeePerGas: "40000000000",
-                maxPriorityFeePerGas: "0",
-              },
-            },
-            {
-              name: "average",
-              value: "50",
-              gasArgs: {
-                denom: "wei",
-                type: 2,
-                maxFeePerGas: "50000000000",
-                maxPriorityFeePerGas: "0",
-              },
-            },
-            {
-              name: "fast",
-              value: "75",
-              gasArgs: {
-                denom: "wei",
-                type: 2,
-                maxFeePerGas: "75000000000",
-                maxPriorityFeePerGas: "0",
-              },
-            },
+        items: validators,
+        total: validators.length,
+        offset: 0,
+        limit: 20,
+      });
+    }),
+    http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
+      await delay();
+
+      const body = (await info.request.json()) as YieldCreateActionDto;
+
+      return HttpResponse.json(
+        yieldApiActionFixture({
+          id: enterAction.id,
+          yieldId: enterAction.integrationId,
+          type: enterAction.type,
+          address: body.address,
+          amount: body.arguments?.amount ?? null,
+          amountRaw: body.arguments?.amount ?? null,
+          amountUsd: null,
+          transactions: [
+            yieldApiTransactionFixture({
+              id: enterAction.transactions[0].id,
+              network: transactionConstruct.network,
+              status: "CREATED",
+              type: "STAKE",
+              gasEstimate: transactionConstruct.gasEstimate
+                ? JSON.stringify(transactionConstruct.gasEstimate)
+                : undefined,
+              unsignedTransaction: transactionConstruct.unsignedTransaction,
+              stepIndex: 0,
+            }),
           ],
-        },
-      });
+          rawArguments: body.arguments ?? null,
+          createdAt: enterAction.createdAt,
+          completedAt: enterAction.completedAt,
+          status: enterAction.status,
+        })
+      );
     }),
-    http.post("*/v1/actions/enter/estimate-gas", async () => {
-      await delay();
-      return HttpResponse.json({
-        amount: "0.002828600000000000",
-        token: {
-          network: "polygon",
-          coinGeckoId: "matic-network",
-          name: "Polygon",
-          decimals: 18,
-          symbol: "MATIC",
-          logoURI: "https://assets.stakek.it/tokens/matic.svg",
-        },
-        gasLimit: "",
-      });
-    }),
-    http.post("*/v1/actions/enter", async (info) => {
-      await delay();
+    http.put(
+      yieldApiRoute("/v1/transactions/:transactionId/submit-hash"),
+      async (info) => {
+        const transactionId = info.params.transactionId as string;
 
-      const body = (await info.request.json()) as ActionRequestDto;
+        await delay();
 
-      return HttpResponse.json({ ...enterAction, amount: body.args.amount });
-    }),
-    http.patch("*/v1/transactions/:transactionId", async (info) => {
+        return HttpResponse.json(
+          yieldApiTransactionFixture({
+            id: transactionId,
+            network: transactionConstruct.network,
+            type: transactionConstruct.type ?? "STAKE",
+            hash: "transaction_hash",
+            status: "BROADCASTED",
+            unsignedTransaction: transactionConstruct.unsignedTransaction,
+            gasEstimate: transactionConstruct.gasEstimate
+              ? JSON.stringify(transactionConstruct.gasEstimate)
+              : undefined,
+          })
+        );
+      }
+    ),
+    http.get(yieldApiRoute("/v1/transactions/:transactionId"), async (info) => {
       const transactionId = info.params.transactionId as string;
-
-      await delay();
-
-      return HttpResponse.json({ ...transactionConstruct, id: transactionId });
-    }),
-    http.post("*/v1/transactions/:transactionId/submit_hash", async () => {
-      await delay(1000);
-      return new HttpResponse(null, { status: 201 });
-    }),
-    http.get("*/v1/transactions/:transactionId/status", async () => {
-      return HttpResponse.json({
-        url: "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        network: "avalanche-c",
-        hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
-        status: "CONFIRMED",
-      });
+      return HttpResponse.json(
+        yieldApiTransactionFixture({
+          id: transactionId,
+          network: transactionConstruct.network,
+          type: transactionConstruct.type ?? "STAKE",
+          explorerUrl:
+            "https://snowtrace.dev/tx/0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          hash: "0x5c2e4ac81fa12b8e935e1cf5e39eda4594d75e82da0c9b44c6d85f20214452fb",
+          status: "CONFIRMED",
+          unsignedTransaction: transactionConstruct.unsignedTransaction,
+          gasEstimate: transactionConstruct.gasEstimate
+            ? JSON.stringify(transactionConstruct.gasEstimate)
+            : undefined,
+        })
+      );
     })
   );
 
@@ -348,10 +404,14 @@ export const setup = async () => {
   });
 
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });
+  const mergedYieldOp = {
+    ...yieldApiYieldOp,
+    __fallback__: yieldOp,
+  };
 
   return {
     customConnectors,
-    yieldOp,
+    yieldOp: mergedYieldOp,
     enterAction,
     transactionConstruct,
     account,

@@ -1,9 +1,7 @@
-import type {
-  ActionTypes,
-  TokenDto,
-  YieldBalanceDto,
-} from "@stakekit/api-hooks";
 import { tokenString } from "../../../domain";
+import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import type { YieldBalanceType } from "../../../domain/types/positions";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import type { BalanceTokenActionType } from "./types";
 
 export const getBalanceTokenActionType = ({
@@ -11,8 +9,8 @@ export const getBalanceTokenActionType = ({
   balanceType,
   token,
 }: {
-  balanceType: YieldBalanceDto["type"];
-  token: TokenDto;
-  actionType: ActionTypes;
+  balanceType: YieldBalanceType;
+  token: TokenDto | YieldTokenDto;
+  actionType: YieldPendingActionType;
 }): BalanceTokenActionType =>
   `${balanceType}-${tokenString(token)}-${actionType}`;

@@ -19,10 +19,6 @@ const TABS_MAP = {
   activity: "/activity",
 };
 
-export type TabsProps = {
-  pendingActionsCount?: number;
-};
-
 export const Tabs = () => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();

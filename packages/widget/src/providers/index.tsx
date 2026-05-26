@@ -41,8 +41,8 @@ export const Providers = ({
             <SKQueryClientProvider>
               <SKLocationProvider>
                 <MountAnimationProvider>
-                  <WagmiConfigProvider>
-                    <SolanaProvider>
+                  <SolanaProvider>
+                    <WagmiConfigProvider>
                       <TrackingContextProviderWithProps>
                         <SKWalletProvider>
                           <RainbowProvider>
@@ -80,8 +80,8 @@ export const Providers = ({
                           </RainbowProvider>
                         </SKWalletProvider>
                       </TrackingContextProviderWithProps>
-                    </SolanaProvider>
-                  </WagmiConfigProvider>
+                    </WagmiConfigProvider>
+                  </SolanaProvider>
                 </MountAnimationProvider>
               </SKLocationProvider>
             </SKQueryClientProvider>

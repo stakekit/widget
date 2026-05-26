@@ -1,4 +1,3 @@
-import type { ActionDto, YieldDto } from "@stakekit/api-hooks";
 import { List } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
@@ -6,6 +5,7 @@ import { ContentLoaderSquare } from "../../../../../components/atoms/content-loa
 import { ListItem } from "../../../../../components/atoms/list/list-item";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { getYieldProviderDetails } from "../../../../../domain/types/yields";
 import { listItemContainer } from "../../../positions-page/style.css";
 import { useActionListItem } from "../../hooks/use-action-list-item";
 import {
@@ -15,10 +15,7 @@ import {
   viaText,
 } from "../../style.css";
 
-type ActionYieldDto = {
-  actionData: ActionDto;
-  yieldData: YieldDto;
-};
+import type { ActionYieldDto } from "../../types";
 
 export const ActionListItem = ({
   action,
@@ -53,7 +50,14 @@ export const ActionListItem = ({
                 justifyContent="flex-start"
                 alignItems="center"
               >
-                <TokenIcon metadata={d.metadata} token={d.token} />
+                <TokenIcon
+                  metadata={{
+                    logoURI: d.metadata.logoURI,
+                    name: d.metadata.name,
+                    provider: getYieldProviderDetails(d) ?? undefined,
+                  }}
+                  token={d.token}
+                />
                 <Box
                   display="flex"
                   flexDirection="column"

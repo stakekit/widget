@@ -1,7 +1,7 @@
-import type { Networks } from "@stakekit/common";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { SupportedSKChains } from "../../../../../domain/types/chains";
+import type { Networks } from "../../../../../domain/types/chains/networks";
 import { useSettings } from "../../../../../providers/settings";
 import type { SettingsProps } from "../../../../../providers/settings/types";
 import { getNetworkLogo } from "../../../../../utils";

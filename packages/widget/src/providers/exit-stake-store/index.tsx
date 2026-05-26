@@ -1,20 +1,22 @@
-import type {
-  ActionDto,
-  ActionRequestDto,
-  TokenDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import type BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type {
+  ActionDto,
+  YieldCreateActionDto,
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
-  requestDto: ActionRequestDto;
-  gasFeeToken: YieldDto["token"];
+  requestDto: YieldCreateActionDto;
+  addresses: AddressesDto;
+  gasFeeToken: Yield["token"];
   unstakeAmount: BigNumber;
-  integrationData: YieldDto;
-  unstakeToken: TokenDto;
+  integrationData: Yield;
+  unstakeToken: TokenDto | YieldTokenDto;
 };
 
 type Store = Maybe<InitData & { actionDto: Maybe<ActionDto> }>;

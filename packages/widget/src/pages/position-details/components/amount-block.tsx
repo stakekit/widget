@@ -1,4 +1,3 @@
-import type { TokenDto, ValidatorDto, YieldDto } from "@stakekit/api-hooks";
 import BigNumber from "bignumber.js";
 import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -13,6 +12,9 @@ import {
 } from "../../../components/atoms/number-input";
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
+import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { ValidatorDto } from "../../../domain/types/validators";
+import type { Yield } from "../../../domain/types/yields";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
 import { priceTxt } from "../styles.css";
@@ -27,12 +29,12 @@ type AmountBlockProps = {
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
-  balance: { amount: BigNumber; token: TokenDto } | null;
+  balance: { amount: BigNumber; token: TokenDto | YieldTokenDto } | null;
 } & (
   | {
       variant: "unstake";
-      unstakeToken: TokenDto;
-      yieldDto: YieldDto;
+      unstakeToken: TokenDto | YieldTokenDto;
+      yieldDto: Yield;
       validators: {
         [Key in keyof Pick<
           ValidatorDto,
@@ -217,11 +219,11 @@ const UnstakeInfo = ({
   yieldDto,
   unstakeToken,
 }: {
-  yieldDto: YieldDto;
+  yieldDto: Yield;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: TokenDto;
+  unstakeToken: TokenDto | YieldTokenDto;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
     useYieldMetaInfo({

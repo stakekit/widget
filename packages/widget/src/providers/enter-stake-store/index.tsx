@@ -1,18 +1,20 @@
-import type {
-  ActionDto,
-  ActionRequestDto,
-  TokenDto,
-  ValidatorDto,
-  YieldDto,
-} from "@stakekit/api-hooks";
 import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
+import type {
+  ActionDto,
+  YieldCreateActionDto,
+} from "../../domain/types/action";
+import type { AddressesDto } from "../../domain/types/addresses";
+import type { TokenDto } from "../../domain/types/tokens";
+import type { ValidatorDto } from "../../domain/types/validators";
+import type { Yield } from "../../domain/types/yields";
 
 type InitData = {
-  requestDto: ActionRequestDto;
-  gasFeeToken: YieldDto["token"];
-  selectedStake: YieldDto;
+  requestDto: YieldCreateActionDto;
+  addresses: AddressesDto;
+  gasFeeToken: Yield["token"];
+  selectedStake: Yield;
   selectedValidators: Map<string, ValidatorDto>;
   selectedToken: TokenDto;
 };

@@ -234,9 +234,9 @@ export const GroupedVirtualList = ({
 
             return (
               <Box
-                ref={rowVirtualizer.measureElement}
                 data-index={virtualItem.index}
-                key={virtualItem.index}
+                key={virtualItem.key}
+                ref={rowVirtualizer.measureElement}
               >
                 {type === "child"
                   ? itemContent(item.index, item.parentIndex)

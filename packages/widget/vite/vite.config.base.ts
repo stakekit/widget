@@ -1,14 +1,22 @@
 import path from "node:path";
-import replace from "@rollup/plugin-replace";
+import babel from "@rolldown/plugin-babel";
 import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import autoprefixer from "autoprefixer";
 import merge from "lodash.merge";
 import macros from "unplugin-macros/vite";
-import { defineConfig, type UserConfig, type UserConfigFnObject } from "vite";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
+import {
+  defineConfig,
+  type Plugin,
+  type UserConfig,
+  type UserConfigFnObject,
+} from "vite";
 import type { InlineConfig } from "vitest/node";
+import {
+  nodePolyfillOptimizeDeps,
+  nodePolyfillPlugins,
+} from "./vite.node-polyfills";
 
 declare module "vite" {
   interface UserConfig {
@@ -16,19 +24,19 @@ declare module "vite" {
   }
 }
 
-const emptyPolyfill = path.resolve(__dirname, "..", "polyfills", "empty.js");
-
-export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
-  defineConfig(({ mode }) => {
-    const isProd = mode === "build";
+export const getConfig = (
+  overides?: Partial<UserConfig>,
+  options?: { plugins?: Plugin[] }
+): UserConfigFnObject =>
+  defineConfig(({ command }) => {
+    const isBuild = command === "build";
+    const shouldMinifyOutput = isBuild && overides?.build?.minify !== false;
 
     return merge(overides, {
       root: path.resolve(__dirname, ".."),
       optimizeDeps: {
         include: [
-          "vite-plugin-node-polyfills/shims/buffer",
-          "vite-plugin-node-polyfills/shims/global",
-          "vite-plugin-node-polyfills/shims/process",
+          ...nodePolyfillOptimizeDeps,
           "@vanilla-extract/recipes/createRuntimeFn",
           "@vanilla-extract/sprinkles/createRuntimeSprinkles",
           "date-fns/locale",
@@ -37,6 +45,7 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
       test: {
         browser: {
           enabled: true,
+          screenshotFailures: false,
           provider: playwright(),
           instances: [{ browser: "chromium" }],
           viewport: { width: 800, height: 900 },
@@ -46,54 +55,35 @@ export const getConfig = (overides?: Partial<UserConfig>): UserConfigFnObject =>
         setupFiles: [path.resolve(__dirname, "..", "tests/utils/setup.ts")],
       },
       plugins: [
+        ...(options?.plugins ?? []),
+        ...nodePolyfillPlugins(),
         macros(),
-        react({
-          babel: {
-            plugins: [["babel-plugin-react-compiler"]],
-          },
-        }),
+        react(),
+        babel({ presets: [reactCompilerPreset()] }),
         vanillaExtractPlugin(),
-        nodePolyfills({ include: ["buffer", "crypto"] }),
       ],
       css: {
         postcss: {
           plugins: [autoprefixer()],
         },
       },
-      esbuild: { drop: isProd ? ["console"] : [] },
       server: {
         host: true,
         cors: true,
-        // https: {
-        //   key: path.resolve(__dirname, "..", "certificates", "skwidget.key"),
-        //   cert: path.resolve(__dirname, "..", "certificates", "skwidget.crt"),
-        // },
-      },
-      resolve: {
-        alias: {
-          crypto: emptyPolyfill,
-          stream: emptyPolyfill,
-          ws: emptyPolyfill,
-          "@emotion/is-prop-valid": emptyPolyfill,
-          "@react-native-async-storage/async-storage": emptyPolyfill,
-        },
       },
       build: {
+        reportCompressedSize: false,
         sourcemap: false,
-        commonjsOptions: {
-          transformMixedEsModules: true,
-        },
-        rollupOptions: {
-          plugins: [
-            replace({
-              values: {
-                'require("@emotion/is-prop-valid")':
-                  "({ default: () => true })",
+        rolldownOptions: {
+          ...(shouldMinifyOutput && {
+            output: {
+              minify: {
+                compress: {
+                  dropConsole: true,
+                },
               },
-              preventAssignment: true,
-              delimiters: ["", ""],
-            }),
-          ],
+            },
+          }),
         },
       },
     } satisfies UserConfig);

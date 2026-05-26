@@ -19,11 +19,11 @@ const TABS_MAP = {
   activity: "/activity",
 };
 
-export type TabsProps = {
+type TabsProps = {
   pendingActionsCount?: number;
 };
 
-export const Tabs = ({ pendingActionsCount }: TabsProps) => {
+const Tabs = ({ pendingActionsCount }: TabsProps) => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
 

@@ -24,6 +24,7 @@ import {
 import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import { configMeta, type ExtraProps } from "./ledger-live-connector-meta";
+import { prepareLedgerLiveTransaction } from "./prepare-ledger-live-transaction";
 import {
   getFilteredSupportedLedgerFamiliesWithCurrency,
   getLedgerCurrencies,
@@ -387,6 +388,7 @@ const createLedgerLiveConnector = ({
       $disabledChains: $disabledChains.asObservable(),
       noAccountPlaceholder,
       deserializeTransaction,
+      prepareTransaction: prepareLedgerLiveTransaction,
     };
   });
 

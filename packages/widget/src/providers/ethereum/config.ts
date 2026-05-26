@@ -9,20 +9,23 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import portoIcon from "../../assets/images/porto.svg";
+import { getEnabledNetworks } from "../../common/get-enabled-networks";
 import { config } from "../../config";
 import { evmChainGroup } from "../../domain/types/chains";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import { getEnabledNetworks } from "../api/get-enabled-networks";
+import type { ApiClient } from "../api/api-client";
 import type { VariantProps } from "../settings/types";
 import { createFineryWallets } from "./finery-wallet-list";
 import { passCorrectChainsToWallet } from "./utils";
 
 const queryFn = async ({
+  apiClient,
   queryClient,
   forceWalletConnectOnly,
   variant,
 }: {
+  apiClient: ApiClient;
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
   variant: VariantProps["variant"];
@@ -32,7 +35,7 @@ const queryFn = async ({
   connector: Maybe<WalletList[number]>;
   fineryWallets: ReturnType<typeof createFineryWallets> | null;
 }> =>
-  getEnabledNetworks({ queryClient }).caseOf({
+  getEnabledNetworks({ apiClient, queryClient }).caseOf({
     Right: (networks) => {
       const filteredEvmChainsMap: Partial<EvmChainsMap> =
         typeSafeObjectFromEntries(

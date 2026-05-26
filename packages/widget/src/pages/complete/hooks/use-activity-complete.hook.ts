@@ -1,7 +1,12 @@
-import type { TokenDto } from "@stakekit/api-hooks";
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import {
+  getActionInputToken,
+  getActionValidatorAddresses,
+} from "../../../domain/types/action";
+import type { TokenDto } from "../../../domain/types/tokens";
+import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -34,12 +39,23 @@ export const useActivityComplete = () => {
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
 
   const inputToken = useMemo(
-    () => Maybe.fromNullable(selectedAction).map((y) => y.inputToken),
-    [selectedAction]
+    () =>
+      Maybe.fromNullable(
+        getActionInputToken({
+          actionDto: selectedAction,
+          yieldDto: selectedYield.extractNullable() ?? undefined,
+        })
+      ),
+    [selectedAction, selectedYield]
   ) as Maybe<TokenDto>;
 
   const metadata = useMemo(
-    () => selectedYield.map((y) => y.metadata),
+    () =>
+      selectedYield.map((yieldDto) => ({
+        logoURI: yieldDto.metadata.logoURI,
+        name: yieldDto.metadata.name,
+        provider: getYieldProviderDetails(yieldDto) ?? undefined,
+      })),
     [selectedYield]
   );
 
@@ -47,8 +63,10 @@ export const useActivityComplete = () => {
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
-    validatorsAddresses: Maybe.of(selectedAction.validatorAddresses ?? []),
-    selectedProviderYieldId: Maybe.of(selectedAction.integrationId),
+    validatorsAddresses: Maybe.of(
+      getActionValidatorAddresses(selectedAction) ?? []
+    ),
+    selectedProviderYieldId: Maybe.of(selectedAction.yieldId),
   });
 
   return {

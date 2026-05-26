@@ -1,8 +1,8 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "./src",
-    "lib": ["dom", "dom.iterable", "ESNext"]
+    "lib": ["dom", "dom.iterable", "ESNext"],
+    "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"
   },
   "include": ["src", "scripts", "tests", "vite/**/*.ts"],
   "exclude": ["dist"]

@@ -1,65 +1,25 @@
-import { StakeKitApiClient } from "@stakekit/api-hooks";
-import type { AxiosInstance } from "axios";
-import axios, { AxiosHeaders } from "axios";
 import type { PropsWithChildren } from "react";
-import { createContext, useContext, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { attachDelayInterceptor } from "../../common/delay-api-requests";
-import { withRequestErrorRetry } from "../../common/utils";
+import { createContext, useContext, useEffect, useMemo } from "react";
 import { config } from "../../config";
-import { attachGeoBlockInterceptor } from "../../hooks/use-geo-block";
-import { attachRichErrorsInterceptor } from "../../hooks/use-rich-errors";
 import { useSettings } from "../settings";
+import { type ApiClient, createApiClient } from "./api-client";
 
-const Context = createContext<AxiosInstance | undefined>(undefined);
+const Context = createContext<ApiClient | undefined>(undefined);
 
 export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
-  const { apiKey, baseUrl } = useSettings();
-  const { i18n } = useTranslation();
+  const { apiKey, baseUrl, yieldsApiUrl } = useSettings();
 
-  const url = baseUrl ?? config.env.apiUrl;
+  const apiClient = useMemo(
+    () =>
+      createApiClient({
+        apiKey,
+        baseUrl: baseUrl ?? config.env.apiUrl,
+        yieldsApiUrl: yieldsApiUrl ?? config.env.yieldsApiUrl,
+      }),
+    [apiKey, baseUrl, yieldsApiUrl]
+  );
 
-  const [apiClient] = useState(() => {
-    const instance = axios.create({
-      baseURL: url,
-      headers: { "X-API-KEY": apiKey },
-      adapter: "fetch",
-    });
-
-    attachDelayInterceptor(instance);
-    attachGeoBlockInterceptor(instance);
-    attachRichErrorsInterceptor(instance, i18n);
-
-    return instance;
-  });
-
-  StakeKitApiClient.configure({
-    apiKey,
-    baseURL: url,
-    fetchInstance: (url, requestInit) => {
-      const headers = new Headers(requestInit.headers);
-
-      const axiosHeaders = new AxiosHeaders();
-
-      for (const [key, value] of headers.entries()) {
-        axiosHeaders.set(key, value);
-      }
-
-      const signal = requestInit.signal ?? undefined;
-
-      return withRequestErrorRetry({
-        fn: () =>
-          apiClient(url, {
-            ...requestInit,
-            headers: axiosHeaders,
-            data: requestInit.body,
-            signal,
-          }).then((response) => response.data),
-      })
-        .run()
-        .then((res) => res.unsafeCoerce());
-    },
-  });
+  useEffect(() => () => void apiClient.dispose(), [apiClient]);
 
   return <Context.Provider value={apiClient}>{children}</Context.Provider>;
 };
@@ -68,7 +28,7 @@ export const useApiClient = () => {
   const value = useContext(Context);
 
   if (!value) {
-    throw new Error("ApiClient must be used within a ApiHooksProvider");
+    throw new Error("useApiClient must be used within a SKApiClientProvider");
   }
 
   return value;

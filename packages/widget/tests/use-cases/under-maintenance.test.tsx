@@ -1,13 +1,16 @@
 import { HttpResponse, http } from "msw";
-import { describe, expect, it } from "vitest";
-import { worker } from "../mocks/worker";
+import { yieldApiRoute } from "../mocks/api-routes";
+import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
 describe("Under maintenance", () => {
-  it("Show under maintenance popup", async () => {
+  it("Show under maintenance popup", async ({ worker }) => {
     worker.use(
-      http.get("*/v2/health", async () => {
-        return HttpResponse.json({ db: "FAIL" });
+      http.get(yieldApiRoute("/health"), async () => {
+        return HttpResponse.json({
+          status: "FAIL",
+          timestamp: new Date().toISOString(),
+        });
       })
     );
 

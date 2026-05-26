@@ -1,0 +1,60 @@
+{
+  "$schema": "https://github.com/jayu/rev-dep/blob/master/config-schema/1.7.schema.json?raw=true",
+  "configVersion": "1.7",
+  "rules": [
+    {
+      "path": "packages/widget",
+      "prodEntryPoints": [
+        "src/index.package.ts",
+        "src/index.bundle.ts",
+        "src/main.tsx",
+        "src/translation/i18next.d.ts",
+        "src/types/purify-extend.d.ts",
+        "src/types/window.d.ts",
+        "src/vite-env.d.ts",
+        "postcss.config.js",
+        "public/mockServiceWorker.js",
+        "vite/*.ts"
+      ],
+      "devEntryPoints": [
+        "scripts/generate-effect-openapi.ts",
+        "tests/utils/setup.ts",
+        "tests/**/*.test.ts",
+        "tests/**/*.test.tsx"
+      ],
+      "orphanFilesDetection": {
+        "enabled": true
+      },
+      "unusedExportsDetection": {
+        "enabled": true,
+        "ignoreFiles": ["src/types/yield-api-schema.d.ts"]
+      },
+      "unusedNodeModulesDetection": {
+        "enabled": true,
+        "excludeModules": [
+          "@effect/openapi-generator",
+          "@effect/platform-node",
+          "babel-plugin-react-compiler",
+          "playwright",
+          "postcss",
+          "swagger2openapi",
+          "tsx",
+          "yaml"
+        ],
+        "pkgJsonFieldsWithBinaries": ["scripts"]
+      },
+      "missingNodeModulesDetection": {
+        "enabled": true
+      },
+      "unresolvedImportsDetection": {
+        "enabled": true
+      },
+      "circularImportsDetection": {
+        "enabled": true
+      }
+      // "devDepsUsageOnProdDetection": {
+      //   "enabled": true
+      // }
+    }
+  ]
+}

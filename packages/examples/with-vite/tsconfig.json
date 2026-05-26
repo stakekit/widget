@@ -1,8 +1,9 @@
 {
-  "extends": "../../../tsconfig.json",
+  "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "allowImportingTsExtensions": true
+    "allowImportingTsExtensions": true,
+    "tsBuildInfoFile": "dist/.tsbuildinfo/tsconfig.tsbuildinfo"
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]

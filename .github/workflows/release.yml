@@ -13,40 +13,73 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
       pull-requests: write
       id-token: write
 
     environment: production
     env:
-      NODE_OPTIONS: "--max_old_space_size=8192"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PACKAGE_DIR: packages/widget
 
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 0
 
-      - uses: jdx/mise-action@v2
-
-      # npm 11.5.1 or later is required for trusted publishing
-      - name: Update npm
-        run: npm install -g npm@latest
-
-      - name: Fix executable files for changesets
+      - name: Install mise
         run: |
-          chmod -x .husky/commit-msg
+          curl https://mise.run | MISE_VERSION=v2026.5.6 sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+          mise install
 
-      - run: pnpm install --frozen-lockfile
-
-      - name: Create Release Pull Request or Publish to npm
-        id: changesets
-        uses: changesets/action@v1
+      - name: Run release-please
+        id: release
+        # googleapis/release-please-action@v5.0.0
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7
         with:
-          publish: pnpm run release
-          version: pnpm run version
-          commit: "ci(changesets): version packages"
-          title: "ci(changesets): version packages"
-          commitMode: github-api
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Use OIDC for npm authentication instead of NPM_TOKEN
-          NPM_TOKEN: "" # https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
+
+      - name: Check npm publish status
+        id: publish
+        shell: bash
+        run: |
+          package_name=$(node -p "require('./${PACKAGE_DIR}/package.json').name")
+          version=$(node -p "require('./${PACKAGE_DIR}/package.json').version")
+          tag="${package_name}@${version}"
+
+          {
+            echo "package_name=${package_name}"
+            echo "version=${version}"
+            echo "tag=${tag}"
+          } >> "$GITHUB_OUTPUT"
+
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "No GitHub release found for ${tag}; skipping npm publish."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if npm view "${package_name}@${version}" version >/dev/null 2>&1; then
+            echo "${package_name}@${version} is already published; skipping npm publish."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to npm
+        if: steps.publish.outputs.should_publish == 'true'
+        run: |
+          tag="${{ steps.publish.outputs.tag }}"
+          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
+          git checkout --detach "$tag"
+          mise install
+          pnpm install --frozen-lockfile
+          pnpm exec turbo --filter=@stakekit/widget build
+          npm publish "$PACKAGE_DIR"

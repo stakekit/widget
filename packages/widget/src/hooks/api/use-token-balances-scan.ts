@@ -1,9 +1,10 @@
-import type { TokenBalanceScanDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
-import { tokenTokenBalancesScan } from "../../common/private-api";
+import type { TokenBalanceScanDto } from "../../domain/types/token-balance";
+import type { ApiClient } from "../../providers/api/api-client";
+import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 
@@ -14,6 +15,7 @@ export const useTokenBalancesScan = () => {
     network,
     isLedgerLiveAccountPlaceholder,
   } = useSKWallet();
+  const apiClient = useApiClient();
 
   const param = useMemo(
     () =>
@@ -50,6 +52,7 @@ export const useTokenBalancesScan = () => {
     queryFn: async () =>
       (
         await queryFn({
+          apiClient,
           tokenBalanceScanDto: param.dto,
         })
       ).unsafeCoerce(),
@@ -70,16 +73,20 @@ export const getTokenBalancesScan = (
   });
 
 const queryFn = ({
+  apiClient,
   tokenBalanceScanDto,
 }: {
+  apiClient: ApiClient;
   tokenBalanceScanDto: TokenBalanceScanDto;
 }) =>
-  EitherAsync(() => tokenTokenBalancesScan(tokenBalanceScanDto)).mapLeft(
-    (e) => {
-      console.log(e);
-      return new Error("could not get token balances");
-    }
-  );
+  EitherAsync(() =>
+    apiClient.legacy.TokenControllerTokenBalancesScan({
+      payload: tokenBalanceScanDto,
+    })
+  ).mapLeft((e) => {
+    console.log(e);
+    return new Error("could not get token balances");
+  });
 
 export const useInvalidateTokenBalances = () => {
   const queryClient = useSKQueryClient();

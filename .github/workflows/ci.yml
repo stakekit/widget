@@ -16,13 +16,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      NODE_OPTIONS: "--max_old_space_size=8192"
 
     steps:
-      - uses: actions/checkout@v4
+      # actions/checkout@v6.0.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
-      - uses: jdx/mise-action@v2
+      - name: Install mise
+        run: |
+          curl https://mise.run | MISE_VERSION=v2026.5.6 sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/share/mise/shims" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+          mise install
 
       - run: pnpm install --frozen-lockfile
 
@@ -33,3 +38,5 @@ jobs:
       - run: pnpm lint
 
       - run: pnpm test
+
+      - run: pnpm check-hygiene

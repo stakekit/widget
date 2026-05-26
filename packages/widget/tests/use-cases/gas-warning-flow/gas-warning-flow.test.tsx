@@ -1,7 +1,6 @@
-import type { YieldDto } from "@stakekit/api-hooks";
-import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
 import { formatAddress } from "../../../src/utils";
+import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";
 
@@ -14,7 +13,9 @@ describe("Gas warning flow", () => {
     customConnectors,
   }: {
     availableAmount: string;
-    yieldDto: YieldDto;
+    yieldDto: ReturnType<
+      typeof setup
+    >["yieldWithSameGasAndStakeToken"]["yieldDto"];
     withWarning: boolean;
   } & Pick<ReturnType<typeof setup>, "account" | "customConnectors">) => {
     const app = await renderApp({
@@ -50,9 +51,11 @@ describe("Gas warning flow", () => {
     await userEvent.keyboard(stakeAmount);
 
     await expect
-      .element(app.getByRole("button", { name: "Stake" }))
+      .element(app.getByRole("button", { name: "Stake", exact: true }))
       .toBeInTheDocument();
-    await userEvent.click(app.getByRole("button", { name: "Stake" }));
+    await userEvent.click(
+      app.getByRole("button", { name: "Stake", exact: true })
+    );
 
     if (withWarning) {
       await expect
@@ -71,14 +74,14 @@ describe("Gas warning flow", () => {
   };
 
   describe("Stake token same as gas token", () => {
-    it("Txs gas > gas token amount", async () => {
+    it("Txs gas > gas token amount", async ({ worker }) => {
       const {
         account,
         customConnectors,
         yieldWithSameGasAndStakeToken,
         setTxGas,
         setAvalanceCTokenAmount,
-      } = setup();
+      } = setup(worker);
 
       const totalTxGas = 4;
       const availableAmount = totalTxGas - 1;
@@ -98,14 +101,14 @@ describe("Gas warning flow", () => {
       });
     });
 
-    it("Txs gas < gas token amount", async () => {
+    it("Txs gas < gas token amount", async ({ worker }) => {
       const {
         account,
         customConnectors,
         yieldWithSameGasAndStakeToken,
         setTxGas,
         setAvalanceCTokenAmount,
-      } = setup();
+      } = setup(worker);
 
       const totalTxGas = 4;
       const availableAmount = totalTxGas + 1;
@@ -127,14 +130,14 @@ describe("Gas warning flow", () => {
   });
 
   describe("Stake token different than gas token", () => {
-    it("Txs gas > gas token amount", async () => {
+    it("Txs gas > gas token amount", async ({ worker }) => {
       const {
         account,
         customConnectors,
         yieldWithDifferentGasAndStakeToken,
         setTxGas,
         setUsdcTokenAmount,
-      } = setup();
+      } = setup(worker);
 
       const totalTxGas = 4;
       const availableAmount = totalTxGas - 1;
@@ -154,14 +157,14 @@ describe("Gas warning flow", () => {
       });
     });
 
-    it("Txs gas < gas token amount", async () => {
+    it("Txs gas < gas token amount", async ({ worker }) => {
       const {
         account,
         customConnectors,
         yieldWithDifferentGasAndStakeToken,
         setTxGas,
         setUsdcTokenAmount,
-      } = setup();
+      } = setup(worker);
 
       const totalTxGas = 4;
       const availableAmount = totalTxGas + 1;

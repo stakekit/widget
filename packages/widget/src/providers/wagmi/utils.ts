@@ -1,7 +1,7 @@
 import type { Wallet, WalletList } from "@stakekit/rainbowkit";
 import { walletConnectWallet } from "@stakekit/rainbowkit/wallets";
 import type { CreateConnectorFn } from "wagmi";
-import { evmChainGroup } from "../../index.package";
+import { evmChainGroup } from "../../domain/types/chains";
 
 /**
  *

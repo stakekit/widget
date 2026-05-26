@@ -1,10 +1,10 @@
-import { ActionTypes } from "@stakekit/api-hooks";
 import { Codec, Left, Right, string } from "purify-ts";
 import { useMemo } from "react";
 import {
   isSupportedChain,
   type SupportedSKChains,
 } from "../domain/types/chains";
+import type { YieldPendingActionType } from "../domain/types/pending-action";
 import type { TokenString } from "../domain/types/tokens";
 import { useSettings } from "../providers/settings";
 import { MaybeWindow } from "../utils/maybe-window";
@@ -21,13 +21,13 @@ export const useInitQueryParams = () => {
   );
 };
 
-const pendingActionCodec = Codec.custom<ActionTypes>({
+const pendingActionCodec = Codec.custom<YieldPendingActionType>({
   decode: (val) =>
     string
       .decode(val)
       .chain((v) =>
-        v in ActionTypes
-          ? Right(v as ActionTypes)
+        /^[A-Z_]+$/.test(v)
+          ? Right(v as YieldPendingActionType)
           : Left("invalid pending action")
       ),
   encode: (val) => val,

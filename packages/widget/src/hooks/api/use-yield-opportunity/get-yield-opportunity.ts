@@ -1,19 +1,12 @@
-import type { YieldDto } from "@stakekit/api-hooks";
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
-import { yieldYieldOpportunity } from "../../../common/private-api";
-import {
-  filterMapValidators,
-  getComputedRewardRate,
-  isBittensorStaking,
-  isEthenaUsdeStaking,
-  type ValidatorsConfig,
-} from "../../../domain/types/yields";
+import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
+import type { ApiClient } from "../../../providers/api/api-client";
 
 type Params = {
   yieldId: string;
   isLedgerLive: boolean;
-  validatorsConfig: ValidatorsConfig;
+  apiClient: ApiClient;
   signal?: AbortSignal;
 };
 
@@ -50,38 +43,37 @@ const fn = ({
   isLedgerLive,
   yieldId,
   signal,
-  validatorsConfig,
+  apiClient,
 }: Params & {
   signal?: AbortSignal;
-}) =>
-  EitherAsync(() =>
-    yieldYieldOpportunity(
-      yieldId,
-      {
-        ledgerWalletAPICompatible: isLedgerLive,
-      },
-      signal
-    )
-  )
-    .map((y) => filterMapValidators(validatorsConfig, y))
+}) => {
+  return EitherAsync(async () => {
+    const client = apiClient.withRunOptions({ signal });
+    const [newYieldResult, legacyYieldResult] = await Promise.all([
+      client.yield.YieldsControllerGetYield(yieldId, undefined),
+      client.legacy.YieldControllerYieldOpportunity(yieldId, {
+        params: { ledgerWalletAPICompatible: isLedgerLive },
+      }),
+    ]);
+
+    return {
+      ...newYieldResult,
+      __fallback__: legacyYieldResult,
+    } satisfies Yield;
+  })
     .map((y) =>
       isEthenaUsdeStaking(y.id)
         ? ({
             ...y,
-            rewardRate: getComputedRewardRate(y),
             metadata: {
               ...y.metadata,
               name: y.metadata.name.replace(/staking/i, ""),
             },
-          } satisfies YieldDto)
-        : isBittensorStaking(y.id)
-          ? {
-              ...y,
-              validators: y.validators.filter((v) => v.name?.match(/yuma/i)),
-            }
-          : y
+          } satisfies Yield)
+        : y
     )
     .mapLeft((e) => {
       console.log(e);
       return new Error("Could not get yield opportunity");
     });
+};

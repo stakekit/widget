@@ -3,17 +3,20 @@ import { EitherAsync, Right } from "purify-ts";
 import type { SKWallet } from "../domain/types/wallet";
 import { getDefaultTokens } from "../hooks/api/use-default-tokens";
 import { getTokenBalancesScan } from "../hooks/api/use-token-balances-scan";
+import type { ApiClient } from "../providers/api/api-client";
 import type { SettingsProps } from "../providers/settings/types";
 
 export const getTokenBalances = ({
   additionalAddresses,
   address,
+  apiClient,
   network,
   queryClient,
   tokensForEnabledYieldsOnly,
 }: {
   additionalAddresses: SKWallet["additionalAddresses"];
   address: SKWallet["address"];
+  apiClient: ApiClient;
   queryClient: QueryClient;
   network: SKWallet["network"];
   tokensForEnabledYieldsOnly: SettingsProps["tokensForEnabledYieldsOnly"];
@@ -21,6 +24,7 @@ export const getTokenBalances = ({
   EitherAsync.fromPromise(() =>
     Promise.all([
       getDefaultTokens({
+        apiClient,
         queryClient,
         network: network ?? undefined,
         enabledYieldsOnly: tokensForEnabledYieldsOnly,
@@ -33,6 +37,7 @@ export const getTokenBalances = ({
         }
 
         return getTokenBalancesScan({
+          apiClient,
           queryClient,
           tokenBalanceScanDto: {
             addresses: {

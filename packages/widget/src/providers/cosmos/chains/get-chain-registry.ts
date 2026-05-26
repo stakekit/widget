@@ -1,12 +1,13 @@
-import { CosmosNetworks } from "@stakekit/common";
 import { assets, chains as RegistryChains } from "chain-registry";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,
 } from "../../../domain/types/chains/cosmos";
+import { CosmosNetworks } from "../../../domain/types/chains/networks";
 import type { CosmosChain, WithWagmiName } from "./types";
 
 type AssetList = (typeof assets)[number];
+type Asset = AssetList["assets"][number];
 
 const mantra: CosmosChain = {
   $schema: "../chain.schema.json",
@@ -211,9 +212,83 @@ const assetMapper = (
   return val;
 };
 
+const pickGasPrices = (
+  feeToken: NonNullable<CosmosChain["fees"]>["fee_tokens"][number]
+) => ({
+  denom: feeToken.denom,
+  low_gas_price: feeToken.low_gas_price,
+  average_gas_price: feeToken.average_gas_price,
+  high_gas_price: feeToken.high_gas_price,
+});
+
+const trimChain = (
+  chain: WithWagmiName<CosmosChain>
+): WithWagmiName<CosmosChain> =>
+  ({
+    chain_name: chain.chain_name,
+    pretty_name: chain.pretty_name,
+    chain_id: chain.chain_id,
+    bech32_prefix: chain.bech32_prefix,
+    slip44: chain.slip44,
+    fees: chain.fees
+      ? {
+          fee_tokens: chain.fees.fee_tokens.map(pickGasPrices),
+        }
+      : undefined,
+    staking: chain.staking
+      ? {
+          staking_tokens: chain.staking.staking_tokens.map((stakingToken) => ({
+            denom: stakingToken.denom,
+          })),
+        }
+      : undefined,
+    apis: {
+      rpc: chain.apis?.rpc?.map(({ address }) => ({ address })),
+      rest: chain.apis?.rest?.map(({ address }) => ({ address })),
+    },
+    codebase: chain.codebase
+      ? {
+          cosmos_sdk_version: chain.codebase.cosmos_sdk_version,
+          cosmwasm_enabled: chain.codebase.cosmwasm_enabled,
+          cosmwasm_version: chain.codebase.cosmwasm_version,
+          sdk: chain.codebase.sdk,
+          cosmwasm: chain.codebase.cosmwasm,
+        }
+      : undefined,
+    logo_URIs: chain.logo_URIs,
+    explorers: chain.explorers?.map(({ url }) => ({ url })),
+    wagmiName: chain.wagmiName,
+  }) as WithWagmiName<CosmosChain>;
+
+const trimAsset = (asset: Asset): Asset =>
+  ({
+    base: asset.base,
+    name: asset.name,
+    display: asset.display,
+    symbol: asset.symbol,
+    denom_units: asset.denom_units.map(({ denom, exponent }) => ({
+      denom,
+      exponent,
+    })),
+    logo_URIs: asset.logo_URIs,
+    coingecko_id: asset.coingecko_id,
+    type_asset: asset.type_asset,
+  }) as Asset;
+
+const trimAssetList = (
+  assetList: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>
+): WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">> =>
+  ({
+    chain_name: assetList.chain_name,
+    assets: assetList.assets.map(trimAsset),
+    wagmiName: assetList.wagmiName,
+    chain_id: assetList.chain_id,
+  }) as WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>;
+
 const cosmosRegistryChains: WithWagmiName<CosmosChain>[] = chains
   .filter((c) => registryIdsSet.has(c.chain_id))
   .map(chainMapper)
+  .map(trimChain)
   .sort((a, b) => a.wagmiName.localeCompare(b.wagmiName));
 
 export const getCosmosRegistryChains = (): WithWagmiName<CosmosChain>[] =>
@@ -245,4 +320,5 @@ export const getCosmosAssets = (): WithWagmiName<
         chain_id,
       };
     })
-    .map(assetMapper);
+    .map(assetMapper)
+    .map(trimAssetList);

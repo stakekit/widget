@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { getBaseToken } from "../../../../domain";
 import { getPositionTotalAmount } from "../../../../domain/types/positions";
+import { getYieldRewardType } from "../../../../domain/types/yields";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
@@ -41,7 +41,7 @@ export const usePositionListItem = (
         .map((val) =>
           getRewardRateFormatted({
             rewardRate: val.rewardRateAverage.toNumber(),
-            rewardType: val.integrationData.rewardType,
+            rewardType: getYieldRewardType(val.integrationData),
           })
         ),
     [integrationData, providersDetails]
@@ -59,19 +59,21 @@ export const usePositionListItem = (
 
   const tokenToDisplay = item.token;
   const baseToken = useMemo(
-    () => integrationData.map((y) => getBaseToken(y)),
+    () => integrationData.map((y) => y.token),
     [integrationData]
   );
 
-  const totalAmount = useMemo(
+  const amounts = useMemo(
     () =>
-      tokenToDisplay.map((val) =>
-        getPositionTotalAmount({
-          token: val,
-          balances: item.balancesWithAmount,
-        })
-      ),
-    [item.balancesWithAmount, tokenToDisplay]
+      baseToken.map((b) => getPositionTotalAmount(item.balancesWithAmount, b)),
+    [item.balancesWithAmount, baseToken]
+  );
+
+  const totalAmount = useMemo(() => amounts.map((v) => v.amount), [amounts]);
+
+  const totalAmountUsd = useMemo(
+    () => amounts.map((v) => v.amountUsd),
+    [amounts]
   );
 
   const totalAmountFormatted = useMemo(
@@ -85,6 +87,7 @@ export const usePositionListItem = (
     rewardRateAverage,
     inactiveValidator,
     totalAmount,
+    totalAmountUsd,
     totalAmountFormatted,
     baseToken,
     tokenToDisplay,

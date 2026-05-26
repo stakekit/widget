@@ -1,9 +1,10 @@
-import type { TronResourceType } from "@stakekit/api-hooks";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { Divider } from "../../../../../components/atoms/divider";
 import { Dropdown } from "../../../../../components/atoms/dropdown";
 import { Text } from "../../../../../components/atoms/typography/text";
+import type { TronResourceType } from "../../../../../domain/types/tron";
+import { getYieldActionArg } from "../../../../../domain/types/yields";
 import { useIsDashboard } from "../../../../../pages-dashboard/providers/dashboard-context";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
@@ -16,9 +17,9 @@ export const ExtraArgsSelection = () => {
   const isDashboard = useIsDashboard();
 
   return selectedStake
-    .chainNullable((ss) => ss.args.enter.args?.tronResource)
+    .chainNullable((ss) => getYieldActionArg(ss, "enter", "tronResource"))
     .map((tronResources) => {
-      const options = tronResources.options.map((v) => ({
+      const options = (tronResources.options ?? []).map((v) => ({
         label: v,
         value: v as TronResourceType,
       }));

@@ -1,4 +1,3 @@
-import type { AxiosInstance } from "axios";
 import { config } from "../config";
 
 const delayMap = new Map<Record<string, never>, Record<string, never>>();
@@ -26,12 +25,7 @@ const checkDelay = () => {
   }).then(() => unsub());
 };
 
-export const attachDelayInterceptor = (apiClient: AxiosInstance) =>
-  apiClient.interceptors.response.use(async (response) => {
-    await checkDelay();
-
-    return response;
-  });
+export const waitForDelayedApiRequests = () => checkDelay();
 
 /**
  *

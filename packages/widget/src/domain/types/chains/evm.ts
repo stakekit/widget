@@ -1,4 +1,3 @@
-import { EvmNetworks } from "@stakekit/common";
 import type { Chain } from "@stakekit/rainbowkit";
 import {
   arbitrum,
@@ -24,6 +23,7 @@ import {
 } from "viem/chains";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
+import { EvmNetworks } from "./networks";
 
 const supportedEVMChains = [
   EvmNetworks.AvalancheC,

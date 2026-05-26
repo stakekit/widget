@@ -3,13 +3,13 @@
   "private": true,
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
     "serve": "serve"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "serve": "^14.2.5"
+    "serve": "catalog:"
   }
 }

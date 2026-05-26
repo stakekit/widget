@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { images } from "../../../assets/images";
 import { useRichErrors } from "../../../hooks/use-rich-errors";
@@ -8,13 +9,16 @@ import { Text } from "../../atoms/typography/text";
 import { imageStyle } from "./style.css";
 
 export const RichErrorModal = () => {
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const { error, resetError } = useRichErrors();
   const { message, details } = error ?? {};
+  const hasKnownMessage = message ? i18n.exists(`errors.${message}`) : false;
+
+  useEffect(() => resetError, [resetError]);
 
   return (
     <SelectModal
-      state={{ isOpen: !!error, setOpen: () => resetError() }}
+      state={{ isOpen: !!error, setOpen: (isOpen) => !isOpen && resetError() }}
       onClose={resetError}
     >
       <Box
@@ -35,7 +39,7 @@ export const RichErrorModal = () => {
           </Box>
         )}
 
-        {message && (
+        {message && hasKnownMessage && (
           <>
             <Box textAlign="center">
               <Heading variant={{ level: "h4" }}>
@@ -44,6 +48,7 @@ export const RichErrorModal = () => {
               <Text
                 variant={{ type: "muted", weight: "normal" }}
                 textAlign="center"
+                marginTop="2"
               >
                 {t(`errors.${message}.details`, details)}
               </Text>
@@ -67,6 +72,21 @@ export const RichErrorModal = () => {
               </Box>
             </Box>
           </>
+        )}
+
+        {message && !hasKnownMessage && (
+          <Box textAlign="center">
+            <Heading variant={{ level: "h4" }}>
+              {t("shared.something_went_wrong")}
+            </Heading>
+            <Text
+              variant={{ type: "muted", weight: "normal" }}
+              textAlign="center"
+              marginTop="2"
+            >
+              {message}
+            </Text>
+          </Box>
         )}
       </Box>
     </SelectModal>

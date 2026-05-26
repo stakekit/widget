@@ -1,11 +1,11 @@
-import type { YieldDto } from "@stakekit/api-hooks";
+import type { Resources } from "i18next";
 import {
   CosmosNetworks,
   EvmNetworks,
   MiscNetworks,
   SubstrateNetworks,
-} from "@stakekit/common";
-import type { Resources } from "i18next";
+} from "./chains/networks";
+import type { Yield } from "./yields";
 
 const enabledRewardsSummaryYieldIds = {
   [SubstrateNetworks.Polkadot]: [
@@ -45,14 +45,14 @@ const enabledRewardsSummaryYieldIds = {
     },
   ],
 } as const satisfies Record<
-  | SubstrateNetworks.Polkadot
-  | EvmNetworks.AvalancheC
-  | CosmosNetworks.Cronos
-  | EvmNetworks.Ethereum
-  | MiscNetworks.BinanceBeacon
-  | MiscNetworks.Tron,
+  | typeof SubstrateNetworks.Polkadot
+  | typeof EvmNetworks.AvalancheC
+  | typeof CosmosNetworks.Cronos
+  | typeof EvmNetworks.Ethereum
+  | typeof MiscNetworks.BinanceBeacon
+  | typeof MiscNetworks.Tron,
   {
-    id: YieldDto["id"];
+    id: Yield["id"];
     name: `dashboard.enabled_rewards_summary_yield_names.${keyof Resources["translation"]["dashboard"]["enabled_rewards_summary_yield_names"]}`;
   }[]
 >;

@@ -8,12 +8,12 @@ import { PageContainer } from "../../components/page-container";
 import { ActionListItem } from "./components/action-list-item";
 import ListItemBullet from "./components/list-item-bullet";
 import { useActivityPage } from "./hooks/use-activity-page";
+import { ItemBulletType } from "./item-bullet-type";
 import { ActivityPageContextProvider } from "./state/activity-page.context";
-import { ItemBulletType } from "./state/types";
 import { container, listItemWrapper } from "./style.css";
 import { type ActionYieldDto, dateGroupLabels } from "./types";
 
-export const ActivityPageComponent = () => {
+const ActivityPageComponent = () => {
   const {
     content,
     allData,

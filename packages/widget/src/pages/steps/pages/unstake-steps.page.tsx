@@ -35,6 +35,7 @@ export const UnstakeStepsPage = () => {
 
   return (
     <StepsPage
+      inputToken={exitRequest.unstakeToken}
       session={exitRequest.actionDto.unsafeCoerce()}
       providersDetails={providersDetails}
     />
