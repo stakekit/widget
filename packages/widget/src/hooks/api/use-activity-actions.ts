@@ -57,7 +57,7 @@ const getItemsWithValidators = async ({
           validatorsData: await getYieldValidatorsByAddresses({
             apiClient,
             queryClient,
-            yieldId: item.yieldData.id,
+            yieldId: item.actionData.yieldId,
             addresses: getActionValidatorAddresses(item.actionData) ?? [],
           }),
         }))
@@ -85,14 +85,9 @@ export const useActivityActions = (): UseActivityActionsResult => {
               limit: PAGE_SIZE,
               offset: pageParam,
               network: network!,
-              statuses: [
-                "SUCCESS",
-                "FAILED",
-                "CANCELED",
-                "PROCESSING",
-                "STALE",
-                "WAITING_FOR_NEXT",
-              ],
+              // Pending actions are filtered out; only completed (SUCCESS) and
+              // retryable error (FAILED) actions are surfaced in the activity list.
+              statuses: ["SUCCESS", "FAILED"],
             },
           })
         )
