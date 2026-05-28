@@ -113,6 +113,7 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__utila__max__button__text__: string;
   __internal__utila__badge__text__success__: string;
   __internal__utila__badge__text__error__: string;
+  __internal__utila__warning__background__: string;
 
   __internal__finery__grey__one__: string;
   __internal__finery__grey__two__: string;
@@ -150,6 +151,7 @@ export const colorsContract: typeof baseColorsContract & {
   __internal__utila__max__button__text__: "",
   __internal__utila__badge__text__success__: "",
   __internal__utila__badge__text__error__: "",
+  __internal__utila__warning__background__: "",
   __internal__finery__grey__one__: "",
   __internal__finery__grey__two__: "",
   __internal__finery__grey__three__: "",

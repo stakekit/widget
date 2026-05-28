@@ -116,6 +116,7 @@ export const lightThemeColors: typeof colorsContract = {
   __internal__utila__max__button__text__: "#5C70FF",
   __internal__utila__badge__text__success__: "#4BAA82",
   __internal__utila__badge__text__error__: "#E73F4A",
+  __internal__utila__warning__background__: "#FFE9BD",
 
   __internal__finery__grey__one__: "#FDFDFD",
   __internal__finery__grey__two__: "#00000008",
@@ -260,6 +261,7 @@ export const darkThemeColors: typeof colorsContract = {
   __internal__utila__max__button__text__: "#5C70FF",
   __internal__utila__badge__text__success__: "#4BAA82",
   __internal__utila__badge__text__error__: "#E73F4A",
+  __internal__utila__warning__background__: "#FFE9BD",
 
   __internal__finery__grey__one__: "#243034",
   __internal__finery__grey__two__: "#FFFFFF14",

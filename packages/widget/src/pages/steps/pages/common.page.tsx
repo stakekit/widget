@@ -3,15 +3,20 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Heading } from "../../../components/atoms/typography/heading";
+import { Text } from "../../../components/atoms/typography/text";
 import type { ActionDto } from "../../../domain/types/action";
 import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { useIsDashboard } from "../../../pages-dashboard/providers/dashboard-context";
+import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
 import { useIsUnstakeOrPendingAction } from "../../position-details/state";
 import { useSteps } from "../hooks/use-steps.hook";
-import { stepsHeadingContainer } from "./styles.css";
+import {
+  stepsHeadingContainer,
+  utilaPendingApprovalsBanner,
+} from "./styles.css";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
@@ -29,6 +34,7 @@ export const StepsPage = ({
 }: StepsPageProps) => {
   const isUnstakeOrPendingAction = useIsUnstakeOrPendingAction();
   const isDashboard = useIsDashboard();
+  const { variant } = useSettings();
 
   const { retry, txStates } = useSteps({
     inputToken,
@@ -38,6 +44,7 @@ export const StepsPage = ({
   });
 
   const { t } = useTranslation();
+  const showUtilaPendingApprovals = variant === "utila";
 
   return (
     <AnimationPage>
@@ -54,6 +61,22 @@ export const StepsPage = ({
           >
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
           </Box>
+
+          {showUtilaPendingApprovals && (
+            <Box
+              className={utilaPendingApprovalsBanner}
+              data-rk="utila-pending-approvals"
+              px="4"
+              py="3"
+            >
+              <Text variant={{ weight: "bold" }}>
+                {t("steps.pending_approvals")}
+              </Text>
+              <Text variant={{ weight: "normal" }}>
+                {t("steps.pending_approvals_desc")}
+              </Text>
+            </Box>
+          )}
 
           <Box flex={1} display="flex">
             <Box

@@ -258,6 +258,8 @@
     "tx_of_one": "Transaction - {{type}}",
     "tx_of_other": "Transaction {{current}} / {{count}} - {{type}}",
     "skipped": "Skipped",
+    "pending_approvals": "Pending approvals",
+    "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
     "approve_error": "Something went wrong. Check if wallet is connected",
     "tx_type": {
       "SWAP": "SWAP",

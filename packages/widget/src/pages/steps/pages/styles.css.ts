@@ -46,3 +46,8 @@ export const stepsHeadingContainer = recipe({
     variant: "absolute",
   },
 });
+
+export const utilaPendingApprovalsBanner = style({
+  background: vars.color.warningBoxBackground,
+  borderRadius: "20px",
+});
