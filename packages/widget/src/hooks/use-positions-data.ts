@@ -35,44 +35,47 @@ const positionsDataSelector = createSelector(
               getPositionBalanceDataKey(b)
             )
           )
-          .reduce((acc, b) => {
-            const key = getPositionBalanceDataKey(b);
-            const prev = acc.get(key);
-            const validatorsAddresses = getBalanceValidatorAddresses(b);
+          .reduce(
+            (acc, b) => {
+              const key = getPositionBalanceDataKey(b);
+              const prev = acc.get(key);
+              const validators = getBalanceValidators(b);
 
-            if (prev) {
-              prev.balances.push(b);
-            } else {
-              if (key === "default") {
-                acc.set(key, {
-                  balances: [b],
-                  type: "default",
-                });
+              if (prev) {
+                prev.balances.push(b);
               } else {
-                acc.set(key, {
-                  balances: [b],
-                  type: "validators",
-                  validatorsAddresses,
-                });
+                if (key === "default") {
+                  acc.set(key, {
+                    balances: [b],
+                    type: "default",
+                  });
+                } else {
+                  acc.set(key, {
+                    balances: [b],
+                    type: "validators",
+                    validators,
+                  });
+                }
               }
-            }
 
-            return acc;
-          }, new Map<
-            BalanceDataKey,
-            { balances: YieldBalanceDto[] } & (
-              | { type: "validators"; validatorsAddresses: string[] }
-              | { type: "default" }
-            )
-          >()),
+              return acc;
+            },
+            new Map<
+              BalanceDataKey,
+              { balances: YieldBalanceDto[] } & (
+                | {
+                    type: "validators";
+                    validators: NonNullable<YieldBalanceDto["validators"]>;
+                  }
+                | { type: "default" }
+              )
+            >()
+          ),
       });
 
       return acc;
     }, new Map() as PositionsData)
 );
 
-const getBalanceValidatorAddresses = (balance: YieldBalanceDto) =>
-  (
-    balance.validators?.map((validator) => validator.address) ??
-    (balance.validator?.address ? [balance.validator.address] : [])
-  ).filter(Boolean);
+const getBalanceValidators = (balance: YieldBalanceDto) =>
+  balance.validators ?? (balance.validator ? [balance.validator] : []);

@@ -327,6 +327,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     enabled: shouldFetchValidators,
     yieldId: selectedStake.extract()?.id,
     network: selectedStake.extract()?.token.network,
+    search: deferredValidatorSearch,
   });
 
   const initialValidatorSelectionYieldIdRef = useRef<string | null>(null);
@@ -387,38 +388,18 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       selectedStake
         .filter(() => shouldFetchValidators)
         .chain(() =>
-          Maybe.fromNullable(yieldValidators.data)
-            .map((validators) => {
-              const searchInput = deferredValidatorSearch.toLowerCase();
-
-              if (!searchInput) {
-                return validators;
-              }
-
-              return validators.filter(
-                (validator) =>
-                  validator.name?.toLowerCase().includes(searchInput) ||
-                  validator.address.toLowerCase().includes(searchInput)
+          Maybe.fromNullable(yieldValidators.data).map((validators) => {
+            if (variant === "utila" || variant === "porto") {
+              return [...validators].sort(
+                (a, b) =>
+                  (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
               );
-            })
-            .map((validators) => {
-              if (variant === "utila" || variant === "porto") {
-                return [...validators].sort(
-                  (a, b) =>
-                    (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
-                );
-              }
+            }
 
-              return validators;
-            })
+            return validators;
+          })
         ),
-    [
-      deferredValidatorSearch,
-      selectedStake,
-      shouldFetchValidators,
-      variant,
-      yieldValidators.data,
-    ]
+    [selectedStake, shouldFetchValidators, variant, yieldValidators.data]
   );
 
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>
@@ -611,7 +592,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorsAddresses: Maybe.of(selectedValidators),
+    validators: Maybe.of(selectedValidators),
     selectedProviderYieldId,
   });
 
@@ -667,8 +648,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading ||
     initYieldRes.isLoading ||
     yieldOpportunityLoading ||
-    (shouldFetchValidators &&
-      (yieldValidators.isLoading || yieldValidators.isFetching));
+    (shouldFetchValidators && yieldValidators.isLoading);
 
   const footerIsLoading =
     defaultTokensIsLoading ||
@@ -765,6 +745,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     stakeMinAmount,
     selectedToken,
     validatorsData,
+    hasMoreValidators: !!yieldValidators.hasNextPage,
+    isLoadingMoreValidators: yieldValidators.isFetchingNextPage,
+    onLoadMoreValidators: yieldValidators.fetchNextPage,
     validatorSearch,
     hasNotYieldsForToken,
     isStakeTokenSameAsGasToken,

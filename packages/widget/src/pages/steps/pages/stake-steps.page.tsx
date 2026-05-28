@@ -28,7 +28,7 @@ export const StakeStepsPage = () => {
       () => Maybe.of(enterRequest.selectedStake),
       [enterRequest.selectedStake]
     ),
-    validatorsAddresses: useMemo(
+    validators: useMemo(
       () => Maybe.of(enterRequest.selectedValidators),
       [enterRequest.selectedValidators]
     ),

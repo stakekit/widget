@@ -22,6 +22,9 @@ export const SelectValidatorSection = () => {
     validatorsData,
     validatorSearch,
     onValidatorSearch,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
   } = useSelectValidator();
 
   return isLoading ? (
@@ -64,6 +67,9 @@ export const SelectValidatorSection = () => {
             onSearch={onValidatorSearch}
             searchValue={validatorSearch}
             validators={val.validatorsData}
+            hasMore={hasMoreValidators}
+            isLoadingMore={isLoadingMoreValidators}
+            onLoadMore={onLoadMoreValidators}
           />
         );
       })

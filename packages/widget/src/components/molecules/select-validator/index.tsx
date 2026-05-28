@@ -13,6 +13,9 @@ type SelectValidatorProps = PropsWithChildren<
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;
     onViewMoreClick?: () => void;
+    onLoadMore?: () => void;
+    hasMore?: boolean;
+    isLoadingMore?: boolean;
     validators: ValidatorDto[];
     selectedStake: Yield;
     multiSelect: boolean;
@@ -33,6 +36,9 @@ export const SelectValidator = ({
   selectedValidators,
   onItemClick,
   onViewMoreClick,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
   validators,
   multiSelect,
   selectedStake,
@@ -45,6 +51,7 @@ export const SelectValidator = ({
 
   const _onViewMoreClick = () => {
     onViewMoreClick?.();
+    onLoadMore?.();
     setViewMore(true);
   };
 
@@ -53,13 +60,21 @@ export const SelectValidator = ({
     onClose?.();
   };
 
-  const viewMore = !!multiSelect || _viewMore || rest.searchValue;
+  const viewMore = multiSelect || _viewMore || !!rest.searchValue;
 
   const data = useMemo<{
     tableData: ValidatorDto[];
     groupedItems: GroupedItem[];
     groupCounts: number[];
   }>(() => {
+    if (!validators.length && hasMore && !viewMore) {
+      return {
+        tableData: [],
+        groupedItems: [{ items: [], label: "view_more" }],
+        groupCounts: [1],
+      };
+    }
+
     if (!validators.length) {
       return {
         tableData: [],
@@ -108,7 +123,8 @@ export const SelectValidator = ({
     }
 
     const canViewMore =
-      !viewMore && groupedItems.preferred.items.length !== validators.length;
+      !viewMore &&
+      (!!hasMore || groupedItems.preferred.items.length !== validators.length);
 
     const groupedItemsValues = Object.values(groupedItems);
 
@@ -125,7 +141,7 @@ export const SelectValidator = ({
         ...(canViewMore ? [1] : []),
       ],
     };
-  }, [validators, t, viewMore]);
+  }, [hasMore, validators, t, viewMore]);
 
   const searchProps = rest.onSearch
     ? {
@@ -133,6 +149,14 @@ export const SelectValidator = ({
         searchValue: rest.searchValue,
       }
     : {};
+  const infiniteScrollProps =
+    viewMore && onLoadMore
+      ? {
+          hasNextPage: !!hasMore,
+          isFetchingNextPage: !!isLoadingMore,
+          fetchNextPage: onLoadMore,
+        }
+      : {};
 
   return (
     <SelectModal
@@ -152,6 +176,7 @@ export const SelectValidator = ({
         onItemClick={onItemClick}
         onViewMoreClick={_onViewMoreClick}
         selectedStake={selectedStake}
+        {...infiniteScrollProps}
       />
 
       {children}

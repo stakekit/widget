@@ -53,7 +53,7 @@ export const StakeCompletePage = () => {
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorsAddresses: Maybe.of(enterRequest.selectedValidators),
+    validators: Maybe.of(enterRequest.selectedValidators),
     selectedProviderYieldId,
   });
 

@@ -18,6 +18,9 @@ export const UtilaSelectValidatorSection = () => {
     validatorsData,
     validatorSearch,
     onValidatorSearch,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
   } = useSelectValidator();
 
   return isLoading ? (
@@ -55,6 +58,9 @@ export const UtilaSelectValidatorSection = () => {
             onSearch={onValidatorSearch}
             searchValue={validatorSearch}
             validators={val.validatorsData}
+            hasMore={hasMoreValidators}
+            isLoadingMore={isLoadingMoreValidators}
+            onLoadMore={onLoadMoreValidators}
           />
         );
       })

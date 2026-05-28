@@ -115,6 +115,7 @@ const _ActivityPage = () => {
         data: Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
+          selectedValidators: data.validatorsData,
         }),
       });
     }
@@ -129,6 +130,7 @@ const _ActivityPage = () => {
         data: Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
+          selectedValidators: data.validatorsData,
         }),
       });
     }
@@ -170,6 +172,7 @@ const _ActivityPage = () => {
         data: Maybe.of({
           selectedAction: val.actionData,
           selectedYield: val.yieldData,
+          selectedValidators: val.validatorsData,
         }),
       })
     );

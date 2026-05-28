@@ -38,7 +38,7 @@ export type PositionsData = Map<
     balanceData: Map<
       BalanceDataKey,
       { balances: YieldBalanceDto[] } & (
-        | { type: "validators"; validatorsAddresses: string[] }
+        | { type: "validators"; validators: ReadonlyArray<ValidatorDto> }
         | { type: "default" }
       )
     >;

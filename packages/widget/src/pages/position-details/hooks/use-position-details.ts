@@ -128,11 +128,10 @@ export const usePositionDetails = () => {
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: positionBalances.data.map((b) => {
-      return b.type === "validators" ? b.validatorsAddresses : [];
+    validators: positionBalances.data.map((b) => {
+      return b.type === "validators" ? b.validators : [];
     }),
     selectedProviderYieldId: Maybe.empty(),
-    validatorsData: Maybe.fromNullable(validatorsData),
   });
 
   const personalizedRewardRate = useMemo(
@@ -229,6 +228,9 @@ export const usePositionDetails = () => {
   return {
     integrationData,
     validatorsData: validatorsData ?? [],
+    hasMoreValidators: !!yieldValidators.hasNextPage,
+    isLoadingMoreValidators: yieldValidators.isFetchingNextPage,
+    onLoadMoreValidators: yieldValidators.fetchNextPage,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     canUnstake,

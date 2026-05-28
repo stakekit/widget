@@ -114,7 +114,10 @@ const positionsTableDataSelector = createSelector(
             token: Maybe<YieldBalanceDto["token"]>;
             yieldLabelDto: Maybe<YieldBalanceLabelDto>;
           } & (
-            | { type: "validators"; validatorsAddresses: string[] }
+            | {
+                type: "validators";
+                validators: NonNullable<YieldBalanceDto["validators"]>;
+              }
             | { type: "default" }
           ))[]
         )

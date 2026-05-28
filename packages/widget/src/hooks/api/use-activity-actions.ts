@@ -1,18 +1,25 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
-import { type ActionDto, getActionInputToken } from "../../domain/types/action";
+import {
+  type ActionDto,
+  getActionInputToken,
+  getActionValidatorAddresses,
+} from "../../domain/types/action";
+import type { ValidatorDto } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
+import { getYieldValidatorsByAddresses } from "./use-yield-validators";
 
 const PAGE_SIZE = 50;
 
 type ActivityActionItem = {
   actionData: ActionDto;
   yieldData: Yield;
+  validatorsData: ValidatorDto[];
 };
 
 type UseActivityActionsResult = ReturnType<typeof useInfiniteQuery> & {
@@ -72,6 +79,22 @@ export const useActivityActions = (): UseActivityActionsResult => {
                       actionDto: x.actionData,
                       yieldDto: x.yieldData,
                     })
+                )
+              )
+              .chain((items) =>
+                EitherAsync(() =>
+                  Promise.all(
+                    items.map(async (item) => ({
+                      ...item,
+                      validatorsData: await getYieldValidatorsByAddresses({
+                        apiClient,
+                        queryClient,
+                        yieldId: item.yieldData.id,
+                        addresses:
+                          getActionValidatorAddresses(item.actionData) ?? [],
+                      }),
+                    }))
+                  )
                 )
               )
               .map((data) => ({ ...actionList, data }))

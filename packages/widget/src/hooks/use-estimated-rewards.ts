@@ -24,7 +24,7 @@ export const useEstimatedRewards = ({
 }) => {
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validatorsAddresses: Maybe.of(selectedValidators),
+    validators: Maybe.of(selectedValidators),
     selectedProviderYieldId,
   });
 
