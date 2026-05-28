@@ -83,7 +83,7 @@ export const getProviderDetails = ({
               List.find((v) => v.id === selectedProviderYieldId, [...list])
             )
           )
-          .map((v) => v.rewardRate.total + v.rewardRate.total)
+          .map((v) => v.rewardRate.total)
           .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
             (res) => ({
               rewardRate: res,

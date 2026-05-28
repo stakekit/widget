@@ -146,6 +146,24 @@ const getFilteredValidators = ({
       })
     : validators;
 
+const deduplicateValidatorsByAddress = (
+  validators: ReadonlyArray<ValidatorDto>
+) => {
+  const seenAddresses = new Set<ValidatorDto["address"]>();
+
+  return validators.filter((validator) => {
+    const address = validator.address.toLowerCase();
+
+    if (seenAddresses.has(address)) {
+      return false;
+    }
+
+    seenAddresses.add(address);
+
+    return true;
+  });
+};
+
 const fetchPagedValidators = async ({
   yieldId,
   network,
@@ -186,11 +204,15 @@ const fetchPagedValidators = async ({
           fetchPage({ offset, name: search }),
           fetchPage({ offset, address: search }),
         ]);
+        const items = deduplicateValidatorsByAddress([
+          ...(namePage.items ?? []),
+          ...(addressPage.items ?? []),
+        ]);
 
         return {
-          total: Math.max(namePage.total, addressPage.total),
+          total: Math.max(namePage.total ?? 0, addressPage.total ?? 0),
           offset,
-          items: [...(namePage.items ?? []), ...(addressPage.items ?? [])],
+          items,
         };
       }
 

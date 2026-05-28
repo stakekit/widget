@@ -377,10 +377,135 @@ describe("validator loading", () => {
       { wrapper: Wrapper }
     );
 
-    await expect.poll(() => result.current.data?.length).toBe(2);
+    await expect.poll(() => result.current.data?.length).toBe(1);
 
     expect(calls).toContainEqual({ name: "searched", address: null });
     expect(calls).toContainEqual({ name: null, address: "searched" });
+  });
+
+  it("uses server totals to paginate deduplicated search results", async ({
+    worker,
+  }) => {
+    const calls: Array<{
+      offset: string | null;
+      name: string | null;
+      address: string | null;
+    }> = [];
+    const firstValidator = yieldApiValidatorFixture({
+      address: "searched-address-0",
+      name: "Searched Validator 0",
+    });
+    const secondValidator = yieldApiValidatorFixture({
+      address: "searched-address-100",
+      name: "Searched Validator 100",
+    });
+
+    worker.use(
+      http.get(
+        `${yieldApiUrl}/v1/yields/:yieldId/validators`,
+        ({ request }) => {
+          const url = new URL(request.url);
+          const offset = Number(url.searchParams.get("offset") ?? 0);
+          const name = url.searchParams.get("name");
+          const address = url.searchParams.get("address");
+
+          calls.push({
+            offset: url.searchParams.get("offset"),
+            name,
+            address,
+          });
+
+          if (name === "searched") {
+            return HttpResponse.json({
+              items: offset === 100 ? [secondValidator] : [firstValidator],
+              total: 101,
+              offset,
+              limit: 100,
+            });
+          }
+
+          return HttpResponse.json({
+            items: [],
+            total: 0,
+            offset,
+            limit: 100,
+          });
+        }
+      )
+    );
+
+    const { result } = await renderHook(
+      () =>
+        useYieldValidators({
+          yieldId: "yield-1",
+          network: "ethereum",
+          search: "searched",
+        }),
+      { wrapper: Wrapper }
+    );
+
+    await expect.poll(() => result.current.data?.length).toBe(1);
+    expect(result.current.hasNextPage).toBe(true);
+
+    await result.current.fetchNextPage();
+
+    await expect.poll(() => result.current.data?.length).toBe(2);
+    expect(result.current.hasNextPage).toBe(false);
+    expect(calls).toContainEqual({
+      offset: "100",
+      name: "searched",
+      address: null,
+    });
+    expect(calls).toContainEqual({
+      offset: "100",
+      name: null,
+      address: "searched",
+    });
+  });
+
+  it("does not add independent search totals when checking for more pages", async ({
+    worker,
+  }) => {
+    const nameValidator = yieldApiValidatorFixture({
+      address: "searched-name-address",
+      name: "Searched Name Validator",
+    });
+    const addressValidator = yieldApiValidatorFixture({
+      address: "searched-address-address",
+      name: "Searched Address Validator",
+    });
+
+    worker.use(
+      http.get(
+        `${yieldApiUrl}/v1/yields/:yieldId/validators`,
+        ({ request }) => {
+          const url = new URL(request.url);
+          const name = url.searchParams.get("name");
+          const address = url.searchParams.get("address");
+
+          return HttpResponse.json({
+            items: name ? [nameValidator] : address ? [addressValidator] : [],
+            total: name || address ? 80 : 0,
+            offset: Number(url.searchParams.get("offset") ?? 0),
+            limit: 100,
+          });
+        }
+      )
+    );
+
+    const { result } = await renderHook(
+      () =>
+        useYieldValidators({
+          yieldId: "yield-1",
+          network: "ethereum",
+          search: "searched",
+        }),
+      { wrapper: Wrapper }
+    );
+
+    await expect.poll(() => result.current.data?.length).toBe(2);
+
+    expect(result.current.hasNextPage).toBe(false);
   });
 
   it("keeps previous validators while a new search is loading", async ({
