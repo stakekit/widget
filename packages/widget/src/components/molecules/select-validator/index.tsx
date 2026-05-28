@@ -3,13 +3,19 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
+import { Text } from "../../atoms/typography/text";
 import type { GroupedItem } from "./select-validator-list";
 import { SelectValidatorList } from "./select-validator-list";
+import { emptyState } from "./styles.css";
 
 type SelectValidatorProps = PropsWithChildren<
-  Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {
+  Pick<
+    SelectModalProps,
+    "isLoading" | "onClose" | "onOpen" | "state" | "trigger"
+  > & {
     selectedValidators: Set<ValidatorDto["address"]>;
     onItemClick: (item: ValidatorDto) => void;
     onViewMoreClick?: () => void;
@@ -30,6 +36,7 @@ type SelectValidatorProps = PropsWithChildren<
 
 export const SelectValidator = ({
   state,
+  isLoading,
   onClose,
   onOpen,
   trigger,
@@ -157,6 +164,9 @@ export const SelectValidator = ({
           fetchNextPage: onLoadMore,
         }
       : {};
+  const emptyMessage = rest.searchValue?.trim().length
+    ? t("details.validators_no_results")
+    : t("details.validators_empty");
 
   return (
     <SelectModal
@@ -167,17 +177,24 @@ export const SelectValidator = ({
       onOpen={onOpen}
       trigger={trigger}
       state={state}
+      isLoading={isLoading}
       {...searchProps}
     >
-      <SelectValidatorList
-        {...data}
-        selectedValidators={selectedValidators}
-        multiSelect={multiSelect}
-        onItemClick={onItemClick}
-        onViewMoreClick={_onViewMoreClick}
-        selectedStake={selectedStake}
-        {...infiniteScrollProps}
-      />
+      {data.groupCounts.length ? (
+        <SelectValidatorList
+          {...data}
+          selectedValidators={selectedValidators}
+          multiSelect={multiSelect}
+          onItemClick={onItemClick}
+          onViewMoreClick={_onViewMoreClick}
+          selectedStake={selectedStake}
+          {...infiniteScrollProps}
+        />
+      ) : isLoading ? null : (
+        <Box className={emptyState}>
+          <Text variant={{ type: "muted" }}>{emptyMessage}</Text>
+        </Box>
+      )}
 
       {children}
     </SelectModal>

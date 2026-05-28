@@ -156,6 +156,8 @@
     "validators_view_all": "Tout voir",
     "validators_inactive": "Inactif",
     "validators_jailed": "Banni",
+    "validators_empty": "Aucun validateur disponible",
+    "validators_no_results": "Aucun validateur trouvé",
     "validators_staked_balance": "Solde validateur",
     "validators_voting_power": "Droit de vote",
     "validators_address": "Adresse",

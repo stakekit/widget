@@ -46,6 +46,7 @@ import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
+import { useDebouncedValue } from "../../../../hooks/use-debounced-value";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
@@ -177,7 +178,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const [tokenSearch, setTokenSearch] = useState("");
   const deferredTokenSearch = useDeferredValue(tokenSearch);
   const [validatorSearch, setValidatorSearch] = useState("");
-  const deferredValidatorSearch = useDeferredValue(validatorSearch);
+  const normalizedValidatorSearch = validatorSearch.trim();
+  const debouncedValidatorSearch = useDebouncedValue(
+    normalizedValidatorSearch,
+    300
+  );
+  const validatorSearchDebouncing =
+    normalizedValidatorSearch !== debouncedValidatorSearch;
 
   const multiYields = useStreamMultiYields(
     useMemo(() => availableYields.orDefault([]), [availableYields])
@@ -327,7 +334,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     enabled: shouldFetchValidators,
     yieldId: selectedStake.extract()?.id,
     network: selectedStake.extract()?.token.network,
-    search: deferredValidatorSearch,
+    search: debouncedValidatorSearch,
   });
 
   const initialValidatorSelectionYieldIdRef = useRef<string | null>(null);
@@ -648,6 +655,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     tokenBalancesScanLoading ||
     initYieldRes.isLoading ||
     yieldOpportunityLoading ||
+    validatorSearchDebouncing ||
     (shouldFetchValidators && yieldValidators.isLoading);
 
   const footerIsLoading =

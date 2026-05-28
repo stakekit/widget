@@ -1,4 +1,4 @@
-import { HttpResponse, http } from "msw";
+import { delay, HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
 import {
   getYieldValidatorQueryKey,
@@ -381,5 +381,94 @@ describe("validator loading", () => {
 
     expect(calls).toContainEqual({ name: "searched", address: null });
     expect(calls).toContainEqual({ name: null, address: "searched" });
+  });
+
+  it("keeps previous validators while a new search is loading", async ({
+    worker,
+  }) => {
+    const defaultValidator = yieldApiValidatorFixture({
+      address: "default-address",
+      name: "Default Validator",
+      preferred: true,
+    });
+    const searchedValidator = yieldApiValidatorFixture({
+      address: "searched-address",
+      name: "Searched Validator",
+    });
+
+    worker.use(
+      http.get(
+        `${yieldApiUrl}/v1/yields/:yieldId/validators`,
+        async ({ request }) => {
+          const url = new URL(request.url);
+          const name = url.searchParams.get("name");
+          const address = url.searchParams.get("address");
+          const preferred = url.searchParams.get("preferred");
+
+          await delay(50);
+
+          if (name === "searched") {
+            return HttpResponse.json({
+              items: [searchedValidator],
+              total: 1,
+              offset: 0,
+              limit: 100,
+            });
+          }
+
+          if (address === "searched") {
+            return HttpResponse.json({
+              items: [],
+              total: 0,
+              offset: 0,
+              limit: 100,
+            });
+          }
+
+          if (preferred === "false") {
+            return HttpResponse.json({
+              items: [],
+              total: 0,
+              offset: 0,
+              limit: Number(url.searchParams.get("limit") ?? 100),
+            });
+          }
+
+          return HttpResponse.json({
+            items: [defaultValidator],
+            total: 1,
+            offset: 0,
+            limit: 100,
+          });
+        }
+      )
+    );
+
+    const { result, rerender } = await renderHook(
+      (props) =>
+        useYieldValidators({
+          yieldId: "yield-1",
+          network: "ethereum",
+          search: props?.search,
+        }),
+      {
+        initialProps: { search: "" },
+        wrapper: Wrapper,
+      }
+    );
+
+    await expect
+      .poll(() => result.current.data?.map((validator) => validator.address))
+      .toEqual(["default-address"]);
+
+    await rerender({ search: "searched" });
+
+    expect(result.current.data?.map((validator) => validator.address)).toEqual([
+      "default-address",
+    ]);
+
+    await expect
+      .poll(() => result.current.data?.map((validator) => validator.address))
+      .toEqual(["searched-address"]);
   });
 });

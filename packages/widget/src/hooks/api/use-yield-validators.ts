@@ -1,4 +1,8 @@
-import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  type QueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
 import type { ValidatorDto } from "../../domain/types/validators";
 import type { ValidatorsConfig } from "../../domain/types/yields";
 import { filterValidators, type Yield } from "../../domain/types/yields";
@@ -367,6 +371,7 @@ export const useYieldValidators = ({
       search,
     }),
     enabled: enabled && !!yieldId,
+    placeholderData: keepPreviousData,
     select: (data) => data.pages.flatMap((page) => page.validators),
   });
 };
