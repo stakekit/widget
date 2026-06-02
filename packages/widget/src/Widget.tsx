@@ -24,6 +24,7 @@ import { AnimatedActivityPage } from "./pages/details/activity-page/activity.pag
 import { Details } from "./pages/details/details-page/details.page";
 import { AnimatedEarnPage } from "./pages/details/earn-page/earn.page";
 import { AnimatedPositionsPage } from "./pages/details/positions-page/positions.page";
+import { KycGatePage } from "./pages/kyc/kyc-gate.page";
 import { PositionDetailsPage } from "./pages/position-details";
 import { StakeReviewPage } from "./pages/review";
 import { ActionReviewPage } from "./pages/review/pages/action-review.page";
@@ -133,6 +134,7 @@ export const Widget = () => {
 
                     {/* Stake flow */}
                     <Route>
+                      <Route path="kyc" element={<KycGatePage />} />
                       <Route path="review" element={<StakeReviewPage />} />
                       <Route path="steps" element={<StakeStepsPage />} />
                       <Route path="complete" element={<StakeCompletePage />} />

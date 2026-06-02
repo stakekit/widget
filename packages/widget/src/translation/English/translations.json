@@ -1,4 +1,22 @@
 {
+  "kyc": {
+    "modal_title": "Identity verification",
+    "not_started": {
+      "title": "Identity verification required",
+      "description": "This opportunity requires you to verify your identity before you can continue.",
+      "cta": "Verify identity"
+    },
+    "pending": {
+      "title": "Verification in progress",
+      "description": "Your identity verification is being reviewed. This can take a little while — you can resume with the provider if you haven't finished.",
+      "cta": "Continue verification"
+    },
+    "rejected": {
+      "title": "Verification unsuccessful",
+      "description": "We couldn't verify your identity. Please try again with the verification provider.",
+      "cta": "Retry verification"
+    }
+  },
   "shared": {
     "stake_kit": "Yield.xyz",
     "max": "Max",

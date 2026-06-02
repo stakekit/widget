@@ -1,4 +1,22 @@
 {
+  "kyc": {
+    "modal_title": "Vérification d'identité",
+    "not_started": {
+      "title": "Vérification d'identité requise",
+      "description": "Cette opportunité nécessite la vérification de votre identité avant de continuer.",
+      "cta": "Vérifier mon identité"
+    },
+    "pending": {
+      "title": "Vérification en cours",
+      "description": "Votre vérification d'identité est en cours d'examen. Cela peut prendre un moment — vous pouvez la reprendre avec le prestataire si elle n'est pas terminée.",
+      "cta": "Continuer la vérification"
+    },
+    "rejected": {
+      "title": "Vérification échouée",
+      "description": "Nous n'avons pas pu vérifier votre identité. Veuillez réessayer avec le prestataire de vérification.",
+      "cta": "Réessayer la vérification"
+    }
+  },
   "shared": {
     "stake_kit": "Yield.xyz",
     "max": "Max",
