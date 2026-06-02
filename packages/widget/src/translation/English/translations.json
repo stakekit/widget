@@ -1,6 +1,7 @@
 {
   "kyc": {
     "modal_title": "Identity verification",
+    "close": "Close",
     "not_started": {
       "title": "Identity verification required",
       "description": "This opportunity requires you to verify your identity before you can continue.",

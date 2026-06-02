@@ -1,5 +1,6 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { SettingsContext } from "../../../providers/settings";
 import { id } from "../../../styles/theme/ids";
 import { Box } from "../../atoms/box";
@@ -21,6 +22,7 @@ export const KycIframeModal = ({
   title,
 }: KycIframeModalProps) => {
   const portalContainer = useContext(SettingsContext)?.portalContainer;
+  const { t } = useTranslation();
 
   return (
     <Root open={open} onOpenChange={onOpenChange}>
@@ -44,7 +46,11 @@ export const KycIframeModal = ({
                 <Text variant={{ weight: "bold", size: "large" }}>{title}</Text>
               </Title>
 
-              <Box as="button" onClick={() => onOpenChange(false)}>
+              <Box
+                as="button"
+                onClick={() => onOpenChange(false)}
+                aria-label={t("kyc.close")}
+              >
                 <XIcon />
               </Box>
             </Box>
