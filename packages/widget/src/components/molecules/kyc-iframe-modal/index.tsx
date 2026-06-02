@@ -7,7 +7,7 @@ import { XIcon } from "../../atoms/icons/x-icon";
 import { Text } from "../../atoms/typography/text";
 import { container, content, iframe, overlay } from "./styles.css";
 
-export type KycIframeModalProps = {
+type KycIframeModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   url: string;

@@ -14,18 +14,18 @@ export enum KycMode {
   OauthRedirect = "oauth_redirect",
 }
 
-export enum KycAccreditation {
+enum KycAccreditation {
   Retail = "retail",
   QualifiedPurchaser = "qualified_purchaser",
   Accredited = "accredited",
 }
 
-export enum KycSubjectType {
+enum KycSubjectType {
   Kyc = "KYC",
   Kyb = "KYB",
 }
 
-export interface YieldKycEligibility {
+interface YieldKycEligibility {
   countries?: string[];
   usPersonAllowed?: boolean;
   accreditation?: KycAccreditation;
@@ -51,7 +51,7 @@ type RequirementsWithKyc = {
   readonly kyc?: YieldKycMetadata;
 };
 
-export type YieldKycRequirement = {
+type YieldKycRequirement = {
   required: boolean;
   kyc?: YieldKycMetadata;
   legacyKycUrl?: string;
