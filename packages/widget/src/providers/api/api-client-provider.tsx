@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { config } from "../../config";
 import { useSettings } from "../settings";
 import { type ApiClient, createApiClient } from "./api-client";
@@ -18,8 +18,6 @@ export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
       }),
     [apiKey, baseUrl, yieldsApiUrl]
   );
-
-  useEffect(() => () => void apiClient.dispose(), [apiClient]);
 
   return <Context.Provider value={apiClient}>{children}</Context.Provider>;
 };

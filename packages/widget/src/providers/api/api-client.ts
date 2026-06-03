@@ -21,6 +21,8 @@ type RunOptions = {
   readonly signal?: AbortSignal;
 };
 
+const runtime = ManagedRuntime.make(FetchHttpClient.layer);
+
 const inspectResponse = ({
   response,
 }: {
@@ -66,8 +68,6 @@ const configureClient = ({
     HttpClient.tap((response) => inspectResponse({ response }))
   );
 
-type ApiRuntime = ManagedRuntime.ManagedRuntime<HttpClient.HttpClient, never>;
-
 type BoundOperation<Operation> = Operation extends (
   ...args: infer Args
 ) => Effect.Effect<infer A, infer _E>
@@ -77,7 +77,6 @@ type BoundOperation<Operation> = Operation extends (
 const bindOperation = <
   Operation extends (...args: never[]) => Effect.Effect<unknown, unknown>,
 >(
-  runtime: ApiRuntime,
   operation: Operation,
   runOptions?: RunOptions
 ): BoundOperation<Operation> =>
@@ -90,45 +89,36 @@ const bindOperation = <
 const bindLegacyApi = ({
   api,
   runOptions,
-  runtime,
 }: {
   readonly api: LegacyApi.LegacyApi;
   readonly runOptions?: RunOptions;
-  readonly runtime: ApiRuntime;
 }) => ({
   TokenControllerGetTokenBalances: bindOperation(
-    runtime,
     api.TokenControllerGetTokenBalances,
     runOptions
   ),
   TokenControllerGetTokenPrices: bindOperation(
-    runtime,
     api.TokenControllerGetTokenPrices,
     runOptions
   ),
   TokenControllerGetTokens: bindOperation(
-    runtime,
     api.TokenControllerGetTokens,
     runOptions
   ),
   TokenControllerTokenBalancesScan: bindOperation(
-    runtime,
     api.TokenControllerTokenBalancesScan,
     runOptions
   ),
   TransactionControllerGetTransactionVerificationMessageForNetwork:
     bindOperation(
-      runtime,
       api.TransactionControllerGetTransactionVerificationMessageForNetwork,
       runOptions
     ),
   YieldControllerGetSingleYieldRewardsSummary: bindOperation(
-    runtime,
     api.YieldControllerGetSingleYieldRewardsSummary,
     runOptions
   ),
   YieldControllerYieldOpportunity: bindOperation(
-    runtime,
     api.YieldControllerYieldOpportunity,
     runOptions
   ),
@@ -137,74 +127,56 @@ const bindLegacyApi = ({
 const bindYieldApi = ({
   api,
   runOptions,
-  runtime,
 }: {
   readonly api: YieldApi.YieldApi;
   readonly runOptions?: RunOptions;
-  readonly runtime: ApiRuntime;
 }) => ({
   ActionsControllerEnterYield: bindOperation(
-    runtime,
     api.ActionsControllerEnterYield,
     runOptions
   ),
   ActionsControllerExitYield: bindOperation(
-    runtime,
     api.ActionsControllerExitYield,
     runOptions
   ),
   ActionsControllerGetActions: bindOperation(
-    runtime,
     api.ActionsControllerGetActions,
     runOptions
   ),
   ActionsControllerManageYield: bindOperation(
-    runtime,
     api.ActionsControllerManageYield,
     runOptions
   ),
-  HealthControllerHealth: bindOperation(
-    runtime,
-    api.HealthControllerHealth,
-    runOptions
-  ),
+  HealthControllerHealth: bindOperation(api.HealthControllerHealth, runOptions),
   NetworksControllerGetNetworks: bindOperation(
-    runtime,
     api.NetworksControllerGetNetworks,
     runOptions
   ),
   TransactionsControllerGetTransaction: bindOperation(
-    runtime,
     api.TransactionsControllerGetTransaction,
     runOptions
   ),
   TransactionsControllerSubmitTransaction: bindOperation(
-    runtime,
     api.TransactionsControllerSubmitTransaction,
     runOptions
   ),
   TransactionsControllerSubmitTransactionHash: bindOperation(
-    runtime,
     api.TransactionsControllerSubmitTransactionHash,
     runOptions
   ),
   YieldsControllerGetAggregateBalances: bindOperation(
-    runtime,
     api.YieldsControllerGetAggregateBalances,
     runOptions
   ),
   YieldsControllerGetYield: bindOperation(
-    runtime,
     api.YieldsControllerGetYield,
     runOptions
   ),
   YieldsControllerGetYieldBalances: bindOperation(
-    runtime,
     api.YieldsControllerGetYieldBalances,
     runOptions
   ),
   YieldsControllerGetYieldValidators: bindOperation(
-    runtime,
     api.YieldsControllerGetYieldValidators,
     runOptions
   ),
@@ -213,16 +185,14 @@ const bindYieldApi = ({
 const bindApiClients = ({
   legacyApi,
   runOptions,
-  runtime,
   yieldApi,
 }: {
   readonly legacyApi: LegacyApi.LegacyApi;
   readonly runOptions?: RunOptions;
-  readonly runtime: ApiRuntime;
   readonly yieldApi: YieldApi.YieldApi;
 }) => ({
-  legacy: bindLegacyApi({ api: legacyApi, runOptions, runtime }),
-  yield: bindYieldApi({ api: yieldApi, runOptions, runtime }),
+  legacy: bindLegacyApi({ api: legacyApi, runOptions }),
+  yield: bindYieldApi({ api: yieldApi, runOptions }),
 });
 
 export const createApiClient = ({
@@ -230,7 +200,6 @@ export const createApiClient = ({
   baseUrl,
   yieldsApiUrl,
 }: WidgetApiClientOptions) => {
-  const runtime = ManagedRuntime.make(FetchHttpClient.layer);
   const baseClient = runtime.runSync(HttpClient.HttpClient);
 
   const legacyHttpClient = configureClient({
@@ -245,13 +214,12 @@ export const createApiClient = ({
   });
   const legacyApi = LegacyApi.make(legacyHttpClient);
   const yieldApi = YieldApi.make(yieldHttpClient);
-  const boundClients = bindApiClients({ legacyApi, runtime, yieldApi });
+  const boundClients = bindApiClients({ legacyApi, yieldApi });
 
   return {
     ...boundClients,
     withRunOptions: (runOptions: RunOptions) =>
-      bindApiClients({ legacyApi, runOptions, runtime, yieldApi }),
-    dispose: () => runtime.dispose(),
+      bindApiClients({ legacyApi, runOptions, yieldApi }),
   };
 };
 
