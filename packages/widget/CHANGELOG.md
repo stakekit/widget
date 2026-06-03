@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.271](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.270...@stakekit/widget@0.0.271) (2026-06-03)
+
+
+### Features
+
+* **widget:** migrate to yield API balances ([#516](https://github.com/stakekit/widget/issues/516)) ([e7229e5](https://github.com/stakekit/widget/commit/e7229e5dfd74f151678306dc53fb3884dbfb21fc))
+
 ## 0.0.270
 
 ### Patch Changes
