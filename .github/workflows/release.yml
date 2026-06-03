@@ -82,4 +82,4 @@ jobs:
           mise install
           pnpm install --frozen-lockfile
           pnpm exec turbo --filter=@stakekit/widget build
-          npm publish "$PACKAGE_DIR"
+          npm publish "./$PACKAGE_DIR"
