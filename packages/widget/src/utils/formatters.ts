@@ -1,4 +1,4 @@
-import type BigNumber from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
@@ -105,6 +105,38 @@ export const getFeesInUSD = ({
         }`,
       ""
     );
+
+const compactUsdFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+const compactNumberFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+export const formatCompactNumber = (
+  value: string | number | null | undefined
+) => {
+  if (value == null || value === "") return "-";
+
+  const amount = BigNumber(value);
+
+  if (!amount.isFinite()) return "-";
+
+  return compactNumberFormatter.format(amount.toNumber());
+};
+
+export const formatCompactUsd = (value: string | number | null | undefined) => {
+  if (value == null || value === "") return "-";
+
+  const amount = BigNumber(value);
+
+  if (!amount.isFinite()) return "-";
+
+  return `$${compactUsdFormatter.format(amount.toNumber())}`;
+};
 
 export const capitalizeFirstLetters = (text: string): string =>
   Maybe.fromNullable(text)

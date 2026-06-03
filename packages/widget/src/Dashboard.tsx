@@ -16,7 +16,8 @@ import { ActivityTabPage } from "./pages-dashboard/activity";
 import { ActivityDetailsPage } from "./pages-dashboard/activity/activity-details.page";
 import { DashboardWrapper } from "./pages-dashboard/common/components/wrapper";
 import { OverviewPage } from "./pages-dashboard/overview";
-import { EarnPage } from "./pages-dashboard/overview/earn-page";
+import { EarnPageContent } from "./pages-dashboard/overview/earn-page";
+import { ManagePage } from "./pages-dashboard/overview/manage.page";
 import { PositionDetailsPage } from "./pages-dashboard/position-details";
 import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
 import { DashboardProvider } from "./pages-dashboard/providers/dashboard-context";
@@ -26,9 +27,9 @@ export const Dashboard = () => {
     <DashboardProvider>
       <Routes>
         <Route element={<DashboardWrapper />}>
-          {/* Overview Tab */}
+          {/* Earn Tab */}
           <Route element={<OverviewPage />}>
-            <Route index element={<EarnPage />} />
+            <Route index element={<EarnPageContent />} />
 
             <Route element={<ConnectedCheck />}>
               <Route path="review" element={<StakeReviewPage />} />
@@ -36,6 +37,9 @@ export const Dashboard = () => {
               <Route path="complete" element={<StakeCompletePage />} />
             </Route>
           </Route>
+
+          {/* Manage Tab */}
+          <Route path="manage" element={<ManagePage />} />
 
           {/* Position Details */}
           <Route

@@ -1,3 +1,5 @@
+import { Match } from "effect";
+import { startsWith } from "effect/String";
 import { useNavigate } from "react-router";
 import { Box } from "../../../../components/atoms/box";
 import { Divider } from "../../../../components/atoms/divider";
@@ -8,14 +10,11 @@ import { combineRecipeWithVariant } from "../../../../utils/styles";
 import { divider, tabsContainer, tabsWrapper } from "./styles.css";
 import { Tab } from "./tab";
 
-type TabsList =
-  | "overview"
-  //  "rewards" |
-  | "activity";
+type TabsList = "earn" | "manage" | "activity";
 
 const TABS_MAP = {
-  overview: "/",
-  // rewards: "/rewards",
+  earn: "/",
+  manage: "/manage",
   activity: "/activity",
 };
 
@@ -33,11 +32,11 @@ export const Tabs = () => {
     navigate(TABS_MAP[selected]);
   };
 
-  const selectedTab = current.pathname.startsWith("/rewards")
-    ? "rewards"
-    : current.pathname.startsWith("/activity")
-      ? "activity"
-      : "overview";
+  const selectedTab = Match.value(current.pathname).pipe(
+    Match.when(startsWith("/activity"), () => "activity"),
+    Match.when(startsWith("/manage"), () => "manage"),
+    Match.orElse(() => "earn")
+  );
 
   const { variant } = useSettings();
 
@@ -48,16 +47,16 @@ export const Tabs = () => {
         className={combineRecipeWithVariant({ rec: tabsContainer, variant })}
       >
         <Tab
-          isSelected={selectedTab === "overview"}
-          onTabPress={() => onTabPress("overview")}
-          variant="overview"
+          isSelected={selectedTab === "earn"}
+          onTabPress={() => onTabPress("earn")}
+          variant="earn"
         />
 
-        {/* <Tab
-          isSelected={selectedTab === "rewards"}
-          onTabPress={() => onTabPress("rewards")}
-          variant="rewards"
-        /> */}
+        <Tab
+          isSelected={selectedTab === "manage"}
+          onTabPress={() => onTabPress("manage")}
+          variant="manage"
+        />
 
         <Tab
           isSelected={selectedTab === "activity"}

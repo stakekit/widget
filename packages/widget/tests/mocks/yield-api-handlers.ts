@@ -107,6 +107,62 @@ export const getYieldApiMock = () => [
     });
   }),
 
+  http.get(
+    yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),
+    async ({ params }) => {
+      await delay();
+
+      return HttpResponse.json({
+        yieldId: String(params.yieldId),
+        total: 3,
+        offset: 0,
+        limit: 20,
+        interval: "day",
+        from: new Date(0).toISOString(),
+        to: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+        items: [
+          { timestamp: new Date(0).toISOString(), rewardRate: "0.04" },
+          {
+            timestamp: new Date(24 * 60 * 60 * 1000).toISOString(),
+            rewardRate: "0.045",
+          },
+          {
+            timestamp: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+            rewardRate: "0.05",
+          },
+        ],
+      });
+    }
+  ),
+
+  http.get(
+    yieldApiRoute("/v1/yields/:yieldId/tvl/history"),
+    async ({ params }) => {
+      await delay();
+
+      return HttpResponse.json({
+        yieldId: String(params.yieldId),
+        total: 3,
+        offset: 0,
+        limit: 20,
+        interval: "day",
+        from: new Date(0).toISOString(),
+        to: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+        items: [
+          { timestamp: new Date(0).toISOString(), tvlUsd: "12000000" },
+          {
+            timestamp: new Date(24 * 60 * 60 * 1000).toISOString(),
+            tvlUsd: "12500000",
+          },
+          {
+            timestamp: new Date(2 * 24 * 60 * 60 * 1000).toISOString(),
+            tvlUsd: "13100000",
+          },
+        ],
+      });
+    }
+  ),
+
   http.post(yieldApiRoute("/v1/yields/balances"), async () => {
     await delay();
 

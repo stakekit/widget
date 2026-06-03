@@ -561,6 +561,8 @@
   "dashboard": {
     "details": {
       "tabs": {
+        "earn": "Earn",
+        "manage": "Manage",
         "overview": "Aperçu",
         "rewards": "Récompenses",
         "activity": "Activité"
@@ -572,6 +574,25 @@
       "positions_rewards": "Récompenses",
       "positions_connect_wallet": "Connectez un portefeuille pour voir vos positions",
       "activity_connect_wallet": "Connectez un portefeuille pour voir votre activité"
+    },
+    "earn_details": {
+      "empty": "Sélectionnez un rendement pour voir les détails",
+      "apy": "APY",
+      "tvl": "TVL",
+      "risk": "Risque",
+      "reward_rate": "Taux de récompense",
+      "about": "À propos",
+      "details": "Détails",
+      "network": "Réseau",
+      "provider": "Fournisseur",
+      "reward_token": "Token de récompense",
+      "cooldown": "Délai de retrait",
+      "cooldown_days_one": "{{count}} jour",
+      "cooldown_days_other": "{{count}} jours",
+      "reward_claiming": "Réclamation des récompenses",
+      "none": "Aucun",
+      "auto_compounding": "Auto-compounding",
+      "manual": "Manuel"
     },
     "position_details_info": {
       "balances": "Soldes"

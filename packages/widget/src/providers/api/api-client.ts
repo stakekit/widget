@@ -172,6 +172,16 @@ const bindYieldApi = ({
     api.YieldsControllerGetYield,
     runOptions
   ),
+  YieldsControllerGetYieldRewardRateHistory: bindOperation(
+    runtime,
+    api.YieldsControllerGetYieldRewardRateHistory,
+    runOptions
+  ),
+  YieldsControllerGetYieldTvlHistory: bindOperation(
+    runtime,
+    api.YieldsControllerGetYieldTvlHistory,
+    runOptions
+  ),
   YieldsControllerGetYieldBalances: bindOperation(
     api.YieldsControllerGetYieldBalances,
     runOptions

@@ -181,6 +181,8 @@
   "dashboard": {
     "details": {
       "tabs": {
+        "earn": "Earn",
+        "manage": "Manage",
         "overview": "Overview",
         "rewards": "Rewards",
         "activity": "Activity"
@@ -192,6 +194,25 @@
       "positions_rewards": "Rewards",
       "positions_connect_wallet": "Connect wallet to see your positions",
       "activity_connect_wallet": "Connect wallet to see your activity"
+    },
+    "earn_details": {
+      "empty": "Select a yield to see details",
+      "apy": "APY",
+      "tvl": "TVL",
+      "risk": "Risk",
+      "reward_rate": "Reward rate",
+      "about": "About",
+      "details": "Details",
+      "network": "Network",
+      "provider": "Provider",
+      "reward_token": "Reward token",
+      "cooldown": "Cooldown",
+      "cooldown_days_one": "{{count}} day",
+      "cooldown_days_other": "{{count}} days",
+      "reward_claiming": "Reward claiming",
+      "none": "None",
+      "auto_compounding": "Auto-compounding",
+      "manual": "Manual"
     },
     "position_details_info": {
       "balances": "Balances"

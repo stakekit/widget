@@ -119,6 +119,7 @@ export const setup = async (worker: TestWorker) => {
       documentation:
         "https://docs.stakek.it/docs/avalanche-avax-liquid-staking",
       supportsLedgerWalletApi: true,
+      supportsCampaigns: false,
     },
     status: {
       enter: true,

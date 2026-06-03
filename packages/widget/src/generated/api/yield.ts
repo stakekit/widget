@@ -3840,6 +3840,7 @@ export type YieldsControllerGetBalanceHistoryParams = {
   readonly from?: string;
   readonly to?: string;
   readonly blockNumber?: number;
+  readonly feeConfigurationId?: string;
   readonly interval?: "block" | "hour" | "day" | "week";
   readonly sort?: "asc" | "desc";
   readonly limit?: number;
@@ -4652,6 +4653,7 @@ export const make = (
           from: options.params["from"] as any,
           to: options.params["to"] as any,
           blockNumber: options.params["blockNumber"] as any,
+          feeConfigurationId: options.params["feeConfigurationId"] as any,
           interval: options.params["interval"] as any,
           sort: options.params["sort"] as any,
           limit: options.params["limit"] as any,

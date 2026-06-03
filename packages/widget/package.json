@@ -109,6 +109,7 @@
     "@types/lodash.uniqwith": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
+    "@types/react-is": "catalog:",
     "@vanilla-extract/css": "catalog:",
     "@vanilla-extract/dynamic": "catalog:",
     "@vanilla-extract/recipes": "catalog:",
@@ -156,7 +157,9 @@
     "vitest-browser-react": "catalog:",
     "wagmi": "catalog:",
     "xstate": "catalog:",
-    "yaml": "catalog:"
+    "yaml": "catalog:",
+    "react-is": "catalog:",
+    "recharts": "catalog:"
   },
   "msw": {
     "workerDirectory": [

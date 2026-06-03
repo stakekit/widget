@@ -9,7 +9,7 @@ import {
   isMorphoProvider,
   RewardTokenDetails,
 } from "../../../../../components/molecules/reward-token-details";
-import { getYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
+import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
 import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
@@ -20,11 +20,16 @@ export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
   const { t } = useTranslation();
 
-  const { rewardToken, estimatedRewards, rewardsTokenSymbol, selectedStake } =
-    useEarnPageContext();
+  const {
+    rewardToken,
+    estimatedRewards,
+    rewardsTokenSymbol,
+    selectedStake,
+    selectedValidators,
+  } = useEarnPageContext();
 
-  const rewardRateDetails = selectedStake.chainNullable(
-    getYieldRewardRateDetails
+  const rewardRateDetails = selectedStake.chainNullable((yieldDto) =>
+    getEffectiveYieldRewardRateDetails({ selectedValidators, yieldDto })
   );
 
   const earnYearly = estimatedRewards.mapOrDefault(

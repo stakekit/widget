@@ -2,283 +2,84 @@ import { HttpResponse, http } from "msw";
 import { setupWorker } from "msw/browser";
 import { config } from "./config";
 
-const yieldId = "ethereum-matic-native-staking";
 const getApiRoute = (baseUrl: string, path: string) =>
   new URL(path.startsWith("/") ? path : `/${path}`, baseUrl).toString();
-const legacyApiRoute = (path: string) => getApiRoute(config.env.apiUrl, path);
 const yieldApiRoute = (path: string) =>
   getApiRoute(config.env.yieldsApiUrl, path);
 
-const maticToken = {
-  address: "0x0000000000000000000000000000000000001010",
-  symbol: "POL",
-  name: "Polygon Ecosystem Token",
-  decimals: 18,
-  network: "ethereum",
-  coinGeckoId: "matic-network",
-  logoURI: "https://assets.stakek.it/tokens/matic.svg",
-  isPoints: false,
-};
+const rewardRateHistory = Array.from({ length: 90 }, (_, index) => {
+  const date = new Date("2026-03-04T00:00:00.000Z");
+  date.setUTCDate(date.getUTCDate() + index);
 
-const morphoToken = {
-  address: "0x58d97b57bb95320f9a05dc918aef65434969c2b3",
-  symbol: "MORPHO",
-  name: "Morpho Token",
-  decimals: 18,
-  network: "ethereum",
-  isPoints: false,
-};
+  const wave = Math.sin(index / 5) * 0.0025;
+  const drift = index > 45 ? (index - 45) * -0.00005 : index * 0.000015;
+  const rebound = index > 78 ? (index - 78) * 0.00045 : 0;
+  const rewardRate = Math.max(0.0481, 0.0525 + wave + drift + rebound);
 
-const campaignToken = {
-  address: "0x58d97b57bb95320f9a05dc918aef65434969c2b2",
-  symbol: "U",
-  name: "United Stables",
-  decimals: 18,
-  network: "ethereum",
-  isPoints: false,
-};
+  return {
+    timestamp: date.toISOString(),
+    rewardRate: rewardRate.toFixed(6),
+  };
+});
 
-const discoveryRewardRate = {
-  total: 0.045507546653006034,
-  rateType: "APY",
-  components: [
-    {
-      rate: 0.0028386677110199426,
-      rateType: "APR",
-      token: morphoToken,
-      yieldSource: "protocol_incentive",
-      description: "MORPHO rewards",
-    },
-    {
-      rate: 0.002,
-      rateType: "APR",
-      token: campaignToken,
-      yieldSource: "campaign_incentive",
-      description: "U rewards",
-    },
-    {
-      rate: 0.042668878941986094,
-      rateType: "APY",
-      token: campaignToken,
-      yieldSource: "staking",
-      description: "Native staking APY",
-    },
-  ],
-};
+const tvlHistory = Array.from({ length: 90 }, (_, index) => {
+  const date = new Date("2026-03-04T00:00:00.000Z");
+  date.setUTCDate(date.getUTCDate() + index);
 
-const personalizedRewardRate = {
-  total: 0.04530754665300604,
-  rateType: "APY",
-  components: [
-    {
-      rate: 0.0028386677110199426,
-      rateType: "APR",
-      token: morphoToken,
-      yieldSource: "protocol_incentive",
-      description: "MORPHO rewards",
-    },
-    {
-      rate: 0.0018,
-      rateType: "APR",
-      token: campaignToken,
-      yieldSource: "campaign_incentive",
-      description: "U rewards",
-    },
-    {
-      rate: 0.042668878941986094,
-      rateType: "APY",
-      token: campaignToken,
-      yieldSource: "staking",
-      description: "Native staking APY",
-    },
-  ],
-};
+  const wave = Math.sin(index / 6) * 280_000;
+  const drift = index * 34_000;
+  const tvlUsd = Math.max(8_500_000, 12_000_000 + wave + drift);
 
-const legacyYieldDto = {
-  id: yieldId,
-  token: maticToken,
-  tokens: [maticToken],
-  rewardRate: discoveryRewardRate.total,
-  rewardType: "apy",
-  apy: discoveryRewardRate.total,
-  feeConfigurations: [],
-  args: {
-    enter: {
-      addresses: {
-        address: {
-          required: true,
-          network: "ethereum",
-        },
-      },
-      args: {
-        amount: {
-          required: true,
-          minimum: 0,
-        },
-      },
-    },
-    exit: {
-      addresses: {
-        address: {
-          required: true,
-          network: "ethereum",
-        },
-      },
-      args: {
-        amount: {
-          required: true,
-          minimum: 0,
-        },
-      },
-    },
-  },
-  metadata: {
-    name: "Trust POL Staking",
-    description: "Local mock for campaign APY QA",
-    documentation: "https://trustwallet.com",
-    logoURI: "https://assets.stakek.it/tokens/matic.svg",
-    type: "staking",
-    token: maticToken,
-    tokens: [maticToken],
-    rewardTokens: [campaignToken, morphoToken],
-    rewardClaiming: "auto",
-    rewardSchedule: "day",
-    gasFeeToken: maticToken,
-    fee: {
-      enabled: false,
-      depositFee: false,
-      managementFee: false,
-      performanceFee: false,
-    },
-    provider: {
-      id: "benqi",
-      name: "Trust",
-      description: "",
-      externalLink: "https://trustwallet.com",
-      logoURI: "https://assets.stakek.it/providers/benqi.svg",
-    },
-    supportsLedgerWalletApi: true,
-    supportsMultipleValidators: false,
-  },
-  status: {
-    enter: true,
-    exit: true,
-  },
-  validators: [],
-};
+  return {
+    timestamp: date.toISOString(),
+    tvlUsd: tvlUsd.toFixed(2),
+  };
+});
 
-const yieldApiYieldDto = {
-  id: yieldId,
-  token: maticToken,
-  tokens: [maticToken],
-  inputTokens: [maticToken],
-  outputToken: maticToken,
-  network: "ethereum",
-  chainId: "1",
-  providerId: "benqi",
-  rewardRate: discoveryRewardRate,
-  metadata: {
-    name: "Trust POL Staking",
-    description: "Local mock for campaign APY QA",
-    documentation: "https://trustwallet.com",
-    logoURI: "https://assets.stakek.it/tokens/matic.svg",
-  },
-  mechanics: {
-    type: "staking",
-    gasFeeToken: maticToken,
-    rewardClaiming: "auto",
-    rewardSchedule: "day",
-    supportsLedgerWalletApi: true,
-    requiresValidatorSelection: false,
-    arguments: {
-      enter: {
-        fields: [
-          {
-            name: "amount",
-            type: "string",
-            label: "Amount",
-            required: true,
-            minimum: "0",
-          },
-        ],
-      },
-      exit: {
-        fields: [
-          {
-            name: "amount",
-            type: "string",
-            label: "Amount",
-            required: true,
-            minimum: "0",
-          },
-        ],
-      },
-    },
-  },
-  status: {
-    enter: true,
-    exit: true,
-  },
-};
+const getHistoryItemsForPeriod = <T>(items: T[], period: string | null) =>
+  period === "30d"
+    ? items.slice(-30)
+    : period === "1y" || period === "all"
+      ? items
+      : items.slice(-90);
 
 export const worker = setupWorker(
-  http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () =>
-    HttpResponse.json(legacyYieldDto)
+  http.get(
+    yieldApiRoute("/v1/yields/:yieldId/reward-rate/history"),
+    async ({ params, request }) => {
+      const url = new URL(request.url);
+      const period = url.searchParams.get("period");
+      const items = getHistoryItemsForPeriod(rewardRateHistory, period);
+
+      return HttpResponse.json({
+        yieldId: String(params.yieldId),
+        total: items.length,
+        offset: 0,
+        limit: items.length,
+        interval: "day",
+        from: items[0]?.timestamp,
+        to: items.at(-1)?.timestamp,
+        items,
+      });
+    }
   ),
-  http.get(yieldApiRoute(`/v1/yields/${yieldId}`), async () =>
-    HttpResponse.json(yieldApiYieldDto)
-  ),
-  http.post("*/v1/yields/balances", async () => {
-    return HttpResponse.json({
-      items: [
-        {
-          yieldId,
-          balances: [
-            {
-              address: "0x15775b23340c0f50e0428d674478b0e9d3d0a759",
-              amount: "1000251.8279906842",
-              amountRaw: "10002518279906842",
-              type: "active",
-              token: maticToken,
-              pendingActions: [],
-              amountUsd: "1000355.009527",
-              isEarning: true,
-            },
-          ],
-          rewardRate: personalizedRewardRate,
-        },
-      ],
-      errors: [],
-    });
-  }),
-  http.post("*/v1/balances", async () => {
-    return HttpResponse.json({
-      items: [
-        {
-          yieldId,
-          balances: [
-            {
-              address: "0x15775b23340c0f50e0428d674478b0e9d3d0a759",
-              amount: "1000251.8279906842",
-              amountRaw: "10002518279906842",
-              type: "active",
-              token: maticToken,
-              pendingActions: [],
-              amountUsd: "1000355.009527",
-              isEarning: true,
-            },
-          ],
-          rewardRate: personalizedRewardRate,
-        },
-      ],
-      errors: [],
-    });
-  }),
-  http.post("*/v1/actions/enter/estimate-gas", async () => {
-    return HttpResponse.json({
-      amount: "0.1",
-      token: maticToken,
-      gasLimit: "",
-    });
-  })
+  http.get(
+    yieldApiRoute("/v1/yields/:yieldId/tvl/history"),
+    async ({ params, request }) => {
+      const url = new URL(request.url);
+      const period = url.searchParams.get("period");
+      const items = getHistoryItemsForPeriod(tvlHistory, period);
+
+      return HttpResponse.json({
+        yieldId: String(params.yieldId),
+        total: items.length,
+        offset: 0,
+        limit: items.length,
+        interval: "day",
+        from: items[0]?.timestamp,
+        to: items.at(-1)?.timestamp,
+        items,
+      });
+    }
+  )
 );

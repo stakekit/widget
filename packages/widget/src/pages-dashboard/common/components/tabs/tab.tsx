@@ -11,7 +11,7 @@ import { tab, tabBorder, tabContainer, tabText } from "./styles.css";
 type Props = {
   isSelected: boolean;
   onTabPress: () => void;
-  variant: "overview" | "rewards" | "activity";
+  variant: "earn" | "manage" | "activity";
 };
 
 export const Tab = ({ isSelected, variant, onTabPress }: Props) => {

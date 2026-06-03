@@ -130,6 +130,40 @@ export type CampaignBudgetSpendStrategy =
   | "allow_underspend"
   | "spend_full_budget";
 export type CampaignStatus = "draft" | "active" | "paused" | "ended";
+export type StakeKitErrorDto = {
+  readonly message: string;
+  readonly code: number;
+  readonly type?: string;
+  readonly details?: {};
+  readonly path?: string;
+};
+export type CampaignAlertFlagsDto = {
+  readonly lowBudget: boolean;
+  readonly noQualifyingUsers: boolean;
+  readonly recentPayoutFailure: boolean;
+};
+export type CampaignBalanceSortField =
+  | "address"
+  | "qualified"
+  | "inputTokenBalance"
+  | "totalEarned"
+  | "totalPaid"
+  | "totalUnpaid";
+export type CampaignUserBalanceDto = {
+  readonly address: string;
+  readonly currentIndexedBalanceRaw: string | null;
+  readonly inputTokenBalance: string | null;
+  readonly cappedBalance: string;
+  readonly qualified: boolean;
+  readonly totalEarned: string;
+  readonly totalPaid: string;
+  readonly totalUnpaid: string;
+};
+export type CampaignBalanceFreshnessDto = {
+  readonly balancesAsOfHour: string;
+  readonly pricePerShareAsOf: string;
+  readonly vaultAggregatesComputed: boolean;
+};
 export type CampaignLiabilityDto = {
   readonly totalEarned: string;
   readonly totalPaid: string;
@@ -152,12 +186,16 @@ export type BudgetProjectionDto = {
 };
 export type UpdateCampaignUserPayoutEligibilityDto = {
   readonly isPayoutEligible: boolean;
+  readonly reason?: string;
 };
 export type CampaignUserPayoutEligibilityDto = {
   readonly campaignId: string;
   readonly address: string;
   readonly isPayoutEligible: boolean;
   readonly totalUnpaid: string;
+  readonly blacklistReason?: string | null;
+  readonly addedBy?: string;
+  readonly addedAt?: string;
 };
 export type CampaignUserEntitlementDto = {
   readonly campaignId: string;
@@ -181,6 +219,22 @@ export type CampaignPayoutItemStatus =
   | "submitted"
   | "settled"
   | "failed";
+export type SafeTransactionDetailDto = {
+  readonly batchKey: string;
+  readonly chainId: string | null;
+  readonly safeTxHash: string | null;
+  readonly executionTxHash: string | null;
+  readonly signaturesCollected: number | null;
+  readonly signaturesRequired: number | null;
+  readonly safeTxUiUrl: string | null;
+  readonly executionTxHashExplorerUrl: string | null;
+};
+export type PayoutRunBudgetStateDto = {
+  readonly totalBudget: string;
+  readonly remainingBefore: string;
+  readonly distributedInRun: string;
+  readonly remainingAfter: string;
+};
 export type CampaignPayoutAuditDto = {
   readonly campaignId: string;
   readonly campaignPayoutRunId: string;
@@ -194,6 +248,11 @@ export type WeeklyDistributionDto = {
   readonly totalReward: string;
   readonly qualifyingUsers: number;
 };
+export type EligibleUserSortField =
+  | "totalEarned"
+  | "totalUnpaid"
+  | "totalPaid"
+  | "cumulativeQualifiedBalance";
 export type EligibleUserDto = {
   readonly address: string;
   readonly totalEarned: string;
@@ -201,6 +260,54 @@ export type EligibleUserDto = {
   readonly totalUnpaid: string;
   readonly cumulativeQualifiedBalance: string;
 };
+export type HourlyAccrualSummaryDto = {
+  readonly timestamp: string;
+  readonly qualifyingUserCount: number;
+  readonly totalQualifyingTvl: string;
+  readonly hourlyBudgetAllocated: string;
+  readonly hourlyBudgetDistributed: string;
+  readonly ceilingActive: boolean;
+  readonly calculatedApr: number | null;
+  readonly pricePerShare: string | null;
+};
+export type AccrualHourSortField = "allocatedReward";
+export type UserHourlyAccrualDto = {
+  readonly address: string;
+  readonly rawBalance: string | null;
+  readonly cappedBalance: string;
+  readonly qualified: boolean;
+  readonly qualificationReason: string;
+  readonly allocatedReward: string;
+  readonly pricePerShareApplied: string | null;
+};
+export type UserHourlyAccrualHistoryDto = {
+  readonly hour: string;
+  readonly rawBalance: string | null;
+  readonly balance: string;
+  readonly qualified: boolean;
+  readonly qualificationReason: string;
+  readonly rewardEarned: string;
+  readonly cumulativeEarned: string;
+  readonly pricePerShareApplied: string | null;
+};
+export type CampaignPayoutEligibilitySummaryDto = {
+  readonly campaignId: string;
+  readonly qualifiedUserCount: number;
+  readonly blacklistedUserCount: number;
+  readonly totalUserCount: number;
+};
+export type BlacklistedAddressDto = {
+  readonly address: string;
+  readonly totalEarned: string;
+  readonly totalUnpaid: string;
+};
+export type CampaignAuditLogType =
+  | "blacklist_added"
+  | "blacklist_removed"
+  | "blacklist_reason_updated"
+  | "paused"
+  | "resumed"
+  | "acknowledged";
 export type CampaignConfigurationRequestType =
   | "create_campaign"
   | "update_configuration"
@@ -215,69 +322,17 @@ export type AcceptCampaignConfigurationRequestDto = {
 export type RejectCampaignConfigurationRequestDto = {
   readonly rejectionReason: string;
 };
-export type HourlyAccrualSummaryDto = {
-  readonly timestamp: string;
-  readonly qualifyingUserCount: number;
-  readonly totalQualifyingTvl: string;
-  readonly hourlyBudgetAllocated: string;
-  readonly hourlyBudgetDistributed: string;
-  readonly ceilingActive: boolean;
-  readonly calculatedApr?: number | null;
-  readonly pricePerShare?: string | null;
-};
-export type UserHourlyAccrualDto = {
-  readonly address: string;
-  readonly rawBalance?: string | null;
-  readonly cappedBalance: string;
-  readonly qualified: boolean;
-  readonly qualificationReason: string;
-  readonly allocatedReward: string;
-  readonly pricePerShareApplied?: string | null;
-};
-export type UserHourlyAccrualHistoryDto = {
-  readonly hour: string;
-  readonly rawBalance?: string | null;
-  readonly balance: string;
-  readonly qualified: boolean;
-  readonly qualificationReason: string;
-  readonly rewardEarned: string;
-  readonly cumulativeEarned: string;
-  readonly pricePerShareApplied?: string | null;
-};
-export type PayoutRunBudgetStateDto = {
-  readonly totalBudget: string;
-  readonly remainingBefore: string;
-  readonly distributedInRun: string;
-  readonly remainingAfter: string;
-};
-export type SafeTransactionDetailDto = {
-  readonly batchKey: string;
-  readonly chainId?: string | null;
-  readonly safeTxHash?: string | null;
-  readonly executionTxHash?: string | null;
-  readonly signaturesCollected?: number | null;
-  readonly signaturesRequired?: number | null;
-};
-export type CampaignPayoutEligibilitySummaryDto = {
-  readonly campaignId: string;
-  readonly qualifiedUserCount: number;
-  readonly blacklistedUserCount: number;
-  readonly totalUserCount: number;
-};
-export type CampaignUserBalanceDto = {
-  readonly address: string;
-  readonly currentIndexedBalanceRaw?: string | null;
-  readonly inputTokenBalance?: string | null;
-  readonly cappedBalance: string;
-  readonly qualified: boolean;
-  readonly totalEarned: string;
-  readonly totalPaid: string;
-  readonly totalUnpaid: string;
-};
-export type CampaignBalanceFreshnessDto = {
-  readonly balancesAsOfHour?: string;
-  readonly pricePerShareAsOf?: string;
-};
+export type CampaignAdminSortingOption =
+  | "createdAtAsc"
+  | "createdAtDesc"
+  | "updatedAtAsc"
+  | "updatedAtDesc"
+  | "startTimeAsc"
+  | "startTimeDesc"
+  | "endTimeAsc"
+  | "endTimeDesc"
+  | "statusAsc"
+  | "statusDesc";
 export type CreateMasterBannedRegionDto = {
   readonly country: string;
   readonly isMandatory: boolean;
@@ -374,13 +429,6 @@ export type UpdateKeyDto = {
   readonly expiresAt?: string;
   readonly info: string;
   readonly name: string;
-};
-export type StakeKitErrorDto = {
-  readonly message: string;
-  readonly code: number;
-  readonly type?: string;
-  readonly details?: {};
-  readonly path?: string;
 };
 export type HealthStatusDto = {
   readonly status: "OK" | "FAIL" | "DEGRADED";
@@ -619,6 +667,7 @@ export type YieldProviders =
   | "benqi"
   | "compound"
   | "lido"
+  | "marinade"
   | "sushi"
   | "yearn"
   | "ape"
@@ -1320,6 +1369,16 @@ export type CustomValidatorAddresses = {
   readonly integrationId: string;
   readonly validatorAddresses: ReadonlyArray<string>;
 };
+export type BalanceTransferEventDto = {
+  readonly blockTimestamp: string;
+  readonly blockNumber: number;
+  readonly network: string;
+  readonly address: string;
+  readonly contractAddress: string;
+  readonly transactionId: string;
+  readonly transferAmountWei: string;
+  readonly cumulativeBalanceWei: string;
+};
 export type YieldRewardsSummaryDto = {
   readonly total: string;
   readonly last24H: string;
@@ -1852,7 +1911,22 @@ export type CampaignBalanceTotalsDto = {
   readonly qualifyingUserCount: number;
   readonly safeAddress: string;
   readonly campaignStatus: CampaignStatus;
-  readonly nextPayoutDueAt?: string;
+  readonly nextPayoutDueAt: string;
+  readonly vaultTvl: string;
+  readonly totalInflows: string;
+  readonly totalOutflows: string;
+};
+export type PaginatedCampaignUserBalanceDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignUserBalanceDto>;
+};
+export type PaginatedCampaignUserPayoutEligibilityDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignUserPayoutEligibilityDto>;
 };
 export type CampaignPayoutRunDto = {
   readonly id: string;
@@ -1861,7 +1935,7 @@ export type CampaignPayoutRunDto = {
   readonly payoutWindowEnd: string;
   readonly actualWindowStart: string;
   readonly actualWindowEnd: string;
-  readonly cappedBudget: string;
+  readonly distributedAmount: string;
   readonly status: CampaignPayoutRunStatus;
   readonly currentStep: CampaignPayoutRunStep;
   readonly retryCount: number;
@@ -1869,24 +1943,11 @@ export type CampaignPayoutRunDto = {
   readonly startedAt?: string;
   readonly completedAt?: string;
   readonly merkleRoot?: string | null;
-};
-export type ProgrammaticPayoutRunDto = {
-  readonly id: string;
-  readonly campaignId: string;
-  readonly payoutWindowStart: string;
-  readonly payoutWindowEnd: string;
-  readonly actualWindowStart: string;
-  readonly actualWindowEnd: string;
-  readonly totalAmount: string;
   readonly recipientCount: number;
-  readonly status: CampaignPayoutRunStatus;
-  readonly currentStep: CampaignPayoutRunStep;
-  readonly safeTransactionHash?: string | null;
-  readonly executionTxHash?: string | null;
-  readonly preparedSafeTransactionMetadata?: {} | null;
-  readonly merkleRoot?: string | null;
-  readonly startedAt?: string;
-  readonly completedAt?: string;
+  readonly safeTransactionHash: string | null;
+  readonly executionTxHash: string | null;
+  readonly safeTransactionUiUrl: string | null;
+  readonly executionTxHashExplorerUrl: string | null;
 };
 export type CampaignPayoutItemDto = {
   readonly id: string;
@@ -1923,24 +1984,6 @@ export type PaginatedEligibleUserDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<EligibleUserDto>;
 };
-export type CampaignConfigurationRequestDto = {
-  readonly id: string;
-  readonly projectId: string;
-  readonly teamId: string;
-  readonly campaignId?: string | null;
-  readonly requestType: CampaignConfigurationRequestType;
-  readonly status: CampaignConfigurationRequestStatus;
-  readonly requestedBy: string;
-  readonly reviewedBy?: string | null;
-  readonly reviewedAt?: string;
-  readonly rejectionReason?: string | null;
-  readonly requestedChanges: { readonly [x: string]: unknown };
-  readonly previousValues?: {};
-  readonly version: number;
-  readonly metadata?: {};
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
 export type PaginatedHourlyAccrualSummaryDto = {
   readonly total: number;
   readonly offset: number;
@@ -1959,11 +2002,39 @@ export type PaginatedUserHourlyAccrualHistoryDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<UserHourlyAccrualHistoryDto>;
 };
-export type PaginatedCampaignUserBalanceDto = {
+export type PaginatedBlacklistedAddressDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
-  readonly items: ReadonlyArray<CampaignUserBalanceDto>;
+  readonly items: ReadonlyArray<BlacklistedAddressDto>;
+};
+export type CampaignAuditLogDto = {
+  readonly id: string;
+  readonly campaignId: string;
+  readonly type: CampaignAuditLogType;
+  readonly address?: string | null;
+  readonly reason?: string | null;
+  readonly actorId?: string;
+  readonly actorRole?: string | null;
+  readonly createdAt: string;
+};
+export type CampaignConfigurationRequestDto = {
+  readonly id: string;
+  readonly projectId: string;
+  readonly teamId: string;
+  readonly campaignId?: string | null;
+  readonly requestType: CampaignConfigurationRequestType;
+  readonly status: CampaignConfigurationRequestStatus;
+  readonly requestedBy: string;
+  readonly reviewedBy?: string | null;
+  readonly reviewedAt?: string;
+  readonly rejectionReason?: string | null;
+  readonly requestedChanges: { readonly [x: string]: unknown };
+  readonly previousValues?: {};
+  readonly version: number;
+  readonly metadata?: {};
+  readonly createdAt: string;
+  readonly updatedAt: string;
 };
 export type CreateTeamDto = {
   readonly contactDetails: {};
@@ -2212,6 +2283,12 @@ export type PendingActionConstraintDto = {
   readonly type: ActionTypes;
   readonly amount?: PendingActionConstraintAmountDto;
 };
+export type PaginatedBalanceTransferEventDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<BalanceTransferEventDto>;
+};
 export type StakeFailureDto = { readonly error: FailureViewDto };
 export type StakeViewSuccessDto = {
   readonly protocol_name: string;
@@ -2254,7 +2331,7 @@ export type UpsertSsoConfigDto = {
   readonly enforced?: boolean;
   readonly jitDefaultRole?: "member";
   readonly syncUserAttributesOnLogin?: boolean;
-  readonly ssoLoginDomain?: {} | null;
+  readonly ssoLoginDomain?: string | null;
 };
 export type ValidatorAdminDto = {
   readonly id: string;
@@ -2571,6 +2648,10 @@ export type CampaignDto = {
   readonly apyCeiling?: number | null;
   readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
   readonly qualificationConfig: CampaignQualificationConfigDto;
+  readonly pausedBy?: string;
+  readonly pausedAt?: string;
+  readonly pausedByRole?: string | null;
+  readonly acknowledgedAt?: string;
 };
 export type UpdateCampaignDto = {
   readonly yieldId?: string;
@@ -2655,21 +2736,59 @@ export type CreateCampaignConfigurationRequestDto = {
   };
   readonly metadata?: { readonly [x: string]: unknown };
 };
+export type AdminCampaignDto = {
+  readonly id: string;
+  readonly name?: string | null;
+  readonly projectId: string;
+  readonly yieldId: string;
+  readonly integrationId: string;
+  readonly rewardToken: {
+    readonly name: string;
+    readonly network: Networks;
+    readonly symbol: string;
+    readonly decimals: number;
+    readonly address?: string;
+    readonly coinGeckoId?: string;
+    readonly logoURI?: string;
+    readonly isPoints?: boolean;
+    readonly feeConfigurationId?: string;
+  };
+  readonly rewardMode: CampaignRewardMode;
+  readonly safeAddress: string;
+  readonly totalBudget: string;
+  readonly distributedBudget: string;
+  readonly remainingBudget: string;
+  readonly startTime: string;
+  readonly endTime: string;
+  readonly payoutFrequency: CampaignPayoutFrequency;
+  readonly status: CampaignStatus;
+  readonly lastProcessedHour?: string;
+  readonly nextPayoutDueAt?: string;
+  readonly apyCeiling?: number | null;
+  readonly budgetSpendStrategy: CampaignBudgetSpendStrategy;
+  readonly qualificationConfig: CampaignQualificationConfigDto;
+  readonly pausedBy?: string;
+  readonly pausedAt?: string;
+  readonly pausedByRole?: string | null;
+  readonly acknowledgedAt?: string;
+  readonly teamId?: string | null;
+};
+export type CampaignBalancesResponseDto = {
+  readonly users: PaginatedCampaignUserBalanceDto;
+  readonly totals: CampaignBalanceTotalsDto;
+  readonly freshness: CampaignBalanceFreshnessDto;
+};
 export type PaginatedCampaignPayoutRunDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignPayoutRunDto>;
 };
-export type PaginatedProgrammaticPayoutRunDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly items: ReadonlyArray<ProgrammaticPayoutRunDto>;
-};
 export type CampaignPayoutRunDetailDto = {
   readonly run: CampaignPayoutRunDto;
   readonly items: ReadonlyArray<CampaignPayoutItemDto>;
+  readonly safeTransactions: ReadonlyArray<SafeTransactionDetailDto>;
+  readonly budgetState: PayoutRunBudgetStateDto;
 };
 export type PaginatedProgrammaticPayoutItemDto = {
   readonly total: number;
@@ -2677,20 +2796,21 @@ export type PaginatedProgrammaticPayoutItemDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<ProgrammaticPayoutItemDto>;
 };
+export type HourlyAccrualDetailDto = {
+  readonly summary: HourlyAccrualSummaryDto;
+  readonly users: PaginatedUserHourlyAccrualDto;
+};
+export type PaginatedCampaignAuditLogDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<CampaignAuditLogDto>;
+};
 export type PaginatedCampaignConfigurationRequestDto = {
   readonly total: number;
   readonly offset: number;
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignConfigurationRequestDto>;
-};
-export type HourlyAccrualDetailDto = {
-  readonly summary: HourlyAccrualSummaryDto;
-  readonly users: PaginatedUserHourlyAccrualDto;
-};
-export type CampaignBalancesResponseDto = {
-  readonly users: PaginatedCampaignUserBalanceDto;
-  readonly totals: CampaignBalanceTotalsDto;
-  readonly freshness: CampaignBalanceFreshnessDto;
 };
 export type YieldMetadataDto = {
   readonly name: string;
@@ -2717,6 +2837,7 @@ export type YieldMetadataDto = {
   readonly isIntegrationAggregator?: boolean;
   readonly extraTransactionFormatsSupported?: ReadonlyArray<TransactionFormat>;
   readonly supportedStandards?: ReadonlyArray<ERCStandards>;
+  readonly supportsCampaigns: boolean;
   readonly commission?: ReadonlyArray<YieldCommissionDto>;
   readonly tvl?: ReadonlyArray<YieldTvlDto>;
 };
@@ -3098,9 +3219,18 @@ export type CampaignSummaryDto = {
   readonly unpaidLiability: string;
   readonly totalQualifyingTvl: string;
   readonly participantsCount: number;
+  readonly averageHourlyEmission: string;
+  readonly ceilingActiveHoursCount: number;
+  readonly alertFlags: CampaignAlertFlagsDto;
+};
+export type PaginatedAdminCampaignDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AdminCampaignDto>;
 };
 export type ProgrammaticPayoutRunDetailDto = {
-  readonly run: ProgrammaticPayoutRunDto;
+  readonly run: CampaignPayoutRunDto;
   readonly recipients: PaginatedProgrammaticPayoutItemDto;
   readonly budgetState: PayoutRunBudgetStateDto;
   readonly safeTransactions: ReadonlyArray<SafeTransactionDetailDto>;
@@ -3195,9 +3325,23 @@ export type CampaignControllerGetById200 = CampaignDto;
 export type CampaignControllerUpdateRequestJson = UpdateCampaignDto;
 export type CampaignControllerUpdate200 = CampaignDto;
 export type CampaignControllerPause200 = CampaignDto;
+export type CampaignControllerPause409 = StakeKitErrorDto;
 export type CampaignControllerResume200 = CampaignDto;
+export type CampaignControllerResume409 = StakeKitErrorDto;
+export type CampaignControllerAcknowledgePause200 = CampaignDto;
+export type CampaignControllerAcknowledgePause409 = StakeKitErrorDto;
 export type CampaignControllerEnd200 = CampaignDto;
 export type CampaignControllerGetSummary200 = CampaignSummaryDto;
+export type CampaignControllerGetCampaignBalancesParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: CampaignBalanceSortField;
+  readonly sortDirection?: "asc" | "desc";
+};
+export type CampaignControllerGetCampaignBalances200 =
+  CampaignBalancesResponseDto;
 export type CampaignControllerGetLiability200 = CampaignLiabilityDto;
 export type CampaignControllerGetBudgetProjectionParams = {
   readonly totalBudget?: string;
@@ -3213,6 +3357,7 @@ export type CampaignControllerGetUserEntitlement200 =
 export type CampaignControllerGetPayoutRunsParams = {
   readonly offset?: number;
   readonly limit?: number;
+  readonly status?: CampaignPayoutRunStatus;
 };
 export type CampaignControllerGetPayoutRuns200 = PaginatedCampaignPayoutRunDto;
 export type CampaignControllerGetPayoutRunDetail200 =
@@ -3232,8 +3377,56 @@ export type CampaignControllerGetWeeklyDistribution200 =
 export type CampaignControllerGetEligibleUsersParams = {
   readonly offset?: number;
   readonly limit?: number;
+  readonly minTotalEarned?: string;
+  readonly sortField?: EligibleUserSortField;
+  readonly sortDirection?: "asc" | "desc";
 };
 export type CampaignControllerGetEligibleUsers200 = PaginatedEligibleUserDto;
+export type CampaignControllerGetBlacklistedUsersParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignControllerGetBlacklistedUsers200 =
+  PaginatedCampaignUserPayoutEligibilityDto;
+export type CampaignControllerGetAccrualDetailsParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly runId?: string;
+};
+export type CampaignControllerGetAccrualDetails200 =
+  PaginatedHourlyAccrualSummaryDto;
+export type CampaignControllerGetAccrualDetailForHourParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: AccrualHourSortField;
+  readonly sortDirection?: "asc" | "desc";
+};
+export type CampaignControllerGetAccrualDetailForHour200 =
+  HourlyAccrualDetailDto;
+export type CampaignControllerGetUserAccrualHistoryParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignControllerGetUserAccrualHistory200 =
+  PaginatedUserHourlyAccrualHistoryDto;
+export type CampaignControllerGetSafeBalance200 = CampaignSafeBalanceDto;
+export type CampaignControllerGetPayoutEligibilitySummary200 =
+  CampaignPayoutEligibilitySummaryDto;
+export type CampaignControllerGetBlacklistedAddressesParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignControllerGetBlacklistedAddresses200 =
+  PaginatedBlacklistedAddressDto;
+export type CampaignControllerGetAuditHistoryParams = {
+  readonly offset?: number;
+  readonly limit?: number;
+  readonly address?: string;
+  readonly type?: CampaignAuditLogType;
+};
+export type CampaignControllerGetAuditHistory200 = PaginatedCampaignAuditLogDto;
 export type CampaignConfigurationRequestControllerListForProjectParams = {
   readonly status?: CampaignConfigurationRequestStatus;
   readonly requestType?: CampaignConfigurationRequestType;
@@ -3273,6 +3466,21 @@ export type CampaignConfigurationRequestAdminControllerListParams = {
 };
 export type CampaignConfigurationRequestAdminControllerList200 =
   PaginatedCampaignConfigurationRequestDto;
+export type CampaignAdminControllerListParams = {
+  readonly status?: CampaignStatus;
+  readonly projectId?: string;
+  readonly integrationId?: string;
+  readonly rewardMode?: CampaignRewardMode;
+  readonly startTimeFrom?: string;
+  readonly startTimeTo?: string;
+  readonly endTimeFrom?: string;
+  readonly endTimeTo?: string;
+  readonly sort?: CampaignAdminSortingOption;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type CampaignAdminControllerList200 = PaginatedAdminCampaignDto;
+export type CampaignAdminControllerGetById200 = AdminCampaignDto;
 export type ProgrammaticCampaignControllerListCampaignsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -3293,6 +3501,10 @@ export type ProgrammaticCampaignControllerGetAccrualDetails200 =
 export type ProgrammaticCampaignControllerGetAccrualDetailForHourParams = {
   readonly offset?: number;
   readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: AccrualHourSortField;
+  readonly sortDirection?: "asc" | "desc";
   readonly "X-ADMIN-API-KEY": string;
 };
 export type ProgrammaticCampaignControllerGetAccrualDetailForHour200 =
@@ -3307,10 +3519,11 @@ export type ProgrammaticCampaignControllerGetUserAccrualHistory200 =
 export type ProgrammaticCampaignControllerGetPayoutRunsParams = {
   readonly offset?: number;
   readonly limit?: number;
+  readonly status?: CampaignPayoutRunStatus;
   readonly "X-ADMIN-API-KEY": string;
 };
 export type ProgrammaticCampaignControllerGetPayoutRuns200 =
-  PaginatedProgrammaticPayoutRunDto;
+  PaginatedCampaignPayoutRunDto;
 export type ProgrammaticCampaignControllerGetPayoutRunDetailParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -3337,6 +3550,10 @@ export type ProgrammaticCampaignControllerGetCampaignPayoutEligibilitySummary200
 export type ProgrammaticCampaignControllerGetCampaignBalancesParams = {
   readonly offset?: number;
   readonly limit?: number;
+  readonly address?: string;
+  readonly qualified?: boolean;
+  readonly sortField?: CampaignBalanceSortField;
+  readonly sortDirection?: "asc" | "desc";
   readonly "X-ADMIN-API-KEY": string;
 };
 export type ProgrammaticCampaignControllerGetCampaignBalances200 =
@@ -3482,6 +3699,7 @@ export type HealthControllerHealthV2400 = StakeKitErrorDto;
 export type HealthControllerHealthV2401 = StakeKitErrorDto;
 export type HealthControllerHealthV2404 = StakeKitErrorDto;
 export type HealthControllerHealthV2408 = StakeKitErrorDto;
+export type HealthControllerHealthV2409 = StakeKitErrorDto;
 export type HealthControllerHealthV2410 = StakeKitErrorDto;
 export type HealthControllerHealthV2412 = StakeKitErrorDto;
 export type HealthControllerHealthV2429 = StakeKitErrorDto;
@@ -3834,6 +4052,7 @@ export type ActionControllerGetAction400 = StakeKitErrorDto;
 export type ActionControllerGetAction401 = StakeKitErrorDto;
 export type ActionControllerGetAction404 = StakeKitErrorDto;
 export type ActionControllerGetAction408 = StakeKitErrorDto;
+export type ActionControllerGetAction409 = StakeKitErrorDto;
 export type ActionControllerGetAction410 = StakeKitErrorDto;
 export type ActionControllerGetAction412 = StakeKitErrorDto;
 export type ActionControllerGetAction429 = StakeKitErrorDto;
@@ -3847,6 +4066,7 @@ export type ActionControllerGetGasEstimate400 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate401 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate404 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate408 = StakeKitErrorDto;
+export type ActionControllerGetGasEstimate409 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerGetGasEstimate429 = StakeKitErrorDto;
@@ -3860,6 +4080,7 @@ export type ActionControllerEnter401 = StakeKitErrorDto;
 export type ActionControllerEnter403 = GeolocationError;
 export type ActionControllerEnter404 = StakeKitErrorDto;
 export type ActionControllerEnter408 = StakeKitErrorDto;
+export type ActionControllerEnter409 = StakeKitErrorDto;
 export type ActionControllerEnter410 = StakeKitErrorDto;
 export type ActionControllerEnter412 = StakeKitErrorDto;
 export type ActionControllerEnter429 = StakeKitErrorDto;
@@ -3873,6 +4094,7 @@ export type ActionControllerExit401 = StakeKitErrorDto;
 export type ActionControllerExit403 = GeolocationError;
 export type ActionControllerExit404 = StakeKitErrorDto;
 export type ActionControllerExit408 = StakeKitErrorDto;
+export type ActionControllerExit409 = StakeKitErrorDto;
 export type ActionControllerExit410 = StakeKitErrorDto;
 export type ActionControllerExit412 = StakeKitErrorDto;
 export type ActionControllerExit429 = StakeKitErrorDto;
@@ -3886,6 +4108,7 @@ export type ActionControllerPending401 = StakeKitErrorDto;
 export type ActionControllerPending403 = GeolocationError;
 export type ActionControllerPending404 = StakeKitErrorDto;
 export type ActionControllerPending408 = StakeKitErrorDto;
+export type ActionControllerPending409 = StakeKitErrorDto;
 export type ActionControllerPending410 = StakeKitErrorDto;
 export type ActionControllerPending412 = StakeKitErrorDto;
 export type ActionControllerPending429 = StakeKitErrorDto;
@@ -3901,6 +4124,7 @@ export type ActionControllerEnterGasEstimation400 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation401 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation404 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation408 = StakeKitErrorDto;
+export type ActionControllerEnterGasEstimation409 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation410 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation412 = StakeKitErrorDto;
 export type ActionControllerEnterGasEstimation429 = StakeKitErrorDto;
@@ -3916,6 +4140,7 @@ export type ActionControllerExitGasEstimate400 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate401 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate404 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate408 = StakeKitErrorDto;
+export type ActionControllerExitGasEstimate409 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate429 = StakeKitErrorDto;
@@ -3995,6 +4220,7 @@ export type ActionControllerList400 = StakeKitErrorDto;
 export type ActionControllerList401 = StakeKitErrorDto;
 export type ActionControllerList404 = StakeKitErrorDto;
 export type ActionControllerList408 = StakeKitErrorDto;
+export type ActionControllerList409 = StakeKitErrorDto;
 export type ActionControllerList410 = StakeKitErrorDto;
 export type ActionControllerList412 = StakeKitErrorDto;
 export type ActionControllerList429 = StakeKitErrorDto;
@@ -4010,6 +4236,7 @@ export type ActionControllerPendingGasEstimate400 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate401 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate404 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate408 = StakeKitErrorDto;
+export type ActionControllerPendingGasEstimate409 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate410 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate412 = StakeKitErrorDto;
 export type ActionControllerPendingGasEstimate429 = StakeKitErrorDto;
@@ -4036,6 +4263,7 @@ export type TransactionControllerGetTransaction400 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction401 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction404 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction408 = StakeKitErrorDto;
+export type TransactionControllerGetTransaction409 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction410 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction412 = StakeKitErrorDto;
 export type TransactionControllerGetTransaction429 = StakeKitErrorDto;
@@ -4052,6 +4280,7 @@ export type TransactionControllerConstruct401 = StakeKitErrorDto;
 export type TransactionControllerConstruct403 = GeolocationError;
 export type TransactionControllerConstruct404 = StakeKitErrorDto;
 export type TransactionControllerConstruct408 = StakeKitErrorDto;
+export type TransactionControllerConstruct409 = StakeKitErrorDto;
 export type TransactionControllerConstruct410 = StakeKitErrorDto;
 export type TransactionControllerConstruct412 = StakeKitErrorDto;
 export type TransactionControllerConstruct429 = StakeKitErrorDto;
@@ -4067,6 +4296,7 @@ export type TransactionControllerSubmit401 = StakeKitErrorDto;
 export type TransactionControllerSubmit403 = GeolocationError;
 export type TransactionControllerSubmit404 = StakeKitErrorDto;
 export type TransactionControllerSubmit408 = StakeKitErrorDto;
+export type TransactionControllerSubmit409 = StakeKitErrorDto;
 export type TransactionControllerSubmit410 = StakeKitErrorDto;
 export type TransactionControllerSubmit412 = StakeKitErrorDto;
 export type TransactionControllerSubmit429 = StakeKitErrorDto;
@@ -4081,6 +4311,7 @@ export type TransactionControllerSubmitHash401 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash403 = GeolocationError;
 export type TransactionControllerSubmitHash404 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash408 = StakeKitErrorDto;
+export type TransactionControllerSubmitHash409 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash410 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash412 = StakeKitErrorDto;
 export type TransactionControllerSubmitHash429 = StakeKitErrorDto;
@@ -4098,6 +4329,8 @@ export type TransactionControllerGetTransactionStatusFromId401 =
 export type TransactionControllerGetTransactionStatusFromId404 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromId408 =
+  StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusFromId409 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusFromId410 =
   StakeKitErrorDto;
@@ -4117,6 +4350,7 @@ export type TransactionControllerGetGasForNetwork400 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork401 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork404 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork408 = StakeKitErrorDto;
+export type TransactionControllerGetGasForNetwork409 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork410 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork412 = StakeKitErrorDto;
 export type TransactionControllerGetGasForNetwork429 = StakeKitErrorDto;
@@ -4134,6 +4368,8 @@ export type TransactionControllerGetTransactionStatusByNetworkAndHash401 =
 export type TransactionControllerGetTransactionStatusByNetworkAndHash404 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHash408 =
+  StakeKitErrorDto;
+export type TransactionControllerGetTransactionStatusByNetworkAndHash409 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionStatusByNetworkAndHash410 =
   StakeKitErrorDto;
@@ -4161,6 +4397,8 @@ export type TransactionControllerGetTransactionVerificationMessageForNetwork404 
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork408 =
   StakeKitErrorDto;
+export type TransactionControllerGetTransactionVerificationMessageForNetwork409 =
+  StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork410 =
   StakeKitErrorDto;
 export type TransactionControllerGetTransactionVerificationMessageForNetwork412 =
@@ -4184,6 +4422,8 @@ export type NetworkAddressesTokenV2ControllerGetTokenBalances404 =
   StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances408 =
   StakeKitErrorDto;
+export type NetworkAddressesTokenV2ControllerGetTokenBalances409 =
+  StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances410 =
   StakeKitErrorDto;
 export type NetworkAddressesTokenV2ControllerGetTokenBalances412 =
@@ -4204,6 +4444,7 @@ export type NetworkTokensV2ControllerGetTokens400 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens401 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens404 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens408 = StakeKitErrorDto;
+export type NetworkTokensV2ControllerGetTokens409 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens410 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens412 = StakeKitErrorDto;
 export type NetworkTokensV2ControllerGetTokens429 = StakeKitErrorDto;
@@ -4220,6 +4461,7 @@ export type TokenControllerGetTokens400 = StakeKitErrorDto;
 export type TokenControllerGetTokens401 = StakeKitErrorDto;
 export type TokenControllerGetTokens404 = StakeKitErrorDto;
 export type TokenControllerGetTokens408 = StakeKitErrorDto;
+export type TokenControllerGetTokens409 = StakeKitErrorDto;
 export type TokenControllerGetTokens410 = StakeKitErrorDto;
 export type TokenControllerGetTokens412 = StakeKitErrorDto;
 export type TokenControllerGetTokens429 = StakeKitErrorDto;
@@ -4234,6 +4476,7 @@ export type TokenControllerGetTokenPrices400 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices401 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices404 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices408 = StakeKitErrorDto;
+export type TokenControllerGetTokenPrices409 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices410 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices412 = StakeKitErrorDto;
 export type TokenControllerGetTokenPrices429 = StakeKitErrorDto;
@@ -4249,6 +4492,7 @@ export type TokenControllerGetTokenBalances400 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances401 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances404 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances408 = StakeKitErrorDto;
+export type TokenControllerGetTokenBalances409 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances410 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances412 = StakeKitErrorDto;
 export type TokenControllerGetTokenBalances429 = StakeKitErrorDto;
@@ -4264,6 +4508,7 @@ export type TokenControllerTokenBalancesScan400 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan401 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan404 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan408 = StakeKitErrorDto;
+export type TokenControllerTokenBalancesScan409 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan410 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan412 = StakeKitErrorDto;
 export type TokenControllerTokenBalancesScan429 = StakeKitErrorDto;
@@ -4332,6 +4577,7 @@ export type OAVControllerFindAllTokens400 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens401 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens404 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens408 = StakeKitErrorDto;
+export type OAVControllerFindAllTokens409 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens410 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens412 = StakeKitErrorDto;
 export type OAVControllerFindAllTokens429 = StakeKitErrorDto;
@@ -4344,6 +4590,7 @@ export type OAVControllerFindYieldsByToken200 = ReadonlyArray<YieldDto>;
 export type OAVControllerFindYieldsByToken400 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken401 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken408 = StakeKitErrorDto;
+export type OAVControllerFindYieldsByToken409 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken410 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken412 = StakeKitErrorDto;
 export type OAVControllerFindYieldsByToken429 = StakeKitErrorDto;
@@ -4355,6 +4602,7 @@ export type OAVControllerFindAll400 = StakeKitErrorDto;
 export type OAVControllerFindAll401 = StakeKitErrorDto;
 export type OAVControllerFindAll404 = StakeKitErrorDto;
 export type OAVControllerFindAll408 = StakeKitErrorDto;
+export type OAVControllerFindAll409 = StakeKitErrorDto;
 export type OAVControllerFindAll410 = StakeKitErrorDto;
 export type OAVControllerFindAll412 = StakeKitErrorDto;
 export type OAVControllerFindAll429 = StakeKitErrorDto;
@@ -4365,6 +4613,7 @@ export type OAVControllerCreate201 = OAVResponseDto;
 export type OAVControllerCreate401 = StakeKitErrorDto;
 export type OAVControllerCreate404 = StakeKitErrorDto;
 export type OAVControllerCreate408 = StakeKitErrorDto;
+export type OAVControllerCreate409 = StakeKitErrorDto;
 export type OAVControllerCreate410 = StakeKitErrorDto;
 export type OAVControllerCreate412 = StakeKitErrorDto;
 export type OAVControllerCreate429 = StakeKitErrorDto;
@@ -4373,6 +4622,7 @@ export type OAVControllerCreate503 = StakeKitErrorDto;
 export type OAVControllerRemove400 = StakeKitErrorDto;
 export type OAVControllerRemove401 = StakeKitErrorDto;
 export type OAVControllerRemove408 = StakeKitErrorDto;
+export type OAVControllerRemove409 = StakeKitErrorDto;
 export type OAVControllerRemove410 = StakeKitErrorDto;
 export type OAVControllerRemove412 = StakeKitErrorDto;
 export type OAVControllerRemove429 = StakeKitErrorDto;
@@ -4382,6 +4632,7 @@ export type OAVControllerUpdateRequestJson = UpdateOAVDto;
 export type OAVControllerUpdate200 = OAVResponseDto;
 export type OAVControllerUpdate401 = StakeKitErrorDto;
 export type OAVControllerUpdate408 = StakeKitErrorDto;
+export type OAVControllerUpdate409 = StakeKitErrorDto;
 export type OAVControllerUpdate410 = StakeKitErrorDto;
 export type OAVControllerUpdate412 = StakeKitErrorDto;
 export type OAVControllerUpdate429 = StakeKitErrorDto;
@@ -4446,6 +4697,7 @@ export type YieldControllerYields400 = StakeKitErrorDto;
 export type YieldControllerYields401 = StakeKitErrorDto;
 export type YieldControllerYields404 = StakeKitErrorDto;
 export type YieldControllerYields408 = StakeKitErrorDto;
+export type YieldControllerYields409 = StakeKitErrorDto;
 export type YieldControllerYields410 = StakeKitErrorDto;
 export type YieldControllerYields412 = StakeKitErrorDto;
 export type YieldControllerYields429 = StakeKitErrorDto;
@@ -4462,6 +4714,7 @@ export type YieldControllerGetMultipleYieldBalances400 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances401 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances404 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances408 = StakeKitErrorDto;
+export type YieldControllerGetMultipleYieldBalances409 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances410 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances412 = StakeKitErrorDto;
 export type YieldControllerGetMultipleYieldBalances429 = StakeKitErrorDto;
@@ -4478,6 +4731,7 @@ export type YieldControllerYieldBalancesScan400 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan401 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan404 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan408 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScan409 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan410 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan412 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScan429 = StakeKitErrorDto;
@@ -4494,6 +4748,7 @@ export type YieldControllerYieldBalancesScanEvm400 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm401 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm404 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm408 = StakeKitErrorDto;
+export type YieldControllerYieldBalancesScanEvm409 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm410 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm412 = StakeKitErrorDto;
 export type YieldControllerYieldBalancesScanEvm429 = StakeKitErrorDto;
@@ -4550,6 +4805,7 @@ export type YieldControllerGetMyYields400 = StakeKitErrorDto;
 export type YieldControllerGetMyYields401 = StakeKitErrorDto;
 export type YieldControllerGetMyYields404 = StakeKitErrorDto;
 export type YieldControllerGetMyYields408 = StakeKitErrorDto;
+export type YieldControllerGetMyYields409 = StakeKitErrorDto;
 export type YieldControllerGetMyYields410 = StakeKitErrorDto;
 export type YieldControllerGetMyYields412 = StakeKitErrorDto;
 export type YieldControllerGetMyYields429 = StakeKitErrorDto;
@@ -4562,6 +4818,7 @@ export type YieldControllerGetMyNetworks400 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks401 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks404 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks408 = StakeKitErrorDto;
+export type YieldControllerGetMyNetworks409 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks410 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks412 = StakeKitErrorDto;
 export type YieldControllerGetMyNetworks429 = StakeKitErrorDto;
@@ -4580,6 +4837,7 @@ export type YieldControllerFindValidators400 = StakeKitErrorDto;
 export type YieldControllerFindValidators401 = StakeKitErrorDto;
 export type YieldControllerFindValidators404 = StakeKitErrorDto;
 export type YieldControllerFindValidators408 = StakeKitErrorDto;
+export type YieldControllerFindValidators409 = StakeKitErrorDto;
 export type YieldControllerFindValidators410 = StakeKitErrorDto;
 export type YieldControllerFindValidators412 = StakeKitErrorDto;
 export type YieldControllerFindValidators429 = StakeKitErrorDto;
@@ -4595,6 +4853,7 @@ export type YieldControllerYieldOpportunity400 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity401 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity404 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity408 = StakeKitErrorDto;
+export type YieldControllerYieldOpportunity409 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity410 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity412 = StakeKitErrorDto;
 export type YieldControllerYieldOpportunity429 = StakeKitErrorDto;
@@ -4610,6 +4869,7 @@ export type YieldControllerGetValidators400 = StakeKitErrorDto;
 export type YieldControllerGetValidators401 = StakeKitErrorDto;
 export type YieldControllerGetValidators404 = StakeKitErrorDto;
 export type YieldControllerGetValidators408 = StakeKitErrorDto;
+export type YieldControllerGetValidators409 = StakeKitErrorDto;
 export type YieldControllerGetValidators410 = StakeKitErrorDto;
 export type YieldControllerGetValidators412 = StakeKitErrorDto;
 export type YieldControllerGetValidators429 = StakeKitErrorDto;
@@ -4627,11 +4887,32 @@ export type YieldControllerGetSingleYieldBalances400 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances401 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances404 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances408 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldBalances409 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances410 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances412 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances429 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances500 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldBalances503 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEventsParams = {
+  readonly address: string;
+  readonly sort?: "asc" | "desc";
+  readonly limit?: number;
+  readonly offset?: number;
+  readonly feeConfigurationId?: string;
+  readonly "X-API-KEY"?: string;
+};
+export type YieldControllerGetBalanceTransferEvents200 =
+  PaginatedBalanceTransferEventDto;
+export type YieldControllerGetBalanceTransferEvents400 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents401 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents404 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents408 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents409 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents410 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents412 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents429 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents500 = StakeKitErrorDto;
+export type YieldControllerGetBalanceTransferEvents503 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummaryParams = {
   readonly "X-API-KEY"?: string;
 };
@@ -4643,6 +4924,7 @@ export type YieldControllerGetSingleYieldRewardsSummary400 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary401 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary404 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary408 = StakeKitErrorDto;
+export type YieldControllerGetSingleYieldRewardsSummary409 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary410 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary412 = StakeKitErrorDto;
 export type YieldControllerGetSingleYieldRewardsSummary429 = StakeKitErrorDto;
@@ -4652,6 +4934,7 @@ export type YieldControllerGetFeeConfiguration200 = FeeConfigurationDto;
 export type YieldControllerGetFeeConfiguration400 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration401 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration408 = StakeKitErrorDto;
+export type YieldControllerGetFeeConfiguration409 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration410 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration412 = StakeKitErrorDto;
 export type YieldControllerGetFeeConfiguration429 = StakeKitErrorDto;
@@ -4667,6 +4950,7 @@ export type YieldControllerCreateFeeConfiguration400 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration401 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration404 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration408 = StakeKitErrorDto;
+export type YieldControllerCreateFeeConfiguration409 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration410 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration412 = StakeKitErrorDto;
 export type YieldControllerCreateFeeConfiguration429 = StakeKitErrorDto;
@@ -4679,6 +4963,7 @@ export type YieldV2ControllerYieldsParams = {
     | "benqi"
     | "compound"
     | "lido"
+    | "marinade"
     | "sushi"
     | "yearn"
     | "ape"
@@ -4887,6 +5172,7 @@ export type YieldV2ControllerYields400 = StakeKitErrorDto;
 export type YieldV2ControllerYields401 = StakeKitErrorDto;
 export type YieldV2ControllerYields404 = StakeKitErrorDto;
 export type YieldV2ControllerYields408 = StakeKitErrorDto;
+export type YieldV2ControllerYields409 = StakeKitErrorDto;
 export type YieldV2ControllerYields410 = StakeKitErrorDto;
 export type YieldV2ControllerYields412 = StakeKitErrorDto;
 export type YieldV2ControllerYields429 = StakeKitErrorDto;
@@ -4900,6 +5186,7 @@ export type YieldV2ControllerGetYieldById400 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById401 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById404 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById408 = StakeKitErrorDto;
+export type YieldV2ControllerGetYieldById409 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById410 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById412 = StakeKitErrorDto;
 export type YieldV2ControllerGetYieldById429 = StakeKitErrorDto;
@@ -4917,6 +5204,7 @@ export type YieldV2ControllerFindYieldValidators400 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators401 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators404 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators408 = StakeKitErrorDto;
+export type YieldV2ControllerFindYieldValidators409 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators410 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators412 = StakeKitErrorDto;
 export type YieldV2ControllerFindYieldValidators429 = StakeKitErrorDto;
@@ -4935,6 +5223,7 @@ export type YieldV2ControllerFindValidators400 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators401 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators404 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators408 = StakeKitErrorDto;
+export type YieldV2ControllerFindValidators409 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators410 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators412 = StakeKitErrorDto;
 export type YieldV2ControllerFindValidators429 = StakeKitErrorDto;
@@ -4964,6 +5253,7 @@ export type YieldV2ControllerGetFeeConfigurations200 = {
 export type YieldV2ControllerGetFeeConfigurations400 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations401 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations408 = StakeKitErrorDto;
+export type YieldV2ControllerGetFeeConfigurations409 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations410 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations412 = StakeKitErrorDto;
 export type YieldV2ControllerGetFeeConfigurations429 = StakeKitErrorDto;
@@ -5583,11 +5873,32 @@ export const make = (
     CampaignControllerPause: (teamId, projectId, campaignId, options) =>
       HttpClientRequest.post(
         `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/pause`
-      ).pipe(onRequest(options?.config)(["2xx"])),
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignControllerPause409",
+        })
+      ),
     CampaignControllerResume: (teamId, projectId, campaignId, options) =>
       HttpClientRequest.post(
         `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/resume`
-      ).pipe(onRequest(options?.config)(["2xx"])),
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignControllerResume409",
+        })
+      ),
+    CampaignControllerAcknowledgePause: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.post(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/acknowledge-pause`
+      ).pipe(
+        onRequest(options?.config)(["2xx"], {
+          "409": "CampaignControllerAcknowledgePause409",
+        })
+      ),
     CampaignControllerEnd: (teamId, projectId, campaignId, options) =>
       HttpClientRequest.post(
         `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/end`
@@ -5596,6 +5907,25 @@ export const make = (
       HttpClientRequest.get(
         `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/summary`
       ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignControllerGetCampaignBalances: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/balances`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          address: options?.params?.["address"] as any,
+          qualified: options?.params?.["qualified"] as any,
+          sortField: options?.params?.["sortField"] as any,
+          sortDirection: options?.params?.["sortDirection"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
     CampaignControllerGetLiability: (teamId, projectId, campaignId, options) =>
       HttpClientRequest.get(
         `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/liability`
@@ -5645,6 +5975,7 @@ export const make = (
         HttpClientRequest.setUrlParams({
           offset: options?.params?.["offset"] as any,
           limit: options?.params?.["limit"] as any,
+          status: options?.params?.["status"] as any,
         }),
         onRequest(options?.config)(["2xx"])
       ),
@@ -5700,6 +6031,126 @@ export const make = (
         HttpClientRequest.setUrlParams({
           offset: options?.params?.["offset"] as any,
           limit: options?.params?.["limit"] as any,
+          minTotalEarned: options?.params?.["minTotalEarned"] as any,
+          sortField: options?.params?.["sortField"] as any,
+          sortDirection: options?.params?.["sortDirection"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetBlacklistedUsers: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/blacklisted-users`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetAccrualDetails: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/accrual-details`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          runId: options?.params?.["runId"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetAccrualDetailForHour: (
+      teamId,
+      projectId,
+      campaignId,
+      hour,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/accrual-details/hour/${hour}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          address: options?.params?.["address"] as any,
+          qualified: options?.params?.["qualified"] as any,
+          sortField: options?.params?.["sortField"] as any,
+          sortDirection: options?.params?.["sortDirection"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetUserAccrualHistory: (
+      teamId,
+      projectId,
+      campaignId,
+      address,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/user-accrual/${address}`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetSafeBalance: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/safe-balance`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignControllerGetPayoutEligibilitySummary: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/payout-eligibility/summary`
+      ).pipe(onRequest(options?.config)(["2xx"])),
+    CampaignControllerGetBlacklistedAddresses: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/blacklisted-addresses`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignControllerGetAuditHistory: (
+      teamId,
+      projectId,
+      campaignId,
+      options
+    ) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/projects/${projectId}/campaigns/${campaignId}/audit-history`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+          address: options?.params?.["address"] as any,
+          type: options?.params?.["type"] as any,
         }),
         onRequest(options?.config)(["2xx"])
       ),
@@ -5791,6 +6242,27 @@ export const make = (
         }),
         onRequest(options?.config)(["2xx"])
       ),
+    CampaignAdminControllerList: (options) =>
+      HttpClientRequest.get(`/v1/admin/campaigns`).pipe(
+        HttpClientRequest.setUrlParams({
+          status: options?.params?.["status"] as any,
+          projectId: options?.params?.["projectId"] as any,
+          integrationId: options?.params?.["integrationId"] as any,
+          rewardMode: options?.params?.["rewardMode"] as any,
+          startTimeFrom: options?.params?.["startTimeFrom"] as any,
+          startTimeTo: options?.params?.["startTimeTo"] as any,
+          endTimeFrom: options?.params?.["endTimeFrom"] as any,
+          endTimeTo: options?.params?.["endTimeTo"] as any,
+          sort: options?.params?.["sort"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    CampaignAdminControllerGetById: (campaignId, options) =>
+      HttpClientRequest.get(`/v1/admin/campaigns/${campaignId}`).pipe(
+        onRequest(options?.config)(["2xx"])
+      ),
     ProgrammaticCampaignControllerListCampaigns: (projectId, options) =>
       HttpClientRequest.get(
         `/v1/programmatic/projects/${projectId}/campaigns`
@@ -5836,6 +6308,10 @@ export const make = (
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
+          address: options.params["address"] as any,
+          qualified: options.params["qualified"] as any,
+          sortField: options.params["sortField"] as any,
+          sortDirection: options.params["sortDirection"] as any,
         }),
         HttpClientRequest.setHeaders({
           "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
@@ -5871,6 +6347,7 @@ export const make = (
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
+          status: options.params["status"] as any,
         }),
         HttpClientRequest.setHeaders({
           "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
@@ -5951,6 +6428,10 @@ export const make = (
         HttpClientRequest.setUrlParams({
           offset: options.params["offset"] as any,
           limit: options.params["limit"] as any,
+          address: options.params["address"] as any,
+          qualified: options.params["qualified"] as any,
+          sortField: options.params["sortField"] as any,
+          sortDirection: options.params["sortDirection"] as any,
         }),
         HttpClientRequest.setHeaders({
           "X-ADMIN-API-KEY": options.params["X-ADMIN-API-KEY"] ?? undefined,
@@ -6152,6 +6633,7 @@ export const make = (
           "401": "HealthControllerHealthV2401",
           "404": "HealthControllerHealthV2404",
           "408": "HealthControllerHealthV2408",
+          "409": "HealthControllerHealthV2409",
           "410": "HealthControllerHealthV2410",
           "412": "HealthControllerHealthV2412",
           "429": "HealthControllerHealthV2429",
@@ -6443,6 +6925,7 @@ export const make = (
           "401": "ActionControllerGetAction401",
           "404": "ActionControllerGetAction404",
           "408": "ActionControllerGetAction408",
+          "409": "ActionControllerGetAction409",
           "410": "ActionControllerGetAction410",
           "412": "ActionControllerGetAction412",
           "429": "ActionControllerGetAction429",
@@ -6460,6 +6943,7 @@ export const make = (
           "401": "ActionControllerGetGasEstimate401",
           "404": "ActionControllerGetGasEstimate404",
           "408": "ActionControllerGetGasEstimate408",
+          "409": "ActionControllerGetGasEstimate409",
           "410": "ActionControllerGetGasEstimate410",
           "412": "ActionControllerGetGasEstimate412",
           "429": "ActionControllerGetGasEstimate429",
@@ -6479,6 +6963,7 @@ export const make = (
           "403": "ActionControllerEnter403",
           "404": "ActionControllerEnter404",
           "408": "ActionControllerEnter408",
+          "409": "ActionControllerEnter409",
           "410": "ActionControllerEnter410",
           "412": "ActionControllerEnter412",
           "429": "ActionControllerEnter429",
@@ -6498,6 +6983,7 @@ export const make = (
           "403": "ActionControllerExit403",
           "404": "ActionControllerExit404",
           "408": "ActionControllerExit408",
+          "409": "ActionControllerExit409",
           "410": "ActionControllerExit410",
           "412": "ActionControllerExit412",
           "429": "ActionControllerExit429",
@@ -6517,6 +7003,7 @@ export const make = (
           "403": "ActionControllerPending403",
           "404": "ActionControllerPending404",
           "408": "ActionControllerPending408",
+          "409": "ActionControllerPending409",
           "410": "ActionControllerPending410",
           "412": "ActionControllerPending412",
           "429": "ActionControllerPending429",
@@ -6535,6 +7022,7 @@ export const make = (
           "401": "ActionControllerEnterGasEstimation401",
           "404": "ActionControllerEnterGasEstimation404",
           "408": "ActionControllerEnterGasEstimation408",
+          "409": "ActionControllerEnterGasEstimation409",
           "410": "ActionControllerEnterGasEstimation410",
           "412": "ActionControllerEnterGasEstimation412",
           "429": "ActionControllerEnterGasEstimation429",
@@ -6553,6 +7041,7 @@ export const make = (
           "401": "ActionControllerExitGasEstimate401",
           "404": "ActionControllerExitGasEstimate404",
           "408": "ActionControllerExitGasEstimate408",
+          "409": "ActionControllerExitGasEstimate409",
           "410": "ActionControllerExitGasEstimate410",
           "412": "ActionControllerExitGasEstimate412",
           "429": "ActionControllerExitGasEstimate429",
@@ -6580,6 +7069,7 @@ export const make = (
           "401": "ActionControllerList401",
           "404": "ActionControllerList404",
           "408": "ActionControllerList408",
+          "409": "ActionControllerList409",
           "410": "ActionControllerList410",
           "412": "ActionControllerList412",
           "429": "ActionControllerList429",
@@ -6598,6 +7088,7 @@ export const make = (
           "401": "ActionControllerPendingGasEstimate401",
           "404": "ActionControllerPendingGasEstimate404",
           "408": "ActionControllerPendingGasEstimate408",
+          "409": "ActionControllerPendingGasEstimate409",
           "410": "ActionControllerPendingGasEstimate410",
           "412": "ActionControllerPendingGasEstimate412",
           "429": "ActionControllerPendingGasEstimate429",
@@ -6647,6 +7138,7 @@ export const make = (
           "401": "TransactionControllerGetTransaction401",
           "404": "TransactionControllerGetTransaction404",
           "408": "TransactionControllerGetTransaction408",
+          "409": "TransactionControllerGetTransaction409",
           "410": "TransactionControllerGetTransaction410",
           "412": "TransactionControllerGetTransaction412",
           "429": "TransactionControllerGetTransaction429",
@@ -6666,6 +7158,7 @@ export const make = (
           "403": "TransactionControllerConstruct403",
           "404": "TransactionControllerConstruct404",
           "408": "TransactionControllerConstruct408",
+          "409": "TransactionControllerConstruct409",
           "410": "TransactionControllerConstruct410",
           "412": "TransactionControllerConstruct412",
           "429": "TransactionControllerConstruct429",
@@ -6685,6 +7178,7 @@ export const make = (
           "403": "TransactionControllerSubmit403",
           "404": "TransactionControllerSubmit404",
           "408": "TransactionControllerSubmit408",
+          "409": "TransactionControllerSubmit409",
           "410": "TransactionControllerSubmit410",
           "412": "TransactionControllerSubmit412",
           "429": "TransactionControllerSubmit429",
@@ -6706,6 +7200,7 @@ export const make = (
           "403": "TransactionControllerSubmitHash403",
           "404": "TransactionControllerSubmitHash404",
           "408": "TransactionControllerSubmitHash408",
+          "409": "TransactionControllerSubmitHash409",
           "410": "TransactionControllerSubmitHash410",
           "412": "TransactionControllerSubmitHash412",
           "429": "TransactionControllerSubmitHash429",
@@ -6723,6 +7218,7 @@ export const make = (
           "401": "TransactionControllerGetTransactionStatusFromId401",
           "404": "TransactionControllerGetTransactionStatusFromId404",
           "408": "TransactionControllerGetTransactionStatusFromId408",
+          "409": "TransactionControllerGetTransactionStatusFromId409",
           "410": "TransactionControllerGetTransactionStatusFromId410",
           "412": "TransactionControllerGetTransactionStatusFromId412",
           "429": "TransactionControllerGetTransactionStatusFromId429",
@@ -6740,6 +7236,7 @@ export const make = (
           "401": "TransactionControllerGetGasForNetwork401",
           "404": "TransactionControllerGetGasForNetwork404",
           "408": "TransactionControllerGetGasForNetwork408",
+          "409": "TransactionControllerGetGasForNetwork409",
           "410": "TransactionControllerGetGasForNetwork410",
           "412": "TransactionControllerGetGasForNetwork412",
           "429": "TransactionControllerGetGasForNetwork429",
@@ -6761,6 +7258,7 @@ export const make = (
           "401": "TransactionControllerGetTransactionStatusByNetworkAndHash401",
           "404": "TransactionControllerGetTransactionStatusByNetworkAndHash404",
           "408": "TransactionControllerGetTransactionStatusByNetworkAndHash408",
+          "409": "TransactionControllerGetTransactionStatusByNetworkAndHash409",
           "410": "TransactionControllerGetTransactionStatusByNetworkAndHash410",
           "412": "TransactionControllerGetTransactionStatusByNetworkAndHash412",
           "429": "TransactionControllerGetTransactionStatusByNetworkAndHash429",
@@ -6788,6 +7286,8 @@ export const make = (
             "TransactionControllerGetTransactionVerificationMessageForNetwork404",
           "408":
             "TransactionControllerGetTransactionVerificationMessageForNetwork408",
+          "409":
+            "TransactionControllerGetTransactionVerificationMessageForNetwork409",
           "410":
             "TransactionControllerGetTransactionVerificationMessageForNetwork410",
           "412":
@@ -6816,6 +7316,7 @@ export const make = (
           "401": "NetworkAddressesTokenV2ControllerGetTokenBalances401",
           "404": "NetworkAddressesTokenV2ControllerGetTokenBalances404",
           "408": "NetworkAddressesTokenV2ControllerGetTokenBalances408",
+          "409": "NetworkAddressesTokenV2ControllerGetTokenBalances409",
           "410": "NetworkAddressesTokenV2ControllerGetTokenBalances410",
           "412": "NetworkAddressesTokenV2ControllerGetTokenBalances412",
           "429": "NetworkAddressesTokenV2ControllerGetTokenBalances429",
@@ -6836,6 +7337,7 @@ export const make = (
           "401": "NetworkTokensV2ControllerGetTokens401",
           "404": "NetworkTokensV2ControllerGetTokens404",
           "408": "NetworkTokensV2ControllerGetTokens408",
+          "409": "NetworkTokensV2ControllerGetTokens409",
           "410": "NetworkTokensV2ControllerGetTokens410",
           "412": "NetworkTokensV2ControllerGetTokens412",
           "429": "NetworkTokensV2ControllerGetTokens429",
@@ -6857,6 +7359,7 @@ export const make = (
           "401": "TokenControllerGetTokens401",
           "404": "TokenControllerGetTokens404",
           "408": "TokenControllerGetTokens408",
+          "409": "TokenControllerGetTokens409",
           "410": "TokenControllerGetTokens410",
           "412": "TokenControllerGetTokens412",
           "429": "TokenControllerGetTokens429",
@@ -6875,6 +7378,7 @@ export const make = (
           "401": "TokenControllerGetTokenPrices401",
           "404": "TokenControllerGetTokenPrices404",
           "408": "TokenControllerGetTokenPrices408",
+          "409": "TokenControllerGetTokenPrices409",
           "410": "TokenControllerGetTokenPrices410",
           "412": "TokenControllerGetTokenPrices412",
           "429": "TokenControllerGetTokenPrices429",
@@ -6893,6 +7397,7 @@ export const make = (
           "401": "TokenControllerGetTokenBalances401",
           "404": "TokenControllerGetTokenBalances404",
           "408": "TokenControllerGetTokenBalances408",
+          "409": "TokenControllerGetTokenBalances409",
           "410": "TokenControllerGetTokenBalances410",
           "412": "TokenControllerGetTokenBalances412",
           "429": "TokenControllerGetTokenBalances429",
@@ -6911,6 +7416,7 @@ export const make = (
           "401": "TokenControllerTokenBalancesScan401",
           "404": "TokenControllerTokenBalancesScan404",
           "408": "TokenControllerTokenBalancesScan408",
+          "409": "TokenControllerTokenBalancesScan409",
           "410": "TokenControllerTokenBalancesScan410",
           "412": "TokenControllerTokenBalancesScan412",
           "429": "TokenControllerTokenBalancesScan429",
@@ -7023,6 +7529,7 @@ export const make = (
           "401": "OAVControllerFindAllTokens401",
           "404": "OAVControllerFindAllTokens404",
           "408": "OAVControllerFindAllTokens408",
+          "409": "OAVControllerFindAllTokens409",
           "410": "OAVControllerFindAllTokens410",
           "412": "OAVControllerFindAllTokens412",
           "429": "OAVControllerFindAllTokens429",
@@ -7041,6 +7548,7 @@ export const make = (
           "400": "OAVControllerFindYieldsByToken400",
           "401": "OAVControllerFindYieldsByToken401",
           "408": "OAVControllerFindYieldsByToken408",
+          "409": "OAVControllerFindYieldsByToken409",
           "410": "OAVControllerFindYieldsByToken410",
           "412": "OAVControllerFindYieldsByToken412",
           "429": "OAVControllerFindYieldsByToken429",
@@ -7060,6 +7568,7 @@ export const make = (
           "401": "OAVControllerFindAll401",
           "404": "OAVControllerFindAll404",
           "408": "OAVControllerFindAll408",
+          "409": "OAVControllerFindAll409",
           "410": "OAVControllerFindAll410",
           "412": "OAVControllerFindAll412",
           "429": "OAVControllerFindAll429",
@@ -7076,6 +7585,7 @@ export const make = (
           "401": "OAVControllerCreate401",
           "404": "OAVControllerCreate404",
           "408": "OAVControllerCreate408",
+          "409": "OAVControllerCreate409",
           "410": "OAVControllerCreate410",
           "412": "OAVControllerCreate412",
           "429": "OAVControllerCreate429",
@@ -7091,6 +7601,7 @@ export const make = (
           "400": "OAVControllerRemove400",
           "401": "OAVControllerRemove401",
           "408": "OAVControllerRemove408",
+          "409": "OAVControllerRemove409",
           "410": "OAVControllerRemove410",
           "412": "OAVControllerRemove412",
           "429": "OAVControllerRemove429",
@@ -7106,6 +7617,7 @@ export const make = (
         onRequest(options.config)(["2xx"], {
           "401": "OAVControllerUpdate401",
           "408": "OAVControllerUpdate408",
+          "409": "OAVControllerUpdate409",
           "410": "OAVControllerUpdate410",
           "412": "OAVControllerUpdate412",
           "429": "OAVControllerUpdate429",
@@ -7154,6 +7666,7 @@ export const make = (
           "401": "YieldControllerYields401",
           "404": "YieldControllerYields404",
           "408": "YieldControllerYields408",
+          "409": "YieldControllerYields409",
           "410": "YieldControllerYields410",
           "412": "YieldControllerYields412",
           "429": "YieldControllerYields429",
@@ -7172,6 +7685,7 @@ export const make = (
           "401": "YieldControllerGetMultipleYieldBalances401",
           "404": "YieldControllerGetMultipleYieldBalances404",
           "408": "YieldControllerGetMultipleYieldBalances408",
+          "409": "YieldControllerGetMultipleYieldBalances409",
           "410": "YieldControllerGetMultipleYieldBalances410",
           "412": "YieldControllerGetMultipleYieldBalances412",
           "429": "YieldControllerGetMultipleYieldBalances429",
@@ -7190,6 +7704,7 @@ export const make = (
           "401": "YieldControllerYieldBalancesScan401",
           "404": "YieldControllerYieldBalancesScan404",
           "408": "YieldControllerYieldBalancesScan408",
+          "409": "YieldControllerYieldBalancesScan409",
           "410": "YieldControllerYieldBalancesScan410",
           "412": "YieldControllerYieldBalancesScan412",
           "429": "YieldControllerYieldBalancesScan429",
@@ -7208,6 +7723,7 @@ export const make = (
           "401": "YieldControllerYieldBalancesScanEvm401",
           "404": "YieldControllerYieldBalancesScanEvm404",
           "408": "YieldControllerYieldBalancesScanEvm408",
+          "409": "YieldControllerYieldBalancesScanEvm409",
           "410": "YieldControllerYieldBalancesScanEvm410",
           "412": "YieldControllerYieldBalancesScanEvm412",
           "429": "YieldControllerYieldBalancesScanEvm429",
@@ -7238,6 +7754,7 @@ export const make = (
           "401": "YieldControllerGetMyYields401",
           "404": "YieldControllerGetMyYields404",
           "408": "YieldControllerGetMyYields408",
+          "409": "YieldControllerGetMyYields409",
           "410": "YieldControllerGetMyYields410",
           "412": "YieldControllerGetMyYields412",
           "429": "YieldControllerGetMyYields429",
@@ -7255,6 +7772,7 @@ export const make = (
           "401": "YieldControllerGetMyNetworks401",
           "404": "YieldControllerGetMyNetworks404",
           "408": "YieldControllerGetMyNetworks408",
+          "409": "YieldControllerGetMyNetworks409",
           "410": "YieldControllerGetMyNetworks410",
           "412": "YieldControllerGetMyNetworks412",
           "429": "YieldControllerGetMyNetworks429",
@@ -7279,6 +7797,7 @@ export const make = (
           "401": "YieldControllerFindValidators401",
           "404": "YieldControllerFindValidators404",
           "408": "YieldControllerFindValidators408",
+          "409": "YieldControllerFindValidators409",
           "410": "YieldControllerFindValidators410",
           "412": "YieldControllerFindValidators412",
           "429": "YieldControllerFindValidators429",
@@ -7304,6 +7823,7 @@ export const make = (
           "401": "YieldControllerYieldOpportunity401",
           "404": "YieldControllerYieldOpportunity404",
           "408": "YieldControllerYieldOpportunity408",
+          "409": "YieldControllerYieldOpportunity409",
           "410": "YieldControllerYieldOpportunity410",
           "412": "YieldControllerYieldOpportunity412",
           "429": "YieldControllerYieldOpportunity429",
@@ -7329,6 +7849,7 @@ export const make = (
           "401": "YieldControllerGetValidators401",
           "404": "YieldControllerGetValidators404",
           "408": "YieldControllerGetValidators408",
+          "409": "YieldControllerGetValidators409",
           "410": "YieldControllerGetValidators410",
           "412": "YieldControllerGetValidators412",
           "429": "YieldControllerGetValidators429",
@@ -7352,11 +7873,39 @@ export const make = (
           "401": "YieldControllerGetSingleYieldBalances401",
           "404": "YieldControllerGetSingleYieldBalances404",
           "408": "YieldControllerGetSingleYieldBalances408",
+          "409": "YieldControllerGetSingleYieldBalances409",
           "410": "YieldControllerGetSingleYieldBalances410",
           "412": "YieldControllerGetSingleYieldBalances412",
           "429": "YieldControllerGetSingleYieldBalances429",
           "500": "YieldControllerGetSingleYieldBalances500",
           "503": "YieldControllerGetSingleYieldBalances503",
+        })
+      ),
+    YieldControllerGetBalanceTransferEvents: (integrationId, options) =>
+      HttpClientRequest.get(
+        `/v1/yields/${integrationId}/balances/transfers`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          address: options.params["address"] as any,
+          sort: options.params["sort"] as any,
+          limit: options.params["limit"] as any,
+          offset: options.params["offset"] as any,
+          feeConfigurationId: options.params["feeConfigurationId"] as any,
+        }),
+        HttpClientRequest.setHeaders({
+          "X-API-KEY": options.params["X-API-KEY"] ?? undefined,
+        }),
+        onRequest(options.config)(["2xx"], {
+          "400": "YieldControllerGetBalanceTransferEvents400",
+          "401": "YieldControllerGetBalanceTransferEvents401",
+          "404": "YieldControllerGetBalanceTransferEvents404",
+          "408": "YieldControllerGetBalanceTransferEvents408",
+          "409": "YieldControllerGetBalanceTransferEvents409",
+          "410": "YieldControllerGetBalanceTransferEvents410",
+          "412": "YieldControllerGetBalanceTransferEvents412",
+          "429": "YieldControllerGetBalanceTransferEvents429",
+          "500": "YieldControllerGetBalanceTransferEvents500",
+          "503": "YieldControllerGetBalanceTransferEvents503",
         })
       ),
     YieldControllerGetSingleYieldRewardsSummary: (integrationId, options) =>
@@ -7372,6 +7921,7 @@ export const make = (
           "401": "YieldControllerGetSingleYieldRewardsSummary401",
           "404": "YieldControllerGetSingleYieldRewardsSummary404",
           "408": "YieldControllerGetSingleYieldRewardsSummary408",
+          "409": "YieldControllerGetSingleYieldRewardsSummary409",
           "410": "YieldControllerGetSingleYieldRewardsSummary410",
           "412": "YieldControllerGetSingleYieldRewardsSummary412",
           "429": "YieldControllerGetSingleYieldRewardsSummary429",
@@ -7387,6 +7937,7 @@ export const make = (
           "400": "YieldControllerGetFeeConfiguration400",
           "401": "YieldControllerGetFeeConfiguration401",
           "408": "YieldControllerGetFeeConfiguration408",
+          "409": "YieldControllerGetFeeConfiguration409",
           "410": "YieldControllerGetFeeConfiguration410",
           "412": "YieldControllerGetFeeConfiguration412",
           "429": "YieldControllerGetFeeConfiguration429",
@@ -7407,6 +7958,7 @@ export const make = (
           "401": "YieldControllerCreateFeeConfiguration401",
           "404": "YieldControllerCreateFeeConfiguration404",
           "408": "YieldControllerCreateFeeConfiguration408",
+          "409": "YieldControllerCreateFeeConfiguration409",
           "410": "YieldControllerCreateFeeConfiguration410",
           "412": "YieldControllerCreateFeeConfiguration412",
           "429": "YieldControllerCreateFeeConfiguration429",
@@ -7441,6 +7993,7 @@ export const make = (
           "401": "YieldV2ControllerYields401",
           "404": "YieldV2ControllerYields404",
           "408": "YieldV2ControllerYields408",
+          "409": "YieldV2ControllerYields409",
           "410": "YieldV2ControllerYields410",
           "412": "YieldV2ControllerYields412",
           "429": "YieldV2ControllerYields429",
@@ -7458,6 +8011,7 @@ export const make = (
           "401": "YieldV2ControllerGetYieldById401",
           "404": "YieldV2ControllerGetYieldById404",
           "408": "YieldV2ControllerGetYieldById408",
+          "409": "YieldV2ControllerGetYieldById409",
           "410": "YieldV2ControllerGetYieldById410",
           "412": "YieldV2ControllerGetYieldById412",
           "429": "YieldV2ControllerGetYieldById429",
@@ -7482,6 +8036,7 @@ export const make = (
           "401": "YieldV2ControllerFindYieldValidators401",
           "404": "YieldV2ControllerFindYieldValidators404",
           "408": "YieldV2ControllerFindYieldValidators408",
+          "409": "YieldV2ControllerFindYieldValidators409",
           "410": "YieldV2ControllerFindYieldValidators410",
           "412": "YieldV2ControllerFindYieldValidators412",
           "429": "YieldV2ControllerFindYieldValidators429",
@@ -7509,6 +8064,7 @@ export const make = (
           "401": "YieldV2ControllerFindValidators401",
           "404": "YieldV2ControllerFindValidators404",
           "408": "YieldV2ControllerFindValidators408",
+          "409": "YieldV2ControllerFindValidators409",
           "410": "YieldV2ControllerFindValidators410",
           "412": "YieldV2ControllerFindValidators412",
           "429": "YieldV2ControllerFindValidators429",
@@ -7528,6 +8084,7 @@ export const make = (
           "400": "YieldV2ControllerGetFeeConfigurations400",
           "401": "YieldV2ControllerGetFeeConfigurations401",
           "408": "YieldV2ControllerGetFeeConfigurations408",
+          "409": "YieldV2ControllerGetFeeConfigurations409",
           "410": "YieldV2ControllerGetFeeConfigurations410",
           "412": "YieldV2ControllerGetFeeConfigurations412",
           "429": "YieldV2ControllerGetFeeConfigurations429",
@@ -8179,7 +8736,8 @@ export interface LegacyApi {
     options: { readonly config?: Config | undefined } | undefined
   ) => Effect.Effect<
     WithOptionalResponse<CampaignControllerPause200, Config>,
-    HttpClientError.HttpClientError
+    | HttpClientError.HttpClientError
+    | LegacyApiError<"CampaignControllerPause409", CampaignControllerPause409>
   >;
   readonly CampaignControllerResume: <Config extends OperationConfig>(
     teamId: string,
@@ -8188,7 +8746,21 @@ export interface LegacyApi {
     options: { readonly config?: Config | undefined } | undefined
   ) => Effect.Effect<
     WithOptionalResponse<CampaignControllerResume200, Config>,
-    HttpClientError.HttpClientError
+    | HttpClientError.HttpClientError
+    | LegacyApiError<"CampaignControllerResume409", CampaignControllerResume409>
+  >;
+  readonly CampaignControllerAcknowledgePause: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerAcknowledgePause200, Config>,
+    | HttpClientError.HttpClientError
+    | LegacyApiError<
+        "CampaignControllerAcknowledgePause409",
+        CampaignControllerAcknowledgePause409
+      >
   >;
   readonly CampaignControllerEnd: <Config extends OperationConfig>(
     teamId: string,
@@ -8206,6 +8778,24 @@ export interface LegacyApi {
     options: { readonly config?: Config | undefined } | undefined
   ) => Effect.Effect<
     WithOptionalResponse<CampaignControllerGetSummary200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetCampaignBalances: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetCampaignBalancesParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetCampaignBalances200, Config>,
     HttpClientError.HttpClientError
   >;
   readonly CampaignControllerGetLiability: <Config extends OperationConfig>(
@@ -8334,6 +8924,135 @@ export interface LegacyApi {
       | undefined
   ) => Effect.Effect<
     WithOptionalResponse<CampaignControllerGetEligibleUsers200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetBlacklistedUsers: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetBlacklistedUsersParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetBlacklistedUsers200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetAccrualDetails: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetAccrualDetailsParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetAccrualDetails200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetAccrualDetailForHour: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    hour: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetAccrualDetailForHourParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetAccrualDetailForHour200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetUserAccrualHistory: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    address: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetUserAccrualHistoryParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetUserAccrualHistory200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetSafeBalance: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetSafeBalance200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetPayoutEligibilitySummary: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      CampaignControllerGetPayoutEligibilitySummary200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetBlacklistedAddresses: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?:
+            | CampaignControllerGetBlacklistedAddressesParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetBlacklistedAddresses200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  readonly CampaignControllerGetAuditHistory: <Config extends OperationConfig>(
+    teamId: string,
+    projectId: string,
+    campaignId: string,
+    options:
+      | {
+          readonly params?: CampaignControllerGetAuditHistoryParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignControllerGetAuditHistory200, Config>,
     HttpClientError.HttpClientError
   >;
   /**
@@ -8478,6 +9197,30 @@ export interface LegacyApi {
       CampaignConfigurationRequestAdminControllerList200,
       Config
     >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List all campaigns across all projects (SuperAdmin).
+   */
+  readonly CampaignAdminControllerList: <Config extends OperationConfig>(
+    options:
+      | {
+          readonly params?: CampaignAdminControllerListParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignAdminControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Get a campaign by ID (SuperAdmin).
+   */
+  readonly CampaignAdminControllerGetById: <Config extends OperationConfig>(
+    campaignId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<CampaignAdminControllerGetById200, Config>,
     HttpClientError.HttpClientError
   >;
   /**
@@ -8986,6 +9729,7 @@ export interface LegacyApi {
     | LegacyApiError<"HealthControllerHealthV2401", HealthControllerHealthV2401>
     | LegacyApiError<"HealthControllerHealthV2404", HealthControllerHealthV2404>
     | LegacyApiError<"HealthControllerHealthV2408", HealthControllerHealthV2408>
+    | LegacyApiError<"HealthControllerHealthV2409", HealthControllerHealthV2409>
     | LegacyApiError<"HealthControllerHealthV2410", HealthControllerHealthV2410>
     | LegacyApiError<"HealthControllerHealthV2412", HealthControllerHealthV2412>
     | LegacyApiError<"HealthControllerHealthV2429", HealthControllerHealthV2429>
@@ -9334,6 +10078,10 @@ export interface LegacyApi {
         ActionControllerGetAction408
       >
     | LegacyApiError<
+        "ActionControllerGetAction409",
+        ActionControllerGetAction409
+      >
+    | LegacyApiError<
         "ActionControllerGetAction410",
         ActionControllerGetAction410
       >
@@ -9385,6 +10133,10 @@ export interface LegacyApi {
         ActionControllerGetGasEstimate408
       >
     | LegacyApiError<
+        "ActionControllerGetGasEstimate409",
+        ActionControllerGetGasEstimate409
+      >
+    | LegacyApiError<
         "ActionControllerGetGasEstimate410",
         ActionControllerGetGasEstimate410
       >
@@ -9420,6 +10172,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerEnter403", ActionControllerEnter403>
     | LegacyApiError<"ActionControllerEnter404", ActionControllerEnter404>
     | LegacyApiError<"ActionControllerEnter408", ActionControllerEnter408>
+    | LegacyApiError<"ActionControllerEnter409", ActionControllerEnter409>
     | LegacyApiError<"ActionControllerEnter410", ActionControllerEnter410>
     | LegacyApiError<"ActionControllerEnter412", ActionControllerEnter412>
     | LegacyApiError<"ActionControllerEnter429", ActionControllerEnter429>
@@ -9441,6 +10194,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerExit403", ActionControllerExit403>
     | LegacyApiError<"ActionControllerExit404", ActionControllerExit404>
     | LegacyApiError<"ActionControllerExit408", ActionControllerExit408>
+    | LegacyApiError<"ActionControllerExit409", ActionControllerExit409>
     | LegacyApiError<"ActionControllerExit410", ActionControllerExit410>
     | LegacyApiError<"ActionControllerExit412", ActionControllerExit412>
     | LegacyApiError<"ActionControllerExit429", ActionControllerExit429>
@@ -9462,6 +10216,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerPending403", ActionControllerPending403>
     | LegacyApiError<"ActionControllerPending404", ActionControllerPending404>
     | LegacyApiError<"ActionControllerPending408", ActionControllerPending408>
+    | LegacyApiError<"ActionControllerPending409", ActionControllerPending409>
     | LegacyApiError<"ActionControllerPending410", ActionControllerPending410>
     | LegacyApiError<"ActionControllerPending412", ActionControllerPending412>
     | LegacyApiError<"ActionControllerPending429", ActionControllerPending429>
@@ -9495,6 +10250,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "ActionControllerEnterGasEstimation408",
         ActionControllerEnterGasEstimation408
+      >
+    | LegacyApiError<
+        "ActionControllerEnterGasEstimation409",
+        ActionControllerEnterGasEstimation409
       >
     | LegacyApiError<
         "ActionControllerEnterGasEstimation410",
@@ -9546,6 +10305,10 @@ export interface LegacyApi {
         ActionControllerExitGasEstimate408
       >
     | LegacyApiError<
+        "ActionControllerExitGasEstimate409",
+        ActionControllerExitGasEstimate409
+      >
+    | LegacyApiError<
         "ActionControllerExitGasEstimate410",
         ActionControllerExitGasEstimate410
       >
@@ -9579,6 +10342,7 @@ export interface LegacyApi {
     | LegacyApiError<"ActionControllerList401", ActionControllerList401>
     | LegacyApiError<"ActionControllerList404", ActionControllerList404>
     | LegacyApiError<"ActionControllerList408", ActionControllerList408>
+    | LegacyApiError<"ActionControllerList409", ActionControllerList409>
     | LegacyApiError<"ActionControllerList410", ActionControllerList410>
     | LegacyApiError<"ActionControllerList412", ActionControllerList412>
     | LegacyApiError<"ActionControllerList429", ActionControllerList429>
@@ -9612,6 +10376,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "ActionControllerPendingGasEstimate408",
         ActionControllerPendingGasEstimate408
+      >
+    | LegacyApiError<
+        "ActionControllerPendingGasEstimate409",
+        ActionControllerPendingGasEstimate409
       >
     | LegacyApiError<
         "ActionControllerPendingGasEstimate410",
@@ -9731,6 +10499,10 @@ export interface LegacyApi {
         TransactionControllerGetTransaction408
       >
     | LegacyApiError<
+        "TransactionControllerGetTransaction409",
+        TransactionControllerGetTransaction409
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransaction410",
         TransactionControllerGetTransaction410
       >
@@ -9783,6 +10555,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerConstruct408",
         TransactionControllerConstruct408
+      >
+    | LegacyApiError<
+        "TransactionControllerConstruct409",
+        TransactionControllerConstruct409
       >
     | LegacyApiError<
         "TransactionControllerConstruct410",
@@ -9839,6 +10615,10 @@ export interface LegacyApi {
         TransactionControllerSubmit408
       >
     | LegacyApiError<
+        "TransactionControllerSubmit409",
+        TransactionControllerSubmit409
+      >
+    | LegacyApiError<
         "TransactionControllerSubmit410",
         TransactionControllerSubmit410
       >
@@ -9891,6 +10671,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerSubmitHash408",
         TransactionControllerSubmitHash408
+      >
+    | LegacyApiError<
+        "TransactionControllerSubmitHash409",
+        TransactionControllerSubmitHash409
       >
     | LegacyApiError<
         "TransactionControllerSubmitHash410",
@@ -9951,6 +10735,10 @@ export interface LegacyApi {
         TransactionControllerGetTransactionStatusFromId408
       >
     | LegacyApiError<
+        "TransactionControllerGetTransactionStatusFromId409",
+        TransactionControllerGetTransactionStatusFromId409
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransactionStatusFromId410",
         TransactionControllerGetTransactionStatusFromId410
       >
@@ -10004,6 +10792,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerGetGasForNetwork408",
         TransactionControllerGetGasForNetwork408
+      >
+    | LegacyApiError<
+        "TransactionControllerGetGasForNetwork409",
+        TransactionControllerGetGasForNetwork409
       >
     | LegacyApiError<
         "TransactionControllerGetGasForNetwork410",
@@ -10063,6 +10855,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TransactionControllerGetTransactionStatusByNetworkAndHash408",
         TransactionControllerGetTransactionStatusByNetworkAndHash408
+      >
+    | LegacyApiError<
+        "TransactionControllerGetTransactionStatusByNetworkAndHash409",
+        TransactionControllerGetTransactionStatusByNetworkAndHash409
       >
     | LegacyApiError<
         "TransactionControllerGetTransactionStatusByNetworkAndHash410",
@@ -10126,6 +10922,10 @@ export interface LegacyApi {
         TransactionControllerGetTransactionVerificationMessageForNetwork408
       >
     | LegacyApiError<
+        "TransactionControllerGetTransactionVerificationMessageForNetwork409",
+        TransactionControllerGetTransactionVerificationMessageForNetwork409
+      >
+    | LegacyApiError<
         "TransactionControllerGetTransactionVerificationMessageForNetwork410",
         TransactionControllerGetTransactionVerificationMessageForNetwork410
       >
@@ -10185,6 +10985,10 @@ export interface LegacyApi {
         NetworkAddressesTokenV2ControllerGetTokenBalances408
       >
     | LegacyApiError<
+        "NetworkAddressesTokenV2ControllerGetTokenBalances409",
+        NetworkAddressesTokenV2ControllerGetTokenBalances409
+      >
+    | LegacyApiError<
         "NetworkAddressesTokenV2ControllerGetTokenBalances410",
         NetworkAddressesTokenV2ControllerGetTokenBalances410
       >
@@ -10238,6 +11042,10 @@ export interface LegacyApi {
         NetworkTokensV2ControllerGetTokens408
       >
     | LegacyApiError<
+        "NetworkTokensV2ControllerGetTokens409",
+        NetworkTokensV2ControllerGetTokens409
+      >
+    | LegacyApiError<
         "NetworkTokensV2ControllerGetTokens410",
         NetworkTokensV2ControllerGetTokens410
       >
@@ -10275,6 +11083,7 @@ export interface LegacyApi {
     | LegacyApiError<"TokenControllerGetTokens401", TokenControllerGetTokens401>
     | LegacyApiError<"TokenControllerGetTokens404", TokenControllerGetTokens404>
     | LegacyApiError<"TokenControllerGetTokens408", TokenControllerGetTokens408>
+    | LegacyApiError<"TokenControllerGetTokens409", TokenControllerGetTokens409>
     | LegacyApiError<"TokenControllerGetTokens410", TokenControllerGetTokens410>
     | LegacyApiError<"TokenControllerGetTokens412", TokenControllerGetTokens412>
     | LegacyApiError<"TokenControllerGetTokens429", TokenControllerGetTokens429>
@@ -10308,6 +11117,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TokenControllerGetTokenPrices408",
         TokenControllerGetTokenPrices408
+      >
+    | LegacyApiError<
+        "TokenControllerGetTokenPrices409",
+        TokenControllerGetTokenPrices409
       >
     | LegacyApiError<
         "TokenControllerGetTokenPrices410",
@@ -10359,6 +11172,10 @@ export interface LegacyApi {
         TokenControllerGetTokenBalances408
       >
     | LegacyApiError<
+        "TokenControllerGetTokenBalances409",
+        TokenControllerGetTokenBalances409
+      >
+    | LegacyApiError<
         "TokenControllerGetTokenBalances410",
         TokenControllerGetTokenBalances410
       >
@@ -10406,6 +11223,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "TokenControllerTokenBalancesScan408",
         TokenControllerTokenBalancesScan408
+      >
+    | LegacyApiError<
+        "TokenControllerTokenBalancesScan409",
+        TokenControllerTokenBalancesScan409
       >
     | LegacyApiError<
         "TokenControllerTokenBalancesScan410",
@@ -10607,6 +11428,10 @@ export interface LegacyApi {
         OAVControllerFindAllTokens408
       >
     | LegacyApiError<
+        "OAVControllerFindAllTokens409",
+        OAVControllerFindAllTokens409
+      >
+    | LegacyApiError<
         "OAVControllerFindAllTokens410",
         OAVControllerFindAllTokens410
       >
@@ -10656,6 +11481,10 @@ export interface LegacyApi {
         OAVControllerFindYieldsByToken408
       >
     | LegacyApiError<
+        "OAVControllerFindYieldsByToken409",
+        OAVControllerFindYieldsByToken409
+      >
+    | LegacyApiError<
         "OAVControllerFindYieldsByToken410",
         OAVControllerFindYieldsByToken410
       >
@@ -10695,6 +11524,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerFindAll401", OAVControllerFindAll401>
     | LegacyApiError<"OAVControllerFindAll404", OAVControllerFindAll404>
     | LegacyApiError<"OAVControllerFindAll408", OAVControllerFindAll408>
+    | LegacyApiError<"OAVControllerFindAll409", OAVControllerFindAll409>
     | LegacyApiError<"OAVControllerFindAll410", OAVControllerFindAll410>
     | LegacyApiError<"OAVControllerFindAll412", OAVControllerFindAll412>
     | LegacyApiError<"OAVControllerFindAll429", OAVControllerFindAll429>
@@ -10717,6 +11547,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerCreate401", OAVControllerCreate401>
     | LegacyApiError<"OAVControllerCreate404", OAVControllerCreate404>
     | LegacyApiError<"OAVControllerCreate408", OAVControllerCreate408>
+    | LegacyApiError<"OAVControllerCreate409", OAVControllerCreate409>
     | LegacyApiError<"OAVControllerCreate410", OAVControllerCreate410>
     | LegacyApiError<"OAVControllerCreate412", OAVControllerCreate412>
     | LegacyApiError<"OAVControllerCreate429", OAVControllerCreate429>
@@ -10737,6 +11568,7 @@ export interface LegacyApi {
     | LegacyApiError<"OAVControllerRemove400", OAVControllerRemove400>
     | LegacyApiError<"OAVControllerRemove401", OAVControllerRemove401>
     | LegacyApiError<"OAVControllerRemove408", OAVControllerRemove408>
+    | LegacyApiError<"OAVControllerRemove409", OAVControllerRemove409>
     | LegacyApiError<"OAVControllerRemove410", OAVControllerRemove410>
     | LegacyApiError<"OAVControllerRemove412", OAVControllerRemove412>
     | LegacyApiError<"OAVControllerRemove429", OAVControllerRemove429>
@@ -10759,6 +11591,7 @@ export interface LegacyApi {
     | HttpClientError.HttpClientError
     | LegacyApiError<"OAVControllerUpdate401", OAVControllerUpdate401>
     | LegacyApiError<"OAVControllerUpdate408", OAVControllerUpdate408>
+    | LegacyApiError<"OAVControllerUpdate409", OAVControllerUpdate409>
     | LegacyApiError<"OAVControllerUpdate410", OAVControllerUpdate410>
     | LegacyApiError<"OAVControllerUpdate412", OAVControllerUpdate412>
     | LegacyApiError<"OAVControllerUpdate429", OAVControllerUpdate429>
@@ -10801,6 +11634,7 @@ export interface LegacyApi {
     | LegacyApiError<"YieldControllerYields401", YieldControllerYields401>
     | LegacyApiError<"YieldControllerYields404", YieldControllerYields404>
     | LegacyApiError<"YieldControllerYields408", YieldControllerYields408>
+    | LegacyApiError<"YieldControllerYields409", YieldControllerYields409>
     | LegacyApiError<"YieldControllerYields410", YieldControllerYields410>
     | LegacyApiError<"YieldControllerYields412", YieldControllerYields412>
     | LegacyApiError<"YieldControllerYields429", YieldControllerYields429>
@@ -10834,6 +11668,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetMultipleYieldBalances408",
         YieldControllerGetMultipleYieldBalances408
+      >
+    | LegacyApiError<
+        "YieldControllerGetMultipleYieldBalances409",
+        YieldControllerGetMultipleYieldBalances409
       >
     | LegacyApiError<
         "YieldControllerGetMultipleYieldBalances410",
@@ -10885,6 +11723,10 @@ export interface LegacyApi {
         YieldControllerYieldBalancesScan408
       >
     | LegacyApiError<
+        "YieldControllerYieldBalancesScan409",
+        YieldControllerYieldBalancesScan409
+      >
+    | LegacyApiError<
         "YieldControllerYieldBalancesScan410",
         YieldControllerYieldBalancesScan410
       >
@@ -10932,6 +11774,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerYieldBalancesScanEvm408",
         YieldControllerYieldBalancesScanEvm408
+      >
+    | LegacyApiError<
+        "YieldControllerYieldBalancesScanEvm409",
+        YieldControllerYieldBalancesScanEvm409
       >
     | LegacyApiError<
         "YieldControllerYieldBalancesScanEvm410",
@@ -10984,6 +11830,10 @@ export interface LegacyApi {
         YieldControllerGetMyYields408
       >
     | LegacyApiError<
+        "YieldControllerGetMyYields409",
+        YieldControllerGetMyYields409
+      >
+    | LegacyApiError<
         "YieldControllerGetMyYields410",
         YieldControllerGetMyYields410
       >
@@ -11034,6 +11884,10 @@ export interface LegacyApi {
         YieldControllerGetMyNetworks408
       >
     | LegacyApiError<
+        "YieldControllerGetMyNetworks409",
+        YieldControllerGetMyNetworks409
+      >
+    | LegacyApiError<
         "YieldControllerGetMyNetworks410",
         YieldControllerGetMyNetworks410
       >
@@ -11082,6 +11936,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerFindValidators408",
         YieldControllerFindValidators408
+      >
+    | LegacyApiError<
+        "YieldControllerFindValidators409",
+        YieldControllerFindValidators409
       >
     | LegacyApiError<
         "YieldControllerFindValidators410",
@@ -11135,6 +11993,10 @@ export interface LegacyApi {
         YieldControllerYieldOpportunity408
       >
     | LegacyApiError<
+        "YieldControllerYieldOpportunity409",
+        YieldControllerYieldOpportunity409
+      >
+    | LegacyApiError<
         "YieldControllerYieldOpportunity410",
         YieldControllerYieldOpportunity410
       >
@@ -11184,6 +12046,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetValidators408",
         YieldControllerGetValidators408
+      >
+    | LegacyApiError<
+        "YieldControllerGetValidators409",
+        YieldControllerGetValidators409
       >
     | LegacyApiError<
         "YieldControllerGetValidators410",
@@ -11238,6 +12104,10 @@ export interface LegacyApi {
         YieldControllerGetSingleYieldBalances408
       >
     | LegacyApiError<
+        "YieldControllerGetSingleYieldBalances409",
+        YieldControllerGetSingleYieldBalances409
+      >
+    | LegacyApiError<
         "YieldControllerGetSingleYieldBalances410",
         YieldControllerGetSingleYieldBalances410
       >
@@ -11256,6 +12126,61 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetSingleYieldBalances503",
         YieldControllerGetSingleYieldBalances503
+      >
+  >;
+  /**
+   * Returns one-to-one indexed ERC20 transfer rows for the resolved yield contract and wallet address, including the cumulative balance at each event.
+   */
+  readonly YieldControllerGetBalanceTransferEvents: <
+    Config extends OperationConfig,
+  >(
+    integrationId: string,
+    options: {
+      readonly params: YieldControllerGetBalanceTransferEventsParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<YieldControllerGetBalanceTransferEvents200, Config>,
+    | HttpClientError.HttpClientError
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents400",
+        YieldControllerGetBalanceTransferEvents400
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents401",
+        YieldControllerGetBalanceTransferEvents401
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents404",
+        YieldControllerGetBalanceTransferEvents404
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents408",
+        YieldControllerGetBalanceTransferEvents408
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents409",
+        YieldControllerGetBalanceTransferEvents409
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents410",
+        YieldControllerGetBalanceTransferEvents410
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents412",
+        YieldControllerGetBalanceTransferEvents412
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents429",
+        YieldControllerGetBalanceTransferEvents429
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents500",
+        YieldControllerGetBalanceTransferEvents500
+      >
+    | LegacyApiError<
+        "YieldControllerGetBalanceTransferEvents503",
+        YieldControllerGetBalanceTransferEvents503
       >
   >;
   /**
@@ -11293,6 +12218,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetSingleYieldRewardsSummary408",
         YieldControllerGetSingleYieldRewardsSummary408
+      >
+    | LegacyApiError<
+        "YieldControllerGetSingleYieldRewardsSummary409",
+        YieldControllerGetSingleYieldRewardsSummary409
       >
     | LegacyApiError<
         "YieldControllerGetSingleYieldRewardsSummary410",
@@ -11335,6 +12264,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldControllerGetFeeConfiguration408",
         YieldControllerGetFeeConfiguration408
+      >
+    | LegacyApiError<
+        "YieldControllerGetFeeConfiguration409",
+        YieldControllerGetFeeConfiguration409
       >
     | LegacyApiError<
         "YieldControllerGetFeeConfiguration410",
@@ -11389,6 +12322,10 @@ export interface LegacyApi {
         YieldControllerCreateFeeConfiguration408
       >
     | LegacyApiError<
+        "YieldControllerCreateFeeConfiguration409",
+        YieldControllerCreateFeeConfiguration409
+      >
+    | LegacyApiError<
         "YieldControllerCreateFeeConfiguration410",
         YieldControllerCreateFeeConfiguration410
       >
@@ -11426,6 +12363,7 @@ export interface LegacyApi {
     | LegacyApiError<"YieldV2ControllerYields401", YieldV2ControllerYields401>
     | LegacyApiError<"YieldV2ControllerYields404", YieldV2ControllerYields404>
     | LegacyApiError<"YieldV2ControllerYields408", YieldV2ControllerYields408>
+    | LegacyApiError<"YieldV2ControllerYields409", YieldV2ControllerYields409>
     | LegacyApiError<"YieldV2ControllerYields410", YieldV2ControllerYields410>
     | LegacyApiError<"YieldV2ControllerYields412", YieldV2ControllerYields412>
     | LegacyApiError<"YieldV2ControllerYields429", YieldV2ControllerYields429>
@@ -11461,6 +12399,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerGetYieldById408",
         YieldV2ControllerGetYieldById408
+      >
+    | LegacyApiError<
+        "YieldV2ControllerGetYieldById409",
+        YieldV2ControllerGetYieldById409
       >
     | LegacyApiError<
         "YieldV2ControllerGetYieldById410",
@@ -11518,6 +12460,10 @@ export interface LegacyApi {
         YieldV2ControllerFindYieldValidators408
       >
     | LegacyApiError<
+        "YieldV2ControllerFindYieldValidators409",
+        YieldV2ControllerFindYieldValidators409
+      >
+    | LegacyApiError<
         "YieldV2ControllerFindYieldValidators410",
         YieldV2ControllerFindYieldValidators410
       >
@@ -11566,6 +12512,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerFindValidators408",
         YieldV2ControllerFindValidators408
+      >
+    | LegacyApiError<
+        "YieldV2ControllerFindValidators409",
+        YieldV2ControllerFindValidators409
       >
     | LegacyApiError<
         "YieldV2ControllerFindValidators410",
@@ -11617,6 +12567,10 @@ export interface LegacyApi {
     | LegacyApiError<
         "YieldV2ControllerGetFeeConfigurations408",
         YieldV2ControllerGetFeeConfigurations408
+      >
+    | LegacyApiError<
+        "YieldV2ControllerGetFeeConfigurations409",
+        YieldV2ControllerGetFeeConfigurations409
       >
     | LegacyApiError<
         "YieldV2ControllerGetFeeConfigurations410",

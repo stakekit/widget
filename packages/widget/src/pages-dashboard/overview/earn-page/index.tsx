@@ -18,53 +18,59 @@ import {
 } from "./styles.css";
 import { UtilaSelectValidatorSection } from "./utila-select-validator-section";
 
-export const EarnPage = () => {
+export const EarnPageContent = () => {
   const { variant } = useSettings();
 
   return (
+    <Box className={container}>
+      <Box>
+        <Box
+          className={combineRecipeWithVariant({
+            rec: selectTokenTitleContainer,
+            variant,
+          })}
+        >
+          <SelectTokenTitle />
+        </Box>
+
+        <SelectTokenSection />
+
+        {(variant === "utila" || variant === "porto") && (
+          <Box
+            className={combineRecipeWithVariant({
+              rec: selectValidatorSectionContainer,
+              variant,
+            })}
+          >
+            <UtilaSelectValidatorSection />
+          </Box>
+        )}
+
+        <SelectYieldSection />
+
+        <StakedVia />
+
+        {variant !== "utila" && variant !== "porto" && (
+          <SelectValidatorSection />
+        )}
+
+        <ExtraArgsSelection />
+      </Box>
+
+      {(variant === "utila" || variant === "porto") && <Divider />}
+
+      <Box>
+        <Footer />
+      </Box>
+    </Box>
+  );
+};
+
+export const EarnPage = () => {
+  return (
     <EarnPageStateUsageBoundaryProvider>
       <EarnPageContextProvider>
-        <Box className={container}>
-          <Box>
-            <Box
-              className={combineRecipeWithVariant({
-                rec: selectTokenTitleContainer,
-                variant,
-              })}
-            >
-              <SelectTokenTitle />
-            </Box>
-
-            <SelectTokenSection />
-
-            {(variant === "utila" || variant === "porto") && (
-              <Box
-                className={combineRecipeWithVariant({
-                  rec: selectValidatorSectionContainer,
-                  variant,
-                })}
-              >
-                <UtilaSelectValidatorSection />
-              </Box>
-            )}
-
-            <SelectYieldSection />
-
-            <StakedVia />
-
-            {variant !== "utila" && variant !== "porto" && (
-              <SelectValidatorSection />
-            )}
-
-            <ExtraArgsSelection />
-          </Box>
-
-          {(variant === "utila" || variant === "porto") && <Divider />}
-
-          <Box>
-            <Footer />
-          </Box>
-        </Box>
+        <EarnPageContent />
       </EarnPageContextProvider>
     </EarnPageStateUsageBoundaryProvider>
   );
