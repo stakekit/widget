@@ -1,12 +1,6 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { Maybe } from "purify-ts";
-import {
-  createContext,
-  type PropsWithChildren,
-  useContext,
-  useMemo,
-} from "react";
-import { useTranslation } from "react-i18next";
+import { createContext, type PropsWithChildren, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
   ActionStatus,
@@ -15,8 +9,6 @@ import {
 import { useActivityActions } from "../../../../hooks/api/use-activity-actions";
 import { useActivityContext } from "../../../../providers/activity-provider";
 import { useSKWallet } from "../../../../providers/sk-wallet";
-import { groupDateStrings } from "../../../../utils";
-import { createSubArray, type ItemBulletType } from "../item-bullet-type";
 import type { ActionYieldDto } from "../types";
 import type { ActivityPageContextType } from "./types";
 
@@ -31,7 +23,6 @@ export const ActivityPageContextProvider = ({
   const { openConnectModal } = useConnectModal();
   const { isConnected } = useSKWallet();
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
 
   const onActionSelect = (data: ActionYieldDto) => {
     if (!isConnected) return openConnectModal?.();
@@ -91,36 +82,9 @@ export const ActivityPageContextProvider = ({
 
   const activityActions = useActivityActions();
 
-  const actions = useMemo(
-    () => Maybe.fromNullable(activityActions.allItems),
-    [activityActions.allItems]
-  );
-
-  const groupedDates = useMemo(
-    () => actions.map((action) => action.map((a) => a.actionData.createdAt)),
-    [actions]
-  );
-
-  const [labels, counts] = useMemo(
-    () => groupDateStrings(groupedDates.extract() ?? [], i18n),
-    [groupedDates, i18n]
-  );
-
-  const bulletLines = useMemo(
-    () =>
-      counts.reduce<ItemBulletType[]>(
-        (acc, val) => acc.concat(createSubArray(val)),
-        []
-      ),
-    [counts]
-  );
-
   const value = {
     onActionSelect,
     activityActions,
-    labels,
-    counts,
-    bulletLines,
   };
 
   return (

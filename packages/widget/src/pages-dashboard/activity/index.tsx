@@ -1,37 +1,61 @@
-// import { Summary } from "../rewards/components/summary";
-import { Outlet } from "react-router";
+import { useSelector } from "@xstate/store/react";
+import { Maybe } from "purify-ts";
+import { Outlet, useNavigate } from "react-router";
 import { Box } from "../../components/atoms/box";
+import { CaretLeftIcon } from "../../components/atoms/icons/caret-left";
 import { AnimationPage } from "../../navigation/containers/animation-page";
+import { useActivityContext } from "../../providers/activity-provider";
 import { useSettings } from "../../providers/settings";
 import { combineRecipeWithVariant } from "../../utils/styles";
-import { VerticalDivider } from "../common/components/divider";
-import { TabPageContainer } from "../common/components/tab-page-container";
 import { ActivityPage } from "./activity.page";
 import { activityDetailsContainer } from "./styles.css";
 
 export const ActivityTabPage = () => {
   const { variant } = useSettings();
+  const navigate = useNavigate();
+  const activityStore = useActivityContext();
+
+  const selectedAction = useSelector(
+    activityStore,
+    (state) => state.context.selectedAction
+  );
+
+  const showDetails = selectedAction.isJust();
+
+  const onBack = () => {
+    activityStore.send({ type: "setSelectedAction", data: Maybe.empty() });
+    navigate("/activity");
+  };
+
   return (
     <AnimationPage>
       <Box display="flex" flexDirection="column" gap="4">
-        {/* <Summary /> */}
+        {showDetails ? (
+          <>
+            <Box
+              as="button"
+              onClick={onBack}
+              display="flex"
+              alignItems="center"
+              justifyContent="flex-start"
+            >
+              <CaretLeftIcon />
+            </Box>
 
-        <TabPageContainer>
-          <ActivityPage />
-
-          <VerticalDivider />
-
-          <Box
-            flex={1}
-            width="0"
-            className={combineRecipeWithVariant({
-              rec: activityDetailsContainer,
-              variant,
-            })}
-          >
-            <Outlet />
+            <Box
+              className={combineRecipeWithVariant({
+                rec: activityDetailsContainer,
+                variant,
+              })}
+            >
+              <Outlet />
+            </Box>
+          </>
+        ) : (
+          <Box display="flex" flex={1} flexDirection="column" width="full">
+            <ActivityPage />
           </Box>
-        </TabPageContainer>
+        )}
       </Box>
     </AnimationPage>
   );

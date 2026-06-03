@@ -39,6 +39,7 @@ const baseColorsContract = {
   positionsClaimRewardsBackground: "",
   positionsActionRequiredBackground: "",
   positionsPendingBackground: "",
+  positionsRewardRate: "",
 
   modalOverlayBackground: "",
   modalBodyBackground: "",

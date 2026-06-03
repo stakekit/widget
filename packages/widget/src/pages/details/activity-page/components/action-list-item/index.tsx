@@ -3,19 +3,21 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { ListItem } from "../../../../../components/atoms/list/list-item";
-import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
-import { getYieldProviderDetails } from "../../../../../domain/types/yields";
 import { listItemContainer } from "../../../positions-page/style.css";
 import { useActionListItem } from "../../hooks/use-action-list-item";
+import type { ActionYieldDto } from "../../types";
+import { ActivityIcon } from "../activity-icon";
 import {
-  activityDetailsContainer,
+  amountNeutral,
+  amountPositive,
+  infoColumn,
   listItem,
   noWrap,
+  timeColumn,
+  titleText,
   viaText,
-} from "../../style.css";
-
-import type { ActionYieldDto } from "../../types";
+} from "../activity-item.css";
 
 export const ActionListItem = ({
   action,
@@ -28,67 +30,65 @@ export const ActionListItem = ({
   const {
     integrationData,
     providersDetails,
-    actionType,
+    iconType,
+    title,
+    tokenSymbol,
     amount,
+    amountSign,
+    isPositive,
+    timestampAbsolute,
+    timestampRelative,
+    showFailedBadge,
     badgeLabel,
-    badgeColor,
   } = useActionListItem(action);
 
   return (
     <Box py="1" width="full">
       {integrationData.mapOrDefault(
-        (d) => (
+        () => (
           <ListItem onClick={() => onActionSelect(action)} className={listItem}>
             <Box
               display="flex"
               width="full"
               justifyContent="space-between"
+              alignItems="center"
               gap="2"
             >
               <Box
                 display="flex"
                 justifyContent="flex-start"
                 alignItems="center"
+                gap="2"
+                minWidth="0"
               >
-                <TokenIcon
-                  metadata={{
-                    logoURI: d.metadata.logoURI,
-                    name: d.metadata.name,
-                    provider: getYieldProviderDetails(d) ?? undefined,
-                  }}
-                  token={d.token}
-                />
-                <Box
-                  display="flex"
-                  flexDirection="column"
-                  justifyContent="center"
-                  alignItems="flex-start"
-                  gap="1"
-                >
-                  <Box className={activityDetailsContainer}>
-                    <Text>{d.token.symbol}</Text>
+                <ActivityIcon type={iconType} />
 
-                    <Box className={listItemContainer({ type: badgeColor })}>
-                      <Text
-                        variant={{
-                          type: badgeColor ? "white" : "regular",
-                          size: "small",
-                        }}
-                        className={noWrap}
+                <Box className={infoColumn}>
+                  <Box display="flex" alignItems="center" gap="2">
+                    <Text className={titleText}>{title}</Text>
+
+                    {showFailedBadge && (
+                      <Box
+                        className={listItemContainer({
+                          type: "actionRequired",
+                        })}
                       >
-                        {badgeLabel}
-                      </Text>
-                    </Box>
+                        <Text
+                          variant={{ type: "white", size: "small" }}
+                          className={noWrap}
+                        >
+                          {badgeLabel}
+                        </Text>
+                      </Box>
+                    )}
                   </Box>
+
                   {providersDetails
                     .chain((val) =>
                       List.head(val).map((p) => (
                         <Text
                           className={viaText}
-                          variant={{
-                            type: "muted",
-                            weight: "normal",
-                          }}
+                          variant={{ type: "muted", weight: "normal" }}
                         >
                           {t("positions.via", {
                             providerName: p.name ?? p.address,
@@ -103,20 +103,34 @@ export const ActionListItem = ({
 
               <Box
                 display="flex"
-                justifyContent="center"
-                alignItems="flex-end"
-                flexDirection="column"
-                textAlign="end"
-                gap="1"
+                alignItems="center"
+                justifyContent="flex-end"
+                gap="3"
+                flexShrink={0}
               >
-                <Text variant={{ weight: "normal" }}>{actionType}</Text>
+                {amount
+                  .map((val) => (
+                    <Text
+                      className={isPositive ? amountPositive : amountNeutral}
+                    >
+                      {amountSign}
+                      {val} {tokenSymbol}
+                    </Text>
+                  ))
+                  .extractNullable()}
 
-                <Text
-                  overflowWrap="anywhere"
-                  variant={{ weight: "normal", type: "muted" }}
-                >
-                  {amount.extractNullable()} {d.token.symbol}
-                </Text>
+                <Box className={timeColumn}>
+                  <Text
+                    variant={{ type: "muted", weight: "normal", size: "small" }}
+                  >
+                    {timestampAbsolute}
+                  </Text>
+                  <Text
+                    variant={{ type: "muted", weight: "normal", size: "small" }}
+                  >
+                    {timestampRelative}
+                  </Text>
+                </Box>
               </Box>
             </Box>
           </ListItem>

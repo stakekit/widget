@@ -40,6 +40,7 @@ export const lightThemeColors: typeof colorsContract = {
   positionsClaimRewardsBackground: "#45D65C",
   positionsActionRequiredBackground: "#FA6878",
   positionsPendingBackground: "#FFAA07",
+  positionsRewardRate: "#16A34A",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#FFFFFF",
@@ -185,6 +186,7 @@ export const darkThemeColors: typeof colorsContract = {
   positionsClaimRewardsBackground: "#45D65C",
   positionsActionRequiredBackground: "#FA6878",
   positionsPendingBackground: "#FFAA07",
+  positionsRewardRate: "#45D65C",
 
   modalOverlayBackground: "rgba(0, 0, 0, 0.5)",
   modalBodyBackground: "#2B2B2B",

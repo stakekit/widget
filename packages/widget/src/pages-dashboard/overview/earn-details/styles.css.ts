@@ -69,6 +69,7 @@ export const rangeButton = recipe({
 
 export const chartContainer = style({
   height: "150px",
+  minWidth: 0,
   position: "relative",
   width: "100%",
 });
@@ -96,7 +97,7 @@ export const chartLoadingOverlay = style([
 ]);
 
 globalStyle(
-  `${chartContainer} :is(.recharts-wrapper, .recharts-surface, svg, .recharts-cartesian-axis-tick-label, .recharts-cartesian-axis-tick-value):is(:focus, :focus-visible)`,
+  `${chartContainer}:is(:focus, :focus-visible, :focus-within), ${chartContainer} *:is(:focus, :focus-visible, :focus-within)`,
   {
     outline: "none",
   }

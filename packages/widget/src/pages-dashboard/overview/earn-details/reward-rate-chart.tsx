@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, XAxis, YAxis } from "recharts";
 import { Box } from "../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { Spinner } from "../../../components/atoms/spinner";
@@ -84,46 +84,47 @@ export const HistoryChart = ({
 
   return (
     <Box className={chartContainer}>
-      <ResponsiveContainer height="100%" width="100%">
-        <AreaChart
-          accessibilityLayer={false}
-          data={data}
-          margin={{ top: 8, right: 4, bottom: 4, left: 0 }}
-        >
-          <defs>
-            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={accentColor} stopOpacity={0.24} />
-              <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
-            </linearGradient>
-          </defs>
+      <AreaChart
+        accessibilityLayer={false}
+        data={data}
+        margin={{ top: 8, right: 4, bottom: 4, left: 0 }}
+        responsive
+        style={{ height, width: "100%" }}
+        tabIndex={-1}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={accentColor} stopOpacity={0.24} />
+            <stop offset="100%" stopColor={accentColor} stopOpacity={0} />
+          </linearGradient>
+        </defs>
 
-          <XAxis dataKey="timestamp" hide />
+        <XAxis dataKey="timestamp" hide />
 
-          <YAxis
-            axisLine={false}
-            domain={[domainMin, domainMax]}
-            orientation="right"
-            tick={{ className: axisLabel }}
-            tickFormatter={tickFormatter}
-            tickLine={false}
-            ticks={ticks}
-            width={46}
-          />
+        <YAxis
+          axisLine={false}
+          domain={[domainMin, domainMax]}
+          orientation="right"
+          tick={{ className: axisLabel }}
+          tickFormatter={tickFormatter}
+          tickLine={false}
+          ticks={ticks}
+          width={46}
+        />
 
-          <Area
-            activeDot={false}
-            dataKey="value"
-            dot={renderEndpointDot}
-            fill={`url(#${gradientId})`}
-            isAnimationActive={false}
-            stroke={accentColor}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            type="monotone"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+        <Area
+          activeDot={false}
+          dataKey="value"
+          dot={renderEndpointDot}
+          fill={`url(#${gradientId})`}
+          isAnimationActive={false}
+          stroke={accentColor}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          type="monotone"
+        />
+      </AreaChart>
 
       {isFetching && (
         <Box className={chartLoadingOverlay}>

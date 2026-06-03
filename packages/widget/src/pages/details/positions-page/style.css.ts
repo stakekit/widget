@@ -1,11 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import {
-  widgetContainerMaxWidth,
-  widgetContainerName,
-} from "../../../style.css";
 import { atoms } from "../../../styles/theme/atoms.css";
-import { minContainerWidth } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],
@@ -72,25 +67,6 @@ export const utilaBadgeText = recipe({
     },
   },
 });
-
-export const positionDetailsContainer = style([
-  atoms({ gap: { mobile: "1", tablet: "2" } }),
-  {
-    display: "flex",
-
-    justifyContent: "center",
-
-    alignItems: "flex-start",
-    flexDirection: "column-reverse",
-
-    "@container": {
-      [minContainerWidth(widgetContainerName, widgetContainerMaxWidth)]: {
-        alignItems: "center",
-        flexDirection: "row",
-      },
-    },
-  },
-]);
 
 export const viaText = style({
   textOverflow: "ellipsis",

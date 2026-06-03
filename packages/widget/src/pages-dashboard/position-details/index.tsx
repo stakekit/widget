@@ -12,7 +12,6 @@ import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
 import { positionDetailsActionsHasContent } from "./components/position-details-actions";
 import { PositionDetailsInfo } from "./components/position-details-info";
-import { TopHeader } from "./components/top-header";
 import { headerContainer, posistionDetailsInfoContainer } from "./styles.css";
 
 const PositionDetailsPageComponent = () => {
@@ -35,8 +34,6 @@ const PositionDetailsPageComponent = () => {
           <BackButtonProvider>
             <BackButton />
           </BackButtonProvider>
-
-          <TopHeader />
         </Box>
 
         <TabPageContainer>

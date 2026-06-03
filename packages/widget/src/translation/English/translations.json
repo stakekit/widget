@@ -46,7 +46,21 @@
       "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In Progress"
     },
-    "no_previous_activity": "No previous activity"
+    "no_previous_activity": "No previous activity",
+    "item": {
+      "deposited": "Deposited {{token}}",
+      "withdrew": "Withdrew {{token}}",
+      "rewards": "Rewards",
+      "generic": "{{action}} {{token}}"
+    },
+    "time": {
+      "now": "just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "failed": "Failed",
+    "showing_count": "Showing {{showing}} of {{total}}"
   },
   "details": {
     "earn": "Earn",
@@ -188,6 +202,9 @@
         "activity": "Activity"
       },
       "positions_tooltip": "Positions are your yield-related balances on the network.",
+      "my_positions": "My positions",
+      "positions_active_one": "{{count}} active",
+      "positions_active_other": "{{count}} active",
       "positions_yield": "Yield",
       "positions_reward_rate": "Reward Rate",
       "positions_amount": "Amount",

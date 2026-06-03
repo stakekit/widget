@@ -6,16 +6,14 @@ import { Text } from "../../../../components/atoms/typography/text";
 import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
-import type { ItemBulletType } from "../item-bullet-type";
 import { useActivityPageContext } from "../state/activity-page.context";
 import type { ActionYieldDto } from "../types";
 
 type UseActivityPageResult = {
   content: ReactNode;
   onActionSelect: (val: ActionYieldDto) => void;
-  labels: string[];
-  counts: number[];
-  bulletLines: ItemBulletType[];
+  showingCount: number;
+  total: number;
   allData: ReturnType<
     typeof useActivityPageContext
   >["activityActions"]["allItems"];
@@ -27,10 +25,15 @@ export const useActivityPage = (): UseActivityPageResult => {
 
   const { isConnected, isConnecting } = useSKWallet();
 
-  const { activityActions, onActionSelect, labels, counts, bulletLines } =
-    useActivityPageContext();
+  const { activityActions, onActionSelect } = useActivityPageContext();
 
   const allData = activityActions.allItems;
+
+  const showingCount = allData?.length ?? 0;
+
+  const total =
+    (activityActions.data as { pages: { total?: number }[] } | undefined)
+      ?.pages?.[0]?.total ?? showingCount;
 
   const { t } = useTranslation();
 
@@ -97,9 +100,8 @@ export const useActivityPage = (): UseActivityPageResult => {
   return {
     content,
     onActionSelect,
-    labels,
-    counts,
-    bulletLines,
+    showingCount,
+    total,
     allData,
     activityActions,
   };

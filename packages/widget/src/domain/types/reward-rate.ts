@@ -6,7 +6,7 @@ type YieldRewardDto = RewardDto;
 export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;
 type YieldWithRewardRate = Pick<YieldDto, "rewardRate">;
 type ValidatorRewardRateDto = NonNullable<ValidatorDto["rewardRate"]>;
-type SelectedValidators =
+export type SelectedValidators =
   | ReadonlyArray<ValidatorDto>
   | ReadonlyMap<ValidatorDto["address"], ValidatorDto>;
 

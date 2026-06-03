@@ -45,7 +45,21 @@
       "terms_of_use": "En cliquant sur {{action}} vous acceptez les <underline0>Conditions d'utilisation</underline0> et comprenez les Informations sur les Risques",
       "in_progress": "En cours"
     },
-    "no_previous_activity": "Aucune activité précédente"
+    "no_previous_activity": "Aucune activité précédente",
+    "item": {
+      "deposited": "Dépôt de {{token}}",
+      "withdrew": "Retrait de {{token}}",
+      "rewards": "Récompenses",
+      "generic": "{{action}} {{token}}"
+    },
+    "time": {
+      "now": "à l'instant",
+      "minutes_ago": "il y a {{count}} min",
+      "hours_ago": "il y a {{count}} h",
+      "days_ago": "il y a {{count}} j"
+    },
+    "failed": "Échec",
+    "showing_count": "Affichage de {{showing}} sur {{total}}"
   },
   "details": {
     "earn": "Earn",
@@ -568,6 +582,9 @@
         "activity": "Activité"
       },
       "positions_tooltip": "Les positions sont vos soldes liés au rendement sur le réseau.",
+      "my_positions": "Mes positions",
+      "positions_active_one": "{{count}} active",
+      "positions_active_other": "{{count}} actives",
       "positions_yield": "Rendement",
       "positions_reward_rate": "Taux de récompense",
       "positions_amount": "Montant",

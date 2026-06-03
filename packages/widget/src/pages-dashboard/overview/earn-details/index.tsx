@@ -12,7 +12,10 @@ import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import { RiskRatingBadge } from "../../../components/molecules/yield-risk";
-import { getEffectiveYieldRewardRateDetails } from "../../../domain/types/reward-rate";
+import {
+  getEffectiveYieldRewardRateDetails,
+  type SelectedValidators,
+} from "../../../domain/types/reward-rate";
 import {
   getYieldCooldownPeriod,
   getYieldProviderDetails,
@@ -56,12 +59,30 @@ export const EarnDetails = () => {
     selectedValidators,
     selectYieldIsLoading,
   } = useEarnPageContext();
+
+  return (
+    <EarnDetailsView
+      isLoading={appLoading || selectYieldIsLoading}
+      selectedValidators={selectedValidators}
+      yieldDto={selectedStake.extractNullable()}
+    />
+  );
+};
+
+export const EarnDetailsView = ({
+  isLoading,
+  selectedValidators,
+  yieldDto,
+}: {
+  isLoading: boolean;
+  selectedValidators?: SelectedValidators | null;
+  yieldDto: Yield | null;
+}) => {
   const [rewardRatePeriod, setRewardRatePeriod] =
     useState<RewardRateHistoryPeriod>("90d");
   const [tvlPeriod, setTvlPeriod] = useState<RewardRateHistoryPeriod>("90d");
   const { t } = useTranslation();
 
-  const yieldDto = selectedStake.extractNullable();
   const rewardRateHistory = useYieldRewardRateHistory({
     period: rewardRatePeriod,
     yieldId: yieldDto?.id,
@@ -71,7 +92,7 @@ export const EarnDetails = () => {
     yieldId: yieldDto?.id,
   });
 
-  if (appLoading || selectYieldIsLoading) {
+  if (isLoading) {
     return <ContentLoaderSquare heightPx={430} />;
   }
 

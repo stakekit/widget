@@ -18,8 +18,8 @@ export const usePositionListItem = (
     rewardRateAverage,
     inactiveValidator,
     baseToken,
-    totalAmountUsd,
     totalAmountFormatted,
+    totalAmountPriceFormatted,
   } = useBasePositionListItem(item);
 
   const rewardsSummaryQuery = useRewardsSummary(item.integrationId);
@@ -46,14 +46,6 @@ export const usePositionListItem = (
         .map((val) => BigNumber(val.rewards.total))
         .map(defaultFormattedNumber),
     [rewardsSummary]
-  );
-
-  const totalAmountPriceFormatted = useMemo(
-    () =>
-      totalAmountUsd
-        .filter((v) => v.isGreaterThan(0))
-        .map(defaultFormattedNumber),
-    [totalAmountUsd]
   );
 
   const rewardsAmountPriceFormatted = useMemo(

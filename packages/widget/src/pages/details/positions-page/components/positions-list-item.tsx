@@ -13,12 +13,14 @@ import type { PositionDetailsLabelType } from "../../../../domain/types/position
 import { getYieldProviderDetails } from "../../../../domain/types/yields";
 import { usePositionListItem } from "../hooks/use-position-list-item";
 import type { usePositions } from "../hooks/use-positions";
+import { listItemContainer, viaText } from "../style.css";
 import {
-  listItemContainer,
-  positionDetailsContainer,
-  viaText,
-} from "../style.css";
-import { listItem, noWrap } from "./styles.css";
+  listItem,
+  noWrap,
+  positionInfoColumn,
+  positionName,
+  rewardRateText,
+} from "./styles.css";
 
 export const PositionsListItem = memo(
   ({
@@ -34,6 +36,7 @@ export const PositionsListItem = memo(
       inactiveValidator,
       rewardRateAverage,
       totalAmountFormatted,
+      totalAmountPriceFormatted,
     } = usePositionListItem(item);
 
     return (
@@ -48,13 +51,16 @@ export const PositionsListItem = memo(
                 <Box
                   display="flex"
                   width="full"
+                  alignItems="center"
                   justifyContent="space-between"
                   gap="2"
                 >
                   <Box
                     display="flex"
-                    justifyContent="flex-start"
                     alignItems="center"
+                    gap="2"
+                    flex={1}
+                    minWidth="0"
                   >
                     {item.token.mapOrDefault(
                       (val) => (
@@ -72,49 +78,40 @@ export const PositionsListItem = memo(
                       </Box>
                     )}
 
-                    <Box
-                      display="flex"
-                      flexDirection="column"
-                      justifyContent="center"
-                      alignItems="flex-start"
-                      gap="1"
-                    >
-                      <Box className={positionDetailsContainer}>
-                        {item.token
-                          .map((t) => <Text>{t.symbol}</Text>)
-                          .extractNullable()}
+                    <Box className={positionInfoColumn}>
+                      <Box display="flex" alignItems="center" gap="1">
+                        <Text className={positionName}>{d.metadata.name}</Text>
 
                         {item.yieldLabelDto
-                          .map((label) => {
-                            return (
-                              <ToolTip
-                                textAlign="left"
-                                maxWidth={300}
-                                label={t(
-                                  `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
-                                  label.params as
-                                    | Record<string, string>
-                                    | undefined
-                                )}
+                          .map((label) => (
+                            <ToolTip
+                              textAlign="left"
+                              maxWidth={300}
+                              label={t(
+                                `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
+                                label.params as
+                                  | Record<string, string>
+                                  | undefined
+                              )}
+                            >
+                              <Box
+                                className={listItemContainer({
+                                  type: "actionRequired",
+                                })}
                               >
-                                <Box
-                                  className={listItemContainer({
-                                    type: "actionRequired",
-                                  })}
+                                <Text
+                                  variant={{ type: "white" }}
+                                  className={noWrap}
                                 >
-                                  <Text
-                                    variant={{ type: "white" }}
-                                    className={noWrap}
-                                  >
-                                    {t(
-                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`
-                                    )}
-                                  </Text>
-                                </Box>
-                              </ToolTip>
-                            );
-                          })
+                                  {t(
+                                    `position_details.labels.${label.type as PositionDetailsLabelType}.label`
+                                  )}
+                                </Text>
+                              </Box>
+                            </ToolTip>
+                          ))
                           .extractNullable()}
+
                         {(item.actionRequired ||
                           item.hasPendingClaimRewards ||
                           !!inactiveValidator) && (
@@ -144,15 +141,13 @@ export const PositionsListItem = memo(
                           </Box>
                         )}
                       </Box>
+
                       {providersDetails
                         .chain((val) =>
                           List.head(val).map((p) => (
                             <Text
                               className={viaText}
-                              variant={{
-                                type: "muted",
-                                weight: "normal",
-                              }}
+                              variant={{ type: "muted", weight: "normal" }}
                             >
                               {t("positions.via", {
                                 providerName: p.name ?? p.address,
@@ -165,33 +160,47 @@ export const PositionsListItem = memo(
                     </Box>
                   </Box>
 
-                  {Maybe.fromRecord({
-                    token: item.token,
-                    rewardRateAverage,
-                    totalAmountFormatted,
-                  })
-                    .map((val) => (
-                      <Box
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="flex-end"
-                        flexDirection="column"
-                        textAlign="end"
-                        gap="1"
-                      >
-                        <Text variant={{ weight: "normal" }}>
-                          {item.actionRequired ? " " : val.rewardRateAverage}
-                        </Text>
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    gap="4"
+                    flexShrink={0}
+                  >
+                    {!item.actionRequired &&
+                      rewardRateAverage
+                        .map((v) => <Text className={rewardRateText}>{v}</Text>)
+                        .extractNullable()}
 
-                        <Text
-                          overflowWrap="anywhere"
-                          variant={{ weight: "normal", type: "muted" }}
+                    {Maybe.fromRecord({
+                      amount: totalAmountFormatted,
+                      token: item.token,
+                    })
+                      .map((val) => (
+                        <Box
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="flex-end"
+                          textAlign="end"
+                          gap="1"
                         >
-                          {val.totalAmountFormatted} {val.token.symbol}
-                        </Text>
-                      </Box>
-                    ))
-                    .extractNullable()}
+                          <Text className={noWrap}>
+                            {val.amount} {val.token.symbol}
+                          </Text>
+
+                          {totalAmountPriceFormatted
+                            .map((price) => (
+                              <Text
+                                className={noWrap}
+                                variant={{ type: "muted", weight: "normal" }}
+                              >
+                                ≈ ${price}
+                              </Text>
+                            ))
+                            .extractNullable()}
+                        </Box>
+                      ))
+                      .extractNullable()}
+                  </Box>
                 </Box>
 
                 {item.pointsRewardTokenBalances.length > 0 && (

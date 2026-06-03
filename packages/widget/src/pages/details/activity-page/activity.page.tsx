@@ -2,24 +2,20 @@ import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Text } from "../../../components/atoms/typography/text";
-import { GroupedVirtualList } from "../../../components/atoms/virtual-list";
+import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { PageContainer } from "../../components/page-container";
 import { ActionListItem } from "./components/action-list-item";
-import ListItemBullet from "./components/list-item-bullet";
 import { useActivityPage } from "./hooks/use-activity-page";
-import { ItemBulletType } from "./item-bullet-type";
 import { ActivityPageContextProvider } from "./state/activity-page.context";
-import { container, listItemWrapper } from "./style.css";
-import { type ActionYieldDto, dateGroupLabels } from "./types";
+import { container } from "./style.css";
 
 const ActivityPageComponent = () => {
   const {
     content,
     allData,
-    bulletLines,
-    counts,
-    labels,
+    showingCount,
+    total,
     onActionSelect,
     activityActions,
   } = useActivityPage();
@@ -31,54 +27,27 @@ const ActivityPageComponent = () => {
       {content}
 
       <Box display="flex" flexDirection="column">
-        {!activityActions.isPending && allData && (
-          <GroupedVirtualList
-            hasNextPage={activityActions.hasNextPage}
-            isFetchingNextPage={activityActions.isFetchingNextPage}
-            fetchNextPage={activityActions.fetchNextPage}
-            estimateSize={() => 100}
-            groupCounts={counts}
-            groupContent={(index) => {
-              return (
-                <Box paddingBottom="3">
-                  <Text variant={{ weight: "bold" }}>
-                    {dateGroupLabels(labels[index], t)}
-                  </Text>
-                </Box>
-              );
-            }}
-            itemContent={(index) => {
-              const item = allData[index];
+        {!activityActions.isPending && allData && !!allData.length && (
+          <>
+            <Box display="flex" justifyContent="flex-end" paddingBottom="2">
+              <Text
+                variant={{ type: "muted", weight: "normal", size: "small" }}
+              >
+                {t("activity.showing_count", { showing: showingCount, total })}
+              </Text>
+            </Box>
 
-              return (
-                <Box
-                  className={listItemWrapper}
-                  paddingBottom={
-                    bulletLines[index] === ItemBulletType.ALONE ||
-                    bulletLines[index] === ItemBulletType.LAST
-                      ? "4"
-                      : "0"
-                  }
-                >
-                  <ListItemBullet
-                    isFirst={
-                      bulletLines[index] === ItemBulletType.FIRST ||
-                      bulletLines[index] === ItemBulletType.ALONE
-                    }
-                    isLast={
-                      bulletLines[index] === ItemBulletType.LAST ||
-                      bulletLines[index] === ItemBulletType.ALONE
-                    }
-                    status={item.actionData.status}
-                  />
-                  <ActionListItem
-                    onActionSelect={onActionSelect}
-                    action={item as ActionYieldDto}
-                  />
-                </Box>
-              );
-            }}
-          />
+            <VirtualList
+              data={allData}
+              hasNextPage={activityActions.hasNextPage}
+              isFetchingNextPage={activityActions.isFetchingNextPage}
+              fetchNextPage={activityActions.fetchNextPage}
+              estimateSize={() => 80}
+              itemContent={(_index, item) => (
+                <ActionListItem onActionSelect={onActionSelect} action={item} />
+              )}
+            />
+          </>
         )}
       </Box>
     </Box>

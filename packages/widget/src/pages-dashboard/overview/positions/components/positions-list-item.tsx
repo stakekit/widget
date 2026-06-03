@@ -1,4 +1,4 @@
-import { List } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
@@ -12,18 +12,15 @@ import { Text } from "../../../../components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "../../../../domain/types/positions";
 import { getYieldProviderDetails } from "../../../../domain/types/yields";
 import {
-  columnContainer,
   listItem,
   noWrap,
-  overflowText,
+  positionInfoColumn,
+  positionName,
+  rewardRateText,
 } from "../../../../pages/details/positions-page/components/styles.css";
 import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
 import { usePositionListItem } from "../hooks/use-position-list-item";
-import {
-  listItemContainer,
-  positionDetailsContainer,
-  viaText,
-} from "../styles.css";
+import { listItemContainer, viaText } from "../styles.css";
 
 export const PositionsListItem = memo(
   ({
@@ -52,13 +49,20 @@ export const PositionsListItem = memo(
           {integrationData.mapOrDefault(
             (d) => (
               <ListItem className={listItem}>
-                <Box display="flex" width="full" gap="1">
+                <Box
+                  display="flex"
+                  width="full"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  gap="2"
+                >
                   {/* Yield */}
                   <Box
                     display="flex"
-                    justifyContent="flex-start"
                     alignItems="center"
-                    flex={5}
+                    gap="2"
+                    flex={1}
+                    minWidth="0"
                   >
                     {item.token.mapOrDefault(
                       (val) => (
@@ -76,40 +80,38 @@ export const PositionsListItem = memo(
                       </Box>
                     )}
 
-                    <Box className={columnContainer}>
-                      <Box className={positionDetailsContainer}>
-                        <Text>{d.metadata.name}</Text>
+                    <Box className={positionInfoColumn}>
+                      <Box display="flex" alignItems="center" gap="1">
+                        <Text className={positionName}>{d.metadata.name}</Text>
 
                         {item.yieldLabelDto
-                          .map((label) => {
-                            return (
-                              <ToolTip
-                                textAlign="left"
-                                maxWidth={300}
-                                label={t(
-                                  `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
-                                  label.params as
-                                    | Record<string, string>
-                                    | undefined
-                                )}
+                          .map((label) => (
+                            <ToolTip
+                              textAlign="left"
+                              maxWidth={300}
+                              label={t(
+                                `position_details.labels.${label.type as PositionDetailsLabelType}.details`,
+                                label.params as
+                                  | Record<string, string>
+                                  | undefined
+                              )}
+                            >
+                              <Box
+                                className={listItemContainer({
+                                  type: "actionRequired",
+                                })}
                               >
-                                <Box
-                                  className={listItemContainer({
-                                    type: "actionRequired",
-                                  })}
+                                <Text
+                                  variant={{ type: "white" }}
+                                  className={noWrap}
                                 >
-                                  <Text
-                                    variant={{ type: "white" }}
-                                    className={noWrap}
-                                  >
-                                    {t(
-                                      `position_details.labels.${label.type as PositionDetailsLabelType}.label`
-                                    )}
-                                  </Text>
-                                </Box>
-                              </ToolTip>
-                            );
-                          })
+                                  {t(
+                                    `position_details.labels.${label.type as PositionDetailsLabelType}.label`
+                                  )}
+                                </Text>
+                              </Box>
+                            </ToolTip>
+                          ))
                           .extractNullable()}
 
                         {(item.actionRequired ||
@@ -141,15 +143,13 @@ export const PositionsListItem = memo(
                           </Box>
                         )}
                       </Box>
+
                       {providersDetails
                         .chain((val) =>
                           List.head(val).map((p) => (
                             <Text
                               className={viaText}
-                              variant={{
-                                type: "muted",
-                                weight: "normal",
-                              }}
+                              variant={{ type: "muted", weight: "normal" }}
                             >
                               {t("positions.via", {
                                 providerName: p.name ?? p.address,
@@ -162,39 +162,46 @@ export const PositionsListItem = memo(
                     </Box>
                   </Box>
 
-                  {/* Reward Rate */}
-                  <Box flex={3} className={columnContainer}>
+                  {/* Reward rate + staked */}
+                  <Box
+                    display="flex"
+                    alignItems="center"
+                    gap="4"
+                    flexShrink={0}
+                  >
                     {rewardRateAverage
-                      .map((v) => <Text className={overflowText}>{v}</Text>)
-                      .orDefaultLazy(() => (
-                        <Text style={{ textAlign: "center" }}>-</Text>
-                      ))}
-                  </Box>
+                      .map((v) => <Text className={rewardRateText}>{v}</Text>)
+                      .extractNullable()}
 
-                  {/* Staked */}
-                  <Box flex={2} className={columnContainer}>
-                    {totalAmountFormatted
-                      .map((v) => (
-                        <>
-                          <Text className={overflowText}>{v}</Text>
+                    {Maybe.fromRecord({
+                      amount: totalAmountFormatted,
+                      token: item.token,
+                    })
+                      .map((val) => (
+                        <Box
+                          display="flex"
+                          flexDirection="column"
+                          alignItems="flex-end"
+                          textAlign="end"
+                          gap="1"
+                        >
+                          <Text className={noWrap}>
+                            {val.amount} {val.token.symbol}
+                          </Text>
 
                           {totalAmountPriceFormatted
-                            .map((v) => (
+                            .map((price) => (
                               <Text
-                                variant={{ weight: "normal" }}
-                                className={overflowText}
+                                className={noWrap}
+                                variant={{ type: "muted", weight: "normal" }}
                               >
-                                {v}$
+                                ≈ ${price}
                               </Text>
                             ))
-                            .orDefaultLazy(() => (
-                              <Text style={{ textAlign: "center" }}>-</Text>
-                            ))}
-                        </>
+                            .extractNullable()}
+                        </Box>
                       ))
-                      .orDefault(
-                        <Text style={{ textAlign: "center" }}>-</Text>
-                      )}
+                      .orDefault(<Text>-</Text>)}
                   </Box>
                 </Box>
 

@@ -39,7 +39,7 @@ export const content = style([
   {
     "@media": {
       [minMediaQuery("tablet")]: {
-        width: "380px",
+        width: "550px",
       },
     },
     animation: `${slideUp} 350ms cubic-bezier(.15,1.15,0.6,1.00), ${fadeIn} 150ms ease`,

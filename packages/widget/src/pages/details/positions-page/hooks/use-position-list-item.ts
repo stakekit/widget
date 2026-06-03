@@ -79,6 +79,14 @@ export const usePositionListItem = (
     [totalAmount]
   );
 
+  const totalAmountPriceFormatted = useMemo(
+    () =>
+      totalAmountUsd
+        .filter((v) => v.isGreaterThan(0))
+        .map(defaultFormattedNumber),
+    [totalAmountUsd]
+  );
+
   return {
     integrationData,
     providersDetails,
@@ -87,6 +95,7 @@ export const usePositionListItem = (
     totalAmount,
     totalAmountUsd,
     totalAmountFormatted,
+    totalAmountPriceFormatted,
     baseToken,
     tokenToDisplay,
   };
