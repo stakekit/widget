@@ -11,6 +11,9 @@ import { useSKQueryClient } from "../../providers/query-client";
 import { useValidatorsConfig } from "../use-validators-config";
 
 const PAGE_SIZE = 100;
+const VALIDATORS_STALE_TIME = 1000 * 60 * 5;
+const MAX_FILTERED_VALIDATOR_PAGE_SCAN = 100;
+const PREFERRED_VALIDATOR_PAGE_CONCURRENCY = 3;
 
 type Params = {
   yieldId: string;
@@ -82,7 +85,7 @@ export const getYieldValidatorsByAddresses = async ({
           try {
             const validator = await queryClient.fetchQuery({
               queryKey: getYieldValidatorQueryKey({ yieldId, address }),
-              staleTime: Number.POSITIVE_INFINITY,
+              staleTime: VALIDATORS_STALE_TIME,
               queryFn: async ({ signal }) => {
                 const validatorsPage = await apiClient
                   .withRunOptions({ signal })
@@ -196,8 +199,11 @@ const fetchPagedValidators = async ({
       });
 
   let offset = pageParam.offset;
+  let scannedPages = 0;
 
-  while (true) {
+  while (scannedPages < MAX_FILTERED_VALIDATOR_PAGE_SCAN) {
+    scannedPages += 1;
+
     const rawPage: RawValidatorsPage = await (async () => {
       if (pageParam.type === "search" && search) {
         const [namePage, addressPage] = await Promise.all([
@@ -248,6 +254,10 @@ const fetchPagedValidators = async ({
 
     offset = nextOffset;
   }
+
+  return {
+    validators: [],
+  };
 };
 
 const fetchValidatorsPage = async ({
@@ -296,9 +306,25 @@ const fetchValidatorsPage = async ({
     { length: Math.max(0, Math.ceil(firstPage.total / PAGE_SIZE) - 1) },
     (_, index) => (index + 1) * PAGE_SIZE
   );
-  const remainingPages = await Promise.all(
-    remainingOffsets.map((offset) => fetchPage({ preferred: true, offset }))
-  );
+  const remainingPages: RawValidatorsPage[] = [];
+
+  for (
+    let index = 0;
+    index < remainingOffsets.length;
+    index += PREFERRED_VALIDATOR_PAGE_CONCURRENCY
+  ) {
+    const offsets = remainingOffsets.slice(
+      index,
+      index + PREFERRED_VALIDATOR_PAGE_CONCURRENCY
+    );
+
+    remainingPages.push(
+      ...(await Promise.all(
+        offsets.map((offset) => fetchPage({ preferred: true, offset }))
+      ))
+    );
+  }
+
   const rawValidators = [firstPage, ...remainingPages].flatMap(
     (page) => page.items ?? []
   );
@@ -351,7 +377,7 @@ const getYieldValidatorsQueryOptions = (params: Params) => ({
     params.search ?? "",
     params.validatorsConfig,
   ],
-  staleTime: Number.POSITIVE_INFINITY,
+  staleTime: VALIDATORS_STALE_TIME,
   initialPageParam: getInitialPageParam(params),
   queryFn: ({
     signal,

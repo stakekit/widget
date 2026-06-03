@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { type QueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import { useMemo } from "react";
 import {
@@ -15,6 +15,7 @@ import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportuni
 import { getYieldValidatorsByAddresses } from "./use-yield-validators";
 
 const PAGE_SIZE = 50;
+const ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY = 5;
 
 type ActivityActionItem = {
   actionData: ActionDto;
@@ -22,8 +23,49 @@ type ActivityActionItem = {
   validatorsData: ValidatorDto[];
 };
 
+type ActivityActionBaseItem = Omit<ActivityActionItem, "validatorsData">;
+
 type UseActivityActionsResult = ReturnType<typeof useInfiniteQuery> & {
   allItems: ActivityActionItem[] | undefined;
+};
+
+const getItemsWithValidators = async ({
+  items,
+  apiClient,
+  queryClient,
+}: {
+  items: ActivityActionBaseItem[];
+  apiClient: ReturnType<typeof useApiClient>;
+  queryClient: QueryClient;
+}) => {
+  const data: ActivityActionItem[] = [];
+
+  for (
+    let index = 0;
+    index < items.length;
+    index += ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY
+  ) {
+    const chunk = items.slice(
+      index,
+      index + ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY
+    );
+
+    data.push(
+      ...(await Promise.all(
+        chunk.map(async (item) => ({
+          ...item,
+          validatorsData: await getYieldValidatorsByAddresses({
+            apiClient,
+            queryClient,
+            yieldId: item.yieldData.id,
+            addresses: getActionValidatorAddresses(item.actionData) ?? [],
+          }),
+        }))
+      ))
+    );
+  }
+
+  return data;
 };
 
 export const useActivityActions = (): UseActivityActionsResult => {
@@ -83,18 +125,11 @@ export const useActivityActions = (): UseActivityActionsResult => {
               )
               .chain((items) =>
                 EitherAsync(() =>
-                  Promise.all(
-                    items.map(async (item) => ({
-                      ...item,
-                      validatorsData: await getYieldValidatorsByAddresses({
-                        apiClient,
-                        queryClient,
-                        yieldId: item.yieldData.id,
-                        addresses:
-                          getActionValidatorAddresses(item.actionData) ?? [],
-                      }),
-                    }))
-                  )
+                  getItemsWithValidators({
+                    items,
+                    apiClient,
+                    queryClient,
+                  })
                 )
               )
               .map((data) => ({ ...actionList, data }))
