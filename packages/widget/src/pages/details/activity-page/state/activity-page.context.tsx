@@ -45,6 +45,7 @@ export const ActivityPageContextProvider = ({
         data: Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
+          selectedValidators: data.validatorsData,
         }),
       });
 
@@ -78,6 +79,7 @@ export const ActivityPageContextProvider = ({
         data: Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
+          selectedValidators: data.validatorsData,
         }),
       });
 

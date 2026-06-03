@@ -13,6 +13,9 @@ export const useSelectValidator = () => {
     onValidatorSearch,
     validatorsData,
     validatorSearch,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
   } = useEarnPageContext();
 
   const isLoading = appLoading || selectValidatorIsLoading;
@@ -51,5 +54,8 @@ export const useSelectValidator = () => {
     onValidatorSearch,
     validatorsData,
     validatorSearch,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
   };
 };

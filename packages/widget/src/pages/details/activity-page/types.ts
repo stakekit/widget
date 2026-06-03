@@ -1,10 +1,12 @@
 import type { TFunction } from "i18next";
 import type { ActionDto } from "../../../domain/types/action";
+import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
 
 export type ActionYieldDto = {
   actionData: ActionDto;
   yieldData: Yield;
+  validatorsData: ValidatorDto[];
 };
 
 type DateGroupLabels = "today" | "yesterday" | string;

@@ -4,6 +4,18 @@ import { vars } from "../../../styles/theme/contract.css";
 
 export const validatorVirtuosoContainer = style([atoms({ marginTop: "2" })]);
 
+export const emptyState = style([
+  atoms({
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    px: "4",
+  }),
+  {
+    minHeight: "180px",
+  },
+]);
+
 const breakWord = style({ wordBreak: "break-all" });
 
 export const modalItemNameContainer = style([

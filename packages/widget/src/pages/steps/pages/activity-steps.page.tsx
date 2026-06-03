@@ -1,10 +1,7 @@
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import {
-  getActionInputToken,
-  getActionValidatorAddresses,
-} from "../../../domain/types/action";
+import { getActionInputToken } from "../../../domain/types/action";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useActivityContext } from "../../../providers/activity-provider";
@@ -25,11 +22,16 @@ export const ActivityStepsPage = () => {
     (state) => state.context.selectedYield
   ).unsafeCoerce();
 
+  const selectedValidators = useSelector(
+    activityContext,
+    (state) => state.context.selectedValidators
+  ).unsafeCoerce();
+
   const providersDetails = useProvidersDetails({
     integrationData: useMemo(() => Maybe.of(selectedYield), [selectedYield]),
-    validatorsAddresses: useMemo(
-      () => Maybe.of(getActionValidatorAddresses(selectedAction) ?? []),
-      [selectedAction]
+    validators: useMemo(
+      () => Maybe.of(selectedValidators),
+      [selectedValidators]
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

@@ -6,7 +6,7 @@ import type {
   TransactionDto as YieldTransactionDtoGenerated,
 } from "../../generated/api/yield";
 import type { TokenDto } from "./tokens";
-import { getYieldMetadataTokens, type Yield } from "./yields";
+import type { Yield } from "./yields";
 
 export type ActionDto = YieldActionDtoGenerated;
 export type TransactionDto = YieldTransactionDtoGenerated;
@@ -107,11 +107,7 @@ export const getActionInputToken = ({
   const needle = toLower(inputTokenValue);
 
   return (
-    [
-      yieldDto.token,
-      ...(yieldDto.tokens ?? []),
-      ...getYieldMetadataTokens(yieldDto),
-    ].find((token) => {
+    [yieldDto.token, ...(yieldDto.tokens ?? [])].find((token) => {
       const address = token.address ? toLower(token.address) : null;
 
       return (

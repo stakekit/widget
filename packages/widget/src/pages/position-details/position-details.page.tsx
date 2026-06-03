@@ -31,6 +31,9 @@ const PositionDetails = () => {
     onPendingActionAmountChange,
     integrationData,
     validatorsData,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
     isLoading,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
@@ -330,6 +333,9 @@ const PositionDetails = () => {
                     }}
                     selectedStake={integrationData}
                     validators={validatorsData}
+                    hasMore={hasMoreValidators}
+                    isLoadingMore={isLoadingMoreValidators}
+                    onLoadMore={onLoadMoreValidators}
                     multiSelect={validatorAddressesHandling.multiSelect}
                     state={validatorAddressesHandling.modalState}
                   >

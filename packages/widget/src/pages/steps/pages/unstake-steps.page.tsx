@@ -27,8 +27,8 @@ export const UnstakeStepsPage = () => {
       () => Maybe.of(exitRequest.integrationData),
       [exitRequest.integrationData]
     ),
-    validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : []
+    validators: positionBalances.data.map((p) =>
+      p.type === "validators" ? p.validators : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

@@ -28,8 +28,8 @@ export const PendingStepsPage = () => {
       () => Maybe.of(pendingRequest.integrationData),
       [pendingRequest.integrationData]
     ),
-    validatorsAddresses: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validatorsAddresses : []
+    validators: positionBalances.data.map((p) =>
+      p.type === "validators" ? p.validators : []
     ),
     selectedProviderYieldId: Maybe.empty(),
   });

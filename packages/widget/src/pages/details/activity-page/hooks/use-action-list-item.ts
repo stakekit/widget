@@ -1,10 +1,7 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ActionStatus,
-  getActionValidatorAddresses,
-} from "../../../../domain/types/action";
+import { ActionStatus } from "../../../../domain/types/action";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
 import { dateOlderThen7Days } from "../../../../utils/date";
@@ -33,9 +30,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: Maybe.of(
-      getActionValidatorAddresses(action.actionData) ?? []
-    ),
+    validators: Maybe.of(action.validatorsData),
     selectedProviderYieldId: Maybe.empty(),
   });
 

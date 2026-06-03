@@ -36,6 +36,9 @@ export const PositionDetailsActions = () => {
     isLoading,
     integrationData,
     validatorsData,
+    hasMoreValidators,
+    isLoadingMoreValidators,
+    onLoadMoreValidators,
     positionBalancesByType,
     unstakeToken,
     providersDetails,
@@ -176,6 +179,9 @@ export const PositionDetailsActions = () => {
             }}
             selectedStake={v.integrationData}
             validators={validatorsData}
+            hasMore={hasMoreValidators}
+            isLoadingMore={isLoadingMoreValidators}
+            onLoadMore={onLoadMoreValidators}
             multiSelect={validatorAddressesHandling.multiSelect}
             state={validatorAddressesHandling.modalState}
           >

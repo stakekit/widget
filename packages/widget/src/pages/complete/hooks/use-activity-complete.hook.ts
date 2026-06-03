@@ -1,10 +1,7 @@
 import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import {
-  getActionInputToken,
-  getActionValidatorAddresses,
-} from "../../../domain/types/action";
+import { getActionInputToken } from "../../../domain/types/action";
 import type { TokenDto } from "../../../domain/types/tokens";
 import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
@@ -36,6 +33,11 @@ export const useActivityComplete = () => {
     (state) => state.context.selectedYield
   );
 
+  const selectedValidators = useSelector(
+    activityContext,
+    (state) => state.context.selectedValidators
+  );
+
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
 
   const inputToken = useMemo(
@@ -63,9 +65,7 @@ export const useActivityComplete = () => {
 
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,
-    validatorsAddresses: Maybe.of(
-      getActionValidatorAddresses(selectedAction) ?? []
-    ),
+    validators: selectedValidators,
     selectedProviderYieldId: Maybe.of(selectedAction.yieldId),
   });
 

@@ -114,10 +114,8 @@ export const SummaryProvider = ({
 
       const providerDetails = getProviderDetails({
         integrationData: Maybe.of(yieldDto),
-        validatorAddress:
-          p.type === "validators"
-            ? List.head(p.validatorsAddresses)
-            : Maybe.empty(),
+        validator:
+          p.type === "validators" ? List.head(p.validators) : Maybe.empty(),
         selectedProviderYieldId: Maybe.empty(),
         yields: Maybe.of(yields),
       });

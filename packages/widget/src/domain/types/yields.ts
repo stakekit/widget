@@ -284,10 +284,6 @@ export const getYieldTVL = (yieldDto: Yield) =>
 export const getYieldLockupPeriod = (yieldDto: Yield) =>
   yieldDto.__fallback__.metadata.lockupPeriod;
 
-export const getYieldMetadataTokens = (yieldDto: Yield) => [
-  ...(yieldDto.__fallback__.metadata.tokens ?? []),
-];
-
 export const hasYieldExitSignatureVerification = (yieldDto: Yield) =>
   !!yieldDto.__fallback__.args.exit?.args?.signatureVerification?.required;
 

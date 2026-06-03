@@ -18,6 +18,7 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
     tokenSelectBackground: vars.color.__internal__utila__grey__one__,
     dashboardDetailsSectionBackground:
       vars.color.__internal__utila__grey__one__,
+    warningBoxBackground: vars.color.__internal__utila__warning__background__,
 
     primaryButtonBackground: vars.color.__internal__utila__primary__blue__,
     primaryButtonColor: vars.color.white,

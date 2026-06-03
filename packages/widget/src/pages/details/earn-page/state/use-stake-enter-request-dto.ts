@@ -52,11 +52,15 @@ export const useStakeEnterRequestDto = () => {
           return Maybe.empty();
         }
 
+        const selectedProviderArgs = isYieldIntegrationAggregator(selectedStake)
+          ? {}
+          : { providerId };
+
         const validatorsOrProvider = (() => {
           if (isYieldIntegrationAggregator(selectedStake)) {
-            return List.head(validators).map((v) => ({
-              providerId: v.providerId,
-            }));
+            return List.head(validators)
+              .chainNullable((v) => v.providerId)
+              .map((providerId) => ({ providerId }));
           }
 
           if (
@@ -109,7 +113,7 @@ export const useStakeEnterRequestDto = () => {
               tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
               useMaxAmount: useMaxAmount || undefined,
-              providerId,
+              ...selectedProviderArgs,
               ...validatorsOrProvider,
               ...(additionalAddresses ?? {}),
             },

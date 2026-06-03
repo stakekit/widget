@@ -20,9 +20,7 @@ export const usePositionListItem = (
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validatorsAddresses: Maybe.of(
-      item.type === "validators" ? item.validatorsAddresses : []
-    ),
+    validators: Maybe.of(item.type === "validators" ? item.validators : []),
     selectedProviderYieldId: Maybe.empty(),
   });
 

@@ -198,7 +198,7 @@ const buildPolkadotLedgerTransaction = ({
             amount: readString(args.value, txMeta.amountRaw),
             recipient,
             fee: fee.toString(),
-            rewardDestination: args.rewardDestination,
+            rewardDestination: readOptionalString(args.payee),
           };
         case "bondExtra":
           return {
@@ -269,15 +269,18 @@ const buildCosmosLedgerTransaction = (
   txMeta: SKTxMeta
 ): Either<string, RawTransaction> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
-  const amount = getActionAmountInBaseUnits(txMeta);
+  const mode = getCosmosMode(txMeta.txType);
+  const actionAmount = getActionAmountInBaseUnits(txMeta);
+  const amount =
+    actionAmount ?? (isCosmosClaimMode(mode) ? new BigNumber(0) : null);
 
-  if (!validatorAddress || !amount) {
+  if (!validatorAddress || amount === null) {
     return Left("Missing Cosmos Ledger arguments");
   }
 
   return Right({
     family: "cosmos",
-    mode: getCosmosMode(txMeta.txType),
+    mode,
     validators: [
       {
         address: validatorAddress,
@@ -311,24 +314,27 @@ const buildTronLedgerTransaction = (
           mode: "freeze",
           resource,
         } as RawTronTransaction);
-      case "VOTE":
-        if (!amount || !txMeta.rawArguments?.validatorAddresses?.length) {
+      case "VOTE": {
+        const validatorAddresses = txMeta.rawArguments?.validatorAddresses;
+
+        if (!amount || !validatorAddresses?.length) {
           return Left("Missing Tron vote arguments");
         }
-        return Right({
-          amount: amount.toString(),
-          recipient: txMeta.address ?? "",
-          family: "tron",
-          mode: "vote",
-          votes: txMeta.rawArguments.validatorAddresses.map((address) => ({
-            address,
-            voteCount: amount
-              .dividedToIntegerBy(
-                txMeta.rawArguments?.validatorAddresses?.length ?? 1
-              )
-              .toNumber(),
-          })),
-        } as RawTronTransaction);
+
+        return getTronVotes({
+          txMeta,
+          validatorAddresses,
+        }).map(
+          (votes) =>
+            ({
+              amount: amount.toString(),
+              recipient: txMeta.address ?? "",
+              family: "tron",
+              mode: "vote",
+              votes,
+            }) as RawTronTransaction
+        );
+      }
       case "UNDELEGATE_BANDWIDTH":
       case "UNDELEGATE_ENERGY":
         if (!amount || !resource || !validatorAddress) {
@@ -523,6 +529,9 @@ const getCosmosMode = (txType: SKTxMeta["txType"]): string => {
   }
 };
 
+const isCosmosClaimMode = (mode: string): boolean =>
+  mode === "claimReward" || mode === "claimRewardCompound";
+
 const getNearMode = (txType: SKTxMeta["txType"]): string => {
   switch (txType) {
     case "STAKE":
@@ -559,7 +568,8 @@ const normalizeSubstrateValue = (value: unknown): unknown => {
 
   if (typeof value === "string") {
     const normalized = value.replace(/,/g, "");
-    return new BigNumber(normalized).isNaN() ? value : normalized;
+
+    return isNumericString(normalized) ? normalized : value;
   }
 
   if (typeof value === "object" && value !== null) {
@@ -578,6 +588,9 @@ const toCamelCase = (key: string): string =>
         )
     : key;
 
+const isNumericString = (value: string): boolean =>
+  /^-?\d+(\.\d+)?(e[+-]?\d+)?$/i.test(value.trim());
+
 const readString = (
   value: unknown,
   fallback: string | null | undefined = undefined
@@ -589,6 +602,75 @@ const readString = (
   if (fallback) return fallback;
 
   return "0";
+};
+
+const readOptionalString = (value: unknown): string | undefined => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "bigint") {
+    return value.toString();
+  }
+
+  return undefined;
+};
+
+const getActionAmountInTokenUnits = (txMeta: SKTxMeta): BigNumber | null => {
+  const amount = txMeta.rawArguments?.amount ?? txMeta.amount;
+
+  if (amount) {
+    return new BigNumber(amount);
+  }
+
+  const decimals = txMeta.inputToken?.decimals;
+
+  if (!txMeta.amountRaw || decimals === undefined) {
+    return null;
+  }
+
+  return new BigNumber(txMeta.amountRaw).dividedBy(
+    new BigNumber(10).pow(decimals)
+  );
+};
+
+const getTronVotes = ({
+  txMeta,
+  validatorAddresses,
+}: {
+  txMeta: SKTxMeta;
+  validatorAddresses: ReadonlyArray<string>;
+}): Either<string, { address: string; voteCount: number }[]> => {
+  const amount = getActionAmountInTokenUnits(txMeta);
+
+  if (!amount) {
+    return Left("Missing Tron vote arguments");
+  }
+
+  const validatorsCount = validatorAddresses.length;
+  const equalVoteCount = amount.dividedToIntegerBy(validatorsCount);
+  const remainingVotes = amount
+    .modulo(validatorsCount)
+    .integerValue(BigNumber.ROUND_FLOOR);
+
+  if (
+    !equalVoteCount.isFinite() ||
+    !remainingVotes.isFinite() ||
+    equalVoteCount.isNegative() ||
+    remainingVotes.isNegative()
+  ) {
+    return Left("Invalid Tron vote count");
+  }
+
+  if (equalVoteCount.plus(1).gt(Number.MAX_SAFE_INTEGER)) {
+    return Left("Tron vote count exceeds Ledger limits");
+  }
+
+  return Right(
+    validatorAddresses.map((address, index) => ({
+      address,
+      voteCount: equalVoteCount
+        .plus(index < remainingVotes.toNumber() ? 1 : 0)
+        .toNumber(),
+    }))
+  );
 };
 
 const readValidatorTargets = (value: unknown): string[] => {
