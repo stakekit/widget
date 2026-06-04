@@ -21,6 +21,7 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { getYieldKycRequirement } from "../../../../domain/types/kyc";
 import { getInitSelectedValidators } from "../../../../domain/types/stake";
 import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TronResourceType } from "../../../../domain/types/tron";
@@ -38,6 +39,7 @@ import {
   type Yield,
 } from "../../../../domain/types/yields";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
+import { useKycStatusPrefetch } from "../../../../hooks/api/use-kyc-status";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
@@ -103,6 +105,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
     useSKWallet();
+
+  // prefetch kyc status for the gate
+  useKycStatusPrefetch(selectedStake);
 
   const yieldType = useYieldType(selectedStake).mapOrDefault(
     (y) => y.title,
@@ -473,7 +478,11 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           selectedValidators: val.stakeEnterRequestDto.selectedValidators,
         },
       });
-      navigate("/review");
+
+      const requiresKyc = getYieldKycRequirement(
+        val.stakeEnterRequestDto.selectedStake
+      ).required;
+      navigate(requiresKyc ? "/kyc" : "/review");
     },
   });
 

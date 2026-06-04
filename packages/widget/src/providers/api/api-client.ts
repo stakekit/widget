@@ -3,9 +3,10 @@ import {
   FetchHttpClient,
   HttpClient,
   HttpClientRequest,
-  type HttpClientResponse,
+  HttpClientResponse,
 } from "effect/unstable/http";
 import { waitForDelayedApiRequests } from "../../common/delay-api-requests";
+import type { KycStatusResult } from "../../domain/types/kyc";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
 import { handleGeoBlockResponse } from "../../hooks/use-geo-block";
@@ -247,8 +248,30 @@ export const createApiClient = ({
   const yieldApi = YieldApi.make(yieldHttpClient);
   const boundClients = bindApiClients({ legacyApi, runtime, yieldApi });
 
+  // not in the generated client yet; runs through the configured yield client
+  const getKycStatus = (
+    yieldId: string,
+    address: string,
+    runOptions?: RunOptions
+  ): Promise<KycStatusResult> =>
+    runtime.runPromise(
+      yieldHttpClient
+        .execute(
+          HttpClientRequest.get(`/v1/yields/${yieldId}/kyc/status`).pipe(
+            HttpClientRequest.setUrlParams({ address })
+          )
+        )
+        .pipe(
+          Effect.flatMap(HttpClientResponse.filterStatusOk),
+          Effect.flatMap((response) => response.json),
+          Effect.map((data) => data as KycStatusResult)
+        ),
+      runOptions
+    );
+
   return {
     ...boundClients,
+    getKycStatus,
     withRunOptions: (runOptions: RunOptions) =>
       bindApiClients({ legacyApi, runOptions, runtime, yieldApi }),
     dispose: () => runtime.dispose(),
