@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.272](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.271...@stakekit/widget@0.0.272) (2026-06-04)
+
+
+### Bug Fixes
+
+* **widget:** share API runtime and fix package build externals ([#523](https://github.com/stakekit/widget/issues/523)) ([5e93f9d](https://github.com/stakekit/widget/commit/5e93f9d041e544b0212ab435ff111aff467ce48d))
+
 ## [0.0.271](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.270...@stakekit/widget@0.0.271) (2026-06-03)
 
 
