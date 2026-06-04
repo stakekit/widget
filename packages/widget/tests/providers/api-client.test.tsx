@@ -41,39 +41,31 @@ describe("API client", () => {
     );
     const client = createTestClient();
 
-    try {
-      await expect(
-        client.legacy.TokenControllerGetTokens(undefined)
-      ).resolves.toEqual([]);
-      await expect(
-        client.yield.HealthControllerHealth(undefined)
-      ).resolves.toMatchObject({
-        status: "OK",
-      });
+    await expect(
+      client.legacy.TokenControllerGetTokens(undefined)
+    ).resolves.toEqual([]);
+    await expect(
+      client.yield.HealthControllerHealth(undefined)
+    ).resolves.toMatchObject({
+      status: "OK",
+    });
 
-      expect(calls.map((call) => call.url)).toEqual([
-        "https://api.example.com/v1/tokens",
-        "https://yield.example.com/health",
-      ]);
-      expect(
-        calls.every((call) => call.headers.get("X-API-KEY") === "test-key")
-      ).toBe(true);
-    } finally {
-      client.dispose();
-    }
+    expect(calls.map((call) => call.url)).toEqual([
+      "https://api.example.com/v1/tokens",
+      "https://yield.example.com/health",
+    ]);
+    expect(
+      calls.every((call) => call.headers.get("X-API-KEY") === "test-key")
+    ).toBe(true);
   });
 
   it("exposes only the generated operations currently used by the app", () => {
     const client = createTestClient();
 
-    try {
-      expect("TokenControllerGetTokens" in client.legacy).toBe(true);
-      expect("AuthControllerMe" in client.legacy).toBe(false);
-      expect("YieldsControllerGetAggregateBalances" in client.yield).toBe(true);
-      expect("ProvidersControllerGetProviders" in client.yield).toBe(false);
-    } finally {
-      client.dispose();
-    }
+    expect("TokenControllerGetTokens" in client.legacy).toBe(true);
+    expect("AuthControllerMe" in client.legacy).toBe(false);
+    expect("YieldsControllerGetAggregateBalances" in client.yield).toBe(true);
+    expect("ProvidersControllerGetProviders" in client.yield).toBe(false);
   });
 
   it("records rich errors for failed StakeKit API responses", async ({
@@ -103,7 +95,6 @@ describe("API client", () => {
         .poll(() => richError.result.current.error?.message)
         .toBe("Rich failure");
     } finally {
-      client.dispose();
       richError.unmount();
     }
   });
@@ -142,7 +133,6 @@ describe("API client", () => {
       const value = geoBlock.result.current;
       expect(value === false ? [] : [...value.tags]).toEqual(["staking"]);
     } finally {
-      client.dispose();
       geoBlock.unmount();
     }
   });
@@ -163,14 +153,10 @@ describe("API client", () => {
     );
     const client = createTestClient();
 
-    try {
-      await expect(
-        client.legacy.TokenControllerGetTokens(undefined)
-      ).resolves.toEqual([]);
-      expect(attempts).toBe(3);
-    } finally {
-      client.dispose();
-    }
+    await expect(
+      client.legacy.TokenControllerGetTokens(undefined)
+    ).resolves.toEqual([]);
+    expect(attempts).toBe(3);
   });
 
   it("does not retry non-transient response statuses", async ({ worker }) => {
@@ -187,18 +173,14 @@ describe("API client", () => {
     );
     const client = createTestClient();
 
-    try {
-      await expect(
-        client.legacy.TokenControllerGetTokens(undefined)
-      ).rejects.toMatchObject({
-        _tag: "TokenControllerGetTokens400",
-        cause: { code: 400, message: "bad request" },
-        response: { status: 400 },
-      });
-      expect(attempts).toBe(1);
-    } finally {
-      client.dispose();
-    }
+    await expect(
+      client.legacy.TokenControllerGetTokens(undefined)
+    ).rejects.toMatchObject({
+      _tag: "TokenControllerGetTokens400",
+      cause: { code: 400, message: "bad request" },
+      response: { status: 400 },
+    });
+    expect(attempts).toBe(1);
   });
 
   it("does not retry aborted requests", async ({ worker }) => {
@@ -218,16 +200,12 @@ describe("API client", () => {
     );
     const client = createTestClient();
 
-    try {
-      await expect(
-        client
-          .withRunOptions({ signal: controller.signal })
-          .legacy.TokenControllerGetTokens(undefined)
-      ).rejects.toBeTruthy();
-      expect(attempts).toBeLessThanOrEqual(1);
-    } finally {
-      client.dispose();
-    }
+    await expect(
+      client
+        .withRunOptions({ signal: controller.signal })
+        .legacy.TokenControllerGetTokens(undefined)
+    ).rejects.toBeTruthy();
+    expect(attempts).toBeLessThanOrEqual(1);
   });
 
   it("waits for delayed API requests before resolving successful responses", async ({
@@ -261,7 +239,6 @@ describe("API client", () => {
 
       expect(resolved).toBe(true);
     } finally {
-      client.dispose();
       releaseDelay();
       env.isTestMode = originalIsTestMode;
     }
