@@ -565,7 +565,9 @@
   },
   "select_token": {
     "title": "Sélectionner un token",
-    "n_available_opps": "{{count}} opportunités disponibles"
+    "n_available_opps": "{{count}} opportunités disponibles",
+    "yields_available_one": "{{count}} rendement disponible",
+    "yields_available_other": "{{count}} rendements disponibles"
   },
   "error_modal": {
     "solution": "Solution potentielle :"

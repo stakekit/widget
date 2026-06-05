@@ -7,11 +7,12 @@ import { useEffect, useMemo } from "react";
 import { createSelector } from "reselect";
 import {
   defaultIfEmpty,
+  EMPTY,
   filter,
   firstValueFrom,
   from,
   map,
-  merge,
+  mergeMap,
   Observable,
   repeat,
   take,
@@ -42,7 +43,7 @@ import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSavedRef } from "../use-saved-ref";
 import { useValidatorsConfig } from "../use-validators-config";
-import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
+import { getYieldOpportunities } from "./use-yield-opportunity/get-yield-opportunity";
 
 const multiYieldsStore = createStore({
   context: { data: new Map<string, Map<string, Yield>>() },
@@ -160,32 +161,31 @@ const multipleYields$ = (args: {
   yieldIds: ReadonlyArray<string>;
   validatorsConfig: ValidatorsConfig;
 }) =>
-  merge(
-    ...args.yieldIds.map((v) =>
-      from(
-        getYieldOpportunity({
+  args.yieldIds.length === 0
+    ? EMPTY
+    : from(
+        getYieldOpportunities({
           isLedgerLive: args.isLedgerLive,
-          yieldId: v,
+          yieldIds: args.yieldIds,
           queryClient: args.queryClient,
           apiClient: args.apiClient,
         })
-      )
-    )
-  ).pipe(
-    map((v) => (v.isRight() ? v.extract() : null)),
-    filter(
-      (v): v is Yield =>
-        !!(
-          v &&
-          defaultFiltered({
-            data: [v],
-            isConnected: args.isConnected,
-            network: args.network,
-            isLedgerLive: args.isLedgerLive,
-          }).length > 0
+      ).pipe(
+        map((v) => (v.isRight() ? v.extract() : [])),
+        mergeMap((v) => from(v)),
+        filter(
+          (v): v is Yield =>
+            !!(
+              v &&
+              defaultFiltered({
+                data: [v],
+                isConnected: args.isConnected,
+                network: args.network,
+                isLedgerLive: args.isLedgerLive,
+              }).length > 0
+            )
         )
-    )
-  );
+      );
 
 const firstEligibleYield$ = (args: {
   isLedgerLive: boolean;

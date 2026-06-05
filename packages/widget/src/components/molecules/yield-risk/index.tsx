@@ -17,10 +17,29 @@ import {
   riskSummaryContainer,
 } from "./styles.css";
 
+export { riskSummaryActions } from "./styles.css";
+
 type RiskRatingBadgeProps = {
   risk: YieldRiskDisplay;
   size?: "compact" | "default";
   testId?: string;
+};
+
+export const YieldRiskInfoTooltip = () => {
+  const { t } = useTranslation();
+
+  return (
+    <ToolTip asChild label={t("details.risk.tooltip")}>
+      <Box
+        as="button"
+        aria-label={t("details.risk.info_aria_label")}
+        className={riskInfoButton}
+        type="button"
+      >
+        <InfoIcon />
+      </Box>
+    </ToolTip>
+  );
 };
 
 export const RiskRatingBadge = ({
@@ -80,16 +99,7 @@ export const YieldRiskRatingSummary = ({ yieldDto }: { yieldDto: Yield }) => {
           testId="yield-risk-rating-summary__badge"
         />
 
-        <ToolTip asChild label={t("details.risk.tooltip")}>
-          <Box
-            as="button"
-            aria-label={t("details.risk.info_aria_label")}
-            className={riskInfoButton}
-            type="button"
-          >
-            <InfoIcon />
-          </Box>
-        </ToolTip>
+        <YieldRiskInfoTooltip />
       </Box>
     </Box>
   );

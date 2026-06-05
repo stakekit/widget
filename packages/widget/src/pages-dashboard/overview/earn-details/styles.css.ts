@@ -4,7 +4,7 @@ import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 
 export const container = style({
-  maxHeight: "720px",
+  maxHeight: "620px",
   overflowY: "auto",
 });
 

@@ -639,7 +639,9 @@
   },
   "select_token": {
     "title": "Select token",
-    "n_available_opps": "{{count}} available opportunities"
+    "n_available_opps": "{{count}} available opportunities",
+    "yields_available_one": "{{count}} yield available",
+    "yields_available_other": "{{count}} yields available"
   },
   "error_modal": {
     "solution": "Potential solution:"

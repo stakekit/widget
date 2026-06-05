@@ -11,7 +11,11 @@ import {
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
-import { RiskRatingBadge } from "../../../components/molecules/yield-risk";
+import {
+  RiskRatingBadge,
+  riskSummaryActions,
+  YieldRiskInfoTooltip,
+} from "../../../components/molecules/yield-risk";
 import {
   getEffectiveYieldRewardRateDetails,
   type SelectedValidators,
@@ -35,7 +39,6 @@ import {
   metricCard,
   metricGrid,
   rangeButton,
-  sectionDivider,
   valueText,
 } from "./styles.css";
 import {
@@ -167,39 +170,48 @@ export const EarnDetailsView = ({
           subValue={
             risk ? getYieldRiskSourceLabel(risk.source, t).toUpperCase() : "-"
           }
-          value={risk ? <RiskRatingBadge risk={risk} /> : "-"}
+          value={
+            risk ? (
+              <Box className={riskSummaryActions}>
+                <RiskRatingBadge risk={risk} />
+                <YieldRiskInfoTooltip />
+              </Box>
+            ) : (
+              "-"
+            )
+          }
         />
       </Box>
 
-      <HistoryChartSection
-        chartId="reward-rate"
-        history={rewardRateHistory}
-        onPeriodChange={setRewardRatePeriod}
-        period={rewardRatePeriod}
-        tickFormatter={(value) => `${formatNumber(value, 2)}%`}
-        title={t("dashboard.earn_details.reward_rate")}
-        value={rewardRateFormatted}
-      />
+      {shouldRenderHistoryChart(rewardRateHistory) && (
+        <HistoryChartSection
+          chartId="reward-rate"
+          history={rewardRateHistory}
+          onPeriodChange={setRewardRatePeriod}
+          period={rewardRatePeriod}
+          tickFormatter={(value) => `${formatNumber(value, 2)}%`}
+          title={t("dashboard.earn_details.reward_rate")}
+          value={rewardRateFormatted}
+        />
+      )}
 
-      <HistoryChartSection
-        chartId="tvl"
-        history={tvlHistory}
-        onPeriodChange={setTvlPeriod}
-        period={tvlPeriod}
-        tickFormatter={formatCompactUsd}
-        title={t("dashboard.earn_details.tvl")}
-        value={tvlFormatted}
-      />
-
-      <Box className={sectionDivider} />
+      {shouldRenderHistoryChart(tvlHistory) && (
+        <HistoryChartSection
+          chartId="tvl"
+          history={tvlHistory}
+          onPeriodChange={setTvlPeriod}
+          period={tvlPeriod}
+          tickFormatter={formatCompactUsd}
+          title={t("dashboard.earn_details.tvl")}
+          value={tvlFormatted}
+        />
+      )}
 
       <DetailsSection title={t("dashboard.earn_details.about")}>
         <Text variant={{ type: "muted", weight: "normal" }}>
           {yieldDto.metadata.description}
         </Text>
       </DetailsSection>
-
-      <Box className={sectionDivider} />
 
       <DetailsSection title={t("dashboard.earn_details.details")}>
         <DetailRow
@@ -234,6 +246,12 @@ export const EarnDetailsView = ({
     </Box>
   );
 };
+
+const shouldRenderHistoryChart = (history: {
+  data: RewardRateHistoryPoint[];
+  isError: boolean;
+  isLoading: boolean;
+}) => !history.isError && (history.isLoading || history.data.length >= 2);
 
 const HistoryChartSection = ({
   chartId,
@@ -301,7 +319,11 @@ const MetricCard = ({
 }) => (
   <Box className={metricCard} display="flex" flexDirection="column" gap="1">
     <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
-    <Text variant={{ weight: "bold", size: "large" }}>{value}</Text>
+    {typeof value === "string" ? (
+      <Text variant={{ weight: "bold", size: "large" }}>{value}</Text>
+    ) : (
+      <Box>{value}</Box>
+    )}
     {subValue && (
       <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
         {subValue}

@@ -25,7 +25,7 @@ export const SelectYieldSection = () => {
     selectYieldIsLoading,
   } = useEarnPageContext();
 
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
 
   const { t } = useTranslation();
 
@@ -116,13 +116,13 @@ export const SelectYieldSection = () => {
               {variant !== "zerion" && <SelectYieldRewardDetails />}
             </Box>
 
-            {variant !== "zerion" && riskSummary}
+            {variant !== "zerion" && !dashboardVariant && riskSummary}
 
             {variant === "zerion" && (
               <Box display="flex" flexDirection="column" gap="3">
                 <SelectYieldRewardDetails />
 
-                {riskSummary}
+                {!dashboardVariant && riskSummary}
 
                 <Divider />
               </Box>

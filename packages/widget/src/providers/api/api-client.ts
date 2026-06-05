@@ -168,6 +168,10 @@ const bindYieldApi = ({
     api.YieldsControllerGetAggregateBalances,
     runOptions
   ),
+  YieldsControllerGetYields: bindOperation(
+    api.YieldsControllerGetYields,
+    runOptions
+  ),
   YieldsControllerGetYield: bindOperation(
     api.YieldsControllerGetYield,
     runOptions
