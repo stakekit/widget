@@ -1,6 +1,10 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
+import {
+  portoPalette,
+  utilaPalette,
+} from "../../../styles/theme/variant-overrides/palettes";
 
 export const container = style([
   atoms({
@@ -18,8 +22,8 @@ export const changeButton = recipe({
   variants: {
     variant: {
       default: {},
-      utila: atoms({ color: "__internal__utila__primary__blue__" }),
-      porto: atoms({ color: "__internal__porto__primary__purple__" }),
+      utila: { color: utilaPalette.primaryBlue },
+      porto: { color: portoPalette.primaryPurple },
       finery: {},
     },
   },

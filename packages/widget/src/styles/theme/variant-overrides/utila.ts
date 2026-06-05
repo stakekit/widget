@@ -1,6 +1,7 @@
 import type { RecursivePartial } from "../../../types/utils";
 import { vars } from "../contract.css";
 import type { lightTheme } from "../themes";
+import { utilaPalette } from "./palettes";
 
 export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
   space: {
@@ -12,26 +13,14 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
     },
   },
   color: {
-    summaryItemBackground: vars.color.__internal__utila__grey__one__,
-    backgroundMuted: vars.color.__internal__utila__grey__one__,
-    stakeSectionBackground: vars.color.__internal__utila__grey__one__,
-    tokenSelectBackground: vars.color.__internal__utila__grey__one__,
-    dashboardDetailsSectionBackground:
-      vars.color.__internal__utila__grey__one__,
-    warningBoxBackground: vars.color.__internal__utila__warning__background__,
+    summaryItemBackground: utilaPalette.greyOne,
+    backgroundMuted: utilaPalette.greyOne,
+    stakeSectionBackground: utilaPalette.greyOne,
+    tokenSelectBackground: utilaPalette.greyOne,
+    dashboardDetailsSectionBackground: utilaPalette.greyOne,
+    warningBoxBackground: utilaPalette.warningBackground,
 
-    primaryButtonBackground: vars.color.__internal__utila__primary__blue__,
+    primaryButtonBackground: utilaPalette.primaryBlue,
     primaryButtonColor: vars.color.white,
-    primaryButtonOutline: vars.color.__internal__utila__primary__blue__,
-
-    primaryButtonHoverBackground:
-      vars.color.__internal__utila__primary__blue__hover__,
-    primaryButtonHoverOutline:
-      vars.color.__internal__utila__primary__blue__hover__,
-
-    primaryButtonActiveBackground:
-      vars.color.__internal__utila__primary__blue__active__,
-    primaryButtonActiveOutline:
-      vars.color.__internal__utila__primary__blue__active__,
   },
 };

@@ -1,7 +1,6 @@
 import { createSprinkles, defineProperties } from "@vanilla-extract/sprinkles";
 import type { Breakpoint } from "../tokens/breakpoints";
 import { breakpoints, minMediaQuery } from "../tokens/breakpoints";
-import { vars } from "./contract.css";
 import { responsiveProperties, unresponsiveProperties } from "./properties";
 
 const unresponsiveAtomicProperties = defineProperties({
@@ -35,23 +34,9 @@ const responsiveAtomicProperties = defineProperties({
   },
 });
 
-const colorAtomicProperties = defineProperties({
-  conditions: {
-    light: { "@media": "(prefers-color-scheme: light)" },
-    dark: { "@media": "(prefers-color-scheme: dark)" },
-  },
-  defaultCondition: ["dark", "light"],
-  properties: {
-    color: vars.color,
-    background: vars.color,
-    borderColor: vars.color,
-  },
-});
-
 export const atoms = createSprinkles(
   unresponsiveAtomicProperties,
-  responsiveAtomicProperties,
-  colorAtomicProperties
+  responsiveAtomicProperties
 );
 
 export type Atoms = Parameters<typeof atoms>[0];

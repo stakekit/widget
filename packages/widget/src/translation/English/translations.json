@@ -639,8 +639,7 @@
   },
   "select_token": {
     "title": "Select token",
-    "n_available_opps": "{{count}} available opportunities",
-    "usde_banner": "Missing USDe balance? Swap now and start earning!"
+    "n_available_opps": "{{count}} available opportunities"
   },
   "error_modal": {
     "solution": "Potential solution:"

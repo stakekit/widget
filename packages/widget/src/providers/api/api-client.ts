@@ -173,12 +173,10 @@ const bindYieldApi = ({
     runOptions
   ),
   YieldsControllerGetYieldRewardRateHistory: bindOperation(
-    runtime,
     api.YieldsControllerGetYieldRewardRateHistory,
     runOptions
   ),
   YieldsControllerGetYieldTvlHistory: bindOperation(
-    runtime,
     api.YieldsControllerGetYieldTvlHistory,
     runOptions
   ),

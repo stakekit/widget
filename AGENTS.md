@@ -59,3 +59,4 @@ This project vendors external repositories under `@repos/`.
 - When searching `@repos/`, use `rg --no-ignore <pattern> @repos/<repo>` so ignored local reference repositories are included without searching unrelated ignored directories
 - Before writing any Effect code, inspect `@repos/effect/LLMS.md`
 - Before writing code that interacts with Effect `HttpClient`, inspect `agent-patterns/effect-http-client.md`
+- Before writing code that uses Effect `Stream`, inspect `agent-patterns/effect-stream.md`

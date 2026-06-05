@@ -86,7 +86,6 @@ export type SettingsProps = {
   dashboardVariant?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
-  showUSDeBanner?: boolean;
   preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
   tonConnectManifestUrl?: string;

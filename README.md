@@ -179,15 +179,13 @@ const App = () => {
     <SKApp
       apiKey="your-api-key"
       theme={{
-        lightMode: {
-          font: { body: '"IBM Plex Mono", monospace' },
-          color: {
-            primaryButtonBackground: "#8323fd",
-            primaryButtonActiveOutline: "#8323fd",
-            primaryButtonOutline: "#8323fd",
-          },
-          borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
+        font: { body: '"IBM Plex Mono", monospace' },
+        color: {
+          primaryButtonBackground: "#8323fd",
+          primaryButtonActiveOutline: "#8323fd",
+          primaryButtonOutline: "#8323fd",
         },
+        borderRadius: { primaryButton: "0", widgetBorderRadius: "10px" },
       }}
     />
   );
@@ -205,25 +203,6 @@ const App = () => {
       theme={{
         ...darkTheme,
         borderRadius: { ...darkTheme.borderRadius, widgetBorderRadius: "10px" },
-      }}
-    />
-  );
-};
-```
-
-You can also provide both themes, and widget will respect preference if a user has requested light or dark color themes
-
-```tsx
-import "@stakekit/widget/package/css";
-import { SKApp, darkTheme, lightTheme } from "@stakekit/widget";
-
-const App = () => {
-  return (
-    <SKApp
-      apiKey="your-api-key"
-      theme={{
-        lightMode: lightTheme,
-        darkMode: darkTheme,
       }}
     />
   );
@@ -640,13 +619,13 @@ Widget component provides `tracking` prop for analytics to track user actions an
 
 ```tsx
 import "@stakekit/widget/package/css";
-import { SKApp, darkTheme, lightTheme } from "@stakekit/widget";
+import { SKApp, darkTheme } from "@stakekit/widget";
 
 const App = () => {
   return (
     <SKApp
       apiKey="your-api-key"
-      theme={{ darkMode: darkTheme }}
+      theme={darkTheme}
       tracking={{
         trackEvent: (event, props) => {
           console.log(event, props);

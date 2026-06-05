@@ -16,7 +16,7 @@ const dashboardVariant: SKAppProps["dashboardVariant"] =
   import.meta.env.VITE_FORCE_DASHBOARD === "true";
 
 const StandaloneApp = () => {
-  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");
+  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("light");
 
   useLayoutEffect(() => {
     document.body.className = rootClassName({ theme: themeVariant, variant });

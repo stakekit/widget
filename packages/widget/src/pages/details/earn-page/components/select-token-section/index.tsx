@@ -1,23 +1,16 @@
-import clsx from "clsx";
-import { Just, Maybe } from "purify-ts";
+import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
-import { Balance } from "../../../../../components/atoms/icons/balance";
 import { MaxButton } from "../../../../../components/atoms/max-button";
 import { NumberInput } from "../../../../../components/atoms/number-input";
 import { Text } from "../../../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../../../components/molecules/amount-toggle";
-import { isUSDeToken } from "../../../../../domain/types/tokens";
 import { useSettings } from "../../../../../providers/settings";
-import { useSKWallet } from "../../../../../providers/sk-wallet";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { SelectToken } from "./select-token";
 import {
-  bottomBanner,
-  bottomBannerBottomRadius,
-  bottomBannerText,
   minMaxContainer,
   priceTxt,
   selectTokenBalance,
@@ -28,9 +21,7 @@ import { SelectTokenTitle } from "./title";
 export const SelectTokenSection = () => {
   const { t } = useTranslation();
 
-  const { variant, showUSDeBanner } = useSettings();
-
-  const { isLedgerLive } = useSKWallet();
+  const { variant } = useSettings();
 
   const {
     appLoading,
@@ -45,7 +36,6 @@ export const SelectTokenSection = () => {
     stakeMinAmount,
     symbol,
     isStakeTokenSameAsGasToken,
-    selectedToken,
   } = useEarnPageContext();
 
   const isLoading = appLoading || selectTokenIsLoading;
@@ -67,19 +57,6 @@ export const SelectTokenSection = () => {
     stakeAmountLessThanMin;
 
   const errorBalance = stakeAmountGreaterThanAvailableAmount;
-
-  const showBottomUSDeBanner = Maybe.fromRecord({
-    selectedTokenAvailableAmount,
-    selectedToken,
-  })
-    .filter(
-      (val) =>
-        !!showUSDeBanner &&
-        isLedgerLive &&
-        val.selectedTokenAvailableAmount.amount.isZero() &&
-        isUSDeToken(val.selectedToken)
-    )
-    .isJust();
 
   const minStakeAmount = Just([
     stakeMinAmount
@@ -122,16 +99,11 @@ export const SelectTokenSection = () => {
         px="4"
         borderStyle="solid"
         borderWidth={1}
-        className={clsx(
-          {
-            [bottomBannerBottomRadius]: showBottomUSDeBanner,
-          },
-          combineRecipeWithVariant({
-            rec: selectTokenSection,
-            variant,
-            state: submitted && stakeAmountIsZero ? "danger" : "default",
-          })
-        )}
+        className={combineRecipeWithVariant({
+          rec: selectTokenSection,
+          variant,
+          state: submitted && stakeAmountIsZero ? "danger" : "default",
+        })}
       >
         {variant === "zerion" && (
           <Box display="flex" justifyContent="space-between">
@@ -169,12 +141,10 @@ export const SelectTokenSection = () => {
           <Box className={priceTxt} display="flex">
             <Text
               variant={{ type: "muted", weight: "normal" }}
-              className={clsx(
-                combineRecipeWithVariant({
-                  rec: selectTokenBalance,
-                  variant,
-                })
-              )}
+              className={combineRecipeWithVariant({
+                rec: selectTokenBalance,
+                variant,
+              })}
             >
               {formattedPrice}
             </Text>
@@ -193,12 +163,10 @@ export const SelectTokenSection = () => {
                   type: errorBalance ? "danger" : "muted",
                 }}
                 data-state={errorBalance ? "error" : "valid"}
-                className={clsx(
-                  combineRecipeWithVariant({
-                    rec: selectTokenBalance,
-                    variant,
-                  })
-                )}
+                className={combineRecipeWithVariant({
+                  rec: selectTokenBalance,
+                  variant,
+                })}
               >
                 {selectedTokenAvailableAmount
                   .map((v) =>
@@ -241,22 +209,6 @@ export const SelectTokenSection = () => {
           </Box>
         </Box>
       </Box>
-
-      {showBottomUSDeBanner && (
-        <Box
-          className={bottomBanner}
-          px="2"
-          py="3"
-          display="flex"
-          gap="2"
-          justifyContent="center"
-        >
-          <Balance />
-          <Text className={bottomBannerText}>
-            {t("select_token.usde_banner")}
-          </Text>
-        </Box>
-      )}
     </Box>
   );
 };

@@ -1,5 +1,6 @@
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
+import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const wrapper = recipe({
   base: [
@@ -74,9 +75,9 @@ export const tabPageDivider = recipe({
         }),
       ],
       utila: [
-        atoms({
-          background: "__internal__utila__tab__page__divider__",
-        }),
+        {
+          background: utilaPalette.tabPageDivider,
+        },
       ],
     },
   },

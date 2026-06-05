@@ -1,7 +1,10 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../styles/theme/atoms.css";
-import { vars } from "../../../../styles/theme/contract.css";
+import {
+  portoPalette,
+  utilaPalette,
+} from "../../../../styles/theme/variant-overrides/palettes";
 
 export const divider = style({
   position: "absolute",
@@ -43,7 +46,7 @@ export const tab = recipe({
         state: "active",
         variant: "utila",
       },
-      style: [atoms({ background: "__internal__utila__grey__one__" })],
+      style: [{ background: utilaPalette.greyOne }],
     },
     {
       variants: {
@@ -116,7 +119,7 @@ export const tabText = recipe({
       porto: [
         atoms({ fontWeight: "semibold" }),
         {
-          color: vars.color.__internal__porto__grey__four__,
+          color: portoPalette.greyFour,
           fontSize: "14px",
         },
       ],
@@ -129,7 +132,7 @@ export const tabText = recipe({
         state: "selected",
       },
       style: {
-        color: vars.color.__internal__porto__grey__one__,
+        color: portoPalette.greyOne,
       },
     },
   ],

@@ -17,9 +17,9 @@ export const selectOpportunityButton = recipe({
   variants: {
     variant: {
       default: atoms({ background: "background" }),
-      utila: atoms({ background: "__internal__utila__grey__one__" }),
+      utila: atoms({ background: "tokenSelectBackground" }),
       finery: [
-        atoms({ background: "__internal__finery__grey__two__" }),
+        atoms({ background: "tokenSelectBackground" }),
         {
           boxShadow: "0px 15px 30px 0px #0000000D",
           ":hover": {
@@ -27,7 +27,7 @@ export const selectOpportunityButton = recipe({
           },
         },
       ],
-      porto: atoms({ background: "__internal__porto__grey__two__" }),
+      porto: atoms({ background: "tokenSelectBackground" }),
     },
   },
   defaultVariants: {
