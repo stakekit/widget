@@ -2,7 +2,6 @@ import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { ValidatorDto } from "../domain/types/validators";
 import {
-  getYieldProviderDetails,
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
   type Yield,
@@ -40,7 +39,7 @@ export const getProviderDetails = ({
   const def = integrationData.chain((val) => {
     const rewardRate = val.rewardRate.total;
     const rewardType = val.rewardRate?.rateType?.toLowerCase();
-    const provider = getYieldProviderDetails(val);
+    const provider = val.provider;
 
     const rewardRateFormatted = getRewardRateFormatted({
       rewardRate,
@@ -53,7 +52,7 @@ export const getProviderDetails = ({
         rewardRateFormatted,
         rewardRate,
         rewardType,
-        website: v.externalLink,
+        website: v.website,
         address: validator.map((v) => v.address).extract(),
       }))
       .altLazy(() =>

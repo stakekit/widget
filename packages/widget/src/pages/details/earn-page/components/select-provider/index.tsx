@@ -8,7 +8,6 @@ import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { SelectYield } from "../../../../../components/molecules/select-yield";
 import {
-  getYieldProviderDetails,
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
 } from "../../../../../domain/types/yields";
@@ -46,12 +45,10 @@ export const SelectProvider = () => {
     providerYieldIdOptions,
     selectedProviderYield,
   }).chain((val) =>
-    Maybe.fromNullable(getYieldProviderDetails(val.selectedProviderYield)).map(
-      (provider) => ({
-        ...val,
-        provider,
-      })
-    )
+    Maybe.fromNullable(val.selectedProviderYield.provider).map((provider) => ({
+      ...val,
+      provider,
+    }))
   );
 
   return appLoading ? (

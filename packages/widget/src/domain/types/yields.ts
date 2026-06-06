@@ -6,6 +6,7 @@ import type { YieldDto as OldYieldDto } from "../../generated/api/legacy";
 import type {
   YieldType as ApiYieldType,
   ArgumentFieldDto,
+  ProviderDto,
   YieldDto as YieldApiYieldDto,
   YieldRiskEntryDto,
 } from "../../generated/api/yield";
@@ -16,8 +17,10 @@ import type { ValidatorDto } from "./validators";
 
 export type Yield = YieldApiYieldDto & {
   __fallback__: OldYieldDto;
+  provider?: YieldProviderDetails;
 };
 
+export type YieldProviderDetails = ProviderDto;
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
 type KnownYieldRiskRatingSource = YieldRiskEntryDto["source"];
 type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
@@ -26,7 +29,12 @@ export type YieldRiskDisplay = {
   source: YieldRiskRatingSource;
   tone: YieldRiskRatingTone;
 };
-export type YieldMetadata = OldYieldDto["metadata"];
+export type YieldMetadata = Pick<
+  YieldApiYieldDto["metadata"],
+  "logoURI" | "name"
+> & {
+  provider?: YieldProviderDetails;
+};
 type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
 export type ExtendedYieldType = ApiYieldType | LocallyDerivedYieldType;
 type YieldActionType = "enter" | "exit";
@@ -201,9 +209,6 @@ export const getYieldRiskSourceLabel = (
       return source;
   }
 };
-
-export const getYieldProviderDetails = (yieldDto: Yield) =>
-  yieldDto.__fallback__.metadata.provider;
 
 export const hasYieldFeeConfigurationEnabled = (yieldDto: Yield) =>
   Object.values(yieldDto.mechanics.fee ?? {}).some(Boolean);

@@ -9,7 +9,6 @@ import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
-import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
@@ -126,7 +125,7 @@ export const usePendingActionReview = () => {
     () =>
       integrationData
         .chainNullable((v) => {
-          const provider = getYieldProviderDetails(v);
+          const provider = v.provider;
 
           return provider ? { provider, rest: v } : null;
         })

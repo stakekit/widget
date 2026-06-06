@@ -22,7 +22,6 @@ import {
 } from "../../../domain/types/reward-rate";
 import {
   getYieldCooldownPeriod,
-  getYieldProviderDetails,
   getYieldRiskDisplay,
   getYieldRiskSourceLabel,
   type Yield,
@@ -114,7 +113,7 @@ export const EarnDetailsView = ({
     );
   }
 
-  const provider = getYieldProviderDetails(yieldDto);
+  const provider = yieldDto.provider;
   const risk = getYieldRiskDisplay(yieldDto);
   const addressRows = getAddressRows(yieldDto);
   const effectiveRewardRate = getEffectiveYieldRewardRateDetails({
@@ -133,7 +132,7 @@ export const EarnDetailsView = ({
           metadata={{
             logoURI: yieldDto.metadata.logoURI,
             name: yieldDto.metadata.name,
-            provider: provider ?? undefined,
+            provider: provider,
           }}
           token={yieldDto.token}
         />

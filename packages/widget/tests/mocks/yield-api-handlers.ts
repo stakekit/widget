@@ -7,6 +7,7 @@ import type { TokenDto } from "../../src/domain/types/tokens";
 import {
   yieldApiActionFixture,
   yieldApiNetworkFixture,
+  yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
@@ -92,6 +93,25 @@ export const getYieldApiMock = () => [
       yieldApiYieldFixture({
         ...defaultYield,
         id: String(params.yieldId),
+      })
+    );
+  }),
+
+  http.get(yieldApiRoute("/v1/providers/:providerId"), async ({ params }) => {
+    await delay();
+    const providerId = String(params.providerId);
+    const providerNameById: Record<string, string> = {
+      benqi: "Benqi",
+      stakekit: "StakeKit",
+      stakewise: "Stakewise",
+      trust: "Trust",
+    };
+
+    return HttpResponse.json(
+      yieldApiProviderFixture({
+        id: providerId,
+        logoURI: `https://assets.stakek.it/providers/${providerId}.svg`,
+        name: providerNameById[providerId] ?? providerId,
       })
     );
   }),

@@ -3,7 +3,6 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getActionInputToken } from "../../../domain/types/action";
 import type { TokenDto } from "../../../domain/types/tokens";
-import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
@@ -56,7 +55,7 @@ export const useActivityComplete = () => {
       selectedYield.map((yieldDto) => ({
         logoURI: yieldDto.metadata.logoURI,
         name: yieldDto.metadata.name,
-        provider: getYieldProviderDetails(yieldDto) ?? undefined,
+        provider: yieldDto.provider,
       })),
     [selectedYield]
   );

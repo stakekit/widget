@@ -1,10 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import {
-  getYieldProviderDetails,
-  getYieldRewardTokens,
-  type Yield,
-} from "../../domain/types/yields";
+import { getYieldRewardTokens, type Yield } from "../../domain/types/yields";
 import { getRewardTokenSymbols } from "./get-reward-token-symbols";
 
 export const useRewardTokenDetails = (yieldOpportunity: Maybe<Yield>) => {
@@ -12,7 +8,7 @@ export const useRewardTokenDetails = (yieldOpportunity: Maybe<Yield>) => {
     () =>
       yieldOpportunity
         .chain((y) =>
-          Maybe.fromNullable(getYieldProviderDetails(y)).map((p) => ({
+          Maybe.fromNullable(y.provider).map((p) => ({
             p,
             rt: getYieldRewardTokens(y),
           }))

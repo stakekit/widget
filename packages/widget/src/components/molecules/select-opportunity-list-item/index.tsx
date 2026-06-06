@@ -7,7 +7,6 @@ import {
 } from "../../../domain/types/reward-rate";
 import {
   getYieldFeePercent,
-  getYieldProviderDetails,
   getYieldRewardTokens,
   getYieldRiskDisplay,
   getYieldTvlUsd,
@@ -77,7 +76,7 @@ export const SelectOpportunityListItem = ({
       : item.rewardRate.total,
   });
 
-  const provider = getYieldProviderDetails(item) ?? undefined;
+  const provider = item.provider;
   const rewardTokenSymbols = pipe(
     getDistinctRewardTokensBySymbol(item),
     EArray.map((token) => token.symbol),

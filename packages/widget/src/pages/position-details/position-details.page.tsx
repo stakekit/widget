@@ -9,10 +9,7 @@ import { Text } from "../../components/atoms/typography/text";
 import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../domain/types/pending-action";
-import {
-  getExtendedYieldType,
-  getYieldProviderDetails,
-} from "../../domain/types/yields";
+import { getExtendedYieldType } from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { getRewardRateFormatted } from "../../utils/formatters";
@@ -101,9 +98,7 @@ const PositionDetails = () => {
                           metadata={{
                             logoURI: integrationData.metadata.logoURI,
                             name: integrationData.metadata.name,
-                            provider:
-                              getYieldProviderDetails(integrationData) ??
-                              undefined,
+                            provider: integrationData.provider,
                           }}
                           token={t}
                           tokenLogoHw="14"

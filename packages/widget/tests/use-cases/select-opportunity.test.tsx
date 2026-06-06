@@ -36,11 +36,26 @@ describe("Select opportunity", () => {
     const getRewardToken = (integrationId: (typeof yieldIds)[number]) => {
       switch (integrationId) {
         case "ethereum-eth-reth-staking":
-          return { ...token, name: "Rocket Pool ETH", symbol: "rETH" };
+          return {
+            ...token,
+            address: "0xae78736cd615f374d3085123a210448e74fc6393",
+            name: "Rocket Pool ETH",
+            symbol: "rETH",
+          };
         case "ethereum-eth-lido-staking":
-          return { ...token, name: "Lido Staked ETH", symbol: "stETH" };
+          return {
+            ...token,
+            address: "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+            name: "Lido Staked ETH",
+            symbol: "stETH",
+          };
         default:
-          return { ...token, name: "Banana ETH", symbol: "bananaETH" };
+          return {
+            ...token,
+            address: "0x0000000000000000000000000000000000000001",
+            name: "Banana ETH",
+            symbol: "bananaETH",
+          };
       }
     };
     const getLegacyYield = (integrationId: (typeof yieldIds)[number]) => {
@@ -68,14 +83,28 @@ describe("Select opportunity", () => {
         },
       });
     };
-    const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) =>
-      yieldApiYieldFixture({
+    const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) => {
+      const rewardToken = getRewardToken(integrationId);
+
+      return yieldApiYieldFixture({
         id: integrationId,
         network: token.network,
+        providerId: "stakewise",
         token,
         tokens: [token],
         inputTokens: [token],
-        outputToken: getRewardToken(integrationId),
+        outputToken: rewardToken,
+        rewardRate: {
+          ...yieldApiYieldBase.rewardRate,
+          components: [
+            {
+              rate: yieldApiYieldBase.rewardRate.total,
+              rateType: yieldApiYieldBase.rewardRate.rateType,
+              token: rewardToken,
+              yieldSource: "staking",
+            },
+          ],
+        },
         status: {
           ...yieldApiYieldBase.status,
           enter: integrationId !== "ethereum-eth-stakewise-staking",
@@ -107,6 +136,7 @@ describe("Select opportunity", () => {
                 ],
               }),
       });
+    };
 
     worker.use(
       http.get(yieldApiRoute("/v1/networks"), async () => {
@@ -177,6 +207,20 @@ describe("Select opportunity", () => {
             ],
           },
         ]);
+      }),
+      http.get(yieldApiRoute("/v1/yields"), async () => {
+        await delay();
+
+        const items = yieldIds.map((integrationId) =>
+          getYieldApiYield(integrationId)
+        );
+
+        return HttpResponse.json({
+          items,
+          total: items.length,
+          offset: 0,
+          limit: items.length,
+        });
       }),
 
       ...yieldIds.flatMap((integrationId) => {

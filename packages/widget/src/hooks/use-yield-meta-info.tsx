@@ -9,7 +9,6 @@ import {
   getExtendedYieldType,
   getYieldCooldownPeriod,
   getYieldLockupPeriod,
-  getYieldProviderDetails,
   getYieldRewardTokens,
   getYieldWarmupPeriod,
   hasYieldFeeConfigurationEnabled,
@@ -54,7 +53,7 @@ export const useYieldMetaInfo = ({
         .filter((t) => !t.isPoints)
         .map((t) => t.symbol)
         .join(", ");
-      const provider = getYieldProviderDetails(y);
+      const provider = y.provider;
       const providerName = sv ?? (provider ? provider.name : y.metadata.name);
       const rewardSchedule = y.mechanics.rewardSchedule;
       const cooldownPeriodDays = getYieldCooldownPeriod(y)?.days ?? 0;

@@ -10,7 +10,6 @@ import type { RewardTokenDetails } from "../../../components/molecules/reward-to
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import {
   getExtendedYieldType,
-  getYieldProviderDetails,
   isUnstakeYieldType,
 } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
@@ -113,7 +112,7 @@ export const useUnstakeActionReview = () => {
 
   const rewardTokenDetailsProps = integrationData
     .chainNullable((v) => {
-      const provider = getYieldProviderDetails(v);
+      const provider = v.provider;
 
       return provider ? { provider, rest: v } : null;
     })

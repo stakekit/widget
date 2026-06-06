@@ -9,9 +9,12 @@ import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
 import type { YieldValidatorDto } from "../../src/domain/types/validators";
 import type { Yield } from "../../src/domain/types/yields";
 import type { TokenDto as LegacyTokenDto } from "../../src/generated/api/legacy";
-import type { NetworkDto as YieldApiNetworkDto } from "../../src/generated/api/yield";
+import type {
+  NetworkDto as YieldApiNetworkDto,
+  ProviderDto as YieldApiProviderDto,
+} from "../../src/generated/api/yield";
 
-type YieldApiYieldDto = Omit<Yield, "__fallback__">;
+type YieldApiYieldDto = Omit<Yield, "__fallback__" | "provider">;
 type LegacyYieldDto = Yield["__fallback__"];
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
@@ -121,6 +124,19 @@ export const yieldApiNetworkFixture = (
     ...overrides,
   };
 };
+
+export const yieldApiProviderFixture = (
+  overrides?: Partial<YieldApiProviderDto>
+): YieldApiProviderDto => ({
+  id: "stakekit",
+  name: "StakeKit",
+  description: "",
+  logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+  website: "https://stakek.it",
+  tvlUsd: null,
+  type: "protocol",
+  ...overrides,
+});
 
 type YieldRiskSummaryDto = NonNullable<YieldApiYieldDto["risk"]>;
 type YieldRiskEntryDto = YieldRiskSummaryDto["ratings"][number];

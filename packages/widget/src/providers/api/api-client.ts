@@ -152,6 +152,10 @@ const bindYieldApi = ({
     api.NetworksControllerGetNetworks,
     runOptions
   ),
+  ProvidersControllerGetProvider: bindOperation(
+    api.ProvidersControllerGetProvider,
+    runOptions
+  ),
   TransactionsControllerGetTransaction: bindOperation(
     api.TransactionsControllerGetTransaction,
     runOptions

@@ -4,7 +4,6 @@ import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
 import {
   getExtendedYieldType,
-  getYieldProviderDetails,
   isStakingYieldType,
   isYieldActionArgRequired,
 } from "../../../../../domain/types/yields";
@@ -22,10 +21,10 @@ export const StakedVia = () => {
           isStakingYieldType(getExtendedYieldType(val)) &&
           !isYieldActionArgRequired(val, "enter", "validatorAddress") &&
           !isYieldActionArgRequired(val, "enter", "validatorAddresses") &&
-          getYieldProviderDetails(val)
+          val.provider
         )
     )
-    .chainNullable((val) => getYieldProviderDetails(val))
+    .chainNullable((val) => val.provider)
     .map((val) => (
       <Box
         display="flex"

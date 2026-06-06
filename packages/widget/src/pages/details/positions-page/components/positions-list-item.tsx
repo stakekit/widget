@@ -10,7 +10,6 @@ import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { ToolTip } from "../../../../components/atoms/tooltip";
 import { Text } from "../../../../components/atoms/typography/text";
 import type { PositionDetailsLabelType } from "../../../../domain/types/positions";
-import { getYieldProviderDetails } from "../../../../domain/types/yields";
 import { usePositionListItem } from "../hooks/use-position-list-item";
 import type { usePositions } from "../hooks/use-positions";
 import { listItemContainer, viaText } from "../style.css";
@@ -68,7 +67,7 @@ export const PositionsListItem = memo(
                           metadata={{
                             logoURI: d.metadata.logoURI,
                             name: d.metadata.name,
-                            provider: getYieldProviderDetails(d) ?? undefined,
+                            provider: d.provider,
                           }}
                           token={val}
                         />
