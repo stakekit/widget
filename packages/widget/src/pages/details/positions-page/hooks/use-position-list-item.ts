@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getPositionTotalAmount } from "../../../../domain/types/positions";
-import { getYieldRewardType } from "../../../../domain/types/yields";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
@@ -39,7 +38,6 @@ export const usePositionListItem = (
         .map((val) =>
           getRewardRateFormatted({
             rewardRate: val.rewardRateAverage.toNumber(),
-            rewardType: getYieldRewardType(val.integrationData),
           })
         ),
     [integrationData, providersDetails]

@@ -640,8 +640,9 @@
   "select_token": {
     "title": "Select token",
     "n_available_opps": "{{count}} available opportunities",
-    "yields_available_one": "{{count}} yield available",
-    "yields_available_other": "{{count}} yields available"
+    "yields_available_one": "{{token_name}} · {{count}} yield available",
+    "yields_available_other": "{{token_name}} · {{count}} yields available",
+    "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
     "solution": "Potential solution:"

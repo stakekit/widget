@@ -8,6 +8,7 @@ export const selectItemText = style([
   }),
 ]);
 
-export const noWrap = style({
-  whiteSpace: "nowrap",
-});
+export const rewardRateText = style([
+  atoms({ color: "positionsRewardRate", fontWeight: "medium" }),
+  { whiteSpace: "nowrap" },
+]);

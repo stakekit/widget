@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
-import type { RewardTypes } from "../domain/types/reward-rate";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
 import type { Yield } from "../domain/types/yields";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
@@ -18,19 +17,18 @@ export const formatCountryCode = ({
 };
 
 export const getRewardRateFormatted = (opts: {
-  rewardType: RewardTypes;
   rewardRate: number | undefined;
 }) => {
-  const { rewardRate, rewardType } = opts;
+  const { rewardRate } = opts;
 
-  if (rewardType === "variable" || !rewardRate) {
+  if (!rewardRate) {
     return "- %";
   }
 
   return `${APToPercentage(rewardRate)}%`;
 };
 
-export const getRewardTypeFormatted = (rewardType: RewardTypes) => {
+export const getRewardTypeFormatted = (rewardType: string | undefined) => {
   switch (rewardType) {
     case "apr":
       return "APR";

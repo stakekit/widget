@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as CopyText from "../../../components/atoms/copy-text";
-import type { RewardTypes } from "../../../domain/types/reward-rate";
 import type { TokenDto } from "../../../domain/types/tokens";
 import type { ValidatorDto } from "../../../domain/types/validators";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
@@ -42,7 +41,7 @@ export const useMetaInfo = ({
   tokenSymbol?: ValidatorDto["tokenSymbol"];
   stakedBalanceToken: TokenDto | undefined;
   rewardRate: number | undefined;
-  rewardType: RewardTypes | undefined;
+  rewardType: string | undefined;
 }) => {
   const { t } = useTranslation();
 
@@ -63,10 +62,7 @@ export const useMetaInfo = ({
         rewardRate && rewardType
           ? {
               title: getRewardTypeFormatted(rewardType),
-              val: getRewardRateFormatted({
-                rewardRate: rewardRate,
-                rewardType: rewardType,
-              }),
+              val: getRewardRateFormatted({ rewardRate: rewardRate }),
             }
           : null,
       stakedBalance:

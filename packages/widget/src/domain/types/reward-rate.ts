@@ -1,7 +1,6 @@
 import type { RewardDto, YieldDto } from "../../generated/api/yield";
 import type { ValidatorDto } from "./validators";
 
-export type RewardTypes = "apr" | "apy" | "variable";
 type YieldRewardDto = RewardDto;
 export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;
 type YieldWithRewardRate = Pick<YieldDto, "rewardRate">;
@@ -15,7 +14,7 @@ type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
 export type RewardRateBreakdownItem = {
   key: RewardRateBreakdownKey;
   rate: number;
-  rewardType: RewardTypes;
+  rewardType: string | undefined;
   isUpTo: boolean;
 };
 
@@ -24,18 +23,6 @@ const breakdownOrder: RewardRateBreakdownKey[] = [
   "protocol_incentive",
   "campaign",
 ];
-
-export const getRewardTypeFromRateType = (
-  rateType: string | null | undefined
-): RewardTypes => {
-  const normalized = rateType?.toLowerCase();
-
-  if (normalized === "apr" || normalized === "apy") {
-    return normalized;
-  }
-
-  return "variable";
-};
 
 const getBreakdownKey = (
   yieldSource: YieldRewardDto["yieldSource"]
@@ -125,8 +112,7 @@ export const getRewardRateBreakdown = (
     acc.set(key, {
       key,
       rate: (prev?.rate ?? 0) + component.rate,
-      rewardType:
-        prev?.rewardType ?? getRewardTypeFromRateType(component.rateType),
+      rewardType: prev?.rewardType ?? component.rateType,
       isUpTo: key === "campaign" && !!opts?.showUpToCampaign,
     });
 

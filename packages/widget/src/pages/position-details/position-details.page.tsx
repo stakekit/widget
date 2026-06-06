@@ -9,7 +9,6 @@ import { Text } from "../../components/atoms/typography/text";
 import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../domain/types/pending-action";
-import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
 import {
   getBaseYieldType,
   getYieldProviderDetails,
@@ -144,9 +143,6 @@ const PositionDetails = () => {
                       >
                         {getRewardRateFormatted({
                           rewardRate: personalizedRewardRate.total,
-                          rewardType: getRewardTypeFromRateType(
-                            personalizedRewardRate.rateType
-                          ),
                         })}
                       </Heading>
                     </Box>

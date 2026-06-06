@@ -6,7 +6,6 @@ import type {
   DecodedTronTransaction,
 } from "../../types/transaction";
 import type { ActionDto, TransactionDto } from "../action";
-import type { RewardTypes } from "../reward-rate";
 import type { TokenDto, YieldTokenDto } from "../tokens";
 
 type EVMTx = {
@@ -49,7 +48,7 @@ export type ActionMeta = {
     name: string;
     address: string | undefined;
     rewardRate: number | undefined;
-    rewardType: RewardTypes;
+    rewardType: string | undefined;
     website: string | undefined;
     logo: string | undefined;
   }[];

@@ -1,4 +1,5 @@
 import BigNumber from "bignumber.js";
+import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
 import type {
@@ -12,8 +13,7 @@ import type {
 } from "../../generated/api/yield";
 import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
-import type { RewardTypes } from "./reward-rate";
-import { type TokenString, tokenString, type YieldTokenDto } from "./tokens";
+import { tokenString } from "./tokens";
 import type { ValidatorDto } from "./validators";
 
 export type Yield = YieldApiYieldDto & {
@@ -178,44 +178,12 @@ export const isYieldActionArgRequired = (
   name: YieldArgumentName
 ) => !!getYieldActionArg(yieldDto, type, name)?.required;
 
-export const getYieldRewardType = (yieldDto: Yield): RewardTypes => {
-  const rateType = yieldDto.rewardRate?.rateType?.toLowerCase();
-
-  if (rateType === "apr" || rateType === "apy") {
-    return rateType;
-  }
-
-  return yieldDto.__fallback__.rewardType ?? "variable";
-};
-
-const uniqTokens = (tokens: (YieldTokenDto | null | undefined)[]) => {
-  const seen = new Set<TokenString>();
-
-  return tokens.flatMap((token) => {
-    if (!token) return [];
-
-    const key = tokenString(token);
-
-    if (seen.has(key)) {
-      return [];
-    }
-
-    seen.add(key);
-    return [token];
-  });
-};
-
-export const getYieldRewardTokens = (yieldDto: Yield) => {
-  const derived = uniqTokens(
-    yieldDto.rewardRate?.components?.map((component) => component.token) ?? []
+export const getYieldRewardTokens = (yieldDto: Yield) =>
+  pipe(
+    yieldDto.rewardRate?.components?.map((component) => component.token) ?? [],
+    EArray.dedupeWith((a, b) => tokenString(a) === tokenString(b)),
+    EArray.filter((token) => tokenString(token) !== tokenString(yieldDto.token))
   );
-
-  if (derived.length) {
-    return derived;
-  }
-
-  return [...(yieldDto.__fallback__.metadata.rewardTokens ?? [])];
-};
 
 const getRiskTone = (rating: string): YieldRiskRatingTone => {
   const normalizedRating = rating.trim().toUpperCase();
@@ -264,7 +232,7 @@ export const getYieldProviderDetails = (yieldDto: Yield) =>
   yieldDto.__fallback__.metadata.provider;
 
 export const hasYieldFeeConfigurationEnabled = (yieldDto: Yield) =>
-  (yieldDto.__fallback__.feeConfigurations?.length ?? 0) > 0;
+  Object.values(yieldDto.mechanics.fee ?? {}).some(Boolean);
 
 export const getYieldCooldownPeriod = (yieldDto: Yield) =>
   secondsToDays(yieldDto.mechanics.cooldownPeriod?.seconds);
@@ -278,11 +246,32 @@ export const getYieldWithdrawPeriod = (yieldDto: Yield) =>
 export const getYieldCommission = (yieldDto: Yield) =>
   yieldDto.__fallback__.metadata.commission;
 
-export const getYieldTVL = (yieldDto: Yield) =>
-  yieldDto.__fallback__.metadata.tvl;
+export const getYieldTvlUsd = (yieldDto: Yield) => {
+  const tvlUsd = yieldDto.statistics?.tvlUsd;
+
+  if (tvlUsd == null || tvlUsd === "") return null;
+
+  return tvlUsd;
+};
+
+export const getYieldFeePercent = (yieldDto: Yield): number | null => {
+  const fee = yieldDto.mechanics.fee;
+
+  if (!fee) return null;
+
+  const total = Object.values(fee).reduce((acc, value) => {
+    const parsed = toNumber(value);
+
+    return parsed !== undefined ? acc + parsed : acc;
+  }, 0);
+
+  if (total <= 0) return null;
+
+  return total / 100;
+};
 
 export const getYieldLockupPeriod = (yieldDto: Yield) =>
-  yieldDto.__fallback__.metadata.lockupPeriod;
+  secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);
 
 export const hasYieldExitSignatureVerification = (yieldDto: Yield) =>
   !!yieldDto.__fallback__.args.exit?.args?.signatureVerification?.required;
@@ -395,9 +384,6 @@ export const isYieldWithProviderOptions = (yieldDto: Yield) =>
 
 export const getYieldProviderYieldIds = (yieldDto: Yield) =>
   getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? [];
-
-export const hasYieldNftsArg = (yieldDto: Yield) =>
-  !!yieldDto.__fallback__.args.enter.args?.nfts;
 
 export const isYieldIntegrationAggregator = (yieldDto: Yield) =>
   !!yieldDto.__fallback__.metadata.isIntegrationAggregator;

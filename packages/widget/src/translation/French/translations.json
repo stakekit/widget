@@ -566,8 +566,9 @@
   "select_token": {
     "title": "Sélectionner un token",
     "n_available_opps": "{{count}} opportunités disponibles",
-    "yields_available_one": "{{count}} rendement disponible",
-    "yields_available_other": "{{count}} rendements disponibles"
+    "yields_available_one": "{{token_name}} · {{count}} rendement disponible",
+    "yields_available_other": "{{token_name}} · {{count}} rendements disponibles",
+    "up_to_rate_type": "JUSQU'À {{rateType}}"
   },
   "error_modal": {
     "solution": "Solution potentielle :"

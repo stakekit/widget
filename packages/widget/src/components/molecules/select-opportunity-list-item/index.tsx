@@ -1,28 +1,49 @@
-import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import type { ComponentProps, ReactNode } from "react";
+import { Array as EArray, pipe } from "effect";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import {
   getRewardRateBreakdown,
   getYieldRewardRateDetails,
 } from "../../../domain/types/reward-rate";
 import {
-  getYieldCommission,
+  getYieldFeePercent,
   getYieldProviderDetails,
   getYieldRewardTokens,
-  getYieldRewardType,
   getYieldRiskDisplay,
-  getYieldTVL,
+  getYieldTvlUsd,
   type Yield,
 } from "../../../domain/types/yields";
-import { APToPercentage, formatNumber, fromWei } from "../../../utils";
-import { getRewardRateFormatted } from "../../../utils/formatters";
+import { APToPercentage, formatNumber } from "../../../utils";
+import {
+  formatCompactUsd,
+  getRewardRateFormatted,
+} from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
 import { SelectModalItem } from "../../atoms/select-modal";
 import { ProviderIcon } from "../../atoms/token-icon/provider-icon";
 import { Text } from "../../atoms/typography/text";
 import { RiskRatingBadge } from "../yield-risk";
-import { noWrap, selectItemText } from "./styles.css";
+import { rewardRateText, selectItemText } from "./styles.css";
+
+const getYieldTvlLabel = (item: Yield) => {
+  const tvlUsd = getYieldTvlUsd(item);
+
+  if (tvlUsd) {
+    const formatted = formatCompactUsd(tvlUsd);
+
+    if (formatted !== "-") {
+      return `TVL: ${formatted}`;
+    }
+  }
+
+  return null;
+};
+
+const getDistinctRewardTokensBySymbol = (item: Yield) =>
+  EArray.dedupeWith(
+    getYieldRewardTokens(item),
+    (a, b) => a.symbol === b.symbol
+  );
 
 export const SelectOpportunityListItem = ({
   item,
@@ -48,20 +69,23 @@ export const SelectOpportunityListItem = ({
 
   const totalRateFormatted = getRewardRateFormatted({
     rewardRate: item.rewardRate.total,
-    rewardType: getYieldRewardType(item),
   });
 
   const primaryRateFormatted = getRewardRateFormatted({
     rewardRate: campaignRate
       ? item.rewardRate.total - campaignRate.rate
       : item.rewardRate.total,
-    rewardType: getYieldRewardType(item),
   });
 
   const provider = getYieldProviderDetails(item) ?? undefined;
-  const rewardTokens = getYieldRewardTokens(item);
-  const tvl = getYieldTVL(item);
-  const commission = getYieldCommission(item);
+  const rewardTokenSymbols = pipe(
+    getDistinctRewardTokensBySymbol(item),
+    EArray.map((token) => token.symbol),
+    EArray.join(", ")
+  );
+
+  const tvlLabel = getYieldTvlLabel(item);
+  const feePercent = getYieldFeePercent(item);
   const risk = getYieldRiskDisplay(item);
 
   return (
@@ -95,7 +119,7 @@ export const SelectOpportunityListItem = ({
           </Box>
 
           <Box textAlign="end">
-            <Text className={noWrap}>{primaryRateFormatted}</Text>
+            <Text className={rewardRateText}>{primaryRateFormatted}</Text>
 
             {campaignRate ? (
               <Text variant={{ type: "muted", weight: "normal" }}>
@@ -109,24 +133,23 @@ export const SelectOpportunityListItem = ({
 
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Box display="flex" marginTop="1" flexWrap="wrap" gap="1">
-            <Text variant={{ type: "muted" }}>
-              {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
-                .map((rt) => rt.map((t) => t.symbol).join(", "))
-                .altLazy(() =>
-                  Maybe.fromNullable(tvl)
-                    .map((tvl) =>
-                      tvl.reduce(
-                        (acc, curr) => acc.plus(curr.value),
-                        BigNumber(0)
-                      )
-                    )
-                    .map(
-                      (tvl) =>
-                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`
-                    )
-                )
-                .orDefault(item.token.symbol)}
-            </Text>
+            {!!tvlLabel && <Text variant={{ type: "muted" }}>{tvlLabel}</Text>}
+
+            {!!rewardTokenSymbols && (
+              <Text variant={{ type: "muted" }}>{rewardTokenSymbols}</Text>
+            )}
+
+            {!rewardTokenSymbols && (
+              <Box
+                background="background"
+                borderRadius="2xl"
+                px="2"
+                display="flex"
+                alignItems="center"
+              >
+                <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
+              </Box>
+            )}
 
             {risk ? (
               <RiskRatingBadge
@@ -134,34 +157,13 @@ export const SelectOpportunityListItem = ({
                 testId={testId ? `risk-rating__${testId}` : undefined}
               />
             ) : null}
-
-            {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
-              .map((): ReactNode | string => (
-                <Box
-                  background="background"
-                  borderRadius="2xl"
-                  px="2"
-                  display="flex"
-                  alignItems="center"
-                >
-                  <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
-                </Box>
-              ))
-              .extractNullable()}
           </Box>
 
-          {Maybe.fromNullable(commission)
-            .map((commission) =>
-              APToPercentage(
-                commission.reduce((acc, curr) => acc + curr.value, 0)
-              )
-            )
-            .map((commission) => (
-              <Text
-                variant={{ type: "muted" }}
-              >{`${t("shared.fee")}: ${formatNumber(commission, 2)}%`}</Text>
-            ))
-            .extractNullable()}
+          {feePercent != null ? (
+            <Text
+              variant={{ type: "muted" }}
+            >{`${t("shared.fee")}: ${formatNumber(APToPercentage(feePercent), 2)}%`}</Text>
+          ) : null}
         </Box>
       </Box>
     </SelectModalItem>

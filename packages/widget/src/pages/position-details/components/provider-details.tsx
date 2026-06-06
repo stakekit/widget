@@ -12,7 +12,6 @@ import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 import { Image } from "../../../components/atoms/image";
 import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
-import type { RewardTypes } from "../../../domain/types/reward-rate";
 import type { Yield } from "../../../domain/types/yields";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import type { GetMaybeJust } from "../../../types/utils";
@@ -35,7 +34,7 @@ export const ProviderDetails = ({
   name: string;
   rewardRateFormatted: string;
   rewardRate: number | undefined;
-  rewardType?: RewardTypes;
+  rewardType?: string | undefined;
 }) => {
   const { t } = useTranslation();
 

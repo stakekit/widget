@@ -11,14 +11,12 @@ import {
   getYieldLockupPeriod,
   getYieldProviderDetails,
   getYieldRewardTokens,
-  getYieldRewardType,
   getYieldWarmupPeriod,
   getYieldWithdrawPeriod,
   hasYieldFeeConfigurationEnabled,
   isEthenaUsdeStaking,
   type Yield,
 } from "../domain/types/yields";
-import { capitalizeFirstLowerRest } from "../utils/text";
 
 export const useYieldMetaInfo = ({
   selectedStake,
@@ -128,13 +126,9 @@ export const useYieldMetaInfo = ({
             })
           : null,
         extra:
-          getYieldRewardType(y) === "variable"
-            ? t("details.reward_type_varialbe", {
-                symbol: capitalizeFirstLowerRest(y.token.symbol),
-              })
-            : y.token.network === MiscNetworks.Tezos
-              ? t("details.extra_tezos")
-              : undefined,
+          y.token.network === MiscNetworks.Tezos
+            ? t("details.extra_tezos")
+            : undefined,
       };
 
       switch (yieldType) {

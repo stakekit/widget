@@ -33,7 +33,6 @@ import {
 } from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
 import {
-  hasYieldNftsArg,
   isNonZeroRewardRateYield,
   type ValidatorsConfig,
   type Yield,
@@ -263,7 +262,6 @@ const defaultFiltered = createSelector(
   (data, isConnected, network) =>
     data.filter((o) => {
       const defaultFilter =
-        !hasYieldNftsArg(o) &&
         o.id !== "binance-bnb-native-staking" &&
         o.id !== "binance-testnet-bnb-native-staking" &&
         o.id !== "avax-native-staking" &&

@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ValidatorDto } from "../../../domain/types/validators";
-import { getYieldRewardType, type Yield } from "../../../domain/types/yields";
+import type { Yield } from "../../../domain/types/yields";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -80,7 +80,9 @@ export const SelectValidatorList = ({
 
             <Box marginRight="4">
               <Text variant={{ weight: "normal", type: "muted" }}>
-                {getRewardTypeFormatted(getYieldRewardType(selectedStake))}
+                {getRewardTypeFormatted(
+                  selectedStake.rewardRate?.rateType?.toLowerCase()
+                )}
               </Text>
             </Box>
           </Box>
@@ -195,7 +197,6 @@ export const SelectValidatorList = ({
                         <Text variant={{ size: "large" }}>
                           {getRewardRateFormatted({
                             rewardRate: item.rewardRate?.total,
-                            rewardType: getYieldRewardType(selectedStake),
                           })}
                         </Text>
                       </Box>

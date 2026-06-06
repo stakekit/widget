@@ -12,7 +12,8 @@ import { SelectModal } from "../../../../../components/atoms/select-modal";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
-import { equalTokens } from "../../../../../domain/types/tokens";
+import { equalTokens, tokenString } from "../../../../../domain/types/tokens";
+import { useTokenListYields } from "../../../../../hooks/api/use-token-list-yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { useSKWallet } from "../../../../../providers/sk-wallet";
@@ -49,6 +50,10 @@ export const SelectToken = () => {
         }))
         .extractNullable(),
     [selectedToken, tokenBalancesData]
+  );
+
+  const { maxYieldRatesByToken } = useTokenListYields(
+    data?.tokenBalances ?? []
   );
 
   if (!data) return null;
@@ -101,6 +106,7 @@ export const SelectToken = () => {
           <SelectTokenListItem
             item={item}
             isSelected={equalTokens(item.token, data.st)}
+            maxYieldRate={maxYieldRatesByToken.get(tokenString(item.token))}
             onTokenBalanceSelect={onTokenBalanceSelect}
             isConnected={isConnected}
           />

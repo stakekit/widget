@@ -55,7 +55,6 @@ export const RewardRateBreakdown = ({
       {items.map((item) => {
         const value = getRewardRateFormatted({
           rewardRate: item.rate,
-          rewardType: item.rewardType,
         });
 
         return (

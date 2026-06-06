@@ -126,6 +126,18 @@ export const selectTokenBalance = recipe({
   },
 });
 
+export const maxYieldRateText = style([
+  atoms({ color: "positionsRewardRate", fontWeight: "medium" }),
+  { whiteSpace: "nowrap" },
+]);
+
+export const maxYieldRateLabel = style([
+  {
+    textTransform: "uppercase",
+    whiteSpace: "nowrap",
+  },
+]);
+
 export const selectedListItem = recipe({
   base: [
     atoms({
