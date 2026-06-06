@@ -10,7 +10,10 @@ import {
   TransactionStatus,
 } from "../../../domain/types/action";
 import type { TokenDto } from "../../../domain/types/tokens";
-import { getBaseYieldType } from "../../../domain/types/yields";
+import {
+  getExtendedYieldType,
+  isUnstakeYieldType,
+} from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useActivityContext } from "../../../providers/activity-provider";
@@ -69,14 +72,11 @@ export const useActionReview = () => {
   );
 
   const unstakeTitle = useMemo(() => {
-    switch (getBaseYieldType(selectedYield)) {
-      case "staking":
-      case "liquid-staking":
-        return t("position_details.unstake") as string;
+    const yieldType = getExtendedYieldType(selectedYield);
 
-      default:
-        return t("position_details.withdraw");
-    }
+    return isUnstakeYieldType(yieldType)
+      ? (t("position_details.unstake") as string)
+      : t("position_details.withdraw");
   }, [selectedYield, t]);
 
   const pendingActionTitle = useMemo(

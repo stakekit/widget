@@ -9,8 +9,9 @@ import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import {
-  getBaseYieldType,
+  getExtendedYieldType,
   getYieldProviderDetails,
+  isUnstakeYieldType,
 } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
@@ -92,16 +93,11 @@ export const useUnstakeActionReview = () => {
     [amount]
   );
 
-  const title: Maybe<string> = integrationData.map((d) => {
-    switch (getBaseYieldType(d)) {
-      case "staking":
-      case "liquid-staking":
-        return t("position_details.unstake") as string;
-
-      default:
-        return t("position_details.withdraw");
-    }
-  });
+  const title: Maybe<string> = integrationData.map((d) =>
+    isUnstakeYieldType(getExtendedYieldType(d))
+      ? (t("position_details.unstake") as string)
+      : t("position_details.withdraw")
+  );
 
   const navigate = useNavigate();
 

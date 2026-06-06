@@ -2,11 +2,9 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
+import type { YieldDto as OldYieldDto } from "../../generated/api/legacy";
 import type {
-  YieldType as LegacyYieldType,
-  YieldDto as OldYieldDto,
-} from "../../generated/api/legacy";
-import type {
+  YieldType as ApiYieldType,
   ArgumentFieldDto,
   YieldDto as YieldApiYieldDto,
   YieldRiskEntryDto,
@@ -29,15 +27,8 @@ export type YieldRiskDisplay = {
   tone: YieldRiskRatingTone;
 };
 export type YieldMetadata = OldYieldDto["metadata"];
-type WidgetYieldType = Extract<
-  LegacyYieldType,
-  "staking" | "restaking" | "lending" | "vault"
->;
-export type ExtendedYieldType =
-  | WidgetYieldType
-  | "liquid-staking"
-  | "native_staking"
-  | "pooled_staking";
+type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
+export type ExtendedYieldType = ApiYieldType | LocallyDerivedYieldType;
 type YieldActionType = "enter" | "exit";
 type YieldArgumentName = ArgumentFieldDto["name"];
 
@@ -132,23 +123,6 @@ const secondsToDays = (seconds: number | undefined) => {
   if (seconds === undefined) return undefined;
 
   return { days: Math.round(seconds / 86400) };
-};
-
-export const getBaseYieldType = (
-  yieldDto: Yield
-): WidgetYieldType | "liquid-staking" => {
-  if (yieldDto.__fallback__.metadata.type === "liquid-staking") {
-    return "liquid-staking";
-  }
-
-  switch (yieldDto.mechanics.type) {
-    case "staking":
-    case "restaking":
-    case "lending":
-      return yieldDto.mechanics.type;
-    default:
-      return "vault";
-  }
 };
 
 export const getYieldActionArg = (
@@ -276,12 +250,33 @@ export const getYieldLockupPeriod = (yieldDto: Yield) =>
 export const hasYieldExitSignatureVerification = (yieldDto: Yield) =>
   !!yieldDto.__fallback__.args.exit?.args?.signatureVerification?.required;
 
-export const getExtendedYieldType = (yieldDto: Yield) =>
-  isNativeStaking(yieldDto)
-    ? "native_staking"
-    : isPooledStaking(yieldDto)
-      ? "pooled_staking"
-      : getBaseYieldType(yieldDto);
+export const getExtendedYieldType = (yieldDto: Yield): ExtendedYieldType => {
+  if (isNativeStaking(yieldDto)) {
+    return "native_staking";
+  }
+
+  if (isPooledStaking(yieldDto)) {
+    return "pooled_staking";
+  }
+
+  return yieldDto.mechanics.type;
+};
+
+export const isStakingYieldType = (yieldType: ExtendedYieldType) =>
+  yieldType === "staking" ||
+  yieldType === "native_staking" ||
+  yieldType === "pooled_staking";
+
+export const isUnstakeYieldType = (yieldType: ExtendedYieldType) =>
+  isStakingYieldType(yieldType) || yieldType === "restaking";
+
+export const isDepositYieldType = (yieldType: ExtendedYieldType) =>
+  yieldType === "lending" ||
+  yieldType === "vault" ||
+  yieldType === "fixed_yield" ||
+  yieldType === "real_world_asset" ||
+  yieldType === "concentrated_liquidity_pool" ||
+  yieldType === "liquidity_pool";
 
 export const getYieldTypeLabels = (
   yieldDto: Yield,
@@ -293,12 +288,6 @@ export const getYieldTypeLabels = (
       title: t("yield_types.staking.title"),
       review: t("yield_types.staking.review"),
       cta: t("yield_types.staking.cta"),
-    },
-    "liquid-staking": {
-      type: "liquid-staking",
-      title: t("yield_types.liquid-staking.title"),
-      review: t("yield_types.liquid-staking.review"),
-      cta: t("yield_types.liquid-staking.cta"),
     },
     vault: {
       type: "vault",
@@ -318,6 +307,30 @@ export const getYieldTypeLabels = (
       review: t("yield_types.restaking.review"),
       cta: t("yield_types.restaking.cta"),
     },
+    fixed_yield: {
+      type: "fixed_yield",
+      title: t("yield_types.fixed_yield.title"),
+      review: t("yield_types.fixed_yield.review"),
+      cta: t("yield_types.fixed_yield.cta"),
+    },
+    real_world_asset: {
+      type: "real_world_asset",
+      title: t("yield_types.real_world_asset.title"),
+      review: t("yield_types.real_world_asset.review"),
+      cta: t("yield_types.real_world_asset.cta"),
+    },
+    concentrated_liquidity_pool: {
+      type: "concentrated_liquidity_pool",
+      title: t("yield_types.concentrated_liquidity_pool.title"),
+      review: t("yield_types.concentrated_liquidity_pool.review"),
+      cta: t("yield_types.concentrated_liquidity_pool.cta"),
+    },
+    liquidity_pool: {
+      type: "liquidity_pool",
+      title: t("yield_types.liquidity_pool.title"),
+      review: t("yield_types.liquidity_pool.review"),
+      cta: t("yield_types.liquidity_pool.cta"),
+    },
     native_staking: {
       type: "native_staking",
       title: t("yield_types.native_staking.title"),
@@ -332,14 +345,6 @@ export const getYieldTypeLabels = (
     },
   } satisfies YieldTypeLabelsMap;
 
-  if (isNativeStaking(yieldDto)) {
-    return map.native_staking;
-  }
-
-  if (isPooledStaking(yieldDto)) {
-    return map.pooled_staking;
-  }
-
   return map[getExtendedYieldType(yieldDto)];
 };
 
@@ -347,10 +352,13 @@ const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   staking: 1,
   native_staking: 2,
   pooled_staking: 3,
-  "liquid-staking": 4,
-  vault: 5,
-  lending: 6,
-  restaking: 7,
+  restaking: 4,
+  lending: 5,
+  vault: 6,
+  fixed_yield: 7,
+  real_world_asset: 8,
+  liquidity_pool: 9,
+  concentrated_liquidity_pool: 10,
 };
 
 export const getYieldTypesSortRank = (yieldDto: Yield) =>

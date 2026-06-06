@@ -3,8 +3,9 @@ import { Box } from "../../../../../components/atoms/box";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
 import {
-  getBaseYieldType,
+  getExtendedYieldType,
   getYieldProviderDetails,
+  isStakingYieldType,
   isYieldActionArgRequired,
 } from "../../../../../domain/types/yields";
 import { useEarnPageContext } from "../../state/earn-page-context";
@@ -18,7 +19,7 @@ export const StakedVia = () => {
     .filter(
       (val) =>
         !!(
-          getBaseYieldType(val) === "staking" &&
+          isStakingYieldType(getExtendedYieldType(val)) &&
           !isYieldActionArgRequired(val, "enter", "validatorAddress") &&
           !isYieldActionArgRequired(val, "enter", "validatorAddresses") &&
           getYieldProviderDetails(val)

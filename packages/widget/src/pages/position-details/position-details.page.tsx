@@ -10,7 +10,7 @@ import { RewardRateBreakdown } from "../../components/molecules/reward-rate-brea
 import { SelectValidator } from "../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../domain/types/pending-action";
 import {
-  getBaseYieldType,
+  getExtendedYieldType,
   getYieldProviderDetails,
 } from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
@@ -181,7 +181,7 @@ const PositionDetails = () => {
                             personalizedRewardRate ? undefined : p.rewardType
                           }
                           stakeType={t(
-                            `position_details.stake_type.${getBaseYieldType(integrationData)}`
+                            `position_details.stake_type.${getExtendedYieldType(integrationData)}`
                           )}
                           integrationData={integrationData}
                         />
@@ -304,7 +304,7 @@ const PositionDetails = () => {
                           unstakeAmountError={unstakeAmountError}
                           onMaxClick={onMaxClick}
                           label={t(
-                            `position_details.unstake_label.${getBaseYieldType(integrationData)}`
+                            `position_details.unstake_label.${getExtendedYieldType(integrationData)}`
                           )}
                           formattedAmount={unstakeFormattedAmount}
                           balance={reducedStakedOrLiquidBalance}
