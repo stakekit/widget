@@ -4,19 +4,13 @@ import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/
 import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
 import { SelectTokenTitle } from "../../../pages/details/earn-page/components/select-token-section/title";
-import { SelectValidatorSection } from "../../../pages/details/earn-page/components/select-validator-section";
 import { SelectYieldSection } from "../../../pages/details/earn-page/components/select-yield-section";
 import { StakedVia } from "../../../pages/details/earn-page/components/select-yield-section/staked-via";
 import { EarnPageContextProvider } from "../../../pages/details/earn-page/state/earn-page-context";
 import { EarnPageStateUsageBoundaryProvider } from "../../../pages/details/earn-page/state/earn-page-state-context";
 import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";
-import {
-  container,
-  selectTokenTitleContainer,
-  selectValidatorSectionContainer,
-} from "./styles.css";
-import { UtilaSelectValidatorSection } from "./utila-select-validator-section";
+import { container, selectTokenTitleContainer } from "./styles.css";
 
 export const EarnPageContent = () => {
   const { variant } = useSettings();
@@ -35,24 +29,9 @@ export const EarnPageContent = () => {
 
         <SelectTokenSection />
 
-        {(variant === "utila" || variant === "porto") && (
-          <Box
-            className={combineRecipeWithVariant({
-              rec: selectValidatorSectionContainer,
-              variant,
-            })}
-          >
-            <UtilaSelectValidatorSection />
-          </Box>
-        )}
-
         <SelectYieldSection />
 
         <StakedVia />
-
-        {variant !== "utila" && variant !== "porto" && (
-          <SelectValidatorSection />
-        )}
 
         <ExtraArgsSelection />
       </Box>

@@ -26,7 +26,9 @@ import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token
 import type { TronResourceType } from "../../../../domain/types/tron";
 import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
+  type DashboardYieldCategory,
   type ExtendedYieldType,
+  getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
   getYieldTypeLabels,
@@ -76,7 +78,10 @@ const EarnPageContext = createContext<EarnPageContextType | undefined>(
   undefined
 );
 
-export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
+export const EarnPageContextProvider = ({
+  children,
+  registerFooterButton = true,
+}: PropsWithChildren<{ registerFooterButton?: boolean }>) => {
   const {
     actions: { onMaxClick: _onMaxClick },
     selectedToken,
@@ -99,7 +104,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const { t } = useTranslation();
   const initParams = useInitParams();
 
-  const { externalProviders, variant } = useSettings();
+  const { dashboardVariant, externalProviders, variant } = useSettings();
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
     useSKWallet();
@@ -243,6 +248,22 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
 
+  const dashboardYieldIds = useMemo(
+    () =>
+      tokenBalancesData
+        .map((data) => [
+          ...new Set(data.all.flatMap((token) => token.availableYields)),
+        ])
+        .orDefault([]),
+    [tokenBalancesData]
+  );
+
+  const dashboardYields = useStreamMultiYields(dashboardYieldIds);
+
+  const selectedDashboardYieldCategory = selectedStake
+    .chainNullable(getDashboardYieldCategory)
+    .extractNullable();
+
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
@@ -272,7 +293,16 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
         .map(({ all, filteredDtos }) => {
-          const sorted = [...filteredDtos].sort(
+          const dashboardFilteredDtos =
+            dashboardVariant && selectedDashboardYieldCategory
+              ? filteredDtos.filter(
+                  (yieldDto) =>
+                    getDashboardYieldCategory(yieldDto) ===
+                    selectedDashboardYieldCategory
+                )
+              : filteredDtos;
+
+          const sorted = [...dashboardFilteredDtos].sort(
             (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
           );
 
@@ -323,7 +353,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             groupsWithCounts,
           };
         }),
-    [deferredStakeSearch, multiYields, t]
+    [
+      dashboardVariant,
+      deferredStakeSearch,
+      multiYields,
+      selectedDashboardYieldCategory,
+      t,
+    ]
   );
 
   const shouldFetchValidators = selectedStake
@@ -428,6 +464,26 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     Maybe.fromNullable(multiYields)
       .chain((val) => List.find((v) => v.id === yieldId, val))
       .ifJust((val) => dispatch({ type: "yield/select", data: val }));
+  };
+
+  const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
+    if (selectedDashboardYieldCategory === category) return;
+
+    const availableYieldsById = new Map(
+      [
+        ...selectedStakeData.map((data) => data.all).orDefault([]),
+        ...dashboardYields,
+      ].map((yieldDto) => [yieldDto.id, yieldDto])
+    );
+
+    const targetYield = [...availableYieldsById.values()]
+      .filter((yieldDto) => getDashboardYieldCategory(yieldDto) === category)
+      .sort((a, b) => b.rewardRate.total - a.rewardRate.total)[0];
+
+    if (!targetYield) return;
+
+    dispatch({ type: "token/select", data: targetYield.token });
+    dispatch({ type: "yield/select", data: targetYield });
   };
 
   const onValidatorSelect = (item: ValidatorDto) =>
@@ -667,7 +723,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   useRegisterFooterButton(
     useMemo(
       () =>
-        hasNotYieldsForToken
+        !registerFooterButton || hasNotYieldsForToken
           ? null
           : isConnected && !isLedgerLiveAccountPlaceholder
             ? {
@@ -700,6 +756,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         isFetching,
         t,
         hasNotYieldsForToken,
+        registerFooterButton,
       ]
     )
   );
@@ -710,6 +767,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     symbol,
     selectedStakeData,
     selectedStake,
+    selectedDashboardYieldCategory,
+    onDashboardYieldCategorySelect,
     onYieldSelect,
     onTokenBalanceSelect,
     onStakeAmountChange,

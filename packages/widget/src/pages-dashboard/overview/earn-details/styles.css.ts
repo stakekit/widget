@@ -18,6 +18,41 @@ export const headerProviderText = style({
   whiteSpace: "nowrap",
 });
 
+export const titleText = style({
+  fontSize: "20px",
+  lineHeight: "120%",
+});
+
+export const headerBadgeRow = style({
+  alignItems: "center",
+  display: "flex",
+  flexWrap: "wrap",
+  gap: "6px",
+  minWidth: 0,
+});
+
+export const headerBadge = style([
+  atoms({
+    borderRadius: "base",
+    px: "2",
+  }),
+  {
+    background: "#FEF3C7",
+    color: "#92400E",
+  },
+]);
+
+export const autoBadge = style([
+  atoms({
+    borderRadius: "base",
+    px: "2",
+  }),
+  {
+    background: "#DCFCE7",
+    color: "#15803D",
+  },
+]);
+
 export const metricGrid = style({
   display: "grid",
   gap: "8px",
@@ -27,7 +62,7 @@ export const metricGrid = style({
 export const metricCard = style([
   atoms({
     background: "stakeSectionBackground",
-    borderRadius: "xl",
+    borderRadius: "base",
     px: "3",
     py: "3",
   }),
@@ -35,6 +70,52 @@ export const metricCard = style([
     minWidth: 0,
   },
 ]);
+
+export const providerCard = style([
+  atoms({
+    alignItems: "center",
+    background: "background",
+    borderRadius: "base",
+    display: "flex",
+    gap: "3",
+    px: "4",
+    py: "3",
+  }),
+  {
+    border: `1px solid ${vars.color.backgroundMuted}`,
+    cursor: "pointer",
+    font: "inherit",
+    minWidth: 0,
+    textAlign: "left",
+    width: "100%",
+  },
+]);
+
+export const providerChangeButton = style([
+  atoms({
+    alignItems: "center",
+    background: "stakeSectionBackground",
+    borderRadius: "2xl",
+    display: "flex",
+    gap: "1",
+    px: "3",
+    py: "2",
+  }),
+  {
+    flexShrink: 0,
+  },
+]);
+
+export const providerMetaText = style({
+  display: "block",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+});
+
+export const providerStatusText = style({
+  color: "#15803D",
+});
 
 export const sectionDivider = style([
   atoms({

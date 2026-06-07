@@ -1,6 +1,9 @@
+import { Trigger } from "@radix-ui/react-dialog";
+import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SKAnchor } from "../../../components/atoms/anchor";
 import { Box } from "../../../components/atoms/box";
 import {
   CollapsibleArrow,
@@ -9,8 +12,11 @@ import {
   CollapsibleTrigger,
 } from "../../../components/atoms/collapsible";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
+import { CaretDownIcon } from "../../../components/atoms/icons/caret-down";
+import { Image } from "../../../components/atoms/image";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
+import { SelectValidator } from "../../../components/molecules/select-validator";
 import {
   RiskRatingBadge,
   riskSummaryActions,
@@ -21,23 +27,41 @@ import {
   type SelectedValidators,
 } from "../../../domain/types/reward-rate";
 import {
+  getDashboardYieldCategory,
+  getExtendedYieldType,
+  getYieldActionArg,
   getYieldCooldownPeriod,
   getYieldRiskDisplay,
   getYieldRiskSourceLabel,
+  isYieldActionArgRequired,
+  isYieldValidatorSelectionRequired,
   type Yield,
 } from "../../../domain/types/yields";
+import { useSelectValidator } from "../../../pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { useEarnPageContext } from "../../../pages/details/earn-page/state/earn-page-context";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
-import { formatCompactUsd } from "../../../utils/formatters";
+import {
+  formatCompactNumber,
+  formatCompactUsd,
+  getRewardTypeFormatted,
+} from "../../../utils/formatters";
 import { HistoryChart } from "./reward-rate-chart";
 import {
   addressBox,
+  autoBadge,
   container,
   detailRow,
+  headerBadge,
+  headerBadgeRow,
   headerProviderText,
   metricCard,
   metricGrid,
+  providerCard,
+  providerChangeButton,
+  providerMetaText,
+  providerStatusText,
   rangeButton,
+  titleText,
   valueText,
 } from "./styles.css";
 import {
@@ -53,6 +77,12 @@ const periods = [
   ["1y", "1Y"],
   ["all", "ALL"],
 ] as const satisfies ReadonlyArray<readonly [RewardRateHistoryPeriod, string]>;
+
+type ProviderDetailsItem = NonNullable<
+  ReturnType<
+    ReturnType<typeof useEarnPageContext>["providersDetails"]["extractNullable"]
+  >
+>[number];
 
 export const EarnDetails = () => {
   const {
@@ -116,6 +146,12 @@ export const EarnDetailsView = ({
   const provider = yieldDto.provider;
   const risk = getYieldRiskDisplay(yieldDto);
   const addressRows = getAddressRows(yieldDto);
+  const dashboardYieldCategory = getDashboardYieldCategory(yieldDto);
+  const isStakeCategory = dashboardYieldCategory === "stake";
+  const providerName = getSelectedProviderName({
+    selectedValidators,
+    yieldDto,
+  });
   const effectiveRewardRate = getEffectiveYieldRewardRateDetails({
     selectedValidators,
     yieldDto,
@@ -124,6 +160,14 @@ export const EarnDetailsView = ({
     ? `${APToPercentage(effectiveRewardRate.total)}%`
     : "-";
   const tvlFormatted = formatCompactUsd(yieldDto.statistics?.tvlUsd);
+  const metricCards = getMetricCards({
+    risk,
+    rewardRateFormatted,
+    t,
+    tvlFormatted,
+    yieldDto,
+  });
+  const headerBadges = getHeaderBadges(yieldDto, t);
 
   return (
     <Box className={container} display="flex" flexDirection="column" gap="4">
@@ -135,52 +179,48 @@ export const EarnDetailsView = ({
             provider: provider,
           }}
           token={yieldDto.token}
+          tokenLogoHw="14"
         />
 
         <Box minWidth="0">
-          <Text variant={{ weight: "bold" }}>{yieldDto.metadata.name}</Text>
-          <Text
-            className={headerProviderText}
-            variant={{ type: "muted", weight: "normal" }}
-          >
-            {t("positions.via", {
-              providerName: provider?.name ?? yieldDto.providerId,
-              count: 1,
-            })}
-            {" · "}
-            {formatNetworkName(yieldDto.network)}
-            {" · "}
-            {yieldDto.token.symbol}
+          <Text className={titleText} variant={{ weight: "bold" }}>
+            {formatDetailsTitle({ providerName, yieldDto })}
           </Text>
+
+          <Box className={headerBadgeRow}>
+            <ProviderLabel providerName={providerName} yieldDto={yieldDto} />
+
+            <Text
+              className={headerProviderText}
+              variant={{ type: "muted", weight: "normal" }}
+            >
+              {" · "}
+              {formatNetworkName(yieldDto.network)}
+              {" · "}
+              {formatDisplayTokenSymbol(yieldDto)}
+            </Text>
+
+            {headerBadges.map((badge) => (
+              <Box
+                className={badge.tone === "auto" ? autoBadge : headerBadge}
+                key={badge.label}
+              >
+                <Text variant={{ weight: "bold", size: "small" }}>
+                  {badge.label}
+                </Text>
+              </Box>
+            ))}
+          </Box>
         </Box>
       </Box>
 
       <Box className={metricGrid}>
-        <MetricCard
-          label={t("dashboard.earn_details.apy")}
-          value={rewardRateFormatted}
-        />
-        <MetricCard
-          label={t("dashboard.earn_details.tvl")}
-          value={tvlFormatted}
-        />
-        <MetricCard
-          label={t("dashboard.earn_details.risk")}
-          subValue={
-            risk ? getYieldRiskSourceLabel(risk.source, t).toUpperCase() : "-"
-          }
-          value={
-            risk ? (
-              <Box className={riskSummaryActions}>
-                <RiskRatingBadge risk={risk} />
-                <YieldRiskInfoTooltip />
-              </Box>
-            ) : (
-              "-"
-            )
-          }
-        />
+        {metricCards.map((card) => (
+          <MetricCard key={card.label} {...card} />
+        ))}
       </Box>
+
+      <ProviderSelectionCard />
 
       {shouldRenderHistoryChart(rewardRateHistory) && (
         <HistoryChartSection
@@ -194,7 +234,7 @@ export const EarnDetailsView = ({
         />
       )}
 
-      {shouldRenderHistoryChart(tvlHistory) && (
+      {!isStakeCategory && shouldRenderHistoryChart(tvlHistory) && (
         <HistoryChartSection
           chartId="tvl"
           history={tvlHistory}
@@ -243,6 +283,171 @@ export const EarnDetailsView = ({
         )}
       </DetailsSection>
     </Box>
+  );
+};
+
+const ProviderLabel = ({
+  providerName,
+  yieldDto,
+}: {
+  providerName: string;
+  yieldDto: Yield;
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Box display="flex" alignItems="center" gap="1" flexShrink={0}>
+      <Image
+        wrapperProps={{ hw: "5" }}
+        imgProps={{ borderRadius: "base" }}
+        src={yieldDto.provider?.logoURI}
+        fallbackName={providerName}
+      />
+      <Text variant={{ weight: "normal" }}>
+        {t("positions.via", { providerName, count: 1 })}
+      </Text>
+    </Box>
+  );
+};
+
+const ProviderSelectionCard = () => {
+  const {
+    hasMoreValidators,
+    isLoading,
+    isLoadingMoreValidators,
+    onClose,
+    onItemClick,
+    onLoadMoreValidators,
+    onOpen,
+    onValidatorSearch,
+    onViewMoreClick,
+    selectedStake,
+    selectedValidators,
+    validatorSearch,
+    validatorsData,
+  } = useSelectValidator();
+  const { providersDetails } = useEarnPageContext();
+  const { t } = useTranslation();
+
+  const yieldDto = selectedStake.extractNullable();
+
+  if (!yieldDto || !isYieldValidatorSelectionRequired(yieldDto)) return null;
+
+  const selectedValidatorsArr = [...selectedValidators.values()];
+  const selectedProvider = providersDetails.extractNullable()?.[0];
+  const providerName =
+    selectedProvider?.name ??
+    selectedValidatorsArr[0]?.name ??
+    selectedValidatorsArr[0]?.address ??
+    yieldDto.provider?.name ??
+    yieldDto.providerId;
+  const multiSelect = isYieldActionArgRequired(
+    yieldDto,
+    "enter",
+    "validatorAddresses"
+  );
+  const validators = validatorsData.orDefault([]);
+
+  return (
+    <SelectValidator
+      trigger={
+        <Trigger asChild>
+          <Box as="button" className={providerCard} type="button">
+            <Image
+              wrapperProps={{ hw: "9", flexShrink: 0 }}
+              imgProps={{ borderRadius: "base" }}
+              src={selectedProvider?.logo}
+              fallbackName={providerName}
+            />
+
+            <Box flex={1} minWidth="0">
+              <Box display="flex" alignItems="center" gap="2">
+                <Text
+                  className={headerProviderText}
+                  variant={{ weight: "bold" }}
+                >
+                  {providerName}
+                </Text>
+
+                {selectedProvider?.preferred ? (
+                  <Box className={autoBadge}>
+                    <Text variant={{ weight: "bold", size: "small" }}>
+                      {t("details.validators_preferred")}
+                    </Text>
+                  </Box>
+                ) : null}
+              </Box>
+
+              <ProviderMetaLine
+                provider={selectedProvider}
+                tokenSymbol={yieldDto.token.symbol}
+              />
+
+              {selectedProvider?.website ? (
+                <SKAnchor href={selectedProvider.website}>
+                  {selectedProvider.website}
+                </SKAnchor>
+              ) : null}
+            </Box>
+
+            <Box className={providerChangeButton}>
+              <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
+              <CaretDownIcon />
+            </Box>
+          </Box>
+        </Trigger>
+      }
+      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.address))}
+      multiSelect={multiSelect}
+      selectedStake={yieldDto}
+      onItemClick={onItemClick}
+      onViewMoreClick={onViewMoreClick}
+      onClose={onClose}
+      onOpen={onOpen}
+      onSearch={onValidatorSearch}
+      searchValue={validatorSearch}
+      isLoading={isLoading}
+      validators={validators}
+      hasMore={hasMoreValidators}
+      isLoadingMore={isLoadingMoreValidators}
+      onLoadMore={onLoadMoreValidators}
+    />
+  );
+};
+
+const ProviderMetaLine = ({
+  provider,
+  tokenSymbol,
+}: {
+  provider: ProviderDetailsItem | undefined;
+  tokenSymbol: string;
+}) => {
+  const details = [
+    formatCommission(provider?.commission),
+    formatProviderTvl(provider?.stakedBalance, tokenSymbol),
+    provider?.status ? formatProviderStatus(provider.status) : null,
+  ].filter((item): item is string => !!item);
+
+  if (!details.length) return null;
+
+  return (
+    <Text
+      className={providerMetaText}
+      variant={{ type: "muted", weight: "normal" }}
+    >
+      {details.map((detail, index) => (
+        <Box
+          as="span"
+          className={
+            detail.toLowerCase() === "active" ? providerStatusText : undefined
+          }
+          key={detail}
+        >
+          {index > 0 ? " · " : ""}
+          {detail}
+        </Box>
+      ))}
+    </Text>
   );
 };
 
@@ -307,15 +512,13 @@ const HistoryChartSection = ({
   </Box>
 );
 
-const MetricCard = ({
-  label,
-  subValue,
-  value,
-}: {
+type MetricCardProps = {
   label: string;
   subValue?: string;
   value: ReactNode;
-}) => (
+};
+
+const MetricCard = ({ label, subValue, value }: MetricCardProps) => (
   <Box className={metricCard} display="flex" flexDirection="column" gap="1">
     <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
     {typeof value === "string" ? (
@@ -330,6 +533,77 @@ const MetricCard = ({
     )}
   </Box>
 );
+
+const getMetricCards = ({
+  risk,
+  rewardRateFormatted,
+  t,
+  tvlFormatted,
+  yieldDto,
+}: {
+  risk: ReturnType<typeof getYieldRiskDisplay>;
+  rewardRateFormatted: string;
+  t: TFunction;
+  tvlFormatted: string;
+  yieldDto: Yield;
+}): MetricCardProps[] => {
+  const category = getDashboardYieldCategory(yieldDto);
+  const rewardRateCard = {
+    label: formatRewardRateLabel(yieldDto, t),
+    value: rewardRateFormatted,
+  };
+
+  if (category === "stake") {
+    return [
+      rewardRateCard,
+      {
+        label: t("dashboard.earn_details.min_stake"),
+        value: formatMinStake(yieldDto),
+      },
+      {
+        label: t("dashboard.earn_details.cooldown"),
+        value: formatCooldown(yieldDto, t),
+      },
+    ];
+  }
+
+  if (category === "rwa") {
+    return [
+      rewardRateCard,
+      {
+        label: t("dashboard.earn_details.tvl"),
+        value: tvlFormatted,
+      },
+      {
+        label: t("dashboard.earn_details.status"),
+        subValue: formatNetworkName(yieldDto.network).toUpperCase(),
+        value: formatRequirementStatus(yieldDto, t),
+      },
+    ];
+  }
+
+  return [
+    rewardRateCard,
+    {
+      label: t("dashboard.earn_details.tvl"),
+      value: tvlFormatted,
+    },
+    {
+      label: t("dashboard.earn_details.risk"),
+      subValue: risk
+        ? getYieldRiskSourceLabel(risk.source, t).toUpperCase()
+        : "-",
+      value: risk ? (
+        <Box className={riskSummaryActions}>
+          <RiskRatingBadge risk={risk} />
+          <YieldRiskInfoTooltip />
+        </Box>
+      ) : (
+        "-"
+      ),
+    },
+  ];
+};
 
 const DetailsSection = ({
   children,
@@ -375,6 +649,92 @@ const AddressRow = ({ address, label }: { address: string; label: string }) => (
   </Box>
 );
 
+const getSelectedProviderName = ({
+  selectedValidators,
+  yieldDto,
+}: {
+  selectedValidators?: SelectedValidators | null;
+  yieldDto: Yield;
+}) => {
+  const [selectedValidator] = selectedValidators
+    ? [...selectedValidators.values()]
+    : [];
+
+  return (
+    selectedValidator?.name ??
+    selectedValidator?.address ??
+    yieldDto.provider?.name ??
+    yieldDto.providerId
+  );
+};
+
+const formatDetailsTitle = ({
+  providerName,
+  yieldDto,
+}: {
+  providerName: string;
+  yieldDto: Yield;
+}) => {
+  const name = yieldDto.metadata.name;
+
+  if (
+    getDashboardYieldCategory(yieldDto) !== "stake" ||
+    name.toLowerCase().includes(providerName.toLowerCase())
+  ) {
+    return name;
+  }
+
+  return `${name} via ${providerName}`;
+};
+
+const formatDisplayTokenSymbol = (yieldDto: Yield) =>
+  yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
+
+const getHeaderBadges = (yieldDto: Yield, t: TFunction) => {
+  const yieldType = getExtendedYieldType(yieldDto);
+  const badges: { label: string; tone: "default" | "auto" }[] = [];
+
+  if (yieldType === "native_staking") {
+    badges.push({
+      label: t("dashboard.earn_details.native"),
+      tone: "default",
+    });
+  }
+
+  if (yieldType === "pooled_staking") {
+    badges.push({
+      label: t("dashboard.earn_details.pooled"),
+      tone: "default",
+    });
+  }
+
+  if (yieldType === "restaking") {
+    badges.push({
+      label: t("yield_types.restaking.title"),
+      tone: "default",
+    });
+  }
+
+  if (yieldDto.mechanics.requirements?.kycRequired) {
+    badges.push({
+      label: t("dashboard.earn_details.kyc"),
+      tone: "default",
+    });
+  }
+
+  if (
+    getDashboardYieldCategory(yieldDto) === "stake" &&
+    yieldDto.mechanics.rewardClaiming === "auto"
+  ) {
+    badges.push({
+      label: t("dashboard.earn_details.auto_compound"),
+      tone: "auto",
+    });
+  }
+
+  return badges;
+};
+
 const getAddressRows = (yieldDto: Yield) =>
   [
     yieldDto.outputToken?.address
@@ -396,6 +756,64 @@ const formatNetworkName = (network: string) =>
     .split("-")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+
+const formatRewardRateLabel = (yieldDto: Yield, t: TFunction) => {
+  const rewardType =
+    getRewardTypeFormatted(yieldDto.rewardRate.rateType.toLowerCase()) ||
+    t("dashboard.earn_details.apy");
+
+  return getDashboardYieldCategory(yieldDto) === "stake"
+    ? rewardType
+    : t("dashboard.earn_details.reward_rate_period", {
+        rewardType,
+      });
+};
+
+const formatMinStake = (yieldDto: Yield) => {
+  const minimum =
+    yieldDto.mechanics.entryLimits?.minimum ??
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
+
+  if (minimum === null || minimum === undefined) return "-";
+
+  const amount = BigNumber(minimum);
+
+  if (!amount.isFinite()) return "-";
+
+  return `${formatNumber(amount, amount.isInteger() ? 0 : 6)} ${
+    yieldDto.token.symbol
+  }`;
+};
+
+const formatRequirementStatus = (yieldDto: Yield, t: TFunction) =>
+  yieldDto.mechanics.requirements?.kycRequired
+    ? t("dashboard.earn_details.kyc")
+    : t("dashboard.earn_details.active");
+
+const formatCommission = (commission: ProviderDetailsItem["commission"]) => {
+  if (commission === null || commission === undefined) return null;
+
+  const amount = BigNumber(commission);
+
+  return amount.isFinite() ? `${APToPercentage(amount.toNumber())}%` : null;
+};
+
+const formatProviderTvl = (
+  tvl: ProviderDetailsItem["stakedBalance"],
+  tokenSymbol: string
+) => {
+  if (tvl === null || tvl === undefined) return null;
+
+  const formatted = formatCompactNumber(tvl);
+
+  return formatted === "-" ? null : `${formatted} ${tokenSymbol}`;
+};
+
+const formatProviderStatus = (status: ProviderDetailsItem["status"]) => {
+  if (!status) return null;
+
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
 
 const formatRewardTokenLabel = (yieldDto: Yield) => {
   const symbol = yieldDto.token.symbol;

@@ -12,6 +12,16 @@ export const divider = style({
   bottom: 0,
 });
 
+export const tabsGroupDivider = style([
+  atoms({
+    background: "backgroundMuted",
+  }),
+  {
+    height: "24px",
+    width: "1px",
+  },
+]);
+
 export const tab = recipe({
   base: {
     cursor: "pointer",
@@ -23,6 +33,12 @@ export const tab = recipe({
   },
   variants: {
     variant: {
+      default: [
+        {
+          borderRadius: "9999px",
+          padding: "8px 16px",
+        },
+      ],
       utila: [
         {
           borderRadius: "8px",
@@ -41,6 +57,13 @@ export const tab = recipe({
     },
   },
   compoundVariants: [
+    {
+      variants: {
+        state: "active",
+        variant: "default",
+      },
+      style: [atoms({ background: "stakeSectionBackground" })],
+    },
     {
       variants: {
         state: "active",
@@ -81,7 +104,7 @@ export const tabContainer = recipe({
   variants: {
     variant: {
       default: {
-        width: "200px",
+        minWidth: "74px",
       },
       utila: {},
       porto: {},
@@ -107,9 +130,7 @@ export const tabText = recipe({
       selected: {},
     },
     variant: {
-      default: {
-        marginBottom: "16px",
-      },
+      default: {},
       utila: [
         atoms({ fontWeight: "semibold" }),
         {
@@ -155,7 +176,7 @@ export const tabsContainer = recipe({
     variant: {
       default: {
         gap: "15px",
-        paddingTop: "16px",
+        padding: "16px 24px",
       },
       utila: {
         gap: "15px",
@@ -198,7 +219,7 @@ export const tabsWrapper = recipe({
   variants: {
     variant: {
       default: {
-        justifyContent: "center",
+        justifyContent: "flex-start",
       },
       utila: {
         justifyContent: "flex-start",

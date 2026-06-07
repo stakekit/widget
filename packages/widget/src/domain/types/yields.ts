@@ -67,6 +67,30 @@ export type ValidatorsConfig = Map<
   }
 >;
 
+export type DashboardYieldCategory = "stake" | "defi" | "rwa";
+
+export const dashboardYieldCategories = [
+  "stake",
+  "defi",
+  "rwa",
+] as const satisfies ReadonlyArray<DashboardYieldCategory>;
+
+export const getDashboardYieldCategory = (
+  yieldDto: Yield
+): DashboardYieldCategory | null => {
+  const yieldType = getExtendedYieldType(yieldDto);
+
+  if (yieldType === "real_world_asset") return "rwa";
+
+  if (isStakingYieldType(yieldType) || yieldType === "restaking") {
+    return "stake";
+  }
+
+  if (isDepositYieldType(yieldType)) return "defi";
+
+  return null;
+};
+
 export const filterValidators = ({
   validatorsConfig,
   validators,

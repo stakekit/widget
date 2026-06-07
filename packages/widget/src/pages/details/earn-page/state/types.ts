@@ -4,7 +4,10 @@ import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { TronResourceType } from "../../../../domain/types/tron";
 import type { ValidatorDto } from "../../../../domain/types/validators";
-import type { Yield } from "../../../../domain/types/yields";
+import type {
+  DashboardYieldCategory,
+  Yield,
+} from "../../../../domain/types/yields";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -77,6 +80,8 @@ export type EarnPageContextType = {
   rewardsTokenSymbol: string;
   selectedStakeData: Maybe<SelectedStakeData>;
   selectedStake: ExtraData["selectedStake"];
+  selectedDashboardYieldCategory: DashboardYieldCategory | null;
+  onDashboardYieldCategorySelect: (category: DashboardYieldCategory) => void;
   onYieldSelect: (yieldId: string) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
   onStakeAmountChange: (value: BigNumber) => void;
