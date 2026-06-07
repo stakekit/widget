@@ -5,7 +5,6 @@ import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
 import { SelectTokenTitle } from "../../../pages/details/earn-page/components/select-token-section/title";
 import { SelectYieldSection } from "../../../pages/details/earn-page/components/select-yield-section";
-import { StakedVia } from "../../../pages/details/earn-page/components/select-yield-section/staked-via";
 import { EarnPageContextProvider } from "../../../pages/details/earn-page/state/earn-page-context";
 import { EarnPageStateUsageBoundaryProvider } from "../../../pages/details/earn-page/state/earn-page-state-context";
 import { useSettings } from "../../../providers/settings";
@@ -30,8 +29,6 @@ export const EarnPageContent = () => {
         <SelectTokenSection />
 
         <SelectYieldSection />
-
-        <StakedVia />
 
         <ExtraArgsSelection />
       </Box>

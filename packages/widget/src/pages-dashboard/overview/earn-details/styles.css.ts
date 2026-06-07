@@ -4,23 +4,34 @@ import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 
 export const container = style({
+  boxSizing: "border-box",
   maxHeight: "620px",
   overflowY: "auto",
+  paddingRight: vars.space["3"],
+  scrollbarGutter: "stable",
 });
 
 export const earnDetailsWrapper = style({
   alignSelf: "flex-start",
+  minWidth: 0,
 });
 
 export const headerProviderText = style({
+  fontSize: "13px",
+  lineHeight: "18px",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
 
 export const titleText = style({
-  fontSize: "20px",
+  fontSize: "16px",
   lineHeight: "120%",
+});
+
+export const headerProviderLabelText = style({
+  fontSize: "13px",
+  lineHeight: "18px",
 });
 
 export const headerBadgeRow = style({
@@ -73,23 +84,65 @@ export const metricCard = style([
 
 export const providerCard = style([
   atoms({
-    alignItems: "center",
+    alignItems: "stretch",
     background: "background",
-    borderRadius: "base",
+    borderRadius: "xl",
     display: "flex",
-    gap: "3",
+    flexDirection: "column",
+    gap: "2",
     px: "4",
-    py: "3",
+    py: "4",
   }),
   {
     border: `1px solid ${vars.color.backgroundMuted}`,
-    cursor: "pointer",
+    boxSizing: "border-box",
     font: "inherit",
+    maxWidth: "100%",
     minWidth: 0,
     textAlign: "left",
     width: "100%",
   },
 ]);
+
+export const providerCardMainRow = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "3",
+  }),
+  {
+    minWidth: 0,
+    width: "100%",
+  },
+]);
+
+export const providerCardContent = style([
+  atoms({
+    display: "flex",
+    flex: 1,
+    flexDirection: "column",
+    gap: "1",
+    minWidth: "0",
+  }),
+]);
+
+export const providerCardHeader = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "2",
+  }),
+  {
+    minWidth: 0,
+  },
+]);
+
+export const providerNameText = style({
+  fontSize: "13px",
+  lineHeight: "20px",
+  minWidth: 0,
+  overflowWrap: "anywhere",
+});
 
 export const providerChangeButton = style([
   atoms({
@@ -102,19 +155,60 @@ export const providerChangeButton = style([
     py: "2",
   }),
   {
+    border: 0,
+    boxSizing: "border-box",
+    cursor: "pointer",
     flexShrink: 0,
+    font: "inherit",
+    // minHeight: "42px",
   },
 ]);
 
 export const providerMetaText = style({
-  display: "block",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  display: "flex",
+  flexWrap: "wrap",
+  fontSize: "13px",
+  gap: "0 8px",
+  lineHeight: "18px",
+  overflowWrap: "anywhere",
+});
+
+export const providerWebsiteText = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "1",
+  }),
+  {
+    color: vars.color.textMuted,
+    fontSize: "13px",
+    lineHeight: "18px",
+    overflowWrap: "anywhere",
+    textDecoration: "none",
+  },
+]);
+
+export const externalLinkIcon = style({
+  flexShrink: 0,
 });
 
 export const providerStatusText = style({
   color: "#15803D",
+});
+
+export const metricLabelText = style({
+  fontSize: "13px",
+  lineHeight: "18px",
+});
+
+export const metricValueText = style({
+  fontSize: "16px",
+  lineHeight: "20px",
+});
+
+export const metricSubValueText = style({
+  fontSize: "11px",
+  lineHeight: "16px",
 });
 
 export const sectionDivider = style([

@@ -13,6 +13,7 @@ import { ProviderIcon } from "../../../../../components/atoms/token-icon/provide
 import { Text } from "../../../../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { SelectOpportunityListItem } from "../../../../../components/molecules/select-opportunity-list-item";
+import { getYieldOutputToken } from "../../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
@@ -56,6 +57,8 @@ export const SelectOpportunity = () => {
 
   if (!data) return null;
 
+  const displayToken = getYieldOutputToken(data.ss).orDefault(data.ss.token);
+
   return (
     <SelectModal
       title={t("details.opportunity_search_title")}
@@ -83,14 +86,14 @@ export const SelectOpportunity = () => {
               alignItems="center"
             >
               <ProviderIcon
-                token={data.ss.token}
+                token={displayToken}
                 metadata={{
                   logoURI: data.ss.metadata.logoURI,
                   name: data.ss.metadata.name,
                   provider: data.ss.provider,
                 }}
               />
-              <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
+              <Text variant={{ weight: "bold" }}>{displayToken.symbol}</Text>
             </Box>
             <CaretDownIcon />
           </Box>

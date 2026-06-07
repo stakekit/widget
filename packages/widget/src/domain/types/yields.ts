@@ -12,7 +12,7 @@ import type {
 } from "../../generated/api/yield";
 import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
-import { tokenString } from "./tokens";
+import { equalTokens, tokenString } from "./tokens";
 import type { ValidatorDto } from "./validators";
 
 export type Yield = YieldApiYieldDto & {
@@ -290,6 +290,11 @@ export const getExtendedYieldType = (yieldDto: Yield): ExtendedYieldType => {
 
   return yieldDto.mechanics.type;
 };
+
+export const getYieldOutputToken = (yieldDto: Yield) =>
+  Maybe.fromNullable(yieldDto.outputToken).filter(
+    (outputToken) => !equalTokens(outputToken, yieldDto.token)
+  );
 
 export const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||

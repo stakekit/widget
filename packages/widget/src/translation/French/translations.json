@@ -66,9 +66,12 @@
     "estimated_reward": "Récompenses estimées",
     "earn_with": "Earn avec",
     "restake_with": "Restake avec",
+    "yield_strategy": "Stratégie de rendement",
+    "via": "via {{providerName}}",
     "additional_info": "Infos supplémentaires",
     "rewards": {
       "receive": "Vous recevrez des <symbols1></symbols1> via",
+      "receive_output": "Vous recevrez",
       "yearly": "Gains annuels estimés",
       "monthly": "Gains mensuels estimés"
     },

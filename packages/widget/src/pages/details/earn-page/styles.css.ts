@@ -19,6 +19,127 @@ export const apyYield = style([
 
 export const breakWord = style({ wordBreak: "break-all" });
 
+export const overflowEllipsis = style({
+  minWidth: 0,
+  overflowWrap: "anywhere",
+});
+
+export const selectorSummaryCard = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: "xl",
+    borderWidth: 1,
+    borderStyle: "solid",
+    borderColor: "backgroundMuted",
+    background: "background",
+    gap: "3",
+    padding: "3",
+    width: "full",
+  }),
+  {
+    boxSizing: "border-box",
+    maxWidth: "100%",
+    minWidth: 0,
+  },
+]);
+
+export const selectorSummaryContent = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    gap: "3",
+    flex: 1,
+    minWidth: "0",
+  }),
+]);
+
+export const selectorSummaryText = style([
+  atoms({
+    display: "flex",
+    flexDirection: "column",
+    gap: "1",
+    flex: 1,
+    minWidth: "0",
+  }),
+]);
+
+export const selectorSummaryHeader = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    gap: "2",
+  }),
+  {
+    minWidth: 0,
+  },
+]);
+
+export const selectorSummaryMeta = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    gap: "1",
+    flexWrap: "wrap",
+  }),
+  {
+    minWidth: 0,
+  },
+]);
+
+export const selectorSummaryWebsite = style([
+  atoms({
+    color: "textMuted",
+  }),
+  {
+    display: "block",
+    maxWidth: "100%",
+    minWidth: 0,
+    overflowWrap: "anywhere",
+    textDecoration: "none",
+
+    ":hover": {
+      textDecoration: "underline",
+    },
+  },
+]);
+
+export const selectorSummaryChangeButton = style([
+  atoms({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "backgroundMuted",
+    borderRadius: "full",
+    gap: "1",
+    flexShrink: 0,
+  }),
+  {
+    boxSizing: "border-box",
+    minHeight: 42,
+    padding: "0 14px",
+  },
+]);
+
+export const selectorSummaryBadge = style({
+  alignItems: "center",
+  background: "#EAF7EE",
+  borderRadius: vars.borderRadius.baseContract.full,
+  color: "#137333",
+  display: "inline-flex",
+  fontSize: vars.fontSize.sm,
+  fontWeight: vars.fontWeight.bold,
+  lineHeight: 1,
+  padding: "3px 8px",
+  whiteSpace: "nowrap",
+});
+
+export const selectorSummaryActive = style({
+  color: "#137333",
+  whiteSpace: "nowrap",
+});
+
 export const apyVariable = style({
   cursor: "pointer",
   position: "absolute",
@@ -50,12 +171,13 @@ export const addValidatorButton = style([
 
 export const addValidatorContainer = style([
   atoms({
-    marginRight: "2",
+    marginRight: "0",
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "stretch",
     marginTop: "3",
     flexWrap: "wrap",
+    width: "full",
   }),
-  { rowGap: "5px", gap: "5px" },
+  { boxSizing: "border-box", rowGap: "5px", gap: "5px", maxWidth: "100%" },
 ]);

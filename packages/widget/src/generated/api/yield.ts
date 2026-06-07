@@ -30,6 +30,7 @@ export type TokenDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -45,6 +46,7 @@ export type TokenDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -142,6 +144,7 @@ export type RewardDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -157,6 +160,7 @@ export type RewardDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -264,6 +268,12 @@ export type RewardSchedule =
   | "epoch"
   | "campaign";
 export type RewardClaiming = "auto" | "manual";
+export type KycEligibilityDto = {
+  readonly countries?: ReadonlyArray<string>;
+  readonly usPersonAllowed?: boolean;
+  readonly accreditation?: "retail" | "qualified_purchaser" | "accredited";
+  readonly subjectType?: "KYC" | "KYB";
+};
 export type ArgumentFieldDto = {
   readonly name:
     | "amount"
@@ -328,6 +338,7 @@ export type AllocationDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -343,6 +354,7 @@ export type AllocationDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -458,6 +470,7 @@ export type BalancesQueryDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -473,6 +486,7 @@ export type BalancesQueryDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -577,6 +591,7 @@ export type TransactionDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -592,6 +607,7 @@ export type TransactionDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -752,14 +768,9 @@ export type YieldRiskCredoraDto = {
   readonly curator?: {};
 };
 export type YieldRiskStakingRewardsMetricsDto = { readonly users?: {} };
-export type RewardRateHistoryResponseDto = {
-  readonly total: number;
-  readonly offset: number;
-  readonly limit: number;
-  readonly yieldId: string;
-  readonly interval: "day" | "week" | "month";
-  readonly from: string;
-  readonly to: string;
+export type RewardRateSnapshotDto = {
+  readonly timestamp: string;
+  readonly rewardRate: string;
 };
 export type TvlHistoryResponseDto = {
   readonly total: number;
@@ -808,6 +819,7 @@ export type CreateActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -823,6 +835,7 @@ export type CreateActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -909,6 +922,7 @@ export type CreateActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -924,6 +938,7 @@ export type CreateActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1041,6 +1056,7 @@ export type CreateManageActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -1056,6 +1072,7 @@ export type CreateManageActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1142,6 +1159,7 @@ export type CreateManageActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -1157,6 +1175,7 @@ export type CreateManageActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1268,6 +1287,15 @@ export type CreateManageActionDto = {
 };
 export type SubmitHashDto = { readonly hash: string };
 export type SubmitTransactionDto = { readonly signedTransaction: string };
+export type KycStatusResponseDto = {
+  readonly kycStatus:
+    | "not_required"
+    | "not_started"
+    | "pending"
+    | "approved"
+    | "rejected";
+  readonly kycUrl?: string;
+};
 export type NetworkDto = {
   readonly id:
     | "ethereum"
@@ -1288,6 +1316,7 @@ export type NetworkDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1303,6 +1332,7 @@ export type NetworkDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -1438,11 +1468,13 @@ export type ValidatorDto = {
   readonly nominatorCount?: number;
   readonly status?: string;
   readonly providerId?: string;
-  readonly pricePerShare?: string;
-  readonly subnetId?: number;
-  readonly subnetName?: string;
-  readonly marketCap?: string;
-  readonly tokenSymbol?: string;
+  readonly subnet?: {
+    readonly id: number;
+    readonly name?: string;
+    readonly tokenSymbol?: string;
+    readonly tvl?: string;
+    readonly pricePerShare?: string;
+  };
 };
 export type ArgumentSchemaDto = {
   readonly fields: ReadonlyArray<ArgumentFieldDto>;
@@ -1539,6 +1571,7 @@ export type ActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -1554,6 +1587,7 @@ export type ActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1640,6 +1674,7 @@ export type ActionDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -1655,6 +1690,7 @@ export type ActionDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1768,6 +1804,16 @@ export type YieldRiskStakingRewardsDto = {
   readonly contractAddress?: {};
   readonly riskMetrics?: YieldRiskStakingRewardsMetricsDto;
 };
+export type RewardRateHistoryResponseDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<RewardRateSnapshotDto>;
+  readonly yieldId: string;
+  readonly interval: "day" | "week" | "month";
+  readonly from: string;
+  readonly to: string;
+};
 export type YieldCampaignDto = {
   readonly id: string;
   readonly name?: string | null;
@@ -1819,6 +1865,7 @@ export type YieldCampaignDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -1834,6 +1881,7 @@ export type YieldCampaignDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -1927,6 +1975,7 @@ export type YieldDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -1942,6 +1991,7 @@ export type YieldDto = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -2033,6 +2083,7 @@ export type YieldDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -2048,6 +2099,7 @@ export type YieldDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2142,6 +2194,7 @@ export type YieldDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -2157,6 +2210,7 @@ export type YieldDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -2282,6 +2336,7 @@ export type YieldDto = {
         | "unichain"
         | "monad-testnet"
         | "monad"
+        | "robinhood-testnet"
         | "avalanche-c"
         | "avalanche-c-atomic"
         | "avalanche-p"
@@ -2297,6 +2352,7 @@ export type YieldDto = {
         | "plasma"
         | "katana"
         | "hyperevm"
+        | "tempo"
         | "agoric"
         | "akash"
         | "axelar"
@@ -2384,6 +2440,13 @@ export type YieldDto = {
     readonly requirements?: {
       readonly kycRequired: boolean;
       readonly kycUrl?: string;
+      readonly kyc?: {
+        readonly kycMode: "oauth_redirect";
+        readonly iframeAllowed: boolean;
+        readonly authorizeUrl?: string;
+        readonly notes?: string;
+        readonly eligibility?: KycEligibilityDto;
+      };
     };
     readonly supportsLedgerWalletApi?: boolean;
     readonly extraTransactionFormatsSupported?: ReadonlyArray<
@@ -2438,6 +2501,7 @@ export type YieldDto = {
           | "unichain"
           | "monad-testnet"
           | "monad"
+          | "robinhood-testnet"
           | "avalanche-c"
           | "avalanche-c-atomic"
           | "avalanche-p"
@@ -2453,6 +2517,7 @@ export type YieldDto = {
           | "plasma"
           | "katana"
           | "hyperevm"
+          | "tempo"
           | "agoric"
           | "akash"
           | "axelar"
@@ -2547,6 +2612,7 @@ export type YieldDto = {
           | "unichain"
           | "monad-testnet"
           | "monad"
+          | "robinhood-testnet"
           | "avalanche-c"
           | "avalanche-c-atomic"
           | "avalanche-p"
@@ -2562,6 +2628,7 @@ export type YieldDto = {
           | "plasma"
           | "katana"
           | "hyperevm"
+          | "tempo"
           | "agoric"
           | "akash"
           | "axelar"
@@ -2667,6 +2734,7 @@ export type YieldDto = {
           | "unichain"
           | "monad-testnet"
           | "monad"
+          | "robinhood-testnet"
           | "avalanche-c"
           | "avalanche-c-atomic"
           | "avalanche-p"
@@ -2682,6 +2750,7 @@ export type YieldDto = {
           | "plasma"
           | "katana"
           | "hyperevm"
+          | "tempo"
           | "agoric"
           | "akash"
           | "axelar"
@@ -2776,6 +2845,7 @@ export type YieldDto = {
           | "unichain"
           | "monad-testnet"
           | "monad"
+          | "robinhood-testnet"
           | "avalanche-c"
           | "avalanche-c-atomic"
           | "avalanche-p"
@@ -2791,6 +2861,7 @@ export type YieldDto = {
           | "plasma"
           | "katana"
           | "hyperevm"
+          | "tempo"
           | "agoric"
           | "akash"
           | "axelar"
@@ -2910,6 +2981,7 @@ export type BalanceDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -2925,6 +2997,7 @@ export type BalanceDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3047,11 +3120,13 @@ export type BalanceDto = {
     readonly nominatorCount?: number;
     readonly status?: string;
     readonly providerId?: string;
-    readonly pricePerShare?: string;
-    readonly subnetId?: number;
-    readonly subnetName?: string;
-    readonly marketCap?: string;
-    readonly tokenSymbol?: string;
+    readonly subnet?: {
+      readonly id: number;
+      readonly name?: string;
+      readonly tokenSymbol?: string;
+      readonly tvl?: string;
+      readonly pricePerShare?: string;
+    };
   } | null;
   readonly validators?: ReadonlyArray<{
     readonly address: string;
@@ -3104,11 +3179,13 @@ export type BalanceDto = {
     readonly nominatorCount?: number;
     readonly status?: string;
     readonly providerId?: string;
-    readonly pricePerShare?: string;
-    readonly subnetId?: number;
-    readonly subnetName?: string;
-    readonly marketCap?: string;
-    readonly tokenSymbol?: string;
+    readonly subnet?: {
+      readonly id: number;
+      readonly name?: string;
+      readonly tokenSymbol?: string;
+      readonly tvl?: string;
+      readonly pricePerShare?: string;
+    };
   }>;
   readonly amountUsd?: string | null;
   readonly isEarning: boolean;
@@ -3139,6 +3216,7 @@ export type BalanceDto = {
       | "unichain"
       | "monad-testnet"
       | "monad"
+      | "robinhood-testnet"
       | "avalanche-c"
       | "avalanche-c-atomic"
       | "avalanche-p"
@@ -3154,6 +3232,7 @@ export type BalanceDto = {
       | "plasma"
       | "katana"
       | "hyperevm"
+      | "tempo"
       | "agoric"
       | "akash"
       | "axelar"
@@ -3265,6 +3344,7 @@ export type YieldBalancesDto = {
         | "unichain"
         | "monad-testnet"
         | "monad"
+        | "robinhood-testnet"
         | "avalanche-c"
         | "avalanche-c-atomic"
         | "avalanche-p"
@@ -3280,6 +3360,7 @@ export type YieldBalancesDto = {
         | "plasma"
         | "katana"
         | "hyperevm"
+        | "tempo"
         | "agoric"
         | "akash"
         | "axelar"
@@ -3402,11 +3483,13 @@ export type YieldBalancesDto = {
       readonly nominatorCount?: number;
       readonly status?: string;
       readonly providerId?: string;
-      readonly pricePerShare?: string;
-      readonly subnetId?: number;
-      readonly subnetName?: string;
-      readonly marketCap?: string;
-      readonly tokenSymbol?: string;
+      readonly subnet?: {
+        readonly id: number;
+        readonly name?: string;
+        readonly tokenSymbol?: string;
+        readonly tvl?: string;
+        readonly pricePerShare?: string;
+      };
     } | null;
     readonly validators?: ReadonlyArray<{
       readonly address: string;
@@ -3459,11 +3542,13 @@ export type YieldBalancesDto = {
       readonly nominatorCount?: number;
       readonly status?: string;
       readonly providerId?: string;
-      readonly pricePerShare?: string;
-      readonly subnetId?: number;
-      readonly subnetName?: string;
-      readonly marketCap?: string;
-      readonly tokenSymbol?: string;
+      readonly subnet?: {
+        readonly id: number;
+        readonly name?: string;
+        readonly tokenSymbol?: string;
+        readonly tvl?: string;
+        readonly pricePerShare?: string;
+      };
     }>;
     readonly amountUsd?: string | null;
     readonly isEarning: boolean;
@@ -3494,6 +3579,7 @@ export type YieldBalancesDto = {
         | "unichain"
         | "monad-testnet"
         | "monad"
+        | "robinhood-testnet"
         | "avalanche-c"
         | "avalanche-c-atomic"
         | "avalanche-p"
@@ -3509,6 +3595,7 @@ export type YieldBalancesDto = {
         | "plasma"
         | "katana"
         | "hyperevm"
+        | "tempo"
         | "agoric"
         | "akash"
         | "axelar"
@@ -3592,6 +3679,12 @@ export type BalanceHistorySnapshotDto = {
   readonly blockNumber: number;
   readonly yieldId: string;
   readonly balances: ReadonlyArray<BalanceDto>;
+  readonly periodDelta?: {
+    readonly shareAmount: string;
+    readonly shareAmountRaw: string;
+    readonly amount: string;
+    readonly amountRaw: string;
+  };
 };
 export type BalancesResponseDto = {
   readonly items: ReadonlyArray<YieldBalancesDto>;
@@ -3620,6 +3713,7 @@ export type YieldsControllerGetYieldsParams = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -3635,6 +3729,7 @@ export type YieldsControllerGetYieldsParams = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -4119,6 +4214,7 @@ export type ActionsControllerGetActionsParams = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
     | "avalanche-p"
@@ -4134,6 +4230,7 @@ export type ActionsControllerGetActionsParams = {
     | "plasma"
     | "katana"
     | "hyperevm"
+    | "tempo"
     | "agoric"
     | "akash"
     | "axelar"
@@ -4393,6 +4490,19 @@ export type TransactionsControllerGetTransaction500 = {
   readonly message?: string;
   readonly error?: string;
   readonly statusCode?: number;
+};
+export type KycControllerGetStatusParams = { readonly address: string };
+export type KycControllerGetStatus200 = KycStatusResponseDto;
+export type KycControllerGetStatus401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type KycControllerGetStatus429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
 };
 export type NetworksControllerGetNetworks200 = ReadonlyArray<NetworkDto>;
 export type NetworksControllerGetNetworks400 = {
@@ -4848,6 +4958,16 @@ export const make = (
           "401": "TransactionsControllerGetTransaction401",
           "429": "TransactionsControllerGetTransaction429",
           "500": "TransactionsControllerGetTransaction500",
+        })
+      ),
+    KycControllerGetStatus: (yieldId, options) =>
+      HttpClientRequest.get(`/v1/yields/${yieldId}/kyc/status`).pipe(
+        HttpClientRequest.setUrlParams({
+          address: options.params["address"] as any,
+        }),
+        onRequest(options.config)(["2xx"], {
+          "401": "KycControllerGetStatus401",
+          "429": "KycControllerGetStatus429",
         })
       ),
     NetworksControllerGetNetworks: (options) =>
@@ -5441,6 +5561,21 @@ export interface YieldApi {
         "TransactionsControllerGetTransaction500",
         TransactionsControllerGetTransaction500
       >
+  >;
+  /**
+   * Returns the normalized KYC status for the given address. Yields without a KYC requirement return not_required.
+   */
+  readonly KycControllerGetStatus: <Config extends OperationConfig>(
+    yieldId: string,
+    options: {
+      readonly params: KycControllerGetStatusParams;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<KycControllerGetStatus200, Config>,
+    | HttpClientError.HttpClientError
+    | YieldApiError<"KycControllerGetStatus401", KycControllerGetStatus401>
+    | YieldApiError<"KycControllerGetStatus429", KycControllerGetStatus429>
   >;
   /**
    * Retrieve a list of all supported networks that can be used for filtering yields and other operations.

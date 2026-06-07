@@ -3,7 +3,6 @@ import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SKAnchor } from "../../../components/atoms/anchor";
 import { Box } from "../../../components/atoms/box";
 import {
   CollapsibleArrow,
@@ -51,15 +50,25 @@ import {
   autoBadge,
   container,
   detailRow,
+  externalLinkIcon,
   headerBadge,
   headerBadgeRow,
+  headerProviderLabelText,
   headerProviderText,
   metricCard,
   metricGrid,
+  metricLabelText,
+  metricSubValueText,
+  metricValueText,
   providerCard,
+  providerCardContent,
+  providerCardHeader,
+  providerCardMainRow,
   providerChangeButton,
   providerMetaText,
+  providerNameText,
   providerStatusText,
+  providerWebsiteText,
   rangeButton,
   titleText,
   valueText,
@@ -179,7 +188,7 @@ export const EarnDetailsView = ({
             provider: provider,
           }}
           token={yieldDto.token}
-          tokenLogoHw="14"
+          tokenLogoHw="12"
         />
 
         <Box minWidth="0">
@@ -303,7 +312,7 @@ const ProviderLabel = ({
         src={yieldDto.provider?.logoURI}
         fallbackName={providerName}
       />
-      <Text variant={{ weight: "normal" }}>
+      <Text className={headerProviderLabelText} variant={{ weight: "normal" }}>
         {t("positions.via", { providerName, count: 1 })}
       </Text>
     </Box>
@@ -351,21 +360,18 @@ const ProviderSelectionCard = () => {
   return (
     <SelectValidator
       trigger={
-        <Trigger asChild>
-          <Box as="button" className={providerCard} type="button">
+        <Box className={providerCard}>
+          <Box className={providerCardMainRow}>
             <Image
-              wrapperProps={{ hw: "9", flexShrink: 0 }}
+              wrapperProps={{ hw: "8", flexShrink: 0 }}
               imgProps={{ borderRadius: "base" }}
               src={selectedProvider?.logo}
               fallbackName={providerName}
             />
 
-            <Box flex={1} minWidth="0">
-              <Box display="flex" alignItems="center" gap="2">
-                <Text
-                  className={headerProviderText}
-                  variant={{ weight: "bold" }}
-                >
+            <Box className={providerCardContent}>
+              <Box className={providerCardHeader}>
+                <Text className={providerNameText} variant={{ weight: "bold" }}>
                   {providerName}
                 </Text>
 
@@ -382,20 +388,32 @@ const ProviderSelectionCard = () => {
                 provider={selectedProvider}
                 tokenSymbol={yieldDto.token.symbol}
               />
-
-              {selectedProvider?.website ? (
-                <SKAnchor href={selectedProvider.website}>
-                  {selectedProvider.website}
-                </SKAnchor>
-              ) : null}
             </Box>
 
-            <Box className={providerChangeButton}>
-              <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
-              <CaretDownIcon />
-            </Box>
+            <Trigger asChild>
+              <Box as="button" className={providerChangeButton} type="button">
+                <Text variant={{ weight: "bold", size: "small" }}>
+                  {t("shared.change")}
+                </Text>
+                <CaretDownIcon />
+              </Box>
+            </Trigger>
           </Box>
-        </Trigger>
+
+          {selectedProvider?.website ? (
+            <Text
+              as="a"
+              className={providerWebsiteText}
+              href={formatProviderWebsiteHref(selectedProvider.website)}
+              rel="noreferrer"
+              target="_blank"
+              variant={{ type: "muted", weight: "normal" }}
+            >
+              {formatProviderWebsite(selectedProvider.website)}
+              <ExternalLinkIcon />
+            </Text>
+          ) : null}
+        </Box>
       }
       selectedValidators={new Set(selectedValidatorsArr.map((v) => v.address))}
       multiSelect={multiSelect}
@@ -443,13 +461,47 @@ const ProviderMetaLine = ({
           }
           key={detail}
         >
-          {index > 0 ? " · " : ""}
+          {index > 0 ? "• " : ""}
           {detail}
         </Box>
       ))}
     </Text>
   );
 };
+
+const ExternalLinkIcon = () => (
+  <svg
+    aria-hidden="true"
+    className={externalLinkIcon}
+    fill="none"
+    height="14"
+    viewBox="0 0 14 14"
+    width="14"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M5.25 3.5H3.5C2.5335 3.5 1.75 4.2835 1.75 5.25V10.5C1.75 11.4665 2.5335 12.25 3.5 12.25H8.75C9.7165 12.25 10.5 11.4665 10.5 10.5V8.75"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M8.75 1.75H12.25V5.25"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M6.41699 7.58333L12.2503 1.75"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
+  </svg>
+);
 
 const shouldRenderHistoryChart = (history: {
   data: RewardRateHistoryPoint[];
@@ -520,14 +572,24 @@ type MetricCardProps = {
 
 const MetricCard = ({ label, subValue, value }: MetricCardProps) => (
   <Box className={metricCard} display="flex" flexDirection="column" gap="1">
-    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
+    <Text
+      className={metricLabelText}
+      variant={{ type: "muted", weight: "normal" }}
+    >
+      {label}
+    </Text>
     {typeof value === "string" ? (
-      <Text variant={{ weight: "bold", size: "large" }}>{value}</Text>
+      <Text className={metricValueText} variant={{ weight: "bold" }}>
+        {value}
+      </Text>
     ) : (
       <Box>{value}</Box>
     )}
     {subValue && (
-      <Text variant={{ type: "muted", weight: "normal", size: "small" }}>
+      <Text
+        className={metricSubValueText}
+        variant={{ type: "muted", weight: "normal" }}
+      >
         {subValue}
       </Text>
     )}
@@ -795,7 +857,9 @@ const formatCommission = (commission: ProviderDetailsItem["commission"]) => {
 
   const amount = BigNumber(commission);
 
-  return amount.isFinite() ? `${APToPercentage(amount.toNumber())}%` : null;
+  return amount.isFinite()
+    ? `Commission ${amount.multipliedBy(100).toFixed(2)}%`
+    : null;
 };
 
 const formatProviderTvl = (
@@ -806,7 +870,7 @@ const formatProviderTvl = (
 
   const formatted = formatCompactNumber(tvl);
 
-  return formatted === "-" ? null : `${formatted} ${tokenSymbol}`;
+  return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
 };
 
 const formatProviderStatus = (status: ProviderDetailsItem["status"]) => {
@@ -814,6 +878,17 @@ const formatProviderStatus = (status: ProviderDetailsItem["status"]) => {
 
   return status.charAt(0).toUpperCase() + status.slice(1);
 };
+
+const formatProviderWebsite = (website: string) => {
+  try {
+    return new URL(website).hostname.replace(/^www\./, "");
+  } catch {
+    return website.replace(/^https?:\/\/(www\.)?/, "");
+  }
+};
+
+const formatProviderWebsiteHref = (website: string) =>
+  /^https?:\/\//i.test(website) ? website : `https://${website}`;
 
 const formatRewardTokenLabel = (yieldDto: Yield) => {
   const symbol = yieldDto.token.symbol;

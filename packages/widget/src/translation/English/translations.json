@@ -67,9 +67,12 @@
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
     "restake_with": "Restake with",
+    "yield_strategy": "Yield strategy",
+    "via": "via {{providerName}}",
     "additional_info": "Additional info",
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
+      "receive_output": "You'll receive",
       "yearly": "Estimated Yearly Earnings",
       "monthly": "Estimated Monthly Earnings"
     },

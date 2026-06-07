@@ -16,7 +16,6 @@ import { SelectTokenSection } from "./components/select-token-section";
 import { SelectTokenTitle } from "./components/select-token-section/title";
 import { SelectValidatorSection } from "./components/select-validator-section";
 import { SelectYieldSection } from "./components/select-yield-section";
-import { StakedVia } from "./components/select-yield-section/staked-via";
 import {
   EarnPageContextProvider,
   useEarnPageContext,
@@ -42,8 +41,6 @@ const EarnPageComponent = () => {
         <SelectTokenSection />
 
         <SelectYieldSection />
-
-        <StakedVia />
 
         <SelectProvider />
 

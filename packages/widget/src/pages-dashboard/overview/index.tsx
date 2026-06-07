@@ -7,13 +7,21 @@ import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
 import { EarnDetails } from "./earn-details";
 import { earnDetailsWrapper } from "./earn-details/styles.css";
+import { overviewPageContainer } from "./styles.css";
 
 export const OverviewPage = () => {
   return (
     <AnimationPage>
       <Box display="flex" flexDirection="column" gap="4">
         <TabPageContainer>
-          <Box display="flex" flex={1} flexDirection="column" gap="8" width="0">
+          <Box
+            display="flex"
+            flex={1}
+            flexDirection="column"
+            gap="8"
+            width="0"
+            className={overviewPageContainer}
+          >
             <BackButtonProvider>
               <Outlet />
             </BackButtonProvider>

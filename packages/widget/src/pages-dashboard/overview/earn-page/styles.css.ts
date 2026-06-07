@@ -8,7 +8,7 @@ import {
 
 export const container = style([
   atoms({
-    gap: "6",
+    gap: "4",
   }),
   {
     display: "flex",

@@ -29,7 +29,7 @@ export const getRewardRateFormatted = (opts: {
 };
 
 export const getRewardTypeFormatted = (rewardType: string | undefined) => {
-  switch (rewardType) {
+  switch (rewardType?.toLowerCase()) {
     case "apr":
       return "APR";
 
