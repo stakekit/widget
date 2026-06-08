@@ -4,8 +4,8 @@ import { atoms } from "./styles/theme/atoms.css";
 import { minContainerWidth } from "./styles/tokens/breakpoints";
 
 const appContainerName = createContainer();
-export const widgetContainerName = createContainer();
-export const widgetContainerMaxWidth = 400;
+const widgetContainerName = createContainer();
+const widgetContainerMaxWidth = 400;
 
 export const animationContainer = style([
   atoms({ background: "background" }),

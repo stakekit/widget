@@ -46,7 +46,7 @@ export const EarnDetails = () => {
   );
 };
 
-export const EarnDetailsView = ({
+const EarnDetailsView = ({
   isLoading,
   selectedValidators,
   yieldDto,

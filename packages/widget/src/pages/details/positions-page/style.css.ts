@@ -1,7 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
-import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],
@@ -42,30 +41,6 @@ export const listItemContainer = recipe({
 
   defaultVariants: {
     variant: "default",
-  },
-});
-
-export const badgeText = recipe({
-  variants: {
-    type: {
-      regular: atoms({ color: "text" }),
-      white: atoms({ color: "white" }),
-    },
-  },
-});
-
-export const utilaBadgeText = recipe({
-  base: [
-    {
-      fontSize: "12px",
-    },
-  ],
-  variants: {
-    type: {
-      regular: atoms({ color: "text" }),
-      success: { color: utilaPalette.badgeTextSuccess },
-      error: { color: utilaPalette.badgeTextError },
-    },
   },
 });
 

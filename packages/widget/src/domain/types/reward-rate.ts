@@ -36,7 +36,7 @@ const getBreakdownKey = (
       ? "protocol_incentive"
       : "native";
 
-export const getYieldRewardRateDetails = (
+const getYieldRewardRateDetails = (
   yieldDto: YieldWithRewardRate | null | undefined
 ): YieldRewardRateDto | undefined => yieldDto?.rewardRate;
 

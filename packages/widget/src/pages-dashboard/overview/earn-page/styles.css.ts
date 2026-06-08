@@ -42,22 +42,6 @@ export const selectTokenTitleContainer = recipe({
   },
 });
 
-export const selectValidatorSectionContainer = recipe({
-  variants: {
-    variant: {
-      default: {},
-      utila: atoms({
-        marginTop: "6",
-        marginBottom: "4",
-      }),
-      porto: atoms({
-        marginTop: "6",
-        marginBottom: "4",
-      }),
-    },
-  },
-});
-
 export const nameOrAddressText = style({
   overflow: "hidden",
   textOverflow: "ellipsis",

@@ -6,11 +6,7 @@ import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
 import { SelectTokenTitle } from "../../../pages/details/earn-page/components/select-token-section/title";
 import { SelectYieldSection } from "../../../pages/details/earn-page/components/select-yield-section";
-import {
-  EarnPageContextProvider,
-  useEarnPageContext,
-} from "../../../pages/details/earn-page/state/earn-page-context";
-import { EarnPageStateUsageBoundaryProvider } from "../../../pages/details/earn-page/state/earn-page-state-context";
+import { useEarnPageContext } from "../../../pages/details/earn-page/state/earn-page-context";
 import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { container, selectTokenTitleContainer } from "./styles.css";
@@ -63,15 +59,5 @@ export const EarnPageContent = () => {
         <Footer />
       </Box>
     </Box>
-  );
-};
-
-export const EarnPage = () => {
-  return (
-    <EarnPageStateUsageBoundaryProvider>
-      <EarnPageContextProvider>
-        <EarnPageContent />
-      </EarnPageContextProvider>
-    </EarnPageStateUsageBoundaryProvider>
   );
 };

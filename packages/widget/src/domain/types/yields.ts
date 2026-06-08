@@ -260,9 +260,6 @@ export const getYieldCooldownPeriod = (yieldDto: Yield) =>
 export const getYieldWarmupPeriod = (yieldDto: Yield) =>
   secondsToDays(yieldDto.mechanics.warmupPeriod?.seconds);
 
-export const getYieldWithdrawPeriod = (yieldDto: Yield) =>
-  yieldDto.__fallback__.metadata.withdrawPeriod;
-
 export const getYieldCommission = (yieldDto: Yield) =>
   yieldDto.__fallback__.metadata.commission;
 
@@ -313,7 +310,7 @@ export const getYieldOutputToken = (yieldDto: Yield) =>
     (outputToken) => !equalTokens(outputToken, yieldDto.token)
   );
 
-export const isStakingYieldType = (yieldType: ExtendedYieldType) =>
+const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||
   yieldType === "native_staking" ||
   yieldType === "pooled_staking";

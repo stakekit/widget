@@ -409,6 +409,3 @@ export const useUnstakeOrPendingActionDispatch = () => {
 
   return dispatch;
 };
-
-export const useIsUnstakeOrPendingAction = () =>
-  !!useContext(UnstakeOrPendingActionContext);

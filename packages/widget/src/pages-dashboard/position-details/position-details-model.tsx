@@ -35,7 +35,7 @@ import {
   formatRewardTokenLabel,
 } from "../overview/earn-details/earn-details-formatters";
 
-export type DashboardPositionStatusTone = "action" | "claim" | "default";
+type DashboardPositionStatusTone = "action" | "claim" | "default";
 
 export type DashboardPositionMetricCard = {
   id: string;
@@ -45,36 +45,36 @@ export type DashboardPositionMetricCard = {
   value: ReactNode;
 };
 
-export type DashboardPositionStatusSummary = {
+type DashboardPositionStatusSummary = {
   label: string;
   tone: DashboardPositionStatusTone;
   value: string;
 } | null;
 
-export type DashboardPositionBreakdownRow = {
+type DashboardPositionBreakdownRow = {
   id: string;
   label: string;
   subValue?: string;
   value: string;
 };
 
-export type DashboardPositionDetailRow = {
+type DashboardPositionDetailRow = {
   id: string;
   label: string;
   value: ReactNode;
 };
 
-export type DashboardPositionAddressRow = {
+type DashboardPositionAddressRow = {
   address: string;
   label: string;
 };
 
-export type DashboardPositionChartSection = {
+type DashboardPositionChartSection = {
   id: string;
   title: string;
 };
 
-export type DashboardPositionDetailsModel = {
+type DashboardPositionDetailsModel = {
   addressRows: DashboardPositionAddressRow[];
   breakdownRows: DashboardPositionBreakdownRow[];
   chartSections: DashboardPositionChartSection[];

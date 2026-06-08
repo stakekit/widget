@@ -6,7 +6,7 @@ import type { Yield } from "../../domain/types/yields";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKWallet } from "../../providers/sk-wallet";
 
-export const getYieldKycStatusQueryKey = ({
+const getYieldKycStatusQueryKey = ({
   address,
   yieldId,
 }: {

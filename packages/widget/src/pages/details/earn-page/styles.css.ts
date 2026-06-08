@@ -140,24 +140,6 @@ export const selectorSummaryActive = style({
   whiteSpace: "nowrap",
 });
 
-export const apyVariable = style({
-  cursor: "pointer",
-  position: "absolute",
-  top: -5,
-  right: -10,
-});
-
-export const validatorPill = style([
-  atoms({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "backgroundMuted",
-    borderRadius: "full",
-  }),
-  { padding: "5px 8px" },
-]);
-
 export const addValidatorButton = style([
   atoms({
     borderRadius: "full",

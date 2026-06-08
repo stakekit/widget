@@ -52,12 +52,12 @@ export const dateOlderThen7Days = (date: string): boolean => {
   return new Date(date) < sevenDaysAgo;
 };
 
-export type ActivityDayKind = "today" | "yesterday" | "other";
+type ActivityDayKind = "today" | "yesterday" | "other";
 
 export const getActivityDayKind = (date: Date): ActivityDayKind =>
   isToday(date) ? "today" : isYesterday(date) ? "yesterday" : "other";
 
-export type ActivityRelativeTime =
+type ActivityRelativeTime =
   | { unit: "now" }
   | { unit: "minutes" | "hours" | "days"; value: number };
 

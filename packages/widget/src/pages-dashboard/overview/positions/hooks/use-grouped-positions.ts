@@ -14,7 +14,7 @@ type PositionItem = ReturnType<
   typeof usePositions
 >["positionsData"]["data"][number];
 
-export type PositionsListRow =
+type PositionsListRow =
   | { kind: "chain-modal" }
   | { kind: "section"; category: DashboardYieldCategory; count: number }
   | { kind: "position"; item: PositionItem };

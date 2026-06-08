@@ -37,11 +37,6 @@ export const formatNumber = (
     .unsafeCoerce();
 };
 
-export const fromWei = (amount: string | BigNumber, decimals: number) =>
-  BigNumber(amount)
-    .dividedBy(10 ** decimals)
-    .toFixed();
-
 export const defaultFormattedNumber = (number: string | BigNumber | number) =>
   formatNumber(number, 6);
 
