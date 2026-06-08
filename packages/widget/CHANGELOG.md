@@ -1,5 +1,16 @@
 # @stakekit/widget
 
+## [0.0.273](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.272...@stakekit/widget@0.0.273) (2026-06-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* theme prop no longer accepts lightMode/darkMode; pass a flat theme object instead.
+
+### Features
+
+* dashboard v2  ([#525](https://github.com/stakekit/widget/issues/525)) ([e2760f8](https://github.com/stakekit/widget/commit/e2760f8173ad9cf276608a0c2a49ef72bcd508ec))
+
 ## [0.0.272](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.271...@stakekit/widget@0.0.272) (2026-06-04)
 
 
