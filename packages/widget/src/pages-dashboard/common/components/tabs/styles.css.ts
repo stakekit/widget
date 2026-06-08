@@ -14,7 +14,8 @@ export const divider = style({
 
 export const tabsGroupDivider = style([
   atoms({
-    background: "backgroundMuted",
+    background: "tabBorder",
+    mx: "2",
   }),
   {
     height: "24px",

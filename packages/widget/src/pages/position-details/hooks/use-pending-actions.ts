@@ -15,6 +15,10 @@ import type { YieldBalanceDto } from "../../../domain/types/positions";
 import type { Yield } from "../../../domain/types/yields";
 import type { ValidatorDto } from "../../../generated/api/yield";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
+import {
+  getPositionDetailsPendingActionReviewPath,
+  useUnstakeOrPendingActionParams,
+} from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
@@ -46,6 +50,7 @@ export const usePendingActions = () => {
   const trackEvent = useTrackEvent();
 
   const navigate = useNavigate();
+  const { plain } = useUnstakeOrPendingActionParams();
 
   const pendingActions = useMemo(
     () =>
@@ -262,6 +267,14 @@ export const usePendingActions = () => {
           },
         },
       });
+
+      const pendingActionReviewPath =
+        getPositionDetailsPendingActionReviewPath(plain);
+
+      if (pendingActionReviewPath) {
+        navigate(pendingActionReviewPath);
+        return;
+      }
 
       pendingActionSelectValidatorMatch
         ? navigate("../pending-action/review", { relative: "route" })

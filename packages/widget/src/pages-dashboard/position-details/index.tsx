@@ -12,7 +12,10 @@ import {
 import { VerticalDivider } from "../common/components/divider";
 import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
-import { positionDetailsActionsHasContent } from "./components/position-details-actions";
+import {
+  positionDetailsActionsHasContent,
+  positionDetailsStakeHasContent,
+} from "./components/position-details-actions";
 import { PositionDetailsInfo } from "./components/position-details-info";
 import {
   breadcrumb,
@@ -52,7 +55,9 @@ const PositionBreadcrumb = ({
 
 const PositionDetailsPageComponent = () => {
   const positionDetails = usePositionDetails();
-  const shouldShowActions = positionDetailsActionsHasContent(positionDetails);
+  const shouldShowActions =
+    positionDetailsActionsHasContent(positionDetails) ||
+    positionDetailsStakeHasContent(positionDetails);
 
   const positionName = positionDetails.integrationData
     .map((yieldDto) => yieldDto.metadata.name)
@@ -72,7 +77,13 @@ const PositionDetailsPageComponent = () => {
           >
             <PositionBreadcrumb positionName={positionName} />
 
-            <Box display="flex" flex={1} flexDirection="column" gap="8">
+            <Box
+              display="flex"
+              flex={1}
+              flexDirection="column"
+              gap="8"
+              justifyContent="space-between"
+            >
               <Outlet />
 
               <FooterOutlet />

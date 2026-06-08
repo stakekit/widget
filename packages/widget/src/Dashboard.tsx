@@ -22,16 +22,20 @@ import { EarnPageContent } from "./pages-dashboard/overview/earn-page";
 import { ManagePage } from "./pages-dashboard/overview/manage.page";
 import { PositionDetailsPage } from "./pages-dashboard/position-details";
 import { PositionDetailsActions } from "./pages-dashboard/position-details/components/position-details-actions";
+import { PositionDetailsStakeActions } from "./pages-dashboard/position-details/components/position-details-stake-actions";
 import { DashboardProvider } from "./pages-dashboard/providers/dashboard-context";
 import { useSKLocation } from "./providers/location";
 
-const earnFooterPaths = ["/", "/review", "/steps", "/complete"];
+const positionDetailsStakeFooterPath =
+  /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
+
+export const shouldRegisterDashboardEarnFooterButton = (pathname: string) =>
+  pathname === "/" || positionDetailsStakeFooterPath.test(pathname);
 
 export const Dashboard = () => {
   const { current } = useSKLocation();
-  const registerEarnFooterButton = earnFooterPaths.some(
-    (path) =>
-      current.pathname === path || current.pathname.startsWith(`${path}/`)
+  const registerEarnFooterButton = shouldRegisterDashboardEarnFooterButton(
+    current.pathname
   );
 
   return (
@@ -61,7 +65,15 @@ export const Dashboard = () => {
                 path="positions/:integrationId/:balanceId"
                 element={<PositionDetailsPage />}
               >
-                <Route index element={<PositionDetailsActions />} />
+                <Route index element={<PositionDetailsStakeActions />} />
+
+                {/* Staking */}
+                <Route path="stake">
+                  <Route index element={<PositionDetailsStakeActions />} />
+                  <Route path="review" element={<StakeReviewPage />} />
+                  <Route path="steps" element={<StakeStepsPage />} />
+                  <Route path="complete" element={<StakeCompletePage />} />
+                </Route>
 
                 <Route
                   path="select-validator/:pendingActionType"
@@ -70,6 +82,7 @@ export const Dashboard = () => {
 
                 {/* Unstaking */}
                 <Route path="unstake">
+                  <Route index element={<PositionDetailsActions />} />
                   <Route path="review" element={<UnstakeReviewPage />} />
                   <Route path="steps" element={<UnstakeStepsPage />} />
                   <Route path="complete" element={<UnstakeCompletePage />} />

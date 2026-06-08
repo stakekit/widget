@@ -1,6 +1,6 @@
 import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { Box } from "../../../../../components/atoms/box";
+import { Box, type BoxProps } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { MaxButton } from "../../../../../components/atoms/max-button";
 import { NumberInput } from "../../../../../components/atoms/number-input";
@@ -18,7 +18,13 @@ import {
 } from "./styles.css";
 import { SelectTokenTitle } from "./title";
 
-export const SelectTokenSection = () => {
+export const SelectTokenSection = ({
+  canSelectToken = true,
+  sectionMarginTop = "2",
+}: {
+  canSelectToken?: boolean;
+  sectionMarginTop?: BoxProps["marginTop"];
+} = {}) => {
   const { t } = useTranslation();
 
   const { variant } = useSettings();
@@ -86,7 +92,7 @@ export const SelectTokenSection = () => {
     .extractNullable();
 
   return isLoading ? (
-    <Box marginTop="2">
+    <Box marginTop={sectionMarginTop}>
       <ContentLoaderSquare heightPx={112.5} />
     </Box>
   ) : (
@@ -94,7 +100,7 @@ export const SelectTokenSection = () => {
       <Box
         data-rk="stake-token-section"
         background="stakeSectionBackground"
-        marginTop="2"
+        marginTop={sectionMarginTop}
         py="4"
         px="4"
         borderStyle="solid"
@@ -123,7 +129,7 @@ export const SelectTokenSection = () => {
           </Box>
 
           <Box display="flex" justifyContent="center" alignItems="center">
-            <SelectToken />
+            <SelectToken canSelect={canSelectToken} />
           </Box>
         </Box>
 

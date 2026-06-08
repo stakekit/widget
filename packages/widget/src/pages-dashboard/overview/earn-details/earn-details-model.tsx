@@ -26,6 +26,7 @@ import {
 } from "../../../domain/types/yields";
 import { APToPercentage } from "../../../utils";
 import { formatCompactUsd } from "../../../utils/formatters";
+import { NetworkDetailValue } from "./components/network-detail-value";
 import {
   formatCooldownDays,
   formatEnumValue,
@@ -246,7 +247,7 @@ const getDetailRows = ({
   {
     id: "network",
     label: t("dashboard.earn_details.network"),
-    value: formatNetworkName(yieldDto.network),
+    value: <NetworkDetailValue network={yieldDto.network} />,
   },
   {
     id: "provider",

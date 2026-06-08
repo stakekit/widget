@@ -2,13 +2,15 @@ import { globalStyle, keyframes, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
+import { OUTLET_PADDING } from "../../common/components/styles.css";
 
 export const container = style({
   boxSizing: "border-box",
   maxHeight: "620px",
   overflowY: "auto",
-  paddingRight: vars.space["3"],
   scrollbarGutter: "stable",
+  marginRight: `calc(-1 * ${OUTLET_PADDING})`,
+  paddingRight: OUTLET_PADDING,
 });
 
 export const earnDetailsWrapper = style({
@@ -363,3 +365,29 @@ export const valueText = style({
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
 });
+
+export const networkValue = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "1",
+    justifyContent: "flex-end",
+    minWidth: "0",
+  }),
+]);
+
+export const integrationDocsLink = style([
+  atoms({
+    alignItems: "center",
+    display: "inline-flex",
+    gap: "1",
+    marginTop: "1",
+  }),
+  {
+    color: vars.color.textMuted,
+    fontSize: "13px",
+    lineHeight: "18px",
+    textDecoration: "none",
+    width: "fit-content",
+  },
+]);

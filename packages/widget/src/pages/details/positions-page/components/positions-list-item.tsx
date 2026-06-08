@@ -18,7 +18,6 @@ import {
   noWrap,
   positionInfoColumn,
   positionName,
-  rewardRateText,
 } from "./styles.css";
 
 export const PositionsListItem = memo(
@@ -33,7 +32,6 @@ export const PositionsListItem = memo(
       integrationData,
       providersDetails,
       inactiveValidator,
-      rewardRateAverage,
       totalAmountFormatted,
       totalAmountPriceFormatted,
     } = usePositionListItem(item);
@@ -165,11 +163,6 @@ export const PositionsListItem = memo(
                     gap="4"
                     flexShrink={0}
                   >
-                    {!item.actionRequired &&
-                      rewardRateAverage
-                        .map((v) => <Text className={rewardRateText}>{v}</Text>)
-                        .extractNullable()}
-
                     {Maybe.fromRecord({
                       amount: totalAmountFormatted,
                       token: item.token,

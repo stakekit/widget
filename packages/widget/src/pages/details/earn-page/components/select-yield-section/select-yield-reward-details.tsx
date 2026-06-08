@@ -213,7 +213,7 @@ const YieldStrategyDetails = ({
         </Text>
       )}
 
-      <Box display="flex" alignItems="center" gap="2">
+      <Box display="flex" alignItems="center" gap="1">
         {!outputToken && (
           <Text variant={{ type: "muted", weight: "normal" }}>{yieldType}</Text>
         )}

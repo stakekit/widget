@@ -22,7 +22,7 @@ import { useEarnPageContext } from "../../state/earn-page-context";
 import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
 
-export const SelectToken = () => {
+export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   const {
     onSelectTokenClose,
     onTokenBalanceSelect,
@@ -57,6 +57,28 @@ export const SelectToken = () => {
   );
 
   if (!data) return null;
+
+  if (!canSelect) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        borderRadius="2xl"
+        px="2"
+        py="1"
+        gap="2"
+        data-testid="select-token"
+        className={combineRecipeWithVariant({
+          variant,
+          rec: selectTokenButton,
+        })}
+      >
+        <TokenIcon token={data.st} />
+        <Text variant={{ weight: "bold" }}>{data.st.symbol}</Text>
+      </Box>
+    );
+  }
 
   return (
     <SelectModal

@@ -26,6 +26,18 @@ export const container = style({
   height: "100%",
 });
 
+export const sectionHeader = style({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+});
+
+export const sectionTitle = style({
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
+});
+
 export const positionsTitle = recipe({
   variants: {
     variant: {

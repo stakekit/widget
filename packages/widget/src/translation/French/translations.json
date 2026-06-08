@@ -59,7 +59,14 @@
       "days_ago": "il y a {{count}} j"
     },
     "failed": "Échec",
-    "showing_count": "Affichage de {{showing}} sur {{total}}"
+    "showing_count": "Affichage de {{showing}} sur {{total}}",
+    "filters": {
+      "all": "Tout",
+      "stake": "Stake",
+      "defi": "DeFi",
+      "rwa": "RWA",
+      "borrow": "Emprunt"
+    }
   },
   "details": {
     "earn": "Earn",
@@ -665,6 +672,11 @@
         "rewards": "Récompenses",
         "activity": "Activité"
       },
+      "positions_sections": {
+        "stake": "Staking",
+        "defi": "DeFi",
+        "rwa": "RWA"
+      },
       "positions_tooltip": "Les positions sont vos soldes liés au rendement sur le réseau.",
       "my_positions": "Mes positions",
       "positions_active_one": "{{count}} active",
@@ -721,12 +733,17 @@
     "position_details": {
       "action_available": "Action disponible",
       "action_required": "Action requise",
+      "action_tabs": {
+        "stake": "Stake",
+        "unstake": "Unstake"
+      },
       "active": "Actif",
       "balance": "Solde",
       "breadcrumb_root": "Positions",
       "breakdown": "Repartition du solde",
       "details": "Details du staking",
       "empty": "Details de position indisponibles",
+      "no_actions": "Aucune action disponible",
       "rewards": "Recompenses",
       "rewards_total": "Total gagne",
       "status": "Statut",

@@ -6,6 +6,7 @@ import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { PageContainer } from "../../components/page-container";
 import { ActionListItem } from "./components/action-list-item";
+import { ActivityFilters } from "./components/activity-filters";
 import { useActivityPage } from "./hooks/use-activity-page";
 import { ActivityPageContextProvider } from "./state/activity-page.context";
 import { container } from "./style.css";
@@ -14,6 +15,10 @@ const ActivityPageComponent = () => {
   const {
     content,
     allData,
+    filteredData,
+    filterOptions,
+    selectedFilter,
+    onFilterSelect,
     showingCount,
     total,
     onActionSelect,
@@ -29,6 +34,12 @@ const ActivityPageComponent = () => {
       <Box display="flex" flexDirection="column">
         {!activityActions.isPending && allData && !!allData.length && (
           <>
+            <ActivityFilters
+              options={filterOptions}
+              selectedFilter={selectedFilter}
+              onSelect={onFilterSelect}
+            />
+
             <Box display="flex" justifyContent="flex-end" paddingBottom="2">
               <Text
                 variant={{ type: "muted", weight: "normal", size: "small" }}
@@ -38,7 +49,7 @@ const ActivityPageComponent = () => {
             </Box>
 
             <VirtualList
-              data={allData}
+              data={filteredData ?? allData}
               hasNextPage={activityActions.hasNextPage}
               isFetchingNextPage={activityActions.isFetchingNextPage}
               fetchNextPage={activityActions.fetchNextPage}

@@ -20,6 +20,8 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
     dashboardDetailsSectionBackground: utilaPalette.greyOne,
     warningBoxBackground: utilaPalette.warningBackground,
 
+    tabBorder: utilaPalette.border,
+
     primaryButtonBackground: utilaPalette.primaryBlue,
     primaryButtonColor: vars.color.white,
   },

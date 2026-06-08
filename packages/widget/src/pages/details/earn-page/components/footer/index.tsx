@@ -1,7 +1,12 @@
+import type { ComponentProps } from "react";
 import { MetaInfo } from "../../../../components/meta-info";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
-export const Footer = () => {
+export const Footer = ({
+  textSize,
+}: {
+  textSize?: ComponentProps<typeof MetaInfo>["textSize"];
+}) => {
   const {
     appLoading,
     footerIsLoading,
@@ -16,6 +21,7 @@ export const Footer = () => {
       selectedStake={selectedStake}
       selectedValidators={selectedValidators}
       selectedToken={selectedToken}
+      textSize={textSize}
     />
   );
 };

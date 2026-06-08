@@ -49,6 +49,10 @@ import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
+import {
+  getPositionDetailsStakeReviewPath,
+  usePositionDetailsStakeMatch,
+} from "../../../../hooks/navigation/use-position-details-stake-match";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useDebouncedValue } from "../../../../hooks/use-debounced-value";
@@ -521,6 +525,11 @@ export const EarnPageContextProvider = ({
   const { openConnectModal } = useConnectModal();
 
   const navigate = useNavigateWithScrollToTop();
+  const positionDetailsStakeMatch = usePositionDetailsStakeMatch();
+  const positionDetailsStakeReviewPath = getPositionDetailsStakeReviewPath({
+    balanceId: positionDetailsStakeMatch?.params.balanceId,
+    integrationId: positionDetailsStakeMatch?.params.integrationId,
+  });
   const enterStakeStore = useEnterStakeStore();
 
   const onClickHandler = useMutation({
@@ -547,7 +556,7 @@ export const EarnPageContextProvider = ({
           selectedValidators: val.stakeEnterRequestDto.selectedValidators,
         },
       });
-      navigate("/review");
+      navigate(positionDetailsStakeReviewPath ?? "/review");
     },
   });
 

@@ -11,12 +11,16 @@ import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { PositionsListItem } from "./components/positions-list-item";
+import { PositionsSectionHeader } from "./components/positions-section-header";
+import { useGroupedPositions } from "./hooks/use-grouped-positions";
 import { container, positionsTitle } from "./styles.css";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, listData, showPositions } = usePositions();
+  const { positionsData, showPositions } = usePositions();
+
+  const listData = useGroupedPositions(positionsData.data);
 
   const { isConnected, isConnecting } = useSKWallet();
 
@@ -94,11 +98,16 @@ export const PositionsPage = () => {
             <VirtualList
               estimateSize={() => 60}
               data={listData}
-              itemContent={(_, item) =>
-                item === "header" ? (
+              itemContent={(_, row) =>
+                row.kind === "chain-modal" ? (
                   <ZerionChainModal />
+                ) : row.kind === "section" ? (
+                  <PositionsSectionHeader
+                    category={row.category}
+                    count={row.count}
+                  />
                 ) : (
-                  <PositionsListItem item={item} />
+                  <PositionsListItem item={row.item} />
                 )
               }
             />

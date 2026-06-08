@@ -60,7 +60,14 @@
       "days_ago": "{{count}}d ago"
     },
     "failed": "Failed",
-    "showing_count": "Showing {{showing}} of {{total}}"
+    "showing_count": "Showing {{showing}} of {{total}}",
+    "filters": {
+      "all": "All",
+      "stake": "Stake",
+      "defi": "DeFi",
+      "rwa": "RWA",
+      "borrow": "Borrow"
+    }
   },
   "details": {
     "earn": "Earn",
@@ -243,6 +250,11 @@
         "rewards": "Rewards",
         "activity": "Activity"
       },
+      "positions_sections": {
+        "stake": "Staking",
+        "defi": "DeFi",
+        "rwa": "RWA"
+      },
       "positions_tooltip": "Positions are your yield-related balances on the network.",
       "my_positions": "My positions",
       "positions_active_one": "{{count}} active",
@@ -299,12 +311,17 @@
     "position_details": {
       "action_available": "Action available",
       "action_required": "Action required",
+      "action_tabs": {
+        "stake": "Stake",
+        "unstake": "Unstake"
+      },
       "active": "Active",
       "balance": "Balance",
       "breadcrumb_root": "Positions",
       "breakdown": "Balance breakdown",
       "details": "Staking details",
       "empty": "Position details unavailable",
+      "no_actions": "No actions available",
       "rewards": "Rewards",
       "rewards_total": "Total earned",
       "status": "Status",

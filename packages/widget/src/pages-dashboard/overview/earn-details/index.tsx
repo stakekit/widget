@@ -19,6 +19,7 @@ import {
   HistoryChartSection,
   shouldRenderHistoryChart,
 } from "./components/history-chart-section";
+import { IntegrationDocsLink } from "./components/integration-docs-link";
 import { ProviderSelectionCard } from "./components/provider-selection-card";
 import { getEarnDetailsModel } from "./earn-details-model";
 import * as styles from "./styles.css";
@@ -144,9 +145,17 @@ export const EarnDetailsView = ({
       )}
 
       <DetailsSection title={t("dashboard.earn_details.about")}>
-        <Text variant={{ type: "muted", weight: "normal" }}>
-          {yieldDto.metadata.description}
-        </Text>
+        <Box display="flex" flexDirection="column" gap="1">
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {yieldDto.metadata.description}
+          </Text>
+
+          {yieldDto.metadata.documentation ? (
+            <IntegrationDocsLink
+              documentation={yieldDto.metadata.documentation}
+            />
+          ) : null}
+        </Box>
       </DetailsSection>
 
       <DetailsSection title={t("dashboard.earn_details.details")}>

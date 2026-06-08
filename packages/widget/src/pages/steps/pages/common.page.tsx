@@ -8,15 +8,10 @@ import type { ActionDto } from "../../../domain/types/action";
 import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { useIsDashboard } from "../../../pages-dashboard/providers/dashboard-context";
 import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
-import { useIsUnstakeOrPendingAction } from "../../position-details/state";
 import { useSteps } from "../hooks/use-steps.hook";
-import {
-  stepsHeadingContainer,
-  utilaPendingApprovalsBanner,
-} from "./styles.css";
+import { utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
@@ -32,8 +27,6 @@ export const StepsPage = ({
   onSignSuccess,
   providersDetails,
 }: StepsPageProps) => {
-  const isUnstakeOrPendingAction = useIsUnstakeOrPendingAction();
-  const isDashboard = useIsDashboard();
   const { variant } = useSettings();
 
   const { retry, txStates } = useSteps({
@@ -50,15 +43,7 @@ export const StepsPage = ({
     <AnimationPage>
       <motion.div layout="position">
         <PageContainer position="relative">
-          <Box
-            marginBottom="2"
-            className={stepsHeadingContainer({
-              variant:
-                isDashboard && isUnstakeOrPendingAction
-                  ? "absolute"
-                  : "default",
-            })}
-          >
+          <Box marginBottom="2">
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
           </Box>
 

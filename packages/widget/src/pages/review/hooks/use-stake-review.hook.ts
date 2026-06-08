@@ -10,6 +10,7 @@ import { getKycProviderName } from "../../../domain/types/kyc";
 import { getYieldCommission } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
+import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
@@ -162,6 +163,8 @@ export const useStakeReview = () => {
   const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const navigate = useNavigate();
+  const positionDetailsStakeReviewMatch =
+    usePositionDetailsStakeMatch("review");
 
   const enterMutation = useMutation({
     mutationFn: async () => {
@@ -173,6 +176,12 @@ export const useStakeReview = () => {
     },
     onSuccess: (data) => {
       enterStore.send({ type: "setActionDto", data });
+      if (positionDetailsStakeReviewMatch) {
+        navigate("../steps", { relative: "path" });
+
+        return;
+      }
+
       navigate("/steps");
     },
   });

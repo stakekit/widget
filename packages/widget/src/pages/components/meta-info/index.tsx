@@ -6,6 +6,7 @@ import { ArrowsLeftRightIcon } from "../../../components/atoms/icons/arrows-left
 import { ClockClockWiseIcon } from "../../../components/atoms/icons/clock-clock-wise";
 import { GifIcon } from "../../../components/atoms/icons/gift";
 import { InfoIcon } from "../../../components/atoms/icons/info";
+import type { TextVariants } from "../../../components/atoms/typography/styles.css";
 import { Text } from "../../../components/atoms/typography/text";
 import type { TokenDto } from "../../../domain/types/tokens";
 import type { Yield } from "../../../domain/types/yields";
@@ -13,11 +14,14 @@ import type { ValidatorDto } from "../../../generated/api/yield";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 
+type MetaInfoTextSize = NonNullable<NonNullable<TextVariants>["size"]>;
+
 type Props = {
   isLoading?: boolean;
   selectedStake: Maybe<Yield>;
   selectedValidators: Map<string, ValidatorDto>;
   selectedToken: Maybe<TokenDto>;
+  textSize?: MetaInfoTextSize;
 };
 
 export const MetaInfo = ({
@@ -25,6 +29,7 @@ export const MetaInfo = ({
   selectedStake,
   selectedToken,
   selectedValidators,
+  textSize,
 }: Props) => {
   const {
     description,
@@ -90,7 +95,7 @@ export const MetaInfo = ({
           </Box>
 
           <Box>
-            <Text variant={{ weight: "normal", type: "muted" }}>
+            <Text variant={{ weight: "normal", type: "muted", size: textSize }}>
               {item.text}
             </Text>
           </Box>

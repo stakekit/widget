@@ -6,8 +6,13 @@ import { Text } from "../../../../components/atoms/typography/text";
 import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
+import type { ActivityFilter } from "../activity-filters";
 import { useActivityPageContext } from "../state/activity-page.context";
 import type { ActionYieldDto } from "../types";
+import {
+  type ActivityFilterOption,
+  useActivityFilters,
+} from "./use-activity-filters";
 
 type UseActivityPageResult = {
   content: ReactNode;
@@ -17,6 +22,12 @@ type UseActivityPageResult = {
   allData: ReturnType<
     typeof useActivityPageContext
   >["activityActions"]["allItems"];
+  filteredData: ReturnType<
+    typeof useActivityPageContext
+  >["activityActions"]["allItems"];
+  filterOptions: ActivityFilterOption[];
+  selectedFilter: ActivityFilter;
+  onFilterSelect: (filter: ActivityFilter) => void;
   activityActions: ReturnType<typeof useActivityPageContext>["activityActions"];
 };
 
@@ -29,11 +40,25 @@ export const useActivityPage = (): UseActivityPageResult => {
 
   const allData = activityActions.allItems;
 
-  const showingCount = allData?.length ?? 0;
+  const {
+    selectedFilter,
+    setSelectedFilter,
+    options: filterOptions,
+    filteredData,
+    filteredCount,
+  } = useActivityFilters(allData);
 
-  const total =
+  const showingCount = filteredCount;
+
+  const apiTotal =
     (activityActions.data as { pages: { total?: number }[] } | undefined)
-      ?.pages?.[0]?.total ?? showingCount;
+      ?.pages?.[0]?.total ??
+    allData?.length ??
+    0;
+
+  // When a category filter is active we can only count loaded items, so the
+  // total reflects the filtered subset instead of the API-reported total.
+  const total = selectedFilter === "all" ? apiTotal : filteredCount;
 
   const { t } = useTranslation();
 
@@ -43,24 +68,15 @@ export const useActivityPage = (): UseActivityPageResult => {
         <Box
           display="flex"
           flex={1}
-          flexDirection="column"
-          justifyContent="flex-end"
+          justifyContent="center"
+          alignItems="center"
         >
-          <Box
-            display="flex"
-            flex={1}
-            justifyContent="center"
-            alignItems="center"
+          <Text
+            variant={{ weight: "medium", size: "large" }}
+            textAlign="center"
           >
-            <Text
-              variant={{ weight: "medium", size: "large" }}
-              textAlign="center"
-            >
-              {t("dashboard.details.activity_connect_wallet")}
-            </Text>
-          </Box>
-
-          <FallbackContent type="not_connected" />
+            {t("dashboard.details.activity_connect_wallet")}
+          </Text>
         </Box>
       );
     }
@@ -103,6 +119,10 @@ export const useActivityPage = (): UseActivityPageResult => {
     showingCount,
     total,
     allData,
+    filteredData,
+    filterOptions,
+    selectedFilter,
+    onFilterSelect: setSelectedFilter,
     activityActions,
   };
 };

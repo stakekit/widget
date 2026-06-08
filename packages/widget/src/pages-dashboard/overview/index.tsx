@@ -21,6 +21,7 @@ export const OverviewPage = () => {
             gap="8"
             width="0"
             className={overviewPageContainer}
+            justifyContent="space-between"
           >
             <BackButtonProvider>
               <Outlet />

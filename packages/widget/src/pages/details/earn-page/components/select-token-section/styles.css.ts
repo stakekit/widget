@@ -104,10 +104,10 @@ export const selectTokenTitle = recipe({
     variant: {
       default: {},
       utila: {
-        fontSize: "16px",
+        fontSize: "14px",
       },
       porto: {
-        fontSize: "16px",
+        fontSize: "14px",
       },
     },
   },
