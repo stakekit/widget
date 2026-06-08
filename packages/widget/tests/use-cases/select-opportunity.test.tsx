@@ -36,11 +36,26 @@ describe("Select opportunity", () => {
     const getRewardToken = (integrationId: (typeof yieldIds)[number]) => {
       switch (integrationId) {
         case "ethereum-eth-reth-staking":
-          return { ...token, name: "Rocket Pool ETH", symbol: "rETH" };
+          return {
+            ...token,
+            address: "0xae78736cd615f374d3085123a210448e74fc6393",
+            name: "Rocket Pool ETH",
+            symbol: "rETH",
+          };
         case "ethereum-eth-lido-staking":
-          return { ...token, name: "Lido Staked ETH", symbol: "stETH" };
+          return {
+            ...token,
+            address: "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+            name: "Lido Staked ETH",
+            symbol: "stETH",
+          };
         default:
-          return { ...token, name: "Banana ETH", symbol: "bananaETH" };
+          return {
+            ...token,
+            address: "0x0000000000000000000000000000000000000001",
+            name: "Banana ETH",
+            symbol: "bananaETH",
+          };
       }
     };
     const getLegacyYield = (integrationId: (typeof yieldIds)[number]) => {
@@ -68,14 +83,28 @@ describe("Select opportunity", () => {
         },
       });
     };
-    const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) =>
-      yieldApiYieldFixture({
+    const getYieldApiYield = (integrationId: (typeof yieldIds)[number]) => {
+      const rewardToken = getRewardToken(integrationId);
+
+      return yieldApiYieldFixture({
         id: integrationId,
         network: token.network,
+        providerId: "stakewise",
         token,
         tokens: [token],
         inputTokens: [token],
-        outputToken: getRewardToken(integrationId),
+        outputToken: rewardToken,
+        rewardRate: {
+          ...yieldApiYieldBase.rewardRate,
+          components: [
+            {
+              rate: yieldApiYieldBase.rewardRate.total,
+              rateType: yieldApiYieldBase.rewardRate.rateType,
+              token: rewardToken,
+              yieldSource: "staking",
+            },
+          ],
+        },
         status: {
           ...yieldApiYieldBase.status,
           enter: integrationId !== "ethereum-eth-stakewise-staking",
@@ -107,6 +136,7 @@ describe("Select opportunity", () => {
                 ],
               }),
       });
+    };
 
     worker.use(
       http.get(yieldApiRoute("/v1/networks"), async () => {
@@ -178,6 +208,20 @@ describe("Select opportunity", () => {
           },
         ]);
       }),
+      http.get(yieldApiRoute("/v1/yields"), async () => {
+        await delay();
+
+        const items = yieldIds.map((integrationId) =>
+          getYieldApiYield(integrationId)
+        );
+
+        return HttpResponse.json({
+          items,
+          total: items.length,
+          offset: 0,
+          limit: items.length,
+        });
+      }),
 
       ...yieldIds.flatMap((integrationId) => {
         const legacyYield = getLegacyYield(integrationId);
@@ -196,6 +240,22 @@ describe("Select opportunity", () => {
     );
 
     const app = await renderApp();
+    const clickOpportunity = async (id: (typeof yieldIds)[number]) => {
+      const item = app
+        .getByTestId("select-modal__container")
+        .getByTestId(new RegExp(`^select-opportunity__item_${id}`));
+
+      await expect.element(item).toBeInTheDocument();
+      await expect.poll(() => item.elements()[0]).toBeTruthy();
+      await userEvent.click(item.elements()[0]);
+    };
+    const clickText = async (text: string) => {
+      const item = app.getByText(text).first();
+
+      await expect.element(item).toBeInTheDocument();
+      await expect.poll(() => item.elements()[0]).toBeTruthy();
+      (item.elements()[0] as HTMLElement).click();
+    };
 
     await app.getByTestId("select-opportunity").click();
 
@@ -217,13 +277,6 @@ describe("Select opportunity", () => {
         )
       )
       .toBeInTheDocument();
-    await expect
-      .element(
-        selectContainer
-          .getByTestId(/^select-opportunity__item_ethereum-eth-lido-staking/)
-          .getByText("A-")
-      )
-      .toBeInTheDocument();
 
     await expect
       .element(
@@ -232,13 +285,6 @@ describe("Select opportunity", () => {
         )
       )
       .toBeInTheDocument();
-    await expect
-      .element(
-        selectContainer.getByTestId(
-          /^risk-rating__select-opportunity__item_ethereum-eth-reth-staking/
-        )
-      )
-      .not.toBeInTheDocument();
 
     await expect
       .element(
@@ -248,9 +294,7 @@ describe("Select opportunity", () => {
       )
       .not.toBeInTheDocument();
 
-    await selectContainer
-      .getByTestId(/^select-opportunity__item_ethereum-eth-reth-staking/)
-      .click();
+    await clickOpportunity("ethereum-eth-reth-staking");
 
     await expect
       .element(app.getByText("You'll receive").first())
@@ -266,7 +310,7 @@ describe("Select opportunity", () => {
 
     await expect.element(app.getByText("Select a Chain")).toBeInTheDocument();
 
-    await app.getByText("EVM").click();
+    await clickText("EVM");
 
     await expect.element(app.getByText("Connect a Wallet")).toBeInTheDocument();
 
@@ -276,9 +320,7 @@ describe("Select opportunity", () => {
 
     selectContainer = app.getByTestId("select-modal__container");
 
-    await selectContainer
-      .getByTestId(/^select-opportunity__item_ethereum-eth-lido-staking/)
-      .click();
+    await clickOpportunity("ethereum-eth-lido-staking");
 
     await expect
       .element(app.getByText("You'll receive").first())
@@ -286,7 +328,9 @@ describe("Select opportunity", () => {
     await expect.element(app.getByText("stETH").first()).toBeInTheDocument();
     await expect.element(app.getByText("Rated by Credora")).toBeInTheDocument();
     await expect
-      .element(app.getByTestId("yield-risk-rating-summary").getByText("A-"))
+      .element(
+        app.getByTestId("yield-risk-rating-summary__badge").getByText("A-")
+      )
       .toBeInTheDocument();
 
     app.unmount();

@@ -1,131 +1,174 @@
-import { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
-import {
-  CollapsibleArrow,
-  CollapsibleContent,
-  CollapsibleRoot,
-  CollapsibleTrigger,
-} from "../../../components/atoms/collapsible";
-import { Spinner } from "../../../components/atoms/spinner";
+import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { Text } from "../../../components/atoms/typography/text";
-import { getBaseYieldType } from "../../../domain/types/yields";
-import { PositionBalances } from "../../../pages/position-details/components/position-balances";
+import { useRewardsSummary } from "../../../hooks/use-rewards-summary";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
-import { ProviderDetails } from "./provider-details";
-import { container } from "./styles.css";
+import {
+  AddressRow,
+  DetailRow,
+  DetailsSection,
+} from "../../overview/earn-details/components/details-section";
+import { EarnDetailsHeader } from "../../overview/earn-details/components/earn-details-header";
+import {
+  type DashboardPositionMetricCard,
+  getDashboardPositionDetailsModel,
+  getPositionHeaderBadges,
+} from "../position-details-model";
+import * as styles from "./styles.css";
+
+const PositionMetricCards = ({
+  cards,
+}: {
+  cards: DashboardPositionMetricCard[];
+}) => (
+  <Box className={styles.metricGrid}>
+    {cards.map((card) => {
+      const tone = card.tone ?? "default";
+
+      return (
+        <Box
+          className={styles.metricCard({ tone })}
+          display="flex"
+          flexDirection="column"
+          gap="1"
+          key={card.id}
+        >
+          <Text
+            className={styles.metricLabelText}
+            variant={{ type: "muted", weight: "normal" }}
+          >
+            {card.label}
+          </Text>
+
+          {typeof card.value === "string" ? (
+            <Text
+              className={styles.metricValueText({ tone })}
+              variant={{ weight: "bold" }}
+            >
+              {card.value}
+            </Text>
+          ) : (
+            <Box>{card.value}</Box>
+          )}
+
+          {card.subValue && (
+            <Text
+              className={styles.metricSubValueText}
+              variant={{ type: "muted", weight: "normal" }}
+            >
+              {card.subValue}
+            </Text>
+          )}
+        </Box>
+      );
+    })}
+  </Box>
+);
 
 export const PositionDetailsInfo = () => {
-  const {
-    isLoading,
-    integrationData,
-    positionBalancesByType,
-    providersDetails,
-    shareToAmountConversions,
-  } = usePositionDetails();
-
+  const positionDetails = usePositionDetails();
   const { t } = useTranslation();
 
-  if (isLoading) {
-    return (
-      <Box
-        className={container}
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Spinner />
-      </Box>
-    );
+  const rewardsSummaryQuery = useRewardsSummary(
+    positionDetails.integrationData.mapOrDefault((yieldDto) => yieldDto.id, "")
+  );
+
+  if (positionDetails.isLoading) {
+    return <ContentLoaderSquare heightPx={430} />;
   }
 
-  return Maybe.fromRecord({ integrationData, positionBalancesByType })
-    .map((val) => (
-      <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        background="stakeSectionBackground"
-        borderRadius="xl"
-        px="4"
-        py="4"
-      >
-        <Box display="flex" flexDirection="column" gap="2">
-          {providersDetails
-            .map((pd) =>
-              pd.map((p, idx) => (
-                <ProviderDetails
-                  {...p}
-                  key={p.address ?? idx}
-                  stakeType={t(
-                    `position_details.stake_type.${getBaseYieldType(val.integrationData)}`
-                  )}
-                  integrationData={val.integrationData}
-                />
-              ))
-            )
-            .extractNullable()}
-        </Box>
+  return positionDetails.integrationData
+    .chain((integrationData) =>
+      positionDetails.positionBalancesByType.map((positionBalancesByType) => {
+        const model = getDashboardPositionDetailsModel({
+          canUnstake: positionDetails.canUnstake,
+          integrationData,
+          pendingActions: positionDetails.pendingActions.orDefault([]),
+          personalizedRewardRate: positionDetails.personalizedRewardRate,
+          positionBalancesByType,
+          providersDetails: positionDetails.providersDetails.orDefault([]),
+          reducedStakedOrLiquidBalance:
+            positionDetails.reducedStakedOrLiquidBalance.extractNullable(),
+          rewardsSummary: rewardsSummaryQuery.data?.data,
+          t,
+        });
 
-        <Box py="2" display="flex" flexDirection="column">
-          <CollapsibleRoot initial={false}>
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Box
-                display="flex"
-                justifyContent="flex-start"
-                alignItems="center"
-              >
-                <Text>{t("dashboard.position_details_info.balances")}</Text>
-              </Box>
+        return (
+          <Box
+            className={styles.infoContainer}
+            display="flex"
+            flexDirection="column"
+            gap="4"
+          >
+            <EarnDetailsHeader
+              headerBadges={getPositionHeaderBadges(integrationData, t)}
+              providerName={model.providerName}
+              yieldDto={integrationData}
+            />
 
-              <CollapsibleTrigger flex={1} justifyContent="flex-end">
-                <CollapsibleArrow />
-              </CollapsibleTrigger>
-            </Box>
+            <PositionMetricCards cards={model.metricCards} />
 
-            <CollapsibleContent>
-              <Box display="flex" flexDirection="column" gap="2" marginTop="4">
-                {[...val.positionBalancesByType.values()].flatMap(
-                  (yieldBalance) =>
-                    yieldBalance.map((yb, i) => (
-                      <PositionBalances
-                        key={`${yb.type}-${i}`}
-                        integrationData={val.integrationData}
-                        yieldBalance={yb}
-                      />
-                    ))
-                )}
-              </Box>
-
-              {shareToAmountConversions
-                .filter((val) => val.size > 0)
-                .map((val) => (
-                  <Box
-                    my="2"
-                    display="flex"
-                    alignItems="flex-end"
-                    flexDirection="column"
-                    gap="1"
-                  >
-                    {[...val.values()].map((v) => (
-                      <Text
-                        variant={{ type: "muted", weight: "normal" }}
-                        key={v}
-                      >
-                        {v}
+            {model.breakdownRows.length > 0 && (
+              <DetailsSection title={t("dashboard.position_details.breakdown")}>
+                <Box display="flex" flexDirection="column">
+                  {model.breakdownRows.map((row) => (
+                    <Box className={styles.breakdownRow} key={row.id}>
+                      <Text variant={{ type: "muted", weight: "normal" }}>
+                        {row.label}
                       </Text>
-                    ))}
-                  </Box>
-                ))
-                .extractNullable()}
-            </CollapsibleContent>
-          </CollapsibleRoot>
-        </Box>
+
+                      <Box className={styles.breakdownAmounts}>
+                        <Text className={styles.breakdownValue}>
+                          {row.value}
+                        </Text>
+                        {row.subValue && (
+                          <Text
+                            className={styles.breakdownSubValue}
+                            variant={{ type: "muted", weight: "normal" }}
+                          >
+                            {row.subValue}
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              </DetailsSection>
+            )}
+
+            <DetailsSection title={t("dashboard.position_details.details")}>
+              {model.detailRows.map((row) => (
+                <DetailRow key={row.id} {...row} />
+              ))}
+
+              {model.addressRows.length > 0 && (
+                <Box
+                  display="flex"
+                  flexDirection="column"
+                  gap="2"
+                  marginTop="2"
+                >
+                  {model.addressRows.map((row) => (
+                    <AddressRow key={`${row.label}-${row.address}`} {...row} />
+                  ))}
+                </Box>
+              )}
+            </DetailsSection>
+          </Box>
+        );
+      })
+    )
+    .orDefault(
+      <Box
+        alignItems="center"
+        className={styles.infoContainer}
+        display="flex"
+        justifyContent="center"
+      >
+        <Text variant={{ type: "muted", weight: "normal" }}>
+          {t("dashboard.position_details.empty")}
+        </Text>
       </Box>
-    ))
-    .extractNullable();
+    );
 };

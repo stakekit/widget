@@ -5,17 +5,24 @@ import { BackButtonProvider } from "../common/components/back-button";
 import { VerticalDivider } from "../common/components/divider";
 import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
-import { PositionsPage } from "./positions/positions.page";
-import { Summary } from "./summary";
+import { EarnDetails } from "./earn-details";
+import { earnDetailsWrapper } from "./earn-details/styles.css";
+import { overviewPageContainer } from "./styles.css";
 
 export const OverviewPage = () => {
   return (
     <AnimationPage>
       <Box display="flex" flexDirection="column" gap="4">
-        <Summary />
-
         <TabPageContainer>
-          <Box display="flex" flexDirection="column" flex={1} gap="8" width="0">
+          <Box
+            display="flex"
+            flex={1}
+            flexDirection="column"
+            gap="8"
+            width="0"
+            className={overviewPageContainer}
+            justifyContent="space-between"
+          >
             <BackButtonProvider>
               <Outlet />
             </BackButtonProvider>
@@ -25,8 +32,8 @@ export const OverviewPage = () => {
 
           <VerticalDivider />
 
-          <Box flex={1} width="0">
-            <PositionsPage />
+          <Box className={earnDetailsWrapper} flex={1} width="0">
+            <EarnDetails />
           </Box>
         </TabPageContainer>
       </Box>

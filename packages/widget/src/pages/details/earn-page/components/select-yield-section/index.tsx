@@ -3,14 +3,12 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
 import { Divider } from "../../../../../components/atoms/divider";
-import { ToolTip } from "../../../../../components/atoms/tooltip";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { YieldRiskRatingSummary } from "../../../../../components/molecules/yield-risk";
-import { getYieldRewardType } from "../../../../../domain/types/yields";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { apyVariable, apyYield } from "../../styles.css";
+import { apyYield } from "../../styles.css";
 import { SelectOpportunity } from "./select-opportunity";
 import { SelectYieldRewardDetails } from "./select-yield-reward-details";
 import { selectYieldSection } from "./styles.css";
@@ -25,7 +23,7 @@ export const SelectYieldSection = () => {
     selectYieldIsLoading,
   } = useEarnPageContext();
 
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
 
   const { t } = useTranslation();
 
@@ -89,21 +87,6 @@ export const SelectYieldSection = () => {
                     position="relative"
                     data-testid="estimated-reward__percent"
                   >
-                    {selectedStake
-                      .filter((pd) => getYieldRewardType(pd) === "variable")
-                      .map(() => (
-                        <ToolTip
-                          asChild
-                          maxWidth={160}
-                          label={t("details.reward_rate_estimate_tooltip")}
-                        >
-                          <Box className={apyVariable}>
-                            <Text variant={{ size: "large" }}>*</Text>
-                          </Box>
-                        </ToolTip>
-                      ))
-                      .extractNullable()}
-
                     <motion.div className={apyYield}>{yieldPerc}</motion.div>
                   </Box>
                 </Box>
@@ -116,13 +99,13 @@ export const SelectYieldSection = () => {
               {variant !== "zerion" && <SelectYieldRewardDetails />}
             </Box>
 
-            {variant !== "zerion" && riskSummary}
+            {variant !== "zerion" && !dashboardVariant && riskSummary}
 
             {variant === "zerion" && (
               <Box display="flex" flexDirection="column" gap="3">
                 <SelectYieldRewardDetails />
 
-                {riskSummary}
+                {!dashboardVariant && riskSummary}
 
                 <Divider />
               </Box>

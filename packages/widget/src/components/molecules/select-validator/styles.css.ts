@@ -38,6 +38,21 @@ export const inactiveContainer = style([
 
 export const noWrap = style({ whiteSpace: "nowrap" });
 
+export const rewardRateText = style([
+  atoms({ color: "positionsRewardRate", fontWeight: "bold" }),
+  { whiteSpace: "nowrap" },
+]);
+
+export const rewardRateLabel = style({
+  textTransform: "uppercase",
+  whiteSpace: "nowrap",
+});
+
+export const groupLabel = style({
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+});
+
 export const addressParent = style({});
 
 export const addressHover = style({

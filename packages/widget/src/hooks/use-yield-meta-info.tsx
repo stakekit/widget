@@ -4,21 +4,17 @@ import { Trans, useTranslation } from "react-i18next";
 import { SKAnchor } from "../components/atoms/anchor";
 import { MiscNetworks } from "../domain/types/chains/networks";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
-import type { ValidatorDto } from "../domain/types/validators";
 import {
-  getBaseYieldType,
+  getExtendedYieldType,
   getYieldCooldownPeriod,
   getYieldLockupPeriod,
-  getYieldProviderDetails,
   getYieldRewardTokens,
-  getYieldRewardType,
   getYieldWarmupPeriod,
-  getYieldWithdrawPeriod,
   hasYieldFeeConfigurationEnabled,
   isEthenaUsdeStaking,
   type Yield,
 } from "../domain/types/yields";
-import { capitalizeFirstLowerRest } from "../utils/text";
+import type { ValidatorDto } from "../generated/api/yield";
 
 export const useYieldMetaInfo = ({
   selectedStake,
@@ -57,15 +53,14 @@ export const useYieldMetaInfo = ({
         .filter((t) => !t.isPoints)
         .map((t) => t.symbol)
         .join(", ");
-      const provider = getYieldProviderDetails(y);
+      const provider = y.provider;
       const providerName = sv ?? (provider ? provider.name : y.metadata.name);
       const rewardSchedule = y.mechanics.rewardSchedule;
       const cooldownPeriodDays = getYieldCooldownPeriod(y)?.days ?? 0;
       const warmupPeriodDays = getYieldWarmupPeriod(y)?.days ?? 0;
       const rewardClaiming = y.mechanics.rewardClaiming;
       const lockupPeriodDays = getYieldLockupPeriod(y)?.days;
-      const yieldType = getBaseYieldType(y);
-      const withdrawPeriodDays = getYieldWithdrawPeriod(y)?.days ?? 0;
+      const yieldType = getExtendedYieldType(y);
 
       const isCompound = providerName.includes("Compound");
 
@@ -128,17 +123,15 @@ export const useYieldMetaInfo = ({
             })
           : null,
         extra:
-          getYieldRewardType(y) === "variable"
-            ? t("details.reward_type_varialbe", {
-                symbol: capitalizeFirstLowerRest(y.token.symbol),
-              })
-            : y.token.network === MiscNetworks.Tezos
-              ? t("details.extra_tezos")
-              : undefined,
+          y.token.network === MiscNetworks.Tezos
+            ? t("details.extra_tezos")
+            : undefined,
       };
 
       switch (yieldType) {
-        case "staking": {
+        case "staking":
+        case "native_staking":
+        case "pooled_staking": {
           return {
             description: null,
             earnPeriod:
@@ -202,6 +195,10 @@ export const useYieldMetaInfo = ({
           };
 
         case "vault":
+        case "fixed_yield":
+        case "real_world_asset":
+        case "concentrated_liquidity_pool":
+        case "liquidity_pool":
           return {
             description: t("details.vault.description", {
               stakeToken,
@@ -229,48 +226,6 @@ export const useYieldMetaInfo = ({
                   })
                 : t("details.vault.withdrawn_time_immediately"),
             withdrawnNotAvailable: null,
-            ...def,
-          };
-
-        case "liquid-staking":
-          return {
-            description: t("details.liquid_stake.description", {
-              stakeToken,
-              rewardTokens,
-            }),
-            earnPeriod:
-              warmupPeriodDays > 0
-                ? t("details.liquid_stake.earn_after_warmup", {
-                    count: warmupPeriodDays,
-                  })
-                : null,
-            earnRewards:
-              rewardClaiming === "manual"
-                ? t("details.liquid_stake.earn_rewards_manual", {
-                    rewardSchedule,
-                  })
-                : t("details.liquid_stake.earn_rewards_auto", {
-                    rewardSchedule,
-                  }),
-            withdrawnTime: y.status.exit
-              ? cooldownPeriodDays > 0
-                ? withdrawPeriodDays > 0
-                  ? t("details.liquid_stake.unstake_time_days_with_claim", {
-                      unstakeTime: t("details.liquid_stake.unstake_time", {
-                        count: cooldownPeriodDays,
-                      }),
-                      count: withdrawPeriodDays,
-                    })
-                  : t("details.liquid_stake.unstake_time", {
-                      count: cooldownPeriodDays,
-                    })
-                : t("details.liquid_stake.unstake_time_immediately")
-              : null,
-            withdrawnNotAvailable: !y.status.exit
-              ? t("details.liquid_stake.withdrawn_not_available", {
-                  rewardTokens,
-                })
-              : null,
             ...def,
           };
 

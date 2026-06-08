@@ -13,6 +13,7 @@ import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
   yieldApiNetworkFixture,
+  yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
@@ -119,6 +120,7 @@ export const setup = async (worker: TestWorker) => {
       documentation:
         "https://docs.stakek.it/docs/avalanche-avax-liquid-staking",
       supportsLedgerWalletApi: true,
+      supportsCampaigns: false,
     },
     status: {
       enter: true,
@@ -131,6 +133,7 @@ export const setup = async (worker: TestWorker) => {
   const yieldApiYieldOp = yieldApiYieldFixture({
     id: yieldOp.id,
     network: token.network,
+    providerId: yieldOp.metadata.provider?.id ?? "benqi",
     token,
     tokens: [token],
     inputTokens: [token],
@@ -138,6 +141,14 @@ export const setup = async (worker: TestWorker) => {
     rewardRate: {
       ...yieldApiYieldBase.rewardRate,
       total: yieldOp.rewardRate,
+      components: [
+        {
+          rate: yieldOp.rewardRate,
+          rateType: "APY",
+          token: yieldOp.metadata.rewardTokens?.[0] ?? token,
+          yieldSource: "staking",
+        },
+      ],
     },
     status: yieldOp.status,
     metadata: {
@@ -288,6 +299,16 @@ export const setup = async (worker: TestWorker) => {
         return HttpResponse.json(yieldOp);
       }
     ),
+    http.get(yieldApiRoute("/v1/yields"), async () => {
+      await delay();
+
+      return HttpResponse.json({
+        items: [yieldApiYieldOp],
+        total: 1,
+        offset: 0,
+        limit: 1,
+      });
+    }),
     http.get(
       yieldApiRoute("/v1/yields/avalanche-avax-liquid-staking"),
       async () => {
@@ -406,6 +427,12 @@ export const setup = async (worker: TestWorker) => {
   const customConnectors = rkMockWallet({ accounts: [account], requestFn });
   const mergedYieldOp = {
     ...yieldApiYieldOp,
+    provider: yieldApiProviderFixture({
+      id: "benqi",
+      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+      name: "Benqi",
+      website: "https://benqi.fi/",
+    }),
     __fallback__: yieldOp,
   };
 

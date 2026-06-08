@@ -1,13 +1,27 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../styles/theme/atoms.css";
-import { vars } from "../../../../styles/theme/contract.css";
+import {
+  portoPalette,
+  utilaPalette,
+} from "../../../../styles/theme/variant-overrides/palettes";
 
 export const divider = style({
   position: "absolute",
   width: "100%",
   bottom: 0,
 });
+
+export const tabsGroupDivider = style([
+  atoms({
+    background: "tabBorder",
+    mx: "2",
+  }),
+  {
+    height: "24px",
+    width: "1px",
+  },
+]);
 
 export const tab = recipe({
   base: {
@@ -20,6 +34,12 @@ export const tab = recipe({
   },
   variants: {
     variant: {
+      default: [
+        {
+          borderRadius: "9999px",
+          padding: "8px 16px",
+        },
+      ],
       utila: [
         {
           borderRadius: "8px",
@@ -41,9 +61,16 @@ export const tab = recipe({
     {
       variants: {
         state: "active",
+        variant: "default",
+      },
+      style: [atoms({ background: "stakeSectionBackground" })],
+    },
+    {
+      variants: {
+        state: "active",
         variant: "utila",
       },
-      style: [atoms({ background: "__internal__utila__grey__one__" })],
+      style: [{ background: utilaPalette.greyOne }],
     },
     {
       variants: {
@@ -78,7 +105,7 @@ export const tabContainer = recipe({
   variants: {
     variant: {
       default: {
-        width: "200px",
+        minWidth: "74px",
       },
       utila: {},
       porto: {},
@@ -104,9 +131,7 @@ export const tabText = recipe({
       selected: {},
     },
     variant: {
-      default: {
-        marginBottom: "16px",
-      },
+      default: {},
       utila: [
         atoms({ fontWeight: "semibold" }),
         {
@@ -116,7 +141,7 @@ export const tabText = recipe({
       porto: [
         atoms({ fontWeight: "semibold" }),
         {
-          color: vars.color.__internal__porto__grey__four__,
+          color: portoPalette.greyFour,
           fontSize: "14px",
         },
       ],
@@ -129,7 +154,7 @@ export const tabText = recipe({
         state: "selected",
       },
       style: {
-        color: vars.color.__internal__porto__grey__one__,
+        color: portoPalette.greyOne,
       },
     },
   ],
@@ -151,17 +176,17 @@ export const tabsContainer = recipe({
   variants: {
     variant: {
       default: {
-        gap: "15px",
-        paddingTop: "16px",
+        gap: "4px",
+        padding: "16px 24px",
       },
       utila: {
-        gap: "15px",
+        gap: "4px",
         padding: "8px",
         paddingLeft: "24px",
         paddingRight: "24px",
       },
       porto: {
-        gap: "15px",
+        gap: "4px",
         padding: "16px 24px",
       },
     },
@@ -195,7 +220,7 @@ export const tabsWrapper = recipe({
   variants: {
     variant: {
       default: {
-        justifyContent: "center",
+        justifyContent: "flex-start",
       },
       utila: {
         justifyContent: "flex-start",

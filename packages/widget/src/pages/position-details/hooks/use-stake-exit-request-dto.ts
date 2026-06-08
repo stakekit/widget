@@ -79,7 +79,7 @@ export const useStakeExitRequestDto = () => {
                     ?.required
                 )
                   .chainNullable(() => b.validator)
-                  .map((validator) => validator.subnetId)
+                  .chainNullable((validator) => validator.subnet?.id)
                   .extract();
 
                 return {

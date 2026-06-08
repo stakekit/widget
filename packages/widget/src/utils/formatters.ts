@@ -1,8 +1,7 @@
-import type BigNumber from "bignumber.js";
+import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { getTokenPriceInUSD } from "../domain";
 import { Prices } from "../domain/types/price";
-import type { RewardTypes } from "../domain/types/reward-rate";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
 import type { Yield } from "../domain/types/yields";
 import { APToPercentage, defaultFormattedNumber, formatNumber } from ".";
@@ -18,20 +17,19 @@ export const formatCountryCode = ({
 };
 
 export const getRewardRateFormatted = (opts: {
-  rewardType: RewardTypes;
   rewardRate: number | undefined;
 }) => {
-  const { rewardRate, rewardType } = opts;
+  const { rewardRate } = opts;
 
-  if (rewardType === "variable" || !rewardRate) {
+  if (!rewardRate) {
     return "- %";
   }
 
   return `${APToPercentage(rewardRate)}%`;
 };
 
-export const getRewardTypeFormatted = (rewardType: RewardTypes) => {
-  switch (rewardType) {
+export const getRewardTypeFormatted = (rewardType: string | undefined) => {
+  switch (rewardType?.toLowerCase()) {
     case "apr":
       return "APR";
 
@@ -105,6 +103,38 @@ export const getFeesInUSD = ({
         }`,
       ""
     );
+
+const compactUsdFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+const compactNumberFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 0,
+});
+
+export const formatCompactNumber = (
+  value: string | number | null | undefined
+) => {
+  if (value == null || value === "") return "-";
+
+  const amount = BigNumber(value);
+
+  if (!amount.isFinite()) return "-";
+
+  return compactNumberFormatter.format(amount.toNumber());
+};
+
+export const formatCompactUsd = (value: string | number | null | undefined) => {
+  if (value == null || value === "") return "-";
+
+  const amount = BigNumber(value);
+
+  if (!amount.isFinite()) return "-";
+
+  return `$${compactUsdFormatter.format(amount.toNumber())}`;
+};
 
 export const capitalizeFirstLetters = (text: string): string =>
   Maybe.fromNullable(text)

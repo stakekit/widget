@@ -59,7 +59,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
     refetchInterval: 1000 * 60,
     queryFn: ({ signal }) =>
       apiClient
-        .withRunOptions({ signal })
+        .withOptions({ signal })
         .yield.YieldsControllerGetAggregateBalances({
           payload: param.dto,
         }),

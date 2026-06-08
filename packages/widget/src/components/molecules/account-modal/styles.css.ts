@@ -18,11 +18,11 @@ export const container = recipe({
     variant: {
       default: {},
       finery: {
-        background: vars.color.__internal__finery__summary__item__background__,
+        background: vars.color.summaryItemBackground,
         boxShadow: "0px 15px 30px 0px #0000000D",
       },
       porto: {
-        background: vars.color.__internal__porto__grey__two__,
+        background: vars.color.summaryItemBackground,
       },
       utila: {},
     },

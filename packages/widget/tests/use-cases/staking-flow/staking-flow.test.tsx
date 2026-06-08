@@ -38,7 +38,11 @@ describe("Staking flow", () => {
 
     await expect
       .poll(
-        () => app.getByTestId("select-opportunity").getByText("AVAX").length
+        () =>
+          app
+            .getByTestId("select-opportunity")
+            .getByText(yieldOp.outputToken?.symbol ?? yieldOp.token.symbol)
+            .length
       )
       .greaterThan(0);
 
@@ -109,10 +113,6 @@ describe("Staking flow", () => {
             { exact: false }
           )
       )
-      .toBeInTheDocument();
-
-    await expect
-      .element(app.getByText("Liquid Staking").first())
       .toBeInTheDocument();
 
     await expect

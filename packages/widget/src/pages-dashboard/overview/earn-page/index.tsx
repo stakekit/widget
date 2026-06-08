@@ -1,71 +1,63 @@
 import { Box } from "../../../components/atoms/box";
 import { Divider } from "../../../components/atoms/divider";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/extra-args-selection";
 import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
 import { SelectTokenTitle } from "../../../pages/details/earn-page/components/select-token-section/title";
-import { SelectValidatorSection } from "../../../pages/details/earn-page/components/select-validator-section";
 import { SelectYieldSection } from "../../../pages/details/earn-page/components/select-yield-section";
-import { StakedVia } from "../../../pages/details/earn-page/components/select-yield-section/staked-via";
-import { EarnPageContextProvider } from "../../../pages/details/earn-page/state/earn-page-context";
-import { EarnPageStateUsageBoundaryProvider } from "../../../pages/details/earn-page/state/earn-page-state-context";
+import { useEarnPageContext } from "../../../pages/details/earn-page/state/earn-page-context";
 import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";
-import {
-  container,
-  selectTokenTitleContainer,
-  selectValidatorSectionContainer,
-} from "./styles.css";
-import { UtilaSelectValidatorSection } from "./utila-select-validator-section";
+import { container, selectTokenTitleContainer } from "./styles.css";
 
-export const EarnPage = () => {
+const EarnKycGateSection = () => {
+  const { kycGate, kycGateIsChecking, kycProviderName, onKycStatusRefresh } =
+    useEarnPageContext();
+
+  if (kycGate.state === "pass" && !kycGateIsChecking) return null;
+
+  return (
+    <Box marginTop="3">
+      <KycGateCard
+        gate={kycGate}
+        isChecking={kycGateIsChecking}
+        onCheckStatus={onKycStatusRefresh}
+        providerName={kycProviderName}
+      />
+    </Box>
+  );
+};
+
+export const EarnPageContent = () => {
   const { variant } = useSettings();
 
   return (
-    <EarnPageStateUsageBoundaryProvider>
-      <EarnPageContextProvider>
-        <Box className={container}>
-          <Box>
-            <Box
-              className={combineRecipeWithVariant({
-                rec: selectTokenTitleContainer,
-                variant,
-              })}
-            >
-              <SelectTokenTitle />
-            </Box>
-
-            <SelectTokenSection />
-
-            {(variant === "utila" || variant === "porto") && (
-              <Box
-                className={combineRecipeWithVariant({
-                  rec: selectValidatorSectionContainer,
-                  variant,
-                })}
-              >
-                <UtilaSelectValidatorSection />
-              </Box>
-            )}
-
-            <SelectYieldSection />
-
-            <StakedVia />
-
-            {variant !== "utila" && variant !== "porto" && (
-              <SelectValidatorSection />
-            )}
-
-            <ExtraArgsSelection />
-          </Box>
-
-          {(variant === "utila" || variant === "porto") && <Divider />}
-
-          <Box>
-            <Footer />
-          </Box>
+    <Box className={container}>
+      <Box>
+        <Box
+          className={combineRecipeWithVariant({
+            rec: selectTokenTitleContainer,
+            variant,
+          })}
+        >
+          <SelectTokenTitle />
         </Box>
-      </EarnPageContextProvider>
-    </EarnPageStateUsageBoundaryProvider>
+
+        <SelectTokenSection />
+
+        <SelectYieldSection />
+
+        <EarnKycGateSection />
+
+        <ExtraArgsSelection />
+      </Box>
+
+      {(variant === "utila" || variant === "porto") && <Divider />}
+
+      <Box>
+        <Footer />
+      </Box>
+    </Box>
   );
 };

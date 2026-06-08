@@ -77,7 +77,7 @@ const getMachine = (
   setup({
     types: {
       context: {} as {
-        error: Maybe<Error>;
+        error: Maybe<unknown>;
         transactionVerificationMessageDto: Maybe<TransactionVerificationMessageDto>;
         signedMessage: Maybe<string>;
         data: ReturnType<(typeof ref)["current"]["getData"]>;
@@ -97,13 +97,13 @@ const getMachine = (
             type: "__GET_VERIFICATION_MESSAGE_SUCCESS__";
             val: TransactionVerificationMessageDto;
           }
-        | { type: "__GET_VERIFICATION_MESSAGE_ERROR__"; val: Error }
+        | { type: "__GET_VERIFICATION_MESSAGE_ERROR__"; val: unknown }
         | { type: "CONTINUE_MESSAGE_SIGN" }
         | { type: "CANCEL_MESSAGE_SIGN" }
         | { type: "__SIGN_MESSAGE_SUCCESS__"; val: string }
-        | { type: "__SIGN_MESSAGE_ERROR__"; val: Error }
+        | { type: "__SIGN_MESSAGE_ERROR__"; val: unknown }
         | { type: "__SUBMIT_SUCCESS__" }
-        | { type: "__SUBMIT_ERROR__" },
+        | { type: "__SUBMIT_ERROR__"; val: unknown },
     },
   }).createMachine({
     context: {
@@ -262,7 +262,13 @@ const getMachine = (
       submit: {
         on: {
           __SUBMIT_SUCCESS__: "done",
-          __SUBMIT_ERROR__: ".error",
+          __SUBMIT_ERROR__: {
+            target: ".error",
+            actions: assign(({ context, event }) => ({
+              ...context,
+              error: Maybe.of(event.val),
+            })),
+          },
         },
         initial: "loading",
         states: {
@@ -315,7 +321,6 @@ const getMachine = (
                       payload: val.requestDto,
                     })
                   )
-                    .mapLeft(() => new Error("Stake exit error"))
                     .chain((actionDto) =>
                       EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
                     )
@@ -331,8 +336,7 @@ const getMachine = (
                     self.send({ type: "__SUBMIT_SUCCESS__" });
                   },
                   Left(error) {
-                    assign(({ context }) => ({ ...context, error }));
-                    self.send({ type: "__SUBMIT_ERROR__" });
+                    self.send({ type: "__SUBMIT_ERROR__", val: error });
                   },
                 }),
           },

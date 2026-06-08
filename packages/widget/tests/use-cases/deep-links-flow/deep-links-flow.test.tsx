@@ -21,26 +21,13 @@ describe("Deep links flow", () => {
     });
 
     await expect
-      .element(withAvaxLiquidStakingApp.getByText("Liquid Staking"))
-      .toBeInTheDocument();
-
-    await expect
-      .element(withAvaxLiquidStakingApp.getByText(`You'll receive`).first())
-      .toBeInTheDocument();
-
-    await expect
       .element(
         withAvaxLiquidStakingApp
-          .getByText(`${avaxLiquidStaking.metadata.rewardTokens![0].symbol}`)
-          .first()
-      )
-      .toBeInTheDocument();
-
-    await expect
-      .element(
-        withAvaxLiquidStakingApp
-          .getByText(`via ${avaxLiquidStaking.metadata.provider!.name}`)
-          .first()
+          .getByTestId("select-opportunity")
+          .getByText(
+            avaxLiquidStaking.metadata.rewardTokens?.[0]?.symbol ??
+              avaxLiquidStaking.token.symbol
+          )
       )
       .toBeInTheDocument();
 
@@ -62,6 +49,14 @@ describe("Deep links flow", () => {
 
     await expect
       .element(withAvaxNativeStakingApp.getByText("Stake").first())
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        withAvaxNativeStakingApp
+          .getByTestId("select-opportunity")
+          .getByText(avaxNativeStaking.token.symbol)
+      )
       .toBeInTheDocument();
 
     await expect

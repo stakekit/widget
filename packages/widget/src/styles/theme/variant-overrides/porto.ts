@@ -1,6 +1,7 @@
 import type { RecursivePartial } from "../../../types/utils";
 import { vars } from "../contract.css";
 import type { lightTheme } from "../themes";
+import { portoPalette } from "./palettes";
 
 export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
   space: {
@@ -26,44 +27,30 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     secondaryButton: "600",
   },
   color: {
-    tooltipBackground: vars.color.__internal__porto__grey__three__,
-    summaryItemBackground: vars.color.__internal__porto__grey__two__,
-    background: vars.color.__internal__porto__grey__one__,
-    backgroundMuted: vars.color.__internal__porto__grey__three__,
-    stakeSectionBackground: vars.color.__internal__porto__grey__two__,
-    tokenSelectBackground: vars.color.__internal__porto__grey__two__,
-    tokenSelectHoverBackground: vars.color.__internal__porto__grey__three__,
-    dashboardDetailsSectionBackground:
-      vars.color.__internal__porto__grey__two__,
+    tooltipBackground: portoPalette.greyThree,
+    summaryItemBackground: portoPalette.greyTwo,
+    background: portoPalette.greyOne,
+    backgroundMuted: portoPalette.greyThree,
+    stakeSectionBackground: portoPalette.greyTwo,
+    tokenSelectBackground: portoPalette.greyTwo,
+    tokenSelectHoverBackground: portoPalette.greyThree,
+    dashboardDetailsSectionBackground: portoPalette.greyTwo,
 
-    modalBodyBackground: vars.color.__internal__porto__grey__one__,
+    modalBodyBackground: portoPalette.greyOne,
 
-    skeletonLoaderBase: vars.color.__internal__porto__grey__two__,
-    skeletonLoaderHighlight: vars.color.__internal__porto__grey__three__,
+    skeletonLoaderBase: portoPalette.greyTwo,
+    skeletonLoaderHighlight: portoPalette.greyThree,
 
-    primaryButtonBackground: vars.color.__internal__porto__primary__purple__,
+    primaryButtonBackground: portoPalette.primaryPurple,
     primaryButtonColor: vars.color.white,
-    primaryButtonHoverColor: vars.color.white,
-    primaryButtonActiveColor: vars.color.white,
-    primaryButtonOutline: vars.color.__internal__porto__primary__purple__,
 
-    smallButtonBackground: vars.color.__internal__porto__grey__three__,
-
-    primaryButtonHoverBackground:
-      vars.color.__internal__porto__primary__purple__hover__,
-    primaryButtonHoverOutline:
-      vars.color.__internal__porto__primary__purple__hover__,
-
-    primaryButtonActiveBackground:
-      vars.color.__internal__porto__primary__purple__active__,
-    primaryButtonActiveOutline:
-      vars.color.__internal__porto__primary__purple__active__,
+    smallButtonBackground: portoPalette.greyThree,
 
     connectKit: {
-      modalBackground: vars.color.__internal__porto__grey__one__,
-      profileForeground: vars.color.__internal__porto__grey__one__,
-      profileAction: vars.color.__internal__porto__grey__two__,
-      profileActionHover: vars.color.__internal__porto__grey__three__,
+      modalBackground: portoPalette.greyOne,
+      profileForeground: portoPalette.greyOne,
+      profileAction: portoPalette.greyTwo,
+      profileActionHover: portoPalette.greyThree,
     },
   },
 };

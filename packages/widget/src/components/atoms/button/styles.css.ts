@@ -4,6 +4,9 @@ import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
 
+const lighterBackground = (background: string) =>
+  `color-mix(in oklab, ${background} 88%, white)`;
+
 export const pressAnimation = style({
   transition: "transform 0.1s ease-in-out",
   ":active": {
@@ -17,7 +20,9 @@ export const selectTokenButton = recipe({
       default: [atoms({ background: "background" })],
       utila: [atoms({ background: "background" })],
       finery: [
-        atoms({ background: "__internal__finery__grey__two__" }),
+        {
+          background: vars.color.tokenSelectBackground,
+        },
         {
           boxShadow: "0px 15px 30px 0px #0000000D",
           ":hover": {
@@ -56,20 +61,14 @@ export const buttonStyle = recipe({
         atoms({
           background: "primaryButtonBackground",
           color: "primaryButtonColor",
-          borderColor: "primaryButtonOutline",
           borderRadius: "primaryButton",
           fontWeight: "primaryButton",
         }),
         {
+          borderColor: vars.color.primaryButtonBackground,
           ":hover": {
-            background: vars.color.primaryButtonHoverBackground,
-            color: vars.color.primaryButtonHoverColor,
-            borderColor: vars.color.primaryButtonHoverOutline,
-          },
-          ":active": {
-            background: vars.color.primaryButtonActiveBackground,
-            color: vars.color.primaryButtonActiveColor,
-            borderColor: vars.color.primaryButtonActiveOutline,
+            background: lighterBackground(vars.color.primaryButtonBackground),
+            borderColor: lighterBackground(vars.color.primaryButtonBackground),
           },
         },
       ],
@@ -77,20 +76,13 @@ export const buttonStyle = recipe({
         atoms({
           background: "secondaryButtonBackground",
           color: "secondaryButtonColor",
-          borderColor: "secondaryButtonOutline",
           borderRadius: "secondaryButton",
           fontWeight: "secondaryButton",
         }),
         {
+          borderColor: vars.color.secondaryButtonColor,
           ":hover": {
-            background: vars.color.secondaryButtonHoverBackground,
-            color: vars.color.secondaryButtonHoverColor,
-            borderColor: vars.color.secondaryButtonHoverOutline,
-          },
-          ":active": {
-            background: vars.color.secondaryButtonActiveBackground,
-            color: vars.color.secondaryButtonActiveColor,
-            borderColor: vars.color.secondaryButtonActiveOutline,
+            background: lighterBackground(vars.color.secondaryButtonBackground),
           },
         },
       ],
@@ -99,9 +91,9 @@ export const buttonStyle = recipe({
         atoms({
           background: "disabledButtonBackground",
           color: "disabledButtonColor",
-          borderColor: "disabledButtonOutline",
         }),
         {
+          borderColor: vars.color.disabledButtonBackground,
           ":active": {
             transform: "none",
           },
@@ -111,20 +103,14 @@ export const buttonStyle = recipe({
         atoms({
           background: "smallButtonBackground",
           color: "smallButtonColor",
-          borderColor: "smallButtonOutline",
           borderRadius: "secondaryButton",
           fontWeight: "secondaryButton",
         }),
         {
+          borderColor: vars.color.smallButtonBackground,
           ":hover": {
-            background: vars.color.smallButtonHoverBackground,
-            color: vars.color.secondaryButtonHoverColor,
-            borderColor: vars.color.smallButtonHoverOutline,
-          },
-          ":active": {
-            background: vars.color.smallButtonActiveBackground,
-            color: vars.color.secondaryButtonActiveColor,
-            borderColor: vars.color.smallButtonActiveOutline,
+            background: lighterBackground(vars.color.smallButtonBackground),
+            borderColor: lighterBackground(vars.color.smallButtonBackground),
           },
         },
       ],
@@ -132,20 +118,18 @@ export const buttonStyle = recipe({
         atoms({
           background: "smallLightButtonBackground",
           color: "smallLightButtonColor",
-          borderColor: "smallLightButtonOutline",
           borderRadius: "secondaryButton",
           fontWeight: "secondaryButton",
         }),
         {
+          borderColor: vars.color.smallLightButtonBackground,
           ":hover": {
-            background: vars.color.smallLightButtonHoverBackground,
-            color: vars.color.smallLightButtonHoverColor,
-            borderColor: vars.color.smallLightButtonHoverOutline,
-          },
-          ":active": {
-            background: vars.color.smallLightButtonActiveBackground,
-            color: vars.color.smallLightButtonActiveColor,
-            borderColor: vars.color.smallLightButtonActiveOutline,
+            background: lighterBackground(
+              vars.color.smallLightButtonBackground
+            ),
+            borderColor: lighterBackground(
+              vars.color.smallLightButtonBackground
+            ),
           },
         },
       ],

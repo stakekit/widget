@@ -21,12 +21,15 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { getKycProviderName } from "../../../../domain/types/kyc";
 import { getInitSelectedValidators } from "../../../../domain/types/stake";
 import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TronResourceType } from "../../../../domain/types/tron";
-import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
+  type DashboardYieldCategory,
   type ExtendedYieldType,
+  getAvailableDashboardYieldCategories,
+  getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
   getYieldTypeLabels,
@@ -37,13 +40,19 @@ import {
   isYieldValidatorSelectionRequired,
   type Yield,
 } from "../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
+import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
+import {
+  getPositionDetailsStakeReviewPath,
+  usePositionDetailsStakeMatch,
+} from "../../../../hooks/navigation/use-position-details-stake-match";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
 import { useDebouncedValue } from "../../../../hooks/use-debounced-value";
@@ -76,7 +85,10 @@ const EarnPageContext = createContext<EarnPageContextType | undefined>(
   undefined
 );
 
-export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
+export const EarnPageContextProvider = ({
+  children,
+  registerFooterButton = true,
+}: PropsWithChildren<{ registerFooterButton?: boolean }>) => {
   const {
     actions: { onMaxClick: _onMaxClick },
     selectedToken,
@@ -99,7 +111,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const { t } = useTranslation();
   const initParams = useInitParams();
 
-  const { externalProviders, variant } = useSettings();
+  const { dashboardVariant, externalProviders, variant } = useSettings();
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
     useSKWallet();
@@ -138,7 +150,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     return selectedStake
       .filter((val) => isBittensorStaking(val.id))
       .chain(() => List.head([...selectedValidators.values()]))
-      .map((validator) => validator.tokenSymbol ?? "")
+      .map((validator) => validator.subnet?.tokenSymbol ?? "")
       .orDefault(symbol);
   }, [selectedStake, symbol, selectedValidators]);
 
@@ -243,6 +255,30 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
 
+  const dashboardYieldIds = useMemo(
+    () =>
+      tokenBalancesData
+        .map((data) => [
+          ...new Set(data.all.flatMap((token) => token.availableYields)),
+        ])
+        .orDefault([]),
+    [tokenBalancesData]
+  );
+
+  const dashboardYields = useStreamMultiYields(dashboardYieldIds);
+
+  const availableDashboardYieldCategories = useMemo(
+    () =>
+      dashboardYields.length > 0
+        ? getAvailableDashboardYieldCategories(dashboardYields)
+        : [],
+    [dashboardYields]
+  );
+
+  const selectedDashboardYieldCategory = selectedStake
+    .chainNullable(getDashboardYieldCategory)
+    .extractNullable();
+
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(multiYields)
@@ -272,7 +308,16 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
         )
         .map(({ all, filteredDtos }) => {
-          const sorted = [...filteredDtos].sort(
+          const dashboardFilteredDtos =
+            dashboardVariant && selectedDashboardYieldCategory
+              ? filteredDtos.filter(
+                  (yieldDto) =>
+                    getDashboardYieldCategory(yieldDto) ===
+                    selectedDashboardYieldCategory
+                )
+              : filteredDtos;
+
+          const sorted = [...dashboardFilteredDtos].sort(
             (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
           );
 
@@ -323,7 +368,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
             groupsWithCounts,
           };
         }),
-    [deferredStakeSearch, multiYields, t]
+    [
+      dashboardVariant,
+      deferredStakeSearch,
+      multiYields,
+      selectedDashboardYieldCategory,
+      t,
+    ]
   );
 
   const shouldFetchValidators = selectedStake
@@ -430,6 +481,26 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       .ifJust((val) => dispatch({ type: "yield/select", data: val }));
   };
 
+  const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
+    if (selectedDashboardYieldCategory === category) return;
+
+    const availableYieldsById = new Map(
+      [
+        ...selectedStakeData.map((data) => data.all).orDefault([]),
+        ...dashboardYields,
+      ].map((yieldDto) => [yieldDto.id, yieldDto])
+    );
+
+    const targetYield = [...availableYieldsById.values()]
+      .filter((yieldDto) => getDashboardYieldCategory(yieldDto) === category)
+      .sort((a, b) => b.rewardRate.total - a.rewardRate.total)[0];
+
+    if (!targetYield) return;
+
+    dispatch({ type: "token/select", data: targetYield.token });
+    dispatch({ type: "yield/select", data: targetYield });
+  };
+
   const onValidatorSelect = (item: ValidatorDto) =>
     selectedStake.ifJust((ss) =>
       isYieldActionArgRequired(ss, "enter", "validatorAddresses")
@@ -444,10 +515,21 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     dispatch({ type: "stakeAmount/change", data: val });
 
   const stakeEnterRequestDto = useStakeEnterRequestDto();
+  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
+  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
+  const kycProviderName = selectedStake
+    .map(getKycProviderName)
+    .extractNullable();
+  const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const { openConnectModal } = useConnectModal();
 
   const navigate = useNavigateWithScrollToTop();
+  const positionDetailsStakeMatch = usePositionDetailsStakeMatch();
+  const positionDetailsStakeReviewPath = getPositionDetailsStakeReviewPath({
+    balanceId: positionDetailsStakeMatch?.params.balanceId,
+    integrationId: positionDetailsStakeMatch?.params.integrationId,
+  });
   const enterStakeStore = useEnterStakeStore();
 
   const onClickHandler = useMutation({
@@ -456,6 +538,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
       if (stakeEnterRequestDto.isNothing()) return;
 
       if (!isConnected) return openConnectModal?.();
+      if (kycGateIsBlocking) return;
 
       const val = Maybe.fromRecord({
         stakeEnterRequestDto,
@@ -473,7 +556,7 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
           selectedValidators: val.stakeEnterRequestDto.selectedValidators,
         },
       });
-      navigate("/review");
+      navigate(positionDetailsStakeReviewPath ?? "/review");
     },
   });
 
@@ -590,7 +673,8 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   const isError = !tokenBalancesScan.data && tokenBalancesScan.isError;
 
   const buttonDisabled =
-    isConnected && (isFetching || stakeEnterRequestDto.isNothing());
+    isConnected &&
+    (isFetching || stakeEnterRequestDto.isNothing() || kycGateIsBlocking);
 
   const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
     (v) => v.cta,
@@ -667,12 +751,13 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
   useRegisterFooterButton(
     useMemo(
       () =>
-        hasNotYieldsForToken
+        !registerFooterButton || hasNotYieldsForToken
           ? null
           : isConnected && !isLedgerLiveAccountPlaceholder
             ? {
                 disabled: buttonDisabled,
-                isLoading: !buttonCTAText || isFetching,
+                isLoading:
+                  !buttonCTAText || isFetching || yieldKycGate.isLoading,
                 onClick: () => onClickRef.current(),
                 label: buttonCTAText,
               }
@@ -698,8 +783,10 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
         onClickRef,
         externalProviders,
         isFetching,
+        yieldKycGate.isLoading,
         t,
         hasNotYieldsForToken,
+        registerFooterButton,
       ]
     )
   );
@@ -710,6 +797,9 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     symbol,
     selectedStakeData,
     selectedStake,
+    selectedDashboardYieldCategory,
+    availableDashboardYieldCategories,
+    onDashboardYieldCategorySelect,
     onYieldSelect,
     onTokenBalanceSelect,
     onStakeAmountChange,
@@ -720,6 +810,14 @@ export const EarnPageContextProvider = ({ children }: PropsWithChildren) => {
     isFetching,
     buttonDisabled,
     onClick: onClickHandler.mutate,
+    kycGate: yieldKycGate.gate,
+    kycGateIsBlocking,
+    kycGateIsChecking:
+      yieldKycGate.isLoading ||
+      yieldKycGate.isFetching ||
+      yieldKycGate.isRefetching,
+    kycProviderName,
+    onKycStatusRefresh,
     onYieldSearch,
     onValidatorSelect,
     onValidatorRemove,

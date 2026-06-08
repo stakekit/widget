@@ -1,10 +1,14 @@
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
+import type { KycGate } from "../../../../domain/types/kyc";
 import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { TronResourceType } from "../../../../domain/types/tron";
-import type { ValidatorDto } from "../../../../domain/types/validators";
-import type { Yield } from "../../../../domain/types/yields";
+import type {
+  DashboardYieldCategory,
+  Yield,
+} from "../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../generated/api/yield";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -77,6 +81,9 @@ export type EarnPageContextType = {
   rewardsTokenSymbol: string;
   selectedStakeData: Maybe<SelectedStakeData>;
   selectedStake: ExtraData["selectedStake"];
+  selectedDashboardYieldCategory: DashboardYieldCategory | null;
+  availableDashboardYieldCategories: DashboardYieldCategory[];
+  onDashboardYieldCategorySelect: (category: DashboardYieldCategory) => void;
   onYieldSelect: (yieldId: string) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
   onStakeAmountChange: (value: BigNumber) => void;
@@ -87,6 +94,11 @@ export type EarnPageContextType = {
   isFetching: boolean;
   buttonDisabled: boolean;
   onClick: () => void;
+  kycGate: KycGate;
+  kycGateIsBlocking: boolean;
+  kycGateIsChecking: boolean;
+  kycProviderName: string | null;
+  onKycStatusRefresh: () => void;
   onYieldSearch: (value: string) => void;
   onValidatorSelect: (item: ValidatorDto) => void;
   onValidatorRemove: (item: ValidatorDto) => void;

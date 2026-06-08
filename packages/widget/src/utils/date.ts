@@ -1,7 +1,13 @@
 import {
+  differenceInDays,
+  differenceInHours,
+  differenceInMinutes,
+  differenceInSeconds,
   type FormatDurationOptions,
   formatDuration,
   intervalToDuration,
+  isToday,
+  isYesterday,
 } from "date-fns";
 
 const getFormat = ({
@@ -44,4 +50,33 @@ export const dateOlderThen7Days = (date: string): boolean => {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
   return new Date(date) < sevenDaysAgo;
+};
+
+type ActivityDayKind = "today" | "yesterday" | "other";
+
+export const getActivityDayKind = (date: Date): ActivityDayKind =>
+  isToday(date) ? "today" : isYesterday(date) ? "yesterday" : "other";
+
+type ActivityRelativeTime =
+  | { unit: "now" }
+  | { unit: "minutes" | "hours" | "days"; value: number };
+
+/**
+ * Compact, unit-bucketed relative time used by the activity list (e.g. 2h, 3d).
+ * The caller is responsible for localizing the resulting unit/value.
+ */
+export const getActivityRelativeTime = (
+  date: Date,
+  now: Date = new Date()
+): ActivityRelativeTime => {
+  const seconds = differenceInSeconds(now, date);
+  if (seconds < 60) return { unit: "now" };
+
+  const minutes = differenceInMinutes(now, date);
+  if (minutes < 60) return { unit: "minutes", value: minutes };
+
+  const hours = differenceInHours(now, date);
+  if (hours < 24) return { unit: "hours", value: hours };
+
+  return { unit: "days", value: Math.max(differenceInDays(now, date), 1) };
 };

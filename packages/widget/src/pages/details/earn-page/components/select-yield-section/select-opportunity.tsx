@@ -9,11 +9,12 @@ import {
   SelectModal,
   SelectModalItemContainer,
 } from "../../../../../components/atoms/select-modal";
+import { selectModalGroupLabel } from "../../../../../components/atoms/select-modal/styles.css";
 import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
 import { SelectOpportunityListItem } from "../../../../../components/molecules/select-opportunity-list-item";
-import { getYieldProviderDetails } from "../../../../../domain/types/yields";
+import { getYieldOutputToken } from "../../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
@@ -57,6 +58,8 @@ export const SelectOpportunity = () => {
 
   if (!data) return null;
 
+  const displayToken = getYieldOutputToken(data.ss).orDefault(data.ss.token);
+
   return (
     <SelectModal
       title={t("details.opportunity_search_title")}
@@ -84,14 +87,14 @@ export const SelectOpportunity = () => {
               alignItems="center"
             >
               <ProviderIcon
-                token={data.ss.token}
+                token={displayToken}
                 metadata={{
                   logoURI: data.ss.metadata.logoURI,
                   name: data.ss.metadata.name,
-                  provider: getYieldProviderDetails(data.ss) ?? undefined,
+                  provider: data.ss.provider,
                 }}
               />
-              <Text variant={{ weight: "bold" }}>{data.ss.token.symbol}</Text>
+              <Text variant={{ weight: "bold" }}>{displayToken.symbol}</Text>
             </Box>
             <CaretDownIcon />
           </Box>
@@ -103,8 +106,13 @@ export const SelectOpportunity = () => {
         groupCounts={data.groupCounts}
         groupContent={(index) => {
           return (
-            <Box py="4" px="4" background="modalBodyBackground">
-              <Text variant={{ weight: "bold" }}>{data.groups[index]}</Text>
+            <Box py="3" px="4" background="modalBodyBackground">
+              <Text
+                className={selectModalGroupLabel}
+                variant={{ type: "muted", weight: "bold", size: "small" }}
+              >
+                {data.groups[index]}
+              </Text>
             </Box>
           );
         }}
@@ -114,12 +122,18 @@ export const SelectOpportunity = () => {
           return (
             <SelectModalItemContainer>
               {typeof item === "string" ? (
-                <Box py="4">
-                  <Text variant={{ weight: "bold" }}>{item}</Text>
+                <Box py="3">
+                  <Text
+                    className={selectModalGroupLabel}
+                    variant={{ type: "muted", weight: "bold", size: "small" }}
+                  >
+                    {item}
+                  </Text>
                 </Box>
               ) : (
                 <SelectOpportunityListItem
                   item={item}
+                  selected={item.id === data.ss.id}
                   onYieldSelect={(yieldDto) => onYieldSelect(yieldDto.id)}
                   testId={`select-opportunity__item_${item.id}-${index}`}
                 />

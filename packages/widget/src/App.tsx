@@ -9,7 +9,6 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { preloadImages } from "./assets/images";
 import { Box } from "./components/atoms/box";
 import { Dashboard } from "./Dashboard";
-import { useToggleTheme } from "./hooks/use-toggle-theme";
 import { Providers } from "./providers";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
 import type { SettingsProps, VariantProps } from "./providers/settings/types";
@@ -20,7 +19,6 @@ import { Widget } from "./Widget";
 preloadImages();
 
 const App = () => {
-  useToggleTheme();
   useLoadErrorTranslations();
 
   const { dashboardVariant } = useSettings();

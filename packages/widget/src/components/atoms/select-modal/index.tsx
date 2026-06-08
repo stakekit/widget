@@ -1,10 +1,12 @@
 import { Content, Overlay, Portal, Root, Title } from "@radix-ui/react-dialog";
 import { Root as VisuallyHiddenRoot } from "@radix-ui/react-visually-hidden";
+import clsx from "clsx";
 import type { ChangeEvent, PropsWithChildren, ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { SettingsContext } from "../../../providers/settings";
+import { SettingsContext, useSettings } from "../../../providers/settings";
 import { id } from "../../../styles/theme/ids";
+import { combineRecipeWithVariant } from "../../../utils/styles";
 import { Box } from "../box";
 import { SearchIcon } from "../icons/search";
 import { XIcon } from "../icons/x-icon";
@@ -17,6 +19,7 @@ import {
   content,
   noOutline,
   overlay,
+  selectedListItem,
   selectModalItemContainer,
 } from "./styles.css";
 
@@ -230,17 +233,35 @@ export const SelectModalItem = ({
   onItemClick,
   testId,
   variant,
+  className,
+  selected,
 }: PropsWithChildren<{
   onItemClick?: (args: { closeModal: () => void }) => void;
   testId?: string;
   variant?: ItemContainerVariants;
+  className?: string;
+  selected?: boolean;
 }>) => {
   const { setOpen } = useSelectModalContext();
+  const { variant: themeVariant } = useSettings();
 
   const onClick = () => onItemClick?.({ closeModal: () => setOpen(false) });
 
   return (
-    <ListItem variant={variant} onClick={onClick} testId={testId}>
+    <ListItem
+      variant={{ appearance: "plain", ...variant }}
+      onClick={onClick}
+      testId={testId}
+      data-selected={selected || undefined}
+      className={clsx(
+        selected &&
+          combineRecipeWithVariant({
+            rec: selectedListItem,
+            variant: themeVariant,
+          }),
+        className
+      )}
+    >
       {children}
     </ListItem>
   );

@@ -1,14 +1,11 @@
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { RewardTypes } from "../domain/types/reward-rate";
-import type { ValidatorDto } from "../domain/types/validators";
 import {
-  getYieldProviderDetails,
   getYieldProviderYieldIds,
-  getYieldRewardType,
   isYieldWithProviderOptions,
   type Yield,
 } from "../domain/types/yields";
+import type { ValidatorDto } from "../generated/api/yield";
 import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useMultiYields } from "./api/use-multi-yields";
@@ -18,7 +15,7 @@ type Res = Maybe<{
   name: string;
   rewardRateFormatted: string;
   rewardRate: number | undefined;
-  rewardType: RewardTypes;
+  rewardType: string | undefined;
   address?: string;
   stakedBalance?: ValidatorDto["tvl"];
   votingPower?: ValidatorDto["votingPower"];
@@ -41,12 +38,11 @@ export const getProviderDetails = ({
 }): Res => {
   const def = integrationData.chain((val) => {
     const rewardRate = val.rewardRate.total;
-    const rewardType = getYieldRewardType(val);
-    const provider = getYieldProviderDetails(val);
+    const rewardType = val.rewardRate?.rateType?.toLowerCase();
+    const provider = val.provider;
 
     const rewardRateFormatted = getRewardRateFormatted({
       rewardRate,
-      rewardType,
     });
 
     return Maybe.fromNullable(provider)
@@ -56,7 +52,7 @@ export const getProviderDetails = ({
         rewardRateFormatted,
         rewardRate,
         rewardType,
-        website: v.externalLink,
+        website: v.website,
         address: validator.map((v) => v.address).extract(),
       }))
       .altLazy(() =>
@@ -84,15 +80,16 @@ export const getProviderDetails = ({
             )
           )
           .map((v) => v.rewardRate.total)
-          .map<{ rewardRate: number | undefined; rewardType: RewardTypes }>(
-            (res) => ({
-              rewardRate: res,
-              rewardType: getYieldRewardType(yieldDto),
-            })
-          )
+          .map<{
+            rewardRate: number | undefined;
+            rewardType: string | undefined;
+          }>((res) => ({
+            rewardRate: res,
+            rewardType: yieldDto.rewardRate?.rateType?.toLowerCase(),
+          }))
           .orDefault({
             rewardRate: validator.rewardRate?.total,
-            rewardType: getYieldRewardType(yieldDto),
+            rewardType: yieldDto.rewardRate?.rateType?.toLowerCase(),
           });
 
         return {
@@ -100,10 +97,9 @@ export const getProviderDetails = ({
           name: validator.name ?? validator.address,
           rewardRateFormatted: getRewardRateFormatted({
             rewardRate,
-            rewardType,
           }),
           rewardRate,
-          rewardType: getYieldRewardType(yieldDto),
+          rewardType,
           address: validator.address,
           stakedBalance: validator.tvl,
           votingPower: validator.votingPower,

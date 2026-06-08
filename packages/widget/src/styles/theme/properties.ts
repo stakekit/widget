@@ -16,6 +16,9 @@ export const unresponsiveProperties = {
   borderWidth: [0.5, 1, 2, 3],
   borderStyle: ["solid"],
   overflowWrap: ["normal", "break-word", "anywhere"],
+  color: vars.color,
+  background: vars.color,
+  borderColor: vars.color,
 } as const;
 
 export const responsiveProperties = {

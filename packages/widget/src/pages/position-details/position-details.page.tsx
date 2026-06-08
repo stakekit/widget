@@ -6,14 +6,11 @@ import { Spinner } from "../../components/atoms/spinner";
 import { TokenIcon } from "../../components/atoms/token-icon";
 import { Heading } from "../../components/atoms/typography/heading";
 import { Text } from "../../components/atoms/typography/text";
+import { KycGateCard } from "../../components/molecules/kyc-gate-card";
 import { RewardRateBreakdown } from "../../components/molecules/reward-rate-breakdown";
 import { SelectValidator } from "../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../domain/types/pending-action";
-import { getRewardTypeFromRateType } from "../../domain/types/reward-rate";
-import {
-  getBaseYieldType,
-  getYieldProviderDetails,
-} from "../../domain/types/yields";
+import { getExtendedYieldType } from "../../domain/types/yields";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
 import { getRewardRateFormatted } from "../../utils/formatters";
@@ -56,6 +53,10 @@ const PositionDetails = () => {
     unstakeMaxAmount,
     unstakeMinAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
+    kycGate,
+    kycGateIsChecking,
+    kycProviderName,
+    onKycStatusRefresh,
     personalizedRewardRate,
     apyCompositionRewardRate,
     apyCompositionShowsUpToCampaign,
@@ -102,9 +103,7 @@ const PositionDetails = () => {
                           metadata={{
                             logoURI: integrationData.metadata.logoURI,
                             name: integrationData.metadata.name,
-                            provider:
-                              getYieldProviderDetails(integrationData) ??
-                              undefined,
+                            provider: integrationData.provider,
                           }}
                           token={t}
                           tokenLogoHw="14"
@@ -144,9 +143,6 @@ const PositionDetails = () => {
                       >
                         {getRewardRateFormatted({
                           rewardRate: personalizedRewardRate.total,
-                          rewardType: getRewardTypeFromRateType(
-                            personalizedRewardRate.rateType
-                          ),
                         })}
                       </Heading>
                     </Box>
@@ -185,7 +181,7 @@ const PositionDetails = () => {
                             personalizedRewardRate ? undefined : p.rewardType
                           }
                           stakeType={t(
-                            `position_details.stake_type.${getBaseYieldType(integrationData)}`
+                            `position_details.stake_type.${getExtendedYieldType(integrationData)}`
                           )}
                           integrationData={integrationData}
                         />
@@ -291,30 +287,41 @@ const PositionDetails = () => {
                         canChangeUnstakeAmount,
                         unstakeToken,
                       }) => (
-                        <AmountBlock
-                          unstakeMaxAmount={unstakeMaxAmount}
-                          unstakeMinAmount={unstakeMinAmount}
-                          unstakeIsGreaterOrLessIntegrationLimitError={
-                            unstakeIsGreaterOrLessIntegrationLimitError
-                          }
-                          variant="unstake"
-                          canUnstake={canUnstake}
-                          unstakeToken={unstakeToken}
-                          onAmountChange={onUnstakeAmountChange}
-                          value={unstakeAmount}
-                          canChangeAmount={canChangeUnstakeAmount}
-                          disabled={unstakeDisabled}
-                          onClick={onUnstakeClick}
-                          unstakeAmountError={unstakeAmountError}
-                          onMaxClick={onMaxClick}
-                          label={t(
-                            `position_details.unstake_label.${getBaseYieldType(integrationData)}`
+                        <>
+                          {(kycGate.state !== "pass" || kycGateIsChecking) && (
+                            <KycGateCard
+                              gate={kycGate}
+                              isChecking={kycGateIsChecking}
+                              onCheckStatus={onKycStatusRefresh}
+                              providerName={kycProviderName}
+                            />
                           )}
-                          formattedAmount={unstakeFormattedAmount}
-                          balance={reducedStakedOrLiquidBalance}
-                          yieldDto={integrationData}
-                          validators={providersDetails.orDefault([])}
-                        />
+
+                          <AmountBlock
+                            unstakeMaxAmount={unstakeMaxAmount}
+                            unstakeMinAmount={unstakeMinAmount}
+                            unstakeIsGreaterOrLessIntegrationLimitError={
+                              unstakeIsGreaterOrLessIntegrationLimitError
+                            }
+                            variant="unstake"
+                            canUnstake={canUnstake}
+                            unstakeToken={unstakeToken}
+                            onAmountChange={onUnstakeAmountChange}
+                            value={unstakeAmount}
+                            canChangeAmount={canChangeUnstakeAmount}
+                            disabled={unstakeDisabled}
+                            onClick={onUnstakeClick}
+                            unstakeAmountError={unstakeAmountError}
+                            onMaxClick={onMaxClick}
+                            label={t(
+                              `position_details.unstake_label.${getExtendedYieldType(integrationData)}`
+                            )}
+                            formattedAmount={unstakeFormattedAmount}
+                            balance={reducedStakedOrLiquidBalance}
+                            yieldDto={integrationData}
+                            validators={providersDetails.orDefault([])}
+                          />
+                        </>
                       )
                     )
                     .extractNullable()}

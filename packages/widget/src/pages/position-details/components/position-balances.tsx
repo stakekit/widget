@@ -6,7 +6,11 @@ import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
-import { getBaseYieldType, type Yield } from "../../../domain/types/yields";
+import {
+  getExtendedYieldType,
+  isDepositYieldType,
+  type Yield,
+} from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
 import { formatDurationUntilDate } from "../../../utils/date";
 
@@ -42,12 +46,11 @@ export const PositionBalances = ({
     return t("position_details.unstaking_duration", { duration });
   }, [yieldBalance.date, yieldBalance.type, t]);
 
-  const yieldType = getBaseYieldType(integrationData);
+  const yieldType = getExtendedYieldType(integrationData);
 
-  const balanceTypeContext =
-    yieldType === "vault" || yieldType === "lending"
-      ? "yearn_or_deposit"
-      : undefined;
+  const balanceTypeContext = isDepositYieldType(yieldType)
+    ? "yearn_or_deposit"
+    : undefined;
 
   return (
     <Box

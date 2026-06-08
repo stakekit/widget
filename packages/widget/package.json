@@ -156,7 +156,8 @@
     "vitest-browser-react": "catalog:",
     "wagmi": "catalog:",
     "xstate": "catalog:",
-    "yaml": "catalog:"
+    "yaml": "catalog:",
+    "recharts": "catalog:"
   },
   "msw": {
     "workerDirectory": [

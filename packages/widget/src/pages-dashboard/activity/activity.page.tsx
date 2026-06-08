@@ -1,36 +1,35 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
 import { useSelector } from "@xstate/store/react";
-import { List, Maybe } from "purify-ts";
+import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
 import { Text } from "../../components/atoms/typography/text";
-import { GroupedVirtualList } from "../../components/atoms/virtual-list";
+import { VirtualList } from "../../components/atoms/virtual-list";
 import { ActionStatus } from "../../domain/types/action";
-import ListItemBullet from "../../pages/details/activity-page/components/list-item-bullet";
+import { ActionListItem } from "../../pages/details/activity-page/components/action-list-item";
+import { ActivityFilters } from "../../pages/details/activity-page/components/activity-filters";
 import { useActivityPage } from "../../pages/details/activity-page/hooks/use-activity-page";
-import { ItemBulletType } from "../../pages/details/activity-page/item-bullet-type";
 import {
   ActivityPageContext,
   ActivityPageContextProvider,
   useActivityPageContext,
 } from "../../pages/details/activity-page/state/activity-page.context";
-import {
-  type ActionYieldDto,
-  dateGroupLabels,
-} from "../../pages/details/activity-page/types";
+import type { ActionYieldDto } from "../../pages/details/activity-page/types";
 import { useActivityContext } from "../../providers/activity-provider";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { ActionListItem } from "./action-list-item";
-import { container, listItemWrapper } from "./styles.css";
+import { container } from "./styles.css";
 
 const ActivityPageComponent = () => {
   const {
     content,
     allData,
-    bulletLines,
-    counts,
-    labels,
+    filteredData,
+    filterOptions,
+    selectedFilter,
+    onFilterSelect,
+    showingCount,
+    total,
     onActionSelect,
     activityActions,
   } = useActivityPage();
@@ -42,54 +41,33 @@ const ActivityPageComponent = () => {
       {content}
 
       <Box display="flex" flexDirection="column">
-        {!activityActions.isPending && allData && (
-          <GroupedVirtualList
-            hasNextPage={activityActions.hasNextPage}
-            isFetchingNextPage={activityActions.isFetchingNextPage}
-            fetchNextPage={activityActions.fetchNextPage}
-            estimateSize={() => 100}
-            groupCounts={counts}
-            groupContent={(index) => {
-              return (
-                <Box paddingBottom="3">
-                  <Text variant={{ weight: "bold" }}>
-                    {dateGroupLabels(labels[index], t)}
-                  </Text>
-                </Box>
-              );
-            }}
-            itemContent={(index) => {
-              const item = allData[index];
+        {!activityActions.isPending && allData && !!allData.length && (
+          <>
+            <ActivityFilters
+              options={filterOptions}
+              selectedFilter={selectedFilter}
+              onSelect={onFilterSelect}
+            />
 
-              return (
-                <Box
-                  className={listItemWrapper}
-                  paddingBottom={
-                    bulletLines[index] === ItemBulletType.ALONE ||
-                    bulletLines[index] === ItemBulletType.LAST
-                      ? "4"
-                      : "0"
-                  }
-                >
-                  <ListItemBullet
-                    isFirst={
-                      bulletLines[index] === ItemBulletType.FIRST ||
-                      bulletLines[index] === ItemBulletType.ALONE
-                    }
-                    isLast={
-                      bulletLines[index] === ItemBulletType.LAST ||
-                      bulletLines[index] === ItemBulletType.ALONE
-                    }
-                    status={item.actionData.status}
-                  />
-                  <ActionListItem
-                    onActionSelect={onActionSelect}
-                    action={item}
-                  />
-                </Box>
-              );
-            }}
-          />
+            <Box display="flex" justifyContent="flex-end" paddingBottom="2">
+              <Text
+                variant={{ type: "muted", weight: "normal", size: "small" }}
+              >
+                {t("activity.showing_count", { showing: showingCount, total })}
+              </Text>
+            </Box>
+
+            <VirtualList
+              data={filteredData ?? allData}
+              hasNextPage={activityActions.hasNextPage}
+              isFetchingNextPage={activityActions.isFetchingNextPage}
+              fetchNextPage={activityActions.fetchNextPage}
+              estimateSize={() => 80}
+              itemContent={(_index, item) => (
+                <ActionListItem onActionSelect={onActionSelect} action={item} />
+              )}
+            />
+          </>
         )}
       </Box>
     </Box>
@@ -159,24 +137,6 @@ const _ActivityPage = () => {
       });
     }
   }, [isConnected, selectedAction, activityStore]);
-
-  /**
-   * If the selected action is not set, set the first action in the list as the selected action
-   */
-  useEffect(() => {
-    if (selectedAction.isJust() || !value.activityActions.allItems) return;
-
-    List.head(value.activityActions.allItems).ifJust((val) =>
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.of({
-          selectedAction: val.actionData,
-          selectedYield: val.yieldData,
-          selectedValidators: val.validatorsData,
-        }),
-      })
-    );
-  }, [selectedAction, activityStore, value.activityActions.allItems]);
 
   return (
     <ActivityPageContext.Provider value={{ ...value, onActionSelect }}>

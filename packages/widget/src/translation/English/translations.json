@@ -46,16 +46,75 @@
       "terms_of_use": "By clicking {{action}} you agree to <underline0>Terms of Use</underline0> and understand the Risk Disclosures",
       "in_progress": "In Progress"
     },
-    "no_previous_activity": "No previous activity"
+    "no_previous_activity": "No previous activity",
+    "item": {
+      "deposited": "Deposited {{token}}",
+      "withdrew": "Withdrew {{token}}",
+      "rewards": "Rewards",
+      "generic": "{{action}} {{token}}"
+    },
+    "time": {
+      "now": "just now",
+      "minutes_ago": "{{count}}m ago",
+      "hours_ago": "{{count}}h ago",
+      "days_ago": "{{count}}d ago"
+    },
+    "failed": "Failed",
+    "showing_count": "Showing {{showing}} of {{total}}",
+    "filters": {
+      "all": "All",
+      "stake": "Stake",
+      "defi": "DeFi",
+      "rwa": "RWA",
+      "borrow": "Borrow"
+    }
   },
   "details": {
     "earn": "Earn",
     "estimated_reward": "Estimated rewards",
     "earn_with": "Earn with",
     "restake_with": "Restake with",
+    "yield_strategy": "Yield strategy",
+    "via": "via {{providerName}}",
     "additional_info": "Additional info",
+    "kyc_gate": {
+      "check_status": "Check status",
+      "modal": {
+        "title": "Complete verification",
+        "close": "Close verification",
+        "iframe_title": "KYC verification"
+      },
+      "checking": {
+        "title": "Confirming your verification status...",
+        "body": "Almost done. We're re-checking your {{providerName}} status now. This usually takes a few seconds.",
+        "body_fallback": "Almost done. We're re-checking your verification status now. This usually takes a few seconds."
+      },
+      "start_kyc": {
+        "title": "Identity verification required",
+        "body": "{{providerName}} requires a one-time identity check before you can hold this RWA. Verification is hosted by {{providerName}}. Yield.xyz never sees your data.",
+        "body_fallback": "This RWA requires a one-time identity check before you can hold it. Verification is hosted by the provider. Yield.xyz never sees your data.",
+        "cta": "Verify your identity"
+      },
+      "pending": {
+        "title": "Your verification is under review",
+        "body": "{{providerName}} is reviewing your submission. This typically takes a few minutes but can take up to 24 hours.",
+        "body_fallback": "Your verification is under review. This typically takes a few minutes but can take up to 24 hours."
+      },
+      "rejected": {
+        "title": "Verification not approved",
+        "body": "{{providerName}} could not approve this wallet for this yield. Contact {{providerName}} support for next steps.",
+        "body_fallback": "This wallet is not approved for this yield. Contact the provider for next steps.",
+        "cta": "Open provider"
+      },
+      "unknown": {
+        "title": "Verification status unavailable",
+        "body": "We could not confirm your {{providerName}} verification status. Check again before continuing.",
+        "body_fallback": "We could not confirm your verification status. Check again before continuing."
+      }
+    },
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
+      "receive_output": "You'll receive",
       "yearly": "Estimated Yearly Earnings",
       "monthly": "Estimated Monthly Earnings"
     },
@@ -145,6 +204,7 @@
     "extra_tezos": "You can use or send staked XTZ as normal",
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
     "opportunity_search_title": "Select a yield",
+    "opportunity_item_subtitle_no_network": "via {{provider}}",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "provider_search_title": "Select provider",
@@ -181,17 +241,91 @@
   "dashboard": {
     "details": {
       "tabs": {
+        "earn": "Earn",
+        "stake": "Stake",
+        "defi": "DeFi",
+        "rwa": "RWA",
+        "manage": "Manage",
         "overview": "Overview",
         "rewards": "Rewards",
         "activity": "Activity"
       },
+      "positions_sections": {
+        "stake": "Staking",
+        "defi": "DeFi",
+        "rwa": "RWA"
+      },
       "positions_tooltip": "Positions are your yield-related balances on the network.",
+      "my_positions": "My positions",
+      "positions_active_one": "{{count}} active",
+      "positions_active_other": "{{count}} active",
       "positions_yield": "Yield",
       "positions_reward_rate": "Reward Rate",
       "positions_amount": "Amount",
       "positions_rewards": "Rewards",
       "positions_connect_wallet": "Connect wallet to see your positions",
       "activity_connect_wallet": "Connect wallet to see your activity"
+    },
+    "earn_details": {
+      "empty": "Select a yield to see details",
+      "apy": "APY",
+      "tvl": "TVL",
+      "risk": "Risk",
+      "min_stake": "Min stake",
+      "status": "Status",
+      "active": "Active",
+      "kyc": "KYC",
+      "native": "Native",
+      "pooled": "Pooled",
+      "auto_compound": "Auto-compound",
+      "reward_rate_period": "{{rewardType}} (7D)",
+      "reward_rate": "Reward rate",
+      "about": "About",
+      "read_docs": "Read the integration docs",
+      "details": "Details",
+      "network": "Network",
+      "provider": "Provider",
+      "reward_token": "Reward token",
+      "type": "Type",
+      "reward_schedule": "Reward schedule",
+      "cooldown": "Cooldown",
+      "cooldown_days_one": "{{count}} day",
+      "cooldown_days_other": "{{count}} days",
+      "warmup": "Warmup",
+      "lockup": "Lockup",
+      "withdrawal": "Withdrawal",
+      "reward_claiming": "Reward claiming",
+      "average_position": "Avg position",
+      "users": "Users",
+      "vault": "Vault",
+      "asset": "Asset ({{symbol}})",
+      "none": "None",
+      "instant": "Instant",
+      "no_minimum": "No minimum",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "kyc_required": "KYC required",
+      "auto_compounding": "Auto-compounding",
+      "manual": "Manual"
+    },
+    "position_details": {
+      "action_available": "Action available",
+      "action_required": "Action required",
+      "action_tabs": {
+        "stake": "Stake",
+        "unstake": "Unstake"
+      },
+      "active": "Active",
+      "balance": "Balance",
+      "breadcrumb_root": "Positions",
+      "breakdown": "Balance breakdown",
+      "details": "Staking details",
+      "empty": "Position details unavailable",
+      "no_actions": "No actions available",
+      "rewards": "Rewards",
+      "rewards_total": "Total earned",
+      "status": "Status",
+      "withdrawal_unavailable": "Withdrawal unavailable"
     },
     "position_details_info": {
       "balances": "Balances"
@@ -333,7 +467,11 @@
       "lending": "supplied",
       "restaking": "restaked",
       "pooled_staking": "staked",
-      "native_staking": "staked"
+      "native_staking": "staked",
+      "fixed_yield": "deposited",
+      "real_world_asset": "deposited",
+      "concentrated_liquidity_pool": "deposited",
+      "liquidity_pool": "deposited"
     },
     "unstake": {
       "staking": "unstaked",
@@ -343,7 +481,11 @@
       "lending": "withdrawn",
       "restaking": "unstaked",
       "pooled_staking": "unstaked",
-      "native_staking": "unstaked"
+      "native_staking": "unstaked",
+      "fixed_yield": "withdrawn",
+      "real_world_asset": "withdrawn",
+      "concentrated_liquidity_pool": "withdrawn",
+      "liquidity_pool": "withdrawn"
     },
     "pending_action": {
       "stake": "staked",
@@ -429,6 +571,26 @@
       "review": "Stake",
       "cta": "Stake"
     },
+    "fixed_yield": {
+      "title": "Fixed Yield",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "real_world_asset": {
+      "title": "Real-World Asset",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "concentrated_liquidity_pool": {
+      "title": "Concentrated Liquidity",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
+    "liquidity_pool": {
+      "title": "Liquidity Pool",
+      "review": "Deposit",
+      "cta": "Deposit"
+    },
     "staking": {
       "title": "Stake",
       "review": "Stake",
@@ -475,17 +637,29 @@
     },
     "stake_type": {
       "staking": "Staked",
+      "native_staking": "Staked",
+      "pooled_staking": "Staked",
       "liquid-staking": "Liquid staked",
       "lending": "Deposited",
       "vault": "Deposited",
-      "restaking": "Restaked"
+      "restaking": "Restaked",
+      "fixed_yield": "Deposited",
+      "real_world_asset": "Deposited",
+      "concentrated_liquidity_pool": "Deposited",
+      "liquidity_pool": "Deposited"
     },
     "unstake_label": {
       "staking": "Unstake",
+      "native_staking": "Unstake",
+      "pooled_staking": "Unstake",
       "liquid-staking": "Unstake",
       "lending": "Withdraw",
       "vault": "Withdraw",
-      "restaking": "Unstake"
+      "restaking": "Unstake",
+      "fixed_yield": "Withdraw",
+      "real_world_asset": "Withdraw",
+      "concentrated_liquidity_pool": "Withdraw",
+      "liquidity_pool": "Withdraw"
     },
     "balance_type": {
       "active": "Active",
@@ -602,7 +776,9 @@
   "select_token": {
     "title": "Select token",
     "n_available_opps": "{{count}} available opportunities",
-    "usde_banner": "Missing USDe balance? Swap now and start earning!"
+    "yields_available_one": "{{token_name}} · {{count}} yield available",
+    "yields_available_other": "{{token_name}} · {{count}} yields available",
+    "up_to_rate_type": "UP TO {{rateType}}"
   },
   "error_modal": {
     "solution": "Potential solution:"

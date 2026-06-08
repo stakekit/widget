@@ -6,14 +6,6 @@ export const container = style({
   minHeight: "300px",
 });
 
-export const listItemWrapper = style([
-  atoms({
-    display: "flex",
-    gap: "3",
-    paddingLeft: "1",
-  }),
-]);
-
 export const activityDetailsContainer = recipe({
   base: [
     atoms({ background: "dashboardDetailsSectionBackground" }),

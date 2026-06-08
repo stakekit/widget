@@ -1,55 +1,52 @@
 import type { RecursivePartial } from "../../../types/utils";
 import { vars } from "../contract.css";
-import type { lightTheme } from "../themes";
+import { darkTheme, type lightTheme } from "../themes";
+import {
+  fineryDarkPalette,
+  fineryLightPalette,
+  utilaPalette,
+} from "./palettes";
 
-export const fineryThemeOverrides: RecursivePartial<typeof lightTheme> = {
-  color: {
-    background: vars.color.__internal__finery__grey__one__,
-    stakeSectionBackground: vars.color.__internal__finery__grey__two__,
-    modalBodyBackground: vars.color.__internal__finery__grey__one__,
-    tokenSelectBackground: vars.color.__internal__finery__grey__two__,
-    tokenSelectHoverBackground: vars.color.__internal__finery__grey__three__,
-    backgroundMuted: vars.color.__internal__finery__grey__two__,
+const getFineryPalette = (theme: typeof lightTheme) =>
+  theme.color.background === darkTheme.color.background
+    ? fineryDarkPalette
+    : fineryLightPalette;
 
-    smallButtonBackground: vars.color.__internal__finery__grey__two__,
-    smallButtonOutline: vars.color.__internal__finery__grey__two__,
-    smallButtonHoverBackground: vars.color.__internal__finery__grey__three__,
-    smallButtonHoverOutline: vars.color.__internal__finery__grey__three__,
-    smallButtonColor: vars.color.white,
-    smallButtonHoverColor: vars.color.white,
-    smallButtonActiveColor: vars.color.white,
+export const getFineryThemeOverrides = (
+  theme: typeof lightTheme
+): RecursivePartial<typeof lightTheme> => {
+  const palette = getFineryPalette(theme);
 
-    primaryButtonBackground: vars.color.__internal__finery__green__one__,
-    primaryButtonOutline: vars.color.__internal__finery__green__one__,
-    primaryButtonHoverBackground: vars.color.__internal__finery__green__two__,
-    primaryButtonHoverOutline: vars.color.__internal__finery__green__two__,
-    primaryButtonActiveBackground: vars.color.__internal__finery__green__two__,
-    primaryButtonActiveOutline: vars.color.__internal__finery__green__two__,
-    primaryButtonColor: vars.color.white,
-    primaryButtonActiveColor: vars.color.white,
-    primaryButtonHoverColor: vars.color.white,
+  return {
+    color: {
+      background: palette.greyOne,
+      summaryItemBackground: palette.summaryItemBackground,
+      stakeSectionBackground: palette.greyTwo,
+      modalBodyBackground: palette.greyOne,
+      tokenSelectBackground: palette.greyTwo,
+      tokenSelectHoverBackground: palette.greyThree,
+      backgroundMuted: palette.greyTwo,
 
-    secondaryButtonBackground: vars.color.__internal__finery__grey__two__,
-    secondaryButtonOutline: vars.color.__internal__finery__grey__two__,
-    secondaryButtonHoverBackground:
-      vars.color.__internal__finery__grey__three__,
-    secondaryButtonHoverOutline: vars.color.__internal__finery__grey__three__,
-    secondaryButtonActiveBackground:
-      vars.color.__internal__finery__grey__three__,
-    secondaryButtonActiveOutline: vars.color.__internal__finery__grey__three__,
-    secondaryButtonColor: vars.color.text,
+      smallButtonBackground: palette.greyTwo,
+      smallButtonColor: vars.color.white,
 
-    connectKit: {
-      modalBackground: vars.color.__internal__finery__grey__one__,
-      profileForeground: vars.color.__internal__finery__grey__one__,
-      profileAction: vars.color.__internal__finery__grey__two__,
-      profileActionHover: vars.color.__internal__finery__grey__three__,
+      primaryButtonBackground: palette.greenOne,
+      primaryButtonColor: vars.color.white,
+
+      secondaryButtonBackground: palette.greyTwo,
+      secondaryButtonColor: vars.color.text,
+
+      connectKit: {
+        modalBackground: palette.greyOne,
+        profileForeground: palette.greyOne,
+        profileAction: palette.greyTwo,
+        profileActionHover: palette.greyThree,
+      },
+
+      positionsClaimRewardsBackground: utilaPalette.badgeTextSuccess,
+
+      skeletonLoaderBase: palette.greyTwo,
+      skeletonLoaderHighlight: palette.greyThree,
     },
-
-    positionsClaimRewardsBackground:
-      vars.color.__internal__utila__badge__text__success__,
-
-    skeletonLoaderBase: vars.color.__internal__finery__grey__two__,
-    skeletonLoaderHighlight: vars.color.__internal__finery__grey__three__,
-  },
+  };
 };

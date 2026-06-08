@@ -8,11 +8,13 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
+import { getKycProviderName } from "../../../domain/types/kyc";
 import {
-  getBaseYieldType,
-  getYieldProviderDetails,
+  getExtendedYieldType,
+  isUnstakeYieldType,
 } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
+import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
@@ -32,8 +34,15 @@ export const useUnstakeActionReview = () => {
 
   const apiClient = useApiClient();
 
+  const integrationData = useMemo(
+    () => Maybe.of(exitRequest.integrationData),
+    [exitRequest.integrationData]
+  );
+  const yieldKycGate = useYieldKycGate({ yieldDto: integrationData });
+  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
+
   const actionPreviewQuery = useQuery({
-    enabled: !!exitRequest,
+    enabled: !!exitRequest && !kycGateIsBlocking,
     queryKey: ["unstake-review-action-preview", exitRequest.requestDto],
     retry: false,
     queryFn: () =>
@@ -62,10 +71,10 @@ export const useUnstakeActionReview = () => {
     [exitRequest.unstakeToken]
   );
 
-  const integrationData = useMemo(
-    () => Maybe.of(exitRequest.integrationData),
-    [exitRequest.integrationData]
-  );
+  const kycProviderName = integrationData
+    .map(getKycProviderName)
+    .extractNullable();
+  const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const pricesState = useTokensPrices({
     token: interactedToken,
@@ -92,16 +101,11 @@ export const useUnstakeActionReview = () => {
     [amount]
   );
 
-  const title: Maybe<string> = integrationData.map((d) => {
-    switch (getBaseYieldType(d)) {
-      case "staking":
-      case "liquid-staking":
-        return t("position_details.unstake") as string;
-
-      default:
-        return t("position_details.withdraw");
-    }
-  });
+  const title: Maybe<string> = integrationData.map((d) =>
+    isUnstakeYieldType(getExtendedYieldType(d))
+      ? (t("position_details.unstake") as string)
+      : t("position_details.withdraw")
+  );
 
   const navigate = useNavigate();
 
@@ -117,7 +121,7 @@ export const useUnstakeActionReview = () => {
 
   const rewardTokenDetailsProps = integrationData
     .chainNullable((v) => {
-      const provider = getYieldProviderDetails(v);
+      const provider = v.provider;
 
       return provider ? { provider, rest: v } : null;
     })
@@ -153,7 +157,7 @@ export const useUnstakeActionReview = () => {
   const onCloseUnstakeSignMessage = () => send({ type: "CANCEL_MESSAGE_SIGN" });
 
   const onClick = () => {
-    if (unstakeIsLoading) return;
+    if (unstakeIsLoading || kycGateIsBlocking) return;
 
     send({ type: "UNSTAKE" });
   };
@@ -165,10 +169,16 @@ export const useUnstakeActionReview = () => {
       () => ({
         label: t("shared.confirm"),
         onClick: () => onClickRef.current(),
-        disabled: false,
-        isLoading: unstakeIsLoading,
+        disabled: kycGateIsBlocking,
+        isLoading: unstakeIsLoading || yieldKycGate.isLoading,
       }),
-      [onClickRef, t, unstakeIsLoading]
+      [
+        kycGateIsBlocking,
+        onClickRef,
+        t,
+        unstakeIsLoading,
+        yieldKycGate.isLoading,
+      ]
     )
   );
 
@@ -188,5 +198,12 @@ export const useUnstakeActionReview = () => {
       actionPreviewQuery.isFetching ||
       gasWarningCheck.isLoading,
     isGasCheckWarning: !!gasWarningCheck.data,
+    kycGate: yieldKycGate.gate,
+    kycProviderName,
+    kycStatusIsChecking:
+      yieldKycGate.isLoading ||
+      yieldKycGate.isFetching ||
+      yieldKycGate.isRefetching,
+    onKycStatusRefresh,
   };
 };

@@ -1,11 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
-import {
-  widgetContainerMaxWidth,
-  widgetContainerName,
-} from "../../../style.css";
 import { atoms } from "../../../styles/theme/atoms.css";
-import { minContainerWidth } from "../../../styles/tokens/breakpoints";
 
 export const listItemContainer = recipe({
   base: [atoms({ borderRadius: "base" }), { padding: "2px 4px" }],
@@ -21,25 +16,6 @@ export const listItemContainer = recipe({
   },
 });
 
-export const positionDetailsContainer = style([
-  atoms({ gap: { mobile: "1", tablet: "2" } }),
-  {
-    display: "flex",
-
-    justifyContent: "center",
-
-    alignItems: "flex-start",
-    flexDirection: "column-reverse",
-
-    "@container": {
-      [minContainerWidth(widgetContainerName, widgetContainerMaxWidth)]: {
-        alignItems: "center",
-        flexDirection: "row",
-      },
-    },
-  },
-]);
-
 export const viaText = style({
   textOverflow: "ellipsis",
   overflow: "hidden",
@@ -50,27 +26,16 @@ export const container = style({
   height: "100%",
 });
 
-export const headerContainer = recipe({
-  base: atoms({
-    display: "flex",
-    alignItems: "center",
-    gap: "1",
-    py: "1",
-    textAlign: "left",
-  }),
-  variants: {
-    variant: {
-      default: {
-        paddingLeft: "10px",
-        paddingRight: "10px",
-      },
-      utila: {},
-      porto: {},
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
+export const sectionHeader = style({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "8px",
+});
+
+export const sectionTitle = style({
+  textTransform: "uppercase",
+  letterSpacing: "0.04em",
 });
 
 export const positionsTitle = recipe({

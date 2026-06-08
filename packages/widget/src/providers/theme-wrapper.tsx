@@ -5,77 +5,45 @@ import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { vars } from "../styles/theme/contract.css";
 import { rootSelector } from "../styles/theme/ids";
-import { darkTheme, lightTheme } from "../styles/theme/themes";
-import { fineryThemeOverrides } from "../styles/theme/variant-overrides/finery";
+import { lightTheme } from "../styles/theme/themes";
+import { getFineryThemeOverrides } from "../styles/theme/variant-overrides/finery";
 import { portoThemeOverrides } from "../styles/theme/variant-overrides/porto";
 import { utilaThemeOverrides } from "../styles/theme/variant-overrides/utila";
 import { useSettings } from "./settings";
 
 export const ThemeWrapper = ({ children }: PropsWithChildren) => {
-  const { theme = { lightMode: lightTheme }, variant } = useSettings();
+  const { theme, variant } = useSettings();
 
-  const finalLightTheme = useMemo(
-    () =>
-      Just(variant)
-        .map((v) => {
-          if (v === "utila") {
-            return utilaThemeOverrides;
-          }
+  const finalTheme = useMemo(() => {
+    const baseTheme = merge(structuredClone(lightTheme), theme);
 
-          if (v === "finery") {
-            return fineryThemeOverrides;
-          }
+    const overrides = Just(variant)
+      .map((v) => {
+        if (v === "utila") {
+          return utilaThemeOverrides;
+        }
 
-          if (v === "porto") {
-            return portoThemeOverrides;
-          }
+        if (v === "finery") {
+          return getFineryThemeOverrides(baseTheme);
+        }
 
-          return {};
-        })
-        .map((overrides) => {
-          if ("lightMode" in theme) {
-            return merge(
-              structuredClone(lightTheme),
-              theme.lightMode,
-              overrides
-            );
-          }
+        if (v === "porto") {
+          return portoThemeOverrides;
+        }
 
-          if (theme) {
-            return merge(structuredClone(lightTheme), theme, overrides);
-          }
+        return {};
+      })
+      .unsafeCoerce();
 
-          return lightTheme;
-        })
-        .unsafeCoerce(),
-    [theme, variant]
-  );
-
-  const finalDarkTheme = useMemo(
-    () =>
-      "darkMode" in theme
-        ? merge(structuredClone(darkTheme), theme.darkMode)
-        : null,
-    [theme]
-  );
+    return merge(structuredClone(lightTheme), theme, overrides);
+  }, [theme, variant]);
 
   return (
     <>
       <style
         // biome-ignore lint: false
         dangerouslySetInnerHTML={{
-          __html: [
-            finalLightTheme
-              ? `${rootSelector} {${assignInlineVars(vars, finalLightTheme)}}`
-              : null,
-
-            finalDarkTheme
-              ? `@media (prefers-color-scheme: dark) { ${rootSelector} {${assignInlineVars(
-                  vars,
-                  finalDarkTheme
-                )}} }`
-              : null,
-          ].join(""),
+          __html: `${rootSelector} {${assignInlineVars(vars, finalTheme)}}`,
         }}
       />
       {children}

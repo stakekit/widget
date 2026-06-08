@@ -1,15 +1,30 @@
 import { Maybe } from "purify-ts";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Spinner } from "../../../components/atoms/spinner";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { SelectValidator } from "../../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
-import { getBaseYieldType } from "../../../domain/types/yields";
-import { AmountBlock } from "../../../pages/position-details/components/amount-block";
+import { getExtendedYieldType } from "../../../domain/types/yields";
+import {
+  type FooterButtonVal,
+  useRegisterFooterButton,
+} from "../../../pages/components/footer-outlet/context";
+import {
+  AmountBlock,
+  UnstakeInfo,
+} from "../../../pages/position-details/components/amount-block";
 import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { container } from "./styles.css";
+
+export const positionDetailsStakeHasContent = (
+  val: ReturnType<typeof usePositionDetails>
+) =>
+  val.integrationData.mapOrDefault((yieldDto) => yieldDto.status.enter, false);
 
 export const positionDetailsActionsHasContent = (
   val: ReturnType<typeof usePositionDetails>
@@ -60,9 +75,45 @@ export const PositionDetailsActions = () => {
     onMaxClick,
     validatorAddressesHandling,
     onValidatorsSubmit,
+    kycGate,
+    kycGateIsChecking,
+    kycProviderName,
+    onKycStatusRefresh,
   } = usePositionDetails();
 
   const { t } = useTranslation();
+  const unstakeFooterButton = useMemo<FooterButtonVal>(
+    () =>
+      isLoading
+        ? null
+        : Maybe.fromRecord({
+            integrationData,
+            reducedStakedOrLiquidBalance,
+            canChangeUnstakeAmount,
+            unstakeToken,
+          })
+            .map(({ integrationData }) => ({
+              disabled: unstakeDisabled,
+              isLoading: false,
+              label: t(
+                `position_details.unstake_label.${getExtendedYieldType(integrationData)}`
+              ),
+              onClick: onUnstakeClick,
+            }))
+            .extractNullable(),
+    [
+      canChangeUnstakeAmount,
+      integrationData,
+      isLoading,
+      onUnstakeClick,
+      reducedStakedOrLiquidBalance,
+      t,
+      unstakeDisabled,
+      unstakeToken,
+    ]
+  );
+
+  useRegisterFooterButton(unstakeFooterButton);
 
   if (isLoading) {
     return (
@@ -79,8 +130,19 @@ export const PositionDetailsActions = () => {
 
   return Maybe.fromRecord({ integrationData, positionBalancesByType })
     .map((v) => (
-      <Box className={container} flex={1} display="flex" flexDirection="column">
-        <Box display="flex" flex={1} flexDirection="column" gap="4">
+      <Box
+        className={container}
+        flex={1}
+        display="flex"
+        flexDirection="column"
+        marginTop="3"
+      >
+        <Box display="flex" flex={1} flexDirection="column" gap="3">
+          <PositionDetailsActionTabs
+            canStake={v.integrationData.status.enter}
+            canUnstake
+          />
+
           {/* Pending actions */}
           {pendingActions
             .map((val) =>
@@ -138,30 +200,49 @@ export const PositionDetailsActions = () => {
                 canChangeUnstakeAmount,
                 unstakeToken,
               }) => (
-                <AmountBlock
-                  unstakeMaxAmount={unstakeMaxAmount}
-                  unstakeMinAmount={unstakeMinAmount}
-                  unstakeIsGreaterOrLessIntegrationLimitError={
-                    unstakeIsGreaterOrLessIntegrationLimitError
-                  }
-                  variant="unstake"
-                  canUnstake={canUnstake}
-                  unstakeToken={unstakeToken}
-                  onAmountChange={onUnstakeAmountChange}
-                  value={unstakeAmount}
-                  canChangeAmount={canChangeUnstakeAmount}
-                  disabled={unstakeDisabled}
-                  onClick={onUnstakeClick}
-                  unstakeAmountError={unstakeAmountError}
-                  onMaxClick={onMaxClick}
-                  label={t(
-                    `position_details.unstake_label.${getBaseYieldType(v.integrationData)}`
+                <>
+                  {(kycGate.state !== "pass" || kycGateIsChecking) && (
+                    <KycGateCard
+                      gate={kycGate}
+                      isChecking={kycGateIsChecking}
+                      onCheckStatus={onKycStatusRefresh}
+                      providerName={kycProviderName}
+                    />
                   )}
-                  formattedAmount={unstakeFormattedAmount}
-                  balance={reducedStakedOrLiquidBalance}
-                  yieldDto={v.integrationData}
-                  validators={providersDetails.orDefault([])}
-                />
+
+                  <AmountBlock
+                    unstakeMaxAmount={unstakeMaxAmount}
+                    unstakeMinAmount={unstakeMinAmount}
+                    unstakeIsGreaterOrLessIntegrationLimitError={
+                      unstakeIsGreaterOrLessIntegrationLimitError
+                    }
+                    variant="unstake"
+                    canUnstake={canUnstake}
+                    unstakeToken={unstakeToken}
+                    onAmountChange={onUnstakeAmountChange}
+                    value={unstakeAmount}
+                    canChangeAmount={canChangeUnstakeAmount}
+                    disabled={unstakeDisabled}
+                    onClick={onUnstakeClick}
+                    unstakeAmountError={unstakeAmountError}
+                    onMaxClick={onMaxClick}
+                    label={t(
+                      `position_details.unstake_label.${getExtendedYieldType(v.integrationData)}`
+                    )}
+                    formattedAmount={unstakeFormattedAmount}
+                    balance={reducedStakedOrLiquidBalance}
+                    yieldDto={v.integrationData}
+                    validators={providersDetails.orDefault([])}
+                    showUnstakeInfo={false}
+                    ctaPlacement="footer"
+                  />
+
+                  <UnstakeInfo
+                    unstakeToken={unstakeToken}
+                    validators={providersDetails.orDefault([])}
+                    yieldDto={v.integrationData}
+                  />
+                </>
               )
             )
             .extractNullable()}

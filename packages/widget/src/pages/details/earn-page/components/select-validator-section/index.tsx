@@ -3,7 +3,6 @@ import { SelectValidator } from "../../../../../components/molecules/select-vali
 import {
   isYieldActionArgRequired,
   isYieldValidatorSelectionRequired,
-  isYieldWithProviderOptions,
 } from "../../../../../domain/types/yields";
 import { SelectValidatorTrigger } from "./select-validator-trigger";
 import { useSelectValidator } from "./use-select-validator";
@@ -46,9 +45,7 @@ export const SelectValidatorSection = () => {
               onRemoveValidator={onRemoveValidator}
               selectedValidatorsArr={selectedValidatorsArr}
               multiSelect={multiSelect}
-              isWithProviderOptions={isYieldWithProviderOptions(
-                val.selectedStake
-              )}
+              selectedStake={val.selectedStake}
             />
           }
           selectedValidators={

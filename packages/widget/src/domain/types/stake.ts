@@ -1,5 +1,6 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
+import type { ValidatorDto } from "../../generated/api/yield";
 import { tokenString } from "..";
 import type { SupportedSKChains } from "./chains";
 import { Networks } from "./chains/networks";
@@ -7,7 +8,6 @@ import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { TokenBalanceScanResponseDto } from "./token-balance";
 import type { TokenString } from "./tokens";
-import type { ValidatorDto } from "./validators";
 import { getYieldActionArg, isBittensorStaking, type Yield } from "./yields";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
@@ -90,24 +90,22 @@ export const canBeInitialYield = (args: {
   yieldDto: Yield;
   tokenBalanceAmount: BigNumber;
   positionsData: PositionsData;
-}) =>
-  args.initQueryParams
-    .chain((queryParams) =>
-      Maybe.fromFalsy(
-        !!queryParams.yieldId &&
-          queryParams.yieldId.toLowerCase() === args.yieldDto.id.toLowerCase()
-      )
-    )
-    .altLazy(() =>
-      Maybe.fromFalsy(
-        balanceValidForYield({
-          tokenBalanceAmount: args.tokenBalanceAmount,
-          yieldDto: args.yieldDto,
-          positionsData: args.positionsData,
-        })
-      )
-    )
-    .isJust();
+}) => {
+  const initYieldId = args.initQueryParams
+    .chainNullable((queryParams) => queryParams.yieldId)
+    .map((yieldId) => yieldId.toLowerCase())
+    .extractNullable();
+
+  if (initYieldId) {
+    return initYieldId === args.yieldDto.id.toLowerCase();
+  }
+
+  return balanceValidForYield({
+    tokenBalanceAmount: args.tokenBalanceAmount,
+    yieldDto: args.yieldDto,
+    positionsData: args.positionsData,
+  });
+};
 
 const balanceValidForYield = ({
   tokenBalanceAmount,

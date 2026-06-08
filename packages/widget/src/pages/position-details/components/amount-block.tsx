@@ -10,13 +10,17 @@ import {
   NumberInput,
   type NumberInputProps,
 } from "../../../components/atoms/number-input";
+import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
 import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
+import { useSettings } from "../../../providers/settings";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
+import { combineRecipeWithVariant } from "../../../utils/styles";
+import { selectTokenSection } from "../../details/earn-page/components/select-token-section/styles.css";
 import { priceTxt } from "../styles.css";
 
 type AmountBlockProps = {
@@ -45,6 +49,12 @@ type AmountBlockProps = {
       unstakeIsGreaterOrLessIntegrationLimitError: boolean;
       unstakeMaxAmount: Maybe<number>;
       unstakeMinAmount: Maybe<number>;
+      /**
+       * When false, the unstake info (withdrawal time, etc.) is not rendered
+       * inside the card so it can be placed below the section instead.
+       */
+      showUnstakeInfo?: boolean;
+      ctaPlacement?: "card" | "footer";
     }
   | { variant: "action" }
 );
@@ -63,6 +73,7 @@ export const AmountBlock = ({
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
+  const { variant, dashboardVariant } = useSettings();
 
   const minMaxUnstakeAmount = Maybe.fromPredicate(
     (v) => v.variant === "unstake",
@@ -114,12 +125,23 @@ export const AmountBlock = ({
           borderStyle: "solid",
           borderColor: "backgroundMuted",
         }
-      : { background: "stakeSectionBackground" };
+      : {
+          background: "stakeSectionBackground",
+          borderWidth: 1,
+          borderStyle: "solid",
+          className: combineRecipeWithVariant({
+            rec: selectTokenSection,
+            variant,
+            state: unstakeAmountError ? "danger" : "default",
+          }),
+        };
+  const showCardCta =
+    rest.variant === "action" || rest.ctaPlacement !== "footer";
 
   return (
     <Box {...variantProps} borderRadius="xl" py="4" px="4">
       {(rest.variant === "action" || rest.canUnstake) && (
-        <Box marginBottom="3">
+        <Box>
           <Box
             display="flex"
             justifyContent="space-between"
@@ -135,19 +157,28 @@ export const AmountBlock = ({
               />
             </Box>
 
-            <Button
-              onClick={onClick}
-              disabled={disabled}
-              variant={{
-                size: "small",
-                color:
-                  rest.variant === "unstake"
-                    ? "smallButton"
-                    : "smallButtonLight",
-              }}
-            >
-              <Text>{label}</Text>
-            </Button>
+            {showCardCta ? (
+              <Button
+                onClick={onClick}
+                disabled={disabled}
+                variant={{
+                  size: "small",
+                  color:
+                    rest.variant === "unstake"
+                      ? "smallButton"
+                      : "smallButtonLight",
+                }}
+              >
+                <Text>{label}</Text>
+              </Button>
+            ) : (
+              <Box display="flex" alignItems="center" gap="2">
+                <TokenIcon token={rest.unstakeToken} />
+                <Text variant={{ weight: "bold" }}>
+                  {rest.unstakeToken.symbol}
+                </Text>
+              </Box>
+            )}
           </Box>
           {minMaxUnstakeAmount}
           <Box
@@ -189,11 +220,9 @@ export const AmountBlock = ({
               {canChangeAmount && onMaxClick && (
                 <MaxButton
                   onMaxClick={onMaxClick}
-                  background={
-                    rest.variant === "unstake"
-                      ? "background"
-                      : "backgroundMuted"
-                  }
+                  {...(rest.variant === "action"
+                    ? { background: "backgroundMuted" as const }
+                    : {})}
                 />
               )}
             </Box>
@@ -201,8 +230,8 @@ export const AmountBlock = ({
         </Box>
       )}
 
-      {rest.variant === "unstake" && (
-        <Box>
+      {rest.variant === "unstake" && rest.showUnstakeInfo !== false && (
+        <Box marginTop={dashboardVariant ? "0" : "2"}>
           <UnstakeInfo
             validators={rest.validators}
             yieldDto={rest.yieldDto}
@@ -214,7 +243,7 @@ export const AmountBlock = ({
   );
 };
 
-const UnstakeInfo = ({
+export const UnstakeInfo = ({
   validators,
   yieldDto,
   unstakeToken,

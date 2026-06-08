@@ -1,38 +1,35 @@
-import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
+import type { Yield } from "../../../domain/types/yields";
 import {
-  getRewardRateBreakdown,
-  getYieldRewardRateDetails,
-} from "../../../domain/types/reward-rate";
-import {
-  getYieldCommission,
-  getYieldProviderDetails,
-  getYieldRewardTokens,
-  getYieldRewardType,
-  getYieldRiskDisplay,
-  getYieldTVL,
-  type Yield,
-} from "../../../domain/types/yields";
-import { APToPercentage, formatNumber, fromWei } from "../../../utils";
-import { getRewardRateFormatted } from "../../../utils/formatters";
+  capitalizeFirstLetters,
+  getRewardRateFormatted,
+  getRewardTypeFormatted,
+} from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
 import { SelectModalItem } from "../../atoms/select-modal";
 import { ProviderIcon } from "../../atoms/token-icon/provider-icon";
 import { Text } from "../../atoms/typography/text";
-import { RiskRatingBadge } from "../yield-risk";
-import { noWrap, selectItemText } from "./styles.css";
+import {
+  itemSubtitle,
+  rewardRateLabel,
+  rewardRateText,
+  selectItemText,
+} from "./styles.css";
 
 export const SelectOpportunityListItem = ({
   item,
   onYieldSelect,
   testId,
+  selected,
 }: {
   item: Yield;
   onYieldSelect: (item: Yield) => void;
   testId?: string;
+  selected?: boolean;
 }) => {
+  const { t } = useTranslation();
+
   const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({
     closeModal,
   }) => {
@@ -40,32 +37,25 @@ export const SelectOpportunityListItem = ({
     closeModal();
   };
 
-  const { t } = useTranslation();
+  const provider = item.provider;
 
-  const campaignRate = getRewardRateBreakdown(
-    getYieldRewardRateDetails(item)
-  ).find((rewardRate) => rewardRate.key === "campaign");
-
-  const totalRateFormatted = getRewardRateFormatted({
+  const rateFormatted = getRewardRateFormatted({
     rewardRate: item.rewardRate.total,
-    rewardType: getYieldRewardType(item),
   });
+  const rateTypeLabel = getRewardTypeFormatted(item.rewardRate.rateType);
 
-  const primaryRateFormatted = getRewardRateFormatted({
-    rewardRate: campaignRate
-      ? item.rewardRate.total - campaignRate.rate
-      : item.rewardRate.total,
-    rewardType: getYieldRewardType(item),
-  });
-
-  const provider = getYieldProviderDetails(item) ?? undefined;
-  const rewardTokens = getYieldRewardTokens(item);
-  const tvl = getYieldTVL(item);
-  const commission = getYieldCommission(item);
-  const risk = getYieldRiskDisplay(item);
+  const subtitle = provider?.name
+    ? t("details.opportunity_item_subtitle_no_network", {
+        provider: provider.name,
+      })
+    : capitalizeFirstLetters(item.token.network);
 
   return (
-    <SelectModalItem testId={testId} onItemClick={onItemClick}>
+    <SelectModalItem
+      testId={testId}
+      onItemClick={onItemClick}
+      selected={selected}
+    >
       <ProviderIcon
         metadata={{
           logoURI: item.metadata.logoURI,
@@ -81,88 +71,38 @@ export const SelectOpportunityListItem = ({
         flex={1}
         marginLeft="2"
         minWidth="0"
+        gap="1"
       >
-        <Box
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          gap="2"
+        <Text className={selectItemText} variant={{ weight: "bold" }}>
+          {item.metadata.name}
+        </Text>
+
+        <Text
+          className={itemSubtitle}
+          variant={{ type: "muted", weight: "normal", size: "small" }}
         >
-          <Box>
-            <Text className={selectItemText} variant={{ weight: "bold" }}>
-              {item.metadata.name}
-            </Text>
-          </Box>
+          {subtitle}
+        </Text>
+      </Box>
 
-          <Box textAlign="end">
-            <Text className={noWrap}>{primaryRateFormatted}</Text>
+      <Box
+        textAlign="end"
+        flexShrink={0}
+        marginLeft="2"
+        gap="1"
+        display="flex"
+        flexDirection="column"
+      >
+        <Text className={rewardRateText}>{rateFormatted}</Text>
 
-            {campaignRate ? (
-              <Text variant={{ type: "muted", weight: "normal" }}>
-                {t("details.apy_composition.up_to", {
-                  value: totalRateFormatted,
-                })}
-              </Text>
-            ) : null}
-          </Box>
-        </Box>
-
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box display="flex" marginTop="1" flexWrap="wrap" gap="1">
-            <Text variant={{ type: "muted" }}>
-              {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
-                .map((rt) => rt.map((t) => t.symbol).join(", "))
-                .altLazy(() =>
-                  Maybe.fromNullable(tvl)
-                    .map((tvl) =>
-                      tvl.reduce(
-                        (acc, curr) => acc.plus(curr.value),
-                        BigNumber(0)
-                      )
-                    )
-                    .map(
-                      (tvl) =>
-                        `TVL: ${formatNumber(fromWei(tvl, item.token.decimals), 0)} ${item.token.symbol}`
-                    )
-                )
-                .orDefault(item.token.symbol)}
-            </Text>
-
-            {risk ? (
-              <RiskRatingBadge
-                risk={risk}
-                testId={testId ? `risk-rating__${testId}` : undefined}
-              />
-            ) : null}
-
-            {Maybe.fromNullable(rewardTokens.length ? rewardTokens : null)
-              .map((): ReactNode | string => (
-                <Box
-                  background="background"
-                  borderRadius="2xl"
-                  px="2"
-                  display="flex"
-                  alignItems="center"
-                >
-                  <Text variant={{ type: "muted" }}>{item.token.symbol}</Text>
-                </Box>
-              ))
-              .extractNullable()}
-          </Box>
-
-          {Maybe.fromNullable(commission)
-            .map((commission) =>
-              APToPercentage(
-                commission.reduce((acc, curr) => acc + curr.value, 0)
-              )
-            )
-            .map((commission) => (
-              <Text
-                variant={{ type: "muted" }}
-              >{`${t("shared.fee")}: ${formatNumber(commission, 2)}%`}</Text>
-            ))
-            .extractNullable()}
-        </Box>
+        {rateTypeLabel && (
+          <Text
+            className={rewardRateLabel}
+            variant={{ type: "muted", weight: "normal", size: "small" }}
+          >
+            {rateTypeLabel}
+          </Text>
+        )}
       </Box>
     </SelectModalItem>
   );

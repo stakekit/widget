@@ -1,6 +1,11 @@
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
+import {
+  fineryLightPalette,
+  portoPalette,
+  utilaPalette,
+} from "../../../styles/theme/variant-overrides/palettes";
 
 export const summaryContainer = recipe({
   base: atoms({
@@ -56,9 +61,10 @@ export const summaryItem = recipe({
       utila: [
         atoms({
           background: "summaryItemBackground",
-          borderColor: "__internal__utila__border__",
+          borderColor: "transparent",
         }),
         {
+          borderColor: utilaPalette.border,
           borderRadius: "8px",
           borderWidth: "1px",
           borderStyle: "solid",
@@ -66,7 +72,7 @@ export const summaryItem = recipe({
       ],
       finery: [
         atoms({
-          background: "__internal__finery__summary__item__background__",
+          background: "summaryItemBackground",
         }),
         {
           boxShadow: "0px 15px 30px 0px #0000000D",
@@ -194,8 +200,8 @@ export const summaryLabelContainer = recipe({
         type: "staked",
       },
       style: {
-        background: vars.color.__internal__finery__purple__one__,
-        color: vars.color.__internal__finery__purple__two__,
+        background: fineryLightPalette.purpleOne,
+        color: fineryLightPalette.purpleTwo,
       },
     },
     {
@@ -204,8 +210,8 @@ export const summaryLabelContainer = recipe({
         type: "apy",
       },
       style: {
-        background: vars.color.__internal__finery__blue__one__,
-        color: vars.color.__internal__finery__blue__two__,
+        background: fineryLightPalette.blueOne,
+        color: fineryLightPalette.blueTwo,
       },
     },
     {
@@ -214,8 +220,8 @@ export const summaryLabelContainer = recipe({
         type: "available",
       },
       style: {
-        background: vars.color.__internal__finery__green__three__,
-        color: vars.color.__internal__finery__green__one__,
+        background: fineryLightPalette.greenThree,
+        color: fineryLightPalette.greenOne,
       },
     },
     {
@@ -226,7 +232,7 @@ export const summaryLabelContainer = recipe({
       style: [
         {
           color: "white",
-          background: vars.color.__internal__porto__grey__three__,
+          background: portoPalette.greyThree,
         },
       ],
     },
@@ -238,7 +244,7 @@ export const summaryLabelContainer = recipe({
       style: [
         {
           color: "white",
-          background: vars.color.__internal__porto__grey__three__,
+          background: portoPalette.greyThree,
         },
       ],
     },
@@ -250,7 +256,7 @@ export const summaryLabelContainer = recipe({
       style: [
         {
           color: "white",
-          background: vars.color.__internal__porto__grey__three__,
+          background: portoPalette.greyThree,
         },
       ],
     },

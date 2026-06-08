@@ -148,6 +148,7 @@ export const setup = async (
   const avaxLiquidStakingYieldApi = yieldApiYieldFixture({
     id: avaxLiquidStaking.id,
     network: token.network,
+    providerId: avaxLiquidStaking.metadata.provider?.id ?? "benqi",
     token,
     tokens: [token],
     inputTokens: [token],
@@ -307,6 +308,18 @@ export const setup = async (
     http.get(legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
       await delay();
       return HttpResponse.json(avaxNativeStaking);
+    }),
+    http.get(yieldApiRoute("/v1/yields"), async () => {
+      await delay();
+
+      const items = [avaxNativeStakingYieldApi, avaxLiquidStakingYieldApi];
+
+      return HttpResponse.json({
+        items,
+        total: items.length,
+        offset: 0,
+        limit: items.length,
+      });
     }),
     http.get(yieldApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
       await delay();

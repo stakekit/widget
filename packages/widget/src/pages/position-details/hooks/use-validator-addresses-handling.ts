@@ -5,7 +5,7 @@ import {
   type YieldPendingActionDto,
 } from "../../../domain/types/pending-action";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
-import type { ValidatorDto } from "../../../domain/types/validators";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import type { Action } from "../../../types/utils";
 
 type State = {

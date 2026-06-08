@@ -17,7 +17,7 @@ import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
-type YieldApiYieldDto = Omit<Yield, "__fallback__">;
+type YieldApiYieldDto = Omit<Yield, "__fallback__" | "provider">;
 
 const setUrl = ({
   accountId,
@@ -239,7 +239,7 @@ export const setup = async (
     },
     network: token.network,
     chainId: `${avalanche.id}`,
-    providerId: rawYieldBase.providerId,
+    providerId: "trust",
     rewardRate: discoveryRewardRate,
     metadata: {
       ...(rawYieldBase.metadata ?? {}),
@@ -319,6 +319,16 @@ export const setup = async (
     http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () => {
       await delay();
       return HttpResponse.json(legacyYield);
+    }),
+    http.get(yieldApiRoute("/v1/yields"), async () => {
+      await delay();
+
+      return HttpResponse.json({
+        items: [rawYield],
+        total: 1,
+        offset: 0,
+        limit: 1,
+      });
     }),
     http.get(yieldApiRoute(`/v1/yields/${yieldId}`), async () => {
       await delay();

@@ -6,8 +6,8 @@ import {
   getActionInputToken,
   getActionValidatorAddresses,
 } from "../../domain/types/action";
-import type { ValidatorDto } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
+import type { ValidatorDto } from "../../generated/api/yield";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
@@ -57,8 +57,9 @@ const getItemsWithValidators = async ({
           validatorsData: await getYieldValidatorsByAddresses({
             apiClient,
             queryClient,
-            yieldId: item.yieldData.id,
+            yieldId: item.actionData.yieldId,
             addresses: getActionValidatorAddresses(item.actionData) ?? [],
+            suppressRichErrors: true,
           }),
         }))
       ))
@@ -85,14 +86,9 @@ export const useActivityActions = (): UseActivityActionsResult => {
               limit: PAGE_SIZE,
               offset: pageParam,
               network: network!,
-              statuses: [
-                "SUCCESS",
-                "FAILED",
-                "CANCELED",
-                "PROCESSING",
-                "STALE",
-                "WAITING_FOR_NEXT",
-              ],
+              // Pending actions are filtered out; only completed (SUCCESS) and
+              // retryable error (FAILED) actions are surfaced in the activity list.
+              statuses: ["SUCCESS", "FAILED"],
             },
           })
         )
@@ -105,6 +101,7 @@ export const useActivityActions = (): UseActivityActionsResult => {
                   queryClient,
                   isLedgerLive,
                   apiClient,
+                  suppressRichErrors: true,
                 })
                   .map((yieldData) => ({
                     actionData: action as ActionDto,

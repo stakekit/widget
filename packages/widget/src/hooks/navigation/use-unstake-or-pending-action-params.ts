@@ -4,6 +4,27 @@ import type { YieldPendingActionType } from "../../domain/types/pending-action";
 import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
 import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
 
+type PositionDetailsParams = {
+  balanceId?: string;
+  integrationId?: string;
+};
+
+export const getPositionDetailsUnstakeReviewPath = ({
+  balanceId,
+  integrationId,
+}: PositionDetailsParams) =>
+  integrationId && balanceId
+    ? `/positions/${integrationId}/${balanceId}/unstake/review`
+    : null;
+
+export const getPositionDetailsPendingActionReviewPath = ({
+  balanceId,
+  integrationId,
+}: PositionDetailsParams) =>
+  integrationId && balanceId
+    ? `/positions/${integrationId}/${balanceId}/pending-action/review`
+    : null;
+
 export const useUnstakeOrPendingActionParams = () => {
   const unstakeOrPendingActionFlowMatch = useUnstakeOrPendingActionMatch();
   const pendingActionSelectValidatorMatch =

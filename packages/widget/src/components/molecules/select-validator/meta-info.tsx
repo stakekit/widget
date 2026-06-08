@@ -4,9 +4,8 @@ import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as CopyText from "../../../components/atoms/copy-text";
-import type { RewardTypes } from "../../../domain/types/reward-rate";
 import type { TokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../domain/types/validators";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
   getRewardRateFormatted,
@@ -16,6 +15,8 @@ import { SKAnchor } from "../../atoms/anchor";
 import { Box } from "../../atoms/box";
 import { Text } from "../../atoms/typography/text";
 import { addressHover, addressParent } from "./styles.css";
+
+type ValidatorSubnet = NonNullable<ValidatorDto["subnet"]>;
 
 export const useMetaInfo = ({
   commission,
@@ -37,12 +38,12 @@ export const useMetaInfo = ({
   address?: ValidatorDto["address"];
   website?: ValidatorDto["website"];
   nominatorCount?: ValidatorDto["nominatorCount"];
-  subnetName?: ValidatorDto["subnetName"];
-  marketCap?: ValidatorDto["marketCap"];
-  tokenSymbol?: ValidatorDto["tokenSymbol"];
+  subnetName?: ValidatorSubnet["name"];
+  marketCap?: ValidatorSubnet["tvl"];
+  tokenSymbol?: ValidatorSubnet["tokenSymbol"];
   stakedBalanceToken: TokenDto | undefined;
   rewardRate: number | undefined;
-  rewardType: RewardTypes | undefined;
+  rewardType: string | undefined;
 }) => {
   const { t } = useTranslation();
 
@@ -63,10 +64,7 @@ export const useMetaInfo = ({
         rewardRate && rewardType
           ? {
               title: getRewardTypeFormatted(rewardType),
-              val: getRewardRateFormatted({
-                rewardRate: rewardRate,
-                rewardType: rewardType,
-              }),
+              val: getRewardRateFormatted({ rewardRate: rewardRate }),
             }
           : null,
       stakedBalance:

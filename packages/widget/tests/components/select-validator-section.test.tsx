@@ -108,7 +108,7 @@ describe("SelectValidatorSection", () => {
 
     const app = await renderSection();
 
-    await expect.element(app.getByText("Earn with")).toBeInTheDocument();
+    await expect.element(app.getByText("Select validator")).toBeInTheDocument();
 
     const trigger = app.container.querySelector("button");
     expect(trigger).not.toBeNull();
@@ -132,7 +132,7 @@ describe("SelectValidatorSection", () => {
 
     const app = await renderSection();
 
-    await expect.element(app.getByText("Earn with")).toBeInTheDocument();
+    await expect.element(app.getByText("Select validator")).toBeInTheDocument();
 
     const trigger = app.container.querySelector("button");
     expect(trigger).not.toBeNull();

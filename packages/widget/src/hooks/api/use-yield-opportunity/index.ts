@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useApiClient } from "../../../providers/api/api-client-provider";
+import { useSKQueryClient } from "../../../providers/query-client";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { queryFn } from "./get-yield-opportunity";
 
@@ -7,6 +8,7 @@ type Params = {
   yieldId: string;
   isLedgerLive: boolean;
   apiClient: ReturnType<typeof useApiClient>;
+  queryClient: ReturnType<typeof useSKQueryClient>;
   signal?: AbortSignal;
 };
 
@@ -20,6 +22,7 @@ const getKey = (params: Params) => [
 export const useYieldOpportunity = (integrationId: string | undefined) => {
   const { isLedgerLive } = useSKWallet();
   const apiClient = useApiClient();
+  const queryClient = useSKQueryClient();
 
   const yieldId = integrationId ?? "";
 
@@ -28,6 +31,7 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
       yieldId,
       isLedgerLive,
       apiClient,
+      queryClient,
     }),
     enabled: !!integrationId,
     staleTime,
@@ -37,6 +41,7 @@ export const useYieldOpportunity = (integrationId: string | undefined) => {
         isLedgerLive,
         signal,
         apiClient,
+        queryClient,
       }),
   });
 };

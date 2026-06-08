@@ -1,10 +1,14 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
+import {
+  portoPalette,
+  utilaPalette,
+} from "../../../styles/theme/variant-overrides/palettes";
 
 export const container = style([
   atoms({
-    gap: "6",
+    gap: "4",
   }),
   {
     display: "flex",
@@ -18,8 +22,8 @@ export const changeButton = recipe({
   variants: {
     variant: {
       default: {},
-      utila: atoms({ color: "__internal__utila__primary__blue__" }),
-      porto: atoms({ color: "__internal__porto__primary__purple__" }),
+      utila: { color: utilaPalette.primaryBlue },
+      porto: { color: portoPalette.primaryPurple },
       finery: {},
     },
   },
@@ -34,22 +38,6 @@ export const selectTokenTitleContainer = recipe({
       default: {},
       utila: atoms({ marginBottom: "4" }),
       porto: atoms({ marginBottom: "4" }),
-    },
-  },
-});
-
-export const selectValidatorSectionContainer = recipe({
-  variants: {
-    variant: {
-      default: {},
-      utila: atoms({
-        marginTop: "6",
-        marginBottom: "4",
-      }),
-      porto: atoms({
-        marginTop: "6",
-        marginBottom: "4",
-      }),
     },
   },
 });

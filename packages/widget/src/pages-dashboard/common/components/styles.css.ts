@@ -1,5 +1,6 @@
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
+import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const wrapper = recipe({
   base: [
@@ -20,7 +21,7 @@ export const wrapper = recipe({
         borderRadius: "30px",
       },
       utila: {
-        borderRadius: "8px",
+        borderRadius: "14px",
       },
       finery: {
         borderRadius: "30px",
@@ -32,17 +33,25 @@ export const wrapper = recipe({
   },
 });
 
+/**
+ * Horizontal inset applied by the dashboard outlet wrapper. Scroll containers
+ * that want their scrollbar to sit in the edge zone (instead of crowding
+ * content) bleed past this value and re-apply it as inner padding, so this is
+ * the single source of truth both sides must reference.
+ */
+export const OUTLET_PADDING = "18px";
+
 export const outletWrapper = recipe({
   variants: {
     variant: {
       default: {
-        padding: "24px",
+        padding: OUTLET_PADDING,
       },
       utila: {
-        padding: "24px",
+        padding: OUTLET_PADDING,
       },
       porto: {
-        padding: "24px",
+        padding: OUTLET_PADDING,
       },
     },
   },
@@ -65,6 +74,7 @@ export const tabPageDivider = recipe({
   base: {
     alignSelf: "stretch",
     width: "1px",
+    marginTop: "-18px",
   },
   variants: {
     variant: {
@@ -74,9 +84,9 @@ export const tabPageDivider = recipe({
         }),
       ],
       utila: [
-        atoms({
-          background: "__internal__utila__tab__page__divider__",
-        }),
+        {
+          background: utilaPalette.tabPageDivider,
+        },
       ],
     },
   },

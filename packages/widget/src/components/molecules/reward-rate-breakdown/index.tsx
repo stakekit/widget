@@ -36,7 +36,7 @@ export const RewardRateBreakdown = ({
     showUpToCampaign,
   });
 
-  if (!items.length) {
+  if (items.length < 2) {
     return null;
   }
 
@@ -55,7 +55,6 @@ export const RewardRateBreakdown = ({
       {items.map((item) => {
         const value = getRewardRateFormatted({
           rewardRate: item.rate,
-          rewardType: item.rewardType,
         });
 
         return (

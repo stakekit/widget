@@ -65,6 +65,7 @@ describe("API client", () => {
     expect("TokenControllerGetTokens" in client.legacy).toBe(true);
     expect("AuthControllerMe" in client.legacy).toBe(false);
     expect("YieldsControllerGetAggregateBalances" in client.yield).toBe(true);
+    expect("ProvidersControllerGetProvider" in client.yield).toBe(true);
     expect("ProvidersControllerGetProviders" in client.yield).toBe(false);
   });
 
@@ -94,6 +95,43 @@ describe("API client", () => {
       await expect
         .poll(() => richError.result.current.error?.message)
         .toBe("Rich failure");
+    } finally {
+      richError.unmount();
+    }
+  });
+
+  it("can suppress rich errors for optional API requests", async ({
+    worker,
+  }) => {
+    const richError = await renderHook(() => useRichErrors());
+    richError.result.current.resetError();
+    const apiUrl = normalizeUrl(config.env.apiUrl);
+    worker.use(
+      http.get(`${apiUrl}/v1/tokens`, () =>
+        HttpResponse.json(
+          {
+            code: 400,
+            details: { code: "TEST" },
+            message: "Optional failure",
+          },
+          { status: 400 }
+        )
+      )
+    );
+    const client = createTestClient({ baseUrl: apiUrl });
+
+    try {
+      await expect(
+        client
+          .withOptions({ suppressRichErrors: true })
+          .legacy.TokenControllerGetTokens(undefined)
+      ).rejects.toMatchObject({
+        _tag: "TokenControllerGetTokens400",
+        response: { status: 400 },
+      });
+      await Promise.resolve();
+
+      expect(richError.result.current.error).toBeNull();
     } finally {
       richError.unmount();
     }
@@ -202,7 +240,7 @@ describe("API client", () => {
 
     await expect(
       client
-        .withRunOptions({ signal: controller.signal })
+        .withOptions({ signal: controller.signal })
         .legacy.TokenControllerGetTokens(undefined)
     ).rejects.toBeTruthy();
     expect(attempts).toBeLessThanOrEqual(1);

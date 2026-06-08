@@ -1,6 +1,5 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
-import { getYieldProviderDetails } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
@@ -49,7 +48,7 @@ export const PendingReviewPage = () => {
       metadata={integrationData.map((yieldDto) => ({
         logoURI: yieldDto.metadata.logoURI,
         name: yieldDto.metadata.name,
-        provider: getYieldProviderDetails(yieldDto) ?? undefined,
+        provider: yieldDto.provider,
       }))}
       token={token}
       isGasCheckError={isGasCheckWarning}

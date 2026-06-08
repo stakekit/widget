@@ -1,8 +1,6 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
-import { InfoIcon } from "../../../components/atoms/icons/info";
-import { ToolTip } from "../../../components/atoms/tooltip";
 import { Text } from "../../../components/atoms/typography/text";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
@@ -13,12 +11,16 @@ import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { PositionsListItem } from "./components/positions-list-item";
-import { container, headerContainer, positionsTitle } from "./styles.css";
+import { PositionsSectionHeader } from "./components/positions-section-header";
+import { useGroupedPositions } from "./hooks/use-grouped-positions";
+import { container, positionsTitle } from "./styles.css";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, listData, showPositions } = usePositions();
+  const { positionsData, showPositions } = usePositions();
+
+  const listData = useGroupedPositions(positionsData.data);
 
   const { isConnected, isConnecting } = useSKWallet();
 
@@ -67,35 +69,45 @@ export const PositionsPage = () => {
 
       {showPositions && (
         <>
-          <Box my="1" display="flex" alignItems="center" gap="1">
+          <Box
+            my="1"
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            gap="1"
+          >
             <Text
               className={combineRecipeWithVariant({
                 rec: positionsTitle,
                 variant,
               })}
             >
-              Positions
+              {t("dashboard.details.my_positions")}
             </Text>
 
-            <ToolTip
-              maxWidth={300}
-              label={t("dashboard.details.positions_tooltip")}
-            >
-              <InfoIcon />
-            </ToolTip>
+            {!!positionsData.data.length && (
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t("dashboard.details.positions_active", {
+                  count: positionsData.data.length,
+                })}
+              </Text>
+            )}
           </Box>
 
           <Box flex={1} display="flex" flexDirection="column">
-            <THead />
-
             <VirtualList
               estimateSize={() => 60}
               data={listData}
-              itemContent={(_, item) =>
-                item === "header" ? (
+              itemContent={(_, row) =>
+                row.kind === "chain-modal" ? (
                   <ZerionChainModal />
+                ) : row.kind === "section" ? (
+                  <PositionsSectionHeader
+                    category={row.category}
+                    count={row.count}
+                  />
                 ) : (
-                  <PositionsListItem item={item} />
+                  <PositionsListItem item={row.item} />
                 )
               }
             />
@@ -111,22 +123,3 @@ export const PositionsPage = () => {
     </Box>
   );
 };
-
-function THead() {
-  const { t } = useTranslation();
-
-  const { variant } = useSettings();
-
-  return (
-    <Box
-      className={combineRecipeWithVariant({
-        rec: headerContainer,
-        variant,
-      })}
-    >
-      <Text flex={5}>{t("dashboard.details.positions_yield")}</Text>
-      <Text flex={3}>{t("dashboard.details.positions_reward_rate")}</Text>
-      <Text flex={2}>{t("dashboard.details.positions_amount")}</Text>
-    </Box>
-  );
-}
