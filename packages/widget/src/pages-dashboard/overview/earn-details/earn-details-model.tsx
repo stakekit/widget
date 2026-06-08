@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import { Box } from "../../../components/atoms/box";
 import {
@@ -38,7 +39,6 @@ import {
   formatRewardRate,
   formatRewardRateLabel,
   formatRewardTokenLabel,
-  type TranslationFn,
 } from "./earn-details-formatters";
 
 export type EarnDetailsMetricCard = {
@@ -93,31 +93,31 @@ type EarnDetailFact = {
 const kpiPriorities = {
   stake: [
     "reward-rate",
-    "risk",
     "min-stake",
     "cooldown",
     "warmup",
     "lockup",
     "withdrawal",
+    "risk",
   ],
   defi: [
     "reward-rate",
     "tvl",
-    "risk",
     "fees",
     "withdrawal",
     "status",
     "average-position",
     "users",
+    "risk",
   ],
   rwa: [
     "reward-rate",
-    "risk",
     "status",
     "tvl",
     "average-position",
     "users",
     "lockup",
+    "risk",
   ],
 } as const satisfies Record<
   Exclude<DashboardYieldCategory, null>,
@@ -132,7 +132,7 @@ export const getEarnDetailsModel = ({
   yieldDto,
 }: {
   selectedValidators?: SelectedValidators | null;
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }) => {
   const provider = yieldDto.provider;
@@ -211,7 +211,7 @@ const getEarnDetailFacts = ({
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
   provider: Yield["provider"];
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }) =>
   [
@@ -240,7 +240,7 @@ const getDetailRows = ({
 }: {
   facts: EarnDetailFact[];
   promotedFactIds: Set<EarnDetailFactId>;
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }): EarnDetailRow[] => [
   {
@@ -273,7 +273,7 @@ const getRewardRateFact = ({
   yieldDto,
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }): EarnDetailFact | null => {
   const value = formatRewardRate(effectiveRewardRate, yieldDto);
@@ -290,10 +290,7 @@ const getRewardRateFact = ({
   };
 };
 
-const getRiskFact = (
-  yieldDto: Yield,
-  t: TranslationFn
-): EarnDetailFact | null => {
+const getRiskFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   const risk = getYieldRiskDisplay(yieldDto);
 
   if (!risk) return null;
@@ -316,7 +313,7 @@ const getRiskFact = (
 
 const getMinStakeFact = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailFact | null => {
   const value = formatMinStake(yieldDto, t);
 
@@ -332,7 +329,7 @@ const getMinStakeFact = (
   };
 };
 
-const getCooldownFact = (yieldDto: Yield, t: TranslationFn): EarnDetailFact => {
+const getCooldownFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => {
   const days = getYieldCooldownPeriod(yieldDto)?.days ?? 0;
 
   return {
@@ -347,7 +344,7 @@ const getCooldownFact = (yieldDto: Yield, t: TranslationFn): EarnDetailFact => {
 
 const getWarmupFact = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailFact | null => {
   const value = formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);
 
@@ -365,7 +362,7 @@ const getWarmupFact = (
 
 const getLockupFact = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailFact | null => {
   const value = formatOptionalDays(getYieldLockupPeriod(yieldDto)?.days, t);
 
@@ -381,10 +378,7 @@ const getLockupFact = (
   };
 };
 
-const getWithdrawalFact = (
-  yieldDto: Yield,
-  t: TranslationFn
-): EarnDetailFact => ({
+const getWithdrawalFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
   detailEligible: true,
   id: "withdrawal",
   kpiEligible: true,
@@ -395,10 +389,7 @@ const getWithdrawalFact = (
     : t("dashboard.earn_details.unavailable"),
 });
 
-const getTvlFact = (
-  yieldDto: Yield,
-  t: TranslationFn
-): EarnDetailFact | null => {
+const getTvlFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   const value = formatMeaningfulCompactUsd(getYieldTvlUsd(yieldDto));
 
   if (!value) return null;
@@ -413,10 +404,7 @@ const getTvlFact = (
   };
 };
 
-const getFeesFact = (
-  yieldDto: Yield,
-  t: TranslationFn
-): EarnDetailFact | null => {
+const getFeesFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   const fee = getYieldFeePercent(yieldDto);
 
   if (fee === null) return null;
@@ -437,7 +425,7 @@ const getStatusFact = ({
   yieldDto,
 }: {
   provider: Yield["provider"];
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }): EarnDetailFact => ({
   detailEligible: true,
@@ -451,7 +439,7 @@ const getStatusFact = ({
 
 const getAveragePositionFact = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailFact | null => {
   const value = formatMeaningfulCompactUsd(
     yieldDto.statistics?.averagePositionSizeUsd
@@ -469,10 +457,7 @@ const getAveragePositionFact = (
   };
 };
 
-const getUsersFact = (
-  yieldDto: Yield,
-  t: TranslationFn
-): EarnDetailFact | null => {
+const getUsersFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   const value = formatMeaningfulCompactNumber(yieldDto.statistics?.uniqueUsers);
 
   if (!value) return null;
@@ -487,7 +472,7 @@ const getUsersFact = (
   };
 };
 
-const getTypeFact = (yieldDto: Yield, t: TranslationFn): EarnDetailFact => ({
+const getTypeFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
   detailEligible: true,
   id: "type",
   kpiEligible: false,
@@ -498,7 +483,7 @@ const getTypeFact = (yieldDto: Yield, t: TranslationFn): EarnDetailFact => ({
 
 const getRewardScheduleFact = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailFact => ({
   detailEligible: true,
   id: "reward-schedule",
@@ -512,7 +497,7 @@ const getRewardClaimingFact = ({
   t,
   yieldDto,
 }: {
-  t: TranslationFn;
+  t: TFunction;
   yieldDto: Yield;
 }): EarnDetailFact => ({
   detailEligible: true,
@@ -544,7 +529,7 @@ const getSelectedProviderName = ({
 
 const getHeaderBadges = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailsHeaderBadge[] => {
   const yieldType = getExtendedYieldType(yieldDto);
   const badges: EarnDetailsHeaderBadge[] = [];
@@ -592,7 +577,7 @@ const getHeaderBadges = (
 
 const getAddressRows = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): EarnDetailAddressRow[] =>
   [
     yieldDto.outputToken?.address

@@ -28,6 +28,7 @@ import type { TronResourceType } from "../../../../domain/types/tron";
 import {
   type DashboardYieldCategory,
   type ExtendedYieldType,
+  getAvailableDashboardYieldCategories,
   getDashboardYieldCategory,
   getExtendedYieldType,
   getYieldRewardTokens,
@@ -261,6 +262,14 @@ export const EarnPageContextProvider = ({
   );
 
   const dashboardYields = useStreamMultiYields(dashboardYieldIds);
+
+  const availableDashboardYieldCategories = useMemo(
+    () =>
+      dashboardYields.length > 0
+        ? getAvailableDashboardYieldCategories(dashboardYields)
+        : [],
+    [dashboardYields]
+  );
 
   const selectedDashboardYieldCategory = selectedStake
     .chainNullable(getDashboardYieldCategory)
@@ -780,6 +789,7 @@ export const EarnPageContextProvider = ({
     selectedStakeData,
     selectedStake,
     selectedDashboardYieldCategory,
+    availableDashboardYieldCategories,
     onDashboardYieldCategorySelect,
     onYieldSelect,
     onTokenBalanceSelect,

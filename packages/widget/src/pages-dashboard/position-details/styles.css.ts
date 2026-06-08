@@ -1,27 +1,5 @@
 import { style } from "@vanilla-extract/css";
-import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../styles/theme/atoms.css";
-
-export const headerContainer = recipe({
-  base: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
-    alignItems: "start",
-  },
-  variants: {
-    page: {
-      default: atoms({
-        marginBottom: "5",
-      }),
-      steps: atoms({
-        marginBottom: "5",
-      }),
-    },
-  },
-  defaultVariants: {
-    page: "default",
-  },
-});
 
 export const posistionDetailsInfoContainer = style([
   atoms({
@@ -36,4 +14,22 @@ export const posistionDetailsInfoContainer = style([
 
 export const positionDetailsActionsContainer = style({
   maxWidth: "380px",
+});
+
+export const breadcrumb = style([
+  atoms({
+    alignItems: "center",
+    display: "flex",
+    gap: "2",
+  }),
+  {
+    minWidth: 0,
+  },
+]);
+
+export const breadcrumbName = style({
+  minWidth: 0,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 });

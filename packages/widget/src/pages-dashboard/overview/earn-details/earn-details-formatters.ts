@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import type { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/types/reward-rate";
 import {
   getDashboardYieldCategory,
@@ -14,8 +14,6 @@ import {
   getRewardTypeFormatted,
 } from "../../../utils/formatters";
 
-export type TranslationFn = ReturnType<typeof useTranslation>["t"];
-
 export const formatNetworkName = (network: string) =>
   network
     .split("-")
@@ -25,7 +23,10 @@ export const formatNetworkName = (network: string) =>
 export const formatDisplayTokenSymbol = (yieldDto: Yield) =>
   yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
 
-export const formatRewardRateLabel = (yieldDto: Yield, t: TranslationFn) => {
+export const formatRewardRateLabel = (
+  yieldDto: Yield,
+  t: TFunction
+): string => {
   const rewardType =
     getRewardTypeFormatted(yieldDto.rewardRate.rateType.toLowerCase()) ||
     t("dashboard.earn_details.apy");
@@ -54,7 +55,7 @@ export const formatRewardRate = (
 
 export const formatMinStake = (
   yieldDto: Yield,
-  t: TranslationFn
+  t: TFunction
 ): { kpiPrimaryEligible: boolean; value: string } | null => {
   const minimum =
     yieldDto.mechanics.entryLimits?.minimum ??
@@ -69,7 +70,7 @@ export const formatMinStake = (
   if (amount.isZero()) {
     return {
       kpiPrimaryEligible: false,
-      value: t("dashboard.earn_details.no_minimum"),
+      value: t("dashboard.earn_details.no_minimum") as string,
     };
   }
 
@@ -81,12 +82,16 @@ export const formatMinStake = (
   };
 };
 
-export const formatRequirementStatus = (yieldDto: Yield, t: TranslationFn) =>
-  !yieldDto.status.enter
+export const formatRequirementStatus = (
+  yieldDto: Yield,
+  t: TFunction
+): string => {
+  return !yieldDto.status.enter
     ? t("dashboard.earn_details.unavailable")
     : yieldDto.mechanics.requirements?.kycRequired
       ? t("dashboard.earn_details.kyc_required")
       : t("dashboard.earn_details.active");
+};
 
 export const formatCommission = (
   commission: string | number | null | undefined
@@ -136,23 +141,27 @@ export const formatRewardTokenLabel = (yieldDto: Yield) => {
     : symbol;
 };
 
-export const formatCooldownDays = (days: number, t: TranslationFn) =>
-  days > 0
+export const formatCooldownDays = (days: number, t: TFunction): string => {
+  return days > 0
     ? t("dashboard.earn_details.cooldown_days", { count: days })
     : t("dashboard.earn_details.instant");
+};
 
-export const formatRewardClaiming = (yieldDto: Yield, t: TranslationFn) =>
-  yieldDto.mechanics.rewardClaiming === "auto"
+export const formatRewardClaiming = (yieldDto: Yield, t: TFunction): string => {
+  return yieldDto.mechanics.rewardClaiming === "auto"
     ? t("dashboard.earn_details.auto_compounding")
     : t("dashboard.earn_details.manual");
+};
 
 export const formatOptionalDays = (
   days: number | undefined,
-  t: TranslationFn
+  t: TFunction
 ): string | null => {
   if (!days || days <= 0) return null;
 
-  return t("dashboard.earn_details.cooldown_days", { count: days });
+  return t("dashboard.earn_details.cooldown_days", {
+    count: days,
+  });
 };
 
 export const formatMeaningfulCompactUsd = (

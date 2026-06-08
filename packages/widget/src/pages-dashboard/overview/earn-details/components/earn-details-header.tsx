@@ -23,7 +23,7 @@ export const EarnDetailsHeader = ({
   providerName: string;
   yieldDto: Yield;
 }) => (
-  <Box display="flex" alignItems="center" gap="3">
+  <Box display="flex" alignItems="center" gap="1">
     <TokenIcon
       metadata={{
         logoURI: yieldDto.metadata.logoURI,

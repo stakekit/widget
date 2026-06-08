@@ -718,6 +718,20 @@
       "auto_compounding": "Auto-compounding",
       "manual": "Manuel"
     },
+    "position_details": {
+      "action_available": "Action disponible",
+      "action_required": "Action requise",
+      "active": "Actif",
+      "balance": "Solde",
+      "breadcrumb_root": "Positions",
+      "breakdown": "Repartition du solde",
+      "details": "Details du staking",
+      "empty": "Details de position indisponibles",
+      "rewards": "Recompenses",
+      "rewards_total": "Total gagne",
+      "status": "Statut",
+      "withdrawal_unavailable": "Retrait indisponible"
+    },
     "position_details_info": {
       "balances": "Soldes"
     },

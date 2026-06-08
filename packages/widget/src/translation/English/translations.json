@@ -296,6 +296,20 @@
       "auto_compounding": "Auto-compounding",
       "manual": "Manual"
     },
+    "position_details": {
+      "action_available": "Action available",
+      "action_required": "Action required",
+      "active": "Active",
+      "balance": "Balance",
+      "breadcrumb_root": "Positions",
+      "breakdown": "Balance breakdown",
+      "details": "Staking details",
+      "empty": "Position details unavailable",
+      "rewards": "Rewards",
+      "rewards_total": "Total earned",
+      "status": "Status",
+      "withdrawal_unavailable": "Withdrawal unavailable"
+    },
     "position_details_info": {
       "balances": "Balances"
     },

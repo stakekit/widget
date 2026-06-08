@@ -91,6 +91,23 @@ export const getDashboardYieldCategory = (
   return null;
 };
 
+export const getAvailableDashboardYieldCategories = (
+  yields: Iterable<Yield>
+): DashboardYieldCategory[] => {
+  const categories = new Set<DashboardYieldCategory>();
+
+  for (const yieldDto of yields) {
+    if (!isNonZeroRewardRateYield(yieldDto)) continue;
+
+    const category = getDashboardYieldCategory(yieldDto);
+    if (category) categories.add(category);
+  }
+
+  return dashboardYieldCategories.filter((category) =>
+    categories.has(category)
+  );
+};
+
 export const filterValidators = ({
   validatorsConfig,
   validators,

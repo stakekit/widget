@@ -3,10 +3,7 @@ import { startsWith } from "effect/String";
 import { useNavigate } from "react-router";
 import { Box } from "../../../../components/atoms/box";
 import { Divider } from "../../../../components/atoms/divider";
-import {
-  type DashboardYieldCategory,
-  dashboardYieldCategories,
-} from "../../../../domain/types/yields";
+import type { DashboardYieldCategory } from "../../../../domain/types/yields";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../../../pages/details/earn-page/state/earn-page-context";
 import { useSKLocation } from "../../../../providers/location";
@@ -30,8 +27,11 @@ const TABS_MAP = {
 export const Tabs = () => {
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
-  const { onDashboardYieldCategorySelect, selectedDashboardYieldCategory } =
-    useEarnPageContext();
+  const {
+    availableDashboardYieldCategories,
+    onDashboardYieldCategorySelect,
+    selectedDashboardYieldCategory,
+  } = useEarnPageContext();
 
   const { current } = useSKLocation();
 
@@ -67,7 +67,7 @@ export const Tabs = () => {
         data-rk="tabs-section"
         className={combineRecipeWithVariant({ rec: tabsContainer, variant })}
       >
-        {dashboardYieldCategories.map((category) => (
+        {availableDashboardYieldCategories.map((category) => (
           <Tab
             isSelected={
               selectedTab === "earn" &&
@@ -79,7 +79,9 @@ export const Tabs = () => {
           />
         ))}
 
-        <Box className={tabsGroupDivider} />
+        {availableDashboardYieldCategories.length > 0 ? (
+          <Box className={tabsGroupDivider} />
+        ) : null}
 
         <Tab
           isSelected={selectedTab === "manage"}

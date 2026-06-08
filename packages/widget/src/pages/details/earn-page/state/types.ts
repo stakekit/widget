@@ -82,6 +82,7 @@ export type EarnPageContextType = {
   selectedStakeData: Maybe<SelectedStakeData>;
   selectedStake: ExtraData["selectedStake"];
   selectedDashboardYieldCategory: DashboardYieldCategory | null;
+  availableDashboardYieldCategories: DashboardYieldCategory[];
   onDashboardYieldCategorySelect: (category: DashboardYieldCategory) => void;
   onYieldSelect: (yieldId: string) => void;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
