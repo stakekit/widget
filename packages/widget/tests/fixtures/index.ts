@@ -6,10 +6,10 @@ import type {
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import type { YieldBalanceDto } from "../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
-import type { YieldValidatorDto } from "../../src/domain/types/validators";
 import type { Yield } from "../../src/domain/types/yields";
 import type { TokenDto as LegacyTokenDto } from "../../src/generated/api/legacy";
 import type {
+  ValidatorDto,
   NetworkDto as YieldApiNetworkDto,
   ProviderDto as YieldApiProviderDto,
 } from "../../src/generated/api/yield";
@@ -187,6 +187,9 @@ export const yieldApiYieldFixture = (
       rewardSchedule: "day",
       rewardClaiming: "auto",
       gasFeeToken: token,
+      requirements: {
+        kycRequired: false,
+      },
       arguments: {
         enter: {
           fields: [],
@@ -203,8 +206,8 @@ export const yieldApiYieldFixture = (
 };
 
 export const yieldApiValidatorFixture = (
-  overrides?: Partial<YieldValidatorDto>
-): YieldValidatorDto => ({
+  overrides?: Partial<ValidatorDto>
+): ValidatorDto => ({
   address: faker.finance.ethereumAddress(),
   commission: 0,
   logoURI: "https://assets.stakek.it/validators/default.png",
@@ -299,8 +302,8 @@ export const legacyYieldFixture = (
 };
 
 export const yieldApiValidatorsFixture = (
-  validators?: Partial<YieldValidatorDto>[]
-): YieldValidatorDto[] =>
+  validators?: Partial<ValidatorDto>[]
+): ValidatorDto[] =>
   (validators?.length ? validators : [{}]).map((validator) =>
     yieldApiValidatorFixture(validator)
   );

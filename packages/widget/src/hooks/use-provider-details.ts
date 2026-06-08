@@ -1,11 +1,11 @@
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { ValidatorDto } from "../domain/types/validators";
 import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
   type Yield,
 } from "../domain/types/yields";
+import type { ValidatorDto } from "../generated/api/yield";
 import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useMultiYields } from "./api/use-multi-yields";

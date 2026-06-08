@@ -7,8 +7,8 @@ import { PlusIcon } from "../../../../../components/atoms/icons/plus";
 import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
-import type { ValidatorDto } from "../../../../../domain/types/validators";
 import type { Yield } from "../../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../../generated/api/yield";
 import { APToPercentage } from "../../../../../utils";
 import { formatCompactNumber } from "../../../../../utils/formatters";
 import {

@@ -1,5 +1,8 @@
-import type { RewardDto, YieldDto } from "../../generated/api/yield";
-import type { ValidatorDto } from "./validators";
+import type {
+  RewardDto,
+  ValidatorDto,
+  YieldDto,
+} from "../../generated/api/yield";
 
 type YieldRewardDto = RewardDto;
 export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;

@@ -33,3 +33,7 @@ export const posistionDetailsInfoContainer = style([
     maxWidth: "600px",
   },
 ]);
+
+export const positionDetailsActionsContainer = style({
+  maxWidth: "380px",
+});

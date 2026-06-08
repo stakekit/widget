@@ -7,13 +7,13 @@ import type {
   YieldType as ApiYieldType,
   ArgumentFieldDto,
   ProviderDto,
+  ValidatorDto,
   YieldDto as YieldApiYieldDto,
   YieldRiskEntryDto,
 } from "../../generated/api/yield";
 import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
 import { equalTokens, tokenString } from "./tokens";
-import type { ValidatorDto } from "./validators";
 
 export type Yield = YieldApiYieldDto & {
   __fallback__: OldYieldDto;

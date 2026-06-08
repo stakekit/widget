@@ -97,6 +97,14 @@ export const getYieldApiMock = () => [
     );
   }),
 
+  http.get(yieldApiRoute("/v1/yields/:yieldId/kyc/status"), async () => {
+    await delay();
+
+    return HttpResponse.json({
+      kycStatus: "not_required",
+    });
+  }),
+
   http.get(yieldApiRoute("/v1/providers/:providerId"), async ({ params }) => {
     await delay();
     const providerId = String(params.providerId);

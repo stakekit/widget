@@ -1,8 +1,8 @@
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -22,9 +22,12 @@ import { Text } from "../../atoms/typography/text";
 import { GroupedVirtualList } from "../../atoms/virtual-list";
 import { useMetaInfo } from "./meta-info";
 import {
+  groupLabel,
   inactiveContainer,
   modalItemNameContainer,
   noWrap,
+  rewardRateLabel,
+  rewardRateText,
   validatorVirtuosoContainer,
 } from "./styles.css";
 
@@ -66,25 +69,13 @@ export const SelectValidatorList = ({
         }
 
         return (
-          <Box
-            py="4"
-            px="4"
-            background="modalBodyBackground"
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Text variant={{ weight: "medium" }}>
+          <Box py="3" px="4" background="modalBodyBackground">
+            <Text
+              className={groupLabel}
+              variant={{ weight: "bold", type: "muted", size: "small" }}
+            >
               {groupedItems[index].label}
             </Text>
-
-            <Box marginRight="4">
-              <Text variant={{ weight: "normal", type: "muted" }}>
-                {getRewardTypeFormatted(
-                  selectedStake.rewardRate?.rateType?.toLowerCase()
-                )}
-              </Text>
-            </Box>
           </Box>
         );
       }}
@@ -118,9 +109,15 @@ export const SelectValidatorList = ({
           !multiSelect && closeModal();
         };
 
+        const rateTypeLabel = getRewardTypeFormatted(item.rewardRate?.rateType);
+
         return (
           <SelectModalItemContainer>
-            <SelectModalItem onItemClick={_onItemClick} testId={item.address}>
+            <SelectModalItem
+              onItemClick={_onItemClick}
+              testId={item.address}
+              selected={!multiSelect && itemSelected}
+            >
               <Box flex={1} display="flex" flexDirection="column" gap="3">
                 <Box display="flex" justifyContent="center" alignItems="center">
                   {multiSelect && (
@@ -193,12 +190,28 @@ export const SelectValidatorList = ({
                         )}
                       </Box>
 
-                      <Box>
-                        <Text variant={{ size: "large" }}>
+                      <Box textAlign="end" flexShrink={0} marginLeft="2">
+                        <Text
+                          className={rewardRateText}
+                          variant={{ weight: "bold" }}
+                        >
                           {getRewardRateFormatted({
                             rewardRate: item.rewardRate?.total,
                           })}
                         </Text>
+
+                        {rateTypeLabel ? (
+                          <Text
+                            className={rewardRateLabel}
+                            variant={{
+                              type: "muted",
+                              weight: "normal",
+                              size: "small",
+                            }}
+                          >
+                            {rateTypeLabel}
+                          </Text>
+                        ) : null}
                       </Box>
                     </Box>
                   </Box>
@@ -210,9 +223,9 @@ export const SelectValidatorList = ({
                   stakedBalance={item.tvl}
                   votingPower={item.votingPower}
                   nominatorCount={item.nominatorCount}
-                  subnetName={item.subnetName}
-                  marketCap={item.marketCap}
-                  tokenSymbol={item.tokenSymbol}
+                  subnetName={item.subnet?.name}
+                  marketCap={item.subnet?.tvl}
+                  tokenSymbol={item.subnet?.tokenSymbol}
                   rewardRate={undefined}
                   rewardType={undefined}
                   stakedBalanceToken={selectedStake.token}

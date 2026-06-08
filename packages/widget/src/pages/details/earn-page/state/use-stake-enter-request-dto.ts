@@ -2,12 +2,12 @@ import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { YieldCreateActionDto } from "../../../../domain/types/action";
 import type { AddressesDto } from "../../../../domain/types/addresses";
-import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
   getYieldActionArg,
   isYieldIntegrationAggregator,
   type Yield,
 } from "../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useEarnPageState } from "./earn-page-state-context";
 
@@ -92,7 +92,7 @@ export const useStakeEnterRequestDto = () => {
 
           return List.head(validators).map((v) => ({
             validatorAddress: v.address,
-            subnetId: subnetIdRequired ? v.subnetId : undefined,
+            subnetId: subnetIdRequired ? v.subnet?.id : undefined,
           }));
         })();
 

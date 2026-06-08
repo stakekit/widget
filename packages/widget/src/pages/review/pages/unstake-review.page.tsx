@@ -1,5 +1,6 @@
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { UnstakeSignPopup } from "../../position-details/components/unstake-sign-popup";
 import { useUnstakeActionReview } from "../hooks/use-unstake-review.hook";
@@ -19,6 +20,10 @@ export const UnstakeReviewPage = () => {
     showUnstakeSignMessagePopup,
     gasCheckLoading,
     isGasCheckWarning,
+    kycGate,
+    kycProviderName,
+    kycStatusIsChecking,
+    onKycStatusRefresh,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
@@ -59,6 +64,16 @@ export const UnstakeReviewPage = () => {
         isGasCheckError={isGasCheckWarning}
         loading={gasCheckLoading}
         commissionFee={Maybe.empty()}
+        notice={
+          kycGate.state !== "pass" || kycStatusIsChecking ? (
+            <KycGateCard
+              gate={kycGate}
+              isChecking={kycStatusIsChecking}
+              onCheckStatus={onKycStatusRefresh}
+              providerName={kycProviderName}
+            />
+          ) : null
+        }
         {...metaInfo}
       />
       <UnstakeSignPopup

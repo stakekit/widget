@@ -111,6 +111,21 @@ describe("Renders initial page", () => {
           return HttpResponse.json(etherNativeStaking);
         }
       ),
+      http.get(yieldApiRoute("/v1/yields"), async () => {
+        await delay();
+
+        const items = [
+          etherNativeStakingYieldApi,
+          avalancheAvaxNativeStakingYieldApi,
+        ];
+
+        return HttpResponse.json({
+          items,
+          total: items.length,
+          offset: 0,
+          limit: items.length,
+        });
+      }),
       http.get(
         yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`),
         async () => {

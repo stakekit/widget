@@ -9,6 +9,7 @@ import {
   SelectModal,
   SelectModalItemContainer,
 } from "../../../../../components/atoms/select-modal";
+import { selectModalGroupLabel } from "../../../../../components/atoms/select-modal/styles.css";
 import { ProviderIcon } from "../../../../../components/atoms/token-icon/provider-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { GroupedVirtualList } from "../../../../../components/atoms/virtual-list";
@@ -105,8 +106,13 @@ export const SelectOpportunity = () => {
         groupCounts={data.groupCounts}
         groupContent={(index) => {
           return (
-            <Box py="4" px="4" background="modalBodyBackground">
-              <Text variant={{ weight: "bold" }}>{data.groups[index]}</Text>
+            <Box py="3" px="4" background="modalBodyBackground">
+              <Text
+                className={selectModalGroupLabel}
+                variant={{ type: "muted", weight: "bold", size: "small" }}
+              >
+                {data.groups[index]}
+              </Text>
             </Box>
           );
         }}
@@ -116,12 +122,18 @@ export const SelectOpportunity = () => {
           return (
             <SelectModalItemContainer>
               {typeof item === "string" ? (
-                <Box py="4">
-                  <Text variant={{ weight: "bold" }}>{item}</Text>
+                <Box py="3">
+                  <Text
+                    className={selectModalGroupLabel}
+                    variant={{ type: "muted", weight: "bold", size: "small" }}
+                  >
+                    {item}
+                  </Text>
                 </Box>
               ) : (
                 <SelectOpportunityListItem
                   item={item}
+                  selected={item.id === data.ss.id}
                   onYieldSelect={(yieldDto) => onYieldSelect(yieldDto.id)}
                   testId={`select-opportunity__item_${item.id}-${index}`}
                 />

@@ -116,10 +116,6 @@ describe("Staking flow", () => {
       .toBeInTheDocument();
 
     await expect
-      .element(app.getByText("Liquid Staking").first())
-      .toBeInTheDocument();
-
-    await expect
       .element(app.getByText(stakeAmount).first())
       .toBeInTheDocument();
 

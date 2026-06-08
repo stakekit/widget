@@ -6,8 +6,10 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
+import { getKycProviderName } from "../../../domain/types/kyc";
 import { getYieldCommission } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
+import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
@@ -37,8 +39,19 @@ export const useStakeReview = () => {
     [enterRequest]
   );
 
+  const selectedStake = useMemo(
+    () => Maybe.of(enterRequest.selectedStake),
+    [enterRequest.selectedStake]
+  );
+  const selectedToken = useMemo(
+    () => Maybe.of(enterRequest.selectedToken),
+    [enterRequest.selectedToken]
+  );
+  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
+  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
+
   const actionPreviewQuery = useQuery({
-    enabled: !!enterRequest,
+    enabled: !!enterRequest && !kycGateIsBlocking,
     queryKey: ["stake-review-action-preview", enterRequest.requestDto],
     retry: false,
     queryFn: () =>
@@ -71,15 +84,6 @@ export const useStakeReview = () => {
     stakeAmount,
     stakeToken: enterRequest.selectedToken,
   });
-
-  const selectedStake = useMemo(
-    () => Maybe.of(enterRequest.selectedStake),
-    [enterRequest.selectedStake]
-  );
-  const selectedToken = useMemo(
-    () => Maybe.of(enterRequest.selectedToken),
-    [enterRequest.selectedToken]
-  );
 
   const selectedProviderYieldId = useMemo(
     () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
@@ -152,21 +156,32 @@ export const useStakeReview = () => {
     name: yieldDto.metadata.name,
     provider: yieldDto.provider,
   }));
+  const kycProviderName = selectedStake
+    .map(getKycProviderName)
+    .extractNullable();
+  const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const navigate = useNavigate();
 
   const enterMutation = useMutation({
-    mutationFn: async () =>
-      actionPreviewQuery.data ??
-      (await actionPreviewQuery.refetch()).data ??
-      Promise.reject(new Error("Stake enter error")),
+    mutationFn: async () => {
+      return (
+        actionPreviewQuery.data ??
+        (await actionPreviewQuery.refetch()).data ??
+        Promise.reject(new Error("Stake enter error"))
+      );
+    },
     onSuccess: (data) => {
       enterStore.send({ type: "setActionDto", data });
       navigate("/steps");
     },
   });
 
-  const onClick = () => enterMutation.mutate();
+  const onClick = () => {
+    if (kycGateIsBlocking) return;
+
+    enterMutation.mutate();
+  };
 
   const onClickRef = useSavedRef(onClick);
 
@@ -175,12 +190,18 @@ export const useStakeReview = () => {
   useRegisterFooterButton(
     useMemo(
       () => ({
-        disabled: false,
-        isLoading: enterMutation.isPending,
+        disabled: kycGateIsBlocking,
+        isLoading: enterMutation.isPending || yieldKycGate.isLoading,
         label: t("shared.confirm"),
         onClick: () => onClickRef.current(),
       }),
-      [onClickRef, t, enterMutation.isPending]
+      [
+        enterMutation.isPending,
+        kycGateIsBlocking,
+        onClickRef,
+        t,
+        yieldKycGate.isLoading,
+      ]
     )
   );
 
@@ -231,5 +252,12 @@ export const useStakeReview = () => {
     performanceFee,
     feeConfigLoading: actionPreviewQuery.isLoading,
     commissionFee,
+    kycGate: yieldKycGate.gate,
+    kycProviderName,
+    kycStatusIsChecking:
+      yieldKycGate.isLoading ||
+      yieldKycGate.isFetching ||
+      yieldKycGate.isRefetching,
+    onKycStatusRefresh,
   };
 };

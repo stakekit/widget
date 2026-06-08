@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Spinner } from "../../../components/atoms/spinner";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { SelectValidator } from "../../../components/molecules/select-validator";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import { getExtendedYieldType } from "../../../domain/types/yields";
@@ -60,6 +61,10 @@ export const PositionDetailsActions = () => {
     onMaxClick,
     validatorAddressesHandling,
     onValidatorsSubmit,
+    kycGate,
+    kycGateIsChecking,
+    kycProviderName,
+    onKycStatusRefresh,
   } = usePositionDetails();
 
   const { t } = useTranslation();
@@ -138,30 +143,41 @@ export const PositionDetailsActions = () => {
                 canChangeUnstakeAmount,
                 unstakeToken,
               }) => (
-                <AmountBlock
-                  unstakeMaxAmount={unstakeMaxAmount}
-                  unstakeMinAmount={unstakeMinAmount}
-                  unstakeIsGreaterOrLessIntegrationLimitError={
-                    unstakeIsGreaterOrLessIntegrationLimitError
-                  }
-                  variant="unstake"
-                  canUnstake={canUnstake}
-                  unstakeToken={unstakeToken}
-                  onAmountChange={onUnstakeAmountChange}
-                  value={unstakeAmount}
-                  canChangeAmount={canChangeUnstakeAmount}
-                  disabled={unstakeDisabled}
-                  onClick={onUnstakeClick}
-                  unstakeAmountError={unstakeAmountError}
-                  onMaxClick={onMaxClick}
-                  label={t(
-                    `position_details.unstake_label.${getExtendedYieldType(v.integrationData)}`
+                <>
+                  {(kycGate.state !== "pass" || kycGateIsChecking) && (
+                    <KycGateCard
+                      gate={kycGate}
+                      isChecking={kycGateIsChecking}
+                      onCheckStatus={onKycStatusRefresh}
+                      providerName={kycProviderName}
+                    />
                   )}
-                  formattedAmount={unstakeFormattedAmount}
-                  balance={reducedStakedOrLiquidBalance}
-                  yieldDto={v.integrationData}
-                  validators={providersDetails.orDefault([])}
-                />
+
+                  <AmountBlock
+                    unstakeMaxAmount={unstakeMaxAmount}
+                    unstakeMinAmount={unstakeMinAmount}
+                    unstakeIsGreaterOrLessIntegrationLimitError={
+                      unstakeIsGreaterOrLessIntegrationLimitError
+                    }
+                    variant="unstake"
+                    canUnstake={canUnstake}
+                    unstakeToken={unstakeToken}
+                    onAmountChange={onUnstakeAmountChange}
+                    value={unstakeAmount}
+                    canChangeAmount={canChangeUnstakeAmount}
+                    disabled={unstakeDisabled}
+                    onClick={onUnstakeClick}
+                    unstakeAmountError={unstakeAmountError}
+                    onMaxClick={onMaxClick}
+                    label={t(
+                      `position_details.unstake_label.${getExtendedYieldType(v.integrationData)}`
+                    )}
+                    formattedAmount={unstakeFormattedAmount}
+                    balance={reducedStakedOrLiquidBalance}
+                    yieldDto={v.integrationData}
+                    validators={providersDetails.orDefault([])}
+                  />
+                </>
               )
             )
             .extractNullable()}

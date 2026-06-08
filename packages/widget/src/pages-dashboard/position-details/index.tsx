@@ -12,7 +12,11 @@ import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
 import { positionDetailsActionsHasContent } from "./components/position-details-actions";
 import { PositionDetailsInfo } from "./components/position-details-info";
-import { headerContainer, posistionDetailsInfoContainer } from "./styles.css";
+import {
+  headerContainer,
+  posistionDetailsInfoContainer,
+  positionDetailsActionsContainer,
+} from "./styles.css";
 
 const PositionDetailsPageComponent = () => {
   const shouldShowActions = positionDetailsActionsHasContent(
@@ -39,6 +43,7 @@ const PositionDetailsPageComponent = () => {
         <TabPageContainer>
           {shouldShowActions && (
             <Box
+              className={positionDetailsActionsContainer}
               display="flex"
               flexDirection="column"
               flex={1}

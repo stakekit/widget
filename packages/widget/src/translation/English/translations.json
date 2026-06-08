@@ -70,6 +70,41 @@
     "yield_strategy": "Yield strategy",
     "via": "via {{providerName}}",
     "additional_info": "Additional info",
+    "kyc_gate": {
+      "check_status": "Check status",
+      "modal": {
+        "title": "Complete verification",
+        "close": "Close verification",
+        "iframe_title": "KYC verification"
+      },
+      "checking": {
+        "title": "Confirming your verification status...",
+        "body": "Almost done. We're re-checking your {{providerName}} status now. This usually takes a few seconds.",
+        "body_fallback": "Almost done. We're re-checking your verification status now. This usually takes a few seconds."
+      },
+      "start_kyc": {
+        "title": "Identity verification required",
+        "body": "{{providerName}} requires a one-time identity check before you can hold this RWA. Verification is hosted by {{providerName}}. Yield.xyz never sees your data.",
+        "body_fallback": "This RWA requires a one-time identity check before you can hold it. Verification is hosted by the provider. Yield.xyz never sees your data.",
+        "cta": "Verify your identity"
+      },
+      "pending": {
+        "title": "Your verification is under review",
+        "body": "{{providerName}} is reviewing your submission. This typically takes a few minutes but can take up to 24 hours.",
+        "body_fallback": "Your verification is under review. This typically takes a few minutes but can take up to 24 hours."
+      },
+      "rejected": {
+        "title": "Verification not approved",
+        "body": "{{providerName}} could not approve this wallet for this yield. Contact {{providerName}} support for next steps.",
+        "body_fallback": "This wallet is not approved for this yield. Contact the provider for next steps.",
+        "cta": "Open provider"
+      },
+      "unknown": {
+        "title": "Verification status unavailable",
+        "body": "We could not confirm your {{providerName}} verification status. Check again before continuing.",
+        "body_fallback": "We could not confirm your verification status. Check again before continuing."
+      }
+    },
     "rewards": {
       "receive": "You'll receive <symbols1></symbols1> via",
       "receive_output": "You'll receive",
@@ -162,6 +197,7 @@
     "extra_tezos": "You can use or send staked XTZ as normal",
     "reward_type_varialbe": "{{symbol}} staking rewards rate varies based on the trading and transaction fees the protocol earns which can't be accurately estimated",
     "opportunity_search_title": "Select a yield",
+    "opportunity_item_subtitle_no_network": "via {{provider}}",
     "validator_search_title_one": "Select validator",
     "validator_search_title_other": "Select validators",
     "provider_search_title": "Select provider",
@@ -238,11 +274,25 @@
       "network": "Network",
       "provider": "Provider",
       "reward_token": "Reward token",
+      "type": "Type",
+      "reward_schedule": "Reward schedule",
       "cooldown": "Cooldown",
       "cooldown_days_one": "{{count}} day",
       "cooldown_days_other": "{{count}} days",
+      "warmup": "Warmup",
+      "lockup": "Lockup",
+      "withdrawal": "Withdrawal",
       "reward_claiming": "Reward claiming",
+      "average_position": "Avg position",
+      "users": "Users",
+      "vault": "Vault",
+      "asset": "Asset ({{symbol}})",
       "none": "None",
+      "instant": "Instant",
+      "no_minimum": "No minimum",
+      "available": "Available",
+      "unavailable": "Unavailable",
+      "kyc_required": "KYC required",
       "auto_compounding": "Auto-compounding",
       "manual": "Manual"
     },

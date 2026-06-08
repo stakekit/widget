@@ -21,10 +21,10 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { getKycProviderName } from "../../../../domain/types/kyc";
 import { getInitSelectedValidators } from "../../../../domain/types/stake";
 import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TronResourceType } from "../../../../domain/types/tron";
-import type { ValidatorDto } from "../../../../domain/types/validators";
 import {
   type DashboardYieldCategory,
   type ExtendedYieldType,
@@ -39,10 +39,12 @@ import {
   isYieldValidatorSelectionRequired,
   type Yield,
 } from "../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamMultiYields } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
+import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
 import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
@@ -143,7 +145,7 @@ export const EarnPageContextProvider = ({
     return selectedStake
       .filter((val) => isBittensorStaking(val.id))
       .chain(() => List.head([...selectedValidators.values()]))
-      .map((validator) => validator.tokenSymbol ?? "")
+      .map((validator) => validator.subnet?.tokenSymbol ?? "")
       .orDefault(symbol);
   }, [selectedStake, symbol, selectedValidators]);
 
@@ -500,6 +502,12 @@ export const EarnPageContextProvider = ({
     dispatch({ type: "stakeAmount/change", data: val });
 
   const stakeEnterRequestDto = useStakeEnterRequestDto();
+  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
+  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
+  const kycProviderName = selectedStake
+    .map(getKycProviderName)
+    .extractNullable();
+  const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const { openConnectModal } = useConnectModal();
 
@@ -512,6 +520,7 @@ export const EarnPageContextProvider = ({
       if (stakeEnterRequestDto.isNothing()) return;
 
       if (!isConnected) return openConnectModal?.();
+      if (kycGateIsBlocking) return;
 
       const val = Maybe.fromRecord({
         stakeEnterRequestDto,
@@ -646,7 +655,8 @@ export const EarnPageContextProvider = ({
   const isError = !tokenBalancesScan.data && tokenBalancesScan.isError;
 
   const buttonDisabled =
-    isConnected && (isFetching || stakeEnterRequestDto.isNothing());
+    isConnected &&
+    (isFetching || stakeEnterRequestDto.isNothing() || kycGateIsBlocking);
 
   const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
     (v) => v.cta,
@@ -728,7 +738,8 @@ export const EarnPageContextProvider = ({
           : isConnected && !isLedgerLiveAccountPlaceholder
             ? {
                 disabled: buttonDisabled,
-                isLoading: !buttonCTAText || isFetching,
+                isLoading:
+                  !buttonCTAText || isFetching || yieldKycGate.isLoading,
                 onClick: () => onClickRef.current(),
                 label: buttonCTAText,
               }
@@ -754,6 +765,7 @@ export const EarnPageContextProvider = ({
         onClickRef,
         externalProviders,
         isFetching,
+        yieldKycGate.isLoading,
         t,
         hasNotYieldsForToken,
         registerFooterButton,
@@ -779,6 +791,14 @@ export const EarnPageContextProvider = ({
     isFetching,
     buttonDisabled,
     onClick: onClickHandler.mutate,
+    kycGate: yieldKycGate.gate,
+    kycGateIsBlocking,
+    kycGateIsChecking:
+      yieldKycGate.isLoading ||
+      yieldKycGate.isFetching ||
+      yieldKycGate.isRefetching,
+    kycProviderName,
+    onKycStatusRefresh,
     onYieldSearch,
     onValidatorSelect,
     onValidatorRemove,

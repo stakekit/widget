@@ -1,0 +1,190 @@
+import BigNumber from "bignumber.js";
+import type { useTranslation } from "react-i18next";
+import type { getEffectiveYieldRewardRateDetails } from "../../../domain/types/reward-rate";
+import {
+  getDashboardYieldCategory,
+  getYieldActionArg,
+  isNonZeroRewardRateYield,
+  type Yield,
+} from "../../../domain/types/yields";
+import { APToPercentage, formatNumber } from "../../../utils";
+import {
+  formatCompactNumber,
+  formatCompactUsd,
+  getRewardTypeFormatted,
+} from "../../../utils/formatters";
+
+export type TranslationFn = ReturnType<typeof useTranslation>["t"];
+
+export const formatNetworkName = (network: string) =>
+  network
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+
+export const formatDisplayTokenSymbol = (yieldDto: Yield) =>
+  yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
+
+export const formatRewardRateLabel = (yieldDto: Yield, t: TranslationFn) => {
+  const rewardType =
+    getRewardTypeFormatted(yieldDto.rewardRate.rateType.toLowerCase()) ||
+    t("dashboard.earn_details.apy");
+
+  return getDashboardYieldCategory(yieldDto) === "stake"
+    ? rewardType
+    : t("dashboard.earn_details.reward_rate_period", {
+        rewardType,
+      });
+};
+
+export const formatRewardRate = (
+  effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>,
+  yieldDto: Yield
+) => {
+  if (!effectiveRewardRate) return null;
+
+  const amount = BigNumber(effectiveRewardRate.total);
+
+  if (!amount.isFinite()) return null;
+
+  if (amount.isZero() && !isNonZeroRewardRateYield(yieldDto)) return null;
+
+  return `${APToPercentage(amount.toNumber())}%`;
+};
+
+export const formatMinStake = (
+  yieldDto: Yield,
+  t: TranslationFn
+): { kpiPrimaryEligible: boolean; value: string } | null => {
+  const minimum =
+    yieldDto.mechanics.entryLimits?.minimum ??
+    getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
+
+  if (minimum === null || minimum === undefined) return null;
+
+  const amount = BigNumber(minimum);
+
+  if (!amount.isFinite()) return null;
+
+  if (amount.isZero()) {
+    return {
+      kpiPrimaryEligible: false,
+      value: t("dashboard.earn_details.no_minimum"),
+    };
+  }
+
+  return {
+    kpiPrimaryEligible: true,
+    value: `${formatNumber(amount, amount.isInteger() ? 0 : 6)} ${
+      yieldDto.token.symbol
+    }`,
+  };
+};
+
+export const formatRequirementStatus = (yieldDto: Yield, t: TranslationFn) =>
+  !yieldDto.status.enter
+    ? t("dashboard.earn_details.unavailable")
+    : yieldDto.mechanics.requirements?.kycRequired
+      ? t("dashboard.earn_details.kyc_required")
+      : t("dashboard.earn_details.active");
+
+export const formatCommission = (
+  commission: string | number | null | undefined
+) => {
+  if (commission === null || commission === undefined) return null;
+
+  const amount = BigNumber(commission);
+
+  return amount.isFinite()
+    ? `Commission ${amount.multipliedBy(100).toFixed(2)}%`
+    : null;
+};
+
+export const formatProviderTvl = (
+  tvl: string | number | null | undefined,
+  tokenSymbol: string
+) => {
+  if (tvl === null || tvl === undefined) return null;
+
+  const formatted = formatCompactNumber(tvl);
+
+  return formatted === "-" ? null : `TVL ${formatted} ${tokenSymbol}`;
+};
+
+export const formatProviderStatus = (status: string | null | undefined) => {
+  if (!status) return null;
+
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
+export const formatProviderWebsite = (website: string) => {
+  try {
+    return new URL(website).hostname.replace(/^www\./, "");
+  } catch {
+    return website.replace(/^https?:\/\/(www\.)?/, "");
+  }
+};
+
+export const formatProviderWebsiteHref = (website: string) =>
+  /^https?:\/\//i.test(website) ? website : `https://${website}`;
+
+export const formatRewardTokenLabel = (yieldDto: Yield) => {
+  const symbol = yieldDto.token.symbol;
+
+  return yieldDto.mechanics.rewardClaiming === "auto"
+    ? `${symbol} (PPS-bearing)`
+    : symbol;
+};
+
+export const formatCooldownDays = (days: number, t: TranslationFn) =>
+  days > 0
+    ? t("dashboard.earn_details.cooldown_days", { count: days })
+    : t("dashboard.earn_details.instant");
+
+export const formatRewardClaiming = (yieldDto: Yield, t: TranslationFn) =>
+  yieldDto.mechanics.rewardClaiming === "auto"
+    ? t("dashboard.earn_details.auto_compounding")
+    : t("dashboard.earn_details.manual");
+
+export const formatOptionalDays = (
+  days: number | undefined,
+  t: TranslationFn
+): string | null => {
+  if (!days || days <= 0) return null;
+
+  return t("dashboard.earn_details.cooldown_days", { count: days });
+};
+
+export const formatMeaningfulCompactUsd = (
+  value: string | number | null | undefined
+) => {
+  if (!isPositiveFinite(value)) return null;
+
+  const formatted = formatCompactUsd(value);
+
+  return formatted === "-" ? null : formatted;
+};
+
+export const formatMeaningfulCompactNumber = (
+  value: string | number | null | undefined
+) => {
+  if (!isPositiveFinite(value)) return null;
+
+  const formatted = formatCompactNumber(value);
+
+  return formatted === "-" ? null : formatted;
+};
+
+const isPositiveFinite = (value: string | number | null | undefined) => {
+  if (value === null || value === undefined || value === "") return false;
+
+  const amount = BigNumber(value);
+
+  return amount.isFinite() && amount.isGreaterThan(0);
+};
+
+export const formatEnumValue = (value: string) =>
+  value
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");

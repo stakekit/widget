@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
+import { getKycProviderName } from "../../../domain/types/kyc";
 import {
   getRewardRateBreakdown,
   type YieldRewardRateDto,
@@ -13,6 +14,7 @@ import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
 } from "../../../domain/types/yields";
+import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
@@ -51,6 +53,14 @@ export const usePositionDetails = () => {
 
   const stakeExitRequestDto = useStakeExitRequestDto();
   const exitStore = useExitStakeStore();
+  const yieldKycGate = useYieldKycGate({ yieldDto: integrationData });
+  const kycGateIsBlocking = yieldKycGate.isGateBlocking;
+  const kycProviderName = integrationData
+    .map(getKycProviderName)
+    .extractNullable();
+  const onKycStatusRefresh = () => {
+    void yieldKycGate.refetch();
+  };
 
   const unstakeMaxAmount = useMemo(
     () =>
@@ -75,6 +85,7 @@ export const usePositionDetails = () => {
     mutationKey: [unstakeAmount.toString()],
     mutationFn: async () => {
       if (!unstakeAmountValid) throw new Error("Invalid amount");
+      if (kycGateIsBlocking) return null;
 
       Maybe.fromRecord({
         stakeExitRequestDto,
@@ -217,7 +228,8 @@ export const usePositionDetails = () => {
     [integrationData, positionBalancesByType, baseToken]
   );
 
-  const unstakeDisabled = yieldOpportunity.isLoading || !unstakeAvailable;
+  const unstakeDisabled =
+    yieldOpportunity.isLoading || !unstakeAvailable || kycGateIsBlocking;
 
   const isLoading =
     positionBalances.isLoading ||
@@ -241,6 +253,13 @@ export const usePositionDetails = () => {
     canChangeUnstakeAmount,
     onUnstakeClick,
     unstakeDisabled,
+    kycGate: yieldKycGate.gate,
+    kycGateIsChecking:
+      yieldKycGate.isLoading ||
+      yieldKycGate.isFetching ||
+      yieldKycGate.isRefetching,
+    kycProviderName,
+    onKycStatusRefresh,
     isLoading,
     onPendingActionClick,
     providersDetails,

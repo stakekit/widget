@@ -138,39 +138,6 @@ export const maxYieldRateLabel = style([
   },
 ]);
 
-export const selectedListItem = recipe({
-  base: [
-    atoms({
-      background: "tokenSelectHoverBackground",
-    }),
-    {
-      border: `1px solid ${vars.color.accent}`,
-      selectors: {
-        "&:hover": {
-          background: vars.color.tokenSelectHoverBackground,
-        },
-      },
-    },
-  ],
-  variants: {
-    variant: {
-      default: {},
-      utila: {
-        background: `${utilaPalette.primaryBlue}14`,
-        border: `1px solid ${utilaPalette.primaryBlue}`,
-        selectors: {
-          "&:hover": {
-            background: `${utilaPalette.primaryBlue}14`,
-          },
-        },
-      },
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
-
 export const minMaxContainer = recipe({
   base: [
     atoms({

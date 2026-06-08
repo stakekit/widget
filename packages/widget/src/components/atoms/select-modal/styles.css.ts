@@ -1,6 +1,8 @@
 import { keyframes, style } from "@vanilla-extract/css";
+import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
+import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 const slideUp = keyframes({
@@ -77,4 +79,42 @@ export const noOutline = style({ outline: "none" });
 
 export const selectModalItemContainer = style({
   padding: "2.5px 0",
+});
+
+export const selectModalGroupLabel = style({
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+});
+
+export const selectedListItem = recipe({
+  base: [
+    atoms({
+      background: "tokenSelectHoverBackground",
+    }),
+    {
+      border: `1px solid ${vars.color.accent}`,
+      selectors: {
+        "&:hover": {
+          background: vars.color.tokenSelectHoverBackground,
+        },
+      },
+    },
+  ],
+  variants: {
+    variant: {
+      default: {},
+      utila: {
+        background: `${utilaPalette.primaryBlue}14`,
+        border: `1px solid ${utilaPalette.primaryBlue}`,
+        selectors: {
+          "&:hover": {
+            background: `${utilaPalette.primaryBlue}14`,
+          },
+        },
+      },
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
 });

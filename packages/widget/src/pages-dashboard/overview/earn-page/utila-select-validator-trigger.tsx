@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Image } from "../../../components/atoms/image";
 import { Text } from "../../../components/atoms/typography/text";
-import type { ValidatorDto } from "../../../domain/types/validators";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { breakWord } from "../../../pages/details/earn-page/styles.css";
 import { useSettings } from "../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../utils/styles";

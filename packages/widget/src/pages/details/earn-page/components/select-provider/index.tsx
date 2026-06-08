@@ -87,6 +87,7 @@ export const SelectProvider = () => {
             dispatch({ type: "providerYieldId/select", data: yieldDto.id })
           }
           providerYieldIds={val.providerYieldIdOptions}
+          selectedYieldId={val.selectedProviderYield.id}
           trigger={
             <Box className={selectorSummaryCard} marginTop="3">
               <Box className={selectorSummaryContent}>

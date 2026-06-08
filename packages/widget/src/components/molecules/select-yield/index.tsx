@@ -16,6 +16,7 @@ type SelectYieldProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {
     onItemClick: (yieldDto: Yield) => void;
     providerYieldIds: Yield["id"][];
+    selectedYieldId?: Yield["id"];
   }
 >;
 
@@ -26,6 +27,7 @@ export const SelectYield = ({
   trigger,
   providerYieldIds,
   onItemClick,
+  selectedYieldId,
   children,
 }: SelectYieldProps) => {
   const { t } = useTranslation();
@@ -49,6 +51,7 @@ export const SelectYield = ({
             <SelectModalItemContainer>
               <SelectOpportunityListItem
                 item={item}
+                selected={item.id === selectedYieldId}
                 onYieldSelect={onItemClick}
               />
             </SelectModalItemContainer>

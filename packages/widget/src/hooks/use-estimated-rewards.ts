@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
-import type { ValidatorDto } from "../domain/types/validators";
 import { isBittensorStaking, type Yield } from "../domain/types/yields";
+import type { ValidatorDto } from "../generated/api/yield";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useProvidersDetails } from "./use-provider-details";
@@ -32,7 +32,7 @@ export const useEstimatedRewards = ({
     return selectedStake
       .filter((val) => isBittensorStaking(val.id))
       .chain(() => List.head([...selectedValidators.values()]))
-      .chainNullable((validator) => validator.pricePerShare)
+      .chainNullable((validator) => validator.subnet?.pricePerShare)
       .map((pps) => stakeAmount.dividedBy(pps))
       .orDefault(stakeAmount);
   }, [selectedStake, stakeAmount, selectedValidators]);

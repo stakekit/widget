@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import clsx from "clsx";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,14 +12,8 @@ import { Text } from "../../../../../components/atoms/typography/text";
 import type { TokenBalanceScanResponseDto } from "../../../../../domain/types/token-balance";
 import type { TokenMaxYieldRate } from "../../../../../hooks/api/use-token-list-yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import { useSettings } from "../../../../../providers/settings";
-import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { selectItemText } from "../../styles.css";
-import {
-  maxYieldRateLabel,
-  maxYieldRateText,
-  selectedListItem,
-} from "./styles.css";
+import { maxYieldRateLabel, maxYieldRateText } from "./styles.css";
 
 type Props = {
   item: TokenBalanceScanResponseDto;
@@ -42,7 +35,6 @@ export const SelectTokenListItem = memo(
 
     const trackEvent = useTrackEvent();
     const { t } = useTranslation();
-    const { variant } = useSettings();
 
     const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] =
       ({ closeModal }) => {
@@ -54,13 +46,7 @@ export const SelectTokenListItem = memo(
     return (
       <SelectModalItemContainer>
         <SelectModalItem
-          className={clsx(
-            isSelected &&
-              combineRecipeWithVariant({
-                rec: selectedListItem,
-                variant,
-              })
-          )}
+          selected={isSelected}
           variant={
             amountGreaterThanZero || !isConnected
               ? { type: "enabled", hover: "enabled" }
@@ -79,12 +65,14 @@ export const SelectTokenListItem = memo(
             minWidth="0"
             gap="2"
           >
-            <Box display="flex" flexDirection="column" minWidth="0">
+            <Box display="flex" flexDirection="column" minWidth="0" gap="1">
               <Text className={selectItemText} variant={{ weight: "bold" }}>
                 {item.token.symbol}
               </Text>
 
-              <Text marginTop="1" variant={{ type: "muted", weight: "normal" }}>
+              <Text
+                variant={{ type: "muted", weight: "normal", size: "small" }}
+              >
                 {t("select_token.yields_available", {
                   count: item.availableYields.length,
                   token_name: item.token.name,
@@ -93,7 +81,13 @@ export const SelectTokenListItem = memo(
             </Box>
 
             {maxYieldRate ? (
-              <Box textAlign="end" flexShrink={0}>
+              <Box
+                textAlign="end"
+                flexShrink={0}
+                gap="1"
+                display="flex"
+                flexDirection="column"
+              >
                 <Text className={maxYieldRateText}>
                   {maxYieldRate.rateFormatted}
                 </Text>

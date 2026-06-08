@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";

@@ -9,14 +9,20 @@ export const itemContainer = recipe({
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      px: { tablet: "4", mobile: "3" },
+      px: "3",
       py: "3",
       borderRadius: "xl",
       flex: 1,
-      background: "tokenSelectBackground",
     }),
   ],
   variants: {
+    appearance: {
+      card: atoms({ background: "tokenSelectBackground" }),
+      plain: [
+        atoms({ background: "transparent" }),
+        { border: "1px solid transparent", boxSizing: "border-box" },
+      ],
+    },
     hover: {
       disabled: {},
       enabled: {
@@ -32,6 +38,7 @@ export const itemContainer = recipe({
     },
   },
   defaultVariants: {
+    appearance: "card",
     hover: "enabled",
     type: "enabled",
   },

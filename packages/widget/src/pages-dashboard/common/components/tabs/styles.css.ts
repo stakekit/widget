@@ -175,17 +175,17 @@ export const tabsContainer = recipe({
   variants: {
     variant: {
       default: {
-        gap: "15px",
+        gap: "4px",
         padding: "16px 24px",
       },
       utila: {
-        gap: "15px",
+        gap: "4px",
         padding: "8px",
         paddingLeft: "24px",
         paddingRight: "24px",
       },
       porto: {
-        gap: "15px",
+        gap: "4px",
         padding: "16px 24px",
       },
     },

@@ -8,8 +8,8 @@ import { GifIcon } from "../../../components/atoms/icons/gift";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import { Text } from "../../../components/atoms/typography/text";
 import type { TokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 

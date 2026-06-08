@@ -53,9 +53,7 @@ describe("Trust incentive APY", () => {
     await expect
       .element(selectContainer.getByText("4.55%"))
       .toBeInTheDocument();
-    await expect
-      .element(selectContainer.getByText("Up to 4.55%"))
-      .toBeInTheDocument();
+    await expect.element(selectContainer.getByText("APY")).toBeInTheDocument();
 
     app.unmount();
   });

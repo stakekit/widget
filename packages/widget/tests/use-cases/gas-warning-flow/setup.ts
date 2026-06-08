@@ -213,6 +213,21 @@ export const setup = (worker: TestWorker) => {
         return HttpResponse.json(yieldWithSameGasAndStakeToken.yieldDto);
       }
     ),
+    http.get(yieldApiRoute("/v1/yields"), async () => {
+      await delay();
+
+      const items = [
+        yieldWithSameGasAndStakeToken.yieldApiDto,
+        yieldWithDifferentGasAndStakeToken.yieldApiDto,
+      ];
+
+      return HttpResponse.json({
+        items,
+        total: items.length,
+        offset: 0,
+        limit: items.length,
+      });
+    }),
     http.get(
       yieldApiRoute(`/v1/yields/${yieldWithSameGasAndStakeToken.yieldDto.id}`),
       async () => {

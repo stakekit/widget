@@ -17,16 +17,19 @@ type WidgetApiClientOptions = {
   readonly yieldsApiUrl: string;
 };
 
-type RunOptions = {
+type ApiClientOptions = {
   readonly signal?: AbortSignal;
+  readonly suppressRichErrors?: boolean;
 };
 
 const runtime = ManagedRuntime.make(FetchHttpClient.layer);
 
 const inspectResponse = ({
   response,
+  suppressRichErrors,
 }: {
   readonly response: HttpClientResponse.HttpClientResponse;
+  readonly suppressRichErrors?: boolean;
 }) =>
   Effect.gen(function* () {
     yield* Effect.promise(waitForDelayedApiRequests);
@@ -41,20 +44,25 @@ const inspectResponse = ({
       data,
       status: response.status,
     });
-    handleRichErrorResponse({
-      data,
-      url: response.request.url,
-    });
+
+    if (!suppressRichErrors) {
+      handleRichErrorResponse({
+        data,
+        url: response.request.url,
+      });
+    }
   });
 
 const configureClient = ({
   apiKey,
   baseUrl,
   client,
+  suppressRichErrors,
 }: {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly client: HttpClient.HttpClient;
+  readonly suppressRichErrors?: boolean;
 }): HttpClient.HttpClient =>
   client.pipe(
     HttpClient.mapRequest(
@@ -65,7 +73,9 @@ const configureClient = ({
       )
     ),
     HttpClient.retryTransient({ times: 3 }),
-    HttpClient.tap((response) => inspectResponse({ response }))
+    HttpClient.tap((response) =>
+      inspectResponse({ response, suppressRichErrors })
+    )
   );
 
 type BoundOperation<Operation> = Operation extends (
@@ -78,137 +88,125 @@ const bindOperation = <
   Operation extends (...args: never[]) => Effect.Effect<unknown, unknown>,
 >(
   operation: Operation,
-  runOptions?: RunOptions
+  options?: ApiClientOptions
 ): BoundOperation<Operation> =>
   ((...args: Parameters<Operation>) =>
     runtime.runPromise(
       operation(...args),
-      runOptions
+      options?.signal ? { signal: options.signal } : undefined
     )) as BoundOperation<Operation>;
 
 const bindLegacyApi = ({
   api,
-  runOptions,
+  options,
 }: {
   readonly api: LegacyApi.LegacyApi;
-  readonly runOptions?: RunOptions;
+  readonly options?: ApiClientOptions;
 }) => ({
   TokenControllerGetTokenBalances: bindOperation(
     api.TokenControllerGetTokenBalances,
-    runOptions
+    options
   ),
   TokenControllerGetTokenPrices: bindOperation(
     api.TokenControllerGetTokenPrices,
-    runOptions
+    options
   ),
   TokenControllerGetTokens: bindOperation(
     api.TokenControllerGetTokens,
-    runOptions
+    options
   ),
   TokenControllerTokenBalancesScan: bindOperation(
     api.TokenControllerTokenBalancesScan,
-    runOptions
+    options
   ),
   TransactionControllerGetTransactionVerificationMessageForNetwork:
     bindOperation(
       api.TransactionControllerGetTransactionVerificationMessageForNetwork,
-      runOptions
+      options
     ),
   YieldControllerGetSingleYieldRewardsSummary: bindOperation(
     api.YieldControllerGetSingleYieldRewardsSummary,
-    runOptions
+    options
   ),
   YieldControllerYieldOpportunity: bindOperation(
     api.YieldControllerYieldOpportunity,
-    runOptions
+    options
   ),
 });
 
 const bindYieldApi = ({
   api,
-  runOptions,
+  options,
 }: {
   readonly api: YieldApi.YieldApi;
-  readonly runOptions?: RunOptions;
+  readonly options?: ApiClientOptions;
 }) => ({
   ActionsControllerEnterYield: bindOperation(
     api.ActionsControllerEnterYield,
-    runOptions
+    options
   ),
   ActionsControllerExitYield: bindOperation(
     api.ActionsControllerExitYield,
-    runOptions
+    options
   ),
   ActionsControllerGetActions: bindOperation(
     api.ActionsControllerGetActions,
-    runOptions
+    options
   ),
   ActionsControllerManageYield: bindOperation(
     api.ActionsControllerManageYield,
-    runOptions
+    options
   ),
-  HealthControllerHealth: bindOperation(api.HealthControllerHealth, runOptions),
+  HealthControllerHealth: bindOperation(api.HealthControllerHealth, options),
+  KycControllerGetStatus: bindOperation(api.KycControllerGetStatus, options),
   NetworksControllerGetNetworks: bindOperation(
     api.NetworksControllerGetNetworks,
-    runOptions
+    options
   ),
   ProvidersControllerGetProvider: bindOperation(
     api.ProvidersControllerGetProvider,
-    runOptions
+    options
   ),
   TransactionsControllerGetTransaction: bindOperation(
     api.TransactionsControllerGetTransaction,
-    runOptions
+    options
   ),
   TransactionsControllerSubmitTransaction: bindOperation(
     api.TransactionsControllerSubmitTransaction,
-    runOptions
+    options
   ),
   TransactionsControllerSubmitTransactionHash: bindOperation(
     api.TransactionsControllerSubmitTransactionHash,
-    runOptions
+    options
   ),
   YieldsControllerGetAggregateBalances: bindOperation(
     api.YieldsControllerGetAggregateBalances,
-    runOptions
+    options
   ),
   YieldsControllerGetYields: bindOperation(
     api.YieldsControllerGetYields,
-    runOptions
+    options
   ),
   YieldsControllerGetYield: bindOperation(
     api.YieldsControllerGetYield,
-    runOptions
+    options
   ),
   YieldsControllerGetYieldRewardRateHistory: bindOperation(
     api.YieldsControllerGetYieldRewardRateHistory,
-    runOptions
+    options
   ),
   YieldsControllerGetYieldTvlHistory: bindOperation(
     api.YieldsControllerGetYieldTvlHistory,
-    runOptions
+    options
   ),
   YieldsControllerGetYieldBalances: bindOperation(
     api.YieldsControllerGetYieldBalances,
-    runOptions
+    options
   ),
   YieldsControllerGetYieldValidators: bindOperation(
     api.YieldsControllerGetYieldValidators,
-    runOptions
+    options
   ),
-});
-
-const bindApiClients = ({
-  legacyApi,
-  runOptions,
-  yieldApi,
-}: {
-  readonly legacyApi: LegacyApi.LegacyApi;
-  readonly runOptions?: RunOptions;
-  readonly yieldApi: YieldApi.YieldApi;
-}) => ({
-  legacy: bindLegacyApi({ api: legacyApi, runOptions }),
-  yield: bindYieldApi({ api: yieldApi, runOptions }),
 });
 
 export const createApiClient = ({
@@ -218,24 +216,33 @@ export const createApiClient = ({
 }: WidgetApiClientOptions) => {
   const baseClient = runtime.runSync(HttpClient.HttpClient);
 
-  const legacyHttpClient = configureClient({
-    apiKey,
-    baseUrl,
-    client: baseClient,
-  });
-  const yieldHttpClient = configureClient({
-    apiKey,
-    baseUrl: yieldsApiUrl,
-    client: baseClient,
-  });
-  const legacyApi = LegacyApi.make(legacyHttpClient);
-  const yieldApi = YieldApi.make(yieldHttpClient);
-  const boundClients = bindApiClients({ legacyApi, yieldApi });
+  const bindApiClients = (options?: ApiClientOptions) => {
+    const legacyHttpClient = configureClient({
+      apiKey,
+      baseUrl,
+      client: baseClient,
+      suppressRichErrors: options?.suppressRichErrors,
+    });
+    const yieldHttpClient = configureClient({
+      apiKey,
+      baseUrl: yieldsApiUrl,
+      client: baseClient,
+      suppressRichErrors: options?.suppressRichErrors,
+    });
+    const legacyApi = LegacyApi.make(legacyHttpClient);
+    const yieldApi = YieldApi.make(yieldHttpClient);
+
+    return {
+      legacy: bindLegacyApi({ api: legacyApi, options }),
+      yield: bindYieldApi({ api: yieldApi, options }),
+    };
+  };
+
+  const boundClients = bindApiClients();
 
   return {
     ...boundClients,
-    withRunOptions: (runOptions: RunOptions) =>
-      bindApiClients({ legacyApi, runOptions, yieldApi }),
+    withOptions: (options: ApiClientOptions) => bindApiClients(options),
   };
 };
 

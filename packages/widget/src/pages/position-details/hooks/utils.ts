@@ -10,9 +10,9 @@ import {
 } from "../../../domain/types/pending-action";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
 import type { YieldTokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { SKWallet } from "../../../domain/types/wallet";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
 

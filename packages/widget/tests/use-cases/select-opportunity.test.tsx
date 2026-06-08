@@ -240,6 +240,22 @@ describe("Select opportunity", () => {
     );
 
     const app = await renderApp();
+    const clickOpportunity = async (id: (typeof yieldIds)[number]) => {
+      const item = app
+        .getByTestId("select-modal__container")
+        .getByTestId(new RegExp(`^select-opportunity__item_${id}`));
+
+      await expect.element(item).toBeInTheDocument();
+      await expect.poll(() => item.elements()[0]).toBeTruthy();
+      await userEvent.click(item.elements()[0]);
+    };
+    const clickText = async (text: string) => {
+      const item = app.getByText(text).first();
+
+      await expect.element(item).toBeInTheDocument();
+      await expect.poll(() => item.elements()[0]).toBeTruthy();
+      (item.elements()[0] as HTMLElement).click();
+    };
 
     await app.getByTestId("select-opportunity").click();
 
@@ -261,13 +277,6 @@ describe("Select opportunity", () => {
         )
       )
       .toBeInTheDocument();
-    await expect
-      .element(
-        selectContainer
-          .getByTestId(/^select-opportunity__item_ethereum-eth-lido-staking/)
-          .getByText("A-")
-      )
-      .toBeInTheDocument();
 
     await expect
       .element(
@@ -276,13 +285,6 @@ describe("Select opportunity", () => {
         )
       )
       .toBeInTheDocument();
-    await expect
-      .element(
-        selectContainer.getByTestId(
-          /^risk-rating__select-opportunity__item_ethereum-eth-reth-staking/
-        )
-      )
-      .not.toBeInTheDocument();
 
     await expect
       .element(
@@ -292,9 +294,7 @@ describe("Select opportunity", () => {
       )
       .not.toBeInTheDocument();
 
-    await selectContainer
-      .getByTestId(/^select-opportunity__item_ethereum-eth-reth-staking/)
-      .click();
+    await clickOpportunity("ethereum-eth-reth-staking");
 
     await expect
       .element(app.getByText("You'll receive").first())
@@ -310,7 +310,7 @@ describe("Select opportunity", () => {
 
     await expect.element(app.getByText("Select a Chain")).toBeInTheDocument();
 
-    await app.getByText("EVM").click();
+    await clickText("EVM");
 
     await expect.element(app.getByText("Connect a Wallet")).toBeInTheDocument();
 
@@ -320,9 +320,7 @@ describe("Select opportunity", () => {
 
     selectContainer = app.getByTestId("select-modal__container");
 
-    await selectContainer
-      .getByTestId(/^select-opportunity__item_ethereum-eth-lido-staking/)
-      .click();
+    await clickOpportunity("ethereum-eth-lido-staking");
 
     await expect
       .element(app.getByText("You'll receive").first())
@@ -330,7 +328,9 @@ describe("Select opportunity", () => {
     await expect.element(app.getByText("stETH").first()).toBeInTheDocument();
     await expect.element(app.getByText("Rated by Credora")).toBeInTheDocument();
     await expect
-      .element(app.getByTestId("yield-risk-rating-summary").getByText("A-"))
+      .element(
+        app.getByTestId("yield-risk-rating-summary__badge").getByText("A-")
+      )
       .toBeInTheDocument();
 
     app.unmount();

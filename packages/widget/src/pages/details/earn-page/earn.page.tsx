@@ -4,6 +4,7 @@ import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Text } from "../../../components/atoms/typography/text";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
@@ -21,6 +22,24 @@ import {
   useEarnPageContext,
 } from "./state/earn-page-context";
 import { EarnPageStateUsageBoundaryProvider } from "./state/earn-page-state-context";
+
+const EarnKycGateSection = () => {
+  const { kycGate, kycGateIsChecking, kycProviderName, onKycStatusRefresh } =
+    useEarnPageContext();
+
+  if (kycGate.state === "pass" && !kycGateIsChecking) return null;
+
+  return (
+    <Box marginTop="3">
+      <KycGateCard
+        gate={kycGate}
+        isChecking={kycGateIsChecking}
+        onCheckStatus={onKycStatusRefresh}
+        providerName={kycProviderName}
+      />
+    </Box>
+  );
+};
 
 const EarnPageComponent = () => {
   useTrackPage("earn");
@@ -41,6 +60,8 @@ const EarnPageComponent = () => {
         <SelectTokenSection />
 
         <SelectYieldSection />
+
+        <EarnKycGateSection />
 
         <SelectProvider />
 

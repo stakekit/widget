@@ -2,6 +2,7 @@ import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { Trans } from "react-i18next";
 import { Highlight } from "../../../components/atoms/highlight";
+import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useStakeReview } from "../hooks/use-stake-review.hook";
 import { ReviewPage } from "./common-page/common.page";
@@ -25,6 +26,10 @@ export const StakeReviewPage = () => {
     performanceFee,
     feeConfigLoading,
     commissionFee,
+    kycGate,
+    kycProviderName,
+    kycStatusIsChecking,
+    onKycStatusRefresh,
   } = useStakeReview();
 
   const info = useMemo(
@@ -69,6 +74,16 @@ export const StakeReviewPage = () => {
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
       commissionFee={commissionFee}
+      notice={
+        kycGate.state !== "pass" || kycStatusIsChecking ? (
+          <KycGateCard
+            gate={kycGate}
+            isChecking={kycStatusIsChecking}
+            onCheckStatus={onKycStatusRefresh}
+            providerName={kycProviderName}
+          />
+        ) : null
+      }
       {...metaInfo}
     />
   );

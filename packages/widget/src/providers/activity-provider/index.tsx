@@ -2,8 +2,8 @@ import { createStore } from "@xstate/store";
 import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import type { ActionDto } from "../../domain/types/action";
-import type { ValidatorDto } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
+import type { ValidatorDto } from "../../generated/api/yield";
 
 const store = createStore({
   context: {

@@ -13,8 +13,8 @@ import {
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
 import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
+import type { ValidatorDto } from "../../../generated/api/yield";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
 import { priceTxt } from "../styles.css";

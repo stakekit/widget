@@ -66,7 +66,7 @@ export const useTokenListYields = (
     enabled: yieldIds.length > 0,
     staleTime,
     queryFn: async ({ signal }) => {
-      const client = apiClient.withRunOptions({ signal });
+      const client = apiClient.withOptions({ signal });
       const result = await client.yield.YieldsControllerGetYields({
         params: {
           yieldIds,

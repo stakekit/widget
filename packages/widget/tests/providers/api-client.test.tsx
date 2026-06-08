@@ -100,6 +100,43 @@ describe("API client", () => {
     }
   });
 
+  it("can suppress rich errors for optional API requests", async ({
+    worker,
+  }) => {
+    const richError = await renderHook(() => useRichErrors());
+    richError.result.current.resetError();
+    const apiUrl = normalizeUrl(config.env.apiUrl);
+    worker.use(
+      http.get(`${apiUrl}/v1/tokens`, () =>
+        HttpResponse.json(
+          {
+            code: 400,
+            details: { code: "TEST" },
+            message: "Optional failure",
+          },
+          { status: 400 }
+        )
+      )
+    );
+    const client = createTestClient({ baseUrl: apiUrl });
+
+    try {
+      await expect(
+        client
+          .withOptions({ suppressRichErrors: true })
+          .legacy.TokenControllerGetTokens(undefined)
+      ).rejects.toMatchObject({
+        _tag: "TokenControllerGetTokens400",
+        response: { status: 400 },
+      });
+      await Promise.resolve();
+
+      expect(richError.result.current.error).toBeNull();
+    } finally {
+      richError.unmount();
+    }
+  });
+
   it("records geo-block responses", async ({ worker }) => {
     const geoBlock = await renderHook(() => useGeoBlock());
     const apiUrl = normalizeUrl(config.env.apiUrl);
@@ -203,7 +240,7 @@ describe("API client", () => {
 
     await expect(
       client
-        .withRunOptions({ signal: controller.signal })
+        .withOptions({ signal: controller.signal })
         .legacy.TokenControllerGetTokens(undefined)
     ).rejects.toBeTruthy();
     expect(attempts).toBeLessThanOrEqual(1);

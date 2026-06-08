@@ -4,7 +4,6 @@ import { Trans, useTranslation } from "react-i18next";
 import { SKAnchor } from "../components/atoms/anchor";
 import { MiscNetworks } from "../domain/types/chains/networks";
 import type { TokenDto, YieldTokenDto } from "../domain/types/tokens";
-import type { ValidatorDto } from "../domain/types/validators";
 import {
   getExtendedYieldType,
   getYieldCooldownPeriod,
@@ -15,6 +14,7 @@ import {
   isEthenaUsdeStaking,
   type Yield,
 } from "../domain/types/yields";
+import type { ValidatorDto } from "../generated/api/yield";
 
 export const useYieldMetaInfo = ({
   selectedStake,

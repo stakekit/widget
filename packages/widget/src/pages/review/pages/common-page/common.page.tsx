@@ -35,6 +35,7 @@ type ReviewPageProps = {
   managementFee: Maybe<FeesBps>;
   performanceFee: Maybe<FeesBps>;
   commissionFee: Maybe<string>;
+  notice?: ReactNode;
   feeConfigLoading?: boolean;
 } & MetaInfoProps;
 
@@ -52,6 +53,7 @@ export const ReviewPage = ({
   performanceFee,
   feeConfigLoading = false,
   commissionFee,
+  notice,
   ...rest
 }: ReviewPageProps) => {
   const trackEvent = useTrackEvent();
@@ -69,6 +71,8 @@ export const ReviewPage = ({
           title={title}
           token={token}
         />
+
+        {notice && <Box marginTop="4">{notice}</Box>}
 
         <Divider />
 

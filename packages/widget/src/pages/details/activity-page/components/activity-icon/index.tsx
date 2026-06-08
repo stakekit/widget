@@ -1,6 +1,5 @@
 import { Box } from "../../../../../components/atoms/box";
-import { ArrowDownIcon } from "../../../../../components/atoms/icons/arrow-down";
-import { ArrowUpIcon } from "../../../../../components/atoms/icons/arrow-up";
+import { Arrow } from "../../../../../components/atoms/icons/arrow";
 import { GifIcon } from "../../../../../components/atoms/icons/gift";
 import { iconCircle } from "../activity-item.css";
 
@@ -11,9 +10,9 @@ export const ActivityIcon = ({ type }: { type: ActivityIconType }) => (
     {type === "rewards" ? (
       <GifIcon />
     ) : type === "out" ? (
-      <ArrowDownIcon />
+      <Arrow direction="down" />
     ) : (
-      <ArrowUpIcon />
+      <Arrow direction="up" />
     )}
   </Box>
 );

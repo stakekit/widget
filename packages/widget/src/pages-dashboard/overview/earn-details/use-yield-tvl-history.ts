@@ -35,7 +35,7 @@ export const useYieldTvlHistory = ({
       if (!yieldId) return [];
 
       const response = await apiClient
-        .withRunOptions({ signal })
+        .withOptions({ signal })
         .yield.YieldsControllerGetYieldTvlHistory(yieldId, {
           params: {
             period: periodToApiPeriod[period],

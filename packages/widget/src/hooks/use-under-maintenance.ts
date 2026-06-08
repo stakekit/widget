@@ -7,9 +7,7 @@ export const useUnderMaintenance = () => {
   const { data, error } = useQuery<HealthStatusDto>({
     queryKey: ["yield-api-health"],
     queryFn: ({ signal }) =>
-      apiClient
-        .withRunOptions({ signal })
-        .yield.HealthControllerHealth(undefined),
+      apiClient.withOptions({ signal }).yield.HealthControllerHealth(undefined),
     refetchInterval: 1000 * 30,
   });
 

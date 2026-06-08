@@ -7,8 +7,8 @@ import type {
 } from "../../domain/types/action";
 import type { AddressesDto } from "../../domain/types/addresses";
 import type { TokenDto } from "../../domain/types/tokens";
-import type { ValidatorDto } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
+import type { ValidatorDto } from "../../generated/api/yield";
 
 type InitData = {
   requestDto: YieldCreateActionDto;

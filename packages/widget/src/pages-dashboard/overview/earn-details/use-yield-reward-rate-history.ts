@@ -46,7 +46,7 @@ export const useYieldRewardRateHistory = ({
       if (!yieldId) return [];
 
       const response = await apiClient
-        .withRunOptions({ signal })
+        .withOptions({ signal })
         .yield.YieldsControllerGetYieldRewardRateHistory(yieldId, {
           params: {
             period: periodToApiPeriod[period],

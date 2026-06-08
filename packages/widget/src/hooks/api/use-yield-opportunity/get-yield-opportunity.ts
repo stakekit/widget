@@ -12,6 +12,7 @@ type Params = {
   isLedgerLive: boolean;
   apiClient: ApiClient;
   signal?: AbortSignal;
+  suppressRichErrors?: boolean;
 };
 
 type MultiParams = Omit<Params, "yieldId"> & {
@@ -69,7 +70,7 @@ const fetchYieldProvider = async ({
   providerId,
   queryClient,
 }: {
-  client: ReturnType<ApiClient["withRunOptions"]>;
+  client: ReturnType<ApiClient["withOptions"]>;
   providerId: string;
   queryClient: QueryClient;
 }): Promise<YieldProviderDetails | undefined> => {
@@ -91,7 +92,7 @@ const fetchYieldProviders = async ({
   providerIds,
   queryClient,
 }: {
-  client: ReturnType<ApiClient["withRunOptions"]>;
+  client: ReturnType<ApiClient["withOptions"]>;
   providerIds: ReadonlyArray<string>;
   queryClient: QueryClient;
 }) => {
@@ -174,12 +175,13 @@ const fn = ({
   yieldId,
   queryClient,
   signal,
+  suppressRichErrors,
   apiClient,
 }: ParamsWithQueryClient & {
   signal?: AbortSignal;
 }) => {
   return EitherAsync(async () => {
-    const client = apiClient.withRunOptions({ signal });
+    const client = apiClient.withOptions({ signal, suppressRichErrors });
     const [newYieldResult, legacyYieldResult] = await Promise.all([
       client.yield.YieldsControllerGetYield(yieldId, undefined),
       client.legacy.YieldControllerYieldOpportunity(yieldId, {
@@ -210,12 +212,13 @@ const multiFn = ({
   queryClient,
   yieldIds,
   signal,
+  suppressRichErrors,
   apiClient,
 }: MultiParamsWithQueryClient & {
   signal?: AbortSignal;
 }) => {
   return EitherAsync(async () => {
-    const client = apiClient.withRunOptions({ signal });
+    const client = apiClient.withOptions({ signal, suppressRichErrors });
     const newYieldsResult = await client.yield.YieldsControllerGetYields({
       params: {
         yieldIds,

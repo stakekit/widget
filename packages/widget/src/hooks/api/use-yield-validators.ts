@@ -3,9 +3,9 @@ import {
   type QueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
-import type { ValidatorDto } from "../../domain/types/validators";
 import type { ValidatorsConfig } from "../../domain/types/yields";
 import { filterValidators, type Yield } from "../../domain/types/yields";
+import type { ValidatorDto } from "../../generated/api/yield";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useValidatorsConfig } from "../use-validators-config";
@@ -71,11 +71,13 @@ export const getYieldValidatorsByAddresses = async ({
   queryClient,
   yieldId,
   addresses,
+  suppressRichErrors,
 }: {
   apiClient: ReturnType<typeof useApiClient>;
   queryClient: QueryClient;
   yieldId: Yield["id"];
   addresses: ReadonlyArray<ValidatorDto["address"]>;
+  suppressRichErrors?: boolean;
 }): Promise<ValidatorDto[]> => {
   const uniqueAddresses = [...new Set(addresses)];
   const validators = new Map(
@@ -88,7 +90,7 @@ export const getYieldValidatorsByAddresses = async ({
               staleTime: VALIDATORS_STALE_TIME,
               queryFn: async ({ signal }) => {
                 const validatorsPage = await apiClient
-                  .withRunOptions({ signal })
+                  .withOptions({ signal, suppressRichErrors })
                   .yield.YieldsControllerGetYieldValidators(yieldId, {
                     params: {
                       address,
@@ -187,7 +189,7 @@ const fetchPagedValidators = async ({
     limit?: number;
   }) =>
     apiClient
-      .withRunOptions({ signal })
+      .withOptions({ signal })
       .yield.YieldsControllerGetYieldValidators(yieldId, {
         params: {
           limit: params.limit ?? PAGE_SIZE,
@@ -289,7 +291,7 @@ const fetchValidatorsPage = async ({
     limit?: number;
   }) =>
     apiClient
-      .withRunOptions({ signal })
+      .withOptions({ signal })
       .yield.YieldsControllerGetYieldValidators(yieldId, {
         params: {
           limit: params.limit ?? PAGE_SIZE,
