@@ -6,6 +6,7 @@ import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
 import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
+import { PageCtaButton } from "../../../pages/components/page-cta";
 import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/extra-args-selection";
 import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
@@ -79,6 +80,7 @@ const PositionDetailsStakeStateInitializer = ({
 export const PositionDetailsStakeActions = () => {
   const positionDetails = usePositionDetails();
   const { plain } = useUnstakeOrPendingActionParams();
+  const { cta } = useEarnPageContext();
   const { t } = useTranslation();
 
   if (positionDetails.isLoading) {
@@ -147,6 +149,8 @@ export const PositionDetailsStakeActions = () => {
 
         <ExtraArgsSelection />
       </Box>
+
+      <PageCtaButton cta={cta} />
     </Box>
   );
 };

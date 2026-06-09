@@ -55,7 +55,11 @@ export const Tabs = () => {
 
   const selectedTab = Match.value(current.pathname).pipe(
     Match.when(startsWith("/activity"), () => "activity"),
-    Match.when(startsWith("/manage"), () => "manage"),
+    Match.whenOr(
+      startsWith("/manage"),
+      startsWith("/positions"),
+      () => "manage"
+    ),
     Match.orElse(() => "earn")
   );
 
