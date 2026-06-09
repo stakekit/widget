@@ -89,6 +89,29 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .orDefault(state);
       }
 
+      case "dashboard/token-yield/select": {
+        return Maybe.fromFalsy(
+          state.selectedToken
+            .map((v) => !equalTokens(v, action.data.token))
+            .orDefault(true) ||
+            state.selectedStakeId
+              .map((v) => v !== action.data.yieldDto.id)
+              .orDefault(true)
+        )
+          .map(() =>
+            onYieldSelectState({
+              yieldDto: action.data.yieldDto,
+              positionsData: positionsData.data,
+            })
+          )
+          .map((val) => ({
+            ...getInitialState(),
+            selectedToken: Maybe.of(action.data.token),
+            ...val,
+          }))
+          .orDefault(state);
+      }
+
       case "yield/select": {
         return Maybe.fromFalsy(
           state.selectedStakeId.map((v) => v !== action.data.id).orDefault(true)
@@ -298,8 +321,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     if (shouldWaitForPositionsData) return;
 
-    initYield.ifJust(setYield);
-  }, [initYield, shouldWaitForPositionsData, setYield]);
+    selectedStakeId.ifNothing(() => initYield.ifJust(setYield));
+  }, [initYield, selectedStakeId, shouldWaitForPositionsData, setYield]);
 
   useEffect(() => {
     if (shouldWaitForPositionsData) return;

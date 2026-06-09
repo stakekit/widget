@@ -19,6 +19,8 @@ type Props = {
   item: TokenBalanceScanResponseDto;
   isConnected: boolean;
   isSelected: boolean;
+  availableYieldsCount?: number;
+  canSelectToken?: boolean;
   maxYieldRate?: TokenMaxYieldRate;
   onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
 };
@@ -28,6 +30,8 @@ export const SelectTokenListItem = memo(
     item,
     isConnected,
     isSelected,
+    availableYieldsCount = item.availableYields.length,
+    canSelectToken = true,
     maxYieldRate,
     onTokenBalanceSelect,
   }: Props) => {
@@ -38,6 +42,8 @@ export const SelectTokenListItem = memo(
 
     const _onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] =
       ({ closeModal }) => {
+        if (!canSelectToken) return;
+
         trackEvent("tokenSelected", { token: item.token.symbol });
         onTokenBalanceSelect(item);
         closeModal();
@@ -48,9 +54,11 @@ export const SelectTokenListItem = memo(
         <SelectModalItem
           selected={isSelected}
           variant={
-            amountGreaterThanZero || !isConnected
-              ? { type: "enabled", hover: "enabled" }
-              : { type: "disabled", hover: "enabled" }
+            !canSelectToken
+              ? { type: "disabled", hover: "disabled" }
+              : amountGreaterThanZero || !isConnected
+                ? { type: "enabled", hover: "enabled" }
+                : { type: "disabled", hover: "enabled" }
           }
           onItemClick={_onItemClick}
         >
@@ -74,7 +82,7 @@ export const SelectTokenListItem = memo(
                 variant={{ type: "muted", weight: "normal", size: "small" }}
               >
                 {t("select_token.yields_available", {
-                  count: item.availableYields.length,
+                  count: availableYieldsCount,
                   token_name: item.token.name,
                 })}
               </Text>

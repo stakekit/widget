@@ -2,12 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { TokenBalanceScanResponseDto } from "../../domain/types/token-balance";
 import { tokenString } from "../../domain/types/tokens";
+import {
+  type DashboardYieldCategory,
+  getDashboardYieldCategoryForApiYieldType,
+} from "../../domain/types/yields";
 import type { YieldDto } from "../../generated/api/yield";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import {
   getRewardRateFormatted,
   getRewardTypeFormatted,
 } from "../../utils/formatters";
+import {
+  fetchYieldSummariesByIds,
+  isVisibleYieldSummary,
+} from "./use-yield-summaries";
 
 const staleTime = 1000 * 60 * 2;
 
@@ -19,6 +27,44 @@ export type TokenMaxYieldRate = {
 const getUniqueYieldIds = (
   tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>
 ) => [...new Set(tokenBalances.flatMap((tb) => tb.availableYields))];
+
+export const fetchTokenListYieldSummaries = ({
+  apiClient,
+  signal,
+  tokenBalances,
+}: {
+  apiClient: ReturnType<typeof useApiClient>;
+  signal?: AbortSignal;
+  tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>;
+}) =>
+  fetchYieldSummariesByIds({
+    apiClient,
+    signal,
+    yieldIds: getUniqueYieldIds(tokenBalances),
+  });
+
+export const getDashboardCategoryYieldIdsForToken = (
+  availableYieldIds: ReadonlyArray<string>,
+  yieldsById: ReadonlyMap<string, YieldDto>,
+  category: DashboardYieldCategory
+) =>
+  availableYieldIds
+    .filter((id) => {
+      const yieldDto = yieldsById.get(id);
+
+      return (
+        !!yieldDto &&
+        isVisibleYieldSummary(yieldDto) &&
+        getDashboardYieldCategoryForApiYieldType(yieldDto.mechanics.type) ===
+          category
+      );
+    })
+    .sort((a, b) => {
+      const left = yieldsById.get(a)?.rewardRate?.total ?? 0;
+      const right = yieldsById.get(b)?.rewardRate?.total ?? 0;
+
+      return right - left;
+    });
 
 export const getMaxYieldRateForToken = (
   availableYieldIds: ReadonlyArray<string>,
@@ -56,7 +102,8 @@ export const getMaxYieldRateForToken = (
 };
 
 export const useTokenListYields = (
-  tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>
+  tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>,
+  dashboardYieldCategory?: DashboardYieldCategory | null
 ) => {
   const apiClient = useApiClient();
   const yieldIds = getUniqueYieldIds(tokenBalances);
@@ -65,21 +112,48 @@ export const useTokenListYields = (
     queryKey: ["token-list-yields", yieldIds],
     enabled: yieldIds.length > 0,
     staleTime,
-    queryFn: async ({ signal }) => {
-      const client = apiClient.withOptions({ signal });
-      const result = await client.yield.YieldsControllerGetYields({
-        params: {
-          yieldIds,
-          limit: yieldIds.length,
-        },
-      });
-
-      return result.items ?? [];
-    },
+    queryFn: async ({ signal }) =>
+      fetchTokenListYieldSummaries({
+        apiClient,
+        signal,
+        tokenBalances,
+      }),
   });
 
-  const yieldsById = new Map(
-    (query.data ?? []).map((yieldDto) => [yieldDto.id, yieldDto])
+  const yieldsById = useMemo(
+    () =>
+      new Map((query.data ?? []).map((yieldDto) => [yieldDto.id, yieldDto])),
+    [query.data]
+  );
+
+  const yieldIdsByToken = useMemo(() => {
+    const map = new Map<string, string[]>();
+
+    for (const tokenBalance of tokenBalances) {
+      map.set(
+        tokenString(tokenBalance.token),
+        dashboardYieldCategory
+          ? getDashboardCategoryYieldIdsForToken(
+              tokenBalance.availableYields,
+              yieldsById,
+              dashboardYieldCategory
+            )
+          : [...tokenBalance.availableYields]
+      );
+    }
+
+    return map;
+  }, [dashboardYieldCategory, tokenBalances, yieldsById]);
+
+  const yieldCountsByToken = useMemo(
+    () =>
+      new Map(
+        [...yieldIdsByToken.entries()].map(([token, tokenYieldIds]) => [
+          token,
+          tokenYieldIds.length,
+        ])
+      ),
+    [yieldIdsByToken]
   );
 
   const maxYieldRatesByToken = useMemo(() => {
@@ -87,7 +161,7 @@ export const useTokenListYields = (
 
     for (const tokenBalance of tokenBalances) {
       const maxYieldRate = getMaxYieldRateForToken(
-        tokenBalance.availableYields,
+        yieldIdsByToken.get(tokenString(tokenBalance.token)) ?? [],
         yieldsById
       );
 
@@ -97,9 +171,11 @@ export const useTokenListYields = (
     }
 
     return map;
-  }, [tokenBalances, yieldsById]);
+  }, [tokenBalances, yieldIdsByToken, yieldsById]);
 
   return {
+    yieldIdsByToken,
+    yieldCountsByToken,
     maxYieldRatesByToken,
     isLoading: query.isLoading,
   };

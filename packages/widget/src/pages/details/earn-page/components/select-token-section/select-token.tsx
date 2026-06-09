@@ -12,8 +12,8 @@ import { SelectModal } from "../../../../../components/atoms/select-modal";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { VirtualList } from "../../../../../components/atoms/virtual-list";
+import type { TokenBalanceScanResponseDto } from "../../../../../domain/types/token-balance";
 import { equalTokens, tokenString } from "../../../../../domain/types/tokens";
-import { useTokenListYields } from "../../../../../hooks/api/use-token-list-yields";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
 import { useSKWallet } from "../../../../../providers/sk-wallet";
@@ -21,6 +21,24 @@ import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { validatorVirtuosoContainer } from "../../styles.css";
 import { SelectTokenListItem } from "./select-token-list-item";
+
+const getAvailableYieldsCount = ({
+  item,
+  selectedDashboardYieldCategory,
+  tokenListYieldsIsLoading,
+  tokenYieldCountsByToken,
+}: {
+  item: TokenBalanceScanResponseDto;
+  selectedDashboardYieldCategory: unknown;
+  tokenListYieldsIsLoading: boolean;
+  tokenYieldCountsByToken: ReadonlyMap<string, number>;
+}) => {
+  if (!selectedDashboardYieldCategory || tokenListYieldsIsLoading) {
+    return item.availableYields.length;
+  }
+
+  return tokenYieldCountsByToken.get(tokenString(item.token)) ?? 0;
+};
 
 export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   const {
@@ -30,6 +48,10 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
     selectedToken,
     onTokenSearch,
     tokenSearch,
+    selectedDashboardYieldCategory,
+    tokenMaxYieldRatesByToken,
+    tokenYieldCountsByToken,
+    tokenListYieldsIsLoading,
   } = useEarnPageContext();
 
   const { variant } = useSettings();
@@ -43,17 +65,31 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   const data = useMemo(
     () =>
       selectedToken
-        .map((st) => ({
-          st,
-          tokenBalances:
-            tokenBalancesData.map((v) => v.filtered).extract() ?? [],
-        }))
-        .extractNullable(),
-    [selectedToken, tokenBalancesData]
-  );
+        .map((st) => {
+          const tokenBalances =
+            tokenBalancesData.map((v) => v.filtered).extract() ?? [];
 
-  const { maxYieldRatesByToken } = useTokenListYields(
-    data?.tokenBalances ?? []
+          return {
+            st,
+            tokenBalances: tokenBalances.filter(
+              (item) =>
+                getAvailableYieldsCount({
+                  item,
+                  selectedDashboardYieldCategory,
+                  tokenListYieldsIsLoading,
+                  tokenYieldCountsByToken,
+                }) > 0
+            ),
+          };
+        })
+        .extractNullable(),
+    [
+      selectedDashboardYieldCategory,
+      selectedToken,
+      tokenBalancesData,
+      tokenListYieldsIsLoading,
+      tokenYieldCountsByToken,
+    ]
   );
 
   if (!data) return null;
@@ -87,6 +123,7 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
       searchValue={tokenSearch}
       onClose={onSelectTokenClose}
       onOpen={() => trackEvent("selectTokenModalOpened")}
+      isLoading={!!selectedDashboardYieldCategory && tokenListYieldsIsLoading}
       trigger={
         <Trigger asChild>
           <Box
@@ -124,15 +161,30 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
         estimateSize={() => 60}
-        itemContent={(_index, item) => (
-          <SelectTokenListItem
-            item={item}
-            isSelected={equalTokens(item.token, data.st)}
-            maxYieldRate={maxYieldRatesByToken.get(tokenString(item.token))}
-            onTokenBalanceSelect={onTokenBalanceSelect}
-            isConnected={isConnected}
-          />
-        )}
+        itemContent={(_index, item) => {
+          const tokenKey = tokenString(item.token);
+          const availableYieldsCount = getAvailableYieldsCount({
+            item,
+            selectedDashboardYieldCategory,
+            tokenListYieldsIsLoading,
+            tokenYieldCountsByToken,
+          });
+          const canSelectToken =
+            !selectedDashboardYieldCategory ||
+            (!tokenListYieldsIsLoading && availableYieldsCount > 0);
+
+          return (
+            <SelectTokenListItem
+              item={item}
+              isSelected={equalTokens(item.token, data.st)}
+              maxYieldRate={tokenMaxYieldRatesByToken.get(tokenKey)}
+              availableYieldsCount={availableYieldsCount}
+              canSelectToken={canSelectToken}
+              onTokenBalanceSelect={onTokenBalanceSelect}
+              isConnected={isConnected}
+            />
+          );
+        }}
       />
     </SelectModal>
   );
