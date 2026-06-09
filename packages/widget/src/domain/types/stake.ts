@@ -8,7 +8,12 @@ import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { TokenBalanceScanResponseDto } from "./token-balance";
 import type { TokenString } from "./tokens";
-import { getYieldActionArg, isBittensorStaking, type Yield } from "./yields";
+import {
+  getYieldActionArg,
+  isBittensorStaking,
+  type Yield,
+  type YieldBase,
+} from "./yields";
 
 const amountGreaterThanZero = (val: TokenBalanceScanResponseDto) =>
   new BigNumber(val.amount).isGreaterThan(0);
@@ -87,7 +92,7 @@ export const getInitialToken = (args: {
 
 export const canBeInitialYield = (args: {
   initQueryParams: Maybe<InitParams>;
-  yieldDto: Yield;
+  yieldDto: YieldBase;
   tokenBalanceAmount: BigNumber;
   positionsData: PositionsData;
 }) => {
@@ -113,7 +118,7 @@ const balanceValidForYield = ({
   positionsData,
 }: {
   tokenBalanceAmount: BigNumber;
-  yieldDto: Yield;
+  yieldDto: YieldBase;
   positionsData: PositionsData;
 }) =>
   tokenBalanceAmount.isGreaterThanOrEqualTo(
@@ -149,7 +154,7 @@ const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
 export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
   yieldsWithEnterMinBasedOnPosition.has(network);
 
-const isYieldWithEnterMinBasedOnPosition = (yieldDto: Yield) =>
+const isYieldWithEnterMinBasedOnPosition = (yieldDto: YieldBase) =>
   Maybe.fromNullable(
     yieldsWithEnterMinBasedOnPosition.get(
       yieldDto.mechanics.gasFeeToken.network as Networks
@@ -159,7 +164,7 @@ const isYieldWithEnterMinBasedOnPosition = (yieldDto: Yield) =>
     .isJust();
 
 export const getMinStakeAmount = (
-  yieldDto: Yield,
+  yieldDto: YieldBase,
   positionsData: PositionsData
 ) => {
   const integrationMin = new BigNumber(

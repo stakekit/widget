@@ -15,12 +15,16 @@ import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
 import { equalTokens, tokenString } from "./tokens";
 
-export type Yield = YieldApiYieldDto & {
-  __fallback__: OldYieldDto;
+export type YieldProviderDetails = ProviderDto;
+
+export type YieldBase = YieldApiYieldDto & {
   provider?: YieldProviderDetails;
 };
 
-export type YieldProviderDetails = ProviderDto;
+export type Yield = YieldBase & {
+  __fallback__: OldYieldDto;
+};
+
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
 type KnownYieldRiskRatingSource = YieldRiskEntryDto["source"];
 type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
@@ -110,7 +114,7 @@ export const getDashboardYieldCategoryForApiYieldType = (
 ): DashboardYieldCategory => apiYieldTypeToDashboardCategory[yieldType];
 
 export const getDashboardYieldCategory = (
-  yieldDto: Yield
+  yieldDto: YieldBase
 ): DashboardYieldCategory | null => {
   const yieldType = getExtendedYieldType(yieldDto);
 
@@ -192,7 +196,7 @@ const secondsToDays = (seconds: number | undefined) => {
 };
 
 export const getYieldActionArg = (
-  yieldDto: Yield,
+  yieldDto: YieldBase,
   type: YieldActionType,
   name: YieldArgumentName
 ): YieldArgumentConfig | null => {
@@ -213,12 +217,12 @@ export const getYieldActionArg = (
 };
 
 export const isYieldActionArgRequired = (
-  yieldDto: Yield,
+  yieldDto: YieldBase,
   type: YieldActionType,
   name: YieldArgumentName
 ) => !!getYieldActionArg(yieldDto, type, name)?.required;
 
-export const getYieldRewardTokens = (yieldDto: Yield) =>
+export const getYieldRewardTokens = (yieldDto: YieldBase) =>
   pipe(
     yieldDto.rewardRate?.components?.map((component) => component.token) ?? [],
     EArray.dedupeWith((a, b) => tokenString(a) === tokenString(b)),
@@ -310,7 +314,9 @@ export const getYieldLockupPeriod = (yieldDto: Yield) =>
 export const hasYieldExitSignatureVerification = (yieldDto: Yield) =>
   !!yieldDto.__fallback__.args.exit?.args?.signatureVerification?.required;
 
-export const getExtendedYieldType = (yieldDto: Yield): ExtendedYieldType => {
+export const getExtendedYieldType = (
+  yieldDto: YieldBase
+): ExtendedYieldType => {
   if (isNativeStaking(yieldDto)) {
     return "native_staking";
   }
@@ -322,7 +328,7 @@ export const getExtendedYieldType = (yieldDto: Yield): ExtendedYieldType => {
   return yieldDto.mechanics.type;
 };
 
-export const getYieldOutputToken = (yieldDto: Yield) =>
+export const getYieldOutputToken = (yieldDto: YieldBase) =>
   Maybe.fromNullable(yieldDto.outputToken).filter(
     (outputToken) => !equalTokens(outputToken, yieldDto.token)
   );
@@ -344,7 +350,7 @@ export const isDepositYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "liquidity_pool";
 
 export const getYieldTypeLabels = (
-  yieldDto: Yield,
+  yieldDto: YieldBase,
   t: TFunction
 ): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
   const map = {
@@ -426,15 +432,15 @@ const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   concentrated_liquidity_pool: 10,
 };
 
-export const getYieldTypesSortRank = (yieldDto: Yield) =>
+export const getYieldTypesSortRank = (yieldDto: YieldBase) =>
   yieldTypesSortRank[getExtendedYieldType(yieldDto)];
 
-const isEthereumStaking = (yieldDto: Yield) =>
+const isEthereumStaking = (yieldDto: YieldBase) =>
   yieldDto.mechanics.type === "staking" &&
   yieldDto.token.network === EvmNetworks.Ethereum &&
   yieldDto.token.symbol === "ETH";
 
-const isNativeStaking = (yieldDto: Yield) =>
+const isNativeStaking = (yieldDto: YieldBase) =>
   Maybe.fromFalsy(isEthereumStaking(yieldDto))
     .chain(() =>
       Maybe.fromFalsy(
@@ -449,13 +455,13 @@ const isNativeStaking = (yieldDto: Yield) =>
     .filter((v) => v.isEqualTo(32))
     .isJust();
 
-const isPooledStaking = (yieldDto: Yield) =>
+const isPooledStaking = (yieldDto: YieldBase) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
 
-export const isYieldWithProviderOptions = (yieldDto: Yield) =>
+export const isYieldWithProviderOptions = (yieldDto: YieldBase) =>
   !!getYieldActionArg(yieldDto, "enter", "providerId")?.required;
 
-export const getYieldProviderYieldIds = (yieldDto: Yield) =>
+export const getYieldProviderYieldIds = (yieldDto: YieldBase) =>
   getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? [];
 
 export const isYieldIntegrationAggregator = (yieldDto: Yield) =>

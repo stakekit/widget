@@ -174,6 +174,7 @@ export const useTokenListYields = (
   }, [tokenBalances, yieldIdsByToken, yieldsById]);
 
   return {
+    yieldsById,
     yieldIdsByToken,
     yieldCountsByToken,
     maxYieldRatesByToken,

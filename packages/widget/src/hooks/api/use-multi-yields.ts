@@ -14,6 +14,7 @@ import {
   map,
   mergeMap,
   Observable,
+  of,
   repeat,
   take,
   tap,
@@ -36,20 +37,28 @@ import {
   isNonZeroRewardRateYield,
   type ValidatorsConfig,
   type Yield,
+  type YieldBase,
 } from "../../domain/types/yields";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useSavedRef } from "../use-saved-ref";
 import { useValidatorsConfig } from "../use-validators-config";
-import { getYieldOpportunities } from "./use-yield-opportunity/get-yield-opportunity";
+import {
+  getYieldOpportunities,
+  getYieldOpportunityFromSummary,
+} from "./use-yield-opportunity/get-yield-opportunity";
+import {
+  fetchYieldSummariesWithProvidersByIds,
+  type YieldSummaryWithProvider,
+} from "./use-yield-summaries";
 
 const multiYieldsStore = createStore({
-  context: { data: new Map<string, Map<string, Yield>>() },
+  context: { data: new Map<string, Map<string, YieldSummaryWithProvider>>() },
   on: {
     "yield-opportunity": (
       context,
-      event: { data: { key: string; yieldDto: Yield } }
+      event: { data: { key: string; yieldDto: YieldSummaryWithProvider } }
     ) => {
       const newMap = new Map(context.data);
       const prev = newMap.get(event.data.key) ?? new Map();
@@ -62,7 +71,7 @@ const multiYieldsStore = createStore({
   },
 });
 
-export const useStreamMultiYields = (yieldIds: ReadonlyArray<string>) => {
+export const useStreamYieldSummaries = (yieldIds: ReadonlyArray<string>) => {
   const { network, isConnected, isLedgerLive } = useSKWallet();
   const apiClient = useApiClient();
 
@@ -79,7 +88,7 @@ export const useStreamMultiYields = (yieldIds: ReadonlyArray<string>) => {
   const validatorsConfig = useValidatorsConfig();
 
   useEffect(() => {
-    const sub = multipleYields$({
+    const sub = multipleYieldSummaries$({
       ...argsRef.current,
       yieldIds,
       validatorsConfig,
@@ -186,6 +195,39 @@ const multipleYields$ = (args: {
         )
       );
 
+const multipleYieldSummaries$ = (args: {
+  isLedgerLive: boolean;
+  queryClient: QueryClient;
+  apiClient: ReturnType<typeof useApiClient>;
+  isConnected: boolean;
+  network: SKWallet["network"];
+  yieldIds: ReadonlyArray<string>;
+  validatorsConfig: ValidatorsConfig;
+}) =>
+  args.yieldIds.length === 0
+    ? EMPTY
+    : from(
+        fetchYieldSummariesWithProvidersByIds({
+          apiClient: args.apiClient,
+          queryClient: args.queryClient,
+          yieldIds: args.yieldIds,
+        })
+      ).pipe(
+        mergeMap((v) => from(v)),
+        filter(
+          (v): v is YieldSummaryWithProvider =>
+            !!(
+              v &&
+              defaultFiltered({
+                data: [v],
+                isConnected: args.isConnected,
+                network: args.network,
+                isLedgerLive: args.isLedgerLive,
+              }).length > 0
+            )
+        )
+      );
+
 const firstEligibleYield$ = (args: {
   isLedgerLive: boolean;
   queryClient: QueryClient;
@@ -199,9 +241,9 @@ const firstEligibleYield$ = (args: {
   validatorsConfig: ValidatorsConfig;
   preferredTokenYieldsPerNetwork: PreferredTokenYieldsPerNetwork | null;
 }) => {
-  let defaultYield: Yield | null = null;
+  let defaultYield: YieldSummaryWithProvider | null = null;
 
-  const successStream = multipleYields$(args).pipe(
+  const successStream = multipleYieldSummaries$(args).pipe(
     tap((v) => {
       if (isNonZeroRewardRateYield(v) || !defaultYield) {
         defaultYield = v;
@@ -232,20 +274,36 @@ const firstEligibleYield$ = (args: {
       });
     }),
     take(1),
-    defaultIfEmpty(null)
+    defaultIfEmpty(null),
+    mergeMap((yieldSummary) => {
+      const selectedYield = yieldSummary ?? defaultYield;
+
+      if (!selectedYield) {
+        return of(null);
+      }
+
+      return from(
+        getYieldOpportunityFromSummary({
+          isLedgerLive: args.isLedgerLive,
+          yieldDto: selectedYield,
+          queryClient: args.queryClient,
+          apiClient: args.apiClient,
+        })
+      ).pipe(map((v) => (v.isRight() ? v.extract() : null)));
+    })
   );
 
   return new Observable<Yield | null>((subscriber) => {
     successStream.subscribe({
       complete: () => subscriber.complete(),
-      next: (v) => subscriber.next(v ?? defaultYield),
+      next: (v) => subscriber.next(v),
       error: (e) => subscriber.error(e),
     });
   });
 };
 
 type SelectorInputData = {
-  data: Yield[];
+  data: YieldBase[];
   isConnected: boolean;
   network: SKWallet["network"];
   isLedgerLive: boolean;
