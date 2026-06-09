@@ -433,7 +433,6 @@ export const setup = async (worker: TestWorker) => {
       name: "Benqi",
       website: "https://benqi.fi/",
     }),
-    __fallback__: yieldOp,
   };
 
   return {

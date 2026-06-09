@@ -16,8 +16,7 @@ import { fetchYieldProviders } from "./use-yield-providers";
  * A yield "summary" is the new yields API DTO, returned by
  * `YieldsControllerGetYields`. It contains everything category discovery and
  * list rendering need (`token`, `rewardRate`, `status`, `metadata`,
- * `mechanics.type`, `providerId`) and intentionally does NOT include the legacy
- * `__fallback__` hydration, which is only required for a selected yield.
+ * `mechanics.type`, `providerId`).
  */
 export type YieldSummary = YieldDto;
 export type YieldSummaryWithProvider = YieldSummary & {

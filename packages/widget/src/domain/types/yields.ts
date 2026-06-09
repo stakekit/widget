@@ -2,7 +2,6 @@ import BigNumber from "bignumber.js";
 import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
-import type { YieldDto as OldYieldDto } from "../../generated/api/legacy";
 import type {
   YieldType as ApiYieldType,
   ArgumentFieldDto,
@@ -17,13 +16,11 @@ import { equalTokens, tokenString } from "./tokens";
 
 export type YieldProviderDetails = ProviderDto;
 
-export type YieldBase = YieldApiYieldDto & {
+export type Yield = YieldApiYieldDto & {
   provider?: YieldProviderDetails;
 };
 
-export type Yield = YieldBase & {
-  __fallback__: OldYieldDto;
-};
+export type YieldBase = Yield;
 
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
 type KnownYieldRiskRatingSource = YieldRiskEntryDto["source"];
@@ -281,9 +278,6 @@ export const getYieldCooldownPeriod = (yieldDto: Yield) =>
 export const getYieldWarmupPeriod = (yieldDto: Yield) =>
   secondsToDays(yieldDto.mechanics.warmupPeriod?.seconds);
 
-export const getYieldCommission = (yieldDto: Yield) =>
-  yieldDto.__fallback__.metadata.commission;
-
 export const getYieldTvlUsd = (yieldDto: Yield) => {
   const tvlUsd = yieldDto.statistics?.tvlUsd;
 
@@ -310,9 +304,6 @@ export const getYieldFeePercent = (yieldDto: Yield): number | null => {
 
 export const getYieldLockupPeriod = (yieldDto: Yield) =>
   secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);
-
-export const hasYieldExitSignatureVerification = (yieldDto: Yield) =>
-  !!yieldDto.__fallback__.args.exit?.args?.signatureVerification?.required;
 
 export const getExtendedYieldType = (
   yieldDto: YieldBase
@@ -464,13 +455,9 @@ export const isYieldWithProviderOptions = (yieldDto: YieldBase) =>
 export const getYieldProviderYieldIds = (yieldDto: YieldBase) =>
   getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? [];
 
-export const isYieldIntegrationAggregator = (yieldDto: Yield) =>
-  !!yieldDto.__fallback__.metadata.isIntegrationAggregator;
-
 export const isYieldValidatorSelectionRequired = (yieldDto: Yield) =>
   !!(
     yieldDto.mechanics.requiresValidatorSelection ||
-    isYieldIntegrationAggregator(yieldDto) ||
     isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
     isYieldActionArgRequired(yieldDto, "enter", "validatorAddresses")
   );

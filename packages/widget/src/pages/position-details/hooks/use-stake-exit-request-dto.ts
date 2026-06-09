@@ -2,11 +2,7 @@ import { Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { YieldCreateActionDto } from "../../../domain/types/action";
 import type { AddressesDto } from "../../../domain/types/addresses";
-import {
-  getYieldActionArg,
-  isYieldIntegrationAggregator,
-  type Yield,
-} from "../../../domain/types/yields";
+import { getYieldActionArg, type Yield } from "../../../domain/types/yields";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { useUnstakeOrPendingActionState } from "../state";
 
@@ -40,17 +36,7 @@ export const useStakeExitRequestDto = () => {
                 NonNullable<YieldCreateActionDto["arguments"]>,
                 "validatorAddress" | "subnetId"
               >
-            | Pick<NonNullable<YieldCreateActionDto["arguments"]>, "providerId">
           >(() => {
-            if (isYieldIntegrationAggregator(val.integrationData)) {
-              return List.find(
-                (b) => !!b.validator?.providerId,
-                val.stakedOrLiquidBalances
-              ).map((b) => ({
-                providerId: b.validator?.providerId,
-                validatorAddress: b.validator?.address,
-              }));
-            }
             if (
               getYieldActionArg(
                 val.integrationData,

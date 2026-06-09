@@ -128,10 +128,6 @@ const bindLegacyApi = ({
     api.YieldControllerGetSingleYieldRewardsSummary,
     options
   ),
-  YieldControllerYieldOpportunity: bindOperation(
-    api.YieldControllerYieldOpportunity,
-    options
-  ),
 });
 
 const bindYieldApi = ({

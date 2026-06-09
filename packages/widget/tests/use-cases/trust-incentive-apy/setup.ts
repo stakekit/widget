@@ -17,7 +17,7 @@ import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
-type YieldApiYieldDto = Omit<Yield, "__fallback__" | "provider">;
+type YieldApiYieldDto = Omit<Yield, "provider">;
 
 const setUrl = ({
   accountId,

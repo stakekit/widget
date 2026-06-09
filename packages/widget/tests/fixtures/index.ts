@@ -7,15 +7,17 @@ import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import type { YieldBalanceDto } from "../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
 import type { Yield } from "../../src/domain/types/yields";
-import type { TokenDto as LegacyTokenDto } from "../../src/generated/api/legacy";
+import type {
+  TokenDto as LegacyTokenDto,
+  YieldDto as LegacyYieldDto,
+} from "../../src/generated/api/legacy";
 import type {
   ValidatorDto,
   NetworkDto as YieldApiNetworkDto,
   ProviderDto as YieldApiProviderDto,
 } from "../../src/generated/api/yield";
 
-type YieldApiYieldDto = Omit<Yield, "__fallback__" | "provider">;
-type LegacyYieldDto = Yield["__fallback__"];
+type YieldApiYieldDto = Omit<Yield, "provider">;
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 

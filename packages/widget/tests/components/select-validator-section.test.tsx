@@ -8,11 +8,7 @@ import type { useSelectValidator } from "../../src/pages/details/earn-page/compo
 import { UtilaSelectValidatorSection } from "../../src/pages-dashboard/overview/earn-page/utila-select-validator-section";
 import { SettingsContextProvider } from "../../src/providers/settings";
 import { i18nInstance } from "../../src/translation";
-import {
-  legacyYieldFixture,
-  yieldApiValidatorFixture,
-  yieldApiYieldFixture,
-} from "../fixtures";
+import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { describe, expect, it } from "../utils/test-extend";
 import { render } from "../utils/test-utils";
 
@@ -47,7 +43,6 @@ const selectedStake = {
       exit: { fields: [] },
     },
   },
-  __fallback__: legacyYieldFixture(),
 } as Yield;
 
 const createHookValue = (
