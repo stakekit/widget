@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.275](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.274...@stakekit/widget@0.0.275) (2026-06-09)
+
+
+### Features
+
+* **widget:** defer yield hydration for dashboard flows ([#529](https://github.com/stakekit/widget/issues/529)) ([44f4eba](https://github.com/stakekit/widget/commit/44f4eba05e4f20f5f8313e9e36eb31390587112a))
+
 ## [0.0.274](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.273...@stakekit/widget@0.0.274) (2026-06-09)
 
 
