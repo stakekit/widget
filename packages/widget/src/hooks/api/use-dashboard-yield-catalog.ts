@@ -41,13 +41,13 @@ export const useDashboardYieldCatalog = ({
   const { network: walletNetwork } = useSKWallet();
   const apiClient = useApiClient();
 
-  const catalogNetwork = network ?? walletNetwork;
-  const probeEnabled = enabled && !!catalogNetwork;
+  const catalogNetwork = network === null ? null : (network ?? walletNetwork);
+  const probeEnabled = enabled && (network === null || !!catalogNetwork);
 
   const results = useQueries({
     queries: dashboardYieldCategories.map((category) => {
       const params: YieldSummariesParams = {
-        network: catalogNetwork ?? undefined,
+        ...(catalogNetwork ? { network: catalogNetwork } : {}),
         types: getApiYieldTypesForDashboardCategory(category),
         sort: "rewardRateDesc",
         limit: DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT,

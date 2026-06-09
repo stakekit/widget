@@ -49,6 +49,7 @@ export const EarnPageStateUsageBoundaryProvider = ({
 const getInitialState = (): State => ({
   selectedToken: Maybe.empty(),
   selectedStakeId: Maybe.empty(),
+  autoSelectYield: true,
   selectedValidators: new Map(),
   stakeAmount: new BigNumber(0),
   useMaxAmount: false,
@@ -85,6 +86,20 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
             ...getInitialState(),
             selectedToken: Maybe.of(action.data),
             ...val,
+          }))
+          .orDefault(state);
+      }
+
+      case "token-only/select": {
+        return Maybe.fromFalsy(
+          state.selectedToken
+            .map((v) => !equalTokens(v, action.data))
+            .orDefault(true) || state.selectedStakeId.isJust()
+        )
+          .map(() => ({
+            ...getInitialState(),
+            selectedToken: Maybe.of(action.data),
+            autoSelectYield: false,
           }))
           .orDefault(state);
       }
@@ -205,6 +220,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const {
     selectedToken,
     selectedStakeId,
+    autoSelectYield,
     selectedValidators,
     stakeAmount: _stakeAmount,
     useMaxAmount,
@@ -321,14 +337,29 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   useEffect(() => {
     if (shouldWaitForPositionsData) return;
 
+    if (!autoSelectYield) return;
+
     selectedStakeId.ifNothing(() => initYield.ifJust(setYield));
-  }, [initYield, selectedStakeId, shouldWaitForPositionsData, setYield]);
+  }, [
+    autoSelectYield,
+    initYield,
+    selectedStakeId,
+    shouldWaitForPositionsData,
+    setYield,
+  ]);
 
   useEffect(() => {
     if (shouldWaitForPositionsData) return;
+    if (!autoSelectYield) return;
 
     selectedStakeId.ifNothing(() => initYieldRef.current.ifJust(setYield));
-  }, [initYieldRef, shouldWaitForPositionsData, selectedStakeId, setYield]);
+  }, [
+    autoSelectYield,
+    initYieldRef,
+    shouldWaitForPositionsData,
+    selectedStakeId,
+    setYield,
+  ]);
 
   /**
    * Reset selectedToken if we dont have initToken
@@ -365,6 +396,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const value: State & ExtraData = useMemo(
     () => ({
       selectedStakeId,
+      autoSelectYield,
       selectedStake,
       selectedValidators,
       stakeAmount,
@@ -383,6 +415,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     }),
     [
       selectedStakeId,
+      autoSelectYield,
       selectedStake,
       selectedToken,
       selectedValidators,

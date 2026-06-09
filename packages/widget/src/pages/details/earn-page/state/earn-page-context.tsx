@@ -45,7 +45,7 @@ import { useDashboardYieldCatalog } from "../../../../hooks/api/use-dashboard-yi
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamYieldSummaries } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
-import { useTokenListYields } from "../../../../hooks/api/use-token-list-yields";
+import { getDashboardCategoryYieldIdsForToken } from "../../../../hooks/api/use-token-list-yields";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
@@ -53,6 +53,7 @@ import {
   getYieldOpportunity,
   getYieldOpportunityFromSummary,
 } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
+import { fetchYieldSummariesByIds } from "../../../../hooks/api/use-yield-summaries";
 import { useYieldValidators } from "../../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import {
@@ -101,6 +102,7 @@ export const EarnPageContextProvider = ({
     actions: { onMaxClick: _onMaxClick },
     selectedToken,
     selectedStakeId,
+    autoSelectYield,
     selectedValidators,
     stakeAmount,
     selectedStake,
@@ -273,25 +275,30 @@ export const EarnPageContextProvider = ({
 
   const dashboardYieldCatalog = useDashboardYieldCatalog({
     enabled: dashboardVariant,
-    network: selectedToken.map((token) => token.network).extractNullable(),
+    network: null,
   });
 
   const availableDashboardYieldCategories =
     dashboardYieldCatalog.availableCategories;
 
-  const selectedDashboardYieldCategory = selectedStake
+  const selectedStakeDashboardYieldCategory = selectedStake
     .chainNullable(getDashboardYieldCategory)
     .extractNullable();
+  const [
+    selectedDashboardYieldCategoryFallback,
+    setSelectedDashboardYieldCategoryFallback,
+  ] = useState<DashboardYieldCategory | null>(null);
+  const selectedDashboardYieldCategory =
+    selectedStakeDashboardYieldCategory ??
+    selectedDashboardYieldCategoryFallback;
 
-  const tokenBalancesForYieldMetadata = useMemo(
-    () => tokenBalancesData.map((v) => v.filtered).orDefault([]),
-    [tokenBalancesData]
-  );
+  useEffect(() => {
+    if (!selectedStakeDashboardYieldCategory) return;
 
-  const tokenListYields = useTokenListYields(
-    tokenBalancesForYieldMetadata,
-    dashboardVariant ? selectedDashboardYieldCategory : null
-  );
+    setSelectedDashboardYieldCategoryFallback(
+      selectedStakeDashboardYieldCategory
+    );
+  }, [selectedStakeDashboardYieldCategory]);
 
   const dashboardSelectionByCategoryRef = useRef(
     new Map<
@@ -323,6 +330,14 @@ export const EarnPageContextProvider = ({
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
       Maybe.of(yieldSummaries)
+        .map((val) =>
+          selectedStake
+            .filter(
+              (stake) => !val.some((yieldDto) => yieldDto.id === stake.id)
+            )
+            .map((stake) => [stake, ...val])
+            .orDefault(val)
+        )
         .map((val) =>
           [...val].sort((a, b) => b.rewardRate.total - a.rewardRate.total)
         )
@@ -412,6 +427,7 @@ export const EarnPageContextProvider = ({
     [
       dashboardVariant,
       deferredStakeSearch,
+      selectedStake,
       yieldSummaries,
       selectedDashboardYieldCategory,
       t,
@@ -547,8 +563,52 @@ export const EarnPageContextProvider = ({
     [apiClient, dispatch, isLedgerLive, queryClient]
   );
 
+  const getDashboardTokenYield = useCallback(
+    async ({
+      category,
+      tokenBalance,
+    }: {
+      category: DashboardYieldCategory;
+      tokenBalance: TokenBalanceScanResponseDto;
+    }) => {
+      const yieldSummaries = await queryClient.fetchQuery({
+        queryKey: [
+          "dashboard-token-yield-summaries",
+          tokenString(tokenBalance.token),
+          tokenBalance.availableYields,
+        ],
+        staleTime: 1000 * 60 * 2,
+        queryFn: ({ signal }) =>
+          fetchYieldSummariesByIds({
+            apiClient,
+            signal,
+            yieldIds: tokenBalance.availableYields,
+          }),
+      });
+
+      const yieldsById = new Map(
+        yieldSummaries.map((yieldDto) => [yieldDto.id, yieldDto])
+      );
+      const yieldId = getDashboardCategoryYieldIdsForToken(
+        tokenBalance.availableYields,
+        yieldsById,
+        category
+      )[0];
+
+      return yieldId
+        ? {
+            yieldId,
+            yieldDto: yieldsById.get(yieldId),
+          }
+        : null;
+    },
+    [apiClient, queryClient]
+  );
+
+  const dashboardTokenSelectionRequestRef = useRef(0);
+
   const onTokenBalanceSelect = useCallback(
-    (tokenBalance: TokenBalanceScanResponseDto) => {
+    async (tokenBalance: TokenBalanceScanResponseDto) => {
       const category = dashboardVariant ? selectedDashboardYieldCategory : null;
 
       if (!category) {
@@ -556,25 +616,37 @@ export const EarnPageContextProvider = ({
         return;
       }
 
-      const yieldId = tokenListYields.yieldIdsByToken.get(
-        tokenString(tokenBalance.token)
-      )?.[0];
+      const selectionRequestId = dashboardTokenSelectionRequestRef.current + 1;
+      dashboardTokenSelectionRequestRef.current = selectionRequestId;
+      dispatch({ type: "token-only/select", data: tokenBalance.token });
 
-      if (!yieldId) return;
+      const tokenYield = await getDashboardTokenYield({
+        category,
+        tokenBalance,
+      }).catch((error) => {
+        console.log(error);
+        return null;
+      });
+
+      if (
+        selectionRequestId !== dashboardTokenSelectionRequestRef.current ||
+        !tokenYield
+      ) {
+        return;
+      }
 
       selectDashboardTokenYield({
         token: tokenBalance.token,
-        yieldDto: tokenListYields.yieldsById.get(yieldId),
-        yieldId,
+        yieldDto: tokenYield.yieldDto,
+        yieldId: tokenYield.yieldId,
       });
     },
     [
       dashboardVariant,
       dispatch,
+      getDashboardTokenYield,
       selectedDashboardYieldCategory,
       selectDashboardTokenYield,
-      tokenListYields.yieldIdsByToken,
-      tokenListYields.yieldsById,
     ]
   );
 
@@ -608,6 +680,8 @@ export const EarnPageContextProvider = ({
 
   const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
     if (selectedDashboardYieldCategory === category) return;
+
+    setSelectedDashboardYieldCategoryFallback(category);
 
     const target =
       dashboardSelectionByCategoryRef.current.get(category) ??
@@ -845,7 +919,7 @@ export const EarnPageContextProvider = ({
     tokenBalancesScanLoading || defaultTokensIsLoading;
 
   const selectYieldIsLoading =
-    (selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
+    (autoSelectYield && selectedStakeId.isNothing() && !hasNotYieldsForToken) ||
     initYieldRes.isLoading ||
     yieldOpportunityLoading ||
     tokenBalancesScanLoading ||
@@ -948,9 +1022,6 @@ export const EarnPageContextProvider = ({
     yieldOpportunityLoading,
     tokenBalancesScanLoading,
     tokenBalancesData,
-    tokenMaxYieldRatesByToken: tokenListYields.maxYieldRatesByToken,
-    tokenYieldCountsByToken: tokenListYields.yieldCountsByToken,
-    tokenListYieldsIsLoading: tokenListYields.isLoading,
     onTokenSearch,
     onValidatorSearch,
     buttonCTAText,
