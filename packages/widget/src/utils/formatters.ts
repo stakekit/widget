@@ -136,6 +136,16 @@ export const formatCompactUsd = (value: string | number | null | undefined) => {
   return `$${compactUsdFormatter.format(amount.toNumber())}`;
 };
 
+// Pending action types come straight from the API and can outpace our
+// translation maps (e.g. RWA-specific actions like WITHDRAWAL_REQUEST). Use this
+// as the i18n `defaultValue`/`defaults` so we never render a raw translation key.
+export const humanizePendingActionType = (type: string): string =>
+  type
+    .split("_")
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+
 export const capitalizeFirstLetters = (text: string): string =>
   Maybe.fromNullable(text)
     .map((t) =>

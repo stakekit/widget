@@ -38,6 +38,7 @@ export const TokenIcon = ({
           {!hideNetwork && !hideNetworkLogo && (
             <NetworkLogoImage
               networkLogoUri={networkLogoUri}
+              networkName={token.network}
               tokenNetworkLogoHw={tokenNetworkLogoHw}
             />
           )}
