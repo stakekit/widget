@@ -35,6 +35,10 @@ type DashboardTokenYieldSelectAction = Action<
   "dashboard/token-yield/select",
   { token: TokenDto; yieldDto: Yield }
 >;
+type PositionDetailsStakeInitializeAction = Action<
+  "positionDetails/stake/initialize",
+  Yield
+>;
 type YieldSelectAction = Action<"yield/select", Yield>;
 
 type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
@@ -56,6 +60,7 @@ export type Actions =
   | TokenBalanceSelectAction
   | TokenOnlySelectAction
   | DashboardTokenYieldSelectAction
+  | PositionDetailsStakeInitializeAction
   | YieldSelectAction
   | StakeAmountChangeAction
   | StakeAmountMaxAction

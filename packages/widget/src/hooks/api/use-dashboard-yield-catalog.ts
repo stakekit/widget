@@ -36,8 +36,10 @@ export const useDashboardYieldCatalog = ({
 }: {
   enabled?: boolean;
 } = {}) => {
-  const { network } = useSKWallet();
+  const { network, isConnecting } = useSKWallet();
   const apiClient = useApiClient();
+
+  const probeEnabled = enabled && !isConnecting;
 
   const results = useQueries({
     queries: dashboardYieldCategories.map((category) => {
@@ -49,7 +51,7 @@ export const useDashboardYieldCatalog = ({
       };
 
       return {
-        enabled,
+        enabled: probeEnabled,
         staleTime,
         queryKey: getYieldSummariesQueryKey(params),
         queryFn: ({ signal }: { signal: AbortSignal }) =>
@@ -83,7 +85,7 @@ export const useDashboardYieldCatalog = ({
     return {
       availableCategories,
       initialSelectionByCategory,
-      isLoading: enabled && results.some((result) => result.isLoading),
+      isLoading: probeEnabled && results.some((result) => result.isLoading),
     };
-  }, [results, enabled]);
+  }, [results, probeEnabled]);
 };

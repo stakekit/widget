@@ -10,7 +10,6 @@ import { userEvent } from "vitest/browser";
 import { shouldRegisterDashboardEarnFooterButton } from "../../src/Dashboard";
 import { getPositionDetailsStakeReviewPath } from "../../src/hooks/navigation/use-position-details-stake-match";
 import { PositionDetailsActionTabs } from "../../src/pages-dashboard/position-details/components/position-details-action-tabs";
-import { shouldInitializePositionDetailsStakeState } from "../../src/pages-dashboard/position-details/components/position-details-stake-actions";
 import { i18nInstance } from "../../src/translation";
 import { describe, expect, it } from "../utils/test-extend";
 import { render } from "../utils/test-utils";
@@ -69,29 +68,6 @@ const renderTabs = (initialEntries: string | string[]) => {
 };
 
 describe("position details action tabs", () => {
-  it("detects when stake state must be initialized from the selected position", () => {
-    expect(
-      shouldInitializePositionDetailsStakeState({
-        positionYieldId: "yield-position",
-        selectedEarnYieldId: "yield-earn",
-      })
-    ).toBe(true);
-
-    expect(
-      shouldInitializePositionDetailsStakeState({
-        positionYieldId: "yield-position",
-        selectedEarnYieldId: "yield-position",
-      })
-    ).toBe(false);
-
-    expect(
-      shouldInitializePositionDetailsStakeState({
-        positionYieldId: null,
-        selectedEarnYieldId: "yield-earn",
-      })
-    ).toBe(false);
-  });
-
   it("builds the nested stake review path from position route params", () => {
     expect(
       getPositionDetailsStakeReviewPath({

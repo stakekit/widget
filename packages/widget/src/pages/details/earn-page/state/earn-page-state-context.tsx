@@ -127,6 +127,29 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .orDefault(state);
       }
 
+      case "positionDetails/stake/initialize": {
+        return Maybe.fromFalsy(
+          state.selectedToken
+            .map((v) => !equalTokens(v, action.data.token))
+            .orDefault(true) ||
+            state.selectedStakeId
+              .map((v) => v !== action.data.id)
+              .orDefault(true)
+        )
+          .map(() =>
+            onYieldSelectState({
+              yieldDto: action.data,
+              positionsData: positionsData.data,
+            })
+          )
+          .map((val) => ({
+            ...getInitialState(),
+            selectedToken: Maybe.of(action.data.token),
+            ...val,
+          }))
+          .orDefault(state);
+      }
+
       case "yield/select": {
         return Maybe.fromFalsy(
           state.selectedStakeId.map((v) => v !== action.data.id).orDefault(true)
