@@ -23,17 +23,19 @@ const queryFn = async ({
   apiClient,
   queryClient,
   forceWalletConnectOnly,
+  institutionalWallets,
   variant,
 }: {
   apiClient: ApiClient;
   queryClient: QueryClient;
   forceWalletConnectOnly: boolean;
+  institutionalWallets: boolean;
   variant: VariantProps["variant"];
 }): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
   connector: Maybe<WalletList[number]>;
-  fineryWallets: ReturnType<typeof createFineryWallets> | null;
+  institutionalWallets: ReturnType<typeof createFineryWallets> | null;
 }> =>
   getEnabledNetworks({ apiClient, queryClient }).caseOf({
     Right: (networks) => {
@@ -80,8 +82,10 @@ const queryFn = async ({
         evmChainsMap: filteredEvmChainsMap,
         evmChains,
         connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
-        fineryWallets:
-          variant === "finery" ? createFineryWallets(evmChains) : null,
+        institutionalWallets:
+          variant === "finery" || institutionalWallets
+            ? createFineryWallets(evmChains)
+            : null,
       });
     },
     Left: (l) => Promise.reject(l),
@@ -91,7 +95,13 @@ export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
   EitherAsync(() =>
     opts.queryClient.fetchQuery({
       staleTime: Number.POSITIVE_INFINITY,
-      queryKey: [config.appPrefix, "evm-config"],
+      queryKey: [
+        config.appPrefix,
+        "evm-config",
+        opts.variant,
+        opts.institutionalWallets,
+        opts.forceWalletConnectOnly,
+      ],
       queryFn: () => queryFn(opts),
     })
   ).mapLeft((e) => {

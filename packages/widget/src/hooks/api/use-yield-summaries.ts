@@ -1,19 +1,27 @@
+import type { QueryClient } from "@tanstack/react-query";
 import { isSupportedChain } from "../../domain/types/chains";
-import { isNonZeroRewardRateYield } from "../../domain/types/yields";
+import {
+  isEthenaUsdeStaking,
+  isNonZeroRewardRateYield,
+  type YieldProviderDetails,
+} from "../../domain/types/yields";
 import type {
   YieldDto,
   YieldsControllerGetYieldsParams,
 } from "../../generated/api/yield";
 import type { useApiClient } from "../../providers/api/api-client-provider";
+import { fetchYieldProviders } from "./use-yield-providers";
 
 /**
  * A yield "summary" is the new yields API DTO, returned by
  * `YieldsControllerGetYields`. It contains everything category discovery and
  * list rendering need (`token`, `rewardRate`, `status`, `metadata`,
- * `mechanics.type`, `providerId`) and intentionally does NOT include the legacy
- * `__fallback__` hydration, which is only required for a selected yield.
+ * `mechanics.type`, `providerId`).
  */
 export type YieldSummary = YieldDto;
+export type YieldSummaryWithProvider = YieldSummary & {
+  provider?: YieldProviderDetails;
+};
 
 export const DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT = 50;
 const DEFAULT_YIELD_IDS_CHUNK_SIZE = 100;
@@ -48,6 +56,10 @@ type FetchByIdsArgs = {
   signal?: AbortSignal;
   suppressRichErrors?: boolean;
   yieldIds: ReadonlyArray<string>;
+};
+
+type FetchByIdsWithProvidersArgs = FetchByIdsArgs & {
+  queryClient: QueryClient;
 };
 
 const unique = <T>(items: ReadonlyArray<T>) => [...new Set(items)];
@@ -115,6 +127,47 @@ export const fetchYieldSummariesByIds = async ({
     const summary = summariesById.get(id);
 
     return summary ? [summary] : [];
+  });
+};
+
+const applyYieldSummaryOverrides = <T extends YieldSummary>(yieldDto: T): T =>
+  isEthenaUsdeStaking(yieldDto.id)
+    ? ({
+        ...yieldDto,
+        metadata: {
+          ...yieldDto.metadata,
+          name: yieldDto.metadata.name.replace(/staking/i, ""),
+        },
+      } as T)
+    : yieldDto;
+
+export const fetchYieldSummariesWithProvidersByIds = async ({
+  apiClient,
+  queryClient,
+  signal,
+  suppressRichErrors,
+  yieldIds,
+}: FetchByIdsWithProvidersArgs): Promise<YieldSummaryWithProvider[]> => {
+  const client = apiClient.withOptions({ signal, suppressRichErrors });
+  const summaries = await fetchYieldSummariesByIds({
+    apiClient,
+    signal,
+    suppressRichErrors,
+    yieldIds,
+  });
+  const providersById = await fetchYieldProviders({
+    client,
+    providerIds: summaries.map((yieldDto) => yieldDto.providerId),
+    queryClient,
+  });
+
+  return summaries.map((summary) => {
+    const provider = providersById.get(summary.providerId);
+
+    return applyYieldSummaryOverrides({
+      ...summary,
+      ...(provider ? { provider } : {}),
+    });
   });
 };
 

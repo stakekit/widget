@@ -14,10 +14,12 @@ import {
   getYieldSummariesQueryKey,
   isVisibleYieldSummary,
   type YieldSummariesParams,
+  type YieldSummary,
 } from "./use-yield-summaries";
 
 type DashboardCategoryInitialSelection = {
   token: TokenDto;
+  yieldDto: YieldSummary;
   yieldId: string;
 };
 
@@ -31,18 +33,21 @@ const staleTime = 1000 * 60 * 2;
  */
 export const useDashboardYieldCatalog = ({
   enabled = true,
+  network,
 }: {
   enabled?: boolean;
+  network?: TokenDto["network"] | null;
 } = {}) => {
-  const { network } = useSKWallet();
+  const { network: walletNetwork } = useSKWallet();
   const apiClient = useApiClient();
 
-  const probeEnabled = enabled && !!network;
+  const catalogNetwork = network === null ? null : (network ?? walletNetwork);
+  const probeEnabled = enabled && (network === null || !!catalogNetwork);
 
   const results = useQueries({
     queries: dashboardYieldCategories.map((category) => {
       const params: YieldSummariesParams = {
-        network: network ?? undefined,
+        ...(catalogNetwork ? { network: catalogNetwork } : {}),
         types: getApiYieldTypesForDashboardCategory(category),
         sort: "rewardRateDesc",
         limit: DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT,
@@ -75,6 +80,7 @@ export const useDashboardYieldCatalog = ({
       availableCategories.push(category);
       initialSelectionByCategory.set(category, {
         token: firstVisible.token,
+        yieldDto: firstVisible,
         yieldId: firstVisible.id,
       });
     });

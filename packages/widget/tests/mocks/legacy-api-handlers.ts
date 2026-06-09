@@ -23,6 +23,12 @@ const defaultYield = legacyYieldFixture({
 });
 
 export const getLegacyApiMock = () => [
+  http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+    await delay();
+
+    return HttpResponse.json([defaultToken.network]);
+  }),
+
   http.get(legacyApiRoute("/v1/tokens"), async () => {
     await delay();
 

@@ -8,7 +8,6 @@ import {
   getDashboardPositionDetailsModel,
 } from "../../src/pages-dashboard/position-details/position-details-model";
 import {
-  legacyYieldFixture,
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
@@ -71,7 +70,6 @@ const makeYield = (overrides?: Partial<Yield>): Yield =>
         symbol: "rETH",
       },
     }),
-    __fallback__: legacyYieldFixture(),
     provider: yieldApiProviderFixture({ name: "Rocket Pool" }),
     ...overrides,
   }) as Yield;

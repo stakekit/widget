@@ -1,6 +1,6 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { Yield } from "../../../domain/types/yields";
+import type { YieldBase } from "../../../domain/types/yields";
 import {
   capitalizeFirstLetters,
   getRewardRateFormatted,
@@ -17,17 +17,19 @@ import {
   selectItemText,
 } from "./styles.css";
 
-export const SelectOpportunityListItem = ({
+type SelectOpportunityListItemProps<T extends YieldBase> = {
+  item: T;
+  onYieldSelect: (item: T) => void;
+  testId?: string;
+  selected?: boolean;
+};
+
+export const SelectOpportunityListItem = <T extends YieldBase>({
   item,
   onYieldSelect,
   testId,
   selected,
-}: {
-  item: Yield;
-  onYieldSelect: (item: Yield) => void;
-  testId?: string;
-  selected?: boolean;
-}) => {
+}: SelectOpportunityListItemProps<T>) => {
   const { t } = useTranslation();
 
   const onItemClick: ComponentProps<typeof SelectModalItem>["onItemClick"] = ({

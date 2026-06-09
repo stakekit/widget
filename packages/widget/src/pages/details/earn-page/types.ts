@@ -1,8 +1,11 @@
-import type { ExtendedYieldType, Yield } from "../../../domain/types/yields";
+import type {
+  ExtendedYieldType,
+  YieldBase,
+} from "../../../domain/types/yields";
 
 export type SelectedStakeData = {
-  all: Yield[];
-  filtered: Yield[];
+  all: YieldBase[];
+  filtered: YieldBase[];
   groupsWithCounts: Map<
     ExtendedYieldType,
     {

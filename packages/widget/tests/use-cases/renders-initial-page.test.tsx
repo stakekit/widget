@@ -1,9 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
-import {
-  legacyYieldFixture,
-  yieldApiNetworkFixture,
-  yieldApiYieldFixture,
-} from "../fixtures";
+import { legacyYieldFixture, yieldApiYieldFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
@@ -81,13 +77,11 @@ describe("Renders initial page", () => {
     });
 
     worker.use(
-      http.get(yieldApiRoute("/v1/networks"), async () => {
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
         await delay();
         return HttpResponse.json([
-          yieldApiNetworkFixture({ id: etherNativeStaking.token.network }),
-          yieldApiNetworkFixture({
-            id: avalancheAvaxNativeStaking.token.network,
-          }),
+          etherNativeStaking.token.network,
+          avalancheAvaxNativeStaking.token.network,
         ]);
       }),
 

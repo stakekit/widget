@@ -146,15 +146,7 @@ export const useUnstakeActionReview = () => {
 
   const unstakeIsLoading =
     machineState.matches("check") ||
-    machineState.matches({ getVerificationMessage: "loading" }) ||
-    machineState.matches({ signMessage: "loading" }) ||
     machineState.matches({ submit: "loading" });
-
-  const showUnstakeSignMessagePopup = machineState.matches("showPopup");
-
-  const onContinueUnstakeSignMessage = () =>
-    send({ type: "CONTINUE_MESSAGE_SIGN" });
-  const onCloseUnstakeSignMessage = () => send({ type: "CANCEL_MESSAGE_SIGN" });
 
   const onClick = () => {
     if (unstakeIsLoading || kycGateIsBlocking) return;
@@ -190,9 +182,9 @@ export const useUnstakeActionReview = () => {
     rewardTokenDetailsProps,
     token: interactedToken,
     metaInfo,
-    onContinueUnstakeSignMessage,
-    onCloseUnstakeSignMessage,
-    showUnstakeSignMessagePopup,
+    onContinueUnstakeSignMessage: () => {},
+    onCloseUnstakeSignMessage: () => {},
+    showUnstakeSignMessagePopup: false,
     gasCheckLoading:
       actionPreviewQuery.isLoading ||
       actionPreviewQuery.isFetching ||

@@ -3,10 +3,12 @@ import { EitherAsync } from "purify-ts";
 import {
   isEthenaUsdeStaking,
   type Yield,
+  type YieldBase,
   type YieldProviderDetails,
 } from "../../../domain/types/yields";
 import type { ApiClient } from "../../../providers/api/api-client";
-import { fetchYieldSummariesByIds } from "../use-yield-summaries";
+import { fetchYieldProvider } from "../use-yield-providers";
+import { fetchYieldSummariesWithProvidersByIds } from "../use-yield-summaries";
 
 type Params = {
   yieldId: string;
@@ -22,10 +24,12 @@ type MultiParams = Omit<Params, "yieldId"> & {
 type ParamsWithQueryClient = Params & {
   queryClient: QueryClient;
 };
+type ParamsWithYieldDto = Omit<ParamsWithQueryClient, "yieldId"> & {
+  yieldDto: YieldBase;
+};
 type MultiParamsWithQueryClient = MultiParams & {
   queryClient: QueryClient;
 };
-type YieldApiYield = Omit<Yield, "__fallback__" | "provider">;
 
 const staleTime = 1000 * 60 * 2;
 const getKey = (params: Params) => [
@@ -38,7 +42,6 @@ const getMultiKey = (params: MultiParams) => [
   params.yieldIds,
   params.isLedgerLive,
 ];
-const getProviderKey = (providerId: string) => ["yield-provider", providerId];
 
 const applyYieldOverrides = (yieldDto: Yield) =>
   isEthenaUsdeStaking(yieldDto.id)
@@ -52,64 +55,16 @@ const applyYieldOverrides = (yieldDto: Yield) =>
     : yieldDto;
 
 const createYield = ({
-  legacyYield,
   provider,
   yieldDto,
 }: {
-  legacyYield: Yield["__fallback__"];
   provider: YieldProviderDetails | undefined;
-  yieldDto: YieldApiYield;
+  yieldDto: YieldBase;
 }) =>
   ({
     ...yieldDto,
     ...(provider ? { provider } : {}),
-    __fallback__: legacyYield,
   }) satisfies Yield;
-
-const fetchYieldProvider = async ({
-  client,
-  providerId,
-  queryClient,
-}: {
-  client: ReturnType<ApiClient["withOptions"]>;
-  providerId: string;
-  queryClient: QueryClient;
-}): Promise<YieldProviderDetails | undefined> => {
-  try {
-    return await queryClient.fetchQuery({
-      queryKey: getProviderKey(providerId),
-      staleTime,
-      queryFn: () =>
-        client.yield.ProvidersControllerGetProvider(providerId, undefined),
-    });
-  } catch (e) {
-    console.log(e);
-    return undefined;
-  }
-};
-
-const fetchYieldProviders = async ({
-  client,
-  providerIds,
-  queryClient,
-}: {
-  client: ReturnType<ApiClient["withOptions"]>;
-  providerIds: ReadonlyArray<string>;
-  queryClient: QueryClient;
-}) => {
-  const providers = await Promise.all(
-    [...new Set(providerIds)].map(async (providerId) => ({
-      providerId,
-      provider: await fetchYieldProvider({ client, providerId, queryClient }),
-    }))
-  );
-
-  return new Map(
-    providers.flatMap(({ provider, providerId }) =>
-      provider ? [[providerId, provider]] : []
-    )
-  );
-};
 
 export const getYieldOpportunity = (params: ParamsWithQueryClient) =>
   EitherAsync(() =>
@@ -117,6 +72,18 @@ export const getYieldOpportunity = (params: ParamsWithQueryClient) =>
       queryKey: getKey(params),
       staleTime,
       queryFn: () => queryFn(params),
+    })
+  ).mapLeft((e) => {
+    console.log(e);
+    return new Error("Could not get yield opportunity");
+  });
+
+export const getYieldOpportunityFromSummary = (params: ParamsWithYieldDto) =>
+  EitherAsync(() =>
+    params.queryClient.fetchQuery({
+      queryKey: getKey({ ...params, yieldId: params.yieldDto.id }),
+      staleTime,
+      queryFn: () => hydrateYieldSummaryQueryFn(params),
     })
   ).mapLeft((e) => {
     console.log(e);
@@ -172,7 +139,6 @@ const multiQueryFn = async (
 ) => (await multiFn(params)).unsafeCoerce();
 
 const fn = ({
-  isLedgerLive,
   yieldId,
   queryClient,
   signal,
@@ -183,12 +149,10 @@ const fn = ({
 }) => {
   return EitherAsync(async () => {
     const client = apiClient.withOptions({ signal, suppressRichErrors });
-    const [newYieldResult, legacyYieldResult] = await Promise.all([
-      client.yield.YieldsControllerGetYield(yieldId, undefined),
-      client.legacy.YieldControllerYieldOpportunity(yieldId, {
-        params: { ledgerWalletAPICompatible: isLedgerLive },
-      }),
-    ]);
+    const newYieldResult = await client.yield.YieldsControllerGetYield(
+      yieldId,
+      undefined
+    );
     const provider = await fetchYieldProvider({
       client,
       providerId: newYieldResult.providerId,
@@ -196,7 +160,6 @@ const fn = ({
     });
 
     return createYield({
-      legacyYield: legacyYieldResult,
       provider,
       yieldDto: newYieldResult,
     });
@@ -208,8 +171,33 @@ const fn = ({
     });
 };
 
+const hydrateYieldSummaryQueryFn = async ({
+  yieldDto,
+  queryClient,
+  signal,
+  suppressRichErrors,
+  apiClient,
+}: ParamsWithYieldDto & {
+  signal?: AbortSignal;
+}) => {
+  const client = apiClient.withOptions({ signal, suppressRichErrors });
+  const provider =
+    yieldDto.provider ??
+    (await fetchYieldProvider({
+      client,
+      providerId: yieldDto.providerId,
+      queryClient,
+    }));
+
+  return applyYieldOverrides(
+    createYield({
+      provider,
+      yieldDto,
+    })
+  );
+};
+
 const multiFn = ({
-  isLedgerLive,
   queryClient,
   yieldIds,
   signal,
@@ -219,53 +207,22 @@ const multiFn = ({
   signal?: AbortSignal;
 }) => {
   return EitherAsync(async () => {
-    const client = apiClient.withOptions({ signal, suppressRichErrors });
-    const newYields = await fetchYieldSummariesByIds({
+    const yields = await fetchYieldSummariesWithProvidersByIds({
       apiClient,
+      queryClient,
       signal,
       suppressRichErrors,
       yieldIds,
     });
-    const newYieldsById = new Map(
-      newYields.map((yieldDto) => [yieldDto.id, yieldDto])
+
+    return yields.map((yieldDto) =>
+      applyYieldOverrides(
+        createYield({
+          provider: yieldDto.provider,
+          yieldDto,
+        })
+      )
     );
-    const providersById = await fetchYieldProviders({
-      client,
-      providerIds: [...newYieldsById.values()].map(
-        (yieldDto) => yieldDto.providerId
-      ),
-      queryClient,
-    });
-
-    const yields = await Promise.all(
-      yieldIds.map(async (yieldId) => {
-        const newYieldResult = newYieldsById.get(yieldId);
-
-        if (!newYieldResult) {
-          return null;
-        }
-
-        try {
-          const legacyYieldResult =
-            await client.legacy.YieldControllerYieldOpportunity(yieldId, {
-              params: { ledgerWalletAPICompatible: isLedgerLive },
-            });
-
-          return applyYieldOverrides(
-            createYield({
-              legacyYield: legacyYieldResult,
-              provider: providersById.get(newYieldResult.providerId),
-              yieldDto: newYieldResult,
-            })
-          );
-        } catch (e) {
-          console.log(e);
-          return null;
-        }
-      })
-    );
-
-    return yields.filter((yieldDto) => yieldDto !== null);
   }).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get yield opportunities");

@@ -2,11 +2,7 @@ import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { YieldCreateActionDto } from "../../../../domain/types/action";
 import type { AddressesDto } from "../../../../domain/types/addresses";
-import {
-  getYieldActionArg,
-  isYieldIntegrationAggregator,
-  type Yield,
-} from "../../../../domain/types/yields";
+import { getYieldActionArg, type Yield } from "../../../../domain/types/yields";
 import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useEarnPageState } from "./earn-page-state-context";
@@ -44,25 +40,13 @@ export const useStakeEnterRequestDto = () => {
         )?.required;
         const providerId = selectedProviderYieldId.extract();
 
-        if (
-          providerIdRequired &&
-          !providerId &&
-          !isYieldIntegrationAggregator(selectedStake)
-        ) {
+        if (providerIdRequired && !providerId) {
           return Maybe.empty();
         }
 
-        const selectedProviderArgs = isYieldIntegrationAggregator(selectedStake)
-          ? {}
-          : { providerId };
+        const selectedProviderArgs = providerId ? { providerId } : {};
 
         const validatorsOrProvider = (() => {
-          if (isYieldIntegrationAggregator(selectedStake)) {
-            return List.head(validators)
-              .chainNullable((v) => v.providerId)
-              .map((providerId) => ({ providerId }));
-          }
-
           if (
             getYieldActionArg(selectedStake, "enter", "validatorAddresses")
               ?.required

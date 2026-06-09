@@ -13,7 +13,8 @@
     "format": "turbo run format",
     "clean": "turbo run clean",
     "prepare": "husky",
-    "check-hygiene": "rev-dep config run --list-all-issues"
+    "check-hygiene": "rev-dep config run --list-all-issues",
+    "check": "turbo run lint && pnpm run check-hygiene && turbo run test && turbo run build"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

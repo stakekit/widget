@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getKycProviderName } from "../../../domain/types/kyc";
-import { getYieldCommission } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
@@ -19,7 +18,7 @@ import { useYieldType } from "../../../hooks/use-yield-type";
 import { useApiClient } from "../../../providers/api/api-client-provider";
 import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
-import { APToPercentage, defaultFormattedNumber } from "../../../utils";
+import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import { useRegisterFooterButton } from "../../components/footer-outlet/context";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
@@ -231,17 +230,6 @@ export const useStakeReview = () => {
     [selectedStake, selectedToken, enterRequest.selectedValidators, variant]
   );
 
-  const commissionFee = useMemo(
-    () =>
-      selectedStake
-        .chainNullable(getYieldCommission)
-        .map((commission) =>
-          commission.reduce<number>((acc, curr) => acc + curr.value, 0)
-        )
-        .map((val) => `${APToPercentage(val)}%`),
-    [selectedStake]
-  );
-
   return {
     token: selectedToken,
     amount,
@@ -260,7 +248,7 @@ export const useStakeReview = () => {
     managementFee,
     performanceFee,
     feeConfigLoading: actionPreviewQuery.isLoading,
-    commissionFee,
+    commissionFee: Maybe.empty(),
     kycGate: yieldKycGate.gate,
     kycProviderName,
     kycStatusIsChecking:

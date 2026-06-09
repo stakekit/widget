@@ -5,16 +5,11 @@ import {
   mapKycStatusToGate,
 } from "../../src/domain/types/kyc";
 import type { Yield } from "../../src/domain/types/yields";
-import {
-  legacyYieldFixture,
-  yieldApiProviderFixture,
-  yieldApiYieldFixture,
-} from "../fixtures";
+import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
 const createYield = (overrides?: Partial<Yield>): Yield =>
   ({
     ...yieldApiYieldFixture(),
-    __fallback__: legacyYieldFixture(),
     provider: yieldApiProviderFixture({
       name: "Superstate",
       website: "https://superstate.com",

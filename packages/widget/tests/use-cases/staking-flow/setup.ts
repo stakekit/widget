@@ -12,7 +12,6 @@ import type {
 import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
-  yieldApiNetworkFixture,
   yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
@@ -238,9 +237,9 @@ export const setup = async (worker: TestWorker) => {
   } as unknown as TransactionDto;
 
   worker.use(
-    http.get(yieldApiRoute("/v1/networks"), async () => {
+    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
       await delay();
-      return HttpResponse.json([yieldApiNetworkFixture({ id: "avalanche-c" })]);
+      return HttpResponse.json(["avalanche-c"]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {
@@ -433,7 +432,6 @@ export const setup = async (worker: TestWorker) => {
       name: "Benqi",
       website: "https://benqi.fi/",
     }),
-    __fallback__: yieldOp,
   };
 
   return {

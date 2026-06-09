@@ -17,8 +17,8 @@ export const getEnabledNetworks = ({
       queryKey: [config.appPrefix, "enabled-networks"],
       queryFn: async () =>
         new Set(
-          (await apiClient.yield.NetworksControllerGetNetworks(undefined)).map(
-            (network) => network.id as Networks
+          (await apiClient.legacy.YieldControllerGetMyNetworks(undefined)).map(
+            (network) => network as Networks
           )
         ),
     })

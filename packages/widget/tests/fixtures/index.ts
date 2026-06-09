@@ -7,15 +7,16 @@ import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import type { YieldBalanceDto } from "../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
 import type { Yield } from "../../src/domain/types/yields";
-import type { TokenDto as LegacyTokenDto } from "../../src/generated/api/legacy";
+import type {
+  TokenDto as LegacyTokenDto,
+  YieldDto as LegacyYieldDto,
+} from "../../src/generated/api/legacy";
 import type {
   ValidatorDto,
-  NetworkDto as YieldApiNetworkDto,
   ProviderDto as YieldApiProviderDto,
 } from "../../src/generated/api/yield";
 
-type YieldApiYieldDto = Omit<Yield, "__fallback__" | "provider">;
-type LegacyYieldDto = Yield["__fallback__"];
+type YieldApiYieldDto = Omit<Yield, "provider">;
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
@@ -39,91 +40,6 @@ const yieldApiTokenFixture = (
   logoURI: "https://assets.stakek.it/tokens/eth.svg",
   ...overrides,
 });
-
-const miscNetworks = new Set<YieldApiNetworkDto["id"]>([
-  "aptos",
-  "cardano",
-  "near",
-  "solana",
-  "solana-devnet",
-  "stellar",
-  "stellar-testnet",
-  "sui",
-  "tezos",
-  "tron",
-  "ton",
-  "ton-testnet",
-  "hyperliquid",
-]);
-
-const substrateNetworks = new Set<YieldApiNetworkDto["id"]>([
-  "polkadot",
-  "kusama",
-  "westend",
-  "bittensor",
-]);
-
-const getYieldApiNetworkCategory = (
-  id: YieldApiNetworkDto["id"]
-): YieldApiNetworkDto["category"] => {
-  if (miscNetworks.has(id)) return "misc";
-  if (substrateNetworks.has(id)) return "substrate";
-  if (
-    [
-      "ethereum",
-      "ethereum-goerli",
-      "ethereum-holesky",
-      "ethereum-sepolia",
-      "ethereum-hoodi",
-      "arbitrum",
-      "base",
-      "base-sepolia",
-      "gnosis",
-      "optimism",
-      "polygon",
-      "polygon-amoy",
-      "starknet",
-      "zksync",
-      "linea",
-      "unichain",
-      "monad-testnet",
-      "monad",
-      "avalanche-c",
-      "avalanche-c-atomic",
-      "avalanche-p",
-      "binance",
-      "celo",
-      "fantom",
-      "harmony",
-      "moonriver",
-      "okc",
-      "viction",
-      "core",
-      "sonic",
-      "plasma",
-      "katana",
-      "hyperevm",
-    ].includes(id)
-  ) {
-    return "evm";
-  }
-
-  return "cosmos";
-};
-
-export const yieldApiNetworkFixture = (
-  overrides?: Partial<YieldApiNetworkDto>
-): YieldApiNetworkDto => {
-  const id = overrides?.id ?? "ethereum";
-
-  return {
-    id,
-    name: id,
-    category: getYieldApiNetworkCategory(id),
-    logoURI: `https://assets.stakek.it/networks/${id}.svg`,
-    ...overrides,
-  };
-};
 
 export const yieldApiProviderFixture = (
   overrides?: Partial<YieldApiProviderDto>
