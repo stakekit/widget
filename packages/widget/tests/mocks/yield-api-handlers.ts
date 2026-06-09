@@ -6,7 +6,6 @@ import type {
 import type { TokenDto } from "../../src/domain/types/tokens";
 import {
   yieldApiActionFixture,
-  yieldApiNetworkFixture,
   yieldApiProviderFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
@@ -65,14 +64,6 @@ export const getYieldApiMock = () => [
       status: "OK",
       timestamp: new Date(0).toISOString(),
     });
-  }),
-
-  http.get(yieldApiRoute("/v1/networks"), async () => {
-    await delay();
-
-    return HttpResponse.json([
-      yieldApiNetworkFixture({ id: defaultToken.network }),
-    ]);
   }),
 
   http.get(yieldApiRoute("/v1/yields"), async () => {

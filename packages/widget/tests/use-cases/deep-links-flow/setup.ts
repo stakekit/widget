@@ -6,7 +6,6 @@ import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
-  yieldApiNetworkFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorFixture,
   yieldApiValidatorsFixture,
@@ -266,12 +265,9 @@ export const setup = async (
         { token: ether, availableYields: ["ethereum-eth-etherfi-staking"] },
       ]);
     }),
-    http.get(yieldApiRoute("/v1/networks"), async () => {
+    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
       await delay();
-      return HttpResponse.json([
-        yieldApiNetworkFixture({ id: token.network }),
-        yieldApiNetworkFixture({ id: ether.network }),
-      ]);
+      return HttpResponse.json([token.network, ether.network]);
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {

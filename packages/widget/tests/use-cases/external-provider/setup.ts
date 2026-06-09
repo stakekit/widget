@@ -1,7 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
 import {
   legacyYieldFixture,
-  yieldApiNetworkFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
@@ -123,15 +122,13 @@ export const setup = (worker: TestWorker) => {
   });
 
   worker.use(
-    http.get(yieldApiRoute("/v1/networks"), async () => {
+    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
       await delay();
       return HttpResponse.json([
-        yieldApiNetworkFixture({ id: etherNativeStaking.token.network }),
-        yieldApiNetworkFixture({
-          id: avalancheAvaxNativeStaking.token.network,
-        }),
-        yieldApiNetworkFixture({ id: solanaNativeStaking.token.network }),
-        yieldApiNetworkFixture({ id: tonNativeStaking.token.network }),
+        etherNativeStaking.token.network,
+        avalancheAvaxNativeStaking.token.network,
+        solanaNativeStaking.token.network,
+        tonNativeStaking.token.network,
       ]);
     }),
 

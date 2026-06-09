@@ -5,7 +5,6 @@ import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
-  yieldApiNetworkFixture,
   yieldApiTransactionFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
@@ -151,11 +150,9 @@ export const setup = (worker: TestWorker) => {
   }) => yieldsTxGasAmountMap.set(yieldId, amount);
 
   worker.use(
-    http.get(yieldApiRoute("/v1/networks"), async () => {
+    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
       await delay();
-      return HttpResponse.json([
-        yieldApiNetworkFixture({ id: avalancheCToken.network }),
-      ]);
+      return HttpResponse.json([avalancheCToken.network]);
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {

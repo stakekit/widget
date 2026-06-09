@@ -9,8 +9,7 @@ import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
 import { SolanaProvider } from "../../src/providers/solana";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
-import { yieldApiNetworkFixture } from "../fixtures";
-import { yieldApiRoute } from "../mocks/api-routes";
+import { legacyApiRoute } from "../mocks/api-routes";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { renderHook } from "../utils/test-utils";
 
@@ -45,11 +44,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async () => "hash");
 
     worker.use(
-      http.get(yieldApiRoute("/v1/networks"), async () => {
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
         await delay();
-        return HttpResponse.json([
-          yieldApiNetworkFixture({ id: MiscNetworks.Solana }),
-        ]);
+        return HttpResponse.json([MiscNetworks.Solana]);
       })
     );
 
@@ -124,11 +121,9 @@ describe("SK Wallet", () => {
     const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
 
     worker.use(
-      http.get(yieldApiRoute("/v1/networks"), async () => {
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
         await delay();
-        return HttpResponse.json([
-          yieldApiNetworkFixture({ id: MiscNetworks.Ton }),
-        ]);
+        return HttpResponse.json([MiscNetworks.Ton]);
       })
     );
 

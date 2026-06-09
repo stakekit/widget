@@ -119,11 +119,10 @@ const bindLegacyApi = ({
     api.TokenControllerTokenBalancesScan,
     options
   ),
-  TransactionControllerGetTransactionVerificationMessageForNetwork:
-    bindOperation(
-      api.TransactionControllerGetTransactionVerificationMessageForNetwork,
-      options
-    ),
+  YieldControllerGetMyNetworks: bindOperation(
+    api.YieldControllerGetMyNetworks,
+    options
+  ),
   YieldControllerGetSingleYieldRewardsSummary: bindOperation(
     api.YieldControllerGetSingleYieldRewardsSummary,
     options
@@ -155,10 +154,6 @@ const bindYieldApi = ({
   ),
   HealthControllerHealth: bindOperation(api.HealthControllerHealth, options),
   KycControllerGetStatus: bindOperation(api.KycControllerGetStatus, options),
-  NetworksControllerGetNetworks: bindOperation(
-    api.NetworksControllerGetNetworks,
-    options
-  ),
   ProvidersControllerGetProvider: bindOperation(
     api.ProvidersControllerGetProvider,
     options

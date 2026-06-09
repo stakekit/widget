@@ -60,6 +60,9 @@ const omitEnsUniversalResolver = <T extends RainbowkitChain>(chain: T): T => {
   return { ...chain, contracts } as T;
 };
 
+const withoutEmptyWalletGroups = (walletList: WalletList): WalletList =>
+  walletList.filter((walletGroup) => walletGroup.wallets.length > 0);
+
 export type BuildWagmiConfig = typeof buildWagmiConfig;
 
 const buildWagmiConfig = async (opts: {
@@ -82,6 +85,7 @@ const buildWagmiConfig = async (opts: {
   isLedgerLive: boolean;
   isSafe: boolean;
   chainIconMapping: SettingsProps["chainIconMapping"];
+  institutionalWallets: boolean;
   variant: VariantProps["variant"];
   solanaWallets: SolanaWallet[];
   solanaConnection: Connection;
@@ -104,6 +108,7 @@ const buildWagmiConfig = async (opts: {
         Promise.all([
           getEvmConfig({
             forceWalletConnectOnly: opts.forceWalletConnectOnly,
+            institutionalWallets: opts.institutionalWallets,
             queryClient: opts.queryClient,
             variant: opts.variant,
             apiClient: opts.apiClient,
@@ -230,15 +235,15 @@ const buildWagmiConfig = async (opts: {
 
       const walletList = Just(null)
         .map(() => {
-          if (evmConfig.fineryWallets) {
+          if (evmConfig.institutionalWallets) {
             return [
               {
                 groupName: "Primary",
-                wallets: evmConfig.fineryWallets.primaryWallets,
+                wallets: evmConfig.institutionalWallets.primaryWallets,
               },
               {
                 groupName: "Other",
-                wallets: evmConfig.fineryWallets.otherWallets,
+                wallets: evmConfig.institutionalWallets.otherWallets,
               },
               ...Maybe.catMaybes(miscConfig.connectors),
             ];
@@ -292,6 +297,7 @@ const buildWagmiConfig = async (opts: {
           }))
         )
         .map((walletList) => opts.mapWalletListFn?.(walletList) ?? walletList)
+        .map(withoutEmptyWalletGroups)
         .map((walletList) => {
           return walletList.map((wg) => ({
             ...wg,
@@ -385,7 +391,6 @@ const buildWagmiConfig = async (opts: {
     });
 };
 
-const queryKey = [config.appPrefix, "wagmi-config"];
 const staleTime = Number.POSITIVE_INFINITY;
 
 export const useWagmiConfig = () => {
@@ -396,6 +401,7 @@ export const useWagmiConfig = () => {
     disableInjectedProviderDiscovery,
     mapWalletFn,
     chainIconMapping,
+    institutionalWallets,
     variant,
     mapWalletListFn,
     tonConnectManifestUrl,
@@ -412,7 +418,13 @@ export const useWagmiConfig = () => {
 
   const wagmiConfigQuery = useQuery({
     staleTime,
-    queryKey,
+    queryKey: [
+      config.appPrefix,
+      "wagmi-config",
+      variant,
+      !!institutionalWallets,
+      !!wagmi?.forceWalletConnectOnly,
+    ],
     queryFn: () =>
       buildWagmiConfig({
         mapWalletFn,
@@ -427,6 +439,7 @@ export const useWagmiConfig = () => {
           externalProviders: externalProvidersRef,
         }),
         chainIconMapping,
+        institutionalWallets: !!institutionalWallets,
         variant,
         solanaWallets: solanaWallets.wallets,
         solanaConnection: solanaConnection.connection,

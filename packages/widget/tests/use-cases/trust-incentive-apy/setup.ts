@@ -7,7 +7,6 @@ import type { Yield } from "../../../src/domain/types/yields";
 import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
-  yieldApiNetworkFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
@@ -274,9 +273,9 @@ export const setup = async (
   });
 
   worker.use(
-    http.get(yieldApiRoute("/v1/networks"), async () => {
+    http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
       await delay();
-      return HttpResponse.json([yieldApiNetworkFixture({ id: token.network })]);
+      return HttpResponse.json([token.network]);
     }),
     http.get(legacyApiRoute("/v1/tokens"), async () => {
       await delay();
