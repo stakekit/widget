@@ -30,6 +30,7 @@ export const StakeReviewPage = () => {
     kycProviderName,
     kycStatusIsChecking,
     onKycStatusRefresh,
+    cta,
   } = useStakeReview();
 
   const info = useMemo(
@@ -74,6 +75,7 @@ export const StakeReviewPage = () => {
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
       commissionFee={commissionFee}
+      cta={cta}
       notice={
         kycGate.state !== "pass" || kycStatusIsChecking ? (
           <KycGateCard

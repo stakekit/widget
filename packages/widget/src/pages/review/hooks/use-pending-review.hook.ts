@@ -17,7 +17,7 @@ import { useApiClient } from "../../../providers/api/api-client-provider";
 import { usePendingActionStore } from "../../../providers/pending-action-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
@@ -148,16 +148,14 @@ export const usePendingActionReview = () => {
 
   const onClickRef = useSavedRef(onClick);
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        label: t("shared.confirm"),
-        onClick: () => onClickRef.current(),
-        disabled: false,
-        isLoading: actionPendingMutation.isPending,
-      }),
-      [onClickRef, t, actionPendingMutation.isPending]
-    )
+  const cta = useMemo<PageCta>(
+    () => ({
+      label: t("shared.confirm"),
+      onClick: () => onClickRef.current(),
+      disabled: false,
+      isLoading: actionPendingMutation.isPending,
+    }),
+    [onClickRef, t, actionPendingMutation.isPending]
   );
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);
@@ -180,5 +178,6 @@ export const usePendingActionReview = () => {
       actionPreviewQuery.isLoading ||
       actionPreviewQuery.isFetching ||
       gasWarningCheck.isLoading,
+    cta,
   };
 };

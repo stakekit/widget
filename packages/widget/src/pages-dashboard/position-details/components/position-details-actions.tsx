@@ -9,9 +9,9 @@ import { SelectValidator } from "../../../components/molecules/select-validator"
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import { getExtendedYieldType } from "../../../domain/types/yields";
 import {
-  type FooterButtonVal,
-  useRegisterFooterButton,
-} from "../../../pages/components/footer-outlet/context";
+  type PageCta,
+  PageCtaButton,
+} from "../../../pages/components/page-cta";
 import {
   AmountBlock,
   UnstakeInfo,
@@ -82,7 +82,7 @@ export const PositionDetailsActions = () => {
   } = usePositionDetails();
 
   const { t } = useTranslation();
-  const unstakeFooterButton = useMemo<FooterButtonVal>(
+  const unstakeCta = useMemo<PageCta>(
     () =>
       isLoading
         ? null
@@ -112,8 +112,6 @@ export const PositionDetailsActions = () => {
       unstakeToken,
     ]
   );
-
-  useRegisterFooterButton(unstakeFooterButton);
 
   if (isLoading) {
     return (
@@ -242,6 +240,8 @@ export const PositionDetailsActions = () => {
                     validators={providersDetails.orDefault([])}
                     yieldDto={v.integrationData}
                   />
+
+                  <PageCtaButton cta={unstakeCta} />
                 </>
               )
             )

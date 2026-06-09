@@ -71,9 +71,9 @@ export type ValidatorsConfig = Map<
 export type DashboardYieldCategory = "stake" | "defi" | "rwa";
 
 export const dashboardYieldCategories = [
-  "stake",
-  "defi",
   "rwa",
+  "defi",
+  "stake",
 ] as const satisfies ReadonlyArray<DashboardYieldCategory>;
 
 /**

@@ -15,6 +15,7 @@ export const PendingReviewPage = () => {
     metaInfo,
     gasCheckLoading,
     isGasCheckWarning,
+    cta,
   } = usePendingActionReview();
 
   useTrackPage("pendingActionReview");
@@ -54,6 +55,7 @@ export const PendingReviewPage = () => {
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
       commissionFee={Maybe.empty()}
+      cta={cta}
       {...metaInfo}
     />
   );

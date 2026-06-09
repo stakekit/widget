@@ -71,6 +71,7 @@ const ActivityCompletePage = () => {
   return (
     <CompleteCommonContextProvider
       value={{
+        cta: null,
         urls,
         onViewTransactionClick,
         unstakeMatch: selectedAction.type === "UNSTAKE",

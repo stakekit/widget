@@ -20,7 +20,7 @@ import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
@@ -195,22 +195,20 @@ export const useStakeReview = () => {
 
   const { t } = useTranslation();
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        disabled: kycGateIsBlocking,
-        isLoading: enterMutation.isPending || yieldKycGate.isLoading,
-        label: t("shared.confirm"),
-        onClick: () => onClickRef.current(),
-      }),
-      [
-        enterMutation.isPending,
-        kycGateIsBlocking,
-        onClickRef,
-        t,
-        yieldKycGate.isLoading,
-      ]
-    )
+  const cta = useMemo<PageCta>(
+    () => ({
+      disabled: kycGateIsBlocking,
+      isLoading: enterMutation.isPending || yieldKycGate.isLoading,
+      label: t("shared.confirm"),
+      onClick: () => onClickRef.current(),
+    }),
+    [
+      enterMutation.isPending,
+      kycGateIsBlocking,
+      onClickRef,
+      t,
+      yieldKycGate.isLoading,
+    ]
   );
 
   const { variant } = useSettings();
@@ -256,5 +254,6 @@ export const useStakeReview = () => {
       yieldKycGate.isFetching ||
       yieldKycGate.isRefetching,
     onKycStatusRefresh,
+    cta,
   };
 };

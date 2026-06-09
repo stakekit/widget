@@ -10,7 +10,7 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useSetActionHistoryData } from "../../../providers/stake-history";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import type { TxState } from "./use-steps-machine.hook";
 import { useStepsMachine } from "./use-steps-machine.hook";
 
@@ -172,25 +172,24 @@ export const useSteps = ({
 
   const onClickRef = useSavedRef(onClick);
 
-  useRegisterFooterButton(
-    useMemo(
-      () =>
-        txStates.length
-          ? {
-              disabled: false,
-              isLoading: false,
-              label: t("shared.cancel"),
-              onClick: () => onClickRef.current(),
-              variant: "secondary",
-            }
-          : null,
-      [txStates.length, t, onClickRef]
-    )
+  const cta = useMemo<PageCta>(
+    () =>
+      txStates.length
+        ? {
+            disabled: false,
+            isLoading: false,
+            label: t("shared.cancel"),
+            onClick: () => onClickRef.current(),
+            variant: "secondary",
+          }
+        : null,
+    [txStates.length, t, onClickRef]
   );
 
   return {
     retry,
     txStates,
+    cta,
   };
 };
 

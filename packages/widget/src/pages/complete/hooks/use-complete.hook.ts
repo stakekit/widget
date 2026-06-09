@@ -12,7 +12,7 @@ import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { isMobile } from "../../../utils";
 import { MaybeWindow } from "../../../utils/maybe-window";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 
 export const useComplete = () => {
   const navigate = useNavigate();
@@ -55,19 +55,17 @@ export const useComplete = () => {
 
   const { t } = useTranslation();
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        disabled: false,
-        isLoading: false,
-        label: t("complete.continue", {
-          context: isLedgerLive ? "ledger" : undefined,
-        }),
-        onClick: () => onClickRef.current(),
-        hide: !!activityReviewMatch,
+  const cta = useMemo<PageCta>(
+    () => ({
+      disabled: false,
+      isLoading: false,
+      label: t("complete.continue", {
+        context: isLedgerLive ? "ledger" : undefined,
       }),
-      [onClickRef, t, activityReviewMatch, isLedgerLive]
-    )
+      onClick: () => onClickRef.current(),
+      hide: !!activityReviewMatch,
+    }),
+    [onClickRef, t, activityReviewMatch, isLedgerLive]
   );
 
   return {
@@ -75,5 +73,6 @@ export const useComplete = () => {
     unstakeMatch: !!(unstakeMatch || activityUnstakeMatch),
     pendingActionMatch: !!(pendingActionMatch || activityPendingMatch),
     onViewTransactionClick,
+    cta,
   };
 };

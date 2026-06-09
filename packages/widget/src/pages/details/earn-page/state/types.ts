@@ -13,6 +13,7 @@ import type { useEstimatedRewards } from "../../../../hooks/use-estimated-reward
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import type { Action } from "../../../../types/utils";
+import type { PageCta } from "../../../components/page-cta";
 import type { SelectedStakeData } from "../types";
 
 export type State = {
@@ -78,6 +79,7 @@ export type ExtraData = {
 };
 
 export type EarnPageContextType = {
+  cta: PageCta;
   selectedTokenAvailableAmount: Maybe<{
     symbol: string;
     shortFormattedAmount: string;

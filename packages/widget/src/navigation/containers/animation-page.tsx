@@ -1,12 +1,21 @@
 import { motion } from "motion/react";
-import type { PropsWithChildren } from "react";
+import type { CSSProperties, PropsWithChildren } from "react";
 import { useSettings } from "../../providers/settings";
 
 export const AnimationPage = ({ children }: PropsWithChildren) => {
   const { dashboardVariant } = useSettings();
+  const dashboardLayoutStyle: CSSProperties | undefined = dashboardVariant
+    ? {
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+        minHeight: 0,
+      }
+    : undefined;
 
   return (
     <motion.div
+      style={dashboardLayoutStyle}
       initial={{
         opacity: 0,
         scale: 1,

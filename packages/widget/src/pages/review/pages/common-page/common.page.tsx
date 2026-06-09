@@ -14,6 +14,7 @@ import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { MetaInfo } from "../../../components/meta-info";
 import { PageContainer } from "../../../components/page-container";
+import { type PageCta, PageCtaButton } from "../../../components/page-cta";
 import type { FeesBps } from "../../types";
 import { feeStyles, pointerStyles } from "../style.css";
 import ReviewTopSection from "./components/review-top-section";
@@ -37,6 +38,7 @@ type ReviewPageProps = {
   commissionFee: Maybe<string>;
   notice?: ReactNode;
   feeConfigLoading?: boolean;
+  cta: PageCta;
 } & MetaInfoProps;
 
 export const ReviewPage = ({
@@ -54,6 +56,7 @@ export const ReviewPage = ({
   feeConfigLoading = false,
   commissionFee,
   notice,
+  cta,
   ...rest
 }: ReviewPageProps) => {
   const trackEvent = useTrackEvent();
@@ -133,7 +136,7 @@ export const ReviewPage = ({
           </>
         )}
 
-        <Box marginTop="4" marginBottom={rest.showMetaInfo ? "4" : "16"}>
+        <Box marginTop="4" marginBottom="4">
           <Text variant={{ weight: "normal", type: "muted" }}>
             <Trans
               i18nKey="review.terms_of_use"
@@ -152,6 +155,8 @@ export const ReviewPage = ({
             />
           </Text>
         </Box>
+
+        <PageCtaButton cta={cta} />
       </PageContainer>
     </AnimationPage>
   );

@@ -79,7 +79,7 @@ import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useWagmiConfig } from "../../../../providers/wagmi";
 import { defaultFormattedNumber, formatNumber } from "../../../../utils";
-import { useRegisterFooterButton } from "../../../components/footer-outlet/context";
+import type { PageCta } from "../../../components/page-cta";
 import type { SelectedStakeData } from "../types";
 import {
   useEarnPageDispatch,
@@ -939,50 +939,48 @@ export const EarnPageContextProvider = ({
     initYieldRes.isLoading ||
     yieldOpportunityLoading;
 
-  useRegisterFooterButton(
-    useMemo(
-      () =>
-        !registerFooterButton || hasNotYieldsForToken
-          ? null
-          : isConnected && !isLedgerLiveAccountPlaceholder
-            ? {
-                disabled: buttonDisabled,
-                isLoading:
-                  !buttonCTAText || isFetching || yieldKycGate.isLoading,
-                onClick: () => onClickRef.current(),
-                label: buttonCTAText,
-              }
-            : externalProviders
-              ? null
-              : {
-                  disabled: appLoading,
-                  isLoading: appLoading,
-                  label: t(
-                    isLedgerLiveAccountPlaceholder
-                      ? "init.ledger_add_account"
-                      : "init.connect_wallet"
-                  ),
-                  onClick: () => connectClickRef.current(),
-                },
-      [
-        appLoading,
-        buttonCTAText,
-        buttonDisabled,
-        connectClickRef,
-        isConnected,
-        isLedgerLiveAccountPlaceholder,
-        onClickRef,
-        externalProviders,
-        isFetching,
-        yieldKycGate.isLoading,
-        t,
-        hasNotYieldsForToken,
-        registerFooterButton,
-      ]
-    )
+  const cta = useMemo<PageCta>(
+    () =>
+      !registerFooterButton || hasNotYieldsForToken
+        ? null
+        : isConnected && !isLedgerLiveAccountPlaceholder
+          ? {
+              disabled: buttonDisabled,
+              isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
+              onClick: () => onClickRef.current(),
+              label: buttonCTAText,
+            }
+          : externalProviders
+            ? null
+            : {
+                disabled: appLoading,
+                isLoading: appLoading,
+                label: t(
+                  isLedgerLiveAccountPlaceholder
+                    ? "init.ledger_add_account"
+                    : "init.connect_wallet"
+                ),
+                onClick: () => connectClickRef.current(),
+              },
+    [
+      appLoading,
+      buttonCTAText,
+      buttonDisabled,
+      connectClickRef,
+      isConnected,
+      isLedgerLiveAccountPlaceholder,
+      onClickRef,
+      externalProviders,
+      isFetching,
+      yieldKycGate.isLoading,
+      t,
+      hasNotYieldsForToken,
+      registerFooterButton,
+    ]
   );
 
   const value = {
+    cta,
     selectedTokenAvailableAmount,
     formattedPrice,
     symbol,

@@ -10,6 +10,7 @@ import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLetters } from "../../../utils/formatters";
 import { PageContainer } from "../../components/page-container";
+import { PageCtaButton } from "../../components/page-cta";
 import { useActionReview } from "../hooks/use-action-review.hook";
 import ReviewTopSection from "./common-page/components/review-top-section";
 import { pointerStyles } from "./style.css";
@@ -25,6 +26,7 @@ export const ActionReviewPage = () => {
     inputToken,
     actionOlderThan7Days,
     labelKey,
+    cta,
   } = useActionReview();
 
   const info = useMemo(
@@ -90,7 +92,7 @@ export const ActionReviewPage = () => {
           .extractNullable()}
         <Divider my="2" />
         {!actionOlderThan7Days && (
-          <Box marginTop="4" marginBottom="16">
+          <Box marginTop="4" marginBottom="4">
             <Text variant={{ weight: "normal", type: "muted" }}>
               <Trans
                 i18nKey="activity.review.terms_of_use"
@@ -111,6 +113,7 @@ export const ActionReviewPage = () => {
             </Text>
           </Box>
         )}
+        <PageCtaButton cta={cta} />
       </PageContainer>
     </AnimationPage>
   );

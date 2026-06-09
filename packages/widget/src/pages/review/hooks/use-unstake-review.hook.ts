@@ -22,7 +22,7 @@ import { useApiClient } from "../../../providers/api/api-client-provider";
 import { useExitStakeStore } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import { useUnstakeMachine } from "../../position-details/hooks/use-unstake-machine";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
@@ -156,22 +156,14 @@ export const useUnstakeActionReview = () => {
 
   const onClickRef = useSavedRef(onClick);
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        label: t("shared.confirm"),
-        onClick: () => onClickRef.current(),
-        disabled: kycGateIsBlocking,
-        isLoading: unstakeIsLoading || yieldKycGate.isLoading,
-      }),
-      [
-        kycGateIsBlocking,
-        onClickRef,
-        t,
-        unstakeIsLoading,
-        yieldKycGate.isLoading,
-      ]
-    )
+  const cta = useMemo<PageCta>(
+    () => ({
+      label: t("shared.confirm"),
+      onClick: () => onClickRef.current(),
+      disabled: kycGateIsBlocking,
+      isLoading: unstakeIsLoading || yieldKycGate.isLoading,
+    }),
+    [kycGateIsBlocking, onClickRef, t, unstakeIsLoading, yieldKycGate.isLoading]
   );
 
   return {
@@ -197,5 +189,6 @@ export const useUnstakeActionReview = () => {
       yieldKycGate.isFetching ||
       yieldKycGate.isRefetching,
     onKycStatusRefresh,
+    cta,
   };
 };

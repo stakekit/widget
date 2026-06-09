@@ -3,7 +3,6 @@ import { motion } from "motion/react";
 import { Just } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
-import { useFooterHeight } from "../../pages/components/footer-outlet/context";
 import { useCurrentLayout } from "../../pages/components/layout/layout-context";
 import { usePoweredByHeight } from "../../pages/components/powered-by";
 import { useMountAnimation } from "../../providers/mount-animation";
@@ -17,7 +16,6 @@ export const [useDisableTransitionDuration, DisableTransitionDurationProvider] =
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const currentLayout = useCurrentLayout();
   const [headerHeight] = useHeaderHeight();
-  const [footerHeight] = useFooterHeight();
   const [poweredByHeight] = usePoweredByHeight();
 
   const { state, dispatch } = useMountAnimation();
@@ -26,10 +24,7 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const containerHeight =
     currentLayout.state?.height && headerHeight
-      ? currentLayout.state.height +
-        headerHeight +
-        footerHeight +
-        poweredByHeight
+      ? currentLayout.state.height + headerHeight + poweredByHeight
       : 0;
 
   const [disableTransitionDuration] = useDisableTransitionDuration();

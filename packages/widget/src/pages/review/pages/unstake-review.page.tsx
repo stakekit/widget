@@ -24,6 +24,7 @@ export const UnstakeReviewPage = () => {
     kycProviderName,
     kycStatusIsChecking,
     onKycStatusRefresh,
+    cta,
   } = useUnstakeActionReview();
 
   useTrackPage("unstakeReview");
@@ -64,6 +65,7 @@ export const UnstakeReviewPage = () => {
         isGasCheckError={isGasCheckWarning}
         loading={gasCheckLoading}
         commissionFee={Maybe.empty()}
+        cta={cta}
         notice={
           kycGate.state !== "pass" || kycStatusIsChecking ? (
             <KycGateCard

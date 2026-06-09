@@ -17,6 +17,7 @@ import {
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
+import { PageCtaButton } from "../../components/page-cta";
 import { useComplete } from "../hooks/use-complete.hook";
 import {
   CompleteCommonContextProvider,
@@ -51,8 +52,13 @@ export const CompletePageComponent = ({
 }: Props) => {
   const { t } = useTranslation();
 
-  const { onViewTransactionClick, unstakeMatch, pendingActionMatch, urls } =
-    useCompleteCommonContext();
+  const {
+    cta,
+    onViewTransactionClick,
+    unstakeMatch,
+    pendingActionMatch,
+    urls,
+  } = useCompleteCommonContext();
 
   return (
     <AnimationPage>
@@ -211,6 +217,7 @@ export const CompletePageComponent = ({
             ))}
           </Box>
         </Box>
+        <PageCtaButton cta={cta} />
       </PageContainer>
     </AnimationPage>
   );
