@@ -75,6 +75,40 @@ export const dashboardYieldCategories = [
   "rwa",
 ] as const satisfies ReadonlyArray<DashboardYieldCategory>;
 
+/**
+ * Maps every API `YieldType` to exactly one dashboard category. The
+ * `satisfies Record<ApiYieldType, ...>` guarantees exhaustiveness: a new server
+ * yield type fails the build here until it is assigned a category. This mirrors
+ * `getDashboardYieldCategory` (which classifies hydrated yields) but is keyed by
+ * the API `type` so it can drive `types[]` query filters.
+ */
+const apiYieldTypeToDashboardCategory = {
+  staking: "stake",
+  restaking: "stake",
+  lending: "defi",
+  vault: "defi",
+  fixed_yield: "defi",
+  concentrated_liquidity_pool: "defi",
+  liquidity_pool: "defi",
+  real_world_asset: "rwa",
+} as const satisfies Record<ApiYieldType, DashboardYieldCategory>;
+
+export const getApiYieldTypesForDashboardCategory = (
+  category: DashboardYieldCategory
+): ApiYieldType[] =>
+  (
+    Object.entries(apiYieldTypeToDashboardCategory) as [
+      ApiYieldType,
+      DashboardYieldCategory,
+    ][]
+  )
+    .filter(([, mapped]) => mapped === category)
+    .map(([yieldType]) => yieldType);
+
+export const getDashboardYieldCategoryForApiYieldType = (
+  yieldType: ApiYieldType
+): DashboardYieldCategory => apiYieldTypeToDashboardCategory[yieldType];
+
 export const getDashboardYieldCategory = (
   yieldDto: Yield
 ): DashboardYieldCategory | null => {
@@ -89,23 +123,6 @@ export const getDashboardYieldCategory = (
   if (isDepositYieldType(yieldType)) return "defi";
 
   return null;
-};
-
-export const getAvailableDashboardYieldCategories = (
-  yields: Iterable<Yield>
-): DashboardYieldCategory[] => {
-  const categories = new Set<DashboardYieldCategory>();
-
-  for (const yieldDto of yields) {
-    if (!isNonZeroRewardRateYield(yieldDto)) continue;
-
-    const category = getDashboardYieldCategory(yieldDto);
-    if (category) categories.add(category);
-  }
-
-  return dashboardYieldCategories.filter((category) =>
-    categories.has(category)
-  );
 };
 
 export const filterValidators = ({

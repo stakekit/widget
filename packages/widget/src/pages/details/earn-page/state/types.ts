@@ -9,6 +9,7 @@ import type {
   Yield,
 } from "../../../../domain/types/yields";
 import type { ValidatorDto } from "../../../../generated/api/yield";
+import type { TokenMaxYieldRate } from "../../../../hooks/api/use-token-list-yields";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -28,6 +29,10 @@ export type State = {
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
+type DashboardTokenYieldSelectAction = Action<
+  "dashboard/token-yield/select",
+  { token: TokenDto; yieldDto: Yield }
+>;
 type YieldSelectAction = Action<"yield/select", Yield>;
 
 type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
@@ -47,6 +52,7 @@ type ProviderYieldIdSelectAction = Action<
 
 export type Actions =
   | TokenBalanceSelectAction
+  | DashboardTokenYieldSelectAction
   | YieldSelectAction
   | StakeAmountChangeAction
   | StakeAmountMaxAction
@@ -117,6 +123,9 @@ export type EarnPageContextType = {
     all: TokenBalanceScanResponseDto[];
     filtered: TokenBalanceScanResponseDto[];
   }>;
+  tokenMaxYieldRatesByToken: ReadonlyMap<string, TokenMaxYieldRate>;
+  tokenYieldCountsByToken: ReadonlyMap<string, number>;
+  tokenListYieldsIsLoading: boolean;
   onTokenSearch: (value: string) => void;
   onValidatorSearch: (value: string) => void;
   validatorSearch: string;

@@ -6,6 +6,7 @@ import {
   type YieldProviderDetails,
 } from "../../../domain/types/yields";
 import type { ApiClient } from "../../../providers/api/api-client";
+import { fetchYieldSummariesByIds } from "../use-yield-summaries";
 
 type Params = {
   yieldId: string;
@@ -219,14 +220,14 @@ const multiFn = ({
 }) => {
   return EitherAsync(async () => {
     const client = apiClient.withOptions({ signal, suppressRichErrors });
-    const newYieldsResult = await client.yield.YieldsControllerGetYields({
-      params: {
-        yieldIds,
-        limit: yieldIds.length,
-      },
+    const newYields = await fetchYieldSummariesByIds({
+      apiClient,
+      signal,
+      suppressRichErrors,
+      yieldIds,
     });
     const newYieldsById = new Map(
-      (newYieldsResult.items ?? []).map((yieldDto) => [yieldDto.id, yieldDto])
+      newYields.map((yieldDto) => [yieldDto.id, yieldDto])
     );
     const providersById = await fetchYieldProviders({
       client,
