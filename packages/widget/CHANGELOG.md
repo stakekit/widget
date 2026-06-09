@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.274](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.273...@stakekit/widget@0.0.274) (2026-06-09)
+
+
+### Features
+
+* **widget:** scope dashboard yield discovery by category ([#527](https://github.com/stakekit/widget/issues/527)) ([229da83](https://github.com/stakekit/widget/commit/229da830a3a57eab19816ac09edf4e08c564e581))
+
 ## [0.0.273](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.272...@stakekit/widget@0.0.273) (2026-06-08)
 
 
