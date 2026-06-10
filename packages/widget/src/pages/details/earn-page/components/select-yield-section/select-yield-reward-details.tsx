@@ -22,7 +22,7 @@ import { useSettings } from "../../../../../providers/settings";
 import { formatNumber } from "../../../../../utils";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { selectYieldRewardsText } from "./styles.css";
+import { selectYieldRewardsText, viaProviderImage } from "./styles.css";
 
 export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
@@ -219,7 +219,7 @@ const YieldStrategyDetails = ({
         )}
 
         <Image
-          imgProps={{ borderRadius: "base" }}
+          imgProps={{ borderRadius: "base", className: viaProviderImage }}
           wrapperProps={{ hw: "5" }}
           src={providerLogo}
           fallbackName={providerName}
