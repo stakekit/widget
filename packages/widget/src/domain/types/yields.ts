@@ -221,7 +221,12 @@ export const isYieldActionArgRequired = (
 
 export const getYieldRewardTokens = (yieldDto: YieldBase) =>
   pipe(
-    yieldDto.rewardRate?.components?.map((component) => component.token) ?? [],
+    [
+      ...(yieldDto.outputToken ? [yieldDto.outputToken] : []),
+      ...(yieldDto.rewardRate?.components?.map(
+        (component) => component.token
+      ) ?? []),
+    ],
     EArray.dedupeWith((a, b) => tokenString(a) === tokenString(b)),
     EArray.filter((token) => tokenString(token) !== tokenString(yieldDto.token))
   );
