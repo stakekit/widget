@@ -1,6 +1,6 @@
 import { style } from "@vanilla-extract/css";
 
-const baseContainer = {
+const baseContainer = style({
   position: "absolute",
   bottom: -2,
   right: -2,
@@ -9,18 +9,15 @@ const baseContainer = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-} as const;
-
-export const logoContainer = style({
-  ...baseContainer,
-  backgroundColor: "#ffffff",
-  boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.06)",
 });
 
-export const fallbackContainer = style({
-  ...baseContainer,
-  backgroundColor: "#9ca3af",
-});
+export const logoContainer = style([
+  baseContainer,
+  {
+    backgroundColor: "#ffffff",
+    boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.06)",
+  },
+]);
 
 export const logoImage = style({
   maxWidth: "100%",
