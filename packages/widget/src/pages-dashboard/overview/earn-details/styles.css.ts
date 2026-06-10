@@ -5,22 +5,23 @@ import { vars } from "../../../styles/theme/contract.css";
 import { OUTLET_PADDING } from "../../common/components/styles.css";
 
 export const container = style({
+  bottom: 0,
   boxSizing: "border-box",
-  flex: 1,
-  maxHeight: "max(620px, 100%)",
-  minHeight: 0,
-  overflowY: "auto",
-  scrollbarGutter: "stable",
+  left: 0,
   marginRight: `calc(-1 * ${OUTLET_PADDING})`,
+  overflowY: "auto",
   paddingRight: OUTLET_PADDING,
+  position: "absolute",
+  right: 0,
+  scrollbarGutter: "stable",
+  top: 0,
 });
 
 export const earnDetailsWrapper = style({
   alignSelf: "stretch",
-  display: "flex",
-  flexDirection: "column",
-  minHeight: 0,
+  minHeight: "620px",
   minWidth: 0,
+  position: "relative",
 });
 
 export const headerProviderText = style({

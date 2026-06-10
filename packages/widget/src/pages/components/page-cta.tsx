@@ -14,7 +14,7 @@ export const PageCtaButton = ({ cta }: { cta: PageCta }) => {
   if (!cta || cta.hide) return null;
 
   return (
-    <Box marginTop="auto" marginBottom="4">
+    <Box marginTop="auto">
       <Button
         data-rk={`footer-button-${cta.variant ?? "primary"}`}
         disabled={cta.disabled}
