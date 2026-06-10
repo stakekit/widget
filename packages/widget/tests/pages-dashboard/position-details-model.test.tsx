@@ -18,13 +18,14 @@ const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
     "dashboard.earn_details.asset": `Asset (${options?.symbol ?? ""})`,
     "dashboard.earn_details.auto_compound": "Auto-compound",
-    "dashboard.earn_details.cooldown": "Cooldown",
+    "dashboard.earn_details.cooldown": "Redemption time",
     "dashboard.earn_details.cooldown_days": `${options?.count ?? ""} days`,
     "dashboard.earn_details.instant": "Instant",
     "dashboard.earn_details.min_stake": "Min stake",
     "dashboard.earn_details.native": "Native",
     "dashboard.earn_details.network": "Network",
     "dashboard.earn_details.no_minimum": "No minimum",
+    "dashboard.earn_details.price_per_share": "Price per share",
     "dashboard.earn_details.provider": "Provider",
     "dashboard.earn_details.reward_claiming": "Reward claiming",
     "dashboard.earn_details.reward_rate_period": `${options?.rewardType ?? "APY"} (7D)`,
@@ -262,7 +263,7 @@ describe("getDashboardPositionDetailsModel", () => {
     expect(
       model.metricCards.find((card) => card.id === "unstaking-period")
     ).toMatchObject({
-      label: "Cooldown",
+      label: "Redemption time",
       value: "7 days",
     });
     expect(model.detailRows.map((row) => row.id)).not.toContain("cooldown");
@@ -322,5 +323,35 @@ describe("getDashboardPositionDetailsModel", () => {
         label: "Asset (ETH)",
       },
     ]);
+  });
+
+  it("includes price per share in details when yield state provides it", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      integrationData: makeYield({
+        state: {
+          pricePerShareState: {
+            price: 1.06274537,
+            quoteToken: yieldApiYieldFixture().token,
+            shareToken: yieldApiYieldFixture().token,
+          },
+        },
+      }),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: new Map(),
+      providersDetails: [{ name: "Midas", status: "active" }],
+      reducedStakedOrLiquidBalance: null,
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(
+      model.detailRows.find((row) => row.id === "price-per-share")
+    ).toEqual({
+      id: "price-per-share",
+      label: "Price per share",
+      value: "1.06274537",
+    });
   });
 });

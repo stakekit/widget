@@ -141,6 +141,18 @@ export const formatRewardTokenLabel = (yieldDto: Yield) => {
     : symbol;
 };
 
+export const formatPricePerShare = (yieldDto: Yield): string | null => {
+  const price = yieldDto.state?.pricePerShareState?.price;
+
+  if (price === null || price === undefined) return null;
+
+  const amount = BigNumber(price);
+
+  if (!amount.isFinite() || amount.isLessThanOrEqualTo(0)) return null;
+
+  return formatNumber(amount, 8);
+};
+
 export const formatCooldownDays = (days: number, t: TFunction): string => {
   return days > 0
     ? t("dashboard.earn_details.cooldown_days", { count: days })
