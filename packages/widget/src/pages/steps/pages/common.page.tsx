@@ -10,6 +10,7 @@ import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
+import { PageCtaButton } from "../../components/page-cta";
 import { useSteps } from "../hooks/use-steps.hook";
 import { utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
@@ -29,7 +30,7 @@ export const StepsPage = ({
 }: StepsPageProps) => {
   const { variant } = useSettings();
 
-  const { retry, txStates } = useSteps({
+  const { retry, txStates, cta } = useSteps({
     inputToken,
     session,
     onSignSuccess,
@@ -92,6 +93,8 @@ export const StepsPage = ({
               </Button>
             </Box>
           )}
+
+          <PageCtaButton cta={cta} />
         </PageContainer>
       </motion.div>
     </AnimationPage>

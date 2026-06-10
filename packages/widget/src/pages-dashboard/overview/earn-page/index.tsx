@@ -1,6 +1,7 @@
 import { Box } from "../../../components/atoms/box";
 import { Divider } from "../../../components/atoms/divider";
 import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
+import { PageCtaButton } from "../../../pages/components/page-cta";
 import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/extra-args-selection";
 import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
@@ -31,6 +32,7 @@ const EarnKycGateSection = () => {
 
 export const EarnPageContent = () => {
   const { variant } = useSettings();
+  const { cta } = useEarnPageContext();
 
   return (
     <Box className={container}>
@@ -58,6 +60,8 @@ export const EarnPageContent = () => {
       <Box>
         <Footer />
       </Box>
+
+      <PageCtaButton cta={cta} />
     </Box>
   );
 };

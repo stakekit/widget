@@ -53,6 +53,11 @@ export const formatRewardRate = (
   return `${APToPercentage(amount.toNumber())}%`;
 };
 
+export const formatMinStakeLabel = (yieldDto: Yield, t: TFunction): string =>
+  getDashboardYieldCategory(yieldDto) === "rwa"
+    ? t("dashboard.earn_details.minimum_subscription")
+    : t("dashboard.earn_details.min_stake");
+
 export const formatMinStake = (
   yieldDto: Yield,
   t: TFunction
@@ -139,6 +144,18 @@ export const formatRewardTokenLabel = (yieldDto: Yield) => {
   return yieldDto.mechanics.rewardClaiming === "auto"
     ? `${symbol} (PPS-bearing)`
     : symbol;
+};
+
+export const formatPricePerShare = (yieldDto: Yield): string | null => {
+  const price = yieldDto.state?.pricePerShareState?.price;
+
+  if (price === null || price === undefined) return null;
+
+  const amount = BigNumber(price);
+
+  if (!amount.isFinite() || amount.isLessThanOrEqualTo(0)) return null;
+
+  return formatNumber(amount, 8);
 };
 
 export const formatCooldownDays = (days: number, t: TFunction): string => {

@@ -1,7 +1,9 @@
 import { createContext, type PropsWithChildren, useContext } from "react";
 import type { TransactionType } from "../../../domain/types/action";
+import type { PageCta } from "../../components/page-cta";
 
 type CompleteCommonContextType = {
+  cta: PageCta;
   urls: {
     type: TransactionType;
     url: string;
@@ -12,6 +14,7 @@ type CompleteCommonContextType = {
 };
 
 const CompleteCommonContext = createContext<CompleteCommonContextType>({
+  cta: null,
   urls: [],
   unstakeMatch: false,
   pendingActionMatch: false,

@@ -6,14 +6,12 @@ import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
 import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
+import { PageCtaButton } from "../../../pages/components/page-cta";
 import { ExtraArgsSelection } from "../../../pages/details/earn-page/components/extra-args-selection";
 import { Footer } from "../../../pages/details/earn-page/components/footer";
 import { SelectTokenSection } from "../../../pages/details/earn-page/components/select-token-section";
 import { useEarnPageContext } from "../../../pages/details/earn-page/state/earn-page-context";
-import {
-  useEarnPageDispatch,
-  useEarnPageState,
-} from "../../../pages/details/earn-page/state/earn-page-state-context";
+import { useEarnPageDispatch } from "../../../pages/details/earn-page/state/earn-page-state-context";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import {
@@ -40,38 +38,21 @@ const StakeKycGateSection = () => {
   );
 };
 
-export const shouldInitializePositionDetailsStakeState = ({
-  positionYieldId,
-  selectedEarnYieldId,
-}: {
-  positionYieldId: string | null;
-  selectedEarnYieldId: string | null;
-}) => !!positionYieldId && selectedEarnYieldId !== positionYieldId;
-
 const PositionDetailsStakeStateInitializer = ({
   positionDetails,
 }: {
   positionDetails: ReturnType<typeof usePositionDetails>;
 }) => {
   const dispatch = useEarnPageDispatch();
-  const { selectedStakeId } = useEarnPageState();
   const positionYield = positionDetails.integrationData.extractNullable();
-  const selectedEarnYieldId = selectedStakeId.extractNullable();
 
   useEffect(() => {
-    if (
-      !shouldInitializePositionDetailsStakeState({
-        positionYieldId: positionYield?.id ?? null,
-        selectedEarnYieldId,
-      }) ||
-      !positionYield
-    ) {
+    if (!positionYield) {
       return;
     }
 
-    dispatch({ type: "token/select", data: positionYield.token });
-    dispatch({ type: "yield/select", data: positionYield });
-  }, [dispatch, positionYield, selectedEarnYieldId]);
+    dispatch({ type: "positionDetails/stake/initialize", data: positionYield });
+  }, [dispatch, positionYield]);
 
   return null;
 };
@@ -79,6 +60,7 @@ const PositionDetailsStakeStateInitializer = ({
 export const PositionDetailsStakeActions = () => {
   const positionDetails = usePositionDetails();
   const { plain } = useUnstakeOrPendingActionParams();
+  const { cta } = useEarnPageContext();
   const { t } = useTranslation();
 
   if (positionDetails.isLoading) {
@@ -147,6 +129,8 @@ export const PositionDetailsStakeActions = () => {
 
         <ExtraArgsSelection />
       </Box>
+
+      <PageCtaButton cta={cta} />
     </Box>
   );
 };

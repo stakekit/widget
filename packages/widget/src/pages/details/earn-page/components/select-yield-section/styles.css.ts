@@ -1,3 +1,4 @@
+import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../styles/theme/atoms.css";
 import { vars } from "../../../../../styles/theme/contract.css";
@@ -60,4 +61,8 @@ export const selectYieldSection = recipe({
       },
     },
   },
+});
+
+export const viaProviderImage = style({
+  minWidth: 0,
 });

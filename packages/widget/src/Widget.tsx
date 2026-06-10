@@ -15,7 +15,6 @@ import { ActivityCompletePage } from "./pages/complete/pages/activity-complete.p
 import { PendingCompletePage } from "./pages/complete/pages/pending-complete.page";
 import { StakeCompletePage } from "./pages/complete/pages/stake-complete.page";
 import { UnstakeCompletePage } from "./pages/complete/pages/unstake-complete.page";
-import { AnimatedFooterContent } from "./pages/components/footer-outlet";
 import { Layout } from "./pages/components/layout";
 import { headerContainer } from "./pages/components/layout/styles.css";
 import { PoweredBy } from "./pages/components/powered-by";
@@ -173,8 +172,6 @@ export const Widget = () => {
               </Routes>
             </AnimatePresence>
           </motion.div>
-
-          <AnimatedFooterContent />
 
           <PoweredBy />
         </LayoutGroup>

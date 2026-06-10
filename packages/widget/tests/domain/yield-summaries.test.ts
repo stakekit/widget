@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  fetchAllYieldSummaries,
   fetchYieldSummariesByIds,
   isVisibleYieldSummary,
   type YieldSummary,
@@ -45,70 +44,6 @@ describe("isVisibleYieldSummary", () => {
         })
       )
     ).toBe(true);
-  });
-});
-
-describe("fetchAllYieldSummaries", () => {
-  it("loops offset until all pages are fetched", async () => {
-    const items = Array.from({ length: 5 }, (_, index) =>
-      summary({ id: `yield-${index}` })
-    );
-
-    const getYields = vi.fn(
-      async ({ params }: { params: { offset?: number; limit?: number } }) => {
-        const offset = params.offset ?? 0;
-        const limit = params.limit ?? 2;
-
-        return {
-          total: items.length,
-          offset,
-          limit,
-          items: items.slice(offset, offset + limit),
-        };
-      }
-    );
-
-    const apiClient = {
-      withOptions: () => ({ yield: { YieldsControllerGetYields: getYields } }),
-    } as unknown as ApiClient;
-
-    const result = await fetchAllYieldSummaries({
-      apiClient,
-      params: { network: "ethereum", limit: 2 },
-    });
-
-    expect(result.map((item) => item.id)).toEqual([
-      "yield-0",
-      "yield-1",
-      "yield-2",
-      "yield-3",
-      "yield-4",
-    ]);
-    expect(getYields).toHaveBeenCalledTimes(3);
-    expect(getYields.mock.calls.map(([arg]) => arg.params.offset)).toEqual([
-      0, 2, 4,
-    ]);
-  });
-
-  it("stops when the API returns an empty page", async () => {
-    const getYields = vi.fn(async () => ({
-      total: 100,
-      offset: 0,
-      limit: 50,
-      items: [],
-    }));
-
-    const apiClient = {
-      withOptions: () => ({ yield: { YieldsControllerGetYields: getYields } }),
-    } as unknown as ApiClient;
-
-    const result = await fetchAllYieldSummaries({
-      apiClient,
-      params: { network: "ethereum" },
-    });
-
-    expect(result).toEqual([]);
-    expect(getYields).toHaveBeenCalledTimes(1);
   });
 });
 

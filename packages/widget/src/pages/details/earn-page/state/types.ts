@@ -13,6 +13,7 @@ import type { useEstimatedRewards } from "../../../../hooks/use-estimated-reward
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
 import type { Action } from "../../../../types/utils";
+import type { PageCta } from "../../../components/page-cta";
 import type { SelectedStakeData } from "../types";
 
 export type State = {
@@ -26,13 +27,17 @@ export type State = {
   useMaxAmount: boolean;
   tronResource: Maybe<TronResourceType>;
   selectedProviderYieldId: Maybe<Yield["id"]>;
+  selectedDashboardYieldCategory: DashboardYieldCategory | null;
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
-type TokenOnlySelectAction = Action<"token-only/select", TokenDto>;
-type DashboardTokenYieldSelectAction = Action<
-  "dashboard/token-yield/select",
-  { token: TokenDto; yieldDto: Yield }
+type DashboardYieldCategorySelectAction = Action<
+  "dashboard/yield-category/select",
+  DashboardYieldCategory
+>;
+type PositionDetailsStakeInitializeAction = Action<
+  "positionDetails/stake/initialize",
+  Yield
 >;
 type YieldSelectAction = Action<"yield/select", Yield>;
 
@@ -53,8 +58,8 @@ type ProviderYieldIdSelectAction = Action<
 
 export type Actions =
   | TokenBalanceSelectAction
-  | TokenOnlySelectAction
-  | DashboardTokenYieldSelectAction
+  | DashboardYieldCategorySelectAction
+  | PositionDetailsStakeInitializeAction
   | YieldSelectAction
   | StakeAmountChangeAction
   | StakeAmountMaxAction
@@ -75,9 +80,11 @@ export type ExtraData = {
   availableAmount: Maybe<BigNumber>;
   availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
   hasNotYieldsForToken: boolean;
+  availableDashboardYieldCategories: DashboardYieldCategory[];
 };
 
 export type EarnPageContextType = {
+  cta: PageCta;
   selectedTokenAvailableAmount: Maybe<{
     symbol: string;
     shortFormattedAmount: string;

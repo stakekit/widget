@@ -20,7 +20,7 @@ import { useActivityContext } from "../../../providers/activity-provider";
 import { defaultFormattedNumber } from "../../../utils";
 import { dateOlderThen7Days } from "../../../utils/date";
 import { MaybeWindow } from "../../../utils/maybe-window";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import type { LabelKey } from "../types";
 
 export const useActionReview = () => {
@@ -143,17 +143,15 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        label: t(`activity.review.${labelKey}`),
-        onClick: () => navigate(`/activity/${path}/steps`),
-        disabled: false,
-        isLoading: false,
-        hide: actionOlderThan7Days,
-      }),
-      [navigate, path, labelKey, actionOlderThan7Days, t]
-    )
+  const cta = useMemo<PageCta>(
+    () => ({
+      label: t(`activity.review.${labelKey}`),
+      onClick: () => navigate(`/activity/${path}/steps`),
+      disabled: false,
+      isLoading: false,
+      hide: actionOlderThan7Days,
+    }),
+    [navigate, path, labelKey, actionOlderThan7Days, t]
   );
 
   return {
@@ -166,5 +164,6 @@ export const useActionReview = () => {
     inputToken,
     actionOlderThan7Days,
     labelKey,
+    cta,
   };
 };

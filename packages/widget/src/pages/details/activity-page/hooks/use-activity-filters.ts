@@ -47,9 +47,8 @@ export const useActivityFilters = (
       count: counts.get(category) ?? 0,
     }));
 
-  // Only surface filters when there is more than one category to switch between.
   const options: ActivityFilterOption[] =
-    categoryOptions.length > 1
+    categoryOptions.length > 0
       ? [{ filter: "all", count: totalCount }, ...categoryOptions]
       : [];
 

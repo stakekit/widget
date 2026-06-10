@@ -71,9 +71,9 @@ export type ValidatorsConfig = Map<
 export type DashboardYieldCategory = "stake" | "defi" | "rwa";
 
 export const dashboardYieldCategories = [
-  "stake",
-  "defi",
   "rwa",
+  "defi",
+  "stake",
 ] as const satisfies ReadonlyArray<DashboardYieldCategory>;
 
 /**
@@ -105,10 +105,6 @@ export const getApiYieldTypesForDashboardCategory = (
   )
     .filter(([, mapped]) => mapped === category)
     .map(([yieldType]) => yieldType);
-
-export const getDashboardYieldCategoryForApiYieldType = (
-  yieldType: ApiYieldType
-): DashboardYieldCategory => apiYieldTypeToDashboardCategory[yieldType];
 
 export const getDashboardYieldCategory = (
   yieldDto: YieldBase
@@ -221,7 +217,12 @@ export const isYieldActionArgRequired = (
 
 export const getYieldRewardTokens = (yieldDto: YieldBase) =>
   pipe(
-    yieldDto.rewardRate?.components?.map((component) => component.token) ?? [],
+    [
+      ...(yieldDto.outputToken ? [yieldDto.outputToken] : []),
+      ...(yieldDto.rewardRate?.components?.map(
+        (component) => component.token
+      ) ?? []),
+    ],
     EArray.dedupeWith((a, b) => tokenString(a) === tokenString(b)),
     EArray.filter((token) => tokenString(token) !== tokenString(yieldDto.token))
   );

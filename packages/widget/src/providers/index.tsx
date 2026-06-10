@@ -4,10 +4,6 @@ import { I18nextProvider } from "react-i18next";
 import { HeaderHeightProvider } from "../components/molecules/header/use-sync-header-height";
 import { SummaryProvider } from "../hooks/use-summary";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
-import {
-  FooterButtonProvider,
-  FooterHeightProvider,
-} from "../pages/components/footer-outlet/context";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { EarnPageStateProvider } from "../pages/details/earn-page/state/earn-page-state-context";
@@ -52,25 +48,21 @@ export const Providers = ({
                                   <ListStateContextProvider>
                                     <CurrentLayoutProvider>
                                       <HeaderHeightProvider>
-                                        <FooterHeightProvider>
-                                          <FooterButtonProvider>
-                                            <PoweredByHeightProvider>
-                                              <DisableTransitionDurationProvider>
-                                                <EnterStakeStoreProvider>
-                                                  <ExitStakeStoreProvider>
-                                                    <PendingActionStoreProvider>
-                                                      <ActivityProvider>
-                                                        <SummaryProvider>
-                                                          {children}
-                                                        </SummaryProvider>
-                                                      </ActivityProvider>
-                                                    </PendingActionStoreProvider>
-                                                  </ExitStakeStoreProvider>
-                                                </EnterStakeStoreProvider>
-                                              </DisableTransitionDurationProvider>
-                                            </PoweredByHeightProvider>
-                                          </FooterButtonProvider>
-                                        </FooterHeightProvider>
+                                        <PoweredByHeightProvider>
+                                          <DisableTransitionDurationProvider>
+                                            <EnterStakeStoreProvider>
+                                              <ExitStakeStoreProvider>
+                                                <PendingActionStoreProvider>
+                                                  <ActivityProvider>
+                                                    <SummaryProvider>
+                                                      {children}
+                                                    </SummaryProvider>
+                                                  </ActivityProvider>
+                                                </PendingActionStoreProvider>
+                                              </ExitStakeStoreProvider>
+                                            </EnterStakeStoreProvider>
+                                          </DisableTransitionDurationProvider>
+                                        </PoweredByHeightProvider>
                                       </HeaderHeightProvider>
                                     </CurrentLayoutProvider>
                                   </ListStateContextProvider>

@@ -28,8 +28,10 @@ import {
   formatCooldownDays,
   formatEnumValue,
   formatMinStake,
+  formatMinStakeLabel,
   formatNetworkName,
   formatOptionalDays,
+  formatPricePerShare,
   formatRewardClaiming,
   formatRewardRateLabel,
   formatRewardTokenLabel,
@@ -488,6 +490,7 @@ const getDetailRows = ({
 }): DashboardPositionDetailRow[] => {
   const risk = getYieldRiskDisplay(integrationData);
   const minStake = formatMinStake(integrationData, t);
+  const pricePerShare = formatPricePerShare(integrationData);
   const cooldown = formatCooldownDays(
     getYieldCooldownPeriod(integrationData)?.days ?? 0,
     t
@@ -519,6 +522,13 @@ const getDetailRows = ({
           label: t("dashboard.earn_details.reward_token"),
           value: formatRewardTokenLabel(integrationData),
         },
+    pricePerShare
+      ? {
+          id: "price-per-share",
+          label: t("dashboard.earn_details.price_per_share"),
+          value: pricePerShare,
+        }
+      : null,
     {
       id: "type",
       label: t("dashboard.earn_details.type"),
@@ -544,7 +554,7 @@ const getDetailRows = ({
     minStake
       ? {
           id: "min-stake",
-          label: t("dashboard.earn_details.min_stake"),
+          label: formatMinStakeLabel(integrationData, t),
           value: minStake.value,
         }
       : null,

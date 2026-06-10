@@ -33,21 +33,18 @@ const staleTime = 1000 * 60 * 2;
  */
 export const useDashboardYieldCatalog = ({
   enabled = true,
-  network,
 }: {
   enabled?: boolean;
-  network?: TokenDto["network"] | null;
 } = {}) => {
-  const { network: walletNetwork } = useSKWallet();
+  const { network, isConnecting } = useSKWallet();
   const apiClient = useApiClient();
 
-  const catalogNetwork = network === null ? null : (network ?? walletNetwork);
-  const probeEnabled = enabled && (network === null || !!catalogNetwork);
+  const probeEnabled = enabled && !isConnecting;
 
   const results = useQueries({
     queries: dashboardYieldCategories.map((category) => {
       const params: YieldSummariesParams = {
-        ...(catalogNetwork ? { network: catalogNetwork } : {}),
+        ...(network ? { network: network } : {}),
         types: getApiYieldTypesForDashboardCategory(category),
         sort: "rewardRateDesc",
         limit: DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT,

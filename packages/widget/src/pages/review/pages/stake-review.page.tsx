@@ -15,6 +15,7 @@ export const StakeReviewPage = () => {
     yieldType,
     amount,
     interestRate,
+    estimatedRewardAmounts,
     metadata,
     rewardToken,
     token,
@@ -30,6 +31,7 @@ export const StakeReviewPage = () => {
     kycProviderName,
     kycStatusIsChecking,
     onKycStatusRefresh,
+    cta,
   } = useStakeReview();
 
   const info = useMemo(
@@ -71,9 +73,11 @@ export const StakeReviewPage = () => {
       token={token}
       info={info}
       rewardTokenDetailsProps={rewardTokenDetailsProps}
+      estimatedRewardAmounts={estimatedRewardAmounts}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
       commissionFee={commissionFee}
+      cta={cta}
       notice={
         kycGate.state !== "pass" || kycStatusIsChecking ? (
           <KycGateCard

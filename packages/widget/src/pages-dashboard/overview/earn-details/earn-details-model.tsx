@@ -33,8 +33,10 @@ import {
   formatMeaningfulCompactNumber,
   formatMeaningfulCompactUsd,
   formatMinStake,
+  formatMinStakeLabel,
   formatNetworkName,
   formatOptionalDays,
+  formatPricePerShare,
   formatRequirementStatus,
   formatRewardClaiming,
   formatRewardRate,
@@ -259,6 +261,7 @@ const getDetailRows = ({
     label: t("dashboard.earn_details.reward_token"),
     value: formatRewardTokenLabel(yieldDto),
   },
+  ...getPricePerShareRows(yieldDto, t),
   ...facts
     .filter((fact) => fact.detailEligible && !promotedFactIds.has(fact.id))
     .map((fact) => ({
@@ -267,6 +270,23 @@ const getDetailRows = ({
       value: fact.value,
     })),
 ];
+
+const getPricePerShareRows = (
+  yieldDto: Yield,
+  t: TFunction
+): EarnDetailRow[] => {
+  const value = formatPricePerShare(yieldDto);
+
+  if (!value) return [];
+
+  return [
+    {
+      id: "price-per-share",
+      label: t("dashboard.earn_details.price_per_share"),
+      value,
+    },
+  ];
+};
 
 const getRewardRateFact = ({
   effectiveRewardRate,
@@ -325,7 +345,7 @@ const getMinStakeFact = (
     id: "min-stake",
     kpiEligible: true,
     kpiPrimaryEligible: value.kpiPrimaryEligible,
-    label: t("dashboard.earn_details.min_stake"),
+    label: formatMinStakeLabel(yieldDto, t),
     value: value.value,
   };
 };

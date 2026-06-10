@@ -10,6 +10,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
+import { PageCtaButton } from "../../components/page-cta";
 import { ExtraArgsSelection } from "./components/extra-args-selection";
 import { Footer } from "./components/footer";
 import { SelectProvider } from "./components/select-provider";
@@ -48,7 +49,7 @@ const EarnPageComponent = () => {
 
   const { variant } = useSettings();
 
-  const { isError } = useEarnPageContext();
+  const { cta, isError } = useEarnPageContext();
 
   return (
     <PageContainer>
@@ -81,6 +82,8 @@ const EarnPageComponent = () => {
       <Box marginTop="4">
         <Footer />
       </Box>
+
+      <PageCtaButton cta={cta} />
     </PageContainer>
   );
 };

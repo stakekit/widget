@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getKycProviderName } from "../../../domain/types/kyc";
+import { isBittensorStaking } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
@@ -20,7 +21,7 @@ import { useEnterStakeStore } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
-import { useRegisterFooterButton } from "../../components/footer-outlet/context";
+import type { PageCta } from "../../components/page-cta";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
@@ -111,6 +112,26 @@ export const useStakeReview = () => {
     [estimatedRewards]
   );
 
+  const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
+  const rewardsTokenSymbol = useMemo(
+    () =>
+      selectedStake
+        .filter((val) => isBittensorStaking(val.id))
+        .chain(() => List.head([...enterRequest.selectedValidators.values()]))
+        .map((validator) => validator.subnet?.tokenSymbol ?? "")
+        .orDefault(symbol),
+    [enterRequest.selectedValidators, selectedStake, symbol]
+  );
+
+  const estimatedRewardAmounts = useMemo(
+    () =>
+      estimatedRewards.map((rewards) => ({
+        earnYearly: `${rewards.yearly} ${rewardsTokenSymbol}`,
+        earnMonthly: `${rewards.monthly} ${rewardsTokenSymbol}`,
+      })),
+    [estimatedRewards, rewardsTokenSymbol]
+  );
+
   const pricesState = useTokensPrices({
     token: selectedToken,
     yieldDto: selectedStake,
@@ -195,22 +216,20 @@ export const useStakeReview = () => {
 
   const { t } = useTranslation();
 
-  useRegisterFooterButton(
-    useMemo(
-      () => ({
-        disabled: kycGateIsBlocking,
-        isLoading: enterMutation.isPending || yieldKycGate.isLoading,
-        label: t("shared.confirm"),
-        onClick: () => onClickRef.current(),
-      }),
-      [
-        enterMutation.isPending,
-        kycGateIsBlocking,
-        onClickRef,
-        t,
-        yieldKycGate.isLoading,
-      ]
-    )
+  const cta = useMemo<PageCta>(
+    () => ({
+      disabled: kycGateIsBlocking,
+      isLoading: enterMutation.isPending || yieldKycGate.isLoading,
+      label: t("shared.confirm"),
+      onClick: () => onClickRef.current(),
+    }),
+    [
+      enterMutation.isPending,
+      kycGateIsBlocking,
+      onClickRef,
+      t,
+      yieldKycGate.isLoading,
+    ]
   );
 
   const { variant } = useSettings();
@@ -235,6 +254,7 @@ export const useStakeReview = () => {
     amount,
     fee,
     interestRate,
+    estimatedRewardAmounts,
     yieldType,
     rewardToken,
     metadata,
@@ -256,5 +276,6 @@ export const useStakeReview = () => {
       yieldKycGate.isFetching ||
       yieldKycGate.isRefetching,
     onKycStatusRefresh,
+    cta,
   };
 };

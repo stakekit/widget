@@ -10,7 +10,6 @@ import {
   BackButtonProvider,
 } from "../common/components/back-button";
 import { VerticalDivider } from "../common/components/divider";
-import { FooterOutlet } from "../common/components/footer-outlet";
 import { TabPageContainer } from "../common/components/tab-page-container";
 import {
   positionDetailsActionsHasContent,
@@ -85,8 +84,6 @@ const PositionDetailsPageComponent = () => {
               justifyContent="space-between"
             >
               <Outlet />
-
-              <FooterOutlet />
             </Box>
           </Box>
         ) : null}

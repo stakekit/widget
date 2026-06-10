@@ -16,7 +16,6 @@ export const PageContainer = ({
       display="flex"
       flexDirection="column"
       px={dashboardVariant ? "0" : "4"}
-      marginBottom="4"
       flex={1}
       paddingTop={dashboardVariant ? "0" : "2"}
       gap={dashboardVariant ? "2" : "0"}

@@ -6,6 +6,7 @@ import { Box } from "../../../../../components/atoms/box";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Heading } from "../../../../../components/atoms/typography/heading";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { EstimatedRewardAmounts } from "../../../../../components/molecules/estimated-reward-amounts";
 import type { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
 import type {
   TokenDto,
@@ -19,6 +20,10 @@ type Props = {
   metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
   info: ReactNode;
   rewardTokenDetailsProps?: Maybe<ComponentProps<typeof RewardTokenDetails>>;
+  estimatedRewardAmounts?: Maybe<{
+    earnYearly: string;
+    earnMonthly: string;
+  }>;
 };
 
 const ReviewTopSection = ({
@@ -27,6 +32,7 @@ const ReviewTopSection = ({
   metadata,
   info,
   rewardTokenDetailsProps,
+  estimatedRewardAmounts,
 }: Props) => {
   const { t } = useTranslation();
 
@@ -69,10 +75,18 @@ const ReviewTopSection = ({
       {rewardTokenDetailsProps
         ?.filter((v) => v.type === "stake")
         .map(() => (
-          <Box marginTop="2">
+          <Box marginTop="4" display="flex" flexDirection="column" gap="1">
             <Text variant={{ type: "muted", weight: "normal" }}>
               {t("review.estimated_reward")}
             </Text>
+            {(estimatedRewardAmounts ?? Maybe.empty())
+              .map((amounts) => (
+                <EstimatedRewardAmounts
+                  earnMonthly={amounts.earnMonthly}
+                  earnYearly={amounts.earnYearly}
+                />
+              ))
+              .extractNullable()}
           </Box>
         ))
         .extractNullable()}

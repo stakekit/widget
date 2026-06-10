@@ -12,7 +12,6 @@ import { renderApp } from "../utils/test-utils";
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 
 describe("Select opportunity", () => {
-  // This loads cosmos wagmi config, which takes some time, so we need to increase the timeout
   it("Works as expected", async ({ worker }) => {
     window.history.pushState({}, "", "/");
 
@@ -141,54 +140,7 @@ describe("Select opportunity", () => {
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
         await delay();
 
-        return HttpResponse.json([
-          "ethereum",
-          "ethereum-goerli",
-          "avalanche-c",
-          "celo",
-          "akash",
-          "cosmos",
-          "kava",
-          "osmosis",
-          "juno",
-          "stargaze",
-          "persistence",
-          "axelar",
-          "onomy",
-          "quicksilver",
-          "agoric",
-          "band-protocol",
-          "bitsong",
-          "chihuahua",
-          "comdex",
-          "crescent",
-          "cronos",
-          "cudos",
-          "fetch-ai",
-          "gravity-bridge",
-          "injective",
-          "irisnet",
-          "ki-network",
-          "mars-protocol",
-          "regen",
-          "secret",
-          "sentinel",
-          "sommelier",
-          "teritori",
-          "umee",
-          "coreum",
-          "desmos",
-          "dydx",
-          "optimism",
-          "fantom",
-          "arbitrum",
-          "polygon",
-          "binance",
-          "near",
-          "harmony",
-          "solana",
-          "tezos",
-        ]);
+        return HttpResponse.json(["ethereum", "polkadot"]);
       }),
       http.get(legacyApiRoute("/v1/tokens"), async () => {
         await delay();

@@ -1,6 +1,5 @@
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { YieldMetadata } from "../../../../domain/types/yields";
-import { useSettings } from "../../../../providers/settings";
 import type { Atoms } from "../../../../styles/theme/atoms.css";
 import { NetworkLogoImage } from "../network-icon-image";
 import { TokenIconContainer } from "../token-icon-container";
@@ -19,25 +18,23 @@ export const ProviderIcon = ({
   tokenNetworkLogoHw?: Atoms["hw"];
   hideNetwork?: boolean;
 }) => {
-  const { hideNetworkLogo } = useSettings();
-
   return (
     <TokenIconContainer
       hideNetwork={hideNetwork}
       token={token}
       metadata={metadata}
     >
-      {({ fallbackUrl, mainUrl, name, networkLogoUri, providerIcon }) => (
+      {({ fallbackUrl, mainUrl, name, providerIcon }) => (
         <>
           <TokenIconImage
             fallbackUrl={fallbackUrl}
-            mainUrl={providerIcon}
+            mainUrl={mainUrl}
             name={name}
             tokenLogoHw={tokenLogoHw}
           />
-          {!hideNetwork && !hideNetworkLogo && (
+          {!hideNetwork && providerIcon && (
             <NetworkLogoImage
-              networkLogoUri={mainUrl || networkLogoUri}
+              networkLogoUri={providerIcon}
               networkName={token.network}
               tokenNetworkLogoHw={tokenNetworkLogoHw}
             />
