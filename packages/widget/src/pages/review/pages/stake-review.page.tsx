@@ -15,6 +15,7 @@ export const StakeReviewPage = () => {
     yieldType,
     amount,
     interestRate,
+    estimatedRewardAmounts,
     metadata,
     rewardToken,
     token,
@@ -72,6 +73,7 @@ export const StakeReviewPage = () => {
       token={token}
       info={info}
       rewardTokenDetailsProps={rewardTokenDetailsProps}
+      estimatedRewardAmounts={estimatedRewardAmounts}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
       commissionFee={commissionFee}

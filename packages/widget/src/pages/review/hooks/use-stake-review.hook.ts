@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getKycProviderName } from "../../../domain/types/kyc";
+import { isBittensorStaking } from "../../../domain/types/yields";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
@@ -109,6 +110,26 @@ export const useStakeReview = () => {
   const interestRate = useMemo(
     () => estimatedRewards.mapOrDefault((r) => r.percentage.toString(), ""),
     [estimatedRewards]
+  );
+
+  const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
+  const rewardsTokenSymbol = useMemo(
+    () =>
+      selectedStake
+        .filter((val) => isBittensorStaking(val.id))
+        .chain(() => List.head([...enterRequest.selectedValidators.values()]))
+        .map((validator) => validator.subnet?.tokenSymbol ?? "")
+        .orDefault(symbol),
+    [enterRequest.selectedValidators, selectedStake, symbol]
+  );
+
+  const estimatedRewardAmounts = useMemo(
+    () =>
+      estimatedRewards.map((rewards) => ({
+        earnYearly: `${rewards.yearly} ${rewardsTokenSymbol}`,
+        earnMonthly: `${rewards.monthly} ${rewardsTokenSymbol}`,
+      })),
+    [estimatedRewards, rewardsTokenSymbol]
   );
 
   const pricesState = useTokensPrices({
@@ -233,6 +254,7 @@ export const useStakeReview = () => {
     amount,
     fee,
     interestRate,
+    estimatedRewardAmounts,
     yieldType,
     rewardToken,
     metadata,

@@ -30,6 +30,10 @@ type ReviewPageProps = {
   metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
   info: ReactNode;
   rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
+  estimatedRewardAmounts?: Maybe<{
+    earnYearly: string;
+    earnMonthly: string;
+  }>;
   isGasCheckError: boolean;
   loading?: boolean;
   depositFee: Maybe<FeesBps>;
@@ -48,6 +52,7 @@ export const ReviewPage = ({
   metadata,
   info,
   rewardTokenDetailsProps,
+  estimatedRewardAmounts,
   isGasCheckError,
   loading = false,
   depositFee,
@@ -71,6 +76,7 @@ export const ReviewPage = ({
           info={info}
           metadata={metadata}
           rewardTokenDetailsProps={rewardTokenDetailsProps}
+          estimatedRewardAmounts={estimatedRewardAmounts}
           title={title}
           token={token}
         />

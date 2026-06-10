@@ -125,6 +125,22 @@ describe("Staking flow", () => {
     await expect.element(app.getByText("& earn").first()).toBeInTheDocument();
     await expect.element(app.getByText("5.08%").first()).toBeInTheDocument();
 
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__yearly")
+          .getByText(`0.00508 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
+    await expect
+      .element(
+        app
+          .getByTestId("estimated-reward__monthly")
+          .getByText(`0.00042 ${yieldOp.token.symbol}`)
+      )
+      .toBeInTheDocument();
+
     await expect.element(app.getByText("Confirm").last()).toBeInTheDocument();
 
     await userEvent.click(app.getByText("Confirm").last());

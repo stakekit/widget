@@ -1,11 +1,11 @@
 import BigNumber from "bignumber.js";
-import clsx from "clsx";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { Divider } from "../../../../../components/atoms/divider";
 import { MorphoStarsIcon } from "../../../../../components/atoms/icons/morpho-stars";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
+import { EstimatedRewardAmounts } from "../../../../../components/molecules/estimated-reward-amounts";
 import { RewardRateBreakdown } from "../../../../../components/molecules/reward-rate-breakdown";
 import { isMorphoProvider } from "../../../../../components/molecules/reward-token-details";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
@@ -17,12 +17,10 @@ import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../domain/types/yields";
-import { VerticalDivider } from "../../../../../pages-dashboard/common/components/divider";
 import { useSettings } from "../../../../../providers/settings";
 import { formatNumber } from "../../../../../utils";
-import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
-import { selectYieldRewardsText, viaProviderImage } from "./styles.css";
+import { viaProviderImage } from "./styles.css";
 
 export const SelectYieldRewardDetails = () => {
   const { variant } = useSettings();
@@ -149,17 +147,10 @@ export const SelectYieldRewardDetails = () => {
             ))
             .extractNullable()}
 
-        {variant === "utila" || variant === "porto" ? (
-          <UtilaEarnYearlyOrMonthly
-            earnMonthly={earnMonthly}
-            earnYearly={earnYearly}
-          />
-        ) : (
-          <DefaultEarnYearlyOrMonthly
-            earnMonthly={earnMonthly}
-            earnYearly={earnYearly}
-          />
-        )}
+        <EstimatedRewardAmounts
+          earnMonthly={earnMonthly}
+          earnYearly={earnYearly}
+        />
 
         {rewardRateDetails
           .map((rewardRate) => (
@@ -228,112 +219,6 @@ const YieldStrategyDetails = ({
         <Text variant={{ type: "muted", weight: "normal" }}>
           {t("details.via", { providerName })}
         </Text>
-      </Box>
-    </Box>
-  );
-};
-
-const DefaultEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: {
-  earnMonthly: string;
-  earnYearly: string;
-}) => {
-  const { t } = useTranslation();
-
-  const { variant } = useSettings();
-
-  return (
-    <>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__yearly"
-        data-rk="estimated-reward__yearly"
-        gap="2"
-      >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {t(variant === "zerion" ? "details.rewards.yearly" : "shared.yearly")}
-        </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnYearly}
-        </Text>
-      </Box>
-
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        data-testid="estimated-reward__monthly"
-        data-rk="estimated-reward__monthly"
-        gap="2"
-      >
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {t("shared.monthly")}
-        </Text>
-        <Text
-          variant={{ type: "muted", weight: "normal" }}
-          className={clsx(
-            combineRecipeWithVariant({
-              rec: selectYieldRewardsText,
-              variant,
-            })
-          )}
-        >
-          {earnMonthly}
-        </Text>
-      </Box>
-    </>
-  );
-};
-
-const UtilaEarnYearlyOrMonthly = ({
-  earnMonthly,
-  earnYearly,
-}: {
-  earnMonthly: string;
-  earnYearly: string;
-}) => {
-  const { t } = useTranslation();
-
-  return (
-    <Box display="flex" alignItems="center" gap="3" flexWrap="wrap">
-      <Box display="flex" alignItems="center" gap="2">
-        <Text variant={{ weight: "normal" }}>{t("shared.yearly")}</Text>
-        <Text variant={{ weight: "normal" }}>{earnYearly}</Text>
-      </Box>
-
-      <VerticalDivider />
-
-      <Box display="flex" alignItems="center" gap="2">
-        <Text variant={{ weight: "normal" }}>{t("shared.monthly")}</Text>
-        <Text variant={{ weight: "normal" }}>{earnMonthly}</Text>
       </Box>
     </Box>
   );
