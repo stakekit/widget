@@ -272,6 +272,7 @@
       "tvl": "TVL",
       "risk": "Risk",
       "min_stake": "Min stake",
+      "minimum_subscription": "Minimum subscription",
       "status": "Status",
       "active": "Active",
       "kyc": "KYC",

@@ -694,6 +694,7 @@
       "tvl": "TVL",
       "risk": "Risque",
       "min_stake": "Mise min.",
+      "minimum_subscription": "Souscription minimale",
       "status": "Statut",
       "active": "Actif",
       "kyc": "KYC",

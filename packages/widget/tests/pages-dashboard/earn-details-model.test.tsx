@@ -6,6 +6,8 @@ import { yieldApiYieldFixture } from "../fixtures";
 
 const t = (key: string): string => {
   const translations: Record<string, string> = {
+    "dashboard.earn_details.min_stake": "Min stake",
+    "dashboard.earn_details.minimum_subscription": "Minimum subscription",
     "dashboard.earn_details.network": "Network",
     "dashboard.earn_details.price_per_share": "Price per share",
     "dashboard.earn_details.provider": "Provider",
@@ -13,6 +15,11 @@ const t = (key: string): string => {
   };
 
   return translations[key] ?? key;
+};
+
+const minStakeMechanics = {
+  ...yieldApiYieldFixture().mechanics,
+  entryLimits: { minimum: "1", maximum: null },
 };
 
 const makeYield = (overrides?: Partial<Yield>): Yield =>
@@ -44,6 +51,46 @@ describe("getEarnDetailsModel", () => {
       label: "Price per share",
       value: "1.06274537",
     });
+  });
+
+  it("labels minimum amount as Minimum subscription for RWA yields", () => {
+    const model = getEarnDetailsModel({
+      t: t as TFunction,
+      yieldDto: makeYield({
+        mechanics: {
+          ...minStakeMechanics,
+          type: "real_world_asset",
+        },
+        token: {
+          ...yieldApiYieldFixture().token,
+          symbol: "USDC",
+        },
+      }),
+    });
+
+    expect(model.detailRows.find((row) => row.id === "min-stake")).toEqual(
+      expect.objectContaining({
+        label: "Minimum subscription",
+      })
+    );
+  });
+
+  it("labels minimum amount as Min stake for non-RWA yields", () => {
+    const model = getEarnDetailsModel({
+      t: t as TFunction,
+      yieldDto: makeYield({
+        mechanics: {
+          ...minStakeMechanics,
+          type: "vault",
+        },
+      }),
+    });
+
+    expect(model.detailRows.find((row) => row.id === "min-stake")).toEqual(
+      expect.objectContaining({
+        label: "Min stake",
+      })
+    );
   });
 
   it("omits price per share when yield state does not provide it", () => {

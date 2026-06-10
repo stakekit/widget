@@ -33,6 +33,7 @@ import {
   formatMeaningfulCompactNumber,
   formatMeaningfulCompactUsd,
   formatMinStake,
+  formatMinStakeLabel,
   formatNetworkName,
   formatOptionalDays,
   formatPricePerShare,
@@ -344,7 +345,7 @@ const getMinStakeFact = (
     id: "min-stake",
     kpiEligible: true,
     kpiPrimaryEligible: value.kpiPrimaryEligible,
-    label: t("dashboard.earn_details.min_stake"),
+    label: formatMinStakeLabel(yieldDto, t),
     value: value.value,
   };
 };

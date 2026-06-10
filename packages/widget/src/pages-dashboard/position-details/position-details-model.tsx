@@ -28,6 +28,7 @@ import {
   formatCooldownDays,
   formatEnumValue,
   formatMinStake,
+  formatMinStakeLabel,
   formatNetworkName,
   formatOptionalDays,
   formatPricePerShare,
@@ -559,7 +560,7 @@ const getDetailRows = ({
     minStake
       ? {
           id: "min-stake",
-          label: t("dashboard.earn_details.min_stake"),
+          label: formatMinStakeLabel(integrationData, t),
           value: minStake.value,
         }
       : null,

@@ -6,7 +6,9 @@ import { OUTLET_PADDING } from "../../common/components/styles.css";
 
 export const container = style({
   boxSizing: "border-box",
-  maxHeight: "620px",
+  flex: 1,
+  maxHeight: "max(620px, 100%)",
+  minHeight: 0,
   overflowY: "auto",
   scrollbarGutter: "stable",
   marginRight: `calc(-1 * ${OUTLET_PADDING})`,
@@ -14,7 +16,10 @@ export const container = style({
 });
 
 export const earnDetailsWrapper = style({
-  alignSelf: "flex-start",
+  alignSelf: "stretch",
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 0,
   minWidth: 0,
 });
 

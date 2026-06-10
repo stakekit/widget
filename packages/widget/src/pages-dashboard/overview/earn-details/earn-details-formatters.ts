@@ -53,6 +53,11 @@ export const formatRewardRate = (
   return `${APToPercentage(amount.toNumber())}%`;
 };
 
+export const formatMinStakeLabel = (yieldDto: Yield, t: TFunction): string =>
+  getDashboardYieldCategory(yieldDto) === "rwa"
+    ? t("dashboard.earn_details.minimum_subscription")
+    : t("dashboard.earn_details.min_stake");
+
 export const formatMinStake = (
   yieldDto: Yield,
   t: TFunction
