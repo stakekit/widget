@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## [0.0.276](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.275...@stakekit/widget@0.0.276) (2026-06-10)
+
+
+### Bug Fixes
+
+* category selection  ([#532](https://github.com/stakekit/widget/issues/532)) ([a75057b](https://github.com/stakekit/widget/commit/a75057bcf23ec77ffe23d681d02ed2d50dd58d4d))
+* **widget:** clean up icon fallbacks and pending action labels ([#531](https://github.com/stakekit/widget/issues/531)) ([9ffe4db](https://github.com/stakekit/widget/commit/9ffe4db838e09c93a2ec3ccafcb024f2ec0c50d6))
+
 ## [0.0.275](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.274...@stakekit/widget@0.0.275) (2026-06-09)
 
 
