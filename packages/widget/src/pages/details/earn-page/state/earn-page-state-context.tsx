@@ -94,7 +94,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
                 yieldState: ReturnType<typeof onYieldSelectState> | null;
               }>((yieldDto) => ({
                 selectedDashboardYieldCategory:
-                  getDashboardYieldCategory(yieldDto),
+                  state.selectedDashboardYieldCategory,
                 yieldState: onYieldSelectState({
                   yieldDto,
                   positionsData: positionsData.data,

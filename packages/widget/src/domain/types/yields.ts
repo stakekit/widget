@@ -106,10 +106,6 @@ export const getApiYieldTypesForDashboardCategory = (
     .filter(([, mapped]) => mapped === category)
     .map(([yieldType]) => yieldType);
 
-export const getDashboardYieldCategoryForApiYieldType = (
-  yieldType: ApiYieldType
-): DashboardYieldCategory => apiYieldTypeToDashboardCategory[yieldType];
-
 export const getDashboardYieldCategory = (
   yieldDto: YieldBase
 ): DashboardYieldCategory | null => {
