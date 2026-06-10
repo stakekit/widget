@@ -419,13 +419,7 @@ const getStatusSummary = ({
         pendingAction.pendingActionDto.type === "CLAIM_REWARDS"
           ? "claim"
           : "action",
-      value: t(
-        `position_details.pending_action.${
-          pendingAction.pendingActionDto.type.toLowerCase() as Lowercase<
-            YieldPendingActionDto["type"]
-          >
-        }`
-      ),
+      value: formatPendingActionLabel(pendingAction.pendingActionDto.type, t),
     };
   }
 
@@ -634,6 +628,17 @@ const balanceTypePriority: YieldBalanceType[] = [
 
 const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
   t(`position_details.balance_type.${type}`);
+
+// Pending action types come from the API and can outpace our translation map
+// (e.g. RWA-specific actions). Fall back to a humanized version of the type so
+// the card never renders a raw translation key.
+const formatPendingActionLabel = (
+  type: YieldPendingActionDto["type"],
+  t: TFunction
+) =>
+  t(`position_details.pending_action.${type.toLowerCase()}`, {
+    defaultValue: formatEnumValue(type),
+  });
 
 const formatUsdSubValue = (
   value: string | number | BigNumber | null | undefined
