@@ -40,7 +40,6 @@ import {
   type YieldBase,
 } from "../../../../domain/types/yields";
 import type { ValidatorDto } from "../../../../generated/api/yield";
-import { useDashboardYieldCatalog } from "../../../../hooks/api/use-dashboard-yield-catalog";
 import { useDefaultTokens } from "../../../../hooks/api/use-default-tokens";
 import { useStreamYieldSummaries } from "../../../../hooks/api/use-multi-yields";
 import { useTokenBalancesScan } from "../../../../hooks/api/use-token-balances-scan";
@@ -106,6 +105,8 @@ export const EarnPageContextProvider = ({
     availableYields,
     hasNotYieldsForToken,
     selectedProviderYieldId,
+    selectedDashboardYieldCategory,
+    availableDashboardYieldCategories,
   } = useEarnPageState();
   const dispatch = useEarnPageDispatch();
 
@@ -122,7 +123,10 @@ export const EarnPageContextProvider = ({
     ""
   );
 
-  const initYieldRes = useInitYield({ selectedToken });
+  const initYieldRes = useInitYield({
+    selectedDashboardYieldCategory,
+    selectedToken,
+  });
 
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
@@ -255,24 +259,6 @@ export const EarnPageContextProvider = ({
         ),
     [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
   );
-
-  const dashboardYieldCatalog = useDashboardYieldCatalog({
-    enabled: dashboardVariant,
-  });
-
-  const availableDashboardYieldCategories =
-    dashboardYieldCatalog.availableCategories;
-
-  const selectedStakeDashboardYieldCategory = selectedStake
-    .chainNullable(getDashboardYieldCategory)
-    .extractNullable();
-  const [
-    selectedDashboardYieldCategoryFallback,
-    setSelectedDashboardYieldCategoryFallback,
-  ] = useState<DashboardYieldCategory | null>(null);
-  const selectedDashboardYieldCategory =
-    selectedStakeDashboardYieldCategory ??
-    selectedDashboardYieldCategoryFallback;
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
     () =>
@@ -488,16 +474,9 @@ export const EarnPageContextProvider = ({
   const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
     if (selectedDashboardYieldCategory === category) return;
 
-    setSelectedDashboardYieldCategoryFallback(category);
-
-    const target =
-      dashboardYieldCatalog.initialSelectionByCategory.get(category);
-
-    if (!target) return;
-
     dispatch({
-      type: "dashboard/token-yield/select",
-      data: { token: target.token, yieldDto: target.yieldDto },
+      type: "dashboard/yield-category/select",
+      data: category,
     });
   };
 

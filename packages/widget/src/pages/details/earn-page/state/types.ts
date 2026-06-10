@@ -27,13 +27,13 @@ export type State = {
   useMaxAmount: boolean;
   tronResource: Maybe<TronResourceType>;
   selectedProviderYieldId: Maybe<Yield["id"]>;
+  selectedDashboardYieldCategory: DashboardYieldCategory | null;
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
-type TokenOnlySelectAction = Action<"token-only/select", TokenDto>;
-type DashboardTokenYieldSelectAction = Action<
-  "dashboard/token-yield/select",
-  { token: TokenDto; yieldDto: Yield }
+type DashboardYieldCategorySelectAction = Action<
+  "dashboard/yield-category/select",
+  DashboardYieldCategory
 >;
 type PositionDetailsStakeInitializeAction = Action<
   "positionDetails/stake/initialize",
@@ -58,8 +58,7 @@ type ProviderYieldIdSelectAction = Action<
 
 export type Actions =
   | TokenBalanceSelectAction
-  | TokenOnlySelectAction
-  | DashboardTokenYieldSelectAction
+  | DashboardYieldCategorySelectAction
   | PositionDetailsStakeInitializeAction
   | YieldSelectAction
   | StakeAmountChangeAction
@@ -81,6 +80,7 @@ export type ExtraData = {
   availableAmount: Maybe<BigNumber>;
   availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
   hasNotYieldsForToken: boolean;
+  availableDashboardYieldCategories: DashboardYieldCategory[];
 };
 
 export type EarnPageContextType = {

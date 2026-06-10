@@ -170,36 +170,3 @@ export const fetchYieldSummariesWithProvidersByIds = async ({
     });
   });
 };
-
-/**
- * Fetch every page of yield summaries for the given params, looping `offset`
- * until all `total` items have been retrieved.
- */
-export const fetchAllYieldSummaries = async ({
-  apiClient,
-  params,
-  signal,
-}: FetchArgs): Promise<YieldSummary[]> => {
-  const client = apiClient.withOptions({ signal });
-  const limit = params.limit ?? DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT;
-
-  const all: YieldSummary[] = [];
-  let offset = 0;
-
-  while (true) {
-    const result = await client.yield.YieldsControllerGetYields({
-      params: { ...params, limit, offset },
-    });
-
-    const items = result.items ?? [];
-    all.push(...items);
-
-    if (items.length === 0 || all.length >= result.total) {
-      break;
-    }
-
-    offset += items.length;
-  }
-
-  return all;
-};

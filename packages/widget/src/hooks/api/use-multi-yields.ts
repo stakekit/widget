@@ -34,6 +34,8 @@ import {
 } from "../../domain/types/stake";
 import type { SKWallet } from "../../domain/types/wallet";
 import {
+  type DashboardYieldCategory,
+  getDashboardYieldCategory,
   isNonZeroRewardRateYield,
   type ValidatorsConfig,
   type Yield,
@@ -152,7 +154,10 @@ export const getFirstEligibleYield = (
 ) =>
   EitherAsync(() =>
     params.queryClient.fetchQuery({
-      queryKey: getFirstEligibleYieldQueryKey(params.yieldIds),
+      queryKey: getFirstEligibleYieldQueryKey({
+        yieldIds: params.yieldIds,
+        dashboardYieldCategory: params.dashboardYieldCategory,
+      }),
       queryFn: () => firstValueFrom(firstEligibleYield$(params)),
     })
   ).mapLeft((e) => {
@@ -235,6 +240,7 @@ const firstEligibleYield$ = (args: {
   isConnected: boolean;
   network: SKWallet["network"];
   yieldIds: ReadonlyArray<string>;
+  dashboardYieldCategory?: DashboardYieldCategory | null;
   initParams: InitParams;
   positionsData: PositionsData;
   tokenBalanceAmount: BigNumber;
@@ -244,6 +250,11 @@ const firstEligibleYield$ = (args: {
   let defaultYield: YieldSummaryWithProvider | null = null;
 
   const successStream = multipleYieldSummaries$(args).pipe(
+    filter(
+      (y) =>
+        !args.dashboardYieldCategory ||
+        getDashboardYieldCategory(y) === args.dashboardYieldCategory
+    ),
     tap((v) => {
       if (isNonZeroRewardRateYield(v) || !defaultYield) {
         defaultYield = v;
@@ -332,18 +343,25 @@ const defaultFiltered = createSelector(
     })
 );
 
-const getFirstEligibleYieldQueryKey = (yieldIds: ReadonlyArray<string>) => [
-  "first-eligible-yield",
+const getFirstEligibleYieldQueryKey = ({
   yieldIds,
-];
+  dashboardYieldCategory,
+}: {
+  yieldIds: ReadonlyArray<string>;
+  dashboardYieldCategory?: DashboardYieldCategory | null;
+}) => ["first-eligible-yield", yieldIds, dashboardYieldCategory ?? null];
 
 export const getCachedFirstEligibleYield = ({
   queryClient,
   yieldIds,
+  dashboardYieldCategory,
 }: {
   queryClient: QueryClient;
   yieldIds: ReadonlyArray<string>;
+  dashboardYieldCategory?: DashboardYieldCategory | null;
 }) =>
   Maybe.fromNullable(
-    queryClient.getQueryData<Yield>(getFirstEligibleYieldQueryKey(yieldIds))
+    queryClient.getQueryData<Yield>(
+      getFirstEligibleYieldQueryKey({ yieldIds, dashboardYieldCategory })
+    )
   );

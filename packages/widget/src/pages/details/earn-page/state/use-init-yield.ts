@@ -4,6 +4,7 @@ import { EitherAsync, Maybe } from "purify-ts";
 import { getTokenBalances } from "../../../../common/get-token-balances";
 import { tokenString } from "../../../../domain";
 import type { TokenDto } from "../../../../domain/types/tokens";
+import type { DashboardYieldCategory } from "../../../../domain/types/yields";
 import { getFirstEligibleYield } from "../../../../hooks/api/use-multi-yields";
 import { getInitParams } from "../../../../hooks/use-init-params";
 import { usePositionsData } from "../../../../hooks/use-positions-data";
@@ -15,8 +16,10 @@ import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useGetTokenBalancesMap } from "./use-get-token-balances-map";
 
 export const useInitYield = ({
+  selectedDashboardYieldCategory,
   selectedToken,
 }: {
+  selectedDashboardYieldCategory?: DashboardYieldCategory | null;
   selectedToken: Maybe<TokenDto>;
 }) => {
   const getTokenBalancesMap = useGetTokenBalancesMap();
@@ -47,6 +50,7 @@ export const useInitYield = ({
       network,
       additionalAddresses,
       address,
+      selectedDashboardYieldCategory ?? null,
       selectedToken.extract(),
     ],
     enabled: !isConnecting,
@@ -84,6 +88,7 @@ export const useInitYield = ({
                   apiClient,
                   network,
                   yieldIds: val.availableYields,
+                  dashboardYieldCategory: selectedDashboardYieldCategory,
                   initParams: initParams,
                   positionsData: positionsData,
                   tokenBalanceAmount: new BigNumber(val.amount),
