@@ -35,6 +35,7 @@ export const ProviderIcon = ({
           {!hideNetwork && providerIcon && (
             <NetworkLogoImage
               networkLogoUri={providerIcon}
+              networkName={token.network}
               tokenNetworkLogoHw={tokenNetworkLogoHw}
             />
           )}

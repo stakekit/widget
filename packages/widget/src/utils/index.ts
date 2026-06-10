@@ -43,13 +43,13 @@ export const defaultFormattedNumber = (number: string | BigNumber | number) =>
 export const APToPercentage = (ap: number) =>
   formatNumber((ap * 100).toFixed(2));
 
-const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
+// const colorsTuple = ["#6B69D6", "#F1C40F", "#1ABC9C", "#E74C3C"];
 
-export const getBackgroundColor = (stringInput: string) => {
-  const char = stringInput.charCodeAt(0);
+// export const getBackgroundColor = (stringInput: string) => {
+//   const char = stringInput.charCodeAt(0);
 
-  return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
-};
+//   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
+// };
 
 export const isIframe = () =>
   MaybeWindow.map((w) => w.parent !== w).orDefault(false);

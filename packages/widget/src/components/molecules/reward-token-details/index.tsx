@@ -3,6 +3,7 @@ import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
+import { humanizePendingActionType } from "../../../utils/formatters";
 import { Box } from "../../atoms/box";
 import { MorphoStarsIcon } from "../../atoms/icons/morpho-stars";
 import { Image } from "../../atoms/image";
@@ -35,6 +36,11 @@ export const RewardTokenDetails = ({
     return "unstake_review.unstake_from";
   })();
 
+  const i18nDefaults =
+    rest.type === "pendingAction"
+      ? humanizePendingActionType(rest.pendingAction)
+      : undefined;
+
   return rewardToken
     .map((rt) => {
       return (
@@ -66,6 +72,7 @@ export const RewardTokenDetails = ({
           <Text variant={{ weight: "semibold" }}>
             <Trans
               i18nKey={i18nKey}
+              defaults={i18nDefaults}
               values={{ providerName: rt.providerName }}
               components={{
                 symbols1: (

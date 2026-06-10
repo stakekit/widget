@@ -10,6 +10,7 @@ import type {
 import type { YieldBalanceDto } from "../../../domain/types/positions";
 import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
+import { humanizePendingActionType } from "../../../utils/formatters";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
@@ -60,6 +61,9 @@ export const StaticActionBlock = ({
                   context: isEthenaUsdeStaking(yieldId)
                     ? "ethena_usde"
                     : undefined,
+                  defaultValue: humanizePendingActionType(
+                    pendingActionDto.type
+                  ),
                 }
               ),
             }}
@@ -93,7 +97,10 @@ export const StaticActionBlock = ({
             {t(
               `position_details.pending_action_button.${
                 pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
-              }`
+              }`,
+              {
+                defaultValue: humanizePendingActionType(pendingActionDto.type),
+              }
             )}
           </Text>
         </Button>

@@ -18,6 +18,7 @@ import {
 } from "../../../pages/position-details/components/amount-block";
 import { StaticActionBlock } from "../../../pages/position-details/components/static-action-block";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
+import { humanizePendingActionType } from "../../../utils/formatters";
 import { PositionDetailsActionTabs } from "./position-details-action-tabs";
 import { container } from "./styles.css";
 
@@ -168,7 +169,12 @@ export const PositionDetailsActions = () => {
                     label={t(
                       `position_details.pending_action_button.${
                         val.pendingActionDto.type.toLowerCase() as Lowercase<YieldPendingActionType>
-                      }`
+                      }`,
+                      {
+                        defaultValue: humanizePendingActionType(
+                          val.pendingActionDto.type
+                        ),
+                      }
                     )}
                     onMaxClick={null}
                     formattedAmount={val.formattedAmount}
