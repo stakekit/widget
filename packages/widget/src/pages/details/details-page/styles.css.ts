@@ -38,7 +38,7 @@ export const divider = style({
 
 export const tabBorder = style([
   atoms({
-    background: "tabBorder",
+    background: "text",
     borderRadius: "full",
     position: "absolute",
   }),

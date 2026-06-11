@@ -8,7 +8,12 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_MSW_MOCK: string;
   readonly VITE_FORCE_ADDRESS: string | undefined;
   readonly VITE_FORCE_DASHBOARD: string;
-  readonly VITE_APP_VARIANT: "utila" | undefined;
+  readonly VITE_APP_VARIANT:
+    | "default"
+    | "utila"
+    | "finery"
+    | "porto"
+    | undefined;
   readonly VITE_YIELDS_API_URL: string;
 }
 

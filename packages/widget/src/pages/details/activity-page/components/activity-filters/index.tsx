@@ -41,7 +41,7 @@ export const ActivityFilters = ({
           >
             <Text
               variant={{
-                type: isSelected ? "white" : "regular",
+                type: isSelected ? "base" : "regular",
                 size: "small",
                 weight: "medium",
               }}
@@ -56,7 +56,7 @@ export const ActivityFilters = ({
             >
               <Text
                 variant={{
-                  type: isSelected ? "white" : "muted",
+                  type: isSelected ? "base" : "muted",
                   size: "small",
                   weight: "medium",
                 }}

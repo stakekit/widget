@@ -1,6 +1,5 @@
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
-import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const wrapper = recipe({
   base: [
@@ -18,7 +17,7 @@ export const wrapper = recipe({
   variants: {
     variant: {
       default: {
-        borderRadius: "30px",
+        borderRadius: "14px",
       },
       utila: {
         borderRadius: "14px",
@@ -80,13 +79,13 @@ export const tabPageDivider = recipe({
     variant: {
       default: [
         atoms({
-          background: "backgroundMuted",
+          background: "tabBorder",
         }),
       ],
       utila: [
-        {
-          background: utilaPalette.tabPageDivider,
-        },
+        atoms({
+          background: "tabBorder",
+        }),
       ],
     },
   },

@@ -147,6 +147,12 @@ export const buttonStyle = recipe({
     },
     size: {
       regular: atoms({ minHeight: "buttonMinHeight" }),
+      compact: [
+        atoms({ minHeight: "10" }),
+        {
+          borderRadius: vars.borderRadius.baseContract.lg,
+        },
+      ],
       small: [
         style({
           padding: "9.8px 13.1px",

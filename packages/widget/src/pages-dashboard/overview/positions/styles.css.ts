@@ -41,9 +41,9 @@ export const sectionTitle = style({
 export const positionsTitle = recipe({
   variants: {
     variant: {
-      default: atoms({
-        fontSize: "md",
-      }),
+      default: {
+        fontSize: "16px",
+      },
       utila: {
         fontSize: "16px",
       },

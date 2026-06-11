@@ -27,6 +27,8 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     secondaryButton: "600",
   },
   color: {
+    accent: portoPalette.primaryPurple,
+    textMuted: portoPalette.greyFour,
     tooltipBackground: portoPalette.greyThree,
     summaryItemBackground: portoPalette.greyTwo,
     background: portoPalette.greyOne,
@@ -34,7 +36,9 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     stakeSectionBackground: portoPalette.greyTwo,
     tokenSelectBackground: portoPalette.greyTwo,
     tokenSelectHoverBackground: portoPalette.greyThree,
+    tokenSelectBorder: portoPalette.primaryPurple,
     dashboardDetailsSectionBackground: portoPalette.greyTwo,
+    tabBorder: portoPalette.greyThree,
 
     modalBodyBackground: portoPalette.greyOne,
 
@@ -45,6 +49,14 @@ export const portoThemeOverrides: RecursivePartial<typeof lightTheme> = {
     primaryButtonColor: vars.color.white,
 
     smallButtonBackground: portoPalette.greyThree,
+    smallLightButtonBackground: portoPalette.greyThree,
+
+    summaryLabelStakedBackground: portoPalette.greyThree,
+    summaryLabelStakedColor: vars.color.white,
+    summaryLabelApyBackground: portoPalette.greyThree,
+    summaryLabelApyColor: vars.color.white,
+    summaryLabelAvailableBackground: portoPalette.greyThree,
+    summaryLabelAvailableColor: vars.color.white,
 
     connectKit: {
       modalBackground: portoPalette.greyOne,

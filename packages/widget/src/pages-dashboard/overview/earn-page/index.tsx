@@ -31,7 +31,7 @@ const EarnKycGateSection = () => {
 };
 
 export const EarnPageContent = () => {
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
   const { cta } = useEarnPageContext();
 
   return (
@@ -55,7 +55,9 @@ export const EarnPageContent = () => {
         <ExtraArgsSelection />
       </Box>
 
-      {(variant === "utila" || variant === "porto") && <Divider />}
+      {(dashboardVariant || variant === "utila" || variant === "porto") && (
+        <Divider />
+      )}
 
       <Box>
         <Footer />

@@ -17,7 +17,7 @@ export const selectOpportunityButton = recipe({
   ],
   variants: {
     variant: {
-      default: atoms({ background: "background" }),
+      default: atoms({ background: "tokenSelectBackground" }),
       utila: atoms({ background: "tokenSelectBackground" }),
       finery: [
         atoms({ background: "tokenSelectBackground" }),

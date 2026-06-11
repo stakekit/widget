@@ -33,6 +33,11 @@ export const SelectYieldSection = () => {
   const riskSummary = selectedStake
     .map((yieldDto) => <YieldRiskRatingSummary yieldDto={yieldDto} />)
     .extractNullable();
+  const showSectionTitle =
+    !dashboardVariant &&
+    variant !== "zerion" &&
+    variant !== "utila" &&
+    variant !== "porto";
 
   return isLoading ? (
     <Box marginTop="2">
@@ -56,13 +61,11 @@ export const SelectYieldSection = () => {
           </Box>
         ) : (
           <Box>
-            {variant !== "zerion" &&
-              variant !== "utila" &&
-              variant !== "porto" && (
-                <Box my="2">
-                  <Text>{t("details.earn")}</Text>
-                </Box>
-              )}
+            {showSectionTitle && (
+              <Box my="2">
+                <Text>{t("details.earn")}</Text>
+              </Box>
+            )}
 
             <Box
               data-rk="stake-yield-section"

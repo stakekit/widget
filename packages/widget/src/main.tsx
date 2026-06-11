@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { SKApp, type SKAppProps } from "./App";
+import type { VariantProps } from "./providers/settings/types";
 import {
   rootClassName,
   toggleThemeButtonClassName,
@@ -9,17 +10,22 @@ import "./standalone.css";
 import { useLayoutEffect, useState } from "react";
 import { darkTheme, lightTheme } from "./styles/theme/themes";
 
-const variant: SKAppProps["variant"] =
+type StandaloneVariant = Exclude<VariantProps["variant"], "zerion">;
+
+const variant: StandaloneVariant =
   import.meta.env.VITE_APP_VARIANT ?? "default";
 
 const dashboardVariant: SKAppProps["dashboardVariant"] =
   import.meta.env.VITE_FORCE_DASHBOARD === "true";
 
 const StandaloneApp = () => {
-  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("light");
+  const [themeVariant, setThemeVariant] = useState<"dark" | "light">("dark");
 
   useLayoutEffect(() => {
-    document.body.className = rootClassName({ theme: themeVariant, variant });
+    document.body.className = rootClassName({
+      theme: themeVariant,
+      variant,
+    });
   }, [themeVariant]);
 
   const toggleTheme = () =>

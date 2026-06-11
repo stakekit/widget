@@ -1,10 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../styles/theme/atoms.css";
-import {
-  portoPalette,
-  utilaPalette,
-} from "../../../../styles/theme/variant-overrides/palettes";
+import { vars } from "../../../../styles/theme/contract.css";
 
 export const divider = style({
   position: "absolute",
@@ -36,7 +33,7 @@ export const tab = recipe({
     variant: {
       default: [
         {
-          borderRadius: "9999px",
+          borderRadius: "8px",
           padding: "8px 16px",
         },
       ],
@@ -70,7 +67,7 @@ export const tab = recipe({
         state: "active",
         variant: "utila",
       },
-      style: [{ background: utilaPalette.greyOne }],
+      style: [atoms({ background: "stakeSectionBackground" })],
     },
     {
       variants: {
@@ -104,9 +101,7 @@ export const tabContainer = recipe({
   },
   variants: {
     variant: {
-      default: {
-        minWidth: "74px",
-      },
+      default: {},
       utila: {},
       porto: {},
       finery: {
@@ -131,7 +126,12 @@ export const tabText = recipe({
       selected: {},
     },
     variant: {
-      default: {},
+      default: [
+        atoms({ fontWeight: "semibold" }),
+        {
+          fontSize: "14px",
+        },
+      ],
       utila: [
         atoms({ fontWeight: "semibold" }),
         {
@@ -139,9 +139,8 @@ export const tabText = recipe({
         },
       ],
       porto: [
-        atoms({ fontWeight: "semibold" }),
+        atoms({ color: "textMuted", fontWeight: "semibold" }),
         {
-          color: portoPalette.greyFour,
           fontSize: "14px",
         },
       ],
@@ -154,7 +153,7 @@ export const tabText = recipe({
         state: "selected",
       },
       style: {
-        color: portoPalette.greyOne,
+        color: vars.color.background,
       },
     },
   ],
@@ -177,7 +176,9 @@ export const tabsContainer = recipe({
     variant: {
       default: {
         gap: "4px",
-        padding: "16px 24px",
+        padding: "8px",
+        paddingLeft: "24px",
+        paddingRight: "24px",
       },
       utila: {
         gap: "4px",

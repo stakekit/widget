@@ -437,7 +437,11 @@ export const EarnPageContextProvider = ({
         .filter(() => shouldFetchValidators)
         .chain(() =>
           Maybe.fromNullable(yieldValidators.data).map((validators) => {
-            if (variant === "utila" || variant === "porto") {
+            if (
+              dashboardVariant ||
+              variant === "utila" ||
+              variant === "porto"
+            ) {
               return [...validators].sort(
                 (a, b) =>
                   (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
@@ -447,7 +451,13 @@ export const EarnPageContextProvider = ({
             return validators;
           })
         ),
-    [selectedStake, shouldFetchValidators, variant, yieldValidators.data]
+    [
+      dashboardVariant,
+      selectedStake,
+      shouldFetchValidators,
+      variant,
+      yieldValidators.data,
+    ]
   );
 
   const onYieldSearch: SelectModalProps["onSearch"] = (val) =>

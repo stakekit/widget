@@ -73,7 +73,7 @@ export const AmountBlock = ({
   ...rest
 }: AmountBlockProps) => {
   const { t } = useTranslation();
-  const { variant, dashboardVariant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
 
   const minMaxUnstakeAmount = Maybe.fromPredicate(
     (v) => v.variant === "unstake",

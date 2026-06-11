@@ -1,6 +1,5 @@
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
-import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const container = recipe({
   base: [
@@ -12,10 +11,13 @@ export const container = recipe({
   ],
   variants: {
     variant: {
-      default: atoms({ background: "background", borderRadius: "xl" }),
+      default: atoms({
+        background: "smallLightButtonBackground",
+        borderRadius: "base",
+      }),
       utila: [
         { borderRadius: "4px" },
-        { background: utilaPalette.maxButtonBackground },
+        atoms({ background: "smallLightButtonBackground" }),
       ],
     },
   },
@@ -27,11 +29,12 @@ export const container = recipe({
 export const text = recipe({
   variants: {
     variant: {
-      default: atoms({ color: "text", fontWeight: "semibold" }),
+      default: atoms({
+        color: "smallLightButtonColor",
+        fontWeight: "normal",
+      }),
       utila: [
-        {
-          color: utilaPalette.maxButtonText,
-        },
+        atoms({ color: "smallLightButtonColor" }),
         atoms({
           fontWeight: "normal",
         }),

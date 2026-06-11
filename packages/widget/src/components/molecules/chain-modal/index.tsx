@@ -34,7 +34,10 @@ export const ChainModal = () => {
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              className={combineRecipeWithVariant({ variant, rec: container })}
+              className={combineRecipeWithVariant({
+                variant,
+                rec: container,
+              })}
               onClick={() => {
                 trackEvent("chainModalOpened");
                 openChainModal();
