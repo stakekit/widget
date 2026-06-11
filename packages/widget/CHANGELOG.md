@@ -1,5 +1,12 @@
 # @stakekit/widget
 
+## [0.0.277](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.276...@stakekit/widget@0.0.277) (2026-06-11)
+
+
+### Bug Fixes
+
+* **widget:** align theme variant defaults ([#534](https://github.com/stakekit/widget/issues/534)) ([27e5f07](https://github.com/stakekit/widget/commit/27e5f073b11b9ef2d38aa888ade461b92af60c12))
+
 ## [0.0.276](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.275...@stakekit/widget@0.0.276) (2026-06-10)
 
 
