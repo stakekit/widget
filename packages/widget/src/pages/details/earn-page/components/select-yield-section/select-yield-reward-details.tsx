@@ -23,7 +23,7 @@ import { useEarnPageContext } from "../../state/earn-page-context";
 import { viaProviderImage } from "./styles.css";
 
 export const SelectYieldRewardDetails = () => {
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
   const { t } = useTranslation();
 
   const {
@@ -85,7 +85,7 @@ export const SelectYieldRewardDetails = () => {
               .map((details) => <YieldStrategyDetails {...details} />)
               .extractNullable()}
 
-            <Divider />
+            {dashboardVariant && <Divider />}
           </>
         )}
 

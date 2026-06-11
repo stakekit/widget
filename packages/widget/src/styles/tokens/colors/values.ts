@@ -123,7 +123,7 @@ export const lightThemeColors: typeof colorsContract = {
   white: sharedSemanticColors.base.white,
   transparent: sharedSemanticColors.base.transparent,
   primary: lightSemanticColors.brand.primary,
-  accent: lightSemanticColors.brand.accent,
+  accent: "#4A60FF",
   disabled: sharedSemanticColors.base.disabled,
 
   text: lightSemanticColors.foreground.default,
@@ -131,27 +131,28 @@ export const lightThemeColors: typeof colorsContract = {
   textDanger: lightSemanticColors.foreground.danger,
 
   background: vars.color.primary,
-  backgroundMuted: lightSemanticColors.background.muted,
+  backgroundMuted: "#f5f5f6",
 
-  tokenSelectBackground: vars.color.backgroundMuted,
+  tokenSelectBackground: "#f5f5f6",
   tokenSelectHoverBackground: lightSemanticColors.interaction.mutedHover,
+  tokenSelectBorder: "#C9CFFF",
   tokenSelect: vars.color.text,
 
-  tabBorder: lightSemanticColors.border.default,
+  tabBorder: "#e4e4e7",
 
   skeletonLoaderBase: vars.color.backgroundMuted,
   skeletonLoaderHighlight: vars.color.background,
 
-  warningBoxBackground: vars.color.backgroundMuted,
+  warningBoxBackground: "#FFE9BD",
 
-  stakeSectionBackground: vars.color.backgroundMuted,
+  stakeSectionBackground: "#f5f5f6",
 
   dropdownBackground: lightSemanticColors.background.dropdown,
 
   selectValidatorMultiSelectedBackground: sharedSemanticColors.status.selected,
   selectValidatorMultiDefaultBackground: vars.color.background,
 
-  positionsClaimRewardsBackground: sharedSemanticColors.status.success,
+  positionsClaimRewardsBackground: "#4BAA82",
   positionsActionRequiredBackground: sharedSemanticColors.status.danger,
   positionsPendingBackground: sharedSemanticColors.status.warning,
   positionsRewardRate: sharedSemanticColors.status.rewardRate,
@@ -162,7 +163,7 @@ export const lightThemeColors: typeof colorsContract = {
   tooltipBackground: lightSemanticColors.background.tooltip,
 
   primaryButtonColor: vars.color.white,
-  primaryButtonBackground: vars.color.accent,
+  primaryButtonBackground: "#4A60FF",
 
   secondaryButtonColor: vars.color.text,
   secondaryButtonBackground: vars.color.background,
@@ -170,8 +171,8 @@ export const lightThemeColors: typeof colorsContract = {
   smallButtonColor: vars.color.text,
   smallButtonBackground: vars.color.background,
 
-  smallLightButtonColor: vars.color.text,
-  smallLightButtonBackground: vars.color.backgroundMuted,
+  smallLightButtonColor: "#5C70FF",
+  smallLightButtonBackground: "#F4F5FF",
 
   disabledButtonColor: vars.color.white,
   disabledButtonBackground: vars.color.disabled,
@@ -185,38 +186,45 @@ export const lightThemeColors: typeof colorsContract = {
     modalBackdrop: sharedSemanticColors.overlay.modal,
   },
 
-  dashboardDetailsSectionBackground: primitiveColors.overlay.black2,
-  summaryItemBackground: vars.color.modalBodyBackground,
+  dashboardDetailsSectionBackground: "#f5f5f6",
+  summaryItemBackground: "#f5f5f6",
+  summaryLabelStakedBackground: "#F6F0FF",
+  summaryLabelStakedColor: "#5A36C0",
+  summaryLabelApyBackground: "#F7ECFA",
+  summaryLabelApyColor: "#CA6CBD",
+  summaryLabelAvailableBackground: "#EEF7F3",
+  summaryLabelAvailableColor: "#327C5F",
 };
 
 export const darkThemeColors: typeof colorsContract = {
   white: sharedSemanticColors.base.white,
   transparent: sharedSemanticColors.base.transparent,
-  primary: darkSemanticColors.brand.primary,
-  accent: darkSemanticColors.brand.accent,
+  primary: "#171717",
+  accent: "#AB95FF",
   disabled: sharedSemanticColors.base.disabled,
 
   text: darkSemanticColors.foreground.default,
-  textMuted: darkSemanticColors.foreground.muted,
+  textMuted: "#87899C",
   textDanger: darkSemanticColors.foreground.danger,
 
   background: vars.color.primary,
-  backgroundMuted: darkSemanticColors.background.muted,
+  backgroundMuted: "#333333",
 
-  tokenSelectBackground: vars.color.backgroundMuted,
-  tokenSelectHoverBackground: darkSemanticColors.interaction.mutedHover,
+  tokenSelectBackground: "#282828",
+  tokenSelectHoverBackground: "#333333",
+  tokenSelectBorder: "#AB95FF",
   tokenSelect: vars.color.text,
 
-  tabBorder: darkSemanticColors.border.default,
+  tabBorder: "#333333",
 
-  skeletonLoaderBase: vars.color.backgroundMuted,
-  skeletonLoaderHighlight: vars.color.background,
+  skeletonLoaderBase: "#282828",
+  skeletonLoaderHighlight: "#333333",
 
   warningBoxBackground: vars.color.backgroundMuted,
 
-  stakeSectionBackground: vars.color.backgroundMuted,
+  stakeSectionBackground: "#282828",
 
-  dropdownBackground: darkSemanticColors.background.dropdown,
+  dropdownBackground: "#333333",
 
   selectValidatorMultiSelectedBackground: sharedSemanticColors.status.selected,
   selectValidatorMultiDefaultBackground: vars.color.background,
@@ -229,19 +237,19 @@ export const darkThemeColors: typeof colorsContract = {
   modalOverlayBackground: sharedSemanticColors.overlay.modal,
   modalBodyBackground: vars.color.background,
 
-  tooltipBackground: darkSemanticColors.background.tooltip,
+  tooltipBackground: "#333333",
 
-  primaryButtonColor: primitiveColors.blackFull,
-  primaryButtonBackground: vars.color.white,
+  primaryButtonColor: vars.color.white,
+  primaryButtonBackground: "#AB95FF",
 
   secondaryButtonColor: vars.color.text,
   secondaryButtonBackground: vars.color.background,
 
   smallButtonColor: vars.color.text,
-  smallButtonBackground: vars.color.background,
+  smallButtonBackground: "#333333",
 
   smallLightButtonColor: vars.color.text,
-  smallLightButtonBackground: vars.color.backgroundMuted,
+  smallLightButtonBackground: "#333333",
 
   disabledButtonColor: primitiveColors.blackFull,
   disabledButtonBackground: vars.color.disabled,
@@ -250,11 +258,17 @@ export const darkThemeColors: typeof colorsContract = {
     ...connectKitTheme.darkMode.colors,
     modalBackground: vars.color.modalBodyBackground,
     profileForeground: vars.color.modalBodyBackground,
-    profileAction: vars.color.backgroundMuted,
-    profileActionHover: darkSemanticColors.interaction.mutedHover,
+    profileAction: "#282828",
+    profileActionHover: "#333333",
     modalBackdrop: sharedSemanticColors.overlay.modal,
   },
 
-  dashboardDetailsSectionBackground: primitiveColors.overlay.black2,
-  summaryItemBackground: vars.color.modalBodyBackground,
+  dashboardDetailsSectionBackground: "#282828",
+  summaryItemBackground: "#282828",
+  summaryLabelStakedBackground: "#333333",
+  summaryLabelStakedColor: vars.color.white,
+  summaryLabelApyBackground: "#333333",
+  summaryLabelApyColor: vars.color.white,
+  summaryLabelAvailableBackground: "#333333",
+  summaryLabelAvailableColor: vars.color.white,
 };

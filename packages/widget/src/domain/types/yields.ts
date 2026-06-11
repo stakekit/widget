@@ -412,14 +412,14 @@ export const getYieldTypeLabels = (
 };
 
 const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
-  staking: 1,
-  native_staking: 2,
-  pooled_staking: 3,
-  restaking: 4,
-  lending: 5,
-  vault: 6,
-  fixed_yield: 7,
-  real_world_asset: 8,
+  real_world_asset: 1,
+  staking: 2,
+  native_staking: 3,
+  pooled_staking: 4,
+  restaking: 5,
+  lending: 6,
+  vault: 7,
+  fixed_yield: 8,
   liquidity_pool: 9,
   concentrated_liquidity_pool: 10,
 };

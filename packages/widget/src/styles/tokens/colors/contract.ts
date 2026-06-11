@@ -16,6 +16,7 @@ const baseColorsContract = {
 
   tokenSelectBackground: "",
   tokenSelectHoverBackground: "",
+  tokenSelectBorder: "",
   tokenSelect: "",
 
   skeletonLoaderBase: "",
@@ -60,6 +61,12 @@ const baseColorsContract = {
   dashboardDetailsSectionBackground: "",
 
   summaryItemBackground: "",
+  summaryLabelStakedBackground: "",
+  summaryLabelStakedColor: "",
+  summaryLabelApyBackground: "",
+  summaryLabelApyColor: "",
+  summaryLabelAvailableBackground: "",
+  summaryLabelAvailableColor: "",
 };
 
 export const colorsContract: typeof baseColorsContract & {

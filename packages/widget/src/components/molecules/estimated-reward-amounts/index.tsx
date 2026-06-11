@@ -16,11 +16,11 @@ export const EstimatedRewardAmounts = ({
   earnYearly,
   earnMonthly,
 }: EstimatedRewardAmountsProps) => {
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
 
-  if (variant === "utila" || variant === "porto") {
+  if (dashboardVariant || variant === "utila" || variant === "porto") {
     return (
-      <UtilaEarnYearlyOrMonthly
+      <CompactEarnYearlyOrMonthly
         earnMonthly={earnMonthly}
         earnYearly={earnYearly}
       />
@@ -111,7 +111,7 @@ const DefaultEarnYearlyOrMonthly = ({
   );
 };
 
-const UtilaEarnYearlyOrMonthly = ({
+const CompactEarnYearlyOrMonthly = ({
   earnMonthly,
   earnYearly,
 }: EstimatedRewardAmountsProps) => {

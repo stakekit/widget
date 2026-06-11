@@ -39,7 +39,7 @@ export const rootClassName = recipe({
         theme: "dark",
       },
       style: {
-        background: "#211f25",
+        background: "#000000",
       },
     },
     {

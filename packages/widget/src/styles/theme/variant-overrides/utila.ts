@@ -13,10 +13,12 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
     },
   },
   color: {
+    accent: utilaPalette.primaryBlue,
     summaryItemBackground: utilaPalette.greyOne,
     backgroundMuted: utilaPalette.greyOne,
     stakeSectionBackground: utilaPalette.greyOne,
     tokenSelectBackground: utilaPalette.greyOne,
+    tokenSelectBorder: utilaPalette.selectTokenBorder,
     dashboardDetailsSectionBackground: utilaPalette.greyOne,
     warningBoxBackground: utilaPalette.warningBackground,
 
@@ -24,5 +26,14 @@ export const utilaThemeOverrides: RecursivePartial<typeof lightTheme> = {
 
     primaryButtonBackground: utilaPalette.primaryBlue,
     primaryButtonColor: vars.color.white,
+    smallLightButtonColor: utilaPalette.maxButtonText,
+    smallLightButtonBackground: utilaPalette.maxButtonBackground,
+
+    summaryLabelStakedBackground: "#F6F0FF",
+    summaryLabelStakedColor: "#5A36C0",
+    summaryLabelApyBackground: "#F7ECFA",
+    summaryLabelApyColor: "#CA6CBD",
+    summaryLabelAvailableBackground: "#EEF7F3",
+    summaryLabelAvailableColor: "#327C5F",
   },
 };

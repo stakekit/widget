@@ -2,7 +2,6 @@ import { keyframes, style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
-import { utilaPalette } from "../../../styles/theme/variant-overrides/palettes";
 import { breakpoints, minMediaQuery } from "../../../styles/tokens/breakpoints";
 
 const slideUp = keyframes({
@@ -88,14 +87,12 @@ export const selectModalGroupLabel = style({
 
 export const selectedListItem = recipe({
   base: [
-    atoms({
-      background: "tokenSelectHoverBackground",
-    }),
     {
+      background: `color-mix(in srgb, ${vars.color.accent} 8%, transparent)`,
       border: `1px solid ${vars.color.accent}`,
       selectors: {
         "&:hover": {
-          background: vars.color.tokenSelectHoverBackground,
+          background: `color-mix(in srgb, ${vars.color.accent} 8%, transparent)`,
         },
       },
     },
@@ -103,15 +100,7 @@ export const selectedListItem = recipe({
   variants: {
     variant: {
       default: {},
-      utila: {
-        background: `${utilaPalette.primaryBlue}14`,
-        border: `1px solid ${utilaPalette.primaryBlue}`,
-        selectors: {
-          "&:hover": {
-            background: `${utilaPalette.primaryBlue}14`,
-          },
-        },
-      },
+      utila: {},
     },
   },
   defaultVariants: {

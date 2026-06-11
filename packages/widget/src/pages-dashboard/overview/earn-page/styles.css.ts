@@ -1,10 +1,6 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
-import {
-  portoPalette,
-  utilaPalette,
-} from "../../../styles/theme/variant-overrides/palettes";
 
 export const container = style([
   atoms({
@@ -21,9 +17,9 @@ export const changeButton = recipe({
   base: [{ cursor: "pointer" }],
   variants: {
     variant: {
-      default: {},
-      utila: { color: utilaPalette.primaryBlue },
-      porto: { color: portoPalette.primaryPurple },
+      default: atoms({ color: "accent" }),
+      utila: atoms({ color: "accent" }),
+      porto: atoms({ color: "accent" }),
       finery: {},
     },
   },
@@ -35,7 +31,7 @@ export const changeButton = recipe({
 export const selectTokenTitleContainer = recipe({
   variants: {
     variant: {
-      default: {},
+      default: atoms({ marginBottom: "4" }),
       utila: atoms({ marginBottom: "4" }),
       porto: atoms({ marginBottom: "4" }),
     },

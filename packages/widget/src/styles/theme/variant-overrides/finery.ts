@@ -8,7 +8,7 @@ import {
 } from "./palettes";
 
 const getFineryPalette = (theme: typeof lightTheme) =>
-  theme.color.background === darkTheme.color.background
+  theme.color.primary === darkTheme.color.primary
     ? fineryDarkPalette
     : fineryLightPalette;
 

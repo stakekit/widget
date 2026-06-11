@@ -2,10 +2,6 @@ import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../styles/theme/atoms.css";
 import { vars } from "../../../../../styles/theme/contract.css";
-import {
-  portoPalette,
-  utilaPalette,
-} from "../../../../../styles/theme/variant-overrides/palettes";
 
 export const priceTxt = style({
   flexGrow: 999,
@@ -17,9 +13,9 @@ export const selectTokenSection = recipe({
   }),
   variants: {
     variant: {
-      default: atoms({
-        background: "stakeSectionBackground",
-      }),
+      default: {
+        background: "transparent",
+      },
       utila: {
         background: "transparent",
       },
@@ -36,10 +32,20 @@ export const selectTokenSection = recipe({
   compoundVariants: [
     {
       variants: {
+        state: "danger",
+        variant: "default",
+      },
+      style: atoms({
+        borderColor: "textDanger",
+      }),
+    },
+    {
+      variants: {
+        state: "default",
         variant: "default",
       },
       style: {
-        borderColor: "transparent",
+        borderColor: vars.color.tokenSelectBorder,
       },
     },
     {
@@ -57,7 +63,7 @@ export const selectTokenSection = recipe({
         variant: "utila",
       },
       style: {
-        borderColor: utilaPalette.selectTokenBorder,
+        borderColor: vars.color.tokenSelectBorder,
       },
     },
     {
@@ -93,7 +99,7 @@ export const selectTokenSection = recipe({
         variant: "porto",
       },
       style: {
-        borderColor: portoPalette.primaryPurple,
+        borderColor: vars.color.tokenSelectBorder,
       },
     },
   ],
@@ -102,7 +108,9 @@ export const selectTokenSection = recipe({
 export const selectTokenTitle = recipe({
   variants: {
     variant: {
-      default: {},
+      default: {
+        fontSize: "14px",
+      },
       utila: {
         fontSize: "14px",
       },
@@ -137,7 +145,6 @@ export const minMaxContainer = recipe({
   variants: {
     variant: {
       default: atoms({
-        marginRight: "2",
         marginTop: "2",
       }),
       utila: atoms({

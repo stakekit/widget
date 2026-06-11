@@ -1,6 +1,7 @@
 import { style } from "@vanilla-extract/css";
 import { recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../../../styles/theme/atoms.css";
+import { vars } from "../../../../../styles/theme/contract.css";
 
 export const filtersContainer = style([
   atoms({ display: "flex", alignItems: "center", paddingBottom: "3" }),
@@ -29,8 +30,12 @@ export const filterPill = recipe({
   ],
   variants: {
     state: {
-      default: atoms({ background: "transparent", borderColor: "tabBorder" }),
-      active: atoms({ background: "text", borderColor: "text" }),
+      default: atoms({ background: "transparent", borderColor: "text" }),
+      active: atoms({
+        background: "text",
+        borderColor: "text",
+        color: "primary",
+      }),
     },
   },
   defaultVariants: {
@@ -51,7 +56,9 @@ export const filterCount = recipe({
   variants: {
     state: {
       default: atoms({ background: "backgroundMuted" }),
-      active: { background: "rgba(255, 255, 255, 0.2)" },
+      active: {
+        background: `color-mix(in srgb, ${vars.color.primary} 18%, transparent)`,
+      },
     },
   },
   defaultVariants: {

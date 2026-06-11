@@ -5,6 +5,7 @@ import { SKLogo } from "../../../components/atoms/icons/sk-logo";
 import { Text } from "../../../components/atoms/typography/text";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useMountAnimation } from "../../../providers/mount-animation";
+import { useSettings } from "../../../providers/settings";
 import createStateContext from "../../../utils/create-state-context";
 
 export const [usePoweredByHeight, PoweredByHeightProvider] =
@@ -19,6 +20,7 @@ export const PoweredBy = ({ opacity }: { opacity?: number }) => {
   const { t } = useTranslation();
 
   const { state } = useMountAnimation();
+  const { dashboardVariant } = useSettings();
 
   return (
     <motion.div
@@ -34,6 +36,7 @@ export const PoweredBy = ({ opacity }: { opacity?: number }) => {
         display="flex"
         justifyContent="center"
         alignItems="center"
+        paddingTop={dashboardVariant ? undefined : "3"}
         marginBottom="3"
         gap="1"
       >

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
+  getYieldTypesSortRank,
+  type YieldBase,
 } from "../../src/domain/types/yields";
 
 const allApiYieldTypes = [
@@ -48,5 +50,27 @@ describe("getApiYieldTypesForDashboardCategory", () => {
     expect(mapped.slice().sort()).toEqual([...allApiYieldTypes].sort());
     expect(new Set(mapped).size).toBe(mapped.length);
     expect(mapped.length).toBe(allApiYieldTypes.length);
+  });
+});
+
+describe("getYieldTypesSortRank", () => {
+  const makeYield = (type: YieldBase["mechanics"]["type"]): YieldBase =>
+    ({
+      mechanics: {
+        type,
+      },
+      token: {
+        network: "ethereum",
+        symbol: "USDC",
+      },
+    }) as YieldBase;
+
+  it("ranks RWA yields before other API yield types", () => {
+    const rwaRank = getYieldTypesSortRank(makeYield("real_world_asset"));
+    const otherRanks = allApiYieldTypes
+      .filter((type) => type !== "real_world_asset")
+      .map((type) => getYieldTypesSortRank(makeYield(type)));
+
+    expect(rwaRank).toBeLessThan(Math.min(...otherRanks));
   });
 });

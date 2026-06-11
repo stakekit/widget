@@ -1,11 +1,7 @@
 import { type RecipeVariants, recipe } from "@vanilla-extract/recipes";
 import { atoms } from "../../../styles/theme/atoms.css";
 import { vars } from "../../../styles/theme/contract.css";
-import {
-  fineryLightPalette,
-  portoPalette,
-  utilaPalette,
-} from "../../../styles/theme/variant-overrides/palettes";
+import { fineryLightPalette } from "../../../styles/theme/variant-overrides/palettes";
 
 export const summaryContainer = recipe({
   base: atoms({
@@ -15,11 +11,9 @@ export const summaryContainer = recipe({
   }),
   variants: {
     variant: {
-      default: [
-        atoms({
-          gap: "8",
-        }),
-      ],
+      default: {
+        gap: "24px",
+      },
       utila: {
         gap: "24px",
       },
@@ -53,18 +47,20 @@ export const summaryItem = recipe({
       default: [
         atoms({
           background: "summaryItemBackground",
+          borderColor: "tabBorder",
         }),
         {
-          boxShadow: "0px 15px 30px 0px #0000000D",
+          borderRadius: "8px",
+          borderWidth: "1px",
+          borderStyle: "solid",
         },
       ],
       utila: [
         atoms({
           background: "summaryItemBackground",
-          borderColor: "transparent",
+          borderColor: "tabBorder",
         }),
         {
-          borderColor: utilaPalette.border,
           borderRadius: "8px",
           borderWidth: "1px",
           borderStyle: "solid",
@@ -99,9 +95,14 @@ export const summaryItem = recipe({
 export const summaryNumber = recipe({
   variants: {
     variant: {
-      default: {
-        fontSize: "28px",
-      },
+      default: [
+        atoms({
+          fontWeight: "medium",
+        }),
+        {
+          fontSize: "18px",
+        },
+      ],
       utila: [
         atoms({
           fontWeight: "medium",
@@ -132,8 +133,8 @@ export const summaryLabelContainer = recipe({
   variants: {
     variant: {
       default: {
-        borderRadius: "9px",
-        padding: "12px 10px",
+        borderRadius: "4px",
+        padding: "2px 6px",
       },
       utila: {
         borderRadius: "4px",
@@ -150,16 +151,16 @@ export const summaryLabelContainer = recipe({
     },
     type: {
       staked: {
-        background: "#F0EDFA",
-        color: "#5A36C0",
+        background: vars.color.summaryLabelStakedBackground,
+        color: vars.color.summaryLabelStakedColor,
       },
       apy: {
-        background: "#EDF1F5",
-        color: "#0059AB",
+        background: vars.color.summaryLabelApyBackground,
+        color: vars.color.summaryLabelApyColor,
       },
       available: {
-        background: "#EDF6F3",
-        color: "#00794E",
+        background: vars.color.summaryLabelAvailableBackground,
+        color: vars.color.summaryLabelAvailableColor,
       },
     },
   },
@@ -170,8 +171,8 @@ export const summaryLabelContainer = recipe({
         type: "staked",
       },
       style: {
-        background: "#F6F0FF",
-        color: "#5A36C0",
+        background: vars.color.summaryLabelStakedBackground,
+        color: vars.color.summaryLabelStakedColor,
       },
     },
     {
@@ -180,8 +181,8 @@ export const summaryLabelContainer = recipe({
         type: "apy",
       },
       style: {
-        background: "#F7ECFA",
-        color: "#CA6CBD",
+        background: vars.color.summaryLabelApyBackground,
+        color: vars.color.summaryLabelApyColor,
       },
     },
     {
@@ -190,8 +191,8 @@ export const summaryLabelContainer = recipe({
         type: "available",
       },
       style: {
-        background: "#EEF7F3",
-        color: "#327C5F",
+        background: vars.color.summaryLabelAvailableBackground,
+        color: vars.color.summaryLabelAvailableColor,
       },
     },
     {
@@ -231,8 +232,8 @@ export const summaryLabelContainer = recipe({
       },
       style: [
         {
-          color: "white",
-          background: portoPalette.greyThree,
+          color: vars.color.summaryLabelStakedColor,
+          background: vars.color.summaryLabelStakedBackground,
         },
       ],
     },
@@ -243,8 +244,8 @@ export const summaryLabelContainer = recipe({
       },
       style: [
         {
-          color: "white",
-          background: portoPalette.greyThree,
+          color: vars.color.summaryLabelApyColor,
+          background: vars.color.summaryLabelApyBackground,
         },
       ],
     },
@@ -255,8 +256,8 @@ export const summaryLabelContainer = recipe({
       },
       style: [
         {
-          color: "white",
-          background: portoPalette.greyThree,
+          color: vars.color.summaryLabelAvailableColor,
+          background: vars.color.summaryLabelAvailableBackground,
         },
       ],
     },
@@ -266,7 +267,10 @@ export const summaryLabelContainer = recipe({
 export const summaryLabel = recipe({
   variants: {
     variant: {
-      default: {},
+      default: {
+        color: "inherit",
+        fontSize: "12px",
+      },
       utila: {
         color: "inherit",
         fontSize: "12px",
