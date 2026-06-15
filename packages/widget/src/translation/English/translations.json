@@ -396,7 +396,7 @@
     "skipped": "Skipped",
     "pending_approvals": "Pending approvals",
     "pending_approvals_desc": "Please open your wallet to review and securely sign the transaction",
-    "approve_error": "Something went wrong. Check if wallet is connected",
+    "approve_error": "Something went wrong",
     "tx_type": {
       "SWAP": "SWAP",
       "DEPOSIT": "DEPOSIT",

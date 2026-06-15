@@ -32,6 +32,7 @@ const baseColorsContract = {
   selectValidatorMultiDefaultBackground: "",
 
   warningBoxBackground: "",
+  errorBoxBackground: "",
 
   positionsClaimRewardsBackground: "",
   positionsActionRequiredBackground: "",

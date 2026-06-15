@@ -25,6 +25,7 @@ import {
   isTonChain,
   isTronChain,
 } from "../../domain/types/chains";
+import { ExternalProviderError } from "../../domain/types/external-providers";
 import {
   decodeAndPrepareEvmTransaction,
   substratePayloadCodec,
@@ -337,7 +338,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   .mapLeft(
                     (e) =>
                       new SendTransactionError(
-                        typeof e === "string" ? e : undefined
+                        e,
+                        e instanceof ExternalProviderError
+                          ? e.customMessage
+                          : null
                       )
                   )
               )
@@ -510,7 +514,9 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
         })
         .mapLeft((e) => {
           console.log(e);
-          return new Error("sign failed");
+          return e instanceof ExternalProviderError
+            ? e
+            : new Error("sign failed");
         }),
     [connectorDetails, signMessageAsync]
   );

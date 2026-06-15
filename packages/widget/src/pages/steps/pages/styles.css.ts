@@ -33,5 +33,10 @@ export const halfOpacityAfter = style({ ":after": { opacity: 0.5 } });
 
 export const utilaPendingApprovalsBanner = style({
   background: vars.color.warningBoxBackground,
-  borderRadius: "20px",
+  borderRadius: vars.borderRadius.baseContract.xl,
+});
+
+export const stepsErrorBanner = style({
+  background: vars.color.errorBoxBackground,
+  borderRadius: vars.borderRadius.baseContract.xl,
 });
