@@ -4,7 +4,7 @@ import type { Yield } from "../../src/domain/types/yields";
 import { getEarnDetailsModel } from "../../src/pages-dashboard/overview/earn-details/earn-details-model";
 import { yieldApiYieldFixture } from "../fixtures";
 
-const t = (key: string): string => {
+const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
     "dashboard.earn_details.min_stake": "Min stake",
     "dashboard.earn_details.minimum_subscription": "Minimum subscription",
@@ -12,6 +12,7 @@ const t = (key: string): string => {
     "dashboard.earn_details.price_per_share": "Price per share",
     "dashboard.earn_details.provider": "Provider",
     "dashboard.earn_details.reward_token": "Reward token",
+    "dashboard.earn_details.yield_bearing_reward_token": `${options?.symbol ?? ""} (yield-bearing)`,
   };
 
   return translations[key] ?? key;
@@ -102,5 +103,57 @@ describe("getEarnDetailsModel", () => {
     expect(model.detailRows.map((row) => row.id)).not.toContain(
       "price-per-share"
     );
+  });
+
+  it("does not mark auto-claiming rewards as yield-bearing without price per share", () => {
+    const model = getEarnDetailsModel({
+      t: t as TFunction,
+      yieldDto: makeYield({
+        outputToken: {
+          ...yieldApiYieldFixture().token,
+          symbol: "stETH",
+        },
+      }),
+    });
+
+    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
+      id: "reward-token",
+      label: "Reward token",
+      value: "stETH",
+    });
+  });
+
+  it("marks distinct output tokens with price per share as yield-bearing", () => {
+    const baseYield = yieldApiYieldFixture();
+    const model = getEarnDetailsModel({
+      t: t as TFunction,
+      yieldDto: makeYield({
+        mechanics: {
+          ...baseYield.mechanics,
+          rewardClaiming: "manual",
+        },
+        outputToken: {
+          ...baseYield.token,
+          symbol: "mUSDC",
+        },
+        state: {
+          pricePerShareState: {
+            price: 1.06274537,
+            quoteToken: baseYield.token,
+            shareToken: baseYield.token,
+          },
+        },
+        token: {
+          ...baseYield.token,
+          symbol: "USDC",
+        },
+      }),
+    });
+
+    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
+      id: "reward-token",
+      label: "Reward token",
+      value: "mUSDC (yield-bearing)",
+    });
   });
 });

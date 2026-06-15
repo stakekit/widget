@@ -31,6 +31,7 @@ const t = (key: string, options?: Record<string, unknown>): string => {
     "dashboard.earn_details.reward_rate_period": `${options?.rewardType ?? "APY"} (7D)`,
     "dashboard.earn_details.reward_schedule": "Reward schedule",
     "dashboard.earn_details.reward_token": "Reward token",
+    "dashboard.earn_details.yield_bearing_reward_token": `${options?.symbol ?? ""} (yield-bearing)`,
     "dashboard.earn_details.risk": "Risk",
     "dashboard.earn_details.type": "Type",
     "dashboard.earn_details.vault": "Vault",
@@ -323,6 +324,69 @@ describe("getDashboardPositionDetailsModel", () => {
         label: "Asset (ETH)",
       },
     ]);
+  });
+
+  it("does not mark auto-claiming position reward tokens as yield-bearing without price per share", () => {
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      integrationData: makeYield(),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      providersDetails: [{ name: "Rocket Pool", status: "active" }],
+      reducedStakedOrLiquidBalance: null,
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
+      id: "reward-token",
+      label: "Reward token",
+      value: "rETH",
+    });
+  });
+
+  it("marks position output tokens with price per share as yield-bearing", () => {
+    const baseYield = yieldApiYieldFixture();
+    const model = getDashboardPositionDetailsModel({
+      canUnstake: true,
+      integrationData: makeYield({
+        mechanics: {
+          ...makeYield().mechanics,
+          rewardClaiming: "manual",
+        },
+        outputToken: {
+          ...baseYield.token,
+          address: "0x0000000000000000000000000000000000000002",
+          symbol: "mUSDC",
+        },
+        state: {
+          pricePerShareState: {
+            price: 1.06274537,
+            quoteToken: baseYield.token,
+            shareToken: baseYield.token,
+          },
+        },
+        token: {
+          ...baseYield.token,
+          address: "0x0000000000000000000000000000000000000001",
+          symbol: "USDC",
+        },
+      }),
+      pendingActions: [],
+      personalizedRewardRate: null,
+      positionBalancesByType: makePositionBalances(),
+      providersDetails: [{ name: "Midas", status: "active" }],
+      reducedStakedOrLiquidBalance: null,
+      rewardsSummary: undefined,
+      t: t as TFunction,
+    });
+
+    expect(model.detailRows.find((row) => row.id === "reward-token")).toEqual({
+      id: "reward-token",
+      label: "Reward token",
+      value: "mUSDC (yield-bearing)",
+    });
   });
 
   it("includes price per share in details when yield state provides it", () => {

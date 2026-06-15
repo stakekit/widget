@@ -325,6 +325,19 @@ export const getYieldOutputToken = (yieldDto: YieldBase) =>
     (outputToken) => !equalTokens(outputToken, yieldDto.token)
   );
 
+const hasPositivePricePerShare = (yieldDto: YieldBase) => {
+  const price = yieldDto.state?.pricePerShareState?.price;
+
+  if (price === null || price === undefined) return false;
+
+  const amount = BigNumber(price);
+
+  return amount.isFinite() && amount.isGreaterThan(0);
+};
+
+export const hasYieldBearingOutputToken = (yieldDto: YieldBase) =>
+  getYieldOutputToken(yieldDto).isJust() && hasPositivePricePerShare(yieldDto);
+
 const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||
   yieldType === "native_staking" ||

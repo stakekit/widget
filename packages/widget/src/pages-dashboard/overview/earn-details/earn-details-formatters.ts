@@ -4,6 +4,7 @@ import type { getEffectiveYieldRewardRateDetails } from "../../../domain/types/r
 import {
   getDashboardYieldCategory,
   getYieldActionArg,
+  hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
   type Yield,
 } from "../../../domain/types/yields";
@@ -138,11 +139,14 @@ export const formatProviderWebsite = (website: string) => {
 export const formatProviderWebsiteHref = (website: string) =>
   /^https?:\/\//i.test(website) ? website : `https://${website}`;
 
-export const formatRewardTokenLabel = (yieldDto: Yield) => {
-  const symbol = yieldDto.token.symbol;
+export const formatRewardTokenLabel = (
+  yieldDto: Yield,
+  t: TFunction
+): string => {
+  const symbol = yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
 
-  return yieldDto.mechanics.rewardClaiming === "auto"
-    ? `${symbol} (PPS-bearing)`
+  return hasYieldBearingOutputToken(yieldDto)
+    ? t("dashboard.earn_details.yield_bearing_reward_token", { symbol })
     : symbol;
 };
 

@@ -259,7 +259,7 @@ const getDetailRows = ({
   {
     id: "reward-token",
     label: t("dashboard.earn_details.reward_token"),
-    value: formatRewardTokenLabel(yieldDto),
+    value: formatRewardTokenLabel(yieldDto, t),
   },
   ...getPricePerShareRows(yieldDto, t),
   ...facts
