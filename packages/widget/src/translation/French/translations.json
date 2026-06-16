@@ -709,6 +709,7 @@
       "network": "Réseau",
       "provider": "Fournisseur",
       "reward_token": "Token de récompense",
+      "yield_bearing_reward_token": "{{symbol}} (porteur de rendement)",
       "price_per_share": "Prix par part",
       "type": "Type",
       "reward_schedule": "Fréquence des récompenses",

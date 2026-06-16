@@ -216,7 +216,7 @@ const getFillerMetric = ({
     };
   }
 
-  const rewardToken = formatRewardTokenLabel(integrationData);
+  const rewardToken = formatRewardTokenLabel(integrationData, t);
 
   if (rewardToken) {
     promotedFactIds.add("reward-token");
@@ -520,7 +520,7 @@ const getDetailRows = ({
       : {
           id: "reward-token",
           label: t("dashboard.earn_details.reward_token"),
-          value: formatRewardTokenLabel(integrationData),
+          value: formatRewardTokenLabel(integrationData, t),
         },
     pricePerShare
       ? {
