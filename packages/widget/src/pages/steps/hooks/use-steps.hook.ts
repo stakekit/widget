@@ -168,6 +168,20 @@ export const useSteps = ({
     ]
   );
 
+  const customSignErrorMessage = useMemo(() => {
+    const error = machineState.context.currentTxMeta
+      .chainNullable((currentTxMeta) => {
+        return machineState.context.txStates[currentTxMeta.idx]?.meta.signError;
+      })
+      .extractNullable();
+
+    if (!error || !("customMessage" in error)) return null;
+
+    return typeof error.customMessage === "string" && error.customMessage
+      ? error.customMessage
+      : null;
+  }, [machineState.context.currentTxMeta, machineState.context.txStates]);
+
   const { t } = useTranslation();
 
   const onClickRef = useSavedRef(onClick);
@@ -190,6 +204,7 @@ export const useSteps = ({
     retry,
     txStates,
     cta,
+    customSignErrorMessage,
   };
 };
 

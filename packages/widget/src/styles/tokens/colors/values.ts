@@ -144,6 +144,7 @@ export const lightThemeColors: typeof colorsContract = {
   skeletonLoaderHighlight: vars.color.background,
 
   warningBoxBackground: "#FFE9BD",
+  errorBoxBackground: sharedSemanticColors.status.danger,
 
   stakeSectionBackground: "#f5f5f6",
 
@@ -221,6 +222,7 @@ export const darkThemeColors: typeof colorsContract = {
   skeletonLoaderHighlight: "#333333",
 
   warningBoxBackground: vars.color.backgroundMuted,
+  errorBoxBackground: sharedSemanticColors.status.danger,
 
   stakeSectionBackground: "#282828",
 

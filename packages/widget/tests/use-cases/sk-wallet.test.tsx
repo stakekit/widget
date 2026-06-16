@@ -6,6 +6,7 @@ import { SKApiClientProvider } from "../../src/providers/api/api-client-provider
 import { SKQueryClientProvider } from "../../src/providers/query-client";
 import { SettingsContextProvider } from "../../src/providers/settings";
 import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
+import { SendTransactionError } from "../../src/providers/sk-wallet/errors";
 import { SolanaProvider } from "../../src/providers/solana";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
@@ -114,6 +115,69 @@ describe("SK Wallet", () => {
         providersDetails: [],
       }
     );
+  });
+
+  it("preserves custom external provider transaction errors", async ({
+    worker,
+  }) => {
+    const customMessage = "Transaction blocked by policy";
+    const switchChainSpy = vi.fn(async (_: number) => {});
+    const sendTransactionSpy = vi.fn(async () => ({
+      type: "error" as const,
+      error: customMessage,
+    }));
+
+    worker.use(
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+        await delay();
+        return HttpResponse.json([MiscNetworks.Solana]);
+      })
+    );
+
+    const solanaWallet = await renderHookWithExternalProvider({
+      type: "generic",
+      currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
+      currentChain: solana.id,
+      supportedChainIds: [solana.id],
+      provider: {
+        signMessage: async () => "hash",
+        switchChain: switchChainSpy,
+        sendTransaction: sendTransactionSpy,
+      },
+    });
+
+    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
+
+    const solanaRes = await solanaWallet.result.current.signTransaction({
+      network: "solana",
+      tx: "12345",
+      txMeta: {
+        txId: "",
+        actionId: "",
+        actionType: "STAKE",
+        txType: "APPROVAL",
+        amount: "100",
+        inputToken: {
+          address: "",
+          decimals: 0,
+          symbol: "",
+          name: "",
+          network: "solana",
+        },
+        structuredTransaction: null,
+        annotatedTransaction: null,
+        providersDetails: [],
+      },
+      ledgerHwAppId: null,
+    });
+
+    expect(solanaRes.isLeft()).toBe(true);
+
+    const error = solanaRes.extract() as SendTransactionError;
+
+    expect(error).toBeInstanceOf(SendTransactionError);
+    expect(error.message).toBe("Send transaction failed");
+    expect(error.customMessage).toBe(customMessage);
   });
 
   it("should work with ton external provider", async ({ worker }) => {

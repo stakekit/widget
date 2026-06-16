@@ -3,6 +3,17 @@ import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
 import type { SKTx, SKTxMeta } from "./wallets/generic-wallet";
 
+export class ExternalProviderError extends Error {
+  _tag = "ExternalProviderError";
+
+  constructor(
+    readonly customMessage: string | null,
+    cause?: unknown
+  ) {
+    super(customMessage ?? "External provider failed", { cause });
+  }
+}
+
 export class ExternalProvider {
   constructor(private variantProvider: RefObject<SKExternalProviders>) {}
 
@@ -13,8 +24,8 @@ export class ExternalProvider {
       ).toEither(new Error("Invalid provider type"))
     )
       .chain((_sendTransaction) =>
-        EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft(
-          () => new Error("Failed to send transaction, unknown error")
+        EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft((error) =>
+          toExternalProviderError(error)
         )
       )
       .chain((res) => {
@@ -26,7 +37,9 @@ export class ExternalProvider {
           return EitherAsync.liftEither(Right(res.txHash));
         }
 
-        return EitherAsync.liftEither(Left(res.error));
+        return EitherAsync.liftEither(
+          Left(new ExternalProviderError(res.error))
+        );
       });
   }
 
@@ -44,7 +57,17 @@ export class ExternalProvider {
       this.variantProvider.current.provider.signMessage(messageHash)
     ).mapLeft((e) => {
       console.error(e);
-      return new Error("Failed to sign message");
+      return toExternalProviderError(e);
     });
   }
 }
+
+const toExternalProviderError = (error: unknown) =>
+  new ExternalProviderError(
+    error instanceof Error && error.message
+      ? error.message
+      : typeof error === "string" && error
+        ? error
+        : null,
+    error
+  );

@@ -11,7 +11,10 @@ export class SafeFailedError extends Error {
 export class SendTransactionError extends Error {
   _tag = "SendTransactionError";
 
-  constructor(cause?: unknown) {
+  constructor(
+    cause?: unknown,
+    readonly customMessage: string | null = null
+  ) {
     super("Send transaction failed", { cause });
 
     this._tag = "SendTransactionError";

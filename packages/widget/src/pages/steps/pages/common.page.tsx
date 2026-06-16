@@ -12,7 +12,7 @@ import { useSettings } from "../../../providers/settings";
 import { PageContainer } from "../../components/page-container";
 import { PageCtaButton } from "../../components/page-cta";
 import { useSteps } from "../hooks/use-steps.hook";
-import { utilaPendingApprovalsBanner } from "./styles.css";
+import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
@@ -28,9 +28,9 @@ export const StepsPage = ({
   onSignSuccess,
   providersDetails,
 }: StepsPageProps) => {
-  const { variant } = useSettings();
+  const { dashboardVariant, variant } = useSettings();
 
-  const { retry, txStates, cta } = useSteps({
+  const { retry, txStates, cta, customSignErrorMessage } = useSteps({
     inputToken,
     session,
     onSignSuccess,
@@ -47,6 +47,19 @@ export const StepsPage = ({
           <Box marginBottom="2">
             <Heading variant={{ level: "h4" }}>{t("steps.title")}</Heading>
           </Box>
+
+          {customSignErrorMessage && (
+            <Box
+              className={stepsErrorBanner}
+              data-rk="steps-custom-sign-error"
+              px="4"
+              py="3"
+            >
+              <Text variant={{ weight: "normal", type: "inverted" }}>
+                {customSignErrorMessage}
+              </Text>
+            </Box>
+          )}
 
           {showUtilaPendingApprovals && (
             <Box
@@ -88,7 +101,11 @@ export const StepsPage = ({
 
           {retry && (
             <Box my="4">
-              <Button data-rk="footer-button-primary" onClick={retry}>
+              <Button
+                data-rk="footer-button-primary"
+                onClick={retry}
+                variant={{ size: dashboardVariant ? "compact" : "regular" }}
+              >
                 {t("shared.retry")}
               </Button>
             </Box>

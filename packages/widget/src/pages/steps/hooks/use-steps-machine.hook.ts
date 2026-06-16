@@ -4,6 +4,7 @@ import { type RefObject, useMemo, useState } from "react";
 import { assign, emit, setup } from "xstate";
 import { isTxError } from "../../../domain";
 import type { ActionDto, TransactionDto } from "../../../domain/types/action";
+import { ExternalProviderError } from "../../../domain/types/external-providers";
 import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
@@ -25,7 +26,7 @@ type TxMeta = {
   url: string | null;
   signedTx: string | null;
   broadcasted: boolean | null;
-  signError: SendTransactionError | TransactionDecodeError | null;
+  signError: SendTransactionError | TransactionDecodeError | SignError | null;
   txCheckError: GetStakeSessionError | null;
   done: boolean;
 };
@@ -240,8 +241,12 @@ const getMachine = (
                     data: { signedTx: val, broadcasted: false },
                   }))
                   .mapLeft(
-                    () =>
+                    (error) =>
                       new SignError({
+                        customMessage:
+                          error instanceof ExternalProviderError
+                            ? error.customMessage
+                            : null,
                         network: tx.network,
                         txId: tx.id,
                       })

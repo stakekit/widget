@@ -270,7 +270,7 @@
     "skipped": "Ignorée",
     "pending_approvals": "Approbations en attente",
     "pending_approvals_desc": "Ouvrez votre portefeuille pour vérifier et signer la transaction en toute sécurité",
-    "approve_error": "Une erreur s'est produite. Vérifiez si le portefeuille est bien connecté",
+    "approve_error": "Une erreur s'est produite",
     "tx_type": {
       "SWAP": "ÉCHANGE",
       "DEPOSIT": "DÉPÔT",
