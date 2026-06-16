@@ -1,5 +1,13 @@
 # @stakekit/widget
 
+## [0.0.278](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.277...@stakekit/widget@0.0.278) (2026-06-16)
+
+
+### Bug Fixes
+
+* **widget:** correct yield-bearing reward token labels ([#536](https://github.com/stakekit/widget/issues/536)) ([de4ec12](https://github.com/stakekit/widget/commit/de4ec12bc4cbf81904cfba8a678c06f71f408469))
+* **widget:** expose transaction signing errors ([#537](https://github.com/stakekit/widget/issues/537)) ([5122351](https://github.com/stakekit/widget/commit/512235156822d78f21835b1a73b4d3dac7da6d02))
+
 ## [0.0.277](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.276...@stakekit/widget@0.0.277) (2026-06-11)
 
 
