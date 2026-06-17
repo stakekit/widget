@@ -170,6 +170,10 @@ const bindYieldApi = ({
     api.TransactionsControllerSubmitTransactionHash,
     options
   ),
+  TokensControllerGetTokens: bindOperation(
+    api.TokensControllerGetTokens,
+    options
+  ),
   YieldsControllerGetAggregateBalances: bindOperation(
     api.YieldsControllerGetAggregateBalances,
     options

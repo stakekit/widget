@@ -7,6 +7,16 @@ import {
 import type { Yield } from "../../src/domain/types/yields";
 import { yieldApiProviderFixture, yieldApiYieldFixture } from "../fixtures";
 
+const kycEligibility = {
+  defaultPolicy: "allow",
+  countries: [],
+  blockedCountries: [],
+  blockedSubdivisions: [],
+  usPersonAllowed: true,
+  investorEligibility: [],
+  subjectTypes: ["KYC"],
+} as const;
+
 const createYield = (overrides?: Partial<Yield>): Yield =>
   ({
     ...yieldApiYieldFixture(),
@@ -44,6 +54,7 @@ describe("KYC gate mapping", () => {
             kycMode: "oauth_redirect",
             iframeAllowed: false,
             authorizeUrl: "https://issuer.example/verify",
+            eligibility: kycEligibility,
           },
         },
       },
@@ -61,7 +72,10 @@ describe("KYC gate mapping", () => {
 
     expect(
       mapKycStatusToGate({
-        status: { kycStatus: "pending", kycUrl: "https://status.example" },
+        status: {
+          kycStatus: "pending",
+          authorizeUrl: "https://status.example",
+        },
         yieldDto,
       })
     ).toEqual({ state: "pending", kycUrl: "https://status.example" });
@@ -87,6 +101,7 @@ describe("KYC gate mapping", () => {
             kycMode: "oauth_redirect",
             iframeAllowed: true,
             authorizeUrl: "https://issuer.example/verify",
+            eligibility: kycEligibility,
           },
         },
       },

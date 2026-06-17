@@ -1,7 +1,11 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Right } from "purify-ts";
 import type { SKWallet } from "../domain/types/wallet";
-import { getDefaultTokens } from "../hooks/api/use-default-tokens";
+import type { DashboardYieldCategory } from "../domain/types/yields";
+import {
+  getDefaultTokens,
+  getYieldTypesForDashboardCategory,
+} from "../hooks/api/use-default-tokens";
 import { getTokenBalancesScan } from "../hooks/api/use-token-balances-scan";
 import type { ApiClient } from "../providers/api/api-client";
 import type { SettingsProps } from "../providers/settings/types";
@@ -11,6 +15,7 @@ export const getTokenBalances = ({
   address,
   apiClient,
   network,
+  selectedDashboardYieldCategory,
   queryClient,
   tokensForEnabledYieldsOnly,
 }: {
@@ -19,6 +24,7 @@ export const getTokenBalances = ({
   apiClient: ApiClient;
   queryClient: QueryClient;
   network: SKWallet["network"];
+  selectedDashboardYieldCategory?: DashboardYieldCategory | null;
   tokensForEnabledYieldsOnly: SettingsProps["tokensForEnabledYieldsOnly"];
 }) =>
   EitherAsync.fromPromise(() =>
@@ -28,6 +34,9 @@ export const getTokenBalances = ({
         queryClient,
         network: network ?? undefined,
         enabledYieldsOnly: tokensForEnabledYieldsOnly,
+        yieldTypes: getYieldTypesForDashboardCategory(
+          selectedDashboardYieldCategory
+        ),
       }),
       EitherAsync.liftEither(
         Right({ additionalAddresses, address, network })

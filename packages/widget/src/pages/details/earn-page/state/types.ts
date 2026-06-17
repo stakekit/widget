@@ -31,6 +31,10 @@ export type State = {
 };
 
 type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
+type TokenBalanceWithYieldsSelectAction = Action<
+  "tokenBalance/select",
+  TokenBalanceScanResponseDto
+>;
 type DashboardYieldCategorySelectAction = Action<
   "dashboard/yield-category/select",
   DashboardYieldCategory
@@ -58,6 +62,7 @@ type ProviderYieldIdSelectAction = Action<
 
 export type Actions =
   | TokenBalanceSelectAction
+  | TokenBalanceWithYieldsSelectAction
   | DashboardYieldCategorySelectAction
   | PositionDetailsStakeInitializeAction
   | YieldSelectAction
@@ -162,7 +167,10 @@ export type EarnPageContextType = {
   stakeMinAmount: Maybe<number>;
   validatorsData: Maybe<ValidatorDto[]>;
   hasMoreValidators: boolean;
+  hasMoreTokens: boolean;
   isLoadingMoreValidators: boolean;
+  isLoadingMoreTokens: boolean;
   onLoadMoreValidators: () => void;
+  onLoadMoreTokens: () => void;
   isStakeTokenSameAsGasToken: boolean;
 };

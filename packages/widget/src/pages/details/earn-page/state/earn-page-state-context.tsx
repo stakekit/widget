@@ -12,6 +12,7 @@ import {
 import { equalTokens } from "../../../../domain";
 import type { Networks } from "../../../../domain/types/chains/networks";
 import { isNetworkWithEnterMinBasedOnPosition } from "../../../../domain/types/stake";
+import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TokenDto } from "../../../../domain/types/tokens";
 import {
   type DashboardYieldCategory,
@@ -80,51 +81,66 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   });
 
   const reducer = (state: State, action: Actions): State => {
-    switch (action.type) {
-      case "token/select": {
-        return Maybe.fromFalsy(
-          state.selectedToken
-            .map((v) => !equalTokens(v, action.data))
-            .orDefault(true)
-        )
-          .chain(() =>
-            getInitYield({
+    const onTokenSelectState = ({
+      availableYields,
+      token,
+    }: {
+      availableYields?: TokenBalanceScanResponseDto["availableYields"];
+      token: TokenDto;
+    }) =>
+      Maybe.fromFalsy(
+        state.selectedToken.map((v) => !equalTokens(v, token)).orDefault(true)
+      )
+        .chain(() =>
+          getInitYield({
+            availableYields,
+            selectedDashboardYieldCategory:
+              dashboardYieldCategorySelectionEnabled
+                ? state.selectedDashboardYieldCategory
+                : null,
+            selectedToken: token,
+          })
+            .map<{
+              selectedDashboardYieldCategory: DashboardYieldCategory | null;
+              yieldState: ReturnType<typeof onYieldSelectState> | null;
+            }>((yieldDto) => ({
               selectedDashboardYieldCategory:
                 dashboardYieldCategorySelectionEnabled
                   ? state.selectedDashboardYieldCategory
                   : null,
-              selectedToken: action.data,
-            })
-              .map<{
-                selectedDashboardYieldCategory: DashboardYieldCategory | null;
-                yieldState: ReturnType<typeof onYieldSelectState> | null;
-              }>((yieldDto) => ({
+              yieldState: onYieldSelectState({
+                yieldDto,
+                positionsData: positionsData.data,
+              }),
+            }))
+            .alt(
+              Maybe.of({
                 selectedDashboardYieldCategory:
                   dashboardYieldCategorySelectionEnabled
                     ? state.selectedDashboardYieldCategory
                     : null,
-                yieldState: onYieldSelectState({
-                  yieldDto,
-                  positionsData: positionsData.data,
-                }),
-              }))
-              .alt(
-                Maybe.of({
-                  selectedDashboardYieldCategory:
-                    dashboardYieldCategorySelectionEnabled
-                      ? state.selectedDashboardYieldCategory
-                      : null,
-                  yieldState: null,
-                })
-              )
-          )
-          .map<State>(({ selectedDashboardYieldCategory, yieldState }) => ({
-            ...getInitialState(),
-            selectedToken: Maybe.of(action.data),
-            selectedDashboardYieldCategory,
-            ...yieldState,
-          }))
-          .orDefault(state);
+                yieldState: null,
+              })
+            )
+        )
+        .map<State>(({ selectedDashboardYieldCategory, yieldState }) => ({
+          ...getInitialState(),
+          selectedToken: Maybe.of(token),
+          selectedDashboardYieldCategory,
+          ...yieldState,
+        }))
+        .orDefault(state);
+
+    switch (action.type) {
+      case "token/select": {
+        return onTokenSelectState({ token: action.data });
+      }
+
+      case "tokenBalance/select": {
+        return onTokenSelectState({
+          availableYields: action.data.availableYields,
+          token: action.data.token,
+        });
       }
 
       case "dashboard/yield-category/select": {
@@ -305,7 +321,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   );
 
   const initYieldRes = useInitYield({
-    selectedDashboardYieldCategory: dashboardYieldCategorySelectionEnabled
+    selectedDashboardYieldCategory: dashboardYieldCategoryGroupingEnabled
       ? selectedDashboardYieldCategoryFallback
       : null,
     selectedToken,
@@ -315,19 +331,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     [initYieldRes.data]
   );
 
-  const { availableAmount, availableYields } = useTokenBalance({
-    selectedToken,
-  });
-
   const yieldOpportunity = useYieldOpportunity(selectedStakeId.extract());
-
-  const { minEnterOrExitAmount, maxEnterOrExitAmount, isForceMax } =
-    useMaxMinYieldAmount({
-      type: "enter",
-      yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
-      availableAmount,
-      positionsData: positionsData.data,
-    });
 
   const selectedStake = useMemo(
     () => Maybe.fromNullable(yieldOpportunity.data),
@@ -340,6 +344,21 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
     ? (selectedStakeDashboardYieldCategory ??
       selectedDashboardYieldCategoryFallback)
     : null;
+
+  const { availableAmount, availableYields } = useTokenBalance({
+    selectedDashboardYieldCategory: dashboardYieldCategoryGroupingEnabled
+      ? selectedDashboardYieldCategory
+      : null,
+    selectedToken,
+  });
+
+  const { minEnterOrExitAmount, maxEnterOrExitAmount, isForceMax } =
+    useMaxMinYieldAmount({
+      type: "enter",
+      yieldOpportunity: Maybe.fromNullable(yieldOpportunity.data),
+      availableAmount,
+      positionsData: positionsData.data,
+    });
 
   /**
    * If stake amount is less then min, use min

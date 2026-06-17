@@ -211,7 +211,11 @@ export const EarnPageContextProvider = ({
   );
 
   const tokenBalancesScan = useTokenBalancesScan();
-  const defaultTokens = useDefaultTokens();
+  const defaultTokens = useDefaultTokens({
+    yieldCategory: dashboardYieldCategoryGroupingEnabled
+      ? selectedDashboardYieldCategory
+      : null,
+  });
 
   const tokenBalancesData = useMemo(
     () =>
@@ -220,24 +224,36 @@ export const EarnPageContextProvider = ({
         tb: Maybe.fromNullable(tokenBalancesScan.data).alt(Maybe.of([])),
       })
         .map((val) => {
-          const { tbWithAmount, tbWithoutAmount, tbSet } = val.tb.reduce(
-            (acc, b) => {
-              acc.tbSet.add(tokenString(b.token));
+          const categoryTokenSet =
+            dashboardYieldCategoryGroupingEnabled &&
+            selectedDashboardYieldCategory
+              ? new Set(val.defTb.map((item) => tokenString(item.token)))
+              : null;
+          const tokenBalancesScanData = categoryTokenSet
+            ? val.tb.filter((item) =>
+                categoryTokenSet.has(tokenString(item.token))
+              )
+            : val.tb;
 
-              if (new BigNumber(b.amount).isGreaterThan(0)) {
-                acc.tbWithAmount.push(b);
-              } else {
-                acc.tbWithoutAmount.push(b);
+          const { tbWithAmount, tbWithoutAmount, tbSet } =
+            tokenBalancesScanData.reduce(
+              (acc, b) => {
+                acc.tbSet.add(tokenString(b.token));
+
+                if (new BigNumber(b.amount).isGreaterThan(0)) {
+                  acc.tbWithAmount.push(b);
+                } else {
+                  acc.tbWithoutAmount.push(b);
+                }
+
+                return acc;
+              },
+              {
+                tbSet: new Set<string>(),
+                tbWithAmount: [] as TokenBalanceScanResponseDto[],
+                tbWithoutAmount: [] as TokenBalanceScanResponseDto[],
               }
-
-              return acc;
-            },
-            {
-              tbSet: new Set<string>(),
-              tbWithAmount: [] as TokenBalanceScanResponseDto[],
-              tbWithoutAmount: [] as TokenBalanceScanResponseDto[],
-            }
-          );
+            );
 
           return [
             ...tbWithAmount,
@@ -260,7 +276,13 @@ export const EarnPageContextProvider = ({
             }))
             .alt(Maybe.of({ all: tb, filtered: tb }))
         ),
-    [defaultTokens.data, deferredTokenSearch, tokenBalancesScan.data]
+    [
+      dashboardYieldCategoryGroupingEnabled,
+      defaultTokens.data,
+      deferredTokenSearch,
+      selectedDashboardYieldCategory,
+      tokenBalancesScan.data,
+    ]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -475,7 +497,7 @@ export const EarnPageContextProvider = ({
 
   const onTokenBalanceSelect = useCallback(
     (tokenBalance: TokenBalanceScanResponseDto) =>
-      dispatch({ type: "token/select", data: tokenBalance.token }),
+      dispatch({ type: "tokenBalance/select", data: tokenBalance }),
     [dispatch]
   );
 
@@ -831,7 +853,10 @@ export const EarnPageContextProvider = ({
     tokenSearch,
     stakeSearch,
     defaultTokensIsLoading,
+    hasMoreTokens: !!defaultTokens.hasNextPage,
     isLedgerLiveAccountPlaceholder,
+    isLoadingMoreTokens: defaultTokens.isFetchingNextPage,
+    onLoadMoreTokens: defaultTokens.fetchNextPage,
     tronResource,
     onTronResourceSelect,
     validation,

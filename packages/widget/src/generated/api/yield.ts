@@ -268,11 +268,32 @@ export type RewardSchedule =
   | "epoch"
   | "campaign";
 export type RewardClaiming = "auto" | "manual";
-export type KycEligibilityDto = {
-  readonly countries?: ReadonlyArray<string>;
-  readonly usPersonAllowed?: boolean;
-  readonly accreditation?: "retail" | "qualified_purchaser" | "accredited";
-  readonly subjectType?: "KYC" | "KYB";
+export type InvestorEligibilityEntryDto = {
+  readonly jurisdiction: string;
+  readonly tier:
+    | "us_retail"
+    | "us_accredited"
+    | "us_qualified_purchaser"
+    | "eu_retail"
+    | "eu_professional"
+    | "eu_professional_optup"
+    | "eu_eligible_counterparty"
+    | "uk_retail"
+    | "uk_professional"
+    | "ch_qualified"
+    | "sg_ai"
+    | "sg_ii"
+    | "hk_pi"
+    | "my_sophisticated"
+    | "br_qi"
+    | "br_pi"
+    | "ae_professional";
+  readonly verificationLevel:
+    | "self_attested"
+    | "verified_documentation"
+    | "letter"
+    | "third_party_attestation";
+  readonly expiresAfterDays?: number;
 };
 export type ArgumentFieldDto = {
   readonly name:
@@ -298,6 +319,7 @@ export type ArgumentFieldDto = {
     | "ledgerWalletApiCompatible"
     | "useMaxAmount"
     | "useInstantExecution"
+    | "useAutoClaim"
     | "rangeMin"
     | "rangeMax"
     | "percentage"
@@ -690,6 +712,7 @@ export type TransactionDto = {
     | "DEPOSIT"
     | "APPROVAL"
     | "STAKE"
+    | "SET_OPERATOR"
     | "CLAIM_UNSTAKED"
     | "CLAIM_REWARDS"
     | "RESTAKE_REWARDS"
@@ -789,6 +812,120 @@ export type CampaignPayoutFrequency =
   | "daily"
   | "six_hourly"
   | "end_of_campaign";
+export type TokenWithAvailableYieldsDto = {
+  readonly token: {
+    readonly symbol: string;
+    readonly name: string;
+    readonly decimals: number;
+    readonly network:
+      | "ethereum"
+      | "ethereum-goerli"
+      | "ethereum-holesky"
+      | "ethereum-sepolia"
+      | "ethereum-hoodi"
+      | "arbitrum"
+      | "base"
+      | "base-sepolia"
+      | "gnosis"
+      | "optimism"
+      | "polygon"
+      | "polygon-amoy"
+      | "starknet"
+      | "zksync"
+      | "linea"
+      | "unichain"
+      | "monad-testnet"
+      | "monad"
+      | "robinhood-testnet"
+      | "avalanche-c"
+      | "avalanche-c-atomic"
+      | "avalanche-p"
+      | "binance"
+      | "celo"
+      | "fantom"
+      | "harmony"
+      | "moonriver"
+      | "okc"
+      | "viction"
+      | "core"
+      | "sonic"
+      | "plasma"
+      | "katana"
+      | "hyperevm"
+      | "tempo"
+      | "agoric"
+      | "akash"
+      | "axelar"
+      | "band-protocol"
+      | "bitsong"
+      | "canto"
+      | "chihuahua"
+      | "comdex"
+      | "coreum"
+      | "cosmos"
+      | "crescent"
+      | "cronos"
+      | "cudos"
+      | "desmos"
+      | "dydx"
+      | "evmos"
+      | "fetch-ai"
+      | "gravity-bridge"
+      | "injective"
+      | "irisnet"
+      | "juno"
+      | "kava"
+      | "ki-network"
+      | "mars-protocol"
+      | "nym"
+      | "okex-chain"
+      | "onomy"
+      | "osmosis"
+      | "persistence"
+      | "quicksilver"
+      | "regen"
+      | "secret"
+      | "sentinel"
+      | "sommelier"
+      | "stafi"
+      | "stargaze"
+      | "stride"
+      | "teritori"
+      | "tgrade"
+      | "umee"
+      | "sei"
+      | "mantra"
+      | "celestia"
+      | "saga"
+      | "zetachain"
+      | "dymension"
+      | "humansai"
+      | "neutron"
+      | "polkadot"
+      | "kusama"
+      | "westend"
+      | "bittensor"
+      | "aptos"
+      | "binancebeacon"
+      | "cardano"
+      | "near"
+      | "solana"
+      | "solana-devnet"
+      | "stellar"
+      | "stellar-testnet"
+      | "sui"
+      | "tezos"
+      | "tron"
+      | "ton"
+      | "ton-testnet"
+      | "hyperliquid";
+    readonly address?: string;
+    readonly logoURI?: string;
+    readonly isPoints?: boolean;
+    readonly coinGeckoId?: string;
+  };
+  readonly availableYields: ReadonlyArray<string>;
+};
 export type CreateActionDto = {
   readonly yieldId: string;
   readonly address: string;
@@ -1016,6 +1153,7 @@ export type CreateActionDto = {
     readonly ledgerWalletApiCompatible?: boolean;
     readonly useMaxAmount?: boolean;
     readonly useInstantExecution?: boolean;
+    readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
@@ -1253,6 +1391,7 @@ export type CreateManageActionDto = {
     readonly ledgerWalletApiCompatible?: boolean;
     readonly useMaxAmount?: boolean;
     readonly useInstantExecution?: boolean;
+    readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
@@ -1265,6 +1404,8 @@ export type CreateManageActionDto = {
   readonly action:
     | "STAKE"
     | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
     | "CLAIM_REWARDS"
     | "AUTO_SWEEP_UNSTAKE_REWARDS"
     | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -1294,7 +1435,7 @@ export type KycStatusResponseDto = {
     | "pending"
     | "approved"
     | "rejected";
-  readonly kycUrl?: string;
+  readonly authorizeUrl?: string;
 };
 export type NetworkDto = {
   readonly id:
@@ -1476,6 +1617,15 @@ export type ValidatorDto = {
     readonly pricePerShare?: string;
   };
 };
+export type KycEligibilityDto = {
+  readonly defaultPolicy: "deny" | "allow";
+  readonly countries: ReadonlyArray<string>;
+  readonly blockedCountries: ReadonlyArray<string>;
+  readonly blockedSubdivisions: ReadonlyArray<string>;
+  readonly usPersonAllowed: boolean;
+  readonly investorEligibility: ReadonlyArray<InvestorEligibilityEntryDto>;
+  readonly subjectTypes: ReadonlyArray<"KYC" | "KYB">;
+};
 export type ArgumentSchemaDto = {
   readonly fields: ReadonlyArray<ArgumentFieldDto>;
   readonly notes?: string;
@@ -1485,6 +1635,8 @@ export type PendingActionDto = {
   readonly type:
     | "STAKE"
     | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
     | "CLAIM_REWARDS"
     | "AUTO_SWEEP_UNSTAKE_REWARDS"
     | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -1519,6 +1671,8 @@ export type ActionDto = {
   readonly type:
     | "STAKE"
     | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
     | "CLAIM_REWARDS"
     | "AUTO_SWEEP_UNSTAKE_REWARDS"
     | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -1768,6 +1922,7 @@ export type ActionDto = {
     readonly ledgerWalletApiCompatible?: boolean;
     readonly useMaxAmount?: boolean;
     readonly useInstantExecution?: boolean;
+    readonly useAutoClaim?: boolean;
     readonly skipPrechecks?: boolean;
     readonly useMaxAllowance?: boolean;
     readonly feePayerAddress?: string;
@@ -2436,16 +2591,23 @@ export type YieldDto = {
     readonly entryLimits?: {
       readonly minimum: string | null;
       readonly maximum: string | null;
+      readonly subsequentMinimum: string | null;
     };
     readonly requirements?: {
       readonly kycRequired: boolean;
-      readonly kycUrl?: string;
       readonly kyc?: {
-        readonly kycMode: "oauth_redirect";
+        readonly kycMode:
+          | "none"
+          | "oauth_redirect"
+          | "external_redirect"
+          | "iframe"
+          | "deeplink"
+          | "native_sdk";
         readonly iframeAllowed: boolean;
         readonly authorizeUrl?: string;
         readonly notes?: string;
-        readonly eligibility?: KycEligibilityDto;
+        readonly eligibility: KycEligibilityDto;
+        readonly mandatoryDisclosureUrl?: string;
       };
     };
     readonly supportsLedgerWalletApi?: boolean;
@@ -2469,6 +2631,7 @@ export type YieldDto = {
     };
   };
   readonly providerId: string;
+  readonly prime: boolean;
   readonly curator?: {
     readonly name?: {} | null;
     readonly description?: {} | null;
@@ -3827,6 +3990,7 @@ export type YieldsControllerGetYieldsParams = {
   readonly provider?: string;
   readonly providers?: ReadonlyArray<string>;
   readonly search?: string;
+  readonly prime?: boolean;
   readonly sort?:
     | "statusEnterAsc"
     | "statusEnterDesc"
@@ -4151,6 +4315,150 @@ export type YieldsControllerGetYieldCampaigns500 = {
   readonly error?: string;
   readonly statusCode?: number;
 };
+export type TokensControllerGetTokensParams = {
+  readonly networks?: ReadonlyArray<
+    | "ethereum"
+    | "ethereum-goerli"
+    | "ethereum-holesky"
+    | "ethereum-sepolia"
+    | "ethereum-hoodi"
+    | "arbitrum"
+    | "base"
+    | "base-sepolia"
+    | "gnosis"
+    | "optimism"
+    | "polygon"
+    | "polygon-amoy"
+    | "starknet"
+    | "zksync"
+    | "linea"
+    | "unichain"
+    | "monad-testnet"
+    | "monad"
+    | "robinhood-testnet"
+    | "avalanche-c"
+    | "avalanche-c-atomic"
+    | "avalanche-p"
+    | "binance"
+    | "celo"
+    | "fantom"
+    | "harmony"
+    | "moonriver"
+    | "okc"
+    | "viction"
+    | "core"
+    | "sonic"
+    | "plasma"
+    | "katana"
+    | "hyperevm"
+    | "tempo"
+    | "agoric"
+    | "akash"
+    | "axelar"
+    | "band-protocol"
+    | "bitsong"
+    | "canto"
+    | "chihuahua"
+    | "comdex"
+    | "coreum"
+    | "cosmos"
+    | "crescent"
+    | "cronos"
+    | "cudos"
+    | "desmos"
+    | "dydx"
+    | "evmos"
+    | "fetch-ai"
+    | "gravity-bridge"
+    | "injective"
+    | "irisnet"
+    | "juno"
+    | "kava"
+    | "ki-network"
+    | "mars-protocol"
+    | "nym"
+    | "okex-chain"
+    | "onomy"
+    | "osmosis"
+    | "persistence"
+    | "quicksilver"
+    | "regen"
+    | "secret"
+    | "sentinel"
+    | "sommelier"
+    | "stafi"
+    | "stargaze"
+    | "stride"
+    | "teritori"
+    | "tgrade"
+    | "umee"
+    | "sei"
+    | "mantra"
+    | "celestia"
+    | "saga"
+    | "zetachain"
+    | "dymension"
+    | "humansai"
+    | "neutron"
+    | "polkadot"
+    | "kusama"
+    | "westend"
+    | "bittensor"
+    | "aptos"
+    | "binancebeacon"
+    | "cardano"
+    | "near"
+    | "solana"
+    | "solana-devnet"
+    | "stellar"
+    | "stellar-testnet"
+    | "sui"
+    | "tezos"
+    | "tron"
+    | "ton"
+    | "ton-testnet"
+    | "hyperliquid"
+  >;
+  readonly yieldTypes?: ReadonlyArray<
+    | "staking"
+    | "restaking"
+    | "lending"
+    | "vault"
+    | "fixed_yield"
+    | "real_world_asset"
+    | "concentrated_liquidity_pool"
+    | "liquidity_pool"
+  >;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type TokensControllerGetTokens200 = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items?: ReadonlyArray<TokenWithAvailableYieldsDto>;
+};
+export type TokensControllerGetTokens400 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type TokensControllerGetTokens401 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
+export type TokensControllerGetTokens429 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+  readonly retryAfter?: number;
+};
+export type TokensControllerGetTokens500 = {
+  readonly message?: string;
+  readonly error?: string;
+  readonly statusCode?: number;
+};
 export type ActionsControllerGetActionsParams = {
   readonly offset?: number;
   readonly limit?: number;
@@ -4176,6 +4484,8 @@ export type ActionsControllerGetActionsParams = {
   readonly type?:
     | "STAKE"
     | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
     | "CLAIM_REWARDS"
     | "AUTO_SWEEP_UNSTAKE_REWARDS"
     | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -4195,6 +4505,16 @@ export type ActionsControllerGetActionsParams = {
     | "VERIFY_WITHDRAW_CREDENTIALS"
     | "DELEGATE";
   readonly yieldId?: string;
+  readonly yieldTypes?: ReadonlyArray<
+    | "staking"
+    | "restaking"
+    | "lending"
+    | "vault"
+    | "fixed_yield"
+    | "real_world_asset"
+    | "concentrated_liquidity_pool"
+    | "liquidity_pool"
+  >;
   readonly network?:
     | "ethereum"
     | "ethereum-goerli"
@@ -4719,6 +5039,7 @@ export const make = (
           provider: options?.params?.["provider"] as any,
           providers: options?.params?.["providers"] as any,
           search: options?.params?.["search"] as any,
+          prime: options?.params?.["prime"] as any,
           sort: options?.params?.["sort"] as any,
         }),
         onRequest(options?.config)(["2xx"], {
@@ -4869,6 +5190,21 @@ export const make = (
           "500": "YieldsControllerGetYieldCampaigns500",
         })
       ),
+    TokensControllerGetTokens: (options) =>
+      HttpClientRequest.get(`/v1/tokens`).pipe(
+        HttpClientRequest.setUrlParams({
+          networks: options?.params?.["networks"] as any,
+          yieldTypes: options?.params?.["yieldTypes"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"], {
+          "400": "TokensControllerGetTokens400",
+          "401": "TokensControllerGetTokens401",
+          "429": "TokensControllerGetTokens429",
+          "500": "TokensControllerGetTokens500",
+        })
+      ),
     ActionsControllerGetActions: (options) =>
       HttpClientRequest.get(`/v1/actions`).pipe(
         HttpClientRequest.setUrlParams({
@@ -4880,6 +5216,7 @@ export const make = (
           intent: options.params["intent"] as any,
           type: options.params["type"] as any,
           yieldId: options.params["yieldId"] as any,
+          yieldTypes: options.params["yieldTypes"] as any,
           network: options.params["network"] as any,
         }),
         onRequest(options.config)(["2xx"], {
@@ -5328,6 +5665,36 @@ export interface YieldApi {
       >
   >;
   /**
+   * Retrieve tokens that have at least one enabled yield available for this project. Optionally filter by one or more networks and yield types. Returns the full list by default; callers should respect `total` and use `offset`/`limit`, as a default page size may be introduced in future.
+   */
+  readonly TokensControllerGetTokens: <Config extends OperationConfig>(
+    options:
+      | {
+          readonly params?: TokensControllerGetTokensParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<TokensControllerGetTokens200, Config>,
+    | HttpClientError.HttpClientError
+    | YieldApiError<
+        "TokensControllerGetTokens400",
+        TokensControllerGetTokens400
+      >
+    | YieldApiError<
+        "TokensControllerGetTokens401",
+        TokensControllerGetTokens401
+      >
+    | YieldApiError<
+        "TokensControllerGetTokens429",
+        TokensControllerGetTokens429
+      >
+    | YieldApiError<
+        "TokensControllerGetTokens500",
+        TokensControllerGetTokens500
+      >
+  >;
+  /**
    * Retrieve all actions performed by a user, with optional filtering by yield, status, category, etc. In the future, this may include personalized action recommendations.
    */
   readonly ActionsControllerGetActions: <
@@ -5578,7 +5945,7 @@ export interface YieldApi {
     | YieldApiError<"KycControllerGetStatus429", KycControllerGetStatus429>
   >;
   /**
-   * Retrieve a list of all supported networks that can be used for filtering yields and other operations.
+   * Retrieve networks with enabled yield opportunities for the authenticated project.
    */
   readonly NetworksControllerGetNetworks: <Config extends OperationConfig>(
     options: { readonly config?: Config | undefined } | undefined

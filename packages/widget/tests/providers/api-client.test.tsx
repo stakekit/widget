@@ -64,6 +64,7 @@ describe("API client", () => {
 
     expect("TokenControllerGetTokens" in client.legacy).toBe(true);
     expect("AuthControllerMe" in client.legacy).toBe(false);
+    expect("TokensControllerGetTokens" in client.yield).toBe(true);
     expect("YieldsControllerGetAggregateBalances" in client.yield).toBe(true);
     expect("ProvidersControllerGetProvider" in client.yield).toBe(true);
     expect("ProvidersControllerGetProviders" in client.yield).toBe(false);

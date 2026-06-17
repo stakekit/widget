@@ -77,6 +77,38 @@ export const getYieldApiMock = () => [
     });
   }),
 
+  http.get(yieldApiRoute("/v1/tokens"), async ({ request }) => {
+    await delay();
+
+    const url = new URL(request.url);
+    const offset = Number(url.searchParams.get("offset") ?? 0);
+    const limit = Number(url.searchParams.get("limit") ?? 100);
+    const networks = url.searchParams
+      .getAll("networks")
+      .flatMap((value) => value.split(","));
+    const yieldTypes = url.searchParams
+      .getAll("yieldTypes")
+      .flatMap((value) => value.split(","));
+    const items =
+      (networks.length === 0 || networks.includes(defaultToken.network)) &&
+      (yieldTypes.length === 0 ||
+        yieldTypes.includes(defaultYield.mechanics.type))
+        ? [
+            {
+              token: defaultToken,
+              availableYields: [defaultYield.id],
+            },
+          ]
+        : [];
+
+    return HttpResponse.json({
+      items: items.slice(offset, offset + limit),
+      total: items.length,
+      limit,
+      offset,
+    });
+  }),
+
   http.get(yieldApiRoute("/v1/yields/:yieldId"), async ({ params }) => {
     await delay();
 
