@@ -2,6 +2,7 @@ import {
   type InfiniteData,
   type QueryClient,
   useInfiniteQuery,
+  useQuery,
 } from "@tanstack/react-query";
 import { EitherAsync } from "purify-ts";
 import type { TokenBalanceScanResponseDto } from "../../domain/types/token-balance";
@@ -24,6 +25,7 @@ import { useSettings } from "../../providers/settings";
 import { useSKWallet } from "../../providers/sk-wallet";
 
 const DEFAULT_TOKENS_PAGE_LIMIT = 100;
+const DEFAULT_TOKENS_PAGE_CONCURRENCY = 5;
 
 type YieldTokenTypes = YieldTokenGetTokensParams["yieldTypes"];
 type DefaultTokensQueryParams = {
@@ -32,8 +34,11 @@ type DefaultTokensQueryParams = {
   yieldTypes?: YieldTokenTypes;
 };
 type DefaultTokensPage = {
+  limit?: number;
   nextOffset?: number;
+  offset?: number;
   tokens: TokenBalanceScanResponseDto[];
+  total?: number;
 };
 type DefaultTokensPages = {
   pages: DefaultTokensPage[];
@@ -45,6 +50,8 @@ type FetchDefaultTokensPageParams = DefaultTokensQueryParams & {
   offset?: number;
   signal?: AbortSignal;
 };
+
+const noopFetchNextPage = () => undefined;
 
 const getTokenGetTokensQueryKey = (params?: DefaultTokensQueryParams) =>
   ["/v1/tokens", ...(params ? [params] : [])] as const;
@@ -89,37 +96,81 @@ export const getYieldTypesForDashboardCategory = (
     ? getApiYieldTypesForDashboardCategory(yieldCategory)
     : undefined;
 
-export const fetchDefaultTokensPage = async ({
+export const fetchDefaultTokens = async ({
   apiClient,
   enabledYieldsOnly,
   limit = DEFAULT_TOKENS_PAGE_LIMIT,
   network,
-  offset = 0,
+  offset: firstOffset = 0,
   signal,
   yieldTypes,
-}: FetchDefaultTokensPageParams): Promise<DefaultTokensPage> => {
+}: FetchDefaultTokensPageParams): Promise<DefaultTokensPages> => {
   if (shouldUseYieldTokensApi({ enabledYieldsOnly, yieldTypes })) {
-    const page = await apiClient
-      .withOptions({ signal })
-      .yield.TokensControllerGetTokens({
-        params: {
-          networks: network
-            ? [
-                network as NonNullable<
-                  YieldTokenGetTokensParams["networks"]
-                >[number],
-              ]
-            : undefined,
-          yieldTypes,
-          offset,
-          limit,
-        },
-      });
-
-    return {
-      tokens: (page.items ?? []).map(toTokenBalanceScanResponse),
-      nextOffset: getNextOffset(page),
+    const yieldTokenParams = {
+      networks: network
+        ? [
+            network as NonNullable<
+              YieldTokenGetTokensParams["networks"]
+            >[number],
+          ]
+        : undefined,
+      yieldTypes,
+      limit,
     };
+
+    const fetchYieldTokensPage = async (
+      offset: number
+    ): Promise<DefaultTokensPage> => {
+      const page = await apiClient
+        .withOptions({ signal })
+        .yield.TokensControllerGetTokens({
+          params: { ...yieldTokenParams, offset },
+        });
+
+      return {
+        limit: page.limit,
+        tokens: (page.items ?? []).map(toTokenBalanceScanResponse),
+        nextOffset: getNextOffset(page),
+        offset: page.offset,
+        total: page.total,
+      };
+    };
+
+    const firstPage = await fetchYieldTokensPage(firstOffset);
+
+    if (firstPage.nextOffset === undefined) {
+      return { pages: [firstPage], pageParams: [firstOffset] };
+    }
+
+    const remainingOffsets: number[] = [];
+    for (
+      let offset = firstPage.offset! + firstPage.limit!;
+      offset < firstPage.total!;
+      offset += firstPage.limit!
+    ) {
+      remainingOffsets.push(offset);
+    }
+
+    const pages = [firstPage];
+    const pageParams = [firstOffset, ...remainingOffsets];
+
+    for (
+      let i = 0;
+      i < remainingOffsets.length;
+      i += DEFAULT_TOKENS_PAGE_CONCURRENCY
+    ) {
+      const chunk = remainingOffsets.slice(
+        i,
+        i + DEFAULT_TOKENS_PAGE_CONCURRENCY
+      );
+      const chunkPages = await Promise.all(
+        chunk.map((offset) => fetchYieldTokensPage(offset))
+      );
+
+      pages.push(...chunkPages);
+    }
+
+    return { pages, pageParams };
   }
 
   const tokens = await apiClient
@@ -132,28 +183,9 @@ export const fetchDefaultTokensPage = async ({
     });
 
   return {
-    tokens: tokens.map(toTokenBalanceScanResponse),
+    pages: [{ tokens: tokens.map(toTokenBalanceScanResponse) }],
+    pageParams: [firstOffset],
   };
-};
-
-const fetchDefaultTokenPages = async (
-  params: FetchDefaultTokensPageParams
-): Promise<DefaultTokensPages> => {
-  const pages: DefaultTokensPage[] = [];
-  const pageParams: number[] = [];
-  let nextOffset: number | undefined = params.offset ?? 0;
-
-  while (nextOffset !== undefined) {
-    const offset = nextOffset;
-    pageParams.push(offset);
-
-    const page = await fetchDefaultTokensPage({ ...params, offset });
-    pages.push(page);
-
-    nextOffset = page.nextOffset;
-  }
-
-  return { pages, pageParams };
 };
 
 export const useDefaultTokens = ({
@@ -169,21 +201,84 @@ export const useDefaultTokens = ({
     network: network ?? undefined,
     yieldTypes: getYieldTypesForDashboardCategory(yieldCategory),
   };
+  const shouldFetchAllPages = !!queryParams.yieldTypes?.length;
 
-  return useInfiniteQuery({
-    queryKey: getTokenGetTokensQueryKey(queryParams),
-    initialPageParam: 0,
-    queryFn: ({ pageParam, signal }) =>
-      fetchDefaultTokensPage({
+  const allPagesQuery = useQuery({
+    queryKey: getAllDefaultTokensQueryKey(queryParams),
+    enabled: shouldFetchAllPages,
+    queryFn: async ({ signal }) => {
+      const data = await fetchDefaultTokens({
         ...queryParams,
         apiClient,
-        offset: pageParam,
         signal,
-      }),
+      });
+
+      return data.pages.flatMap((page) => page.tokens);
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const infiniteQuery = useInfiniteQuery({
+    queryKey: getTokenGetTokensQueryKey(queryParams),
+    enabled: !shouldFetchAllPages,
+    initialPageParam: 0,
+    queryFn: async ({ pageParam, signal }) => {
+      if (shouldUseYieldTokensApi(queryParams)) {
+        const page = await apiClient
+          .withOptions({ signal })
+          .yield.TokensControllerGetTokens({
+            params: {
+              networks: queryParams.network
+                ? [
+                    queryParams.network as NonNullable<
+                      YieldTokenGetTokensParams["networks"]
+                    >[number],
+                  ]
+                : undefined,
+              yieldTypes: queryParams.yieldTypes,
+              offset: pageParam,
+              limit: DEFAULT_TOKENS_PAGE_LIMIT,
+            },
+          });
+
+        return {
+          limit: page.limit,
+          tokens: (page.items ?? []).map(toTokenBalanceScanResponse),
+          nextOffset: getNextOffset(page),
+          offset: page.offset,
+          total: page.total,
+        };
+      }
+
+      const tokens = await apiClient
+        .withOptions({ signal })
+        .legacy.TokenControllerGetTokens({
+          params: {
+            enabledYieldsOnly: queryParams.enabledYieldsOnly || undefined,
+            network:
+              queryParams.network as LegacyTokenGetTokensParams["network"],
+          },
+        });
+
+      return {
+        tokens: tokens.map(toTokenBalanceScanResponse),
+      };
+    },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     select: (data) => data.pages.flatMap((page) => page.tokens),
     staleTime: 1000 * 60 * 5,
   });
+
+  if (shouldFetchAllPages) {
+    return {
+      ...allPagesQuery,
+      fetchNextPage: noopFetchNextPage,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    };
+  }
+
+  return infiniteQuery;
 };
 
 export const getDefaultTokens = (
@@ -201,7 +296,7 @@ export const getDefaultTokens = (
     params.queryClient.fetchQuery({
       queryKey: getAllDefaultTokensQueryKey(queryParams),
       queryFn: async () => {
-        const data = await fetchDefaultTokenPages(params);
+        const data = await fetchDefaultTokens(params);
         params.queryClient.setQueryData<
           InfiniteData<DefaultTokensPage, number>
         >(getTokenGetTokensQueryKey(queryParams), data);
