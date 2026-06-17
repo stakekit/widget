@@ -154,4 +154,22 @@ describe("Renders initial page", () => {
 
     app.unmount();
   });
+
+  it("uses flat dashboard yield grouping by default", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        dashboardVariant: true,
+      },
+    });
+
+    await expect.element(app.getByText("Earn")).toBeInTheDocument();
+    await expect.element(app.getByText("Manage")).toBeInTheDocument();
+    await expect.element(app.getByText("Activity")).toBeInTheDocument();
+    await expect.element(app.getByText("Stake")).not.toBeInTheDocument();
+    await expect.element(app.getByText("DeFi")).not.toBeInTheDocument();
+    await expect.element(app.getByText("RWA")).not.toBeInTheDocument();
+
+    app.unmount();
+  });
 });

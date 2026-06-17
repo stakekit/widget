@@ -84,6 +84,7 @@ export type SettingsProps = {
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
   dashboardVariant?: boolean;
+  yieldGrouping?: "flat" | "category";
   institutionalWallets?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;

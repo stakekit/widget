@@ -66,13 +66,17 @@ const getInitialState = (): State => ({
 
 export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const { network, isConnected } = useSKWallet();
-  const { dashboardVariant } = useSettings();
+  const { dashboardVariant, yieldGrouping } = useSettings();
+  const dashboardYieldCategoryGroupingEnabled =
+    dashboardVariant && yieldGrouping === "category";
+  const dashboardYieldCategorySelectionEnabled =
+    !dashboardVariant || dashboardYieldCategoryGroupingEnabled;
 
   const getInitYield = useGetInitYield();
 
   const positionsData = usePositionsData();
   const dashboardYieldCatalog = useDashboardYieldCatalog({
-    enabled: dashboardVariant,
+    enabled: dashboardYieldCategoryGroupingEnabled,
   });
 
   const reducer = (state: State, action: Actions): State => {
@@ -86,7 +90,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .chain(() =>
             getInitYield({
               selectedDashboardYieldCategory:
-                state.selectedDashboardYieldCategory,
+                dashboardYieldCategorySelectionEnabled
+                  ? state.selectedDashboardYieldCategory
+                  : null,
               selectedToken: action.data,
             })
               .map<{
@@ -94,7 +100,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
                 yieldState: ReturnType<typeof onYieldSelectState> | null;
               }>((yieldDto) => ({
                 selectedDashboardYieldCategory:
-                  state.selectedDashboardYieldCategory,
+                  dashboardYieldCategorySelectionEnabled
+                    ? state.selectedDashboardYieldCategory
+                    : null,
                 yieldState: onYieldSelectState({
                   yieldDto,
                   positionsData: positionsData.data,
@@ -103,7 +111,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
               .alt(
                 Maybe.of({
                   selectedDashboardYieldCategory:
-                    state.selectedDashboardYieldCategory,
+                    dashboardYieldCategorySelectionEnabled
+                      ? state.selectedDashboardYieldCategory
+                      : null,
                   yieldState: null,
                 })
               )
@@ -118,6 +128,8 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       }
 
       case "dashboard/yield-category/select": {
+        if (!dashboardYieldCategoryGroupingEnabled) return state;
+
         const target = dashboardYieldCatalog.initialSelectionByCategory.get(
           action.data
         );
@@ -171,9 +183,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .map<State>((val) => ({
             ...getInitialState(),
             selectedToken: Maybe.of(action.data.token),
-            selectedDashboardYieldCategory: getDashboardYieldCategory(
-              action.data
-            ),
+            selectedDashboardYieldCategory:
+              dashboardYieldCategorySelectionEnabled
+                ? getDashboardYieldCategory(action.data)
+                : null,
             ...val,
           }))
           .orDefault(state);
@@ -192,9 +205,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
           .map<State>((val) => ({
             ...getInitialState(),
             selectedToken: state.selectedToken,
-            selectedDashboardYieldCategory: getDashboardYieldCategory(
-              action.data
-            ),
+            selectedDashboardYieldCategory:
+              dashboardYieldCategorySelectionEnabled
+                ? getDashboardYieldCategory(action.data)
+                : null,
             ...val,
           }))
           .orDefault(state);
@@ -291,7 +305,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   );
 
   const initYieldRes = useInitYield({
-    selectedDashboardYieldCategory: selectedDashboardYieldCategoryFallback,
+    selectedDashboardYieldCategory: dashboardYieldCategorySelectionEnabled
+      ? selectedDashboardYieldCategoryFallback
+      : null,
     selectedToken,
   });
   const initYield = useMemo(
@@ -320,9 +336,10 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
   const selectedStakeDashboardYieldCategory = selectedStake
     .chainNullable(getDashboardYieldCategory)
     .extractNullable();
-  const selectedDashboardYieldCategory =
-    selectedStakeDashboardYieldCategory ??
-    selectedDashboardYieldCategoryFallback;
+  const selectedDashboardYieldCategory = dashboardYieldCategorySelectionEnabled
+    ? (selectedStakeDashboardYieldCategory ??
+      selectedDashboardYieldCategoryFallback)
+    : null;
 
   /**
    * If stake amount is less then min, use min
@@ -478,8 +495,9 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       hasNotYieldsForToken,
       selectedProviderYieldId,
       selectedDashboardYieldCategory,
-      availableDashboardYieldCategories:
-        dashboardYieldCatalog.availableCategories,
+      availableDashboardYieldCategories: dashboardYieldCategoryGroupingEnabled
+        ? dashboardYieldCatalog.availableCategories
+        : [],
     }),
     [
       selectedStakeId,
@@ -500,6 +518,7 @@ export const EarnPageStateProvider = ({ children }: PropsWithChildren) => {
       hasNotYieldsForToken,
       selectedProviderYieldId,
       selectedDashboardYieldCategory,
+      dashboardYieldCategoryGroupingEnabled,
       dashboardYieldCatalog.availableCategories,
     ]
   );
