@@ -17,9 +17,10 @@ import {
 } from "./styles.css";
 import { Tab } from "./tab";
 
-type RouteTab = "manage" | "activity";
+type RouteTab = "earn" | "manage" | "activity";
 
 const TABS_MAP = {
+  earn: "/",
   manage: "/manage",
   activity: "/activity",
 };
@@ -63,7 +64,8 @@ export const Tabs = () => {
     Match.orElse(() => "earn")
   );
 
-  const { variant } = useSettings();
+  const { variant, yieldGrouping } = useSettings();
+  const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
 
   return (
     <Box className={combineRecipeWithVariant({ rec: tabsWrapper, variant })}>
@@ -71,19 +73,28 @@ export const Tabs = () => {
         data-rk="tabs-section"
         className={combineRecipeWithVariant({ rec: tabsContainer, variant })}
       >
-        {availableDashboardYieldCategories.map((category) => (
+        {dashboardYieldCategoryGroupingEnabled ? (
+          availableDashboardYieldCategories.map((category) => (
+            <Tab
+              isSelected={
+                selectedTab === "earn" &&
+                selectedDashboardYieldCategory === category
+              }
+              key={category}
+              onTabPress={() => onYieldCategoryPress(category)}
+              variant={category}
+            />
+          ))
+        ) : (
           <Tab
-            isSelected={
-              selectedTab === "earn" &&
-              selectedDashboardYieldCategory === category
-            }
-            key={category}
-            onTabPress={() => onYieldCategoryPress(category)}
-            variant={category}
+            isSelected={selectedTab === "earn"}
+            onTabPress={() => onRouteTabPress("earn")}
+            variant="earn"
           />
-        ))}
+        )}
 
-        {availableDashboardYieldCategories.length > 0 ? (
+        {dashboardYieldCategoryGroupingEnabled &&
+        availableDashboardYieldCategories.length > 0 ? (
           <Box className={tabsGroupDivider} />
         ) : null}
 

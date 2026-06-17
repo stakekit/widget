@@ -113,7 +113,10 @@ export const EarnPageContextProvider = ({
   const { t } = useTranslation();
   const initParams = useInitParams();
 
-  const { dashboardVariant, externalProviders, variant } = useSettings();
+  const { dashboardVariant, externalProviders, variant, yieldGrouping } =
+    useSettings();
+  const dashboardYieldCategoryGroupingEnabled =
+    dashboardVariant && yieldGrouping === "category";
 
   const { isConnected, isConnecting, isLedgerLiveAccountPlaceholder, chain } =
     useSKWallet();
@@ -298,7 +301,8 @@ export const EarnPageContextProvider = ({
         )
         .map(({ all, filteredDtos }) => {
           const dashboardFilteredDtos =
-            dashboardVariant && selectedDashboardYieldCategory
+            dashboardYieldCategoryGroupingEnabled &&
+            selectedDashboardYieldCategory
               ? filteredDtos.filter(
                   (yieldDto) =>
                     getDashboardYieldCategory(yieldDto) ===
@@ -358,7 +362,7 @@ export const EarnPageContextProvider = ({
           };
         }),
     [
-      dashboardVariant,
+      dashboardYieldCategoryGroupingEnabled,
       deferredStakeSearch,
       selectedStake,
       yieldSummaries,
@@ -482,6 +486,8 @@ export const EarnPageContextProvider = ({
   };
 
   const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
+    if (!dashboardYieldCategoryGroupingEnabled) return;
+
     if (selectedDashboardYieldCategory === category) return;
 
     dispatch({

@@ -8,6 +8,7 @@ import { queryFn } from "../../../../hooks/api/use-yield-opportunity/get-yield-o
 import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
 import { useApiClient } from "../../../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../../../providers/query-client";
+import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 
 type PositionItem = ReturnType<
@@ -32,18 +33,29 @@ export const useGroupedPositions = (
   const { isLedgerLive } = useSKWallet();
   const apiClient = useApiClient();
   const queryClient = useSKQueryClient();
+  const { yieldGrouping } = useSettings();
+  const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
 
-  const integrationIds = [...new Set(positions.map((p) => p.integrationId))];
+  const integrationIds = dashboardYieldCategoryGroupingEnabled
+    ? [...new Set(positions.map((p) => p.integrationId))]
+    : [];
 
   const categoryQueries = useQueries({
     queries: integrationIds.map((yieldId) => ({
       queryKey: ["yield-opportunity", yieldId, isLedgerLive],
-      enabled: !!yieldId,
+      enabled: dashboardYieldCategoryGroupingEnabled && !!yieldId,
       staleTime,
       queryFn: ({ signal }: { signal: AbortSignal }) =>
         queryFn({ yieldId, isLedgerLive, apiClient, queryClient, signal }),
     })),
   });
+
+  if (!dashboardYieldCategoryGroupingEnabled) {
+    return [
+      { kind: "chain-modal" },
+      ...positions.map((item) => ({ kind: "position" as const, item })),
+    ];
+  }
 
   const categoryByIntegrationId = new Map<
     string,

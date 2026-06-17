@@ -10,7 +10,7 @@ import { tab, tabBorder, tabContainer, tabText } from "./styles.css";
 type Props = {
   isSelected: boolean;
   onTabPress: () => void;
-  variant: "stake" | "defi" | "rwa" | "manage" | "activity";
+  variant: "earn" | "stake" | "defi" | "rwa" | "manage" | "activity";
 };
 
 export const Tab = ({ isSelected, variant, onTabPress }: Props) => {
