@@ -155,7 +155,7 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("uses flat dashboard yield grouping by default", async () => {
+  it("uses category dashboard yield grouping by default", async () => {
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -163,12 +163,19 @@ describe("Renders initial page", () => {
       },
     });
 
-    await expect.element(app.getByText("Earn")).toBeInTheDocument();
+    await expect.element(app.getByText("Stake")).toBeInTheDocument();
+    await expect.element(app.getByText("DeFi")).toBeInTheDocument();
+    await expect.element(app.getByText("RWA")).toBeInTheDocument();
     await expect.element(app.getByText("Manage")).toBeInTheDocument();
     await expect.element(app.getByText("Activity")).toBeInTheDocument();
-    await expect.element(app.getByText("Stake")).not.toBeInTheDocument();
-    await expect.element(app.getByText("DeFi")).not.toBeInTheDocument();
-    await expect.element(app.getByText("RWA")).not.toBeInTheDocument();
+
+    const tabsSection = app.container.querySelector("[data-rk='tabs-section']");
+    const tabsText = tabsSection?.textContent ?? "";
+
+    expect(tabsText).toContain("Stake");
+    expect(tabsText).toContain("DeFi");
+    expect(tabsText).toContain("RWA");
+    expect(tabsText).not.toContain("Earn");
 
     app.unmount();
   });

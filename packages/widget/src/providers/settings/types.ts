@@ -17,7 +17,7 @@ import type {
   TrackPageVal,
 } from "../tracking/types";
 
-export type YieldGrouping = "flat" | "category";
+type YieldGrouping = "flat" | "category";
 
 export type VariantProps =
   | {
@@ -96,7 +96,7 @@ export type SettingsProps = {
   initialChain?: SupportedSKChainIds;
 };
 
-export type ResolvedSettingsProps = Omit<SettingsProps, "yieldGrouping"> & {
+type ResolvedSettingsProps = Omit<SettingsProps, "yieldGrouping"> & {
   yieldGrouping: YieldGrouping;
 };
 
