@@ -1,5 +1,14 @@
 # @stakekit/widget
 
+## [0.0.279](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.278...@stakekit/widget@0.0.279) (2026-06-18)
+
+
+### Features
+
+* **widget:** add api-backed activity filters by yield category ([#542](https://github.com/stakekit/widget/issues/542)) ([5752e9f](https://github.com/stakekit/widget/commit/5752e9f9013ab5e831db95dcedc9cd286190787d))
+* **widget:** add flat yield grouping option for dashboard ([#539](https://github.com/stakekit/widget/issues/539)) ([dcf1c01](https://github.com/stakekit/widget/commit/dcf1c0191490f4ce2b6d6c6fb535fc119f34e699))
+* **widget:** filter eligible tokens by yield category ([#541](https://github.com/stakekit/widget/issues/541)) ([c52d6b4](https://github.com/stakekit/widget/commit/c52d6b4e1a80dab095eecc331e13d003432ca21f))
+
 ## [0.0.278](https://github.com/stakekit/widget/compare/@stakekit/widget@0.0.277...@stakekit/widget@0.0.278) (2026-06-16)
 
 
