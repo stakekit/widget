@@ -9,10 +9,7 @@ import { FallbackContent } from "../../positions-page/components/fallback-conten
 import type { ActivityFilter } from "../activity-filters";
 import { useActivityPageContext } from "../state/activity-page.context";
 import type { ActionYieldDto } from "../types";
-import {
-  type ActivityFilterOption,
-  useActivityFilters,
-} from "./use-activity-filters";
+import type { ActivityFilterOption } from "./use-activity-filters";
 
 type UseActivityPageResult = {
   content: ReactNode;
@@ -22,13 +19,13 @@ type UseActivityPageResult = {
   allData: ReturnType<
     typeof useActivityPageContext
   >["activityActions"]["allItems"];
-  filteredData: ReturnType<
-    typeof useActivityPageContext
-  >["activityActions"]["allItems"];
   filterOptions: ActivityFilterOption[];
   selectedFilter: ActivityFilter;
   onFilterSelect: (filter: ActivityFilter) => void;
   activityActions: ReturnType<typeof useActivityPageContext>["activityActions"];
+  showActivityContent: boolean;
+  showActivityControls: boolean;
+  showActivityList: boolean;
 };
 
 export const useActivityPage = (): UseActivityPageResult => {
@@ -36,29 +33,29 @@ export const useActivityPage = (): UseActivityPageResult => {
 
   const { isConnected, isConnecting } = useSKWallet();
 
-  const { activityActions, onActionSelect } = useActivityPageContext();
+  const {
+    activityActions,
+    filterOptions,
+    onActionSelect,
+    selectedFilter,
+    setSelectedFilter,
+  } = useActivityPageContext();
 
   const allData = activityActions.allItems;
 
-  const {
-    selectedFilter,
-    setSelectedFilter,
-    options: filterOptions,
-    filteredData,
-    filteredCount,
-  } = useActivityFilters(allData);
-
-  const showingCount = filteredCount;
+  const showingCount = allData?.length ?? 0;
 
   const apiTotal =
     (activityActions.data as { pages: { total?: number }[] } | undefined)
       ?.pages?.[0]?.total ??
     allData?.length ??
     0;
-
-  // When a category filter is active we can only count loaded items, so the
-  // total reflects the filtered subset instead of the API-reported total.
-  const total = selectedFilter === "all" ? apiTotal : filteredCount;
+  const total = apiTotal;
+  const hasRenderableActivity = !!allData?.length;
+  const hasActivityFilters = filterOptions.length > 0;
+  const showActivityControls = !activityActions.isPending && hasActivityFilters;
+  const showActivityList = !activityActions.isPending && hasRenderableActivity;
+  const showActivityContent = showActivityControls || showActivityList;
 
   const { t } = useTranslation();
 
@@ -81,7 +78,7 @@ export const useActivityPage = (): UseActivityPageResult => {
       );
     }
 
-    if (isConnected && !allData?.length && !activityActions.isPending) {
+    if (isConnected && !showActivityContent && !activityActions.isPending) {
       return (
         <Box my="4">
           <FallbackContent type="no_previous_activity" />
@@ -107,7 +104,7 @@ export const useActivityPage = (): UseActivityPageResult => {
   }, [
     isConnected,
     isConnecting,
-    allData,
+    showActivityContent,
     activityActions.isPending,
     activityActions.isFetchingNextPage,
     t,
@@ -119,10 +116,12 @@ export const useActivityPage = (): UseActivityPageResult => {
     showingCount,
     total,
     allData,
-    filteredData,
     filterOptions,
     selectedFilter,
     onFilterSelect: setSelectedFilter,
     activityActions,
+    showActivityContent,
+    showActivityControls,
+    showActivityList,
   };
 };

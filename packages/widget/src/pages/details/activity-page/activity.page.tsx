@@ -5,6 +5,7 @@ import { Text } from "../../../components/atoms/typography/text";
 import { VirtualList } from "../../../components/atoms/virtual-list";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { PageContainer } from "../../components/page-container";
+import { FallbackContent } from "../positions-page/components/fallback-content";
 import { ActionListItem } from "./components/action-list-item";
 import { ActivityFilters } from "./components/activity-filters";
 import { useActivityPage } from "./hooks/use-activity-page";
@@ -15,7 +16,6 @@ const ActivityPageComponent = () => {
   const {
     content,
     allData,
-    filteredData,
     filterOptions,
     selectedFilter,
     onFilterSelect,
@@ -23,6 +23,9 @@ const ActivityPageComponent = () => {
     total,
     onActionSelect,
     activityActions,
+    showActivityContent,
+    showActivityControls,
+    showActivityList,
   } = useActivityPage();
 
   const { t } = useTranslation();
@@ -32,32 +35,52 @@ const ActivityPageComponent = () => {
       {content}
 
       <Box display="flex" flexDirection="column">
-        {!activityActions.isPending && allData && !!allData.length && (
+        {showActivityContent && (
           <>
-            <ActivityFilters
-              options={filterOptions}
-              selectedFilter={selectedFilter}
-              onSelect={onFilterSelect}
-            />
+            {showActivityControls && (
+              <ActivityFilters
+                options={filterOptions}
+                selectedFilter={selectedFilter}
+                onSelect={onFilterSelect}
+              />
+            )}
 
-            <Box display="flex" justifyContent="flex-end" paddingBottom="2">
-              <Text
-                variant={{ type: "muted", weight: "normal", size: "small" }}
-              >
-                {t("activity.showing_count", { showing: showingCount, total })}
-              </Text>
-            </Box>
+            {showActivityList ? (
+              <>
+                <Box display="flex" justifyContent="flex-end" paddingBottom="2">
+                  <Text
+                    variant={{
+                      type: "muted",
+                      weight: "normal",
+                      size: "small",
+                    }}
+                  >
+                    {t("activity.showing_count", {
+                      showing: showingCount,
+                      total,
+                    })}
+                  </Text>
+                </Box>
 
-            <VirtualList
-              data={filteredData ?? allData}
-              hasNextPage={activityActions.hasNextPage}
-              isFetchingNextPage={activityActions.isFetchingNextPage}
-              fetchNextPage={activityActions.fetchNextPage}
-              estimateSize={() => 80}
-              itemContent={(_index, item) => (
-                <ActionListItem onActionSelect={onActionSelect} action={item} />
-              )}
-            />
+                <VirtualList
+                  data={allData ?? []}
+                  hasNextPage={activityActions.hasNextPage}
+                  isFetchingNextPage={activityActions.isFetchingNextPage}
+                  fetchNextPage={activityActions.fetchNextPage}
+                  estimateSize={() => 80}
+                  itemContent={(_index, item) => (
+                    <ActionListItem
+                      onActionSelect={onActionSelect}
+                      action={item}
+                    />
+                  )}
+                />
+              </>
+            ) : (
+              <Box my="4">
+                <FallbackContent type="no_previous_activity" />
+              </Box>
+            )}
           </>
         )}
       </Box>

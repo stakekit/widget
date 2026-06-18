@@ -70,7 +70,8 @@ export const SettingsContextProvider = ({
       value={{
         ...rest,
         preferredTokenYieldsPerNetwork,
-        yieldGrouping: rest.yieldGrouping ?? "category",
+        yieldGrouping:
+          rest.yieldGrouping ?? (rest.dashboardVariant ? "category" : "flat"),
       }}
     >
       {children}

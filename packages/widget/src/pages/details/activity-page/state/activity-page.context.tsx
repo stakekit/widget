@@ -6,9 +6,14 @@ import {
   ActionStatus,
   type TransactionType,
 } from "../../../../domain/types/action";
-import { useActivityActions } from "../../../../hooks/api/use-activity-actions";
+import {
+  useActivityActions,
+  useActivityFilterOptions,
+  usePrefetchActivityActionFilters,
+} from "../../../../hooks/api/use-activity-actions";
 import { useActivityContext } from "../../../../providers/activity-provider";
 import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useActivityFilters } from "../hooks/use-activity-filters";
 import type { ActionYieldDto } from "../types";
 import type { ActivityPageContextType } from "./types";
 
@@ -80,11 +85,19 @@ export const ActivityPageContextProvider = ({
     return;
   };
 
-  const activityActions = useActivityActions();
+  const filterOptions = useActivityFilterOptions();
+  const { selectedFilter, setSelectedFilter } = useActivityFilters({
+    options: filterOptions,
+  });
+  const activityActions = useActivityActions(selectedFilter);
+  usePrefetchActivityActionFilters({ filterOptions });
 
   const value = {
     onActionSelect,
     activityActions,
+    filterOptions,
+    selectedFilter,
+    setSelectedFilter,
   };
 
   return (

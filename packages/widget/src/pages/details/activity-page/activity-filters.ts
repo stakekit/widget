@@ -1,25 +1,18 @@
 import {
   type DashboardYieldCategory,
-  getDashboardYieldCategory,
+  getApiYieldTypesForDashboardCategory,
 } from "../../../domain/types/yields";
-import type { ActionYieldDto } from "./types";
+import type { ActionsControllerGetActionsParams } from "../../../generated/api/yield";
 
-export type ActivityFilterCategory = DashboardYieldCategory | "borrow";
+export type ActivityFilter = "all" | DashboardYieldCategory;
 
-export type ActivityFilter = "all" | ActivityFilterCategory;
-
-/**
- * Order in which the filter pills are rendered. "borrow" has no client-side
- * signal yet and will only start matching once the API exposes a category per
- * action; until then its pill stays hidden because no items resolve to it.
- */
 export const activityFilterCategories = [
   "stake",
   "defi",
   "rwa",
-  "borrow",
-] as const satisfies ReadonlyArray<ActivityFilterCategory>;
+] as const satisfies ReadonlyArray<DashboardYieldCategory>;
 
-export const getActivityFilterCategory = (
-  action: ActionYieldDto
-): ActivityFilterCategory | null => getDashboardYieldCategory(action.yieldData);
+export const getActivityFilterYieldTypes = (
+  filter: ActivityFilter
+): ActionsControllerGetActionsParams["yieldTypes"] =>
+  filter === "all" ? undefined : getApiYieldTypesForDashboardCategory(filter);
