@@ -17,6 +17,8 @@ import type {
   TrackPageVal,
 } from "../tracking/types";
 
+export type YieldGrouping = "flat" | "category";
+
 export type VariantProps =
   | {
       variant: "zerion";
@@ -84,7 +86,7 @@ export type SettingsProps = {
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
   dashboardVariant?: boolean;
-  yieldGrouping?: "flat" | "category";
+  yieldGrouping?: YieldGrouping;
   institutionalWallets?: boolean;
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
@@ -94,4 +96,8 @@ export type SettingsProps = {
   initialChain?: SupportedSKChainIds;
 };
 
-export type SettingsContextType = SettingsProps & VariantProps;
+export type ResolvedSettingsProps = Omit<SettingsProps, "yieldGrouping"> & {
+  yieldGrouping: YieldGrouping;
+};
+
+export type SettingsContextType = ResolvedSettingsProps & VariantProps;

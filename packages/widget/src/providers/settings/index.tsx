@@ -4,7 +4,7 @@ import { createContext, useContext, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { config } from "../../config";
 import utilaTranslations from "../../translation/English/utila-variant.json";
-import type { SettingsContextType } from "./types";
+import type { SettingsContextType, SettingsProps, VariantProps } from "./types";
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined
@@ -13,7 +13,7 @@ export const SettingsContext = createContext<SettingsContextType | undefined>(
 export const SettingsContextProvider = ({
   children,
   ...rest
-}: PropsWithChildren<SettingsContextType>) => {
+}: PropsWithChildren<SettingsProps & VariantProps>) => {
   if (!config.env.isTestMode && rest.wagmi?.__customConnectors__) {
     rest.wagmi.__customConnectors__ = undefined;
   }
@@ -67,7 +67,11 @@ export const SettingsContextProvider = ({
 
   return (
     <SettingsContext.Provider
-      value={{ ...rest, preferredTokenYieldsPerNetwork }}
+      value={{
+        ...rest,
+        preferredTokenYieldsPerNetwork,
+        yieldGrouping: rest.yieldGrouping ?? "category",
+      }}
     >
       {children}
     </SettingsContext.Provider>

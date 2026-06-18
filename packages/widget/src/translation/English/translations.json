@@ -493,6 +493,8 @@
     "pending_action": {
       "stake": "staked",
       "unstake": "unstaked",
+      "withdraw_request": "requested withdrawal",
+      "instant_withdraw": "withdrew instantly",
       "claim_rewards": "claimed rewards",
       "auto_sweep_unstake_rewards": "unstaked rewards",
       "auto_sweep_withdraw_rewards": "withdrew rewards",
@@ -691,6 +693,8 @@
     "pending_action": {
       "stake": "Stake",
       "unstake": "Unstake",
+      "withdraw_request": "Request withdrawal",
+      "instant_withdraw": "Instant withdraw",
       "claim_rewards": "Claim rewards",
       "auto_sweep_unstake_rewards": "Unstake rewards",
       "auto_sweep_withdraw_rewards": "Withdraw rewards",
@@ -721,6 +725,8 @@
     "pending_action_button": {
       "stake": "Stake",
       "unstake": "Unstake",
+      "withdraw_request": "Request withdrawal",
+      "instant_withdraw": "Instant withdraw",
       "claim_rewards": "Claim",
       "auto_sweep_unstake_rewards": "Unstake rewards",
       "auto_sweep_withdraw_rewards": "Withdraw rewards",
@@ -754,6 +760,8 @@
     "pending_action_type": {
       "stake": "Stake with {{providerName}}",
       "unstake": "Unstake from {{providerName}}",
+      "withdraw_request": "Request withdrawal from {{providerName}}",
+      "instant_withdraw": "Instant withdraw from {{providerName}}",
       "claim_rewards": "Claim rewards from {{providerName}}",
       "auto_sweep_unstake_rewards": "Unstake rewards from {{providerName}}",
       "auto_sweep_withdraw_rewards": "Withdraw rewards from {{providerName}}",

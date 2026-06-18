@@ -366,6 +366,8 @@
     "pending_action": {
       "stake": "staké",
       "unstake": "déstaké",
+      "withdraw_request": "retrait demandé",
+      "instant_withdraw": "retiré instantanément",
       "claim_rewards": "récompenses réclamées",
       "auto_sweep_unstake_rewards": "récompenses retirées",
       "auto_sweep_withdraw_rewards": "récompenses retirées",
@@ -564,6 +566,8 @@
     "pending_action": {
       "stake": "Staker",
       "unstake": "Déstaker",
+      "withdraw_request": "Demander le retrait",
+      "instant_withdraw": "Retrait instantané",
       "claim_rewards": "Réclamer les récompenses",
       "auto_sweep_unstake_rewards": "Retirer les récompenses",
       "auto_sweep_withdraw_rewards": "Retirer les récompenses",
@@ -594,6 +598,8 @@
     "pending_action_button": {
       "stake": "Staker",
       "unstake": "Déstaker",
+      "withdraw_request": "Demander le retrait",
+      "instant_withdraw": "Retrait instantané",
       "claim_rewards": "Réclamer",
       "auto_sweep_unstake_rewards": "Retirer les récompenses",
       "auto_sweep_withdraw_rewards": "Retirer les récompenses",
@@ -627,6 +633,8 @@
     "pending_action_type": {
       "stake": "Staker avec {{providerName}}",
       "unstake": "Déstaker de {{providerName}}",
+      "withdraw_request": "Demander le retrait de {{providerName}}",
+      "instant_withdraw": "Retrait instantané de {{providerName}}",
       "claim_rewards": "Réclamer les récompenses de {{providerName}}",
       "auto_sweep_unstake_rewards": "Retirer les récompenses de {{providerName}}",
       "auto_sweep_withdraw_rewards": "Retirer les récompenses de {{providerName}}",

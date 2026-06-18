@@ -563,6 +563,61 @@ export type UpdatePayoutAddressDto = {
   readonly note?: string;
 };
 export type ReferralDto = { readonly id: string; readonly code: string };
+export type IntegrationFreshness =
+  | "real_time"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "coming_soon";
+export type KpiSummaryResponseDto = {
+  readonly total_earned_revenue_usd: {
+    readonly value: string | null;
+    readonly coverage: boolean;
+    readonly last_updated_at: string;
+    readonly delta_30d_usd?: string | null;
+    readonly delta_30d_pct?: string | null;
+    readonly delta_30d?: string | null;
+  };
+  readonly volume_inflow_usd: {
+    readonly value: string | null;
+    readonly coverage: boolean;
+    readonly last_updated_at: string;
+    readonly delta_30d_usd?: string | null;
+    readonly delta_30d_pct?: string | null;
+    readonly delta_30d?: string | null;
+  };
+  readonly volume_outflow_usd: {
+    readonly value: string | null;
+    readonly coverage: boolean;
+    readonly last_updated_at: string;
+    readonly delta_30d_usd?: string | null;
+    readonly delta_30d_pct?: string | null;
+    readonly delta_30d?: string | null;
+  };
+  readonly tvl_usd: {
+    readonly value: string | null;
+    readonly coverage: boolean;
+    readonly last_updated_at: string;
+    readonly delta_30d_usd?: string | null;
+    readonly delta_30d_pct?: string | null;
+    readonly delta_30d?: string | null;
+  };
+  readonly active_users_unique_addresses: {
+    readonly value: string | null;
+    readonly coverage: boolean;
+    readonly last_updated_at: string;
+    readonly delta_30d_usd?: string | null;
+    readonly delta_30d_pct?: string | null;
+    readonly delta_30d?: string | null;
+  };
+  readonly total_actions_count: number;
+};
+export type TrendDataPointDto = {
+  readonly month: string;
+  readonly tvl_usd: string | null;
+  readonly revenue_usd: string | null;
+  readonly active_users: string | null;
+};
 export type ActionStatus =
   | "CANCELED"
   | "CREATED"
@@ -574,6 +629,8 @@ export type ActionStatus =
 export type ActionTypes =
   | "STAKE"
   | "UNSTAKE"
+  | "WITHDRAW_REQUEST"
+  | "INSTANT_WITHDRAW"
   | "CLAIM_REWARDS"
   | "AUTO_SWEEP_UNSTAKE_REWARDS"
   | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -608,6 +665,7 @@ export type TransactionType =
   | "DEPOSIT"
   | "APPROVAL"
   | "STAKE"
+  | "SET_OPERATOR"
   | "CLAIM_UNSTAKED"
   | "CLAIM_REWARDS"
   | "RESTAKE_REWARDS"
@@ -728,7 +786,12 @@ export type YieldProviders =
   | "veda"
   | "lista"
   | "dolomite"
-  | "midas";
+  | "midas"
+  | "dinari"
+  | "ondo"
+  | "superstate"
+  | "securitize"
+  | "nest";
 export type YieldType =
   | "staking"
   | "liquid-staking"
@@ -1403,6 +1466,7 @@ export type CreateFeeConfigurationDtoV2 = {
   readonly managementFeeBps?: number;
   readonly performanceFeeBps?: number;
   readonly depositFeeBps?: number;
+  readonly chargeOnFirstDepositOnly?: boolean;
   readonly layerzeroOVaultConfig?: {};
 };
 export type FailureViewDto = {
@@ -1533,12 +1597,14 @@ export type CreateFeeConfigurationDto = {
   readonly managementFeeBps?: number;
   readonly performanceFeeBps?: number;
   readonly depositFeeBps?: number;
+  readonly chargeOnFirstDepositOnly?: boolean;
   readonly layerzeroOVaultConfig?: {};
 };
 export type UpdateFeeConfigurationDto = {
   readonly managementFeeBps?: number;
   readonly performanceFeeBps?: number;
   readonly depositFeeBps?: number;
+  readonly chargeOnFirstDepositOnly?: boolean | null;
   readonly layerzeroOVaultConfig?: {} | null;
 };
 export type InitiateSsoDto = {
@@ -2062,6 +2128,28 @@ export type UpdateTeamDto = {
   readonly name?: string;
   readonly isMfaEnforced?: boolean;
 };
+export type IntegrationRevenueRowDto = {
+  readonly integration_id: string;
+  readonly integration_name: string | null;
+  readonly revenue_usd: string | null;
+  readonly revenue_type: "estimated" | "actual" | null;
+  readonly tvl_usd: string | null;
+  readonly data_freshness: IntegrationFreshness;
+  readonly coverage: boolean;
+  readonly volume_inflow_usd: string | null;
+  readonly volume_outflow_usd: string | null;
+  readonly estimated_rewards_usd: string | null;
+};
+export type TopIntegrationDto = {
+  readonly integration_id: string;
+  readonly integration_name: string | null;
+  readonly revenue_usd: string | null;
+  readonly tvl_usd: string | null;
+  readonly data_freshness: IntegrationFreshness;
+};
+export type KpiTrendsResponseDto = {
+  readonly data_points: ReadonlyArray<TrendDataPointDto>;
+};
 export type TransactionStatusResponseDto = {
   readonly status: TransactionStatus;
   readonly url: string;
@@ -2140,8 +2228,10 @@ export type FeeConfigurationWithApyDto = {
   readonly managementFeeBps: number;
   readonly performanceFeeBps: number;
   readonly depositFeeBps: number;
+  readonly chargeOnFirstDepositOnly: boolean;
   readonly allocatorVaultContractAddress: string | null;
   readonly feeWrapperContractAddress: string | null;
+  readonly feeRecipientAddress: string | null;
   readonly status: FeeConfigurationStatus;
   readonly layerzeroOVaultConfig?: {} | null;
   readonly computedRewardRate: number;
@@ -2153,8 +2243,10 @@ export type FeeConfigurationDto = {
   readonly managementFeeBps: number;
   readonly performanceFeeBps: number;
   readonly depositFeeBps: number;
+  readonly chargeOnFirstDepositOnly: boolean;
   readonly allocatorVaultContractAddress: string | null;
   readonly feeWrapperContractAddress: string | null;
+  readonly feeRecipientAddress: string | null;
   readonly status: FeeConfigurationStatus;
   readonly layerzeroOVaultConfig?: {} | null;
 };
@@ -2829,6 +2921,10 @@ export type PaginatedCampaignConfigurationRequestDto = {
   readonly limit: number;
   readonly items: ReadonlyArray<CampaignConfigurationRequestDto>;
 };
+export type TopIntegrationsDto = {
+  readonly by_revenue: ReadonlyArray<TopIntegrationDto>;
+  readonly by_tvl: ReadonlyArray<TopIntegrationDto>;
+};
 export type YieldMetadataDto = {
   readonly name: string;
   readonly logoURI: string;
@@ -3261,6 +3357,13 @@ export type ProgrammaticPayoutRunDetailDto = {
 export type ProgrammaticPayoutBatchDetailDto = {
   readonly safeTransaction: SafeTransactionDetailDto;
   readonly recipients: PaginatedProgrammaticPayoutItemDto;
+};
+export type RevenueBreakdownResponseDto = {
+  readonly total_earned_revenue_usd: string | null;
+  readonly coverage: boolean;
+  readonly last_updated_at: string;
+  readonly integrations: ReadonlyArray<IntegrationRevenueRowDto>;
+  readonly top_integrations: TopIntegrationsDto;
 };
 export type GasForNetworkResponseDto = {
   readonly customisable: boolean;
@@ -3760,6 +3863,25 @@ export type ReferralControllerGetByCodeParams = {
   readonly "X-API-KEY"?: string;
 };
 export type ReferralControllerGetByCode200 = ReferralDto;
+export type RevenueBreakdownControllerGetRevenueSummaryParams = {
+  readonly month?: string;
+  readonly date_from?: string;
+  readonly date_to?: string;
+  readonly project_ids?: ReadonlyArray<string>;
+};
+export type RevenueBreakdownControllerGetRevenueSummary200 =
+  RevenueBreakdownResponseDto;
+export type KpiSummaryControllerGetSummaryParams = {
+  readonly month?: string;
+  readonly date_from?: string;
+  readonly date_to?: string;
+  readonly project_ids?: ReadonlyArray<string>;
+};
+export type KpiSummaryControllerGetSummary200 = KpiSummaryResponseDto;
+export type KpiTrendsControllerGetTrendsParams = {
+  readonly project_ids?: ReadonlyArray<string>;
+};
+export type KpiTrendsControllerGetTrends200 = KpiTrendsResponseDto;
 export type ReportEntryControllerListParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -4191,6 +4313,8 @@ export type ActionControllerListParams = {
   readonly type?:
     | "STAKE"
     | "UNSTAKE"
+    | "WITHDRAW_REQUEST"
+    | "INSTANT_WITHDRAW"
     | "CLAIM_REWARDS"
     | "AUTO_SWEEP_UNSTAKE_REWARDS"
     | "AUTO_SWEEP_WITHDRAW_REWARDS"
@@ -5043,7 +5167,12 @@ export type YieldV2ControllerYieldsParams = {
     | "veda"
     | "lista"
     | "dolomite"
-    | "midas";
+    | "midas"
+    | "dinari"
+    | "ondo"
+    | "superstate"
+    | "securitize"
+    | "nest";
   readonly inputToken?: string;
   readonly enterStatus?: boolean;
   readonly preferredValidatorsOnly?: boolean;
@@ -5267,8 +5396,10 @@ export type YieldV2ControllerGetFeeConfigurations200 = {
     readonly managementFeeBps: number;
     readonly performanceFeeBps: number;
     readonly depositFeeBps: number;
+    readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
+    readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
     readonly layerzeroOVaultConfig?: {} | null;
   }>;
@@ -5320,8 +5451,10 @@ export type FeeConfigurationControllerGet200 = {
     readonly managementFeeBps: number;
     readonly performanceFeeBps: number;
     readonly depositFeeBps: number;
+    readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
+    readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
     readonly layerzeroOVaultConfig?: {} | null;
   }>;
@@ -5347,8 +5480,10 @@ export type ProgrammaticFeeConfigurationControllerGet200 = {
     readonly managementFeeBps: number;
     readonly performanceFeeBps: number;
     readonly depositFeeBps: number;
+    readonly chargeOnFirstDepositOnly: boolean;
     readonly allocatorVaultContractAddress: string | null;
     readonly feeWrapperContractAddress: string | null;
+    readonly feeRecipientAddress: string | null;
     readonly status: FeeConfigurationStatus;
     readonly layerzeroOVaultConfig?: {} | null;
   }>;
@@ -6723,6 +6858,35 @@ export const make = (
       HttpClientRequest.get(`/v1/referrals/${code}`).pipe(
         HttpClientRequest.setHeaders({
           "X-API-KEY": options?.params?.["X-API-KEY"] ?? undefined,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    RevenueBreakdownControllerGetRevenueSummary: (teamId, options) =>
+      HttpClientRequest.get(
+        `/v1/teams/${teamId}/reporting/revenue/summary`
+      ).pipe(
+        HttpClientRequest.setUrlParams({
+          month: options?.params?.["month"] as any,
+          date_from: options?.params?.["date_from"] as any,
+          date_to: options?.params?.["date_to"] as any,
+          project_ids: options?.params?.["project_ids"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    KpiSummaryControllerGetSummary: (teamId, options) =>
+      HttpClientRequest.get(`/v1/teams/${teamId}/reporting/summary`).pipe(
+        HttpClientRequest.setUrlParams({
+          month: options?.params?.["month"] as any,
+          date_from: options?.params?.["date_from"] as any,
+          date_to: options?.params?.["date_to"] as any,
+          project_ids: options?.params?.["project_ids"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
+    KpiTrendsControllerGetTrends: (teamId, options) =>
+      HttpClientRequest.get(`/v1/teams/${teamId}/reporting/trends`).pipe(
+        HttpClientRequest.setUrlParams({
+          project_ids: options?.params?.["project_ids"] as any,
         }),
         onRequest(options?.config)(["2xx"])
       ),
@@ -9855,6 +10019,58 @@ export interface LegacyApi {
       | undefined
   ) => Effect.Effect<
     WithOptionalResponse<ReferralControllerGetByCode200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Aggregate revenue, per-integration breakdown, and top integrations for the selected period. Supports monthly or explicit date-range filtering.
+   */
+  readonly RevenueBreakdownControllerGetRevenueSummary: <
+    Config extends OperationConfig,
+  >(
+    teamId: string,
+    options:
+      | {
+          readonly params?:
+            | RevenueBreakdownControllerGetRevenueSummaryParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<
+      RevenueBreakdownControllerGetRevenueSummary200,
+      Config
+    >,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Four headline KPIs (revenue, volume, TVL, active users) for the selected period. Metrics without pipeline support return coverage: false and value: null.
+   */
+  readonly KpiSummaryControllerGetSummary: <Config extends OperationConfig>(
+    teamId: string,
+    options:
+      | {
+          readonly params?: KpiSummaryControllerGetSummaryParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<KpiSummaryControllerGetSummary200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Returns 12 monthly data points ordered oldest to newest, each containing TVL, revenue, and active-user counts. Null values indicate missing pipeline data for that month.
+   */
+  readonly KpiTrendsControllerGetTrends: <Config extends OperationConfig>(
+    teamId: string,
+    options:
+      | {
+          readonly params?: KpiTrendsControllerGetTrendsParams | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<KpiTrendsControllerGetTrends200, Config>,
     HttpClientError.HttpClientError
   >;
   readonly ReportEntryControllerList: <Config extends OperationConfig>(

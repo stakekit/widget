@@ -20,7 +20,7 @@ const t = (key: string, options?: Record<string, unknown>): string => {
 
 const minStakeMechanics = {
   ...yieldApiYieldFixture().mechanics,
-  entryLimits: { minimum: "1", maximum: null },
+  entryLimits: { minimum: "1", maximum: null, subsequentMinimum: null },
 };
 
 const makeYield = (overrides?: Partial<Yield>): Yield =>

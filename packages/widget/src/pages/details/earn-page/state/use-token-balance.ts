@@ -3,14 +3,19 @@ import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { tokenString } from "../../../../domain";
 import type { TokenDto } from "../../../../domain/types/tokens";
+import type { DashboardYieldCategory } from "../../../../domain/types/yields";
 import { useTokenBalancesMap } from "./use-token-balances-map";
 
 export const useTokenBalance = ({
+  selectedDashboardYieldCategory,
   selectedToken,
 }: {
+  selectedDashboardYieldCategory?: DashboardYieldCategory | null;
   selectedToken: Maybe<TokenDto>;
 }) => {
-  const tokenBalancesMap = useTokenBalancesMap();
+  const tokenBalancesMap = useTokenBalancesMap({
+    selectedDashboardYieldCategory,
+  });
 
   const tokenBalance = useMemo(
     () =>

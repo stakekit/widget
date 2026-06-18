@@ -14,7 +14,7 @@ export type KycGate =
     };
 
 type KycUrlSource = {
-  readonly status?: Pick<KycStatusResponseDto, "kycUrl"> | null;
+  readonly status?: Pick<KycStatusResponseDto, "authorizeUrl"> | null;
   readonly yieldDto?: Yield | null;
 };
 
@@ -22,9 +22,8 @@ export const getKycProviderName = (yieldDto: Yield | null | undefined) =>
   yieldDto?.provider?.name ?? null;
 
 export const getKycUrl = ({ status, yieldDto }: KycUrlSource) =>
-  status?.kycUrl ??
+  status?.authorizeUrl ??
   yieldDto?.mechanics.requirements?.kyc?.authorizeUrl ??
-  yieldDto?.mechanics.requirements?.kycUrl ??
   yieldDto?.provider?.website;
 
 const getKycGateUrlFields = ({

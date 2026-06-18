@@ -29,6 +29,9 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
     selectedToken,
     onTokenSearch,
     tokenSearch,
+    hasMoreTokens,
+    isLoadingMoreTokens,
+    onLoadMoreTokens,
   } = useEarnPageContext();
 
   const { variant } = useSettings();
@@ -123,6 +126,9 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
         className={validatorVirtuosoContainer}
         data={data.tokenBalances}
         estimateSize={() => 60}
+        hasNextPage={hasMoreTokens}
+        isFetchingNextPage={isLoadingMoreTokens}
+        fetchNextPage={onLoadMoreTokens}
         itemContent={(_index, item) => {
           return (
             <SelectTokenListItem

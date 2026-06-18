@@ -65,6 +65,7 @@ export const useInitYield = ({
             apiClient,
             network,
             queryClient,
+            selectedDashboardYieldCategory,
             tokensForEnabledYieldsOnly,
           })
             .chain((val) =>
