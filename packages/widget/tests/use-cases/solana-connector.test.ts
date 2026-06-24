@@ -5,10 +5,10 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { decodeSolanaTransactionToBuffer } from "../../src/domain/types/transaction";
 import {
   deserializeSolanaTransaction,
   getSolanaConnectors,
-  getSolanaTxDecodingCandidates,
 } from "../../src/providers/misc/solana-connector";
 
 const createConnectorForTest = ({
@@ -56,28 +56,27 @@ describe("solana connector", () => {
 
   it("decodes padded base64 payloads before deserializing", () => {
     const bytes = Buffer.from([1, 2, 3, 4]);
-    const candidates = getSolanaTxDecodingCandidates(bytes.toString("base64"));
+    const decodedTx = decodeSolanaTransactionToBuffer(bytes.toString("base64"));
 
-    expect(candidates[0]?.encoding).toBe("base64");
-    expect(candidates[0]?.buffer.equals(bytes)).toBe(true);
+    expect(decodedTx.encoding).toBe("base64");
+    expect(decodedTx.buffer.equals(bytes)).toBe(true);
   });
 
   it("decodes unpadded base64 payloads before deserializing", () => {
     const bytes = Buffer.from([1, 2, 3, 4]);
     const unpaddedBase64 = bytes.toString("base64").replace(/=+$/u, "");
 
-    const candidates = getSolanaTxDecodingCandidates(unpaddedBase64);
+    const decodedTx = decodeSolanaTransactionToBuffer(unpaddedBase64);
 
-    expect(candidates[0]?.encoding).toBe("base64");
-    expect(candidates[0]?.buffer.equals(bytes)).toBe(true);
+    expect(decodedTx.encoding).toBe("base64");
+    expect(decodedTx.buffer.equals(bytes)).toBe(true);
   });
 
   it("supports hex payloads with 0x prefix", () => {
-    const candidates = getSolanaTxDecodingCandidates("0x01020304");
+    const decodedTx = decodeSolanaTransactionToBuffer("0x01020304");
 
-    expect(candidates).toHaveLength(1);
-    expect(candidates[0]?.encoding).toBe("hex");
-    expect(candidates[0]?.buffer.equals(Buffer.from([1, 2, 3, 4]))).toBe(true);
+    expect(decodedTx.encoding).toBe("hex");
+    expect(decodedTx.buffer.equals(Buffer.from([1, 2, 3, 4]))).toBe(true);
   });
 
   it("returns helpful error for invalid payloads", () => {

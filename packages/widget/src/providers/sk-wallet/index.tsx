@@ -28,6 +28,7 @@ import {
 import { ExternalProviderError } from "../../domain/types/external-providers";
 import {
   decodeAndPrepareEvmTransaction,
+  normalizeSolanaTransactionToHex,
   substratePayloadCodec,
   unsignedEVMTransactionCodec,
   unsignedSolanaTransactionCodec,
@@ -299,7 +300,10 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                   if (isSolanaChain(network)) {
                     return unsignedSolanaTransactionCodec
                       .decode(tx)
-                      .map((v) => ({ type: "solana", tx: v }));
+                      .map((v) => ({
+                        type: "solana",
+                        tx: normalizeSolanaTransactionToHex(v),
+                      }));
                   }
 
                   if (isTonChain(network)) {

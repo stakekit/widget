@@ -2,6 +2,7 @@ import { delay, HttpResponse, http } from "msw";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
 import type { SKExternalProviders } from "../../src/domain/types/wallets";
+import type { SKTxMeta } from "../../src/domain/types/wallets/generic-wallet";
 import { SKApiClientProvider } from "../../src/providers/api/api-client-provider";
 import { SKQueryClientProvider } from "../../src/providers/query-client";
 import { SettingsContextProvider } from "../../src/providers/settings";
@@ -39,6 +40,24 @@ const renderHookWithExternalProvider = (
     ),
   });
 
+const createSolanaTxMeta = (): SKTxMeta => ({
+  txId: "",
+  actionId: "",
+  actionType: "STAKE",
+  txType: "APPROVAL",
+  amount: "100",
+  inputToken: {
+    address: "",
+    decimals: 0,
+    symbol: "",
+    name: "",
+    network: "solana",
+  },
+  structuredTransaction: null,
+  annotatedTransaction: null,
+  providersDetails: [],
+});
+
 describe("SK Wallet", () => {
   it("should work with solana external provider", async ({ worker }) => {
     const switchChainSpy = vi.fn(async (_: number) => {});
@@ -67,24 +86,8 @@ describe("SK Wallet", () => {
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       network: "solana",
-      tx: "12345",
-      txMeta: {
-        txId: "",
-        actionId: "",
-        actionType: "STAKE",
-        txType: "APPROVAL",
-        amount: "100",
-        inputToken: {
-          address: "",
-          decimals: 0,
-          symbol: "",
-          name: "",
-          network: "solana",
-        },
-        structuredTransaction: null,
-        annotatedTransaction: null,
-        providersDetails: [],
-      },
+      tx: "AQIDBA==",
+      txMeta: createSolanaTxMeta(),
       ledgerHwAppId: null,
     });
 
@@ -95,25 +98,56 @@ describe("SK Wallet", () => {
     expect(sendTransactionSpy).toHaveBeenCalledWith(
       {
         type: "solana",
-        tx: "12345",
+        tx: "01020304",
       },
+      createSolanaTxMeta()
+    );
+  });
+
+  it("keeps hex solana external provider transactions in hex form", async ({
+    worker,
+  }) => {
+    const switchChainSpy = vi.fn(async (_: number) => {});
+    const sendTransactionSpy = vi.fn(async () => "hash");
+
+    worker.use(
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+        await delay();
+        return HttpResponse.json([MiscNetworks.Solana]);
+      })
+    );
+
+    const solanaWallet = await renderHookWithExternalProvider({
+      type: "generic",
+      currentAddress: "9TCnDo7Txc5bC9SnE9iKsU5CyffLfeK4nrv1BFUmxkiJ",
+      currentChain: solana.id,
+      supportedChainIds: [solana.id],
+      provider: {
+        signMessage: async () => "hash",
+        switchChain: switchChainSpy,
+        sendTransaction: sendTransactionSpy,
+      },
+    });
+
+    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
+
+    const solanaRes = await solanaWallet.result.current.signTransaction({
+      network: "solana",
+      tx: "0xA1B2",
+      txMeta: createSolanaTxMeta(),
+      ledgerHwAppId: null,
+    });
+
+    expect(solanaRes.extract()).toEqual({
+      signedTx: "hash",
+      broadcasted: true,
+    });
+    expect(sendTransactionSpy).toHaveBeenCalledWith(
       {
-        txId: "",
-        actionId: "",
-        actionType: "STAKE",
-        txType: "APPROVAL",
-        amount: "100",
-        inputToken: {
-          address: "",
-          decimals: 0,
-          symbol: "",
-          name: "",
-          network: "solana",
-        },
-        structuredTransaction: null,
-        annotatedTransaction: null,
-        providersDetails: [],
-      }
+        type: "solana",
+        tx: "a1b2",
+      },
+      createSolanaTxMeta()
     );
   });
 
