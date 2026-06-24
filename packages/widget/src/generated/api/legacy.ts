@@ -383,6 +383,7 @@ export type Team = {
   readonly oavEnabled: boolean;
   readonly isMfaEnforced: boolean;
   readonly hyperliquidVerifyByClientOrderId: boolean;
+  readonly unifiedAccountModeEnabled: boolean;
   readonly referredBy: string | null;
   readonly referralCode: string | null;
 };
@@ -787,6 +788,7 @@ export type YieldProviders =
   | "lista"
   | "dolomite"
   | "midas"
+  | "concrete"
   | "dinari"
   | "ondo"
   | "superstate"
@@ -855,7 +857,8 @@ export type PerpActionTypes =
   | "approveAgent"
   | "approveBuilderFee"
   | "updateMargin"
-  | "setTpAndSl";
+  | "setTpAndSl"
+  | "setUnifiedAccount";
 export type ProgrammaticPerpReportingTransactionDto = {
   readonly id: string;
   readonly type:
@@ -873,7 +876,8 @@ export type ProgrammaticPerpReportingTransactionDto = {
     | "ENABLE_DEX_ABSTRACTION"
     | "APPROVE_AGENT"
     | "UPDATE_MARGIN"
-    | "SET_TP_AND_SL";
+    | "SET_TP_AND_SL"
+    | "SET_USER_ABSTRACTION";
   readonly status:
     | "CREATED"
     | "QUEUED"
@@ -3305,6 +3309,7 @@ export type ActionDto = {
 };
 export type ActionGasEstimateDto = {
   readonly amount: string | null;
+  readonly entryReserveEstimate?: string;
   readonly token: TokenDto;
   readonly gasLimit?: string;
   readonly transactions: ReadonlyArray<TransactionGasEstimateDto>;
@@ -4139,7 +4144,8 @@ export type ProgrammaticReportingControllerGetPerpActions200 = {
       | "approveAgent"
       | "approveBuilderFee"
       | "updateMargin"
-      | "setTpAndSl";
+      | "setTpAndSl"
+      | "setUnifiedAccount";
     readonly status:
       | "CANCELED"
       | "CREATED"
@@ -5168,6 +5174,7 @@ export type YieldV2ControllerYieldsParams = {
     | "lista"
     | "dolomite"
     | "midas"
+    | "concrete"
     | "dinari"
     | "ondo"
     | "superstate"

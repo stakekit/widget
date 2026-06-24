@@ -466,6 +466,7 @@
       "staking": "staked",
       "staking_ethena_usde": "deposited",
       "liquid-staking": "staked",
+      "liquid_staking": "staked",
       "vault": "deposited",
       "lending": "supplied",
       "restaking": "restaked",
@@ -474,12 +475,14 @@
       "fixed_yield": "deposited",
       "real_world_asset": "deposited",
       "concentrated_liquidity_pool": "deposited",
-      "liquidity_pool": "deposited"
+      "liquidity_pool": "deposited",
+      "unknown": "earned"
     },
     "unstake": {
       "staking": "unstaked",
       "staking_ethena_usde": "withdrawn",
       "liquid-staking": "unstaked",
+      "liquid_staking": "unstaked",
       "vault": "withdrawn",
       "lending": "withdrawn",
       "restaking": "unstaked",
@@ -488,7 +491,8 @@
       "fixed_yield": "withdrawn",
       "real_world_asset": "withdrawn",
       "concentrated_liquidity_pool": "withdrawn",
-      "liquidity_pool": "withdrawn"
+      "liquidity_pool": "withdrawn",
+      "unknown": "withdrawn"
     },
     "pending_action": {
       "stake": "staked",
@@ -606,6 +610,11 @@
       "review": "Liquid Staking",
       "cta": "Stake"
     },
+    "liquid_staking": {
+      "title": "Liquid Staking",
+      "review": "Liquid Staking",
+      "cta": "Stake"
+    },
     "vault": {
       "title": "Vault",
       "review": "Deposit",
@@ -645,26 +654,30 @@
       "native_staking": "Staked",
       "pooled_staking": "Staked",
       "liquid-staking": "Liquid staked",
+      "liquid_staking": "Liquid staked",
       "lending": "Deposited",
       "vault": "Deposited",
       "restaking": "Restaked",
       "fixed_yield": "Deposited",
       "real_world_asset": "Deposited",
       "concentrated_liquidity_pool": "Deposited",
-      "liquidity_pool": "Deposited"
+      "liquidity_pool": "Deposited",
+      "unknown": "Yield"
     },
     "unstake_label": {
       "staking": "Unstake",
       "native_staking": "Unstake",
       "pooled_staking": "Unstake",
       "liquid-staking": "Unstake",
+      "liquid_staking": "Unstake",
       "lending": "Withdraw",
       "vault": "Withdraw",
       "restaking": "Unstake",
       "fixed_yield": "Withdraw",
       "real_world_asset": "Withdraw",
       "concentrated_liquidity_pool": "Withdraw",
-      "liquidity_pool": "Withdraw"
+      "liquidity_pool": "Withdraw",
+      "unknown": "Manage"
     },
     "balance_type": {
       "active": "Active",

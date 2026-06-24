@@ -234,6 +234,7 @@ export type RewardDto = {
   };
   readonly yieldSource:
     | "staking"
+    | "liquid_staking"
     | "restaking"
     | "protocol_incentive"
     | "campaign_incentive"
@@ -257,7 +258,8 @@ export type YieldType =
   | "fixed_yield"
   | "real_world_asset"
   | "concentrated_liquidity_pool"
-  | "liquidity_pool";
+  | "liquidity_pool"
+  | "liquid_staking";
 export type RewardSchedule =
   | "block"
   | "hour"
@@ -3971,7 +3973,8 @@ export type YieldsControllerGetYieldsParams = {
     | "fixed_yield"
     | "real_world_asset"
     | "concentrated_liquidity_pool"
-    | "liquidity_pool";
+    | "liquidity_pool"
+    | "liquid_staking";
   readonly types?: ReadonlyArray<
     | "staking"
     | "restaking"
@@ -3981,6 +3984,7 @@ export type YieldsControllerGetYieldsParams = {
     | "real_world_asset"
     | "concentrated_liquidity_pool"
     | "liquidity_pool"
+    | "liquid_staking"
   >;
   readonly hasCooldownPeriod?: boolean;
   readonly hasWarmupPeriod?: boolean;
@@ -4428,6 +4432,7 @@ export type TokensControllerGetTokensParams = {
     | "real_world_asset"
     | "concentrated_liquidity_pool"
     | "liquidity_pool"
+    | "liquid_staking"
   >;
   readonly offset?: number;
   readonly limit?: number;
@@ -4514,6 +4519,7 @@ export type ActionsControllerGetActionsParams = {
     | "real_world_asset"
     | "concentrated_liquidity_pool"
     | "liquidity_pool"
+    | "liquid_staking"
   >;
   readonly network?:
     | "ethereum"

@@ -339,6 +339,7 @@
       "staking": "staké",
       "staking_ethena_usde": "déposé",
       "liquid-staking": "staké",
+      "liquid_staking": "staké",
       "vault": "déposé",
       "lending": "fourni",
       "restaking": "restaké",
@@ -347,12 +348,14 @@
       "fixed_yield": "déposé",
       "real_world_asset": "déposé",
       "concentrated_liquidity_pool": "déposé",
-      "liquidity_pool": "déposé"
+      "liquidity_pool": "déposé",
+      "unknown": "gagné"
     },
     "unstake": {
       "staking": "déstaké",
       "staking_ethena_usde": "retiré",
       "liquid-staking": "déstaké",
+      "liquid_staking": "déstaké",
       "vault": "retiré",
       "lending": "retiré",
       "restaking": "déstaké",
@@ -361,7 +364,8 @@
       "fixed_yield": "retiré",
       "real_world_asset": "retiré",
       "concentrated_liquidity_pool": "retiré",
-      "liquidity_pool": "retiré"
+      "liquidity_pool": "retiré",
+      "unknown": "retiré"
     },
     "pending_action": {
       "stake": "staké",
@@ -479,6 +483,11 @@
       "review": "Staker",
       "cta": "Staker"
     },
+    "liquid_staking": {
+      "title": "Staking Liquide",
+      "review": "Staker",
+      "cta": "Staker"
+    },
     "vault": {
       "title": "Vault",
       "review": "Déposer",
@@ -518,26 +527,30 @@
       "native_staking": "Staké",
       "pooled_staking": "Staké",
       "liquid-staking": "Staké",
+      "liquid_staking": "Staké",
       "lending": "Déposé",
       "vault": "Déposé",
       "restaking": "Restaké",
       "fixed_yield": "Déposé",
       "real_world_asset": "Déposé",
       "concentrated_liquidity_pool": "Déposé",
-      "liquidity_pool": "Déposé"
+      "liquidity_pool": "Déposé",
+      "unknown": "Rendement"
     },
     "unstake_label": {
       "staking": "Déstaker",
       "native_staking": "Déstaker",
       "pooled_staking": "Déstaker",
       "liquid-staking": "Déstaker",
+      "liquid_staking": "Déstaker",
       "lending": "Retirer",
       "vault": "Retirer",
       "restaking": "Déstaker",
       "fixed_yield": "Retirer",
       "real_world_asset": "Retirer",
       "concentrated_liquidity_pool": "Retirer",
-      "liquidity_pool": "Retirer"
+      "liquidity_pool": "Retirer",
+      "unknown": "Gérer"
     },
     "balance_type": {
       "active": "Actif",

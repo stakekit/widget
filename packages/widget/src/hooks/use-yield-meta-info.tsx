@@ -130,6 +130,7 @@ export const useYieldMetaInfo = ({
 
       switch (yieldType) {
         case "staking":
+        case "liquid_staking":
         case "native_staking":
         case "pooled_staking": {
           return {
