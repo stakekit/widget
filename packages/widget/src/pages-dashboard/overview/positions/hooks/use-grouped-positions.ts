@@ -1,7 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import {
   type DashboardYieldCategory,
-  dashboardYieldCategories,
   getDashboardYieldCategory,
 } from "../../../../domain/types/yields";
 import { queryFn } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
@@ -33,7 +32,7 @@ export const useGroupedPositions = (
   const { isLedgerLive } = useSKWallet();
   const apiClient = useApiClient();
   const queryClient = useSKQueryClient();
-  const { yieldGrouping } = useSettings();
+  const { dashboardYieldCategoryOrder, yieldGrouping } = useSettings();
   const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
 
   const integrationIds = dashboardYieldCategoryGroupingEnabled
@@ -83,7 +82,7 @@ export const useGroupedPositions = (
 
   const rows: PositionsListRow[] = [{ kind: "chain-modal" }];
 
-  for (const category of dashboardYieldCategories) {
+  for (const category of dashboardYieldCategoryOrder) {
     const items = grouped.get(category);
     if (!items?.length) continue;
 

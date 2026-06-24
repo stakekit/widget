@@ -1,4 +1,5 @@
 import { delay, HttpResponse, http } from "msw";
+import { DashboardYieldCategory } from "../../src/domain/types/yields";
 import { legacyYieldFixture, yieldApiYieldFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
 import { describe, expect, it } from "../utils/test-extend";
@@ -176,6 +177,38 @@ describe("Renders initial page", () => {
     expect(tabsText).toContain("DeFi");
     expect(tabsText).toContain("RWA");
     expect(tabsText).not.toContain("Earn");
+
+    app.unmount();
+  });
+
+  it("uses the configured dashboard category tab order", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        dashboardVariant: true,
+        dashboardYieldCategoryOrder: [
+          DashboardYieldCategory.Stake,
+          DashboardYieldCategory.DeFi,
+          DashboardYieldCategory.RWA,
+        ],
+      },
+    });
+
+    await expect.element(app.getByText("Stake")).toBeInTheDocument();
+    await expect.element(app.getByText("DeFi")).toBeInTheDocument();
+    await expect.element(app.getByText("RWA")).toBeInTheDocument();
+    await expect.element(app.getByText("Manage")).toBeInTheDocument();
+    await expect.element(app.getByText("Activity")).toBeInTheDocument();
+
+    const tabsSection = app.container.querySelector("[data-rk='tabs-section']");
+    const tabsText = tabsSection?.textContent ?? "";
+
+    expect(tabsText.indexOf("Stake")).toBeLessThan(tabsText.indexOf("DeFi"));
+    expect(tabsText.indexOf("DeFi")).toBeLessThan(tabsText.indexOf("RWA"));
+    expect(tabsText.indexOf("RWA")).toBeLessThan(tabsText.indexOf("Manage"));
+    expect(tabsText.indexOf("Manage")).toBeLessThan(
+      tabsText.indexOf("Activity")
+    );
 
     app.unmount();
   });

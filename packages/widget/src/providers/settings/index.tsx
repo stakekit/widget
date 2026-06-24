@@ -3,6 +3,7 @@ import type { PropsWithChildren } from "react";
 import { createContext, useContext, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { config } from "../../config";
+import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
 import utilaTranslations from "../../translation/English/utila-variant.json";
 import type { SettingsContextType, SettingsProps, VariantProps } from "./types";
 
@@ -39,6 +40,10 @@ export const SettingsContextProvider = ({
       .extract() as typeof rest.preferredTokenYieldsPerNetwork;
   }, [rest.preferredTokenYieldsPerNetwork]);
 
+  const dashboardYieldCategoryOrder = normalizeDashboardYieldCategoryOrder(
+    rest.dashboardYieldCategoryOrder
+  );
+
   const { i18n } = useTranslation();
 
   useLayoutEffect(() => {
@@ -69,6 +74,7 @@ export const SettingsContextProvider = ({
     <SettingsContext.Provider
       value={{
         ...rest,
+        dashboardYieldCategoryOrder,
         preferredTokenYieldsPerNetwork,
         yieldGrouping:
           rest.yieldGrouping ?? (rest.dashboardVariant ? "category" : "flat"),
