@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { Just } from "purify-ts";
 import { vitest } from "vitest";
 import type { YieldCreateManageActionDto } from "../../../src/domain/types/action";
@@ -12,6 +12,7 @@ import {
   yieldApiYieldFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 import { setUrl as _setUrl } from "./utils";
@@ -248,7 +249,7 @@ export const setup = async (
 
   worker.use(
     http.get(legacyApiRoute("/v1/tokens"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         {
@@ -266,12 +267,12 @@ export const setup = async (
       ]);
     }),
     http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([token.network, ether.network]);
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -282,7 +283,7 @@ export const setup = async (
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -293,7 +294,7 @@ export const setup = async (
     }),
 
     http.post(legacyApiRoute("/v1/tokens/prices"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         "avalanche-c-undefined": {
           price: 43.92,
@@ -302,11 +303,11 @@ export const setup = async (
       });
     }),
     http.get(legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(avaxNativeStaking);
     }),
     http.get(yieldApiRoute("/v1/yields"), async () => {
-      await delay();
+      await mockDelay();
 
       const items = [avaxNativeStakingYieldApi, avaxLiquidStakingYieldApi];
 
@@ -318,19 +319,19 @@ export const setup = async (
       });
     }),
     http.get(yieldApiRoute(`/v1/yields/${avaxNativeStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(avaxNativeStakingYieldApi);
     }),
     http.get(legacyApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(avaxLiquidStaking);
     }),
     http.get(yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(avaxLiquidStakingYieldApi);
     }),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async (info) => {
-      await delay();
+      await mockDelay();
 
       const yieldId = info.params.yieldId as string;
       const validators =
@@ -350,7 +351,7 @@ export const setup = async (
       });
     }),
     http.post(legacyApiRoute("/v1/yields/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           balances: avaxLiquidStakingBalances,
@@ -359,7 +360,7 @@ export const setup = async (
       ]);
     }),
     http.post(yieldApiRoute("/v1/yields/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         items: [
           {
@@ -373,7 +374,7 @@ export const setup = async (
     http.post(
       legacyApiRoute(`/v1/yields/${avaxNativeStaking.id}/balances/scan`),
       async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json({
           integrationId: avaxLiquidStaking.id,
           balances: avaxLiquidStakingBalances,
@@ -383,7 +384,7 @@ export const setup = async (
     http.post(
       yieldApiRoute(`/v1/yields/${avaxLiquidStaking.id}/balances`),
       async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json({
           yieldId: avaxLiquidStaking.id,
           balances: avaxLiquidStakingBalancesV2,
@@ -392,7 +393,7 @@ export const setup = async (
     ),
     http.post(yieldApiRoute("/v1/actions/manage"), async (info) => {
       const data = (await info.request.json()) as YieldCreateManageActionDto;
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         ...yieldApiActionFixture({
@@ -423,7 +424,7 @@ export const setup = async (
     http.put(
       yieldApiRoute("/v1/transactions/:transactionId/submit-hash"),
       async (info) => {
-        await delay();
+        await mockDelay();
 
         const transactionId = info.params.transactionId as string;
 

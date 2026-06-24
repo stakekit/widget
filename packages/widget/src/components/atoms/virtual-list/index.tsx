@@ -46,7 +46,7 @@ type VirtualGroupListProps = {
   estimateSize: VirtualizerOptions<Element, Element>["estimateSize"];
 } & InfiniteScrollProps;
 
-export const VirtualList = <ItemData = unknown>({
+export const VirtualList = <ItemData,>({
   data,
   itemContent,
   className,

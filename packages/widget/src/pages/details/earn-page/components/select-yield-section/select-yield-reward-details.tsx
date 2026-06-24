@@ -17,14 +17,22 @@ import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../domain/types/yields";
+import type { ValidatorDto } from "../../../../../generated/api/yield";
 import { useSettings } from "../../../../../providers/settings";
 import { formatNumber } from "../../../../../utils";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { viaProviderImage } from "./styles.css";
 
+type StrategyProvider = {
+  key: string;
+  logo: string | undefined;
+  name: string;
+};
+
 export const SelectYieldRewardDetails = () => {
   const { dashboardVariant, variant } = useSettings();
   const { t } = useTranslation();
+  const showYieldStrategyDetails = variant !== "zerion";
 
   const {
     rewardToken,
@@ -50,14 +58,33 @@ export const SelectYieldRewardDetails = () => {
   );
   const strategyDetails = selectedStake.map((yieldDto) => {
     const outputToken = getYieldOutputToken(yieldDto).extractNullable();
-    const providerDetails = providersDetails
-      .chainNullable((val) => val[0])
-      .extractNullable();
-    const providerName =
-      providerDetails?.name ??
-      yieldDto.provider?.name ??
-      yieldDto.providerId ??
-      yieldDto.metadata.name;
+    const selectedValidatorsArr = [...selectedValidators.values()];
+    const providersDetailsArr = providersDetails.extractNullable() ?? [];
+    const strategyProviders = selectedValidatorsArr.length
+      ? selectedValidatorsArr.map<StrategyProvider>((validator, index) => {
+          const providerDetails = providersDetailsArr[index];
+          const name = getValidatorName(validator);
+
+          return {
+            key: validator.address,
+            logo: providerDetails?.logo ?? validator.logoURI,
+            name: providerDetails?.name ?? name,
+          };
+        })
+      : [
+          {
+            key: yieldDto.provider?.id ?? yieldDto.providerId ?? yieldDto.id,
+            logo:
+              providersDetailsArr[0]?.logo ??
+              yieldDto.provider?.logoURI ??
+              undefined,
+            name:
+              providersDetailsArr[0]?.name ??
+              yieldDto.provider?.name ??
+              yieldDto.providerId ??
+              yieldDto.metadata.name,
+          },
+        ];
     const pricePerShare = new BigNumber(
       yieldDto.state?.pricePerShareState?.price ?? 1
     );
@@ -69,9 +96,7 @@ export const SelectYieldRewardDetails = () => {
     return {
       outputAmount: formatNumber(outputAmount, 6),
       outputToken,
-      providerLogo:
-        providerDetails?.logo ?? yieldDto.provider?.logoURI ?? undefined,
-      providerName,
+      providers: strategyProviders,
       yieldType: getYieldTypeLabels(yieldDto, t).title,
     };
   });
@@ -79,10 +104,14 @@ export const SelectYieldRewardDetails = () => {
   return (
     <Box data-rk="yield-rewards">
       <Box display="flex" flexDirection="column" gap="4" marginTop="3">
-        {variant !== "zerion" && (
+        {showYieldStrategyDetails && (
           <>
             {strategyDetails
-              .map((details) => <YieldStrategyDetails {...details} />)
+              .map((details) =>
+                dashboardVariant || details.outputToken ? (
+                  <YieldStrategyDetails {...details} />
+                ) : null
+              )
               .extractNullable()}
 
             {dashboardVariant && <Divider />}
@@ -170,17 +199,23 @@ export const SelectYieldRewardDetails = () => {
 const YieldStrategyDetails = ({
   outputAmount,
   outputToken,
-  providerLogo,
-  providerName,
+  providers,
   yieldType,
 }: {
   outputAmount: string;
   outputToken: TokenDto | YieldTokenDto | null;
-  providerLogo: string | undefined;
-  providerName: string;
+  providers: StrategyProvider[];
   yieldType: string;
 }) => {
   const { t } = useTranslation();
+  const firstProvider = providers[0];
+  const providerName =
+    firstProvider && providers.length > 1
+      ? t("details.selected_validators_summary_other", {
+          providerName: firstProvider.name,
+        })
+      : (firstProvider?.name ?? "");
+  const displayedProviders = firstProvider ? [firstProvider] : [];
 
   return (
     <Box
@@ -209,12 +244,15 @@ const YieldStrategyDetails = ({
           <Text variant={{ type: "muted", weight: "normal" }}>{yieldType}</Text>
         )}
 
-        <Image
-          imgProps={{ borderRadius: "base", className: viaProviderImage }}
-          wrapperProps={{ hw: "5" }}
-          src={providerLogo}
-          fallbackName={providerName}
-        />
+        {displayedProviders.map((provider) => (
+          <Image
+            key={provider.key}
+            imgProps={{ borderRadius: "base", className: viaProviderImage }}
+            wrapperProps={{ hw: "5" }}
+            src={provider.logo}
+            fallbackName={provider.name}
+          />
+        ))}
 
         <Text variant={{ type: "muted", weight: "normal" }}>
           {t("details.via", { providerName })}
@@ -223,3 +261,6 @@ const YieldStrategyDetails = ({
     </Box>
   );
 };
+
+const getValidatorName = (validator: ValidatorDto) =>
+  validator.name ?? validator.address;

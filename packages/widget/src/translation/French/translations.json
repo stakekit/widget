@@ -22,7 +22,8 @@
     "continue": "Continuer",
     "powered_by": "Alimenté par <span0>{{name}}</span0>",
     "learn_more": "En savoir plus",
-    "change": "Changer"
+    "change": "Changer",
+    "manage_validators": "Gérer les validateurs"
   },
   "chain_modal": {
     "disabled_chain_info": "Ajoutez un portefeuille"
@@ -136,6 +137,7 @@
     "no_opportunities": "Pas d'opportunité de yield pour ce token",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} autres",
+    "selected_validators_summary_other": "{{providerName}} et autres",
     "campaign_susd_description": "Après avoir staké sUSD, la position est bloquée jusqu'au 20 avril 2026.",
     "campaign_susd_extra": "Les récompenses gagnées sont distribuées périodiquement sous forme de SNX et se débloquent linéairement sur 3 mois après la fin du programme.",
     "campaign_susd_position_locked": "La position est bloquée jusqu'au 20 avril 2026. <link0>En savoir plus</link0>",

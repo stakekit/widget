@@ -5,7 +5,7 @@ import {
   internal,
   storeMessageRelaxed,
 } from "@ton/core";
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
 import type { SKExternalProviders } from "../../src/domain/types/wallets";
@@ -19,6 +19,7 @@ import { SolanaProvider } from "../../src/providers/solana";
 import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
 import { WagmiConfigProvider } from "../../src/providers/wagmi/provider";
 import { legacyApiRoute } from "../mocks/api-routes";
+import { mockDelay } from "../mocks/delay";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { renderHook } from "../utils/test-utils";
 
@@ -122,7 +123,7 @@ describe("SK Wallet", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([MiscNetworks.Solana]);
       })
     );
@@ -169,7 +170,7 @@ describe("SK Wallet", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([MiscNetworks.Solana]);
       })
     );
@@ -220,7 +221,7 @@ describe("SK Wallet", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([MiscNetworks.Solana]);
       })
     );
@@ -277,7 +278,7 @@ describe("SK Wallet", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([MiscNetworks.Ton]);
       })
     );
@@ -293,7 +294,13 @@ describe("SK Wallet", () => {
         sendTransaction: sendTransactionSpy,
       },
     });
-    await expect.poll(() => tonWallet.result.current.isConnected).toBe(true);
+    await expect
+      .poll(
+        () =>
+          !tonWallet.result.current.isConnecting &&
+          tonWallet.result.current.isConnected
+      )
+      .toBe(true);
 
     const tonFixture = createDefaultTonTransactionFixture();
     const tonRes = await tonWallet.result.current.signTransaction({
@@ -331,7 +338,7 @@ describe("SK Wallet", () => {
 
     worker.use(
       http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-        await delay();
+        await mockDelay();
         return HttpResponse.json([MiscNetworks.Ton]);
       })
     );

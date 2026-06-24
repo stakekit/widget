@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import type { SKAppProps } from "../../src/App";
@@ -6,6 +6,7 @@ import { KycGateCard } from "../../src/components/molecules/kyc-gate-card";
 import { formatAddress } from "../../src/utils";
 import { yieldApiYieldFixture } from "../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
+import { mockDelay } from "../mocks/delay";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render, renderApp } from "../utils/test-utils";
 import { setup as setupStakingFlow } from "./staking-flow/setup";
@@ -41,7 +42,7 @@ const mockKycStatus = ({
   const handler = http.get(
     yieldApiRoute("/v1/yields/:yieldId/kyc/status"),
     async ({ request }) => {
-      await delay();
+      await mockDelay();
       calls += 1;
       requestedAddress = new URL(request.url).searchParams.get("address");
 
@@ -88,7 +89,7 @@ const mockKycRequiredDefaultYield = () => {
 
   return [
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         {
@@ -99,7 +100,7 @@ const mockKycRequiredDefaultYield = () => {
       ]);
     }),
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         {
@@ -110,7 +111,7 @@ const mockKycRequiredDefaultYield = () => {
       ]);
     }),
     http.get(yieldApiRoute("/v1/yields"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         items: [kycRequiredYield],
@@ -120,7 +121,7 @@ const mockKycRequiredDefaultYield = () => {
       });
     }),
     http.get(yieldApiRoute(`/v1/yields/${baseYield.id}`), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(kycRequiredYield);
     }),
@@ -257,7 +258,7 @@ describe("RWA KYC flow", () => {
     worker.use(
       ...mockKycRequiredDefaultYield(),
       http.get(yieldApiRoute("/v1/yields/:yieldId/kyc/status"), async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(
           { message: "Unable to fetch KYC status" },
@@ -320,7 +321,7 @@ describe("RWA KYC flow", () => {
     worker.use(
       kycStatus.handler,
       http.post(yieldApiRoute("/v1/actions/enter"), async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(
           {
@@ -382,7 +383,7 @@ describe("RWA KYC flow", () => {
     worker.use(
       kycStatus.handler,
       http.post(yieldApiRoute("/v1/actions/exit"), async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(
           {

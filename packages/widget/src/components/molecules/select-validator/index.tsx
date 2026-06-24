@@ -67,14 +67,15 @@ export const SelectValidator = ({
     onClose?.();
   };
 
-  const viewMore = multiSelect || _viewMore || !!rest.searchValue;
+  const hasRequestedMoreValidators = _viewMore || !!rest.searchValue;
+  const showExpandedValidators = multiSelect || hasRequestedMoreValidators;
 
   const data = useMemo<{
     tableData: ValidatorDto[];
     groupedItems: GroupedItem[];
     groupCounts: number[];
   }>(() => {
-    if (!validators.length && hasMore && !viewMore) {
+    if (!validators.length && hasMore && !hasRequestedMoreValidators) {
       return {
         tableData: [],
         groupedItems: [{ items: [], label: "view_more" }],
@@ -97,7 +98,7 @@ export const SelectValidator = ({
       (acc, val) => {
         if (val.preferred) {
           acc.preferred.items.push(val);
-        } else if (viewMore) {
+        } else if (showExpandedValidators) {
           acc.other.items.push(val);
         }
 
@@ -117,6 +118,8 @@ export const SelectValidator = ({
 
     // If we do not have preferred validators, show all other
     if (!groupedItems.preferred.items.length && validators.length) {
+      const canViewMore = !hasRequestedMoreValidators && !!hasMore;
+
       return {
         tableData: validators,
         groupedItems: [
@@ -124,14 +127,17 @@ export const SelectValidator = ({
             items: validators,
             label: t("details.validators_other"),
           },
+          ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
         ],
-        groupCounts: [validators.length],
+        groupCounts: [validators.length, ...(canViewMore ? [1] : [])],
       };
     }
 
     const canViewMore =
-      !viewMore &&
-      (!!hasMore || groupedItems.preferred.items.length !== validators.length);
+      !hasRequestedMoreValidators &&
+      (!!hasMore ||
+        (!showExpandedValidators &&
+          groupedItems.preferred.items.length !== validators.length));
 
     const groupedItemsValues = Object.values(groupedItems);
 
@@ -148,7 +154,13 @@ export const SelectValidator = ({
         ...(canViewMore ? [1] : []),
       ],
     };
-  }, [hasMore, validators, t, viewMore]);
+  }, [
+    hasMore,
+    validators,
+    t,
+    hasRequestedMoreValidators,
+    showExpandedValidators,
+  ]);
 
   const searchProps = rest.onSearch
     ? {
@@ -157,7 +169,7 @@ export const SelectValidator = ({
       }
     : {};
   const infiniteScrollProps =
-    viewMore && onLoadMore
+    hasRequestedMoreValidators && onLoadMore
       ? {
           hasNextPage: !!hasMore,
           isFetchingNextPage: !!isLoadingMore,
