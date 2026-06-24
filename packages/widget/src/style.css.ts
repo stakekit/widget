@@ -43,6 +43,7 @@ export const container = style([
 export const appContainer = recipe({
   base: {
     minHeight: "800px",
+    padding: "16px",
     containerType: "inline-size",
     containerName: appContainerName,
   },

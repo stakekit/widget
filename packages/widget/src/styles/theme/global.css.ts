@@ -9,6 +9,12 @@ globalStyle(rootSelector, {
     [reset]: {
       fontFamily: vars.font.body,
     },
+    widget: {
+      marginLeft: "auto",
+      marginRight: "auto",
+      maxWidth: "1000px",
+      width: "100%",
+    },
   },
 });
 
