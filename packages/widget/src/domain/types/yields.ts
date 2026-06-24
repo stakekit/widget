@@ -36,8 +36,23 @@ export type YieldMetadata = Pick<
 > & {
   provider?: YieldProviderDetails;
 };
+
+const knownApiYieldTypes = [
+  "staking",
+  "restaking",
+  "lending",
+  "vault",
+  "fixed_yield",
+  "real_world_asset",
+  "concentrated_liquidity_pool",
+  "liquidity_pool",
+  "liquid_staking",
+] as const satisfies ReadonlyArray<ApiYieldType>;
+
+type KnownApiYieldType = (typeof knownApiYieldTypes)[number];
 type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
-export type ExtendedYieldType = ApiYieldType | LocallyDerivedYieldType;
+type KnownExtendedYieldType = KnownApiYieldType | LocallyDerivedYieldType;
+export type ExtendedYieldType = KnownExtendedYieldType | "unknown";
 type YieldActionType = "enter" | "exit";
 type YieldArgumentName = ArgumentFieldDto["name"];
 
@@ -77,29 +92,28 @@ export const dashboardYieldCategories = [
 ] as const satisfies ReadonlyArray<DashboardYieldCategory>;
 
 /**
- * Maps every API `YieldType` to exactly one dashboard category. The
- * `satisfies Record<ApiYieldType, ...>` guarantees exhaustiveness: a new server
- * yield type fails the build here until it is assigned a category. This mirrors
- * `getDashboardYieldCategory` (which classifies hydrated yields) but is keyed by
- * the API `type` so it can drive `types[]` query filters.
+ * Maps locally known API yield types to dashboard categories. Unknown future
+ * API types are intentionally not included in filtered queries because the app
+ * cannot infer which dashboard category they belong to.
  */
 const apiYieldTypeToDashboardCategory = {
   staking: "stake",
   restaking: "stake",
+  liquid_staking: "stake",
   lending: "defi",
   vault: "defi",
   fixed_yield: "defi",
   concentrated_liquidity_pool: "defi",
   liquidity_pool: "defi",
   real_world_asset: "rwa",
-} as const satisfies Record<ApiYieldType, DashboardYieldCategory>;
+} as const satisfies Record<KnownApiYieldType, DashboardYieldCategory>;
 
 export const getApiYieldTypesForDashboardCategory = (
   category: DashboardYieldCategory
-): ApiYieldType[] =>
+): KnownApiYieldType[] =>
   (
     Object.entries(apiYieldTypeToDashboardCategory) as [
-      ApiYieldType,
+      KnownApiYieldType,
       DashboardYieldCategory,
     ][]
   )
@@ -306,6 +320,11 @@ export const getYieldFeePercent = (yieldDto: Yield): number | null => {
 export const getYieldLockupPeriod = (yieldDto: Yield) =>
   secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);
 
+const knownApiYieldTypeValues = new Set<string>(knownApiYieldTypes);
+
+const isKnownApiYieldType = (type: string): type is KnownApiYieldType =>
+  knownApiYieldTypeValues.has(type);
+
 export const getExtendedYieldType = (
   yieldDto: YieldBase
 ): ExtendedYieldType => {
@@ -317,7 +336,9 @@ export const getExtendedYieldType = (
     return "pooled_staking";
   }
 
-  return yieldDto.mechanics.type;
+  const type = yieldDto.mechanics.type as string;
+
+  return isKnownApiYieldType(type) ? type : "unknown";
 };
 
 export const getYieldOutputToken = (yieldDto: YieldBase) =>
@@ -340,6 +361,7 @@ export const hasYieldBearingOutputToken = (yieldDto: YieldBase) =>
 
 const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||
+  yieldType === "liquid_staking" ||
   yieldType === "native_staking" ||
   yieldType === "pooled_staking";
 
@@ -383,6 +405,12 @@ export const getYieldTypeLabels = (
       review: t("yield_types.restaking.review"),
       cta: t("yield_types.restaking.cta"),
     },
+    liquid_staking: {
+      type: "liquid_staking",
+      title: t("yield_types.liquid-staking.title"),
+      review: t("yield_types.liquid-staking.review"),
+      cta: t("yield_types.liquid-staking.cta"),
+    },
     fixed_yield: {
       type: "fixed_yield",
       title: t("yield_types.fixed_yield.title"),
@@ -419,6 +447,12 @@ export const getYieldTypeLabels = (
       review: t("yield_types.pooled_staking.review"),
       cta: t("yield_types.pooled_staking.cta"),
     },
+    unknown: {
+      type: "unknown",
+      title: "Yield",
+      review: "Earn",
+      cta: "Earn",
+    },
   } satisfies YieldTypeLabelsMap;
 
   return map[getExtendedYieldType(yieldDto)];
@@ -427,14 +461,16 @@ export const getYieldTypeLabels = (
 const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   real_world_asset: 1,
   staking: 2,
-  native_staking: 3,
-  pooled_staking: 4,
-  restaking: 5,
-  lending: 6,
-  vault: 7,
-  fixed_yield: 8,
-  liquidity_pool: 9,
-  concentrated_liquidity_pool: 10,
+  liquid_staking: 3,
+  native_staking: 4,
+  pooled_staking: 5,
+  restaking: 6,
+  lending: 7,
+  vault: 8,
+  fixed_yield: 9,
+  liquidity_pool: 10,
+  concentrated_liquidity_pool: 11,
+  unknown: 12,
 };
 
 export const getYieldTypesSortRank = (yieldDto: YieldBase) =>

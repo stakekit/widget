@@ -18,7 +18,7 @@ const yieldTypeKey = (values?: ReadonlyArray<string>) =>
 
 const filterByYieldTypes = new Map<string, ActivityFilter>([
   ["", "all"],
-  [yieldTypeKey(["staking", "restaking"]), "stake"],
+  [yieldTypeKey(["staking", "restaking", "liquid_staking"]), "stake"],
   [
     yieldTypeKey([
       "lending",
@@ -90,7 +90,7 @@ describe("activity action request params", () => {
   });
 
   it.each([
-    ["stake", ["staking", "restaking"]],
+    ["stake", ["staking", "restaking", "liquid_staking"]],
     [
       "defi",
       [
@@ -131,7 +131,7 @@ describe("activity action request params", () => {
     expect(allKey).not.toEqual(stakeKey);
     expect(stakeKey[1]).toMatchObject({
       filter: "stake",
-      yieldTypes: ["staking", "restaking"],
+      yieldTypes: ["staking", "restaking", "liquid_staking"],
     });
   });
 });
