@@ -1,3 +1,10 @@
+import {
+  Address,
+  beginCell,
+  type CommonMessageInfoRelaxedInternal,
+  internal,
+  storeMessageRelaxed,
+} from "@ton/core";
 import { delay, HttpResponse, http } from "msw";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
@@ -16,12 +23,15 @@ import { describe, expect, it, vi } from "../utils/test-extend";
 import { renderHook } from "../utils/test-utils";
 
 const renderHookWithExternalProvider = (
-  externalProviders: SKExternalProviders
+  externalProviders: SKExternalProviders,
+  options: {
+    variant?: "default" | "utila";
+  } = {}
 ) =>
   renderHook(useSKWallet, {
     wrapper: ({ children }) => (
       <SettingsContextProvider
-        variant="default"
+        variant={options.variant ?? "default"}
         apiKey={import.meta.env.VITE_API_KEY}
         externalProviders={externalProviders}
       >
@@ -57,6 +67,53 @@ const createSolanaTxMeta = (): SKTxMeta => ({
   annotatedTransaction: null,
   providersDetails: [],
 });
+
+const createTonTxMeta = (): SKTxMeta => ({
+  txId: "",
+  actionId: "",
+  actionType: "STAKE",
+  txType: "APPROVAL",
+  amount: "100",
+  inputToken: {
+    address: "",
+    decimals: 0,
+    symbol: "",
+    name: "",
+    network: "ton",
+  },
+  structuredTransaction: null,
+  annotatedTransaction: null,
+  providersDetails: [],
+});
+
+const createDefaultTonTransactionFixture = () => {
+  const message = internal({
+    to: Address.parseRaw(
+      "0:0000000000000000000000000000000000000000000000000000000000000000"
+    ),
+    value: 123n,
+    body: "Deposit",
+  });
+  const info = message.info as CommonMessageInfoRelaxedInternal;
+
+  return {
+    tx: JSON.stringify({
+      seqno: 0,
+      message: beginCell()
+        .store(storeMessageRelaxed(message))
+        .endCell()
+        .toBoc()
+        .toString("base64"),
+    }),
+    rawTx: [
+      {
+        address: info.dest.toString(),
+        amount: info.value.coins.toString(),
+        payload: message.body.toBoc().toString("base64"),
+      },
+    ],
+  };
+};
 
 describe("SK Wallet", () => {
   it("should work with solana external provider", async ({ worker }) => {
@@ -238,26 +295,11 @@ describe("SK Wallet", () => {
     });
     await expect.poll(() => tonWallet.result.current.isConnected).toBe(true);
 
+    const tonFixture = createDefaultTonTransactionFixture();
     const tonRes = await tonWallet.result.current.signTransaction({
       network: "ton",
-      tx: JSON.stringify({ seqno: 0, message: "12345" }),
-      txMeta: {
-        txId: "",
-        actionId: "",
-        actionType: "STAKE",
-        txType: "APPROVAL",
-        amount: "100",
-        inputToken: {
-          address: "",
-          decimals: 0,
-          symbol: "",
-          name: "",
-          network: "ton",
-        },
-        structuredTransaction: null,
-        annotatedTransaction: null,
-        providersDetails: [],
-      },
+      tx: tonFixture.tx,
+      txMeta: createTonTxMeta(),
       ledgerHwAppId: null,
     });
 
@@ -268,25 +310,62 @@ describe("SK Wallet", () => {
     expect(sendTransactionSpy).toHaveBeenCalledWith(
       {
         type: "ton",
-        tx: { seqno: 0n, message: "12345" },
+        tx: tonFixture.rawTx,
       },
+      createTonTxMeta()
+    );
+  });
+
+  it("keeps raw ton transactions unchanged for external provider", async ({
+    worker,
+  }) => {
+    const switchChainSpy = vi.fn(async (_: number) => {});
+    const sendTransactionSpy = vi.fn(async (_: unknown) => "hash");
+    const rawTx = [
       {
-        txId: "",
-        actionId: "",
-        actionType: "STAKE",
-        txType: "APPROVAL",
-        amount: "100",
-        inputToken: {
-          address: "",
-          decimals: 0,
-          symbol: "",
-          name: "",
-          network: "ton",
-        },
-        structuredTransaction: null,
-        annotatedTransaction: null,
-        providersDetails: [],
-      }
+        address: "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+        amount: "123",
+        payload: "te6cckEBAQEAAgAAAA==",
+      },
+    ];
+
+    worker.use(
+      http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
+        await delay();
+        return HttpResponse.json([MiscNetworks.Ton]);
+      })
+    );
+
+    const tonWallet = await renderHookWithExternalProvider({
+      type: "generic",
+      currentAddress: "UQDyiNAyPy8QRQy45-SjxzrbKVOTOVyXaVGPZSLI9jxHF_Sy",
+      currentChain: ton.id,
+      supportedChainIds: [ton.id],
+      provider: {
+        signMessage: async () => "hash",
+        switchChain: switchChainSpy,
+        sendTransaction: sendTransactionSpy,
+      },
+    });
+    await expect.poll(() => tonWallet.result.current.isConnected).toBe(true);
+
+    const tonRes = await tonWallet.result.current.signTransaction({
+      network: "ton",
+      tx: JSON.stringify(rawTx),
+      txMeta: createTonTxMeta(),
+      ledgerHwAppId: null,
+    });
+
+    expect(tonRes.extract()).toEqual({
+      signedTx: "hash",
+      broadcasted: true,
+    });
+    expect(sendTransactionSpy).toHaveBeenCalledWith(
+      {
+        type: "ton",
+        tx: rawTx,
+      },
+      createTonTxMeta()
     );
   });
 });

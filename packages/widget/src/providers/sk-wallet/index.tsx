@@ -29,6 +29,7 @@ import { ExternalProviderError } from "../../domain/types/external-providers";
 import {
   decodeAndPrepareEvmTransaction,
   normalizeSolanaTransactionToHex,
+  normalizeTonTransactionToRaw,
   substratePayloadCodec,
   unsignedEVMTransactionCodec,
   unsignedSolanaTransactionCodec,
@@ -310,6 +311,11 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
                     return Either.encase(() => JSON.parse(tx))
                       .mapLeft(() => "Failed to parse tx")
                       .chain((val) => unsignedTonTransactionCodec.decode(val))
+                      .chain((val) =>
+                        Either.encase(() =>
+                          normalizeTonTransactionToRaw(val)
+                        ).mapLeft(() => "Failed to normalize TON tx")
+                      )
                       .map((v) => ({ type: "ton", tx: v }));
                   }
 

@@ -100,7 +100,6 @@ type SettingsProps = {
   mapWalletListFn?: Parameters<BuildWagmiConfig>[0]["mapWalletListFn"];
   customTranslations?: RecursivePartial<typeof localResources>;
   tokensForEnabledYieldsOnly?: boolean;
-  preferredTransactionFormat?: TransactionFormat;
   validatorsConfig?: {
     [Key in SupportedSKChains]?: {
       allowed?: string[];
