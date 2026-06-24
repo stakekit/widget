@@ -116,10 +116,36 @@ type SettingsProps = {
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
   dashboardVariant?: boolean;
+  dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   hideChainSelector?: boolean;
   hideAccountAndChainSelector?: boolean;
   preferredTokenYieldsPerNetwork?: PreferredTokenYieldsPerNetwork;
   portalContainer?: HTMLElement;
+};
+```
+
+### Dashboard category tab order
+
+For the dashboard variant, you can reorder the `RWA`, `DeFi`, and `Stake`
+category tabs. `Manage` and `Activity` stay fixed after those category tabs.
+
+```tsx
+import "@stakekit/widget/package/css";
+import { DashboardYieldCategory, SKApp, darkTheme } from "@stakekit/widget";
+
+const App = () => {
+  return (
+    <SKApp
+      apiKey="your-api-key"
+      dashboardVariant
+      dashboardYieldCategoryOrder={[
+        DashboardYieldCategory.Stake,
+        DashboardYieldCategory.DeFi,
+        DashboardYieldCategory.RWA,
+      ]}
+      theme={darkTheme}
+    />
+  );
 };
 ```
 

@@ -3,10 +3,10 @@ import { useMemo } from "react";
 import type { TokenDto } from "../../domain/types/tokens";
 import {
   type DashboardYieldCategory,
-  dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
 } from "../../domain/types/yields";
 import { useApiClient } from "../../providers/api/api-client-provider";
+import { useSettings } from "../../providers/settings";
 import { useSKWallet } from "../../providers/sk-wallet";
 import {
   DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT,
@@ -38,11 +38,12 @@ export const useDashboardYieldCatalog = ({
 } = {}) => {
   const { network, isConnecting } = useSKWallet();
   const apiClient = useApiClient();
+  const { dashboardYieldCategoryOrder } = useSettings();
 
   const probeEnabled = enabled && !isConnecting;
 
   const results = useQueries({
-    queries: dashboardYieldCategories.map((category) => {
+    queries: dashboardYieldCategoryOrder.map((category) => {
       const params: YieldSummariesParams = {
         ...(network ? { network: network } : {}),
         types: getApiYieldTypesForDashboardCategory(category),
@@ -67,7 +68,7 @@ export const useDashboardYieldCatalog = ({
     >();
     const availableCategories: DashboardYieldCategory[] = [];
 
-    dashboardYieldCategories.forEach((category, index) => {
+    dashboardYieldCategoryOrder.forEach((category, index) => {
       const firstVisible = (results[index]?.data ?? []).find(
         isVisibleYieldSummary
       );
@@ -87,5 +88,5 @@ export const useDashboardYieldCatalog = ({
       initialSelectionByCategory,
       isLoading: probeEnabled && results.some((result) => result.isLoading),
     };
-  }, [results, probeEnabled]);
+  }, [dashboardYieldCategoryOrder, results, probeEnabled]);
 };

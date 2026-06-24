@@ -8,6 +8,7 @@ import type { TransactionFormat } from "../../domain/types/settings";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import type { TokenDto } from "../../domain/types/tokens";
 import type { SKExternalProviders } from "../../domain/types/wallets";
+import type { DashboardYieldCategory } from "../../domain/types/yields";
 import type { Languages, localResources } from "../../translation/resources";
 import type { RecursivePartial } from "../../types/utils";
 import type { ThemeWrapperTheme } from "../theme-wrapper-types";
@@ -86,6 +87,7 @@ export type SettingsProps = {
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
   dashboardVariant?: boolean;
+  dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   yieldGrouping?: YieldGrouping;
   institutionalWallets?: boolean;
   hideChainSelector?: boolean;
@@ -96,7 +98,11 @@ export type SettingsProps = {
   initialChain?: SupportedSKChainIds;
 };
 
-type ResolvedSettingsProps = Omit<SettingsProps, "yieldGrouping"> & {
+type ResolvedSettingsProps = Omit<
+  SettingsProps,
+  "dashboardYieldCategoryOrder" | "yieldGrouping"
+> & {
+  dashboardYieldCategoryOrder: DashboardYieldCategory[];
   yieldGrouping: YieldGrouping;
 };
 

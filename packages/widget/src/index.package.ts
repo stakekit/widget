@@ -7,6 +7,7 @@ export { EvmChainIds } from "./domain/types/chains/evm";
 export { MiscChainIds } from "./domain/types/chains/misc";
 export { SubstrateChainIds } from "./domain/types/chains/substrate";
 export type * from "./domain/types/wallets/generic-wallet";
+export { DashboardYieldCategory } from "./domain/types/yields";
 export { TrackingContextProvider } from "./providers/tracking";
 export { createWallet } from "./providers/wagmi/utils";
 export { darkTheme, lightTheme } from "./styles/theme/themes";

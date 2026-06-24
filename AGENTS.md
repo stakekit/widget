@@ -33,7 +33,7 @@
 
 ## Agent Working Guidelines (short)
 - Keep public API compatibility in `src/index.package.ts` and `src/index.bundle.ts`.
-- React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `React.memo` only for render-performance optimization; prefer plain values/functions. Use manual memoization only when required for semantic stability, such as an external API dependency or context value identity.
+- React Compiler is enabled. Do not add `useMemo`, `useCallback`, or `React.memo` only for render-performance optimization; prefer plain values/functions.
 - When changing user-facing copy, update both:
   - `packages/widget/src/translation/English/translations.json`
   - `packages/widget/src/translation/French/translations.json`

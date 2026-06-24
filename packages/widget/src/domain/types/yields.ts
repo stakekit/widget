@@ -68,13 +68,46 @@ export type ValidatorsConfig = Map<
   }
 >;
 
-export type DashboardYieldCategory = "stake" | "defi" | "rwa";
+export const DashboardYieldCategory = {
+  RWA: "rwa",
+  DeFi: "defi",
+  Stake: "stake",
+} as const;
+
+export type DashboardYieldCategory =
+  (typeof DashboardYieldCategory)[keyof typeof DashboardYieldCategory];
 
 export const dashboardYieldCategories = [
-  "rwa",
-  "defi",
-  "stake",
+  DashboardYieldCategory.RWA,
+  DashboardYieldCategory.DeFi,
+  DashboardYieldCategory.Stake,
 ] as const satisfies ReadonlyArray<DashboardYieldCategory>;
+
+const dashboardYieldCategoryValues = new Set<string>(dashboardYieldCategories);
+
+export const normalizeDashboardYieldCategoryOrder = (
+  order?: ReadonlyArray<unknown> | null
+): DashboardYieldCategory[] => {
+  const normalized: DashboardYieldCategory[] = [];
+
+  for (const category of order ?? []) {
+    if (
+      typeof category === "string" &&
+      dashboardYieldCategoryValues.has(category) &&
+      !normalized.includes(category as DashboardYieldCategory)
+    ) {
+      normalized.push(category as DashboardYieldCategory);
+    }
+  }
+
+  for (const category of dashboardYieldCategories) {
+    if (!normalized.includes(category)) {
+      normalized.push(category);
+    }
+  }
+
+  return normalized;
+};
 
 /**
  * Maps every API `YieldType` to exactly one dashboard category. The

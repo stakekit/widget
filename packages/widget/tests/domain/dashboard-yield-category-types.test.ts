@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  DashboardYieldCategory,
   dashboardYieldCategories,
   getApiYieldTypesForDashboardCategory,
   getYieldTypesSortRank,
+  normalizeDashboardYieldCategoryOrder,
   type YieldBase,
 } from "../../src/domain/types/yields";
 
@@ -50,6 +52,51 @@ describe("getApiYieldTypesForDashboardCategory", () => {
     expect(mapped.slice().sort()).toEqual([...allApiYieldTypes].sort());
     expect(new Set(mapped).size).toBe(mapped.length);
     expect(mapped.length).toBe(allApiYieldTypes.length);
+  });
+});
+
+describe("normalizeDashboardYieldCategoryOrder", () => {
+  it("uses the default category order when no order is provided", () => {
+    expect(normalizeDashboardYieldCategoryOrder()).toEqual([
+      "rwa",
+      "defi",
+      "stake",
+    ]);
+  });
+
+  it("preserves a complete custom category order", () => {
+    expect(
+      normalizeDashboardYieldCategoryOrder([
+        DashboardYieldCategory.Stake,
+        DashboardYieldCategory.DeFi,
+        DashboardYieldCategory.RWA,
+      ])
+    ).toEqual([
+      DashboardYieldCategory.Stake,
+      DashboardYieldCategory.DeFi,
+      DashboardYieldCategory.RWA,
+    ]);
+  });
+
+  it("deduplicates categories by keeping their first occurrence", () => {
+    expect(
+      normalizeDashboardYieldCategoryOrder([
+        DashboardYieldCategory.Stake,
+        DashboardYieldCategory.DeFi,
+        DashboardYieldCategory.Stake,
+        DashboardYieldCategory.RWA,
+      ])
+    ).toEqual([
+      DashboardYieldCategory.Stake,
+      DashboardYieldCategory.DeFi,
+      DashboardYieldCategory.RWA,
+    ]);
+  });
+
+  it("ignores runtime-invalid entries and appends missing valid categories", () => {
+    expect(
+      normalizeDashboardYieldCategoryOrder(["stake", "invalid", "defi"])
+    ).toEqual(["stake", "defi", "rwa"]);
   });
 });
 
