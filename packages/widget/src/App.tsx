@@ -47,6 +47,7 @@ export const SKApp = (props: SKAppProps) => {
   return (
     <SettingsContextProvider {...variantProps} {...props}>
       <Box
+        data-sk-layout={props.dashboardVariant ? "dashboard" : "widget"}
         className={appContainer({
           variant: props.dashboardVariant ? "dashboard" : "widget",
         })}
