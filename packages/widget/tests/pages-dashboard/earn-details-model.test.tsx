@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import type { Yield } from "../../src/domain/types/yields";
 import { getEarnDetailsModel } from "../../src/pages-dashboard/overview/earn-details/earn-details-model";
-import { yieldApiYieldFixture } from "../fixtures";
+import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -121,6 +121,28 @@ describe("getEarnDetailsModel", () => {
       label: "Reward token",
       value: "stETH",
     });
+  });
+
+  it("uses all selected validators in the header provider name", () => {
+    const firstValidator = yieldApiValidatorFixture({
+      address: "validator-1",
+      name: "Kiln",
+    });
+    const secondValidator = yieldApiValidatorFixture({
+      address: "validator-2",
+      name: "P2P",
+    });
+
+    const model = getEarnDetailsModel({
+      selectedValidators: new Map([
+        [firstValidator.address, firstValidator],
+        [secondValidator.address, secondValidator],
+      ]),
+      t: t as TFunction,
+      yieldDto: makeYield(),
+    });
+
+    expect(model.providerName).toBe("Kiln, P2P");
   });
 
   it("marks distinct output tokens with price per share as yield-bearing", () => {

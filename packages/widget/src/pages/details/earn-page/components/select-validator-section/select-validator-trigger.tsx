@@ -4,6 +4,7 @@ import { Box } from "../../../../../components/atoms/box";
 import { Divider } from "../../../../../components/atoms/divider";
 import { CaretDownIcon } from "../../../../../components/atoms/icons/caret-down";
 import { PlusIcon } from "../../../../../components/atoms/icons/plus";
+import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
@@ -12,7 +13,6 @@ import type { ValidatorDto } from "../../../../../generated/api/yield";
 import { APToPercentage } from "../../../../../utils";
 import { formatCompactNumber } from "../../../../../utils/formatters";
 import {
-  addValidatorButton,
   addValidatorContainer,
   overflowEllipsis,
   selectorSummaryActive,
@@ -24,6 +24,11 @@ import {
   selectorSummaryMeta,
   selectorSummaryText,
   selectorSummaryWebsite,
+  validatorChip,
+  validatorChipAddButton,
+  validatorChipName,
+  validatorChipRemoveButton,
+  validatorChipsContainer,
 } from "../../styles.css";
 
 const getDisplayWebsite = (website: string) => {
@@ -62,6 +67,77 @@ export const SelectValidatorTrigger = ({
 }) => {
   const { t } = useTranslation();
   const hasSelectedValidators = selectedValidatorsArr.length > 0;
+
+  if (multiSelect) {
+    return (
+      <>
+        <Box
+          data-rk="select-validator-trigger-container"
+          className={validatorChipsContainer}
+        >
+          <Text flexShrink={0} variant={{ weight: "bold" }}>
+            {t("details.earn_with")}
+          </Text>
+
+          {selectedValidatorsArr.map((sv) => {
+            const nameOrAddress = sv.name ?? sv.address;
+
+            return (
+              <Box
+                key={sv.address}
+                data-rk="select-validator-trigger"
+                className={validatorChip}
+              >
+                <Image
+                  wrapperProps={{ hw: "5", flexShrink: 0 }}
+                  imgProps={{ borderRadius: "full" }}
+                  src={sv.logoURI}
+                  fallbackName={nameOrAddress}
+                />
+
+                <Text
+                  className={validatorChipName}
+                  variant={{ weight: "bold" }}
+                >
+                  {nameOrAddress}
+                </Text>
+
+                {sv.preferred ? <PreferredIcon /> : null}
+
+                {selectedValidatorsArr.length > 1 ? (
+                  <Box
+                    aria-label={`Remove ${nameOrAddress}`}
+                    as="button"
+                    className={validatorChipRemoveButton}
+                    onClick={() => onRemoveValidator(sv)}
+                    type="button"
+                  >
+                    <XIcon hw={12} strokeWidth={4.9} />
+                  </Box>
+                ) : null}
+              </Box>
+            );
+          })}
+
+          <Trigger asChild>
+            <Box
+              aria-label={t("shared.manage_validators")}
+              as="button"
+              className={validatorChipAddButton}
+              data-rk="select-validator-plus"
+              type="button"
+            >
+              <PlusIcon hw={12} strokeWidth={4.9} />
+            </Box>
+          </Trigger>
+        </Box>
+
+        <Box marginTop="3">
+          <Divider />
+        </Box>
+      </>
+    );
+  }
 
   return (
     <>
@@ -206,20 +282,6 @@ export const SelectValidatorTrigger = ({
             </Box>
           );
         })}
-
-        {multiSelect && (
-          <Box>
-            <Trigger asChild>
-              <Box
-                data-rk="select-validator-plus"
-                as="button"
-                className={addValidatorButton}
-              >
-                <PlusIcon hw={12} strokeWidth={4.9} />
-              </Box>
-            </Trigger>
-          </Box>
-        )}
       </Box>
 
       <Box marginTop="3">

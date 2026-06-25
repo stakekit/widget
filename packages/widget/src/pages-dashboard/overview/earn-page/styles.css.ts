@@ -13,21 +13,6 @@ export const container = style([
   },
 ]);
 
-export const changeButton = recipe({
-  base: [{ cursor: "pointer" }],
-  variants: {
-    variant: {
-      default: atoms({ color: "accent" }),
-      utila: atoms({ color: "accent" }),
-      porto: atoms({ color: "accent" }),
-      finery: {},
-    },
-  },
-  defaultVariants: {
-    variant: "default",
-  },
-});
-
 export const selectTokenTitleContainer = recipe({
   variants: {
     variant: {
@@ -36,10 +21,4 @@ export const selectTokenTitleContainer = recipe({
       porto: atoms({ marginBottom: "4" }),
     },
   },
-});
-
-export const nameOrAddressText = style({
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
 });

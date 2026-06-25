@@ -23,6 +23,7 @@
     "powered_by": "Powered by <span0>{{name}}</span0>",
     "learn_more": "Learn more",
     "change": "Change",
+    "manage_validators": "Manage validators",
     "fee": "Fee"
   },
   "chain_modal": {
@@ -137,6 +138,7 @@
     "no_opportunities": "No yield opportunities for this token",
     "selected_validators_one": "{{providerName}}",
     "selected_validators_other": "{{providerName}} + {{count}} more",
+    "selected_validators_summary_other": "{{providerName}} and others",
     "campaign_susd_description": "After staking sUSD, the position is locked until April 20, 2026.",
     "campaign_susd_extra": "Earned rewards are distributed periodically as SNX and unlock linearly over 3 months after the program ends.",
     "campaign_susd_position_locked": "The position is locked until April 20, 2026. <link0>Learn more</link0>",

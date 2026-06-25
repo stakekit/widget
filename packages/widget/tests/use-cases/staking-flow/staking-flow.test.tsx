@@ -141,9 +141,14 @@ describe("Staking flow", () => {
       )
       .toBeInTheDocument();
 
-    await expect.element(app.getByText("Confirm").last()).toBeInTheDocument();
+    const confirmButton = app.getByRole("button", {
+      exact: true,
+      name: "Confirm",
+    });
 
-    await userEvent.click(app.getByText("Confirm").last());
+    await expect.element(confirmButton).toBeInTheDocument();
+
+    await userEvent.click(confirmButton);
 
     await expect.element(app.getByText("Follow Steps")).toBeInTheDocument();
 

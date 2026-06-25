@@ -1,4 +1,4 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { YieldBalanceDto } from "../../../src/domain/types/positions";
@@ -12,6 +12,7 @@ import {
   yieldRewardRateFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
@@ -274,11 +275,11 @@ export const setup = async (
 
   worker.use(
     http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([token.network]);
     }),
     http.get(legacyApiRoute("/v1/tokens"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -287,7 +288,7 @@ export const setup = async (
       ]);
     }),
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -297,7 +298,7 @@ export const setup = async (
       ]);
     }),
     http.post(legacyApiRoute("/v1/tokens/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token,
@@ -307,7 +308,7 @@ export const setup = async (
       ]);
     }),
     http.post(legacyApiRoute("/v1/tokens/prices"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         "avalanche-c-undefined": {
           price: 1,
@@ -316,11 +317,11 @@ export const setup = async (
       });
     }),
     http.get(legacyApiRoute(`/v1/yields/${yieldId}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(legacyYield);
     }),
     http.get(yieldApiRoute("/v1/yields"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json({
         items: [rawYield],
@@ -330,11 +331,11 @@ export const setup = async (
       });
     }),
     http.get(yieldApiRoute(`/v1/yields/${yieldId}`), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json(rawYield);
     }),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         items: [],
         total: 0,
@@ -343,7 +344,7 @@ export const setup = async (
       });
     }),
     http.post(yieldApiRoute("/v1/yields/balances"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json({
         items: [
           {

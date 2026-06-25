@@ -1,10 +1,11 @@
-import { delay, HttpResponse, http } from "msw";
+import { HttpResponse, http } from "msw";
 import {
   legacyYieldFixture,
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
+import { mockDelay } from "../../mocks/delay";
 import type { TestWorker } from "../../utils/test-extend";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
@@ -123,7 +124,7 @@ export const setup = (worker: TestWorker) => {
 
   worker.use(
     http.get(legacyApiRoute("/v1/yields/enabled/networks"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         etherNativeStaking.token.network,
         avalancheAvaxNativeStaking.token.network,
@@ -133,7 +134,7 @@ export const setup = (worker: TestWorker) => {
     }),
 
     http.get(legacyApiRoute("/v1/tokens"), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json([
         { token: ether, availableYields: [etherNativeStaking.id] },
@@ -147,7 +148,7 @@ export const setup = (worker: TestWorker) => {
     }),
 
     http.post(legacyApiRoute("/v1/tokens/balances/scan"), async () => {
-      await delay();
+      await mockDelay();
       return HttpResponse.json([
         {
           token: ether,
@@ -175,20 +176,20 @@ export const setup = (worker: TestWorker) => {
     http.get(
       legacyApiRoute(`/v1/yields/${etherNativeStaking.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(etherNativeStaking);
       }
     ),
     http.get(yieldApiRoute(`/v1/yields/${etherNativeStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(etherNativeStakingYieldApi);
     }),
     http.get(
       legacyApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(avalancheAvaxNativeStaking);
       }
@@ -196,7 +197,7 @@ export const setup = (worker: TestWorker) => {
     http.get(
       yieldApiRoute(`/v1/yields/${avalancheAvaxNativeStaking.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(avalancheAvaxNativeStakingYieldApi);
       }
@@ -204,7 +205,7 @@ export const setup = (worker: TestWorker) => {
     http.get(
       legacyApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(solanaNativeStaking);
       }
@@ -212,23 +213,23 @@ export const setup = (worker: TestWorker) => {
     http.get(
       yieldApiRoute(`/v1/yields/${solanaNativeStaking.id}`),
       async () => {
-        await delay();
+        await mockDelay();
 
         return HttpResponse.json(solanaNativeStakingYieldApi);
       }
     ),
     http.get(legacyApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(tonNativeStaking);
     }),
     http.get(yieldApiRoute(`/v1/yields/${tonNativeStaking.id}`), async () => {
-      await delay();
+      await mockDelay();
 
       return HttpResponse.json(tonNativeStakingYieldApi);
     }),
     http.get(yieldApiRoute("/v1/yields/:yieldId/validators"), async () => {
-      await delay();
+      await mockDelay();
 
       const validators = yieldApiValidatorsFixture([]);
 

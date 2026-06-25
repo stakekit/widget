@@ -10,7 +10,6 @@ import {
   useDeferredValue,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -404,18 +403,14 @@ export const EarnPageContextProvider = ({
     search: debouncedValidatorSearch,
   });
 
-  const initialValidatorSelectionYieldIdRef = useRef<string | null>(null);
-
   useEffect(() => {
     const currentYieldId = selectedStake.map((val) => val.id).extractNullable();
 
     if (!currentYieldId) {
-      initialValidatorSelectionYieldIdRef.current = null;
       return;
     }
 
     if (selectedValidators.size > 0) {
-      initialValidatorSelectionYieldIdRef.current = currentYieldId;
       return;
     }
 
@@ -427,15 +422,9 @@ export const EarnPageContextProvider = ({
       return;
     }
 
-    if (initialValidatorSelectionYieldIdRef.current === currentYieldId) {
-      return;
-    }
-
     if (!yieldValidators.isFetched && !yieldValidators.isError) {
       return;
     }
-
-    initialValidatorSelectionYieldIdRef.current = currentYieldId;
 
     const nextValidator = List.head([
       ...getInitSelectedValidators({
