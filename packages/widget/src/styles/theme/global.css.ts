@@ -1,6 +1,6 @@
 import { globalStyle, layer } from "@vanilla-extract/css";
 import { vars } from "./contract.css";
-import { rootSelector } from "./ids";
+import { dashboardLayoutSelector, rootSelector } from "./ids";
 
 const reset = layer("reset");
 
@@ -10,6 +10,13 @@ globalStyle(rootSelector, {
       fontFamily: vars.font.body,
     },
   },
+});
+
+globalStyle(`${dashboardLayoutSelector} ${rootSelector}`, {
+  marginLeft: "auto",
+  marginRight: "auto",
+  maxWidth: "1000px",
+  width: "100%",
 });
 
 // Resets

@@ -6,8 +6,24 @@ export const breakpoints = {
 
 export type Breakpoint = keyof typeof breakpoints;
 
-export const minMediaQuery = (breakpoint: Breakpoint) =>
-  `screen and (min-width: ${breakpoints[breakpoint]}px)`;
+const SPLIT_COLLAPSE_BREAKPOINT = 800;
+
+const toPx = (breakpoint: Breakpoint | number) =>
+  typeof breakpoint === "number" ? breakpoint : breakpoints[breakpoint];
+
+export const minMediaQuery = (breakpoint: Breakpoint | number) =>
+  `screen and (min-width: ${toPx(breakpoint)}px)`;
+
+const maxMediaQuery = (breakpoint: Breakpoint | number) =>
+  `screen and (max-width: ${toPx(breakpoint)}px)`;
+
+export const splitCollapsedMediaQuery = maxMediaQuery(
+  SPLIT_COLLAPSE_BREAKPOINT
+);
+
+export const splitExpandedMediaQuery = minMediaQuery(
+  SPLIT_COLLAPSE_BREAKPOINT + 1
+);
 
 export const minContainerWidth = (
   containerName: string,
