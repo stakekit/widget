@@ -23,11 +23,5 @@
     "husky": "catalog:",
     "rev-dep": "catalog:",
     "turbo": "catalog:"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "purify-ts": "patches/purify-ts.patch",
-      "@stakekit/rainbowkit@2.2.11": "patches/@stakekit__rainbowkit@2.2.11.patch"
-    }
   }
 }

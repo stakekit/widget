@@ -151,9 +151,6 @@ const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
   [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
 ]);
 
-export const isNetworkWithEnterMinBasedOnPosition = (network: Networks) =>
-  yieldsWithEnterMinBasedOnPosition.has(network);
-
 const isYieldWithEnterMinBasedOnPosition = (yieldDto: YieldBase) =>
   Maybe.fromNullable(
     yieldsWithEnterMinBasedOnPosition.get(

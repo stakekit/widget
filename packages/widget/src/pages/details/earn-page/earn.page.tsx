@@ -22,7 +22,6 @@ import {
   EarnPageContextProvider,
   useEarnPageContext,
 } from "./state/earn-page-context";
-import { EarnPageStateUsageBoundaryProvider } from "./state/earn-page-state-context";
 
 const EarnKycGateSection = () => {
   const { kycGate, kycGateIsChecking, kycProviderName, onKycStatusRefresh } =
@@ -89,11 +88,9 @@ const EarnPageComponent = () => {
 };
 
 const EarnPage = () => (
-  <EarnPageStateUsageBoundaryProvider>
-    <EarnPageContextProvider>
-      <EarnPageComponent />
-    </EarnPageContextProvider>
-  </EarnPageStateUsageBoundaryProvider>
+  <EarnPageContextProvider>
+    <EarnPageComponent />
+  </EarnPageContextProvider>
 );
 
 export const AnimatedEarnPage = () => {

@@ -6,7 +6,6 @@ import { PendingCompletePage } from "./pages/complete/pages/pending-complete.pag
 import { StakeCompletePage } from "./pages/complete/pages/stake-complete.page";
 import { UnstakeCompletePage } from "./pages/complete/pages/unstake-complete.page";
 import { EarnPageContextProvider } from "./pages/details/earn-page/state/earn-page-context";
-import { EarnPageStateUsageBoundaryProvider } from "./pages/details/earn-page/state/earn-page-state-context";
 import { StakeReviewPage } from "./pages/review";
 import { PendingReviewPage } from "./pages/review/pages/pending-review.page";
 import { UnstakeReviewPage } from "./pages/review/pages/unstake-review.page";
@@ -40,77 +39,73 @@ export const Dashboard = () => {
 
   return (
     <DashboardProvider>
-      <EarnPageStateUsageBoundaryProvider>
-        <EarnPageContextProvider
-          registerFooterButton={registerEarnFooterButton}
-        >
-          <Routes>
-            <Route element={<DashboardWrapper />}>
-              {/* Earn Tab */}
-              <Route element={<OverviewPage />}>
-                <Route index element={<EarnPageContent />} />
+      <EarnPageContextProvider registerFooterButton={registerEarnFooterButton}>
+        <Routes>
+          <Route element={<DashboardWrapper />}>
+            {/* Earn Tab */}
+            <Route element={<OverviewPage />}>
+              <Route index element={<EarnPageContent />} />
 
-                <Route element={<ConnectedCheck />}>
-                  <Route path="review" element={<StakeReviewPage />} />
-                  <Route path="steps" element={<StakeStepsPage />} />
-                  <Route path="complete" element={<StakeCompletePage />} />
-                </Route>
-              </Route>
-
-              {/* Manage Tab */}
-              <Route path="manage" element={<ManagePage />} />
-
-              {/* Position Details */}
-              <Route
-                path="positions/:integrationId/:balanceId"
-                element={<PositionDetailsPage />}
-              >
-                <Route index element={<PositionDetailsStakeActions />} />
-
-                {/* Staking */}
-                <Route path="stake">
-                  <Route index element={<PositionDetailsStakeActions />} />
-                  <Route path="review" element={<StakeReviewPage />} />
-                  <Route path="steps" element={<StakeStepsPage />} />
-                  <Route path="complete" element={<StakeCompletePage />} />
-                </Route>
-
-                <Route
-                  path="select-validator/:pendingActionType"
-                  element={<PositionDetailsPage />}
-                />
-
-                {/* Unstaking */}
-                <Route path="unstake">
-                  <Route index element={<PositionDetailsActions />} />
-                  <Route path="review" element={<UnstakeReviewPage />} />
-                  <Route path="steps" element={<UnstakeStepsPage />} />
-                  <Route path="complete" element={<UnstakeCompletePage />} />
-                </Route>
-
-                {/* Pending Actions */}
-                <Route path="pending-action">
-                  <Route path="review" element={<PendingReviewPage />} />
-                  <Route path="steps" element={<PendingStepsPage />} />
-                  <Route path="complete" element={<PendingCompletePage />} />
-                </Route>
-              </Route>
-
-              {/* Rewards Tab */}
-              {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
-
-              {/* Activity Tab */}
-              <Route path="activity" element={<ActivityTabPage />}>
-                <Route index element={<ActivityDetailsPage />} />
-                <Route
-                  path=":pendingActionType/steps"
-                  element={<ActivityStepsPage />}
-                />
+              <Route element={<ConnectedCheck />}>
+                <Route path="review" element={<StakeReviewPage />} />
+                <Route path="steps" element={<StakeStepsPage />} />
+                <Route path="complete" element={<StakeCompletePage />} />
               </Route>
             </Route>
-          </Routes>
-        </EarnPageContextProvider>
-      </EarnPageStateUsageBoundaryProvider>
+
+            {/* Manage Tab */}
+            <Route path="manage" element={<ManagePage />} />
+
+            {/* Position Details */}
+            <Route
+              path="positions/:integrationId/:balanceId"
+              element={<PositionDetailsPage />}
+            >
+              <Route index element={<PositionDetailsStakeActions />} />
+
+              {/* Staking */}
+              <Route path="stake">
+                <Route index element={<PositionDetailsStakeActions />} />
+                <Route path="review" element={<StakeReviewPage />} />
+                <Route path="steps" element={<StakeStepsPage />} />
+                <Route path="complete" element={<StakeCompletePage />} />
+              </Route>
+
+              <Route
+                path="select-validator/:pendingActionType"
+                element={<PositionDetailsPage />}
+              />
+
+              {/* Unstaking */}
+              <Route path="unstake">
+                <Route index element={<PositionDetailsActions />} />
+                <Route path="review" element={<UnstakeReviewPage />} />
+                <Route path="steps" element={<UnstakeStepsPage />} />
+                <Route path="complete" element={<UnstakeCompletePage />} />
+              </Route>
+
+              {/* Pending Actions */}
+              <Route path="pending-action">
+                <Route path="review" element={<PendingReviewPage />} />
+                <Route path="steps" element={<PendingStepsPage />} />
+                <Route path="complete" element={<PendingCompletePage />} />
+              </Route>
+            </Route>
+
+            {/* Rewards Tab */}
+            {/* <Route path="rewards" element={<RewardsTabPage />} /> */}
+
+            {/* Activity Tab */}
+            <Route path="activity" element={<ActivityTabPage />}>
+              <Route index element={<ActivityDetailsPage />} />
+              <Route
+                path=":pendingActionType/steps"
+                element={<ActivityStepsPage />}
+              />
+            </Route>
+          </Route>
+        </Routes>
+      </EarnPageContextProvider>
 
       <GlobalModals />
     </DashboardProvider>

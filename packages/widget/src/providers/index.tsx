@@ -6,10 +6,10 @@ import { SummaryProvider } from "../hooks/use-summary";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
-import { EarnPageStateProvider } from "../pages/details/earn-page/state/earn-page-state-context";
 import { i18nInstance } from "../translation";
 import { ActivityProvider } from "./activity-provider";
 import { SKApiClientProvider } from "./api/api-client-provider";
+import { SKAtomRuntimeProvider } from "./effect-atom-runtime";
 import { EnterStakeStoreProvider } from "./enter-stake-store";
 import { ExitStakeStoreProvider } from "./exit-stake-store";
 import { ListStateContextProvider } from "./list-state";
@@ -34,16 +34,16 @@ export const Providers = ({
       <RootElementProvider>
         <I18nextProvider i18n={i18nInstance}>
           <SKApiClientProvider>
-            <SKQueryClientProvider>
-              <SKLocationProvider>
-                <MountAnimationProvider>
-                  <SolanaProvider>
-                    <WagmiConfigProvider>
-                      <TrackingContextProviderWithProps>
-                        <SKWalletProvider>
-                          <RainbowProvider>
-                            <ActionHistoryContextProvider>
-                              <EarnPageStateProvider>
+            <SKAtomRuntimeProvider>
+              <SKQueryClientProvider>
+                <SKLocationProvider>
+                  <MountAnimationProvider>
+                    <SolanaProvider>
+                      <WagmiConfigProvider>
+                        <TrackingContextProviderWithProps>
+                          <SKWalletProvider>
+                            <RainbowProvider>
+                              <ActionHistoryContextProvider>
                                 <ThemeWrapper>
                                   <ListStateContextProvider>
                                     <CurrentLayoutProvider>
@@ -67,16 +67,16 @@ export const Providers = ({
                                     </CurrentLayoutProvider>
                                   </ListStateContextProvider>
                                 </ThemeWrapper>
-                              </EarnPageStateProvider>
-                            </ActionHistoryContextProvider>
-                          </RainbowProvider>
-                        </SKWalletProvider>
-                      </TrackingContextProviderWithProps>
-                    </WagmiConfigProvider>
-                  </SolanaProvider>
-                </MountAnimationProvider>
-              </SKLocationProvider>
-            </SKQueryClientProvider>
+                              </ActionHistoryContextProvider>
+                            </RainbowProvider>
+                          </SKWalletProvider>
+                        </TrackingContextProviderWithProps>
+                      </WagmiConfigProvider>
+                    </SolanaProvider>
+                  </MountAnimationProvider>
+                </SKLocationProvider>
+              </SKQueryClientProvider>
+            </SKAtomRuntimeProvider>
           </SKApiClientProvider>
         </I18nextProvider>
       </RootElementProvider>

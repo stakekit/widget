@@ -1,7 +1,6 @@
 import type BigNumber from "bignumber.js";
 import type { Maybe } from "purify-ts";
 import type { KycGate } from "../../../../domain/types/kyc";
-import type { TokenBalanceScanResponseDto } from "../../../../domain/types/token-balance";
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { TronResourceType } from "../../../../domain/types/tron";
 import type {
@@ -12,83 +11,17 @@ import type { ValidatorDto } from "../../../../generated/api/yield";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
-import type { Action } from "../../../../types/utils";
 import type { PageCta } from "../../../components/page-cta";
 import type { SelectedStakeData } from "../types";
-
-export type State = {
-  selectedToken: Maybe<TokenDto>;
-  selectedStakeId: Maybe<
-    TokenBalanceScanResponseDto["availableYields"][number]
-  >;
-  autoSelectYield: boolean;
-  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
-  stakeAmount: BigNumber;
-  useMaxAmount: boolean;
-  tronResource: Maybe<TronResourceType>;
-  selectedProviderYieldId: Maybe<Yield["id"]>;
-  selectedDashboardYieldCategory: DashboardYieldCategory | null;
-};
-
-type TokenBalanceSelectAction = Action<"token/select", TokenDto>;
-type TokenBalanceWithYieldsSelectAction = Action<
-  "tokenBalance/select",
-  TokenBalanceScanResponseDto
->;
-type DashboardYieldCategorySelectAction = Action<
-  "dashboard/yield-category/select",
-  DashboardYieldCategory
->;
-type PositionDetailsStakeInitializeAction = Action<
-  "positionDetails/stake/initialize",
-  Yield
->;
-type YieldSelectAction = Action<"yield/select", Yield>;
-
-type StakeAmountChangeAction = Action<"stakeAmount/change", BigNumber>;
-type StakeAmountMaxAction = Action<"stakeAmount/max", BigNumber>;
-type StateResetAction = Action<"state/reset">;
-
-type ValidatorSelectAction = Action<"validator/select", ValidatorDto>;
-type ValidatorMultiSelectAction = Action<"validator/multiselect", ValidatorDto>;
-type ValidatorRemoveAction = Action<"validator/remove", ValidatorDto>;
-
-type SelectTronResourceAction = Action<"tronResource/select", TronResourceType>;
-
-type ProviderYieldIdSelectAction = Action<
-  "providerYieldId/select",
-  Yield["id"]
->;
-
-export type Actions =
-  | TokenBalanceSelectAction
-  | TokenBalanceWithYieldsSelectAction
-  | DashboardYieldCategorySelectAction
-  | PositionDetailsStakeInitializeAction
-  | YieldSelectAction
-  | StakeAmountChangeAction
-  | StakeAmountMaxAction
-  | StateResetAction
-  | ValidatorSelectAction
-  | ValidatorMultiSelectAction
-  | ValidatorRemoveAction
-  | SelectTronResourceAction
-  | ProviderYieldIdSelectAction;
-
-export type ExtraData = {
-  actions: { onMaxClick: () => void };
-  selectedStake: Maybe<Yield>;
-  stakeAmountLessThanMin: boolean;
-  stakeAmountGreaterThanMax: boolean;
-  stakeAmountGreaterThanAvailableAmount: boolean;
-  stakeAmountIsZero: boolean;
-  availableAmount: Maybe<BigNumber>;
-  availableYields: Maybe<TokenBalanceScanResponseDto["availableYields"]>;
-  hasNotYieldsForToken: boolean;
-  availableDashboardYieldCategories: DashboardYieldCategory[];
-};
+import type {
+  EarnMachineStatus,
+  EarnMachineView,
+  EarnTokenOption,
+} from "./effect-atom-poc/types";
 
 export type EarnPageContextType = {
+  machine: EarnMachineView;
+  machineStatus: EarnMachineStatus;
   cta: PageCta;
   selectedTokenAvailableAmount: Maybe<{
     symbol: string;
@@ -100,17 +33,19 @@ export type EarnPageContextType = {
   symbol: string;
   rewardsTokenSymbol: string;
   selectedStakeData: Maybe<SelectedStakeData>;
-  selectedStake: ExtraData["selectedStake"];
+  selectedStake: Maybe<Yield>;
+  selectedProviderYieldId: Maybe<Yield["id"]>;
   selectedDashboardYieldCategory: DashboardYieldCategory | null;
   availableDashboardYieldCategories: DashboardYieldCategory[];
   onDashboardYieldCategorySelect: (category: DashboardYieldCategory) => void;
   onYieldSelect: (yieldId: string) => void;
-  onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
+  onTokenBalanceSelect: (tokenBalance: EarnTokenOption) => void;
   onStakeAmountChange: (value: BigNumber) => void;
+  onProviderYieldIdSelect: (yieldId: Yield["id"]) => void;
   estimatedRewards: ReturnType<typeof useEstimatedRewards>;
   yieldType: string;
   onMaxClick: () => void;
-  stakeAmount: State["stakeAmount"];
+  stakeAmount: BigNumber;
   isFetching: boolean;
   buttonDisabled: boolean;
   onClick: () => void;
@@ -122,7 +57,7 @@ export type EarnPageContextType = {
   onYieldSearch: (value: string) => void;
   onValidatorSelect: (item: ValidatorDto) => void;
   onValidatorRemove: (item: ValidatorDto) => void;
-  selectedValidators: State["selectedValidators"];
+  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
   isError: boolean;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
@@ -132,10 +67,10 @@ export type EarnPageContextType = {
   appLoading: boolean;
   yieldOpportunityLoading: boolean;
   tokenBalancesScanLoading: boolean;
-  selectedToken: State["selectedToken"];
+  selectedToken: Maybe<TokenDto>;
   tokenBalancesData: Maybe<{
-    all: TokenBalanceScanResponseDto[];
-    filtered: TokenBalanceScanResponseDto[];
+    all: EarnTokenOption[];
+    filtered: EarnTokenOption[];
   }>;
   onTokenSearch: (value: string) => void;
   onValidatorSearch: (value: string) => void;
@@ -145,7 +80,7 @@ export type EarnPageContextType = {
   tokenSearch: string;
   stakeSearch: string;
   defaultTokensIsLoading: boolean;
-  tronResource: State["tronResource"];
+  tronResource: Maybe<TronResourceType>;
   onTronResourceSelect: (value: TronResourceType) => void;
   validation: {
     submitted: boolean;

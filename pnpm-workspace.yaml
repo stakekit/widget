@@ -12,8 +12,9 @@ catalog:
   "@cosmos-kit/keplr": ^2.17.1
   "@cosmos-kit/leap": ^2.17.1
   "@cosmos-kit/walletconnect": 2.15.1
-  "@effect/openapi-generator": 4.0.0-beta.68
-  "@effect/platform-node": 4.0.0-beta.68
+  "@effect/atom-react": 4.0.0-beta.87
+  "@effect/openapi-generator": 4.0.0-beta.87
+  "@effect/platform-node": 4.0.0-beta.87
   "@faker-js/faker": ^10.4.0
   "@ledgerhq/wallet-api-client": ^1.14.5
   "@ledgerhq/wallet-api-core": ^1.32.1
@@ -64,7 +65,7 @@ catalog:
   clsx: ^2.1.1
   cosmjs-types: ^0.10.1
   date-fns: ^4.1.0
-  effect: 4.0.0-beta.68
+  effect: 4.0.0-beta.87
   eventemitter3: ^5.0.4
   husky: ^9.1.7
   i18next: ^26.1.0
@@ -108,3 +109,7 @@ minimumReleaseAge: 4320
 
 minimumReleaseAgeExclude:
   - "@stakekit/rainbowkit"
+
+patchedDependencies:
+  "@stakekit/rainbowkit@2.2.11": patches/@stakekit__rainbowkit@2.2.11.patch
+  purify-ts: patches/purify-ts.patch

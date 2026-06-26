@@ -75,6 +75,7 @@
     "@cosmos-kit/keplr": "catalog:",
     "@cosmos-kit/leap": "catalog:",
     "@cosmos-kit/walletconnect": "catalog:",
+    "@effect/atom-react": "catalog:",
     "@effect/openapi-generator": "catalog:",
     "@effect/platform-node": "catalog:",
     "@faker-js/faker": "catalog:",
