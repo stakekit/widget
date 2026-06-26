@@ -91,6 +91,7 @@
     "@rolldown/plugin-babel": "catalog:",
     "@safe-global/safe-apps-provider": "catalog:",
     "@safe-global/safe-apps-sdk": "catalog:",
+    "@sentry/react": "catalog:",
     "@solana/wallet-adapter-base": "catalog:",
     "@solana/wallet-adapter-react": "catalog:",
     "@solana/wallet-adapter-wallets": "catalog:",
