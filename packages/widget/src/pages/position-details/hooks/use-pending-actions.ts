@@ -21,7 +21,7 @@ import {
 } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { usePendingActionStore } from "../../../providers/pending-action-store";
+import { useSetPendingActionRequest } from "../../../providers/pending-action-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { defaultFormattedNumber } from "../../../utils";
 import {
@@ -231,7 +231,7 @@ export const usePendingActions = () => {
   const pendingActionSelectValidatorMatch =
     usePendingActionSelectValidatorMatch();
 
-  const pendingActionStore = usePendingActionStore();
+  const setPendingActionRequest = useSetPendingActionRequest();
 
   const continuePendingActionFlow = ({
     integrationData,
@@ -253,9 +253,9 @@ export const usePendingActions = () => {
       integration: integrationData,
       selectedValidators,
     }).ifRight((val) => {
-      pendingActionStore.send({
-        type: "initFlow",
-        data: {
+      setPendingActionRequest(
+        Maybe.of({
+          actionDto: Maybe.empty(),
           gasFeeToken: val.gasFeeToken,
           integrationData: val.integrationData,
           interactedToken: yieldBalance.token,
@@ -265,8 +265,8 @@ export const usePendingActions = () => {
             address: val.address,
             additionalAddresses: val.additionalAddresses,
           },
-        },
-      });
+        })
+      );
 
       const pendingActionReviewPath =
         getPositionDetailsPendingActionReviewPath(plain);

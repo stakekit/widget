@@ -1,6 +1,6 @@
-import { createStore } from "@xstate/store";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import { Maybe } from "purify-ts";
-import { createContext, type PropsWithChildren, useContext } from "react";
 import type {
   ActionDto,
   YieldCreateManageActionDto,
@@ -10,7 +10,7 @@ import type { YieldPendingActionType } from "../../domain/types/pending-action";
 import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
 import type { Yield } from "../../domain/types/yields";
 
-type InitData = {
+type PendingActionInitData = {
   requestDto: YieldCreateManageActionDto;
   addresses: AddressesDto;
   pendingActionType: YieldPendingActionType;
@@ -19,43 +19,18 @@ type InitData = {
   gasFeeToken: TokenDto;
 };
 
-type Store = Maybe<InitData & { actionDto: Maybe<ActionDto> }>;
-
-const store = createStore({
-  context: { data: Maybe.empty() as Store },
-  on: {
-    initFlow: (_, event: { data: InitData }) => ({
-      data: Maybe.of({ ...event.data, actionDto: Maybe.empty() }),
-    }),
-    setActionDto: (context, event: { data: ActionDto }) => ({
-      data: context.data.map((data) => ({
-        ...data,
-        actionDto: Maybe.of(event.data),
-      })),
-    }),
-  },
-});
-
-const PendingActionStoreContext = createContext<typeof store | undefined>(
-  undefined
-);
-
-export const PendingActionStoreProvider = ({ children }: PropsWithChildren) => {
-  return (
-    <PendingActionStoreContext.Provider value={store}>
-      {children}
-    </PendingActionStoreContext.Provider>
-  );
+type PendingActionRequest = PendingActionInitData & {
+  actionDto: Maybe<ActionDto>;
 };
 
-export const usePendingActionStore = () => {
-  const value = useContext(PendingActionStoreContext);
+type PendingActionState = Maybe<PendingActionRequest>;
 
-  if (!value) {
-    throw new Error(
-      "usePendingActionStore must be used within a PendingActionProvider"
-    );
-  }
+const pendingActionRequestAtom = Atom.make<PendingActionState>(
+  Maybe.empty()
+).pipe(Atom.keepAlive, Atom.withLabel("pendingActionRequestAtom"));
 
-  return value;
-};
+export const usePendingActionRequest = () =>
+  useAtomValue(pendingActionRequestAtom);
+
+export const useSetPendingActionRequest = () =>
+  useAtomSet(pendingActionRequestAtom);

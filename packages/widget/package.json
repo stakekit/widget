@@ -118,7 +118,6 @@
     "@vitejs/plugin-react": "catalog:",
     "@vitest/browser-playwright": "catalog:",
     "@xstate/react": "catalog:",
-    "@xstate/store": "catalog:",
     "autoprefixer": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
     "bignumber.js": "catalog:",

@@ -7,15 +7,11 @@ import { DisableTransitionDurationProvider } from "../navigation/containers/anim
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { i18nInstance } from "../translation";
-import { ActivityProvider } from "./activity-provider";
 import { SKApiClientProvider } from "./api/api-client-provider";
 import { SKAtomRuntimeProvider } from "./effect-atom-runtime";
-import { EnterStakeStoreProvider } from "./enter-stake-store";
-import { ExitStakeStoreProvider } from "./exit-stake-store";
 import { ListStateContextProvider } from "./list-state";
 import { SKLocationProvider } from "./location";
 import { MountAnimationProvider } from "./mount-animation";
-import { PendingActionStoreProvider } from "./pending-action-store";
 import { SKQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
 import { RootElementProvider } from "./root-element";
@@ -50,17 +46,9 @@ export const Providers = ({
                                       <HeaderHeightProvider>
                                         <PoweredByHeightProvider>
                                           <DisableTransitionDurationProvider>
-                                            <EnterStakeStoreProvider>
-                                              <ExitStakeStoreProvider>
-                                                <PendingActionStoreProvider>
-                                                  <ActivityProvider>
-                                                    <SummaryProvider>
-                                                      {children}
-                                                    </SummaryProvider>
-                                                  </ActivityProvider>
-                                                </PendingActionStoreProvider>
-                                              </ExitStakeStoreProvider>
-                                            </EnterStakeStoreProvider>
+                                            <SummaryProvider>
+                                              {children}
+                                            </SummaryProvider>
                                           </DisableTransitionDurationProvider>
                                         </PoweredByHeightProvider>
                                       </HeaderHeightProvider>

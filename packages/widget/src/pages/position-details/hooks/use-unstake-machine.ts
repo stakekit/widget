@@ -1,6 +1,4 @@
 import { useMachine } from "@xstate/react";
-import type { SnapshotFromStore } from "@xstate/store";
-import { useSelector } from "@xstate/store/react";
 import { EitherAsync, Maybe } from "purify-ts";
 import { type RefObject, useState } from "react";
 import { assign, setup } from "xstate";
@@ -8,18 +6,19 @@ import { getValidStakeSessionTx } from "../../../domain";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useApiClient } from "../../../providers/api/api-client-provider";
-import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import {
+  type ExitStakeRequest,
+  useExitStakeRequest,
+  useSetExitStakeRequest,
+} from "../../../providers/exit-stake-store";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import type { GetMaybeJust } from "../../../types/utils";
 
 export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const trackEvent = useTrackEvent();
 
-  const exitStore = useExitStakeStore();
-  const exitRequest = useSelector(
-    useExitStakeStore(),
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const exitRequest = useExitStakeRequest().unsafeCoerce();
+  const setExitStakeRequest = useSetExitStakeRequest();
 
   const apiClient = useApiClient();
   const { address, additionalAddresses } = useSKWallet();
@@ -27,7 +26,7 @@ export const useUnstakeMachine = ({ onDone }: { onDone: () => void }) => {
   const machineParams = useSavedRef({
     onDone,
     trackEvent,
-    exitStore,
+    setExitStakeRequest,
     apiClient,
     getData: () =>
       Maybe.fromRecord({
@@ -52,18 +51,10 @@ const getMachine = (
   ref: Readonly<
     RefObject<{
       onDone: () => void;
-      exitStore: ReturnType<typeof useExitStakeStore>;
+      setExitStakeRequest: ReturnType<typeof useSetExitStakeRequest>;
       trackEvent: ReturnType<typeof useTrackEvent>;
       apiClient: ReturnType<typeof useApiClient>;
-      getData: () => Maybe<
-        GetMaybeJust<
-          SnapshotFromStore<
-            ReturnType<typeof useExitStakeStore>
-          >["context"]["data"]
-        > & {
-          address: string;
-        }
-      >;
+      getData: () => Maybe<ExitStakeRequest & { address: string }>;
     }>
   >
 ) =>
@@ -141,10 +132,12 @@ const getMachine = (
                       EitherAsync.liftEither(getValidStakeSessionTx(actionDto))
                     )
                     .ifRight((result) =>
-                      ref.current.exitStore.send({
-                        type: "setActionDto",
-                        data: result,
-                      })
+                      ref.current.setExitStakeRequest((request) =>
+                        request.map((value) => ({
+                          ...value,
+                          actionDto: Maybe.of(result),
+                        }))
+                      )
                     )
                 )
                 .caseOf({

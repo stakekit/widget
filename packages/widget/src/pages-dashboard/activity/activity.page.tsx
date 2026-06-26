@@ -1,5 +1,4 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,7 +16,10 @@ import {
 } from "../../pages/details/activity-page/state/activity-page.context";
 import type { ActionYieldDto } from "../../pages/details/activity-page/types";
 import { FallbackContent } from "../../pages/details/positions-page/components/fallback-content";
-import { useActivityContext } from "../../providers/activity-provider";
+import {
+  useActivitySelectedAction,
+  useSetActivitySelection,
+} from "../../providers/activity-provider";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { container } from "./styles.css";
 
@@ -100,7 +102,7 @@ const ActivityPageComponent = () => {
 const _ActivityPage = () => {
   const value = useActivityPageContext();
 
-  const activityStore = useActivityContext();
+  const setActivitySelection = useSetActivitySelection();
   const { openConnectModal } = useConnectModal();
   const { isConnected, network } = useSKWallet();
 
@@ -111,14 +113,13 @@ const _ActivityPage = () => {
       data.actionData.status === ActionStatus.SUCCESS ||
       data.actionData.status === ActionStatus.PROCESSING
     ) {
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.of({
+      setActivitySelection(
+        Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
           selectedValidators: data.validatorsData,
-        }),
-      });
+        })
+      );
     }
 
     if (
@@ -126,40 +127,30 @@ const _ActivityPage = () => {
       data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
       data.actionData.status === ActionStatus.FAILED
     ) {
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.of({
+      setActivitySelection(
+        Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
           selectedValidators: data.validatorsData,
-        }),
-      });
+        })
+      );
     }
 
     return;
   };
 
-  const selectedAction = useSelector(
-    activityStore,
-    (state) => state.context.selectedAction
-  );
+  const selectedAction = useActivitySelectedAction();
 
   // biome-ignore lint: false
   useEffect(() => {
-    activityStore.send({
-      type: "setSelectedAction",
-      data: Maybe.empty(),
-    });
-  }, [network, activityStore]);
+    setActivitySelection(Maybe.empty());
+  }, [network, setActivitySelection]);
 
   useEffect(() => {
     if (!isConnected && selectedAction.isJust()) {
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.empty(),
-      });
+      setActivitySelection(Maybe.empty());
     }
-  }, [isConnected, selectedAction, activityStore]);
+  }, [isConnected, selectedAction, setActivitySelection]);
 
   return (
     <ActivityPageContext.Provider value={{ ...value, onActionSelect }}>

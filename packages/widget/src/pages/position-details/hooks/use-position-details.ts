@@ -22,7 +22,7 @@ import {
 } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
-import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import { useSetExitStakeRequest } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import {
   useUnstakeOrPendingActionDispatch,
@@ -57,7 +57,7 @@ export const usePositionDetails = () => {
   const { plain } = useUnstakeOrPendingActionParams();
 
   const stakeExitRequestDto = useStakeExitRequestDto();
-  const exitStore = useExitStakeStore();
+  const setExitStakeRequest = useSetExitStakeRequest();
   const yieldKycGate = useYieldKycGate({ yieldDto: integrationData });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
   const kycProviderName = integrationData
@@ -97,17 +97,17 @@ export const usePositionDetails = () => {
         integrationData,
         unstakeToken,
       }).ifJust((val) => {
-        exitStore.send({
-          type: "initFlow",
-          data: {
+        setExitStakeRequest(
+          Maybe.of({
             addresses: val.stakeExitRequestDto.addresses,
+            actionDto: Maybe.empty(),
             gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
             integrationData: val.integrationData,
             requestDto: val.stakeExitRequestDto.dto,
             unstakeAmount,
             unstakeToken: val.unstakeToken,
-          },
-        });
+          })
+        );
         navigate(
           getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review"
         );

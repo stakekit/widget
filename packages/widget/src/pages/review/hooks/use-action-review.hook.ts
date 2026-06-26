@@ -1,4 +1,3 @@
-import { useSelector } from "@xstate/store/react";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,7 +15,10 @@ import {
 } from "../../../domain/types/yields";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useActivityContext } from "../../../providers/activity-provider";
+import {
+  useActivitySelectedAction,
+  useActivitySelectedYield,
+} from "../../../providers/activity-provider";
 import { defaultFormattedNumber } from "../../../utils";
 import { dateOlderThen7Days } from "../../../utils/date";
 import { MaybeWindow } from "../../../utils/maybe-window";
@@ -28,17 +30,8 @@ export const useActionReview = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const activityContext = useActivityContext();
-
-  const selectedAction = useSelector(
-    activityContext,
-    (state) => state.context.selectedAction
-  ).unsafeCoerce();
-
-  const selectedYield = useSelector(
-    activityContext,
-    (state) => state.context.selectedYield
-  ).unsafeCoerce();
+  const selectedAction = useActivitySelectedAction().unsafeCoerce();
+  const selectedYield = useActivitySelectedYield().unsafeCoerce();
 
   const inputToken = useMemo(
     () =>

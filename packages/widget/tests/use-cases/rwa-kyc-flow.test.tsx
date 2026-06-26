@@ -29,14 +29,9 @@ const skProps = {
   },
 } satisfies SKAppProps;
 
-const mockKycStatus = ({
-  status,
-  statusAfterRefresh,
-}: {
-  status: string;
-  statusAfterRefresh?: string;
-}) => {
+const mockKycStatus = ({ status }: { status: string }) => {
   let calls = 0;
+  let currentStatus = status;
   let requestedAddress: string | null = null;
 
   const handler = http.get(
@@ -47,8 +42,7 @@ const mockKycStatus = ({
       requestedAddress = new URL(request.url).searchParams.get("address");
 
       return HttpResponse.json({
-        kycStatus:
-          calls > 1 && statusAfterRefresh ? statusAfterRefresh : status,
+        kycStatus: currentStatus,
         kycUrl: "https://issuer.example/verify",
       });
     }
@@ -58,6 +52,9 @@ const mockKycStatus = ({
     handler,
     getCalls: () => calls,
     getRequestedAddress: () => requestedAddress,
+    setStatus: (newStatus: string) => {
+      currentStatus = newStatus;
+    },
   };
 };
 
@@ -216,10 +213,7 @@ describe("RWA KYC flow", () => {
   });
 
   it("refreshes pending status with Check status", async ({ worker }) => {
-    const kycStatus = mockKycStatus({
-      status: "pending",
-      statusAfterRefresh: "approved",
-    });
+    const kycStatus = mockKycStatus({ status: "pending" });
 
     worker.use(...mockKycRequiredDefaultYield(), kycStatus.handler);
 
@@ -229,6 +223,7 @@ describe("RWA KYC flow", () => {
       .element(app.getByTestId("kyc-gate-card-pending"))
       .toBeInTheDocument();
 
+    kycStatus.setStatus("approved");
     await userEvent.click(app.getByTestId("kyc-gate-check-status"));
 
     await expect

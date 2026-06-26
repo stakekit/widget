@@ -8,15 +8,15 @@ type PositionDetailsStakeEntryParams = {
   balanceId: string;
 };
 
-export class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryParams> {}
+class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryParams> {}
 
-export type PositionDetailsStakeIntent = {
+type PositionDetailsStakeIntent = {
   stakeAmount: string;
   tronResource: TronResourceType | null;
   useMaxAmount: boolean;
 };
 
-export type PositionDetailsStakeAction =
+type PositionDetailsStakeAction =
   | {
       type: "stakeAmount/change";
       amount: string;

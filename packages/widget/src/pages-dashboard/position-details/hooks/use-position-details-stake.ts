@@ -42,7 +42,7 @@ import type { PageCta } from "../../../pages/components/page-cta";
 import { useAmountValidation } from "../../../pages/details/earn-page/state/use-amount-validation";
 import { useStakeEnterRequestDto } from "../../../pages/details/earn-page/state/use-stake-enter-request-dto";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
-import { useEnterStakeStore } from "../../../providers/enter-stake-store";
+import { useSetEnterStakeRequest } from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
@@ -227,7 +227,7 @@ export const usePositionDetailsStake = () => {
   const onKycStatusRefresh = () => yieldKycGate.refetch();
   const { openConnectModal } = useConnectModal();
   const navigate = useNavigateWithScrollToTop();
-  const enterStakeStore = useEnterStakeStore();
+  const setEnterStakeRequest = useSetEnterStakeRequest();
   const { isConnected, isLedgerLiveAccountPlaceholder, chain } = useSKWallet();
 
   const {
@@ -254,17 +254,17 @@ export const usePositionDetailsStake = () => {
         selectedToken,
         stakeEnterRequestDto,
       }).ifJust((value) => {
-        enterStakeStore.send({
-          type: "initFlow",
-          data: {
+        setEnterStakeRequest(
+          Maybe.of({
+            actionDto: Maybe.empty(),
             addresses: value.stakeEnterRequestDto.addresses,
             requestDto: value.stakeEnterRequestDto.dto,
             selectedToken: value.selectedToken,
             gasFeeToken: value.stakeEnterRequestDto.gasFeeToken,
             selectedStake: value.stakeEnterRequestDto.selectedStake,
             selectedValidators: value.stakeEnterRequestDto.selectedValidators,
-          },
-        });
+          })
+        );
         navigate(
           getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
             "/review"

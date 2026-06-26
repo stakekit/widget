@@ -1,4 +1,3 @@
-import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -7,7 +6,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { usePendingActionStore } from "../../../providers/pending-action-store";
+import { usePendingActionRequest } from "../../../providers/pending-action-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
@@ -19,10 +18,7 @@ export const PendingCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const pendingRequest = useSelector(
-    usePendingActionStore(),
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const pendingRequest = usePendingActionRequest().unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(pendingRequest.integrationData),

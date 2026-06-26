@@ -58,7 +58,7 @@ import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-detail
 import { useSavedRef } from "../../../../hooks/use-saved-ref";
 import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useYieldType } from "../../../../hooks/use-yield-type";
-import { useEnterStakeStore } from "../../../../providers/enter-stake-store";
+import { useSetEnterStakeRequest } from "../../../../providers/enter-stake-store";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
 import { useSKWallet } from "../../../../providers/sk-wallet";
@@ -511,7 +511,7 @@ export const EarnPageContextProvider = ({
     balanceId: positionDetailsStakeMatch?.params.balanceId,
     integrationId: positionDetailsStakeMatch?.params.integrationId,
   });
-  const enterStakeStore = useEnterStakeStore();
+  const setEnterStakeRequest = useSetEnterStakeRequest();
 
   const onClickHandler = useMutation({
     mutationFn: async () => {
@@ -526,17 +526,17 @@ export const EarnPageContextProvider = ({
         selectedToken,
       }).unsafeCoerce();
 
-      enterStakeStore.send({
-        type: "initFlow",
-        data: {
+      setEnterStakeRequest(
+        Maybe.of({
+          actionDto: Maybe.empty(),
           addresses: val.stakeEnterRequestDto.addresses,
           requestDto: val.stakeEnterRequestDto.dto,
           selectedToken: val.selectedToken,
           gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
           selectedStake: val.stakeEnterRequestDto.selectedStake,
           selectedValidators: val.stakeEnterRequestDto.selectedValidators,
-        },
-      });
+        })
+      );
       navigate(positionDetailsStakeReviewPath ?? "/review");
     },
   });

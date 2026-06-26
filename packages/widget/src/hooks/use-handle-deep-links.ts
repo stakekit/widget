@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { usePendingActionDeepLink } from "../pages/details/earn-page/state/use-pending-action-deep-link";
 import { useMountAnimation } from "../providers/mount-animation";
-import { usePendingActionStore } from "../providers/pending-action-store";
+import { useSetPendingActionRequest } from "../providers/pending-action-store";
 import { useSKWallet } from "../providers/sk-wallet";
 import { useInitQueryParams } from "./use-init-query-params";
 import { useSavedRef } from "./use-saved-ref";
@@ -11,7 +11,7 @@ import { useSavedRef } from "./use-saved-ref";
 export const useHandleDeepLinks = () => {
   const pendingActionDeepLinkCheck = usePendingActionDeepLink();
   const navigateRef = useSavedRef(useNavigate());
-  const pendignActionStore = usePendingActionStore();
+  const setPendingActionRequest = useSetPendingActionRequest();
   const initQueryParams = useInitQueryParams();
 
   const { mountAnimationFinished } = useMountAnimation();
@@ -52,9 +52,9 @@ export const useHandleDeepLinks = () => {
           appReady && val.type === "review"
       )
       .ifJust((val) => {
-        pendignActionStore.send({
-          type: "initFlow",
-          data: {
+        setPendingActionRequest(
+          Maybe.of({
+            actionDto: Maybe.empty(),
             requestDto: val.pendingActionDto.requestDto,
             addresses: {
               address: val.pendingActionDto.address,
@@ -64,14 +64,14 @@ export const useHandleDeepLinks = () => {
             integrationData: val.pendingActionDto.integrationData,
             interactedToken: val.balance.token,
             pendingActionType: val.pendingActionDto.requestDto.action,
-          },
-        });
+          })
+        );
         navigateRef.current(
           `positions/${val.yieldOp.id}/${val.balanceId}/pending-action/review`
         );
       });
   }, [
-    pendignActionStore,
+    setPendingActionRequest,
     pendingActionDeepLinkCheck.data,
     appReady,
     navigateRef,

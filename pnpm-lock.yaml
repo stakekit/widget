@@ -165,9 +165,6 @@ catalogs:
     '@xstate/react':
       specifier: ^6.1.0
       version: 6.1.0
-    '@xstate/store':
-      specifier: ^3.17.5
-      version: 3.17.5
     autoprefixer:
       specifier: ^10.5.0
       version: 10.5.0
@@ -559,9 +556,6 @@ importers:
       '@xstate/react':
         specifier: 'catalog:'
         version: 6.1.0(@types/react@19.2.17)(react@19.2.7)(xstate@5.31.1)
-      '@xstate/store':
-        specifier: 'catalog:'
-        version: 3.17.5(react@19.2.7)
       autoprefixer:
         specifier: 'catalog:'
         version: 10.5.0(postcss@8.5.14)
@@ -5223,17 +5217,6 @@ packages:
       xstate: ^5.28.0
     peerDependenciesMeta:
       xstate:
-        optional: true
-
-  '@xstate/store@3.17.5':
-    resolution: {integrity: sha512-ITajQVRAMa1pgmgM0OdRFYQ6OQ8GK4ynh391p13GKtZnELXn9Hgs9pr4mqO1Z95HH9INcmczmWi5xk3O18GBWg==}
-    peerDependencies:
-      react: ^18.2.0 || ^19.0.0
-      solid-js: ^1.7.6
-    peerDependenciesMeta:
-      react:
-        optional: true
-      solid-js:
         optional: true
 
   '@zeit/schemas@2.36.0':
@@ -18090,10 +18073,6 @@ snapshots:
       xstate: 5.31.1
     transitivePeerDependencies:
       - '@types/react'
-
-  '@xstate/store@3.17.5(react@19.2.7)':
-    optionalDependencies:
-      react: 19.2.7
 
   '@zeit/schemas@2.36.0': {}
 

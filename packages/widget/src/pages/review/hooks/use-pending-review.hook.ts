@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
@@ -14,20 +13,20 @@ import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useApiClient } from "../../../providers/api/api-client-provider";
-import { usePendingActionStore } from "../../../providers/pending-action-store";
+import {
+  usePendingActionRequest,
+  useSetPendingActionRequest,
+} from "../../../providers/pending-action-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import type { PageCta } from "../../components/page-cta";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
-  const pendingActionStore = usePendingActionStore();
+  const setPendingActionRequest = useSetPendingActionRequest();
   const apiClient = useApiClient();
 
-  const pendingRequest = useSelector(
-    pendingActionStore,
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const pendingRequest = usePendingActionRequest().unsafeCoerce();
 
   const actionPreviewQuery = useQuery({
     enabled: !!pendingRequest,
@@ -114,7 +113,9 @@ export const usePendingActionReview = () => {
       (await actionPreviewQuery.refetch()).data ??
       Promise.reject(new Error("Pending actions error")),
     onSuccess: (data) => {
-      pendingActionStore.send({ type: "setActionDto", data });
+      setPendingActionRequest((request) =>
+        request.map((value) => ({ ...value, actionDto: Maybe.of(data) }))
+      );
       navigate("../steps", { relative: "path" });
     },
   });

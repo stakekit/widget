@@ -11,7 +11,7 @@ import {
   useActivityFilterOptions,
   usePrefetchActivityActionFilters,
 } from "../../../../hooks/api/use-activity-actions";
-import { useActivityContext } from "../../../../providers/activity-provider";
+import { useSetActivitySelection } from "../../../../providers/activity-provider";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { useActivityFilters } from "../hooks/use-activity-filters";
 import type { ActionYieldDto } from "../types";
@@ -24,7 +24,7 @@ export const ActivityPageContext = createContext<
 export const ActivityPageContextProvider = ({
   children,
 }: PropsWithChildren) => {
-  const activityStore = useActivityContext();
+  const setActivitySelection = useSetActivitySelection();
   const { openConnectModal } = useConnectModal();
   const { isConnected } = useSKWallet();
   const navigate = useNavigate();
@@ -36,14 +36,13 @@ export const ActivityPageContextProvider = ({
       data.actionData.status === ActionStatus.SUCCESS ||
       data.actionData.status === ActionStatus.PROCESSING
     ) {
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.of({
+      setActivitySelection(
+        Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
           selectedValidators: data.validatorsData,
-        }),
-      });
+        })
+      );
 
       const urls = data.actionData.transactions
         .map((val) => ({ type: val.type, url: val.explorerUrl }))
@@ -70,14 +69,13 @@ export const ActivityPageContextProvider = ({
       data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
       data.actionData.status === ActionStatus.FAILED
     ) {
-      activityStore.send({
-        type: "setSelectedAction",
-        data: Maybe.of({
+      setActivitySelection(
+        Maybe.of({
           selectedAction: data.actionData,
           selectedYield: data.yieldData,
           selectedValidators: data.validatorsData,
-        }),
-      });
+        })
+      );
 
       return navigate("/activity/review");
     }
