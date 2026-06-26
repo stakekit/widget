@@ -15,10 +15,6 @@ import { useMultiYields } from "../../../../../hooks/api/use-multi-yields";
 import { formatCompactUsd } from "../../../../../utils/formatters";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import {
-  useEarnPageDispatch,
-  useEarnPageState,
-} from "../../state/earn-page-state-context";
-import {
   overflowEllipsis,
   selectorSummaryCard,
   selectorSummaryChangeButton,
@@ -45,9 +41,12 @@ const getProviderTvl = (tvlUsd: unknown) => {
 };
 
 export const SelectProvider = () => {
-  const { selectedStake, selectedProviderYieldId } = useEarnPageState();
-  const { appLoading } = useEarnPageContext();
-  const dispatch = useEarnPageDispatch();
+  const {
+    appLoading,
+    onProviderYieldIdSelect,
+    selectedProviderYieldId,
+    selectedStake,
+  } = useEarnPageContext();
 
   const { t } = useTranslation();
 
@@ -83,9 +82,7 @@ export const SelectProvider = () => {
     providerSelection
       .map((val) => (
         <SelectYield
-          onItemClick={(yieldDto) =>
-            dispatch({ type: "providerYieldId/select", data: yieldDto.id })
-          }
+          onItemClick={(yieldDto) => onProviderYieldIdSelect(yieldDto.id)}
           providerYieldIds={val.providerYieldIdOptions}
           selectedYieldId={val.selectedProviderYield.id}
           trigger={

@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -17,7 +16,10 @@ import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { useApiClient } from "../../../providers/api/api-client-provider";
-import { useEnterStakeStore } from "../../../providers/enter-stake-store";
+import {
+  useEnterStakeRequest,
+  useSetEnterStakeRequest,
+} from "../../../providers/enter-stake-store";
 import { useSettings } from "../../../providers/settings";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
@@ -26,12 +28,8 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
-  const enterStore = useEnterStakeStore();
-
-  const enterRequest = useSelector(
-    enterStore,
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const enterRequest = useEnterStakeRequest().unsafeCoerce();
+  const setEnterStakeRequest = useSetEnterStakeRequest();
 
   const apiClient = useApiClient();
 
@@ -195,7 +193,9 @@ export const useStakeReview = () => {
       );
     },
     onSuccess: (data) => {
-      enterStore.send({ type: "setActionDto", data });
+      setEnterStakeRequest((request) =>
+        request.map((value) => ({ ...value, actionDto: Maybe.of(data) }))
+      );
       if (positionDetailsStakeReviewMatch) {
         navigate("../steps", { relative: "path" });
 

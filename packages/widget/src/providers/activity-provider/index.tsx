@@ -1,54 +1,31 @@
-import { createStore } from "@xstate/store";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import { Maybe } from "purify-ts";
-import { createContext, type PropsWithChildren, useContext } from "react";
 import type { ActionDto } from "../../domain/types/action";
 import type { Yield } from "../../domain/types/yields";
 import type { ValidatorDto } from "../../generated/api/yield";
 
-const store = createStore({
-  context: {
-    selectedAction: Maybe.empty() as Maybe<ActionDto>,
-    selectedYield: Maybe.empty() as Maybe<Yield>,
-    selectedValidators: Maybe.empty() as Maybe<ValidatorDto[]>,
-  },
-  on: {
-    setSelectedAction: (
-      _,
-      event: {
-        data: Maybe<{
-          selectedAction: ActionDto;
-          selectedYield: Yield;
-          selectedValidators: ValidatorDto[];
-        }>;
-      }
-    ) => ({
-      selectedAction: event.data.map(({ selectedAction }) => selectedAction),
-      selectedYield: event.data.map(({ selectedYield }) => selectedYield),
-      selectedValidators: event.data.map(
-        ({ selectedValidators }) => selectedValidators
-      ),
-    }),
-  },
-});
-
-const ActivityContext = createContext<typeof store | undefined>(undefined);
-
-export const ActivityProvider = ({ children }: PropsWithChildren) => {
-  return (
-    <ActivityContext.Provider value={store}>
-      {children}
-    </ActivityContext.Provider>
-  );
+type ActivitySelection = {
+  selectedAction: ActionDto;
+  selectedYield: Yield;
+  selectedValidators: ValidatorDto[];
 };
 
-export const useActivityContext = () => {
-  const value = useContext(ActivityContext);
+type ActivitySelectionState = Maybe<ActivitySelection>;
 
-  if (!value) {
-    throw new Error(
-      "useActivityContext must be used within a ActivityProvider"
-    );
-  }
+const activitySelectionAtom = Atom.make<ActivitySelectionState>(
+  Maybe.empty()
+).pipe(Atom.keepAlive, Atom.withLabel("activitySelectionAtom"));
 
-  return value;
-};
+const useActivitySelection = () => useAtomValue(activitySelectionAtom);
+
+export const useActivitySelectedAction = () =>
+  useActivitySelection().map(({ selectedAction }) => selectedAction);
+
+export const useActivitySelectedYield = () =>
+  useActivitySelection().map(({ selectedYield }) => selectedYield);
+
+export const useActivitySelectedValidators = () =>
+  useActivitySelection().map(({ selectedValidators }) => selectedValidators);
+
+export const useSetActivitySelection = () => useAtomSet(activitySelectionAtom);

@@ -22,6 +22,11 @@ type ApiClientOptions = {
   readonly suppressRichErrors?: boolean;
 };
 
+export type EffectApiClient = {
+  readonly legacy: LegacyApi.LegacyApi;
+  readonly yield: YieldApi.YieldApi;
+};
+
 const runtime = ManagedRuntime.make(FetchHttpClient.layer);
 
 const inspectResponse = ({
@@ -211,7 +216,9 @@ export const createApiClient = ({
 }: WidgetApiClientOptions) => {
   const baseClient = runtime.runSync(HttpClient.HttpClient);
 
-  const bindApiClients = (options?: ApiClientOptions) => {
+  const createEffectApiClients = (
+    options?: Pick<ApiClientOptions, "suppressRichErrors">
+  ): EffectApiClient => {
     const legacyHttpClient = configureClient({
       apiKey,
       baseUrl,
@@ -224,19 +231,28 @@ export const createApiClient = ({
       client: baseClient,
       suppressRichErrors: options?.suppressRichErrors,
     });
-    const legacyApi = LegacyApi.make(legacyHttpClient);
-    const yieldApi = YieldApi.make(yieldHttpClient);
 
     return {
-      legacy: bindLegacyApi({ api: legacyApi, options }),
-      yield: bindYieldApi({ api: yieldApi, options }),
+      legacy: LegacyApi.make(legacyHttpClient),
+      yield: YieldApi.make(yieldHttpClient),
     };
   };
 
+  const bindApiClients = (options?: ApiClientOptions) => {
+    const effectApi = createEffectApiClients(options);
+
+    return {
+      legacy: bindLegacyApi({ api: effectApi.legacy, options }),
+      yield: bindYieldApi({ api: effectApi.yield, options }),
+    };
+  };
+
+  const effectClients = createEffectApiClients();
   const boundClients = bindApiClients();
 
   return {
     ...boundClients,
+    effect: effectClients,
     withOptions: (options: ApiClientOptions) => bindApiClients(options),
   };
 };

@@ -8,15 +8,15 @@ import {
 } from "../../../../../components/atoms/select-modal";
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
-import type { TokenBalanceScanResponseDto } from "../../../../../domain/types/token-balance";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
+import type { EarnTokenOption } from "../../state/effect-atom-poc/types";
 import { selectItemText } from "../../styles.css";
 
 type Props = {
-  item: TokenBalanceScanResponseDto;
+  item: EarnTokenOption;
   isConnected: boolean;
   isSelected: boolean;
-  onTokenBalanceSelect: (tokenBalance: TokenBalanceScanResponseDto) => void;
+  onTokenBalanceSelect: (tokenBalance: EarnTokenOption) => void;
 };
 
 export const SelectTokenListItem = memo(

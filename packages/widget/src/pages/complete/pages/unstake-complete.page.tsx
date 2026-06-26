@@ -1,4 +1,3 @@
-import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
@@ -6,7 +5,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import { useExitStakeRequest } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
@@ -17,10 +16,7 @@ export const UnstakeCompletePage = () => {
     integrationId: plain.integrationId,
   });
 
-  const exitRequest = useSelector(
-    useExitStakeStore(),
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const exitRequest = useExitStakeRequest().unsafeCoerce();
 
   const integrationData = useMemo(
     () => Maybe.of(exitRequest.integrationData),

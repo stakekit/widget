@@ -1,22 +1,31 @@
+import type BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { YieldCreateActionDto } from "../../../../domain/types/action";
 import type { AddressesDto } from "../../../../domain/types/addresses";
+import type { TokenDto } from "../../../../domain/types/tokens";
+import type { TronResourceType } from "../../../../domain/types/tron";
 import { getYieldActionArg, type Yield } from "../../../../domain/types/yields";
 import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useEarnPageState } from "./earn-page-state-context";
 
-export const useStakeEnterRequestDto = () => {
-  const {
-    selectedStake,
-    stakeAmount,
-    useMaxAmount,
-    selectedValidators,
-    tronResource,
-    selectedToken,
-    selectedProviderYieldId,
-  } = useEarnPageState();
+export const useStakeEnterRequestDto = ({
+  selectedProviderYieldId,
+  selectedStake,
+  selectedToken,
+  selectedValidators,
+  stakeAmount,
+  tronResource,
+  useMaxAmount,
+}: {
+  selectedProviderYieldId: Maybe<Yield["id"]>;
+  selectedStake: Maybe<Yield>;
+  selectedToken: Maybe<TokenDto>;
+  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
+  stakeAmount: BigNumber;
+  tronResource: Maybe<TronResourceType>;
+  useMaxAmount: boolean;
+}) => {
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   return useMemo(

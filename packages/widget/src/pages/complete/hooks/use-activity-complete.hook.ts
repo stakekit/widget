@@ -1,4 +1,3 @@
-import { useSelector } from "@xstate/store/react";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getActionInputToken } from "../../../domain/types/action";
@@ -6,18 +5,17 @@ import type { TokenDto } from "../../../domain/types/tokens";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useActivityContext } from "../../../providers/activity-provider";
+import {
+  useActivitySelectedAction,
+  useActivitySelectedValidators,
+  useActivitySelectedYield,
+} from "../../../providers/activity-provider";
 import { defaultFormattedNumber } from "../../../utils";
 
 export const useActivityComplete = () => {
   useTrackPage("activityComplete");
 
-  const activityContext = useActivityContext();
-
-  const selectedAction = useSelector(
-    activityContext,
-    (state) => state.context.selectedAction
-  ).unsafeCoerce();
+  const selectedAction = useActivitySelectedAction().unsafeCoerce();
 
   const amount = useMemo(
     () =>
@@ -27,15 +25,8 @@ export const useActivityComplete = () => {
     [selectedAction]
   );
 
-  const selectedYield = useSelector(
-    activityContext,
-    (state) => state.context.selectedYield
-  );
-
-  const selectedValidators = useSelector(
-    activityContext,
-    (state) => state.context.selectedValidators
-  );
+  const selectedYield = useActivitySelectedYield();
+  const selectedValidators = useActivitySelectedValidators();
 
   const yieldType = useYieldType(selectedYield).map((v) => v.type);
 

@@ -1,4 +1,3 @@
-import type { QueryClient } from "@tanstack/react-query";
 import { useQuery } from "@tanstack/react-query";
 import { EitherAsync, Just, Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
@@ -58,19 +57,6 @@ export const useTokenBalancesScan = () => {
       ).unsafeCoerce(),
   });
 };
-
-export const getTokenBalancesScan = (
-  params: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
-) =>
-  EitherAsync(() =>
-    params.queryClient.fetchQuery({
-      queryKey: getTokenTokenBalancesScanQueryKey(params.tokenBalanceScanDto),
-      queryFn: async () => (await queryFn(params)).unsafeCoerce(),
-    })
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("could not get multi yields");
-  });
 
 const queryFn = ({
   apiClient,

@@ -1,4 +1,3 @@
-import { useSelector } from "@xstate/store/react";
 import { Box } from "../../components/atoms/box";
 import { ActionStatus, type TransactionType } from "../../domain/types/action";
 import { useActivityComplete } from "../../pages/complete/hooks/use-activity-complete.hook";
@@ -6,20 +5,14 @@ import { useComplete } from "../../pages/complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "../../pages/complete/pages/common.page";
 import { CompleteCommonContextProvider } from "../../pages/complete/state";
 import { ActionReviewPage } from "../../pages/review/pages/action-review.page";
-import { useActivityContext } from "../../providers/activity-provider";
+import {
+  useActivitySelectedAction,
+  useActivitySelectedYield,
+} from "../../providers/activity-provider";
 
 export const ActivityDetailsPage = () => {
-  const activityContext = useActivityContext();
-
-  const selectedAction = useSelector(
-    activityContext,
-    (state) => state.context.selectedAction
-  ).extractNullable();
-
-  const selectedYield = useSelector(
-    activityContext,
-    (state) => state.context.selectedYield
-  ).extractNullable();
+  const selectedAction = useActivitySelectedAction().extractNullable();
+  const selectedYield = useActivitySelectedYield().extractNullable();
 
   if (!selectedYield || !selectedAction) {
     return null;

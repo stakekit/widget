@@ -24,9 +24,6 @@ type MultiParams = Omit<Params, "yieldId"> & {
 type ParamsWithQueryClient = Params & {
   queryClient: QueryClient;
 };
-type ParamsWithYieldDto = Omit<ParamsWithQueryClient, "yieldId"> & {
-  yieldDto: YieldBase;
-};
 type MultiParamsWithQueryClient = MultiParams & {
   queryClient: QueryClient;
 };
@@ -72,18 +69,6 @@ export const getYieldOpportunity = (params: ParamsWithQueryClient) =>
       queryKey: getKey(params),
       staleTime,
       queryFn: () => queryFn(params),
-    })
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get yield opportunity");
-  });
-
-export const getYieldOpportunityFromSummary = (params: ParamsWithYieldDto) =>
-  EitherAsync(() =>
-    params.queryClient.fetchQuery({
-      queryKey: getKey({ ...params, yieldId: params.yieldDto.id }),
-      staleTime,
-      queryFn: () => hydrateYieldSummaryQueryFn(params),
     })
   ).mapLeft((e) => {
     console.log(e);
@@ -169,32 +154,6 @@ const fn = ({
       console.log(e);
       return new Error("Could not get yield opportunity");
     });
-};
-
-const hydrateYieldSummaryQueryFn = async ({
-  yieldDto,
-  queryClient,
-  signal,
-  suppressRichErrors,
-  apiClient,
-}: ParamsWithYieldDto & {
-  signal?: AbortSignal;
-}) => {
-  const client = apiClient.withOptions({ signal, suppressRichErrors });
-  const provider =
-    yieldDto.provider ??
-    (await fetchYieldProvider({
-      client,
-      providerId: yieldDto.providerId,
-      queryClient,
-    }));
-
-  return applyYieldOverrides(
-    createYield({
-      provider,
-      yieldDto,
-    })
-  );
 };
 
 const multiFn = ({

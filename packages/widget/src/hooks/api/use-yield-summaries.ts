@@ -1,14 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query";
+import { chunksOf } from "effect/Array";
 import { isSupportedChain } from "../../domain/types/chains";
 import {
   isEthenaUsdeStaking,
   isNonZeroRewardRateYield,
   type YieldProviderDetails,
 } from "../../domain/types/yields";
-import type {
-  YieldDto,
-  YieldsControllerGetYieldsParams,
-} from "../../generated/api/yield";
+import type { YieldDto } from "../../generated/api/yield";
 import type { useApiClient } from "../../providers/api/api-client-provider";
 import { fetchYieldProviders } from "./use-yield-providers";
 
@@ -19,17 +17,11 @@ import { fetchYieldProviders } from "./use-yield-providers";
  * `mechanics.type`, `providerId`).
  */
 export type YieldSummary = YieldDto;
-export type YieldSummaryWithProvider = YieldSummary & {
+type YieldSummaryWithProvider = YieldSummary & {
   provider?: YieldProviderDetails;
 };
 
-export const DEFAULT_YIELD_SUMMARIES_PAGE_LIMIT = 50;
 const DEFAULT_YIELD_IDS_CHUNK_SIZE = 100;
-
-export type YieldSummariesParams = Pick<
-  YieldsControllerGetYieldsParams,
-  "network" | "types" | "inputToken" | "sort" | "limit"
->;
 
 /**
  * A summary is "visible" when it is enterable, on a supported chain, and has a
@@ -39,16 +31,6 @@ export const isVisibleYieldSummary = (summary: YieldSummary): boolean =>
   summary.status.enter &&
   isSupportedChain(summary.token.network) &&
   isNonZeroRewardRateYield(summary);
-
-export const getYieldSummariesQueryKey = (
-  params: YieldSummariesParams & { allPages?: boolean }
-) => ["yield-summaries", params];
-
-type FetchArgs = {
-  apiClient: ReturnType<typeof useApiClient>;
-  params: YieldSummariesParams;
-  signal?: AbortSignal;
-};
 
 type FetchByIdsArgs = {
   apiClient: ReturnType<typeof useApiClient>;
@@ -63,30 +45,6 @@ type FetchByIdsWithProvidersArgs = FetchByIdsArgs & {
 };
 
 const unique = <T>(items: ReadonlyArray<T>) => [...new Set(items)];
-
-const chunks = <T>(items: ReadonlyArray<T>, chunkSize: number): T[][] => {
-  const result: T[][] = [];
-
-  for (let index = 0; index < items.length; index += chunkSize) {
-    result.push(items.slice(index, index + chunkSize));
-  }
-
-  return result;
-};
-
-/**
- * Fetch a single page of yield summaries.
- */
-export const fetchYieldSummariesPage = async ({
-  apiClient,
-  params,
-  signal,
-}: FetchArgs): Promise<YieldSummary[]> => {
-  const client = apiClient.withOptions({ signal });
-  const result = await client.yield.YieldsControllerGetYields({ params });
-
-  return [...(result.items ?? [])];
-};
 
 /**
  * Fetch yield summaries by ID without ever sending an unbounded `yieldIds`
@@ -110,7 +68,7 @@ export const fetchYieldSummariesByIds = async ({
   const normalizedChunkSize = Math.max(1, chunkSize);
   const summariesById = new Map<string, YieldSummary>();
 
-  for (const chunk of chunks(ids, normalizedChunkSize)) {
+  for (const chunk of chunksOf(ids, normalizedChunkSize)) {
     const result = await client.yield.YieldsControllerGetYields({
       params: {
         yieldIds: chunk,

@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
@@ -19,7 +18,7 @@ import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useApiClient } from "../../../providers/api/api-client-provider";
-import { useExitStakeStore } from "../../../providers/exit-stake-store";
+import { useExitStakeRequest } from "../../../providers/exit-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { getGasFeeInUSD } from "../../../utils/formatters";
 import type { PageCta } from "../../components/page-cta";
@@ -27,10 +26,7 @@ import { useUnstakeMachine } from "../../position-details/hooks/use-unstake-mach
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const useUnstakeActionReview = () => {
-  const exitRequest = useSelector(
-    useExitStakeStore(),
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const exitRequest = useExitStakeRequest().unsafeCoerce();
 
   const apiClient = useApiClient();
 

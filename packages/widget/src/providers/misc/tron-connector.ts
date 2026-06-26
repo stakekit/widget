@@ -171,7 +171,7 @@ export const getTronConnectors = ({
               createTronConnector({
                 walletDetailsParams,
                 metaConfig: "tronLedger",
-                adapter: new LedgerAdapter(),
+                adapter: new LedgerAdapter() as unknown as Adapter,
               }),
           }),
         ],

@@ -1,21 +1,17 @@
-import { useSelector } from "@xstate/store/react";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useEnterStakeStore } from "../../../providers/enter-stake-store";
+import { useEnterStakeRequest } from "../../../providers/enter-stake-store";
 import { defaultFormattedNumber } from "../../../utils";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
   useTrackPage("stakeComplete");
 
-  const enterRequest = useSelector(
-    useEnterStakeStore(),
-    (state) => state.context.data
-  ).unsafeCoerce();
+  const enterRequest = useEnterStakeRequest().unsafeCoerce();
 
   const selectedStake = useMemo(
     () => Maybe.of(enterRequest.selectedStake),
