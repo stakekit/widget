@@ -12,7 +12,6 @@ export const wrapper = recipe({
       borderStyle: "solid",
       boxShadow: "0px 15px 40px 0px #0000000D",
       width: "1000px",
-      borderRadius: "14px",
     },
   ],
   variants: {

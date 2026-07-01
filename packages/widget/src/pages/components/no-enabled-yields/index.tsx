@@ -14,6 +14,7 @@ const NoEnabledYields = () => {
 
   return (
     <Box
+      style={{ borderRadius: "14px" }}
       className={
         dashboardVariant
           ? [
@@ -38,7 +39,7 @@ const NoEnabledYields = () => {
             textAlign="center"
             variant={{ level: "h4" }}
           >
-            {t("no_enabled_yields.title")}
+            {t("help_modals.no_enabled_yields.title")}
           </Heading>
 
           <Text
@@ -46,7 +47,7 @@ const NoEnabledYields = () => {
             textAlign="center"
             marginBottom="4"
           >
-            {t("no_enabled_yields.description")}
+            {t("help_modals.no_enabled_yields.description")}
           </Text>
         </Box>
       </Box>
