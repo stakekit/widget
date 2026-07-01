@@ -555,6 +555,10 @@
       "description2": "We appreciate your patience and encourage you to check back shortly!"
     }
   },
+  "no_enabled_yields": {
+    "title": "No yields enabled",
+    "description": "There are no yields enabled for this API key. Enable at least one yield to start earning."
+  },
   "positions": {
     "title": "My Positions",
     "via_one": "via {{providerName}}",
