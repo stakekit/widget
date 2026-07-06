@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { Validator, ValidatorKey } from "../domain/types/validators";
 import { isBittensorStaking, type Yield } from "../domain/types/yields";
-import type { ValidatorDto } from "../generated/api/yield";
 import { formatNumber } from "../utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useProvidersDetails } from "./use-provider-details";
@@ -15,7 +15,7 @@ export const useEstimatedRewards = ({
 }: {
   selectedStake: Maybe<Yield>;
   stakeAmount: BigNumber;
-  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
+  selectedValidators: Map<ValidatorKey, Validator>;
   selectedProviderYieldId: Maybe<Yield["id"]>;
 }) => {
   const providersDetails = useProvidersDetails({

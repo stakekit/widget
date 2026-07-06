@@ -3,6 +3,7 @@ import { Maybe } from "purify-ts";
 import { I18nextProvider } from "react-i18next";
 import { vi } from "vitest";
 import { userEvent } from "vitest/browser";
+import { toValidator } from "../../src/domain/types/validators";
 import type { Yield } from "../../src/domain/types/yields";
 import type { useSelectValidator } from "../../src/pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { SelectYieldRewardDetails } from "../../src/pages/details/earn-page/components/select-yield-section/select-yield-reward-details";
@@ -117,17 +118,21 @@ const renderSelectYieldRewardDetails = ({
 
 describe("ProviderSelectionCard", () => {
   it("renders all selected validators with removal controls", async () => {
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Kiln",
-      preferred: true,
-      tvl: "1000000",
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      name: "P2P",
-      tvl: "2000000",
-    });
+    const firstValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Kiln",
+        preferred: true,
+        tvl: "1000000",
+      })
+    );
+    const secondValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        name: "P2P",
+        tvl: "2000000",
+      })
+    );
     const onRemoveValidator = vi.fn();
 
     hookState.earnContext = {
@@ -156,11 +161,13 @@ describe("ProviderSelectionCard", () => {
   });
 
   it("maps unknown validator statuses to inactive", async () => {
-    const validator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Yuma",
-      status: "not_found",
-    });
+    const validator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Yuma",
+        status: "not_found",
+      })
+    );
 
     hookState.earnContext = {
       providersDetails: Maybe.of([]),
@@ -175,14 +182,18 @@ describe("ProviderSelectionCard", () => {
   });
 
   it("keeps the selector available from the multi-validator dashboard card", async () => {
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Kiln",
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      name: "P2P",
-    });
+    const firstValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Kiln",
+      })
+    );
+    const secondValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        name: "P2P",
+      })
+    );
 
     hookState.earnContext = {
       providersDetails: Maybe.of([]),
@@ -210,14 +221,18 @@ describe("ProviderSelectionCard", () => {
 
 describe("SelectYieldRewardDetails", () => {
   it("uses all selected validators in the dashboard Stake via summary", async () => {
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Kiln",
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      name: "P2P",
-    });
+    const firstValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Kiln",
+      })
+    );
+    const secondValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        name: "P2P",
+      })
+    );
 
     hookState.earnContext = {
       estimatedRewards: Maybe.empty(),

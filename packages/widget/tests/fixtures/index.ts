@@ -1,8 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type {
-  YieldActionDto,
-  YieldTransactionDto,
-} from "../../src/domain/types/action";
+import type { ActionDto, TransactionDto } from "../../src/domain/types/action";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import type { YieldBalanceDto } from "../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
@@ -225,8 +222,8 @@ export const yieldApiValidatorsFixture = (
   );
 
 export const yieldApiTransactionFixture = (
-  overrides?: Partial<YieldTransactionDto>
-): YieldTransactionDto =>
+  overrides?: Partial<TransactionDto>
+): TransactionDto =>
   ({
     id: faker.string.uuid(),
     title: "Stake",
@@ -244,11 +241,11 @@ export const yieldApiTransactionFixture = (
     explorerUrl: null,
     isMessage: false,
     ...overrides,
-  }) as YieldTransactionDto;
+  }) as TransactionDto;
 
 export const yieldApiActionFixture = (
-  overrides?: Partial<YieldActionDto>
-): YieldActionDto => {
+  overrides?: Partial<ActionDto>
+): ActionDto => {
   const type = overrides?.type ?? "STAKE";
   const intent =
     overrides?.intent ??
@@ -264,7 +261,7 @@ export const yieldApiActionFixture = (
     amountRaw: null,
     amountUsd: null,
     transactions: [
-      yieldApiTransactionFixture({ type: type as YieldTransactionDto["type"] }),
+      yieldApiTransactionFixture({ type: type as TransactionDto["type"] }),
     ],
     executionPattern: "synchronous",
     rawArguments: null,
@@ -272,5 +269,5 @@ export const yieldApiActionFixture = (
     completedAt: null,
     status: "CREATED",
     ...overrides,
-  } as YieldActionDto;
+  } as ActionDto;
 };

@@ -39,6 +39,11 @@ export class TokenOptionsKey extends Data.TaggedClass("TokenOptionsKey")<{
   tokensForEnabledYieldsOnly: boolean;
 }> {}
 
+export class TokenYieldScopeKey extends Data.TaggedClass("TokenYieldScopeKey")<{
+  category: DashboardYieldCategory | null;
+  yieldIds: ReadonlyArray<string>;
+}> {}
+
 export class DefaultTokenOptionsKey extends Data.TaggedClass(
   "DefaultTokenOptionsKey"
 )<{

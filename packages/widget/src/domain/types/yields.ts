@@ -169,17 +169,17 @@ export const getDashboardYieldCategory = (
   return null;
 };
 
-export const filterValidators = ({
+export const filterValidators = <T extends ValidatorDto>({
   validatorsConfig,
   validators,
   network,
   yieldId,
 }: {
   validatorsConfig: ValidatorsConfig;
-  validators: ValidatorDto[];
+  validators: ReadonlyArray<T>;
   network: Yield["token"]["network"];
   yieldId?: Yield["id"];
-}) => {
+}): T[] => {
   const valConfig = Maybe.fromNullable(
     validatorsConfig.get(network as SupportedSKChains)
   )
@@ -187,7 +187,7 @@ export const filterValidators = ({
     .extractNullable();
 
   const filtered = !valConfig
-    ? validators
+    ? [...validators]
     : (() => {
         const {
           allowed,
@@ -206,10 +206,10 @@ export const filterValidators = ({
             !!(mergePreferredWithDefault && v.preferred);
 
           if (preferredOnly) {
-            return isPreferred ? [{ ...v, preferred: true }] : [];
+            return isPreferred ? [{ ...v, preferred: true } as T] : [];
           }
 
-          return [{ ...v, preferred: isPreferred }];
+          return [{ ...v, preferred: isPreferred } as T];
         });
       })();
 

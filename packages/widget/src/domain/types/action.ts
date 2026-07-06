@@ -17,8 +17,6 @@ export type TransactionStatus = TransactionDto["status"];
 
 export type YieldCreateActionDto = YieldCreateActionDtoGenerated;
 export type YieldCreateManageActionDto = YieldCreateManageActionDtoGenerated;
-export type YieldActionDto = ActionDto;
-export type YieldTransactionDto = TransactionDto;
 type TransactionGasEstimate = {
   amount: string;
   gasLimit?: string;

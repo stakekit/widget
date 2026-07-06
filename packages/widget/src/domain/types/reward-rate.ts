@@ -1,16 +1,13 @@
-import type {
-  RewardDto,
-  ValidatorDto,
-  YieldDto,
-} from "../../generated/api/yield";
+import type { RewardDto, YieldDto } from "../../generated/api/yield";
+import type { Validator, ValidatorKey } from "./validators";
 
 type YieldRewardDto = RewardDto;
 export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;
 type YieldWithRewardRate = Pick<YieldDto, "rewardRate">;
-type ValidatorRewardRateDto = NonNullable<ValidatorDto["rewardRate"]>;
+type ValidatorRewardRateDto = NonNullable<Validator["rewardRate"]>;
 export type SelectedValidators =
-  | ReadonlyArray<ValidatorDto>
-  | ReadonlyMap<ValidatorDto["address"], ValidatorDto>;
+  | ReadonlyArray<Validator>
+  | ReadonlyMap<ValidatorKey, Validator>;
 
 type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
 

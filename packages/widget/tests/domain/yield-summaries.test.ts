@@ -1,51 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  fetchYieldSummariesByIds,
-  isVisibleYieldSummary,
-  type YieldSummary,
-} from "../../src/hooks/api/use-yield-summaries";
+import type { YieldDto } from "../../src/generated/api/yield";
+import { fetchYieldSummariesByIds } from "../../src/hooks/api/use-yield-summaries";
 import type { ApiClient } from "../../src/providers/api/api-client";
-import { yieldApiYieldFixture, yieldRewardRateFixture } from "../fixtures";
+import { yieldApiYieldFixture } from "../fixtures";
 
 const summary = (overrides?: Parameters<typeof yieldApiYieldFixture>[0]) =>
-  yieldApiYieldFixture(overrides) as YieldSummary;
-
-describe("isVisibleYieldSummary", () => {
-  it("includes enterable, supported-chain, non-zero-reward summaries", () => {
-    expect(isVisibleYieldSummary(summary())).toBe(true);
-  });
-
-  it("excludes summaries that are not enterable", () => {
-    expect(
-      isVisibleYieldSummary(summary({ status: { enter: false, exit: true } }))
-    ).toBe(false);
-  });
-
-  it("excludes summaries with a zero reward rate", () => {
-    expect(
-      isVisibleYieldSummary(
-        summary({ rewardRate: yieldRewardRateFixture({ total: 0 }) })
-      )
-    ).toBe(false);
-  });
-
-  it("includes whitelisted zero-reward summaries", () => {
-    expect(
-      isVisibleYieldSummary(
-        summary({
-          id: "optimism-usdc-gtusdcb-0x4ffc4e5f1f1f5c43dc9bc27b53728da13b02be35-4626-vault",
-          token: {
-            name: "USD Coin",
-            symbol: "USDC",
-            decimals: 6,
-            network: "optimism",
-          },
-          rewardRate: yieldRewardRateFixture({ total: 0 }),
-        })
-      )
-    ).toBe(true);
-  });
-});
+  yieldApiYieldFixture(overrides) as YieldDto;
 
 describe("fetchYieldSummariesByIds", () => {
   it("splits yield IDs into bounded chunks", async () => {

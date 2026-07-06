@@ -1,5 +1,6 @@
 import { delay, HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
+import { toValidator } from "../../src/domain/types/validators";
 import {
   getYieldValidatorQueryKey,
   useYieldValidators,
@@ -190,7 +191,7 @@ describe("validator loading", () => {
           address: preferredValidator.address,
         })
       )
-    ).toEqual(preferredValidator);
+    ).toEqual(toValidator(preferredValidator));
     expect(
       result.current.queryClient.getQueryData(
         getYieldValidatorQueryKey({
@@ -198,7 +199,7 @@ describe("validator loading", () => {
           address: otherValidator.address,
         })
       )
-    ).toEqual(otherValidator);
+    ).toEqual(toValidator(otherValidator));
   });
 
   it("skips raw pages that are empty after validator config filtering", async ({

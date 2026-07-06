@@ -12,10 +12,13 @@ import type { PositionsData } from "../../../../../domain/types/positions";
 import type { PreferredTokenYieldsPerNetwork } from "../../../../../domain/types/stake";
 import type { TokenBalanceScanDto } from "../../../../../domain/types/token-balance";
 import type { TokenDto } from "../../../../../domain/types/tokens";
+import type {
+  Validator,
+  ValidatorKey,
+} from "../../../../../domain/types/validators";
 import type { DashboardYieldCategory } from "../../../../../domain/types/yields";
 import type { LegacyApiError } from "../../../../../generated/api/legacy";
 import type {
-  ValidatorDto,
   YieldApiError,
   YieldDto,
 } from "../../../../../generated/api/yield";
@@ -28,11 +31,11 @@ export type EarnTokenOption = {
   readonly source: "balance" | "default" | "init";
 };
 export type EarnYieldOption = YieldDto;
-export type EarnValidatorOption = ValidatorDto;
+export type EarnValidatorOption = Validator;
 
 export type EarnTokenKey = string;
 export type EarnYieldId = string;
-export type EarnValidatorKey = string;
+export type EarnValidatorKey = ValidatorKey;
 
 export type EarnCatalogOperation =
   | "available-yield-categories"
@@ -44,6 +47,7 @@ export type EarnCatalogOperation =
   | "preferred-validators"
   | "runtime"
   | "token-balances-scan"
+  | "token-yield-scope"
   | "validators";
 
 export type EarnCatalogUnderlyingError =
@@ -105,36 +109,32 @@ export type EarnMachineStatus =
   | "no-yields"
   | "ready";
 
-export type EarnTokenOptionsState = {
-  readonly items: ReadonlyArray<EarnTokenOption>;
-  readonly defaultItems: ReadonlyArray<EarnTokenOption>;
-  readonly balanceItems: ReadonlyArray<EarnTokenOption>;
-  readonly initItems: ReadonlyArray<EarnTokenOption>;
-  readonly defaultResult: PullResult<EarnTokenOption, EarnCatalogError>;
-  readonly balancesResult: AsyncResult<
-    ReadonlyArray<EarnTokenOption>,
-    EarnCatalogError
-  >;
-  readonly initTokenResult: AsyncResult<
-    EarnTokenOption | null,
-    EarnCatalogError
-  >;
-  readonly initYieldResult: AsyncResult<YieldDto | null, EarnCatalogError>;
-};
+export type EarnTokenOptionsState = AsyncResult<
+  ReadonlyArray<EarnTokenOption>,
+  EarnCatalogError
+>;
 
 export type EarnValidatorsPullParams = {
   readonly search: string | null;
 };
 
+type EarnTokenOptionsResource = {
+  readonly loadedTokenOptionsAtom: Atom<EarnTokenOptionsState>;
+  readonly tokenOptionsPullAtom: Writable<
+    PullResult<EarnTokenOption, EarnCatalogError>,
+    void
+  >;
+};
+
 export type EarnValidatorsResource = {
   readonly enabled: boolean;
   readonly loadedValidatorsAtom: Writable<
-    Map<ValidatorDto["address"], ValidatorDto>,
-    ReadonlyArray<ValidatorDto>
+    Map<EarnValidatorKey, EarnValidatorOption>,
+    ReadonlyArray<EarnValidatorOption>
   >;
   readonly validatorsPullAtom: (
     key: EarnValidatorsPullParams
-  ) => Writable<PullResult<ValidatorDto, EarnCatalogError>, void>;
+  ) => Writable<PullResult<EarnValidatorOption, EarnCatalogError>, void>;
 };
 
 export type EarnMachineView = {
@@ -143,13 +143,8 @@ export type EarnMachineView = {
   form: EarnMachineForm;
   availableCategories: ReadonlyArray<DashboardYieldCategory>;
   resources: {
-    initYieldAtom: Atom<AsyncResult<YieldDto | null, EarnCatalogError>>;
     positionsDataAtom: Atom<AsyncResult<PositionsData, EarnCatalogError>>;
-    tokenOptionsAtom: Atom<EarnTokenOptionsState>;
-    tokenOptionsPullAtom: Writable<
-      PullResult<EarnTokenOption, EarnCatalogError>,
-      void
-    >;
+    tokenOptions: EarnTokenOptionsResource;
     yieldsResult: AsyncResult<
       ReadonlyArray<EarnYieldOption>,
       EarnCatalogError

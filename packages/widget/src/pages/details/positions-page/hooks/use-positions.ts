@@ -3,6 +3,7 @@ import { compare, Just, List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { createSelector } from "reselect";
 import type {
+  PositionValidators,
   YieldBalanceDto,
   YieldBalanceType,
 } from "../../../../domain/types/positions";
@@ -116,7 +117,7 @@ const positionsTableDataSelector = createSelector(
           } & (
             | {
                 type: "validators";
-                validators: NonNullable<YieldBalanceDto["validators"]>;
+                validators: PositionValidators;
               }
             | { type: "default" }
           ))[]

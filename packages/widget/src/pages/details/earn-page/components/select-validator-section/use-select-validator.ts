@@ -1,4 +1,4 @@
-import type { ValidatorDto } from "../../../../../generated/api/yield";
+import type { Validator } from "../../../../../domain/types/validators";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
@@ -26,7 +26,7 @@ export const useSelectValidator = () => {
   const onClose = () => trackEvent("selectValidatorModalClosed");
   const onOpen = () => trackEvent("selectValidatorModalOpened");
 
-  const onItemClick = (item: ValidatorDto) => {
+  const onItemClick = (item: Validator) => {
     trackEvent("validatorSelected", {
       validatorName: item.name,
       validatorAddress: item.address,
@@ -34,7 +34,7 @@ export const useSelectValidator = () => {
     onValidatorSelect(item);
   };
 
-  const onRemoveValidator = (item: ValidatorDto) => {
+  const onRemoveValidator = (item: Validator) => {
     trackEvent("validatorRemoved", {
       validatorName: item.name,
       validatorAddress: item.address,

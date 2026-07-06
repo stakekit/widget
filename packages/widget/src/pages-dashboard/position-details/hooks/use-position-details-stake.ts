@@ -17,12 +17,12 @@ import type {
 } from "../../../domain/types/positions";
 import { getInitSelectedValidators } from "../../../domain/types/stake";
 import type { TronResourceType } from "../../../domain/types/tron";
+import type { Validator, ValidatorKey } from "../../../domain/types/validators";
 import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
   type Yield,
 } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import { useTokenBalancesScan } from "../../../hooks/api/use-token-balances-scan";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
@@ -166,7 +166,7 @@ export const usePositionDetailsStake = () => {
   });
   const selectedValidators = useMemo(() => {
     if (!validatorsRequired) {
-      return new Map<ValidatorDto["address"], ValidatorDto>();
+      return new Map<ValidatorKey, Validator>();
     }
 
     const validators = yieldValidators.data ?? [];

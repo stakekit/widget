@@ -2,17 +2,14 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type {
   EarnCatalogError,
   EarnEntryKey,
-  EarnTokenOption,
   EarnTokenOptionsState,
   EarnYieldOption,
 } from "../types";
 
 export const isResolvingTokenOptions = (tokenOptions: EarnTokenOptionsState) =>
-  tokenOptions.items.length === 0 &&
-  (AsyncResult.isInitial(tokenOptions.defaultResult) ||
-    AsyncResult.isWaiting(tokenOptions.defaultResult) ||
-    AsyncResult.isInitial(tokenOptions.balancesResult) ||
-    AsyncResult.isWaiting(tokenOptions.balancesResult));
+  (AsyncResult.value(tokenOptions)._tag === "None" ||
+    AsyncResult.getOrElse(tokenOptions, () => []).length === 0) &&
+  (AsyncResult.isInitial(tokenOptions) || AsyncResult.isWaiting(tokenOptions));
 
 export const isResolvingInitialSelection = ({
   entry,
@@ -21,10 +18,8 @@ export const isResolvingInitialSelection = ({
   entry: EarnEntryKey;
   tokenOptions: EarnTokenOptionsState;
 }) =>
-  (!!entry.initParams?.token &&
-    isResolvingResult(tokenOptions.initTokenResult)) ||
-  (!!entry.initParams?.yieldId &&
-    isResolvingResult(tokenOptions.initYieldResult));
+  (!!entry.initParams?.token || !!entry.initParams?.yieldId) &&
+  isResolvingResult(tokenOptions);
 
 export const isResolvingYields = (
   yieldsResult: AsyncResult.AsyncResult<
@@ -34,8 +29,5 @@ export const isResolvingYields = (
 ) => AsyncResult.isInitial(yieldsResult) || AsyncResult.isWaiting(yieldsResult);
 
 const isResolvingResult = (
-  result: AsyncResult.AsyncResult<
-    EarnTokenOption | EarnYieldOption | null,
-    EarnCatalogError
-  >
+  result: AsyncResult.AsyncResult<unknown, EarnCatalogError>
 ) => AsyncResult.isInitial(result) || AsyncResult.isWaiting(result);

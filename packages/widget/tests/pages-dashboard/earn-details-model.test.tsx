@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { toValidator } from "../../src/domain/types/validators";
 import type { Yield } from "../../src/domain/types/yields";
 import { getEarnDetailsModel } from "../../src/pages-dashboard/overview/earn-details/earn-details-model";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
@@ -124,14 +125,18 @@ describe("getEarnDetailsModel", () => {
   });
 
   it("uses all selected validators in the header provider name", () => {
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      name: "Kiln",
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      name: "P2P",
-    });
+    const firstValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        name: "Kiln",
+      })
+    );
+    const secondValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        name: "P2P",
+      })
+    );
 
     const model = getEarnDetailsModel({
       selectedValidators: new Map([

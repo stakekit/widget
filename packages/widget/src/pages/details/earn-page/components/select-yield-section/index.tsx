@@ -46,9 +46,7 @@ export const SelectYieldSection = () => {
   ) : (
     selectedStakeData
       .map((val) => {
-        const opportunityCount = dashboardVariant
-          ? val.filtered.length
-          : val.all.length;
+        const opportunityCount = val.all.length;
 
         return opportunityCount === 0 ? (
           <Box

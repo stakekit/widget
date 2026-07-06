@@ -8,8 +8,8 @@ import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
+import type { Validator } from "../../../../../domain/types/validators";
 import type { Yield } from "../../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../../generated/api/yield";
 import { APToPercentage } from "../../../../../utils";
 import { formatCompactNumber } from "../../../../../utils/formatters";
 import {
@@ -42,7 +42,7 @@ const getDisplayWebsite = (website: string) => {
 const formatCommission = (commission: number | undefined) =>
   typeof commission === "number" ? `${APToPercentage(commission)}%` : null;
 
-const formatValidatorTvl = (validator: ValidatorDto, selectedStake: Yield) => {
+const formatValidatorTvl = (validator: Validator, selectedStake: Yield) => {
   const tvl = validator.tvl ?? validator.tvlRaw;
 
   if (!tvl) return null;
@@ -60,9 +60,9 @@ export const SelectValidatorTrigger = ({
   selectedValidatorsArr,
   selectedStake,
 }: {
-  onRemoveValidator: (item: ValidatorDto) => void;
+  onRemoveValidator: (item: Validator) => void;
   multiSelect: boolean;
-  selectedValidatorsArr: ValidatorDto[];
+  selectedValidatorsArr: Validator[];
   selectedStake: Yield;
 }) => {
   const { t } = useTranslation();
@@ -84,7 +84,7 @@ export const SelectValidatorTrigger = ({
 
             return (
               <Box
-                key={sv.address}
+                key={sv.key}
                 data-rk="select-validator-trigger"
                 className={validatorChip}
               >
@@ -180,7 +180,7 @@ export const SelectValidatorTrigger = ({
 
           return (
             <Box
-              key={sv.address}
+              key={sv.key}
               data-rk="select-validator-trigger"
               className={selectorSummaryCard}
             >

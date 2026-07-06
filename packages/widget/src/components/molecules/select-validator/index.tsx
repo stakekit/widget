@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Validator, ValidatorKey } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
@@ -16,13 +16,13 @@ type SelectValidatorProps = PropsWithChildren<
     SelectModalProps,
     "isLoading" | "onClose" | "onOpen" | "state" | "trigger"
   > & {
-    selectedValidators: Set<ValidatorDto["address"]>;
-    onItemClick: (item: ValidatorDto) => void;
+    selectedValidators: Set<ValidatorKey>;
+    onItemClick: (item: Validator) => void;
     onViewMoreClick?: () => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
     isLoadingMore?: boolean;
-    validators: ValidatorDto[];
+    validators: Validator[];
     selectedStake: Yield;
     multiSelect: boolean;
   } & (
@@ -71,7 +71,7 @@ export const SelectValidator = ({
   const showExpandedValidators = multiSelect || hasRequestedMoreValidators;
 
   const data = useMemo<{
-    tableData: ValidatorDto[];
+    tableData: Validator[];
     groupedItems: GroupedItem[];
     groupCounts: number[];
   }>(() => {
@@ -106,11 +106,11 @@ export const SelectValidator = ({
       },
       {
         preferred: {
-          items: [] as ValidatorDto[],
+          items: [] as Validator[],
           label: t("details.validators_preferred"),
         },
         other: {
-          items: [] as ValidatorDto[],
+          items: [] as Validator[],
           label: t("details.validators_other"),
         },
       }

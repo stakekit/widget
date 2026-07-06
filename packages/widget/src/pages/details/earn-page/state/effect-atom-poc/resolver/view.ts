@@ -2,11 +2,14 @@ import { Option, pipe } from "effect";
 import type { AsyncResult as AsyncResultValue } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import type {
+  Validator,
+  ValidatorKey,
+} from "../../../../../../domain/types/validators";
 import {
   getDashboardYieldCategory,
   isYieldValidatorSelectionRequired,
 } from "../../../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../../../generated/api/yield";
 import {
   availableYieldCategoriesAtom,
   earnYieldCatalogAtom,
@@ -68,21 +71,21 @@ const mergeYieldOptions = (yields: ReadonlyArray<EarnYieldOption | null>) => {
 };
 
 const emptyValidatorsMapAtom = Atom.writable<
-  Map<ValidatorDto["address"], ValidatorDto>,
-  ReadonlyArray<ValidatorDto>
+  Map<ValidatorKey, Validator>,
+  ReadonlyArray<Validator>
 >(
-  () => new Map<ValidatorDto["address"], ValidatorDto>(),
+  () => new Map<ValidatorKey, Validator>(),
   () => {}
 );
 
 const emptyValidatorsPullAtom = Atom.writable<
-  Atom.PullResult<ValidatorDto, EarnCatalogError>,
+  Atom.PullResult<Validator, EarnCatalogError>,
   void
 >(
   () =>
     AsyncResult.success({
       done: true,
-      items: [] as unknown as [ValidatorDto, ...ValidatorDto[]],
+      items: [] as unknown as [Validator, ...Validator[]],
     }),
   () => {}
 );
@@ -155,7 +158,12 @@ export const resolveEarnView = ({
       tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
     })
   );
-  const tokenOptions = context.get(tokenOptionsAtom);
+  const tokenOptionsResult = context.get(tokenOptionsAtom);
+  const tokenOptions = getAsyncValue(tokenOptionsResult) ?? [];
+  const tokenOptionsResource = {
+    loadedTokenOptionsAtom: tokenOptionsAtom,
+    tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+  };
   const positionsDataAtomValue = positionsDataAtom(
     new PositionsDataKey({
       address: entry.address,
@@ -168,7 +176,7 @@ export const resolveEarnView = ({
   if (
     !intent.selectedTokenKey &&
     !intent.selectedYieldId &&
-    isResolvingInitialSelection({ entry, tokenOptions })
+    isResolvingInitialSelection({ entry, tokenOptions: tokenOptionsResult })
   ) {
     return {
       status: "loading-initial-selection",
@@ -182,14 +190,12 @@ export const resolveEarnView = ({
       form: getIntentForm(intent),
       resources: {
         yieldsResult: null,
-        initYieldAtom: initYieldAtomValue,
         positionsDataAtom: positionsDataAtomValue,
-        tokenOptionsAtom,
-        tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+        tokenOptions: tokenOptionsResource,
         validators: disabledValidatorsResource,
       },
       can: {
-        selectToken: tokenOptions.items.length > 0,
+        selectToken: tokenOptions.length > 0,
         selectYield: false,
         selectValidator: false,
         submit: false,
@@ -205,7 +211,7 @@ export const resolveEarnView = ({
 
   if (!selectedToken) {
     return {
-      status: isResolvingTokenOptions(tokenOptions)
+      status: isResolvingTokenOptions(tokenOptionsResult)
         ? "loading-token-options"
         : "no-tokens",
       availableCategories,
@@ -218,14 +224,12 @@ export const resolveEarnView = ({
       form: getIntentForm(intent),
       resources: {
         yieldsResult: null,
-        initYieldAtom: initYieldAtomValue,
         positionsDataAtom: positionsDataAtomValue,
-        tokenOptionsAtom,
-        tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+        tokenOptions: tokenOptionsResource,
         validators: disabledValidatorsResource,
       },
       can: {
-        selectToken: tokenOptions.items.length > 0,
+        selectToken: tokenOptions.length > 0,
         selectYield: false,
         selectValidator: false,
         submit: false,
@@ -270,14 +274,12 @@ export const resolveEarnView = ({
       form: getIntentForm(intent),
       resources: {
         yieldsResult,
-        initYieldAtom: initYieldAtomValue,
         positionsDataAtom: positionsDataAtomValue,
-        tokenOptionsAtom,
-        tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+        tokenOptions: tokenOptionsResource,
         validators: disabledValidatorsResource,
       },
       can: {
-        selectToken: tokenOptions.items.length > 0,
+        selectToken: tokenOptions.length > 0,
         selectYield: yieldOptions.length > 0,
         selectValidator: false,
         submit: false,
@@ -286,12 +288,9 @@ export const resolveEarnView = ({
   }
 
   const validators = isYieldValidatorSelectionRequired(selectedYield)
-    ? ({
-        ...yieldValidatorsAtom(
-          new YieldValidatorsKey({ selectedYieldId: selectedYield.id })
-        ),
-        enabled: true,
-      } satisfies EarnValidatorsResource)
+    ? yieldValidatorsAtom(
+        new YieldValidatorsKey({ selectedYieldId: selectedYield.id })
+      )
     : disabledValidatorsResource;
   const validatorOptions = validators.enabled
     ? [...context.get(validators.loadedValidatorsAtom).values()]
@@ -318,14 +317,12 @@ export const resolveEarnView = ({
     }),
     resources: {
       yieldsResult,
-      initYieldAtom: initYieldAtomValue,
       positionsDataAtom: positionsDataAtomValue,
-      tokenOptionsAtom,
-      tokenOptionsPullAtom: tokenOptionsPullAtomValue,
+      tokenOptions: tokenOptionsResource,
       validators,
     },
     can: {
-      selectToken: tokenOptions.items.length > 0,
+      selectToken: tokenOptions.length > 0,
       selectYield: yieldOptions.length > 0,
       selectValidator: validators.enabled,
       submit: !validators.enabled || selectedValidators.length > 0,

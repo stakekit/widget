@@ -25,6 +25,7 @@ import {
 import { getKycProviderName } from "../../../../domain/types/kyc";
 import type { PositionsData } from "../../../../domain/types/positions";
 import type { TronResourceType } from "../../../../domain/types/tron";
+import type { Validator } from "../../../../domain/types/validators";
 import {
   type DashboardYieldCategory,
   type ExtendedYieldType,
@@ -39,7 +40,6 @@ import {
   isYieldActionArgRequired,
   type YieldBase,
 } from "../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
@@ -132,11 +132,14 @@ export const EarnPageContextProvider = ({
     tokensForEnabledYieldsOnly: !!tokensForEnabledYieldsOnly,
   });
 
-  const tokenOptions = useAtomValue(machine.resources.tokenOptionsAtom);
-  const [tokenOptionsPull, pullMoreTokens] = useAtom(
-    machine.resources.tokenOptionsPullAtom
+  const tokenOptionsResource = machine.resources.tokenOptions;
+  const tokenOptionsResult = useAtomValue(
+    tokenOptionsResource.loadedTokenOptionsAtom
   );
-  const initYieldResult = useAtomValue(machine.resources.initYieldAtom);
+  const tokenOptions = getAsyncValue(tokenOptionsResult) ?? [];
+  const [tokenOptionsPull, pullMoreTokens] = useAtom(
+    tokenOptionsResource.tokenOptionsPullAtom
+  );
   const positionsDataResult = useAtomValue(machine.resources.positionsDataAtom);
   const positionsData =
     getAsyncValue(positionsDataResult) ?? (new Map() as PositionsData);
@@ -156,10 +159,7 @@ export const EarnPageContextProvider = ({
     )
     .orDefault([...machine.selection.validators]);
   const selectedValidators = new Map(
-    filteredSelectedValidators.map((validator) => [
-      validator.address,
-      validator,
-    ])
+    filteredSelectedValidators.map((validator) => [validator.key, validator])
   );
   const stakeAmount = new BigNumber(machine.form.stakeAmount);
   const selectedProviderYieldId = maybeFromNullable(
@@ -276,7 +276,7 @@ export const EarnPageContextProvider = ({
 
   const tokenBalancesData = useMemo(
     () =>
-      Maybe.of([...tokenOptions.items]).chain((tokens) =>
+      Maybe.of([...tokenOptions]).chain((tokens) =>
         Maybe.of(deferredTokenSearch)
           .chain((val) =>
             val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
@@ -291,7 +291,7 @@ export const EarnPageContextProvider = ({
           }))
           .alt(Maybe.of({ all: tokens, filtered: tokens }))
       ),
-    [deferredTokenSearch, tokenOptions.items]
+    [deferredTokenSearch, tokenOptions]
   );
 
   const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
@@ -468,18 +468,21 @@ export const EarnPageContextProvider = ({
     });
   };
 
-  const onValidatorSelect = (item: ValidatorDto) =>
+  const onValidatorSelect = (item: Validator) =>
     selectedStake.ifJust((ss) =>
       isYieldActionArgRequired(ss, "enter", "validatorAddresses")
         ? dispatch({
             type: "validator/multiselect",
-            validatorKey: item.address,
+            validatorKey: item.key,
           })
-        : dispatch({ type: "validator/select", validatorKey: item.address })
+        : dispatch({
+            type: "validator/select",
+            validatorKey: item.key,
+          })
     );
 
-  const onValidatorRemove = (item: ValidatorDto) =>
-    dispatch({ type: "validator/remove", validatorKey: item.address });
+  const onValidatorRemove = (item: Validator) =>
+    dispatch({ type: "validator/remove", validatorKey: item.key });
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     dispatch({ type: "stakeAmount/change", amount: val.toString(10) });
@@ -658,24 +661,16 @@ export const EarnPageContextProvider = ({
     isConnecting ||
     !state.layout;
 
-  const tokenBalancesScanLoading =
-    tokenOptions.balancesResult.waiting &&
-    tokenOptions.balanceItems.length === 0;
-  const defaultTokensIsLoading =
-    tokenOptions.defaultResult.waiting &&
-    tokenOptions.defaultItems.length === 0;
+  const tokenOptionsLoading =
+    tokenOptionsResult.waiting && tokenOptions.length === 0;
 
   const isFetching =
-    tokenOptions.defaultResult.waiting ||
-    tokenOptions.balancesResult.waiting ||
-    initYieldResult.waiting ||
+    tokenOptionsResult.waiting ||
     positionsDataResult.waiting ||
     !!machine.resources.yieldsResult?.waiting;
 
   const isError =
-    isAsyncErrorWithoutValue(tokenOptions.defaultResult) ||
-    isAsyncErrorWithoutValue(tokenOptions.balancesResult) ||
-    isAsyncErrorWithoutValue(initYieldResult) ||
+    isAsyncErrorWithoutValue(tokenOptionsResult) ||
     isAsyncErrorWithoutValue(positionsDataResult) ||
     (machine.resources.yieldsResult
       ? isAsyncErrorWithoutValue(machine.resources.yieldsResult)
@@ -751,28 +746,22 @@ export const EarnPageContextProvider = ({
   const selectTokenIsLoading =
     machine.status === "loading-token-options" ||
     machine.status === "loading-initial-selection" ||
-    tokenBalancesScanLoading ||
-    defaultTokensIsLoading;
+    tokenOptionsLoading;
 
   const selectYieldIsLoading =
     machine.status === "loading-initial-selection" ||
     yieldOpportunityLoading ||
-    tokenBalancesScanLoading ||
-    defaultTokensIsLoading;
+    tokenOptionsLoading;
 
   const selectValidatorIsLoading =
-    defaultTokensIsLoading ||
-    tokenBalancesScanLoading ||
+    tokenOptionsLoading ||
     yieldOpportunityLoading ||
     validatorSearchDebouncing ||
     (shouldFetchValidators &&
       validatorsPullResult.waiting &&
       getPullItems(validatorsPullResult).length === 0);
 
-  const footerIsLoading =
-    defaultTokensIsLoading ||
-    tokenBalancesScanLoading ||
-    yieldOpportunityLoading;
+  const footerIsLoading = tokenOptionsLoading || yieldOpportunityLoading;
 
   const cta = useMemo<PageCta>(
     () =>
@@ -857,7 +846,6 @@ export const EarnPageContextProvider = ({
     isConnected,
     appLoading,
     yieldOpportunityLoading,
-    tokenBalancesScanLoading,
     tokenBalancesData,
     onTokenSearch,
     onValidatorSearch,
@@ -865,7 +853,6 @@ export const EarnPageContextProvider = ({
     providersDetails,
     tokenSearch,
     stakeSearch,
-    defaultTokensIsLoading,
     hasMoreTokens,
     isLedgerLiveAccountPlaceholder,
     isLoadingMoreTokens,

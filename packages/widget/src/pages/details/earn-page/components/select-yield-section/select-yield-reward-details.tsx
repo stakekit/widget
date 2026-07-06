@@ -13,11 +13,11 @@ import type {
   TokenDto,
   YieldTokenDto,
 } from "../../../../../domain/types/tokens";
+import type { Validator } from "../../../../../domain/types/validators";
 import {
   getYieldOutputToken,
   getYieldTypeLabels,
 } from "../../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../../generated/api/yield";
 import { useSettings } from "../../../../../providers/settings";
 import { formatNumber } from "../../../../../utils";
 import { useEarnPageContext } from "../../state/earn-page-context";
@@ -66,7 +66,7 @@ export const SelectYieldRewardDetails = () => {
           const name = getValidatorName(validator);
 
           return {
-            key: validator.address,
+            key: validator.key,
             logo: providerDetails?.logo ?? validator.logoURI,
             name: providerDetails?.name ?? name,
           };
@@ -262,5 +262,5 @@ const YieldStrategyDetails = ({
   );
 };
 
-const getValidatorName = (validator: ValidatorDto) =>
+const getValidatorName = (validator: Validator) =>
   validator.name ?? validator.address;

@@ -5,6 +5,7 @@ import type {
   YieldBalancesByYieldDto,
   YieldBalancesRequestDto,
 } from "../../domain/types/positions";
+import { toYieldBalancesByYields } from "../../domain/types/positions";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
@@ -64,7 +65,7 @@ export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
           payload: param.dto,
         }),
     select: (data) => {
-      const items = data.items as YieldBalancesByYieldDto[];
+      const items = toYieldBalancesByYields(data.items);
 
       if (opts?.select) {
         return opts.select(items);

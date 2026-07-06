@@ -16,7 +16,7 @@ export const resolveValidators = ({
   }
 
   const selectedValidators = validatorOptions.filter((validator) =>
-    selectedValidatorKeys.has(validator.address)
+    selectedValidatorKeys.has(validator.key)
   );
 
   if (selectedValidators.length > 0) {

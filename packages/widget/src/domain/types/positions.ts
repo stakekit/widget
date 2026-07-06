@@ -2,16 +2,26 @@ import BigNumber from "bignumber.js";
 import type {
   BalanceDto,
   BalancesRequestDto,
-  ValidatorDto,
   YieldBalancesDto,
   BalanceType as YieldBalanceTypeGenerated,
 } from "../../generated/api/yield";
 import { equalTokens } from "..";
 import type { YieldRewardRateDto } from "./reward-rate";
 import type { TokenDto } from "./tokens";
+import {
+  toValidator,
+  toValidators,
+  type Validator,
+  type ValidatorKey,
+} from "./validators";
 
-export type YieldBalanceDto = BalanceDto;
-export type YieldBalancesByYieldDto = YieldBalancesDto;
+export type YieldBalanceDto = Omit<BalanceDto, "validator" | "validators"> & {
+  readonly validator?: Validator;
+  readonly validators?: ReadonlyArray<Validator>;
+};
+export type YieldBalancesByYieldDto = Omit<YieldBalancesDto, "balances"> & {
+  readonly balances: ReadonlyArray<YieldBalanceDto>;
+};
 export type YieldBalancesRequestDto = BalancesRequestDto;
 export type YieldBalanceType = YieldBalanceTypeGenerated;
 
@@ -21,14 +31,13 @@ export type PositionBalancesByType = Map<
     tokenPriceInUsd: BigNumber;
   })[]
 >;
+export type PositionValidators = ReadonlyArray<Validator>;
 
 export type PositionDetailsLabelType = "hasFrozenV1";
 
 type BalanceType = "validators" | "default";
 
-export type BalanceDataKey =
-  | BalanceType
-  | `validator::${ValidatorDto["address"]}`;
+export type BalanceDataKey = BalanceType | `validator::${ValidatorKey}`;
 
 export type PositionsData = Map<
   YieldBalancesByYieldDto["yieldId"],
@@ -38,12 +47,29 @@ export type PositionsData = Map<
     balanceData: Map<
       BalanceDataKey,
       { balances: YieldBalanceDto[] } & (
-        | { type: "validators"; validators: ReadonlyArray<ValidatorDto> }
+        | { type: "validators"; validators: PositionValidators }
         | { type: "default" }
       )
     >;
   }
 >;
+
+export const toYieldBalance = (balance: BalanceDto): YieldBalanceDto => ({
+  ...balance,
+  validator: balance.validator ? toValidator(balance.validator) : undefined,
+  validators: balance.validators ? toValidators(balance.validators) : undefined,
+});
+
+const toYieldBalancesByYield = (
+  balancesByYield: YieldBalancesDto
+): YieldBalancesByYieldDto => ({
+  ...balancesByYield,
+  balances: balancesByYield.balances.map(toYieldBalance),
+});
+
+export const toYieldBalancesByYields = (
+  balancesByYields: ReadonlyArray<YieldBalancesDto>
+): YieldBalancesByYieldDto[] => balancesByYields.map(toYieldBalancesByYield);
 
 export const getPositionBalanceDataKey = (
   balance: YieldBalanceDto
@@ -52,8 +78,10 @@ export const getPositionBalanceDataKey = (
     return "validators";
   }
 
-  if (balance.validator?.address) {
-    return `validator::${balance.validator.address}` as BalanceDataKey;
+  const validator = balance.validator ?? balance.validators?.[0];
+
+  if (validator) {
+    return `validator::${validator.key}` as BalanceDataKey;
   }
 
   return "default";

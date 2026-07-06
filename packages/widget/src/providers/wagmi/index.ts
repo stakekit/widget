@@ -63,8 +63,6 @@ const omitEnsUniversalResolver = <T extends RainbowkitChain>(chain: T): T => {
 const withoutEmptyWalletGroups = (walletList: WalletList): WalletList =>
   walletList.filter((walletGroup) => walletGroup.wallets.length > 0);
 
-export type BuildWagmiConfig = typeof buildWagmiConfig;
-
 const buildWagmiConfig = async (opts: {
   disableInjectedProviderDiscovery: boolean;
   mapWalletFn?: (props: {

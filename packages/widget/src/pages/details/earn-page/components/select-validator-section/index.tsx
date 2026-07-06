@@ -48,9 +48,7 @@ export const SelectValidatorSection = () => {
               selectedStake={val.selectedStake}
             />
           }
-          selectedValidators={
-            new Set(selectedValidatorsArr.map((v) => v.address))
-          }
+          selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
           multiSelect={multiSelect}
           selectedStake={val.selectedStake}
           onItemClick={onItemClick}

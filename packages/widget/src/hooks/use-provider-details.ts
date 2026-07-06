@@ -1,11 +1,11 @@
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { Validator, ValidatorKey } from "../domain/types/validators";
 import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
   type Yield,
 } from "../domain/types/yields";
-import type { ValidatorDto } from "../generated/api/yield";
 import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
 import { useMultiYields } from "./api/use-multi-yields";
@@ -17,12 +17,12 @@ type Res = Maybe<{
   rewardRate: number | undefined;
   rewardType: string | undefined;
   address?: string;
-  stakedBalance?: ValidatorDto["tvl"];
-  votingPower?: ValidatorDto["votingPower"];
-  commission?: ValidatorDto["commission"];
-  website?: ValidatorDto["website"];
-  status?: ValidatorDto["status"];
-  preferred?: ValidatorDto["preferred"];
+  stakedBalance?: Validator["tvl"];
+  votingPower?: Validator["votingPower"];
+  commission?: Validator["commission"];
+  website?: Validator["website"];
+  status?: Validator["status"];
+  preferred?: Validator["preferred"];
 }>;
 
 export const getProviderDetails = ({
@@ -32,7 +32,7 @@ export const getProviderDetails = ({
   selectedProviderYieldId,
 }: {
   integrationData: Maybe<Yield>;
-  validator: Maybe<ValidatorDto>;
+  validator: Maybe<Validator>;
   yields: Maybe<ReadonlyArray<Yield>>;
   selectedProviderYieldId: Maybe<string>;
 }): Res => {
@@ -119,7 +119,7 @@ export const useProvidersDetails = ({
   selectedProviderYieldId,
 }: {
   integrationData: Maybe<Yield>;
-  validators: Maybe<ReadonlyArray<ValidatorDto> | Map<string, ValidatorDto>>;
+  validators: Maybe<ReadonlyArray<Validator> | Map<ValidatorKey, Validator>>;
   selectedProviderYieldId: Maybe<string>;
 }) => {
   const yields = useMultiYields(

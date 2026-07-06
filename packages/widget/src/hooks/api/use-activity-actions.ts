@@ -10,11 +10,9 @@ import {
   getActionInputToken,
   getActionValidatorAddresses,
 } from "../../domain/types/action";
+import type { Validator } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
-import type {
-  ActionsControllerGetActionsParams,
-  ValidatorDto,
-} from "../../generated/api/yield";
+import type { ActionsControllerGetActionsParams } from "../../generated/api/yield";
 import {
   type ActivityFilter,
   activityFilterCategories,
@@ -39,7 +37,7 @@ const ACTIVITY_ACTION_STATUSES = [
 type ActivityActionItem = {
   actionData: ActionDto;
   yieldData: Yield;
-  validatorsData: ValidatorDto[];
+  validatorsData: Validator[];
 };
 
 type ActivityActionBaseItem = Omit<ActivityActionItem, "validatorsData">;

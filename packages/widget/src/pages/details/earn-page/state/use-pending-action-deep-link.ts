@@ -9,6 +9,7 @@ import type { AddressWithTokenDtoAdditionalAddresses } from "../../../../domain/
 import type { YieldPendingActionDto } from "../../../../domain/types/pending-action";
 import {
   getPositionBalanceDataKey,
+  toYieldBalance,
   type YieldBalanceDto,
 } from "../../../../domain/types/positions";
 import type { Yield } from "../../../../domain/types/yields";
@@ -103,7 +104,7 @@ const fn = ({
           yieldId: initQueryParams.yieldId,
           pendingaction: initQueryParams.pendingaction,
           validatorAddress: initQueryParams.validator,
-          singleYieldBalances: val.balances,
+          singleYieldBalances: val.balances.map(toYieldBalance),
           address: address,
           additionalAddresses: additionalAddresses ?? undefined,
         }))

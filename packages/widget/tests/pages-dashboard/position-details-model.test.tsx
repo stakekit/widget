@@ -3,16 +3,17 @@ import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import type { PositionBalancesByType } from "../../src/domain/types/positions";
 import type { Yield } from "../../src/domain/types/yields";
-import {
-  type DashboardPositionPendingAction,
-  getDashboardPositionDetailsModel,
-} from "../../src/pages-dashboard/position-details/position-details-model";
+import { getDashboardPositionDetailsModel } from "../../src/pages-dashboard/position-details/position-details-model";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,
   yieldBalanceFixture,
   yieldRewardRateFixture,
 } from "../fixtures";
+
+type DashboardPositionPendingAction = Parameters<
+  typeof getDashboardPositionDetailsModel
+>[0]["pendingActions"][number];
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {

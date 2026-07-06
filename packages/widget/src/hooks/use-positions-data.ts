@@ -4,6 +4,7 @@ import {
   type BalanceDataKey,
   getPositionBalanceDataKey,
   type PositionsData,
+  type PositionValidators,
   type YieldBalanceDto,
   type YieldBalancesByYieldDto,
 } from "../domain/types/positions";
@@ -65,7 +66,7 @@ const positionsDataSelector = createSelector(
               { balances: YieldBalanceDto[] } & (
                 | {
                     type: "validators";
-                    validators: NonNullable<YieldBalanceDto["validators"]>;
+                    validators: PositionValidators;
                   }
                 | { type: "default" }
               )

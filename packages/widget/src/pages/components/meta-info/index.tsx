@@ -9,8 +9,8 @@ import { InfoIcon } from "../../../components/atoms/icons/info";
 import type { TextVariants } from "../../../components/atoms/typography/styles.css";
 import { Text } from "../../../components/atoms/typography/text";
 import type { TokenDto } from "../../../domain/types/tokens";
+import type { Validator, ValidatorKey } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 
@@ -19,7 +19,7 @@ type MetaInfoTextSize = NonNullable<NonNullable<TextVariants>["size"]>;
 type Props = {
   isLoading?: boolean;
   selectedStake: Maybe<Yield>;
-  selectedValidators: Map<string, ValidatorDto>;
+  selectedValidators: Map<ValidatorKey, Validator>;
   selectedToken: Maybe<TokenDto>;
   textSize?: MetaInfoTextSize;
 };

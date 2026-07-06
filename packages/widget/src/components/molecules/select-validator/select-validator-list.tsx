@@ -1,8 +1,8 @@
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import type { Validator, ValidatorKey } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -31,7 +31,7 @@ import {
   validatorVirtuosoContainer,
 } from "./styles.css";
 
-export type GroupedItem = { items: ValidatorDto[]; label: string };
+export type GroupedItem = { items: Validator[]; label: string };
 
 export const SelectValidatorList = ({
   multiSelect,
@@ -44,11 +44,11 @@ export const SelectValidatorList = ({
   tableData,
 }: {
   multiSelect: boolean;
-  selectedValidators: Set<ValidatorDto["address"]>;
-  onItemClick: (item: ValidatorDto) => void;
+  selectedValidators: Set<ValidatorKey>;
+  onItemClick: (item: Validator) => void;
   onViewMoreClick: () => void;
   selectedStake: Yield;
-  tableData: ValidatorDto[];
+  tableData: Validator[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
 }) => {
@@ -100,7 +100,7 @@ export const SelectValidatorList = ({
 
         const status = item.status;
 
-        const itemSelected = selectedValidators.has(item.address);
+        const itemSelected = selectedValidators.has(item.key);
 
         const _onItemClick: ComponentProps<
           typeof SelectModalItem
@@ -115,7 +115,7 @@ export const SelectValidatorList = ({
           <SelectModalItemContainer>
             <SelectModalItem
               onItemClick={_onItemClick}
-              testId={item.address}
+              testId={item.key}
               selected={!multiSelect && itemSelected}
             >
               <Box flex={1} display="flex" flexDirection="column" gap="3">
@@ -135,7 +135,7 @@ export const SelectValidatorList = ({
                       justifyContent="center"
                       alignItems="center"
                     >
-                      {selectedValidators.has(item.address) ? (
+                      {itemSelected ? (
                         <CheckSteps hw={16} color={vars.color.white} />
                       ) : null}
                     </Box>

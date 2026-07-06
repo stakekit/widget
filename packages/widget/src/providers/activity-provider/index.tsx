@@ -2,13 +2,13 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { Maybe } from "purify-ts";
 import type { ActionDto } from "../../domain/types/action";
+import type { Validator } from "../../domain/types/validators";
 import type { Yield } from "../../domain/types/yields";
-import type { ValidatorDto } from "../../generated/api/yield";
 
 type ActivitySelection = {
   selectedAction: ActionDto;
   selectedYield: Yield;
-  selectedValidators: ValidatorDto[];
+  selectedValidators: Validator[];
 };
 
 type ActivitySelectionState = Maybe<ActivitySelection>;

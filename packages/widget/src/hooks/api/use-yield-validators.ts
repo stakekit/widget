@@ -3,6 +3,11 @@ import {
   type QueryClient,
   useInfiniteQuery,
 } from "@tanstack/react-query";
+import {
+  toValidator,
+  toValidators,
+  type Validator,
+} from "../../domain/types/validators";
 import type { ValidatorsConfig } from "../../domain/types/yields";
 import { filterValidators, type Yield } from "../../domain/types/yields";
 import type { ValidatorDto } from "../../generated/api/yield";
@@ -31,7 +36,7 @@ type PageParam =
   | { type: "search"; offset: number; search: string };
 
 type Page = {
-  validators: ValidatorDto[];
+  validators: Validator[];
   nextPageParam?: PageParam;
 };
 
@@ -56,7 +61,7 @@ const setYieldValidatorsQueryData = ({
 }: {
   queryClient: QueryClient;
   yieldId: Yield["id"];
-  validators: ReadonlyArray<ValidatorDto>;
+  validators: ReadonlyArray<Validator>;
 }) => {
   validators.forEach((validator) => {
     queryClient.setQueryData(
@@ -78,12 +83,12 @@ export const getYieldValidatorsByAddresses = async ({
   yieldId: Yield["id"];
   addresses: ReadonlyArray<ValidatorDto["address"]>;
   suppressRichErrors?: boolean;
-}): Promise<ValidatorDto[]> => {
+}): Promise<Validator[]> => {
   const uniqueAddresses = [...new Set(addresses)];
   const validators = new Map(
     await Promise.all(
       uniqueAddresses.map(
-        async (address): Promise<[ValidatorDto["address"], ValidatorDto]> => {
+        async (address): Promise<[ValidatorDto["address"], Validator]> => {
           try {
             const validator = await queryClient.fetchQuery({
               queryKey: getYieldValidatorQueryKey({ yieldId, address }),
@@ -100,18 +105,21 @@ export const getYieldValidatorsByAddresses = async ({
                   });
                 const lowerCaseAddress = address.toLowerCase();
 
-                return (
+                const matchingValidator =
                   validatorsPage.items?.find(
                     (validator) =>
                       validator.address.toLowerCase() === lowerCaseAddress
-                  ) ?? null
-                );
+                  ) ?? null;
+
+                return matchingValidator
+                  ? toValidator(matchingValidator)
+                  : null;
               },
             });
 
-            return [address, validator ?? { address }];
+            return [address, validator ?? toValidator({ address })];
           } catch {
-            return [address, { address }];
+            return [address, toValidator({ address })];
           }
         }
       )
@@ -140,7 +148,7 @@ const getFilteredValidators = ({
   validatorsConfig,
   yieldId,
 }: Pick<Params, "network" | "validatorsConfig" | "yieldId"> & {
-  validators: ValidatorDto[];
+  validators: Validator[];
 }) =>
   network
     ? filterValidators({
@@ -151,19 +159,19 @@ const getFilteredValidators = ({
       })
     : validators;
 
-const deduplicateValidatorsByAddress = (
+const deduplicateValidatorsByKey = (
   validators: ReadonlyArray<ValidatorDto>
 ) => {
-  const seenAddresses = new Set<ValidatorDto["address"]>();
+  const seenKeys = new Set<Validator["key"]>();
 
   return validators.filter((validator) => {
-    const address = validator.address.toLowerCase();
+    const key = toValidator(validator).key;
 
-    if (seenAddresses.has(address)) {
+    if (seenKeys.has(key)) {
       return false;
     }
 
-    seenAddresses.add(address);
+    seenKeys.add(key);
 
     return true;
   });
@@ -212,7 +220,7 @@ const fetchPagedValidators = async ({
           fetchPage({ offset, name: search }),
           fetchPage({ offset, address: search }),
         ]);
-        const items = deduplicateValidatorsByAddress([
+        const items = deduplicateValidatorsByKey([
           ...(namePage.items ?? []),
           ...(addressPage.items ?? []),
         ]);
@@ -227,15 +235,16 @@ const fetchPagedValidators = async ({
       return fetchPage({ offset, preferred: false });
     })();
     const rawValidators = [...(rawPage.items ?? [])];
+    const validatorOptions = toValidators(rawValidators);
 
     setYieldValidatorsQueryData({
       queryClient,
       yieldId,
-      validators: rawValidators,
+      validators: validatorOptions,
     });
 
     const validators = getFilteredValidators({
-      validators: rawValidators,
+      validators: validatorOptions,
       network,
       validatorsConfig,
       yieldId,
@@ -330,15 +339,16 @@ const fetchValidatorsPage = async ({
   const rawValidators = [firstPage, ...remainingPages].flatMap(
     (page) => page.items ?? []
   );
+  const validatorOptions = toValidators(rawValidators);
 
   setYieldValidatorsQueryData({
     queryClient,
     yieldId,
-    validators: [...rawValidators, ...(otherPage.items ?? [])],
+    validators: [...validatorOptions, ...toValidators(otherPage.items ?? [])],
   });
 
   const validators = getFilteredValidators({
-    validators: rawValidators,
+    validators: validatorOptions,
     network,
     validatorsConfig,
     yieldId,

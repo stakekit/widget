@@ -4,10 +4,13 @@ import type { KycGate } from "../../../../domain/types/kyc";
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { TronResourceType } from "../../../../domain/types/tron";
 import type {
+  Validator,
+  ValidatorKey,
+} from "../../../../domain/types/validators";
+import type {
   DashboardYieldCategory,
   Yield,
 } from "../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../generated/api/yield";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -55,9 +58,9 @@ export type EarnPageContextType = {
   kycProviderName: string | null;
   onKycStatusRefresh: () => void;
   onYieldSearch: (value: string) => void;
-  onValidatorSelect: (item: ValidatorDto) => void;
-  onValidatorRemove: (item: ValidatorDto) => void;
-  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
+  onValidatorSelect: (item: Validator) => void;
+  onValidatorRemove: (item: Validator) => void;
+  selectedValidators: Map<ValidatorKey, Validator>;
   isError: boolean;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
@@ -66,7 +69,6 @@ export type EarnPageContextType = {
   isLedgerLiveAccountPlaceholder: boolean;
   appLoading: boolean;
   yieldOpportunityLoading: boolean;
-  tokenBalancesScanLoading: boolean;
   selectedToken: Maybe<TokenDto>;
   tokenBalancesData: Maybe<{
     all: EarnTokenOption[];
@@ -79,7 +81,6 @@ export type EarnPageContextType = {
   providersDetails: ReturnType<typeof useProvidersDetails>;
   tokenSearch: string;
   stakeSearch: string;
-  defaultTokensIsLoading: boolean;
   tronResource: Maybe<TronResourceType>;
   onTronResourceSelect: (value: TronResourceType) => void;
   validation: {
@@ -100,7 +101,7 @@ export type EarnPageContextType = {
   footerIsLoading: boolean;
   stakeMaxAmount: Maybe<number>;
   stakeMinAmount: Maybe<number>;
-  validatorsData: Maybe<ValidatorDto[]>;
+  validatorsData: Maybe<Validator[]>;
   hasMoreValidators: boolean;
   hasMoreTokens: boolean;
   isLoadingMoreValidators: boolean;

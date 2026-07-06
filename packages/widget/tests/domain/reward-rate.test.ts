@@ -3,6 +3,7 @@ import {
   getEffectiveYieldRewardRateDetails,
   getRewardRateBreakdown,
 } from "../../src/domain/types/reward-rate";
+import { toValidator } from "../../src/domain/types/validators";
 import type { RewardDto } from "../../src/generated/api/yield";
 import {
   yieldApiValidatorFixture,
@@ -39,13 +40,15 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const validator = yieldApiValidatorFixture({
-      address: "validator-1",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.1582,
-        components: [nativeComponent(0.1582)],
-      }),
-    });
+    const validator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.1582,
+          components: [nativeComponent(0.1582)],
+        }),
+      })
+    );
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
       selectedValidators: new Map([[validator.address, validator]]),
@@ -60,20 +63,24 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const firstValidator = yieldApiValidatorFixture({
-      address: "validator-1",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.16,
-        components: [nativeComponent(0.16)],
-      }),
-    });
-    const secondValidator = yieldApiValidatorFixture({
-      address: "validator-2",
-      rewardRate: yieldRewardRateFixture({
-        total: 0.18,
-        components: [nativeComponent(0.18)],
-      }),
-    });
+    const firstValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-1",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.16,
+          components: [nativeComponent(0.16)],
+        }),
+      })
+    );
+    const secondValidator = toValidator(
+      yieldApiValidatorFixture({
+        address: "validator-2",
+        rewardRate: yieldRewardRateFixture({
+          total: 0.18,
+          components: [nativeComponent(0.18)],
+        }),
+      })
+    );
 
     const rewardRate = getEffectiveYieldRewardRateDetails({
       selectedValidators: new Map([

@@ -86,7 +86,7 @@ type DashboardPositionDetailsModel = {
   statusSummary: DashboardPositionStatusSummary;
 };
 
-export type DashboardPositionPendingAction = {
+type DashboardPositionPendingAction = {
   amount: BigNumber | null;
   formattedAmount: string;
   pendingActionDto: YieldPendingActionDto;

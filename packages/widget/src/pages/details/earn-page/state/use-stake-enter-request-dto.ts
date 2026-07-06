@@ -5,8 +5,11 @@ import type { YieldCreateActionDto } from "../../../../domain/types/action";
 import type { AddressesDto } from "../../../../domain/types/addresses";
 import type { TokenDto } from "../../../../domain/types/tokens";
 import type { TronResourceType } from "../../../../domain/types/tron";
+import type {
+  Validator,
+  ValidatorKey,
+} from "../../../../domain/types/validators";
 import { getYieldActionArg, type Yield } from "../../../../domain/types/yields";
-import type { ValidatorDto } from "../../../../generated/api/yield";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 
 export const useStakeEnterRequestDto = ({
@@ -21,7 +24,7 @@ export const useStakeEnterRequestDto = ({
   selectedProviderYieldId: Maybe<Yield["id"]>;
   selectedStake: Maybe<Yield>;
   selectedToken: Maybe<TokenDto>;
-  selectedValidators: Map<ValidatorDto["address"], ValidatorDto>;
+  selectedValidators: Map<ValidatorKey, Validator>;
   stakeAmount: BigNumber;
   tronResource: Maybe<TronResourceType>;
   useMaxAmount: boolean;
@@ -38,7 +41,7 @@ export const useStakeEnterRequestDto = ({
         addresses: AddressesDto;
         gasFeeToken: Yield["token"];
         dto: YieldCreateActionDto;
-        selectedValidators: Map<string, ValidatorDto>;
+        selectedValidators: Map<ValidatorKey, Validator>;
         selectedStake: Yield;
       }>(({ address, selectedStake, selectedToken }) => {
         const validators = [...selectedValidators.values()];

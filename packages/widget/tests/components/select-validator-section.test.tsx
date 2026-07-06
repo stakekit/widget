@@ -2,6 +2,7 @@ import { Maybe } from "purify-ts";
 import { I18nextProvider } from "react-i18next";
 import { vi } from "vitest";
 import { userEvent } from "vitest/browser";
+import { toValidator } from "../../src/domain/types/validators";
 import type { Yield } from "../../src/domain/types/yields";
 import { SelectValidatorSection } from "../../src/pages/details/earn-page/components/select-validator-section";
 import type { useSelectValidator } from "../../src/pages/details/earn-page/components/select-validator-section/use-select-validator";
@@ -76,7 +77,7 @@ const createHookValue = (
   selectedValidators: new Map(),
   selectedStake: Maybe.of(selectedStake),
   onValidatorSearch: vi.fn(),
-  validatorsData: Maybe.of([yieldApiValidatorFixture()]),
+  validatorsData: Maybe.of([toValidator(yieldApiValidatorFixture())]),
   validatorSearch: "",
   hasMoreValidators: false,
   isLoadingMoreValidators: false,
@@ -171,11 +172,13 @@ describe("SelectValidatorSection", () => {
       selectedStake: Maybe.of(multiSelectStake),
       validatorsData: Maybe.of(
         Array.from({ length: 4 }, (_, index) =>
-          yieldApiValidatorFixture({
-            address: `validator-${index}`,
-            name: `Validator ${index}`,
-            preferred: true,
-          })
+          toValidator(
+            yieldApiValidatorFixture({
+              address: `validator-${index}`,
+              name: `Validator ${index}`,
+              preferred: true,
+            })
+          )
         )
       ),
       hasMoreValidators: true,

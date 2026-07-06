@@ -1,9 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { chunksOf } from "effect/Array";
-import { isSupportedChain } from "../../domain/types/chains";
 import {
   isEthenaUsdeStaking,
-  isNonZeroRewardRateYield,
   type YieldProviderDetails,
 } from "../../domain/types/yields";
 import type { YieldDto } from "../../generated/api/yield";
@@ -16,21 +14,12 @@ import { fetchYieldProviders } from "./use-yield-providers";
  * list rendering need (`token`, `rewardRate`, `status`, `metadata`,
  * `mechanics.type`, `providerId`).
  */
-export type YieldSummary = YieldDto;
+type YieldSummary = YieldDto;
 type YieldSummaryWithProvider = YieldSummary & {
   provider?: YieldProviderDetails;
 };
 
 const DEFAULT_YIELD_IDS_CHUNK_SIZE = 100;
-
-/**
- * A summary is "visible" when it is enterable, on a supported chain, and has a
- * non-zero reward rate (matching the dashboard catalog's display semantics).
- */
-export const isVisibleYieldSummary = (summary: YieldSummary): boolean =>
-  summary.status.enter &&
-  isSupportedChain(summary.token.network) &&
-  isNonZeroRewardRateYield(summary);
 
 type FetchByIdsArgs = {
   apiClient: ReturnType<typeof useApiClient>;
