@@ -1,4 +1,4 @@
-import { Effect, flow, ManagedRuntime } from "effect";
+import { Data, Effect, flow, ManagedRuntime } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
@@ -6,6 +6,7 @@ import {
   type HttpClientResponse,
 } from "effect/unstable/http";
 import { waitForDelayedApiRequests } from "../../common/delay-api-requests";
+import * as BorrowApi from "../../generated/api/borrow";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
 import { handleGeoBlockResponse } from "../../hooks/use-geo-block";
@@ -14,6 +15,7 @@ import { handleRichErrorResponse } from "../../hooks/use-rich-errors";
 type WidgetApiClientOptions = {
   readonly apiKey: string;
   readonly baseUrl: string;
+  readonly borrowApiUrl: string;
   readonly yieldsApiUrl: string;
 };
 
@@ -23,9 +25,16 @@ type ApiClientOptions = {
 };
 
 export type EffectApiClient = {
+  readonly borrow: BorrowApi.BorrowApi;
   readonly legacy: LegacyApi.LegacyApi;
   readonly yield: YieldApi.YieldApi;
 };
+
+export class MissingBorrowApiConfig extends Data.TaggedError(
+  "MissingBorrowApiConfig"
+)<{
+  readonly message: string;
+}> {}
 
 const runtime = ManagedRuntime.make(FetchHttpClient.layer);
 
@@ -82,6 +91,18 @@ const configureClient = ({
       inspectResponse({ response, suppressRichErrors })
     )
   );
+
+const requireBorrowApiUrl = (url: string) => {
+  const trimmedUrl = url.trim();
+
+  if (!trimmedUrl) {
+    throw new MissingBorrowApiConfig({
+      message: "Borrow API URL must be configured before using Borrow.",
+    });
+  }
+
+  return trimmedUrl;
+};
 
 type BoundOperation<Operation> = Operation extends (
   ...args: infer Args
@@ -212,40 +233,66 @@ const bindYieldApi = ({
 export const createApiClient = ({
   apiKey,
   baseUrl,
+  borrowApiUrl,
   yieldsApiUrl,
 }: WidgetApiClientOptions) => {
   const baseClient = runtime.runSync(HttpClient.HttpClient);
+  const resolvedBorrowApiUrl = requireBorrowApiUrl(borrowApiUrl);
+
+  const createLegacyApiClient = (
+    options?: Pick<ApiClientOptions, "suppressRichErrors">
+  ) =>
+    LegacyApi.make(
+      configureClient({
+        apiKey,
+        baseUrl,
+        client: baseClient,
+        suppressRichErrors: options?.suppressRichErrors,
+      })
+    );
+
+  const createYieldApiClient = (
+    options?: Pick<ApiClientOptions, "suppressRichErrors">
+  ) =>
+    YieldApi.make(
+      configureClient({
+        apiKey,
+        baseUrl: yieldsApiUrl,
+        client: baseClient,
+        suppressRichErrors: options?.suppressRichErrors,
+      })
+    );
+
+  const createBorrowApiClient = (
+    options?: Pick<ApiClientOptions, "suppressRichErrors">
+  ) =>
+    BorrowApi.make(
+      configureClient({
+        apiKey,
+        baseUrl: resolvedBorrowApiUrl,
+        client: baseClient,
+        suppressRichErrors: options?.suppressRichErrors,
+      })
+    );
 
   const createEffectApiClients = (
     options?: Pick<ApiClientOptions, "suppressRichErrors">
-  ): EffectApiClient => {
-    const legacyHttpClient = configureClient({
-      apiKey,
-      baseUrl,
-      client: baseClient,
-      suppressRichErrors: options?.suppressRichErrors,
-    });
-    const yieldHttpClient = configureClient({
-      apiKey,
-      baseUrl: yieldsApiUrl,
-      client: baseClient,
-      suppressRichErrors: options?.suppressRichErrors,
-    });
+  ): EffectApiClient => ({
+    borrow: createBorrowApiClient(options),
+    legacy: createLegacyApiClient(options),
+    yield: createYieldApiClient(options),
+  });
 
-    return {
-      legacy: LegacyApi.make(legacyHttpClient),
-      yield: YieldApi.make(yieldHttpClient),
-    };
-  };
-
-  const bindApiClients = (options?: ApiClientOptions) => {
-    const effectApi = createEffectApiClients(options);
-
-    return {
-      legacy: bindLegacyApi({ api: effectApi.legacy, options }),
-      yield: bindYieldApi({ api: effectApi.yield, options }),
-    };
-  };
+  const bindApiClients = (options?: ApiClientOptions) => ({
+    legacy: bindLegacyApi({
+      api: createLegacyApiClient(options),
+      options,
+    }),
+    yield: bindYieldApi({
+      api: createYieldApiClient(options),
+      options,
+    }),
+  });
 
   const effectClients = createEffectApiClients();
   const boundClients = bindApiClients();

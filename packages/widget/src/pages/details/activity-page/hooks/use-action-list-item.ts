@@ -54,6 +54,37 @@ const ICON_TYPE_MAP: Record<ActivityDirection, ActivityIconType> = {
   other: "in",
 };
 
+const ADDRESS_LIKE_TOKEN = /^0x[0-9a-fA-F]{40}$/;
+
+const getReadableRawTokenSymbol = (
+  value: string | null | undefined
+): string | null => {
+  if (!value || value === "0x" || ADDRESS_LIKE_TOKEN.test(value)) {
+    return null;
+  }
+
+  return value;
+};
+
+const getFallbackTokenSymbol = ({
+  direction,
+  inputToken,
+  outputToken,
+  unknownTokenLabel,
+}: {
+  direction: ActivityDirection;
+  inputToken: string | null | undefined;
+  outputToken: string | null | undefined;
+  unknownTokenLabel: string;
+}) => {
+  const preferredToken =
+    direction === "withdraw" || direction === "other"
+      ? (outputToken ?? inputToken)
+      : (inputToken ?? outputToken);
+
+  return getReadableRawTokenSymbol(preferredToken) ?? unknownTokenLabel;
+};
+
 export const useActionListItem = (action: ActionYieldDto) => {
   const { t, i18n } = useTranslation();
 
@@ -79,7 +110,18 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   /** Deposits/rewards show the underlying input token, withdrawals the vault token. */
   const tokenSymbol = useMemo(() => {
-    const yieldToken = action.yieldData.token;
+    const yieldData = action.yieldData;
+
+    if (!yieldData) {
+      return getFallbackTokenSymbol({
+        direction,
+        inputToken: action.actionData.rawArguments?.inputToken,
+        outputToken: action.actionData.rawArguments?.outputToken,
+        unknownTokenLabel: t("activity.item.unknown_token"),
+      });
+    }
+
+    const yieldToken = yieldData.token;
 
     if (direction === "withdraw" || direction === "other") {
       return yieldToken.symbol;
@@ -87,11 +129,11 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
     const inputToken = getActionInputToken({
       actionDto: action.actionData,
-      yieldDto: action.yieldData,
+      yieldDto: yieldData,
     });
 
     return inputToken?.symbol ?? yieldToken.symbol;
-  }, [action.actionData, action.yieldData, direction]);
+  }, [action.actionData, action.yieldData, direction, t]);
 
   const amount = useMemo(
     () =>
@@ -167,8 +209,11 @@ export const useActionListItem = (action: ActionYieldDto) => {
   }, [action.actionData.createdAt, locale, t]);
 
   const showFailedBadge = action.actionData.status === ActionStatus.FAILED;
+  const canOpenDetails = !!action.yieldData;
+  const showUnavailableYieldDetails = !action.yieldData;
 
   return {
+    canOpenDetails,
     integrationData,
     providersDetails,
     iconType,
@@ -181,5 +226,7 @@ export const useActionListItem = (action: ActionYieldDto) => {
     timestampRelative,
     showFailedBadge,
     badgeLabel: t("activity.failed"),
+    showUnavailableYieldDetails,
+    unavailableYieldLabel: t("activity.item.yield_unavailable"),
   };
 };

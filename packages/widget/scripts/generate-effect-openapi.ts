@@ -11,9 +11,11 @@ type JsonPatchOperation = {
 };
 
 type SpecConfig = {
+  format?: "httpclient" | "httpclient-type-only";
   name: string;
   outputPath: string;
   patches: JsonPatchOperation[];
+  prepareSpec?: (contents: string) => string;
   specFileName: string;
   url: string;
 };
@@ -71,6 +73,22 @@ const specs: SpecConfig[] = [
         },
       },
     ],
+  },
+  {
+    name: "BorrowApi",
+    url:
+      process.env.BORROW_API_SPEC_URL ?? "https://borrow.yield.xyz/docs.json",
+    specFileName: "borrow-api.json",
+    outputPath: path.join(widgetRoot, "src/generated/api/borrow.ts"),
+    // Borrow domain code needs generated runtime schemas as well as the client,
+    // so this spec intentionally uses the full httpclient format.
+    format: "httpclient",
+    patches: [],
+    prepareSpec: (contents) =>
+      contents.replaceAll(
+        '"allOf":[{"$ref":"#/components/schemas/ArgumentSchemaPropertyDto"}]',
+        '"type":"object"'
+      ),
   },
 ];
 
@@ -140,7 +158,8 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
   const patchPath = path.join(tempDir, `${spec.specFileName}.patch.json`);
 
   console.log(`Fetching ${spec.name} spec from ${spec.url}`);
-  await writeFile(specPath, await fetchSpec(spec));
+  const specContents = await fetchSpec(spec);
+  await writeFile(specPath, spec.prepareSpec?.(specContents) ?? specContents);
   await writeFile(patchPath, `${JSON.stringify(spec.patches, null, 2)}\n`);
   await mkdir(path.dirname(spec.outputPath), { recursive: true });
 
@@ -153,7 +172,7 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
     "--name",
     spec.name,
     "--format",
-    "httpclient-type-only",
+    spec.format ?? "httpclient-type-only",
     "--patch",
     patchPath,
   ]);
@@ -171,9 +190,19 @@ const generateSpec = async (spec: SpecConfig, tempDir: string) => {
 
 const main = async () => {
   const tempDir = await mkdtemp(path.join(tmpdir(), "stakekit-openapi-"));
+  const requestedSpecs = new Set(process.argv.slice(2));
+  const selectedSpecs = requestedSpecs.size
+    ? specs.filter((spec) => requestedSpecs.has(spec.name))
+    : specs;
+
+  if (!selectedSpecs.length) {
+    throw new Error(
+      `No OpenAPI specs matched: ${[...requestedSpecs].join(", ")}`
+    );
+  }
 
   try {
-    for (const spec of specs) {
+    for (const spec of selectedSpecs) {
       await generateSpec(spec, tempDir);
     }
 
@@ -183,7 +212,9 @@ const main = async () => {
       "check",
       "--write",
       "--unsafe",
-      ...specs.map((spec) => path.relative(widgetRoot, spec.outputPath)),
+      ...selectedSpecs.map((spec) =>
+        path.relative(widgetRoot, spec.outputPath)
+      ),
     ]);
   } finally {
     await rm(tempDir, { force: true, recursive: true });

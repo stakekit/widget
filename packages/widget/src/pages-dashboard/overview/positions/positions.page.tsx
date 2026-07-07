@@ -1,3 +1,4 @@
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -10,28 +11,53 @@ import { usePositions } from "../../../pages/details/positions-page/hooks/use-po
 import { useSettings } from "../../../providers/settings";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import { combineRecipeWithVariant } from "../../../utils/styles";
+import { useBorrowPositions } from "../../borrow/use-borrow-positions";
 import { PositionsListItem } from "./components/positions-list-item";
 import { PositionsSectionHeader } from "./components/positions-section-header";
 import { useGroupedPositions } from "./hooks/use-grouped-positions";
+import { getUnifiedManagePositionsState } from "./model";
 import { container, positionsTitle } from "./styles.css";
 
 export const PositionsPage = () => {
   useTrackPage("positions");
 
   const { positionsData, showPositions } = usePositions();
-
-  const listData = useGroupedPositions(positionsData.data);
-
+  const settings = useSettings();
+  const borrowManageEnabled =
+    settings.borrowEnabled && !!settings.dashboardVariant;
+  const borrowPositions = useBorrowPositions({ enabled: borrowManageEnabled });
+  const borrowPositionItems = AsyncResult.getOrElse(
+    borrowPositions.positionsResult,
+    () => []
+  );
   const { isConnected, isConnecting } = useSKWallet();
+  const manageState = getUnifiedManagePositionsState({
+    borrowPositionsResult: borrowPositions.positionsResult,
+    borrowWalletIsConnected:
+      borrowManageEnabled &&
+      borrowPositions.walletBridge.status === "connected",
+    earnIsError: positionsData.isError,
+    earnIsFetching: positionsData.isFetching,
+    earnIsLoading: positionsData.isLoading,
+    earnPositionsCount: positionsData.data.length,
+    isConnected,
+    isConnecting,
+    showEarnPositions: showPositions,
+  });
+
+  const listData = useGroupedPositions({
+    borrowPositions: borrowPositionItems,
+    earnPositions: positionsData.data,
+  });
 
   const { t } = useTranslation();
-  const { variant } = useSettings();
+  const { variant } = settings;
 
   const content = useMemo(() => {
-    if (positionsData.isLoading && positionsData.isFetching && isConnected) {
+    if (manageState.isAnyPositionsLoading && isConnected) {
       return <FallbackContent type="spinner" />;
     }
-    if (!isConnected && !isConnecting) {
+    if (manageState.showConnectWallet) {
       return (
         <Box
           display="flex"
@@ -48,26 +74,18 @@ export const PositionsPage = () => {
         </Box>
       );
     }
-    if (positionsData.isError && !positionsData.data.length) {
+    if (manageState.hasOnlyErrors) {
       return <FallbackContent type="something_wrong" />;
     }
 
     return null;
-  }, [
-    isConnected,
-    isConnecting,
-    positionsData.data.length,
-    positionsData.isError,
-    positionsData.isFetching,
-    positionsData.isLoading,
-    t,
-  ]);
+  }, [isConnected, manageState, t]);
 
   return (
     <Box className={container} display="flex" flex={1} flexDirection="column">
       {content}
 
-      {showPositions && (
+      {manageState.showPositionsList && (
         <>
           <Box
             my="1"
@@ -85,16 +103,24 @@ export const PositionsPage = () => {
               {t("dashboard.details.my_positions")}
             </Text>
 
-            {!!positionsData.data.length && (
+            {!!manageState.totalPositionsCount && (
               <Text variant={{ type: "muted", weight: "normal" }}>
                 {t("dashboard.details.positions_active", {
-                  count: positionsData.data.length,
+                  count: manageState.totalPositionsCount,
                 })}
               </Text>
             )}
           </Box>
 
           <Box flex={1} display="flex" flexDirection="column">
+            {manageState.hasPartialError && (
+              <Box marginBottom="2">
+                <Text variant={{ type: "danger", weight: "normal" }}>
+                  {t("dashboard.details.positions_partial_error")}
+                </Text>
+              </Box>
+            )}
+
             <VirtualList
               estimateSize={() => 60}
               data={listData}
@@ -112,7 +138,7 @@ export const PositionsPage = () => {
               }
             />
 
-            {isConnected && !positionsData.data.length && (
+            {manageState.showEmptyPositions && (
               <Box my="4">
                 <FallbackContent type="no_current_positions" />
               </Box>

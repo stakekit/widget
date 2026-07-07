@@ -20,7 +20,11 @@ const isRichError = (error: unknown): error is RichError =>
 
 const resetRichError = () => $richError.next(null);
 
-const allowedUrls = [config.env.apiUrl, config.env.yieldsApiUrl];
+const allowedUrls = [
+  config.env.apiUrl,
+  config.env.borrowApiUrl,
+  config.env.yieldsApiUrl,
+];
 
 export const handleRichErrorResponse = ({
   data,

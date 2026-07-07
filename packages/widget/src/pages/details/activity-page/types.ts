@@ -4,6 +4,6 @@ import type { Yield } from "../../../domain/types/yields";
 
 export type ActionYieldDto = {
   actionData: ActionDto;
-  yieldData: Yield;
+  yieldData: Yield | null;
   validatorsData: Validator[];
 };

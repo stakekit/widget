@@ -36,6 +36,7 @@ export type VariantProps =
 export type SettingsProps = {
   apiKey: string;
   baseUrl?: string;
+  borrowApiUrl?: string;
   yieldsApiUrl?: string;
   theme?: ThemeWrapperTheme;
   tracking?: {
@@ -84,6 +85,7 @@ export type SettingsProps = {
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);
+  borrowEnabled?: boolean;
   dashboardVariant?: boolean;
   dashboardYieldCategoryOrder?: DashboardYieldCategory[];
   yieldGrouping?: YieldGrouping;
@@ -98,8 +100,9 @@ export type SettingsProps = {
 
 type ResolvedSettingsProps = Omit<
   SettingsProps,
-  "dashboardYieldCategoryOrder" | "yieldGrouping"
+  "borrowEnabled" | "dashboardYieldCategoryOrder" | "yieldGrouping"
 > & {
+  borrowEnabled: boolean;
   dashboardYieldCategoryOrder: DashboardYieldCategory[];
   yieldGrouping: YieldGrouping;
 };

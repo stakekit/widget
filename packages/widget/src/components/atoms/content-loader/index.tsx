@@ -27,3 +27,38 @@ export const ContentLoaderSquare = ({
     />
   );
 };
+
+export const ContentLoaderLine = ({
+  heightPx = 12,
+  widthPx,
+  containerClassName,
+}: {
+  heightPx?: number;
+  widthPx?: number | string;
+  containerClassName?: ComponentProps<typeof Skeleton>["containerClassName"];
+}) => {
+  return (
+    <Skeleton
+      height={heightPx}
+      width={widthPx}
+      containerClassName={containerClassName}
+      baseColor={vars.color.skeletonLoaderBase}
+      highlightColor={vars.color.skeletonLoaderHighlight}
+      enableAnimation
+      borderRadius={vars.borderRadius.baseContract.md}
+    />
+  );
+};
+
+export const ContentLoaderCircle = ({ sizePx }: { sizePx: number }) => {
+  return (
+    <Skeleton
+      circle
+      height={sizePx}
+      width={sizePx}
+      baseColor={vars.color.skeletonLoaderBase}
+      highlightColor={vars.color.skeletonLoaderHighlight}
+      enableAnimation
+    />
+  );
+};

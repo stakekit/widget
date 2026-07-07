@@ -9,6 +9,7 @@ import { useEarnPageContext } from "../../../../pages/details/earn-page/state/ea
 import { useSKLocation } from "../../../../providers/location";
 import { useSettings } from "../../../../providers/settings";
 import { combineRecipeWithVariant } from "../../../../utils/styles";
+import { isBorrowFeatureEnabled } from "../../../borrow/use-borrow-feature-enabled";
 import {
   divider,
   tabsContainer,
@@ -17,10 +18,11 @@ import {
 } from "./styles.css";
 import { Tab } from "./tab";
 
-type RouteTab = "earn" | "manage" | "activity";
+type RouteTab = "earn" | "borrow" | "manage" | "activity";
 
 const TABS_MAP = {
   earn: "/",
+  borrow: "/borrow",
   manage: "/manage",
   activity: "/activity",
 };
@@ -56,6 +58,7 @@ export const Tabs = () => {
 
   const selectedTab = Match.value(current.pathname).pipe(
     Match.when(startsWith("/activity"), () => "activity"),
+    Match.when(startsWith("/borrow"), () => "borrow"),
     Match.whenOr(
       startsWith("/manage"),
       startsWith("/positions"),
@@ -64,8 +67,17 @@ export const Tabs = () => {
     Match.orElse(() => "earn")
   );
 
-  const { variant, yieldGrouping } = useSettings();
+  const { borrowEnabled, dashboardVariant, variant, yieldGrouping } =
+    useSettings();
   const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
+  const borrowFeatureEnabled = isBorrowFeatureEnabled({
+    borrowEnabled,
+    dashboardVariant,
+    yieldGrouping,
+  });
+  const shouldShowTabsGroupDivider =
+    dashboardYieldCategoryGroupingEnabled &&
+    (availableDashboardYieldCategories.length > 0 || borrowFeatureEnabled);
 
   return (
     <Box className={combineRecipeWithVariant({ rec: tabsWrapper, variant })}>
@@ -93,8 +105,15 @@ export const Tabs = () => {
           />
         )}
 
-        {dashboardYieldCategoryGroupingEnabled &&
-        availableDashboardYieldCategories.length > 0 ? (
+        {borrowFeatureEnabled ? (
+          <Tab
+            isSelected={selectedTab === "borrow"}
+            onTabPress={() => onRouteTabPress("borrow")}
+            variant="borrow"
+          />
+        ) : null}
+
+        {shouldShowTabsGroupDivider ? (
           <Box className={tabsGroupDivider} />
         ) : null}
 

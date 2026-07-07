@@ -74,6 +74,7 @@ export const SettingsContextProvider = ({
     <SettingsContext.Provider
       value={{
         ...rest,
+        borrowEnabled: rest.borrowEnabled ?? false,
         dashboardYieldCategoryOrder,
         preferredTokenYieldsPerNetwork,
         yieldGrouping:

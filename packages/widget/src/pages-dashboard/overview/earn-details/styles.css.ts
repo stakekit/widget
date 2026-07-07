@@ -361,16 +361,20 @@ export const axisLabel = style({
 
 export const detailRow = style([
   atoms({
-    alignItems: "center",
     display: "flex",
     justifyContent: "space-between",
     gap: "4",
     py: "2",
   }),
   {
+    alignItems: "baseline",
     borderBottom: `1px solid ${vars.color.backgroundMuted}`,
   },
 ]);
+
+globalStyle(`${detailRow}:last-child`, {
+  borderBottom: "none",
+});
 
 export const addressBox = style([
   atoms({
@@ -396,7 +400,12 @@ export const addressValue = style([
   }),
 ]);
 
+export const detailRowLabel = style({
+  lineHeight: "20px",
+});
+
 export const valueText = style({
+  lineHeight: "20px",
   minWidth: 0,
   overflow: "hidden",
   textAlign: "right",

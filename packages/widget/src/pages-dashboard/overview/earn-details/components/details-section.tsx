@@ -43,9 +43,19 @@ export const DetailsSection = ({
 
 export const DetailRow = ({ label, value }: EarnDetailRow) => (
   <Box className={styles.detailRow}>
-    <Text variant={{ type: "muted", weight: "normal" }}>{label}</Text>
+    <Text
+      as="span"
+      className={styles.detailRowLabel}
+      variant={{ type: "muted", weight: "normal" }}
+    >
+      {label}
+    </Text>
     {typeof value === "string" ? (
-      <Text className={styles.valueText} variant={{ weight: "normal" }}>
+      <Text
+        as="span"
+        className={styles.valueText}
+        variant={{ weight: "normal" }}
+      >
         {value}
       </Text>
     ) : (

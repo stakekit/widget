@@ -6,6 +6,7 @@ import { SummaryProvider } from "../hooks/use-summary";
 import { DisableTransitionDurationProvider } from "../navigation/containers/animation-layout";
 import { CurrentLayoutProvider } from "../pages/components/layout/layout-context";
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
+import { BorrowWalletProvider } from "../pages-dashboard/borrow/connected-wallet";
 import { i18nInstance } from "../translation";
 import { SKApiClientProvider } from "./api/api-client-provider";
 import { SKAtomRuntimeProvider } from "./effect-atom-runtime";
@@ -30,41 +31,43 @@ export const Providers = ({
       <RootElementProvider>
         <I18nextProvider i18n={i18nInstance}>
           <SKApiClientProvider>
-            <SKAtomRuntimeProvider>
-              <SKQueryClientProvider>
-                <SKLocationProvider>
-                  <MountAnimationProvider>
-                    <SolanaProvider>
-                      <WagmiConfigProvider>
-                        <TrackingContextProviderWithProps>
-                          <SKWalletProvider>
-                            <RainbowProvider>
-                              <ActionHistoryContextProvider>
-                                <ThemeWrapper>
-                                  <ListStateContextProvider>
-                                    <CurrentLayoutProvider>
-                                      <HeaderHeightProvider>
-                                        <PoweredByHeightProvider>
-                                          <DisableTransitionDurationProvider>
-                                            <SummaryProvider>
-                                              {children}
-                                            </SummaryProvider>
-                                          </DisableTransitionDurationProvider>
-                                        </PoweredByHeightProvider>
-                                      </HeaderHeightProvider>
-                                    </CurrentLayoutProvider>
-                                  </ListStateContextProvider>
-                                </ThemeWrapper>
-                              </ActionHistoryContextProvider>
-                            </RainbowProvider>
-                          </SKWalletProvider>
-                        </TrackingContextProviderWithProps>
-                      </WagmiConfigProvider>
-                    </SolanaProvider>
-                  </MountAnimationProvider>
-                </SKLocationProvider>
-              </SKQueryClientProvider>
-            </SKAtomRuntimeProvider>
+            <SKQueryClientProvider>
+              <SKLocationProvider>
+                <MountAnimationProvider>
+                  <SolanaProvider>
+                    <WagmiConfigProvider>
+                      <TrackingContextProviderWithProps>
+                        <SKWalletProvider>
+                          <BorrowWalletProvider>
+                            <SKAtomRuntimeProvider>
+                              <RainbowProvider>
+                                <ActionHistoryContextProvider>
+                                  <ThemeWrapper>
+                                    <ListStateContextProvider>
+                                      <CurrentLayoutProvider>
+                                        <HeaderHeightProvider>
+                                          <PoweredByHeightProvider>
+                                            <DisableTransitionDurationProvider>
+                                              <SummaryProvider>
+                                                {children}
+                                              </SummaryProvider>
+                                            </DisableTransitionDurationProvider>
+                                          </PoweredByHeightProvider>
+                                        </HeaderHeightProvider>
+                                      </CurrentLayoutProvider>
+                                    </ListStateContextProvider>
+                                  </ThemeWrapper>
+                                </ActionHistoryContextProvider>
+                              </RainbowProvider>
+                            </SKAtomRuntimeProvider>
+                          </BorrowWalletProvider>
+                        </SKWalletProvider>
+                      </TrackingContextProviderWithProps>
+                    </WagmiConfigProvider>
+                  </SolanaProvider>
+                </MountAnimationProvider>
+              </SKLocationProvider>
+            </SKQueryClientProvider>
           </SKApiClientProvider>
         </I18nextProvider>
       </RootElementProvider>

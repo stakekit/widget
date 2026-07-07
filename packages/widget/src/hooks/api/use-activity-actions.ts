@@ -7,7 +7,6 @@ import { EitherAsync } from "purify-ts";
 import { useEffect, useMemo } from "react";
 import {
   type ActionDto,
-  getActionInputToken,
   getActionValidatorAddresses,
 } from "../../domain/types/action";
 import type { Validator } from "../../domain/types/validators";
@@ -23,7 +22,7 @@ import type { ApiClient } from "../../providers/api/api-client";
 import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKQueryClient } from "../../providers/query-client";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { getYieldOpportunity } from "./use-yield-opportunity/get-yield-opportunity";
+import { fetchYieldSummariesWithProvidersByIds } from "./use-yield-summaries";
 import { getYieldValidatorsByAddresses } from "./use-yield-validators";
 
 const PAGE_SIZE = 50;
@@ -36,7 +35,7 @@ const ACTIVITY_ACTION_STATUSES = [
 
 type ActivityActionItem = {
   actionData: ActionDto;
-  yieldData: Yield;
+  yieldData: Yield | null;
   validatorsData: Validator[];
 };
 
@@ -70,7 +69,6 @@ type FetchActivityActionsPageParams = {
   address: string;
   apiClient: ApiClient;
   filter: ActivityFilter;
-  isLedgerLive: boolean;
   network: NonNullable<ActionsControllerGetActionsParams["network"]>;
   offset: number;
   queryClient: QueryClient;
@@ -191,13 +189,15 @@ const getItemsWithValidators = async ({
       ...(await Promise.all(
         chunk.map(async (item) => ({
           ...item,
-          validatorsData: await getYieldValidatorsByAddresses({
-            apiClient,
-            queryClient,
-            yieldId: item.actionData.yieldId,
-            addresses: getActionValidatorAddresses(item.actionData) ?? [],
-            suppressRichErrors: true,
-          }),
+          validatorsData: item.yieldData
+            ? await getYieldValidatorsByAddresses({
+                apiClient,
+                queryClient,
+                yieldId: item.actionData.yieldId,
+                addresses: getActionValidatorAddresses(item.actionData) ?? [],
+                suppressRichErrors: true,
+              })
+            : [],
         }))
       ))
     );
@@ -212,11 +212,40 @@ const getNextActivityActionsPageParam = (lastPage: ActivityActionsPage) => {
   return nextOffset < (lastPage.total ?? 0) ? nextOffset : undefined;
 };
 
-const fetchActivityActionsPage = async ({
+const getActionsWithYieldData = async ({
+  actions,
+  apiClient,
+  queryClient,
+  signal,
+  suppressRichErrors,
+}: {
+  actions: ReadonlyArray<ActionDto>;
+  apiClient: ApiClient;
+  queryClient: QueryClient;
+  signal?: AbortSignal;
+  suppressRichErrors?: boolean;
+}): Promise<ActivityActionBaseItem[]> => {
+  const yieldData = await fetchYieldSummariesWithProvidersByIds({
+    apiClient,
+    queryClient,
+    signal,
+    suppressRichErrors,
+    yieldIds: actions.map((action) => action.yieldId),
+  }).catch(() => []);
+  const yieldDataById = new Map<string, Yield>(
+    yieldData.map((yieldDto) => [yieldDto.id, yieldDto])
+  );
+
+  return actions.map((action) => ({
+    actionData: action,
+    yieldData: yieldDataById.get(action.yieldId) ?? null,
+  }));
+};
+
+export const fetchActivityActionsPage = async ({
   address,
   apiClient,
   filter,
-  isLedgerLive,
   network,
   offset,
   queryClient,
@@ -239,32 +268,15 @@ const fetchActivityActionsPage = async ({
     )
       .mapLeft(() => new Error("Could not get action list"))
       .chain(async (actionList) =>
-        EitherAsync.all(
-          (actionList.items ?? []).map((action) =>
-            getYieldOpportunity({
-              yieldId: action.yieldId,
-              queryClient,
-              isLedgerLive,
-              apiClient,
-              suppressRichErrors: true,
-            })
-              .map((yieldData) => ({
-                actionData: action as ActionDto,
-                yieldData,
-              }))
-              .chainLeft(() => EitherAsync(() => Promise.resolve(null)))
-          )
+        EitherAsync(() =>
+          getActionsWithYieldData({
+            actions: (actionList.items ?? []) as ActionDto[],
+            apiClient,
+            queryClient,
+            signal,
+            suppressRichErrors: true,
+          })
         )
-          .map((res) => res.filter((x) => x !== null))
-          .map((res) =>
-            res.filter(
-              (x) =>
-                !!getActionInputToken({
-                  actionDto: x.actionData,
-                  yieldDto: x.yieldData,
-                })
-            )
-          )
           .chain((items) =>
             EitherAsync(() =>
               getItemsWithValidators({
@@ -304,7 +316,7 @@ export const usePrefetchActivityActionFilters = ({
 }: {
   filterOptions: ActivityFilterOption[];
 }) => {
-  const { address, isLedgerLive, network } = useSKWallet();
+  const { address, network } = useSKWallet();
   const queryClient = useSKQueryClient();
   const apiClient = useApiClient();
 
@@ -320,7 +332,6 @@ export const usePrefetchActivityActionFilters = ({
               address,
               apiClient,
               filter,
-              isLedgerLive,
               network,
               offset: pageParam as number,
               queryClient,
@@ -332,13 +343,13 @@ export const usePrefetchActivityActionFilters = ({
         })
         .catch(() => undefined);
     }
-  }, [address, apiClient, filterOptions, isLedgerLive, network, queryClient]);
+  }, [address, apiClient, filterOptions, network, queryClient]);
 };
 
 export const useActivityActions = (
   filter: ActivityFilter = "all"
 ): UseActivityActionsResult => {
-  const { address, isLedgerLive, network } = useSKWallet();
+  const { address, network } = useSKWallet();
   const queryClient = useSKQueryClient();
   const apiClient = useApiClient();
 
@@ -350,7 +361,6 @@ export const useActivityActions = (
         address: address!,
         apiClient,
         filter,
-        isLedgerLive,
         network: network!,
         offset: pageParam as number,
         queryClient,

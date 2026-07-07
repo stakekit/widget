@@ -7,16 +7,17 @@ import { type ApiClient, createApiClient } from "./api-client";
 const Context = createContext<ApiClient | undefined>(undefined);
 
 export const SKApiClientProvider = ({ children }: PropsWithChildren) => {
-  const { apiKey, baseUrl, yieldsApiUrl } = useSettings();
+  const { apiKey, baseUrl, borrowApiUrl, yieldsApiUrl } = useSettings();
 
   const apiClient = useMemo(
     () =>
       createApiClient({
         apiKey,
         baseUrl: baseUrl ?? config.env.apiUrl,
+        borrowApiUrl: borrowApiUrl ?? config.env.borrowApiUrl,
         yieldsApiUrl: yieldsApiUrl ?? config.env.yieldsApiUrl,
       }),
-    [apiKey, baseUrl, yieldsApiUrl]
+    [apiKey, baseUrl, borrowApiUrl, yieldsApiUrl]
   );
 
   return <Context.Provider value={apiClient}>{children}</Context.Provider>;

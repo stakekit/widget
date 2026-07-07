@@ -1,12 +1,34 @@
 import { HttpResponse, http } from "msw";
+import { userEvent } from "vitest/browser";
 import { DashboardYieldCategory } from "../../src/domain/types/yields";
 import { legacyYieldFixture, yieldApiYieldFixture } from "../fixtures";
-import { legacyApiRoute, yieldApiRoute } from "../mocks/api-routes";
+import {
+  borrowApiRoute,
+  legacyApiRoute,
+  yieldApiRoute,
+} from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
+import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
+
+const emptyBorrowPosition = {
+  address: "0x0000000000000000000000000000000000000001",
+  availableToBorrowUsd: "0",
+  currentLtv: "0",
+  debtBalances: [],
+  healthFactor: null,
+  integrationId: "aave-borrow",
+  netApy: "0",
+  netWorthUsd: "0",
+  network: "ethereum",
+  supplyBalances: [],
+  totalBorrowedUsd: "0",
+  totalCollateralUsd: "0",
+  totalSuppliedUsd: "0",
+} as const;
 
 describe("Renders initial page", () => {
   it("Works as expected", async ({ worker }) => {
@@ -157,7 +179,7 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
-  it("uses category dashboard yield grouping by default", async () => {
+  it("uses category dashboard yield grouping by default with Borrow disabled", async () => {
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
@@ -177,7 +199,56 @@ describe("Renders initial page", () => {
     expect(tabsText).toContain("Stake");
     expect(tabsText).toContain("DeFi");
     expect(tabsText).toContain("RWA");
+    expect(tabsText).not.toContain("Borrow");
     expect(tabsText).not.toContain("Earn");
+
+    app.unmount();
+  });
+
+  it("shows Borrow when enabled with dashboard category grouping", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await expect.element(app.getByText("Stake")).toBeInTheDocument();
+    await expect.element(app.getByText("DeFi")).toBeInTheDocument();
+    await expect.element(app.getByText("RWA")).toBeInTheDocument();
+    await expect.element(app.getByText("Borrow")).toBeInTheDocument();
+
+    const tabsSection = app.container.querySelector("[data-rk='tabs-section']");
+    const tabsText = tabsSection?.textContent ?? "";
+
+    expect(tabsText).toContain("Stake");
+    expect(tabsText).toContain("DeFi");
+    expect(tabsText).toContain("RWA");
+    expect(tabsText).toContain("Borrow");
+    expect(tabsText).toContain("Manage");
+    expect(tabsText).toContain("Activity");
+
+    app.unmount();
+  });
+
+  it("hides Borrow when dashboard yield grouping is flat", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+        yieldGrouping: "flat",
+      },
+    });
+
+    const tabsSection = app.container.querySelector("[data-rk='tabs-section']");
+    const tabsText = tabsSection?.textContent ?? "";
+
+    expect(tabsText).toContain("Earn");
+    expect(tabsText).not.toContain("Borrow");
+    expect(tabsText).toContain("Manage");
+    expect(tabsText).toContain("Activity");
 
     app.unmount();
   });
@@ -186,6 +257,7 @@ describe("Renders initial page", () => {
     const app = await renderApp({
       skProps: {
         apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
         dashboardVariant: true,
         dashboardYieldCategoryOrder: [
           DashboardYieldCategory.Stake,
@@ -198,6 +270,7 @@ describe("Renders initial page", () => {
     await expect.element(app.getByText("Stake")).toBeInTheDocument();
     await expect.element(app.getByText("DeFi")).toBeInTheDocument();
     await expect.element(app.getByText("RWA")).toBeInTheDocument();
+    await expect.element(app.getByText("Borrow")).toBeInTheDocument();
     await expect.element(app.getByText("Manage")).toBeInTheDocument();
     await expect.element(app.getByText("Activity")).toBeInTheDocument();
 
@@ -206,10 +279,318 @@ describe("Renders initial page", () => {
 
     expect(tabsText.indexOf("Stake")).toBeLessThan(tabsText.indexOf("DeFi"));
     expect(tabsText.indexOf("DeFi")).toBeLessThan(tabsText.indexOf("RWA"));
-    expect(tabsText.indexOf("RWA")).toBeLessThan(tabsText.indexOf("Manage"));
+    expect(tabsText.indexOf("RWA")).toBeLessThan(tabsText.indexOf("Borrow"));
+    expect(tabsText.indexOf("Borrow")).toBeLessThan(tabsText.indexOf("Manage"));
     expect(tabsText.indexOf("Manage")).toBeLessThan(
       tabsText.indexOf("Activity")
     );
+
+    app.unmount();
+  });
+
+  it("opens the native Borrow dashboard tab", async ({ worker }) => {
+    worker.use(
+      http.post(legacyApiRoute("/v1/tokens/balances/scan"), () =>
+        HttpResponse.json([])
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(emptyBorrowPosition)
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([
+          {
+            id: "aave-borrow",
+            providerId: "aave",
+            name: "Aave V3",
+            networks: ["ethereum"],
+            metadata: {
+              description: "Aave lending and borrowing",
+              externalLink: "https://aave.com",
+              logoURI: "https://assets.stakek.it/protocols/aave.svg",
+            },
+            actions: [],
+          },
+        ])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          total: 1,
+          offset: 0,
+          limit: 100,
+          items: [
+            {
+              id: "aave-v3-ethereum-usdc",
+              integrationId: "aave-borrow",
+              network: "ethereum",
+              type: "pool",
+              poolAddress: "0x0000000000000000000000000000000000000001",
+              loanToken: {
+                address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                symbol: "USDC",
+                name: "USD Coin",
+                decimals: 6,
+              },
+              collateralTokens: [
+                {
+                  token: {
+                    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    symbol: "WETH",
+                    name: "Wrapped Ether",
+                    decimals: 18,
+                  },
+                  priceUsd: "2000",
+                  maxLtv: "0.8",
+                  liquidationThreshold: "0.85",
+                  liquidationPenalty: "0.05",
+                  supplyRate: "0.02",
+                },
+                {
+                  token: {
+                    address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                    symbol: "WBTC",
+                    name: "Wrapped Bitcoin",
+                    decimals: 8,
+                  },
+                  priceUsd: "60000",
+                  maxLtv: "0.75",
+                  liquidationThreshold: "0.8",
+                  liquidationPenalty: "0.05",
+                  supplyRate: "0.015",
+                },
+              ],
+              borrowRate: "0.06",
+              totalSupply: "1000000",
+              totalSupplyRaw: "1000000000000",
+              totalBorrow: "500000",
+              totalBorrowRaw: "500000000000",
+              availableLiquidity: "500000",
+              availableLiquidityRaw: "500000000000",
+              utilizationRate: "0.5",
+              loanTokenPriceUsd: "1",
+              isBorrowEnabled: true,
+              supplyCollateralFeeBps: "0",
+              feeWrapperAddress: null,
+              minLoan: null,
+            },
+            {
+              id: "aave-v3-ethereum-dai",
+              integrationId: "aave-borrow",
+              network: "ethereum",
+              type: "pool",
+              poolAddress: "0x0000000000000000000000000000000000000002",
+              loanToken: {
+                address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+                symbol: "DAI",
+                name: "Dai Stablecoin",
+                decimals: 18,
+              },
+              collateralTokens: [
+                {
+                  token: {
+                    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    symbol: "WETH",
+                    name: "Wrapped Ether",
+                    decimals: 18,
+                  },
+                  priceUsd: "2000",
+                  maxLtv: "0.8",
+                  liquidationThreshold: "0.85",
+                  liquidationPenalty: "0.05",
+                  supplyRate: "0.02",
+                },
+              ],
+              borrowRate: "0.04",
+              totalSupply: "500000",
+              totalSupplyRaw: "500000000000000000000000",
+              totalBorrow: "125000",
+              totalBorrowRaw: "125000000000000000000000",
+              availableLiquidity: "375000",
+              availableLiquidityRaw: "375000000000000000000000",
+              utilizationRate: "0.25",
+              loanTokenPriceUsd: "1",
+              isBorrowEnabled: true,
+              supplyCollateralFeeBps: "0",
+              feeWrapperAddress: null,
+              minLoan: null,
+            },
+          ],
+        })
+      )
+    );
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: rkMockWallet({
+          accounts: ["0x0000000000000000000000000000000000000001"],
+        }),
+      },
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Borrow"));
+
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+    await expect.element(app.getByText("Market stats")).toBeInTheDocument();
+    await expect.element(app.getByText("LTV ratio")).toBeInTheDocument();
+
+    await app.getByTestId("borrow-collateral-select").click();
+    await expect
+      .element(app.getByText("Select collateral"))
+      .toBeInTheDocument();
+    await app
+      .getByTestId("select-modal__container")
+      .getByTestId(
+        "borrow-collateral-select__item_0x2260fac5e5542a773aa44fbcfedf7c193bc2c599"
+      )
+      .click();
+    await expect.element(app.getByText("WBTC / USDC")).toBeInTheDocument();
+
+    await app.getByTestId("borrow-market-select").click();
+    await expect
+      .element(app.getByText("Select borrow market"))
+      .toBeInTheDocument();
+    await app
+      .getByTestId("select-modal__container")
+      .getByTestId("borrow-market-select__group_dai")
+      .click();
+    await app
+      .getByTestId("select-modal__container")
+      .getByTestId("borrow-market-select__item_aave-v3-ethereum-dai")
+      .click();
+    await expect.element(app.getByText("WETH / DAI")).toBeInTheDocument();
+
+    await userEvent.click(app.getByTestId("number-input").last());
+    await userEvent.keyboard("1");
+    await expect
+      .element(app.getByText("Amount exceeds wallet balance."))
+      .toBeInTheDocument();
+    expect(app.container.textContent).not.toContain("3M");
+
+    app.unmount();
+  });
+
+  it("opens the native Borrow review screen", async ({ worker }) => {
+    const account = "0x0000000000000000000000000000000000000001";
+
+    worker.use(
+      http.post(legacyApiRoute("/v1/tokens/balances/scan"), () =>
+        HttpResponse.json([
+          {
+            token: {
+              network: "ethereum",
+              address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              symbol: "WETH",
+              name: "Wrapped Ether",
+              decimals: 18,
+            },
+            amount: "1",
+            availableYields: [],
+          },
+        ])
+      ),
+      http.get(borrowApiRoute("/v1/positions"), () =>
+        HttpResponse.json(emptyBorrowPosition)
+      ),
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([
+          {
+            id: "aave-borrow",
+            providerId: "aave",
+            name: "Aave V3",
+            networks: ["ethereum"],
+            metadata: {
+              description: "Aave lending and borrowing",
+              externalLink: "https://aave.com",
+              logoURI: "https://assets.stakek.it/protocols/aave.svg",
+            },
+            actions: [],
+          },
+        ])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          total: 1,
+          offset: 0,
+          limit: 100,
+          items: [
+            {
+              id: "aave-v3-ethereum-usdc",
+              integrationId: "aave-borrow",
+              network: "ethereum",
+              type: "pool",
+              poolAddress: "0x0000000000000000000000000000000000000001",
+              loanToken: {
+                address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                symbol: "USDC",
+                name: "USD Coin",
+                decimals: 6,
+              },
+              collateralTokens: [
+                {
+                  token: {
+                    address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+                    symbol: "WETH",
+                    name: "Wrapped Ether",
+                    decimals: 18,
+                  },
+                  priceUsd: "2000",
+                  maxLtv: "0.8",
+                  liquidationThreshold: "0.85",
+                  liquidationPenalty: "0.05",
+                  supplyRate: "0.02",
+                },
+              ],
+              borrowRate: "0.06",
+              totalSupply: "1000000",
+              totalSupplyRaw: "1000000000000",
+              totalBorrow: "500000",
+              totalBorrowRaw: "500000000000",
+              availableLiquidity: "500000",
+              availableLiquidityRaw: "500000000000",
+              utilizationRate: "0.5",
+              loanTokenPriceUsd: "1",
+              isBorrowEnabled: true,
+              supplyCollateralFeeBps: "0",
+              feeWrapperAddress: null,
+              minLoan: null,
+            },
+          ],
+        })
+      )
+    );
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: rkMockWallet({ accounts: [account] }),
+      },
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Borrow"));
+    await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
+
+    await userEvent.click(app.getByTestId("number-input").first());
+    await userEvent.keyboard("25");
+    await userEvent.click(app.getByTestId("number-input").last());
+    await userEvent.keyboard("0.5");
+    await app.getByRole("button", { name: "Review borrow" }).click();
+
+    await expect
+      .element(app.getByText("Borrow and supply collateral"))
+      .toBeInTheDocument();
+    await expect.element(app.getByText("25 USDC")).toBeInTheDocument();
+    await expect.element(app.getByText("0.5 WETH")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("aave-v3-ethereum-usdc"))
+      .toBeInTheDocument();
 
     app.unmount();
   });

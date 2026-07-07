@@ -51,7 +51,9 @@
       "deposited": "Dépôt de {{token}}",
       "withdrew": "Retrait de {{token}}",
       "rewards": "Récompenses",
-      "generic": "{{action}} {{token}}"
+      "generic": "{{action}} {{token}}",
+      "unknown_token": "Jeton inconnu",
+      "yield_unavailable": "Détails du rendement indisponibles"
     },
     "time": {
       "now": "à l'instant",
@@ -690,6 +692,7 @@
         "stake": "Stake",
         "defi": "DeFi",
         "rwa": "RWA",
+        "borrow": "Emprunter",
         "manage": "Manage",
         "overview": "Aperçu",
         "rewards": "Récompenses",
@@ -698,7 +701,8 @@
       "positions_sections": {
         "stake": "Staking",
         "defi": "DeFi",
-        "rwa": "RWA"
+        "rwa": "RWA",
+        "borrow": "Emprunt"
       },
       "positions_tooltip": "Les positions sont vos soldes liés au rendement sur le réseau.",
       "my_positions": "Mes positions",
@@ -709,6 +713,7 @@
       "positions_amount": "Montant",
       "positions_rewards": "Récompenses",
       "positions_connect_wallet": "Connectez un portefeuille pour voir vos positions",
+      "positions_partial_error": "Certaines positions n'ont pas pu être chargées.",
       "activity_connect_wallet": "Connectez un portefeuille pour voir votre activité"
     },
     "earn_details": {
@@ -756,6 +761,190 @@
       "auto_compounding": "Auto-compounding",
       "manual": "Manuel"
     },
+    "borrow": {
+      "title": "Emprunter",
+      "review": "Vérifier l'emprunt",
+      "enter_amounts": "Saisissez les montants",
+      "fix_errors": "Corrigez les erreurs",
+      "connect_title": "Connecter un portefeuille",
+      "connect_description": "Connectez un portefeuille pour consulter les marchés d'emprunt et démarrer une action d'emprunt.",
+      "unsupported_network": "Réseau non pris en charge",
+      "unsupported_network_description": "Passez à un réseau pris en charge pour consulter les marchés d'emprunt et les positions.",
+      "empty_title": "Aucun marché d'emprunt",
+      "empty_description": "Les marchés d'emprunt ne sont pas encore disponibles pour ce réseau.",
+      "error_title": "Emprunt indisponible",
+      "error_description": "Les données du marché d'emprunt ne peuvent pas être chargées pour le moment.",
+      "form": {
+        "borrow": "Emprunt",
+        "collateral": "Garantie",
+        "details": "Détails",
+        "markets": "Marchés",
+        "select_market": "Sélectionner le marché d'emprunt",
+        "select_collateral": "Sélectionner la garantie",
+        "search_assets": "Rechercher des actifs...",
+        "borrowable_assets": "Actifs empruntables",
+        "collateral_assets": "Actifs de garantie",
+        "no_assets": "Aucun actif trouvé",
+        "max_ltv": "LTV max. {{value}} %",
+        "available": "{{amount}} {{symbol}} disponibles",
+        "wallet_balance": "{{amount}} {{symbol}} dans le portefeuille",
+        "ltv_ratio": "Ratio LTV",
+        "collateral_value": "Valeur de la garantie",
+        "loan": "Prêt",
+        "borrow_rate": "Taux d'emprunt",
+        "health_factor": "Facteur de santé",
+        "ltv_note": "La liquidation peut survenir si le LTV dépasse le seuil du marché sélectionné.",
+        "validation": {
+          "available_liquidity": "Le montant dépasse la liquidité disponible.",
+          "wallet_balance": "Le montant dépasse le solde du portefeuille.",
+          "ltv": "La garantie est trop faible pour ce montant emprunté."
+        }
+      },
+      "details": {
+        "empty_title": "Sélectionnez un marché d'emprunt",
+        "empty_description": "Les détails du marché s'affichent ici après la sélection.",
+        "borrow_apy": "APY d'emprunt",
+        "supply_apy": "APY de dépôt",
+        "max_ltv": "LTV max.",
+        "about": "À propos",
+        "about_fallback": "Empruntez contre une garantie sur le marché {{market}} via {{provider}}.",
+        "market_stats": "Statistiques du marché",
+        "protocol": "Protocole",
+        "provider": "Fournisseur",
+        "network": "Réseau",
+        "market_type": "Type de marché",
+        "pool_address": "Adresse du pool",
+        "total_supply": "Total fourni",
+        "total_borrow": "Total emprunté",
+        "available_liquidity": "Liquidité disponible",
+        "utilization": "Utilisation"
+      },
+      "market_type": {
+        "pool": "Marché groupé",
+        "isolated": "Marché isolé"
+      },
+      "review_page": {
+        "title": "Vérifier l'emprunt",
+        "unavailable_title": "Vérification d'emprunt indisponible",
+        "unavailable_description": "Revenez à Emprunter et saisissez les montants pour vérifier cette action.",
+        "back": "Retour à Emprunter",
+        "action": "Action",
+        "actions": {
+          "borrow": "Emprunter",
+          "borrowAndSupply": "Emprunter et fournir une garantie",
+          "disableCollateral": "Désactiver la garantie",
+          "enableCollateral": "Activer la garantie",
+          "repay": "Rembourser la dette",
+          "supply": "Fournir une garantie",
+          "withdraw": "Retirer la garantie"
+        },
+        "borrow_amount": "Montant emprunté",
+        "collateral_amount": "Montant de garantie",
+        "market": "Marché",
+        "provider": "Fournisseur",
+        "network": "Réseau",
+        "requested_action": "Action demandée",
+        "market_id": "ID du marché",
+        "execution_pending": "La confirmation ouvrira le flux de transaction d'emprunt.",
+        "confirm": "Confirmer",
+        "back_to_position": "Retour à la position",
+        "projected_ltv": "LTV projeté",
+        "projected_health_factor": "Facteur de santé projeté",
+        "estimated_fee": "Frais estimés",
+        "estimated_fee_pending": "Affichés dans le portefeuille",
+        "risk_disclosures": {
+          "borrow": "L'emprunt augmente la dette et le risque de liquidation si la valeur de la garantie baisse.",
+          "borrowAndSupply": "Fournir une garantie et emprunter modifie votre LTV et le risque de liquidation.",
+          "disableCollateral": "Désactiver une garantie peut réduire le facteur de santé et augmenter le risque de liquidation.",
+          "enableCollateral": "Activer une garantie peut améliorer le facteur de santé, mais l'actif reste soumis au risque de marché.",
+          "repay": "Rembourser la dette peut améliorer le LTV et réduire le risque de liquidation.",
+          "supply": "Fournir une garantie peut modifier la disponibilité au retrait et la capacité d'emprunt.",
+          "withdraw": "Retirer une garantie peut augmenter le LTV et le risque de liquidation."
+        }
+      },
+      "execution_page": {
+        "title": "Confirmer l'emprunt",
+        "unavailable_title": "Exécution d'emprunt indisponible",
+        "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
+        "error_title": "La transaction d'emprunt a échoué",
+        "current_transaction": "Transaction {{current}} sur {{total}}",
+        "steps": {
+          "create": {
+            "label": "Créer l'action",
+            "description": "Préparation de l'action d'emprunt."
+          },
+          "sign": {
+            "label": "Approuver dans le portefeuille",
+            "description": "Vérifiez et signez la transaction d'emprunt."
+          },
+          "submit": {
+            "label": "Soumettre la transaction",
+            "description": "Envoi du résultat de transaction à l'API d'emprunt."
+          },
+          "confirm": {
+            "label": "Confirmer la transaction",
+            "description": "Attente de la confirmation par l'API d'emprunt."
+          }
+        }
+      },
+      "success_page": {
+        "title": "Emprunt terminé",
+        "unavailable_title": "Résultat d'emprunt indisponible",
+        "unavailable_description": "Revenez à Emprunter pour lancer une nouvelle action.",
+        "view_transaction": "Voir la transaction",
+        "done": "Terminé"
+      },
+      "position_details": {
+        "actions_title": "Actions",
+        "borrowed": "Emprunté",
+        "collateral": "Garantie",
+        "debt": "Dette",
+        "details": "Détails de l'emprunt",
+        "empty": "Position d'emprunt indisponible",
+        "health_factor": "Facteur de santé",
+        "liquidation_penalty": "Pénalité de liquidation",
+        "liquidation_threshold": "Seuil de liquidation",
+        "ltv": "LTV",
+        "loan_to_value": "Loan to value",
+        "low_risk": "Risque plus faible",
+        "liquidation_at": "Liquidation {{value}}",
+        "net_apy": "APY net",
+        "net_worth": "Valeur nette",
+        "no_actions": "Aucune action disponible",
+        "supplied": "Fourni",
+        "unsupported_network": "Les positions d'emprunt ne sont pas disponibles sur ce réseau.",
+        "collateral_list": "Valeur de la garantie",
+        "configure_action": "Gérer",
+        "selected": "Sélectionné",
+        "select_withdraw_token": "Sélectionner la garantie à retirer",
+        "outstanding_debt": "{{amount}} {{symbol}} dus",
+        "withdrawable": "{{amount}} {{symbol}} retirable",
+        "repay_full": "Rembourser le montant total",
+        "repay_full_description": "Utilise la sémantique de remboursement total du protocole.",
+        "enable_collateral_title": "Activer {{symbol}} comme garantie",
+        "disable_collateral_title": "Désactiver {{symbol}} comme garantie",
+        "enable_collateral_warning": "Activer cet actif comme garantie peut améliorer le facteur de santé, mais l'actif fourni reste exposé au risque de marché.",
+        "disable_collateral_warning": "Désactiver cet actif comme garantie peut réduire le facteur de santé et augmenter le risque de liquidation.",
+        "validation": {
+          "repay_debt": "Le montant dépasse la dette restante.",
+          "wallet_balance": "Le montant dépasse le solde du portefeuille.",
+          "withdraw_balance": "Le montant dépasse le solde retirable.",
+          "withdraw_ltv": "Le retrait dépasserait la limite LTV du marché."
+        },
+        "action_descriptions": {
+          "disableCollateral": "Vérifiez l'impact sur la santé avant de désactiver cette garantie.",
+          "enableCollateral": "Vérifiez l'impact sur la santé avant d'activer cette garantie.",
+          "repay": "Choisissez un montant ou remboursez toute la dette.",
+          "withdraw": "Choisissez la garantie et le montant à retirer."
+        },
+        "actions": {
+          "disableCollateral": "Désactiver la garantie",
+          "enableCollateral": "Activer la garantie",
+          "repay": "Rembourser",
+          "withdraw": "Retirer"
+        }
+      }
+    },
     "position_details": {
       "action_available": "Action disponible",
       "action_required": "Action requise",
@@ -781,8 +970,11 @@
     "overview": {
       "summary": {
         "total_staked": "Total staké",
+        "total_supplied": "Total fourni",
         "total_rewards": "Total des récompenses",
-        "available_balance": "Disponible"
+        "average_apy": "APY moyen",
+        "available_balance": "Disponible",
+        "net_worth": "Valeur nette"
       }
     },
     "rewards": {

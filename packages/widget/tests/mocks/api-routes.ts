@@ -8,3 +8,6 @@ export const legacyApiRoute = (path: string) =>
 
 export const yieldApiRoute = (path: string) =>
   getApiRoute(config.env.yieldsApiUrl, path);
+
+export const borrowApiRoute = (path: string) =>
+  getApiRoute(config.env.borrowApiUrl, path);

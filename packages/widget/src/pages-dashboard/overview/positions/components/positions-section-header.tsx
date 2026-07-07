@@ -8,7 +8,7 @@ export const PositionsSectionHeader = ({
   category,
   count,
 }: {
-  category: DashboardYieldCategory;
+  category: DashboardYieldCategory | "borrow";
   count: number;
 }) => {
   const { t } = useTranslation();

@@ -15,7 +15,14 @@ const useBackButton = () => {
   return useContext(BackButtonContext);
 };
 
-export const BackButton = () => {
+type BackButtonProps = {
+  readonly "aria-label"?: string;
+  readonly "data-rk"?: string;
+  readonly "data-testid"?: string;
+  readonly onClick?: () => void;
+};
+
+export const BackButton = ({ onClick, ...rest }: BackButtonProps) => {
   const { onLeftIconPress } = useHeader();
   const showBack = useBackButton();
 
@@ -24,10 +31,12 @@ export const BackButton = () => {
   return (
     <Box
       as="button"
-      onClick={onLeftIconPress}
+      onClick={onClick ?? onLeftIconPress}
       display="flex"
       alignItems="center"
       justifyContent="flex-start"
+      type="button"
+      {...rest}
     >
       <CaretLeftIcon />
     </Box>

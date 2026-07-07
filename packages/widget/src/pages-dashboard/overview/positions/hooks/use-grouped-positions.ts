@@ -1,4 +1,5 @@
 import { useQueries } from "@tanstack/react-query";
+import type { Position as BorrowPosition } from "../../../../borrow";
 import {
   type DashboardYieldCategory,
   getDashboardYieldCategory,
@@ -14,10 +15,18 @@ type PositionItem = ReturnType<
   typeof usePositions
 >["positionsData"]["data"][number];
 
+export type UnifiedPositionItem =
+  | { readonly kind: "borrow"; readonly position: BorrowPosition }
+  | { readonly kind: "earn"; readonly position: PositionItem };
+
 type PositionsListRow =
   | { kind: "chain-modal" }
-  | { kind: "section"; category: DashboardYieldCategory; count: number }
-  | { kind: "position"; item: PositionItem };
+  | {
+      kind: "section";
+      category: DashboardYieldCategory | "borrow";
+      count: number;
+    }
+  | { kind: "position"; item: UnifiedPositionItem };
 
 const staleTime = 1000 * 60 * 2;
 
@@ -26,9 +35,13 @@ const staleTime = 1000 * 60 * 2;
  * mirroring how the top navigation tabs are grouped. Positions whose category
  * cannot (yet) be resolved are kept ungrouped at the end so nothing is hidden.
  */
-export const useGroupedPositions = (
-  positions: PositionItem[]
-): PositionsListRow[] => {
+export const useGroupedPositions = ({
+  borrowPositions,
+  earnPositions,
+}: {
+  readonly borrowPositions: BorrowPosition[];
+  readonly earnPositions: PositionItem[];
+}): PositionsListRow[] => {
   const { isLedgerLive } = useSKWallet();
   const apiClient = useApiClient();
   const queryClient = useSKQueryClient();
@@ -36,7 +49,7 @@ export const useGroupedPositions = (
   const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
 
   const integrationIds = dashboardYieldCategoryGroupingEnabled
-    ? [...new Set(positions.map((p) => p.integrationId))]
+    ? [...new Set(earnPositions.map((p) => p.integrationId))]
     : [];
 
   const categoryQueries = useQueries({
@@ -52,7 +65,14 @@ export const useGroupedPositions = (
   if (!dashboardYieldCategoryGroupingEnabled) {
     return [
       { kind: "chain-modal" },
-      ...positions.map((item) => ({ kind: "position" as const, item })),
+      ...earnPositions.map((position) => ({
+        kind: "position" as const,
+        item: { kind: "earn" as const, position },
+      })),
+      ...borrowPositions.map((position) => ({
+        kind: "position" as const,
+        item: { kind: "borrow" as const, position },
+      })),
     ];
   }
 
@@ -68,7 +88,7 @@ export const useGroupedPositions = (
   const grouped = new Map<DashboardYieldCategory, PositionItem[]>();
   const ungrouped: PositionItem[] = [];
 
-  for (const item of positions) {
+  for (const item of earnPositions) {
     const category = categoryByIntegrationId.get(item.integrationId);
 
     if (category) {
@@ -87,10 +107,34 @@ export const useGroupedPositions = (
     if (!items?.length) continue;
 
     rows.push({ kind: "section", category, count: items.length });
-    for (const item of items) rows.push({ kind: "position", item });
+    for (const item of items) {
+      rows.push({
+        kind: "position",
+        item: { kind: "earn", position: item },
+      });
+    }
   }
 
-  for (const item of ungrouped) rows.push({ kind: "position", item });
+  for (const item of ungrouped) {
+    rows.push({
+      kind: "position",
+      item: { kind: "earn", position: item },
+    });
+  }
+
+  if (borrowPositions.length > 0) {
+    rows.push({
+      category: "borrow",
+      count: borrowPositions.length,
+      kind: "section",
+    });
+    for (const position of borrowPositions) {
+      rows.push({
+        kind: "position",
+        item: { kind: "borrow", position },
+      });
+    }
+  }
 
   return rows;
 };

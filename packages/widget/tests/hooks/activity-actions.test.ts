@@ -1,12 +1,19 @@
+import { QueryClient } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import type { ActionsControllerGetActionsParams } from "../../src/generated/api/yield";
 import {
+  fetchActivityActionsPage,
   fetchActivityFilterOptions,
   getActivityActionsQueryKey,
   getActivityActionsRequestParams,
 } from "../../src/hooks/api/use-activity-actions";
 import type { ActivityFilter } from "../../src/pages/details/activity-page/activity-filters";
 import type { ApiClient } from "../../src/providers/api/api-client";
+import {
+  yieldApiActionFixture,
+  yieldApiProviderFixture,
+  yieldApiYieldFixture,
+} from "../fixtures";
 
 const address = "0x0000000000000000000000000000000000000001";
 const network = "ethereum";
@@ -174,5 +181,68 @@ describe("fetchActivityFilterOptions", () => {
           params.statuses?.join("|") === "SUCCESS|FAILED"
       )
     ).toBe(true);
+  });
+});
+
+describe("fetchActivityActionsPage", () => {
+  it("keeps actions whose yield metadata is missing", async () => {
+    const presentAction = yieldApiActionFixture({
+      id: "action-with-yield",
+      yieldId: "yield-present",
+      rawArguments: { inputToken: "ETH" },
+    });
+    const missingYieldAction = yieldApiActionFixture({
+      id: "action-without-yield",
+      yieldId: "yield-missing",
+      rawArguments: { inputToken: "stETH" },
+    });
+    const presentYield = yieldApiYieldFixture({ id: presentAction.yieldId });
+    const getActions = vi.fn(async () => ({
+      items: [presentAction, missingYieldAction],
+      limit: 50,
+      offset: 0,
+      total: 2,
+    }));
+    const getYields = vi.fn(async () => ({
+      items: [presentYield],
+      limit: 2,
+      offset: 0,
+      total: 1,
+    }));
+    const getProvider = vi.fn(async () => yieldApiProviderFixture());
+    const apiClient = {
+      withOptions: vi.fn(() => ({
+        yield: {
+          ActionsControllerGetActions: getActions,
+          ProvidersControllerGetProvider: getProvider,
+          YieldsControllerGetYields: getYields,
+        },
+      })),
+    } as unknown as ApiClient;
+
+    const result = await fetchActivityActionsPage({
+      address,
+      apiClient,
+      filter: "stake",
+      network,
+      offset: 0,
+      queryClient: new QueryClient(),
+    });
+
+    expect(result.total).toBe(2);
+    expect(result.data.map((item) => item.actionData.id)).toEqual([
+      "action-with-yield",
+      "action-without-yield",
+    ]);
+    expect(result.data.map((item) => item.yieldData?.id ?? null)).toEqual([
+      "yield-present",
+      null,
+    ]);
+    expect(getYields).toHaveBeenCalledWith({
+      params: {
+        yieldIds: ["yield-present", "yield-missing"],
+        limit: 2,
+      },
+    });
   });
 });

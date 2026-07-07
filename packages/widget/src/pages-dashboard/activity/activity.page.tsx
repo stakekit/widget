@@ -108,6 +108,7 @@ const _ActivityPage = () => {
 
   const onActionSelect = (data: ActionYieldDto) => {
     if (!isConnected) return openConnectModal?.();
+    if (!data.yieldData) return;
 
     if (
       data.actionData.status === ActionStatus.SUCCESS ||

@@ -1,9 +1,13 @@
+import { Effect } from "effect";
 import { HttpResponse, http } from "msw";
 import { delayAPIRequests } from "../../src/common/delay-api-requests";
 import { config } from "../../src/config";
 import { useGeoBlock } from "../../src/hooks/use-geo-block";
 import { useRichErrors } from "../../src/hooks/use-rich-errors";
-import { createApiClient } from "../../src/providers/api/api-client";
+import {
+  createApiClient,
+  MissingBorrowApiConfig,
+} from "../../src/providers/api/api-client";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderHook } from "../utils/test-utils";
 
@@ -13,6 +17,7 @@ const createTestClient = (
   createApiClient({
     apiKey: "test-key",
     baseUrl: "https://api.example.com",
+    borrowApiUrl: "https://borrow.example.com",
     yieldsApiUrl: "https://yield.example.com",
     ...options,
   });
@@ -20,7 +25,7 @@ const createTestClient = (
 const normalizeUrl = (url: string) => url.replace(/\/$/, "");
 
 describe("API client", () => {
-  it("constructs bound generated legacy and Yield clients with shared headers", async ({
+  it("constructs bound legacy and Yield clients plus an Effect Borrow client with shared headers", async ({
     worker,
   }) => {
     const calls: Array<{ headers: Headers; url: string }> = [];
@@ -31,6 +36,14 @@ describe("API client", () => {
         return HttpResponse.json([]);
       }),
       http.get("https://yield.example.com/health", ({ request }) => {
+        calls.push({ headers: request.headers, url: request.url });
+
+        return HttpResponse.json({
+          status: "OK",
+          timestamp: new Date(0).toISOString(),
+        });
+      }),
+      http.get("https://borrow.example.com/health", ({ request }) => {
         calls.push({ headers: request.headers, url: request.url });
 
         return HttpResponse.json({
@@ -49,10 +62,16 @@ describe("API client", () => {
     ).resolves.toMatchObject({
       status: "OK",
     });
+    await expect(
+      Effect.runPromise(client.effect.borrow.HealthControllerHealth(undefined))
+    ).resolves.toMatchObject({
+      status: "OK",
+    });
 
     expect(calls.map((call) => call.url)).toEqual([
       "https://api.example.com/v1/tokens",
       "https://yield.example.com/health",
+      "https://borrow.example.com/health",
     ]);
     expect(
       calls.every((call) => call.headers.get("X-API-KEY") === "test-key")
@@ -64,10 +83,24 @@ describe("API client", () => {
 
     expect("TokenControllerGetTokens" in client.legacy).toBe(true);
     expect("AuthControllerMe" in client.legacy).toBe(false);
+    expect("borrow" in client).toBe(false);
+    expect("MarketsControllerGetMarketsV1" in client.effect.borrow).toBe(true);
+    expect("PositionsControllerGetPositionsV1" in client.effect.borrow).toBe(
+      true
+    );
+    expect(
+      "TransactionsControllerSubmitTransactionV1" in client.effect.borrow
+    ).toBe(true);
     expect("TokensControllerGetTokens" in client.yield).toBe(true);
     expect("YieldsControllerGetAggregateBalances" in client.yield).toBe(true);
     expect("ProvidersControllerGetProvider" in client.yield).toBe(true);
     expect("ProvidersControllerGetProviders" in client.yield).toBe(false);
+  });
+
+  it("fails early when borrow API URL config is missing", () => {
+    expect(() => createTestClient({ borrowApiUrl: " " })).toThrowError(
+      MissingBorrowApiConfig
+    );
   });
 
   it("records rich errors for failed StakeKit API responses", async ({

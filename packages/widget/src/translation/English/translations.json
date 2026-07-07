@@ -52,7 +52,9 @@
       "deposited": "Deposited {{token}}",
       "withdrew": "Withdrew {{token}}",
       "rewards": "Rewards",
-      "generic": "{{action}} {{token}}"
+      "generic": "{{action}} {{token}}",
+      "unknown_token": "Unknown token",
+      "yield_unavailable": "Yield details unavailable"
     },
     "time": {
       "now": "just now",
@@ -247,6 +249,7 @@
         "stake": "Stake",
         "defi": "DeFi",
         "rwa": "RWA",
+        "borrow": "Borrow",
         "manage": "Manage",
         "overview": "Overview",
         "rewards": "Rewards",
@@ -255,7 +258,8 @@
       "positions_sections": {
         "stake": "Staking",
         "defi": "DeFi",
-        "rwa": "RWA"
+        "rwa": "RWA",
+        "borrow": "Borrow"
       },
       "positions_tooltip": "Positions are your yield-related balances on the network.",
       "my_positions": "My positions",
@@ -266,6 +270,7 @@
       "positions_amount": "Amount",
       "positions_rewards": "Rewards",
       "positions_connect_wallet": "Connect wallet to see your positions",
+      "positions_partial_error": "Some positions could not be loaded.",
       "activity_connect_wallet": "Connect wallet to see your activity"
     },
     "earn_details": {
@@ -313,6 +318,190 @@
       "auto_compounding": "Auto-compounding",
       "manual": "Manual"
     },
+    "borrow": {
+      "title": "Borrow",
+      "review": "Review borrow",
+      "enter_amounts": "Enter amounts",
+      "fix_errors": "Fix errors",
+      "connect_title": "Connect wallet",
+      "connect_description": "Connect a wallet to view borrow markets and start a borrow action.",
+      "unsupported_network": "Unsupported network",
+      "unsupported_network_description": "Switch to a supported network to view borrow markets and positions.",
+      "empty_title": "No borrow markets",
+      "empty_description": "Borrow markets are not available for this network yet.",
+      "error_title": "Borrow unavailable",
+      "error_description": "Borrow market data could not be loaded right now.",
+      "form": {
+        "borrow": "Borrow",
+        "collateral": "Collateral",
+        "details": "Details",
+        "markets": "Markets",
+        "select_market": "Select borrow market",
+        "select_collateral": "Select collateral",
+        "search_assets": "Search assets...",
+        "borrowable_assets": "Borrowable Assets",
+        "collateral_assets": "Collateral Assets",
+        "no_assets": "No assets found",
+        "max_ltv": "Max LTV {{value}}%",
+        "available": "{{amount}} {{symbol}} available",
+        "wallet_balance": "{{amount}} {{symbol}} in wallet",
+        "ltv_ratio": "LTV ratio",
+        "collateral_value": "Collateral value",
+        "loan": "Loan",
+        "borrow_rate": "Borrow rate",
+        "health_factor": "Health factor",
+        "ltv_note": "Liquidation can occur if LTV crosses the selected market threshold.",
+        "validation": {
+          "available_liquidity": "Amount exceeds available liquidity.",
+          "wallet_balance": "Amount exceeds wallet balance.",
+          "ltv": "Collateral is too low for this borrow amount."
+        }
+      },
+      "details": {
+        "empty_title": "Select a borrow market",
+        "empty_description": "Market details appear here after a market is selected.",
+        "borrow_apy": "Borrow APY",
+        "supply_apy": "Supply APY",
+        "max_ltv": "Max LTV",
+        "about": "About",
+        "about_fallback": "Borrow against collateral in the {{market}} market via {{provider}}.",
+        "market_stats": "Market stats",
+        "protocol": "Protocol",
+        "provider": "Provider",
+        "network": "Network",
+        "market_type": "Market type",
+        "pool_address": "Pool address",
+        "total_supply": "Total supply",
+        "total_borrow": "Total borrow",
+        "available_liquidity": "Available liquidity",
+        "utilization": "Utilization"
+      },
+      "market_type": {
+        "pool": "Pooled market",
+        "isolated": "Isolated market"
+      },
+      "review_page": {
+        "title": "Review borrow",
+        "unavailable_title": "Borrow review unavailable",
+        "unavailable_description": "Return to Borrow and enter amounts to review this action.",
+        "back": "Back to Borrow",
+        "action": "Action",
+        "actions": {
+          "borrow": "Borrow",
+          "borrowAndSupply": "Borrow and supply collateral",
+          "disableCollateral": "Disable collateral",
+          "enableCollateral": "Enable collateral",
+          "repay": "Repay debt",
+          "supply": "Supply collateral",
+          "withdraw": "Withdraw collateral"
+        },
+        "borrow_amount": "Borrow amount",
+        "collateral_amount": "Collateral amount",
+        "market": "Market",
+        "provider": "Provider",
+        "network": "Network",
+        "requested_action": "Requested action",
+        "market_id": "Market ID",
+        "execution_pending": "Confirming will open the borrow transaction flow.",
+        "confirm": "Confirm",
+        "back_to_position": "Back to position",
+        "projected_ltv": "Projected LTV",
+        "projected_health_factor": "Projected health factor",
+        "estimated_fee": "Estimated fee",
+        "estimated_fee_pending": "Shown in wallet",
+        "risk_disclosures": {
+          "borrow": "Borrowing increases debt and liquidation risk if collateral value falls.",
+          "borrowAndSupply": "Supplying collateral and borrowing changes your LTV and liquidation risk.",
+          "disableCollateral": "Disabling collateral can reduce health factor and increase liquidation risk.",
+          "enableCollateral": "Enabling collateral can improve health factor, but the asset remains subject to market risk.",
+          "repay": "Repaying debt can improve LTV and reduce liquidation risk.",
+          "supply": "Supplying collateral may affect your withdrawal availability and borrowing capacity.",
+          "withdraw": "Withdrawing collateral can increase LTV and liquidation risk."
+        }
+      },
+      "execution_page": {
+        "title": "Confirm borrow",
+        "unavailable_title": "Borrow execution unavailable",
+        "unavailable_description": "Return to Borrow and review an action before confirming.",
+        "error_title": "Borrow transaction failed",
+        "current_transaction": "Transaction {{current}} of {{total}}",
+        "steps": {
+          "create": {
+            "label": "Create action",
+            "description": "Preparing the borrow action."
+          },
+          "sign": {
+            "label": "Approve in wallet",
+            "description": "Review and sign the borrow transaction."
+          },
+          "submit": {
+            "label": "Submit transaction",
+            "description": "Sending the transaction result to the borrow API."
+          },
+          "confirm": {
+            "label": "Confirm transaction",
+            "description": "Waiting for the borrow API to confirm completion."
+          }
+        }
+      },
+      "success_page": {
+        "title": "Borrow complete",
+        "unavailable_title": "Borrow result unavailable",
+        "unavailable_description": "Return to Borrow to start a new action.",
+        "view_transaction": "View transaction",
+        "done": "Done"
+      },
+      "position_details": {
+        "actions_title": "Actions",
+        "borrowed": "Borrowed",
+        "collateral": "Collateral",
+        "debt": "Debt",
+        "details": "Borrow details",
+        "empty": "Borrow position unavailable",
+        "health_factor": "Health factor",
+        "liquidation_penalty": "Liquidation penalty",
+        "liquidation_threshold": "Liquidation threshold",
+        "ltv": "LTV",
+        "loan_to_value": "Loan to value",
+        "low_risk": "Lower risk",
+        "liquidation_at": "Liquidation {{value}}",
+        "net_apy": "Net APY",
+        "net_worth": "Net worth",
+        "no_actions": "No actions available",
+        "supplied": "Supplied",
+        "unsupported_network": "Borrow positions are not available on this network.",
+        "collateral_list": "Collateral value",
+        "configure_action": "Manage",
+        "selected": "Selected",
+        "select_withdraw_token": "Select collateral to withdraw",
+        "outstanding_debt": "{{amount}} {{symbol}} outstanding",
+        "withdrawable": "{{amount}} {{symbol}} withdrawable",
+        "repay_full": "Repay full amount",
+        "repay_full_description": "Uses protocol full-repay semantics.",
+        "enable_collateral_title": "Enable {{symbol}} collateral",
+        "disable_collateral_title": "Disable {{symbol}} collateral",
+        "enable_collateral_warning": "Enabling this asset as collateral can improve health factor, but the supplied asset remains exposed to market risk.",
+        "disable_collateral_warning": "Disabling this asset as collateral can lower health factor and increase liquidation risk.",
+        "validation": {
+          "repay_debt": "Amount exceeds outstanding debt.",
+          "wallet_balance": "Amount exceeds wallet balance.",
+          "withdraw_balance": "Amount exceeds withdrawable balance.",
+          "withdraw_ltv": "Withdrawal would exceed the market LTV limit."
+        },
+        "action_descriptions": {
+          "disableCollateral": "Review the health impact before disabling this collateral.",
+          "enableCollateral": "Review the health impact before enabling this collateral.",
+          "repay": "Choose an amount or repay the full debt.",
+          "withdraw": "Choose collateral and amount to withdraw."
+        },
+        "actions": {
+          "disableCollateral": "Disable collateral",
+          "enableCollateral": "Enable collateral",
+          "repay": "Repay",
+          "withdraw": "Withdraw"
+        }
+      }
+    },
     "position_details": {
       "action_available": "Action available",
       "action_required": "Action required",
@@ -338,9 +527,11 @@
     "overview": {
       "summary": {
         "total_staked": "Total staked",
+        "total_supplied": "Total supplied",
         "total_rewards": "Total rewards",
         "average_apy": "Average APY",
-        "available_balance": "Available"
+        "available_balance": "Available",
+        "net_worth": "Net worth"
       }
     },
     "rewards": {
