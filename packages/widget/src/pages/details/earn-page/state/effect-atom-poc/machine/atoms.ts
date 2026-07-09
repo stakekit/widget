@@ -1,3 +1,4 @@
+import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { resolveEarnView } from "../resolver/resolver";
 import {
@@ -9,22 +10,31 @@ import {
 import type { EarnAction } from "./actions";
 import { applyEarnAction } from "./reducer";
 
-export const earnMachineAtom = Atom.family((entry: EarnEntryKey) => {
-  const earnIntentAtom = Atom.make<EarnMachineIntent>(makeDefaultEarnIntent());
-
-  return Atom.writable<EarnMachineView, EarnAction>(
+export const getEarnMachineAtoms = Atom.family((entry: EarnEntryKey) => {
+  const intentAtom = Atom.writable<EarnMachineIntent, EarnAction>(
     (context) =>
-      resolveEarnView({
-        context,
-        entry,
-        intent: context.get(earnIntentAtom),
-      }),
+      context
+        .self<EarnMachineIntent>()
+        .pipe(Option.getOrElse(makeDefaultEarnIntent)),
     (ctx, action) => {
-      const intent = ctx.get(earnIntentAtom);
+      const intent = ctx.get(intentAtom);
 
       const newIntent = applyEarnAction({ action, intent });
 
-      ctx.set(earnIntentAtom, newIntent);
+      ctx.setSelf(newIntent);
     }
   );
+
+  const viewAtom = Atom.readable<EarnMachineView>((context) => {
+    return resolveEarnView({
+      context,
+      entry,
+      intent: context.get(intentAtom),
+    });
+  });
+
+  return {
+    intentAtom,
+    viewAtom,
+  };
 });

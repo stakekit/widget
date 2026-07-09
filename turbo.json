@@ -1,6 +1,5 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "dangerouslyDisablePackageManagerCheck": true,
   "globalDependencies": [
     "biome.json",
     "pnpm-lock.yaml",
@@ -43,6 +42,9 @@
         "vite.config.*",
         "package.json"
       ]
+    },
+    "clean": {
+      "cache": false
     }
   }
 }

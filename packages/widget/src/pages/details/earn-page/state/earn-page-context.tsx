@@ -130,6 +130,7 @@ export const EarnPageContextProvider = ({
     network: network ?? null,
     preferredTokenYieldsPerNetwork: preferredTokenYieldsPerNetwork ?? null,
     tokensForEnabledYieldsOnly: !!tokensForEnabledYieldsOnly,
+    walletResolution: isConnecting ? "pending" : "settled",
   });
 
   const tokenOptionsResource = machine.resources.tokenOptions;
@@ -744,11 +745,13 @@ export const EarnPageContextProvider = ({
   const onLoadMoreValidators = () => pullMoreValidators();
 
   const selectTokenIsLoading =
+    machine.status === "resolving-wallet" ||
     machine.status === "loading-token-options" ||
     machine.status === "loading-initial-selection" ||
     tokenOptionsLoading;
 
   const selectYieldIsLoading =
+    machine.status === "resolving-wallet" ||
     machine.status === "loading-initial-selection" ||
     yieldOpportunityLoading ||
     tokenOptionsLoading;

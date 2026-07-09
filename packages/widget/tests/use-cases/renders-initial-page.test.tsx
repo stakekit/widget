@@ -288,6 +288,72 @@ describe("Renders initial page", () => {
     app.unmount();
   });
 
+  it("updates the selected dashboard category after route tab changes", async () => {
+    const app = await renderApp({
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+    const clickTab = (label: string) => {
+      const tabsSection = app.container.querySelector(
+        "[data-rk='tabs-section']"
+      );
+      const tab = [...(tabsSection?.querySelectorAll("p") ?? [])].find(
+        (el) => el.textContent === label
+      );
+
+      expect(tab).not.toBeUndefined();
+      tab?.click();
+    };
+
+    await expect
+      .element(app.getByText("RWA"))
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("DeFi");
+
+    await expect
+      .element(app.getByText("DeFi"))
+      .toHaveAttribute("data-state", "selected");
+    await expect
+      .element(app.getByText("RWA"))
+      .toHaveAttribute("data-state", "default");
+
+    clickTab("Borrow");
+    await expect
+      .element(app.getByText("Borrow").first())
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("Stake");
+    await expect
+      .element(app.getByText("Stake").first())
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("Manage");
+    await expect
+      .element(app.getByText("Manage").first())
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("RWA");
+    await expect
+      .element(app.getByText("RWA").first())
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("Activity");
+    await expect
+      .element(app.getByText("Activity").first())
+      .toHaveAttribute("data-state", "selected");
+
+    clickTab("DeFi");
+    await expect
+      .element(app.getByText("DeFi").first())
+      .toHaveAttribute("data-state", "selected");
+
+    app.unmount();
+  });
+
   it("opens the native Borrow dashboard tab", async ({ worker }) => {
     worker.use(
       http.post(legacyApiRoute("/v1/tokens/balances/scan"), () =>

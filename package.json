@@ -6,6 +6,12 @@
   ],
   "author": "Petar Todorovic <petar@omni.app> (https://github.com)",
   "license": "MIT",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.10.0"
+    }
+  },
   "scripts": {
     "build": "turbo run build",
     "lint": "turbo run lint",

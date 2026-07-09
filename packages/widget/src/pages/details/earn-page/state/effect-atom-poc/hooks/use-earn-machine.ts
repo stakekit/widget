@@ -1,15 +1,16 @@
-import { useAtom } from "@effect/atom-react";
-import { earnMachineAtom } from "../machine/atoms";
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { getEarnMachineAtoms } from "../machine/atoms";
 import { EarnEntryKey, type EarnEntryParams } from "../types";
 
 export const useEarnMachine = (entryParams: EarnEntryParams) => {
-  const [view, dispatch] = useAtom(
-    earnMachineAtom(
-      new EarnEntryKey({
-        ...entryParams,
-      })
-    )
+  const { viewAtom, intentAtom } = getEarnMachineAtoms(
+    new EarnEntryKey({
+      ...entryParams,
+    })
   );
+
+  const view = useAtomValue(viewAtom);
+  const dispatch = useAtomSet(intentAtom);
 
   return {
     view,

@@ -1,0 +1,91 @@
+--- a/src/unstable/reactivity/AtomRegistry.ts
++++ b/src/unstable/reactivity/AtomRegistry.ts
+@@ -754,9 +754,12 @@
+         const parents = this.previousParents
+         this.previousParents = undefined
+         for (let i = 0; i < parents.length; i++) {
+-          parents[i].removeChild(this)
+-          if (parents[i].canBeRemoved) {
+-            this.registry.scheduleNodeRemoval(parents[i])
++          const parent = parents[i]
++          if (this.parents.indexOf(parent) === -1) {
++            parent.removeChild(this)
++            if (parent.canBeRemoved) {
++              this.registry.scheduleNodeRemoval(parent)
++            }
+           }
+         }
+       }
+@@ -826,14 +829,19 @@
+   }
+ 
+   addParent(parent: NodeImpl<any>): void {
+-    this.parents.push(parent)
++    if (this.parents.indexOf(parent) === -1) {
++      this.parents.push(parent)
++    }
+     if (this.previousParents !== undefined) {
+-      const index = this.previousParents.indexOf(parent)
+-      if (index !== -1) {
++      let index = this.previousParents.indexOf(parent)
++      while (index !== -1) {
+         this.previousParents[index] = this.previousParents[this.previousParents.length - 1]
+-        if (this.previousParents.pop() === undefined) {
++        this.previousParents.pop()
++        if (this.previousParents.length === 0) {
+           this.previousParents = undefined
++          break
+         }
++        index = this.previousParents.indexOf(parent)
+       }
+     }
+ 
+--- a/dist/unstable/reactivity/AtomRegistry.js
++++ b/dist/unstable/reactivity/AtomRegistry.js
+@@ -440,9 +440,12 @@
+         const parents = this.previousParents;
+         this.previousParents = undefined;
+         for (let i = 0; i < parents.length; i++) {
+-          parents[i].removeChild(this);
+-          if (parents[i].canBeRemoved) {
+-            this.registry.scheduleNodeRemoval(parents[i]);
++          const parent = parents[i];
++          if (this.parents.indexOf(parent) === -1) {
++            parent.removeChild(this);
++            if (parent.canBeRemoved) {
++              this.registry.scheduleNodeRemoval(parent);
++            }
+           }
+         }
+       }
+@@ -499,14 +502,19 @@
+     }
+   }
+   addParent(parent) {
+-    this.parents.push(parent);
++    if (this.parents.indexOf(parent) === -1) {
++      this.parents.push(parent);
++    }
+     if (this.previousParents !== undefined) {
+-      const index = this.previousParents.indexOf(parent);
+-      if (index !== -1) {
++      let index = this.previousParents.indexOf(parent);
++      while (index !== -1) {
+         this.previousParents[index] = this.previousParents[this.previousParents.length - 1];
+-        if (this.previousParents.pop() === undefined) {
++        this.previousParents.pop();
++        if (this.previousParents.length === 0) {
+           this.previousParents = undefined;
++          break;
+         }
++        index = this.previousParents.indexOf(parent);
+       }
+     }
+     if (parent.children.indexOf(this) === -1) {
+@@ -845,4 +853,4 @@
+     node.value();
+   }
+ }
+-//# sourceMappingURL=AtomRegistry.js.map
+\ No newline at end of file
++//# sourceMappingURL=AtomRegistry.js.map

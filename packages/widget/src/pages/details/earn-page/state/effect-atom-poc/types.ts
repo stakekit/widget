@@ -67,6 +67,7 @@ export type EarnEntryParams = {
     | TokenBalanceScanDto["addresses"]["additionalAddresses"]
     | null;
   network: Networks | null;
+  walletResolution: "pending" | "settled";
   dashboardVariant: boolean;
   categoryOrder: ReadonlyArray<DashboardYieldCategory>;
   initParams?: InitParams | null;
@@ -102,6 +103,7 @@ export type EarnMachineForm = {
 };
 
 export type EarnMachineStatus =
+  | "resolving-wallet"
   | "loading-initial-selection"
   | "loading-token-options"
   | "no-tokens"
