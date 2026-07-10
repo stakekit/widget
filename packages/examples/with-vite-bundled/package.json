@@ -14,7 +14,7 @@
     "@stakekit/widget": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "catalog:",
+    "@typescript/native": "catalog:",
     "vite": "catalog:"
   }
 }
