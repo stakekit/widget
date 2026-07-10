@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
+import { Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
 import { List, Maybe } from "purify-ts";
@@ -22,6 +22,8 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
+import { EarnValidatorKey } from "../../../../domain/schema/earn-models";
+import { YieldId } from "../../../../domain/schema/identifiers";
 import { getKycProviderName } from "../../../../domain/types/kyc";
 import type { PositionsData } from "../../../../domain/types/positions";
 import type { TronResourceType } from "../../../../domain/types/tron";
@@ -455,7 +457,10 @@ export const EarnPageContextProvider = ({
     });
 
   const onYieldSelect = (yieldId: string) => {
-    dispatch({ type: "yield/select", yieldId });
+    const decoded = Schema.decodeUnknownOption(YieldId)(yieldId);
+    if (Option.isSome(decoded)) {
+      dispatch({ type: "yield/select", yieldId: decoded.value });
+    }
   };
 
   const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
@@ -471,19 +476,29 @@ export const EarnPageContextProvider = ({
 
   const onValidatorSelect = (item: Validator) =>
     selectedStake.ifJust((ss) =>
-      isYieldActionArgRequired(ss, "enter", "validatorAddresses")
-        ? dispatch({
-            type: "validator/multiselect",
-            validatorKey: item.key,
-          })
-        : dispatch({
-            type: "validator/select",
-            validatorKey: item.key,
-          })
+      Schema.decodeUnknownOption(EarnValidatorKey)(item.key).pipe(
+        Option.match({
+          onNone: () => undefined,
+          onSome: (validatorKey) =>
+            isYieldActionArgRequired(ss, "enter", "validatorAddresses")
+              ? dispatch({
+                  type: "validator/multiselect",
+                  validatorKey,
+                })
+              : dispatch({
+                  type: "validator/select",
+                  validatorKey,
+                }),
+        })
+      )
     );
 
-  const onValidatorRemove = (item: Validator) =>
-    dispatch({ type: "validator/remove", validatorKey: item.key });
+  const onValidatorRemove = (item: Validator) => {
+    const decoded = Schema.decodeUnknownOption(EarnValidatorKey)(item.key);
+    if (Option.isSome(decoded)) {
+      dispatch({ type: "validator/remove", validatorKey: decoded.value });
+    }
+  };
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     dispatch({ type: "stakeAmount/change", amount: val.toString(10) });
@@ -517,40 +532,38 @@ export const EarnPageContextProvider = ({
   });
   const setEnterStakeRequest = useSetEnterStakeRequest();
 
-  const onClickHandler = useMutation({
-    mutationFn: async () => {
-      if (validation.hasErrors) return;
-      if (stakeEnterRequestDto.isNothing()) return;
+  const [submitted, setSubmitted] = useState(false);
+  const onClickHandler = () => {
+    setSubmitted(true);
+    if (validation.hasErrors) return;
+    if (stakeEnterRequestDto.isNothing()) return;
 
-      if (!isConnected) return openConnectModal?.();
-      if (kycGateIsBlocking) return;
+    if (!isConnected) return openConnectModal?.();
+    if (kycGateIsBlocking) return;
 
-      const val = Maybe.fromRecord({
-        stakeEnterRequestDto,
-        selectedToken,
-      }).unsafeCoerce();
+    const val = Maybe.fromRecord({
+      stakeEnterRequestDto,
+      selectedToken,
+    }).unsafeCoerce();
 
-      setEnterStakeRequest(
-        Maybe.of({
-          actionDto: Maybe.empty(),
-          addresses: val.stakeEnterRequestDto.addresses,
-          requestDto: val.stakeEnterRequestDto.dto,
-          selectedToken: val.selectedToken,
-          gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
-          selectedStake: val.stakeEnterRequestDto.selectedStake,
-          selectedValidators: val.stakeEnterRequestDto.selectedValidators,
-        })
-      );
-      navigate(positionDetailsStakeReviewPath ?? "/review");
-    },
-  });
-
-  const onClickHandlerResetRef = useSavedRef(onClickHandler.reset);
+    setEnterStakeRequest(
+      Maybe.of({
+        actionDto: Maybe.empty(),
+        addresses: val.stakeEnterRequestDto.addresses,
+        requestDto: val.stakeEnterRequestDto.dto,
+        selectedToken: val.selectedToken,
+        gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
+        selectedStake: val.stakeEnterRequestDto.selectedStake,
+        selectedValidators: val.stakeEnterRequestDto.selectedValidators,
+      })
+    );
+    navigate(positionDetailsStakeReviewPath ?? "/review");
+  };
 
   // biome-ignore lint: false
   useEffect(() => {
-    onClickHandlerResetRef.current();
-  }, [isConnected, selectedStakeId, onClickHandlerResetRef]);
+    setSubmitted(false);
+  }, [isConnected, selectedStakeId]);
 
   const {
     maxIntegrationAmount,
@@ -609,13 +622,13 @@ export const EarnPageContextProvider = ({
       stakeAmountIsZero,
     };
 
-    val.submitted = onClickHandler.status !== "idle";
+    val.submitted = submitted;
     val.hasErrors = Object.values(val.errors).some(Boolean);
 
     return val;
   }, [
     isConnected,
-    onClickHandler.status,
+    submitted,
     selectedStake,
     stakeAmountGreaterThanAvailableAmount,
     stakeAmountGreaterThanMax,
@@ -705,7 +718,7 @@ export const EarnPageContextProvider = ({
   const onTronResourceSelect = (value: TronResourceType) =>
     dispatch({ type: "tronResource/select", tronResource: value });
 
-  const onClickRef = useSavedRef(onClickHandler.mutate);
+  const onClickRef = useSavedRef(onClickHandler);
 
   const addLedgerAccount = useAddLedgerAccount();
 
@@ -829,7 +842,7 @@ export const EarnPageContextProvider = ({
     stakeAmount,
     isFetching,
     buttonDisabled,
-    onClick: onClickHandler.mutate,
+    onClick: onClickHandler,
     kycGate: yieldKycGate.gate,
     kycGateIsBlocking,
     kycGateIsChecking:

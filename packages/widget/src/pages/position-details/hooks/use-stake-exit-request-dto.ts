@@ -70,7 +70,7 @@ export const useStakeExitRequestDto = () => {
 
                 return {
                   validatorAddress: b.validator?.address,
-                  subnetId,
+                  ...(subnetId === undefined ? {} : { subnetId }),
                 };
               });
             }
@@ -90,7 +90,7 @@ export const useStakeExitRequestDto = () => {
             yieldId: val.integrationData.id,
             arguments: {
               amount: unstakeAmount.toString(10),
-              useMaxAmount: unstakeUseMaxAmount || undefined,
+              ...(unstakeUseMaxAmount ? { useMaxAmount: true } : {}),
               ...validatorsOrProvider,
               ...(additionalAddresses ?? {}),
             },

@@ -10,8 +10,8 @@ import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
 import type { SKExternalProviders } from "../../src/domain/types/wallets";
 import type { SKTxMeta } from "../../src/domain/types/wallets/generic-wallet";
-import { SKApiClientProvider } from "../../src/providers/api/api-client-provider";
-import { SKQueryClientProvider } from "../../src/providers/query-client";
+import { SKAtomRuntimeProvider } from "../../src/providers/effect-atom-runtime";
+import { ThirdPartyQueryClientProvider } from "../../src/providers/query-client";
 import { SettingsContextProvider } from "../../src/providers/settings";
 import { SKWalletProvider, useSKWallet } from "../../src/providers/sk-wallet";
 import { SendTransactionError } from "../../src/providers/sk-wallet/errors";
@@ -36,17 +36,17 @@ const renderHookWithExternalProvider = (
         apiKey={import.meta.env.VITE_API_KEY}
         externalProviders={externalProviders}
       >
-        <SKApiClientProvider>
-          <SKQueryClientProvider>
-            <SolanaProvider>
+        <ThirdPartyQueryClientProvider>
+          <SolanaProvider>
+            <SKAtomRuntimeProvider>
               <WagmiConfigProvider>
                 <TrackingContextProviderWithProps>
                   <SKWalletProvider>{children}</SKWalletProvider>
                 </TrackingContextProviderWithProps>
               </WagmiConfigProvider>
-            </SolanaProvider>
-          </SKQueryClientProvider>
-        </SKApiClientProvider>
+            </SKAtomRuntimeProvider>
+          </SolanaProvider>
+        </ThirdPartyQueryClientProvider>
       </SettingsContextProvider>
     ),
   });

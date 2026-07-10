@@ -1,18 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
-import { Duration } from "effect";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { Maybe } from "purify-ts";
+import { WalletAddress, YieldId } from "../../domain/schema/identifiers";
 import { isKycGateBlocking, mapKycStatusToGate } from "../../domain/types/kyc";
 import type { Yield } from "../../domain/types/yields";
-import { useApiClient } from "../../providers/api/api-client-provider";
 import { useSKWallet } from "../../providers/sk-wallet";
-
-const getYieldKycStatusQueryKey = ({
-  address,
-  yieldId,
-}: {
-  readonly address?: string;
-  readonly yieldId?: string;
-}) => ["yield-kyc-status", yieldId ?? null, address ?? null] as const;
+import { YieldKycKey, yieldKycStatusAtom } from "./dashboard-atoms";
 
 export const useYieldKycGate = ({
   enabled = true,
@@ -21,44 +15,44 @@ export const useYieldKycGate = ({
   readonly enabled?: boolean;
   readonly yieldDto: Maybe<Yield>;
 }) => {
-  const apiClient = useApiClient();
-  const { address } = useSKWallet();
+  const { address: rawAddress } = useSKWallet();
   const selectedYield = yieldDto.extractNullable();
   const queryEnabled =
     enabled &&
     !!selectedYield &&
-    !!address &&
+    !!rawAddress &&
     selectedYield.mechanics.requirements?.kycRequired === true;
-
-  const query = useQuery({
-    enabled: queryEnabled,
-    queryKey: getYieldKycStatusQueryKey({
-      address: address ?? undefined,
-      yieldId: selectedYield?.id,
-    }),
-    staleTime: Duration.minutes(2).pipe(Duration.toMillis),
-    queryFn: ({ signal }) =>
-      apiClient
-        .withOptions({ signal })
-        .yield.KycControllerGetStatus(selectedYield?.id ?? "", {
-          params: { address: address ?? "" },
-        }),
-  });
-
+  const address = rawAddress
+    ? Schema.decodeUnknownSync(WalletAddress)(rawAddress)
+    : null;
+  const yieldId = selectedYield
+    ? Schema.decodeUnknownSync(YieldId)(selectedYield.id)
+    : null;
+  const resource = yieldKycStatusAtom(
+    new YieldKycKey({ address, enabled: queryEnabled, yieldId })
+  );
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const status = result.pipe(AsyncResult.value, Option.getOrUndefined);
+  const isFetching = queryEnabled && result.waiting;
   const gate = !queryEnabled
     ? ({ state: "pass" } as const)
-    : query.isError
+    : AsyncResult.isFailure(result)
       ? mapKycStatusToGate({ status: null, yieldDto: selectedYield })
-      : mapKycStatusToGate({
-          status: query.data,
-          yieldDto: selectedYield,
-        });
+      : mapKycStatusToGate({ status, yieldDto: selectedYield });
 
   return {
-    ...query,
+    data: status === null ? undefined : status,
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
     gate,
+    isError: AsyncResult.isFailure(result),
+    isFetching,
     isGateBlocking:
-      queryEnabled && (query.isLoading || isKycGateBlocking(gate)),
+      queryEnabled &&
+      (AsyncResult.isInitial(result) || isKycGateBlocking(gate)),
     isKycEnabled: queryEnabled,
-  };
+    isLoading: queryEnabled && AsyncResult.isInitial(result),
+    isRefetching: isFetching && status !== undefined,
+    refetch: refresh,
+  } as const;
 };

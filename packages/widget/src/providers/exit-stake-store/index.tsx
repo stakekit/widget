@@ -19,7 +19,7 @@ type ExitStakeInitData = {
   unstakeToken: TokenDto | YieldTokenDto;
 };
 
-export type ExitStakeRequest = ExitStakeInitData & {
+type ExitStakeRequest = ExitStakeInitData & {
   actionDto: Maybe<ActionDto>;
 };
 

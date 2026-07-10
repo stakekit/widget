@@ -3,37 +3,29 @@ import { Array as EArray, pipe } from "effect";
 import type { TFunction } from "i18next";
 import { Maybe } from "purify-ts";
 import type {
-  YieldType as ApiYieldType,
-  ArgumentFieldDto,
-  ProviderDto,
-  ValidatorDto,
-  YieldDto as YieldApiYieldDto,
-  YieldRiskEntryDto,
-} from "../../generated/api/yield";
+  EarnProvider,
+  EarnYieldWithProvider,
+} from "../schema/earn-models";
 import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
 import { equalTokens, tokenString } from "./tokens";
 
-export type YieldProviderDetails = ProviderDto;
+type YieldProviderDetails = typeof EarnProvider.Encoded;
 
-export type Yield = YieldApiYieldDto & {
-  provider?: YieldProviderDetails;
-};
+export type Yield = typeof EarnYieldWithProvider.Encoded;
 
 export type YieldBase = Yield;
 
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
-type KnownYieldRiskRatingSource = YieldRiskEntryDto["source"];
+type YieldRiskEntry = NonNullable<Yield["risk"]>["ratings"][number];
+type KnownYieldRiskRatingSource = YieldRiskEntry["source"];
 type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
 export type YieldRiskDisplay = {
   rating: string;
   source: YieldRiskRatingSource;
   tone: YieldRiskRatingTone;
 };
-export type YieldMetadata = Pick<
-  YieldApiYieldDto["metadata"],
-  "logoURI" | "name"
-> & {
+export type YieldMetadata = Pick<Yield["metadata"], "logoURI" | "name"> & {
   provider?: YieldProviderDetails;
 };
 
@@ -47,14 +39,24 @@ const knownApiYieldTypes = [
   "concentrated_liquidity_pool",
   "liquidity_pool",
   "liquid_staking",
-] as const satisfies ReadonlyArray<ApiYieldType>;
+] as const satisfies ReadonlyArray<Yield["mechanics"]["type"]>;
 
 type KnownApiYieldType = (typeof knownApiYieldTypes)[number];
 type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
 type KnownExtendedYieldType = KnownApiYieldType | LocallyDerivedYieldType;
 export type ExtendedYieldType = KnownExtendedYieldType | "unknown";
 type YieldActionType = "enter" | "exit";
-type YieldArgumentName = ArgumentFieldDto["name"];
+type YieldArguments = NonNullable<Yield["mechanics"]["arguments"]>;
+type YieldArgumentField = NonNullable<
+  YieldArguments["enter"]
+>["fields"][number];
+type YieldArgumentName = YieldArgumentField["name"];
+
+type ValidatorDto = {
+  readonly address: string;
+  readonly name?: string | null;
+  readonly preferred?: boolean;
+};
 
 type YieldArgumentConfig = {
   required?: boolean;

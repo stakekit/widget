@@ -1,30 +1,40 @@
 import BigNumber from "bignumber.js";
-import { Cause, Duration, Effect, flow, Option, Stream } from "effect";
+import { Cause, Duration, Effect, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import {
+  valueEqualAtomFamily,
+  withApiResourcePolicy,
+} from "../../../../../../atoms/api-resource";
+import { paginatedApiStream } from "../../../../../../atoms/pagination";
 import { tokenString } from "../../../../../../domain";
+import {
+  EarnLegacyTokenOptionsResponse,
+  EarnPositionsResponse,
+  type EarnToken,
+  EarnTokenBalancesResponse,
+  EarnTokenPage,
+  EarnValidatorPage,
+  EarnYield,
+  EarnYieldPage,
+  makeEarnYieldPage,
+} from "../../../../../../domain/schema/earn-models";
+import type { YieldId } from "../../../../../../domain/schema/identifiers";
 import type { Networks } from "../../../../../../domain/types/chains/networks";
 import {
   type BalanceDataKey,
   getPositionBalanceDataKey,
   type PositionsData,
   type PositionValidators,
-  toYieldBalancesByYields,
   type YieldBalanceDto,
   type YieldBalancesByYieldDto,
 } from "../../../../../../domain/types/positions";
 import type { TokenBalanceScanDto } from "../../../../../../domain/types/token-balance";
-import type { TokenDto } from "../../../../../../domain/types/tokens";
-import { toValidators } from "../../../../../../domain/types/validators";
 import {
   type DashboardYieldCategory,
   getApiYieldTypesForDashboardCategory,
   isNonZeroRewardRateYield,
 } from "../../../../../../domain/types/yields";
-import type {
-  BalancesRequestDto,
-  YieldDto,
-} from "../../../../../../generated/api/yield";
 import { StakeKitApiService, widgetAtomRuntime } from "../runtime";
 import {
   EarnCatalogError,
@@ -51,17 +61,19 @@ import {
 } from "./keys";
 import { loadAllPages, loadAllPagesByIdChunks } from "./utilities";
 
-const catalogSWR = flow(
-  Atom.swr({
-    staleTime: Duration.minutes(5),
-    revalidateOnMount: true,
-  }),
-  Atom.setIdleTTL(Duration.minutes(5))
-);
+const catalogSWR = withApiResourcePolicy({
+  staleTime: Duration.minutes(5),
+  idleTTL: Duration.minutes(5),
+  revalidateOnMount: true,
+});
 
 const DEFAULT_PAGE_SIZE = 100;
 const YIELD_IDS_CHUNK_SIZE = 100;
 const PREFERRED_PAGE_CONCURRENCY = 5;
+const AvailableYieldCategoriesPage = makeEarnYieldPage(
+  "available-yield-categories"
+);
+const TokenYieldScopePage = makeEarnYieldPage("token-yield-scope");
 
 const toCatalogError =
   (operation: EarnCatalogOperation) => (cause: EarnCatalogUnderlyingError) =>
@@ -95,27 +107,12 @@ const shouldUseYieldTokensApi = ({
   tokensForEnabledYieldsOnly: boolean;
 }) => tokensForEnabledYieldsOnly || !!toYieldTypesParam(category)?.length;
 
-const getNextOffset = ({
-  itemsLength,
-  limit,
-  offset,
-  total,
-}: {
-  itemsLength: number;
-  limit: number;
-  offset: number;
-  total: number;
-}) => {
-  const nextOffset = offset + itemsLength;
-  return nextOffset < total && itemsLength >= limit
-    ? Option.some(nextOffset)
-    : Option.none<number>();
-};
-
 const getBalanceValidators = (balance: YieldBalanceDto) =>
   balance.validators ?? (balance.validator ? [balance.validator] : []);
 
-const toPositionsData = (balancesData: YieldBalancesByYieldDto[]) =>
+const toPositionsData = (
+  balancesData: ReadonlyArray<YieldBalancesByYieldDto>
+) =>
   balancesData.reduce((acc, val) => {
     acc.set(val.yieldId, {
       yieldId: val.yieldId,
@@ -165,7 +162,7 @@ const toPositionsData = (balancesData: YieldBalancesByYieldDto[]) =>
     return acc;
   }, new Map() as PositionsData);
 
-export const availableYieldCategoriesAtom = Atom.family(
+export const availableYieldCategoriesAtom = valueEqualAtomFamily(
   (key: AvailableYieldCategoriesKey) =>
     widgetAtomRuntime
       .atom(() =>
@@ -183,7 +180,10 @@ export const availableYieldCategoriesAtom = Atom.family(
                   },
                 });
 
-                const hasVisibleYield = (response.items ?? []).some(
+                const page = yield* Schema.decodeUnknownEffect(
+                  AvailableYieldCategoriesPage
+                )(response);
+                const hasVisibleYield = (page.items ?? []).some(
                   (yieldDto) =>
                     yieldDto.status.enter && isNonZeroRewardRateYield(yieldDto)
                 );
@@ -202,35 +202,43 @@ export const availableYieldCategoriesAtom = Atom.family(
       .pipe(catalogSWR)
 );
 
-export const earnYieldCatalogAtom = Atom.family((key: YieldCatalogKey) => {
-  return widgetAtomRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        const api = yield* StakeKitApiService;
+export const earnYieldCatalogAtom = valueEqualAtomFamily(
+  (key: YieldCatalogKey) => {
+    return widgetAtomRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          const api = yield* StakeKitApiService;
 
-        return yield* loadAllPagesByIdChunks({
-          chunkSize: YIELD_IDS_CHUNK_SIZE,
-          concurrency: PREFERRED_PAGE_CONCURRENCY,
-          fetchPage: ({ ids, offset }) =>
-            api.yield.YieldsControllerGetYields({
-              params: {
-                limit: DEFAULT_PAGE_SIZE,
-                offset,
-                types: toYieldTypesParam(key.category),
-                network: key.selectedToken.token.network,
-                yieldIds: ids,
-              },
-            }),
-          getItemId: (yieldDto) => yieldDto.id,
-          ids: key.selectedToken.availableYields,
-          pageSize: DEFAULT_PAGE_SIZE,
-        });
-      }).pipe(withCatalogError("earn-yield-catalog"))
-    )
-    .pipe(catalogSWR);
-});
+          return yield* loadAllPagesByIdChunks({
+            chunkSize: YIELD_IDS_CHUNK_SIZE,
+            concurrency: PREFERRED_PAGE_CONCURRENCY,
+            fetchPage: ({ ids, offset }) =>
+              api.yield
+                .YieldsControllerGetYields({
+                  params: {
+                    limit: DEFAULT_PAGE_SIZE,
+                    offset,
+                    types: toYieldTypesParam(key.category),
+                    network: key.selectedToken.token.network,
+                    yieldIds: ids,
+                  },
+                })
+                .pipe(
+                  Effect.flatMap((response) =>
+                    Schema.decodeUnknownEffect(EarnYieldPage)(response)
+                  )
+                ),
+            getItemId: (yieldDto) => yieldDto.id,
+            ids: key.selectedToken.availableYields,
+            pageSize: DEFAULT_PAGE_SIZE,
+          });
+        }).pipe(withCatalogError("earn-yield-catalog"))
+      )
+      .pipe(catalogSWR);
+  }
+);
 
-export const initYieldAtom = Atom.family((key: InitYieldKey) =>
+export const initYieldAtom = valueEqualAtomFamily((key: InitYieldKey) =>
   widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -240,16 +248,18 @@ export const initYieldAtom = Atom.family((key: InitYieldKey) =>
 
         const api = yield* StakeKitApiService;
 
-        return yield* api.yield.YieldsControllerGetYield(
+        const response = yield* api.yield.YieldsControllerGetYield(
           key.yieldId,
           undefined
         );
+
+        return yield* Schema.decodeUnknownEffect(EarnYield)(response);
       }).pipe(withCatalogError("init-yield"))
     )
     .pipe(catalogSWR)
 );
 
-export const positionsDataAtom = Atom.family((key: PositionsDataKey) =>
+export const positionsDataAtom = valueEqualAtomFamily((key: PositionsDataKey) =>
   widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -263,22 +273,25 @@ export const positionsDataAtom = Atom.family((key: PositionsDataKey) =>
             queries: [
               {
                 address: key.address,
-                network:
-                  key.network as BalancesRequestDto["queries"][number]["network"],
+                network: key.network,
               },
             ],
           },
         });
 
-        return toPositionsData(toYieldBalancesByYields(response.items));
+        const positions = yield* Schema.decodeUnknownEffect(
+          EarnPositionsResponse
+        )(response);
+
+        return toPositionsData(positions.items);
       }).pipe(withCatalogError("positions-data"))
     )
     .pipe(catalogSWR)
 );
 
 const toDefaultTokenOption = (tokenWithYields: {
-  readonly token: TokenDto;
-  readonly availableYields: ReadonlyArray<string>;
+  readonly token: EarnToken;
+  readonly availableYields: ReadonlyArray<YieldId>;
 }): EarnTokenOption => ({
   token: tokenWithYields.token,
   availableYields: tokenWithYields.availableYields,
@@ -287,19 +300,19 @@ const toDefaultTokenOption = (tokenWithYields: {
 });
 
 const toBalanceTokenOption = (tokenBalance: {
-  readonly token: TokenDto;
-  readonly availableYields: ReadonlyArray<string>;
-  readonly amount: string;
+  readonly token: EarnToken;
+  readonly availableYields: ReadonlyArray<YieldId>;
+  readonly amount: BigNumber;
 }): EarnTokenOption => ({
   token: tokenBalance.token,
   availableYields: tokenBalance.availableYields,
-  amount: tokenBalance.amount,
+  amount: tokenBalance.amount.toFixed(),
   source: "balance",
 });
 
 const toInitTokenOption = (tokenWithYields: {
-  readonly token: TokenDto;
-  readonly availableYields: ReadonlyArray<string>;
+  readonly token: EarnToken;
+  readonly availableYields: ReadonlyArray<YieldId>;
 }): EarnTokenOption => ({
   token: tokenWithYields.token,
   availableYields: tokenWithYields.availableYields,
@@ -307,7 +320,7 @@ const toInitTokenOption = (tokenWithYields: {
   source: "init",
 });
 
-const toInitYieldTokenOption = (yieldDto: YieldDto): EarnTokenOption => ({
+const toInitYieldTokenOption = (yieldDto: EarnYield): EarnTokenOption => ({
   token: yieldDto.token,
   availableYields: [yieldDto.id],
   amount: "0",
@@ -319,7 +332,7 @@ const hasAvailableYields = (option: EarnTokenOption) =>
 
 const getAvailableYieldIds = (
   items: ReadonlyArray<EarnTokenOption>
-): ReadonlyArray<string> =>
+): ReadonlyArray<YieldId> =>
   [...new Set(items.flatMap((option) => option.availableYields))].sort();
 
 const scopeTokenOptions = ({
@@ -327,7 +340,7 @@ const scopeTokenOptions = ({
   yieldIds,
 }: {
   items: ReadonlyArray<EarnTokenOption>;
-  yieldIds: ReadonlySet<string> | null;
+  yieldIds: ReadonlySet<YieldId> | null;
 }) =>
   items
     .map((option) =>
@@ -380,59 +393,65 @@ const findInitTokenOption = ({
     return (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare;
   }) ?? null;
 
-const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
-  widgetAtomRuntime.pull(() =>
-    Stream.paginate(0, (offset) =>
-      Effect.gen(function* () {
-        const api = yield* StakeKitApiService;
+const defaultTokenOptionsPullAtom = valueEqualAtomFamily(
+  (key: DefaultTokenOptionsKey) =>
+    widgetAtomRuntime.pull(() =>
+      paginatedApiStream({
+        fetchPage: (offset) =>
+          Effect.gen(function* () {
+            const api = yield* StakeKitApiService;
 
-        if (
-          shouldUseYieldTokensApi({
-            category: key.category,
-            tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
-          })
-        ) {
-          const response = yield* api.yield.TokensControllerGetTokens({
-            params: {
-              limit: DEFAULT_PAGE_SIZE,
-              offset,
-              networks: toNetworksParam(key.network),
-              yieldTypes: toYieldTypesParam(key.category),
-            },
-          });
-          const items = (response.items ?? []).map(toDefaultTokenOption);
+            if (
+              shouldUseYieldTokensApi({
+                category: key.category,
+                tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
+              })
+            ) {
+              const response = yield* api.yield.TokensControllerGetTokens({
+                params: {
+                  limit: DEFAULT_PAGE_SIZE,
+                  offset,
+                  networks: toNetworksParam(key.network),
+                  yieldTypes: toYieldTypesParam(key.category),
+                },
+              });
+              const page =
+                yield* Schema.decodeUnknownEffect(EarnTokenPage)(response);
+              const items = (page.items ?? []).map(toDefaultTokenOption);
 
-          return [
-            items,
-            getNextOffset({
-              itemsLength: response.items?.length ?? 0,
-              limit: response.limit,
-              offset: response.offset,
-              total: response.total,
-            }),
-          ] as const;
-        }
+              return {
+                items,
+                limit: page.limit,
+                offset: page.offset,
+                total: page.total,
+              };
+            }
 
-        if (offset > 0) {
-          return [[], Option.none<number>()] as const;
-        }
+            if (offset > 0) {
+              return { items: [], limit: 1, offset, total: 0 };
+            }
 
-        const response = yield* api.legacy.TokenControllerGetTokens({
-          params: {
-            network: key.network ?? undefined,
-          },
-        });
+            const response = yield* api.legacy.TokenControllerGetTokens({
+              params: {
+                network: key.network ?? undefined,
+              },
+            });
+            const tokens = yield* Schema.decodeUnknownEffect(
+              EarnLegacyTokenOptionsResponse
+            )(response);
 
-        return [
-          response.map(toDefaultTokenOption),
-          Option.none<number>(),
-        ] as const;
-      })
-    ).pipe(mapCatalogStreamError("default-token-options"))
-  )
+            return {
+              items: tokens.map(toDefaultTokenOption),
+              limit: Math.max(1, tokens.length),
+              offset: 0,
+              total: tokens.length,
+            };
+          }),
+      }).pipe(mapCatalogStreamError("default-token-options"))
+    )
 );
 
-const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) =>
+const initTokenOptionAtom = valueEqualAtomFamily((key: InitTokenOptionKey) =>
   widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -446,48 +465,55 @@ const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) =>
             network: key.network ?? undefined,
           },
         });
+        const tokens = yield* Schema.decodeUnknownEffect(
+          EarnLegacyTokenOptionsResponse
+        )(response);
 
         return findInitTokenOption({
           network: key.network,
           token: key.token,
-          tokenOptions: response.map(toInitTokenOption),
+          tokenOptions: tokens.map(toInitTokenOption),
         });
       }).pipe(withCatalogError("init-token-option"))
     )
     .pipe(catalogSWR)
 );
 
-const tokenBalancesScanAtom = Atom.family((key: TokenBalancesScanKey) =>
-  widgetAtomRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.address || !key.network) {
-          return [];
-        }
+const tokenBalancesScanAtom = valueEqualAtomFamily(
+  (key: TokenBalancesScanKey) =>
+    widgetAtomRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          if (!key.address || !key.network) {
+            return [];
+          }
 
-        const api = yield* StakeKitApiService;
-        const response = yield* api.legacy.TokenControllerTokenBalancesScan({
-          payload: {
-            addresses: {
-              address: key.address,
-              additionalAddresses: key.additionalAddresses ?? undefined,
+          const api = yield* StakeKitApiService;
+          const response = yield* api.legacy.TokenControllerTokenBalancesScan({
+            payload: {
+              addresses: {
+                address: key.address,
+                additionalAddresses: key.additionalAddresses ?? undefined,
+              },
+              network: key.network as TokenBalanceScanDto["network"],
             },
-            network: key.network as TokenBalanceScanDto["network"],
-          },
-        });
+          });
+          const balances = yield* Schema.decodeUnknownEffect(
+            EarnTokenBalancesResponse
+          )(response);
 
-        return response.map(toBalanceTokenOption);
-      }).pipe(withCatalogError("token-balances-scan"))
-    )
-    .pipe(catalogSWR)
+          return balances.map(toBalanceTokenOption);
+        }).pipe(withCatalogError("token-balances-scan"))
+      )
+      .pipe(catalogSWR)
 );
 
-const tokenYieldScopeAtom = Atom.family((key: TokenYieldScopeKey) =>
+const tokenYieldScopeAtom = valueEqualAtomFamily((key: TokenYieldScopeKey) =>
   widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
         if (!key.category || key.yieldIds.length === 0) {
-          return new Set<string>();
+          return new Set<YieldId>();
         }
 
         const api = yield* StakeKitApiService;
@@ -495,14 +521,20 @@ const tokenYieldScopeAtom = Atom.family((key: TokenYieldScopeKey) =>
           chunkSize: YIELD_IDS_CHUNK_SIZE,
           concurrency: PREFERRED_PAGE_CONCURRENCY,
           fetchPage: ({ ids, offset }) =>
-            api.yield.YieldsControllerGetYields({
-              params: {
-                limit: DEFAULT_PAGE_SIZE,
-                offset,
-                types: toYieldTypesParam(key.category),
-                yieldIds: ids,
-              },
-            }),
+            api.yield
+              .YieldsControllerGetYields({
+                params: {
+                  limit: DEFAULT_PAGE_SIZE,
+                  offset,
+                  types: toYieldTypesParam(key.category),
+                  yieldIds: ids,
+                },
+              })
+              .pipe(
+                Effect.flatMap((response) =>
+                  Schema.decodeUnknownEffect(TokenYieldScopePage)(response)
+                )
+              ),
           getItemId: (yieldDto) => yieldDto.id,
           ids: key.yieldIds,
           pageSize: DEFAULT_PAGE_SIZE,
@@ -616,93 +648,100 @@ const mergeTokenOptions = ({
     .map(({ option }) => option);
 };
 
-export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
-  const defaultTokenOptionsAtom = defaultTokenOptionsPullAtom(
-    new DefaultTokenOptionsKey({
-      category: key.category,
-      network: key.network,
-      tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
-    })
-  );
-  const tokenBalancesAtom = tokenBalancesScanAtom(
-    new TokenBalancesScanKey({
-      address: key.address,
-      additionalAddresses: key.additionalAddresses,
-      network: key.network,
-    })
-  );
-  const initTokenAtom = initTokenOptionAtom(
-    new InitTokenOptionKey({
-      token: key.initToken,
-      network: key.initTokenNetwork,
-    })
-  );
-  const initYieldAtomValue = initYieldAtom(
-    new InitYieldKey({ yieldId: key.initYieldId })
-  );
+export const mergedTokenOptionsAtom = valueEqualAtomFamily(
+  (key: TokenOptionsKey) => {
+    const defaultTokenOptionsAtom = defaultTokenOptionsPullAtom(
+      new DefaultTokenOptionsKey({
+        category: key.category,
+        network: key.network,
+        tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
+      })
+    );
+    const tokenBalancesAtom = tokenBalancesScanAtom(
+      new TokenBalancesScanKey({
+        address: key.address,
+        additionalAddresses: key.additionalAddresses,
+        network: key.network,
+      })
+    );
+    const initTokenAtom = initTokenOptionAtom(
+      new InitTokenOptionKey({
+        token: key.initToken,
+        network: key.initTokenNetwork,
+      })
+    );
+    const initYieldAtomValue = initYieldAtom(
+      new InitYieldKey({ yieldId: key.initYieldId })
+    );
 
-  return Atom.readable<EarnTokenOptionsState>((context) => {
-    const defaultResult = context.get(defaultTokenOptionsAtom);
-    const balancesResult = context.get(tokenBalancesAtom);
-    const initTokenResult = context.get(initTokenAtom);
-    const initYieldResult = context.get(initYieldAtomValue);
+    return Atom.readable<EarnTokenOptionsState>((context) => {
+      const defaultResult = context.get(defaultTokenOptionsAtom);
+      const balancesResult = context.get(tokenBalancesAtom);
+      const initTokenResult = context.get(initTokenAtom);
+      const initYieldResult = context.get(initYieldAtomValue);
 
-    const tokenSourcesResult = AsyncResult.all({
-      defaultItems: getPullItemsResult(defaultResult),
-      balanceItems: balancesResult,
-      initToken: initTokenResult,
-      initYield: initYieldResult,
-    });
+      const tokenSourcesResult = AsyncResult.all({
+        defaultItems: getPullItemsResult(defaultResult),
+        balanceItems: balancesResult,
+        initToken: initTokenResult,
+        initYield: initYieldResult,
+      });
 
-    return AsyncResult.flatMap(tokenSourcesResult, (sources, sourcesResult) => {
-      const rawInitItems = [
-        sources.initYield ? toInitYieldTokenOption(sources.initYield) : null,
-        sources.initToken,
-      ].filter((option): option is EarnTokenOption => option !== null);
-      const candidateYieldIds = getAvailableYieldIds([
-        ...sources.balanceItems,
-        ...rawInitItems,
-      ]);
-      const tokenYieldScopeResult: AsyncResult.AsyncResult<
-        ReadonlySet<string> | null,
-        EarnCatalogError
-      > =
-        key.category && candidateYieldIds.length > 0
-          ? context.get(
-              tokenYieldScopeAtom(
-                new TokenYieldScopeKey({
-                  category: key.category,
-                  yieldIds: candidateYieldIds,
-                })
-              )
+      return AsyncResult.flatMap(
+        tokenSourcesResult,
+        (sources, sourcesResult) => {
+          const rawInitItems = [
+            sources.initYield
+              ? toInitYieldTokenOption(sources.initYield)
+              : null,
+            sources.initToken,
+          ].filter((option): option is EarnTokenOption => option !== null);
+          const candidateYieldIds = getAvailableYieldIds([
+            ...sources.balanceItems,
+            ...rawInitItems,
+          ]);
+          const tokenYieldScopeResult: AsyncResult.AsyncResult<
+            ReadonlySet<YieldId> | null,
+            EarnCatalogError
+          > =
+            key.category && candidateYieldIds.length > 0
+              ? context.get(
+                  tokenYieldScopeAtom(
+                    new TokenYieldScopeKey({
+                      category: key.category,
+                      yieldIds: candidateYieldIds,
+                    })
+                  )
+                )
+              : AsyncResult.success(key.category ? new Set<YieldId>() : null);
+          const scopedResult = tokenYieldScopeResult.pipe(
+            AsyncResult.map((scopedYieldIds) =>
+              mergeTokenOptions({
+                balanceItems: scopeTokenOptions({
+                  items: sources.balanceItems,
+                  yieldIds: scopedYieldIds,
+                }),
+                defaultItems: sources.defaultItems.filter(hasAvailableYields),
+                initItems: scopeTokenOptions({
+                  items: rawInitItems,
+                  yieldIds: scopedYieldIds,
+                }),
+              })
             )
-          : AsyncResult.success(key.category ? new Set<string>() : null);
-      const scopedResult = tokenYieldScopeResult.pipe(
-        AsyncResult.map((scopedYieldIds) =>
-          mergeTokenOptions({
-            balanceItems: scopeTokenOptions({
-              items: sources.balanceItems,
-              yieldIds: scopedYieldIds,
-            }),
-            defaultItems: sources.defaultItems.filter(hasAvailableYields),
-            initItems: scopeTokenOptions({
-              items: rawInitItems,
-              yieldIds: scopedYieldIds,
-            }),
-          })
-        )
-      );
+          );
 
-      return sourcesResult.waiting
-        ? AsyncResult.waiting(scopedResult)
-        : scopedResult;
+          return sourcesResult.waiting
+            ? AsyncResult.waiting(scopedResult)
+            : scopedResult;
+        }
+      );
     });
-  });
-});
+  }
+);
 
 export const tokenOptionsPullAtom = defaultTokenOptionsPullAtom;
 
-export const yieldValidatorsAtom = Atom.family(
+export const yieldValidatorsAtom = valueEqualAtomFamily(
   ({ selectedYieldId }: YieldValidatorsKey) => {
     const preferredValidatorsAtom = widgetAtomRuntime
       .atom(() =>
@@ -712,18 +751,24 @@ export const yieldValidatorsAtom = Atom.family(
           const validators = yield* loadAllPages({
             concurrency: PREFERRED_PAGE_CONCURRENCY,
             fetchPage: (offset: number) =>
-              api.yield.YieldsControllerGetYieldValidators(selectedYieldId, {
-                params: {
-                  limit: DEFAULT_PAGE_SIZE,
-                  offset,
-                  preferred: true,
-                  status: "active",
-                },
-              }),
+              api.yield
+                .YieldsControllerGetYieldValidators(selectedYieldId, {
+                  params: {
+                    limit: DEFAULT_PAGE_SIZE,
+                    offset,
+                    preferred: true,
+                    status: "active",
+                  },
+                })
+                .pipe(
+                  Effect.flatMap((response) =>
+                    Schema.decodeUnknownEffect(EarnValidatorPage)(response)
+                  )
+                ),
             pageSize: DEFAULT_PAGE_SIZE,
           });
 
-          return toValidators(validators);
+          return validators;
         }).pipe(withCatalogError("preferred-validators"))
       )
       .pipe(catalogSWR);
@@ -768,42 +813,44 @@ export const yieldValidatorsAtom = Atom.family(
      * If search is provided, we search all preferred and non-preferred validators
      * If search is not provided, we pull only non-preferred validators
      */
-    const validatorsPullAtom = Atom.family(
+    const validatorsPullAtom = valueEqualAtomFamily(
       ({ search }: EarnValidatorsPullParams) =>
         widgetAtomRuntime.pull(
           (context) => {
-            return Stream.paginate(0, (offset) =>
-              Effect.gen(function* () {
-                const api = yield* StakeKitApiService;
-                const response =
-                  yield* api.yield.YieldsControllerGetYieldValidators(
-                    selectedYieldId,
-                    {
-                      params: {
-                        limit: DEFAULT_PAGE_SIZE,
-                        name: search || undefined,
-                        address: search || undefined,
-                        offset,
-                        status: "active",
-                        ...(search ? {} : { preferred: false }),
-                      },
-                    }
-                  );
-                const items = toValidators(response.items ?? []);
+            return paginatedApiStream({
+              fetchPage: (offset) =>
+                Effect.gen(function* () {
+                  const api = yield* StakeKitApiService;
+                  const response =
+                    yield* api.yield.YieldsControllerGetYieldValidators(
+                      selectedYieldId,
+                      {
+                        params: {
+                          limit: DEFAULT_PAGE_SIZE,
+                          name: search || undefined,
+                          address: search || undefined,
+                          offset,
+                          status: "active",
+                          ...(search ? {} : { preferred: false }),
+                        },
+                      }
+                    );
+                  const page =
+                    yield* Schema.decodeUnknownEffect(EarnValidatorPage)(
+                      response
+                    );
+                  const items = page.items ?? [];
 
-                context.set(loadedValidatorsAtom, items);
+                  context.set(loadedValidatorsAtom, items);
 
-                return [
-                  items,
-                  getNextOffset({
-                    itemsLength: items.length,
-                    limit: response.limit,
-                    offset: response.offset,
-                    total: response.total,
-                  }),
-                ] as const;
-              })
-            ).pipe(mapCatalogStreamError("validators"));
+                  return {
+                    items,
+                    limit: page.limit,
+                    offset: page.offset,
+                    total: page.total,
+                  };
+                }),
+            }).pipe(mapCatalogStreamError("validators"));
           },
           { initialValue: [] }
         )

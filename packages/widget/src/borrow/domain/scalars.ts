@@ -1,10 +1,10 @@
-import { Schema } from "effect";
-import { bigintFromString } from "effect/SchemaTransformation";
+import {
+  BigIntFromString as AppBigIntFromString,
+  FiniteNumberFromString,
+} from "../../domain/schema/scalars";
 
-export const NumberFromString = Schema.NumberFromString;
+export const NumberFromString = FiniteNumberFromString;
 export type NumberFromString = typeof NumberFromString.Type;
 
-export const BigIntFromString = Schema.String.pipe(
-  Schema.decodeTo(Schema.BigInt, bigintFromString)
-);
+export const BigIntFromString = AppBigIntFromString;
 export type BigIntFromString = typeof BigIntFromString.Type;

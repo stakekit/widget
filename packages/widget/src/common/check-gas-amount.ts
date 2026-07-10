@@ -1,72 +1,31 @@
-import BigNumber from "bignumber.js";
-import { EitherAsync, Left, List, Maybe, Right } from "purify-ts";
+import type BigNumber from "bignumber.js";
 import { equalTokens } from "../domain";
-import type { ActionDtoWithGasEstimate } from "../domain/types/action";
-import type { AddressWithTokenDto } from "../domain/types/addresses";
-import type { TokenDto } from "../domain/types/tokens";
-import type { ApiClient } from "../providers/api/api-client";
+import type { TokenBalance } from "../domain/schema/financial-models";
+
+type ComparableToken = {
+  readonly address?: string;
+  readonly network: string;
+  readonly symbol: string;
+};
 
 type CheckGasAmountIfStake =
-  | { isStake: true; stakeToken: TokenDto; stakeAmount: BigNumber }
+  | { isStake: true; stakeToken: ComparableToken; stakeAmount: BigNumber }
   | { isStake: false };
 
 export const checkGasAmount = ({
-  addressWithTokenDto,
-  apiClient,
+  gasTokenBalance,
   gasEstimate,
   ...rest
 }: {
-  addressWithTokenDto: AddressWithTokenDto;
-  apiClient: ApiClient;
-  gasEstimate: ActionDtoWithGasEstimate["gasEstimate"];
-} & CheckGasAmountIfStake) =>
-  EitherAsync.liftEither(
-    Maybe.fromNullable(gasEstimate).toEither(new GasTokenMissingError())
-  ).chain((gasEstimate) =>
-    EitherAsync(() =>
-      apiClient.legacy.TokenControllerGetTokenBalances({
-        payload: { addresses: [addressWithTokenDto] },
-      })
-    )
-      .mapLeft(() => new GetGasTokenError())
-      .chain((res) =>
-        EitherAsync.liftEither(
-          List.head(res)
-            .map((val) => ({
-              ...val,
-              amount: new BigNumber(val.amount ?? 0),
-            }))
-            .toEither(new GasTokenMissingError())
-        ).chain(async (gasTokenBalance) => {
-          const amount =
-            rest.isStake && equalTokens(gasTokenBalance.token, rest.stakeToken)
-              ? gasTokenBalance.amount.minus(rest.stakeAmount)
-              : gasTokenBalance.amount;
+  gasTokenBalance: TokenBalance | undefined;
+  gasEstimate: BigNumber;
+} & CheckGasAmountIfStake) => {
+  if (!gasTokenBalance) return true;
 
-          if (gasEstimate.amount.isGreaterThan(amount)) {
-            return Left(new NotEnoughGasTokenError());
-          }
+  const amount =
+    rest.isStake && equalTokens(gasTokenBalance.token, rest.stakeToken)
+      ? gasTokenBalance.amount.minus(rest.stakeAmount)
+      : gasTokenBalance.amount;
 
-          return Right(null);
-        })
-      )
-      .chainLeft(async (e) => Right(e))
-  );
-
-export class NotEnoughGasTokenError extends Error {
-  constructor() {
-    super("Not enough gas token");
-  }
-}
-
-export class GasTokenMissingError extends Error {
-  constructor() {
-    super("Gas token missing from response");
-  }
-}
-
-class GetGasTokenError extends Error {
-  constructor() {
-    super("Get gas token failed");
-  }
-}
+  return gasEstimate.isGreaterThan(amount);
+};

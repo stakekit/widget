@@ -1,30 +1,34 @@
-import { Cause, Effect, Option, Schema } from "effect";
+import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it, vi } from "vitest";
 import {
+  ActionRequest,
   Action as BorrowAction,
   BorrowExecutionKey,
   type BorrowExecutionMachineState,
+  type Transaction as BorrowTransaction,
   BorrowTransactionFailedError,
   BorrowTransactionNotConfirmedError,
   type BorrowWalletExecutionAdapter,
   borrowCreateActionAtom,
   borrowExecutionAtom,
   borrowWalletExecutionAdapterAtom,
+  type SubmitTransactionCommand,
 } from "../../src/borrow";
-import type {
-  ActionDto,
-  ActionsControllerExecuteActionV1RequestJson,
-  SubmitTransactionDto,
-  TransactionDto,
-} from "../../src/generated/api/borrow";
-import { stakeKitEffectApiClientAtom } from "../../src/providers/effect-atom-runtime/stakekit-api-service";
+import {
+  StakeKitApiService,
+  stakeKitApiLayerAtom,
+} from "../../src/providers/effect-atom-runtime/stakekit-api-service";
 
 const address = "0x0000000000000000000000000000000000000001";
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
-const request: ActionsControllerExecuteActionV1RequestJson = {
+type ActionDto = typeof BorrowAction.Encoded;
+type TransactionDto = typeof BorrowTransaction.Encoded;
+type SubmitTransactionDto = typeof SubmitTransactionCommand.Encoded;
+
+const request = Schema.decodeUnknownSync(ActionRequest)({
   action: "borrow",
   address,
   args: {
@@ -33,7 +37,7 @@ const request: ActionsControllerExecuteActionV1RequestJson = {
     tokenAddress: "0x0000000000000000000000000000000000000002",
   },
   integrationId: "morpho-blue",
-};
+});
 
 const transaction = (
   overrides: Partial<TransactionDto> = {}
@@ -127,14 +131,23 @@ const createRegistry = ({
   );
   const registry = AtomRegistry.make({
     initialValues: [
-      Atom.initialValue(stakeKitEffectApiClientAtom, {
-        borrow: {
-          ActionsControllerExecuteActionV1,
-          ActionsControllerGetActionV1,
-          ActionsControllerStepV1,
-          TransactionsControllerSubmitTransactionV1,
-        },
-      } as never),
+      Atom.initialValue(
+        stakeKitApiLayerAtom,
+        Layer.succeed(StakeKitApiService, {
+          borrow: {
+            ActionsControllerExecuteActionV1,
+            ActionsControllerGetActionV1,
+            ActionsControllerStepV1,
+            TransactionsControllerSubmitTransactionV1,
+          },
+          borrowMutations: {
+            ActionsControllerExecuteActionV1,
+            ActionsControllerGetActionV1,
+            ActionsControllerStepV1,
+            TransactionsControllerSubmitTransactionV1,
+          },
+        } as never)
+      ),
       Atom.initialValue(borrowWalletExecutionAdapterAtom, wallet),
     ],
   });

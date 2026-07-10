@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
@@ -7,6 +6,7 @@ import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getKycProviderName } from "../../../domain/types/kyc";
 import { isBittensorStaking } from "../../../domain/types/yields";
+import { useActionPreview } from "../../../hooks/api/use-action-preview";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
@@ -15,7 +15,6 @@ import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { useRewardTokenDetails } from "../../../hooks/use-reward-token-details";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { useYieldType } from "../../../hooks/use-yield-type";
-import { useApiClient } from "../../../providers/api/api-client-provider";
 import {
   useEnterStakeRequest,
   useSetEnterStakeRequest,
@@ -30,8 +29,6 @@ import { useFees } from "./use-fees";
 export const useStakeReview = () => {
   const enterRequest = useEnterStakeRequest().unsafeCoerce();
   const setEnterStakeRequest = useSetEnterStakeRequest();
-
-  const apiClient = useApiClient();
 
   const stakeAmount = useMemo(
     () => new BigNumber(enterRequest.requestDto.arguments?.amount ?? 0),
@@ -49,14 +46,10 @@ export const useStakeReview = () => {
   const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
 
-  const actionPreviewQuery = useQuery({
+  const actionPreviewQuery = useActionPreview({
+    command: enterRequest.requestDto,
     enabled: !!enterRequest && !kycGateIsBlocking,
-    queryKey: ["stake-review-action-preview", enterRequest.requestDto],
-    retry: false,
-    queryFn: () =>
-      apiClient.yield.ActionsControllerEnterYield({
-        payload: enterRequest.requestDto,
-      }),
+    intent: "enter",
   });
 
   const stakeEnterTxGas = useMemo(
@@ -184,32 +177,26 @@ export const useStakeReview = () => {
   const positionDetailsStakeReviewMatch =
     usePositionDetailsStakeMatch("review");
 
-  const enterMutation = useMutation({
-    mutationFn: async () => {
-      return (
-        actionPreviewQuery.data ??
-        (await actionPreviewQuery.refetch()).data ??
-        Promise.reject(new Error("Stake enter error"))
-      );
-    },
-    onSuccess: (data) => {
-      setEnterStakeRequest((request) =>
-        request.map((value) => ({ ...value, actionDto: Maybe.of(data) }))
-      );
-      if (positionDetailsStakeReviewMatch) {
-        navigate("../steps", { relative: "path" });
-
-        return;
-      }
-
-      navigate("/steps");
-    },
-  });
-
   const onClick = () => {
     if (kycGateIsBlocking) return;
+    const action = actionPreviewQuery.data;
+    if (!action) {
+      actionPreviewQuery.refetch();
+      return;
+    }
 
-    enterMutation.mutate();
+    setEnterStakeRequest((request) =>
+      request.map((value) => ({
+        ...value,
+        actionDto: Maybe.of(action),
+      }))
+    );
+    if (positionDetailsStakeReviewMatch) {
+      navigate("../steps", { relative: "path" });
+      return;
+    }
+
+    navigate("/steps");
   };
 
   const onClickRef = useSavedRef(onClick);
@@ -219,12 +206,16 @@ export const useStakeReview = () => {
   const cta = useMemo<PageCta>(
     () => ({
       disabled: kycGateIsBlocking,
-      isLoading: enterMutation.isPending || yieldKycGate.isLoading,
+      isLoading:
+        actionPreviewQuery.isLoading ||
+        actionPreviewQuery.isFetching ||
+        yieldKycGate.isLoading,
       label: t("shared.confirm"),
       onClick: () => onClickRef.current(),
     }),
     [
-      enterMutation.isPending,
+      actionPreviewQuery.isFetching,
+      actionPreviewQuery.isLoading,
       kycGateIsBlocking,
       onClickRef,
       t,

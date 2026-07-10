@@ -74,7 +74,7 @@ export const isForceMaxAmount = (
   args: { minimum?: number | null; maximum?: number | null } | null | undefined
 ) => args?.minimum === -1 && args?.maximum === -1;
 
-const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<Yield["id"]>>([
+const yieldsWithEnterMinBasedOnPosition = new Map<Networks, Set<string>>([
   [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
 ]);
 

@@ -1,12 +1,14 @@
 import { HttpResponse, http } from "msw";
 import { userEvent } from "vitest/browser";
-import type { PositionDto } from "../../src/generated/api/borrow";
+import type { BorrowAccountPosition } from "../../src/borrow";
 import { borrowApiRoute } from "../mocks/api-routes";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it } from "../utils/test-extend";
 import { renderApp } from "../utils/test-utils";
 
 const account = "0x0000000000000000000000000000000000000001";
+
+type PositionDto = typeof BorrowAccountPosition.Encoded;
 
 const integration = {
   id: "aave-borrow",

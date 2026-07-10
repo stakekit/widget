@@ -1,23 +1,9 @@
-import type { ValidatorDto } from "../../generated/api/yield";
+import { Schema } from "effect";
+import { EarnValidator } from "../schema/earn-models";
 
 export type ValidatorKey = string;
+export type Validator = EarnValidator;
+export type ValidatorInput = typeof EarnValidator.Encoded;
 
-export type Validator = ValidatorDto & {
-  readonly key: ValidatorKey;
-};
-
-const getValidatorKey = (
-  validator: Pick<ValidatorDto, "address" | "subnet">
-): ValidatorKey =>
-  validator.subnet?.id === undefined
-    ? validator.address
-    : `${validator.address}:${validator.subnet.id}`;
-
-export const toValidator = (validator: ValidatorDto): Validator => ({
-  ...validator,
-  key: getValidatorKey(validator),
-});
-
-export const toValidators = (
-  validators: ReadonlyArray<ValidatorDto>
-): Validator[] => validators.map(toValidator);
+export const toValidator = (validator: typeof EarnValidator.Encoded) =>
+  Schema.decodeUnknownSync(EarnValidator)(validator);

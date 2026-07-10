@@ -1,7 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { YieldBalanceDto } from "../../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
 import type { Yield } from "../../../src/domain/types/yields";
 import { waitForMs } from "../../../src/utils";
@@ -262,7 +261,7 @@ export const setup = async (
     },
   };
 
-  const activeBalance: YieldBalanceDto = yieldBalanceFixture({
+  const activeBalance = yieldBalanceFixture({
     address: account,
     type: "active",
     amount: "1000251.8279906842",

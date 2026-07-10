@@ -12,8 +12,8 @@ import {
   type YieldPendingActionDto,
 } from "../../../domain/types/pending-action";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
+import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import type { Yield } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import { usePendingActionSelectValidatorMatch } from "../../../hooks/navigation/use-pending-action-select-validator-match";
 import {
   getPositionDetailsPendingActionReviewPath,

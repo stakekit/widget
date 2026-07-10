@@ -1,8 +1,8 @@
+import type { ActivityActionsQuery } from "../../../domain/schema/legacy-models";
 import {
   type DashboardYieldCategory,
   getApiYieldTypesForDashboardCategory,
 } from "../../../domain/types/yields";
-import type { ActionsControllerGetActionsParams } from "../../../generated/api/yield";
 
 export type ActivityFilter = "all" | DashboardYieldCategory;
 
@@ -14,5 +14,5 @@ export const activityFilterCategories = [
 
 export const getActivityFilterYieldTypes = (
   filter: ActivityFilter
-): ActionsControllerGetActionsParams["yieldTypes"] =>
+): ActivityActionsQuery["yieldTypes"] =>
   filter === "all" ? undefined : getApiYieldTypesForDashboardCategory(filter);

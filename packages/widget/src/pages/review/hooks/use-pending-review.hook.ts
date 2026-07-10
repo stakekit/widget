@@ -1,4 +1,3 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
@@ -8,11 +7,11 @@ import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import { useActionPreview } from "../../../hooks/api/use-action-preview";
 import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useApiClient } from "../../../providers/api/api-client-provider";
 import {
   usePendingActionRequest,
   useSetPendingActionRequest,
@@ -24,18 +23,13 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const usePendingActionReview = () => {
   const setPendingActionRequest = useSetPendingActionRequest();
-  const apiClient = useApiClient();
 
   const pendingRequest = usePendingActionRequest().unsafeCoerce();
 
-  const actionPreviewQuery = useQuery({
+  const actionPreviewQuery = useActionPreview({
+    command: pendingRequest.requestDto,
     enabled: !!pendingRequest,
-    queryKey: ["pending-review-action-preview", pendingRequest.requestDto],
-    retry: false,
-    queryFn: () =>
-      apiClient.yield.ActionsControllerManageYield({
-        payload: pendingRequest.requestDto,
-      }),
+    intent: "manage",
   });
 
   const pendingTxGas = useMemo(
@@ -107,20 +101,21 @@ export const usePendingActionReview = () => {
     [integrationData, pendingTxGas, pricesState.data]
   );
 
-  const actionPendingMutation = useMutation({
-    mutationFn: async () =>
-      actionPreviewQuery.data ??
-      (await actionPreviewQuery.refetch()).data ??
-      Promise.reject(new Error("Pending actions error")),
-    onSuccess: (data) => {
-      setPendingActionRequest((request) =>
-        request.map((value) => ({ ...value, actionDto: Maybe.of(data) }))
-      );
-      navigate("../steps", { relative: "path" });
-    },
-  });
+  const onClick = () => {
+    const action = actionPreviewQuery.data;
+    if (!action) {
+      actionPreviewQuery.refetch();
+      return;
+    }
 
-  const onClick = () => actionPendingMutation.mutate();
+    setPendingActionRequest((request) =>
+      request.map((value) => ({
+        ...value,
+        actionDto: Maybe.of(action),
+      }))
+    );
+    navigate("../steps", { relative: "path" });
+  };
 
   const rewardTokenDetailsProps = useMemo(
     () =>
@@ -154,9 +149,9 @@ export const usePendingActionReview = () => {
       label: t("shared.confirm"),
       onClick: () => onClickRef.current(),
       disabled: false,
-      isLoading: actionPendingMutation.isPending,
+      isLoading: actionPreviewQuery.isLoading || actionPreviewQuery.isFetching,
     }),
-    [onClickRef, t, actionPendingMutation.isPending]
+    [actionPreviewQuery.isFetching, actionPreviewQuery.isLoading, onClickRef, t]
   );
 
   const metaInfo: MetaInfoProps = useMemo(() => ({ showMetaInfo: false }), []);

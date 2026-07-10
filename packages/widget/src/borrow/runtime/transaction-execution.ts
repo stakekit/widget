@@ -4,10 +4,12 @@ import type { Networks } from "../../domain/types/chains/networks";
 import type { SKWallet } from "../../domain/types/wallet";
 import type { SKTxMeta } from "../../domain/types/wallets/generic-wallet";
 import type {
-  SubmitTransactionDto,
-  SubmitTransactionResponseDto,
-} from "../../generated/api/borrow";
-import type { Action, Transaction, WalletState } from "../domain";
+  Action,
+  SubmitTransactionCommand,
+  SubmitTransactionResult,
+  Transaction,
+  WalletState,
+} from "../domain";
 
 export type BorrowExecutionPhase =
   | "creating"
@@ -21,7 +23,7 @@ export type BorrowSubmittedTransaction = {
   readonly hash: string;
   readonly link?: string;
   readonly signedPayload?: string;
-  readonly status?: SubmitTransactionResponseDto["status"];
+  readonly status?: SubmitTransactionResult["status"];
   readonly transaction: Transaction;
 };
 
@@ -365,7 +367,7 @@ export const getBorrowTransactionMeta = ({
 
 export const getBorrowTransactionSubmitPayload = (
   signedTransaction: BorrowSignedTransaction
-): SubmitTransactionDto =>
+): SubmitTransactionCommand =>
   signedTransaction.broadcasted
     ? { transactionHash: signedTransaction.signedTx }
     : { signedPayload: signedTransaction.signedTx };
@@ -375,7 +377,7 @@ export const getBorrowSubmittedTransaction = ({
   signedTransaction,
   transaction,
 }: {
-  readonly response: SubmitTransactionResponseDto;
+  readonly response: SubmitTransactionResult;
   readonly signedTransaction: BorrowSignedTransaction;
   readonly transaction: Transaction;
 }): BorrowSubmittedTransaction => ({

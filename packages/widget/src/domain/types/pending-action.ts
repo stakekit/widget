@@ -1,22 +1,20 @@
-import type { PendingActionDto as LegacyPendingActionDto } from "../../generated/api/legacy";
 import type {
-  CreateManageActionDto,
-  PendingActionDto as YieldPendingActionDtoGenerated,
-} from "../../generated/api/yield";
+  ManageActionCommand,
+  PendingAction,
+} from "../schema/action-models";
+import type { LegacyPendingAction } from "../schema/legacy-models";
 
-export type YieldPendingActionDto = YieldPendingActionDtoGenerated;
+export type YieldPendingActionDto = PendingAction;
 export type YieldPendingActionType =
   | YieldPendingActionDto["type"]
-  | NonNullable<CreateManageActionDto["action"]>;
+  | NonNullable<ManageActionCommand["action"]>;
 
 type PendingActionArgName =
   | "amount"
   | "validatorAddress"
   | "validatorAddresses";
 
-export type AnyPendingActionDto =
-  | LegacyPendingActionDto
-  | YieldPendingActionDto;
+export type AnyPendingActionDto = LegacyPendingAction | YieldPendingActionDto;
 
 type PendingActionAmountConfig = {
   required: boolean;
@@ -77,7 +75,7 @@ const getPendingActionArgument = (
     };
   }
 
-  const legacyField = (pendingAction as LegacyPendingActionDto).args?.args?.[
+  const legacyField = (pendingAction as LegacyPendingAction).args?.args?.[
     name
   ] as
     | {

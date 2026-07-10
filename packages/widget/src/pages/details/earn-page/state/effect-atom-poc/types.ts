@@ -1,41 +1,36 @@
 import { Data } from "effect";
-import type * as HttpClientError from "effect/unstable/http/HttpClientError";
 import type { AsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import type {
   Atom,
   PullResult,
   Writable,
 } from "effect/unstable/reactivity/Atom";
+import type {
+  EarnToken,
+  EarnValidator,
+  EarnValidatorKey,
+  EarnYield,
+} from "../../../../../domain/schema/earn-models";
+import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { Networks } from "../../../../../domain/types/chains/networks";
 import type { InitParams } from "../../../../../domain/types/init-params";
 import type { PositionsData } from "../../../../../domain/types/positions";
 import type { PreferredTokenYieldsPerNetwork } from "../../../../../domain/types/stake";
 import type { TokenBalanceScanDto } from "../../../../../domain/types/token-balance";
-import type { TokenDto } from "../../../../../domain/types/tokens";
-import type {
-  Validator,
-  ValidatorKey,
-} from "../../../../../domain/types/validators";
 import type { DashboardYieldCategory } from "../../../../../domain/types/yields";
-import type { LegacyApiError } from "../../../../../generated/api/legacy";
-import type {
-  YieldApiError,
-  YieldDto,
-} from "../../../../../generated/api/yield";
-import type { MissingStakeKitApiClient } from "../../../../../providers/effect-atom-runtime/stakekit-api-service";
 
 export type EarnTokenOption = {
-  readonly token: TokenDto;
-  readonly availableYields: ReadonlyArray<string>;
+  readonly token: EarnToken;
+  readonly availableYields: ReadonlyArray<YieldId>;
   readonly amount: string;
   readonly source: "balance" | "default" | "init";
 };
-export type EarnYieldOption = YieldDto;
-export type EarnValidatorOption = Validator;
+export type EarnYieldOption = EarnYield;
+export type EarnValidatorOption = EarnValidator;
 
 export type EarnTokenKey = string;
-export type EarnYieldId = string;
-export type EarnValidatorKey = ValidatorKey;
+export type EarnYieldId = YieldId;
+export type { EarnValidatorKey };
 
 export type EarnCatalogOperation =
   | "available-yield-categories"
@@ -50,11 +45,7 @@ export type EarnCatalogOperation =
   | "token-yield-scope"
   | "validators";
 
-export type EarnCatalogUnderlyingError =
-  | HttpClientError.HttpClientError
-  | LegacyApiError<string, unknown>
-  | MissingStakeKitApiClient
-  | YieldApiError<string, unknown>;
+export type EarnCatalogUnderlyingError = unknown;
 
 export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
   readonly operation: EarnCatalogOperation;

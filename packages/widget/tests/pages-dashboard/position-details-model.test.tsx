@@ -1,6 +1,9 @@
 import BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { RewardsSummary } from "../../src/domain/schema/dashboard-models";
+import { EarnBalance } from "../../src/domain/schema/earn-models";
 import type { PositionBalancesByType } from "../../src/domain/types/positions";
 import type { Yield } from "../../src/domain/types/yields";
 import { getDashboardPositionDetailsModel } from "../../src/pages-dashboard/position-details/position-details-model";
@@ -14,6 +17,9 @@ import {
 type DashboardPositionPendingAction = Parameters<
   typeof getDashboardPositionDetailsModel
 >[0]["pendingActions"][number];
+
+const makeBalance = (overrides?: Parameters<typeof yieldBalanceFixture>[0]) =>
+  Schema.decodeUnknownSync(EarnBalance)(yieldBalanceFixture(overrides));
 
 const t = (key: string, options?: Record<string, unknown>): string => {
   const translations: Record<string, string> = {
@@ -85,7 +91,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "active",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "12",
             amountUsd: "41400",
             token,
@@ -99,7 +105,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "claimable",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "0.25",
             amountUsd: "862",
             token,
@@ -113,7 +119,7 @@ const makePositionBalances = (): PositionBalancesByType => {
       "locked",
       [
         {
-          ...yieldBalanceFixture({
+          ...makeBalance({
             amount: "42",
             amountUsd: null,
             token: { ...token, isPoints: true, symbol: "PTS" },
@@ -187,7 +193,7 @@ describe("getDashboardPositionDetailsModel", () => {
           passthrough: "claim",
           type: "CLAIM_REWARDS",
         },
-        yieldBalance: yieldBalanceFixture({ type: "claimable" }),
+        yieldBalance: makeBalance({ type: "claimable" }),
       },
     ];
 
@@ -223,7 +229,7 @@ describe("getDashboardPositionDetailsModel", () => {
         "active",
         [
           {
-            ...yieldBalanceFixture({
+            ...makeBalance({
               amount: "12",
               amountUsd: "41400",
               token,
@@ -280,7 +286,7 @@ describe("getDashboardPositionDetailsModel", () => {
       positionBalancesByType: makePositionBalances(),
       providersDetails: [{ name: "Rocket Pool", status: "active" }],
       reducedStakedOrLiquidBalance: null,
-      rewardsSummary: {
+      rewardsSummary: Schema.decodeUnknownSync(RewardsSummary)({
         rewards: {
           last24H: "0",
           last30D: "0",
@@ -289,7 +295,7 @@ describe("getDashboardPositionDetailsModel", () => {
           total: "1.5",
         },
         token: yieldApiYieldFixture().token,
-      },
+      }),
       t: t as TFunction,
     });
 

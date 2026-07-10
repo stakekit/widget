@@ -44,7 +44,7 @@
     "dev": "vite -c vite/vite.config.dev.ts",
     "start": "pnpm dev",
     "build": "pnpm lint && pnpm clean && pnpm build:package && pnpm build:bundle && pnpm build:website && pnpm build:types",
-    "lint": "biome check . && tsc",
+    "lint": "biome check . && node --import tsx scripts/check-architecture.ts && tsc",
     "test": "vitest -c vite/vite.config.dev.ts --retry 2 run",
     "format": "biome check --write . --unsafe",
     "build:website": "vite -c vite/vite.config.website build",
@@ -54,7 +54,7 @@
     "build:types": "tsc --project tsconfig.build.json",
     "clean": "rm -rf dist",
     "preview": "vite -c vite/vite.config.dev.ts preview --outDir dist/website",
-    "gen:api": "tsx scripts/generate-effect-openapi.ts"
+    "gen:api": "node --import tsx scripts/generate-effect-openapi.ts"
   },
   "peerDependencies": {
     "react": ">=18",

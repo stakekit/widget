@@ -5,7 +5,7 @@ import {
   deriveBorrowTokenWalletBalance,
   Market,
 } from "../../src/borrow";
-import type { TokenBalanceScanResponseDto } from "../../src/generated/api/legacy";
+import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 
 const market = Schema.decodeUnknownSync(Market)({
   id: "aave-v3-ethereum-usdc",
@@ -49,7 +49,7 @@ const market = Schema.decodeUnknownSync(Market)({
   minLoan: null,
 });
 
-const balances = [
+const balances = Schema.decodeUnknownSync(TokenBalancesResponse)([
   {
     token: {
       network: "ethereum",
@@ -83,7 +83,7 @@ const balances = [
     amount: "999",
     availableYields: [],
   },
-] as const satisfies ReadonlyArray<TokenBalanceScanResponseDto>;
+]);
 
 describe("borrow balance adapter", () => {
   it("derives loan and collateral balances from existing token scans", () => {

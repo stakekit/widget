@@ -1,30 +1,47 @@
-import { Cause, Effect, Exit, Fiber, Option, Stream } from "effect";
+import { Cause, Effect, Exit, Fiber, Option, Schema, Stream } from "effect";
 import { EitherAsync, Left, Right } from "purify-ts";
 import { describe, expect, it, vi } from "vitest";
 import {
-  type Action,
+  Action,
   type BorrowExecutionEvent,
   BorrowExecutionEventsService,
+  BorrowMarketsKey,
   BorrowPayloadDecodeError,
+  BorrowPositionsKey,
   BorrowSigningFailedError,
   BorrowWalletDisconnectedError,
   type BorrowWalletSignRequest,
+  borrowIntegrationsAtom,
+  borrowMarketsAtom,
+  borrowPositionsAtom,
   decodeBorrowEvmTransactionForWallet,
+  getBorrowExecutionRefreshResources,
   getBorrowTransactionSubmitPayload,
   makeDisconnectedBorrowWalletExecutionAdapter,
   makeSKWalletBorrowExecutionAdapter,
-  type Transaction,
-  type WalletState,
+  Transaction,
+  WalletState,
 } from "../../src/borrow";
-import type { Networks } from "../../src/domain/types/chains/networks";
+import {
+  TokenBalanceScanCommand,
+  YieldBalancesCommand,
+} from "../../src/domain/schema/financial-models";
 import type { SKWallet } from "../../src/domain/types/wallet";
+import {
+  TokenBalancesKey,
+  tokenBalancesAtom,
+} from "../../src/hooks/api/token-balances-atoms";
+import {
+  YieldBalancesKey,
+  yieldBalancesAtom,
+} from "../../src/hooks/api/yield-balances-atoms";
 import { SendTransactionError } from "../../src/providers/sk-wallet/errors";
 
 const address = "0x0000000000000000000000000000000000000001";
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
-const transaction = {
+const transactionInput = {
   address,
   chainId: "8453",
   id: "tx-1",
@@ -41,35 +58,46 @@ const transaction = {
   type: "BORROW",
 } as const;
 
-const action = {
+const transaction = Schema.decodeUnknownSync(Transaction)(transactionInput);
+
+const action = Schema.decodeUnknownSync(Action)({
   address,
   action: "borrow",
+  createdAt: "2026-07-10T12:00:00.000Z",
+  currentStep: 1,
+  hasNextStep: false,
   id: "action-1",
   integrationId: "morpho-blue",
-} as Action;
+  status: "CREATED",
+  totalSteps: 1,
+  transactions: [transactionInput],
+});
 
-const connectedWalletState = {
+const connectedWalletState = Schema.decodeUnknownSync(WalletState)({
   accounts: [{ address }],
-  chains: [],
+  chains: [
+    {
+      chainId: "8453",
+      iconUrl: "",
+      name: "Base",
+      network: "base",
+    },
+  ],
   currentAccount: { address },
   currentChain: {
-    chainId: 8453 as never,
+    chainId: "8453",
     iconUrl: "",
     name: "Base",
     network: "base",
   },
   network: "base",
   status: "connected",
-} as unknown as WalletState;
+});
 
 const makeSignRequest = (): BorrowWalletSignRequest => ({
   action,
-  network: "base" as Networks,
-  transaction: {
-    chainId: 8453,
-    id: "tx-1",
-    network: "base",
-  } as Transaction,
+  network: "base",
+  transaction,
   tx: "{}",
   txMeta: {} as never,
 });
@@ -98,7 +126,7 @@ describe("borrow transaction execution runtime", () => {
       await Effect.runPromise(
         decodeBorrowEvmTransactionForWallet({
           action,
-          transaction: transaction as unknown as Transaction,
+          transaction,
         })
       )
     );
@@ -122,7 +150,7 @@ describe("borrow transaction execution runtime", () => {
         transaction: {
           ...transaction,
           signablePayload: undefined,
-        } as unknown as Transaction,
+        },
       })
     );
     const error = getExitError(exit);
@@ -206,7 +234,7 @@ describe("borrow transaction execution runtime", () => {
             _tag: "BorrowTransactionSubmitted",
             action,
             submissions: [],
-            transaction: transaction as unknown as Transaction,
+            transaction,
           });
           yield* service.publish({
             _tag: "BorrowActionCompleted",
@@ -224,6 +252,52 @@ describe("borrow transaction execution runtime", () => {
       "BorrowTransactionSubmitted",
       "BorrowActionCompleted",
     ]);
+  });
+
+  it("targets execution refresh to the affected address and network", () => {
+    const event: BorrowExecutionEvent = {
+      _tag: "BorrowTransactionSubmitted",
+      action,
+      submissions: [],
+      transaction,
+    };
+    const resources = getBorrowExecutionRefreshResources(event);
+    const tokenCommand = Schema.decodeUnknownSync(TokenBalanceScanCommand)({
+      addresses: { address },
+      network: "base",
+    });
+    const yieldCommand = Schema.decodeUnknownSync(YieldBalancesCommand)({
+      queries: [{ address, network: "base" }],
+    });
+    const otherTokenCommand = Schema.decodeUnknownSync(TokenBalanceScanCommand)(
+      {
+        addresses: { address },
+        network: "ethereum",
+      }
+    );
+
+    expect(resources).toContain(borrowIntegrationsAtom);
+    expect(resources).toContain(
+      borrowMarketsAtom(new BorrowMarketsKey({ network: "base" }))
+    );
+    expect(resources).toContain(
+      borrowPositionsAtom(new BorrowPositionsKey({ address, network: "base" }))
+    );
+    expect(resources).toContain(
+      tokenBalancesAtom(
+        new TokenBalancesKey({ command: tokenCommand, enabled: true })
+      )
+    );
+    expect(resources).toContain(
+      yieldBalancesAtom(
+        new YieldBalancesKey({ command: yieldCommand, enabled: true })
+      )
+    );
+    expect(resources).not.toContain(
+      tokenBalancesAtom(
+        new TokenBalancesKey({ command: otherTokenCommand, enabled: true })
+      )
+    );
   });
 
   it("fails with a typed wallet error when disconnected", async () => {

@@ -1,6 +1,9 @@
+import { Effect } from "effect";
 import * as Schema from "effect/Schema";
+import { HttpClient } from "effect/unstable/http";
 import { describe, expect, it } from "vitest";
 import * as BorrowApi from "../../src/generated/api/borrow";
+import * as BorrowClient from "../../src/generated/api/borrow-client";
 
 describe("generated Borrow API", () => {
   it("exposes runtime schemas for borrow domain DTOs", () => {
@@ -9,10 +12,13 @@ describe("generated Borrow API", () => {
     expect(Schema.isSchema(BorrowApi.PositionDto)).toBe(true);
     expect(Schema.isSchema(BorrowApi.ActionDto)).toBe(true);
     expect(Schema.isSchema(BorrowApi.TransactionDto)).toBe(true);
+    expect("make" in BorrowApi).toBe(false);
   });
 
-  it("exposes the generated borrow operations needed by the widget", () => {
-    const client = BorrowApi.make({} as Parameters<typeof BorrowApi.make>[0]);
+  it("exposes typed Effect client operations separately from schemas", () => {
+    const client = BorrowClient.make(
+      HttpClient.make(() => Effect.die("operation must not execute"))
+    );
 
     expect(client).toEqual(
       expect.objectContaining({
@@ -29,5 +35,8 @@ describe("generated Borrow API", () => {
         TransactionsControllerSubmitTransactionV1: expect.any(Function),
       })
     );
+    expect(
+      Effect.isEffect(client.IntegrationsControllerGetIntegrationsV1(undefined))
+    ).toBe(true);
   });
 });

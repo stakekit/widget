@@ -1,6 +1,11 @@
-import { Context, Data } from "effect";
+import { Data, Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { EffectApiClient } from "../api/api-client";
+import {
+  type MissingBorrowApiConfig,
+  StakeKitApiService,
+} from "../api/api-client";
+
+export { StakeKitApiService };
 
 export class MissingStakeKitApiClient extends Data.TaggedError(
   "MissingStakeKitApiClient"
@@ -8,11 +13,21 @@ export class MissingStakeKitApiClient extends Data.TaggedError(
   readonly message: string;
 }> {}
 
-export class StakeKitApiService extends Context.Service<
+const missingStakeKitApiLayer = Layer.effect(
   StakeKitApiService,
-  EffectApiClient
->()("stakekit/widget/StakeKitApiService") {}
+  Effect.fail(
+    new MissingStakeKitApiClient({
+      message: "StakeKit API layer was not initialized in the atom runtime.",
+    })
+  )
+);
 
-export const stakeKitEffectApiClientAtom = Atom.make<EffectApiClient | null>(
-  null
-).pipe(Atom.withLabel("stakeKitEffectApiClientAtom"));
+type StakeKitApiLayerError = MissingBorrowApiConfig | MissingStakeKitApiClient;
+
+export const stakeKitApiLayerAtom = Atom.make<
+  Layer.Layer<StakeKitApiService, StakeKitApiLayerError>
+>(missingStakeKitApiLayer).pipe(Atom.withLabel("stakeKitApiLayerAtom"));
+
+export const stakeKitApiRuntime = Atom.runtime((get) =>
+  get(stakeKitApiLayerAtom)
+);

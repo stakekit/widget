@@ -1,10 +1,5 @@
 import type { WalletList } from "@stakekit/rainbowkit";
-import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Left, Right } from "purify-ts";
-import { config } from "../../config";
-
-const queryKey = [config.appPrefix, "safe-config"];
-const staleTime = Number.POSITIVE_INFINITY;
 
 const queryFn = async (): Promise<{
   groupName: string;
@@ -20,14 +15,8 @@ const queryFn = async (): Promise<{
     });
 };
 
-export const getConfig = (opts: { queryClient: QueryClient }) =>
-  EitherAsync(() =>
-    opts.queryClient.fetchQuery({
-      staleTime,
-      queryKey,
-      queryFn: () => queryFn(),
-    })
-  ).mapLeft((e) => {
+export const getConfig = () =>
+  EitherAsync(() => queryFn()).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get safe config");
   });

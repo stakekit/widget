@@ -1,8 +1,7 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { NumberInputProps } from "../../../components/atoms/number-input";
 import {
@@ -242,36 +241,36 @@ export const usePositionDetailsStake = () => {
     minEnterOrExitAmount,
   });
 
-  const onClickHandler = useMutation({
-    mutationFn: async () => {
-      if (validation.hasErrors) return;
-      if (stakeEnterRequestDto.isNothing()) return;
+  const [submitted, setSubmitted] = useState(false);
+  const onClickHandler = () => {
+    setSubmitted(true);
+    if (validation.hasErrors) return;
+    if (stakeEnterRequestDto.isNothing()) return;
 
-      if (!isConnected) return openConnectModal?.();
-      if (kycGateIsBlocking) return;
+    if (!isConnected) return openConnectModal?.();
+    if (kycGateIsBlocking) return;
 
-      Maybe.fromRecord({
-        selectedToken,
-        stakeEnterRequestDto,
-      }).ifJust((value) => {
-        setEnterStakeRequest(
-          Maybe.of({
-            actionDto: Maybe.empty(),
-            addresses: value.stakeEnterRequestDto.addresses,
-            requestDto: value.stakeEnterRequestDto.dto,
-            selectedToken: value.selectedToken,
-            gasFeeToken: value.stakeEnterRequestDto.gasFeeToken,
-            selectedStake: value.stakeEnterRequestDto.selectedStake,
-            selectedValidators: value.stakeEnterRequestDto.selectedValidators,
-          })
-        );
-        navigate(
-          getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
-            "/review"
-        );
-      });
-    },
-  });
+    Maybe.fromRecord({
+      selectedToken,
+      stakeEnterRequestDto,
+    }).ifJust((value) => {
+      setEnterStakeRequest(
+        Maybe.of({
+          actionDto: Maybe.empty(),
+          addresses: value.stakeEnterRequestDto.addresses,
+          requestDto: value.stakeEnterRequestDto.dto,
+          selectedToken: value.selectedToken,
+          gasFeeToken: value.stakeEnterRequestDto.gasFeeToken,
+          selectedStake: value.stakeEnterRequestDto.selectedStake,
+          selectedValidators: value.stakeEnterRequestDto.selectedValidators,
+        })
+      );
+      navigate(
+        getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
+          "/review"
+      );
+    });
+  };
 
   const validation = useMemo(() => {
     const errors = {
@@ -296,13 +295,13 @@ export const usePositionDetailsStake = () => {
     }
 
     return {
-      submitted: onClickHandler.status !== "idle",
+      submitted,
       hasErrors: Object.values(errors).some(Boolean),
       errors,
     };
   }, [
     isConnected,
-    onClickHandler.status,
+    submitted,
     selectedStake,
     stakeAmountGreaterThanAvailableAmount,
     stakeAmountGreaterThanMax,
@@ -325,7 +324,7 @@ export const usePositionDetailsStake = () => {
     dispatch({ type: "stakeAmount/change", amount: amount.toString(10) });
   const onTronResourceSelect = (value: TronResourceType) =>
     dispatch({ type: "tronResource/select", tronResource: value });
-  const onClickRef = useSavedRef(onClickHandler.mutate);
+  const onClickRef = useSavedRef(onClickHandler);
 
   const addLedgerAccount = useAddLedgerAccount();
   const connectClickRef = useSavedRef(() => {

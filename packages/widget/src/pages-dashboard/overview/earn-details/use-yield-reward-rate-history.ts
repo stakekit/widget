@@ -1,85 +1,44 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import BigNumber from "bignumber.js";
-import { useMemo } from "react";
-import { useApiClient } from "../../../providers/api/api-client-provider";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type {
+  HistoryPeriod,
+  HistoryPoint,
+} from "../../../domain/schema/dashboard-models";
+import { YieldId } from "../../../domain/schema/identifiers";
+import {
+  YieldHistoryKey,
+  yieldRewardRateHistoryAtom,
+} from "../../../hooks/api/dashboard-atoms";
 
-export type RewardRateHistoryPeriod = "30d" | "90d" | "1y" | "all";
-
-export type RewardRateHistoryPoint = {
-  date: Date;
-  timestamp: string;
-  value: number;
-};
-
-type RewardRateHistoryResponse = {
-  readonly items?: ReadonlyArray<{
-    readonly timestamp: string;
-    readonly rewardRate: string;
-  }>;
-};
-
-export const periodToApiPeriod = {
-  "30d": "30d",
-  "90d": "90d",
-  "1y": "1y",
-  all: "all",
-} as const;
-
-export const getYieldHistoryInterval = (period: RewardRateHistoryPeriod) =>
-  period === "1y" || period === "all" ? "week" : "day";
+export type RewardRateHistoryPeriod = HistoryPeriod;
+export type RewardRateHistoryPoint = HistoryPoint;
 
 export const useYieldRewardRateHistory = ({
   period,
-  yieldId,
+  yieldId: rawYieldId,
 }: {
   period: RewardRateHistoryPeriod;
   yieldId: string | undefined;
 }) => {
-  const apiClient = useApiClient();
-
-  const query = useQuery({
-    enabled: !!yieldId,
-    queryKey: ["yield-reward-rate-history", yieldId, period],
-    placeholderData: keepPreviousData,
-    staleTime: 1000 * 60 * 2,
-    queryFn: async ({ signal }) => {
-      if (!yieldId) return [];
-
-      const response = await apiClient
-        .withOptions({ signal })
-        .yield.YieldsControllerGetYieldRewardRateHistory(yieldId, {
-          params: {
-            period: periodToApiPeriod[period],
-            interval: getYieldHistoryInterval(period),
-          },
-        });
-
-      return (response as RewardRateHistoryResponse).items ?? [];
-    },
-  });
-
-  const data = useMemo(
-    () =>
-      (query.data ?? [])
-        .flatMap((item) => {
-          const date = new Date(item.timestamp);
-          const rewardRate = BigNumber(item.rewardRate);
-
-          if (Number.isNaN(date.getTime()) || !rewardRate.isFinite()) {
-            return [];
-          }
-
-          return [
-            {
-              date,
-              timestamp: item.timestamp,
-              value: rewardRate.times(100).toNumber(),
-            },
-          ];
-        })
-        .sort((a, b) => a.date.getTime() - b.date.getTime()),
-    [query.data]
+  const yieldId = rawYieldId
+    ? Schema.decodeUnknownSync(YieldId)(rawYieldId)
+    : null;
+  const resource = yieldRewardRateHistoryAtom(
+    new YieldHistoryKey({ period, yieldId })
   );
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const page = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
-  return { ...query, data };
+  return {
+    data: [...(page?.items ?? [])].sort(
+      (a, b) => a.date.getTime() - b.date.getTime()
+    ),
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isError: AsyncResult.isFailure(result),
+    isFetching: result.waiting,
+    isLoading: !!yieldId && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
 };

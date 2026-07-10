@@ -5,9 +5,8 @@ export const config = {
   appIcon: `${assetsUrl}/stakekit/sk-icon_320x320.png`,
   appUrl: "https://yield.xyz",
   currency: "USD",
-  queryClient: {
-    staleTime: 1000 * 5,
-    cacheTime: 1000 * 60 * 5,
+  atomResources: {
+    defaultIdleTTL: 1000 * 60 * 5,
   },
   walletConnectV2: {
     projectId: "10a5257c04d1d3097ff768a139c95f50",

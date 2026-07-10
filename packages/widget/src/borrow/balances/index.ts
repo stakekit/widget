@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import type { TokenBalanceScanResponseDto } from "../../generated/api/legacy";
+import type { TokenBalance } from "../../domain/schema/financial-models";
 import type {
   BorrowNetwork,
   BorrowToken,
@@ -16,7 +16,7 @@ type BorrowBalanceToken = Pick<
 export type BorrowTokenWalletBalance = {
   readonly amount: string;
   readonly amountValue: BigNumber;
-  readonly balance: TokenBalanceScanResponseDto | null;
+  readonly balance: TokenBalance | null;
   readonly network: BorrowNetwork;
   readonly token: BorrowBalanceToken;
 };
@@ -42,10 +42,7 @@ const sameAddress = (left?: string, right?: string) => {
   );
 };
 
-const sameNativeToken = (
-  token: BorrowBalanceToken,
-  balance: TokenBalanceScanResponseDto
-) =>
+const sameNativeToken = (token: BorrowBalanceToken, balance: TokenBalance) =>
   !token.address &&
   !balance.token.address &&
   token.symbol.toLowerCase() === balance.token.symbol.toLowerCase();
@@ -55,7 +52,7 @@ export const isBorrowTokenBalanceMatch = ({
   network,
   token,
 }: {
-  readonly balance: TokenBalanceScanResponseDto;
+  readonly balance: TokenBalance;
   readonly network: BorrowNetwork;
   readonly token: BorrowBalanceToken;
 }) =>
@@ -68,7 +65,7 @@ export const deriveBorrowTokenWalletBalance = ({
   network,
   token,
 }: {
-  readonly balances: ReadonlyArray<TokenBalanceScanResponseDto>;
+  readonly balances: ReadonlyArray<TokenBalance>;
   readonly network: BorrowNetwork;
   readonly token: BorrowBalanceToken;
 }): BorrowTokenWalletBalance => {
@@ -76,11 +73,11 @@ export const deriveBorrowTokenWalletBalance = ({
     balances.find((candidate) =>
       isBorrowTokenBalanceMatch({ balance: candidate, network, token })
     ) ?? null;
-  const amount = balance?.amount ?? "0";
+  const amountValue = balance?.amount ?? new BigNumber(0);
 
   return {
-    amount,
-    amountValue: new BigNumber(amount),
+    amount: amountValue.toFixed(),
+    amountValue,
     balance,
     network,
     token,
@@ -92,7 +89,7 @@ export const deriveBorrowMarketWalletBalances = ({
   market,
   selectedCollateralTokenAddress,
 }: {
-  readonly balances: ReadonlyArray<TokenBalanceScanResponseDto>;
+  readonly balances: ReadonlyArray<TokenBalance>;
   readonly market: Market;
   readonly selectedCollateralTokenAddress?: TokenAddress | string | null;
 }): BorrowMarketWalletBalances => {

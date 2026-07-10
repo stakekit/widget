@@ -1,4 +1,4 @@
-import type { KycStatusResponseDto } from "../../generated/api/yield";
+import type { KycStatus } from "../schema/dashboard-models";
 import type { Yield } from "./yields";
 
 export type KycGate =
@@ -14,7 +14,7 @@ export type KycGate =
     };
 
 type KycUrlSource = {
-  readonly status?: Pick<KycStatusResponseDto, "authorizeUrl"> | null;
+  readonly status?: Pick<KycStatus, "authorizeUrl"> | null;
   readonly yieldDto?: Yield | null;
 };
 
@@ -43,7 +43,7 @@ export const mapKycStatusToGate = ({
   status,
   yieldDto,
 }: {
-  readonly status?: KycStatusResponseDto | null;
+  readonly status?: KycStatus | null;
   readonly yieldDto?: Yield | null;
 }): KycGate => {
   const kycUrl = getKycUrl({ status, yieldDto });

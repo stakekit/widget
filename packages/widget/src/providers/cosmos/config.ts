@@ -1,27 +1,19 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, Right } from "purify-ts";
-import { getEnabledNetworks } from "../../common/get-enabled-networks";
-import { config } from "../../config";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { supportedCosmosChains } from "../../domain/types/chains/cosmos";
+import type { Networks } from "../../domain/types/chains/networks";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import type { ApiClient } from "../api/api-client";
 import { getWagmiChain } from "./chains";
 
-const queryKey = [config.appPrefix, "cosmos-config"];
-const staleTime = Number.POSITIVE_INFINITY;
-
 const queryFn = async ({
-  apiClient,
-  queryClient,
+  enabledNetworks,
   forceWalletConnectOnly,
 }: {
-  apiClient: ApiClient;
-  queryClient: QueryClient;
+  enabledNetworks: ReadonlySet<Networks>;
   forceWalletConnectOnly: boolean;
 }) =>
-  getEnabledNetworks({ apiClient, queryClient })
+  EitherAsync.liftEither(Right(enabledNetworks))
     .chain<
       Error,
       {
@@ -123,13 +115,7 @@ const queryFn = async ({
     });
 
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() =>
-    opts.queryClient.fetchQuery({
-      staleTime,
-      queryKey,
-      queryFn: () => queryFn(opts),
-    })
-  ).mapLeft((e) => {
+  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get cosmos config");
   });

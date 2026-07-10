@@ -1,6 +1,8 @@
 import BigNumber from "bignumber.js";
+import { Option, Schema } from "effect";
 import { Maybe } from "purify-ts";
 import { tokenString } from "../../../../../../domain";
+import { YieldId } from "../../../../../../domain/schema/identifiers";
 import {
   isSupportedChain,
   type SupportedSKChains,
@@ -62,7 +64,12 @@ export const resolveYield = ({
 
   const initYieldId = entry.initParams?.yieldId;
   if (initYieldId) {
-    const selected = findYieldById(yieldOptions, initYieldId);
+    const decodedInitYieldId = Schema.decodeUnknownOption(YieldId)(
+      initYieldId
+    ).pipe(Option.getOrNull);
+    const selected = decodedInitYieldId
+      ? findYieldById(yieldOptions, decodedInitYieldId)
+      : null;
     if (selected) {
       return selected;
     }
@@ -78,7 +85,12 @@ export const resolveYield = ({
       return getDefaultYield(yieldOptions);
     }
 
-    const selected = findYieldById(yieldOptions, preferredYieldId);
+    const decodedPreferredYieldId = Schema.decodeUnknownOption(YieldId)(
+      preferredYieldId
+    ).pipe(Option.getOrNull);
+    const selected = decodedPreferredYieldId
+      ? findYieldById(yieldOptions, decodedPreferredYieldId)
+      : null;
     if (selected) {
       return selected;
     }

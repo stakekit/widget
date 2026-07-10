@@ -1,15 +1,73 @@
-import { useQuery } from "@tanstack/react-query";
-import type BigNumber from "bignumber.js";
-import { EitherAsync, type Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import BigNumber from "bignumber.js";
+import { Data, Duration, Effect, Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type { Maybe } from "purify-ts";
 import {
-  checkGasAmount,
-  GasTokenMissingError,
-  NotEnoughGasTokenError,
-} from "../common/check-gas-amount";
+  valueEqualAtomFamily,
+  withApiRequestError,
+  withApiResourcePolicy,
+  withResponseDecodeError,
+} from "../atoms/api-resource";
+import { checkGasAmount } from "../common/check-gas-amount";
+import {
+  type GasBalancesCommand,
+  GasBalancesCommand as GasBalancesCommandSchema,
+  GasTokenBalancesResponse,
+} from "../domain/schema/financial-models";
 import type { AddressesDto } from "../domain/types/addresses";
 import type { TokenDto } from "../domain/types/tokens";
-import { useApiClient } from "../providers/api/api-client-provider";
+import { StakeKitApiService } from "../providers/api/api-client";
+import { stakeKitApiRuntime } from "../providers/effect-atom-runtime/stakekit-api-service";
+
+type StakeTokenKey = {
+  readonly address?: string;
+  readonly network: string;
+  readonly symbol: string;
+};
+
+class GasWarningKey extends Data.Class<{
+  readonly command: GasBalancesCommand | null;
+  readonly gasAmount: string | null;
+  readonly stakeAmount: string | null;
+  readonly stakeToken: StakeTokenKey | null;
+}> {}
+
+const gasWarningAtom = valueEqualAtomFamily((key: GasWarningKey) =>
+  stakeKitApiRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (!key.command || !key.gasAmount) return null;
+
+        const api = yield* StakeKitApiService;
+        const response = yield* api.legacy
+          .TokenControllerGetTokenBalances({ payload: key.command })
+          .pipe(withApiRequestError("gas-balance-check"));
+        const balances = yield* Schema.decodeUnknownEffect(
+          GasTokenBalancesResponse
+        )(response).pipe(withResponseDecodeError("gas-balance-check"));
+
+        return checkGasAmount({
+          gasEstimate: new BigNumber(key.gasAmount),
+          gasTokenBalance: balances[0],
+          ...(key.stakeAmount && key.stakeToken
+            ? {
+                isStake: true as const,
+                stakeAmount: new BigNumber(key.stakeAmount),
+                stakeToken: key.stakeToken,
+              }
+            : { isStake: false as const }),
+        });
+      })
+    )
+    .pipe(
+      withApiResourcePolicy({
+        idleTTL: Duration.minutes(5),
+        staleTime: Duration.zero,
+        revalidateOnMount: true,
+      })
+    )
+);
 
 export const useGasWarningCheck = (
   props: {
@@ -23,60 +81,48 @@ export const useGasWarningCheck = (
     | { isStake: false }
   )
 ) => {
-  const apiClient = useApiClient();
-  const requestData = useMemo(
-    () =>
-      props.gasAmount.map((v) => ({
-        ...props,
-        gasAmount: v,
-        stakeData: props.isStake
-          ? {
-              isStake: props.isStake,
-              stakeAmount: props.stakeAmount,
-              stakeToken: props.stakeToken,
-            }
-          : { isStake: props.isStake },
-      })),
-    [props]
+  const gasAmount = props.gasAmount.extractNullable();
+  const command = Schema.decodeUnknownOption(GasBalancesCommandSchema)({
+    addresses: [
+      {
+        address: props.address,
+        ...(props.additionalAddresses
+          ? { additionalAddresses: props.additionalAddresses }
+          : {}),
+        network: props.gasFeeToken.network,
+        ...(props.gasFeeToken.address
+          ? { tokenAddress: props.gasFeeToken.address }
+          : {}),
+      },
+    ],
+  }).pipe(Option.getOrNull);
+  const resource = gasWarningAtom(
+    new GasWarningKey({
+      command,
+      gasAmount: gasAmount?.toFixed() ?? null,
+      stakeAmount: props.isStake ? props.stakeAmount.toFixed() : null,
+      stakeToken: props.isStake
+        ? {
+            ...(props.stakeToken.address
+              ? { address: props.stakeToken.address }
+              : {}),
+            network: props.stakeToken.network,
+            symbol: props.stakeToken.symbol,
+          }
+        : null,
+    })
   );
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
+  const enabled = !!(command && gasAmount);
 
-  return useQuery({
-    queryKey: ["gas-check", requestData.extract()],
-    enabled: requestData.isJust(),
-    staleTime: 0,
-    queryFn: async () => {
-      return (
-        await EitherAsync.liftEither(
-          requestData.toEither(new Error("Request data is missing"))
-        )
-          .chain((val) =>
-            checkGasAmount({
-              apiClient,
-              gasEstimate: {
-                amount: val.gasAmount,
-                token: val.gasFeeToken as NonNullable<
-                  Parameters<typeof checkGasAmount>[0]["gasEstimate"]
-                >["token"],
-              },
-              addressWithTokenDto: {
-                address: val.address,
-                additionalAddresses: val.additionalAddresses as Parameters<
-                  typeof checkGasAmount
-                >[0]["addressWithTokenDto"]["additionalAddresses"],
-                network: val.gasFeeToken.network as Parameters<
-                  typeof checkGasAmount
-                >[0]["addressWithTokenDto"]["network"],
-                tokenAddress: val.gasFeeToken.address,
-              },
-              ...val.stakeData,
-            })
-          )
-          .map(
-            (val) =>
-              val instanceof NotEnoughGasTokenError ||
-              val instanceof GasTokenMissingError
-          )
-      ).unsafeCoerce();
-    },
-  });
+  return {
+    data: value ?? undefined,
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isError: AsyncResult.isFailure(result),
+    isFetching: result.waiting,
+    isLoading: enabled && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
 };

@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as CopyText from "../../../components/atoms/copy-text";
 import type { TokenDto } from "../../../domain/types/tokens";
-import type { ValidatorDto } from "../../../generated/api/yield";
+import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
   getRewardRateFormatted,

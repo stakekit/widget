@@ -107,12 +107,18 @@ describe("Deep links flow", () => {
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith({
-        method: "eth_sendTransaction",
-        params: expect.anything(),
-      });
+      .toHaveBeenCalledWith(
+        {
+          method: "eth_sendTransaction",
+          params: expect.anything(),
+        },
+        undefined
+      );
 
-    expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" });
+    expect(requestFn).toHaveBeenCalledWith(
+      { method: "eth_chainId" },
+      undefined
+    );
 
     await expect
       .element(app.getByText("Successfully claimed rewards", { exact: false }))
@@ -168,12 +174,18 @@ describe("Deep links flow", () => {
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith({
-        method: "eth_sendTransaction",
-        params: expect.anything(),
-      });
+      .toHaveBeenCalledWith(
+        {
+          method: "eth_sendTransaction",
+          params: expect.anything(),
+        },
+        undefined
+      );
 
-    expect(requestFn).toHaveBeenCalledWith({ method: "eth_chainId" });
+    expect(requestFn).toHaveBeenCalledWith(
+      { method: "eth_chainId" },
+      undefined
+    );
 
     await expect
       .element(app.getByText("Successfully claimed rewards", { exact: false }))
@@ -201,10 +213,13 @@ describe("Deep links flow", () => {
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: numberToHex(1) }],
-      });
+      .toHaveBeenCalledWith(
+        {
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: numberToHex(1) }],
+        },
+        undefined
+      );
 
     await app.unmount();
   });

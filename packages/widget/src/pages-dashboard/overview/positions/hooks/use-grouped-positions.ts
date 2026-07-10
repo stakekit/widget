@@ -1,15 +1,11 @@
-import { useQueries } from "@tanstack/react-query";
 import type { Position as BorrowPosition } from "../../../../borrow";
 import {
   type DashboardYieldCategory,
   getDashboardYieldCategory,
 } from "../../../../domain/types/yields";
-import { queryFn } from "../../../../hooks/api/use-yield-opportunity/get-yield-opportunity";
+import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
 import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
-import { useApiClient } from "../../../../providers/api/api-client-provider";
-import { useSKQueryClient } from "../../../../providers/query-client";
 import { useSettings } from "../../../../providers/settings";
-import { useSKWallet } from "../../../../providers/sk-wallet";
 
 type PositionItem = ReturnType<
   typeof usePositions
@@ -28,8 +24,6 @@ type PositionsListRow =
     }
   | { kind: "position"; item: UnifiedPositionItem };
 
-const staleTime = 1000 * 60 * 2;
-
 /**
  * Groups position items by their dashboard yield category (stake / defi / rwa),
  * mirroring how the top navigation tabs are grouped. Positions whose category
@@ -42,9 +36,6 @@ export const useGroupedPositions = ({
   readonly borrowPositions: BorrowPosition[];
   readonly earnPositions: PositionItem[];
 }): PositionsListRow[] => {
-  const { isLedgerLive } = useSKWallet();
-  const apiClient = useApiClient();
-  const queryClient = useSKQueryClient();
   const { dashboardYieldCategoryOrder, yieldGrouping } = useSettings();
   const dashboardYieldCategoryGroupingEnabled = yieldGrouping === "category";
 
@@ -52,14 +43,15 @@ export const useGroupedPositions = ({
     ? [...new Set(earnPositions.map((p) => p.integrationId))]
     : [];
 
-  const categoryQueries = useQueries({
-    queries: integrationIds.map((yieldId) => ({
-      queryKey: ["yield-opportunity", yieldId, isLedgerLive],
-      enabled: dashboardYieldCategoryGroupingEnabled && !!yieldId,
-      staleTime,
-      queryFn: ({ signal }: { signal: AbortSignal }) =>
-        queryFn({ yieldId, isLedgerLive, apiClient, queryClient, signal }),
-    })),
+  const categoryQuery = useMultiYields(integrationIds, {
+    enabled: dashboardYieldCategoryGroupingEnabled,
+    select: (yields) =>
+      new Map(
+        yields.map((yieldModel) => [
+          yieldModel.id,
+          getDashboardYieldCategory(yieldModel),
+        ])
+      ),
   });
 
   if (!dashboardYieldCategoryGroupingEnabled) {
@@ -76,14 +68,7 @@ export const useGroupedPositions = ({
     ];
   }
 
-  const categoryByIntegrationId = new Map<
-    string,
-    DashboardYieldCategory | null
-  >();
-  integrationIds.forEach((id, index) => {
-    const data = categoryQueries[index]?.data;
-    if (data) categoryByIntegrationId.set(id, getDashboardYieldCategory(data));
-  });
+  const categoryByIntegrationId = categoryQuery.data ?? new Map();
 
   const grouped = new Map<DashboardYieldCategory, PositionItem[]>();
   const ungrouped: PositionItem[] = [];

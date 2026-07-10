@@ -1,11 +1,14 @@
-import { Data, Duration, Effect, flow, Schema } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import type { PositionDto } from "../../generated/api/borrow";
+import { Data, Duration, Effect, Schema } from "effect";
 import {
+  valueEqualAtomFamily,
+  withApiResourcePolicy,
+} from "../../atoms/api-resource";
+import {
+  BorrowIntegrationPositionsResponse,
+  BorrowIntegrationsResponse,
+  BorrowMarketsResponse,
   type BorrowNetwork,
   deriveBorrowPositionItems,
-  Integration,
-  Market,
   type MarketId,
   type Position,
 } from "../domain";
@@ -49,13 +52,11 @@ export class BorrowPositionKey extends Data.Class<{
 const DEFAULT_PAGE_SIZE = 100;
 const PREFERRED_PAGE_CONCURRENCY = 5;
 
-const borrowSWR = flow(
-  Atom.swr({
-    staleTime: Duration.minutes(1),
-    revalidateOnMount: true,
-  }),
-  Atom.setIdleTTL(Duration.minutes(5))
-);
+const borrowSWR = withApiResourcePolicy({
+  staleTime: Duration.minutes(1),
+  idleTTL: Duration.minutes(5),
+  revalidateOnMount: true,
+});
 
 const withBorrowAtomError =
   (operation: BorrowAtomOperation) =>
@@ -70,11 +71,6 @@ const withBorrowAtomError =
       )
     );
 
-const decodeIntegrations = Schema.decodeUnknownEffect(
-  Schema.Array(Integration)
-);
-const decodeMarkets = Schema.decodeUnknownEffect(Schema.Array(Market));
-
 export const borrowIntegrationsAtom = borrowAtomRuntime
   .atom(() =>
     Effect.gen(function* () {
@@ -82,12 +78,14 @@ export const borrowIntegrationsAtom = borrowAtomRuntime
       const response =
         yield* api.IntegrationsControllerGetIntegrationsV1(undefined);
 
-      return yield* decodeIntegrations(response);
+      return yield* Schema.decodeUnknownEffect(BorrowIntegrationsResponse)(
+        response
+      );
     }).pipe(withBorrowAtomError("borrow-integrations"))
   )
   .pipe(borrowSWR);
 
-export const borrowMarketsAtom = Atom.family((key: BorrowMarketsKey) =>
+export const borrowMarketsAtom = valueEqualAtomFamily((key: BorrowMarketsKey) =>
   borrowAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
@@ -101,7 +99,11 @@ export const borrowMarketsAtom = Atom.family((key: BorrowMarketsKey) =>
           },
         });
 
-        return yield* decodeMarkets(response.items ?? []);
+        const page = yield* Schema.decodeUnknownEffect(BorrowMarketsResponse)(
+          response
+        );
+
+        return page.items ?? [];
       }).pipe(withBorrowAtomError("borrow-markets"))
     )
     .pipe(borrowSWR)
@@ -118,9 +120,11 @@ const loadBorrowPositions = ({
     const api = yield* BorrowApiService;
     const integrationsResponse =
       yield* api.IntegrationsControllerGetIntegrationsV1(undefined);
-    const integrations = (yield* decodeIntegrations(
-      integrationsResponse
-    )).filter((integration) => integration.networks.includes(network));
+    const integrations = (yield* Schema.decodeUnknownEffect(
+      BorrowIntegrationsResponse
+    )(integrationsResponse)).filter((integration) =>
+      integration.networks.includes(network)
+    );
     const marketsResponse = yield* api.MarketsControllerGetMarketsV1({
       params: {
         limit: DEFAULT_PAGE_SIZE,
@@ -129,8 +133,10 @@ const loadBorrowPositions = ({
         scope: "all",
       },
     });
-    const markets = yield* decodeMarkets(marketsResponse.items ?? []);
-    const integrationPositions = yield* Effect.all(
+    const marketsPage = yield* Schema.decodeUnknownEffect(
+      BorrowMarketsResponse
+    )(marketsResponse);
+    const integrationPositionResponses = yield* Effect.all(
       integrations.map((integration) =>
         Effect.gen(function* () {
           const position = yield* api.PositionsControllerGetPositionsV1({
@@ -143,60 +149,65 @@ const loadBorrowPositions = ({
 
           return {
             integration,
-            position: position as PositionDto,
+            position,
           };
         })
       ),
       { concurrency: PREFERRED_PAGE_CONCURRENCY }
     );
+    const integrationPositions = yield* Schema.decodeUnknownEffect(
+      BorrowIntegrationPositionsResponse
+    )(integrationPositionResponses);
 
     return deriveBorrowPositionItems({
       integrationPositions,
-      markets,
+      markets: marketsPage.items ?? [],
     });
   });
 
-export const borrowPositionsAtom = Atom.family((key: BorrowPositionsKey) =>
-  borrowAtomRuntime
-    .atom(() => {
-      if (!key.address || !key.network) {
-        return Effect.succeed([] as Position[]);
-      }
-
-      return loadBorrowPositions({
-        address: key.address,
-        network: key.network,
-      }).pipe(withBorrowAtomError("borrow-positions"));
-    })
-    .pipe(borrowSWR)
-);
-
-export const borrowPositionAtom = Atom.family((key: BorrowPositionKey) =>
-  borrowAtomRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.address || !key.network || !key.marketId) {
-          return yield* new BorrowPositionNotFound({
-            marketId: key.marketId ?? "",
-          });
+export const borrowPositionsAtom = valueEqualAtomFamily(
+  (key: BorrowPositionsKey) =>
+    borrowAtomRuntime
+      .atom(() => {
+        if (!key.address || !key.network) {
+          return Effect.succeed([] as Position[]);
         }
 
-        const positions = yield* loadBorrowPositions({
+        return loadBorrowPositions({
           address: key.address,
           network: key.network,
-        });
-        const position = positions.find(
-          (candidate) => candidate.id === key.marketId
-        );
+        }).pipe(withBorrowAtomError("borrow-positions"));
+      })
+      .pipe(borrowSWR)
+);
 
-        if (!position) {
-          return yield* new BorrowPositionNotFound({
-            marketId: key.marketId,
+export const borrowPositionAtom = valueEqualAtomFamily(
+  (key: BorrowPositionKey) =>
+    borrowAtomRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          if (!key.address || !key.network || !key.marketId) {
+            return yield* new BorrowPositionNotFound({
+              marketId: key.marketId ?? "",
+            });
+          }
+
+          const positions = yield* loadBorrowPositions({
+            address: key.address,
+            network: key.network,
           });
-        }
+          const position = positions.find(
+            (candidate) => candidate.id === key.marketId
+          );
 
-        return position;
-      }).pipe(withBorrowAtomError("borrow-position"))
-    )
-    .pipe(borrowSWR)
+          if (!position) {
+            return yield* new BorrowPositionNotFound({
+              marketId: key.marketId,
+            });
+          }
+
+          return position;
+        }).pipe(withBorrowAtomError("borrow-position"))
+      )
+      .pipe(borrowSWR)
 );

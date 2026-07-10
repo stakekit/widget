@@ -1,8 +1,11 @@
-import type { Action, BorrowExecutionResult } from "../../borrow";
-import type { ActionsControllerExecuteActionV1RequestJson } from "../../generated/api/borrow";
+import type {
+  Action,
+  ActionRequest,
+  BorrowExecutionResult,
+} from "../../borrow";
 
 export type BorrowReviewState = {
-  readonly request: ActionsControllerExecuteActionV1RequestJson;
+  readonly request: ActionRequest;
   readonly summary: {
     readonly action:
       | "borrow"

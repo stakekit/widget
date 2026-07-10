@@ -1,106 +1,74 @@
-import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { Maybe } from "purify-ts";
-import { useCallback, useMemo } from "react";
-import type {
-  YieldBalancesByYieldDto,
-  YieldBalancesRequestDto,
-} from "../../domain/types/positions";
-import { toYieldBalancesByYields } from "../../domain/types/positions";
-import { useApiClient } from "../../providers/api/api-client-provider";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useEffect } from "react";
+import type { EarnPosition } from "../../domain/schema/earn-models";
+import { YieldBalancesCommand as YieldBalancesCommandSchema } from "../../domain/schema/financial-models";
 import { useSKWallet } from "../../providers/sk-wallet";
 import { useActionHistoryData } from "../../providers/stake-history";
-import { useInvalidateQueryNTimes } from "../use-invalidate-query-n-times";
+import { YieldBalancesKey, yieldBalancesAtom } from "./yield-balances-atoms";
 
-export const useYieldBalancesScan = <T = YieldBalancesByYieldDto[]>(opts?: {
-  select?: (data: YieldBalancesByYieldDto[]) => T;
-  // biome-ignore lint/suspicious/noExplicitAny: fix later
-}): UseQueryResult<T, any> => {
-  const apiClient = useApiClient();
+const useYieldBalancesResource = () => {
   const { network, address } = useSKWallet();
+  const command =
+    address && network
+      ? Schema.decodeUnknownSync(YieldBalancesCommandSchema)({
+          queries: [{ address, network }],
+        })
+      : null;
+  const enabled = !!command;
+  const resource = yieldBalancesAtom(
+    new YieldBalancesKey({ command, enabled })
+  );
 
+  return { enabled, resource };
+};
+
+export const useYieldBalancesScan = <T = ReadonlyArray<EarnPosition>>(opts?: {
+  select?: (data: ReadonlyArray<EarnPosition>) => T;
+}) => {
+  const { enabled, resource } = useYieldBalancesResource();
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const page = result.pipe(AsyncResult.value, Option.getOrUndefined);
+  const value = page?.items;
   const actionHistoryData = useActionHistoryData();
+  const lastActionTimestamp = actionHistoryData
+    .map((item) => item.timestamp)
+    .extractNullable();
 
-  const lastActionTimestamp = useMemo(
-    () => actionHistoryData.map((v) => v.timestamp).extractNullable(),
-    [actionHistoryData]
-  );
+  useEffect(() => {
+    if (!enabled) return;
+    const interval = globalThis.setInterval(refresh, 60_000);
+    return () => globalThis.clearInterval(interval);
+  }, [enabled, refresh]);
 
-  const param = useMemo(
-    () =>
-      Maybe.fromRecord({
-        address: Maybe.fromNullable(address),
-        network: Maybe.fromNullable(network),
-      }).mapOrDefault<{ dto: YieldBalancesRequestDto; enabled: boolean }>(
-        (val) => ({
-          enabled: true,
-          dto: {
-            queries: [
-              {
-                address: val.address,
-                network:
-                  val.network as YieldBalancesRequestDto["queries"][number]["network"],
-              },
-            ],
-          },
-        }),
-        {
-          enabled: false,
-          dto: {
-            queries: [{ address: "", network: "ethereum" }],
-          },
-        }
-      ),
-    [address, network]
-  );
+  useEffect(() => {
+    if (!lastActionTimestamp) return;
+    const refreshIfRecent = () => {
+      if (Date.now() - lastActionTimestamp < 12_000) refresh();
+    };
+    const interval = globalThis.setInterval(refreshIfRecent, 4_000);
+    return () => globalThis.clearInterval(interval);
+  }, [lastActionTimestamp, refresh]);
 
-  const res = useQuery({
-    queryKey: getYieldYieldBalancesScanQueryKey(param.dto),
-    enabled: param.enabled,
-    refetchInterval: 1000 * 60,
-    queryFn: ({ signal }) =>
-      apiClient
-        .withOptions({ signal })
-        .yield.YieldsControllerGetAggregateBalances({
-          payload: param.dto,
-        }),
-    select: (data) => {
-      const items = toYieldBalancesByYields(data.items);
-
-      if (opts?.select) {
-        return opts.select(items);
-      }
-
-      return items as T;
-    },
-  });
-
-  /**
-   * This is a hack to make sure that the yield balances are updated after a transaction
-   */
-  useInvalidateQueryNTimes({
-    enabled: !!lastActionTimestamp,
-    key: ["yield-balances-refetch", lastActionTimestamp],
-    queryKey: getYieldYieldBalancesScanQueryKey(),
-    waitMs: 4000,
-    shouldRefetch: () =>
-      !!lastActionTimestamp && Date.now() - lastActionTimestamp < 1000 * 12,
-  });
-
-  return res;
+  return {
+    data:
+      value === undefined
+        ? undefined
+        : opts?.select
+          ? opts.select(value)
+          : (value as T),
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isError: AsyncResult.isFailure(result),
+    isFetching: result.waiting,
+    isLoading: enabled && AsyncResult.isInitial(result),
+    isPending: enabled && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
 };
 
 export const useInvalidateYieldBalances = () => {
-  const queryClient = useSKQueryClient();
-
-  return useCallback(
-    () =>
-      queryClient.invalidateQueries({
-        queryKey: getYieldYieldBalancesScanQueryKey(),
-      }),
-    [queryClient]
-  );
+  const { resource } = useYieldBalancesResource();
+  return useAtomRefresh(resource);
 };
-
-const getYieldYieldBalancesScanQueryKey = (dto?: YieldBalancesRequestDto) =>
-  ["post", "/v1/yields/balances", ...(dto ? [dto] : [])] as const;

@@ -1,5 +1,5 @@
 import { RegistryProvider } from "@effect/atom-react";
-import { Effect, Schema } from "effect";
+import { Effect, Layer, Schema } from "effect";
 import { useEffect } from "react";
 import {
   MemoryRouter,
@@ -10,19 +10,19 @@ import {
 } from "react-router";
 import { userEvent } from "vitest/browser";
 import {
+  ActionRequest,
   Action as BorrowAction,
+  type Transaction as BorrowTransaction,
   type BorrowWalletExecutionAdapter,
   borrowWalletExecutionAdapterAtom,
+  type SubmitTransactionCommand,
 } from "../../src/borrow";
-import type {
-  ActionDto,
-  ActionsControllerExecuteActionV1RequestJson,
-  SubmitTransactionDto,
-  TransactionDto,
-} from "../../src/generated/api/borrow";
 import type { BorrowReviewState } from "../../src/pages-dashboard/borrow/review-state";
 import { useBorrowExecution } from "../../src/pages-dashboard/borrow/use-borrow-execution";
-import { stakeKitEffectApiClientAtom } from "../../src/providers/effect-atom-runtime/stakekit-api-service";
+import {
+  StakeKitApiService,
+  stakeKitApiLayerAtom,
+} from "../../src/providers/effect-atom-runtime/stakekit-api-service";
 import { describe, expect, it, vi } from "../utils/test-extend";
 import { render } from "../utils/test-utils";
 
@@ -30,7 +30,11 @@ const address = "0x0000000000000000000000000000000000000001";
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
-const request: ActionsControllerExecuteActionV1RequestJson = {
+type ActionDto = typeof BorrowAction.Encoded;
+type TransactionDto = typeof BorrowTransaction.Encoded;
+type SubmitTransactionDto = typeof SubmitTransactionCommand.Encoded;
+
+const request = Schema.decodeUnknownSync(ActionRequest)({
   action: "borrow",
   address,
   args: {
@@ -39,7 +43,7 @@ const request: ActionsControllerExecuteActionV1RequestJson = {
     tokenAddress: "0x0000000000000000000000000000000000000002",
   },
   integrationId: "morpho-blue",
-};
+});
 
 const reviewState: BorrowReviewState = {
   request,
@@ -180,7 +184,13 @@ const renderExecution = (
   render(
     <RegistryProvider
       initialValues={[
-        [stakeKitEffectApiClientAtom, { borrow } as never],
+        [
+          stakeKitApiLayerAtom,
+          Layer.succeed(StakeKitApiService, {
+            borrow,
+            borrowMutations: borrow,
+          } as never),
+        ],
         [borrowWalletExecutionAdapterAtom, options.wallet ?? wallet],
       ]}
     >

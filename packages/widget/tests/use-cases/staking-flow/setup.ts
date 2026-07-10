@@ -1,14 +1,14 @@
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
 import type {
-  ActionDto,
-  AddressesDto,
-  TokenDto,
-  TransactionDto,
-  YieldDto,
-} from "../../../src/generated/api/legacy";
+  LegacyAction,
+  LegacyAddresses,
+  LegacyToken,
+  LegacyTransaction,
+  LegacyYield,
+} from "../../../src/domain/schema/legacy-models";
+import type { YieldCreateActionDto } from "../../../src/domain/types/action";
 import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
@@ -21,6 +21,12 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+
+type ActionDto = typeof LegacyAction.Encoded;
+type AddressesDto = typeof LegacyAddresses.Encoded;
+type TokenDto = typeof LegacyToken.Encoded;
+type TransactionDto = typeof LegacyTransaction.Encoded;
+type YieldDto = typeof LegacyYield.Encoded;
 
 export const setup = async (worker: TestWorker) => {
   const token: TokenDto = {

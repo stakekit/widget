@@ -1,3 +1,4 @@
+import { useAtomValue } from "@effect/atom-react";
 import {
   type Wallet as SolanaWallet,
   useConnection as useSolanaConnection,
@@ -10,19 +11,25 @@ import type {
   WalletList,
 } from "@stakekit/rainbowkit";
 import { connectorsForWallets } from "@stakekit/rainbowkit";
-import type { QueryClient } from "@tanstack/react-query";
-import { useQuery } from "@tanstack/react-query";
+import { Data, Effect, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import uniqwith from "lodash.uniqwith";
 import { createStore } from "mipd";
 import { EitherAsync, Just, Left, Maybe, Right } from "purify-ts";
 import type { RefObject } from "react";
 import { createClient } from "viem";
+import type { Connector } from "wagmi";
 import { createConfig, http } from "wagmi";
+import { connect, reconnect, switchChain } from "wagmi/actions";
 import type { Chain } from "wagmi/chains";
 import { mainnet } from "wagmi/chains";
-import { getEnabledNetworks } from "../../common/get-enabled-networks";
 import { getVariantNetworkUrl } from "../../components/atoms/token-icon/token-icon-container/hooks/use-variant-network-urls";
 import { config } from "../../config";
+import type {
+  EnabledNetworks,
+  WalletInitParams,
+} from "../../domain/schema/wallet-models";
 import { evmChainGroup } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
@@ -30,22 +37,24 @@ import type { MiscChainsMap } from "../../domain/types/chains/misc";
 import type { Networks } from "../../domain/types/chains/networks";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
 import type { SKExternalProviders } from "../../domain/types/wallets";
-import { getInitParams } from "../../hooks/get-init-params";
 import { useSavedRef } from "../../hooks/use-saved-ref";
 import type { GetEitherAsyncRight } from "../../types/utils";
-import { isLedgerDappBrowserProvider } from "../../utils";
-import type { ApiClient } from "../api/api-client";
-import { useApiClient } from "../api/api-client-provider";
+import { isLedgerDappBrowserProvider, isMobile } from "../../utils";
 import { getConfig as getCosmosConfig } from "../cosmos/config";
 import { getConfig as getEvmConfig } from "../ethereum/config";
 import { externalProviderConnector } from "../external-provider";
 import { getConfig as getLedgerLiveConfig } from "../ledger/config";
 import { getConfig as getMiscConfig } from "../misc/config";
-import { useSKQueryClient } from "../query-client";
 import { getConfig as getSafeConnector } from "../safe/config";
+import { configMeta as safeConfigMeta } from "../safe/safe-connector-meta";
 import { useSettings } from "../settings";
 import type { SettingsProps, VariantProps } from "../settings/types";
 import { getConfig as getSubstrateConfig } from "../substrate/config";
+import {
+  enabledNetworksAtom,
+  WalletInitParamsKey,
+  walletInitParamsAtom,
+} from "./atoms";
 
 const mipdStore = createStore();
 
@@ -63,7 +72,7 @@ const omitEnsUniversalResolver = <T extends RainbowkitChain>(chain: T): T => {
 const withoutEmptyWalletGroups = (walletList: WalletList): WalletList =>
   walletList.filter((walletGroup) => walletGroup.wallets.length > 0);
 
-const buildWagmiConfig = async (opts: {
+type BuildWagmiConfigOptions = {
   disableInjectedProviderDiscovery: boolean;
   mapWalletFn?: (props: {
     id: string;
@@ -76,10 +85,9 @@ const buildWagmiConfig = async (opts: {
     iconBackground: string;
   };
   externalProviders?: RefObject<SKExternalProviders>;
+  enabledNetworks: EnabledNetworks;
   forceWalletConnectOnly: boolean;
   customConnectors?: (chains: Chain[]) => WalletList;
-  queryClient: QueryClient;
-  apiClient: ApiClient;
   isLedgerLive: boolean;
   isSafe: boolean;
   chainIconMapping: SettingsProps["chainIconMapping"];
@@ -88,73 +96,61 @@ const buildWagmiConfig = async (opts: {
   solanaWallets: SolanaWallet[];
   solanaConnection: Connection;
   mapWalletListFn?: (val: WalletList) => WalletList;
+  queryParams: WalletInitParams;
   tonConnectManifestUrl: string | undefined;
-}): Promise<{
+};
+
+const buildWagmiConfig = async (
+  opts: BuildWagmiConfigOptions
+): Promise<{
   evmConfig: GetEitherAsyncRight<ReturnType<typeof getEvmConfig>>;
   cosmosConfig: GetEitherAsyncRight<ReturnType<typeof getCosmosConfig>>;
   miscConfig: GetEitherAsyncRight<ReturnType<typeof getMiscConfig>>;
   substrateConfig: GetEitherAsyncRight<ReturnType<typeof getSubstrateConfig>>;
   wagmiConfig: ReturnType<typeof createConfig>;
   queryParamsInitChainId: number | undefined;
+  cleanup: () => void;
 }> => {
-  return getEnabledNetworks({
-    apiClient: opts.apiClient,
-    queryClient: opts.queryClient,
-  })
-    .chain((networks) =>
-      EitherAsync.fromPromise(() =>
-        Promise.all([
-          getEvmConfig({
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            institutionalWallets: opts.institutionalWallets,
-            queryClient: opts.queryClient,
-            variant: opts.variant,
-            apiClient: opts.apiClient,
-          }),
-          getCosmosConfig({
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            queryClient: opts.queryClient,
-            apiClient: opts.apiClient,
-          }),
-          getMiscConfig({
-            enabledNetworks: networks,
-            queryClient: opts.queryClient,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            solanaWallets: opts.solanaWallets,
-            solanaConnection: opts.solanaConnection,
-            variant: opts.variant,
-            tonConnectManifestUrl: opts.tonConnectManifestUrl,
-          }),
-          getSubstrateConfig({
-            queryClient: opts.queryClient,
-            forceWalletConnectOnly: opts.forceWalletConnectOnly,
-            apiClient: opts.apiClient,
-          }),
-          getInitParams({
-            isLedgerLive: opts.isLedgerLive,
-            queryClient: opts.queryClient,
-            apiClient: opts.apiClient,
-            externalProviders: opts.externalProviders?.current,
-          }),
-        ]).then(([evm, cosmos, misc, substrate, queryParams]) =>
-          evm.chain((e) =>
-            cosmos.chain((c) =>
-              misc.chain((m) =>
-                substrate.chain((s) =>
-                  queryParams.map((qp) => ({
-                    evmConfig: e,
-                    cosmosConfig: c,
-                    miscConfig: m,
-                    substrateConfig: s,
-                    queryParams: qp,
-                  }))
-                )
-              )
-            )
+  return EitherAsync.fromPromise(() =>
+    Promise.all([
+      getEvmConfig({
+        enabledNetworks: opts.enabledNetworks,
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+        institutionalWallets: opts.institutionalWallets,
+        variant: opts.variant,
+      }),
+      getCosmosConfig({
+        enabledNetworks: opts.enabledNetworks,
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+      }),
+      getMiscConfig({
+        enabledNetworks: opts.enabledNetworks,
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+        solanaWallets: opts.solanaWallets,
+        solanaConnection: opts.solanaConnection,
+        variant: opts.variant,
+        tonConnectManifestUrl: opts.tonConnectManifestUrl,
+      }),
+      getSubstrateConfig({
+        enabledNetworks: opts.enabledNetworks,
+        forceWalletConnectOnly: opts.forceWalletConnectOnly,
+      }),
+    ]).then(([evm, cosmos, misc, substrate]) =>
+      evm.chain((e) =>
+        cosmos.chain((c) =>
+          misc.chain((m) =>
+            substrate.map((s) => ({
+              evmConfig: e,
+              cosmosConfig: c,
+              miscConfig: m,
+              substrateConfig: s,
+              queryParams: opts.queryParams,
+            }))
           )
         )
       )
     )
+  )
     .chain((val) =>
       getLedgerLiveConfig({
         enabledChainsMap: {
@@ -163,13 +159,12 @@ const buildWagmiConfig = async (opts: {
           misc: val.miscConfig.miscChainsMap,
           substrate: val.substrateConfig.substrateChainsMap,
         },
-        queryClient: opts.queryClient,
         queryParams: val.queryParams,
       }).map((l) => ({ ...val, ledgerLiveConnector: l }))
     )
     .chain((val) =>
       EitherAsync.liftEither(Maybe.fromFalsy(opts.isSafe).toEither(null))
-        .chain(() => getSafeConnector({ queryClient: opts.queryClient }))
+        .chain(() => getSafeConnector())
         .chainLeft((e) => EitherAsync.liftEither(e ? Left(e) : Right(null)))
         .map((s) => ({ ...val, safeConnector: s }))
     )
@@ -345,6 +340,8 @@ const buildWagmiConfig = async (opts: {
         }),
       });
 
+      let cleanup = () => {};
+
       if (multiInjectedProviderDiscovery && evmConfig.evmChains.length > 0) {
         wagmiConfig._internal.connectors.setState((prev) => [
           ...prev,
@@ -359,7 +356,7 @@ const buildWagmiConfig = async (opts: {
           })),
         ]);
 
-        mipdStore.subscribe((providers) => {
+        cleanup = mipdStore.subscribe((providers) => {
           wagmiConfig._internal.connectors.setState((prev) => [
             ...prev,
             ...uniqwith(providers, (a, b) => a.info.rdns === b.info.rdns).map(
@@ -376,6 +373,7 @@ const buildWagmiConfig = async (opts: {
 
       return {
         ...val,
+        cleanup,
         wagmiConfig,
         queryParamsInitChainId,
       };
@@ -389,9 +387,160 @@ const buildWagmiConfig = async (opts: {
     });
 };
 
-const staleTime = Number.POSITIVE_INFINITY;
+class WalletInitializationError extends Data.TaggedError(
+  "WalletInitializationError"
+)<{
+  readonly cause: unknown;
+  readonly phase: "configuration";
+}> {}
 
-export const useWagmiConfig = () => {
+type WalletInitializationKeyFields = Omit<
+  BuildWagmiConfigOptions,
+  "enabledNetworks" | "queryParams"
+> & {
+  readonly externalProvidersValue: SKExternalProviders | undefined;
+};
+
+export class WalletInitializationKey extends Data.Class<WalletInitializationKeyFields> {}
+
+export const withWalletLifecycleCleanup = <
+  A extends { readonly cleanup: () => void },
+  E,
+  R,
+>(
+  effect: Effect.Effect<A, E, R>
+) =>
+  Effect.gen(function* () {
+    const result = yield* effect;
+    yield* Effect.addFinalizer(() => Effect.sync(result.cleanup));
+    return result;
+  });
+
+export type WalletInitializationOperations = {
+  readonly connect: (
+    config: ReturnType<typeof createConfig>,
+    options: {
+      readonly chainId: number | undefined;
+      readonly connector: Connector;
+    }
+  ) => Promise<unknown>;
+  readonly isLedgerLive: () => boolean;
+  readonly isMobile: () => boolean;
+  readonly reconnect: (
+    config: ReturnType<typeof createConfig>
+  ) => Promise<ReadonlyArray<unknown>>;
+  readonly switchChain: (
+    config: ReturnType<typeof createConfig>,
+    options: { readonly chainId: number }
+  ) => Promise<unknown>;
+};
+
+const walletInitializationOperations: WalletInitializationOperations = {
+  connect: (config, options) => connect(config, options),
+  isLedgerLive: isLedgerDappBrowserProvider,
+  isMobile,
+  reconnect: (config) => reconnect(config),
+  switchChain: (config, options) => switchChain(config, options),
+};
+
+export const initializeWallet = ({
+  externalProviders,
+  operations = walletInitializationOperations,
+  queryParamsInitChainId,
+  wagmiConfig,
+}: {
+  readonly externalProviders: SKExternalProviders | undefined;
+  readonly operations?: WalletInitializationOperations;
+  readonly queryParamsInitChainId: number | undefined;
+  readonly wagmiConfig: ReturnType<typeof createConfig>;
+}) =>
+  Effect.gen(function* () {
+    const reconnected = yield* Effect.tryPromise(() =>
+      operations.reconnect(wagmiConfig)
+    ).pipe(Effect.orElseSucceed(() => []));
+
+    if (
+      !externalProviders &&
+      reconnected.length === 0 &&
+      !operations.isLedgerLive() &&
+      operations.isMobile()
+    ) {
+      const injectedConnector = wagmiConfig.connectors.find(
+        (connector: Connector) =>
+          connector.id === "injected" || connector.id === safeConfigMeta.id
+      );
+
+      if (injectedConnector) {
+        yield* Effect.tryPromise(() =>
+          operations.connect(wagmiConfig, {
+            connector: injectedConnector,
+            chainId: queryParamsInitChainId,
+          })
+        ).pipe(Effect.ignore);
+      }
+    }
+
+    if (
+      queryParamsInitChainId &&
+      wagmiConfig.state.chainId !== queryParamsInitChainId
+    ) {
+      yield* Effect.tryPromise(() =>
+        operations.switchChain(wagmiConfig, {
+          chainId: queryParamsInitChainId,
+        })
+      ).pipe(Effect.ignore);
+    }
+  });
+
+export const walletInitializationAtom = (key: WalletInitializationKey) =>
+  walletInitializationAtomFamily(key);
+
+const walletInitializationAtomFamily = Atom.family(
+  (key: WalletInitializationKey) =>
+    Atom.make((get) =>
+      Effect.gen(function* () {
+        const enabledNetworks = yield* get.result(enabledNetworksAtom);
+        const queryParams = yield* get.result(
+          walletInitParamsAtom(
+            new WalletInitParamsKey({
+              externalProviderInitToken:
+                key.externalProvidersValue?.initToken ?? null,
+            })
+          )
+        );
+        const result = yield* withWalletLifecycleCleanup(
+          Effect.tryPromise({
+            try: () =>
+              buildWagmiConfig({
+                ...key,
+                enabledNetworks,
+                queryParams,
+              }),
+            catch: (cause) =>
+              new WalletInitializationError({
+                cause,
+                phase: "configuration",
+              }),
+          })
+        );
+        yield* initializeWallet({
+          externalProviders: key.externalProvidersValue,
+          queryParamsInitChainId: result.queryParamsInitChainId,
+          wagmiConfig: result.wagmiConfig,
+        });
+
+        return result;
+      })
+    ).pipe(Atom.setIdleTTL(0))
+);
+
+type WagmiConfigResult = {
+  readonly data: Awaited<ReturnType<typeof buildWagmiConfig>> | undefined;
+  readonly error: unknown;
+  readonly isLoading: boolean;
+};
+
+export const useWagmiConfig = (): WagmiConfigResult => {
   const {
     wagmi,
     externalProviders,
@@ -407,35 +556,23 @@ export const useWagmiConfig = () => {
   const solanaWallets = useSolanaWallet();
   const solanaConnection = useSolanaConnection();
 
-  const queryClient = useSKQueryClient();
-  const apiClient = useApiClient();
-
   const externalProvidersRef = useSavedRef(externalProviders) as
     | RefObject<SKExternalProviders>
     | RefObject<undefined>;
 
-  const wagmiConfigQuery = useQuery({
-    staleTime,
-    queryKey: [
-      config.appPrefix,
-      "wagmi-config",
-      variant,
-      !!institutionalWallets,
-      !!wagmi?.forceWalletConnectOnly,
-    ],
-    queryFn: () =>
-      buildWagmiConfig({
+  const result = useAtomValue(
+    walletInitializationAtom(
+      new WalletInitializationKey({
         mapWalletFn,
         disableInjectedProviderDiscovery: !!disableInjectedProviderDiscovery,
         forceWalletConnectOnly: !!wagmi?.forceWalletConnectOnly,
         customConnectors: wagmi?.__customConnectors__,
-        queryClient,
-        apiClient,
         isLedgerLive: isLedgerDappBrowserProvider(),
         isSafe: !!isSafe,
         ...(externalProvidersRef.current && {
           externalProviders: externalProvidersRef,
         }),
+        externalProvidersValue: externalProviders,
         chainIconMapping,
         institutionalWallets: !!institutionalWallets,
         variant,
@@ -443,10 +580,15 @@ export const useWagmiConfig = () => {
         solanaConnection: solanaConnection.connection,
         mapWalletListFn,
         tonConnectManifestUrl,
-      }),
-  });
+      })
+    )
+  );
 
-  return wagmiConfigQuery;
+  return {
+    data: result.pipe(AsyncResult.value, Option.getOrUndefined),
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isLoading: AsyncResult.isInitial(result),
+  };
 };
 
 export const defaultConfig = createConfig({

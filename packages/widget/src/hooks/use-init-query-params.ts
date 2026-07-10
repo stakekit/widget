@@ -78,7 +78,7 @@ const accountIdCodec = Codec.custom<string>({
   encode: (val) => val,
 });
 
-export const getAndValidateInitParams = ({
+const getAndValidateInitParams = ({
   externalProviderInitToken,
 }: {
   externalProviderInitToken?: TokenString;

@@ -1,314 +1,201 @@
 import {
-  type QueryClient,
-  useInfiniteQuery,
-  useQuery,
-} from "@tanstack/react-query";
-import { EitherAsync } from "purify-ts";
-import { useEffect, useMemo } from "react";
+  useAtom,
+  useAtomMount,
+  useAtomRefresh,
+  useAtomValue,
+} from "@effect/atom-react";
+import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import {
-  type ActionDto,
-  getActionValidatorAddresses,
-} from "../../domain/types/action";
-import type { Validator } from "../../domain/types/validators";
-import type { Yield } from "../../domain/types/yields";
-import type { ActionsControllerGetActionsParams } from "../../generated/api/yield";
+  valueEqualAtomFamily,
+  withApiResourcePolicy,
+} from "../../atoms/api-resource";
+import { getPullResultItems, paginatedApiStream } from "../../atoms/pagination";
+import { ActivityActionsPage } from "../../domain/schema/activity-models";
+import { WalletAddress } from "../../domain/schema/identifiers";
+import { Network } from "../../domain/schema/wallet-models";
+import { getActionValidatorAddresses } from "../../domain/types/action";
 import {
   type ActivityFilter,
   activityFilterCategories,
-  getActivityFilterYieldTypes,
 } from "../../pages/details/activity-page/activity-filters";
 import type { ActivityFilterOption } from "../../pages/details/activity-page/hooks/use-activity-filters";
-import type { ApiClient } from "../../providers/api/api-client";
-import { useApiClient } from "../../providers/api/api-client-provider";
-import { useSKQueryClient } from "../../providers/query-client";
+import { StakeKitApiService } from "../../providers/api/api-client";
+import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
 import { useSKWallet } from "../../providers/sk-wallet";
-import { fetchYieldSummariesWithProvidersByIds } from "./use-yield-summaries";
-import { getYieldValidatorsByAddresses } from "./use-yield-validators";
+import {
+  ActivityActionsKey,
+  getActivityActionsRequestParams,
+} from "./activity-requests";
+import { getYieldValidatorsByAddressesEffect } from "./use-yield-validators";
+import { YieldOpportunityKey, yieldOpportunityAtom } from "./yield-atoms";
 
 const PAGE_SIZE = 50;
 const COUNT_PAGE_SIZE = 1;
-const ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY = 5;
-const ACTIVITY_ACTION_STATUSES = [
-  "SUCCESS",
-  "FAILED",
-] as const satisfies NonNullable<ActionsControllerGetActionsParams["statuses"]>;
 
-type ActivityActionItem = {
-  actionData: ActionDto;
-  yieldData: Yield | null;
-  validatorsData: Validator[];
-};
+class ActivityActionsError extends Data.TaggedError("ActivityActionsError")<{
+  readonly cause: unknown;
+}> {}
 
-type ActivityActionBaseItem = Omit<ActivityActionItem, "validatorsData">;
-type ActivityActionsPage = Awaited<
-  ReturnType<ApiClient["yield"]["ActionsControllerGetActions"]>
-> & {
-  data: ActivityActionItem[];
-};
+const activityTotalAtom = valueEqualAtomFamily((_key: ActivityActionsKey) =>
+  Atom.make<number | null>(null)
+);
+const activityHasNextPageAtom = valueEqualAtomFamily(
+  (_key: ActivityActionsKey) => Atom.make(false)
+);
 
-type UseActivityActionsResult = ReturnType<typeof useInfiniteQuery> & {
-  allItems: ActivityActionItem[] | undefined;
-};
+const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
+  stakeKitApiRuntime.pull(
+    (context) => {
+      if (!key.enabled || !key.address || !key.network) return Stream.empty;
+      const address = key.address;
+      const network = key.network;
 
-type ActivityActionsRequestParams = {
-  address: string;
-  filter: ActivityFilter;
-  limit: number;
-  network: NonNullable<ActionsControllerGetActionsParams["network"]>;
-  offset: number;
-};
+      return paginatedApiStream({
+        fetchPage: (offset) =>
+          Effect.gen(function* () {
+            const api = yield* StakeKitApiService;
+            const response = yield* api.yield.ActionsControllerGetActions({
+              params: getActivityActionsRequestParams({
+                address,
+                filter: key.filter,
+                limit: PAGE_SIZE,
+                network,
+                offset,
+              }),
+            });
+            const page =
+              yield* Schema.decodeUnknownEffect(ActivityActionsPage)(response);
+            context.set(activityTotalAtom(key), page.total);
+            context.set(
+              activityHasNextPageAtom(key),
+              page.offset + page.limit < page.total
+            );
+            const data = yield* Effect.forEach(
+              page.items ?? [],
+              (action) =>
+                Effect.gen(function* () {
+                  const yieldResult = yield* context
+                    .result(
+                      yieldOpportunityAtom(
+                        new YieldOpportunityKey({
+                          decodeIssue: null,
+                          yieldId: action.yieldId,
+                        })
+                      )
+                    )
+                    .pipe(Effect.option);
+                  const yieldData = Option.getOrNull(yieldResult);
+                  const validatorsData =
+                    yield* getYieldValidatorsByAddressesEffect({
+                      addresses: getActionValidatorAddresses(action) ?? [],
+                      yieldId: action.yieldId,
+                    }).pipe(Effect.orElseSucceed(() => []));
 
-type ActivityFilterOptionsParams = {
-  address: string;
-  apiClient: ApiClient;
-  network: NonNullable<ActionsControllerGetActionsParams["network"]>;
-  signal?: AbortSignal;
-};
+                  return { actionData: action, validatorsData, yieldData };
+                }),
+              { concurrency: 5 }
+            );
 
-type FetchActivityActionsPageParams = {
-  address: string;
-  apiClient: ApiClient;
-  filter: ActivityFilter;
-  network: NonNullable<ActionsControllerGetActionsParams["network"]>;
-  offset: number;
-  queryClient: QueryClient;
-  signal?: AbortSignal;
-  suppressRichErrors?: boolean;
-};
-
-export const getActivityActionsQueryKey = ({
-  address,
-  filter,
-  network,
-}: {
-  address: string | null | undefined;
-  filter: ActivityFilter;
-  network: ActionsControllerGetActionsParams["network"] | null | undefined;
-}) =>
-  [
-    "activity-actions",
-    {
-      address,
-      filter,
-      network,
-      yieldTypes: getActivityFilterYieldTypes(filter),
+            return {
+              items: data,
+              limit: page.limit,
+              offset: page.offset,
+              total: page.total,
+            };
+          }).pipe(
+            Effect.mapError((cause) => new ActivityActionsError({ cause }))
+          ),
+      });
     },
-  ] as const;
-
-const getActivityFilterOptionsQueryKey = ({
-  address,
-  network,
-}: {
-  address: string | null | undefined;
-  network: ActionsControllerGetActionsParams["network"] | null | undefined;
-}) => ["activity-action-filter-options", { address, network }] as const;
-
-export const getActivityActionsRequestParams = ({
-  address,
-  filter,
-  limit,
-  network,
-  offset,
-}: ActivityActionsRequestParams): ActionsControllerGetActionsParams => {
-  const yieldTypes = getActivityFilterYieldTypes(filter);
-
-  return {
-    address,
-    limit,
-    offset,
-    network,
-    // Pending actions are filtered out; only completed (SUCCESS) and retryable
-    // error (FAILED) actions are surfaced in the activity list.
-    statuses: ACTIVITY_ACTION_STATUSES,
-    ...(yieldTypes?.length ? { yieldTypes } : {}),
-  };
-};
-
-export const fetchActivityFilterOptions = async ({
-  address,
-  apiClient,
-  network,
-  signal,
-}: ActivityFilterOptionsParams): Promise<ActivityFilterOption[]> => {
-  const client = apiClient.withOptions({ signal, suppressRichErrors: true });
-  const getCount = async (filter: ActivityFilter) => {
-    const result = await client.yield.ActionsControllerGetActions({
-      params: getActivityActionsRequestParams({
-        address,
-        filter,
-        limit: COUNT_PAGE_SIZE,
-        network,
-        offset: 0,
-      }),
-    });
-
-    return result.total;
-  };
-
-  const allCount = await getCount("all");
-
-  if (allCount <= 0) return [];
-
-  const categoryOptions = await Promise.all(
-    activityFilterCategories.map(async (filter) => ({
-      filter,
-      count: await getCount(filter),
-    }))
-  );
-  const visibleCategoryOptions = categoryOptions.filter(
-    (option) => option.count > 0
+    { initialValue: [] }
   );
 
-  return visibleCategoryOptions.length > 0
-    ? [{ filter: "all", count: allCount }, ...visibleCategoryOptions]
-    : [];
-};
+const activityActionsPullAtom = valueEqualAtomFamily(
+  makeActivityActionsPullAtom
+);
 
-const getItemsWithValidators = async ({
-  items,
-  apiClient,
-  queryClient,
-}: {
-  items: ActivityActionBaseItem[];
-  apiClient: ReturnType<typeof useApiClient>;
-  queryClient: QueryClient;
-}) => {
-  const data: ActivityActionItem[] = [];
+class ActivityFilterOptionsKey extends Data.Class<{
+  readonly address: typeof WalletAddress.Type | null;
+  readonly network: Network | null;
+}> {}
 
-  for (
-    let index = 0;
-    index < items.length;
-    index += ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY
-  ) {
-    const chunk = items.slice(
-      index,
-      index + ACTIVITY_VALIDATOR_ENRICHMENT_CONCURRENCY
-    );
+const activityFilterOptionsAtom = valueEqualAtomFamily(
+  (key: ActivityFilterOptionsKey) =>
+    stakeKitApiRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          if (!key.address || !key.network) return [];
 
-    data.push(
-      ...(await Promise.all(
-        chunk.map(async (item) => ({
-          ...item,
-          validatorsData: item.yieldData
-            ? await getYieldValidatorsByAddresses({
-                apiClient,
-                queryClient,
-                yieldId: item.actionData.yieldId,
-                addresses: getActionValidatorAddresses(item.actionData) ?? [],
-                suppressRichErrors: true,
+          const api = yield* StakeKitApiService;
+          const count = (filter: ActivityFilter) =>
+            api.yield
+              .ActionsControllerGetActions({
+                params: getActivityActionsRequestParams({
+                  address: key.address!,
+                  filter,
+                  limit: COUNT_PAGE_SIZE,
+                  network: key.network!,
+                  offset: 0,
+                }),
               })
-            : [],
-        }))
-      ))
-    );
-  }
+              .pipe(
+                Effect.flatMap((response) =>
+                  Schema.decodeUnknownEffect(ActivityActionsPage)(response)
+                ),
+                Effect.map((page) => page.total)
+              );
+          const allCount = yield* count("all");
 
-  return data;
-};
+          if (allCount <= 0) return [];
 
-const getNextActivityActionsPageParam = (lastPage: ActivityActionsPage) => {
-  const nextOffset = (lastPage.offset ?? 0) + (lastPage.limit ?? PAGE_SIZE);
+          const categoryCounts = yield* Effect.forEach(
+            activityFilterCategories,
+            (filter) =>
+              count(filter).pipe(Effect.map((count) => ({ filter, count }))),
+            { concurrency: 3 }
+          );
+          const visible = categoryCounts.filter((item) => item.count > 0);
 
-  return nextOffset < (lastPage.total ?? 0) ? nextOffset : undefined;
-};
-
-const getActionsWithYieldData = async ({
-  actions,
-  apiClient,
-  queryClient,
-  signal,
-  suppressRichErrors,
-}: {
-  actions: ReadonlyArray<ActionDto>;
-  apiClient: ApiClient;
-  queryClient: QueryClient;
-  signal?: AbortSignal;
-  suppressRichErrors?: boolean;
-}): Promise<ActivityActionBaseItem[]> => {
-  const yieldData = await fetchYieldSummariesWithProvidersByIds({
-    apiClient,
-    queryClient,
-    signal,
-    suppressRichErrors,
-    yieldIds: actions.map((action) => action.yieldId),
-  }).catch(() => []);
-  const yieldDataById = new Map<string, Yield>(
-    yieldData.map((yieldDto) => [yieldDto.id, yieldDto])
-  );
-
-  return actions.map((action) => ({
-    actionData: action,
-    yieldData: yieldDataById.get(action.yieldId) ?? null,
-  }));
-};
-
-export const fetchActivityActionsPage = async ({
-  address,
-  apiClient,
-  filter,
-  network,
-  offset,
-  queryClient,
-  signal,
-  suppressRichErrors,
-}: FetchActivityActionsPageParams): Promise<ActivityActionsPage> => {
-  return (
-    await EitherAsync(() =>
-      apiClient
-        .withOptions({ signal, suppressRichErrors })
-        .yield.ActionsControllerGetActions({
-          params: getActivityActionsRequestParams({
-            address,
-            filter,
-            limit: PAGE_SIZE,
-            offset,
-            network,
-          }),
-        })
-    )
-      .mapLeft(() => new Error("Could not get action list"))
-      .chain(async (actionList) =>
-        EitherAsync(() =>
-          getActionsWithYieldData({
-            actions: (actionList.items ?? []) as ActionDto[],
-            apiClient,
-            queryClient,
-            signal,
-            suppressRichErrors: true,
-          })
-        )
-          .chain((items) =>
-            EitherAsync(() =>
-              getItemsWithValidators({
-                items,
-                apiClient,
-                queryClient,
-              })
-            )
-          )
-          .map((data) => ({ ...actionList, data }))
+          return visible.length > 0
+            ? [{ filter: "all" as const, count: allCount }, ...visible]
+            : [];
+        }).pipe(Effect.mapError((cause) => new ActivityActionsError({ cause })))
       )
-  ).unsafeCoerce();
+      .pipe(
+        withApiResourcePolicy({
+          idleTTL: Duration.minutes(5),
+          staleTime: Duration.minutes(1),
+          revalidateOnMount: true,
+        })
+      )
+);
+
+const useActivityKeyValues = () => {
+  const { address: rawAddress, network: rawNetwork } = useSKWallet();
+  const address = rawAddress
+    ? Schema.decodeUnknownSync(WalletAddress)(rawAddress)
+    : null;
+  const network = rawNetwork
+    ? Schema.decodeUnknownSync(Network)(rawNetwork)
+    : null;
+
+  return { address, network };
 };
 
 export const useActivityFilterOptions = (): ActivityFilterOption[] => {
-  const { address, network } = useSKWallet();
-  const apiClient = useApiClient();
+  const { address, network } = useActivityKeyValues();
+  const result = useAtomValue(
+    activityFilterOptionsAtom(
+      new ActivityFilterOptionsKey({ address, network })
+    )
+  );
 
-  const query = useQuery({
-    enabled: !!address && !!network,
-    queryKey: getActivityFilterOptionsQueryKey({ address, network }),
-    queryFn: async ({ signal }) =>
-      fetchActivityFilterOptions({
-        address: address!,
-        apiClient,
-        network: network!,
-        signal,
-      }).catch(() => []),
-    staleTime: 1000 * 60,
-  });
-
-  return query.data ?? [];
+  return result.pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => [])
+  );
 };
 
 export const usePrefetchActivityActionFilters = ({
@@ -316,67 +203,43 @@ export const usePrefetchActivityActionFilters = ({
 }: {
   filterOptions: ActivityFilterOption[];
 }) => {
-  const { address, network } = useSKWallet();
-  const queryClient = useSKQueryClient();
-  const apiClient = useApiClient();
+  const { address, network } = useActivityKeyValues();
+  const enabled = !!address && !!network && filterOptions.length > 0;
+  const make = (filter: ActivityFilter) =>
+    activityActionsPullAtom(
+      new ActivityActionsKey({ address, enabled, filter, network })
+    );
 
-  useEffect(() => {
-    if (!address || !network || filterOptions.length === 0) return;
-
-    for (const { filter } of filterOptions) {
-      queryClient
-        .prefetchInfiniteQuery({
-          queryKey: getActivityActionsQueryKey({ address, network, filter }),
-          queryFn: ({ pageParam = 0, signal }) =>
-            fetchActivityActionsPage({
-              address,
-              apiClient,
-              filter,
-              network,
-              offset: pageParam as number,
-              queryClient,
-              signal,
-              suppressRichErrors: true,
-            }),
-          initialPageParam: 0,
-          getNextPageParam: getNextActivityActionsPageParam,
-        })
-        .catch(() => undefined);
-    }
-  }, [address, apiClient, filterOptions, network, queryClient]);
+  useAtomMount(make("all"));
+  useAtomMount(make("stake"));
+  useAtomMount(make("defi"));
+  useAtomMount(make("rwa"));
 };
 
-export const useActivityActions = (
-  filter: ActivityFilter = "all"
-): UseActivityActionsResult => {
-  const { address, network } = useSKWallet();
-  const queryClient = useSKQueryClient();
-  const apiClient = useApiClient();
-
-  const query = useInfiniteQuery({
+export const useActivityActions = (filter: ActivityFilter = "all") => {
+  const { address, network } = useActivityKeyValues();
+  const key = new ActivityActionsKey({
+    address,
     enabled: !!address && !!network,
-    queryKey: getActivityActionsQueryKey({ address, network, filter }),
-    queryFn: async ({ pageParam = 0, signal }) =>
-      fetchActivityActionsPage({
-        address: address!,
-        apiClient,
-        filter,
-        network: network!,
-        offset: pageParam as number,
-        queryClient,
-        signal,
-      }),
-    initialPageParam: 0,
-    getNextPageParam: getNextActivityActionsPageParam,
+    filter,
+    network,
   });
-
-  const allItems = useMemo(
-    () => query.data?.pages.flatMap((page) => page.data),
-    [query.data]
-  );
+  const resource = activityActionsPullAtom(key);
+  const [result, pull] = useAtom(resource);
+  const refresh = useAtomRefresh(resource);
+  const total = useAtomValue(activityTotalAtom(key));
+  const hasNextPage = useAtomValue(activityHasNextPageAtom(key));
+  const allItems = [...getPullResultItems(result)];
 
   return {
     allItems,
-    ...query,
-  };
+    data: total === null ? undefined : { pages: [{ total }] },
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    fetchNextPage: pull,
+    hasNextPage,
+    isFetchingNextPage: result.waiting && allItems.length > 0,
+    isLoading: result.waiting && allItems.length === 0,
+    isPending: result.waiting && allItems.length === 0,
+    refetch: refresh,
+  } as const;
 };

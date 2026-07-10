@@ -1,6 +1,12 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
-import { ActionId, IntegrationId, MarketId } from "./ids";
+import {
+  ActionId,
+  IntegrationId,
+  MarketId,
+  TokenAddress,
+  WalletAddress,
+} from "./ids";
 import { BigIntFromString, NumberFromString } from "./scalars";
 import { Transaction } from "./transaction";
 
@@ -9,6 +15,8 @@ class ActionRawArguments extends Schema.Class<ActionRawArguments>(
 )({
   ...BorrowApi.ActionDto.fields.rawArguments.schema.fields,
   marketId: MarketId,
+  tokenAddress: Schema.optionalKey(TokenAddress),
+  collateralTokenAddress: Schema.optionalKey(TokenAddress),
   amount: Schema.optionalKey(NumberFromString),
   amountRaw: Schema.optionalKey(BigIntFromString),
   collateralAmount: Schema.optionalKey(NumberFromString),
@@ -31,6 +39,7 @@ export class Action extends Schema.Class<Action>("BorrowAction")({
   ...BorrowApi.ActionDto.fields,
   id: ActionId,
   integrationId: IntegrationId,
+  address: WalletAddress,
   transactions: Schema.Array(Transaction),
   rawArguments: Schema.optionalKey(ActionRawArguments),
   metadata: Schema.optionalKey(ActionMetadata),

@@ -1,18 +1,14 @@
-import * as Schema from "effect/Schema";
-import type { PositionDto } from "../../generated/api/borrow";
 import type { MarketId } from "./ids";
 import type { Integration } from "./integration";
 import type { Market } from "./market";
 import type { PendingAction } from "./pending-action";
-import { DebtBalance, Position, SupplyBalance } from "./position";
+import type { BorrowAccountPosition } from "./position";
+import { Position, type SupplyBalance } from "./position";
 
 type IntegrationPosition = {
   readonly integration: Integration;
-  readonly position: PositionDto;
+  readonly position: BorrowAccountPosition;
 };
-
-const decodeDebtBalance = Schema.decodeUnknownSync(DebtBalance);
-const decodeSupplyBalance = Schema.decodeUnknownSync(SupplyBalance);
 
 export const deriveBorrowPositionItems = ({
   integrationPositions,
@@ -25,12 +21,8 @@ export const deriveBorrowPositionItems = ({
   const positionsByMarketId = new Map<MarketId, Position>();
 
   for (const integrationPosition of integrationPositions) {
-    const debtBalances = integrationPosition.position.debtBalances.map(
-      (balance) => decodeDebtBalance(balance)
-    );
-    const supplyBalances = integrationPosition.position.supplyBalances.map(
-      (balance) => decodeSupplyBalance(balance)
-    );
+    const debtBalances = integrationPosition.position.debtBalances;
+    const supplyBalances = integrationPosition.position.supplyBalances;
     const supplyBalancesByTokenAddress = new Map(
       supplyBalances.map((supplyBalance) => [
         supplyBalance.tokenAddress,

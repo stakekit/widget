@@ -1,29 +1,12 @@
 import BigNumber from "bignumber.js";
-import type {
-  BalanceDto,
-  BalancesRequestDto,
-  YieldBalancesDto,
-  BalanceType as YieldBalanceTypeGenerated,
-} from "../../generated/api/yield";
 import { equalTokens } from "..";
+import type { EarnBalance, EarnPosition } from "../schema/earn-models";
 import type { YieldRewardRateDto } from "./reward-rate";
-import type { TokenDto } from "./tokens";
-import {
-  toValidator,
-  toValidators,
-  type Validator,
-  type ValidatorKey,
-} from "./validators";
+import type { Validator, ValidatorKey } from "./validators";
 
-export type YieldBalanceDto = Omit<BalanceDto, "validator" | "validators"> & {
-  readonly validator?: Validator;
-  readonly validators?: ReadonlyArray<Validator>;
-};
-export type YieldBalancesByYieldDto = Omit<YieldBalancesDto, "balances"> & {
-  readonly balances: ReadonlyArray<YieldBalanceDto>;
-};
-export type YieldBalancesRequestDto = BalancesRequestDto;
-export type YieldBalanceType = YieldBalanceTypeGenerated;
+export type YieldBalanceDto = EarnBalance;
+export type YieldBalancesByYieldDto = EarnPosition;
+export type YieldBalanceType = EarnBalance["type"];
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,
@@ -40,9 +23,9 @@ type BalanceType = "validators" | "default";
 export type BalanceDataKey = BalanceType | `validator::${ValidatorKey}`;
 
 export type PositionsData = Map<
-  YieldBalancesByYieldDto["yieldId"],
+  string,
   {
-    yieldId: YieldBalancesByYieldDto["yieldId"];
+    yieldId: string;
     rewardRate?: YieldRewardRateDto | null;
     balanceData: Map<
       BalanceDataKey,
@@ -53,23 +36,6 @@ export type PositionsData = Map<
     >;
   }
 >;
-
-export const toYieldBalance = (balance: BalanceDto): YieldBalanceDto => ({
-  ...balance,
-  validator: balance.validator ? toValidator(balance.validator) : undefined,
-  validators: balance.validators ? toValidators(balance.validators) : undefined,
-});
-
-const toYieldBalancesByYield = (
-  balancesByYield: YieldBalancesDto
-): YieldBalancesByYieldDto => ({
-  ...balancesByYield,
-  balances: balancesByYield.balances.map(toYieldBalance),
-});
-
-export const toYieldBalancesByYields = (
-  balancesByYields: ReadonlyArray<YieldBalancesDto>
-): YieldBalancesByYieldDto[] => balancesByYields.map(toYieldBalancesByYield);
 
 export const getPositionBalanceDataKey = (
   balance: YieldBalanceDto
@@ -89,7 +55,11 @@ export const getPositionBalanceDataKey = (
 
 export const getPositionTotalAmount = (
   balances: YieldBalanceDto[],
-  baseToken: TokenDto
+  baseToken: {
+    readonly address?: string;
+    readonly symbol: string;
+    readonly network: string;
+  }
 ) => {
   const baseTokenBalance = balances.find((b) =>
     equalTokens(b.token, baseToken)
@@ -98,10 +68,10 @@ export const getPositionTotalAmount = (
   const baseTokenPriceInUsd = (() => {
     if (!baseTokenBalance?.amountUsd) return null;
 
-    const amount = BigNumber(baseTokenBalance.amount);
+    const amount = baseTokenBalance.amount;
     if (amount.lte(0)) return null;
 
-    return BigNumber(baseTokenBalance.amountUsd).dividedBy(amount);
+    return baseTokenBalance.amountUsd.dividedBy(amount);
   })();
 
   return balances.reduce(
@@ -115,7 +85,7 @@ export const getPositionTotalAmount = (
         };
       }
 
-      const balanceAmountUsd = BigNumber(b.amountUsd ?? 0);
+      const balanceAmountUsd = b.amountUsd ?? BigNumber(0);
 
       if (baseTokenPriceInUsd && !baseTokenPriceInUsd.isZero()) {
         return {

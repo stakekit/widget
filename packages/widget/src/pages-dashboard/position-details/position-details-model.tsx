@@ -6,6 +6,7 @@ import {
   riskSummaryActions,
   YieldRiskInfoTooltip,
 } from "../../components/molecules/yield-risk";
+import type { RewardsSummary } from "../../domain/schema/dashboard-models";
 import type { YieldPendingActionDto } from "../../domain/types/pending-action";
 import type {
   PositionBalancesByType,
@@ -22,7 +23,6 @@ import {
   getYieldWarmupPeriod,
   type Yield,
 } from "../../domain/types/yields";
-import type { YieldRewardsSummaryResponseDto } from "../../generated/api/legacy";
 import { APToPercentage, defaultFormattedNumber } from "../../utils";
 import {
   formatCooldownDays,
@@ -120,9 +120,9 @@ export const getDashboardPositionDetailsModel = ({
   reducedStakedOrLiquidBalance: {
     amount: BigNumber;
     amountUsd: BigNumber;
-    token: YieldBalanceDto["token"];
+    token: { readonly symbol: string };
   } | null;
-  rewardsSummary?: YieldRewardsSummaryResponseDto;
+  rewardsSummary?: RewardsSummary;
   t: TFunction;
 }): DashboardPositionDetailsModel => {
   const promotedFactIds = new Set<string>();
@@ -259,7 +259,7 @@ const getBalanceMetric = ({
   reducedStakedOrLiquidBalance: {
     amount: BigNumber;
     amountUsd: BigNumber;
-    token: YieldBalanceDto["token"];
+    token: { readonly symbol: string };
   } | null;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
@@ -302,7 +302,7 @@ const getRewardsMetric = ({
   pendingActions: DashboardPositionPendingAction[];
   positionBalancesByType: PositionBalancesByType;
   promotedFactIds: Set<string>;
-  rewardsSummary?: YieldRewardsSummaryResponseDto;
+  rewardsSummary?: RewardsSummary;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
   const claimableBalance = getBalancesByPriority(positionBalancesByType)

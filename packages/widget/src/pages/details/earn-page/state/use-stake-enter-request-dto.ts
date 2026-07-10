@@ -45,6 +45,9 @@ export const useStakeEnterRequestDto = ({
         selectedStake: Yield;
       }>(({ address, selectedStake, selectedToken }) => {
         const validators = [...selectedValidators.values()];
+        const inputToken = selectedToken.address;
+        const ledgerWalletApiCompatible = isLedgerLive ?? undefined;
+        const selectedTronResource = tronResource.extract();
         const providerIdRequired = !!getYieldActionArg(
           selectedStake,
           "enter",
@@ -104,11 +107,15 @@ export const useStakeEnterRequestDto = ({
             address,
             yieldId: selectedStake.id,
             arguments: {
-              inputToken: selectedToken.address,
-              ledgerWalletApiCompatible: isLedgerLive ?? undefined,
-              tronResource: tronResource.extract(),
               amount: stakeAmount.toString(10),
-              useMaxAmount: useMaxAmount || undefined,
+              ...(inputToken === undefined ? {} : { inputToken }),
+              ...(ledgerWalletApiCompatible === undefined
+                ? {}
+                : { ledgerWalletApiCompatible }),
+              ...(selectedTronResource === undefined
+                ? {}
+                : { tronResource: selectedTronResource }),
+              ...(useMaxAmount ? { useMaxAmount: true } : {}),
               ...selectedProviderArgs,
               ...validatorsOrProvider,
               ...(additionalAddresses ?? {}),

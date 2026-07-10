@@ -1,8 +1,9 @@
-import { Cause, Effect, Option, Schema } from "effect";
+import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it } from "vitest";
 import {
   applyBorrowFormAction,
+  BorrowAccountPosition,
   BorrowAtomError,
   BorrowDashboardKey,
   type BorrowFormIntent,
@@ -16,9 +17,11 @@ import {
   Market,
   resolveBorrowDashboardView,
 } from "../../src/borrow";
-import type { PositionDto } from "../../src/generated/api/borrow";
-import type { TokenBalanceScanResponseDto } from "../../src/generated/api/legacy";
-import { stakeKitEffectApiClientAtom } from "../../src/providers/effect-atom-runtime/stakekit-api-service";
+import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
+import {
+  StakeKitApiService,
+  stakeKitApiLayerAtom,
+} from "../../src/providers/effect-atom-runtime/stakekit-api-service";
 
 const address = "0x0000000000000000000000000000000000000001";
 
@@ -77,7 +80,7 @@ const marketDto = {
   minLoan: null,
 } as const;
 
-const positionDto: PositionDto = {
+const positionDto = {
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -102,14 +105,18 @@ const positionDto: PositionDto = {
   totalBorrowedUsd: "400",
   totalCollateralUsd: "0",
   totalSuppliedUsd: "0",
-};
+} as const;
 
 const makeRegistry = (borrow: Record<string, unknown>) =>
   AtomRegistry.make({
     initialValues: [
-      Atom.initialValue(stakeKitEffectApiClientAtom, {
-        borrow,
-      } as never),
+      Atom.initialValue(
+        stakeKitApiLayerAtom,
+        Layer.succeed(StakeKitApiService, {
+          borrow,
+          borrowMutations: borrow,
+        } as never)
+      ),
     ],
   });
 
@@ -201,7 +208,7 @@ describe("borrow atoms", () => {
       key: new BorrowDashboardKey({
         network: "ethereum",
         scopeId: "test",
-        tokenBalances: [
+        tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
           {
             amount: "2",
             availableYields: [],
@@ -213,7 +220,7 @@ describe("borrow atoms", () => {
               symbol: "WETH",
             },
           },
-        ] satisfies ReadonlyArray<TokenBalanceScanResponseDto>,
+        ]),
         walletAddress: address,
       }),
       marketsResult: AsyncResult.success([market]),
@@ -239,7 +246,7 @@ describe("borrow atoms", () => {
       integrationPositions: [
         {
           integration,
-          position: {
+          position: Schema.decodeUnknownSync(BorrowAccountPosition)({
             ...positionDto,
             supplyBalances: [
               {
@@ -256,7 +263,7 @@ describe("borrow atoms", () => {
             ],
             totalCollateralUsd: "1000",
             totalSuppliedUsd: "1000",
-          },
+          }),
         },
       ],
       markets: [market],

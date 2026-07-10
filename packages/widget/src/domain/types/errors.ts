@@ -1,11 +1,8 @@
-import type {
-  GeolocationError,
-  StakeKitErrorDto,
-} from "../../generated/api/legacy";
+import type { GeolocationError } from "../schema/legacy-models";
 
 const GeolocationErrorType = {
   GEO_LOCATION: "GEO_LOCATION",
 } as const;
 
-export type { GeolocationError, StakeKitErrorDto };
+export type { GeolocationError };
 export { GeolocationErrorType };

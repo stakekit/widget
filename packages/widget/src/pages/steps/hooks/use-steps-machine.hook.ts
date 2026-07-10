@@ -6,9 +6,9 @@ import { isTxError } from "../../../domain";
 import type { ActionDto, TransactionDto } from "../../../domain/types/action";
 import { ExternalProviderError } from "../../../domain/types/external-providers";
 import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
+import { useTransactionOperations } from "../../../hooks/api/use-transaction-operations";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useApiClient } from "../../../providers/api/api-client-provider";
 import { useSKWallet } from "../../../providers/sk-wallet";
 import type {
   SendTransactionError,
@@ -56,7 +56,7 @@ export const useStepsMachine = ({
   actionMeta: ActionMeta;
 }) => {
   const { signTransaction, signMessage } = useSKWallet();
-  const apiClient = useApiClient();
+  const transactionOperations = useTransactionOperations();
   const trackEvent = useTrackEvent();
 
   const sortedTransactions = useMemo(
@@ -72,7 +72,7 @@ export const useStepsMachine = ({
     signMessage,
     signTransaction,
     actionMeta,
-    apiClient,
+    transactionOperations,
   });
 
   return useMachine(useState(() => getMachine(machineParams))[0]);
@@ -87,7 +87,7 @@ const getMachine = (
       signMessage: ReturnType<typeof useSKWallet>["signMessage"];
       signTransaction: ReturnType<typeof useSKWallet>["signTransaction"];
       actionMeta: ActionMeta;
-      apiClient: ReturnType<typeof useApiClient>;
+      transactionOperations: ReturnType<typeof useTransactionOperations>;
     }>
   >
 ) => {
@@ -364,9 +364,9 @@ const getMachine = (
             .chain((currentTx) => {
               if (currentTx.meta.broadcasted) {
                 return EitherAsync(() =>
-                  ref.current.apiClient.yield.TransactionsControllerSubmitTransactionHash(
+                  ref.current.transactionOperations.submitHash(
                     currentTx.tx.id,
-                    { payload: { hash: currentTx.meta.signedTx! } }
+                    currentTx.meta.signedTx!
                   )
                 )
                   .mapLeft(() => new SubmitHashError())
@@ -381,13 +381,9 @@ const getMachine = (
               }
 
               return EitherAsync(() =>
-                ref.current.apiClient.yield.TransactionsControllerSubmitTransaction(
+                ref.current.transactionOperations.submitSigned(
                   currentTx.tx.id,
-                  {
-                    payload: {
-                      signedTransaction: currentTx.meta.signedTx!,
-                    },
-                  }
+                  currentTx.meta.signedTx!
                 )
               )
                 .mapLeft(() => new SubmitError())
@@ -460,10 +456,7 @@ const getMachine = (
           )
             .chain((currentTx) =>
               EitherAsync(() =>
-                ref.current.apiClient.yield.TransactionsControllerGetTransaction(
-                  currentTx.tx.id,
-                  undefined
-                )
+                ref.current.transactionOperations.getStatus(currentTx.tx.id)
               )
                 .map((res) => ({
                   url: res.explorerUrl,

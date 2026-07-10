@@ -1,6 +1,8 @@
-import { Maybe } from "purify-ts";
-import { getInitSelectedValidators } from "../../../../../../domain/types/stake";
-import type { EarnEntryKey, EarnValidatorOption } from "../types";
+import type {
+  EarnEntryKey,
+  EarnValidatorKey,
+  EarnValidatorOption,
+} from "../types";
 
 export const resolveValidators = ({
   entry,
@@ -8,7 +10,7 @@ export const resolveValidators = ({
   validatorOptions,
 }: {
   entry: EarnEntryKey;
-  selectedValidatorKeys: ReadonlySet<string>;
+  selectedValidatorKeys: ReadonlySet<EarnValidatorKey>;
   validatorOptions: ReadonlyArray<EarnValidatorOption>;
 }) => {
   if (validatorOptions.length === 0) {
@@ -23,10 +25,18 @@ export const resolveValidators = ({
     return selectedValidators;
   }
 
-  return [
-    ...getInitSelectedValidators({
-      initQueryParams: Maybe.fromNullable(entry.initParams),
-      validators: [...validatorOptions],
-    }).values(),
-  ];
+  const initialValidator = entry.initParams?.validator
+    ? validatorOptions.find(
+        (validator) =>
+          validator.name?.toLowerCase() ===
+            entry.initParams?.validator?.toLowerCase() ||
+          validator.address === entry.initParams?.validator
+      )
+    : undefined;
+
+  return initialValidator
+    ? [initialValidator]
+    : validatorOptions[0]
+      ? [validatorOptions[0]]
+      : [];
 };

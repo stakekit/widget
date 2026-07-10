@@ -1,7 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { getKycProviderName } from "../../../domain/types/kyc";
 import {
@@ -86,40 +85,36 @@ export const usePositionDetails = () => {
     [integrationData, minUnstakeAmount]
   );
 
-  const onClickHandler = useMutation({
-    mutationKey: [unstakeAmount.toString()],
-    mutationFn: async () => {
-      if (!unstakeAmountValid) throw new Error("Invalid amount");
-      if (kycGateIsBlocking) return null;
+  const [unstakeSubmissionError, setUnstakeSubmissionError] = useState(false);
+  const onUnstakeClick = () => {
+    if (!unstakeAmountValid) {
+      setUnstakeSubmissionError(true);
+      return;
+    }
+    setUnstakeSubmissionError(false);
+    if (kycGateIsBlocking) return;
 
-      Maybe.fromRecord({
-        stakeExitRequestDto,
-        integrationData,
-        unstakeToken,
-      }).ifJust((val) => {
-        setExitStakeRequest(
-          Maybe.of({
-            addresses: val.stakeExitRequestDto.addresses,
-            actionDto: Maybe.empty(),
-            gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
-            integrationData: val.integrationData,
-            requestDto: val.stakeExitRequestDto.dto,
-            unstakeAmount,
-            unstakeToken: val.unstakeToken,
-          })
-        );
-        navigate(
-          getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review"
-        );
-      });
+    Maybe.fromRecord({
+      stakeExitRequestDto,
+      integrationData,
+      unstakeToken,
+    }).ifJust((val) => {
+      setExitStakeRequest(
+        Maybe.of({
+          addresses: val.stakeExitRequestDto.addresses,
+          actionDto: Maybe.empty(),
+          gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
+          integrationData: val.integrationData,
+          requestDto: val.stakeExitRequestDto.dto,
+          unstakeAmount,
+          unstakeToken: val.unstakeToken,
+        })
+      );
+      navigate(getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review");
+    });
+  };
 
-      return null;
-    },
-  });
-
-  const onUnstakeClick = onClickHandler.mutate;
-
-  const _unstakeAmountError = onClickHandler.isError || unstakeAmountError;
+  const _unstakeAmountError = unstakeSubmissionError || unstakeAmountError;
 
   const dispatch = useUnstakeOrPendingActionDispatch();
 

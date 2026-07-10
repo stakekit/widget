@@ -1,5 +1,18 @@
-import { Effect, Stream } from "effect";
+import { Effect, Option, Schema, Stream } from "effect";
 import type * as Atom from "effect/unstable/reactivity/Atom";
+import { invalidateAtomResources } from "../../atoms/api-resource";
+import {
+  TokenBalanceScanCommand,
+  YieldBalancesCommand,
+} from "../../domain/schema/financial-models";
+import {
+  TokenBalancesKey,
+  tokenBalancesAtom,
+} from "../../hooks/api/token-balances-atoms";
+import {
+  YieldBalancesKey,
+  yieldBalancesAtom,
+} from "../../hooks/api/yield-balances-atoms";
 import { isBorrowNetwork } from "../domain";
 import type { BorrowExecutionEvent } from "../runtime";
 import { BorrowExecutionEventsService, borrowAtomRuntime } from "../runtime";
@@ -20,23 +33,17 @@ const getBorrowRefreshNetwork = (event: BorrowExecutionEvent) => {
   return network && isBorrowNetwork(network) ? network : null;
 };
 
-const refreshBorrowResources = ({
-  context,
-  event,
-}: {
-  readonly context: Atom.AtomContext;
-  readonly event: BorrowExecutionEvent;
-}) => {
+export const getBorrowExecutionRefreshResources = (
+  event: BorrowExecutionEvent
+): ReadonlyArray<Atom.Atom<unknown>> => {
   const network = getBorrowRefreshNetwork(event);
 
-  context.refresh(borrowIntegrationsAtom);
+  const resources: Array<Atom.Atom<unknown>> = [borrowIntegrationsAtom];
 
-  if (!network) {
-    return;
-  }
+  if (!network) return resources;
 
-  context.refresh(borrowMarketsAtom(new BorrowMarketsKey({ network })));
-  context.refresh(
+  resources.push(borrowMarketsAtom(new BorrowMarketsKey({ network })));
+  resources.push(
     borrowPositionsAtom(
       new BorrowPositionsKey({
         address: event.action.address,
@@ -44,20 +51,45 @@ const refreshBorrowResources = ({
       })
     )
   );
-};
 
-export const borrowExecutionEventsAtom = borrowAtomRuntime.atom(() =>
-  Stream.fromEffect(BorrowExecutionEventsService).pipe(
-    Stream.flatMap((events) => events.events)
-  )
-);
+  const tokenCommand = Schema.decodeUnknownOption(TokenBalanceScanCommand)({
+    addresses: { address: event.action.address },
+    network,
+  }).pipe(Option.getOrNull);
+  const yieldCommand = Schema.decodeUnknownOption(YieldBalancesCommand)({
+    queries: [{ address: event.action.address, network }],
+  }).pipe(Option.getOrNull);
+
+  if (tokenCommand) {
+    resources.push(
+      tokenBalancesAtom(
+        new TokenBalancesKey({ command: tokenCommand, enabled: true })
+      )
+    );
+  }
+
+  if (yieldCommand) {
+    resources.push(
+      yieldBalancesAtom(
+        new YieldBalancesKey({ command: yieldCommand, enabled: true })
+      )
+    );
+  }
+
+  return resources;
+};
 
 export const borrowExecutionRuntimeRefreshAtom = borrowAtomRuntime.atom(
   (context) =>
     Stream.fromEffect(BorrowExecutionEventsService).pipe(
       Stream.flatMap((events) => events.events),
       Stream.tap((event) =>
-        Effect.sync(() => refreshBorrowResources({ context, event }))
+        Effect.sync(() =>
+          invalidateAtomResources(
+            context,
+            getBorrowExecutionRefreshResources(event)
+          )
+        )
       ),
       Stream.map(() => undefined)
     ),

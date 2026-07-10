@@ -1,11 +1,12 @@
-import { Option, pipe } from "effect";
+import { Option, pipe, Schema } from "effect";
 import type { AsyncResult as AsyncResultValue } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type {
-  Validator,
-  ValidatorKey,
-} from "../../../../../../domain/types/validators";
+  EarnValidatorKey,
+  EarnValidator as EarnValidatorOption,
+} from "../../../../../../domain/schema/earn-models";
+import { YieldId } from "../../../../../../domain/schema/identifiers";
 import {
   getDashboardYieldCategory,
   isYieldValidatorSelectionRequired,
@@ -59,7 +60,7 @@ const getIntentForm = (intent: EarnMachineIntent): EarnMachineForm => ({
 });
 
 const mergeYieldOptions = (yields: ReadonlyArray<EarnYieldOption | null>) => {
-  const byId = new Map<string, EarnYieldOption>();
+  const byId = new Map<YieldId, EarnYieldOption>();
 
   yields.forEach((yieldDto) => {
     if (yieldDto) {
@@ -71,21 +72,21 @@ const mergeYieldOptions = (yields: ReadonlyArray<EarnYieldOption | null>) => {
 };
 
 const emptyValidatorsMapAtom = Atom.writable<
-  Map<ValidatorKey, Validator>,
-  ReadonlyArray<Validator>
+  Map<EarnValidatorKey, EarnValidatorOption>,
+  ReadonlyArray<EarnValidatorOption>
 >(
-  () => new Map<ValidatorKey, Validator>(),
+  () => new Map<EarnValidatorKey, EarnValidatorOption>(),
   () => {}
 );
 
 const emptyValidatorsPullAtom = Atom.writable<
-  Atom.PullResult<Validator, EarnCatalogError>,
+  Atom.PullResult<EarnValidatorOption, EarnCatalogError>,
   void
 >(
   () =>
     AsyncResult.success({
       done: true,
-      items: [] as unknown as [Validator, ...Validator[]],
+      items: [] as unknown as [EarnValidatorOption, ...EarnValidatorOption[]],
     }),
   () => {}
 );
@@ -105,8 +106,13 @@ export const resolveEarnView = ({
   entry: EarnEntryKey;
   intent: EarnMachineIntent;
 }): EarnMachineView => {
+  const initYieldId = entry.initParams?.yieldId
+    ? Schema.decodeUnknownOption(YieldId)(entry.initParams.yieldId).pipe(
+        Option.getOrNull
+      )
+    : null;
   const initYieldAtomValue = initYieldAtom(
-    new InitYieldKey({ yieldId: entry.initParams?.yieldId ?? null })
+    new InitYieldKey({ yieldId: initYieldId })
   );
   const initYieldResult = context.get(initYieldAtomValue);
   const initYield = getAsyncValue(initYieldResult);
@@ -154,7 +160,7 @@ export const resolveEarnView = ({
       category,
       initToken: entry.initParams?.token ?? null,
       initTokenNetwork: entry.initParams?.network ?? null,
-      initYieldId: entry.initParams?.yieldId ?? null,
+      initYieldId,
       tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
     })
   );

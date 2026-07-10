@@ -63,7 +63,6 @@ import {
 import { useAdditionalAddresses } from "./use-additional-addresses";
 import { useConnectorChains } from "./use-connector-chains";
 import { useCosmosCW } from "./use-cosmos-cw";
-import { useInit } from "./use-init";
 import { useLedgerAccounts } from "./use-ledger-accounts";
 import { useLedgerCurrentAccountId } from "./use-ledger-current-account-id";
 import { useSyncExternalProvider } from "./use-sync-external-provider";
@@ -84,8 +83,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const address = (config.env.forceAddress as Address) || _address;
 
   const checkIsUnmounted = useCheckIsUnmounted();
-
-  const { isLoading } = useInit();
+  const wagmiConfig = useWagmiConfig();
 
   const connector =
     _connector?.connect && _connector.emitter ? _connector : undefined;
@@ -98,8 +96,6 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
   const ledgerAccounts = useLedgerAccounts(connector);
   const ledgerCurrentAccountId = useLedgerCurrentAccountId(connector);
   const cosmosCW = useCosmosCW(connector);
-
-  const wagmiConfig = useWagmiConfig();
 
   const connectorChains = useConnectorChains({
     wagmiConfig: wagmiConfig.data,
@@ -134,8 +130,7 @@ export const SKWalletProvider = ({ children }: PropsWithChildren) => {
     isConnected,
   });
 
-  const isConnecting =
-    isLoading || _isConnecting || isReconnecting || wagmiConfig.isLoading;
+  const isConnecting = _isConnecting || isReconnecting || wagmiConfig.isLoading;
 
   const trackEvent = useTrackEvent();
 

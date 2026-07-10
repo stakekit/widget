@@ -1,7 +1,6 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
 import { config } from "../../config";
 import {
@@ -12,9 +11,6 @@ import type { Networks } from "../../domain/types/chains/networks";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import type { VariantProps } from "../settings/types";
 
-const queryKey = [config.appPrefix, "misc-config"];
-const staleTime = Number.POSITIVE_INFINITY;
-
 const queryFn = async ({
   enabledNetworks,
   forceWalletConnectOnly,
@@ -23,7 +19,7 @@ const queryFn = async ({
   variant,
   tonConnectManifestUrl,
 }: {
-  enabledNetworks: Set<Networks>;
+  enabledNetworks: ReadonlySet<Networks>;
   forceWalletConnectOnly: boolean;
   solanaWallets: Wallet[];
   solanaConnection: Connection;
@@ -85,16 +81,8 @@ const queryFn = async ({
   }));
 };
 
-export const getConfig = (
-  opts: Parameters<typeof queryFn>[0] & { queryClient: QueryClient }
-) =>
-  EitherAsync(() =>
-    opts.queryClient.fetchQuery({
-      staleTime,
-      queryKey,
-      queryFn: () => queryFn(opts),
-    })
-  ).mapLeft((e) => {
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
+  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get misc config");
   });

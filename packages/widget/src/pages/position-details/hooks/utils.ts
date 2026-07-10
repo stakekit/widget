@@ -1,3 +1,4 @@
+import type BigNumber from "bignumber.js";
 import type { Either } from "purify-ts";
 import { List, Maybe } from "purify-ts";
 import type { YieldCreateManageActionDto } from "../../../domain/types/action";
@@ -10,14 +11,14 @@ import {
 } from "../../../domain/types/pending-action";
 import type { YieldBalanceDto } from "../../../domain/types/positions";
 import type { YieldTokenDto } from "../../../domain/types/tokens";
+import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import type { SKWallet } from "../../../domain/types/wallet";
 import type { Yield } from "../../../domain/types/yields";
-import type { ValidatorDto } from "../../../generated/api/yield";
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
 
 type AnyYieldBalanceDto = {
-  amount: string;
+  amount: BigNumber;
   token: YieldTokenDto;
   type: YieldBalanceDto["type"];
 };
@@ -62,23 +63,24 @@ export const preparePendingActionRequestDto = ({
             ? { validatorAddress: List.head(selectedValidators).orDefault("") }
             : {};
 
-      const args = {
-        amount: Maybe.fromPredicate(
-          Boolean,
-          isPendingActionAmountRequired(pendingActionDto)
-        )
-          .chainNullable(() =>
-            pendingActionsState.get(
-              getBalanceTokenActionType({
-                balanceType: yieldBalance.type as YieldBalanceDto["type"],
-                token: yieldBalance.token,
-                actionType: pendingActionDto.type as YieldPendingActionType,
-              })
-            )
+      const amount = Maybe.fromPredicate(
+        Boolean,
+        isPendingActionAmountRequired(pendingActionDto)
+      )
+        .chainNullable(() =>
+          pendingActionsState.get(
+            getBalanceTokenActionType({
+              balanceType: yieldBalance.type as YieldBalanceDto["type"],
+              token: yieldBalance.token,
+              actionType: pendingActionDto.type as YieldPendingActionType,
+            })
           )
-          .map((v) => v.toString())
-          .alt(Maybe.of(yieldBalance.amount))
-          .extract(),
+        )
+        .map((v) => v.toString())
+        .alt(Maybe.of(yieldBalance.amount.toFixed()))
+        .extract();
+      const args = {
+        ...(amount === undefined ? {} : { amount }),
         ...validatorArgs,
       } satisfies NonNullable<YieldCreateManageActionDto["arguments"]>;
 

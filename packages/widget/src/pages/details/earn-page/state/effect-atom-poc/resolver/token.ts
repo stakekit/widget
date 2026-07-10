@@ -1,4 +1,6 @@
+import { Option, Schema } from "effect";
 import { tokenString } from "../../../../../../domain";
+import { YieldId } from "../../../../../../domain/schema/identifiers";
 import type { SupportedSKChains } from "../../../../../../domain/types/chains";
 import type { EarnEntryKey, EarnTokenKey, EarnTokenOption } from "../types";
 
@@ -19,8 +21,11 @@ export const resolveToken = ({
   }
 
   if (entry.initParams?.yieldId) {
+    const initYieldId = Schema.decodeUnknownOption(YieldId)(
+      entry.initParams.yieldId
+    ).pipe(Option.getOrNull);
     const selected = tokenOptions.find((option) =>
-      option.availableYields.includes(entry.initParams?.yieldId ?? "")
+      initYieldId ? option.availableYields.includes(initYieldId) : false
     );
     if (selected) {
       return selected;

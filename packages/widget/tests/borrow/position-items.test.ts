@@ -2,11 +2,11 @@ import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import {
+  BorrowAccountPosition,
   deriveBorrowPositionItems,
   Integration,
   Market,
 } from "../../src/borrow";
-import type { PositionDto } from "../../src/generated/api/borrow";
 import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
@@ -69,7 +69,7 @@ const integrationDto = {
   actions: [],
 } as const;
 
-const positionDto: PositionDto = {
+const positionDto = Schema.decodeUnknownSync(BorrowAccountPosition)({
   address,
   availableToBorrowUsd: "450",
   currentLtv: "0.4",
@@ -133,7 +133,7 @@ const positionDto: PositionDto = {
   totalBorrowedUsd: "400",
   totalCollateralUsd: "1000",
   totalSuppliedUsd: "1000",
-};
+});
 
 const t = ((key: string) => key) as TFunction;
 

@@ -1,13 +1,7 @@
-import {
-  RegistryProvider,
-  useAtomMount,
-  useAtomSubscribe,
-} from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { type PropsWithChildren, useRef } from "react";
+import { RegistryProvider, useAtomMount, useAtomSet } from "@effect/atom-react";
+import { type PropsWithChildren, useEffect, useRef } from "react";
 import {
   type BorrowWalletExecutionAdapter,
-  borrowExecutionEventsAtom,
   borrowExecutionRuntimeRefreshAtom,
   borrowWalletExecutionAdapterAtom,
   disconnectedBorrowWalletState,
@@ -16,13 +10,11 @@ import {
 } from "../../borrow";
 import { config } from "../../config";
 import type { SKWallet } from "../../domain/types/wallet";
-import { useInvalidateTokenBalances } from "../../hooks/api/use-token-balances-scan";
 import { useBorrowWalletBridge } from "../../pages-dashboard/borrow/connected-wallet";
-import { useApiClient } from "../api/api-client-provider";
+import { makeStakeKitApiLayer } from "../api/api-client";
+import { useSettings } from "../settings";
 import { useSKWallet } from "../sk-wallet";
-import { stakeKitEffectApiClientAtom } from "./stakekit-api-service";
-
-const immediateSubscription = { immediate: true };
+import { stakeKitApiLayerAtom } from "./stakekit-api-service";
 
 type BorrowWalletRuntimeSnapshot = {
   readonly signTransaction: SKWallet["signTransaction"];
@@ -58,36 +50,35 @@ const useBorrowWalletExecutionAdapter = (): BorrowWalletExecutionAdapter => {
 };
 
 export const SKAtomRuntimeProvider = ({ children }: PropsWithChildren) => {
-  const apiClient = useApiClient();
-  const walletExecutionAdapter = useBorrowWalletExecutionAdapter();
+  const { apiKey, baseUrl, borrowApiUrl, yieldsApiUrl } = useSettings();
+  const apiLayer = makeStakeKitApiLayer({
+    apiKey,
+    baseUrl: baseUrl ?? config.env.apiUrl,
+    borrowApiUrl: borrowApiUrl ?? config.env.borrowApiUrl,
+    yieldsApiUrl: yieldsApiUrl ?? config.env.yieldsApiUrl,
+  });
 
   return (
     <RegistryProvider
-      defaultIdleTTL={config.queryClient.cacheTime}
-      initialValues={[
-        [stakeKitEffectApiClientAtom, apiClient.effect],
-        [borrowWalletExecutionAdapterAtom, walletExecutionAdapter],
-      ]}
+      defaultIdleTTL={config.atomResources.defaultIdleTTL}
+      initialValues={[[stakeKitApiLayerAtom, apiLayer]]}
     >
-      <SKAtomRuntimeBridge>{children}</SKAtomRuntimeBridge>
+      {children}
     </RegistryProvider>
   );
 };
 
-const SKAtomRuntimeBridge = ({ children }: PropsWithChildren) => {
-  useAtomMount(borrowExecutionRuntimeRefreshAtom);
-
-  const invalidateTokenBalances = useInvalidateTokenBalances();
-
-  useAtomSubscribe(
-    borrowExecutionEventsAtom,
-    (eventResult) => {
-      if (AsyncResult.isSuccess(eventResult)) {
-        invalidateTokenBalances();
-      }
-    },
-    immediateSubscription
+export const SKAtomRuntimeBridge = ({ children }: PropsWithChildren) => {
+  const walletExecutionAdapter = useBorrowWalletExecutionAdapter();
+  const setWalletExecutionAdapter = useAtomSet(
+    borrowWalletExecutionAdapterAtom
   );
+
+  useEffect(() => {
+    setWalletExecutionAdapter(walletExecutionAdapter);
+  }, [setWalletExecutionAdapter, walletExecutionAdapter]);
+
+  useAtomMount(borrowExecutionRuntimeRefreshAtom);
 
   return children;
 };

@@ -9,9 +9,12 @@ import {
   Stream,
 } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { Networks } from "../../domain/types/chains/networks";
-import type { ActionsControllerExecuteActionV1RequestJson } from "../../generated/api/borrow";
-import { Action, type Transaction } from "../domain";
+import {
+  Action,
+  type ActionRequest,
+  SubmitTransactionResult,
+  type Transaction,
+} from "../domain";
 import {
   BorrowActionCompletionFailedError,
   BorrowActionStepFailedError,
@@ -20,6 +23,7 @@ import {
   BorrowExecutionEventsService,
   type BorrowExecutionPhase,
   type BorrowExecutionResult,
+  BorrowMutationApiService,
   type BorrowSignedTransaction,
   BorrowSubmitFailedError,
   type BorrowSubmittedTransaction,
@@ -263,13 +267,9 @@ const advanceToNextTransaction = ({
   );
 };
 
-const createBorrowAction = ({
-  request,
-}: {
-  readonly request: ActionsControllerExecuteActionV1RequestJson;
-}) =>
+const createBorrowAction = ({ request }: { readonly request: ActionRequest }) =>
   Effect.gen(function* () {
-    const api = yield* BorrowApiService;
+    const api = yield* BorrowMutationApiService;
     const response = yield* api
       .ActionsControllerExecuteActionV1({ payload: request })
       .pipe(
@@ -387,7 +387,7 @@ const checkBorrowTransaction = ({
 
 const stepBorrowAction = (state: BorrowExecutionMachineState) =>
   Effect.gen(function* () {
-    const api = yield* BorrowApiService;
+    const api = yield* BorrowMutationApiService;
     const response = yield* api
       .ActionsControllerStepV1(state.action.id, undefined)
       .pipe(
@@ -509,7 +509,7 @@ const processBorrowExecutionStep = ({
           });
           const signedTransaction = yield* wallet.signTransaction({
             action: state.action,
-            network: transaction.network as Networks,
+            network: transaction.network,
             transaction,
             tx,
             txMeta: getBorrowTransactionMeta({
@@ -528,7 +528,7 @@ const processBorrowExecutionStep = ({
       ),
       Match.when("submit", () =>
         Effect.gen(function* () {
-          const api = yield* BorrowApiService;
+          const api = yield* BorrowMutationApiService;
           const signedTransaction = yield* getSignedTransaction(
             state,
             transaction
@@ -549,8 +549,22 @@ const processBorrowExecutionStep = ({
                   })
               )
             );
+          const decodedResponse = yield* Schema.decodeUnknownEffect(
+            SubmitTransactionResult
+          )(response).pipe(
+            Effect.mapError(
+              (cause) =>
+                new BorrowSubmitFailedError({
+                  actionId: state.action.id,
+                  cause,
+                  message: "Borrow submission response could not be decoded.",
+                  phase: "submitting",
+                  transactionId: transaction.id,
+                })
+            )
+          );
           const submission = getBorrowSubmittedTransaction({
-            response,
+            response: decodedResponse,
             signedTransaction,
             transaction,
           });
@@ -604,8 +618,7 @@ const processBorrowExecutionStep = ({
   });
 
 export const borrowCreateActionAtom = borrowAtomRuntime.fn(
-  (request: ActionsControllerExecuteActionV1RequestJson) =>
-    createBorrowAction({ request })
+  (request: ActionRequest) => createBorrowAction({ request })
 );
 
 export const borrowExecutionAtom = Atom.family((key: BorrowExecutionKey) => {

@@ -1,4 +1,4 @@
-import { Data, Effect, flow, ManagedRuntime } from "effect";
+import { Context, Data, Effect, flow, Layer } from "effect";
 import {
   FetchHttpClient,
   HttpClient,
@@ -6,7 +6,7 @@ import {
   type HttpClientResponse,
 } from "effect/unstable/http";
 import { waitForDelayedApiRequests } from "../../common/delay-api-requests";
-import * as BorrowApi from "../../generated/api/borrow";
+import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
 import { handleGeoBlockResponse } from "../../hooks/use-geo-block";
@@ -19,24 +19,26 @@ type WidgetApiClientOptions = {
   readonly yieldsApiUrl: string;
 };
 
-type ApiClientOptions = {
-  readonly signal?: AbortSignal;
-  readonly suppressRichErrors?: boolean;
-};
+export type BorrowEffectClient = BorrowApi.BorrowApi;
 
-export type EffectApiClient = {
-  readonly borrow: BorrowApi.BorrowApi;
+type EffectApiClient = {
+  readonly borrow: BorrowEffectClient;
+  readonly borrowMutations: BorrowEffectClient;
   readonly legacy: LegacyApi.LegacyApi;
   readonly yield: YieldApi.YieldApi;
+  readonly yieldMutations: YieldApi.YieldApi;
 };
+
+export class StakeKitApiService extends Context.Service<
+  StakeKitApiService,
+  EffectApiClient
+>()("stakekit/widget/StakeKitApiService") {}
 
 export class MissingBorrowApiConfig extends Data.TaggedError(
   "MissingBorrowApiConfig"
 )<{
   readonly message: string;
 }> {}
-
-const runtime = ManagedRuntime.make(FetchHttpClient.layer);
 
 const inspectResponse = ({
   response,
@@ -71,26 +73,34 @@ const configureClient = ({
   apiKey,
   baseUrl,
   client,
+  retryTransient = true,
   suppressRichErrors,
 }: {
   readonly apiKey: string;
   readonly baseUrl: string;
   readonly client: HttpClient.HttpClient;
   readonly suppressRichErrors?: boolean;
-}): HttpClient.HttpClient =>
-  client.pipe(
+  readonly retryTransient?: boolean;
+}): HttpClient.HttpClient => {
+  const configured = client.pipe(
     HttpClient.mapRequest(
       flow(
         HttpClientRequest.prependUrl(baseUrl),
         HttpClientRequest.setHeader("X-API-KEY", apiKey),
         HttpClientRequest.acceptJson
       )
-    ),
-    HttpClient.retryTransient({ times: 3 }),
+    )
+  );
+  const withRetry = retryTransient
+    ? configured.pipe(HttpClient.retryTransient({ times: 3 }))
+    : configured;
+
+  return withRetry.pipe(
     HttpClient.tap((response) =>
       inspectResponse({ response, suppressRichErrors })
     )
   );
+};
 
 const requireBorrowApiUrl = (url: string) => {
   const trimmedUrl = url.trim();
@@ -104,204 +114,84 @@ const requireBorrowApiUrl = (url: string) => {
   return trimmedUrl;
 };
 
-type BoundOperation<Operation> = Operation extends (
-  ...args: infer Args
-) => Effect.Effect<infer A, infer _E>
-  ? (...args: Args) => Promise<A>
-  : never;
-
-const bindOperation = <
-  Operation extends (...args: never[]) => Effect.Effect<unknown, unknown>,
->(
-  operation: Operation,
-  options?: ApiClientOptions
-): BoundOperation<Operation> =>
-  ((...args: Parameters<Operation>) =>
-    runtime.runPromise(
-      operation(...args),
-      options?.signal ? { signal: options.signal } : undefined
-    )) as BoundOperation<Operation>;
-
-const bindLegacyApi = ({
-  api,
-  options,
-}: {
-  readonly api: LegacyApi.LegacyApi;
-  readonly options?: ApiClientOptions;
-}) => ({
-  TokenControllerGetTokenBalances: bindOperation(
-    api.TokenControllerGetTokenBalances,
-    options
-  ),
-  TokenControllerGetTokenPrices: bindOperation(
-    api.TokenControllerGetTokenPrices,
-    options
-  ),
-  TokenControllerGetTokens: bindOperation(
-    api.TokenControllerGetTokens,
-    options
-  ),
-  TokenControllerTokenBalancesScan: bindOperation(
-    api.TokenControllerTokenBalancesScan,
-    options
-  ),
-  YieldControllerGetMyNetworks: bindOperation(
-    api.YieldControllerGetMyNetworks,
-    options
-  ),
-  YieldControllerGetSingleYieldRewardsSummary: bindOperation(
-    api.YieldControllerGetSingleYieldRewardsSummary,
-    options
-  ),
-});
-
-const bindYieldApi = ({
-  api,
-  options,
-}: {
-  readonly api: YieldApi.YieldApi;
-  readonly options?: ApiClientOptions;
-}) => ({
-  ActionsControllerEnterYield: bindOperation(
-    api.ActionsControllerEnterYield,
-    options
-  ),
-  ActionsControllerExitYield: bindOperation(
-    api.ActionsControllerExitYield,
-    options
-  ),
-  ActionsControllerGetActions: bindOperation(
-    api.ActionsControllerGetActions,
-    options
-  ),
-  ActionsControllerManageYield: bindOperation(
-    api.ActionsControllerManageYield,
-    options
-  ),
-  HealthControllerHealth: bindOperation(api.HealthControllerHealth, options),
-  KycControllerGetStatus: bindOperation(api.KycControllerGetStatus, options),
-  ProvidersControllerGetProvider: bindOperation(
-    api.ProvidersControllerGetProvider,
-    options
-  ),
-  TransactionsControllerGetTransaction: bindOperation(
-    api.TransactionsControllerGetTransaction,
-    options
-  ),
-  TransactionsControllerSubmitTransaction: bindOperation(
-    api.TransactionsControllerSubmitTransaction,
-    options
-  ),
-  TransactionsControllerSubmitTransactionHash: bindOperation(
-    api.TransactionsControllerSubmitTransactionHash,
-    options
-  ),
-  TokensControllerGetTokens: bindOperation(
-    api.TokensControllerGetTokens,
-    options
-  ),
-  YieldsControllerGetAggregateBalances: bindOperation(
-    api.YieldsControllerGetAggregateBalances,
-    options
-  ),
-  YieldsControllerGetYields: bindOperation(
-    api.YieldsControllerGetYields,
-    options
-  ),
-  YieldsControllerGetYield: bindOperation(
-    api.YieldsControllerGetYield,
-    options
-  ),
-  YieldsControllerGetYieldRewardRateHistory: bindOperation(
-    api.YieldsControllerGetYieldRewardRateHistory,
-    options
-  ),
-  YieldsControllerGetYieldTvlHistory: bindOperation(
-    api.YieldsControllerGetYieldTvlHistory,
-    options
-  ),
-  YieldsControllerGetYieldBalances: bindOperation(
-    api.YieldsControllerGetYieldBalances,
-    options
-  ),
-  YieldsControllerGetYieldValidators: bindOperation(
-    api.YieldsControllerGetYieldValidators,
-    options
-  ),
-});
-
-export const createApiClient = ({
+const createApiClient = ({
   apiKey,
   baseUrl,
   borrowApiUrl,
+  httpClient,
+  suppressRichErrors,
   yieldsApiUrl,
-}: WidgetApiClientOptions) => {
-  const baseClient = runtime.runSync(HttpClient.HttpClient);
+}: WidgetApiClientOptions & {
+  readonly httpClient: HttpClient.HttpClient;
+  readonly suppressRichErrors?: boolean;
+}): EffectApiClient => {
   const resolvedBorrowApiUrl = requireBorrowApiUrl(borrowApiUrl);
 
-  const createLegacyApiClient = (
-    options?: Pick<ApiClientOptions, "suppressRichErrors">
-  ) =>
-    LegacyApi.make(
-      configureClient({
-        apiKey,
-        baseUrl,
-        client: baseClient,
-        suppressRichErrors: options?.suppressRichErrors,
-      })
-    );
-
-  const createYieldApiClient = (
-    options?: Pick<ApiClientOptions, "suppressRichErrors">
-  ) =>
-    YieldApi.make(
-      configureClient({
-        apiKey,
-        baseUrl: yieldsApiUrl,
-        client: baseClient,
-        suppressRichErrors: options?.suppressRichErrors,
-      })
-    );
-
-  const createBorrowApiClient = (
-    options?: Pick<ApiClientOptions, "suppressRichErrors">
-  ) =>
-    BorrowApi.make(
+  return {
+    borrow: BorrowApi.make(
       configureClient({
         apiKey,
         baseUrl: resolvedBorrowApiUrl,
-        client: baseClient,
-        suppressRichErrors: options?.suppressRichErrors,
+        client: httpClient,
+        suppressRichErrors,
       })
-    );
-
-  const createEffectApiClients = (
-    options?: Pick<ApiClientOptions, "suppressRichErrors">
-  ): EffectApiClient => ({
-    borrow: createBorrowApiClient(options),
-    legacy: createLegacyApiClient(options),
-    yield: createYieldApiClient(options),
-  });
-
-  const bindApiClients = (options?: ApiClientOptions) => ({
-    legacy: bindLegacyApi({
-      api: createLegacyApiClient(options),
-      options,
-    }),
-    yield: bindYieldApi({
-      api: createYieldApiClient(options),
-      options,
-    }),
-  });
-
-  const effectClients = createEffectApiClients();
-  const boundClients = bindApiClients();
-
-  return {
-    ...boundClients,
-    effect: effectClients,
-    withOptions: (options: ApiClientOptions) => bindApiClients(options),
+    ),
+    borrowMutations: BorrowApi.make(
+      configureClient({
+        apiKey,
+        baseUrl: resolvedBorrowApiUrl,
+        client: httpClient,
+        suppressRichErrors,
+        retryTransient: false,
+      })
+    ),
+    legacy: LegacyApi.make(
+      configureClient({
+        apiKey,
+        baseUrl,
+        client: httpClient,
+        suppressRichErrors,
+      })
+    ),
+    yield: YieldApi.make(
+      configureClient({
+        apiKey,
+        baseUrl: yieldsApiUrl,
+        client: httpClient,
+        suppressRichErrors,
+      })
+    ),
+    yieldMutations: YieldApi.make(
+      configureClient({
+        apiKey,
+        baseUrl: yieldsApiUrl,
+        client: httpClient,
+        suppressRichErrors,
+        retryTransient: false,
+      })
+    ),
   };
 };
 
-export type ApiClient = ReturnType<typeof createApiClient>;
+export const makeStakeKitApiLayer = (config: WidgetApiClientOptions) =>
+  Layer.effect(
+    StakeKitApiService,
+    Effect.gen(function* () {
+      const borrowApiUrl = config.borrowApiUrl.trim();
+
+      if (!borrowApiUrl) {
+        return yield* new MissingBorrowApiConfig({
+          message: "Borrow API URL must be configured before using Borrow.",
+        });
+      }
+
+      const httpClient = yield* HttpClient.HttpClient;
+      return StakeKitApiService.of(
+        createApiClient({
+          ...config,
+          borrowApiUrl,
+          httpClient,
+        })
+      );
+    })
+  ).pipe(Layer.provide(FetchHttpClient.layer));

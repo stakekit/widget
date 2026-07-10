@@ -38,6 +38,7 @@ export type Networks =
   | "unichain"
   | "monad-testnet"
   | "monad"
+  | "robinhood"
   | "robinhood-testnet"
   | "avalanche-c"
   | "avalanche-c-atomic"
@@ -476,6 +477,7 @@ export type UpdatePayoutAddressDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -726,6 +728,7 @@ export type AnnotatedFieldDto = {
 };
 export type YieldProviders =
   | "aave"
+  | "edel"
   | "anchor"
   | "benqi"
   | "compound"
@@ -905,6 +908,7 @@ export type ProgrammaticPerpReportingTransactionDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1069,6 +1073,7 @@ export type CreateCustomUriDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1174,6 +1179,7 @@ export type UpdateCustomUriDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1322,6 +1328,7 @@ export type AllocationDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -1630,7 +1637,6 @@ export type MfaSetupResponseDto = {
 export type MfaVerifySetupDto = { readonly code: string };
 export type MfaVerifySetupResponseDto = {
   readonly recoveryCodes: ReadonlyArray<string>;
-  readonly token: string;
 };
 export type MfaBeginReenrollmentDto = { readonly code: string };
 export type MfaStatusResponseDto = { readonly isMfaEnabled: boolean };
@@ -1860,6 +1866,19 @@ export type YieldStatusOverrideResponseDto = {
   readonly enter: boolean;
   readonly exit: boolean;
   readonly updatedAt: string;
+};
+export type PerpsOverrideResponseDto = {
+  readonly providerId: string;
+  readonly state: "down" | "degraded";
+  readonly reason: string;
+  readonly setByUserId: string;
+  readonly setAt: string;
+  readonly clearedByUserId: string | null;
+  readonly clearedAt: string | null;
+};
+export type SetPerpsOverrideDto = {
+  readonly state: "down" | "degraded";
+  readonly reason: string;
 };
 export type AvalancheCAdditionalAddressesDto = {
   readonly cAddressBech: string;
@@ -2112,7 +2131,7 @@ export type CampaignConfigurationRequestDto = {
   readonly reviewedBy?: string | null;
   readonly reviewedAt?: string;
   readonly rejectionReason?: string | null;
-  readonly requestedChanges: { readonly [x: string]: unknown };
+  readonly requestedChanges: { readonly [x: string]: Schema.Json };
   readonly previousValues?: {};
   readonly version: number;
   readonly metadata?: {};
@@ -2254,6 +2273,23 @@ export type FeeConfigurationDto = {
   readonly status: FeeConfigurationStatus;
   readonly layerzeroOVaultConfig?: {} | null;
 };
+export type AdminFeeConfigurationDto = {
+  readonly id: string;
+  readonly projectId: string;
+  readonly integrationId: string;
+  readonly managementFeeBps: number;
+  readonly performanceFeeBps: number;
+  readonly depositFeeBps: number;
+  readonly chargeOnFirstDepositOnly: boolean;
+  readonly allocatorVaultContractAddress: string | null;
+  readonly feeWrapperContractAddress: string | null;
+  readonly feeRecipientAddress: string | null;
+  readonly status: FeeConfigurationStatus;
+  readonly layerzeroOVaultConfig?: {} | null;
+  readonly teamId?: string | null;
+  readonly teamName?: string | null;
+  readonly projectName?: string | null;
+};
 export type CreateOAVDto = {
   readonly network:
     | "ethereum"
@@ -2274,6 +2310,7 @@ export type CreateOAVDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -2517,6 +2554,7 @@ export type AddressWithTokenDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -2603,20 +2641,13 @@ export type AddressWithTokenDto = {
   readonly tokenAddress?: string;
 };
 export type AuthEmailLoginResponseDto = {
-  readonly token?: string;
   readonly user?: UserDto;
   readonly mfaRequired?: boolean;
   readonly challengeToken?: string;
   readonly mfaSetupRequired?: boolean;
 };
-export type MfaVerifyResponseDto = {
-  readonly token: string;
-  readonly user: UserDto;
-};
-export type MfaRecoverResponseDto = {
-  readonly token: string;
-  readonly user: UserDto;
-};
+export type MfaVerifyResponseDto = { readonly user: UserDto };
+export type MfaRecoverResponseDto = { readonly user: UserDto };
 export type CampaignSafeBalanceDto = {
   readonly safeAddress: string;
   readonly network: Networks;
@@ -2674,6 +2705,23 @@ export type ActionArgumentsDto = {
   readonly subnetId?: number;
   readonly receiverAddress?: string;
   readonly useMaxAmount?: boolean;
+};
+export type ExitActionArgumentsDto = {
+  readonly validatorAddress?: string;
+  readonly validatorAddresses?: ReadonlyArray<string>;
+  readonly providerId?: string;
+  readonly duration?: number;
+  readonly nfts?: ApeNativeArgumentsDto;
+  readonly ledgerWalletAPICompatible?: boolean;
+  readonly tronResource?: TronResourceType;
+  readonly signatureVerification?: SignatureVerificationArgumentsDto;
+  readonly inputToken?: TokenDto;
+  readonly outputToken?: TokenDto;
+  readonly feeConfigurationId?: string;
+  readonly subnetId?: number;
+  readonly receiverAddress?: string;
+  readonly useMaxAmount?: boolean;
+  readonly amount?: string;
 };
 export type TokenBalanceScanResponseDto = {
   readonly token: TokenDto;
@@ -2847,7 +2895,7 @@ export type CreateCampaignConfigurationRequestDto = {
     readonly budgetSpendStrategy?: CampaignBudgetSpendStrategy;
     readonly status?: CampaignStatus;
   };
-  readonly metadata?: { readonly [x: string]: unknown };
+  readonly metadata?: { readonly [x: string]: Schema.Json };
 };
 export type AdminCampaignDto = {
   readonly id: string;
@@ -2995,6 +3043,12 @@ export type ValidatorSearchResultDto = {
   readonly integrationId: string;
   readonly validators: ReadonlyArray<ValidatorDto>;
 };
+export type PaginatedAdminFeeConfigurationDto = {
+  readonly total: number;
+  readonly offset: number;
+  readonly limit: number;
+  readonly items: ReadonlyArray<AdminFeeConfigurationDto>;
+};
 export type StakeResponseDto = {
   readonly id: WalletViewDto;
   readonly stake: StakeViewSuccessDto | StakeFailureDto;
@@ -3023,6 +3077,7 @@ export type TokenBalanceScanDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3133,6 +3188,7 @@ export type YieldBalanceScanRequestDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3240,6 +3296,7 @@ export type YieldBalanceScanEvmRequestDto = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -3327,6 +3384,24 @@ export type ActionGasEstimateRequestDto = {
   readonly args: ActionArgumentsDto;
   readonly referralCode?: string;
   readonly skipPrechecks?: boolean;
+  readonly gasArgs?:
+    | CosmosGasArgsDto
+    | EvmEIP1559GasArgsDto
+    | EvmLegacyGasArgsDto;
+};
+export type ExitActionRequestDto = {
+  readonly integrationId: string;
+  readonly addresses: AddressesDto;
+  readonly referralCode?: string;
+  readonly skipPrechecks?: boolean;
+  readonly args: ExitActionArgumentsDto;
+};
+export type ExitActionGasEstimateRequestDto = {
+  readonly integrationId: string;
+  readonly addresses: AddressesDto;
+  readonly referralCode?: string;
+  readonly skipPrechecks?: boolean;
+  readonly args: ExitActionArgumentsDto;
   readonly gasArgs?:
     | CosmosGasArgsDto
     | EvmEIP1559GasArgsDto
@@ -4238,7 +4313,7 @@ export type ActionControllerEnter429 = StakeKitErrorDto;
 export type ActionControllerEnter500 = StakeKitErrorDto;
 export type ActionControllerEnter503 = StakeKitErrorDto;
 export type ActionControllerExitParams = { readonly "X-API-KEY"?: string };
-export type ActionControllerExitRequestJson = ActionRequestDto;
+export type ActionControllerExitRequestJson = ExitActionRequestDto;
 export type ActionControllerExit201 = ActionDto;
 export type ActionControllerExit400 = StakeKitErrorDto;
 export type ActionControllerExit401 = StakeKitErrorDto;
@@ -4285,7 +4360,7 @@ export type ActionControllerExitGasEstimateParams = {
   readonly "X-API-KEY"?: string;
 };
 export type ActionControllerExitGasEstimateRequestJson =
-  ActionGasEstimateRequestDto;
+  ExitActionGasEstimateRequestDto;
 export type ActionControllerExitGasEstimate201 = ActionGasEstimateDto;
 export type ActionControllerExitGasEstimate400 = StakeKitErrorDto;
 export type ActionControllerExitGasEstimate401 = StakeKitErrorDto;
@@ -5112,6 +5187,7 @@ export type YieldControllerCreateFeeConfiguration503 = StakeKitErrorDto;
 export type YieldV2ControllerYieldsParams = {
   readonly providerId?:
     | "aave"
+    | "edel"
     | "anchor"
     | "benqi"
     | "compound"
@@ -5224,6 +5300,7 @@ export type YieldV2ControllerYieldsParams = {
     | "unichain"
     | "monad-testnet"
     | "monad"
+    | "robinhood"
     | "robinhood-testnet"
     | "avalanche-c"
     | "avalanche-c-atomic"
@@ -5513,6 +5590,16 @@ export type ProgrammaticFeeConfigurationControllerUpdateParams = {
 };
 export type ProgrammaticFeeConfigurationControllerUpdateRequestJson =
   UpdateFeeConfigurationDto;
+export type FeeConfigurationAdminControllerListParams = {
+  readonly teamId?: string;
+  readonly projectId?: string;
+  readonly status?: FeeConfigurationStatus;
+  readonly integrationId?: string;
+  readonly offset?: number;
+  readonly limit?: number;
+};
+export type FeeConfigurationAdminControllerList200 =
+  PaginatedAdminFeeConfigurationDto;
 export type RiskParametersControllerFindManyParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -5854,6 +5941,10 @@ export type YieldStatusControllerFindAllParams = {
 };
 export type YieldStatusControllerFindAll200 =
   PaginatedYieldStatusOverrideResponseDto;
+export type PerpsOverridesControllerList200 =
+  ReadonlyArray<PerpsOverrideResponseDto>;
+export type PerpsOverridesControllerSetRequestJson = SetPerpsOverrideDto;
+export type PerpsOverridesControllerSet200 = PerpsOverrideResponseDto;
 export type NetworksV2ControllerGetNetworksParams = {
   readonly limit?: number;
   readonly page?: number;
@@ -5993,6 +6084,10 @@ export const make = (
       HttpClientRequest.post(`/v1/auth/login/verify-code`).pipe(
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)(["2xx"])
+      ),
+    AuthControllerLogout: (options) =>
+      HttpClientRequest.post(`/v1/auth/logout`).pipe(
+        onRequest(options?.config)([])
       ),
     AuthControllerConfirmEmail: (options) =>
       HttpClientRequest.post(`/v1/auth/email/confirm`).pipe(
@@ -8404,6 +8499,18 @@ export const make = (
         HttpClientRequest.bodyJsonUnsafe(options.payload),
         onRequest(options.config)([])
       ),
+    FeeConfigurationAdminControllerList: (options) =>
+      HttpClientRequest.get(`/v1/admin/fee-configuration`).pipe(
+        HttpClientRequest.setUrlParams({
+          teamId: options?.params?.["teamId"] as any,
+          projectId: options?.params?.["projectId"] as any,
+          status: options?.params?.["status"] as any,
+          integrationId: options?.params?.["integrationId"] as any,
+          offset: options?.params?.["offset"] as any,
+          limit: options?.params?.["limit"] as any,
+        }),
+        onRequest(options?.config)(["2xx"])
+      ),
     RiskParametersControllerFindMany: (options) =>
       HttpClientRequest.get(`/v1/risk-parameters`).pipe(
         HttpClientRequest.setUrlParams({
@@ -8825,6 +8932,21 @@ export const make = (
         }),
         onRequest(options?.config)(["2xx"])
       ),
+    PerpsOverridesControllerList: (options) =>
+      HttpClientRequest.get(`/v1/admin/perps/providers/overrides`).pipe(
+        onRequest(options?.config)(["2xx"])
+      ),
+    PerpsOverridesControllerSet: (providerId, options) =>
+      HttpClientRequest.put(
+        `/v1/admin/perps/providers/${providerId}/override`
+      ).pipe(
+        HttpClientRequest.bodyJsonUnsafe(options.payload),
+        onRequest(options.config)(["2xx"])
+      ),
+    PerpsOverridesControllerClear: (providerId, options) =>
+      HttpClientRequest.delete(
+        `/v1/admin/perps/providers/${providerId}/override`
+      ).pipe(onRequest(options?.config)([])),
     NetworksV2ControllerGetNetworks: (options) =>
       HttpClientRequest.get(`/v2/networks`).pipe(
         HttpClientRequest.setUrlParams({
@@ -8857,6 +8979,15 @@ export interface LegacyApi {
     readonly config?: Config | undefined;
   }) => Effect.Effect<
     WithOptionalResponse<AuthControllerVerifyLoginCode200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Clear dashboard session cookie
+   */
+  readonly AuthControllerLogout: <Config extends OperationConfig>(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<void, Config>,
     HttpClientError.HttpClientError
   >;
   readonly AuthControllerConfirmEmail: <
@@ -13013,6 +13144,24 @@ export interface LegacyApi {
     HttpClientError.HttpClientError
   >;
   /**
+   * List all fee configurations across all projects and teams (SuperAdmin).
+   */
+  readonly FeeConfigurationAdminControllerList: <
+    Config extends OperationConfig,
+  >(
+    options:
+      | {
+          readonly params?:
+            | FeeConfigurationAdminControllerListParams
+            | undefined;
+          readonly config?: Config | undefined;
+        }
+      | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<FeeConfigurationAdminControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
    * List risk parameters
    */
   readonly RiskParametersControllerFindMany: <Config extends OperationConfig>(
@@ -13093,7 +13242,7 @@ export interface LegacyApi {
     HttpClientError.HttpClientError
   >;
   /**
-   * OIDC SSO callback — exchanges code for JWT and redirects to frontend
+   * OIDC SSO callback — sets HttpOnly session cookie and redirects to frontend
    */
   readonly SsoControllerOidcCallback: <
     Config extends OperationConfig,
@@ -13143,6 +13292,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerSetup200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Verifies the TOTP code, enables MFA, and refreshes the HttpOnly session cookie. Returns one-time recovery codes.
+   */
   readonly MfaControllerVerifySetup: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerVerifySetupRequestJson;
     readonly config?: Config | undefined;
@@ -13168,6 +13320,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerGetStatus200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Completes MFA login by verifying the TOTP code; issues the HttpOnly session cookie.
+   */
   readonly MfaControllerVerify: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerVerifyRequestJson;
     readonly config?: Config | undefined;
@@ -13175,6 +13330,9 @@ export interface LegacyApi {
     WithOptionalResponse<MfaControllerVerify200, Config>,
     HttpClientError.HttpClientError
   >;
+  /**
+   * Uses a one-time recovery code to complete MFA login; issues the HttpOnly session cookie.
+   */
   readonly MfaControllerRecover: <Config extends OperationConfig>(options: {
     readonly payload: MfaControllerRecoverRequestJson;
     readonly config?: Config | undefined;
@@ -13809,6 +13967,38 @@ export interface LegacyApi {
       | undefined
   ) => Effect.Effect<
     WithOptionalResponse<YieldStatusControllerFindAll200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * List all perps provider overrides (including cleared history)
+   */
+  readonly PerpsOverridesControllerList: <Config extends OperationConfig>(
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<PerpsOverridesControllerList200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Set a manual health override for a perps provider
+   */
+  readonly PerpsOverridesControllerSet: <Config extends OperationConfig>(
+    providerId: string,
+    options: {
+      readonly payload: PerpsOverridesControllerSetRequestJson;
+      readonly config?: Config | undefined;
+    }
+  ) => Effect.Effect<
+    WithOptionalResponse<PerpsOverridesControllerSet200, Config>,
+    HttpClientError.HttpClientError
+  >;
+  /**
+   * Clear the manual override for a perps provider
+   */
+  readonly PerpsOverridesControllerClear: <Config extends OperationConfig>(
+    providerId: string,
+    options: { readonly config?: Config | undefined } | undefined
+  ) => Effect.Effect<
+    WithOptionalResponse<void, Config>,
     HttpClientError.HttpClientError
   >;
   readonly NetworksV2ControllerGetNetworks: <Config extends OperationConfig>(

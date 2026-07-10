@@ -154,14 +154,17 @@ describe("Staking flow", () => {
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith({
-        method: "eth_sendTransaction",
-        params: expect.anything(),
-      });
+      .toHaveBeenCalledWith(
+        {
+          method: "eth_sendTransaction",
+          params: expect.anything(),
+        },
+        undefined
+      );
 
     await expect
       .poll(() => requestFn, { timeout: 1000 * 5 })
-      .toHaveBeenCalledWith({ method: "eth_chainId" });
+      .toHaveBeenCalledWith({ method: "eth_chainId" }, undefined);
 
     await expect
       .element(

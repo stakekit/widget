@@ -3,27 +3,29 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import {
   MissingStakeKitApiClient,
   StakeKitApiService,
-  stakeKitEffectApiClientAtom,
+  stakeKitApiLayerAtom,
 } from "../../../../../../providers/effect-atom-runtime/stakekit-api-service";
 import { EarnCatalogError } from "../types";
 
 export { StakeKitApiService };
 
 export const widgetAtomRuntime = Atom.runtime((get) => {
-  const apiClient = get(stakeKitEffectApiClientAtom);
-
-  return apiClient
-    ? Layer.succeed(StakeKitApiService, apiClient)
-    : Layer.effect(
+  return get(stakeKitApiLayerAtom).pipe(
+    Layer.catch((cause) =>
+      Layer.effect(
         StakeKitApiService,
         Effect.fail(
           new EarnCatalogError({
             operation: "runtime",
-            cause: new MissingStakeKitApiClient({
-              message:
-                "StakeKit Effect API client was not initialized in the atom runtime.",
-            }),
+            cause:
+              cause instanceof MissingStakeKitApiClient
+                ? cause
+                : new MissingStakeKitApiClient({
+                    message: "StakeKit API layer failed to initialize.",
+                  }),
           })
         )
-      );
+      )
+    )
+  );
 });

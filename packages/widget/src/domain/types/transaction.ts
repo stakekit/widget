@@ -18,10 +18,7 @@ import {
   unknown,
 } from "purify-ts";
 import { type Address, type Hex, numberToHex } from "viem";
-import type { TransactionVerificationMessageDto } from "../../generated/api/legacy";
 import type { GetEitherRight } from "../../types/utils";
-
-export type { TransactionVerificationMessageDto };
 
 const bigintCodec = Codec.custom<bigint>({
   decode: (input) => {

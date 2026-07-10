@@ -1,9 +1,9 @@
-import type { RewardDto, YieldDto } from "../../generated/api/yield";
 import type { Validator, ValidatorKey } from "./validators";
+import type { Yield } from "./yields";
 
-type YieldRewardDto = RewardDto;
-export type YieldRewardRateDto = NonNullable<YieldDto["rewardRate"]>;
-type YieldWithRewardRate = Pick<YieldDto, "rewardRate">;
+export type YieldRewardRateDto = NonNullable<Yield["rewardRate"]>;
+type YieldRewardDto = YieldRewardRateDto["components"][number];
+type YieldWithRewardRate = Pick<Yield, "rewardRate">;
 type ValidatorRewardRateDto = NonNullable<Validator["rewardRate"]>;
 export type SelectedValidators =
   | ReadonlyArray<Validator>
@@ -81,7 +81,7 @@ const averageRewardRates = (
     });
 
     return acc;
-  }, new Map<string, { component: RewardDto; rate: number }>());
+  }, new Map<string, { component: YieldRewardDto; rate: number }>());
 
   return {
     total:

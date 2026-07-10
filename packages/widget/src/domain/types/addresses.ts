@@ -1,10 +1,7 @@
 import type {
-  AddressesDto,
-  AddressWithTokenDto as LegacyAddressWithTokenDto,
-} from "../../generated/api/legacy";
+  AdditionalAddresses,
+  WalletAddresses,
+} from "../schema/address-models";
 
-export type AddressWithTokenDto = LegacyAddressWithTokenDto;
-export type AddressWithTokenDtoAdditionalAddresses = NonNullable<
-  LegacyAddressWithTokenDto["additionalAddresses"]
->;
-export type { AddressesDto };
+export type AddressesDto = typeof WalletAddresses.Encoded;
+export type AddressWithTokenDtoAdditionalAddresses = AdditionalAddresses;

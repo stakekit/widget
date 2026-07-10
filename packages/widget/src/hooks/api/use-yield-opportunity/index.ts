@@ -1,47 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
-import { useApiClient } from "../../../providers/api/api-client-provider";
-import { useSKQueryClient } from "../../../providers/query-client";
-import { useSKWallet } from "../../../providers/sk-wallet";
-import { queryFn } from "./get-yield-opportunity";
-
-type Params = {
-  yieldId: string;
-  isLedgerLive: boolean;
-  apiClient: ReturnType<typeof useApiClient>;
-  queryClient: ReturnType<typeof useSKQueryClient>;
-  signal?: AbortSignal;
-};
-
-const staleTime = 1000 * 60 * 2;
-const getKey = (params: Params) => [
-  "yield-opportunity",
-  params.yieldId,
-  params.isLedgerLive,
-];
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Option, Result, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { YieldId } from "../../../domain/schema/identifiers";
+import { YieldOpportunityKey, yieldOpportunityAtom } from "../yield-atoms";
 
 export const useYieldOpportunity = (integrationId: string | undefined) => {
-  const { isLedgerLive } = useSKWallet();
-  const apiClient = useApiClient();
-  const queryClient = useSKQueryClient();
+  const decodedId = integrationId
+    ? Schema.decodeUnknownResult(YieldId)(integrationId)
+    : null;
+  const yieldId = decodedId ? Result.getOrElse(decodedId, () => null) : null;
+  const decodeIssue =
+    decodedId && Result.isFailure(decodedId) ? decodedId.failure.message : null;
+  const resource = yieldOpportunityAtom(
+    new YieldOpportunityKey({ decodeIssue, yieldId })
+  );
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
-  const yieldId = integrationId ?? "";
-
-  return useQuery({
-    queryKey: getKey({
-      yieldId,
-      isLedgerLive,
-      apiClient,
-      queryClient,
-    }),
-    enabled: !!integrationId,
-    staleTime,
-    queryFn: ({ signal }) =>
-      queryFn({
-        yieldId,
-        isLedgerLive,
-        signal,
-        apiClient,
-        queryClient,
-      }),
-  });
+  return {
+    data: value === null ? undefined : value,
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isLoading: !!integrationId && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
 };

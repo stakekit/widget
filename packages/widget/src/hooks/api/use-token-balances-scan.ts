@@ -1,95 +1,59 @@
-import { useQuery } from "@tanstack/react-query";
-import { EitherAsync, Just, Maybe } from "purify-ts";
-import { useCallback, useMemo } from "react";
-import type { TokenBalanceScanDto } from "../../domain/types/token-balance";
-import type { ApiClient } from "../../providers/api/api-client";
-import { useApiClient } from "../../providers/api/api-client-provider";
-import { useSKQueryClient } from "../../providers/query-client";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Option, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useEffect } from "react";
+import { TokenBalanceScanCommand as TokenBalanceScanCommandSchema } from "../../domain/schema/financial-models";
 import { useSKWallet } from "../../providers/sk-wallet";
+import { TokenBalancesKey, tokenBalancesAtom } from "./token-balances-atoms";
 
-export const useTokenBalancesScan = () => {
+const useTokenBalancesResource = () => {
   const {
     additionalAddresses,
     address,
     network,
     isLedgerLiveAccountPlaceholder,
   } = useSKWallet();
-  const apiClient = useApiClient();
-
-  const param = useMemo(
-    () =>
-      Maybe.fromRecord({
-        additionalAddresses: Just(additionalAddresses ?? undefined),
-        address: Maybe.fromNullable(address),
-        network: Maybe.fromNullable(network),
-      }).mapOrDefault<{ dto: TokenBalanceScanDto; enabled: boolean }>(
-        (val) => ({
-          enabled: !isLedgerLiveAccountPlaceholder,
-          dto: {
-            addresses: {
-              address: val.address,
-              additionalAddresses: val.additionalAddresses,
-            },
-            network: val.network,
+  const command =
+    address && network
+      ? Schema.decodeUnknownSync(TokenBalanceScanCommandSchema)({
+          addresses: {
+            address,
+            ...(additionalAddresses ? { additionalAddresses } : {}),
           },
-        }),
-        {
-          enabled: false,
-          dto: {
-            addresses: { address: "", additionalAddresses: undefined },
-            network: "ethereum",
-          },
-        }
-      ),
-    [additionalAddresses, address, isLedgerLiveAccountPlaceholder, network]
+          network,
+        })
+      : null;
+  const enabled = !!command && !isLedgerLiveAccountPlaceholder;
+  const resource = tokenBalancesAtom(
+    new TokenBalancesKey({ command, enabled })
   );
 
-  return useQuery({
-    queryKey: getTokenTokenBalancesScanQueryKey(param.dto),
-    enabled: param.enabled,
-    refetchInterval: 1000 * 60,
-    queryFn: async () =>
-      (
-        await queryFn({
-          apiClient,
-          tokenBalanceScanDto: param.dto,
-        })
-      ).unsafeCoerce(),
-  });
+  return { enabled, resource };
 };
 
-const queryFn = ({
-  apiClient,
-  tokenBalanceScanDto,
-}: {
-  apiClient: ApiClient;
-  tokenBalanceScanDto: TokenBalanceScanDto;
-}) =>
-  EitherAsync(() =>
-    apiClient.legacy.TokenControllerTokenBalancesScan({
-      payload: tokenBalanceScanDto,
-    })
-  ).mapLeft((e) => {
-    console.log(e);
-    return new Error("could not get token balances");
-  });
+export const useTokenBalancesScan = () => {
+  const { enabled, resource } = useTokenBalancesResource();
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const interval = globalThis.setInterval(refresh, 60_000);
+    return () => globalThis.clearInterval(interval);
+  }, [enabled, refresh]);
+
+  return {
+    data: value === null || value === undefined ? undefined : value,
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isError: AsyncResult.isFailure(result),
+    isLoading: enabled && AsyncResult.isInitial(result),
+    isPending: enabled && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
+};
 
 export const useInvalidateTokenBalances = () => {
-  const queryClient = useSKQueryClient();
-
-  return useCallback(
-    () =>
-      queryClient.invalidateQueries({
-        queryKey: [
-          getTokenTokenBalancesScanQueryKey({} as TokenBalanceScanDto)[0],
-        ],
-      }),
-    [queryClient]
-  );
-};
-
-const getTokenTokenBalancesScanQueryKey = (
-  tokenBalanceScanDto: TokenBalanceScanDto
-) => {
-  return ["/v1/tokens/balances/scan", tokenBalanceScanDto] as const;
+  const { resource } = useTokenBalancesResource();
+  return useAtomRefresh(resource);
 };

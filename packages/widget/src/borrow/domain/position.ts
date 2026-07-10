@@ -8,11 +8,26 @@ import {
 } from "effect";
 import { sumAll } from "effect/Number";
 import * as BorrowApi from "../../generated/api/borrow";
-import { decodeTokenId, MarketId, TokenAddress } from "./ids";
+import {
+  decodeTokenId,
+  IntegrationId,
+  MarketId,
+  TokenAddress,
+  WalletAddress,
+} from "./ids";
 import { Integration } from "./integration";
 import { Market } from "./market";
-import { PendingActionsFromDto } from "./pending-action";
+import { BorrowNetwork } from "./network";
+import { PendingActions } from "./pending-action";
 import { BigIntFromString, NumberFromString } from "./scalars";
+
+const PositionState = Schema.Struct({
+  ...BorrowApi.SupplyBalanceDto.fields.positionState.schema.fields,
+  currentLtv: NumberFromString,
+  liquidationThreshold: NumberFromString,
+  healthFactor: Schema.NullOr(NumberFromString),
+  availableToBorrowUsd: NumberFromString,
+});
 
 export const SupplyBalance = Schema.Struct({
   ...BorrowApi.SupplyBalanceDto.fields,
@@ -22,7 +37,8 @@ export const SupplyBalance = Schema.Struct({
   balanceRaw: BigIntFromString,
   balanceUsd: NumberFromString,
   apy: NumberFromString,
-  pendingActions: PendingActionsFromDto,
+  positionState: Schema.optionalKey(PositionState),
+  pendingActions: PendingActions,
 });
 export type SupplyBalance = typeof SupplyBalance.Type;
 
@@ -34,9 +50,27 @@ export const DebtBalance = Schema.Struct({
   balanceRaw: BigIntFromString,
   balanceUsd: NumberFromString,
   apy: NumberFromString,
-  pendingActions: PendingActionsFromDto,
+  pendingActions: PendingActions,
 });
 export type DebtBalance = typeof DebtBalance.Type;
+
+export const BorrowAccountPosition = Schema.Struct({
+  ...BorrowApi.PositionDto.fields,
+  address: WalletAddress,
+  integrationId: IntegrationId,
+  network: BorrowNetwork,
+  totalSuppliedUsd: NumberFromString,
+  totalCollateralUsd: NumberFromString,
+  totalBorrowedUsd: NumberFromString,
+  netWorthUsd: NumberFromString,
+  healthFactor: Schema.NullOr(NumberFromString),
+  currentLtv: NumberFromString,
+  availableToBorrowUsd: Schema.NullOr(NumberFromString),
+  netApy: NumberFromString,
+  supplyBalances: Schema.Array(SupplyBalance),
+  debtBalances: Schema.Array(DebtBalance),
+});
+export type BorrowAccountPosition = typeof BorrowAccountPosition.Type;
 
 export class Position extends Schema.Class<Position>("BorrowPosition")({
   id: MarketId,
@@ -44,8 +78,8 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
   integration: Integration,
   debtBalance: Schema.NullOr(DebtBalance),
   supplyBalances: Schema.Array(SupplyBalance),
-  debtPendingActions: PendingActionsFromDto,
-  supplyPendingActions: PendingActionsFromDto,
+  debtPendingActions: PendingActions,
+  supplyPendingActions: PendingActions,
 }) {
   getCurrentLtv() {
     if (this.debtBalance == null) {

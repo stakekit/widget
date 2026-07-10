@@ -15,7 +15,7 @@
       "!**/region-iso-3166-codes.ts",
       "!**/mockServiceWorker.js",
       "!**/package.json",
-      "!**/repos"
+      "!**/@repos"
     ]
   },
   "formatter": {
@@ -35,8 +35,19 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "style": {
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "patterns": [
+              {
+                "group": ["**/generated/api/**"],
+                "message": "Generated API modules are internal. Import the Effect API service or an application-owned domain schema/model instead."
+              }
+            ]
+          }
+        },
         "noNonNullAssertion": "off",
         "noParameterAssign": "error",
         "useAsConstAssertion": "error",
@@ -78,6 +89,24 @@
       "trailingCommas": "es5"
     }
   },
+  "overrides": [
+    {
+      "includes": [
+        "packages/widget/src/providers/api/api-client.ts",
+        "packages/widget/src/domain/schema/**/*.ts",
+        "packages/widget/src/borrow/domain/**/*.ts",
+        "packages/widget/tests/generated/**/*.ts",
+        "packages/widget/scripts/**/*.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    }
+  ],
   "html": {
     "formatter": {
       "enabled": true,

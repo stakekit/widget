@@ -14,6 +14,10 @@ import type { SettingsContextType } from "../../../../providers/settings/types";
 import { useSKWallet } from "../../../../providers/sk-wallet";
 import { defaultFormattedNumber } from "../../../../utils";
 
+type FormattedPointsBalance = Omit<YieldBalanceDto, "amount"> & {
+  amount: string;
+};
+
 export const usePositions = () => {
   const { variant } = useSettings();
   const _positionsData = usePositionsData();
@@ -110,7 +114,7 @@ const positionsTableDataSelector = createSelector(
             allBalances: YieldBalanceDto[];
             balanceId: string;
             actionRequired: boolean;
-            pointsRewardTokenBalances: YieldBalanceDto[];
+            pointsRewardTokenBalances: FormattedPointsBalance[];
             hasPendingClaimRewards: boolean;
             token: Maybe<YieldBalanceDto["token"]>;
             yieldLabelDto: Maybe<YieldBalanceLabelDto>;

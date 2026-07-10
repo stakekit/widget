@@ -1,70 +1,96 @@
-import { useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
-import { createSelector } from "reselect";
-import type { StakeKitErrorDto } from "../../domain/types/errors";
-import type {
-  PriceRequestDto,
-  PriceResponseDto,
-  Prices,
-} from "../../domain/types/price";
-import type { YieldTokenDto } from "../../domain/types/tokens";
-import { useApiClient } from "../../providers/api/api-client-provider";
-import { priceResponseDtoToPrices } from "../../utils/mappers";
+import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { Data, Duration, Effect, Option, Result, Schema } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import {
+  valueEqualAtomFamily,
+  withApiRequestError,
+  withApiResourcePolicy,
+  withResponseDecodeError,
+} from "../../atoms/api-resource";
+import { ResponseDecodeError } from "../../domain/schema/api-errors";
+import {
+  PriceRequest,
+  PriceResponse,
+  type Prices,
+} from "../../domain/schema/health-price-models";
+import { StakeKitApiService } from "../../providers/api/api-client";
+import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
 
-const defaultParam: PriceRequestDto = {
-  currency: "USD",
-  tokenList: [
-    { network: "ethereum", name: "Ethereum", symbol: "ETH", decimals: 18 },
-  ],
-};
+class PriceRequestKey extends Data.Class<{
+  readonly decodeIssue: string | null;
+  readonly enabled: boolean;
+  readonly request: PriceRequest | null;
+}> {}
 
-const pricesSelector = createSelector(
-  (val: PriceResponseDto) => val,
-  (val) => priceResponseDtoToPrices(val)
+const priceResourcePolicy = withApiResourcePolicy({
+  idleTTL: Duration.minutes(5),
+  staleTime: Duration.minutes(2),
+  revalidateOnMount: true,
+});
+
+const pricesAtom = valueEqualAtomFamily((key: PriceRequestKey) =>
+  stakeKitApiRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (key.decodeIssue) {
+          return yield* new ResponseDecodeError({
+            operation: "token-prices-request",
+            issue: key.decodeIssue,
+            cause: new Error(key.decodeIssue),
+          });
+        }
+
+        if (!key.enabled || !key.request) return null;
+
+        const api = yield* StakeKitApiService;
+        const response = yield* api.legacy
+          .TokenControllerGetTokenPrices({ payload: key.request })
+          .pipe(withApiRequestError("token-prices"));
+
+        return yield* Schema.decodeUnknownEffect(PriceResponse)(response).pipe(
+          withResponseDecodeError("token-prices")
+        );
+      })
+    )
+    .pipe(priceResourcePolicy)
 );
 
-type PriceRequestInput = Omit<PriceRequestDto, "tokenList"> & {
-  tokenList: (PriceRequestDto["tokenList"][number] | YieldTokenDto)[];
-};
-
-const getTokenGetTokenPricesQueryKey = (priceRequestDto: PriceRequestDto) =>
-  ["/v1/tokens/prices", priceRequestDto] as const;
+type PriceRequestInput = typeof PriceRequest.Encoded;
 
 export const usePrices = <T = Prices>(
-  priceRequestDto: PriceRequestInput | null | undefined,
+  priceRequest: PriceRequestInput | null | undefined,
   opts?: {
     enabled?: boolean;
     select?: (val: Prices) => T;
   }
 ) => {
-  const apiClient = useApiClient();
-  const requestDto = priceRequestDto
-    ? ({
-        ...priceRequestDto,
-        tokenList: priceRequestDto.tokenList.map((token) => ({
-          ...token,
-          network:
-            token.network as PriceRequestDto["tokenList"][number]["network"],
-        })),
-      } satisfies PriceRequestDto)
-    : defaultParam;
+  const decodedRequest = priceRequest
+    ? Schema.decodeUnknownResult(PriceRequest)(priceRequest)
+    : null;
+  const request = decodedRequest
+    ? Result.getOrElse(decodedRequest, () => null)
+    : null;
+  const decodeIssue =
+    decodedRequest && Result.isFailure(decodedRequest)
+      ? decodedRequest.failure.message
+      : null;
+  const enabled = !!priceRequest && opts?.enabled !== false;
+  const resource = pricesAtom(
+    new PriceRequestKey({ decodeIssue, enabled, request })
+  );
+  const result = useAtomValue(resource);
+  const refresh = useAtomRefresh(resource);
+  const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
-  return useQuery<PriceResponseDto, StakeKitErrorDto, T>({
-    queryKey: getTokenGetTokenPricesQueryKey(requestDto),
-    queryFn: () =>
-      apiClient.legacy.TokenControllerGetTokenPrices({ payload: requestDto }),
-    enabled: !!priceRequestDto && opts?.enabled,
-    select: useCallback(
-      (res: PriceResponseDto): T => {
-        const mapped = pricesSelector(res);
-
-        if (opts?.select) {
-          return opts.select(mapped);
-        }
-
-        return mapped as T;
-      },
-      [opts?.select]
-    ),
-  });
+  return {
+    data:
+      value === undefined || value === null
+        ? undefined
+        : opts?.select
+          ? opts.select(value)
+          : (value as T),
+    error: result.pipe(AsyncResult.error, Option.getOrUndefined),
+    isLoading: enabled && AsyncResult.isInitial(result),
+    refetch: refresh,
+  } as const;
 };

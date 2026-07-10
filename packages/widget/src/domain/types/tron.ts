@@ -1,3 +1,3 @@
-import type { TronResourceType } from "../../generated/api/legacy";
+import type { TronResource } from "../schema/legacy-models";
 
-export type { TronResourceType };
+export type TronResourceType = TronResource;

@@ -1,7 +1,8 @@
-import type {
-  TokenBalanceScanDto as LegacyTokenBalanceScanDto,
-  YieldBalanceLabelDto as LegacyYieldBalanceLabelDto,
-} from "../../generated/api/legacy";
+import type { TokenBalanceScanCommand } from "../schema/financial-models";
 
-export type TokenBalanceScanDto = LegacyTokenBalanceScanDto;
-export type YieldBalanceLabelDto = LegacyYieldBalanceLabelDto;
+export type TokenBalanceScanDto = TokenBalanceScanCommand;
+
+export type YieldBalanceLabelDto = {
+  readonly params: Readonly<Record<string, never>>;
+  readonly type: string;
+};

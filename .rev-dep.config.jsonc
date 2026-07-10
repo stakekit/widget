@@ -17,6 +17,7 @@
         "vite/*.ts"
       ],
       "devEntryPoints": [
+        "scripts/check-architecture.ts",
         "scripts/generate-effect-openapi.ts",
         "tests/utils/setup.ts",
         "tests/**/*.test.ts",

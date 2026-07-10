@@ -24,7 +24,7 @@ export const usePositionsData = () => {
 };
 
 const positionsDataSelector = createSelector(
-  (balancesData: YieldBalancesByYieldDto[]) => balancesData,
+  (balancesData: ReadonlyArray<YieldBalancesByYieldDto>) => balancesData,
   (balancesData) =>
     balancesData.reduce((acc, val) => {
       acc.set(val.yieldId, {

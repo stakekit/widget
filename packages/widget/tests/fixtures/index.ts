@@ -1,17 +1,22 @@
 import { faker } from "@faker-js/faker";
+import type {
+  EarnBalance,
+  EarnProvider,
+  EarnValidator,
+} from "../../src/domain/schema/earn-models";
+import type {
+  LegacyToken,
+  LegacyYield,
+} from "../../src/domain/schema/legacy-models";
 import type { ActionDto, TransactionDto } from "../../src/domain/types/action";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import type { YieldBalanceDto } from "../../src/domain/types/positions";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
 import type { Yield } from "../../src/domain/types/yields";
-import type {
-  TokenDto as LegacyTokenDto,
-  YieldDto as LegacyYieldDto,
-} from "../../src/generated/api/legacy";
-import type {
-  ValidatorDto,
-  ProviderDto as YieldApiProviderDto,
-} from "../../src/generated/api/yield";
+
+type LegacyTokenDto = typeof LegacyToken.Encoded;
+type LegacyYieldDto = typeof LegacyYield.Encoded;
+type ValidatorDto = typeof EarnValidator.Encoded;
+type YieldApiProviderDto = typeof EarnProvider.Encoded;
 
 type YieldApiYieldDto = Omit<Yield, "provider">;
 
@@ -112,6 +117,7 @@ export const yieldApiYieldFixture = (
         },
       },
     },
+    prime: false,
     providerId: "stakekit",
     validators: [],
     ...overrides,
@@ -132,8 +138,8 @@ export const yieldApiValidatorFixture = (
 });
 
 export const yieldBalanceFixture = (
-  overrides?: Partial<YieldBalanceDto>
-): YieldBalanceDto => {
+  overrides?: Partial<typeof EarnBalance.Encoded>
+): typeof EarnBalance.Encoded => {
   const token = overrides?.token ?? yieldApiYieldFixture().token;
 
   return {
@@ -145,7 +151,7 @@ export const yieldBalanceFixture = (
     token,
     isEarning: true,
     ...overrides,
-  } as YieldBalanceDto;
+  } as typeof EarnBalance.Encoded;
 };
 
 export const legacyYieldFixture = (

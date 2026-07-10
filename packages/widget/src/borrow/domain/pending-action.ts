@@ -1,5 +1,4 @@
-import { Array as EffectArray, Schema, SchemaGetter } from "effect";
-import * as BorrowApi from "../../generated/api/borrow";
+import { Schema } from "effect";
 import { MarketId, TokenAddress } from "./ids";
 import { BigIntFromString } from "./scalars";
 
@@ -55,17 +54,5 @@ export const PendingAction = Schema.Union([
 ]);
 export type PendingAction = typeof PendingAction.Type;
 
-export const PendingActionsFromDto = Schema.Array(
-  BorrowApi.BorrowPendingActionDto
-).pipe(
-  Schema.decodeTo(Schema.Array(PendingAction), {
-    decode: SchemaGetter.transform((items) =>
-      EffectArray.getSomes(
-        items.map((action) =>
-          Schema.decodeUnknownOption(Schema.toEncoded(PendingAction))(action)
-        )
-      )
-    ),
-    encode: SchemaGetter.forbidden(() => "Cannot encode PendingActionsFromDto"),
-  })
-);
+export const PendingActions = Schema.Array(PendingAction);
+export type PendingActions = typeof PendingActions.Type;

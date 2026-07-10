@@ -1,6 +1,6 @@
-import type { TokenDto } from "../../../generated/api/yield";
+import type { Network } from "../../schema/network-model";
 
-export type Networks = TokenDto["network"];
+export type Networks = Network;
 
 type NetworkMap = Record<string, Networks>;
 

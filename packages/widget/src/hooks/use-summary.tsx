@@ -1,10 +1,8 @@
-import type { UseQueryResult } from "@tanstack/react-query";
 import BigNumber from "bignumber.js";
 import { List, Maybe } from "purify-ts";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { config } from "../config";
 import { getTokenPriceInUSD } from "../domain";
-import type { StakeKitErrorDto } from "../domain/types/errors";
 import { getPositionTotalAmount } from "../domain/types/positions";
 import type { Prices } from "../domain/types/price";
 import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
@@ -34,25 +32,30 @@ const SummaryContext = createContext<
           | undefined;
         isLoading: boolean;
       };
-      rewardsPositionsQuery: UseQueryResult<
-        {
-          rewardsPositions: {
-            yieldName: string;
-            total: BigNumber;
-            lastMonth: BigNumber;
-            lastWeek: BigNumber;
-          }[];
-          rewardsPositionsTotalSum: BigNumber;
-          rewardsPositionsLastMonthSum: BigNumber;
-          rewardsPositionsLastWeekSum: BigNumber;
-        },
-        StakeKitErrorDto
-      >;
+      rewardsPositionsQuery: {
+        data:
+          | {
+              rewardsPositions: {
+                yieldName: string;
+                total: BigNumber;
+                lastMonth: BigNumber;
+                lastWeek: BigNumber;
+              }[];
+              rewardsPositionsTotalSum: BigNumber;
+              rewardsPositionsLastMonthSum: BigNumber;
+              rewardsPositionsLastWeekSum: BigNumber;
+            }
+          | undefined;
+        isLoading: boolean;
+      };
       averageApyQuery: {
         data: BigNumber | undefined;
         isLoading: boolean;
       };
-      availableBalanceSumQuery: UseQueryResult<BigNumber, StakeKitErrorDto>;
+      availableBalanceSumQuery: {
+        data: BigNumber | undefined;
+        isLoading: boolean;
+      };
     }
   | undefined
 >(undefined);
@@ -93,7 +96,9 @@ export const SummaryProvider = ({
   });
 
   const allPositionsQuery = useMemo(() => {
-    if (!multiYieldsMapQuery.data) {
+    const multiYieldsMap = multiYieldsMapQuery.data;
+
+    if (!multiYieldsMap) {
       return {
         data: undefined as undefined,
         isLoading: multiYieldsMapQuery.isLoading,
@@ -101,7 +106,7 @@ export const SummaryProvider = ({
     }
 
     const allPositions = positionsData.data.flatMap((p) => {
-      const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
+      const yieldDto = multiYieldsMap.get(p.integrationId);
 
       if (!yieldDto) return [];
 
@@ -110,7 +115,7 @@ export const SummaryProvider = ({
         yieldDto.token
       );
 
-      const yields = [...multiYieldsMapQuery.data.values()];
+      const yields = [...multiYieldsMap.values()];
 
       const providerDetails = getProviderDetails({
         integrationData: Maybe.of(yieldDto),
@@ -154,7 +159,9 @@ export const SummaryProvider = ({
       enabled: !rewardsSummaryQuery.isLoading && !multiYieldsMapQuery.isLoading,
       select: useCallback(
         (prices: Prices) => {
-          if (!rewardsSummaryQuery.data || !multiYieldsMapQuery.data) {
+          const multiYieldsMap = multiYieldsMapQuery.data;
+
+          if (!rewardsSummaryQuery.data || !multiYieldsMap) {
             return {
               rewardsPositions: [],
               rewardsPositionsTotalSum: new BigNumber(0),
@@ -166,7 +173,7 @@ export const SummaryProvider = ({
           const rewardsPositions = Object.entries(
             rewardsSummaryQuery.data
           ).flatMap(([integrationId, rewardSummary]) => {
-            const yieldDto = multiYieldsMapQuery.data.get(integrationId);
+            const yieldDto = multiYieldsMap.get(integrationId);
 
             if (!yieldDto) return [];
 
@@ -222,7 +229,9 @@ export const SummaryProvider = ({
   );
 
   const averageApyQuery = useMemo(() => {
-    if (!multiYieldsMapQuery.data) {
+    const multiYieldsMap = multiYieldsMapQuery.data;
+
+    if (!multiYieldsMap) {
       return {
         data: undefined as undefined,
         isLoading: multiYieldsMapQuery.isLoading,
@@ -231,7 +240,7 @@ export const SummaryProvider = ({
 
     const { totalWeightedApy, totalValue } = positionsData.data.reduce(
       (acc, p) => {
-        const yieldDto = multiYieldsMapQuery.data.get(p.integrationId);
+        const yieldDto = multiYieldsMap.get(p.integrationId);
 
         if (!yieldDto) return acc;
 

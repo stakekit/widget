@@ -1,8 +1,8 @@
 import { Data } from "effect";
+import type { YieldId } from "../../../../../../domain/schema/identifiers";
 import type { Networks } from "../../../../../../domain/types/chains/networks";
 import type { TokenBalanceScanDto } from "../../../../../../domain/types/token-balance";
 import type { DashboardYieldCategory } from "../../../../../../domain/types/yields";
-import type { YieldDto } from "../../../../../../generated/api/yield";
 import type { EarnTokenOption } from "../types";
 
 export class AvailableYieldCategoriesKey extends Data.TaggedClass(
@@ -18,7 +18,7 @@ export class YieldCatalogKey extends Data.TaggedClass("YieldCatalogKey")<{
 }> {}
 
 export class InitYieldKey extends Data.TaggedClass("InitYieldKey")<{
-  yieldId: string | null;
+  yieldId: YieldId | null;
 }> {}
 
 export class PositionsDataKey extends Data.TaggedClass("PositionsDataKey")<{
@@ -35,13 +35,13 @@ export class TokenOptionsKey extends Data.TaggedClass("TokenOptionsKey")<{
   category: DashboardYieldCategory | null;
   initToken: string | null;
   initTokenNetwork: Networks | null;
-  initYieldId: string | null;
+  initYieldId: YieldId | null;
   tokensForEnabledYieldsOnly: boolean;
 }> {}
 
 export class TokenYieldScopeKey extends Data.TaggedClass("TokenYieldScopeKey")<{
   category: DashboardYieldCategory | null;
-  yieldIds: ReadonlyArray<string>;
+  yieldIds: ReadonlyArray<YieldId>;
 }> {}
 
 export class DefaultTokenOptionsKey extends Data.TaggedClass(
@@ -68,7 +68,7 @@ export class InitTokenOptionKey extends Data.TaggedClass("InitTokenOptionKey")<{
 }> {}
 
 export class YieldValidatorsKey extends Data.TaggedClass("YieldValidatorsKey")<{
-  selectedYieldId: YieldDto["id"];
+  selectedYieldId: YieldId;
 }> {}
 
 export class YieldValidatorsPullKey extends Data.TaggedClass(

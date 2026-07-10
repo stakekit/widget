@@ -1,3 +1,3 @@
-import type { FeeConfigurationDto } from "../../generated/api/legacy";
+import type { FeeConfiguration } from "../schema/legacy-models";
 
-export type { FeeConfigurationDto };
+export type FeeConfigurationDto = FeeConfiguration;

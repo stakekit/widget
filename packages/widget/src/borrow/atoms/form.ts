@@ -3,7 +3,7 @@ import { Data } from "effect";
 import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/AsyncResult";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { TokenBalanceScanResponseDto } from "../../generated/api/legacy";
+import type { TokenBalance } from "../../domain/schema/financial-models";
 import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
@@ -132,7 +132,7 @@ export class BorrowFormScopeKey extends Data.Class<{
 export class BorrowDashboardKey extends Data.Class<{
   readonly network: BorrowNetwork;
   readonly scopeId: string;
-  readonly tokenBalances: ReadonlyArray<TokenBalanceScanResponseDto>;
+  readonly tokenBalances: ReadonlyArray<TokenBalance>;
   readonly walletAddress: string;
 }> {}
 

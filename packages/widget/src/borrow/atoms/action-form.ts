@@ -1,7 +1,7 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { ActionsControllerExecuteActionV1RequestJson } from "../../generated/api/borrow";
 import type {
   Action,
+  ActionRequest,
   CollateralToken,
   DebtBalance,
   DisableCollateralPendingAction,
@@ -40,7 +40,7 @@ export type BorrowPositionPendingActionContext =
     };
 
 export type BorrowActionFormReviewState = {
-  readonly request: ActionsControllerExecuteActionV1RequestJson;
+  readonly request: ActionRequest;
   readonly summary: {
     readonly action:
       | "borrow"

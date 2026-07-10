@@ -6,28 +6,23 @@ import {
   metaMaskWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
-import type { QueryClient } from "@tanstack/react-query";
 import { EitherAsync, Maybe } from "purify-ts";
 import portoIcon from "../../assets/images/porto.svg";
-import { getEnabledNetworks } from "../../common/get-enabled-networks";
-import { config } from "../../config";
 import { evmChainGroup } from "../../domain/types/chains";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
+import type { Networks } from "../../domain/types/chains/networks";
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
-import type { ApiClient } from "../api/api-client";
 import type { VariantProps } from "../settings/types";
 import { createFineryWallets } from "./finery-wallet-list";
 import { passCorrectChainsToWallet } from "./utils";
 
 const queryFn = async ({
-  apiClient,
-  queryClient,
+  enabledNetworks,
   forceWalletConnectOnly,
   institutionalWallets,
   variant,
 }: {
-  apiClient: ApiClient;
-  queryClient: QueryClient;
+  enabledNetworks: ReadonlySet<Networks>;
   forceWalletConnectOnly: boolean;
   institutionalWallets: boolean;
   variant: VariantProps["variant"];
@@ -36,75 +31,58 @@ const queryFn = async ({
   evmChains: Chain[];
   connector: Maybe<WalletList[number]>;
   institutionalWallets: ReturnType<typeof createFineryWallets> | null;
-}> =>
-  getEnabledNetworks({ apiClient, queryClient }).caseOf({
-    Right: (networks) => {
-      const filteredEvmChainsMap: Partial<EvmChainsMap> =
-        typeSafeObjectFromEntries(
-          typeSafeObjectEntries<EvmChainsMap>(evmChainsMap).filter(([_, v]) =>
-            networks.has(v.skChainName)
-          )
-        );
+}> => {
+  const filteredEvmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
+    typeSafeObjectEntries<EvmChainsMap>(evmChainsMap).filter(([_, v]) =>
+      enabledNetworks.has(v.skChainName)
+    )
+  );
 
-      const evmChains = Object.values(filteredEvmChainsMap).map(
-        (val) => val.wagmiChain
-      );
+  const evmChains = Object.values(filteredEvmChainsMap).map(
+    (val) => val.wagmiChain
+  );
 
-      const portoWallet: WalletList[number]["wallets"][number] = (args) => ({
-        ...walletConnectWallet(args),
-        iconUrl: portoIcon,
-        iconBackground: "#000",
-        name: "Porto",
-      });
-
-      const wallets: WalletList[number]["wallets"] = (
-        variant === "porto"
-          ? [portoWallet]
-          : forceWalletConnectOnly
-            ? [walletConnectWallet]
-            : [
-                metaMaskWallet,
-                injectedWallet,
-                walletConnectWallet,
-                coinbaseWallet,
-                ledgerWallet,
-              ]
-      )
-        .map((w) => passCorrectChainsToWallet(w, evmChains))
-        .map((w) => (props) => ({ ...w(props), chainGroup: evmChainGroup }));
-
-      const connector: WalletList[number] = {
-        groupName: "Ethereum",
-        wallets,
-      };
-
-      return Promise.resolve({
-        evmChainsMap: filteredEvmChainsMap,
-        evmChains,
-        connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
-        institutionalWallets:
-          variant === "finery" || institutionalWallets
-            ? createFineryWallets(evmChains)
-            : null,
-      });
-    },
-    Left: (l) => Promise.reject(l),
+  const portoWallet: WalletList[number]["wallets"][number] = (args) => ({
+    ...walletConnectWallet(args),
+    iconUrl: portoIcon,
+    iconBackground: "#000",
+    name: "Porto",
   });
 
+  const wallets: WalletList[number]["wallets"] = (
+    variant === "porto"
+      ? [portoWallet]
+      : forceWalletConnectOnly
+        ? [walletConnectWallet]
+        : [
+            metaMaskWallet,
+            injectedWallet,
+            walletConnectWallet,
+            coinbaseWallet,
+            ledgerWallet,
+          ]
+  )
+    .map((w) => passCorrectChainsToWallet(w, evmChains))
+    .map((w) => (props) => ({ ...w(props), chainGroup: evmChainGroup }));
+
+  const connector: WalletList[number] = {
+    groupName: "Ethereum",
+    wallets,
+  };
+
+  return {
+    evmChainsMap: filteredEvmChainsMap,
+    evmChains,
+    connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
+    institutionalWallets:
+      variant === "finery" || institutionalWallets
+        ? createFineryWallets(evmChains)
+        : null,
+  };
+};
+
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() =>
-    opts.queryClient.fetchQuery({
-      staleTime: Number.POSITIVE_INFINITY,
-      queryKey: [
-        config.appPrefix,
-        "evm-config",
-        opts.variant,
-        opts.institutionalWallets,
-        opts.forceWalletConnectOnly,
-      ],
-      queryFn: () => queryFn(opts),
-    })
-  ).mapLeft((e) => {
+  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
     console.log(e);
     return new Error("Could not get evm config");
   });

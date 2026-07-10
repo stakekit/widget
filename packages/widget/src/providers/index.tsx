@@ -8,12 +8,14 @@ import { CurrentLayoutProvider } from "../pages/components/layout/layout-context
 import { PoweredByHeightProvider } from "../pages/components/powered-by";
 import { BorrowWalletProvider } from "../pages-dashboard/borrow/connected-wallet";
 import { i18nInstance } from "../translation";
-import { SKApiClientProvider } from "./api/api-client-provider";
-import { SKAtomRuntimeProvider } from "./effect-atom-runtime";
+import {
+  SKAtomRuntimeBridge,
+  SKAtomRuntimeProvider,
+} from "./effect-atom-runtime";
 import { ListStateContextProvider } from "./list-state";
 import { SKLocationProvider } from "./location";
 import { MountAnimationProvider } from "./mount-animation";
-import { SKQueryClientProvider } from "./query-client";
+import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";
 import { RootElementProvider } from "./root-element";
 import { SKWalletProvider } from "./sk-wallet";
@@ -30,16 +32,16 @@ export const Providers = ({
     <StrictMode>
       <RootElementProvider>
         <I18nextProvider i18n={i18nInstance}>
-          <SKApiClientProvider>
-            <SKQueryClientProvider>
-              <SKLocationProvider>
-                <MountAnimationProvider>
-                  <SolanaProvider>
+          <ThirdPartyQueryClientProvider>
+            <SKLocationProvider>
+              <MountAnimationProvider>
+                <SolanaProvider>
+                  <SKAtomRuntimeProvider>
                     <WagmiConfigProvider>
                       <TrackingContextProviderWithProps>
                         <SKWalletProvider>
                           <BorrowWalletProvider>
-                            <SKAtomRuntimeProvider>
+                            <SKAtomRuntimeBridge>
                               <RainbowProvider>
                                 <ActionHistoryContextProvider>
                                   <ThemeWrapper>
@@ -59,16 +61,16 @@ export const Providers = ({
                                   </ThemeWrapper>
                                 </ActionHistoryContextProvider>
                               </RainbowProvider>
-                            </SKAtomRuntimeProvider>
+                            </SKAtomRuntimeBridge>
                           </BorrowWalletProvider>
                         </SKWalletProvider>
                       </TrackingContextProviderWithProps>
                     </WagmiConfigProvider>
-                  </SolanaProvider>
-                </MountAnimationProvider>
-              </SKLocationProvider>
-            </SKQueryClientProvider>
-          </SKApiClientProvider>
+                  </SKAtomRuntimeProvider>
+                </SolanaProvider>
+              </MountAnimationProvider>
+            </SKLocationProvider>
+          </ThirdPartyQueryClientProvider>
         </I18nextProvider>
       </RootElementProvider>
     </StrictMode>
