@@ -7,7 +7,6 @@ import {
   TokenAddress,
   WalletAddress,
 } from "./ids";
-import { BigIntFromString, NumberFromString } from "./scalars";
 import { Transaction } from "./transaction";
 
 class ActionRawArguments extends Schema.Class<ActionRawArguments>(
@@ -17,22 +16,22 @@ class ActionRawArguments extends Schema.Class<ActionRawArguments>(
   marketId: MarketId,
   tokenAddress: Schema.optionalKey(TokenAddress),
   collateralTokenAddress: Schema.optionalKey(TokenAddress),
-  amount: Schema.optionalKey(NumberFromString),
-  amountRaw: Schema.optionalKey(BigIntFromString),
-  collateralAmount: Schema.optionalKey(NumberFromString),
-  collateralAmountRaw: Schema.optionalKey(BigIntFromString),
+  amount: Schema.optionalKey(Schema.FiniteFromString),
+  amountRaw: Schema.optionalKey(Schema.BigIntFromString),
+  collateralAmount: Schema.optionalKey(Schema.FiniteFromString),
+  collateralAmountRaw: Schema.optionalKey(Schema.BigIntFromString),
 }) {}
 
 class ActionMetadata extends Schema.Class<ActionMetadata>(
   "BorrowActionMetadata"
 )({
-  currentHealthFactor: Schema.NullOr(NumberFromString),
-  predictedHealthFactor: Schema.NullOr(NumberFromString),
-  currentLtv: NumberFromString,
-  predictedLtv: NumberFromString,
-  liquidationThreshold: NumberFromString,
-  predictedTotalSupplyUsd: NumberFromString,
-  predictedTotalDebtUsd: NumberFromString,
+  currentHealthFactor: Schema.NullOr(Schema.FiniteFromString),
+  predictedHealthFactor: Schema.NullOr(Schema.FiniteFromString),
+  currentLtv: Schema.FiniteFromString,
+  predictedLtv: Schema.FiniteFromString,
+  liquidationThreshold: Schema.FiniteFromString,
+  predictedTotalSupplyUsd: Schema.FiniteFromString,
+  predictedTotalDebtUsd: Schema.FiniteFromString,
 }) {}
 
 export class Action extends Schema.Class<Action>("BorrowAction")({

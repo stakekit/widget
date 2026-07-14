@@ -1,4 +1,3 @@
-import type { Maybe } from "purify-ts";
 import { type JSX, type ReactNode, useMemo } from "react";
 import { Box } from "../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
@@ -8,9 +7,14 @@ import { GifIcon } from "../../../components/atoms/icons/gift";
 import { InfoIcon } from "../../../components/atoms/icons/info";
 import type { TextVariants } from "../../../components/atoms/typography/styles.css";
 import { Text } from "../../../components/atoms/typography/text";
-import type { TokenDto } from "../../../domain/types/tokens";
-import type { Validator, ValidatorKey } from "../../../domain/types/validators";
-import type { Yield } from "../../../domain/types/yields";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
+import type { ValidatorKey } from "../../../domain/types/validators";
+
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { dotContainer, dotText } from "./styles.css";
 
@@ -18,9 +22,9 @@ type MetaInfoTextSize = NonNullable<NonNullable<TextVariants>["size"]>;
 
 type Props = {
   isLoading?: boolean;
-  selectedStake: Maybe<Yield>;
-  selectedValidators: Map<ValidatorKey, Validator>;
-  selectedToken: Maybe<TokenDto>;
+  selectedStake: EarnYieldWithProvider | null;
+  selectedValidators: Map<ValidatorKey, EarnValidator>;
+  selectedToken: AppToken | null;
   textSize?: MetaInfoTextSize;
 };
 

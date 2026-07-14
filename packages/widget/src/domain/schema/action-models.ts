@@ -4,6 +4,7 @@ import {
   ActionId,
   TokenAddress,
   TransactionId,
+  ValidatorAddress,
   WalletAddress,
   YieldId,
 } from "./identifiers";
@@ -13,6 +14,20 @@ const ActionToken = Schema.Struct({
   ...YieldApi.TokenDto.fields,
   address: Schema.optionalKey(TokenAddress),
   decimals: Schema.Number.check(Schema.isInt()),
+});
+
+const ActionArguments = Schema.Struct({
+  ...YieldApi.CreateActionDto.fields.arguments.schema.fields,
+  providerId: Schema.optionalKey(YieldId),
+  validatorAddress: Schema.optionalKey(ValidatorAddress),
+  validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
+});
+
+const ManageActionArguments = Schema.Struct({
+  ...YieldApi.CreateManageActionDto.fields.arguments.schema.fields,
+  providerId: Schema.optionalKey(YieldId),
+  validatorAddress: Schema.optionalKey(ValidatorAddress),
+  validatorAddresses: Schema.optionalKey(Schema.Array(ValidatorAddress)),
 });
 
 const TransactionGasEstimate = Schema.Struct({
@@ -35,6 +50,7 @@ export const YieldAction = Schema.Struct({
   ...YieldApi.ActionDto.fields,
   address: WalletAddress,
   id: ActionId,
+  rawArguments: Schema.NullOr(ActionArguments),
   transactions: Schema.Array(ActionTransaction),
   yieldId: YieldId,
 });
@@ -43,6 +59,7 @@ export type YieldAction = typeof YieldAction.Type;
 export const ActionCommand = Schema.Struct({
   ...YieldApi.CreateActionDto.fields,
   address: WalletAddress,
+  arguments: Schema.optionalKey(ActionArguments),
   yieldId: YieldId,
 });
 export type ActionCommand = typeof ActionCommand.Type;
@@ -50,6 +67,7 @@ export type ActionCommand = typeof ActionCommand.Type;
 export const ManageActionCommand = Schema.Struct({
   ...YieldApi.CreateManageActionDto.fields,
   address: WalletAddress,
+  arguments: Schema.optionalKey(ManageActionArguments),
   yieldId: YieldId,
 });
 export type ManageActionCommand = typeof ManageActionCommand.Type;

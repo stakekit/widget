@@ -4,8 +4,9 @@ import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
-import type { ActionDto } from "../../../domain/types/action";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { YieldAction } from "../../../domain/schema/action-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
 import { useSettings } from "../../../providers/settings";
@@ -16,8 +17,8 @@ import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 
 type StepsPageProps = {
-  session: ActionDto;
-  inputToken?: TokenDto | YieldTokenDto;
+  session: YieldAction;
+  inputToken?: AppToken;
   onSignSuccess?: () => void;
   providersDetails: ReturnType<typeof useProvidersDetails>;
 };

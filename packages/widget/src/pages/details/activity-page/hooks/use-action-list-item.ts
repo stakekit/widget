@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -90,15 +89,12 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const locale = i18n.language;
 
-  const integrationData = useMemo(
-    () => Maybe.fromNullable(action.yieldData),
-    [action.yieldData]
-  );
+  const integrationData = action.yieldData ?? null;
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validators: Maybe.of(action.validatorsData),
-    selectedProviderYieldId: Maybe.empty(),
+    validators: action.validatorsData,
+    selectedProviderYieldId: null,
   });
 
   const direction = useMemo(
@@ -137,14 +133,16 @@ export const useActionListItem = (action: ActionYieldDto) => {
 
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(action.actionData.amount).map(defaultFormattedNumber),
+      action.actionData.amount == null
+        ? null
+        : defaultFormattedNumber(action.actionData.amount),
     [action.actionData.amount]
   );
 
   const isPositive = direction === "deposit" || direction === "rewards";
 
   const amountSign = useMemo(() => {
-    if (amount.isNothing()) return "";
+    if (!amount) return "";
     if (direction === "withdraw") return "-";
     if (direction === "deposit" || direction === "rewards") return "+";
     return "";

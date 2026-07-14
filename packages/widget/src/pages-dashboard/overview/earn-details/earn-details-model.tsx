@@ -6,6 +6,7 @@ import {
   riskSummaryActions,
   YieldRiskInfoTooltip,
 } from "../../../components/molecules/yield-risk";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import {
   getEffectiveYieldRewardRateDetails,
   type SelectedValidators,
@@ -22,7 +23,6 @@ import {
   getYieldTvlUsd,
   getYieldTypeLabels,
   getYieldWarmupPeriod,
-  type Yield,
 } from "../../../domain/types/yields";
 import { APToPercentage } from "../../../utils";
 import { formatCompactUsd } from "../../../utils/formatters";
@@ -136,7 +136,7 @@ export const getEarnDetailsModel = ({
 }: {
   selectedValidators?: SelectedValidators | null;
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) => {
   const provider = yieldDto.provider;
   const dashboardYieldCategory = getDashboardYieldCategory(yieldDto);
@@ -213,9 +213,9 @@ const getEarnDetailFacts = ({
   yieldDto,
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
-  provider: Yield["provider"];
+  provider: EarnYieldWithProvider["provider"];
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) =>
   [
     getRewardRateFact({ effectiveRewardRate, t, yieldDto }),
@@ -244,7 +244,7 @@ const getDetailRows = ({
   facts: EarnDetailFact[];
   promotedFactIds: Set<EarnDetailFactId>;
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }): EarnDetailRow[] => [
   {
     id: "network",
@@ -272,7 +272,7 @@ const getDetailRows = ({
 ];
 
 const getPricePerShareRows = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailRow[] => {
   const value = formatPricePerShare(yieldDto);
@@ -295,7 +295,7 @@ const getRewardRateFact = ({
 }: {
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>;
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }): EarnDetailFact | null => {
   const value = formatRewardRate(effectiveRewardRate, yieldDto);
 
@@ -311,7 +311,10 @@ const getRewardRateFact = ({
   };
 };
 
-const getRiskFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
+const getRiskFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact | null => {
   const risk = getYieldRiskDisplay(yieldDto);
 
   if (!risk) return null;
@@ -333,7 +336,7 @@ const getRiskFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
 };
 
 const getMinStakeFact = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
   const value = formatMinStake(yieldDto, t);
@@ -350,7 +353,10 @@ const getMinStakeFact = (
   };
 };
 
-const getCooldownFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => {
+const getCooldownFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact => {
   const days = getYieldCooldownPeriod(yieldDto)?.days ?? 0;
 
   return {
@@ -364,7 +370,7 @@ const getCooldownFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => {
 };
 
 const getWarmupFact = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
   const value = formatOptionalDays(getYieldWarmupPeriod(yieldDto)?.days, t);
@@ -382,7 +388,7 @@ const getWarmupFact = (
 };
 
 const getLockupFact = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
   const value = formatOptionalDays(getYieldLockupPeriod(yieldDto)?.days, t);
@@ -399,7 +405,10 @@ const getLockupFact = (
   };
 };
 
-const getWithdrawalFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
+const getWithdrawalFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact => ({
   detailEligible: true,
   id: "withdrawal",
   kpiEligible: true,
@@ -410,7 +419,10 @@ const getWithdrawalFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
     : t("dashboard.earn_details.unavailable"),
 });
 
-const getTvlFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
+const getTvlFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact | null => {
   const value = formatMeaningfulCompactUsd(getYieldTvlUsd(yieldDto));
 
   if (!value) return null;
@@ -425,7 +437,10 @@ const getTvlFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   };
 };
 
-const getFeesFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
+const getFeesFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact | null => {
   const fee = getYieldFeePercent(yieldDto);
 
   if (fee === null) return null;
@@ -445,9 +460,9 @@ const getStatusFact = ({
   t,
   yieldDto,
 }: {
-  provider: Yield["provider"];
+  provider: EarnYieldWithProvider["provider"];
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }): EarnDetailFact => ({
   detailEligible: true,
   id: "status",
@@ -459,7 +474,7 @@ const getStatusFact = ({
 });
 
 const getAveragePositionFact = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact | null => {
   const value = formatMeaningfulCompactUsd(
@@ -478,7 +493,10 @@ const getAveragePositionFact = (
   };
 };
 
-const getUsersFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
+const getUsersFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact | null => {
   const value = formatMeaningfulCompactNumber(yieldDto.statistics?.uniqueUsers);
 
   if (!value) return null;
@@ -493,7 +511,10 @@ const getUsersFact = (yieldDto: Yield, t: TFunction): EarnDetailFact | null => {
   };
 };
 
-const getTypeFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
+const getTypeFact = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): EarnDetailFact => ({
   detailEligible: true,
   id: "type",
   kpiEligible: false,
@@ -503,7 +524,7 @@ const getTypeFact = (yieldDto: Yield, t: TFunction): EarnDetailFact => ({
 });
 
 const getRewardScheduleFact = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailFact => ({
   detailEligible: true,
@@ -519,7 +540,7 @@ const getRewardClaimingFact = ({
   yieldDto,
 }: {
   t: TFunction;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }): EarnDetailFact => ({
   detailEligible: true,
   id: "reward-claiming",
@@ -534,7 +555,7 @@ const getSelectedProviderName = ({
   yieldDto,
 }: {
   selectedValidators?: SelectedValidators | null;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) => {
   const selectedValidatorsArr = selectedValidators
     ? [...selectedValidators.values()]
@@ -550,7 +571,7 @@ const getSelectedProviderName = ({
 };
 
 const getHeaderBadges = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): EarnDetailsHeaderBadge[] => {
   const yieldType = getExtendedYieldType(yieldDto);
@@ -598,10 +619,10 @@ const getHeaderBadges = (
 };
 
 const getAddressRows = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
-): EarnDetailAddressRow[] =>
-  [
+): EarnDetailAddressRow[] => {
+  const rows: Array<EarnDetailAddressRow | null> = [
     yieldDto.outputToken?.address
       ? {
           label: t("dashboard.earn_details.vault"),
@@ -616,4 +637,7 @@ const getAddressRows = (
           address: yieldDto.token.address,
         }
       : null,
-  ].filter((row): row is EarnDetailAddressRow => !!row);
+  ];
+
+  return rows.filter((row): row is EarnDetailAddressRow => row !== null);
+};

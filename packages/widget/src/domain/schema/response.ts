@@ -1,6 +1,6 @@
 import {
+  Array as EArray,
   Effect,
-  Array as EffectArray,
   Option,
   Result,
   Schema,
@@ -50,7 +50,7 @@ export const TolerantTopLevelArray = <
               }).pipe(Effect.as(Option.none<Item["Type"]>())),
             onSuccess: (value) => Effect.succeed(Option.some(value)),
           });
-        }).pipe(Effect.map(EffectArray.getSomes))
+        }).pipe(Effect.map(EArray.getSomes))
       ),
       encode: SchemaGetter.forbidden(
         () => "Cannot encode a tolerant top-level array response"
@@ -100,10 +100,7 @@ export const TolerantTopLevelRecord = <
           }).pipe(
             Effect.as(Option.none<readonly [Key["Type"], Value["Type"]]>())
           );
-        }).pipe(
-          Effect.map(EffectArray.getSomes),
-          Effect.map(Object.fromEntries)
-        )
+        }).pipe(Effect.map(EArray.getSomes), Effect.map(Object.fromEntries))
       ),
       encode: SchemaGetter.forbidden(
         () => "Cannot encode a tolerant top-level record response"

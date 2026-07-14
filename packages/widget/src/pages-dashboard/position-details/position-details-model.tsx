@@ -6,11 +6,15 @@ import {
   riskSummaryActions,
   YieldRiskInfoTooltip,
 } from "../../components/molecules/yield-risk";
+import type { PendingAction } from "../../domain/schema/action-models";
 import type { RewardsSummary } from "../../domain/schema/dashboard-models";
-import type { YieldPendingActionDto } from "../../domain/types/pending-action";
+import type {
+  EarnBalance,
+  EarnYieldWithProvider,
+} from "../../domain/schema/earn-models";
+
 import type {
   PositionBalancesByType,
-  YieldBalanceDto,
   YieldBalanceType,
 } from "../../domain/types/positions";
 import type { YieldRewardRateDto } from "../../domain/types/reward-rate";
@@ -21,7 +25,6 @@ import {
   getYieldRiskDisplay,
   getYieldTypeLabels,
   getYieldWarmupPeriod,
-  type Yield,
 } from "../../domain/types/yields";
 import { APToPercentage, defaultFormattedNumber } from "../../utils";
 import {
@@ -89,8 +92,8 @@ type DashboardPositionDetailsModel = {
 type DashboardPositionPendingAction = {
   amount: BigNumber | null;
   formattedAmount: string;
-  pendingActionDto: YieldPendingActionDto;
-  yieldBalance: YieldBalanceDto;
+  pendingActionDto: PendingAction;
+  yieldBalance: EarnBalance;
 };
 
 type ProviderDetail = {
@@ -112,7 +115,7 @@ export const getDashboardPositionDetailsModel = ({
   t,
 }: {
   canUnstake: boolean;
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   pendingActions: DashboardPositionPendingAction[];
   personalizedRewardRate?: YieldRewardRateDto | null;
   positionBalancesByType: PositionBalancesByType;
@@ -200,7 +203,7 @@ const getFillerMetric = ({
   promotedFactIds,
   t,
 }: {
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   promotedFactIds: Set<string>;
   t: TFunction;
 }): DashboardPositionMetricCard | null => {
@@ -235,7 +238,7 @@ const getPositionProviderName = ({
   integrationData,
   providersDetails,
 }: {
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   providersDetails: ProviderDetail[];
 }) => {
   const [provider] = providersDetails;
@@ -362,7 +365,7 @@ const getApyMetric = ({
   promotedFactIds,
   t,
 }: {
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   personalizedRewardRate?: YieldRewardRateDto | null;
   promotedFactIds: Set<string>;
   t: TFunction;
@@ -483,7 +486,7 @@ const getDetailRows = ({
   providerName,
   t,
 }: {
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   promotedFactIds: Set<string>;
   providerName: string;
   t: TFunction;
@@ -597,10 +600,10 @@ const getDetailRows = ({
 };
 
 const getAddressRows = (
-  integrationData: Yield,
+  integrationData: EarnYieldWithProvider,
   t: TFunction
-): DashboardPositionAddressRow[] =>
-  [
+): DashboardPositionAddressRow[] => {
+  const rows: Array<DashboardPositionAddressRow | null> = [
     integrationData.outputToken?.address
       ? {
           label: t("dashboard.earn_details.vault"),
@@ -615,7 +618,10 @@ const getAddressRows = (
           address: integrationData.token.address,
         }
       : null,
-  ].filter((row): row is DashboardPositionAddressRow => !!row);
+  ];
+
+  return rows.filter((row): row is DashboardPositionAddressRow => row !== null);
+};
 
 const getBalancesByPriority = (
   positionBalancesByType: PositionBalancesByType
@@ -642,10 +648,7 @@ const formatBalanceTypeLabel = (type: YieldBalanceType, t: TFunction) =>
 // Pending action types come from the API and can outpace our translation map
 // (e.g. RWA-specific actions). Fall back to a humanized version of the type so
 // the card never renders a raw translation key.
-const formatPendingActionLabel = (
-  type: YieldPendingActionDto["type"],
-  t: TFunction
-) =>
+const formatPendingActionLabel = (type: PendingAction["type"], t: TFunction) =>
   t(`position_details.pending_action.${type.toLowerCase()}`, {
     defaultValue: formatEnumValue(type),
   });
@@ -664,7 +667,7 @@ const formatUsdValue = (value: BigNumber) =>
   `$${defaultFormattedNumber(value)}`;
 
 export const getPositionHeaderBadges = (
-  integrationData: Yield,
+  integrationData: EarnYieldWithProvider,
   t: TFunction
 ) => {
   const yieldType = getExtendedYieldType(integrationData);

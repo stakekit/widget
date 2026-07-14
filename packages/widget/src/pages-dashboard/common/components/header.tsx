@@ -1,6 +1,5 @@
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
-import { Maybe } from "purify-ts";
 import { Box } from "../../../components/atoms/box";
 import { XIcon } from "../../../components/atoms/icons/x-icon";
 import { AccountModal } from "../../../components/molecules/account-modal";
@@ -43,17 +42,12 @@ export const Header = () => {
               justifyContent="center"
               gap="2"
             >
-              {Maybe.fromFalsy(
-                (isConnected || isConnecting) && chain && account
-              )
-                .map(() => (
-                  <>
-                    {!hideChainSelector && <ChainModal />}
-
-                    <AccountModal />
-                  </>
-                ))
-                .extractNullable()}
+              {(isConnected || isConnecting) && chain && account ? (
+                <>
+                  {!hideChainSelector && <ChainModal />}
+                  <AccountModal />
+                </>
+              ) : null}
             </Box>
           );
         }}

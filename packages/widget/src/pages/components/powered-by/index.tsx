@@ -1,3 +1,5 @@
+import { useAtom } from "@effect/atom-react";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import { motion } from "motion/react";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -6,10 +8,10 @@ import { Text } from "../../../components/atoms/typography/text";
 import { useSyncElementHeight } from "../../../hooks/use-sync-element-height";
 import { useMountAnimation } from "../../../providers/mount-animation";
 import { useSettings } from "../../../providers/settings";
-import createStateContext from "../../../utils/create-state-context";
 
-export const [usePoweredByHeight, PoweredByHeightProvider] =
-  createStateContext(0);
+const poweredByHeightAtom = Atom.make(0);
+
+export const usePoweredByHeight = () => useAtom(poweredByHeightAtom);
 
 const useSyncPoweredByHeight = () =>
   useSyncElementHeight(usePoweredByHeight()[1]);

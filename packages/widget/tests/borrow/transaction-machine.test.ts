@@ -1,26 +1,34 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
+import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
+import type { Connector } from "wagmi";
 import {
   ActionRequest,
   Action as BorrowAction,
+  BorrowExecutionEventsService,
   BorrowExecutionKey,
   type BorrowExecutionMachineState,
   type Transaction as BorrowTransaction,
   BorrowTransactionFailedError,
   BorrowTransactionNotConfirmedError,
-  type BorrowWalletExecutionAdapter,
+  BorrowWalletExecutionService,
+  borrowAtomRuntime,
   borrowCreateActionAtom,
   borrowExecutionAtom,
-  borrowWalletExecutionAdapterAtom,
+  borrowExecutionRuntimeRefreshAtom,
+  borrowIntegrationsAtom,
   type SubmitTransactionCommand,
 } from "../../src/borrow";
-import {
-  StakeKitApiService,
-  stakeKitApiLayerAtom,
-} from "../../src/providers/effect-atom-runtime/stakekit-api-service";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { StakeKitApiService } from "../../src/providers/api/api-service";
+import { WalletService } from "../../src/providers/wallet/runtime/service";
+import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
+import type { WalletOperations } from "../utils/wallet-operations";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
@@ -77,87 +85,111 @@ const action = (overrides: Partial<ActionDto> = {}): ActionDto => ({
 const decodedAction = (overrides: Partial<ActionDto> = {}) =>
   Schema.decodeUnknownSync(BorrowAction)(action(overrides));
 
-const walletAdapter = ({
+const connectedWalletState = {
+  additionalAddresses: null,
+  address,
+  chain: base,
+  connector: { id: "test", uid: "test" } as Connector,
+  connectorChains: [base],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
+  network: "base",
+  status: "connected",
+} satisfies NormalizedWalletState;
+
+const walletService = ({
   broadcasted = true,
   signedTx = transactionHash,
 }: {
   readonly broadcasted?: boolean;
   readonly signedTx?: string;
-} = {}): BorrowWalletExecutionAdapter => ({
-  getState: () => ({ status: "connected" }) as never,
-  signTransaction: () =>
-    Effect.succeed({
-      broadcasted,
-      signedTx,
-    }),
-});
+} = {}): WalletOperations =>
+  ({
+    getState: () => connectedWalletState,
+    signTransaction: () =>
+      Effect.succeed({
+        broadcasted,
+        signedTx,
+      }),
+  }) as unknown as WalletOperations;
+
+const defaultWalletService = walletService();
 
 const createRegistry = ({
   executeAction = action(),
   getActions = [],
   stepActions = [],
-  wallet = walletAdapter(),
+  wallet = defaultWalletService,
 }: {
   readonly executeAction?: ActionDto;
   readonly getActions?: ReadonlyArray<ActionDto>;
   readonly stepActions?: ReadonlyArray<ActionDto>;
-  readonly wallet?: BorrowWalletExecutionAdapter;
+  readonly wallet?: WalletOperations;
 }) => {
   const queuedGetActions = [...getActions];
   const queuedStepActions = [...stepActions];
-  const ActionsControllerExecuteActionV1 = vi.fn(() =>
-    Effect.succeed(executeAction)
+  const executeActionOperation = vi.fn(() =>
+    Effect.succeed(Schema.decodeUnknownSync(BorrowAction)(executeAction))
   );
-  const ActionsControllerGetActionV1 = vi.fn(() =>
+  const getActionOperation = vi.fn(() =>
     Effect.succeed(
-      queuedGetActions.shift() ?? getActions.at(-1) ?? executeAction
+      Schema.decodeUnknownSync(BorrowAction)(
+        queuedGetActions.shift() ?? getActions.at(-1) ?? executeAction
+      )
     )
   );
-  const ActionsControllerStepV1 = vi.fn(() =>
+  const stepActionOperation = vi.fn(() =>
     Effect.succeed(
-      queuedStepActions.shift() ?? stepActions.at(-1) ?? executeAction
+      Schema.decodeUnknownSync(BorrowAction)(
+        queuedStepActions.shift() ?? stepActions.at(-1) ?? executeAction
+      )
     )
   );
-  const TransactionsControllerSubmitTransactionV1 = vi.fn(
-    (
-      _transactionId: string,
-      _options: { readonly payload: SubmitTransactionDto }
-    ) =>
+  const submitTransactionOperation = vi.fn(
+    (_request: {
+      readonly command: SubmitTransactionDto;
+      readonly transactionId: string;
+    }) =>
       Effect.succeed({
         link: "https://basescan.org/tx/0x111",
         status: "BROADCASTED" as const,
         transactionHash,
       })
   );
+  const getIntegrationsOperation = vi.fn(() => Effect.succeed([]));
   const registry = AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
-        stakeKitApiLayerAtom,
-        Layer.succeed(StakeKitApiService, {
-          borrow: {
-            ActionsControllerExecuteActionV1,
-            ActionsControllerGetActionV1,
-            ActionsControllerStepV1,
-            TransactionsControllerSubmitTransactionV1,
-          },
-          borrowMutations: {
-            ActionsControllerExecuteActionV1,
-            ActionsControllerGetActionV1,
-            ActionsControllerStepV1,
-            TransactionsControllerSubmitTransactionV1,
-          },
-        } as never)
+        borrowAtomRuntime.layer,
+        Layer.mergeAll(
+          Layer.succeed(StakeKitApiService, {
+            borrow: {
+              executeAction: executeActionOperation,
+              getAction: getActionOperation,
+              getIntegrations: getIntegrationsOperation,
+              stepAction: stepActionOperation,
+              submitTransaction: submitTransactionOperation,
+            },
+          } as never),
+          BorrowWalletExecutionService.layer.pipe(
+            Layer.provide(
+              Layer.succeed(WalletService, wallet as WalletService["Service"])
+            )
+          ),
+          BorrowExecutionEventsService.layer
+        ).pipe(Layer.fresh)
       ),
-      Atom.initialValue(borrowWalletExecutionAdapterAtom, wallet),
     ],
   });
 
   return {
     operations: {
-      ActionsControllerExecuteActionV1,
-      ActionsControllerGetActionV1,
-      ActionsControllerStepV1,
-      TransactionsControllerSubmitTransactionV1,
+      executeAction: executeActionOperation,
+      getAction: getActionOperation,
+      getIntegrations: getIntegrationsOperation,
+      stepAction: stepActionOperation,
+      submitTransaction: submitTransactionOperation,
     },
     registry,
   };
@@ -263,9 +295,7 @@ describe("borrow transaction machine atom", () => {
     if (AsyncResult.isSuccess(result)) {
       expect(result.value.id).toBe("action-2");
     }
-    expect(operations.ActionsControllerExecuteActionV1).toHaveBeenCalledWith({
-      payload: request,
-    });
+    expect(operations.executeAction).toHaveBeenCalledWith(request);
   });
 
   it("signs, submits, checks, and completes a single transaction", async () => {
@@ -287,27 +317,26 @@ describe("borrow transaction machine atom", () => {
       expect(result.value.action.status).toBe("SUCCESS");
       expect(result.value.submissions).toHaveLength(1);
     }
-    expect(operations.ActionsControllerExecuteActionV1).not.toHaveBeenCalled();
-    expect(
-      operations.TransactionsControllerSubmitTransactionV1
-    ).toHaveBeenCalledWith("tx-1", {
-      payload: { transactionHash },
+    expect(operations.executeAction).not.toHaveBeenCalled();
+    expect(operations.submitTransaction).toHaveBeenCalledWith({
+      command: { transactionHash },
+      transactionId: "tx-1",
     });
   });
 
-  it("submits signed-only wallet output as signed payload", async () => {
-    const signedPayload = "0xsigned-payload";
+  it("refreshes borrow resources from feature-scoped execution events", async () => {
+    const confirmedAction = action({
+      status: "SUCCESS",
+      transactions: [transaction({ status: "CONFIRMED" })],
+    });
     const { operations, registry } = createRegistry({
-      getActions: [
-        action({
-          status: "SUCCESS",
-          transactions: [transaction({ status: "CONFIRMED" })],
-        }),
-      ],
-      wallet: walletAdapter({
-        broadcasted: false,
-        signedTx: signedPayload,
-      }),
+      getActions: [confirmedAction],
+    });
+    const unmountRefresh = registry.mount(borrowExecutionRuntimeRefreshAtom);
+    const unmountIntegrations = registry.mount(borrowIntegrationsAtom);
+
+    await vi.waitFor(() => {
+      expect(operations.getIntegrations).toHaveBeenCalledOnce();
     });
 
     await waitForExecution(
@@ -316,10 +345,45 @@ describe("borrow transaction machine atom", () => {
       (candidate) => AsyncResult.isSuccess(candidate) && candidate.value.isDone
     );
 
-    expect(
-      operations.TransactionsControllerSubmitTransactionV1
-    ).toHaveBeenCalledWith("tx-1", {
-      payload: { signedPayload },
+    await vi.waitFor(() => {
+      expect(operations.getIntegrations.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    unmountIntegrations();
+    unmountRefresh();
+  });
+
+  it("submits signed-only wallet output as signed payload", async () => {
+    const signedPayload = "0xsigned-payload";
+    const signedPayloadWallet = walletService({
+      broadcasted: false,
+      signedTx: signedPayload,
+    });
+    const { operations, registry } = createRegistry({
+      getActions: [
+        action({
+          status: "SUCCESS",
+          transactions: [transaction({ status: "CONFIRMED" })],
+        }),
+      ],
+      wallet: signedPayloadWallet,
+    });
+
+    await waitForExecution(
+      registry,
+      borrowExecutionAtom(
+        new BorrowExecutionKey({
+          action: decodedAction(),
+          confirmationPollAttempts: 0,
+          confirmationPollIntervalMs: 0,
+        })
+      ),
+      (candidate) => AsyncResult.isSuccess(candidate) && candidate.value.isDone
+    );
+
+    expect(operations.submitTransaction).toHaveBeenCalledWith({
+      command: { signedPayload },
+      transactionId: "tx-1",
     });
   });
 
@@ -359,9 +423,7 @@ describe("borrow transaction machine atom", () => {
     if (AsyncResult.isSuccess(result)) {
       expect(result.value.submissions).toHaveLength(2);
     }
-    expect(
-      operations.TransactionsControllerSubmitTransactionV1
-    ).toHaveBeenCalledTimes(2);
+    expect(operations.submitTransaction).toHaveBeenCalledTimes(2);
   });
 
   it("advances through next-step actions", async () => {
@@ -400,13 +462,8 @@ describe("borrow transaction machine atom", () => {
     );
 
     expect(AsyncResult.isSuccess(result)).toBe(true);
-    expect(operations.ActionsControllerStepV1).toHaveBeenCalledWith(
-      "action-1",
-      undefined
-    );
-    expect(
-      operations.TransactionsControllerSubmitTransactionV1
-    ).toHaveBeenCalledTimes(2);
+    expect(operations.stepAction).toHaveBeenCalledWith("action-1");
+    expect(operations.submitTransaction).toHaveBeenCalledTimes(2);
   });
 
   it("fails with a typed transaction failure", async () => {

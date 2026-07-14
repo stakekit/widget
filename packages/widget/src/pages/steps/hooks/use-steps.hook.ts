@@ -1,17 +1,21 @@
+import { useAtomSubscribe } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import type { ActionDto, TransactionType } from "../../../domain/types/action";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { YieldAction } from "../../../domain/schema/action-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+import type { TransactionType } from "../../../domain/types/action";
+
 import type { ActionMeta } from "../../../domain/types/wallets/generic-wallet";
-import { useInvalidateTokenBalances } from "../../../hooks/api/use-token-balances-scan";
-import { useInvalidateYieldBalances } from "../../../hooks/api/use-yield-balances-scan";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import type { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useSetActionHistoryData } from "../../../providers/stake-history";
 import type { PageCta } from "../../components/page-cta";
-import type { TxState } from "./use-steps-machine.hook";
+import type {
+  StepsMachineState,
+  StepsTransactionState,
+} from "../state/steps-machine-model";
 import { useStepsMachine } from "./use-steps-machine.hook";
 
 export const useSteps = ({
@@ -21,8 +25,8 @@ export const useSteps = ({
   providersDetails,
 }: {
   onSignSuccess?: () => void;
-  session: ActionDto;
-  inputToken?: TokenDto | YieldTokenDto;
+  session: YieldAction;
+  inputToken?: AppToken;
   providersDetails: ReturnType<typeof useProvidersDetails>;
 }) => {
   const navigate = useNavigate();
@@ -39,23 +43,24 @@ export const useSteps = ({
       rawArguments: session.rawArguments,
       yieldId: session.yieldId,
       inputToken,
-      providersDetails: providersDetails
-        .map((providerDetail) =>
-          providerDetail.map((v) => ({
-            name: v.name,
-            address: v.address,
-            rewardRate: v.rewardRate,
-            rewardType: v.rewardType,
-            website: v.website,
-            logo: v.logo,
-          }))
-        )
-        .orDefault([]),
+      providersDetails:
+        providersDetails?.map((v) => ({
+          name: v.name,
+          address: v.address,
+          rewardRate: v.rewardRate,
+          rewardType: v.rewardType,
+          website: v.website,
+          logo: v.logo,
+        })) ?? [],
     }),
     [session, providersDetails, inputToken]
   );
 
-  const [machineState, send, actorRef] = useStepsMachine({
+  const {
+    dispatch,
+    eventsAtom,
+    state: machineState,
+  } = useStepsMachine({
     transactions: session.transactions,
     yieldId: session.yieldId,
     actionMeta,
@@ -66,47 +71,28 @@ export const useSteps = ({
    * @summary Start sign + check tx on mount
    */
   useLayoutEffect(() => {
-    send({ type: "START" });
-  }, [send]);
+    dispatch({ _tag: "Start" });
+  }, [dispatch]);
 
   /**
    *
    * @summary Callbacks
    */
-  useEffect(() => {
-    const sub = actorRef.on("signSuccess", () =>
-      callbacksRef.current.onSignSuccess?.()
-    );
-
-    return () => {
-      sub.unsubscribe();
-    };
-  }, [actorRef, callbacksRef]);
-
-  /**
-   *
-   * @summary Clear timeout on unmount
-   */
-  useEffect(() => {
-    return () => {
-      machineState.context.txCheckTimeoutId.ifJust((id) => clearTimeout(id));
-    };
-  }, [machineState.context.txCheckTimeoutId]);
-
-  const invalidateYieldBalances = useInvalidateYieldBalances();
-  const invalidateTokenBalances = useInvalidateTokenBalances();
-  const setActionHistoryData = useSetActionHistoryData();
+  useAtomSubscribe(eventsAtom, (result) => {
+    if (
+      AsyncResult.isSuccess(result) &&
+      result.value._tag === "StepsSignSucceeded"
+    ) {
+      callbacksRef.current.onSignSuccess?.();
+    }
+  });
 
   /**
    *
    * @summary Navigate to next page
    */
   useEffect(() => {
-    if (machineState.status === "done") {
-      invalidateYieldBalances();
-      invalidateTokenBalances();
-      setActionHistoryData();
-
+    if (machineState._tag === "Completed") {
       navigate("../complete", {
         state: {
           urls: machineState.context.txStates
@@ -119,14 +105,7 @@ export const useSteps = ({
         replace: true,
       });
     }
-  }, [
-    invalidateYieldBalances,
-    invalidateTokenBalances,
-    setActionHistoryData,
-    navigate,
-    machineState.context.txStates,
-    machineState.status,
-  ]);
+  }, [navigate, machineState.context.txStates, machineState._tag]);
 
   const trackEvent = useTrackEvent();
 
@@ -136,16 +115,16 @@ export const useSteps = ({
   };
 
   const retry = (() => {
-    if (machineState.matches("signError")) {
-      return () => send({ type: "__SIGN_RETRY__" });
+    if (machineState._tag === "SignFailed") {
+      return () => dispatch({ _tag: "RetrySign" });
     }
 
-    if (machineState.matches("broadcastError")) {
-      return () => send({ type: "__BROADCAST_RETRY__" });
+    if (machineState._tag === "SubmissionFailed") {
+      return () => dispatch({ _tag: "RetrySubmission" });
     }
 
-    if (machineState.matches("txCheckError")) {
-      return () => send({ type: "__TX_CHECK_RETRY__" });
+    if (machineState._tag === "ConfirmationFailed") {
+      return () => dispatch({ _tag: "RetryConfirmation" });
     }
   })();
 
@@ -155,32 +134,31 @@ export const useSteps = ({
         ...val,
         state: getState({
           txState: val,
-          machineState: machineState.value,
-          currentTxId: machineState.context.currentTxMeta
-            .map((v) => v.id)
-            .extractNullable(),
+          machineState,
+          currentTxId:
+            machineState.context.currentTxIndex === null
+              ? null
+              : (machineState.context.txStates[
+                  machineState.context.currentTxIndex
+                ]?.tx.id ?? null),
         }),
       })),
-    [
-      machineState.context.currentTxMeta,
-      machineState.context.txStates,
-      machineState.value,
-    ]
+    [machineState, machineState.context.txStates]
   );
 
   const customSignErrorMessage = useMemo(() => {
-    const error = machineState.context.currentTxMeta
-      .chainNullable((currentTxMeta) => {
-        return machineState.context.txStates[currentTxMeta.idx]?.meta.signError;
-      })
-      .extractNullable();
+    const error =
+      machineState.context.currentTxIndex === null
+        ? null
+        : (machineState.context.txStates[machineState.context.currentTxIndex]
+            ?.meta.signError ?? null);
 
     if (!error || !("customMessage" in error)) return null;
 
     return typeof error.customMessage === "string" && error.customMessage
       ? error.customMessage
       : null;
-  }, [machineState.context.currentTxMeta, machineState.context.txStates]);
+  }, [machineState.context.currentTxIndex, machineState.context.txStates]);
 
   const { t } = useTranslation();
 
@@ -230,8 +208,8 @@ const getState = ({
   machineState,
   txState,
 }: {
-  txState: TxState;
-  machineState: ReturnType<typeof useStepsMachine>[0]["value"];
+  txState: StepsTransactionState;
+  machineState: StepsMachineState;
   currentTxId: string | null;
 }) => {
   const isActive = currentTxId === null ? false : currentTxId === txState.tx.id;
@@ -240,24 +218,23 @@ const getState = ({
     if (txState.meta.done) return TxStateEnum.CHECK_TX_STATUS_SUCCESS;
     if (!isActive) return TxStateEnum.SIGN_IDLE;
 
-    switch (machineState) {
-      case "idle":
-      case "signLoading":
+    switch (machineState._tag) {
+      case "Idle":
+      case "Signing":
         return TxStateEnum.SIGN_LOADING;
-      case "signError":
+      case "SignFailed":
         return TxStateEnum.SIGN_ERROR;
-      case "broadcastLoading":
+      case "Submitting":
         return TxStateEnum.BROADCAST_LOADING;
-      case "broadcastError":
+      case "SubmissionFailed":
         return TxStateEnum.BROADCAST_ERROR;
-      case "txCheckError":
+      case "ConfirmationFailed":
         return TxStateEnum.CHECK_TX_STATUS_ERROR;
-      case "txCheckRetry":
-      case "txCheckLoading":
+      case "Confirming":
         return TxStateEnum.CHECK_TX_STATUS_LOADING;
-      case "done":
+      case "Completed":
         return TxStateEnum.CHECK_TX_STATUS_SUCCESS;
-      case "disabled":
+      case "Disabled":
         return TxStateEnum.SIGN_IDLE;
     }
   })();

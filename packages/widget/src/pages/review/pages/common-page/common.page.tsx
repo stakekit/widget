@@ -1,4 +1,3 @@
-import type { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../../components/atoms/box";
@@ -9,7 +8,8 @@ import { ToolTip } from "../../../../components/atoms/tooltip";
 import { Text } from "../../../../components/atoms/typography/text";
 import { WarningBox } from "../../../../components/atoms/warning-box";
 import type { RewardTokenDetails } from "../../../../components/molecules/reward-token-details";
-import type { TokenDto, YieldTokenDto } from "../../../../domain/types/tokens";
+import type { AppToken } from "../../../../domain/schema/legacy-models";
+
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
 import { AnimationPage } from "../../../../navigation/containers/animation-page";
 import { MetaInfo } from "../../../components/meta-info";
@@ -26,20 +26,20 @@ export type MetaInfoProps =
 type ReviewPageProps = {
   fee: string;
   title: string;
-  token: Maybe<TokenDto | YieldTokenDto>;
+  token: AppToken | null;
   metadata: ComponentProps<typeof ReviewTopSection>["metadata"];
   info: ReactNode;
-  rewardTokenDetailsProps: Maybe<ComponentProps<typeof RewardTokenDetails>>;
-  estimatedRewardAmounts?: Maybe<{
+  rewardTokenDetailsProps: ComponentProps<typeof RewardTokenDetails> | null;
+  estimatedRewardAmounts?: {
     earnYearly: string;
     earnMonthly: string;
-  }>;
+  } | null;
   isGasCheckError: boolean;
   loading?: boolean;
-  depositFee: Maybe<FeesBps>;
-  managementFee: Maybe<FeesBps>;
-  performanceFee: Maybe<FeesBps>;
-  commissionFee: Maybe<string>;
+  depositFee: FeesBps | null;
+  managementFee: FeesBps | null;
+  performanceFee: FeesBps | null;
+  commissionFee: string | null;
   notice?: ReactNode;
   feeConfigLoading?: boolean;
   cta: PageCta;
@@ -100,21 +100,13 @@ export const ReviewPage = ({
           loading={isLoading}
         />
 
-        {commissionFee
-          .map((val) => <CommissionFee commissionFee={val} />)
-          .extractNullable()}
+        {commissionFee ? <CommissionFee commissionFee={commissionFee} /> : null}
 
         {!isLoading && (
           <>
-            {depositFee
-              .map((val) => <ConfigFee feesBps={val} />)
-              .extractNullable()}
-            {managementFee
-              .map((val) => <ConfigFee feesBps={val} />)
-              .extractNullable()}
-            {performanceFee
-              .map((val) => <ConfigFee feesBps={val} />)
-              .extractNullable()}
+            {depositFee ? <ConfigFee feesBps={depositFee} /> : null}
+            {managementFee ? <ConfigFee feesBps={managementFee} /> : null}
+            {performanceFee ? <ConfigFee feesBps={performanceFee} /> : null}
           </>
         )}
 

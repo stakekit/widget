@@ -3,25 +3,27 @@ import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Button } from "../../../components/atoms/button";
 import { Text } from "../../../components/atoms/typography/text";
+import type { PendingAction } from "../../../domain/schema/action-models";
 import type {
-  YieldPendingActionDto,
-  YieldPendingActionType,
-} from "../../../domain/types/pending-action";
-import type { YieldBalanceDto } from "../../../domain/types/positions";
-import { isEthenaUsdeStaking, type Yield } from "../../../domain/types/yields";
+  EarnBalance,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+
+import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
 import { humanizePendingActionType } from "../../../utils/formatters";
 import type { usePositionDetails } from "../hooks/use-position-details";
 
 type StaticActionBlockProps = {
-  pendingActionDto: YieldPendingActionDto;
-  yieldBalance: YieldBalanceDto & {
+  pendingActionDto: PendingAction;
+  yieldBalance: EarnBalance & {
     tokenPriceInUsd: BigNumber;
   };
   onPendingActionClick: ReturnType<
     typeof usePositionDetails
   >["onPendingActionClick"];
-  yieldId: Yield["id"];
+  yieldId: EarnYieldWithProvider["id"];
 };
 
 export const StaticActionBlock = ({

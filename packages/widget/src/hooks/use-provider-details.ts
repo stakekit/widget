@@ -1,29 +1,33 @@
-import { List, Maybe } from "purify-ts";
-import { useMemo } from "react";
-import type { Validator, ValidatorKey } from "../domain/types/validators";
+import { useAtomValue } from "@effect/atom-react";
+import { Array as EArray, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../domain/schema/earn-models";
+import type { YieldId } from "../domain/schema/identifiers";
+import type { ValidatorKey } from "../domain/types/validators";
 import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
-  type Yield,
 } from "../domain/types/yields";
-import type { GetMaybeJust } from "../types/utils";
 import { getRewardRateFormatted } from "../utils/formatters";
-import { useMultiYields } from "./api/use-multi-yields";
+import { MultiYieldsKey, visibleMultiYieldsAtom } from "./api/yield-atoms";
 
-type Res = Maybe<{
-  logo: string | undefined;
-  name: string;
-  rewardRateFormatted: string;
-  rewardRate: number | undefined;
-  rewardType: string | undefined;
-  address?: string;
-  stakedBalance?: Validator["tvl"];
-  votingPower?: Validator["votingPower"];
-  commission?: Validator["commission"];
-  website?: Validator["website"];
-  status?: Validator["status"];
-  preferred?: Validator["preferred"];
-}>;
+export type ProviderDetails = {
+  readonly address?: EarnValidator["address"];
+  readonly commission?: EarnValidator["commission"];
+  readonly logo: string | undefined;
+  readonly name: string;
+  readonly preferred?: EarnValidator["preferred"];
+  readonly rewardRate: number | undefined;
+  readonly rewardRateFormatted: string;
+  readonly rewardType: string | undefined;
+  readonly stakedBalance?: EarnValidator["tvl"];
+  readonly status?: EarnValidator["status"];
+  readonly votingPower?: EarnValidator["votingPower"];
+  readonly website?: EarnValidator["website"];
+};
 
 export const getProviderDetails = ({
   integrationData,
@@ -31,86 +35,56 @@ export const getProviderDetails = ({
   yields,
   selectedProviderYieldId,
 }: {
-  integrationData: Maybe<Yield>;
-  validator: Maybe<Validator>;
-  yields: Maybe<ReadonlyArray<Yield>>;
-  selectedProviderYieldId: Maybe<string>;
-}): Res => {
-  const def = integrationData.chain((val) => {
-    const rewardRate = val.rewardRate.total;
-    const rewardType = val.rewardRate?.rateType?.toLowerCase();
-    const provider = val.provider;
+  readonly integrationData: EarnYieldWithProvider | null;
+  readonly selectedProviderYieldId: YieldId | null;
+  readonly validator: EarnValidator | null;
+  readonly yields: ReadonlyArray<EarnYieldWithProvider> | null;
+}): ProviderDetails | null => {
+  if (!integrationData) return null;
 
-    const rewardRateFormatted = getRewardRateFormatted({
+  if (validator) {
+    const selectedProviderYield =
+      isYieldWithProviderOptions(integrationData) &&
+      selectedProviderYieldId &&
+      yields
+        ? EArray.findFirst(
+            yields,
+            (yieldDto) => yieldDto.id === selectedProviderYieldId
+          ).pipe(Option.getOrNull)
+        : null;
+    const rewardRate =
+      selectedProviderYield?.rewardRate.total ?? validator.rewardRate?.total;
+    const rewardType = integrationData.rewardRate?.rateType?.toLowerCase();
+
+    return {
+      address: validator.address,
+      commission: validator.commission,
+      logo: validator.logoURI,
+      name: validator.name ?? validator.address,
+      preferred: validator.preferred,
       rewardRate,
-    });
+      rewardRateFormatted: getRewardRateFormatted({ rewardRate }),
+      rewardType,
+      stakedBalance: validator.tvl,
+      status: validator.status,
+      votingPower: validator.votingPower,
+      website: validator.website,
+    };
+  }
 
-    return Maybe.fromNullable(provider)
-      .map<GetMaybeJust<Res>>((v) => ({
-        logo: v.logoURI,
-        name: v.name,
-        rewardRateFormatted,
-        rewardRate,
-        rewardType,
-        website: v.website,
-        address: validator.map((v) => v.address).extract(),
-      }))
-      .altLazy(() =>
-        Maybe.of({
-          logo: val.metadata.logoURI,
-          name: val.metadata.name,
-          rewardRateFormatted,
-          rewardRate,
-          rewardType,
-          address: validator.map((v) => v.address).extract(),
-        })
-      );
-  });
+  const rewardRate = integrationData.rewardRate.total;
+  const rewardType = integrationData.rewardRate?.rateType?.toLowerCase();
+  const provider = integrationData.provider;
 
-  return integrationData.chain((yieldDto) =>
-    validator
-      .map<GetMaybeJust<Res>>((validator) => {
-        const { rewardRate, rewardType } = Maybe.fromRecord({
-          _: Maybe.fromFalsy(isYieldWithProviderOptions(yieldDto)),
-          selectedProviderYieldId,
-        })
-          .chain(({ selectedProviderYieldId }) =>
-            yields.chain((list) =>
-              List.find((v) => v.id === selectedProviderYieldId, [...list])
-            )
-          )
-          .map((v) => v.rewardRate.total)
-          .map<{
-            rewardRate: number | undefined;
-            rewardType: string | undefined;
-          }>((res) => ({
-            rewardRate: res,
-            rewardType: yieldDto.rewardRate?.rateType?.toLowerCase(),
-          }))
-          .orDefault({
-            rewardRate: validator.rewardRate?.total,
-            rewardType: yieldDto.rewardRate?.rateType?.toLowerCase(),
-          });
-
-        return {
-          logo: validator.logoURI,
-          name: validator.name ?? validator.address,
-          rewardRateFormatted: getRewardRateFormatted({
-            rewardRate,
-          }),
-          rewardRate,
-          rewardType,
-          address: validator.address,
-          stakedBalance: validator.tvl,
-          votingPower: validator.votingPower,
-          commission: validator.commission,
-          status: validator.status,
-          website: validator.website,
-          preferred: validator.preferred,
-        };
-      })
-      .altLazy(() => def)
-  );
+  return {
+    address: undefined,
+    logo: provider?.logoURI ?? integrationData.metadata.logoURI,
+    name: provider?.name ?? integrationData.metadata.name,
+    rewardRate,
+    rewardRateFormatted: getRewardRateFormatted({ rewardRate }),
+    rewardType,
+    website: provider?.website,
+  };
 };
 
 export const useProvidersDetails = ({
@@ -118,37 +92,50 @@ export const useProvidersDetails = ({
   validators,
   selectedProviderYieldId,
 }: {
-  integrationData: Maybe<Yield>;
-  validators: Maybe<ReadonlyArray<Validator> | Map<ValidatorKey, Validator>>;
-  selectedProviderYieldId: Maybe<string>;
-}) => {
-  const yields = useMultiYields(
-    integrationData.map(getYieldProviderYieldIds).orDefault([])
+  readonly integrationData: EarnYieldWithProvider | null;
+  readonly selectedProviderYieldId: YieldId | null;
+  readonly validators:
+    | Map<ValidatorKey, EarnValidator>
+    | ReadonlyArray<EarnValidator>
+    | null;
+}): ProviderDetails[] | null => {
+  const yieldIds = integrationData
+    ? getYieldProviderYieldIds(integrationData)
+    : [];
+  const yields = AsyncResult.getOrElse(
+    useAtomValue(
+      visibleMultiYieldsAtom(
+        new MultiYieldsKey({
+          enabled: yieldIds.length > 0,
+          yieldIds,
+        })
+      )
+    ),
+    () => null
   );
 
-  return useMemo<Maybe<GetMaybeJust<ReturnType<typeof getProviderDetails>>[]>>(
-    () =>
-      validators.chain((val) =>
-        Maybe.sequence(
-          (val instanceof Map ? [...val.values()] : val).map((v) =>
-            getProviderDetails({
-              integrationData,
-              validator: Maybe.of(v),
-              yields: Maybe.fromNullable(yields.data),
-              selectedProviderYieldId,
-            })
-          )
-        ).chain((val) =>
-          val.length
-            ? Maybe.of(val)
-            : getProviderDetails({
-                integrationData,
-                validator: Maybe.empty(),
-                yields: Maybe.fromNullable(yields.data),
-                selectedProviderYieldId,
-              }).map((v) => [v])
-        )
-      ),
-    [integrationData, validators, yields.data, selectedProviderYieldId]
+  if (!validators) return null;
+
+  const values =
+    validators instanceof Map ? [...validators.values()] : validators;
+  const details = values.map((validator) =>
+    getProviderDetails({
+      integrationData,
+      validator,
+      yields,
+      selectedProviderYieldId,
+    })
   );
+
+  if (details.some((detail) => detail === null)) return null;
+  if (details.length > 0) return details as ProviderDetails[];
+
+  const fallback = getProviderDetails({
+    integrationData,
+    validator: null,
+    yields,
+    selectedProviderYieldId,
+  });
+
+  return fallback ? [fallback] : null;
 };

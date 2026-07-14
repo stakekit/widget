@@ -1,14 +1,11 @@
 import { HttpResponse, http } from "msw";
-import type {
-  LegacyRewardsSummary,
-  LegacyToken,
-} from "../../src/domain/schema/legacy-models";
 import { legacyYieldFixture } from "../fixtures";
+import type {
+  TokenDto,
+  YieldRewardsSummaryResponseDto,
+} from "../generated/legacy-api-types";
 import { legacyApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
-
-type TokenDto = typeof LegacyToken.Encoded;
-type YieldRewardsSummaryResponseDto = typeof LegacyRewardsSummary.Encoded;
 
 const defaultToken: TokenDto = {
   name: "Ethereum",

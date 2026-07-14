@@ -1,5 +1,6 @@
+import { useAtomValue } from "@effect/atom-react";
 import { Trigger } from "@radix-ui/react-dialog";
-import { Maybe } from "purify-ts";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
@@ -11,7 +12,10 @@ import {
   getYieldProviderYieldIds,
   isYieldWithProviderOptions,
 } from "../../../../../domain/types/yields";
-import { useMultiYields } from "../../../../../hooks/api/use-multi-yields";
+import {
+  MultiYieldsKey,
+  visibleMultiYieldsAtom,
+} from "../../../../../hooks/api/yield-atoms";
 import { formatCompactUsd } from "../../../../../utils/formatters";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import {
@@ -50,96 +54,92 @@ export const SelectProvider = () => {
 
   const { t } = useTranslation();
 
-  const providerYieldIdOptions = selectedStake
-    .filter(isYieldWithProviderOptions)
-    .map(getYieldProviderYieldIds);
+  const providerYieldIdOptions =
+    selectedStake && isYieldWithProviderOptions(selectedStake)
+      ? getYieldProviderYieldIds(selectedStake)
+      : null;
 
-  const yields = useMultiYields(providerYieldIdOptions.orDefault([]));
-
-  const selectedProviderYield = Maybe.fromRecord({
-    selectedProviderYieldId,
-    yields: Maybe.fromNullable(yields.data),
-  }).chainNullable((val) =>
-    val.yields.find((v) => v.id === val.selectedProviderYieldId)
+  const yieldIds = providerYieldIdOptions ?? [];
+  const yields = AsyncResult.getOrElse(
+    useAtomValue(
+      visibleMultiYieldsAtom(
+        new MultiYieldsKey({
+          enabled: yieldIds.length > 0,
+          yieldIds,
+        })
+      )
+    ),
+    () => null
   );
 
-  const providerSelection = Maybe.fromRecord({
-    selectedStake,
-    providerYieldIdOptions,
-    selectedProviderYield,
-  }).chain((val) =>
-    Maybe.fromNullable(val.selectedProviderYield.provider).map((provider) => ({
-      ...val,
-      provider,
-    }))
-  );
+  const selectedProviderYield =
+    selectedProviderYieldId && yields
+      ? (yields.find((value) => value.id === selectedProviderYieldId) ?? null)
+      : null;
+  const provider = selectedProviderYield?.provider;
 
   return appLoading ? (
     <Box marginTop="2">
       <ContentLoaderSquare heightPx={20} variant={{ size: "medium" }} />
     </Box>
-  ) : (
-    providerSelection
-      .map((val) => (
-        <SelectYield
-          onItemClick={(yieldDto) => onProviderYieldIdSelect(yieldDto.id)}
-          providerYieldIds={val.providerYieldIdOptions}
-          selectedYieldId={val.selectedProviderYield.id}
-          trigger={
-            <Box className={selectorSummaryCard} marginTop="3">
-              <Box className={selectorSummaryContent}>
-                <Image
-                  wrapperProps={{ hw: "8", flexShrink: 0 }}
-                  imgProps={{ borderRadius: "base" }}
-                  src={val.provider.logoURI}
-                  fallbackName={val.provider.name}
-                />
+  ) : selectedStake &&
+    providerYieldIdOptions &&
+    selectedProviderYield &&
+    provider ? (
+    <SelectYield
+      onItemClick={(yieldDto) => onProviderYieldIdSelect(yieldDto.id)}
+      providerYieldIds={providerYieldIdOptions}
+      selectedYieldId={selectedProviderYield.id}
+      trigger={
+        <Box className={selectorSummaryCard} marginTop="3">
+          <Box className={selectorSummaryContent}>
+            <Image
+              wrapperProps={{ hw: "8", flexShrink: 0 }}
+              imgProps={{ borderRadius: "base" }}
+              src={provider.logoURI}
+              fallbackName={provider.name}
+            />
 
-                <Box className={selectorSummaryText}>
-                  <Text
-                    className={overflowEllipsis}
-                    variant={{ weight: "bold" }}
-                  >
-                    {val.provider.name}
+            <Box className={selectorSummaryText}>
+              <Text className={overflowEllipsis} variant={{ weight: "bold" }}>
+                {provider.name}
+              </Text>
+
+              {getProviderTvl(provider.tvlUsd) && (
+                <Box className={selectorSummaryMeta}>
+                  <Text variant={{ type: "muted", weight: "normal" }}>
+                    TVL {getProviderTvl(provider.tvlUsd)}
                   </Text>
-
-                  {getProviderTvl(val.provider.tvlUsd) && (
-                    <Box className={selectorSummaryMeta}>
-                      <Text variant={{ type: "muted", weight: "normal" }}>
-                        TVL {getProviderTvl(val.provider.tvlUsd)}
-                      </Text>
-                    </Box>
-                  )}
-
-                  {val.provider.website && (
-                    <Text
-                      as="a"
-                      href={val.provider.website}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={selectorSummaryWebsite}
-                      variant={{ type: "muted", weight: "normal" }}
-                    >
-                      {getDisplayWebsite(val.provider.website)}
-                    </Text>
-                  )}
                 </Box>
-              </Box>
+              )}
 
-              <Trigger asChild>
-                <Box
-                  as="button"
-                  data-rk="select-provider-trigger"
-                  className={selectorSummaryChangeButton}
+              {provider.website && (
+                <Text
+                  as="a"
+                  href={provider.website}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={selectorSummaryWebsite}
+                  variant={{ type: "muted", weight: "normal" }}
                 >
-                  <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
-                  <CaretDownIcon />
-                </Box>
-              </Trigger>
+                  {getDisplayWebsite(provider.website)}
+                </Text>
+              )}
             </Box>
-          }
-        />
-      ))
-      .extractNullable()
-  );
+          </Box>
+
+          <Trigger asChild>
+            <Box
+              as="button"
+              data-rk="select-provider-trigger"
+              className={selectorSummaryChangeButton}
+            >
+              <Text variant={{ weight: "bold" }}>{t("shared.change")}</Text>
+              <CaretDownIcon />
+            </Box>
+          </Trigger>
+        </Box>
+      }
+    />
+  ) : null;
 };

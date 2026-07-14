@@ -1,13 +1,19 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Array as EArray, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { getKycProviderName } from "../../../domain/types/kyc";
 import { isBittensorStaking } from "../../../domain/types/yields";
+import {
+  getTokensPricesRequest,
+  PricesKey,
+  pricesAtom,
+} from "../../../hooks/api/prices-atoms";
 import { useActionPreview } from "../../../hooks/api/use-action-preview";
-import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { usePositionDetailsStakeMatch } from "../../../hooks/navigation/use-position-details-stake-match";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
@@ -27,7 +33,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
-  const enterRequest = useEnterStakeRequest().unsafeCoerce();
+  const enterRequest = useEnterStakeRequest()!;
   const setEnterStakeRequest = useSetEnterStakeRequest();
 
   const stakeAmount = useMemo(
@@ -35,14 +41,8 @@ export const useStakeReview = () => {
     [enterRequest]
   );
 
-  const selectedStake = useMemo(
-    () => Maybe.of(enterRequest.selectedStake),
-    [enterRequest.selectedStake]
-  );
-  const selectedToken = useMemo(
-    () => Maybe.of(enterRequest.selectedToken),
-    [enterRequest.selectedToken]
-  );
+  const selectedStake = enterRequest.selectedStake;
+  const selectedToken = enterRequest.selectedToken;
   const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
 
@@ -52,20 +52,16 @@ export const useStakeReview = () => {
     intent: "enter",
   });
 
-  const stakeEnterTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(actionPreviewQuery.data)
-        .map((actionDto) =>
-          actionDto.transactions.reduce((acc, transaction) => {
-            const decoded = getTransactionGasEstimate(transaction);
-
-            return acc.plus(decoded?.amount ?? 0);
-          }, new BigNumber(0))
-        )
-        .map((value) => (value.isZero() ? null : value))
-        .chainNullable((value) => value),
-    [actionPreviewQuery.data]
-  );
+  const stakeEnterTxGas = useMemo(() => {
+    const total = actionPreviewQuery.data?.transactions.reduce(
+      (acc, transaction) => {
+        const decoded = getTransactionGasEstimate(transaction);
+        return acc.plus(decoded?.amount ?? 0);
+      },
+      new BigNumber(0)
+    );
+    return total && !total.isZero() ? total : null;
+  }, [actionPreviewQuery.data]);
 
   const gasCheckWarning = useGasWarningCheck({
     gasAmount: stakeEnterTxGas,
@@ -77,9 +73,8 @@ export const useStakeReview = () => {
     stakeToken: enterRequest.selectedToken,
   });
 
-  const selectedProviderYieldId = useMemo(
-    () => Maybe.fromNullable(enterRequest.requestDto.arguments?.providerId),
-    [enterRequest.requestDto.arguments?.providerId]
+  const selectedProviderYieldId = getActionProviderYieldId(
+    enterRequest.requestDto
   );
 
   const rewardToken = useRewardTokenDetails(selectedStake);
@@ -89,59 +84,68 @@ export const useStakeReview = () => {
     selectedValidators: enterRequest.selectedValidators,
     selectedProviderYieldId,
   });
-  const yieldType = useYieldType(selectedStake).mapOrDefault(
-    (y) => y.review,
-    ""
-  );
+  const yieldType = useYieldType(selectedStake)?.review ?? "";
 
   const amount = useMemo(
     () => defaultFormattedNumber(stakeAmount),
     [stakeAmount]
   );
   const interestRate = useMemo(
-    () => estimatedRewards.mapOrDefault((r) => r.percentage.toString(), ""),
+    () => estimatedRewards?.percentage.toString() ?? "",
     [estimatedRewards]
   );
 
-  const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
+  const symbol = selectedToken.symbol;
   const rewardsTokenSymbol = useMemo(
     () =>
-      selectedStake
-        .filter((val) => isBittensorStaking(val.id))
-        .chain(() => List.head([...enterRequest.selectedValidators.values()]))
-        .map((validator) => validator.subnet?.tokenSymbol ?? "")
-        .orDefault(symbol),
+      isBittensorStaking(selectedStake.id)
+        ? EArray.head([...enterRequest.selectedValidators.values()]).pipe(
+            Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),
+            Option.getOrElse(() => symbol)
+          )
+        : symbol,
     [enterRequest.selectedValidators, selectedStake, symbol]
   );
 
   const estimatedRewardAmounts = useMemo(
     () =>
-      estimatedRewards.map((rewards) => ({
-        earnYearly: `${rewards.yearly} ${rewardsTokenSymbol}`,
-        earnMonthly: `${rewards.monthly} ${rewardsTokenSymbol}`,
-      })),
+      estimatedRewards
+        ? {
+            earnYearly: `${estimatedRewards.yearly} ${rewardsTokenSymbol}`,
+            earnMonthly: `${estimatedRewards.monthly} ${rewardsTokenSymbol}`,
+          }
+        : null,
     [estimatedRewards, rewardsTokenSymbol]
   );
 
-  const pricesState = useTokensPrices({
-    token: selectedToken,
-    yieldDto: selectedStake,
-  });
+  const prices = AsyncResult.getOrElse(
+    useAtomValue(
+      pricesAtom(
+        new PricesKey({
+          request: getTokensPricesRequest({
+            token: selectedToken,
+            yieldDto: selectedStake,
+          }),
+        })
+      )
+    ),
+    () => null
+  );
 
   const fee = useMemo(
     () =>
       getGasFeeInUSD({
         gas: stakeEnterTxGas,
-        prices: Maybe.fromNullable(pricesState.data),
+        prices,
         yieldDto: selectedStake,
       }),
-    [pricesState.data, selectedStake, stakeEnterTxGas]
+    [prices, selectedStake, stakeEnterTxGas]
   );
 
   const { depositFee, managementFee, performanceFee } = useFees({
     amount: stakeAmount,
     token: selectedToken,
-    feeConfigDto: Maybe.empty(),
+    feeConfigDto: null,
     yieldFee: useMemo(
       () =>
         (
@@ -157,20 +161,15 @@ export const useStakeReview = () => {
         ).mechanics?.fee ?? null,
       [enterRequest.selectedStake]
     ),
-    prices: useMemo(
-      () => Maybe.fromNullable(pricesState.data),
-      [pricesState.data]
-    ),
+    prices,
   });
 
-  const metadata = selectedStake.map((yieldDto) => ({
-    logoURI: yieldDto.metadata.logoURI,
-    name: yieldDto.metadata.name,
-    provider: yieldDto.provider,
-  }));
-  const kycProviderName = selectedStake
-    .map(getKycProviderName)
-    .extractNullable();
+  const metadata = {
+    logoURI: selectedStake.metadata.logoURI,
+    name: selectedStake.metadata.name,
+    provider: selectedStake.provider,
+  };
+  const kycProviderName = getKycProviderName(selectedStake);
   const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const navigate = useNavigate();
@@ -186,10 +185,7 @@ export const useStakeReview = () => {
     }
 
     setEnterStakeRequest((request) =>
-      request.map((value) => ({
-        ...value,
-        actionDto: Maybe.of(action),
-      }))
+      request ? { ...request, actionDto: action } : null
     );
     if (positionDetailsStakeReviewMatch) {
       navigate("../steps", { relative: "path" });
@@ -259,7 +255,7 @@ export const useStakeReview = () => {
     managementFee,
     performanceFee,
     feeConfigLoading: actionPreviewQuery.isLoading,
-    commissionFee: Maybe.empty(),
+    commissionFee: null,
     kycGate: yieldKycGate.gate,
     kycProviderName,
     kycStatusIsChecking:
@@ -270,3 +266,5 @@ export const useStakeReview = () => {
     cta,
   };
 };
+
+import { getActionProviderYieldId } from "../../../domain/types/action";

@@ -1,6 +1,16 @@
-import { Cause, Effect, Exit, Fiber, Option, Schema, Stream } from "effect";
-import { EitherAsync, Left, Right } from "purify-ts";
+import {
+  Cause,
+  Effect,
+  Exit,
+  Fiber,
+  Layer,
+  Option,
+  Schema,
+  Stream,
+} from "effect";
+import { base, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
+import type { Connector } from "wagmi";
 import {
   Action,
   type BorrowExecutionEvent,
@@ -10,23 +20,22 @@ import {
   BorrowPositionsKey,
   BorrowSigningFailedError,
   BorrowWalletDisconnectedError,
+  BorrowWalletExecutionService,
   type BorrowWalletSignRequest,
+  BorrowWalletStateChangedError,
   borrowIntegrationsAtom,
   borrowMarketsAtom,
   borrowPositionsAtom,
   decodeBorrowEvmTransactionForWallet,
   getBorrowExecutionRefreshResources,
   getBorrowTransactionSubmitPayload,
-  makeDisconnectedBorrowWalletExecutionAdapter,
-  makeSKWalletBorrowExecutionAdapter,
   Transaction,
-  WalletState,
 } from "../../src/borrow";
 import {
   TokenBalanceScanCommand,
   YieldBalancesCommand,
 } from "../../src/domain/schema/financial-models";
-import type { SKWallet } from "../../src/domain/types/wallet";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   TokenBalancesKey,
   tokenBalancesAtom,
@@ -35,9 +44,19 @@ import {
   YieldBalancesKey,
   yieldBalancesAtom,
 } from "../../src/hooks/api/yield-balances-atoms";
-import { SendTransactionError } from "../../src/providers/sk-wallet/errors";
+import {
+  WalletService,
+  WalletSigningError,
+} from "../../src/providers/wallet/runtime/service";
+import {
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+} from "../../src/providers/wallet/state/wallet";
+import type { WalletOperations } from "../utils/wallet-operations";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
 
@@ -73,26 +92,34 @@ const action = Schema.decodeUnknownSync(Action)({
   transactions: [transactionInput],
 });
 
-const connectedWalletState = Schema.decodeUnknownSync(WalletState)({
-  accounts: [{ address }],
-  chains: [
-    {
-      chainId: "8453",
-      iconUrl: "",
-      name: "Base",
-      network: "base",
-    },
-  ],
-  currentAccount: { address },
-  currentChain: {
-    chainId: "8453",
-    iconUrl: "",
-    name: "Base",
-    network: "base",
-  },
+const connectedWalletState = {
+  additionalAddresses: null,
+  address,
+  chain: base,
+  connector: { id: "test", uid: "test" } as Connector,
+  connectorChains: [base, mainnet],
+  isLedgerLive: false,
+  isLedgerLiveAccountPlaceholder: false,
+  ledgerAccounts: [],
   network: "base",
   status: "connected",
-});
+} satisfies NormalizedWalletState;
+
+const makeWalletService = ({
+  state = connectedWalletState,
+  signTransaction = () =>
+    Effect.succeed({
+      broadcasted: true as const,
+      signedTx: transactionHash,
+    }),
+}: {
+  readonly state?: NormalizedWalletState;
+  readonly signTransaction?: WalletOperations["signTransaction"];
+} = {}) =>
+  ({
+    getState: () => state,
+    signTransaction,
+  }) as unknown as WalletOperations;
 
 const makeSignRequest = (): BorrowWalletSignRequest => ({
   action,
@@ -101,6 +128,22 @@ const makeSignRequest = (): BorrowWalletSignRequest => ({
   tx: "{}",
   txMeta: {} as never,
 });
+
+const signWithWallet = (
+  wallet: WalletOperations,
+  request: BorrowWalletSignRequest
+) =>
+  BorrowWalletExecutionService.use((service) =>
+    service.signTransaction(request)
+  ).pipe(
+    Effect.provide(
+      BorrowWalletExecutionService.layer.pipe(
+        Layer.provide(
+          Layer.succeed(WalletService, wallet as WalletService["Service"])
+        )
+      )
+    )
+  );
 
 const getExitError = <E>(exit: Exit.Exit<unknown, E>) => {
   expect(Exit.isFailure(exit)).toBe(true);
@@ -182,23 +225,15 @@ describe("borrow transaction execution runtime", () => {
     ).toEqual({ signedPayload: "0xsigned-payload" });
   });
 
-  it("wraps the current SK wallet signer in an Effect wallet adapter", async () => {
-    const signTransaction = vi.fn(
-      (): ReturnType<SKWallet["signTransaction"]> =>
-        EitherAsync.liftEither(
-          Right({
-            broadcasted: true,
-            signedTx: transactionHash,
-          })
-        )
+  it("wraps the shared wallet service with borrow validation", async () => {
+    const signTransaction = vi.fn(() =>
+      Effect.succeed({
+        broadcasted: true as const,
+        signedTx: transactionHash,
+      })
     );
-    const adapter = makeSKWalletBorrowExecutionAdapter({
-      getState: () => connectedWalletState,
-      signTransaction: signTransaction as SKWallet["signTransaction"],
-    });
-
     const result = await Effect.runPromise(
-      adapter.signTransaction(makeSignRequest())
+      signWithWallet(makeWalletService({ signTransaction }), makeSignRequest())
     );
 
     expect(result).toEqual({
@@ -301,24 +336,62 @@ describe("borrow transaction execution runtime", () => {
   });
 
   it("fails with a typed wallet error when disconnected", async () => {
-    const adapter = makeDisconnectedBorrowWalletExecutionAdapter();
+    const signTransaction = vi.fn(() => Effect.never);
+    const wallet = makeWalletService({
+      signTransaction,
+      state: disconnectedNormalizedWalletState,
+    });
     const exit = await Effect.runPromiseExit(
-      adapter.signTransaction(makeSignRequest())
+      signWithWallet(wallet, makeSignRequest())
     );
 
     expect(getExitError(exit)).toBeInstanceOf(BorrowWalletDisconnectedError);
+    expect(signTransaction).not.toHaveBeenCalled();
   });
 
-  it("fails with a typed signing error when SK wallet signing fails", async () => {
-    const adapter = makeSKWalletBorrowExecutionAdapter({
-      getState: () => connectedWalletState,
-      signTransaction: (() =>
-        EitherAsync.liftEither(
-          Left(new SendTransactionError())
-        )) as SKWallet["signTransaction"],
+  it("fails when the account changes during execution", async () => {
+    const wallet = makeWalletService({
+      state: {
+        ...connectedWalletState,
+        address: Schema.decodeSync(WalletAddress)(
+          "0x0000000000000000000000000000000000000002"
+        ),
+      },
     });
     const exit = await Effect.runPromiseExit(
-      adapter.signTransaction(makeSignRequest())
+      signWithWallet(wallet, makeSignRequest())
+    );
+
+    expect(getExitError(exit)).toBeInstanceOf(BorrowWalletStateChangedError);
+  });
+
+  it("fails when the network changes during execution", async () => {
+    const wallet = makeWalletService({
+      state: {
+        ...connectedWalletState,
+        chain: mainnet,
+        network: "ethereum",
+      },
+    });
+    const exit = await Effect.runPromiseExit(
+      signWithWallet(wallet, makeSignRequest())
+    );
+
+    expect(getExitError(exit)).toBeInstanceOf(BorrowWalletStateChangedError);
+  });
+
+  it("maps shared wallet failures to typed borrow signing errors", async () => {
+    const wallet = makeWalletService({
+      signTransaction: () =>
+        Effect.fail(
+          new WalletSigningError({
+            cause: new Error("rejected"),
+            operation: "transaction",
+          })
+        ),
+    });
+    const exit = await Effect.runPromiseExit(
+      signWithWallet(wallet, makeSignRequest())
     );
 
     expect(getExitError(exit)).toBeInstanceOf(BorrowSigningFailedError);

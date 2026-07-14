@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { Trans } from "react-i18next";
 import { Highlight } from "../../../components/atoms/highlight";
@@ -34,32 +33,28 @@ export const StakeReviewPage = () => {
     cta,
   } = useStakeReview();
 
-  const info = useMemo(
-    () =>
-      token
-        .map((t) => (
-          <Trans
-            i18nKey="review.amount_and_earn"
-            values={{
-              amount,
-              tokenSymbol: t.symbol,
-              interestRate,
-            }}
-            components={{
-              highlight0: <Highlight />,
-              highlight1: <Highlight />,
-              highlight3: <Highlight />,
-            }}
-          />
-        ))
-        .extractNullable(),
-    [amount, interestRate, token]
-  );
+  const info = useMemo(() => {
+    return token ? (
+      <Trans
+        i18nKey="review.amount_and_earn"
+        values={{
+          amount,
+          tokenSymbol: token.symbol,
+          interestRate,
+        }}
+        components={{
+          highlight0: <Highlight />,
+          highlight1: <Highlight />,
+          highlight3: <Highlight />,
+        }}
+      />
+    ) : null;
+  }, [amount, interestRate, token]);
 
-  const rewardTokenDetailsProps = useMemo(
-    () => Maybe.of({ rewardToken, type: "stake" as const }),
-    [rewardToken]
-  );
+  const rewardTokenDetailsProps = {
+    rewardToken,
+    type: "stake" as const,
+  };
 
   return (
     <ReviewPage

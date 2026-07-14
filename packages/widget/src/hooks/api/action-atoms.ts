@@ -1,76 +1,23 @@
-import { Data, Duration, Effect, Schema } from "effect";
-import {
-  valueEqualAtomFamily,
-  withApiRequestError,
-  withApiResourcePolicy,
-  withResponseDecodeError,
-} from "../../atoms/api-resource";
-import {
-  type ActionCommand,
-  type ManageActionCommand,
-  YieldAction,
-} from "../../domain/schema/action-models";
-import { ResponseDecodeError } from "../../domain/schema/api-errors";
-import { StakeKitApiService } from "../../providers/api/api-client";
-import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
-
-export type ActionRequest =
-  | {
-      readonly intent: "enter" | "exit";
-      readonly command: ActionCommand;
-    }
-  | {
-      readonly intent: "manage";
-      readonly command: ManageActionCommand;
-    };
+import { Data, Duration, Effect } from "effect";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import { withApiResourcePolicy } from "../../atoms/api-resource";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import type { ActionPreviewRequest } from "../../providers/api/yield-api-service";
+import { widgetAtomRuntime } from "../../providers/effect-atom-runtime/widget-runtime";
 
 export class ActionPreviewKey extends Data.Class<{
-  readonly decodeIssue: string | null;
   readonly enabled: boolean;
-  readonly request: ActionRequest | null;
+  readonly request: ActionPreviewRequest | null;
 }> {}
 
-const executeActionRequest = (request: ActionRequest) =>
-  Effect.gen(function* () {
-    const api = yield* StakeKitApiService;
-
-    switch (request.intent) {
-      case "enter":
-        return yield* api.yieldMutations.ActionsControllerEnterYield({
-          payload: request.command,
-        });
-      case "exit":
-        return yield* api.yieldMutations.ActionsControllerExitYield({
-          payload: request.command,
-        });
-      case "manage":
-        return yield* api.yieldMutations.ActionsControllerManageYield({
-          payload: request.command,
-        });
-    }
-  });
-
-export const actionPreviewAtom = valueEqualAtomFamily((key: ActionPreviewKey) =>
-  stakeKitApiRuntime
+export const actionPreviewAtom = Atom.family((key: ActionPreviewKey) =>
+  widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
-        if (key.decodeIssue) {
-          return yield* new ResponseDecodeError({
-            operation: "action-preview-command",
-            issue: key.decodeIssue,
-            cause: new Error(key.decodeIssue),
-          });
-        }
-
         if (!key.enabled || !key.request) return null;
 
-        const response = yield* executeActionRequest(key.request).pipe(
-          withApiRequestError(`action-${key.request.intent}-preview`)
-        );
-
-        return yield* Schema.decodeUnknownEffect(YieldAction)(response).pipe(
-          withResponseDecodeError(`action-${key.request.intent}-preview`)
-        );
+        const api = yield* StakeKitApiService;
+        return yield* api.yield.previewAction(key.request);
       })
     )
     .pipe(

@@ -2,21 +2,20 @@ import { useAtom, useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { Data, Effect, Option, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { valueEqualAtomFamily } from "../../atoms/api-resource";
 import { getPullResultItems, paginatedApiStream } from "../../atoms/pagination";
-import {
-  EarnValidator,
-  EarnValidatorPage,
-} from "../../domain/schema/earn-models";
-import { YieldId } from "../../domain/schema/identifiers";
-import type { Network } from "../../domain/schema/wallet-models";
-import type { Validator } from "../../domain/types/validators";
+import { EarnValidator } from "../../domain/schema/earn-models";
+import type {
+  ValidatorAddress,
+  YieldId,
+} from "../../domain/schema/identifiers";
+import type { Network } from "../../domain/schema/network-model";
+
 import {
   filterValidators,
   type ValidatorsConfig,
 } from "../../domain/types/yields";
-import { StakeKitApiService } from "../../providers/api/api-client";
-import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import { widgetAtomRuntime } from "../../providers/effect-atom-runtime/widget-runtime";
 import { useValidatorsConfig } from "../use-validators-config";
 
 const PAGE_SIZE = 100;
@@ -33,12 +32,12 @@ class YieldValidatorsError extends Data.TaggedError("YieldValidatorsError")<{
   readonly cause: unknown;
 }> {}
 
-const yieldValidatorsHasNextPageAtom = valueEqualAtomFamily(
-  (_key: YieldValidatorsKey) => Atom.make(false)
+const yieldValidatorsHasNextPageAtom = Atom.family((_key: YieldValidatorsKey) =>
+  Atom.make(false)
 );
 
 const makeValidatorsPullAtom = (key: YieldValidatorsKey) =>
-  stakeKitApiRuntime.pull((context) => {
+  widgetAtomRuntime.pull((context) => {
     if (!key.enabled || !key.yieldId) {
       return Stream.empty;
     }
@@ -50,13 +49,12 @@ const makeValidatorsPullAtom = (key: YieldValidatorsKey) =>
         Effect.gen(function* () {
           const api = yield* StakeKitApiService;
           const fetchPage = (params: { name?: string; address?: string }) =>
-            api.yield.YieldsControllerGetYieldValidators(yieldId, {
-              params: {
-                ...params,
-                limit: PAGE_SIZE,
-                offset,
-                status: "active",
-              },
+            api.yield.getValidators({
+              ...params,
+              limit: PAGE_SIZE,
+              offset,
+              status: "active",
+              yieldId,
             });
           const responses = key.search
             ? yield* Effect.all(
@@ -67,9 +65,7 @@ const makeValidatorsPullAtom = (key: YieldValidatorsKey) =>
                 { concurrency: 2 }
               )
             : [yield* fetchPage({})];
-          const pages = yield* Effect.forEach(responses, (response) =>
-            Schema.decodeUnknownEffect(EarnValidatorPage)(response)
-          );
+          const pages = responses;
           const seen = new Set<string>();
           const validators = pages
             .flatMap((page) => page.items ?? [])
@@ -104,10 +100,10 @@ const makeValidatorsPullAtom = (key: YieldValidatorsKey) =>
     });
   });
 
-const getYieldValidatorsPullAtom = valueEqualAtomFamily(makeValidatorsPullAtom);
+const getYieldValidatorsPullAtom = Atom.family(makeValidatorsPullAtom);
 
 type YieldValidatorsResult = {
-  readonly data: Validator[];
+  readonly data: EarnValidator[];
   readonly error: unknown;
   readonly fetchNextPage: () => void;
   readonly hasNextPage: boolean;
@@ -120,7 +116,7 @@ export const getYieldValidatorsByAddressesEffect = ({
   addresses,
   yieldId,
 }: {
-  readonly addresses: ReadonlyArray<string>;
+  readonly addresses: ReadonlyArray<ValidatorAddress>;
   readonly yieldId: YieldId;
 }) =>
   Effect.gen(function* () {
@@ -130,13 +126,13 @@ export const getYieldValidatorsByAddressesEffect = ({
       addresses,
       (address) =>
         api.yield
-          .YieldsControllerGetYieldValidators(yieldId, {
-            params: { address, limit: 100, offset: 0 },
+          .getValidators({
+            address,
+            limit: 100,
+            offset: 0,
+            yieldId,
           })
           .pipe(
-            Effect.flatMap((response) =>
-              Schema.decodeUnknownEffect(EarnValidatorPage)(response)
-            ),
             Effect.map((page) => {
               const normalizedAddress = address.toLowerCase();
               return (
@@ -153,31 +149,28 @@ export const getYieldValidatorsByAddressesEffect = ({
   });
 
 export const useYieldValidators = ({
-  yieldId: rawYieldId,
+  yieldId,
   network,
   search,
   enabled = true,
 }: {
   enabled?: boolean;
-  yieldId?: string;
+  yieldId?: YieldId;
   network?: Network;
   search?: string;
 }): YieldValidatorsResult => {
   const validatorsConfig = useValidatorsConfig();
-  const yieldId = rawYieldId
-    ? Schema.decodeUnknownSync(YieldId)(rawYieldId)
-    : null;
   const key = new YieldValidatorsKey({
     enabled: enabled && !!yieldId,
     network: network ?? null,
     search: search?.trim() || null,
     validatorsConfig,
-    yieldId,
+    yieldId: yieldId ?? null,
   });
   const resource = getYieldValidatorsPullAtom(key);
   const [result, pull] = useAtom(resource);
   const refresh = useAtomRefresh(resource);
-  const data: Validator[] = [...getPullResultItems(result)];
+  const data: EarnValidator[] = [...getPullResultItems(result)];
   const hasNextPage = useAtomValue(yieldValidatorsHasNextPageAtom(key));
 
   return {

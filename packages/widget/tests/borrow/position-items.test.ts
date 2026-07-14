@@ -7,12 +7,15 @@ import {
   Integration,
   Market,
 } from "../../src/borrow";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
 } from "../../src/pages-dashboard/borrow/position-details-model";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 
 const marketDto = {
   id: "aave-v3-ethereum-usdc",

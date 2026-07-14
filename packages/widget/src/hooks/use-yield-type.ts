@@ -1,9 +1,11 @@
-import type { Maybe } from "purify-ts";
 import { useTranslation } from "react-i18next";
-import { getYieldTypeLabels, type Yield } from "../domain/types/yields";
+import type { EarnYieldWithProvider } from "../domain/schema/earn-models";
+import { getYieldTypeLabels } from "../domain/types/yields";
 
-export const useYieldType = (yieldOpportunity: Maybe<Yield>) => {
+export const useYieldType = (
+  yieldOpportunity: EarnYieldWithProvider | null
+) => {
   const { t } = useTranslation();
 
-  return yieldOpportunity.chainNullable((s) => getYieldTypeLabels(s, t));
+  return yieldOpportunity ? getYieldTypeLabels(yieldOpportunity, t) : null;
 };

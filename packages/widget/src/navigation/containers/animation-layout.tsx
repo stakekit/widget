@@ -1,6 +1,7 @@
+import { useAtom } from "@effect/atom-react";
+import * as Atom from "effect/unstable/reactivity/Atom";
 import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
-import { Just } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useHeaderHeight } from "../../components/molecules/header/use-sync-header-height";
 import { useCurrentLayout } from "../../pages/components/layout/layout-context";
@@ -8,10 +9,11 @@ import { usePoweredByHeight } from "../../pages/components/powered-by";
 import { useMountAnimation } from "../../providers/mount-animation";
 import { useSettings } from "../../providers/settings";
 import { animationContainer } from "../../style.css";
-import createStateContext from "../../utils/create-state-context";
 
-export const [useDisableTransitionDuration, DisableTransitionDurationProvider] =
-  createStateContext(false);
+const disableTransitionDurationAtom = Atom.make(false);
+
+export const useDisableTransitionDuration = () =>
+  useAtom(disableTransitionDurationAtom);
 
 export const AnimationLayout = ({ children }: PropsWithChildren) => {
   const currentLayout = useCurrentLayout();
@@ -29,24 +31,19 @@ export const AnimationLayout = ({ children }: PropsWithChildren) => {
 
   const [disableTransitionDuration] = useDisableTransitionDuration();
 
-  const animate = Just(containerHeight)
-    .chain<TargetAndTransition>((height) =>
-      Just(null)
-        .map<MotionProps["transition"]>(() => {
-          if (disableTransitionDuration) {
-            return { duration: 0 };
-          }
-          if (state.layout) {
-            return { duration: 0.3 };
-          }
-          if (disableInitLayoutAnimation) {
-            return { duration: 0 };
-          }
-          return { duration: 0.6, delay: 0.3 };
-        })
-        .map((transition) => ({ height, transition }))
-    )
-    .unsafeCoerce();
+  const transition: MotionProps["transition"] = (() => {
+    if (disableTransitionDuration) {
+      return { duration: 0 };
+    }
+    if (state.layout) {
+      return { duration: 0.3 };
+    }
+    if (disableInitLayoutAnimation) {
+      return { duration: 0 };
+    }
+    return { duration: 0.6, delay: 0.3 };
+  })();
+  const animate: TargetAndTransition = { height: containerHeight, transition };
 
   return (
     <motion.div

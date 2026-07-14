@@ -1,7 +1,6 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
+import type { Network } from "../../../../../domain/schema/network-model";
 import type { SupportedSKChains } from "../../../../../domain/types/chains";
-import type { Networks } from "../../../../../domain/types/chains/networks";
 import { useSettings } from "../../../../../providers/settings";
 import type { SettingsProps } from "../../../../../providers/settings/types";
 import { getNetworkLogo } from "../../../../../utils";
@@ -10,18 +9,19 @@ export const getVariantNetworkUrl = ({
   chainIconMapping,
   network,
 }: {
-  network: Networks;
+  network: Network;
   chainIconMapping: SettingsProps["chainIconMapping"];
 }) => {
-  const chainMappingResult = Maybe.fromNullable(chainIconMapping)
-    .chainNullable((mapping) => {
-      if (typeof mapping === "function") {
-        return mapping(network as SupportedSKChains);
-      }
+  const chainMappingResult = chainIconMapping
+    ? (() => {
+        const mapping = chainIconMapping;
+        if (typeof mapping === "function") {
+          return mapping(network as SupportedSKChains);
+        }
 
-      return mapping[network as SupportedSKChains];
-    })
-    .extractNullable();
+        return mapping[network as SupportedSKChains];
+      })()
+    : null;
 
   if (chainMappingResult) {
     return chainMappingResult;
@@ -30,7 +30,7 @@ export const getVariantNetworkUrl = ({
   return getNetworkLogo(network);
 };
 
-export const useVariantNetworkUrls = (network: Networks) => {
+export const useVariantNetworkUrls = (network: Network) => {
   const { chainIconMapping } = useSettings();
 
   return useMemo(

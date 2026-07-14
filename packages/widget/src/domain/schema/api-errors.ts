@@ -1,4 +1,10 @@
-import { Schema } from "effect";
+import { Data, Schema } from "effect";
+
+export class MissingBorrowApiConfig extends Data.TaggedError(
+  "MissingBorrowApiConfig"
+)<{
+  readonly message: string;
+}> {}
 
 export class ApiRequestError extends Schema.TaggedErrorClass<ApiRequestError>()(
   "ApiRequestError",
@@ -17,15 +23,11 @@ export class ResponseDecodeError extends Schema.TaggedErrorClass<ResponseDecodeE
   }
 ) {}
 
-export class ApiResourceNotFound extends Schema.TaggedErrorClass<ApiResourceNotFound>()(
-  "ApiResourceNotFound",
+export class InputValidationError extends Schema.TaggedErrorClass<InputValidationError>()(
+  "InputValidationError",
   {
     operation: Schema.String,
-    identifier: Schema.optionalKey(Schema.String),
+    issue: Schema.String,
+    cause: Schema.Defect(),
   }
 ) {}
-
-export type ApiBoundaryError =
-  | ApiRequestError
-  | ApiResourceNotFound
-  | ResponseDecodeError;

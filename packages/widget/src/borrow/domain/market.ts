@@ -3,7 +3,6 @@ import * as BorrowApi from "../../generated/api/borrow";
 import { CollateralToken } from "./collateral-token";
 import { IntegrationId, MarketId } from "./ids";
 import { BorrowNetwork } from "./network";
-import { BigIntFromString, NumberFromString } from "./scalars";
 import { BorrowToken } from "./token";
 
 export class Market extends Schema.Class<Market>("BorrowMarket")({
@@ -13,15 +12,15 @@ export class Market extends Schema.Class<Market>("BorrowMarket")({
   network: BorrowNetwork,
   loanToken: BorrowToken,
   collateralTokens: Schema.Array(CollateralToken),
-  borrowRate: NumberFromString,
-  totalSupply: NumberFromString,
-  totalSupplyRaw: BigIntFromString,
-  totalBorrow: NumberFromString,
-  totalBorrowRaw: BigIntFromString,
-  availableLiquidity: NumberFromString,
-  availableLiquidityRaw: BigIntFromString,
-  utilizationRate: NumberFromString,
-  loanTokenPriceUsd: NumberFromString,
+  borrowRate: Schema.FiniteFromString,
+  totalSupply: Schema.FiniteFromString,
+  totalSupplyRaw: Schema.BigIntFromString,
+  totalBorrow: Schema.FiniteFromString,
+  totalBorrowRaw: Schema.BigIntFromString,
+  availableLiquidity: Schema.FiniteFromString,
+  availableLiquidityRaw: Schema.BigIntFromString,
+  utilizationRate: Schema.FiniteFromString,
+  loanTokenPriceUsd: Schema.FiniteFromString,
 }) {
   getMaxLtv() {
     if (this.collateralTokens.length === 0) {

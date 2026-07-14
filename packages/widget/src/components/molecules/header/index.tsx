@@ -1,7 +1,6 @@
 import { ConnectButton } from "@stakekit/rainbowkit";
 import classNames from "clsx";
 import { motion } from "motion/react";
-import { Maybe } from "purify-ts";
 import { Box } from "../../atoms/box";
 import { CaretLeftIcon } from "../../atoms/icons/caret-left";
 import { XIcon } from "../../atoms/icons/x-icon";
@@ -62,39 +61,31 @@ export const Header = () => {
           )}
         </Box>
 
-        {Maybe.fromFalsy(
-          !wagmiConfig.isLoading && wagmiConfig.data && variant !== "zerion"
-        )
-          .map(() => (
-            <ConnectButton.Custom>
-              {({ account, chain, mounted }) => {
-                return (
-                  <Box
-                    className={classNames({ [parentButton]: !mounted })}
-                    aria-hidden={!mounted}
-                  >
-                    {Maybe.fromFalsy(
-                      (isConnected || isConnecting) && chain && account
-                    )
-                      .map(() => (
-                        <motion.div
-                          className={animationContainer}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.2, duration: 0.2 }}
-                        >
-                          {!hideChainSelector && <ChainModal />}
+        {!wagmiConfig.isLoading && wagmiConfig.data && variant !== "zerion" ? (
+          <ConnectButton.Custom>
+            {({ account, chain, mounted }) => {
+              return (
+                <Box
+                  className={classNames({ [parentButton]: !mounted })}
+                  aria-hidden={!mounted}
+                >
+                  {(isConnected || isConnecting) && chain && account ? (
+                    <motion.div
+                      className={animationContainer}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2, duration: 0.2 }}
+                    >
+                      {!hideChainSelector && <ChainModal />}
 
-                          <AccountModal />
-                        </motion.div>
-                      ))
-                      .extractNullable()}
-                  </Box>
-                );
-              }}
-            </ConnectButton.Custom>
-          ))
-          .extractNullable()}
+                      <AccountModal />
+                    </motion.div>
+                  ) : null}
+                </Box>
+              );
+            }}
+          </ConnectButton.Custom>
+        ) : null}
       </Box>
     </Box>
   );

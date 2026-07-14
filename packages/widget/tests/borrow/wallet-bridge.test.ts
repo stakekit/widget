@@ -1,72 +1,54 @@
-import { Effect } from "effect";
-import { arbitrum, base, mainnet, polygon } from "viem/chains";
+import { Effect, Schema } from "effect";
+import { arbitrum, base, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
+import type { Connector } from "wagmi";
 import {
   decodeChainId,
   switchBorrowWalletChain,
-  toBorrowWalletBridgeState,
+  toBorrowSwitchChainCommandInput,
+  toBorrowWalletStateProjection,
 } from "../../src/borrow";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
+import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 
 describe("borrow wallet bridge", () => {
-  it("returns disconnected state when the widget wallet is disconnected", () => {
-    const state = toBorrowWalletBridgeState({
-      address: null,
-      chain: null,
-      connector: null,
-      connectorChains: [],
-      isConnected: false,
-      network: null,
-    });
-
-    expect(state).toEqual({
-      status: "disconnected",
-      wallet: { status: "disconnected" },
-    });
-  });
-
-  it("returns unsupported-network state for connected non-borrow networks", () => {
-    const state = toBorrowWalletBridgeState({
-      address,
-      chain: polygon,
-      connector: null,
-      connectorChains: [mainnet, polygon],
-      isConnected: true,
-      network: "polygon",
-    });
-
-    expect(state.status).toBe("unsupported-network");
-    if (state.status !== "unsupported-network") {
-      throw new Error("Expected unsupported-network state");
-    }
-    expect(state.chainId).toBe(137);
-    expect(state.supportedChains.map((chain) => chain.network)).toEqual([
-      "ethereum",
-    ]);
-  });
-
-  it("maps supported widget wallet state into borrow wallet state", () => {
-    const state = toBorrowWalletBridgeState({
+  it("purely projects atom-owned wallet state and switch input", () => {
+    const connector = {
+      switchChain: vi.fn(async () => arbitrum),
+    } as unknown as Connector;
+    const wallet = {
+      additionalAddresses: null,
       address,
       chain: mainnet,
-      connector: null,
-      connectorChains: [mainnet, base, polygon],
-      isConnected: true,
+      connector,
+      connectorChains: [mainnet, base],
+      isLedgerLive: false,
+      isLedgerLiveAccountPlaceholder: false,
+      ledgerAccounts: [],
       network: "ethereum",
+      status: "connected",
+    } satisfies NormalizedWalletState;
+    const projection = toBorrowWalletStateProjection(wallet);
+    const switchInput = toBorrowSwitchChainCommandInput({
+      chainId: decodeChainId(42_161),
+      wallet,
     });
 
-    expect(state.status).toBe("connected");
-    if (state.status !== "connected") {
-      throw new Error("Expected connected state");
-    }
-    expect(state.wallet.currentAccount.address).toBe(address);
-    expect(state.wallet.currentChain.network).toBe("ethereum");
-    expect(state.wallet.network).toBe("ethereum");
-    expect(state.wallet.chains.map((chain) => chain.network)).toEqual([
-      "ethereum",
-      "base",
-    ]);
+    expect(projection).toMatchObject({
+      status: "connected",
+      wallet: {
+        currentAccount: { address },
+        network: "ethereum",
+      },
+    });
+    expect(switchInput).toEqual({
+      chainId: "42161",
+      connector,
+    });
   });
 
   it("switches chains through the current widget connector", async () => {

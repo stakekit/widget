@@ -11,7 +11,8 @@ import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
 import { KycGateCard } from "../../../components/molecules/kyc-gate-card";
-import type { TronResourceType } from "../../../domain/types/tron";
+import type { TronResource } from "../../../domain/schema/legacy-models";
+
 import { getYieldActionArg } from "../../../domain/types/yields";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { MetaInfo } from "../../../pages/components/meta-info";
@@ -56,29 +57,26 @@ const StakeKycGateSection = ({
 const FixedToken = ({ stake }: { stake: PositionDetailsStakeState }) => {
   const { variant } = useSettings();
 
-  return stake.selectedToken
-    .map((token) => {
-      return (
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          borderRadius="2xl"
-          px="2"
-          py="1"
-          gap="2"
-          data-testid="select-token"
-          className={combineRecipeWithVariant({
-            variant,
-            rec: selectTokenButton,
-          })}
-        >
-          <TokenIcon token={token} />
-          <Text variant={{ weight: "bold" }}>{token.symbol}</Text>
-        </Box>
-      );
-    })
-    .extractNullable();
+  const token = stake.selectedToken;
+  return token ? (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      borderRadius="2xl"
+      px="2"
+      py="1"
+      gap="2"
+      data-testid="select-token"
+      className={combineRecipeWithVariant({
+        variant,
+        rec: selectTokenButton,
+      })}
+    >
+      <TokenIcon token={token} />
+      <Text variant={{ weight: "bold" }}>{token.symbol}</Text>
+    </Box>
+  ) : null;
 };
 
 const PositionDetailsStakeTokenSection = ({
@@ -105,12 +103,15 @@ const PositionDetailsStakeTokenSection = ({
     stakeAmountGreaterThanMax ||
     stakeAmountLessThanMin;
   const errorBalance = stakeAmountGreaterThanAvailableAmount;
-  const min = stake.stakeMinAmount
-    .map((value) => `${t("shared.min")} ${value} ${stake.symbol}`)
-    .extractNullable();
-  const max = stake.stakeMaxAmount
-    .map((value) => `${t("shared.max")} ${value} ${stake.symbol}`)
-    .extractNullable();
+  const available = stake.selectedTokenAvailableAmount;
+  const min =
+    stake.stakeMinAmount === null
+      ? null
+      : `${t("shared.min")} ${stake.stakeMinAmount} ${stake.symbol}`;
+  const max =
+    stake.stakeMaxAmount === null
+      ? null
+      : `${t("shared.max")} ${stake.stakeMaxAmount} ${stake.symbol}`;
   const minMax = min || max;
 
   return isLoading ? (
@@ -203,22 +204,21 @@ const PositionDetailsStakeTokenSection = ({
                 variant,
               })}
             >
-              {stake.selectedTokenAvailableAmount
-                .map((value) => (
-                  <AmountToggle.Root>
-                    <AmountToggle.Amount>
-                      {({ state }) => (
-                        <span>
-                          {state === "full"
-                            ? value.fullFormattedAmount
-                            : value.shortFormattedAmount}
-                          &nbsp;{value.symbol}&nbsp;{t("shared.available")}
-                        </span>
-                      )}
-                    </AmountToggle.Amount>
-                  </AmountToggle.Root>
-                ))
-                .extractNullable()}
+              {available ? (
+                <AmountToggle.Root>
+                  <AmountToggle.Amount>
+                    {({ state }) => (
+                      <span>
+                        {state === "full"
+                          ? available.fullFormattedAmount
+                          : available.shortFormattedAmount}
+                        &nbsp;{available.symbol}&nbsp;
+                        {t("shared.available")}
+                      </span>
+                    )}
+                  </AmountToggle.Amount>
+                </AmountToggle.Root>
+              ) : null}
             </Text>
           </Box>
 
@@ -252,44 +252,42 @@ const PositionDetailsStakeExtraArgs = ({
 }) => {
   const { t } = useTranslation();
 
-  return stake.selectedStake
-    .chainNullable((selectedStake) =>
-      getYieldActionArg(selectedStake, "enter", "tronResource")
-    )
-    .map((tronResources) => {
-      const options = (tronResources.options ?? []).map((value) => ({
-        label: value,
-        value: value as TronResourceType,
-      }));
-      const selectedOption = stake.tronResource
-        .map((value) => ({ value, label: value }))
-        .extract();
-      const isError =
-        stake.validation.submitted && stake.validation.errors.tronResource;
+  const tronResources = stake.selectedStake
+    ? getYieldActionArg(stake.selectedStake, "enter", "tronResource")
+    : null;
+  if (!tronResources) return null;
 
-      return (
-        <Box>
-          <Box my="2">
-            <Text
-              variant={{
-                type: isError ? "danger" : "regular",
-              }}
-            >
-              {t("details.tron_resources.label")}
-            </Text>
-          </Box>
+  const options = (tronResources.options ?? []).map((value) => ({
+    label: value,
+    value: value as TronResource,
+  }));
+  const selectedOption = stake.tronResource
+    ? { value: stake.tronResource, label: stake.tronResource }
+    : undefined;
+  const isError =
+    stake.validation.submitted && stake.validation.errors.tronResource;
 
-          <Dropdown
-            options={options}
-            onSelect={(value) => stake.onTronResourceSelect(value)}
-            selectedOption={selectedOption}
-            placeholder={t("details.tron_resources.placeholder")}
-            isError={isError}
-          />
-        </Box>
-      );
-    })
-    .extractNullable();
+  return (
+    <Box>
+      <Box my="2">
+        <Text
+          variant={{
+            type: isError ? "danger" : "regular",
+          }}
+        >
+          {t("details.tron_resources.label")}
+        </Text>
+      </Box>
+
+      <Dropdown
+        options={options}
+        onSelect={(value) => stake.onTronResourceSelect(value)}
+        selectedOption={selectedOption}
+        placeholder={t("details.tron_resources.placeholder")}
+        isError={isError}
+      />
+    </Box>
+  );
 };
 
 export const PositionDetailsStakeActions = () => {

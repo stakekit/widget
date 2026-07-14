@@ -1,4 +1,5 @@
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
 import type { YieldMetadata } from "../../../domain/types/yields";
 import { useSettings } from "../../../providers/settings";
 import type { Atoms } from "../../../styles/theme/atoms.css";
@@ -13,7 +14,7 @@ export const TokenIcon = ({
   tokenNetworkLogoHw,
   hideNetwork,
 }: {
-  token: TokenDto | YieldTokenDto;
+  token: AppToken;
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   tokenLogoHw?: Atoms["hw"];
   tokenNetworkLogoHw?: Atoms["hw"];

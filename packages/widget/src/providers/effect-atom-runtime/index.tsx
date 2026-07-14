@@ -1,84 +1,84 @@
-import { RegistryProvider, useAtomMount, useAtomSet } from "@effect/atom-react";
-import { type PropsWithChildren, useEffect, useRef } from "react";
+import { RegistryProvider, useAtomSet } from "@effect/atom-react";
 import {
-  type BorrowWalletExecutionAdapter,
-  borrowExecutionRuntimeRefreshAtom,
-  borrowWalletExecutionAdapterAtom,
-  disconnectedBorrowWalletState,
-  makeSKWalletBorrowExecutionAdapter,
-  type WalletState,
-} from "../../borrow";
+  useConnection as useSolanaConnection,
+  useWallet as useSolanaWallet,
+} from "@solana/wallet-adapter-react";
+import { type PropsWithChildren, useLayoutEffect, useState } from "react";
 import { config } from "../../config";
-import type { SKWallet } from "../../domain/types/wallet";
-import { useBorrowWalletBridge } from "../../pages-dashboard/borrow/connected-wallet";
-import { makeStakeKitApiLayer } from "../api/api-client";
+import { isLedgerDappBrowserProvider } from "../../utils";
 import { useSettings } from "../settings";
-import { useSKWallet } from "../sk-wallet";
-import { stakeKitApiLayerAtom } from "./stakekit-api-service";
+import {
+  normalizeWidgetBootstrapConfig,
+  widgetBootstrapConfigAtom,
+} from "./bootstrap-config";
+import {
+  type DynamicExternalProviderInput,
+  dynamicExternalProviderInputAtom,
+  normalizeDynamicExternalProviderInput,
+  normalizeSolanaWalletInput,
+  type SolanaWalletInput,
+  solanaWalletInputAtom,
+} from "./root-inputs";
 
-type BorrowWalletRuntimeSnapshot = {
-  readonly signTransaction: SKWallet["signTransaction"];
-  readonly walletState: WalletState;
-};
+type RootInputBindingProps = PropsWithChildren<{
+  readonly dynamicWalletInput: DynamicExternalProviderInput;
+  readonly solanaInput: SolanaWalletInput;
+}>;
 
-const useBorrowWalletExecutionAdapter = (): BorrowWalletExecutionAdapter => {
-  const skWallet = useSKWallet();
-  const walletBridge = useBorrowWalletBridge();
-  const walletState: WalletState =
-    walletBridge.status === "connected"
-      ? walletBridge.wallet
-      : disconnectedBorrowWalletState;
-  const latest = useRef<BorrowWalletRuntimeSnapshot>({
-    signTransaction: skWallet.signTransaction,
-    walletState,
-  });
-  const adapter = useRef<BorrowWalletExecutionAdapter | null>(null);
+const RootInputBinding = ({
+  children,
+  dynamicWalletInput,
+  solanaInput,
+}: RootInputBindingProps) => {
+  const setDynamicWalletInput = useAtomSet(dynamicExternalProviderInputAtom);
+  const setSolanaInput = useAtomSet(solanaWalletInputAtom);
 
-  latest.current = {
-    signTransaction: skWallet.signTransaction,
-    walletState,
-  };
+  useLayoutEffect(() => {
+    setDynamicWalletInput(dynamicWalletInput);
+  }, [dynamicWalletInput, setDynamicWalletInput]);
 
-  if (!adapter.current) {
-    adapter.current = makeSKWalletBorrowExecutionAdapter({
-      getState: () => latest.current.walletState,
-      signTransaction: (args) => latest.current.signTransaction(args),
-    });
-  }
+  useLayoutEffect(() => {
+    setSolanaInput(solanaInput);
+  }, [setSolanaInput, solanaInput]);
 
-  return adapter.current;
+  return children;
 };
 
 export const SKAtomRuntimeProvider = ({ children }: PropsWithChildren) => {
-  const { apiKey, baseUrl, borrowApiUrl, yieldsApiUrl } = useSettings();
-  const apiLayer = makeStakeKitApiLayer({
-    apiKey,
-    baseUrl: baseUrl ?? config.env.apiUrl,
-    borrowApiUrl: borrowApiUrl ?? config.env.borrowApiUrl,
-    yieldsApiUrl: yieldsApiUrl ?? config.env.yieldsApiUrl,
+  const settings = useSettings();
+  const solanaConnection = useSolanaConnection();
+  const solanaWallet = useSolanaWallet();
+  const [bootstrapConfig] = useState(() =>
+    normalizeWidgetBootstrapConfig({
+      isLedgerLive: isLedgerDappBrowserProvider(),
+      settings,
+    })
+  );
+  const dynamicWalletInput = normalizeDynamicExternalProviderInput(
+    settings.externalProviders
+  );
+  const solanaInput = normalizeSolanaWalletInput({
+    connection: solanaConnection.connection,
+    wallets: solanaWallet.wallets,
   });
-
   return (
     <RegistryProvider
       defaultIdleTTL={config.atomResources.defaultIdleTTL}
-      initialValues={[[stakeKitApiLayerAtom, apiLayer]]}
+      initialValues={[
+        [widgetBootstrapConfigAtom, bootstrapConfig],
+        [
+          dynamicExternalProviderInputAtom.initialValueTarget,
+          dynamicWalletInput,
+        ],
+        [solanaWalletInputAtom.initialValueTarget, solanaInput],
+      ]}
     >
-      {children}
+      <RootInputBinding
+        dynamicWalletInput={dynamicWalletInput}
+        solanaInput={solanaInput}
+      >
+        {children}
+      </RootInputBinding>
     </RegistryProvider>
   );
-};
-
-export const SKAtomRuntimeBridge = ({ children }: PropsWithChildren) => {
-  const walletExecutionAdapter = useBorrowWalletExecutionAdapter();
-  const setWalletExecutionAdapter = useAtomSet(
-    borrowWalletExecutionAdapterAtom
-  );
-
-  useEffect(() => {
-    setWalletExecutionAdapter(walletExecutionAdapter);
-  }, [setWalletExecutionAdapter, walletExecutionAdapter]);
-
-  useAtomMount(borrowExecutionRuntimeRefreshAtom);
-
-  return children;
 };

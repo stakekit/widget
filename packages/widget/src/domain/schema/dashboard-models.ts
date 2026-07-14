@@ -3,9 +3,9 @@ import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { AdditionalAddresses } from "./address-models";
 import { TokenAddress, WalletAddress, YieldId } from "./identifiers";
+import { Network } from "./network-model";
 import { TolerantTopLevelArray, TolerantTopLevelRecord } from "./response";
-import { FiniteNumberFromString, ValidDateFromString } from "./scalars";
-import { Network } from "./wallet-models";
+import { ValidDateFromString } from "./scalars";
 
 export const KycStatus = YieldApi.KycStatusResponseDto;
 export type KycStatus = typeof KycStatus.Type;
@@ -40,7 +40,7 @@ const RewardRatePoint = YieldApi.RewardRateSnapshotDto.pipe(
 const TvlPointWire = Schema.Struct({
   timestamp: Schema.String,
   tvl: Schema.optionalKey(Schema.NullOr(Schema.String)),
-  tvlUsd: Schema.optionalKey(Schema.NullOr(FiniteNumberFromString)),
+  tvlUsd: Schema.optionalKey(Schema.NullOr(Schema.FiniteFromString)),
 });
 
 const TvlPoint = TvlPointWire.pipe(

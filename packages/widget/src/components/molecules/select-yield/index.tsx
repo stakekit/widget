@@ -1,8 +1,14 @@
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { PropsWithChildren } from "react";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Yield } from "../../../domain/types/yields";
-import { useMultiYields } from "../../../hooks/api/use-multi-yields";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+import type { YieldId } from "../../../domain/schema/identifiers";
+
+import {
+  MultiYieldsKey,
+  visibleMultiYieldsAtom,
+} from "../../../hooks/api/yield-atoms";
 import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import {
@@ -14,9 +20,9 @@ import { SelectOpportunityListItem } from "../select-opportunity-list-item";
 
 type SelectYieldProps = PropsWithChildren<
   Pick<SelectModalProps, "onClose" | "onOpen" | "state" | "trigger"> & {
-    onItemClick: (yieldDto: Yield) => void;
-    providerYieldIds: Yield["id"][];
-    selectedYieldId?: Yield["id"];
+    onItemClick: (yieldDto: EarnYieldWithProvider) => void;
+    providerYieldIds: ReadonlyArray<YieldId>;
+    selectedYieldId?: YieldId;
   }
 >;
 
@@ -32,9 +38,18 @@ export const SelectYield = ({
 }: SelectYieldProps) => {
   const { t } = useTranslation();
 
-  const multiYields = useMultiYields(providerYieldIds);
-
-  const data = useMemo(() => multiYields.data ?? [], [multiYields.data]);
+  const data =
+    AsyncResult.getOrElse(
+      useAtomValue(
+        visibleMultiYieldsAtom(
+          new MultiYieldsKey({
+            enabled: providerYieldIds.length > 0,
+            yieldIds: providerYieldIds,
+          })
+        )
+      ),
+      () => []
+    ) ?? [];
 
   return (
     <SelectModal

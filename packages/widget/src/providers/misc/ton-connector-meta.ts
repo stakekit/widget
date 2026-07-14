@@ -1,4 +1,4 @@
-import type { EitherAsync } from "purify-ts";
+import type { Effect } from "effect";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
@@ -7,7 +7,7 @@ export const configMeta = {
 } as const;
 
 export type ExtraProps = ConnectorWithFilteredChains & {
-  signTransaction: (tx: string) => EitherAsync<Error, string>;
+  signTransaction: (tx: string) => Effect.Effect<string, Error>;
 };
 
 type TonConnector = Connector & ExtraProps;

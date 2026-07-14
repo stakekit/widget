@@ -1,10 +1,9 @@
-import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { usePendingActionDeepLink } from "../pages/details/earn-page/state/use-pending-action-deep-link";
 import { useMountAnimation } from "../providers/mount-animation";
 import { useSetPendingActionRequest } from "../providers/pending-action-store";
-import { useSKWallet } from "../providers/sk-wallet";
+import { useSKWallet } from "../providers/wallet/react/use-wallet";
 import { useInitQueryParams } from "./use-init-query-params";
 import { useSavedRef } from "./use-saved-ref";
 
@@ -21,55 +20,49 @@ export const useHandleDeepLinks = () => {
 
   // Position details page
   useEffect(() => {
-    initQueryParams
-      .filter((val) =>
-        Boolean(val.yieldId && val.balanceId && !val.pendingaction && appReady)
-      )
-      .ifJust((val) =>
-        navigateRef.current(`positions/${val.yieldId}/${val.balanceId}`)
+    if (
+      initQueryParams?.yieldId &&
+      initQueryParams.balanceId &&
+      !initQueryParams.pendingaction &&
+      appReady
+    ) {
+      navigateRef.current(
+        `positions/${initQueryParams.yieldId}/${initQueryParams.balanceId}`
       );
+    }
   }, [initQueryParams, navigateRef, appReady]);
 
   // Select validators on position details page
   useEffect(() => {
-    Maybe.fromNullable(pendingActionDeepLinkCheck.data)
-      .filter(
-        (val): val is Extract<typeof val, { type: "positionDetails" }> =>
-          appReady && val.type === "positionDetails"
-      )
-      .ifJust((val) =>
-        navigateRef.current(
-          `positions/${val.yieldOp.id}/${val.balanceId}/select-validator/${val.pendingAction.type}`
-        )
+    const data = pendingActionDeepLinkCheck.data;
+
+    if (appReady && data?.type === "positionDetails") {
+      navigateRef.current(
+        `positions/${data.yieldOp.id}/${data.balanceId}/select-validator/${data.pendingAction.type}`
       );
+    }
   }, [navigateRef, pendingActionDeepLinkCheck.data, appReady]);
 
   // Review pending action
   useEffect(() => {
-    Maybe.fromNullable(pendingActionDeepLinkCheck.data)
-      .filter(
-        (val): val is Extract<typeof val, { type: "review" }> =>
-          appReady && val.type === "review"
-      )
-      .ifJust((val) => {
-        setPendingActionRequest(
-          Maybe.of({
-            actionDto: Maybe.empty(),
-            requestDto: val.pendingActionDto.requestDto,
-            addresses: {
-              address: val.pendingActionDto.address,
-              additionalAddresses: val.pendingActionDto.additionalAddresses,
-            },
-            gasFeeToken: val.pendingActionDto.gasFeeToken,
-            integrationData: val.pendingActionDto.integrationData,
-            interactedToken: val.balance.token,
-            pendingActionType: val.pendingActionDto.requestDto.action,
-          })
-        );
-        navigateRef.current(
-          `positions/${val.yieldOp.id}/${val.balanceId}/pending-action/review`
-        );
+    const data = pendingActionDeepLinkCheck.data;
+    if (appReady && data?.type === "review") {
+      setPendingActionRequest({
+        actionDto: null,
+        requestDto: data.pendingActionDto.requestDto,
+        addresses: {
+          address: data.pendingActionDto.address,
+          additionalAddresses: data.pendingActionDto.additionalAddresses,
+        },
+        gasFeeToken: data.pendingActionDto.gasFeeToken,
+        integrationData: data.pendingActionDto.integrationData,
+        interactedToken: data.balance.token,
+        pendingActionType: data.pendingActionDto.requestDto.action,
       });
+      navigateRef.current(
+        `positions/${data.yieldOp.id}/${data.balanceId}/pending-action/review`
+      );
+    }
   }, [
     setPendingActionRequest,
     pendingActionDeepLinkCheck.data,

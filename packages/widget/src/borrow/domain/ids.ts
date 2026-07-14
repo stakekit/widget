@@ -1,5 +1,10 @@
 import { identity, Schema, SchemaTransformation } from "effect";
 
+import {
+  TokenAddress as CanonicalTokenAddress,
+  WalletAddress as CanonicalWalletAddress,
+} from "../../domain/schema/identifiers";
+
 export const ChainId = Schema.String.pipe(Schema.brand("BorrowChainId"));
 export type ChainId = typeof ChainId.Type;
 
@@ -15,12 +20,10 @@ export const decodeChainId = Schema.decodeSync(
   )
 );
 
-export const WalletAddress = Schema.TemplateLiteral([
-  Schema.Literal("0x"),
-  Schema.String,
-]).pipe(Schema.brand("BorrowWalletAddress"));
-export type WalletAddress = typeof WalletAddress.Type;
-export const decodeWalletAddress = Schema.decodeUnknownSync(WalletAddress);
+export const WalletAddress = Schema.String.check(Schema.isPattern(/^0x/)).pipe(
+  Schema.decodeTo(CanonicalWalletAddress)
+);
+export type WalletAddress = typeof CanonicalWalletAddress.Type;
 
 export const ActionId = Schema.String.pipe(Schema.brand("BorrowActionId"));
 export type ActionId = typeof ActionId.Type;
@@ -35,9 +38,9 @@ export type MarketId = typeof MarketId.Type;
 
 export const TokenAddress = Schema.String.pipe(
   Schema.decode(SchemaTransformation.toLowerCase()),
-  Schema.brand("BorrowTokenAddress")
+  Schema.decodeTo(CanonicalTokenAddress)
 );
-export type TokenAddress = typeof TokenAddress.Type;
+export type TokenAddress = typeof CanonicalTokenAddress.Type;
 
 export const TransactionId = Schema.String.pipe(
   Schema.brand("BorrowTransactionId")

@@ -1,36 +1,38 @@
 import type { WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
+import { Effect } from "effect";
 import type { InitParams } from "../../domain/types/init-params";
 import { isLedgerDappBrowserProvider } from "../../utils";
 import type { EnabledChainsMap } from "./ledger-connector";
 
-const queryFn = async ({
+const queryFn = ({
   enabledChainsMap,
   queryParams,
 }: {
   enabledChainsMap: EnabledChainsMap;
   queryParams: InitParams;
-}): Promise<{
-  groupName: string;
-  wallets: WalletList[number]["wallets"];
-} | null> => {
-  return EitherAsync.liftEither(
-    Maybe.fromFalsy(isLedgerDappBrowserProvider()).toEither(null)
-  )
-    .chain(() =>
-      EitherAsync(() => import("./ledger-connector"))
-        .mapLeft(() => new Error("Could not import ledger-connector"))
-        .map((v) => v.ledgerLiveConnector({ enabledChainsMap, queryParams }))
+}): Effect.Effect<
+  {
+    groupName: string;
+    wallets: WalletList[number]["wallets"];
+  } | null,
+  Error
+> => {
+  if (!isLedgerDappBrowserProvider()) return Effect.succeed(null);
+
+  return Effect.tryPromise({
+    try: () => import("./ledger-connector"),
+    catch: (error) =>
+      new Error("Could not import ledger-connector", { cause: error }),
+  }).pipe(
+    Effect.map((module) =>
+      module.ledgerLiveConnector({ enabledChainsMap, queryParams })
     )
-    .chainLeft((e) => EitherAsync.liftEither(e ? Left(e) : Right(null)))
-    .caseOf({
-      Right: (val) => Promise.resolve(val),
-      Left: (l) => Promise.reject(l),
-    });
+  );
 };
 
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get ledger live config");
-  });
+  queryFn(opts).pipe(
+    Effect.mapError(
+      (error) => new Error("Could not get ledger live config", { cause: error })
+    )
+  );

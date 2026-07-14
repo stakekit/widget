@@ -92,9 +92,10 @@
   "overrides": [
     {
       "includes": [
-        "packages/widget/src/providers/api/api-client.ts",
-        "packages/widget/src/domain/schema/**/*.ts",
-        "packages/widget/src/borrow/domain/**/*.ts",
+        "packages/widget/src/providers/api/api-service.ts",
+        "packages/widget/src/providers/api/borrow-api-service.ts",
+        "packages/widget/src/providers/api/legacy-api-service.ts",
+        "packages/widget/src/providers/api/yield-api-service.ts",
         "packages/widget/tests/generated/**/*.ts",
         "packages/widget/scripts/**/*.ts"
       ],
@@ -102,6 +103,33 @@
         "rules": {
           "style": {
             "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/widget/src/domain/schema/**/*.ts",
+        "packages/widget/src/borrow/domain/**/*.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "**/generated/api/legacy",
+                      "**/generated/api/yield",
+                      "**/generated/api/borrow-client"
+                    ],
+                    "message": "Generated runtime API clients are private to the application API transport implementation. Domain modules may import generated schema artifacts only."
+                  }
+                ]
+              }
+            }
           }
         }
       }

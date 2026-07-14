@@ -1,20 +1,23 @@
 import BigNumber from "bignumber.js";
 import { equalTokens } from "..";
-import type { EarnBalance, EarnPosition } from "../schema/earn-models";
+import type {
+  EarnBalance,
+  EarnPosition,
+  EarnValidator,
+} from "../schema/earn-models";
+import type { YieldId } from "../schema/identifiers";
 import type { YieldRewardRateDto } from "./reward-rate";
-import type { Validator, ValidatorKey } from "./validators";
+import type { ValidatorKey } from "./validators";
 
-export type YieldBalanceDto = EarnBalance;
-export type YieldBalancesByYieldDto = EarnPosition;
 export type YieldBalanceType = EarnBalance["type"];
 
 export type PositionBalancesByType = Map<
   YieldBalanceType,
-  (YieldBalanceDto & {
+  (EarnBalance & {
     tokenPriceInUsd: BigNumber;
   })[]
 >;
-export type PositionValidators = ReadonlyArray<Validator>;
+export type PositionValidators = ReadonlyArray<EarnValidator>;
 
 export type PositionDetailsLabelType = "hasFrozenV1";
 
@@ -23,13 +26,13 @@ type BalanceType = "validators" | "default";
 export type BalanceDataKey = BalanceType | `validator::${ValidatorKey}`;
 
 export type PositionsData = Map<
-  string,
+  YieldId,
   {
-    yieldId: string;
+    yieldId: YieldId;
     rewardRate?: YieldRewardRateDto | null;
     balanceData: Map<
       BalanceDataKey,
-      { balances: YieldBalanceDto[] } & (
+      { balances: EarnBalance[] } & (
         | { type: "validators"; validators: PositionValidators }
         | { type: "default" }
       )
@@ -37,8 +40,16 @@ export type PositionsData = Map<
   }
 >;
 
+export type PositionData =
+  PositionsData extends Map<YieldId, infer Value> ? Value : never;
+
+export type PositionBalances =
+  PositionData["balanceData"] extends Map<BalanceDataKey, infer Value>
+    ? Value & { rewardRate: PositionData["rewardRate"] }
+    : never;
+
 export const getPositionBalanceDataKey = (
-  balance: YieldBalanceDto
+  balance: EarnBalance
 ): BalanceDataKey => {
   if (Array.isArray(balance.validators) && balance.validators.length > 1) {
     return "validators";
@@ -53,8 +64,93 @@ export const getPositionBalanceDataKey = (
   return "default";
 };
 
+const getBalanceValidators = (balance: EarnBalance) =>
+  balance.validators ?? (balance.validator ? [balance.validator] : []);
+
+export const toPositionsData = (
+  balancesData: ReadonlyArray<EarnPosition>
+): PositionsData =>
+  balancesData.reduce((positions, position) => {
+    positions.set(position.yieldId, {
+      yieldId: position.yieldId,
+      rewardRate: position.rewardRate,
+      balanceData: [...position.balances]
+        .sort((a, b) =>
+          getPositionBalanceDataKey(a).localeCompare(
+            getPositionBalanceDataKey(b)
+          )
+        )
+        .reduce(
+          (balances, balance) => {
+            const key = getPositionBalanceDataKey(balance);
+            const previous = balances.get(key);
+
+            if (previous) {
+              previous.balances.push(balance);
+            } else if (key === "default") {
+              balances.set(key, {
+                balances: [balance],
+                type: "default",
+              });
+            } else {
+              balances.set(key, {
+                balances: [balance],
+                type: "validators",
+                validators: getBalanceValidators(balance),
+              });
+            }
+
+            return balances;
+          },
+          new Map() as PositionData["balanceData"]
+        ),
+    });
+
+    return positions;
+  }, new Map() as PositionsData);
+
+export const getPositionData = (
+  positions: PositionsData,
+  yieldId: YieldId | null
+): PositionData | null => (yieldId ? (positions.get(yieldId) ?? null) : null);
+
+export const getPositionBalances = (
+  position: PositionData | null,
+  balanceId: string | null
+): PositionBalances | null => {
+  if (!position || !balanceId) return null;
+
+  const balanceData =
+    position.balanceData.get(balanceId as BalanceDataKey) ??
+    position.balanceData.values().next().value;
+
+  return balanceData
+    ? { ...balanceData, rewardRate: position.rewardRate }
+    : null;
+};
+
+export const toPositionBalancesByType = (
+  balances: ReadonlyArray<EarnBalance>
+): PositionBalancesByType =>
+  balances.reduce((byType, balance) => {
+    const amount = new BigNumber(balance.amount);
+    if (amount.isZero() || amount.isNaN()) return byType;
+
+    const tokenPriceInUsd = new BigNumber(
+      String(balance.amountUsd ?? 0).replace(/,/g, "")
+    );
+    const previous = byType.get(balance.type);
+
+    byType.set(balance.type, [
+      ...(previous ?? []),
+      { ...balance, tokenPriceInUsd },
+    ]);
+
+    return byType;
+  }, new Map() as PositionBalancesByType);
+
 export const getPositionTotalAmount = (
-  balances: YieldBalanceDto[],
+  balances: EarnBalance[],
   baseToken: {
     readonly address?: string;
     readonly symbol: string;

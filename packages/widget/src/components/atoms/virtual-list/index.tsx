@@ -3,11 +3,10 @@ import {
   type VirtualizerOptions,
 } from "@tanstack/react-virtual";
 import clsx from "clsx";
-import { List, Maybe } from "purify-ts";
+import { Array as EArray, Option } from "effect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
 import { breakpoints } from "../../../styles/tokens/breakpoints";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import { Box, type BoxDataAttributes, type BoxProps } from "../box";
 import { Spinner } from "../spinner";
 import {
@@ -70,19 +69,16 @@ export const VirtualList = <ItemData,>({
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   const isEndReached = useMemo(
-    () =>
-      List.head([...virtualItems].reverse())
-        .filter((item) => item.index >= data.length - 1)
-        .isJust(),
+    () => (virtualItems.at(-1)?.index ?? -1) >= data.length - 1,
     [virtualItems, data.length]
   );
 
   const fetchNextPageRef = useSavedRef(fetchNextPage);
 
   useEffect(() => {
-    Maybe.fromFalsy(isEndReached)
-      .filter(() => !!hasNextPage && !isFetchingNextPage)
-      .ifJust(() => fetchNextPageRef.current?.());
+    if (isEndReached && hasNextPage && !isFetchingNextPage) {
+      fetchNextPageRef.current?.();
+    }
   }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
 
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 400px)";
@@ -103,15 +99,21 @@ export const VirtualList = <ItemData,>({
             transform: `translateY(${virtualItems[0]?.start ?? 0}px)`,
           }}
         >
-          {virtualItems.map((virtualItem) => (
-            <Box
-              key={virtualItem.key}
-              data-index={virtualItem.index}
-              ref={rowVirtualizer.measureElement}
-            >
-              {itemContent(virtualItem.index, data[virtualItem.index])}
-            </Box>
-          ))}
+          {virtualItems.map((virtualItem) => {
+            const item = EArray.get(data, virtualItem.index);
+
+            if (Option.isNone(item)) return null;
+
+            return (
+              <Box
+                key={virtualItem.key}
+                data-index={virtualItem.index}
+                ref={rowVirtualizer.measureElement}
+              >
+                {itemContent(virtualItem.index, item.value)}
+              </Box>
+            );
+          })}
           {isFetchingNextPage && (
             <Box justifyContent="center" display="flex" my="4">
               <Spinner />
@@ -196,17 +198,14 @@ export const GroupedVirtualList = ({
   );
 
   const isEndReached = useMemo(
-    () =>
-      List.head([...virtualItems].reverse())
-        .filter((item) => item.index >= resultArray.length - 1)
-        .isJust(),
+    () => (virtualItems.at(-1)?.index ?? -1) >= resultArray.length - 1,
     [virtualItems, resultArray.length]
   );
 
   useEffect(() => {
-    Maybe.fromFalsy(isEndReached)
-      .filter(() => !!hasNextPage && !isFetchingNextPage)
-      .ifJust(() => fetchNextPageRef.current?.());
+    if (isEndReached && hasNextPage && !isFetchingNextPage) {
+      fetchNextPageRef.current?.();
+    }
   }, [isEndReached, hasNextPage, isFetchingNextPage, fetchNextPageRef]);
 
   const _maxHeight = isTabletOrBigger ? maxHeight : "max(65vh, 500px)";
@@ -229,7 +228,11 @@ export const GroupedVirtualList = ({
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualItem) => {
-            const item = resultArray[virtualItem.index];
+            const itemOption = EArray.get(resultArray, virtualItem.index);
+
+            if (Option.isNone(itemOption)) return null;
+
+            const item = itemOption.value;
             const type = item.type;
 
             return (
@@ -256,9 +259,7 @@ export const GroupedVirtualList = ({
 };
 
 const useIsTabletOrBigger = () => {
-  const [windowWidth] = useState(() =>
-    MaybeWindow.map((w) => w.innerWidth).orDefault(0)
-  );
+  const [windowWidth] = useState(() => window.innerWidth);
 
   return windowWidth >= breakpoints.tablet;
 };

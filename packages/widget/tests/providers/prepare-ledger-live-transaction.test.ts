@@ -1,4 +1,6 @@
+import { Result, Schema } from "effect";
 import { describe, expect, it, vi } from "vitest";
+import { ValidatorAddress } from "../../src/domain/schema/identifiers";
 import {
   CosmosNetworks,
   MiscNetworks,
@@ -56,6 +58,8 @@ const createTxMeta = (overrides: Partial<SKTxMeta>): SKTxMeta =>
     ...overrides,
   }) as SKTxMeta;
 
+const validatorAddress = Schema.decodeSync(ValidatorAddress);
+
 const tronTx = JSON.stringify({
   raw_data: {
     contract: [],
@@ -105,15 +109,19 @@ describe("prepareLedgerLiveTransaction", () => {
         },
         rawArguments: {
           amount: "1201",
-          validatorAddresses: ["validator-1", "validator-2", "validator-3"],
+          validatorAddresses: [
+            validatorAddress("validator-1"),
+            validatorAddress("validator-2"),
+            validatorAddress("validator-3"),
+          ],
         },
         txType: "VOTE",
       }),
     });
 
-    expect(result.isRight()).toBe(true);
+    expect(Result.isSuccess(result)).toBe(true);
 
-    const tx = result.unsafeCoerce() as {
+    const tx = Result.getOrThrow(result) as {
       amount: string;
       votes: Array<{ address: string; voteCount: number }>;
     };
@@ -134,15 +142,15 @@ describe("prepareLedgerLiveTransaction", () => {
         amount: "0.123456",
         rawArguments: {
           amount: "0.123456",
-          validatorAddress: "cosmosvaloper1validator",
+          validatorAddress: validatorAddress("cosmosvaloper1validator"),
         },
         txType: "CLAIM_REWARDS",
       }),
     });
 
-    expect(result.isRight()).toBe(true);
+    expect(Result.isSuccess(result)).toBe(true);
 
-    const tx = result.unsafeCoerce() as {
+    const tx = Result.getOrThrow(result) as {
       amount: string;
       mode: string;
       validators: Array<{ address: string; amount: string }>;
@@ -162,15 +170,15 @@ describe("prepareLedgerLiveTransaction", () => {
       txMeta: createTxMeta({
         amount: null,
         rawArguments: {
-          validatorAddress: "cosmosvaloper1validator",
+          validatorAddress: validatorAddress("cosmosvaloper1validator"),
         },
         txType: "CLAIM_REWARDS",
       }),
     });
 
-    expect(result.isRight()).toBe(true);
+    expect(Result.isSuccess(result)).toBe(true);
 
-    const tx = result.unsafeCoerce() as {
+    const tx = Result.getOrThrow(result) as {
       amount: string;
       validators: Array<{ address: string; amount: string }>;
     };
@@ -188,13 +196,13 @@ describe("prepareLedgerLiveTransaction", () => {
       txMeta: createTxMeta({
         amount: null,
         rawArguments: {
-          validatorAddress: "cosmosvaloper1validator",
+          validatorAddress: validatorAddress("cosmosvaloper1validator"),
         },
         txType: "STAKE",
       }),
     });
 
-    expect(result.extract()).toBe("Missing Cosmos Ledger arguments");
+    expect(Result.merge(result)).toBe("Missing Cosmos Ledger arguments");
   });
 
   it("uses the Polkadot bond payee as Ledger reward destination", () => {
@@ -222,9 +230,9 @@ describe("prepareLedgerLiveTransaction", () => {
       }),
     });
 
-    expect(result.isRight()).toBe(true);
+    expect(Result.isSuccess(result)).toBe(true);
 
-    const tx = result.unsafeCoerce() as {
+    const tx = Result.getOrThrow(result) as {
       amount: string;
       rewardDestination?: string;
     };

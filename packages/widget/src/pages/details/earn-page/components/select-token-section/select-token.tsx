@@ -15,7 +15,7 @@ import { VirtualList } from "../../../../../components/atoms/virtual-list";
 import { equalTokens } from "../../../../../domain/types/tokens";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useSettings } from "../../../../../providers/settings";
-import { useSKWallet } from "../../../../../providers/sk-wallet";
+import { useSKWallet } from "../../../../../providers/wallet/react/use-wallet";
 import { combineRecipeWithVariant } from "../../../../../utils/styles";
 import { useEarnPageContext } from "../../state/earn-page-context";
 import { validatorVirtuosoContainer } from "../../styles.css";
@@ -45,16 +45,8 @@ export const SelectToken = ({ canSelect = true }: { canSelect?: boolean }) => {
   const data = useMemo(
     () =>
       selectedToken
-        .map((st) => {
-          const tokenBalances =
-            tokenBalancesData.map((v) => v.filtered).extract() ?? [];
-
-          return {
-            st,
-            tokenBalances,
-          };
-        })
-        .extractNullable(),
+        ? { st: selectedToken, tokenBalances: tokenBalancesData.filtered }
+        : null,
     [selectedToken, tokenBalancesData]
   );
 

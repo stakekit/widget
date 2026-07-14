@@ -1,11 +1,21 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import {
+  setTosAcceptedAtom,
+  tosAcceptedAtom,
+} from "../providers/effect-atom-runtime/persistence-atoms";
 import { useSettings } from "../providers/settings";
-import { setStorageItem } from "../services/local-storage";
-import { useLocalStorageValue } from "./use-local-storage-value";
 
 export const useShowTOS = () => {
-  const tosAccepted = useLocalStorageValue("sk-widget@1//tosAccepted");
+  const result = useAtomValue(tosAcceptedAtom);
+  const setTosAccepted = useAtomSet(setTosAcceptedAtom);
+  const tosAccepted = result.pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => false)
+  );
 
-  const onAccept = () => setStorageItem("sk-widget@1//tosAccepted", true);
+  const onAccept = () => setTosAccepted(true);
 
   const { variant } = useSettings();
 

@@ -1,5 +1,4 @@
 import BigNumber from "bignumber.js";
-import { Just, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box, type BoxProps } from "../../../components/atoms/box";
@@ -13,9 +12,11 @@ import {
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
 import * as AmountToggle from "../../../components/molecules/amount-toggle";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
 import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
-import type { Yield } from "../../../domain/types/yields";
+
 import { useYieldMetaInfo } from "../../../hooks/use-yield-meta-info";
 import { useSettings } from "../../../providers/settings";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
@@ -33,12 +34,12 @@ type AmountBlockProps = {
   onMaxClick: (() => void) | null;
   label: string;
   formattedAmount: string;
-  balance: { amount: BigNumber; token: TokenDto | YieldTokenDto } | null;
+  balance: { amount: BigNumber; token: AppToken } | null;
 } & (
   | {
       variant: "unstake";
-      unstakeToken: TokenDto | YieldTokenDto;
-      yieldDto: Yield;
+      unstakeToken: AppToken;
+      yieldDto: EarnYieldWithProvider;
       validators: {
         [Key in keyof Pick<
           ValidatorDto,
@@ -47,8 +48,8 @@ type AmountBlockProps = {
       }[];
       canUnstake: boolean;
       unstakeIsGreaterOrLessIntegrationLimitError: boolean;
-      unstakeMaxAmount: Maybe<number>;
-      unstakeMinAmount: Maybe<number>;
+      unstakeMaxAmount: number | null;
+      unstakeMinAmount: number | null;
       /**
        * When false, the unstake info (withdrawal time, etc.) is not rendered
        * inside the card so it can be placed below the section instead.
@@ -75,30 +76,25 @@ export const AmountBlock = ({
   const { t } = useTranslation();
   const { dashboardVariant, variant } = useSettings();
 
-  const minMaxUnstakeAmount = Maybe.fromPredicate(
-    (v) => v.variant === "unstake",
-    rest as Extract<AmountBlockProps, { variant: "unstake" }>
-  )
-    .map(
-      (val) =>
-        [
-          val.unstakeMinAmount
-            .map(
-              (v) =>
-                `${t("shared.min")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
-            )
-            .extractNullable(),
-          val.unstakeMaxAmount
-            .map(
-              (v) =>
-                `${t("shared.max")} ${formatNumber(new BigNumber(v))} ${val.unstakeToken.symbol}`
-            )
-            .extractNullable(),
-          val.unstakeIsGreaterOrLessIntegrationLimitError,
-        ] as const
-    )
-    .filter((val) => val.some(Boolean))
-    .map(([min, max, error]) => (
+  const unstakeProps =
+    rest.variant === "unstake"
+      ? (rest as Extract<AmountBlockProps, { variant: "unstake" }>)
+      : null;
+  const min =
+    unstakeProps?.unstakeMinAmount == null
+      ? null
+      : `${t("shared.min")} ${formatNumber(
+          new BigNumber(unstakeProps.unstakeMinAmount)
+        )} ${unstakeProps.unstakeToken.symbol}`;
+  const max =
+    unstakeProps?.unstakeMaxAmount == null
+      ? null
+      : `${t("shared.max")} ${formatNumber(
+          new BigNumber(unstakeProps.unstakeMaxAmount)
+        )} ${unstakeProps.unstakeToken.symbol}`;
+  const minMaxUnstakeAmount =
+    unstakeProps &&
+    (min || max || unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError) ? (
       <Box
         display="flex"
         justifyContent="flex-end"
@@ -108,14 +104,17 @@ export const AmountBlock = ({
       >
         <Text
           key="min"
-          variant={{ type: error ? "danger" : "muted" }}
+          variant={{
+            type: unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError
+              ? "danger"
+              : "muted",
+          }}
           textAlign="right"
         >
           {min && max ? `${min} / ${max}` : (min ?? max)}
         </Text>
       </Box>
-    ))
-    .extractNullable();
+    ) : null;
 
   const variantProps: BoxProps =
     rest.variant === "action"
@@ -248,44 +247,43 @@ export const UnstakeInfo = ({
   yieldDto,
   unstakeToken,
 }: {
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
   validators: {
     [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
   }[];
-  unstakeToken: TokenDto | YieldTokenDto;
+  unstakeToken: AppToken;
 }) => {
   const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
     useYieldMetaInfo({
       validators,
-      selectedStake: Just(yieldDto),
-      tokenDto: Just(unstakeToken),
+      selectedStake: yieldDto,
+      tokenDto: unstakeToken,
     });
 
-  return useMemo(
-    () =>
-      Just([withdrawnTime, withdrawnNotAvailable, positionLocked])
-        .map((val) => val.filter((v) => !!v))
-        .filter((val) => !!val.length)
-        .map((val) => (
-          <Box display="flex" flexDirection="column" gap="2">
-            {val.map((v, i) => (
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="flex-start"
-                gap="1"
-                key={i}
-              >
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <InfoIcon />
-                </Box>
+  return useMemo(() => {
+    const values = [
+      withdrawnTime,
+      withdrawnNotAvailable,
+      positionLocked,
+    ].filter(Boolean);
+    return values.length > 0 ? (
+      <Box display="flex" flexDirection="column" gap="2">
+        {values.map((v, i) => (
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="flex-start"
+            gap="1"
+            key={i}
+          >
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <InfoIcon />
+            </Box>
 
-                <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
-              </Box>
-            ))}
+            <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
           </Box>
-        ))
-        .extractNullable(),
-    [withdrawnTime, withdrawnNotAvailable, positionLocked]
-  );
+        ))}
+      </Box>
+    ) : null;
+  }, [withdrawnTime, withdrawnNotAvailable, positionLocked]);
 };

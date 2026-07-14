@@ -1,3 +1,4 @@
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { motion } from "motion/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,7 @@ import { VirtualList } from "../../../components/atoms/virtual-list";
 import { ZerionChainModal } from "../../../components/molecules/zerion-chain-modal";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useMountAnimation } from "../../../providers/mount-animation";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { PageContainer } from "../../components/page-container";
 import { FallbackContent } from "./components/fallback-content";
 import { PositionsListItem } from "./components/positions-list-item";
@@ -17,14 +18,19 @@ import { container } from "./style.css";
 const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, listData, showPositions } = usePositions();
+  const { positions, positionsResult, listData, showPositions } =
+    usePositions();
 
   const { isConnected, isConnecting } = useSKWallet();
 
   const { t } = useTranslation();
 
   const content = useMemo(() => {
-    if (positionsData.isLoading && positionsData.isFetching && isConnected) {
+    if (
+      AsyncResult.isInitial(positionsResult) &&
+      positionsResult.waiting &&
+      isConnected
+    ) {
       return <FallbackContent type="spinner" />;
     }
     if (!isConnected && !isConnecting) {
@@ -53,20 +59,12 @@ const PositionsPage = () => {
         </Box>
       );
     }
-    if (positionsData.isError && !positionsData.data.length) {
+    if (AsyncResult.isFailure(positionsResult) && !positions.length) {
       return <FallbackContent type="something_wrong" />;
     }
 
     return null;
-  }, [
-    isConnected,
-    isConnecting,
-    positionsData.data.length,
-    positionsData.isError,
-    positionsData.isFetching,
-    positionsData.isLoading,
-    t,
-  ]);
+  }, [isConnected, isConnecting, positions.length, positionsResult, t]);
 
   return (
     <Box className={container} display="flex" flex={1} flexDirection="column">
@@ -82,7 +80,7 @@ const PositionsPage = () => {
                 <>
                   <ZerionChainModal />
 
-                  {isConnected && !positionsData.data.length && (
+                  {isConnected && !positions.length && (
                     <Box my="4">
                       <FallbackContent type="no_current_positions" />
                     </Box>

@@ -7,11 +7,14 @@ import { XIcon } from "../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../components/atoms/image";
 import { Text } from "../../../../components/atoms/typography/text";
 import { SelectValidator } from "../../../../components/molecules/select-validator";
-import type { Validator } from "../../../../domain/types/validators";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../domain/schema/earn-models";
+
 import {
   isYieldActionArgRequired,
   isYieldValidatorSelectionRequired,
-  type Yield,
 } from "../../../../domain/types/yields";
 import { useSelectValidator } from "../../../../pages/details/earn-page/components/select-validator-section/use-select-validator";
 import { useEarnPageContext } from "../../../../pages/details/earn-page/state/earn-page-context";
@@ -25,20 +28,18 @@ import {
 import * as styles from "../styles.css";
 
 type ProviderDetailsItem = NonNullable<
-  ReturnType<
-    ReturnType<typeof useEarnPageContext>["providersDetails"]["extractNullable"]
-  >
+  ReturnType<typeof useEarnPageContext>["providersDetails"]
 >[number];
 
 type ProviderCardItem = {
   key: string;
-  commission: ProviderDetailsItem["commission"] | Validator["commission"];
+  commission: ProviderDetailsItem["commission"] | EarnValidator["commission"];
   logo: string | undefined;
   name: string;
   preferred: boolean | undefined;
-  stakedBalance: ProviderDetailsItem["stakedBalance"] | Validator["tvlRaw"];
-  status: ProviderDetailsItem["status"] | Validator["status"];
-  validator: Validator | undefined;
+  stakedBalance: ProviderDetailsItem["stakedBalance"] | EarnValidator["tvlRaw"];
+  status: ProviderDetailsItem["status"] | EarnValidator["status"];
+  validator: EarnValidator | undefined;
   website: string | undefined;
 };
 
@@ -61,12 +62,12 @@ export const ProviderSelectionCard = () => {
   } = useSelectValidator();
   const { providersDetails } = useEarnPageContext();
 
-  const yieldDto = selectedStake.extractNullable();
+  const yieldDto = selectedStake;
 
   if (!yieldDto || !isYieldValidatorSelectionRequired(yieldDto)) return null;
 
   const selectedValidatorsArr = [...selectedValidators.values()];
-  const providerDetailsArr = providersDetails.extractNullable() ?? [];
+  const providerDetailsArr = providersDetails ?? [];
   const providerCardItems = getProviderCardItems({
     providerDetailsArr,
     selectedValidatorsArr,
@@ -77,7 +78,7 @@ export const ProviderSelectionCard = () => {
     "enter",
     "validatorAddresses"
   );
-  const validators = validatorsData.orDefault([]);
+  const validators = validatorsData ?? [];
 
   return (
     <SelectValidator
@@ -115,7 +116,7 @@ const ProviderCardsTrigger = ({
 }: {
   items: ProviderCardItem[];
   multiSelect: boolean;
-  onRemoveValidator: (item: Validator) => void;
+  onRemoveValidator: (item: EarnValidator) => void;
   tokenSymbol: string;
 }) => {
   const { t } = useTranslation();
@@ -227,8 +228,8 @@ const getProviderCardItems = ({
   yieldDto,
 }: {
   providerDetailsArr: ProviderDetailsItem[];
-  selectedValidatorsArr: Validator[];
-  yieldDto: Yield;
+  selectedValidatorsArr: EarnValidator[];
+  yieldDto: EarnYieldWithProvider;
 }): ProviderCardItem[] => {
   if (selectedValidatorsArr.length) {
     return selectedValidatorsArr.map((validator, index) => {

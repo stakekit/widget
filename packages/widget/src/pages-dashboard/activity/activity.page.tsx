@@ -1,5 +1,4 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { Maybe } from "purify-ts";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../components/atoms/box";
@@ -20,7 +19,7 @@ import {
   useActivitySelectedAction,
   useSetActivitySelection,
 } from "../../providers/activity-provider";
-import { useSKWallet } from "../../providers/sk-wallet";
+import { useSKWallet } from "../../providers/wallet/react/use-wallet";
 import { container } from "./styles.css";
 
 const ActivityPageComponent = () => {
@@ -114,13 +113,11 @@ const _ActivityPage = () => {
       data.actionData.status === ActionStatus.SUCCESS ||
       data.actionData.status === ActionStatus.PROCESSING
     ) {
-      setActivitySelection(
-        Maybe.of({
-          selectedAction: data.actionData,
-          selectedYield: data.yieldData,
-          selectedValidators: data.validatorsData,
-        })
-      );
+      setActivitySelection({
+        selectedAction: data.actionData,
+        selectedYield: data.yieldData,
+        selectedValidators: data.validatorsData,
+      });
     }
 
     if (
@@ -128,13 +125,11 @@ const _ActivityPage = () => {
       data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
       data.actionData.status === ActionStatus.FAILED
     ) {
-      setActivitySelection(
-        Maybe.of({
-          selectedAction: data.actionData,
-          selectedYield: data.yieldData,
-          selectedValidators: data.validatorsData,
-        })
-      );
+      setActivitySelection({
+        selectedAction: data.actionData,
+        selectedYield: data.yieldData,
+        selectedValidators: data.validatorsData,
+      });
     }
 
     return;
@@ -144,12 +139,12 @@ const _ActivityPage = () => {
 
   // biome-ignore lint: false
   useEffect(() => {
-    setActivitySelection(Maybe.empty());
+    setActivitySelection(null);
   }, [network, setActivitySelection]);
 
   useEffect(() => {
-    if (!isConnected && selectedAction.isJust()) {
-      setActivitySelection(Maybe.empty());
+    if (!isConnected && selectedAction) {
+      setActivitySelection(null);
     }
   }, [isConnected, selectedAction, setActivitySelection]);
 

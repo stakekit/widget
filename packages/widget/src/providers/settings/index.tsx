@@ -1,11 +1,17 @@
-import { Maybe } from "purify-ts";
+import { Record as EffectRecord } from "effect";
 import type { PropsWithChildren } from "react";
 import { createContext, useContext, useLayoutEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { config } from "../../config";
+import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
 import utilaTranslations from "../../translation/English/utila-variant.json";
 import type { SettingsContextType, SettingsProps, VariantProps } from "./types";
+
+type TokenYieldPreferences = Exclude<
+  PreferredTokenYieldsPerNetwork[keyof PreferredTokenYieldsPerNetwork],
+  undefined
+>;
 
 export const SettingsContext = createContext<SettingsContextType | undefined>(
   undefined
@@ -23,21 +29,23 @@ export const SettingsContextProvider = ({
    * Convert to lower case to match token string
    */
   const preferredTokenYieldsPerNetwork = useMemo(() => {
-    return Maybe.fromNullable(rest.preferredTokenYieldsPerNetwork)
-      .map((value) => Object.entries(value))
-      .map((entries) =>
-        entries.map(([chain, value]) => [
-          chain,
-          Object.fromEntries(
-            Object.entries(value).map(([tokenString, innerValue]) => [
-              tokenString.toLowerCase(),
-              innerValue,
-            ])
-          ),
-        ])
-      )
-      .map((entries) => Object.fromEntries(entries))
-      .extract() as typeof rest.preferredTokenYieldsPerNetwork;
+    const value = rest.preferredTokenYieldsPerNetwork;
+
+    return value
+      ? (EffectRecord.map(
+          value as Readonly<Record<string, TokenYieldPreferences>>,
+          (tokenYields) =>
+            EffectRecord.mapKeys(
+              tokenYields as Readonly<
+                Record<
+                  string,
+                  TokenYieldPreferences[keyof TokenYieldPreferences]
+                >
+              >,
+              (tokenString) => tokenString.toLowerCase()
+            )
+        ) as PreferredTokenYieldsPerNetwork)
+      : undefined;
   }, [rest.preferredTokenYieldsPerNetwork]);
 
   const dashboardYieldCategoryOrder = normalizeDashboardYieldCategoryOrder(

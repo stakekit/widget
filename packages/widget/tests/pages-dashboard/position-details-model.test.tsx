@@ -3,9 +3,11 @@ import { Schema } from "effect";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 import { RewardsSummary } from "../../src/domain/schema/dashboard-models";
+import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
 import { EarnBalance } from "../../src/domain/schema/earn-models";
+import { TokenAddress } from "../../src/domain/schema/identifiers";
 import type { PositionBalancesByType } from "../../src/domain/types/positions";
-import type { Yield } from "../../src/domain/types/yields";
+
 import { getDashboardPositionDetailsModel } from "../../src/pages-dashboard/position-details/position-details-model";
 import {
   yieldApiProviderFixture,
@@ -65,7 +67,9 @@ const t = (key: string, options?: Record<string, unknown>): string => {
   return translations[key] ?? key;
 };
 
-const makeYield = (overrides?: Partial<Yield>): Yield =>
+const makeYield = (
+  overrides?: Partial<EarnYieldWithProvider>
+): EarnYieldWithProvider =>
   ({
     ...yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.04 }),
@@ -81,7 +85,7 @@ const makeYield = (overrides?: Partial<Yield>): Yield =>
     }),
     provider: yieldApiProviderFixture({ name: "Rocket Pool" }),
     ...overrides,
-  }) as Yield;
+  }) as EarnYieldWithProvider;
 
 const makePositionBalances = (): PositionBalancesByType => {
   const token = yieldApiYieldFixture().token;
@@ -248,7 +252,7 @@ describe("getDashboardPositionDetailsModel", () => {
           ...makeYield().mechanics,
           cooldownPeriod: { seconds: 7 * 24 * 60 * 60 },
         },
-      } as Partial<Yield>),
+      } as Partial<EarnYieldWithProvider>),
       pendingActions: [],
       personalizedRewardRate: null,
       positionBalancesByType,
@@ -364,7 +368,9 @@ describe("getDashboardPositionDetailsModel", () => {
         },
         outputToken: {
           ...baseYield.token,
-          address: "0x0000000000000000000000000000000000000002",
+          address: Schema.decodeSync(TokenAddress)(
+            "0x0000000000000000000000000000000000000002"
+          ),
           symbol: "mUSDC",
         },
         state: {
@@ -376,7 +382,9 @@ describe("getDashboardPositionDetailsModel", () => {
         },
         token: {
           ...baseYield.token,
-          address: "0x0000000000000000000000000000000000000001",
+          address: Schema.decodeSync(TokenAddress)(
+            "0x0000000000000000000000000000000000000001"
+          ),
           symbol: "USDC",
         },
       }),

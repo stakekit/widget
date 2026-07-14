@@ -9,12 +9,12 @@ import type {
   WalletDetailsParams,
   WalletList,
 } from "@stakekit/rainbowkit";
-import { EitherAsync, List, Maybe } from "purify-ts";
-import { BehaviorSubject, map } from "rxjs";
+import { Effect, Result, Stream } from "effect";
 import type { Address } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
+import { makeCurrentValueStream } from "../../common/current-value-stream";
 import { skNormalizeChainId } from "../../domain";
 import type { SupportedSKChains } from "../../domain/types/chains";
 import {
@@ -41,15 +41,17 @@ const createLedgerLiveConnector = ({
 }) =>
   createConnector<unknown, ExtraProps>((config) => {
     const noAccountPlaceholder = "N/A" as Address;
-    const $filteredChains = new BehaviorSubject<Chain[]>([]);
-    const $disabledChains = new BehaviorSubject<Chain[]>([]);
-    const $currentAccount = new BehaviorSubject<Account | undefined>(undefined);
+    const filteredChains = makeCurrentValueStream<Chain[]>([]);
+    const disabledChains = makeCurrentValueStream<Chain[]>([]);
+    const currentAccount = makeCurrentValueStream<Account | undefined>(
+      undefined
+    );
 
-    const $currentAccountId = $currentAccount.pipe(
-      map((v) => v?.parentAccountId ?? v?.id)
+    const currentAccountId = currentAccount.changes.pipe(
+      Stream.map((value) => value?.parentAccountId ?? value?.id)
     );
     let ledgerAccounts: Account[] = [];
-    const $accountsOnCurrentChain = new BehaviorSubject<Account[]>([]);
+    const accountsOnCurrentChainState = makeCurrentValueStream<Account[]>([]);
     let currentChain: ChainItem | null = null;
     let filteredSkSupportedChainsToCurrencyIdMap: Map<
       Chain["id"],
@@ -71,35 +73,39 @@ const createLedgerLiveConnector = ({
        * then use TokenCurrency parent to get CryptoCurrency family
        * and add to map TokenCurrency['id'] => CryptoCurrency['family']
        */
-      const ledgerCurrencies = (
-        await getLedgerCurrencies(walletApiClient)
-      ).unsafeCoerce();
+      const ledgerCurrencies = await Effect.runPromise(
+        getLedgerCurrencies(walletApiClient)
+      );
 
-      const allAccounts = (
-        await EitherAsync(() => walletApiClient.account.list())
-          .map((val) => ({
+      const allAccounts = await Effect.runPromise(
+        Effect.tryPromise({
+          try: () => walletApiClient.account.list(),
+          catch: (error) =>
+            new Error("could not get accounts", { cause: error }),
+        }).pipe(
+          Effect.map((val) => ({
             accounts: val,
             accountsMap: new Map<Account["id"], Account>(
               val.map((v) => [v.id, v])
             ),
-          }))
-          .map((val) =>
+          })),
+          Effect.map((val) =>
             val.accounts.map((acc) =>
               acc.parentAccountId
-                ? Maybe.fromNullable(val.accountsMap.get(acc.parentAccountId))
-                    .map((parentAcc) => ({
-                      ...acc,
-                      currency: parentAcc.currency,
-                    }))
-                    .orDefault(acc)
+                ? (() => {
+                    const parentAccount = val.accountsMap.get(
+                      acc.parentAccountId
+                    );
+
+                    return parentAccount
+                      ? { ...acc, currency: parentAccount.currency }
+                      : acc;
+                  })()
                 : acc
             )
           )
-          .mapLeft((e) => {
-            console.log(e);
-            return new Error("could not get accounts");
-          })
-      ).unsafeCoerce();
+        )
+      );
 
       ledgerAccounts = allAccounts.filter((a) => !a.parentAccountId);
 
@@ -137,8 +143,8 @@ const createLedgerLiveConnector = ({
       );
 
       // Set chains to expose for switcher
-      $filteredChains.next([...enabled, ...disabled]);
-      $disabledChains.next(disabled);
+      filteredChains.set([...enabled, ...disabled]);
+      disabledChains.set(disabled);
 
       const accountsWithChain = allAccounts
         .reduce(
@@ -173,15 +179,13 @@ const createLedgerLiveConnector = ({
         });
 
       if (!accountsWithChain.length) {
-        const defaultChain = Maybe.fromNullable(
-          filteredSupportedLedgerFamiliesWithCurrency
-            .get("ethereum")
-            ?.get("ethereum")
-        ).extractNullable();
+        const defaultChain = filteredSupportedLedgerFamiliesWithCurrency
+          .get("ethereum")
+          ?.get("ethereum");
 
         if (!defaultChain) throw new Error("Default chain not found");
 
-        $accountsOnCurrentChain.next([]);
+        accountsOnCurrentChainState.set([]);
         currentChain = defaultChain;
 
         onAccountsChanged([noAccountPlaceholder as Address]);
@@ -195,44 +199,36 @@ const createLedgerLiveConnector = ({
         } as never;
       }
 
-      const preferredAccount = Maybe.fromNullable(queryParams.accountId).chain(
-        (accId) =>
-          Maybe.encase(() => {
-            if (accId.startsWith("js:")) {
-              const [, , , address] = accId.split(":");
-
-              return { type: "address", address } as const;
-            }
-
-            return { type: "accountId", accountId: accId } as const;
-          })
-      );
-
-      const accountWithChain = preferredAccount
-        .chain((pa) =>
-          List.find((v) => {
-            if (pa.type === "address") {
-              return v.account.address === pa.address;
-            }
-
-            return v.account.id === pa.accountId;
-          }, accountsWithChain)
-        )
-        .altLazy(() =>
-          Maybe.fromNullable(queryParams.network).chain((network) =>
-            List.find(
-              (v) => v.chainItem.skChainName === network,
-              accountsWithChain
+      const preferredAccount = queryParams.accountId
+        ? queryParams.accountId.startsWith("js:")
+          ? ({
+              type: "address",
+              address: queryParams.accountId.split(":")[3],
+            } as const)
+          : ({ type: "accountId", accountId: queryParams.accountId } as const)
+        : null;
+      const accountWithChain =
+        (preferredAccount
+          ? accountsWithChain.find((value) =>
+              preferredAccount.type === "address"
+                ? value.account.address === preferredAccount.address
+                : value.account.id === preferredAccount.accountId
             )
-          )
-        )
-        .altLazy(() => List.head(accountsWithChain))
-        .toEither(new Error("Account not found"))
-        .unsafeCoerce();
+          : undefined) ??
+        (queryParams.network
+          ? accountsWithChain.find(
+              (value) => value.chainItem.skChainName === queryParams.network
+            )
+          : undefined) ??
+        accountsWithChain[0];
 
-      $currentAccount.next(accountWithChain.account);
+      if (!accountWithChain) throw new Error("Account not found");
+
+      currentAccount.set(accountWithChain.account);
       currentChain = accountWithChain.chainItem;
-      $accountsOnCurrentChain.next(getAccountsOnCurrentChain().unsafeCoerce());
+      accountsOnCurrentChainState.set(
+        Result.getOrThrow(getAccountsOnCurrentChain())
+      );
 
       onAccountsChanged([accountWithChain.account.address as Address]);
       onChainChanged(currentChain.chain.id.toString());
@@ -251,11 +247,13 @@ const createLedgerLiveConnector = ({
     };
 
     const getAccountsOnCurrentChain = () =>
-      Maybe.fromNullable(currentChain)
-        .toEither(new Error("Current chain not found"))
-        .map((val) =>
-          ledgerAccounts.filter((a) => a.currency === val.currencyId)
-        );
+      currentChain
+        ? Result.succeed(
+            ledgerAccounts.filter(
+              (account) => account.currency === currentChain?.currencyId
+            )
+          )
+        : Result.fail(new Error("Current chain not found"));
 
     const onAccountsChanged: ReturnType<CreateConnectorFn>["onAccountsChanged"] =
       (accounts) => {
@@ -295,39 +293,40 @@ const createLedgerLiveConnector = ({
       };
 
     const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
-      async () => [$currentAccount.value?.address as Address];
+      async () => [currentAccount.get()?.address as Address];
 
     const switchAccount = (account: Account) => {
-      $currentAccount.next(account);
+      currentAccount.set(account);
       onAccountsChanged([account.address as Address]);
     };
 
     const requestAndSwitchAccount = (chain: Chain) =>
-      EitherAsync.liftEither(
-        Maybe.fromNullable(
-          filteredSkSupportedChainsToCurrencyIdMap?.get(chain.id)
-        ).toEither(new Error("Chain not found"))
-      )
-        .chain((currencyId) =>
-          EitherAsync(() =>
-            walletApiClient.account.request({ currencyIds: [currencyId] })
-          ).mapLeft((e) => {
-            console.log(e);
-            return new Error("could not request account");
-          })
-        )
-        .chain((account) => {
-          ledgerAccounts.push(account);
-          $filteredChains.next([...$filteredChains.value, chain]);
-          $disabledChains.next(
-            $disabledChains.value.filter((c) => c.id !== chain.id)
-          );
-          return EitherAsync(() => switchChain({ chainId: chain.id }));
-        })
-        .mapLeft((e) => {
-          console.log(e);
-          return new Error("failed to switch to new chain");
+      Effect.gen(function* () {
+        const currencyId = filteredSkSupportedChainsToCurrencyIdMap?.get(
+          chain.id
+        );
+
+        if (!currencyId)
+          return yield* Effect.fail(new Error("Chain not found"));
+
+        const account = yield* Effect.tryPromise({
+          try: () =>
+            walletApiClient.account.request({ currencyIds: [currencyId] }),
+          catch: (error) =>
+            new Error("could not request account", { cause: error }),
         });
+
+        ledgerAccounts.push(account);
+        filteredChains.set([...filteredChains.get(), chain]);
+        disabledChains.set(
+          disabledChains.get().filter((c) => c.id !== chain.id)
+        );
+        return yield* Effect.tryPromise({
+          try: () => switchChain({ chainId: chain.id }),
+          catch: (error) =>
+            new Error("failed to switch to new chain", { cause: error }),
+        });
+      });
 
     const switchChain: NonNullable<
       ReturnType<CreateConnectorFn>["switchChain"]
@@ -345,21 +344,22 @@ const createLedgerLiveConnector = ({
 
       if (
         currChain.chain.id !== skSupportedChain.chain.id ||
-        !$currentAccount.value
+        !currentAccount.get()
       ) {
         currentChain = skSupportedChain;
-        const accountsOnCurrentChain =
-          getAccountsOnCurrentChain().unsafeCoerce();
+        const accountsOnCurrentChain = Result.getOrThrow(
+          getAccountsOnCurrentChain()
+        );
 
-        $accountsOnCurrentChain.next(accountsOnCurrentChain);
-        $currentAccount.next(accountsOnCurrentChain[0]);
+        accountsOnCurrentChainState.set(accountsOnCurrentChain);
+        currentAccount.set(accountsOnCurrentChain[0]);
       }
 
-      const currentAccount = $currentAccount.value;
-      if (!currentAccount) throw new Error("Account not found");
+      const selectedAccount = currentAccount.get();
+      if (!selectedAccount) throw new Error("Account not found");
 
       onChainChanged(chainId.toString());
-      onAccountsChanged([currentAccount.address as Address]);
+      onAccountsChanged([selectedAccount.address as Address]);
 
       return skSupportedChain.chain;
     };
@@ -382,10 +382,10 @@ const createLedgerLiveConnector = ({
       switchAccount,
       requestAndSwitchAccount,
       walletApiClient,
-      $accountsOnCurrentChain,
-      $filteredChains: $filteredChains.asObservable(),
-      $currentAccountId,
-      $disabledChains: $disabledChains.asObservable(),
+      $accountsOnCurrentChain: accountsOnCurrentChainState.changes,
+      $filteredChains: filteredChains.changes,
+      $currentAccountId: currentAccountId,
+      $disabledChains: disabledChains.changes,
       noAccountPlaceholder,
       deserializeTransaction,
       prepareTransaction: prepareLedgerLiveTransaction,

@@ -6,5 +6,3 @@ export class BorrowToken extends Schema.Class<BorrowToken>("BorrowToken")({
   ...BorrowApi.CollateralTokenDto.fields.token.fields,
   address: Schema.optionalKey(TokenAddress),
 }) {}
-
-export type Token = BorrowToken;

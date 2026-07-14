@@ -1,21 +1,20 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
-import { createContext, useCallback, useContext, useMemo } from "react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { createContext, useContext, useMemo } from "react";
 import { config } from "../config";
 import { getTokenPriceInUSD } from "../domain";
 import { getPositionTotalAmount } from "../domain/types/positions";
-import type { Prices } from "../domain/types/price";
-import type { EnabledRewardsSummaryYieldId } from "../domain/types/rewards";
-import type { Yield } from "../domain/types/yields";
+
 import { usePositions } from "../pages/details/positions-page/hooks/use-positions";
-import { useMultiYields } from "./api/use-multi-yields";
-import { usePrices } from "./api/use-prices";
-import { useTokenBalancesScan } from "./api/use-token-balances-scan";
-import { getProviderDetails } from "./use-provider-details";
 import {
-  type RewardsSummaryResult,
-  useMultiRewardsSummary,
-} from "./use-rewards-summary";
+  CurrentRewardsSummaryKey,
+  positiveRewardsSummaryAtom,
+} from "./api/dashboard-atoms";
+import { PricesKey, pricesAtom } from "./api/prices-atoms";
+import { tokenBalancesScanAtom } from "./api/token-balances-atoms";
+import { MultiYieldsKey, multiYieldsByIdAtom } from "./api/yield-atoms";
+import { getProviderDetails } from "./use-provider-details";
 
 const SummaryContext = createContext<
   | {
@@ -65,47 +64,47 @@ export const SummaryProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { positionsData } = usePositions();
+  const { positions } = usePositions();
 
   const yieldIds = useMemo(
-    () => [...new Set(positionsData.data.map((p) => p.integrationId)).values()],
-    [positionsData.data]
+    () => [...new Set(positions.map((position) => position.integrationId))],
+    [positions]
   );
 
-  const multiYieldsMapQuery = useMultiYields(yieldIds, {
-    select: useCallback(
-      (val: Yield[]) => new Map(val.map((y) => [y.id, y])),
-      []
-    ),
-  });
-
-  const rewardsSummaryQuery = useMultiRewardsSummary(yieldIds, {
-    select: useCallback(
-      (val: RewardsSummaryResult) =>
-        Object.keys(val).reduce((acc, key) => {
-          const item = val[key as EnabledRewardsSummaryYieldId];
-
-          if (BigNumber(item.rewards.total).gt(0)) {
-            acc[key as EnabledRewardsSummaryYieldId] = item;
-          }
-
-          return acc;
-        }, {} as RewardsSummaryResult),
-      []
-    ),
-  });
+  const multiYieldsMapResult = useAtomValue(
+    multiYieldsByIdAtom(
+      new MultiYieldsKey({
+        enabled: yieldIds.length > 0,
+        yieldIds,
+      })
+    )
+  );
+  const multiYieldsMap = AsyncResult.getOrElse(
+    multiYieldsMapResult,
+    () => null
+  );
+  const rewardsSummaryResult = useAtomValue(
+    positiveRewardsSummaryAtom(
+      new CurrentRewardsSummaryKey({
+        enabled: yieldIds.length > 0,
+        yieldIds,
+      })
+    )
+  );
+  const rewardsSummaryData = AsyncResult.getOrElse(
+    rewardsSummaryResult,
+    () => null
+  );
 
   const allPositionsQuery = useMemo(() => {
-    const multiYieldsMap = multiYieldsMapQuery.data;
-
     if (!multiYieldsMap) {
       return {
         data: undefined as undefined,
-        isLoading: multiYieldsMapQuery.isLoading,
+        isLoading: AsyncResult.isInitial(multiYieldsMapResult),
       };
     }
 
-    const allPositions = positionsData.data.flatMap((p) => {
+    const allPositions = positions.flatMap((p) => {
       const yieldDto = multiYieldsMap.get(p.integrationId);
 
       if (!yieldDto) return [];
@@ -118,11 +117,10 @@ export const SummaryProvider = ({
       const yields = [...multiYieldsMap.values()];
 
       const providerDetails = getProviderDetails({
-        integrationData: Maybe.of(yieldDto),
-        validator:
-          p.type === "validators" ? List.head(p.validators) : Maybe.empty(),
-        selectedProviderYieldId: Maybe.empty(),
-        yields: Maybe.of(yields),
+        integrationData: yieldDto,
+        validator: p.type === "validators" ? (p.validators[0] ?? null) : null,
+        selectedProviderYieldId: null,
+        yields,
       });
 
       return {
@@ -141,104 +139,98 @@ export const SummaryProvider = ({
       data: { allPositions, allPositionsSum },
       isLoading: false as const,
     };
-  }, [
-    multiYieldsMapQuery.data,
-    multiYieldsMapQuery.isLoading,
-    positionsData.data,
-  ]);
+  }, [multiYieldsMap, multiYieldsMapResult, positions]);
 
-  const rewardsPositionsQuery = usePrices(
-    {
-      currency: config.currency,
-      tokenList: useMemo(
-        () => Object.values(rewardsSummaryQuery.data ?? {}).map((v) => v.token),
-        [rewardsSummaryQuery.data]
-      ),
-    },
-    {
-      enabled: !rewardsSummaryQuery.isLoading && !multiYieldsMapQuery.isLoading,
-      select: useCallback(
-        (prices: Prices) => {
-          const multiYieldsMap = multiYieldsMapQuery.data;
-
-          if (!rewardsSummaryQuery.data || !multiYieldsMap) {
-            return {
-              rewardsPositions: [],
-              rewardsPositionsTotalSum: new BigNumber(0),
-              rewardsPositionsLastMonthSum: new BigNumber(0),
-              rewardsPositionsLastWeekSum: new BigNumber(0),
-            };
-          }
-
-          const rewardsPositions = Object.entries(
-            rewardsSummaryQuery.data
-          ).flatMap(([integrationId, rewardSummary]) => {
-            const yieldDto = multiYieldsMap.get(integrationId);
-
-            if (!yieldDto) return [];
-
-            const common = {
-              pricePerShare: "1",
-              baseToken: yieldDto.token,
-              token: rewardSummary.token,
-              prices,
-            };
-
-            return {
-              yieldName: yieldDto.metadata.name,
-              total: getTokenPriceInUSD({
-                ...common,
-                amount: rewardSummary.rewards.total,
-              }),
-              lastMonth: getTokenPriceInUSD({
-                ...common,
-                amount: rewardSummary.rewards.last30D,
-              }),
-              lastWeek: getTokenPriceInUSD({
-                ...common,
-                amount: rewardSummary.rewards.last7D,
-              }),
-            };
-          });
-
-          const rewardsPositionsTotalSum = rewardsPositions.reduce(
-            (acc, p) => acc.plus(p.total),
-            new BigNumber(0)
-          );
-
-          const rewardsPositionsLastMonthSum = rewardsPositions.reduce(
-            (acc, p) => acc.plus(p.lastMonth),
-            new BigNumber(0)
-          );
-
-          const rewardsPositionsLastWeekSum = rewardsPositions.reduce(
-            (acc, p) => acc.plus(p.lastWeek),
-            new BigNumber(0)
-          );
-
-          return {
-            rewardsPositions,
-            rewardsPositionsTotalSum,
-            rewardsPositionsLastMonthSum,
-            rewardsPositionsLastWeekSum,
-          };
-        },
-        [multiYieldsMapQuery.data, rewardsSummaryQuery.data]
-      ),
-    }
+  const rewardsPricesResult = useAtomValue(
+    pricesAtom(
+      new PricesKey({
+        request:
+          AsyncResult.isInitial(rewardsSummaryResult) ||
+          AsyncResult.isInitial(multiYieldsMapResult)
+            ? null
+            : {
+                currency: config.currency,
+                tokenList: Object.values(rewardsSummaryData ?? {}).map(
+                  (summary) => summary.token
+                ),
+              },
+      })
+    )
   );
-
-  const averageApyQuery = useMemo(() => {
-    const multiYieldsMap = multiYieldsMapQuery.data;
-
-    if (!multiYieldsMap) {
+  const rewardsPrices = AsyncResult.getOrElse(rewardsPricesResult, () => null);
+  const rewardsPositionsQuery = useMemo(() => {
+    if (!rewardsPrices || !rewardsSummaryData || !multiYieldsMap) {
       return {
-        data: undefined as undefined,
-        isLoading: multiYieldsMapQuery.isLoading,
+        data: undefined,
+        isLoading: AsyncResult.isInitial(rewardsPricesResult),
       };
     }
 
-    const { totalWeightedApy, totalValue } = positionsData.data.reduce(
+    const rewardsPositions = yieldIds.flatMap((integrationId) => {
+      const rewardSummary = rewardsSummaryData[integrationId];
+      const yieldDto = multiYieldsMap.get(integrationId);
+
+      if (!rewardSummary || !yieldDto) return [];
+
+      const common = {
+        pricePerShare: "1",
+        baseToken: yieldDto.token,
+        token: rewardSummary.token,
+        prices: rewardsPrices,
+      };
+
+      return {
+        yieldName: yieldDto.metadata.name,
+        total: getTokenPriceInUSD({
+          ...common,
+          amount: rewardSummary.rewards.total,
+        }),
+        lastMonth: getTokenPriceInUSD({
+          ...common,
+          amount: rewardSummary.rewards.last30D,
+        }),
+        lastWeek: getTokenPriceInUSD({
+          ...common,
+          amount: rewardSummary.rewards.last7D,
+        }),
+      };
+    });
+
+    return {
+      data: {
+        rewardsPositions,
+        rewardsPositionsTotalSum: rewardsPositions.reduce(
+          (sum, position) => sum.plus(position.total),
+          new BigNumber(0)
+        ),
+        rewardsPositionsLastMonthSum: rewardsPositions.reduce(
+          (sum, position) => sum.plus(position.lastMonth),
+          new BigNumber(0)
+        ),
+        rewardsPositionsLastWeekSum: rewardsPositions.reduce(
+          (sum, position) => sum.plus(position.lastWeek),
+          new BigNumber(0)
+        ),
+      },
+      isLoading: false,
+    };
+  }, [
+    multiYieldsMap,
+    rewardsPrices,
+    rewardsPricesResult,
+    rewardsSummaryData,
+    yieldIds,
+  ]);
+
+  const averageApyQuery = useMemo(() => {
+    if (!multiYieldsMap) {
+      return {
+        data: undefined as undefined,
+        isLoading: AsyncResult.isInitial(multiYieldsMapResult),
+      };
+    }
+
+    const { totalWeightedApy, totalValue } = positions.reduce(
       (acc, p) => {
         const yieldDto = multiYieldsMap.get(p.integrationId);
 
@@ -275,50 +267,63 @@ export const SummaryProvider = ({
       : new BigNumber(0);
 
     return { data, isLoading: false as const };
-  }, [
-    multiYieldsMapQuery.data,
-    multiYieldsMapQuery.isLoading,
-    positionsData.data,
-  ]);
+  }, [multiYieldsMap, multiYieldsMapResult, positions]);
 
-  const tokenBalancesScan = useTokenBalancesScan();
-
-  const tokenList = useMemo(
-    () => tokenBalancesScan.data?.map((tb) => tb.token),
-    [tokenBalancesScan.data]
+  const tokenBalancesScan = useAtomValue(tokenBalancesScanAtom);
+  const tokenBalances = AsyncResult.getOrElse(
+    tokenBalancesScan.result,
+    () => null
   );
-
-  const availableBalanceSumQuery = usePrices(
-    tokenList
-      ? {
-          currency: config.currency,
-          tokenList,
-        }
-      : null,
-    {
-      enabled: !tokenBalancesScan.isLoading && !tokenBalancesScan.isPending,
-      select: useCallback(
-        (prices: Prices) => {
-          if (!tokenBalancesScan.data) return BigNumber(0);
-
-          return tokenBalancesScan.data.reduce(
-            (acc, tb) =>
-              acc.plus(
-                getTokenPriceInUSD({
-                  amount: tb.amount,
-                  pricePerShare: "1",
-                  baseToken: tb.token,
-                  token: tb.token,
-                  prices,
-                })
-              ),
-            BigNumber(0)
-          );
-        },
-        [tokenBalancesScan.data]
-      ),
+  const availableBalancePricesResult = useAtomValue(
+    pricesAtom(
+      new PricesKey({
+        request: tokenBalances
+          ? {
+              currency: config.currency,
+              tokenList: tokenBalances.map((balance) => balance.token),
+            }
+          : null,
+      })
+    )
+  );
+  const availableBalancePrices = AsyncResult.getOrElse(
+    availableBalancePricesResult,
+    () => null
+  );
+  const availableBalanceSumQuery = useMemo(() => {
+    if (!availableBalancePrices || !tokenBalances) {
+      return {
+        data: undefined,
+        isLoading:
+          tokenBalancesScan.enabled &&
+          (AsyncResult.isInitial(tokenBalancesScan.result) ||
+            AsyncResult.isInitial(availableBalancePricesResult)),
+      };
     }
-  );
+
+    return {
+      data: tokenBalances.reduce(
+        (sum, balance) =>
+          sum.plus(
+            getTokenPriceInUSD({
+              amount: balance.amount,
+              pricePerShare: "1",
+              baseToken: balance.token,
+              token: balance.token,
+              prices: availableBalancePrices,
+            })
+          ),
+        BigNumber(0)
+      ),
+      isLoading: false,
+    };
+  }, [
+    availableBalancePrices,
+    availableBalancePricesResult,
+    tokenBalances,
+    tokenBalancesScan.enabled,
+    tokenBalancesScan.result,
+  ]);
 
   const value = useMemo(
     () => ({

@@ -1,20 +1,18 @@
 import type BigNumber from "bignumber.js";
-import type { Maybe } from "purify-ts";
+import type * as Atom from "effect/unstable/reactivity/Atom";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type {
+  PositionBalances,
   PositionBalancesByType,
   YieldBalanceType,
 } from "../../../domain/types/positions";
-import type { Prices } from "../../../domain/types/price";
-import type {
-  TokenDto,
-  TokenString,
-  YieldTokenDto,
-} from "../../../domain/types/tokens";
-import type { Yield } from "../../../domain/types/yields";
-import type { usePrices } from "../../../hooks/api/use-prices";
-import type { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
-import type { usePositionBalances } from "../../../hooks/use-position-balances";
+import type { TokenString } from "../../../domain/types/tokens";
+
+import type { positionBalancesAtom } from "../../../hooks/api/position-atoms";
+import type { pricesAtom } from "../../../hooks/api/prices-atoms";
+import type { yieldOpportunityAtom } from "../../../hooks/api/yield-atoms";
 import type { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import type { Action } from "../../../types/utils";
 
@@ -28,7 +26,7 @@ export type PendingActionAmountChange = Action<
   "pendingAction/amount/change",
   {
     balanceType: YieldBalanceType;
-    token: TokenDto | YieldTokenDto;
+    token: AppToken;
     actionType: YieldPendingActionType;
     amount: BigNumber;
   }
@@ -46,22 +44,23 @@ export type State = {
 };
 
 export type ExtraData = {
-  pendingActionType: Maybe<YieldPendingActionType>;
-  integrationData: Maybe<Yield>;
-  positionBalances: ReturnType<typeof usePositionBalances>;
-  yieldOpportunity: ReturnType<typeof useYieldOpportunity>;
-  positionBalancesByType: Maybe<PositionBalancesByType>;
+  pendingActionType: YieldPendingActionType | null;
+  integrationData: EarnYieldWithProvider | null;
+  positionBalances: PositionBalances | null;
+  positionBalancesResult: Atom.Type<ReturnType<typeof positionBalancesAtom>>;
+  yieldOpportunity: Atom.Type<ReturnType<typeof yieldOpportunityAtom>>;
+  positionBalancesByType: PositionBalancesByType | null;
   stakedOrLiquidBalances: ReturnType<typeof useStakedOrLiquidBalance>;
-  reducedStakedOrLiquidBalance: Maybe<{
+  reducedStakedOrLiquidBalance: {
     amount: BigNumber;
     amountUsd: BigNumber;
-    token: TokenDto | YieldTokenDto;
-  }>;
-  positionBalancePrices: ReturnType<typeof usePrices<Prices>>;
+    token: AppToken;
+  } | null;
+  positionBalancePrices: Atom.Type<ReturnType<typeof pricesAtom>>;
   unstakeAmountValid: boolean;
-  unstakeToken: Maybe<TokenDto | YieldTokenDto>;
+  unstakeToken: AppToken | null;
   unstakeAmountError: boolean;
-  canChangeUnstakeAmount: Maybe<boolean>;
+  canChangeUnstakeAmount: boolean | null;
   unstakeIsGreaterOrLessIntegrationLimitError: boolean;
   minUnstakeAmount: BigNumber;
 };

@@ -1,10 +1,11 @@
 import React from "react";
 import { Box } from "../../components/atoms/box";
 import { tokenString } from "../../domain";
-import type { TokenDto } from "../../domain/types/tokens";
+import type { AppToken } from "../../domain/schema/legacy-models";
+
 import { symbolIcon } from "./style.css";
 
-export const getRewardTokenSymbols = (rewardTokens: TokenDto[]) =>
+export const getRewardTokenSymbols = (rewardTokens: AppToken[]) =>
   rewardTokens.map((val, i) =>
     val.isPoints ? (
       <Box as="span" display="inline-block" key={tokenString(val)}>

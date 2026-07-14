@@ -1,12 +1,11 @@
 import { Schema, SchemaTransformation } from "effect";
-import { Maybe } from "purify-ts";
 import * as LegacyApi from "../../generated/api/legacy-schema";
 import * as YieldApi from "../../generated/api/yield-schema";
 import { tokenString } from "../types/tokens";
 import { TokenAddress } from "./identifiers";
+import { Network } from "./network-model";
 import { TolerantTopLevelRecord } from "./response";
 import { UtcDateTimeFromString } from "./scalars";
-import { Network } from "./wallet-models";
 
 export const HealthStatus = Schema.Struct({
   ...YieldApi.HealthStatusDto.fields,
@@ -44,7 +43,7 @@ export class Prices {
     readonly network: string;
     readonly address?: string;
   }) {
-    return Maybe.fromNullable(this.value.get(tokenString(token)));
+    return this.value.get(tokenString(token)) ?? null;
   }
 }
 

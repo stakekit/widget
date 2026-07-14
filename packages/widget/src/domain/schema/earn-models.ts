@@ -17,6 +17,16 @@ export const EarnToken = Schema.Struct({
 });
 export type EarnToken = typeof EarnToken.Type;
 
+const EarnReward = Schema.Struct({
+  ...YieldApi.RewardDto.fields,
+  token: EarnToken,
+});
+
+const EarnRewardRate = Schema.Struct({
+  ...YieldApi.YieldDto.fields.rewardRate.fields,
+  components: Schema.Array(EarnReward),
+});
+
 export const EarnProvider = Schema.Struct({
   ...YieldApi.ProviderDto.fields,
   id: ProviderId,
@@ -34,6 +44,7 @@ const EarnValidatorWire = Schema.Struct({
   ...YieldApi.ValidatorDto.fields,
   address: ValidatorAddress,
   providerId: Schema.optionalKey(ProviderId),
+  rewardRate: Schema.optionalKey(EarnRewardRate),
 });
 
 export const EarnValidator = EarnValidatorWire.pipe(
@@ -53,13 +64,21 @@ export const EarnValidator = EarnValidatorWire.pipe(
 );
 export type EarnValidator = typeof EarnValidator.Type;
 
+const EarnYieldMechanics = Schema.Struct({
+  ...YieldApi.YieldDto.fields.mechanics.fields,
+  gasFeeToken: EarnToken,
+});
+
 export const EarnYield = Schema.Struct({
   ...YieldApi.YieldDto.fields,
   id: YieldId,
   providerId: ProviderId,
   inputTokens: Schema.Array(EarnToken),
+  mechanics: EarnYieldMechanics,
   outputToken: Schema.optionalKey(EarnToken),
+  rewardRate: EarnRewardRate,
   token: EarnToken,
+  tokens: Schema.Array(EarnToken),
 });
 export type EarnYield = typeof EarnYield.Type;
 
@@ -86,6 +105,7 @@ export const EarnPosition = Schema.Struct({
   yieldId: YieldId,
   balances: Schema.Array(EarnBalance),
   outputTokenBalance: Schema.optionalKey(Schema.NullOr(EarnBalance)),
+  rewardRate: Schema.optionalKey(Schema.NullOr(EarnRewardRate)),
 });
 export type EarnPosition = typeof EarnPosition.Type;
 
@@ -96,6 +116,7 @@ export const EarnYieldBalancesResponse = Schema.Struct({
     operation: "yield-balances",
   }),
   outputTokenBalance: Schema.optionalKey(Schema.NullOr(EarnBalance)),
+  rewardRate: Schema.optionalKey(Schema.NullOr(EarnRewardRate)),
 });
 export type EarnYieldBalancesResponse = typeof EarnYieldBalancesResponse.Type;
 
@@ -113,7 +134,7 @@ const ValidatorIdentifier = Schema.Struct({ address: Schema.String }).pipe(
   })
 );
 
-export const makeEarnYieldPage = (operation: string) =>
+const makeEarnYieldPage = (operation: string) =>
   Schema.Struct({
     ...YieldApi.YieldsControllerGetYields200.fields,
     items: Schema.optionalKey(
@@ -125,6 +146,12 @@ export const makeEarnYieldPage = (operation: string) =>
   });
 
 export const EarnYieldPage = makeEarnYieldPage("earn-yield-catalog");
+
+export const AvailableYieldCategoriesPage = makeEarnYieldPage(
+  "available-yield-categories"
+);
+
+export const TokenYieldScopePage = makeEarnYieldPage("token-yield-scope");
 
 const EarnTokenWithAvailableYields = Schema.Struct({
   token: EarnToken,

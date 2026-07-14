@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { Text } from "../../../components/atoms/typography/text";
+import type { HistoryPeriod } from "../../../domain/schema/dashboard-models";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import type { SelectedValidators } from "../../../domain/types/reward-rate";
-import type { Yield } from "../../../domain/types/yields";
+
 import { useEarnPageContext } from "../../../pages/details/earn-page/state/earn-page-context";
 import { formatNumber } from "../../../utils";
 import { formatCompactUsd } from "../../../utils/formatters";
@@ -23,10 +25,7 @@ import { IntegrationDocsLink } from "./components/integration-docs-link";
 import { ProviderSelectionCard } from "./components/provider-selection-card";
 import { getEarnDetailsModel } from "./earn-details-model";
 import * as styles from "./styles.css";
-import {
-  type RewardRateHistoryPeriod,
-  useYieldRewardRateHistory,
-} from "./use-yield-reward-rate-history";
+import { useYieldRewardRateHistory } from "./use-yield-reward-rate-history";
 import { useYieldTvlHistory } from "./use-yield-tvl-history";
 
 export const EarnDetails = () => {
@@ -41,7 +40,7 @@ export const EarnDetails = () => {
     <EarnDetailsView
       isLoading={appLoading || selectYieldIsLoading}
       selectedValidators={selectedValidators}
-      yieldDto={selectedStake.extractNullable()}
+      yieldDto={selectedStake}
     />
   );
 };
@@ -53,11 +52,11 @@ const EarnDetailsView = ({
 }: {
   isLoading: boolean;
   selectedValidators?: SelectedValidators | null;
-  yieldDto: Yield | null;
+  yieldDto: EarnYieldWithProvider | null;
 }) => {
   const [rewardRatePeriod, setRewardRatePeriod] =
-    useState<RewardRateHistoryPeriod>("90d");
-  const [tvlPeriod, setTvlPeriod] = useState<RewardRateHistoryPeriod>("90d");
+    useState<HistoryPeriod>("90d");
+  const [tvlPeriod, setTvlPeriod] = useState<HistoryPeriod>("90d");
   const { t } = useTranslation();
 
   const rewardRateHistory = useYieldRewardRateHistory({

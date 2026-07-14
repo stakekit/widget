@@ -1,14 +1,9 @@
+import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
-import type {
-  LegacyAction,
-  LegacyAddresses,
-  LegacyToken,
-  LegacyTransaction,
-  LegacyYield,
-} from "../../../src/domain/schema/legacy-models";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
+import type { ActionCommand } from "../../../src/domain/schema/action-models";
+import type { LegacyTransaction } from "../../../src/domain/schema/legacy-models";
 import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
@@ -17,16 +12,18 @@ import {
   yieldApiValidatorsFixture,
   yieldApiYieldFixture,
 } from "../../fixtures";
+import type {
+  ActionDto,
+  AddressesDto,
+  TokenDto,
+  YieldDto,
+} from "../../generated/legacy-api-types";
 import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
-type ActionDto = typeof LegacyAction.Encoded;
-type AddressesDto = typeof LegacyAddresses.Encoded;
-type TokenDto = typeof LegacyToken.Encoded;
 type TransactionDto = typeof LegacyTransaction.Encoded;
-type YieldDto = typeof LegacyYield.Encoded;
 
 export const setup = async (worker: TestWorker) => {
   const token: TokenDto = {
@@ -339,7 +336,7 @@ export const setup = async (worker: TestWorker) => {
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await mockDelay();
 
-      const body = (await info.request.json()) as YieldCreateActionDto;
+      const body = (await info.request.json()) as ActionCommand;
 
       return HttpResponse.json(
         yieldApiActionFixture({
@@ -352,7 +349,7 @@ export const setup = async (worker: TestWorker) => {
           amountUsd: null,
           transactions: [
             yieldApiTransactionFixture({
-              id: enterAction.transactions[0].id,
+              id: EArray.getUnsafe(enterAction.transactions, 0).id,
               network: transactionConstruct.network,
               status: "CREATED",
               type: "STAKE",

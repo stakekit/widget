@@ -4,12 +4,9 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  invalidateAtomResources,
   refreshAtomResources,
-  valueEqualAtomFamily,
-  withApiRequestError,
   withApiResourcePolicy,
-  withResponseDecodeError,
+  withInputValidationError,
 } from "../../src/atoms/api-resource";
 
 class ResourceKey extends Data.Class<{
@@ -28,7 +25,7 @@ describe("shared API resource conventions", () => {
 
   it("deduplicates atom-family instances by value-equal keys", () => {
     let constructions = 0;
-    const family = valueEqualAtomFamily((key: ResourceKey) => {
+    const family = Atom.family((key: ResourceKey) => {
       constructions += 1;
       return Atom.make(`${key.network}:${key.page}`);
     });
@@ -129,21 +126,17 @@ describe("shared API resource conventions", () => {
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
   });
 
-  it("maps request and Schema failures to distinct typed errors", async () => {
-    const requestError = await Effect.runPromise(
-      Effect.fail("offline").pipe(withApiRequestError("health"), Effect.flip)
-    );
-    const decodeError = await Effect.runPromise(
+  it("maps input Schema failures to typed validation errors", async () => {
+    const inputError = await Effect.runPromise(
       Schema.decodeUnknownEffect(Schema.String)(1).pipe(
-        withResponseDecodeError("health"),
+        withInputValidationError("wallet-init-params"),
         Effect.flip
       )
     );
 
-    expect(requestError._tag).toBe("ApiRequestError");
-    expect(requestError.operation).toBe("health");
-    expect(decodeError._tag).toBe("ResponseDecodeError");
-    expect(decodeError.issue).toContain("Expected string");
+    expect(inputError._tag).toBe("InputValidationError");
+    expect(inputError.operation).toBe("wallet-init-params");
+    expect(inputError.issue).toContain("Expected string");
   });
 
   it("refreshes only explicitly declared resources", () => {
@@ -158,7 +151,7 @@ describe("shared API resource conventions", () => {
     };
 
     refreshAtomResources(target, [first, second]);
-    invalidateAtomResources(target, [third]);
+    refreshAtomResources(target, [third]);
 
     expect(refreshed).toEqual([first, second, third]);
   });

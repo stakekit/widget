@@ -1,6 +1,5 @@
 import { Schema } from "effect";
 import { MarketId, TokenAddress } from "./ids";
-import { BigIntFromString } from "./scalars";
 
 export class WithdrawPendingAction extends Schema.Class<WithdrawPendingAction>(
   "BorrowWithdrawPendingAction"
@@ -8,7 +7,7 @@ export class WithdrawPendingAction extends Schema.Class<WithdrawPendingAction>(
   type: Schema.Literal("withdraw"),
   label: Schema.String,
   args: Schema.Struct({
-    amountRaw: BigIntFromString,
+    amountRaw: Schema.BigIntFromString,
     tokenAddress: TokenAddress,
     marketId: MarketId,
   }),

@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import {
   type GeolocationError,
   GeolocationErrorType,
@@ -8,16 +8,15 @@ let _isGeoBlocked:
   | false
   | { tags: Set<string>; countryCode: string; regionCode?: string } = false;
 
-const subs = new Map<
-  (val: typeof _isGeoBlocked) => void,
-  (val: typeof _isGeoBlocked) => void
->();
+const subscribers = new Set<() => void>();
 
-const notify = () => subs.forEach((cb) => cb(_isGeoBlocked));
+const getSnapshot = () => _isGeoBlocked;
 
-const subscribe = (callback: (val: typeof _isGeoBlocked) => void) => {
-  subs.set(callback, callback);
-  return () => subs.delete(callback);
+const notify = () => subscribers.forEach((callback) => callback());
+
+const subscribe = (callback: () => void) => {
+  subscribers.add(callback);
+  return () => subscribers.delete(callback);
 };
 
 const isGeoLocationError = (data: unknown): data is GeolocationError =>
@@ -48,14 +47,4 @@ export const handleGeoBlockResponse = ({
 };
 
 export const useGeoBlock = () =>
-  useSyncExternalStore(
-    useCallback((onChange) => {
-      const unsub = subscribe(onChange);
-
-      return () => {
-        unsub();
-      };
-    }, []),
-    useCallback(() => _isGeoBlocked, []),
-    useCallback(() => _isGeoBlocked, [])
-  );
+  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

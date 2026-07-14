@@ -4,7 +4,7 @@ import type {
   SendTransactionsResponse,
   TransactionStatus,
 } from "@safe-global/safe-apps-sdk";
-import type { EitherAsync } from "purify-ts";
+import type { Effect } from "effect";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
@@ -15,11 +15,11 @@ export const configMeta = {
 };
 
 export type ExtraProps = ConnectorWithFilteredChains & {
-  getTxStatus(txHash: string): EitherAsync<Error, GatewayTransactionDetails>;
+  getTxStatus(txHash: string): Effect.Effect<GatewayTransactionDetails, Error>;
   txStatus: typeof TransactionStatus;
   sendTransactions(
     ...args: Parameters<SDK["txs"]["send"]>
-  ): EitherAsync<Error, SendTransactionsResponse>;
+  ): Effect.Effect<SendTransactionsResponse, Error>;
 };
 
 type SafeConnector = Connector & ExtraProps;

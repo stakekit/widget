@@ -11,8 +11,8 @@ import {
 } from "../../providers/activity-provider";
 
 export const ActivityDetailsPage = () => {
-  const selectedAction = useActivitySelectedAction().extractNullable();
-  const selectedYield = useActivitySelectedYield().extractNullable();
+  const selectedAction = useActivitySelectedAction();
+  const selectedYield = useActivitySelectedYield();
 
   if (!selectedYield || !selectedAction) {
     return null;

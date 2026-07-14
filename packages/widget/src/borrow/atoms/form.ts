@@ -4,6 +4,7 @@ import type { AsyncResult as AtomAsyncResult } from "effect/unstable/reactivity/
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { TokenBalance } from "../../domain/schema/financial-models";
+import type { WalletAddress } from "../../domain/schema/identifiers";
 import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
@@ -133,7 +134,7 @@ export class BorrowDashboardKey extends Data.Class<{
   readonly network: BorrowNetwork;
   readonly scopeId: string;
   readonly tokenBalances: ReadonlyArray<TokenBalance>;
-  readonly walletAddress: string;
+  readonly walletAddress: WalletAddress;
 }> {}
 
 export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
@@ -236,7 +237,7 @@ const getPreparedReviewState = ({
   readonly selectedCollateralToken: CollateralToken | null;
   readonly selectedIntegration: Integration | null;
   readonly selectedMarket: Market | null;
-  readonly walletAddress: string;
+  readonly walletAddress: WalletAddress;
 }): BorrowPreparedReviewState | null => {
   if (!isActionReady || !selectedMarket || !selectedCollateralToken) {
     return null;

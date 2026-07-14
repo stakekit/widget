@@ -1,15 +1,13 @@
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { Position as BorrowPosition } from "../../../../borrow";
+import type { DashboardYieldCategory } from "../../../../domain/types/yields";
+import type { PositionItem } from "../../../../hooks/api/position-atoms";
 import {
-  type DashboardYieldCategory,
-  getDashboardYieldCategory,
-} from "../../../../domain/types/yields";
-import { useMultiYields } from "../../../../hooks/api/use-multi-yields";
-import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
+  MultiYieldsKey,
+  multiYieldCategoriesAtom,
+} from "../../../../hooks/api/yield-atoms";
 import { useSettings } from "../../../../providers/settings";
-
-type PositionItem = ReturnType<
-  typeof usePositions
->["positionsData"]["data"][number];
 
 export type UnifiedPositionItem =
   | { readonly kind: "borrow"; readonly position: BorrowPosition }
@@ -43,16 +41,17 @@ export const useGroupedPositions = ({
     ? [...new Set(earnPositions.map((p) => p.integrationId))]
     : [];
 
-  const categoryQuery = useMultiYields(integrationIds, {
-    enabled: dashboardYieldCategoryGroupingEnabled,
-    select: (yields) =>
-      new Map(
-        yields.map((yieldModel) => [
-          yieldModel.id,
-          getDashboardYieldCategory(yieldModel),
-        ])
-      ),
-  });
+  const categoryByIntegrationId = AsyncResult.getOrElse(
+    useAtomValue(
+      multiYieldCategoriesAtom(
+        new MultiYieldsKey({
+          enabled: dashboardYieldCategoryGroupingEnabled,
+          yieldIds: integrationIds,
+        })
+      )
+    ),
+    () => new Map()
+  );
 
   if (!dashboardYieldCategoryGroupingEnabled) {
     return [
@@ -67,8 +66,6 @@ export const useGroupedPositions = ({
       })),
     ];
   }
-
-  const categoryByIntegrationId = categoryQuery.data ?? new Map();
 
   const grouped = new Map<DashboardYieldCategory, PositionItem[]>();
   const ungrouped: PositionItem[] = [];

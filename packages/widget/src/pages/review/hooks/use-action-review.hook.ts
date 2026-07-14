@@ -1,4 +1,3 @@
-import { List, Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -8,7 +7,6 @@ import {
   getActionInputToken,
   TransactionStatus,
 } from "../../../domain/types/action";
-import type { TokenDto } from "../../../domain/types/tokens";
 import {
   getExtendedYieldType,
   isUnstakeYieldType,
@@ -21,7 +19,6 @@ import {
 } from "../../../providers/activity-provider";
 import { defaultFormattedNumber } from "../../../utils";
 import { dateOlderThen7Days } from "../../../utils/date";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import type { PageCta } from "../../components/page-cta";
 import type { LabelKey } from "../types";
 
@@ -30,39 +27,29 @@ export const useActionReview = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const selectedAction = useActivitySelectedAction().unsafeCoerce();
-  const selectedYield = useActivitySelectedYield().unsafeCoerce();
+  const selectedAction = useActivitySelectedAction()!;
+  const selectedYield = useActivitySelectedYield()!;
 
   const inputToken = useMemo(
     () =>
-      Maybe.fromNullable(
-        getActionInputToken({
-          actionDto: selectedAction,
-          yieldDto: selectedYield,
-        })
-      ),
+      getActionInputToken({
+        actionDto: selectedAction,
+        yieldDto: selectedYield,
+      }) ?? null,
     [selectedAction, selectedYield]
-  ) as Maybe<TokenDto>;
+  );
 
   const transactions = useMemo(
     () =>
-      Maybe.fromNullable(selectedAction)
-        .map((a) => a.transactions)
-        .map((tx) =>
-          [...tx].sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0))
-        ),
+      [...selectedAction.transactions].sort(
+        (a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0)
+      ),
     [selectedAction]
   );
 
-  const onViewTransactionClick = (url: string) =>
-    MaybeWindow.ifJust((w) => {
-      w.open(url, "_blank");
-    });
+  const onViewTransactionClick = (url: string) => window.open(url, "_blank");
 
-  const stakeTitle = useYieldType(Maybe.of(selectedYield)).mapOrDefault(
-    (y) => y.review,
-    ""
-  );
+  const stakeTitle = useYieldType(selectedYield)?.review ?? "";
 
   const unstakeTitle = useMemo(() => {
     const yieldType = getExtendedYieldType(selectedYield);
@@ -94,9 +81,9 @@ export const useActionReview = () => {
 
   const amount = useMemo(
     () =>
-      Maybe.fromNullable(selectedAction.amount)
-        .map(defaultFormattedNumber)
-        .extractNullable(),
+      selectedAction.amount == null
+        ? null
+        : defaultFormattedNumber(selectedAction.amount),
     [selectedAction]
   );
 
@@ -110,29 +97,19 @@ export const useActionReview = () => {
     [selectedAction]
   );
 
-  const labelKey: LabelKey = useMemo(
-    () =>
-      transactions
-        .chain((txs) =>
-          List.find(
-            (tx) => tx.status === TransactionStatus.WAITING_FOR_SIGNATURE,
-            txs
-          ).chain((tx) =>
-            List.findIndex((val) => val.id === tx.id, txs)
-              .chainNullable((index) => txs[index - 1])
-              .filter((prevTx) => prevTx.status === TransactionStatus.CONFIRMED)
-              .map(() => "continue" as LabelKey)
-          )
-        )
-        .orDefault("retry"),
-    [transactions]
-  );
+  const labelKey: LabelKey = useMemo(() => {
+    const waitingIndex = transactions.findIndex(
+      (transaction) =>
+        transaction.status === TransactionStatus.WAITING_FOR_SIGNATURE
+    );
+    return waitingIndex > 0 &&
+      transactions[waitingIndex - 1]?.status === TransactionStatus.CONFIRMED
+      ? "continue"
+      : "retry";
+  }, [transactions]);
 
   const actionOlderThan7Days = useMemo(
-    () =>
-      Maybe.of(selectedAction.createdAt)
-        .map(dateOlderThen7Days)
-        .orDefault(false),
+    () => dateOlderThen7Days(selectedAction.createdAt),
     [selectedAction]
   );
 

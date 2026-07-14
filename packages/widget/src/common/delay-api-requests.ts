@@ -1,22 +1,22 @@
 import { config } from "../config";
 
-const delayMap = new Map<Record<string, never>, Record<string, never>>();
-const subs = new Map<() => void, () => void>();
+const delays = new Set<Record<string, never>>();
+const subscribers = new Set<() => void>();
 
 const subscribe = (fn: () => void) => {
-  subs.set(fn, fn);
+  subscribers.add(fn);
 
   return () => {
-    subs.delete(fn);
+    subscribers.delete(fn);
   };
 };
 
 const notify = () => {
-  subs.forEach((fn) => fn());
+  subscribers.forEach((fn) => fn());
 };
 
 const checkDelay = () => {
-  if (delayMap.size === 0) return Promise.resolve();
+  if (delays.size === 0) return Promise.resolve();
 
   let unsub: () => void;
 
@@ -35,12 +35,12 @@ export const delayAPIRequests = () => {
   if (config.env.isTestMode) return () => {};
 
   const key = {};
-  delayMap.set(key, key);
+  delays.add(key);
 
   return () => {
-    delayMap.delete(key);
+    delays.delete(key);
 
-    if (delayMap.size === 0) {
+    if (delays.size === 0) {
       notify();
     }
   };

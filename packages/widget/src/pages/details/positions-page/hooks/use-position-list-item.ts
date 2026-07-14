@@ -1,87 +1,86 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { getPositionTotalAmount } from "../../../../domain/types/positions";
-import { useYieldOpportunity } from "../../../../hooks/api/use-yield-opportunity";
+import type { PositionItem } from "../../../../hooks/api/position-atoms";
+import {
+  YieldOpportunityKey,
+  yieldOpportunityAtom,
+} from "../../../../hooks/api/yield-atoms";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { defaultFormattedNumber } from "../../../../utils";
 import { getRewardRateFormatted } from "../../../../utils/formatters";
-import type { usePositions } from "./use-positions";
 
-export const usePositionListItem = (
-  item: ReturnType<typeof usePositions>["positionsData"]["data"][number]
-) => {
-  const yieldOpportunity = useYieldOpportunity(item.integrationId);
-  const integrationData = useMemo(
-    () => Maybe.fromNullable(yieldOpportunity.data),
-    [yieldOpportunity.data]
+export const usePositionListItem = (item: PositionItem) => {
+  const yieldOpportunityResult = useAtomValue(
+    yieldOpportunityAtom(
+      new YieldOpportunityKey({ yieldId: item.integrationId })
+    )
+  );
+  const integrationData = yieldOpportunityResult.pipe(
+    AsyncResult.value,
+    Option.getOrNull
   );
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validators: Maybe.of(item.type === "validators" ? item.validators : []),
-    selectedProviderYieldId: Maybe.empty(),
+    validators: item.type === "validators" ? item.validators : [],
+    selectedProviderYieldId: null,
   });
 
   const rewardRateAverage = useMemo(
     () =>
-      Maybe.fromRecord({ providersDetails, integrationData })
-        .map((val) => ({
-          ...val,
-          rewardRateAverage: val.providersDetails
-            .reduce(
-              (acc, val) => acc.plus(new BigNumber(val.rewardRate || 0)),
-              new BigNumber(0)
-            )
-            .dividedBy(val.providersDetails.length),
-        }))
-        .map((val) =>
-          getRewardRateFormatted({
-            rewardRate: val.rewardRateAverage.toNumber(),
+      providersDetails && integrationData
+        ? getRewardRateFormatted({
+            rewardRate: providersDetails
+              .reduce(
+                (acc, val) => acc.plus(new BigNumber(val.rewardRate || 0)),
+                new BigNumber(0)
+              )
+              .dividedBy(providersDetails.length)
+              .toNumber(),
           })
-        ),
+        : null,
     [integrationData, providersDetails]
   );
 
   const inactiveValidator = useMemo(
     () =>
-      providersDetails
-        .chain((val) => List.find((v) => v.status !== "active", val))
-        .chainNullable((val) => val.status)
-        .map((v) => v as Exclude<typeof v, "active">)
-        .extractNullable(),
+      providersDetails?.find((provider) => provider.status !== "active")
+        ?.status as Exclude<
+        NonNullable<NonNullable<typeof providersDetails>[number]["status"]>,
+        "active"
+      > | null,
     [providersDetails]
   );
 
   const tokenToDisplay = item.token;
-  const baseToken = useMemo(
-    () => integrationData.map((y) => y.token),
-    [integrationData]
-  );
+  const baseToken = integrationData?.token ?? null;
 
   const amounts = useMemo(
     () =>
-      baseToken.map((b) => getPositionTotalAmount(item.balancesWithAmount, b)),
+      baseToken
+        ? getPositionTotalAmount(item.balancesWithAmount, baseToken)
+        : null,
     [item.balancesWithAmount, baseToken]
   );
 
-  const totalAmount = useMemo(() => amounts.map((v) => v.amount), [amounts]);
+  const totalAmount = amounts?.amount ?? null;
 
-  const totalAmountUsd = useMemo(
-    () => amounts.map((v) => v.amountUsd),
-    [amounts]
-  );
+  const totalAmountUsd = useMemo(() => amounts?.amountUsd ?? null, [amounts]);
 
   const totalAmountFormatted = useMemo(
-    () => totalAmount.map(defaultFormattedNumber),
+    () => (totalAmount ? defaultFormattedNumber(totalAmount) : null),
     [totalAmount]
   );
 
   const totalAmountPriceFormatted = useMemo(
     () =>
-      totalAmountUsd
-        .filter((v) => v.isGreaterThan(0))
-        .map(defaultFormattedNumber),
+      totalAmountUsd?.isGreaterThan(0)
+        ? defaultFormattedNumber(totalAmountUsd)
+        : null,
     [totalAmountUsd]
   );
 

@@ -6,7 +6,7 @@ import type {
   WalletAPIClient,
 } from "@ledgerhq/wallet-api-client";
 import type { Chain } from "@stakekit/rainbowkit";
-import { EitherAsync } from "purify-ts";
+import { Effect } from "effect";
 import type { SupportedSKChains } from "../../domain/types/chains";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import type { EvmChainsMap } from "../../domain/types/chains/evm";
@@ -18,7 +18,6 @@ import {
 } from "../../domain/types/chains/ledger";
 import type { MiscChainsMap } from "../../domain/types/chains/misc";
 import type { SubstrateChainsMap } from "../../domain/types/chains/substrate";
-import type { GetEitherAsyncRight } from "../../types/utils";
 import { typeSafeObjectEntries } from "../../utils";
 
 export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
@@ -27,7 +26,7 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
   enabledChainsMap,
 }: {
   accounts: Account[];
-  ledgerCurrencies: GetEitherAsyncRight<ReturnType<typeof getLedgerCurrencies>>;
+  ledgerCurrencies: Effect.Success<ReturnType<typeof getLedgerCurrencies>>;
   enabledChainsMap: {
     evm: Partial<EvmChainsMap>;
     cosmos: Partial<CosmosChainsMap>;
@@ -108,7 +107,9 @@ export const getFilteredSupportedLedgerFamiliesWithCurrency = ({
       type SubItemKey = keyof typeof subItem;
 
       const subItemMap = Object.keys(subItem).reduce((acc, subKey) => {
-        acc.set(subKey as SubItemKey, subItem[subKey as keyof typeof subItem]);
+        const value = subItem[subKey as keyof typeof subItem];
+
+        if (value) acc.set(subKey as SubItemKey, value);
 
         return acc;
       }, new Map<SubItemKey, V[Key][SubItemKey]>());
@@ -148,14 +149,16 @@ type MappedSupportedLedgerFamiliesWithCurrency = {
  * and add to map TokenCurrency['id'] => CryptoCurrency['family']
  */
 export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
-  EitherAsync(() =>
-    walletAPIClient.currency.list({
-      currencyIds: Object.values(supportedLedgerFamiliesWithCurrency).flatMap(
-        (chain) => Object.values(chain).map((currency) => currency.currencyId)
-      ),
-    })
-  )
-    .map((val) => {
+  Effect.tryPromise({
+    try: () =>
+      walletAPIClient.currency.list({
+        currencyIds: Object.values(supportedLedgerFamiliesWithCurrency).flatMap(
+          (chain) => Object.values(chain).map((currency) => currency.currencyId)
+        ),
+      }),
+    catch: (error) => new Error("could not get currencies", { cause: error }),
+  }).pipe(
+    Effect.map((val) => {
       return val.reduce(
         (acc, next) => {
           if (next.type === "CryptoCurrency") {
@@ -171,8 +174,8 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
           tokenCurrency: ERC20TokenCurrency[];
         }
       );
-    })
-    .map((v) => {
+    }),
+    Effect.map((v) => {
       v.tokenCurrency.forEach((t) => {
         const parentCryptoCurrencyFamily = v.cryptoCurrency.get(t.parent);
 
@@ -183,7 +186,4 @@ export const getLedgerCurrencies = (walletAPIClient: WalletAPIClient) =>
 
       return v.cryptoCurrency;
     })
-    .mapLeft((e) => {
-      console.log(e);
-      return new Error("could not get currencies");
-    });
+  );

@@ -4,6 +4,7 @@ import {
   Transaction,
   VersionedTransaction,
 } from "@solana/web3.js";
+import { Array as EArray } from "effect";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { decodeSolanaTransactionToBuffer } from "../../src/domain/types/transaction";
 import {
@@ -31,12 +32,15 @@ const createConnectorForTest = ({
     },
   } as unknown as Wallet;
 
-  const walletFactory = getSolanaConnectors({
-    wallets: [wallet],
-    forceWalletConnectOnly: false,
-    connection,
-    variant: "default",
-  }).wallets[0];
+  const walletFactory = EArray.getUnsafe(
+    getSolanaConnectors({
+      wallets: [wallet],
+      forceWalletConnectOnly: false,
+      connection,
+      variant: "default",
+    }).wallets,
+    0
+  );
 
   const connectorFactory = walletFactory({} as never).createConnector(
     {} as never

@@ -1,21 +1,18 @@
-import { Data, Duration, Effect, Option, Schema } from "effect";
+import { Data, Duration, Effect, Option } from "effect";
 import { chunksOf } from "effect/Array";
-import {
-  valueEqualAtomFamily,
-  withApiRequestError,
-  withApiResourcePolicy,
-  withResponseDecodeError,
-} from "../../atoms/api-resource";
-import { ResponseDecodeError } from "../../domain/schema/api-errors";
-import {
-  EarnProvider,
-  EarnYield,
-  EarnYieldPage,
-  EarnYieldWithProvider,
-} from "../../domain/schema/earn-models";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import { withApiResourcePolicy } from "../../atoms/api-resource";
+import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
 import type { ProviderId, YieldId } from "../../domain/schema/identifiers";
-import { StakeKitApiService } from "../../providers/api/api-client";
-import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
+import { isSupportedChain } from "../../domain/types/chains";
+import {
+  type DashboardYieldCategory,
+  getDashboardYieldCategory,
+} from "../../domain/types/yields";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import { widgetAtomRuntime } from "../../providers/effect-atom-runtime/widget-runtime";
+import { currentWalletConnectedNetworkAtom } from "../../providers/wallet";
 
 const yieldResourcePolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -27,71 +24,49 @@ class YieldProviderKey extends Data.Class<{
   readonly providerId: ProviderId;
 }> {}
 
-const yieldProviderAtom = valueEqualAtomFamily((key: YieldProviderKey) =>
-  stakeKitApiRuntime
+const yieldProviderAtom = Atom.family((key: YieldProviderKey) =>
+  widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
         const api = yield* StakeKitApiService;
-        const response = yield* api.yield
-          .ProvidersControllerGetProvider(key.providerId, undefined)
-          .pipe(withApiRequestError("yield-provider"));
-
-        return yield* Schema.decodeUnknownEffect(EarnProvider)(response).pipe(
-          withResponseDecodeError("yield-provider")
-        );
+        return yield* api.yield.getProvider(key.providerId);
       })
     )
     .pipe(yieldResourcePolicy)
 );
 
 export class YieldOpportunityKey extends Data.Class<{
-  readonly decodeIssue: string | null;
   readonly yieldId: YieldId | null;
 }> {}
 
-export const yieldOpportunityAtom = valueEqualAtomFamily(
-  (key: YieldOpportunityKey) =>
-    stakeKitApiRuntime
-      .atom((get) =>
-        Effect.gen(function* () {
-          if (key.decodeIssue) {
-            return yield* new ResponseDecodeError({
-              operation: "yield-opportunity-key",
-              issue: key.decodeIssue,
-              cause: new Error(key.decodeIssue),
-            });
-          }
+export const yieldOpportunityAtom = Atom.family((key: YieldOpportunityKey) =>
+  widgetAtomRuntime
+    .atom((get) =>
+      Effect.gen(function* () {
+        if (!key.yieldId) return null;
 
-          if (!key.yieldId) return null;
-
-          const api = yield* StakeKitApiService;
-          const response = yield* api.yield
-            .YieldsControllerGetYield(key.yieldId, undefined)
-            .pipe(withApiRequestError("yield-opportunity"));
-          const yieldModel = yield* Schema.decodeUnknownEffect(EarnYield)(
-            response
-          ).pipe(withResponseDecodeError("yield-opportunity"));
-          const provider = yield* get
-            .result(
-              yieldProviderAtom(
-                new YieldProviderKey({
-                  providerId: yieldModel.providerId,
-                })
-              )
+        const api = yield* StakeKitApiService;
+        const yieldModel = yield* api.yield.getYield(key.yieldId);
+        const provider = yield* get
+          .result(
+            yieldProviderAtom(
+              new YieldProviderKey({
+                providerId: yieldModel.providerId,
+              })
             )
-            .pipe(Effect.option);
+          )
+          .pipe(Effect.option);
 
-          return yield* Schema.decodeUnknownEffect(EarnYieldWithProvider)({
-            ...yieldModel,
-            ...(Option.isSome(provider) ? { provider: provider.value } : {}),
-          }).pipe(withResponseDecodeError("yield-opportunity"));
-        })
-      )
-      .pipe(yieldResourcePolicy)
+        return {
+          ...yieldModel,
+          ...(Option.isSome(provider) ? { provider: provider.value } : {}),
+        } satisfies EarnYieldWithProvider;
+      })
+    )
+    .pipe(yieldResourcePolicy)
 );
 
 export class MultiYieldsKey extends Data.Class<{
-  readonly decodeIssue: string | null;
   readonly enabled: boolean;
   readonly yieldIds: ReadonlyArray<YieldId>;
 }> {}
@@ -101,18 +76,10 @@ export const getUniqueYieldIdChunks = (
   chunkSize = 100
 ) => chunksOf(Array.from(new Set(yieldIds)), Math.max(1, chunkSize));
 
-export const multiYieldsAtom = valueEqualAtomFamily((key: MultiYieldsKey) =>
-  stakeKitApiRuntime
+const multiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
+  widgetAtomRuntime
     .atom((get) =>
       Effect.gen(function* () {
-        if (key.decodeIssue) {
-          return yield* new ResponseDecodeError({
-            operation: "multi-yields-key",
-            issue: key.decodeIssue,
-            cause: new Error(key.decodeIssue),
-          });
-        }
-
         if (!key.enabled || key.yieldIds.length === 0) return null;
 
         const api = yield* StakeKitApiService;
@@ -121,21 +88,10 @@ export const multiYieldsAtom = valueEqualAtomFamily((key: MultiYieldsKey) =>
         const pages = yield* Effect.forEach(
           chunks,
           (chunk) =>
-            api.yield
-              .YieldsControllerGetYields({
-                params: {
-                  limit: chunk.length,
-                  yieldIds: chunk,
-                },
-              })
-              .pipe(
-                withApiRequestError("multi-yields"),
-                Effect.flatMap((response) =>
-                  Schema.decodeUnknownEffect(EarnYieldPage)(response).pipe(
-                    withResponseDecodeError("multi-yields")
-                  )
-                )
-              ),
+            api.yield.getYields({
+              limit: chunk.length,
+              yieldIds: chunk,
+            }),
           { concurrency: 3 }
         );
         const yieldsById = new Map(
@@ -161,13 +117,14 @@ export const multiYieldsAtom = valueEqualAtomFamily((key: MultiYieldsKey) =>
               )
               .pipe(
                 Effect.option,
-                Effect.flatMap((provider) =>
-                  Schema.decodeUnknownEffect(EarnYieldWithProvider)({
-                    ...yieldModel,
-                    ...(Option.isSome(provider)
-                      ? { provider: provider.value }
-                      : {}),
-                  }).pipe(withResponseDecodeError("multi-yields"))
+                Effect.map(
+                  (provider) =>
+                    ({
+                      ...yieldModel,
+                      ...(Option.isSome(provider)
+                        ? { provider: provider.value }
+                        : {}),
+                    }) satisfies EarnYieldWithProvider
                 )
               );
           },
@@ -176,4 +133,53 @@ export const multiYieldsAtom = valueEqualAtomFamily((key: MultiYieldsKey) =>
       })
     )
     .pipe(yieldResourcePolicy)
+);
+
+export const visibleMultiYieldsAtom = Atom.family((key: MultiYieldsKey) =>
+  Atom.make((get) => {
+    const connectedNetwork = get(currentWalletConnectedNetworkAtom);
+
+    return get(multiYieldsAtom(key)).pipe(
+      AsyncResult.map(
+        (yields) =>
+          yields?.filter((yieldModel) => {
+            const visible =
+              yieldModel.id !== "binance-bnb-native-staking" &&
+              yieldModel.id !== "binance-testnet-bnb-native-staking" &&
+              yieldModel.id !== "avax-native-staking" &&
+              yieldModel.status.enter &&
+              isSupportedChain(yieldModel.token.network);
+
+            return (
+              visible &&
+              (connectedNetwork === null ||
+                connectedNetwork === yieldModel.token.network)
+            );
+          }) ?? null
+      )
+    );
+  })
+);
+
+export const multiYieldsByIdAtom = Atom.family((key: MultiYieldsKey) =>
+  visibleMultiYieldsAtom(key).pipe(
+    Atom.mapResult(
+      (yields) =>
+        new Map((yields ?? []).map((yieldModel) => [yieldModel.id, yieldModel]))
+    )
+  )
+);
+
+export const multiYieldCategoriesAtom = Atom.family((key: MultiYieldsKey) =>
+  visibleMultiYieldsAtom(key).pipe(
+    Atom.mapResult(
+      (yields) =>
+        new Map<YieldId, DashboardYieldCategory | null>(
+          (yields ?? []).map((yieldModel) => [
+            yieldModel.id,
+            getDashboardYieldCategory(yieldModel),
+          ])
+        )
+    )
+  )
 );

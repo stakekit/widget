@@ -1,0 +1,13 @@
+id: no-literal-effect-failure
+valid:
+  - 'Effect.fail(new AppError({ message: "boom" }))'
+  - 'Effect.fail(error)'
+invalid:
+  - 'Effect.fail("boom")'
+  - 'Effect.fail(42)'
+  - 'Effect.fail(false)'
+  - 'Effect.fail(null)'
+  - 'Effect.fail(undefined)'
+  - 'Effect.fail(`failed: ${reason}`)'
+  - 'Effect.fail({ message: "boom" })'
+  - 'Effect.fail(["boom"])'

@@ -8,17 +8,17 @@ export const useAnimateYieldPercent = (
   estimatedRewards: EarnPageContextType["estimatedRewards"]
 ) => {
   const perReward = estimatedRewards
-    .map((val) => {
-      if (
-        val.rewardType === "variable" ||
-        !val.rewardRateAverage.isPositive()
-      ) {
-        return "- %";
-      }
+    ? (() => {
+        if (
+          estimatedRewards.rewardType === "variable" ||
+          !estimatedRewards.rewardRateAverage.isPositive()
+        ) {
+          return "- %";
+        }
 
-      return val.rewardRateAverage.toNumber();
-    })
-    .extractNullable();
+        return estimatedRewards.rewardRateAverage.toNumber();
+      })()
+    : null;
 
   const rewardPercMotionValue = useMotionValue(0);
 
@@ -41,6 +41,6 @@ export const useAnimateYieldPercent = (
   );
 
   return typeof perReward === "string" || config.env.isTestMode
-    ? estimatedRewards.extract()?.percentage
+    ? estimatedRewards?.percentage
     : transformedMotionValue;
 };

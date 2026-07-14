@@ -58,9 +58,7 @@ const PositionDetailsPageComponent = () => {
     positionDetailsActionsHasContent(positionDetails) ||
     positionDetailsStakeHasContent(positionDetails);
 
-  const positionName = positionDetails.integrationData
-    .map((yieldDto) => yieldDto.metadata.name)
-    .extractNullable();
+  const positionName = positionDetails.integrationData?.metadata.name ?? null;
 
   return (
     <AnimationPage>

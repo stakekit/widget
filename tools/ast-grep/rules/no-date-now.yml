@@ -1,0 +1,16 @@
+id: no-date-now
+language: Tsx
+severity: error
+message: Use Clock for current time and Duration for intervals.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  pattern: $DATE.now()
+constraints:
+  DATE:
+    regex: ^(?:(?:globalThis|window)\.)?Date$

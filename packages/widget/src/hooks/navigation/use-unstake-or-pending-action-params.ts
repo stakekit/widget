@@ -1,5 +1,6 @@
-import { Maybe } from "purify-ts";
+import { Option, Schema } from "effect";
 import { useMemo } from "react";
+import { YieldId } from "../../domain/schema/identifiers";
 import type { YieldPendingActionType } from "../../domain/types/pending-action";
 import { usePendingActionSelectValidatorMatch } from "./use-pending-action-select-validator-match";
 import { useUnstakeOrPendingActionMatch } from "./use-unstake-or-pending-action-match";
@@ -31,18 +32,24 @@ export const useUnstakeOrPendingActionParams = () => {
     usePendingActionSelectValidatorMatch();
 
   return useMemo(() => {
-    const { balanceId, integrationId } =
+    const { balanceId, integrationId: rawIntegrationId } =
       unstakeOrPendingActionFlowMatch?.params ??
       pendingActionSelectValidatorMatch?.params ??
       {};
+
+    const integrationId = rawIntegrationId
+      ? Schema.decodeOption(YieldId)(rawIntegrationId).pipe(
+          Option.getOrUndefined
+        )
+      : undefined;
 
     const pendingActionType = pendingActionSelectValidatorMatch?.params
       .pendingActionType as YieldPendingActionType | undefined;
 
     return {
-      balanceId: Maybe.fromNullable(balanceId),
-      integrationId: Maybe.fromNullable(integrationId),
-      pendingActionType: Maybe.fromNullable(pendingActionType),
+      balanceId: balanceId ?? null,
+      integrationId: integrationId ?? null,
+      pendingActionType: pendingActionType ?? null,
       plain: {
         balanceId,
         integrationId,

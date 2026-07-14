@@ -1,0 +1,19 @@
+id: no-local-storage
+language: Tsx
+severity: error
+message: Use the persistence service instead of localStorage.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  any:
+    - kind: identifier
+      regex: ^localStorage$
+    - pattern: window.localStorage
+    - pattern: globalThis.localStorage
+    - pattern: window["localStorage"]
+    - pattern: globalThis["localStorage"]

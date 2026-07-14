@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { shouldShowDisconnect } from "../../../domain/types/connectors";
@@ -6,8 +5,8 @@ import { useDetailsMatch } from "../../../hooks/navigation/use-details-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useLogout } from "../../../hooks/use-logout";
 import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
-import { useWagmiConfig } from "../../../providers/wagmi";
+import { useWalletController } from "../../../providers/wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { useSyncHeaderHeight } from "./use-sync-header-height";
 
 export const useHeader = () => {
@@ -21,12 +20,11 @@ export const useHeader = () => {
   const { isConnected, isConnecting, connector } = useSKWallet();
 
   const showDisconnect = useMemo(
-    () =>
-      Maybe.fromNullable(connector).map(shouldShowDisconnect).orDefault(false),
+    () => (connector ? shouldShowDisconnect(connector) : false),
     [connector]
   );
 
-  const wagmiConfig = useWagmiConfig();
+  const wagmiConfig = useWalletController();
 
   const showBack = !useDetailsMatch();
 
@@ -39,11 +37,11 @@ export const useHeader = () => {
     navigate(-1);
   };
 
-  const { mutate: logout } = useLogout();
+  const logout = useLogout();
 
   const onXPress = () => {
     trackEvent("widgetDisconnectClicked");
-    logout();
+    void logout().catch(() => undefined);
   };
 
   return {

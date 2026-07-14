@@ -1,25 +1,22 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { YieldId } from "../../../domain/schema/identifiers";
+import type { HistoryPeriod } from "../../../domain/schema/dashboard-models";
+import type { YieldId } from "../../../domain/schema/identifiers";
 import {
   YieldHistoryKey,
   yieldTvlHistoryAtom,
 } from "../../../hooks/api/dashboard-atoms";
-import type { RewardRateHistoryPeriod } from "./use-yield-reward-rate-history";
 
 export const useYieldTvlHistory = ({
   period,
-  yieldId: rawYieldId,
+  yieldId,
 }: {
-  period: RewardRateHistoryPeriod;
-  yieldId: string | undefined;
+  period: HistoryPeriod;
+  yieldId: YieldId | undefined;
 }) => {
-  const yieldId = rawYieldId
-    ? Schema.decodeUnknownSync(YieldId)(rawYieldId)
-    : null;
   const resource = yieldTvlHistoryAtom(
-    new YieldHistoryKey({ period, yieldId })
+    new YieldHistoryKey({ period, yieldId: yieldId ?? null })
   );
   const result = useAtomValue(resource);
   const refresh = useAtomRefresh(resource);

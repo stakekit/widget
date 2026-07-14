@@ -10,21 +10,6 @@ export const AppToken = Schema.Struct({
 });
 export type AppToken = typeof AppToken.Type;
 
-export const LegacyToken = LegacyApi.TokenDto;
-export type LegacyToken = typeof LegacyToken.Type;
-
-export const LegacyYield = LegacyApi.YieldDto;
-export type LegacyYield = typeof LegacyYield.Type;
-
-export const LegacyRewardsSummary = LegacyApi.YieldRewardsSummaryResponseDto;
-export type LegacyRewardsSummary = typeof LegacyRewardsSummary.Type;
-
-export const LegacyAction = LegacyApi.ActionDto;
-export type LegacyAction = typeof LegacyAction.Type;
-
-export const LegacyAddresses = LegacyApi.AddressesDto;
-export type LegacyAddresses = typeof LegacyAddresses.Type;
-
 export const GeolocationError = LegacyApi.GeolocationError;
 export type GeolocationError = typeof GeolocationError.Type;
 

@@ -1,7 +1,7 @@
 import { useAtom } from "@effect/atom-react";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { TronResourceType } from "../../../domain/types/tron";
+import type { TronResource } from "../../../domain/schema/legacy-models";
 
 type PositionDetailsStakeEntryParams = {
   integrationId: string;
@@ -12,7 +12,7 @@ class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryP
 
 type PositionDetailsStakeIntent = {
   stakeAmount: string;
-  tronResource: TronResourceType | null;
+  tronResource: TronResource | null;
   useMaxAmount: boolean;
 };
 
@@ -27,7 +27,7 @@ type PositionDetailsStakeAction =
     }
   | {
       type: "tronResource/select";
-      tronResource: TronResourceType;
+      tronResource: TronResource;
     };
 
 const makeDefaultIntent = (): PositionDetailsStakeIntent => ({

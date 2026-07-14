@@ -6,16 +6,16 @@ import { usePositions } from "../positions-page/hooks/use-positions";
 import { AnimatedTabs } from "./components/tabs";
 
 export const Details = () => {
-  const { positionsData } = usePositions();
+  const { positions } = usePositions();
 
   const pendingActionsCount = useMemo(
     () =>
-      positionsData.data.reduce((acc, val) => {
+      positions.reduce((acc, val) => {
         if (val.hasPendingClaimRewards || val.actionRequired) return acc + 1;
 
         return acc;
       }, 0),
-    [positionsData.data]
+    [positions]
   );
 
   return (

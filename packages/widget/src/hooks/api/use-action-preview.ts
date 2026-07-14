@@ -1,60 +1,34 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { Option, Result, Schema } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import {
+import type {
   ActionCommand,
   ManageActionCommand,
 } from "../../domain/schema/action-models";
-import type {
-  YieldCreateActionDto,
-  YieldCreateManageActionDto,
-} from "../../domain/types/action";
-import {
-  ActionPreviewKey,
-  type ActionRequest,
-  actionPreviewAtom,
-} from "./action-atoms";
+import type { ActionPreviewRequest } from "../../providers/api/yield-api-service";
+import { ActionPreviewKey, actionPreviewAtom } from "./action-atoms";
 
 type ActionPreviewInput =
   | {
-      readonly command: YieldCreateActionDto;
+      readonly command: ActionCommand;
       readonly enabled: boolean;
       readonly intent: "enter" | "exit";
     }
   | {
-      readonly command: YieldCreateManageActionDto;
+      readonly command: ManageActionCommand;
       readonly enabled: boolean;
       readonly intent: "manage";
     };
 
-const decodeRequest = (input: ActionPreviewInput) => {
-  const decoded =
-    input.intent === "manage"
-      ? Schema.decodeUnknownResult(ManageActionCommand)(input.command)
-      : Schema.decodeUnknownResult(ActionCommand)(input.command);
-
-  if (Result.isFailure(decoded)) {
-    return {
-      decodeIssue: decoded.failure.message,
-      request: null,
-    } as const;
-  }
-
-  return {
-    decodeIssue: null,
-    request: {
-      intent: input.intent,
-      command: decoded.success,
-    } as ActionRequest,
-  } as const;
-};
-
 export const useActionPreview = (input: ActionPreviewInput) => {
-  const decoded = decodeRequest(input);
+  const request = {
+    intent: input.intent,
+    command: input.command,
+  } as ActionPreviewRequest;
   const resource = actionPreviewAtom(
     new ActionPreviewKey({
-      ...decoded,
       enabled: input.enabled,
+      request,
     })
   );
   const result = useAtomValue(resource);

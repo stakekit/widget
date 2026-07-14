@@ -1,6 +1,7 @@
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import type { YieldBase } from "../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+
 import {
   capitalizeFirstLetters,
   getRewardRateFormatted,
@@ -17,14 +18,14 @@ import {
   selectItemText,
 } from "./styles.css";
 
-type SelectOpportunityListItemProps<T extends YieldBase> = {
+type SelectOpportunityListItemProps<T extends EarnYieldWithProvider> = {
   item: T;
   onYieldSelect: (item: T) => void;
   testId?: string;
   selected?: boolean;
 };
 
-export const SelectOpportunityListItem = <T extends YieldBase>({
+export const SelectOpportunityListItem = <T extends EarnYieldWithProvider>({
   item,
   onYieldSelect,
   testId,

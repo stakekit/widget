@@ -1,9 +1,11 @@
-import { Just, List, Maybe } from "purify-ts";
+import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
-import type { YieldCreateActionDto } from "../../../domain/types/action";
-import type { AddressesDto } from "../../../domain/types/addresses";
-import { getYieldActionArg, type Yield } from "../../../domain/types/yields";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import type { ActionCommand } from "../../../domain/schema/action-models";
+import type { WalletAddresses } from "../../../domain/schema/address-models";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+
+import { getYieldActionArg } from "../../../domain/types/yields";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { useUnstakeOrPendingActionState } from "../state";
 
 export const useStakeExitRequestDto = () => {
@@ -15,95 +17,79 @@ export const useStakeExitRequestDto = () => {
     stakedOrLiquidBalances,
   } = useUnstakeOrPendingActionState();
 
-  return useMemo(
-    () =>
-      Maybe.fromRecord({
-        address: Maybe.fromNullable(address),
-        integrationData,
-        stakedOrLiquidBalances,
-      }).map<{
-        addresses: AddressesDto;
-        gasFeeToken: Yield["token"];
-        dto: YieldCreateActionDto;
-      }>((val) => {
-        const validatorsOrProvider = Just(null)
-          .chain<
-            | Pick<
-                NonNullable<YieldCreateActionDto["arguments"]>,
-                "validatorAddresses"
-              >
-            | Pick<
-                NonNullable<YieldCreateActionDto["arguments"]>,
-                "validatorAddress" | "subnetId"
-              >
-          >(() => {
-            if (
-              getYieldActionArg(
-                val.integrationData,
-                "exit",
-                "validatorAddresses"
-              )?.required
-            ) {
-              return List.find(
-                (b) => !!b.validators?.length,
-                val.stakedOrLiquidBalances
-              ).map((b) => ({
-                validatorAddresses:
-                  b.validators?.map((validator) => validator.address) ?? [],
-              }));
+  return useMemo((): {
+    addresses: WalletAddresses;
+    gasFeeToken: EarnYieldWithProvider["token"];
+    dto: ActionCommand;
+  } | null => {
+    if (!address || !integrationData || !stakedOrLiquidBalances) return null;
+
+    const validatorsOrProvider:
+      | Pick<NonNullable<ActionCommand["arguments"]>, "validatorAddresses">
+      | Pick<
+          NonNullable<ActionCommand["arguments"]>,
+          "validatorAddress" | "subnetId"
+        >
+      | Record<string, never> = (() => {
+      if (
+        getYieldActionArg(integrationData, "exit", "validatorAddresses")
+          ?.required
+      ) {
+        const balance = EArray.findFirst(
+          stakedOrLiquidBalances,
+          (b) => !!b.validators?.length
+        ).pipe(Option.getOrNull);
+        return balance
+          ? {
+              validatorAddresses:
+                balance.validators?.map((validator) => validator.address) ?? [],
             }
-            if (
-              getYieldActionArg(val.integrationData, "exit", "validatorAddress")
-                ?.required
-            ) {
-              return List.find(
-                (b) => !!b.validator?.address,
-                val.stakedOrLiquidBalances
-              ).map((b) => {
-                const subnetId = Maybe.fromNullable(
-                  getYieldActionArg(val.integrationData, "exit", "subnetId")
-                    ?.required
-                )
-                  .chainNullable(() => b.validator)
-                  .chainNullable((validator) => validator.subnet?.id)
-                  .extract();
-
-                return {
-                  validatorAddress: b.validator?.address,
-                  ...(subnetId === undefined ? {} : { subnetId }),
-                };
-              });
-            }
-
-            return Maybe.empty();
-          })
-          .orDefault({});
-
+          : {};
+      }
+      if (
+        getYieldActionArg(integrationData, "exit", "validatorAddress")?.required
+      ) {
+        const balance = EArray.findFirst(
+          stakedOrLiquidBalances,
+          (b) => !!b.validator?.address
+        ).pipe(Option.getOrNull);
+        if (!balance?.validator?.address) return {};
+        const subnetId = getYieldActionArg(integrationData, "exit", "subnetId")
+          ?.required
+          ? balance.validator.subnet?.id
+          : undefined;
         return {
-          gasFeeToken: val.integrationData.mechanics.gasFeeToken,
-          addresses: {
-            address: val.address,
-            additionalAddresses: additionalAddresses ?? undefined,
-          },
-          dto: {
-            address: val.address,
-            yieldId: val.integrationData.id,
-            arguments: {
-              amount: unstakeAmount.toString(10),
-              ...(unstakeUseMaxAmount ? { useMaxAmount: true } : {}),
-              ...validatorsOrProvider,
-              ...(additionalAddresses ?? {}),
-            },
-          },
+          validatorAddress: balance.validator.address,
+          ...(subnetId === undefined ? {} : { subnetId }),
         };
-      }),
-    [
-      additionalAddresses,
-      address,
-      stakedOrLiquidBalances,
-      integrationData,
-      unstakeAmount,
-      unstakeUseMaxAmount,
-    ]
-  );
+      }
+
+      return {};
+    })();
+
+    return {
+      gasFeeToken: integrationData.mechanics.gasFeeToken,
+      addresses: {
+        address,
+        additionalAddresses: additionalAddresses ?? undefined,
+      },
+      dto: {
+        address,
+        yieldId: integrationData.id,
+        arguments: {
+          amount: unstakeAmount.toString(10),
+          ...(unstakeUseMaxAmount ? { useMaxAmount: true } : {}),
+          ...validatorsOrProvider,
+          ...(additionalAddresses ?? {}),
+        },
+      },
+    };
+  }, [
+    additionalAddresses,
+    address,
+    stakedOrLiquidBalances,
+    integrationData,
+    unstakeAmount,
+    unstakeUseMaxAmount,
+  ]);
 };

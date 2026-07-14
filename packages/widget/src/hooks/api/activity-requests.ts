@@ -1,6 +1,6 @@
 import { Data } from "effect";
 import type { WalletAddress } from "../../domain/schema/identifiers";
-import type { Network } from "../../domain/schema/wallet-models";
+import type { Network } from "../../domain/schema/network-model";
 import {
   type ActivityFilter,
   getActivityFilterYieldTypes,

@@ -1,11 +1,12 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
 import type { ReactNode } from "react";
+import type { AppToken } from "../../domain/schema/legacy-models";
 import type {
   SupportedSKChainIds,
   SupportedSKChains,
 } from "../../domain/types/chains";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
-import type { TokenDto } from "../../domain/types/tokens";
+
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import type { DashboardYieldCategory } from "../../domain/types/yields";
 import type { Languages, localResources } from "../../translation/resources";
@@ -80,8 +81,8 @@ export type SettingsProps = {
     };
   };
   tokenIconMapping?:
-    | Record<TokenDto["symbol"], string>
-    | ((token: TokenDto) => string);
+    | Record<AppToken["symbol"], string>
+    | ((token: AppToken) => string);
   chainIconMapping?:
     | Record<SupportedSKChains, string>
     | ((chain: SupportedSKChains) => string);

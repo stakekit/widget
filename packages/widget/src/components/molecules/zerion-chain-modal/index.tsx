@@ -1,8 +1,7 @@
-import { Maybe } from "purify-ts";
 import { useCallback, useMemo } from "react";
 import { useSettings } from "../../../providers/settings";
 import type { VariantProps } from "../../../providers/settings/types";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { Box } from "../../atoms/box";
 
 export const ZerionChainModal = () => {
@@ -25,17 +24,14 @@ export const ZerionChainModal = () => {
 
   if (settings.variant !== "zerion" || !switchChain || !connector) return null;
 
-  return Maybe.fromNullable(
-    settings.chainModal({
-      chainIds,
-      selectedChainId: chain.id,
-      onSwitchChain,
-    })
-  )
-    .map((elem) => (
-      <Box minHeight="8" data-rk="chain-modal">
-        {elem}
-      </Box>
-    ))
-    .extractNullable();
+  const content = settings.chainModal({
+    chainIds,
+    selectedChainId: chain.id,
+    onSwitchChain,
+  });
+  return content ? (
+    <Box minHeight="8" data-rk="chain-modal">
+      {content}
+    </Box>
+  ) : null;
 };

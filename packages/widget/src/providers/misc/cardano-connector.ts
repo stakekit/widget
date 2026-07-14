@@ -1,7 +1,6 @@
 import { BrowserWallet } from "@meshsdk/wallet";
 import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Effect, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
 import { cardano } from "../../domain/types/chains/misc";
@@ -33,13 +32,13 @@ const createCardanoConnector = ({
       name: wallet.name,
       type: configMeta.type,
       signTransaction: (tx: string) =>
-        EitherAsync(({ throwE }) => {
-          if (!connectedWallet) {
-            return throwE(new Error("No wallet connected"));
-          }
-
-          return connectedWallet.signTx(tx);
-        }),
+        connectedWallet
+          ? Effect.tryPromise({
+              try: () => connectedWallet!.signTx(tx),
+              catch: (error) =>
+                error instanceof Error ? error : new Error(String(error)),
+            })
+          : Effect.fail(new Error("No wallet connected")),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
@@ -108,7 +107,7 @@ const createCardanoConnector = ({
         config.emitter.emit("disconnect");
       },
       getProvider: async () => ({}),
-      $filteredChains: new BehaviorSubject<Chain[]>([cardano]).asObservable(),
+      $filteredChains: Stream.succeed<Chain[]>([cardano]),
     };
   });
 

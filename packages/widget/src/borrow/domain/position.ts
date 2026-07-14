@@ -1,11 +1,4 @@
-import {
-  Array as EffectArray,
-  Option,
-  pipe,
-  Record,
-  Result,
-  Schema,
-} from "effect";
+import { Array as EArray, Option, pipe, Record, Result, Schema } from "effect";
 import { sumAll } from "effect/Number";
 import * as BorrowApi from "../../generated/api/borrow";
 import {
@@ -19,24 +12,23 @@ import { Integration } from "./integration";
 import { Market } from "./market";
 import { BorrowNetwork } from "./network";
 import { PendingActions } from "./pending-action";
-import { BigIntFromString, NumberFromString } from "./scalars";
 
 const PositionState = Schema.Struct({
   ...BorrowApi.SupplyBalanceDto.fields.positionState.schema.fields,
-  currentLtv: NumberFromString,
-  liquidationThreshold: NumberFromString,
-  healthFactor: Schema.NullOr(NumberFromString),
-  availableToBorrowUsd: NumberFromString,
+  currentLtv: Schema.FiniteFromString,
+  liquidationThreshold: Schema.FiniteFromString,
+  healthFactor: Schema.NullOr(Schema.FiniteFromString),
+  availableToBorrowUsd: Schema.FiniteFromString,
 });
 
 export const SupplyBalance = Schema.Struct({
   ...BorrowApi.SupplyBalanceDto.fields,
   marketId: MarketId,
   tokenAddress: TokenAddress,
-  balance: NumberFromString,
-  balanceRaw: BigIntFromString,
-  balanceUsd: NumberFromString,
-  apy: NumberFromString,
+  balance: Schema.FiniteFromString,
+  balanceRaw: Schema.BigIntFromString,
+  balanceUsd: Schema.FiniteFromString,
+  apy: Schema.FiniteFromString,
   positionState: Schema.optionalKey(PositionState),
   pendingActions: PendingActions,
 });
@@ -46,10 +38,10 @@ export const DebtBalance = Schema.Struct({
   ...BorrowApi.DebtBalanceDto.fields,
   marketId: MarketId,
   tokenAddress: TokenAddress,
-  balance: NumberFromString,
-  balanceRaw: BigIntFromString,
-  balanceUsd: NumberFromString,
-  apy: NumberFromString,
+  balance: Schema.FiniteFromString,
+  balanceRaw: Schema.BigIntFromString,
+  balanceUsd: Schema.FiniteFromString,
+  apy: Schema.FiniteFromString,
   pendingActions: PendingActions,
 });
 export type DebtBalance = typeof DebtBalance.Type;
@@ -59,14 +51,14 @@ export const BorrowAccountPosition = Schema.Struct({
   address: WalletAddress,
   integrationId: IntegrationId,
   network: BorrowNetwork,
-  totalSuppliedUsd: NumberFromString,
-  totalCollateralUsd: NumberFromString,
-  totalBorrowedUsd: NumberFromString,
-  netWorthUsd: NumberFromString,
-  healthFactor: Schema.NullOr(NumberFromString),
-  currentLtv: NumberFromString,
-  availableToBorrowUsd: Schema.NullOr(NumberFromString),
-  netApy: NumberFromString,
+  totalSuppliedUsd: Schema.FiniteFromString,
+  totalCollateralUsd: Schema.FiniteFromString,
+  totalBorrowedUsd: Schema.FiniteFromString,
+  netWorthUsd: Schema.FiniteFromString,
+  healthFactor: Schema.NullOr(Schema.FiniteFromString),
+  currentLtv: Schema.FiniteFromString,
+  availableToBorrowUsd: Schema.NullOr(Schema.FiniteFromString),
+  netApy: Schema.FiniteFromString,
   supplyBalances: Schema.Array(SupplyBalance),
   debtBalances: Schema.Array(DebtBalance),
 });
@@ -97,7 +89,7 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
 
   getTotalCollateralUsd() {
     return pipe(
-      EffectArray.filterMap(this.supplyBalances, (supplyBalance) =>
+      EArray.filterMap(this.supplyBalances, (supplyBalance) =>
         supplyBalance.isCollateral
           ? Result.succeed(supplyBalance.balanceUsd)
           : Result.failVoid
@@ -118,7 +110,7 @@ export class Position extends Schema.Class<Position>("BorrowPosition")({
       ]
     );
 
-    return EffectArray.reduce(
+    return EArray.reduce(
       this.supplyBalances,
       {
         maxLtv: Number.POSITIVE_INFINITY,

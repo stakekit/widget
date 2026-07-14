@@ -1,0 +1,16 @@
+id: no-json-parse
+language: Tsx
+severity: error
+message: Decode JSON strings with Schema.fromJsonString.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  pattern: $JSON.parse($$$ARGS)
+constraints:
+  JSON:
+    regex: ^(?:(?:globalThis|window)\.)?JSON$

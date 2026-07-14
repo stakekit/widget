@@ -1,15 +1,16 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import { Effect, Layer } from "effect";
+import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { EitherAsync } from "purify-ts";
-
-const walletWorkflowRuntime = Atom.runtime(Layer.empty);
+import { widgetAtomRuntime } from "../providers/effect-atom-runtime/widget-runtime";
+import { WalletService } from "../providers/wallet/runtime/service";
 
 type LedgerAccountConnector = {
-  readonly requestAndSwitchAccount: (chain: Chain) => EitherAsync<Error, Chain>;
+  readonly requestAndSwitchAccount: (
+    chain: Chain
+  ) => Effect.Effect<Chain, Error>;
 };
 
-export const addLedgerAccountAtom = walletWorkflowRuntime.fn(
+export const addLedgerAccountAtom = Atom.fn(
   (command: {
     readonly chain: Chain;
     readonly closeChainModal: () => void;
@@ -19,20 +20,37 @@ export const addLedgerAccountAtom = walletWorkflowRuntime.fn(
       return Effect.fail(new Error("Only Ledger Live is supported"));
     }
 
-    return Effect.promise(() =>
-      Promise.resolve(command.connector!.requestAndSwitchAccount(command.chain))
-    ).pipe(
-      Effect.flatMap((result) =>
-        result.caseOf<Effect.Effect<void, Error>>({
-          Left: (error) => Effect.fail(error),
-          Right: () => Effect.sync(command.closeChainModal),
-        })
-      )
+    return command.connector.requestAndSwitchAccount(command.chain).pipe(
+      Effect.tap(() => Effect.sync(command.closeChainModal)),
+      Effect.asVoid
     );
   }
 );
 
-export const logoutAtom = walletWorkflowRuntime.fn(
-  (command: { readonly run: () => Promise<void> }) =>
-    Effect.promise(command.run)
+type LogoutCommand = {
+  readonly clearDatabases?: () => Promise<void>;
+  readonly disconnect: Effect.Effect<void, unknown>;
+};
+
+const clearIndexedDatabases = async () => {
+  const databases = await indexedDB.databases();
+  databases.forEach(
+    (database) => database.name && indexedDB.deleteDatabase(database.name)
+  );
+};
+
+export const runLogout = Effect.fn("runLogout")(function* ({
+  clearDatabases = clearIndexedDatabases,
+  disconnect,
+}: LogoutCommand) {
+  yield* disconnect;
+  yield* Effect.tryPromise(clearDatabases);
+});
+
+export const logoutAtom = widgetAtomRuntime.fn(() =>
+  WalletService.use((wallet) =>
+    runLogout({
+      disconnect: wallet.disconnect(),
+    })
+  )
 );

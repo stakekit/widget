@@ -1,5 +1,6 @@
 import { Trigger } from "@radix-ui/react-dialog";
 import clsx from "clsx";
+import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
@@ -37,20 +38,18 @@ export const SelectOpportunity = () => {
 
   const data = useMemo(
     () =>
-      selectedStakeData
-        .chain((ssd) =>
-          selectedStake.map((ss) => {
-            const val = [...ssd.groupsWithCounts.values()];
+      selectedStake
+        ? (() => {
+            const val = [...selectedStakeData.groupsWithCounts.values()];
 
             return {
-              ss,
-              all: ssd.filtered,
+              ss: selectedStake,
+              all: selectedStakeData.filtered,
               groups: val.map((v) => v.title),
               groupCounts: val.map((v) => v.itemsLength),
             };
-          })
-        )
-        .extractNullable(),
+          })()
+        : null,
     [selectedStake, selectedStakeData]
   );
 
@@ -58,7 +57,7 @@ export const SelectOpportunity = () => {
 
   if (!data) return null;
 
-  const displayToken = getYieldOutputToken(data.ss).orDefault(data.ss.token);
+  const displayToken = getYieldOutputToken(data.ss) ?? data.ss.token;
 
   return (
     <SelectModal
@@ -117,7 +116,11 @@ export const SelectOpportunity = () => {
           );
         }}
         itemContent={(index) => {
-          const item = data.all[index];
+          const itemOption = EArray.get(data.all, index);
+
+          if (Option.isNone(itemOption)) return null;
+
+          const item = itemOption.value;
 
           return (
             <SelectModalItemContainer>

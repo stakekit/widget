@@ -8,8 +8,11 @@ import { PreferredIcon } from "../../../../../components/atoms/icons/preferred";
 import { XIcon } from "../../../../../components/atoms/icons/x-icon";
 import { Image } from "../../../../../components/atoms/image";
 import { Text } from "../../../../../components/atoms/typography/text";
-import type { Validator } from "../../../../../domain/types/validators";
-import type { Yield } from "../../../../../domain/types/yields";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../../domain/schema/earn-models";
+
 import { APToPercentage } from "../../../../../utils";
 import { formatCompactNumber } from "../../../../../utils/formatters";
 import {
@@ -42,7 +45,10 @@ const getDisplayWebsite = (website: string) => {
 const formatCommission = (commission: number | undefined) =>
   typeof commission === "number" ? `${APToPercentage(commission)}%` : null;
 
-const formatValidatorTvl = (validator: Validator, selectedStake: Yield) => {
+const formatValidatorTvl = (
+  validator: EarnValidator,
+  selectedStake: EarnYieldWithProvider
+) => {
   const tvl = validator.tvl ?? validator.tvlRaw;
 
   if (!tvl) return null;
@@ -60,10 +66,10 @@ export const SelectValidatorTrigger = ({
   selectedValidatorsArr,
   selectedStake,
 }: {
-  onRemoveValidator: (item: Validator) => void;
+  onRemoveValidator: (item: EarnValidator) => void;
   multiSelect: boolean;
-  selectedValidatorsArr: Validator[];
-  selectedStake: Yield;
+  selectedValidatorsArr: EarnValidator[];
+  selectedStake: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
   const hasSelectedValidators = selectedValidatorsArr.length > 0;

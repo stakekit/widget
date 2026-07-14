@@ -1,6 +1,6 @@
 {
-  "$schema": "https://github.com/jayu/rev-dep/blob/master/config-schema/1.7.schema.json?raw=true",
-  "configVersion": "1.7",
+  "configVersion": "1.10",
+  "$schema": "https://raw.githubusercontent.com/jayu/rev-dep/master/config-schema/1.10.schema.json",
   "rules": [
     {
       "path": "packages/widget",
@@ -17,15 +17,37 @@
         "vite/*.ts"
       ],
       "devEntryPoints": [
-        "scripts/check-architecture.ts",
         "scripts/generate-effect-openapi.ts",
-        "tests/utils/setup.ts",
+        "tests/utils/setup.browser.ts",
+        "tests/utils/setup.dom.ts",
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx"
       ],
-      "orphanFilesDetection": {
-        "enabled": true
-      },
+      "orphanFilesDetection": [
+        {
+          "enabled": true
+        },
+        {
+          // check for runtime files that are only reachable from tests
+          "enabled": true,
+          "validEntryPoints": [
+            "src/index.package.ts",
+            "src/index.bundle.ts",
+            "src/main.tsx",
+            "src/translation/i18next.d.ts",
+            "src/types/purify-extend.d.ts",
+            "src/types/window.d.ts",
+            "src/vite-env.d.ts",
+            "postcss.config.js",
+            "public/mockServiceWorker.js",
+            "vite/*.ts",
+            "scripts/generate-effect-openapi.ts",
+            "tests/**/*.ts",
+            "tests/**/*.tsx"
+          ],
+          "graphExclude": ["tests/**/*.ts", "tests/**/*.tsx"]
+        }
+      ],
       "unusedExportsDetection": {
         "enabled": true,
         "ignoreFiles": ["src/types/yield-api-schema.d.ts"]
@@ -36,6 +58,7 @@
           "@effect/openapi-generator",
           "@effect/platform-node",
           "babel-plugin-react-compiler",
+          "jsdom",
           "playwright",
           "postcss",
           "swagger2openapi",

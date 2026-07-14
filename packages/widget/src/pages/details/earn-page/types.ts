@@ -1,11 +1,9 @@
-import type {
-  ExtendedYieldType,
-  YieldBase,
-} from "../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+import type { ExtendedYieldType } from "../../../domain/types/yields";
 
 export type SelectedStakeData = {
-  all: YieldBase[];
-  filtered: YieldBase[];
+  all: EarnYieldWithProvider[];
+  filtered: EarnYieldWithProvider[];
   groupsWithCounts: Map<
     ExtendedYieldType,
     {

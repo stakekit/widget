@@ -1,8 +1,12 @@
+import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
+import {
+  EarnToken,
+  type EarnYield,
+} from "../../../src/domain/schema/earn-models";
 import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
-import type { Yield } from "../../../src/domain/types/yields";
 import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
@@ -16,7 +20,7 @@ import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
-type YieldApiYieldDto = Omit<Yield, "provider">;
+type YieldApiYieldDto = typeof EarnYield.Encoded;
 
 const setUrl = ({
   accountId,
@@ -67,23 +71,23 @@ export const setup = async (
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
   };
 
-  const rewardToken: LegacyTokenDto = {
+  const rewardToken = Schema.decodeUnknownSync(EarnToken)({
     name: "United Stables",
     symbol: "U",
     decimals: 18,
     network: token.network,
     address: "0x58D97B57BB95320F9a05dC918Aef65434969c2B2",
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
-  };
+  });
 
-  const morphoToken: LegacyTokenDto = {
+  const morphoToken = Schema.decodeUnknownSync(EarnToken)({
     name: "Morpho Token",
     symbol: "MORPHO",
     decimals: 18,
     network: token.network,
     address: "0x58D97B57BB95320F9a05dC918Aef65434969c2B3",
     logoURI: "https://assets.stakek.it/tokens/usda.svg",
-  };
+  });
 
   const discoveryRewardRate: YieldRewardRateDto = yieldRewardRateFixture({
     total: 0.045507546653006034,

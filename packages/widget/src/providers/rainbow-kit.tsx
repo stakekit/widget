@@ -1,21 +1,21 @@
 import type { DisclaimerComponent } from "@stakekit/rainbowkit";
 import { RainbowKitProvider, useChainModal } from "@stakekit/rainbowkit";
-import { Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { addLedgerAccountAtom } from "../atoms/wallet-workflows";
 import { Text } from "../components/atoms/typography/text";
 import { shouldShowDisconnect } from "../domain/types/connectors";
 import { useTrackEvent } from "../hooks/tracking/use-track-event";
-import { useAddLedgerAccount } from "../hooks/use-add-ledger-account";
 import { useCloseChainModal } from "../hooks/use-close-chain-modal";
 import { vars } from "../styles/theme/contract.css";
 import { id } from "../styles/theme/ids";
 import type { ConnectKitTheme } from "../styles/tokens/connect-kit";
 import { connectKitTheme } from "../styles/tokens/connect-kit";
+import { isLedgerLiveConnector } from "./ledger/ledger-live-connector-meta";
 import { useSettings } from "./settings";
-import { useSKWallet } from "./sk-wallet";
-import { useLedgerDisabledChain } from "./sk-wallet/use-ledger-disabled-chains";
+import { useLedgerDisabledChain } from "./wallet/react/use-ledger-disabled-chains";
+import { useSKWallet } from "./wallet/react/use-wallet";
 
 const finalTheme: ConnectKitTheme = {
   ...connectKitTheme.lightMode,
@@ -31,11 +31,12 @@ export const RainbowKitProviderWithTheme = ({
 
   const { portalContainer } = useSettings();
 
-  const ledgerDisabledChains = useLedgerDisabledChain(connector);
+  const ledgerDisabledChains = useLedgerDisabledChain();
 
   const trackEvent = useTrackEvent();
 
-  const onDisabledChainClick = useAddLedgerAccount();
+  const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
+  const { closeChainModal } = useCloseChainModal();
 
   const { t, i18n } = useTranslation();
 
@@ -56,10 +57,7 @@ export const RainbowKitProviderWithTheme = ({
   );
 
   const hideDisconnect = useMemo(
-    () =>
-      Maybe.fromNullable(connector)
-        .map((c) => !shouldShowDisconnect(c))
-        .orDefault(true),
+    () => (connector ? !shouldShowDisconnect(connector) : true),
     [connector]
   );
 
@@ -79,7 +77,12 @@ export const RainbowKitProviderWithTheme = ({
       disabledChains={disabledChains}
       onDisabledChainClick={(disabledChain) => {
         trackEvent("addLedgerAccountClicked");
-        onDisabledChainClick.mutate(disabledChain);
+        addLedgerAccount({
+          chain: disabledChain,
+          closeChainModal,
+          connector:
+            connector && isLedgerLiveConnector(connector) ? connector : null,
+        });
       }}
       locale={locale}
       appInfo={{ disclaimer: Disclamer, appName: t("shared.stake_kit") }}
@@ -106,3 +109,5 @@ const Disclamer: DisclaimerComponent = () => {
   const { t } = useTranslation();
   return <Text>{t("chain_modal_disclaimer")}</Text>;
 };
+
+import { useAtomSet } from "@effect/atom-react";

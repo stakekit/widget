@@ -3,8 +3,8 @@ import { Logger, WalletManager } from "@cosmos-kit/core";
 import { wallets as keplrWallets } from "@cosmos-kit/keplr";
 import { wallets as leapWallets } from "@cosmos-kit/leap";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { Just } from "purify-ts";
 import { config } from "../../config";
+import type { WalletAddress } from "../../domain/schema/identifiers";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { CosmosNetworks } from "../../domain/types/chains/networks";
 import {
@@ -25,9 +25,14 @@ const wallets: MainWalletBase[] = [
 export const getWalletManager = ({
   cosmosChainsMap,
   forceWalletConnectOnly,
+  persistPublicKey,
 }: {
   forceWalletConnectOnly: boolean;
   cosmosChainsMap: Partial<CosmosChainsMap>;
+  persistPublicKey: (input: {
+    readonly address: WalletAddress;
+    readonly publicKey: string;
+  }) => Promise<void>;
 }): {
   connector: {
     groupName: string;
@@ -39,31 +44,23 @@ export const getWalletManager = ({
     ? wallets.filter((w) => w instanceof WalletConnectWallet)
     : wallets;
 
-  const { chains, cosmosWagmiChains } = Just(cosmosChainsMap)
-    .map((val) =>
-      Object.values(val).reduce(
-        (acc, next) => {
-          acc.cosmosWagmiChains.push(next.wagmiChain);
-          acc.chains.push(next.chain);
+  const { chains, cosmosWagmiChains } = Object.values(cosmosChainsMap).reduce(
+    (acc, next) => {
+      acc.cosmosWagmiChains.push(next.wagmiChain);
+      acc.chains.push(next.chain);
 
-          return acc;
-        },
-        {
-          cosmosWagmiChains: [] as Chain[],
-          chains: [] as CosmosChainsAssets[],
-        }
-      )
-    )
-    .map((val) => ({
-      ...val,
-      chains: [...val.chains].sort((a) =>
-        // Put cosmos first
-        registryIdsToSKCosmosNetworks[a.chain_id] === CosmosNetworks.Cosmos
-          ? -1
-          : 1
-      ),
-    }))
-    .unsafeCoerce();
+      return acc;
+    },
+    {
+      cosmosWagmiChains: [] as Chain[],
+      chains: [] as CosmosChainsAssets[],
+    }
+  );
+
+  chains.sort((a) =>
+    // Put cosmos first
+    registryIdsToSKCosmosNetworks[a.chain_id] === CosmosNetworks.Cosmos ? -1 : 1
+  );
 
   const connector: WalletList[number] = {
     groupName: "Cosmos",
@@ -73,6 +70,7 @@ export const getWalletManager = ({
           wallet: w,
           cosmosChainsMap,
           cosmosWagmiChains,
+          persistPublicKey,
         })
     ),
   };

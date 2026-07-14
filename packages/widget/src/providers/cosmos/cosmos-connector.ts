@@ -8,15 +8,18 @@ import type {
 import type { WCClient } from "@cosmos-kit/walletconnect";
 import type { Wallet } from "@stakekit/rainbowkit";
 import { SignDoc, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { Array as EArray, Effect, Option, Schema, Stream } from "effect";
 import EventEmitter from "eventemitter3";
-import { EitherAsync } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
 import type { Address, Chain } from "viem";
 import type { CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
+import { makeCurrentValueStream } from "../../common/current-value-stream";
+import {
+  WalletAddress,
+  type WalletAddress as WalletAddressType,
+} from "../../domain/schema/identifiers";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { CosmosNetworks } from "../../domain/types/chains/networks";
-import { getStorageItem, setStorageItem } from "../../services/local-storage";
 import { getNetworkLogo, waitForMs } from "../../utils";
 import type { ExtraProps } from "./cosmos-connector-meta";
 import { configMeta } from "./cosmos-connector-meta";
@@ -33,11 +36,22 @@ export const createCosmosConnector = ({
   wallet,
   cosmosChainsMap,
   cosmosWagmiChains,
+  persistPublicKey,
 }: {
   wallet: MainWalletBase;
   cosmosChainsMap: Partial<CosmosChainsMap>;
   cosmosWagmiChains: Chain[];
+  persistPublicKey: (input: {
+    readonly address: WalletAddressType;
+    readonly publicKey: string;
+  }) => Promise<void>;
 }): Wallet => {
+  const getDownloadLink = (index: number) =>
+    EArray.get(wallet.walletInfo.downloads ?? [], index).pipe(
+      Option.map((download) => download.link),
+      Option.getOrUndefined
+    );
+
   return {
     id: wallet.walletInfo.name,
     name: wallet.walletInfo.prettyName,
@@ -48,9 +62,9 @@ export const createCosmosConnector = ({
       "",
     iconBackground: "transparent",
     downloadUrls: {
-      chrome: wallet.walletInfo.downloads?.[0].link,
-      firefox: wallet.walletInfo.downloads?.[1].link,
-      browserExtension: wallet.walletInfo.downloads?.[0].link,
+      chrome: getDownloadLink(0),
+      firefox: getDownloadLink(1),
+      browserExtension: getDownloadLink(0),
     },
     qrCode: {
       getUri: (uri) => uri,
@@ -64,16 +78,19 @@ export const createCosmosConnector = ({
     createConnector: (walletDetailsParams) =>
       createConnector<unknown, ExtraProps>((config) => {
         const provider = new EventEmitter();
-        const $filteredChains = new BehaviorSubject(cosmosWagmiChains);
-
-        const initCw = wallet.chainWalletMap.get(
+        const initialChainName =
           cosmosChainsMap.cosmos?.chain.chain_name ??
-            Object.values(cosmosChainsMap)[0].chain.chain_name
-        );
+          EArray.head(Object.values(cosmosChainsMap)).pipe(
+            Option.map(({ chain }) => chain.chain_name),
+            Option.getOrUndefined
+          );
+        const initCw = initialChainName
+          ? wallet.chainWalletMap.get(initialChainName)
+          : undefined;
 
         if (!initCw) throw new Error("Chain wallet not found");
 
-        const $chainWallet = new BehaviorSubject<ChainWalletBase>(initCw);
+        const chainWallet = makeCurrentValueStream<ChainWalletBase>(initCw);
 
         const setup: ReturnType<CreateConnectorFn>["setup"] = () =>
           new Promise((res, rej) => {
@@ -104,7 +121,7 @@ export const createCosmosConnector = ({
         ) => {
           config.emitter.emit("message", { type: "connecting" });
 
-          const cw = $chainWallet.getValue();
+          const cw = chainWallet.get();
           const getConnectResult = (chainWallet: ChainWalletBase) => {
             if (!chainWallet.address || !chainWallet.chainId) {
               throw new Error(
@@ -159,7 +176,7 @@ export const createCosmosConnector = ({
         };
 
         const getAndSavePubKeyToStorage = async () => {
-          const cw = await $chainWallet.getValue();
+          const cw = chainWallet.get();
 
           const result = await cw.client?.getAccount?.(cw.chainId);
 
@@ -167,12 +184,9 @@ export const createCosmosConnector = ({
 
           const { address, pubkey } = result;
 
-          const prevVal =
-            getStorageItem("sk-widget@1//skPubKeys").orDefault({}) ?? {};
-
-          setStorageItem("sk-widget@1//skPubKeys", {
-            ...prevVal,
-            [address]: toBase64(pubkey),
+          await persistPublicKey({
+            address: Schema.decodeSync(WalletAddress)(address),
+            publicKey: toBase64(pubkey),
           });
         };
 
@@ -192,7 +206,7 @@ export const createCosmosConnector = ({
 
             if (!newCw) throw new Error("Chain wallet not found");
 
-            $chainWallet.next(newCw);
+            chainWallet.set(newCw);
 
             await connect();
 
@@ -231,7 +245,7 @@ export const createCosmosConnector = ({
 
         const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
           async () => {
-            const address = $chainWallet.getValue().address;
+            const address = chainWallet.get().address;
 
             return address ? [address as Address] : [];
           };
@@ -239,7 +253,7 @@ export const createCosmosConnector = ({
         const isAuthorized: ReturnType<CreateConnectorFn>["isAuthorized"] =
           async () => {
             try {
-              return !!$chainWallet.getValue().address;
+              return !!chainWallet.get().address;
             } catch (_error) {
               return false;
             }
@@ -252,18 +266,16 @@ export const createCosmosConnector = ({
           cw: ChainWalletBase;
           tx: string;
         }) =>
-          EitherAsync(() =>
-            cw.client.signDirect!(
-              cw.chainId,
-              cw.address!,
-              SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
-            )
-          )
-            .mapLeft((e) => {
-              console.log(e);
-              return new Error("signDirect failed");
-            })
-            .map((val) =>
+          Effect.tryPromise({
+            try: () =>
+              cw.client.signDirect!(
+                cw.chainId,
+                cw.address!,
+                SignDoc.decode(fromHex(tx)) as unknown as DirectSignDoc // accountNumber bigint/Long issue
+              ),
+            catch: (error) => new Error("signDirect failed", { cause: error }),
+          }).pipe(
+            Effect.map((val) =>
               toHex(
                 TxRaw.encode({
                   authInfoBytes: val.signed.authInfoBytes,
@@ -271,16 +283,17 @@ export const createCosmosConnector = ({
                   signatures: [decodeSignature(val.signature).signature],
                 }).finish()
               )
-            );
+            )
+          );
 
         const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-          async () => $chainWallet.getValue().chainId as unknown as number;
+          async () => chainWallet.get().chainId as unknown as number;
 
         const getProvider: ReturnType<CreateConnectorFn>["getProvider"] =
           async () => provider;
 
         const disconnect: ReturnType<CreateConnectorFn>["disconnect"] =
-          async () => $chainWallet.getValue().disconnect();
+          async () => chainWallet.get().disconnect();
 
         return {
           ...walletDetailsParams,
@@ -288,8 +301,8 @@ export const createCosmosConnector = ({
           id: wallet.walletInfo.name,
           name: wallet.walletInfo.name,
           type: configMeta.type,
-          $filteredChains: $filteredChains.asObservable(),
-          $chainWallet: $chainWallet.asObservable(),
+          $filteredChains: Stream.succeed(cosmosWagmiChains),
+          $chainWallet: chainWallet.changes,
           connect,
           switchChain,
           onAccountsChanged,

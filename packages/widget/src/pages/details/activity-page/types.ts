@@ -1,9 +1,11 @@
-import type { ActionDto } from "../../../domain/types/action";
-import type { Validator } from "../../../domain/types/validators";
-import type { Yield } from "../../../domain/types/yields";
+import type { YieldAction } from "../../../domain/schema/action-models";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
 
 export type ActionYieldDto = {
-  actionData: ActionDto;
-  yieldData: Yield | null;
-  validatorsData: Validator[];
+  actionData: YieldAction;
+  yieldData: EarnYieldWithProvider | null;
+  validatorsData: EarnValidator[];
 };

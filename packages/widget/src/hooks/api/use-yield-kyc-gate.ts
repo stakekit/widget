@@ -1,11 +1,10 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { Option, Schema } from "effect";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { Maybe } from "purify-ts";
-import { WalletAddress, YieldId } from "../../domain/schema/identifiers";
+import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
 import { isKycGateBlocking, mapKycStatusToGate } from "../../domain/types/kyc";
-import type { Yield } from "../../domain/types/yields";
-import { useSKWallet } from "../../providers/sk-wallet";
+
+import { useSKWallet } from "../../providers/wallet/react/use-wallet";
 import { YieldKycKey, yieldKycStatusAtom } from "./dashboard-atoms";
 
 export const useYieldKycGate = ({
@@ -13,21 +12,16 @@ export const useYieldKycGate = ({
   yieldDto,
 }: {
   readonly enabled?: boolean;
-  readonly yieldDto: Maybe<Yield>;
+  readonly yieldDto: EarnYieldWithProvider | null;
 }) => {
-  const { address: rawAddress } = useSKWallet();
-  const selectedYield = yieldDto.extractNullable();
+  const { address } = useSKWallet();
+  const selectedYield = yieldDto;
   const queryEnabled =
     enabled &&
     !!selectedYield &&
-    !!rawAddress &&
+    !!address &&
     selectedYield.mechanics.requirements?.kycRequired === true;
-  const address = rawAddress
-    ? Schema.decodeUnknownSync(WalletAddress)(rawAddress)
-    : null;
-  const yieldId = selectedYield
-    ? Schema.decodeUnknownSync(YieldId)(selectedYield.id)
-    : null;
+  const yieldId = selectedYield?.id ?? null;
   const resource = yieldKycStatusAtom(
     new YieldKycKey({ address, enabled: queryEnabled, yieldId })
   );

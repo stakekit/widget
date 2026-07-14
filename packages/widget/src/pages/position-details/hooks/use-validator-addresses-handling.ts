@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useReducer } from "react";
 import type { SelectModalProps } from "../../../components/atoms/select-modal";
-import {
-  isPendingActionValidatorAddressesRequired,
-  type YieldPendingActionDto,
-} from "../../../domain/types/pending-action";
-import type { YieldBalanceDto } from "../../../domain/types/positions";
+import type { PendingAction } from "../../../domain/schema/action-models";
+import type { EarnBalance } from "../../../domain/schema/earn-models";
+import { isPendingActionValidatorAddressesRequired } from "../../../domain/types/pending-action";
+
 import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import type { Action } from "../../../types/utils";
 
@@ -14,8 +13,8 @@ type State = {
 } & (
   | {
       showValidatorsModal: true;
-      yieldBalance: YieldBalanceDto;
-      pendingActionDto: YieldPendingActionDto;
+      yieldBalance: EarnBalance;
+      pendingActionDto: PendingAction;
     }
   | {
       showValidatorsModal: false;
@@ -26,7 +25,7 @@ type State = {
 
 type ValidatorOpenAction = Action<
   "validator/open",
-  { yieldBalance: YieldBalanceDto; pendingActionDto: YieldPendingActionDto }
+  { yieldBalance: EarnBalance; pendingActionDto: PendingAction }
 >;
 type ValidatorCloseAction = Action<"validator/close">;
 type ValidatorMultiSelectAction = Action<
@@ -124,10 +123,8 @@ export const useValidatorAddressesHandling = () => {
   );
 
   const openModal = useCallback(
-    (args: {
-      yieldBalance: YieldBalanceDto;
-      pendingActionDto: YieldPendingActionDto;
-    }) => dispatch({ type: "validator/open", data: args }),
+    (args: { yieldBalance: EarnBalance; pendingActionDto: PendingAction }) =>
+      dispatch({ type: "validator/open", data: args }),
     []
   );
 

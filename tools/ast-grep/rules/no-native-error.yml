@@ -1,0 +1,20 @@
+id: no-native-error
+language: Tsx
+severity: error
+message: Use Data.TaggedError or Schema.TaggedErrorClass, not a native Error.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  any:
+    - pattern: new $ERROR($$$ARGS)
+    - pattern: $ERROR($$$ARGS)
+    - pattern: class $NAME extends $ERROR { $$$BODY }
+    - pattern: class extends $ERROR { $$$BODY }
+constraints:
+  ERROR:
+    regex: ^(?:(?:globalThis|window)\.)?(?:Error|TypeError|RangeError|ReferenceError|SyntaxError|URIError|EvalError|AggregateError)$

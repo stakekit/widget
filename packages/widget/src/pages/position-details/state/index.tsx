@@ -1,5 +1,7 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { Dispatch, PropsWithChildren } from "react";
 import {
   createContext,
@@ -10,20 +12,27 @@ import {
   useRef,
 } from "react";
 import { config } from "../../../config";
+import type { PendingAction } from "../../../domain/schema/action-models";
+import type { EarnBalance } from "../../../domain/schema/earn-models";
+import type { AppToken } from "../../../domain/schema/legacy-models";
 import {
   getPendingActionAmountConfig,
-  type YieldPendingActionDto,
   type YieldPendingActionType,
 } from "../../../domain/types/pending-action";
-import type { YieldBalanceDto } from "../../../domain/types/positions";
-import type { YieldTokenDto } from "../../../domain/types/tokens";
+
 import { getYieldActionArg, isERC4626 } from "../../../domain/types/yields";
-import { usePrices } from "../../../hooks/api/use-prices";
-import { useYieldOpportunity } from "../../../hooks/api/use-yield-opportunity";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+  positionBalancesByTypeAtom,
+} from "../../../hooks/api/position-atoms";
+import { PricesKey, pricesAtom } from "../../../hooks/api/prices-atoms";
+import {
+  YieldOpportunityKey,
+  yieldOpportunityAtom,
+} from "../../../hooks/api/yield-atoms";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
-import { usePositionBalanceByType } from "../../../hooks/use-position-balance-by-type";
-import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useStakedOrLiquidBalance } from "../../../hooks/use-staked-or-liquid-balance";
 import type {
   Actions,
@@ -49,24 +58,34 @@ export const UnstakeOrPendingActionProvider = ({
   const balanceId = plain.balanceId;
   const integrationId = plain.integrationId;
 
-  const yieldOpportunity = useYieldOpportunity(integrationId);
-
-  const integrationData = useMemo(
-    () => Maybe.fromNullable(yieldOpportunity.data),
-    [yieldOpportunity.data]
+  const yieldOpportunity = useAtomValue(
+    yieldOpportunityAtom(
+      new YieldOpportunityKey({ yieldId: integrationId ?? null })
+    )
+  );
+  const integrationData = yieldOpportunity.pipe(
+    AsyncResult.value,
+    Option.getOrNull
   );
 
-  const baseToken = integrationData.map((val) => val.token);
+  const baseToken = integrationData?.token ?? null;
 
-  const positionBalancesRemote = usePositionBalances({
-    balanceId,
-    integrationId,
+  const positionKey = new PositionBalancesKey({
+    balanceId: balanceId ?? null,
+    yieldId: integrationId ?? null,
   });
+  const positionBalancesResult = useAtomValue(
+    positionBalancesAtom(positionKey)
+  );
+  const positionBalancesRemote = AsyncResult.getOrElse(
+    positionBalancesResult,
+    () => null
+  );
 
   const lastExistingPositionBalances = useRef(positionBalancesRemote);
 
   useEffect(() => {
-    if (positionBalancesRemote.data.isNothing()) {
+    if (!positionBalancesRemote) {
       return;
     }
 
@@ -76,44 +95,52 @@ export const UnstakeOrPendingActionProvider = ({
   /**
    * Prevent position balance being removed after unstake
    */
-  const positionBalances = positionBalancesRemote.data.isJust()
+  const positionBalances = positionBalancesRemote
     ? positionBalancesRemote
     : lastExistingPositionBalances.current;
 
-  const positionBalancePrices = usePrices(
-    useMemo(
-      () =>
-        Maybe.fromRecord({
-          positionBalances: positionBalances.data,
-          baseToken,
-        })
-          .map((val) => ({
-            currency: config.currency,
-            tokenList: [
-              val.baseToken,
-              ...val.positionBalances.balances.map((v) => v.token),
-            ],
-          }))
-          .extractNullable(),
-      [positionBalances, baseToken]
+  const positionBalancePrices = useAtomValue(
+    pricesAtom(
+      new PricesKey({
+        request:
+          positionBalances && baseToken
+            ? {
+                currency: config.currency,
+                tokenList: [
+                  baseToken,
+                  ...positionBalances.balances.map((balance) => balance.token),
+                ],
+              }
+            : null,
+      })
     )
   );
 
-  /**
-   * @summary Position balance by type
-   */
-  const positionBalancesByType = usePositionBalanceByType({
-    positionBalancesData: positionBalances.data,
-  });
+  const positionBalancesByTypeRemote = AsyncResult.getOrElse(
+    useAtomValue(positionBalancesByTypeAtom(positionKey)),
+    () => null
+  );
+  const lastExistingPositionBalancesByType = useRef(
+    positionBalancesByTypeRemote
+  );
+
+  useEffect(() => {
+    if (positionBalancesByTypeRemote) {
+      lastExistingPositionBalancesByType.current = positionBalancesByTypeRemote;
+    }
+  }, [positionBalancesByTypeRemote]);
+
+  const positionBalancesByType =
+    positionBalancesByTypeRemote ?? lastExistingPositionBalancesByType.current;
 
   const stakedOrLiquidBalances = useStakedOrLiquidBalance(
     positionBalancesByType
   );
 
-  const reducedStakedOrLiquidBalance = useMemo(
-    () =>
-      stakedOrLiquidBalances.map((b) =>
-        b.reduce(
+  const reducedStakedOrLiquidBalance = useMemo(() => {
+    const first = stakedOrLiquidBalances?.[0];
+    return first
+      ? stakedOrLiquidBalances.reduce(
           (acc, next) => {
             acc.amount = acc.amount.plus(new BigNumber(next.amount));
             acc.amountUsd = acc.amountUsd.plus(
@@ -126,18 +153,14 @@ export const UnstakeOrPendingActionProvider = ({
           {
             amountUsd: new BigNumber(0),
             amount: new BigNumber(0),
-            token: b[0].token,
+            token: first.token,
           }
         )
-      ),
-    [stakedOrLiquidBalances]
-  );
+      : null;
+  }, [stakedOrLiquidBalances]);
 
   const unstakeToken = useMemo(
-    () =>
-      stakedOrLiquidBalances
-        .chain((balances) => List.head(balances))
-        .map((v) => v.token),
+    () => stakedOrLiquidBalances?.[0]?.token ?? null,
     [stakedOrLiquidBalances]
   );
 
@@ -149,27 +172,26 @@ export const UnstakeOrPendingActionProvider = ({
   } = useMaxMinYieldAmount({
     yieldOpportunity: integrationData,
     type: "exit",
-    availableAmount: reducedStakedOrLiquidBalance.map((v) => v.amount),
+    availableAmount: reducedStakedOrLiquidBalance?.amount ?? null,
     pricePerShare: null,
   });
 
-  const canChangeUnstakeAmount = integrationData.map(
-    (d) =>
-      !!(
+  const canChangeUnstakeAmount = integrationData
+    ? !!(
         !isForceMax &&
-        (getYieldActionArg(d, "exit", "amount")?.required || isERC4626(d))
+        (getYieldActionArg(integrationData, "exit", "amount")?.required ||
+          isERC4626(integrationData))
       )
-  );
+    : null;
 
   const positionBalancesByTypePendingActions = useMemo(
     () =>
       new Map<
         BalanceTokenActionType,
-        { pendingAction: YieldPendingActionDto; balance: YieldBalanceDto }
+        { pendingAction: PendingAction; balance: EarnBalance }
       >(
         positionBalancesByType
-          .map((pbbt) =>
-            [...pbbt.values()].flatMap((val) =>
+          ? [...positionBalancesByType.values()].flatMap((val) =>
               val.flatMap((b) =>
                 b.pendingActions.map(
                   (p) =>
@@ -184,8 +206,7 @@ export const UnstakeOrPendingActionProvider = ({
                 )
               )
             )
-          )
-          .orDefault([])
+          : []
       ),
     [positionBalancesByType]
   );
@@ -198,35 +219,34 @@ export const UnstakeOrPendingActionProvider = ({
     token,
   }: {
     state: State["pendingActions"];
-    balanceType: YieldBalanceDto["type"];
-    token: YieldTokenDto;
+    balanceType: EarnBalance["type"];
+    token: AppToken;
     actionType: YieldPendingActionType;
     amount: BigNumber;
   }) => {
     const key = getBalanceTokenActionType({ actionType, balanceType, token });
 
-    return Maybe.fromNullable(
-      positionBalancesByTypePendingActions.get(key)
-    ).mapOrDefault((val) => {
-      const newMap = new Map(state);
-      newMap.set(key, amount);
+    const value = positionBalancesByTypePendingActions.get(key);
+    if (!value) return state;
 
-      const amountConfig = getPendingActionAmountConfig(val.pendingAction);
-      const max = new BigNumber(
-        amountConfig?.maximum ?? Number.POSITIVE_INFINITY
-      );
-      const min = new BigNumber(amountConfig?.minimum ?? 0);
+    const newMap = new Map(state);
+    newMap.set(key, amount);
 
-      if (amountConfig?.forceMax) {
-        newMap.set(key, new BigNumber(val.balance.amount));
-      } else if (amount.isLessThan(min)) {
-        newMap.set(key, min);
-      } else if (amount.isGreaterThan(max)) {
-        newMap.set(key, max);
-      }
+    const amountConfig = getPendingActionAmountConfig(value.pendingAction);
+    const max = new BigNumber(
+      amountConfig?.maximum ?? Number.POSITIVE_INFINITY
+    );
+    const min = new BigNumber(amountConfig?.minimum ?? 0);
 
-      return newMap;
-    }, state);
+    if (amountConfig?.forceMax) {
+      newMap.set(key, new BigNumber(value.balance.amount));
+    } else if (amount.isLessThan(min)) {
+      newMap.set(key, min);
+    } else if (amount.isGreaterThan(max)) {
+      newMap.set(key, max);
+    }
+
+    return newMap;
   };
 
   const reducer = (state: State, action: Actions): State => {
@@ -276,21 +296,18 @@ export const UnstakeOrPendingActionProvider = ({
 
   const unstakeAmount = useMemo(
     () =>
-      Maybe.fromRecord({
-        reducedStakedOrLiquidBalance,
-        canChangeUnstakeAmount,
-      })
-        .map((val) => {
-          if (
-            (!val.canChangeUnstakeAmount || isForceMax) &&
-            !val.reducedStakedOrLiquidBalance.amount.isEqualTo(_ustankeAmount)
-          ) {
-            return val.reducedStakedOrLiquidBalance.amount;
-          }
+      reducedStakedOrLiquidBalance && canChangeUnstakeAmount !== null
+        ? (() => {
+            if (
+              (!canChangeUnstakeAmount || isForceMax) &&
+              !reducedStakedOrLiquidBalance.amount.isEqualTo(_ustankeAmount)
+            ) {
+              return reducedStakedOrLiquidBalance.amount;
+            }
 
-          return _ustankeAmount;
-        })
-        .orDefault(_ustankeAmount),
+            return _ustankeAmount;
+          })()
+        : _ustankeAmount,
     [
       _ustankeAmount,
       canChangeUnstakeAmount,
@@ -319,9 +336,9 @@ export const UnstakeOrPendingActionProvider = ({
 
   const unstakeIsGreaterOrLessIntegrationLimitError = useMemo(
     () =>
-      maxIntegrationAmount
-        .map((v) => unstakeAmount.isGreaterThan(v))
-        .orDefault(false) || unstakeIsLessThanMin,
+      (maxIntegrationAmount
+        ? unstakeAmount.isGreaterThan(maxIntegrationAmount)
+        : false) || unstakeIsLessThanMin,
     [unstakeAmount, unstakeIsLessThanMin, maxIntegrationAmount]
   );
 
@@ -347,6 +364,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeUseMaxAmount,
       pendingActions,
       positionBalancePrices,
+      positionBalancesResult,
       reducedStakedOrLiquidBalance,
       positionBalancesByType,
       stakedOrLiquidBalances,
@@ -366,6 +384,7 @@ export const UnstakeOrPendingActionProvider = ({
       unstakeUseMaxAmount,
       pendingActions,
       positionBalancePrices,
+      positionBalancesResult,
       reducedStakedOrLiquidBalance,
       positionBalancesByType,
       stakedOrLiquidBalances,

@@ -10,7 +10,7 @@ import {
   EarnYield,
   EarnYieldPage,
 } from "../../src/domain/schema/earn-models";
-import { resolveYieldOptions } from "../../src/pages/details/earn-page/state/effect-atom-poc/resolver/yield";
+import { resolveYieldOptions } from "../../src/pages/details/earn-page/state/atoms-state/resolver/yield";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const token = {

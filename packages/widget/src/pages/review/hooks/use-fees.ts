@@ -1,10 +1,11 @@
 import BigNumber from "bignumber.js";
-import { Just, type Maybe } from "purify-ts";
-import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { FeeConfigurationDto } from "../../../domain/types/fees";
-import type { Prices } from "../../../domain/types/price";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+import type { Prices } from "../../../domain/schema/health-price-models";
+import type {
+  AppToken,
+  FeeConfiguration,
+} from "../../../domain/schema/legacy-models";
+
 import { bpsToAmount, bpsToPercentage } from "../../../utils";
 import { getFeesInUSD } from "../../../utils/formatters";
 import type { FeesBps } from "../types";
@@ -16,141 +17,63 @@ export const useFees = ({
   prices,
   token,
 }: {
-  prices: Maybe<Prices>;
-  token: Maybe<TokenDto | YieldTokenDto>;
-  amount: BigNumber;
-  feeConfigDto: Maybe<FeeConfigurationDto>;
-  yieldFee?: {
-    deposit?: string;
-    management?: string;
-    performance?: string;
+  readonly amount: BigNumber;
+  readonly feeConfigDto: FeeConfiguration | null;
+  readonly prices: Prices | null;
+  readonly token: AppToken | null;
+  readonly yieldFee?: {
+    readonly deposit?: string;
+    readonly management?: string;
+    readonly performance?: string;
   } | null;
 }): {
-  depositFee: Maybe<FeesBps>;
-  managementFee: Maybe<FeesBps>;
-  performanceFee: Maybe<FeesBps>;
+  readonly depositFee: FeesBps | null;
+  readonly managementFee: FeesBps | null;
+  readonly performanceFee: FeesBps | null;
 } => {
   const { t } = useTranslation();
+  const fromBps = (
+    value: number | null | undefined,
+    type: "deposit" | "management" | "performance"
+  ): FeesBps | null =>
+    value === null || value === undefined
+      ? null
+      : {
+          explanation: t(`review.${type}_fee_explanation`),
+          inPercentage: `${bpsToPercentage(value)}%`,
+          inUSD: getFeesInUSD({
+            amount: bpsToAmount(BigNumber(value), amount),
+            prices,
+            token,
+          }),
+          label: t(`review.${type}_fee`),
+        };
+  const fromPercentage = (
+    value: string | null | undefined,
+    type: "deposit" | "management" | "performance"
+  ): FeesBps | null =>
+    value === null || value === undefined
+      ? null
+      : {
+          explanation: t(`review.${type}_fee_explanation`),
+          inPercentage: `${value}%`,
+          inUSD: getFeesInUSD({
+            amount: amount.multipliedBy(value).dividedBy(100),
+            prices,
+            token,
+          }),
+          label: t(`review.${type}_fee`),
+        };
 
-  const getFeeInUSD = useCallback(
-    (fee: number) =>
-      getFeesInUSD({
-        amount: Just(bpsToAmount(BigNumber(fee), amount)),
-        prices,
-        token,
-      }),
-    [amount, token, prices]
-  );
-
-  const getBpsInPercentage = useCallback(
-    (val: number) => `${bpsToPercentage(val)}%`,
-    []
-  );
-
-  const getPercentAmount = useCallback(
-    (val: string) => amount.multipliedBy(val).dividedBy(100),
-    [amount]
-  );
-
-  const getPercentInUsd = useCallback(
-    (val: string) =>
-      getFeesInUSD({
-        amount: Just(getPercentAmount(val)),
-        prices,
-        token,
-      }),
-    [getPercentAmount, prices, token]
-  );
-
-  const depositFee = useMemo(
-    () =>
-      feeConfigDto
-        .chainNullable((v) => v.depositFeeBps)
-        .map<FeesBps>((val) => ({
-          inUSD: getFeeInUSD(val),
-          inPercentage: getBpsInPercentage(val),
-          explanation: t("review.deposit_fee_explanation"),
-          label: t("review.deposit_fee"),
-        }))
-        .altLazy(() =>
-          Just(yieldFee?.deposit)
-            .chainNullable((v) => v)
-            .map<FeesBps>((val) => ({
-              inUSD: getPercentInUsd(val),
-              inPercentage: `${val}%`,
-              explanation: t("review.deposit_fee_explanation"),
-              label: t("review.deposit_fee"),
-            }))
-        ),
-    [
-      feeConfigDto,
-      getFeeInUSD,
-      getBpsInPercentage,
-      getPercentInUsd,
-      t,
-      yieldFee,
-    ]
-  );
-
-  const managementFee = useMemo(
-    () =>
-      feeConfigDto
-        .chainNullable((v) => v.managementFeeBps)
-        .map<FeesBps>((val) => ({
-          inUSD: getFeeInUSD(val),
-          inPercentage: getBpsInPercentage(val),
-          explanation: t("review.management_fee_explanation"),
-          label: t("review.management_fee"),
-        }))
-        .altLazy(() =>
-          Just(yieldFee?.management)
-            .chainNullable((v) => v)
-            .map<FeesBps>((val) => ({
-              inUSD: getPercentInUsd(val),
-              inPercentage: `${val}%`,
-              explanation: t("review.management_fee_explanation"),
-              label: t("review.management_fee"),
-            }))
-        ),
-    [
-      feeConfigDto,
-      getFeeInUSD,
-      getBpsInPercentage,
-      getPercentInUsd,
-      t,
-      yieldFee,
-    ]
-  );
-
-  const performanceFee = useMemo(
-    () =>
-      feeConfigDto
-        .chainNullable((v) => v.performanceFeeBps)
-        .map<FeesBps>((val) => ({
-          inUSD: getFeeInUSD(val),
-          inPercentage: getBpsInPercentage(val),
-          explanation: t("review.performance_fee_explanation"),
-          label: t("review.performance_fee"),
-        }))
-        .altLazy(() =>
-          Just(yieldFee?.performance)
-            .chainNullable((v) => v)
-            .map<FeesBps>((val) => ({
-              inUSD: getPercentInUsd(val),
-              inPercentage: `${val}%`,
-              explanation: t("review.performance_fee_explanation"),
-              label: t("review.performance_fee"),
-            }))
-        ),
-    [
-      feeConfigDto,
-      getFeeInUSD,
-      getBpsInPercentage,
-      getPercentInUsd,
-      t,
-      yieldFee,
-    ]
-  );
-
-  return { depositFee, managementFee, performanceFee };
+  return {
+    depositFee:
+      fromBps(feeConfigDto?.depositFeeBps, "deposit") ??
+      fromPercentage(yieldFee?.deposit, "deposit"),
+    managementFee:
+      fromBps(feeConfigDto?.managementFeeBps, "management") ??
+      fromPercentage(yieldFee?.management, "management"),
+    performanceFee:
+      fromBps(feeConfigDto?.performanceFeeBps, "performance") ??
+      fromPercentage(yieldFee?.performance, "performance"),
+  };
 };

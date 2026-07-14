@@ -1,7 +1,8 @@
 import { tokenString } from "../../../domain";
+import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { YieldBalanceType } from "../../../domain/types/positions";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+
 import type { BalanceTokenActionType } from "./types";
 
 export const getBalanceTokenActionType = ({
@@ -10,7 +11,7 @@ export const getBalanceTokenActionType = ({
   token,
 }: {
   balanceType: YieldBalanceType;
-  token: TokenDto | YieldTokenDto;
+  token: AppToken;
   actionType: YieldPendingActionType;
 }): BalanceTokenActionType =>
   `${balanceType}-${tokenString(token)}-${actionType}`;

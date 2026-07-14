@@ -1,5 +1,4 @@
 import { useConnectModal } from "@stakekit/rainbowkit";
-import { Maybe } from "purify-ts";
 import { createContext, type PropsWithChildren, useContext } from "react";
 import { useNavigate } from "react-router";
 import {
@@ -12,7 +11,7 @@ import {
   usePrefetchActivityActionFilters,
 } from "../../../../hooks/api/use-activity-actions";
 import { useSetActivitySelection } from "../../../../providers/activity-provider";
-import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useSKWallet } from "../../../../providers/wallet/react/use-wallet";
 import { useActivityFilters } from "../hooks/use-activity-filters";
 import type { ActionYieldDto } from "../types";
 import type { ActivityPageContextType } from "./types";
@@ -37,13 +36,11 @@ export const ActivityPageContextProvider = ({
       data.actionData.status === ActionStatus.SUCCESS ||
       data.actionData.status === ActionStatus.PROCESSING
     ) {
-      setActivitySelection(
-        Maybe.of({
-          selectedAction: data.actionData,
-          selectedYield: data.yieldData,
-          selectedValidators: data.validatorsData,
-        })
-      );
+      setActivitySelection({
+        selectedAction: data.actionData,
+        selectedYield: data.yieldData,
+        selectedValidators: data.validatorsData,
+      });
 
       const urls = data.actionData.transactions
         .map((val) => ({ type: val.type, url: val.explorerUrl }))
@@ -70,13 +67,11 @@ export const ActivityPageContextProvider = ({
       data.actionData.status === ActionStatus.WAITING_FOR_NEXT ||
       data.actionData.status === ActionStatus.FAILED
     ) {
-      setActivitySelection(
-        Maybe.of({
-          selectedAction: data.actionData,
-          selectedYield: data.yieldData,
-          selectedValidators: data.validatorsData,
-        })
-      );
+      setActivitySelection({
+        selectedAction: data.actionData,
+        selectedYield: data.yieldData,
+        selectedValidators: data.validatorsData,
+      });
 
       return navigate("/activity/review");
     }

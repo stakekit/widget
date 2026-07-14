@@ -1,11 +1,11 @@
 import type { WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, List, Maybe } from "purify-ts";
+import { Array as EArray, Effect, Option } from "effect";
 import type { RefObject } from "react";
-import { BehaviorSubject } from "rxjs";
 import type { Address } from "viem";
 import type { Connector, CreateConnectorFn } from "wagmi";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
+import { makeCurrentValueStream } from "../../common/current-value-stream";
 import { config } from "../../config";
 import { skNormalizeChainId } from "../../domain";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
@@ -49,26 +49,32 @@ export const externalProviderConnector = (
       },
       createConnector: () =>
         createConnector<unknown, ExtraProps>((connectorConfig) => {
-          const $filteredChains = new BehaviorSubject(
-            Maybe.fromNullable(variant.current.supportedChainIds)
-              .map((val) => new Set(val))
-              .mapOrDefault(
-                (val) => connectorConfig.chains.filter((c) => val.has(c.id)),
-                connectorConfig.chains as [Chain, ...Chain[]]
-              )
+          const filteredChains = makeCurrentValueStream(
+            variant.current.supportedChainIds
+              ? connectorConfig.chains.filter((chain) =>
+                  new Set(variant.current.supportedChainIds).has(chain.id)
+                )
+              : (connectorConfig.chains as [Chain, ...Chain[]])
           );
 
-          if ($filteredChains.getValue().length === 0) {
+          if (filteredChains.get().length === 0) {
             throw new Error("No supported chains found!");
           }
 
           const provider = new ExternalProvider(variant);
 
+          const getFirstFilteredChain = () =>
+            EArray.head(filteredChains.get()).pipe(
+              Option.getOrThrowWith(
+                () => new Error("No supported chains found!")
+              )
+            );
+
           const getAccounts: ReturnType<CreateConnectorFn>["getAccounts"] =
             async () => [variant.current.currentAddress as Address];
 
           const getChainId: ReturnType<CreateConnectorFn>["getChainId"] =
-            async () => $filteredChains.getValue()[0].id;
+            async () => getFirstFilteredChain().id;
 
           const connect: ReturnType<CreateConnectorFn>["connect"] = async (
             args
@@ -90,18 +96,15 @@ export const externalProviderConnector = (
 
           const switchChain: ReturnType<CreateConnectorFn>["switchChain"] =
             async ({ chainId }) => {
-              return (
-                await EitherAsync.liftEither(
-                  List.find(
-                    (c) => c.id === chainId,
-                    connectorConfig.chains as unknown as Array<Chain>
-                  ).toEither(new Error("Chain not found"))
-                )
-                  .chain((chain) =>
-                    provider.switchChain({ chainId }).map(() => chain)
-                  )
-                  .ifRight((chain) => onChainChanged(chain.id.toString()))
-              ).unsafeCoerce();
+              const chain = connectorConfig.chains.find(
+                (candidate) => candidate.id === chainId
+              );
+
+              if (!chain) throw new Error("Chain not found");
+
+              await Effect.runPromise(provider.switchChain({ chainId }));
+              onChainChanged(chain.id.toString());
+              return chain;
             };
 
           const disconnect: ReturnType<CreateConnectorFn>["disconnect"] =
@@ -134,20 +137,16 @@ export const externalProviderConnector = (
 
           const onSupportedChainsChanged: ExtraProps["onSupportedChainsChanged"] =
             ({ currentChainId, supportedChainIds }) => {
-              $filteredChains.next(
-                Maybe.fromFalsy(!!supportedChainIds.length)
-                  .map(() => new Set(supportedChainIds))
-                  .mapOrDefault(
-                    (val) =>
-                      connectorConfig.chains.filter((c) => val.has(c.id)),
-                    connectorConfig.chains as [Chain, ...Chain[]]
-                  )
+              filteredChains.set(
+                supportedChainIds.length
+                  ? connectorConfig.chains.filter((chain) =>
+                      new Set(supportedChainIds).has(chain.id)
+                    )
+                  : (connectorConfig.chains as [Chain, ...Chain[]])
               );
 
               // If the current chain is not in the supported chains, switch to the first supported chain
-              if (
-                $filteredChains.getValue().every((c) => c.id !== currentChainId)
-              ) {
+              if (filteredChains.get().every((c) => c.id !== currentChainId)) {
                 getChainId().then((chainId) =>
                   onChainChanged(chainId.toString())
                 );
@@ -170,7 +169,7 @@ export const externalProviderConnector = (
             switchChain,
             sendTransaction: provider.sendTransaction.bind(provider),
             signMessage: provider.signMessage.bind(provider),
-            $filteredChains: $filteredChains.asObservable(),
+            $filteredChains: filteredChains.changes,
             onSupportedChainsChanged,
           };
         }),

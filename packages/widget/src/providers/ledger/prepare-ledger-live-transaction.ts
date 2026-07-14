@@ -10,7 +10,7 @@ import {
   loadMessageRelaxed,
 } from "@ton/core";
 import BigNumber from "bignumber.js";
-import { Either, Left, Right } from "purify-ts";
+import { Result, Schema } from "effect";
 import { hexToBytes } from "viem";
 import { isEvmChain } from "../../domain/types/chains";
 import {
@@ -55,86 +55,103 @@ const eip1559FieldsUnsupportedNetworks = new Set<string>([
   EvmNetworks.Core,
 ]);
 
+const decodeSchema = <S extends Schema.ConstraintDecoder<unknown>>(
+  schema: S,
+  input: unknown
+): Result.Result<S["Type"], string> =>
+  Schema.decodeUnknownResult(schema)(input).pipe(
+    Result.mapError((error) => error.message)
+  );
+
 export const prepareLedgerLiveTransaction = ({
   network,
   tx,
   txMeta,
-}: PrepareLedgerLiveTransactionParams): Either<string, RawTransaction> => {
+}: PrepareLedgerLiveTransactionParams): Result.Result<
+  RawTransaction,
+  string
+> => {
   const parsedTx = parseJson(tx);
 
-  if (parsedTx.isLeft()) {
-    return parsedTx;
+  if (Result.isFailure(parsedTx)) {
+    return Result.fail(parsedTx.failure);
   }
 
   if (isEvmChain(network)) {
-    return parsedTx.chain((value) =>
-      unsignedEVMTransactionCodec
-        .decode(value)
-        .mapLeft(String)
-        .map((decodedTx) =>
-          buildEthereumLedgerTransaction({
-            network,
-            tx: decodedTx,
-          })
+    return parsedTx.pipe(
+      Result.flatMap((value) =>
+        decodeSchema(unsignedEVMTransactionCodec, value).pipe(
+          Result.map((decodedTx) =>
+            buildEthereumLedgerTransaction({
+              network,
+              tx: decodedTx,
+            })
+          )
         )
+      )
     );
   }
 
   switch (network) {
     case SubstrateNetworks.Polkadot:
-      return parsedTx.chain((value) =>
-        substratePayloadCodec
-          .decode(value)
-          .mapLeft(String)
-          .chain((payload) =>
-            buildPolkadotLedgerTransaction({
-              gasEstimate: parseGasEstimate(txMeta.gasEstimate),
-              payload,
-              txMeta,
-            })
+      return parsedTx.pipe(
+        Result.flatMap((value) =>
+          decodeSchema(substratePayloadCodec, value).pipe(
+            Result.flatMap((payload) =>
+              buildPolkadotLedgerTransaction({
+                gasEstimate: parseGasEstimate(txMeta.gasEstimate),
+                payload,
+                txMeta,
+              })
+            )
           )
+        )
       );
     case MiscNetworks.Tron:
-      return parsedTx.chain((value) =>
-        unsignedTronTransactionCodec
-          .decode(value)
-          .mapLeft(String)
-          .chain(() => buildTronLedgerTransaction(txMeta))
+      return parsedTx.pipe(
+        Result.flatMap((value) =>
+          decodeSchema(unsignedTronTransactionCodec, value).pipe(
+            Result.flatMap(() => buildTronLedgerTransaction(txMeta))
+          )
+        )
       );
     case MiscNetworks.Near:
       return buildNearLedgerTransaction(txMeta);
     case MiscNetworks.Tezos:
       return buildTezosLedgerTransaction(txMeta);
     case MiscNetworks.Ton:
-      return parsedTx.chain((value) =>
-        unsignedTonTransactionCodec
-          .decode(value)
-          .mapLeft(String)
-          .chain((decodedTx) => buildTonLedgerTransaction(decodedTx, txMeta))
+      return parsedTx.pipe(
+        Result.flatMap((value) =>
+          decodeSchema(unsignedTonTransactionCodec, value).pipe(
+            Result.flatMap((decodedTx) =>
+              buildTonLedgerTransaction(decodedTx, txMeta)
+            )
+          )
+        )
       );
     default:
       if (isCosmosNetwork(network)) {
         return buildCosmosLedgerTransaction(txMeta);
       }
 
-      return parsedTx.map((value) => value as RawTransaction);
+      return parsedTx.pipe(Result.map((value) => value as RawTransaction));
   }
 };
 
-const parseJson = (value: string): Either<string, unknown> =>
-  Either.encase(() => JSON.parse(value)).mapLeft(() => "Failed to parse tx");
+const parseJson = (value: string): Result.Result<unknown, string> => {
+  try {
+    return Result.succeed(JSON.parse(value));
+  } catch {
+    return Result.fail("Failed to parse tx");
+  }
+};
 
 const buildEthereumLedgerTransaction = ({
   network,
   tx,
 }: {
   network: string;
-  tx: ReturnType<typeof unsignedEVMTransactionCodec.decode> extends Either<
-    string,
-    infer T
-  >
-    ? T
-    : never;
+  tx: typeof unsignedEVMTransactionCodec.Type;
 }): RawTransaction => {
   const ledgerTx: RawEthereumTransaction = {
     amount: (tx.value ?? 0n).toString(),
@@ -165,15 +182,10 @@ const buildPolkadotLedgerTransaction = ({
   txMeta,
 }: {
   gasEstimate: GasEstimate;
-  payload: ReturnType<typeof substratePayloadCodec.decode> extends Either<
-    string,
-    infer T
-  >
-    ? T
-    : never;
+  payload: typeof substratePayloadCodec.Type;
   txMeta: SKTxMeta;
-}): Either<string, RawTransaction> =>
-  Either.encase(() => {
+}): Result.Result<RawTransaction, string> => {
+  try {
     const registry = new TypeRegistry();
     registry.setMetadata(
       registry.createType("Metadata", payload.tx.metadataRpc)
@@ -260,14 +272,17 @@ const buildPolkadotLedgerTransaction = ({
       }
     })();
 
-    return ledgerTx as RawTransaction;
-  }).mapLeft((error) =>
-    error instanceof Error ? error.message : "Invalid Polkadot transaction"
-  );
+    return Result.succeed(ledgerTx as RawTransaction);
+  } catch (error) {
+    return Result.fail(
+      error instanceof Error ? error.message : "Invalid Polkadot transaction"
+    );
+  }
+};
 
 const buildCosmosLedgerTransaction = (
   txMeta: SKTxMeta
-): Either<string, RawTransaction> => {
+): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const mode = getCosmosMode(txMeta.txType);
   const actionAmount = getActionAmountInBaseUnits(txMeta);
@@ -275,10 +290,10 @@ const buildCosmosLedgerTransaction = (
     actionAmount ?? (isCosmosClaimMode(mode) ? new BigNumber(0) : null);
 
   if (!validatorAddress || amount === null) {
-    return Left("Missing Cosmos Ledger arguments");
+    return Result.fail("Missing Cosmos Ledger arguments");
   }
 
-  return Right({
+  return Result.succeed({
     family: "cosmos",
     mode,
     validators: [
@@ -295,7 +310,7 @@ const buildCosmosLedgerTransaction = (
 
 const buildTronLedgerTransaction = (
   txMeta: SKTxMeta
-): Either<string, RawTronTransaction> => {
+): Result.Result<RawTronTransaction, string> => {
   const amount = getActionAmountInBaseUnits(txMeta);
   const resource = txMeta.rawArguments?.tronResource;
   const validatorAddress =
@@ -306,8 +321,9 @@ const buildTronLedgerTransaction = (
     switch (txMeta.txType) {
       case "FREEZE_BANDWIDTH":
       case "FREEZE_ENERGY":
-        if (!amount || !resource) return Left("Missing Tron freeze arguments");
-        return Right({
+        if (!amount || !resource)
+          return Result.fail("Missing Tron freeze arguments");
+        return Result.succeed({
           amount: amount.toString(),
           recipient: txMeta.address ?? "",
           family: "tron",
@@ -318,38 +334,40 @@ const buildTronLedgerTransaction = (
         const validatorAddresses = txMeta.rawArguments?.validatorAddresses;
 
         if (!amount || !validatorAddresses?.length) {
-          return Left("Missing Tron vote arguments");
+          return Result.fail("Missing Tron vote arguments");
         }
 
         return getTronVotes({
           txMeta,
           validatorAddresses,
-        }).map(
-          (votes) =>
-            ({
-              amount: amount.toString(),
-              recipient: txMeta.address ?? "",
-              family: "tron",
-              mode: "vote",
-              votes,
-            }) as RawTronTransaction
+        }).pipe(
+          Result.map(
+            (votes) =>
+              ({
+                amount: amount.toString(),
+                recipient: txMeta.address ?? "",
+                family: "tron",
+                mode: "vote",
+                votes,
+              }) as RawTronTransaction
+          )
         );
       }
       case "UNDELEGATE_BANDWIDTH":
       case "UNDELEGATE_ENERGY":
         if (!amount || !resource || !validatorAddress) {
-          return Left("Missing Tron undelegate arguments");
+          return Result.fail("Missing Tron undelegate arguments");
         }
-        return Right({
+        return Result.succeed({
           amount: amount.toString(),
-          recipient: validatorAddress,
+          recipient: String(validatorAddress),
           family: "tron",
           mode: "unDelegateResource",
           resource,
         } as RawTronTransaction);
       case "UNFREEZE_LEGACY_BANDWIDTH":
       case "UNFREEZE_LEGACY_ENERGY":
-        return Right({
+        return Result.succeed({
           amount: "0",
           recipient: "",
           family: "tron",
@@ -359,8 +377,8 @@ const buildTronLedgerTransaction = (
       case "UNFREEZE_BANDWIDTH":
       case "UNFREEZE_ENERGY":
         if (!amount || !resource)
-          return Left("Missing Tron unfreeze arguments");
-        return Right({
+          return Result.fail("Missing Tron unfreeze arguments");
+        return Result.succeed({
           amount: amount.toString(),
           recipient: txMeta.address ?? "",
           family: "tron",
@@ -368,33 +386,35 @@ const buildTronLedgerTransaction = (
           resource,
         } as RawTronTransaction);
       case "CLAIM_REWARDS":
-        return Right({
+        return Result.succeed({
           amount: "0",
           recipient: txMeta.address ?? "",
           family: "tron",
           mode: "claimReward",
         } as RawTronTransaction);
       default:
-        return Left(
+        return Result.fail(
           `Unsupported Tron Ledger transaction type: ${txMeta.txType}`
         );
     }
   })();
 
-  return tronLedgerTx.map((tx) => ({ ...tx, votes: tx.votes ?? [] }));
+  return tronLedgerTx.pipe(
+    Result.map((tx) => ({ ...tx, votes: tx.votes ?? [] }))
+  );
 };
 
 const buildNearLedgerTransaction = (
   txMeta: SKTxMeta
-): Either<string, RawTransaction> => {
+): Result.Result<RawTransaction, string> => {
   const validatorAddress = txMeta.rawArguments?.validatorAddress;
   const amount = getActionAmountInBaseUnits(txMeta);
 
   if (!validatorAddress || !amount) {
-    return Left("Missing Near Ledger arguments");
+    return Result.fail("Missing Near Ledger arguments");
   }
 
-  return Right({
+  return Result.succeed({
     amount: amount.toString(),
     recipient: validatorAddress,
     family: "near",
@@ -405,16 +425,16 @@ const buildNearLedgerTransaction = (
 
 const buildTezosLedgerTransaction = (
   txMeta: SKTxMeta
-): Either<string, RawTransaction> => {
+): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
   const isUnstake = txMeta.txType === "UNSTAKE";
   const recipient = isUnstake ? "" : txMeta.rawArguments?.validatorAddress;
 
   if (!isUnstake && !recipient) {
-    return Left("Missing Tezos Ledger validator");
+    return Result.fail("Missing Tezos Ledger validator");
   }
 
-  return Right({
+  return Result.succeed({
     family: "tezos",
     mode: isUnstake ? "undelegate" : "delegate",
     amount: "0",
@@ -425,24 +445,19 @@ const buildTezosLedgerTransaction = (
 };
 
 const buildTonLedgerTransaction = (
-  tx: ReturnType<typeof unsignedTonTransactionCodec.decode> extends Either<
-    string,
-    infer T
-  >
-    ? T
-    : never,
+  tx: typeof unsignedTonTransactionCodec.Type,
   txMeta: SKTxMeta
-): Either<string, RawTransaction> => {
+): Result.Result<RawTransaction, string> => {
   const gasEstimate = parseGasEstimate(txMeta.gasEstimate);
 
-  if (Array.isArray(tx)) {
+  if (!("message" in tx)) {
     const firstMessage = tx[0];
 
     if (!firstMessage) {
-      return Left("Unsupported Ton Ledger transaction payload");
+      return Result.fail("Unsupported Ton Ledger transaction payload");
     }
 
-    return Right({
+    return Result.succeed({
       family: "ton",
       amount: firstMessage.amount,
       recipient: firstMessage.address,
@@ -454,13 +469,13 @@ const buildTonLedgerTransaction = (
     } as RawTransaction);
   }
 
-  return Either.encase(() => {
+  try {
     const parsedTx = loadMessageRelaxed(
       Cell.fromBase64(tx.message).beginParse()
     );
     const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
 
-    return {
+    return Result.succeed({
       family: "ton",
       amount: info.value.coins.toString(),
       recipient: info.dest.toString(),
@@ -469,8 +484,10 @@ const buildTonLedgerTransaction = (
         text: parsedTx.body.toBoc().toString("base64"),
         isEncrypted: false,
       },
-    } as RawTransaction;
-  }).mapLeft(() => "Unsupported Ton Ledger transaction payload");
+    } as RawTransaction);
+  } catch {
+    return Result.fail("Unsupported Ton Ledger transaction payload");
+  }
 };
 
 const isCosmosNetwork = (network: string): network is CosmosNetworks =>
@@ -481,9 +498,11 @@ const parseGasEstimate = (
 ): GasEstimate => {
   if (!gasEstimate) return null;
 
-  return Either.encase(() => JSON.parse(gasEstimate) as GasEstimate).orDefault(
-    null
-  );
+  try {
+    return JSON.parse(gasEstimate) as GasEstimate;
+  } catch {
+    return null;
+  }
 };
 
 const getActionAmountInBaseUnits = (txMeta: SKTxMeta): BigNumber | null => {
@@ -637,11 +656,11 @@ const getTronVotes = ({
 }: {
   txMeta: SKTxMeta;
   validatorAddresses: ReadonlyArray<string>;
-}): Either<string, { address: string; voteCount: number }[]> => {
+}): Result.Result<{ address: string; voteCount: number }[], string> => {
   const amount = getActionAmountInTokenUnits(txMeta);
 
   if (!amount) {
-    return Left("Missing Tron vote arguments");
+    return Result.fail("Missing Tron vote arguments");
   }
 
   const validatorsCount = validatorAddresses.length;
@@ -656,14 +675,14 @@ const getTronVotes = ({
     equalVoteCount.isNegative() ||
     remainingVotes.isNegative()
   ) {
-    return Left("Invalid Tron vote count");
+    return Result.fail("Invalid Tron vote count");
   }
 
   if (equalVoteCount.plus(1).gt(Number.MAX_SAFE_INTEGER)) {
-    return Left("Tron vote count exceeds Ledger limits");
+    return Result.fail("Tron vote count exceeds Ledger limits");
   }
 
-  return Right(
+  return Result.succeed(
     validatorAddresses.map((address, index) => ({
       address,
       voteCount: equalVoteCount

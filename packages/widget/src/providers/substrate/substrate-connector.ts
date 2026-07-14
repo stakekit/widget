@@ -9,8 +9,7 @@ import { TypeRegistry } from "@polkadot/types";
 import type { SignerPayloadJSON } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util";
 import type { WalletDetailsParams, WalletList } from "@stakekit/rainbowkit";
-import { Either, EitherAsync, Maybe, Right } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Array as EArray, Effect, Option, Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import type { Chain } from "wagmi/chains";
@@ -41,7 +40,11 @@ const createSubstrateConnector = ({
   lunoKitChains: LunoKitChain[];
 }) =>
   createConnector<unknown, ExtraProps, StorageItem>((config) => {
-    const $filteredChains = new BehaviorSubject<Chain[]>(chains as Chain[]);
+    const filteredChains = chains as Chain[];
+    const getFirstFilteredChain = () =>
+      EArray.head(filteredChains).pipe(
+        Option.getOrThrowWith(() => new Error("No supported chains found"))
+      );
 
     return {
       ...walletDetailsParams,
@@ -53,57 +56,64 @@ const createSubstrateConnector = ({
         tx: SignerPayloadJSON;
         metadataRpc: string;
       }) =>
-        EitherAsync(() => baseConnector.getSigner())
-          .chain((signer) =>
-            EitherAsync.liftEither(
-              Maybe.fromNullable(signer?.signPayload?.bind(signer)).toEither(
-                new Error("signer missing")
-              )
-            )
-              .chain((signPayload) =>
-                EitherAsync(() =>
-                  signPayload({ ...payload.tx, withSignedTransaction: true })
-                )
-              )
-              .chain((res) => {
-                if (res.signedTransaction) {
-                  return EitherAsync.liftEither(
-                    Right(
-                      typeof res.signedTransaction === "string"
-                        ? res.signedTransaction
-                        : u8aToHex(res.signedTransaction)
-                    )
-                  );
-                }
+        Effect.tryPromise({
+          try: () => baseConnector.getSigner(),
+          catch: (error) => error,
+        }).pipe(
+          Effect.flatMap((signer) => {
+            const signPayload = signer?.signPayload?.bind(signer);
 
-                return EitherAsync.liftEither(
-                  Either.encase(() => {
-                    const registry = new TypeRegistry();
+            if (!signPayload) {
+              return Effect.fail(new Error("signer missing"));
+            }
 
-                    registry.setMetadata(
-                      registry.createType("Metadata", payload.metadataRpc)
-                    );
+            return Effect.tryPromise({
+              try: () =>
+                signPayload({
+                  ...payload.tx,
+                  withSignedTransaction: true,
+                }),
+              catch: (error) => error,
+            });
+          }),
+          Effect.flatMap((res) => {
+            if (res.signedTransaction) {
+              return Effect.succeed(
+                typeof res.signedTransaction === "string"
+                  ? res.signedTransaction
+                  : u8aToHex(res.signedTransaction)
+              );
+            }
 
-                    const extrinsic = registry.createType(
-                      "Extrinsic",
-                      { method: payload.tx.method },
-                      { version: payload.tx.version }
-                    );
+            return Effect.try({
+              try: () => {
+                const registry = new TypeRegistry();
 
-                    extrinsic.addSignature(
-                      payload.tx.address,
-                      res.signature,
-                      payload.tx
-                    );
-
-                    return u8aToHex(extrinsic.toU8a());
-                  })
+                registry.setMetadata(
+                  registry.createType("Metadata", payload.metadataRpc)
                 );
-              })
+
+                const extrinsic = registry.createType(
+                  "Extrinsic",
+                  { method: payload.tx.method },
+                  { version: payload.tx.version }
+                );
+
+                extrinsic.addSignature(
+                  payload.tx.address,
+                  res.signature,
+                  payload.tx
+                );
+
+                return u8aToHex(extrinsic.toU8a());
+              },
+              catch: (error) => error,
+            });
+          }),
+          Effect.mapError(
+            (error) => new Error("Failed to sign transaction", { cause: error })
           )
-          .mapLeft(
-            (e) => new Error("Failed to sign transaction", { cause: e })
-          ),
+        ),
       connect: async (args) => {
         config.emitter.emit("message", { type: "connecting" });
 
@@ -124,7 +134,7 @@ const createSubstrateConnector = ({
           accounts: args?.withCapabilities
             ? accounts.map((a) => ({ address: a.address, capabilities: {} }))
             : (accounts.map((a) => a.address) as Address[]),
-          chainId: $filteredChains.getValue()[0].id,
+          chainId: getFirstFilteredChain().id,
         } as never;
       },
       disconnect: () => {
@@ -137,9 +147,9 @@ const createSubstrateConnector = ({
           .getAccounts()
           .then((acc) => acc.map((a) => a.address) as Address[]),
       switchChain: async (chain) => {
-        const chainToSwitchTo = $filteredChains
-          .getValue()
-          .find((c) => c.id === chain.chainId);
+        const chainToSwitchTo = filteredChains.find(
+          (c) => c.id === chain.chainId
+        );
 
         if (!chainToSwitchTo) throw new Error("Chain not found");
 
@@ -147,7 +157,7 @@ const createSubstrateConnector = ({
 
         return chainToSwitchTo;
       },
-      getChainId: async () => $filteredChains.getValue()[0].id,
+      getChainId: async () => getFirstFilteredChain().id,
       isAuthorized: async () => {
         const isDisconnected = await config.storage?.getItem(
           "substrate.disconnected"
@@ -177,7 +187,7 @@ const createSubstrateConnector = ({
         config.emitter.emit("disconnect");
       },
       getProvider: async () => baseConnector,
-      $filteredChains: $filteredChains.asObservable(),
+      $filteredChains: Stream.succeed(filteredChains),
     };
   });
 

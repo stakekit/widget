@@ -1,11 +1,8 @@
 import type { AppToken } from "../schema/legacy-models";
 
-export type YieldTokenDto = typeof AppToken.Encoded;
-export type TokenDto = typeof AppToken.Encoded;
+export type TokenString = `${AppToken["network"]}-${string}`;
 
-export type TokenString = `${TokenDto["network"]}-${TokenDto["address"]}`;
-
-type TokenLike = Pick<TokenDto, "symbol"> & {
+type TokenLike = Pick<AppToken, "symbol"> & {
   network: string;
   address?: string;
 };

@@ -1,13 +1,19 @@
-import type { Validator, ValidatorKey } from "./validators";
-import type { Yield } from "./yields";
+import { Array as EArray } from "effect";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../schema/earn-models";
+import type { ValidatorKey } from "./validators";
 
-export type YieldRewardRateDto = NonNullable<Yield["rewardRate"]>;
+export type YieldRewardRateDto = NonNullable<
+  EarnYieldWithProvider["rewardRate"]
+>;
 type YieldRewardDto = YieldRewardRateDto["components"][number];
-type YieldWithRewardRate = Pick<Yield, "rewardRate">;
-type ValidatorRewardRateDto = NonNullable<Validator["rewardRate"]>;
+type YieldWithRewardRate = Pick<EarnYieldWithProvider, "rewardRate">;
+type ValidatorRewardRateDto = NonNullable<EarnValidator["rewardRate"]>;
 export type SelectedValidators =
-  | ReadonlyArray<Validator>
-  | ReadonlyMap<ValidatorKey, Validator>;
+  | ReadonlyArray<EarnValidator>
+  | ReadonlyMap<ValidatorKey, EarnValidator>;
 
 type RewardRateBreakdownKey = "native" | "protocol_incentive" | "campaign";
 
@@ -59,15 +65,14 @@ const getSelectedValidatorsRewardRate = (
     validator.rewardRate ? [validator.rewardRate] : []
   );
 
-  if (rewardRates.length < 2) {
-    return rewardRates[0];
-  }
+  if (!EArray.isArrayNonEmpty(rewardRates)) return undefined;
+  if (rewardRates.length === 1) return EArray.headNonEmpty(rewardRates);
 
   return averageRewardRates(rewardRates);
 };
 
 const averageRewardRates = (
-  rewardRates: ValidatorRewardRateDto[]
+  rewardRates: EArray.NonEmptyArray<ValidatorRewardRateDto>
 ): ValidatorRewardRateDto => {
   const componentsByKey = rewardRates.reduce((acc, rewardRate) => {
     rewardRate.components.forEach((component) => {
@@ -87,7 +92,7 @@ const averageRewardRates = (
     total:
       rewardRates.reduce((acc, rewardRate) => acc + rewardRate.total, 0) /
       rewardRates.length,
-    rateType: rewardRates[0].rateType,
+    rateType: EArray.headNonEmpty(rewardRates).rateType,
     components: [...componentsByKey.values()].map(({ component, rate }) => ({
       ...component,
       rate: rate / rewardRates.length,

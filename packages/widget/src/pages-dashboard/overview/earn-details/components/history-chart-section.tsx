@@ -1,21 +1,21 @@
 import { Box } from "../../../../components/atoms/box";
 import { Text } from "../../../../components/atoms/typography/text";
+import type {
+  HistoryPeriod,
+  HistoryPoint,
+} from "../../../../domain/schema/dashboard-models";
 import { HistoryChart } from "../reward-rate-chart";
 import * as styles from "../styles.css";
-import type {
-  RewardRateHistoryPeriod,
-  RewardRateHistoryPoint,
-} from "../use-yield-reward-rate-history";
 
 const periods = [
   ["30d", "1M"],
   ["90d", "3M"],
   ["1y", "1Y"],
   ["all", "ALL"],
-] as const satisfies ReadonlyArray<readonly [RewardRateHistoryPeriod, string]>;
+] as const satisfies ReadonlyArray<readonly [HistoryPeriod, string]>;
 
 export const shouldRenderHistoryChart = (history: {
-  data: RewardRateHistoryPoint[];
+  data: HistoryPoint[];
   isError: boolean;
   isLoading: boolean;
 }) => !history.isError && (history.isLoading || history.data.length >= 2);
@@ -31,12 +31,12 @@ export const HistoryChartSection = ({
 }: {
   chartId: string;
   history: {
-    data: RewardRateHistoryPoint[];
+    data: HistoryPoint[];
     isFetching: boolean;
     isLoading: boolean;
   };
-  onPeriodChange: (period: RewardRateHistoryPeriod) => void;
-  period: RewardRateHistoryPeriod;
+  onPeriodChange: (period: HistoryPeriod) => void;
+  period: HistoryPeriod;
   tickFormatter: (value: number) => string;
   title: string;
   value: string;

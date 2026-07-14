@@ -1,0 +1,25 @@
+id: no-literal-effect-failure
+language: Tsx
+severity: error
+message: Pass a tagged error to Effect.fail.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  pattern: Effect.fail($FAILURE)
+constraints:
+  FAILURE:
+    any:
+      - kind: string
+      - kind: template_string
+      - kind: number
+      - kind: "true"
+      - kind: "false"
+      - kind: "null"
+      - kind: object
+      - kind: array
+      - kind: undefined

@@ -1,8 +1,8 @@
 import { useTranslation } from "react-i18next";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import {
   getYieldRiskDisplay,
   getYieldRiskSourceLabel,
-  type Yield,
   type YieldRiskDisplay,
 } from "../../../domain/types/yields";
 import { Box } from "../../atoms/box";
@@ -63,7 +63,11 @@ export const RiskRatingBadge = ({
   );
 };
 
-export const YieldRiskRatingSummary = ({ yieldDto }: { yieldDto: Yield }) => {
+export const YieldRiskRatingSummary = ({
+  yieldDto,
+}: {
+  yieldDto: EarnYieldWithProvider;
+}) => {
   const { t } = useTranslation();
   const risk = getYieldRiskDisplay(yieldDto);
 

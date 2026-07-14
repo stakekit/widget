@@ -1,0 +1,26 @@
+id: no-unknown-decode-in-internal-composition
+language: Tsx
+severity: error
+message: Unknown-input decoders belong at external boundaries; use a typed decoder for already-typed values.
+files:
+  - packages/widget/src/**/*.ts
+  - packages/widget/src/**/*.tsx
+ignores:
+  - packages/widget/src/generated/**
+  - packages/widget/src/domain/schema/response.ts
+  - packages/widget/src/domain/types/transaction.ts
+  - packages/widget/src/providers/api/**
+  - packages/widget/src/translation/index.ts
+  - packages/widget/src/borrow/runtime/transaction-execution.ts
+  - packages/widget/src/providers/ledger/prepare-ledger-live-transaction.ts
+  - packages/widget/src/providers/misc/ton-connector.ts
+  - packages/widget/src/providers/wagmi/atoms.ts
+  - packages/widget/src/providers/wagmi/drivers/**
+  - packages/widget/src/hooks/use-init-query-params.ts
+rule:
+  any:
+    - pattern: Schema.decodeUnknown($SCHEMA)
+    - pattern: Schema.decodeUnknownSync($SCHEMA)
+    - pattern: Schema.decodeUnknownOption($SCHEMA)
+    - pattern: Schema.decodeUnknownResult($SCHEMA)
+    - pattern: Schema.decodeUnknownEffect($SCHEMA)

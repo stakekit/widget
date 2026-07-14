@@ -1,9 +1,10 @@
 import { HttpResponse, http } from "msw";
 import type {
-  YieldCreateActionDto,
-  YieldCreateManageActionDto,
-} from "../../src/domain/types/action";
-import type { TokenDto } from "../../src/domain/types/tokens";
+  ActionCommand,
+  ManageActionCommand,
+} from "../../src/domain/schema/action-models";
+import type { AppToken } from "../../src/domain/schema/legacy-models";
+
 import {
   yieldApiActionFixture,
   yieldApiProviderFixture,
@@ -16,7 +17,7 @@ import {
 import { yieldApiRoute } from "./api-routes";
 import { mockDelay } from "./delay";
 
-const defaultToken: TokenDto = {
+const defaultToken: AppToken = {
   name: "Ethereum",
   symbol: "ETH",
   decimals: 18,
@@ -35,7 +36,7 @@ const defaultYield = yieldApiYieldFixture({
 });
 
 const createDefaultAction = (
-  body: YieldCreateActionDto | YieldCreateManageActionDto,
+  body: ActionCommand | ManageActionCommand,
   type: "STAKE" | "UNSTAKE" | "CLAIM_REWARDS" = "STAKE"
 ) => {
   const transaction = yieldApiTransactionFixture({
@@ -240,7 +241,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      createDefaultAction((await request.json()) as YieldCreateActionDto)
+      createDefaultAction((await request.json()) as ActionCommand)
     );
   }),
 
@@ -248,10 +249,7 @@ export const getYieldApiMock = () => [
     await mockDelay();
 
     return HttpResponse.json(
-      createDefaultAction(
-        (await request.json()) as YieldCreateActionDto,
-        "UNSTAKE"
-      )
+      createDefaultAction((await request.json()) as ActionCommand, "UNSTAKE")
     );
   }),
 
@@ -260,7 +258,7 @@ export const getYieldApiMock = () => [
 
     return HttpResponse.json(
       createDefaultAction(
-        (await request.json()) as YieldCreateManageActionDto,
+        (await request.json()) as ManageActionCommand,
         "CLAIM_REWARDS"
       )
     );

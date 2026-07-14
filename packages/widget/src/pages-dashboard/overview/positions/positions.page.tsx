@@ -9,7 +9,7 @@ import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { FallbackContent } from "../../../pages/details/positions-page/components/fallback-content";
 import { usePositions } from "../../../pages/details/positions-page/hooks/use-positions";
 import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { combineRecipeWithVariant } from "../../../utils/styles";
 import { useBorrowPositions } from "../../borrow/use-borrow-positions";
 import { PositionsListItem } from "./components/positions-list-item";
@@ -21,7 +21,7 @@ import { container, positionsTitle } from "./styles.css";
 export const PositionsPage = () => {
   useTrackPage("positions");
 
-  const { positionsData, showPositions } = usePositions();
+  const { positions, positionsResult, showPositions } = usePositions();
   const settings = useSettings();
   const borrowManageEnabled =
     settings.borrowEnabled && !!settings.dashboardVariant;
@@ -36,10 +36,10 @@ export const PositionsPage = () => {
     borrowWalletIsConnected:
       borrowManageEnabled &&
       borrowPositions.walletBridge.status === "connected",
-    earnIsError: positionsData.isError,
-    earnIsFetching: positionsData.isFetching,
-    earnIsLoading: positionsData.isLoading,
-    earnPositionsCount: positionsData.data.length,
+    earnIsError: AsyncResult.isFailure(positionsResult),
+    earnIsFetching: positionsResult.waiting,
+    earnIsLoading: AsyncResult.isInitial(positionsResult),
+    earnPositionsCount: positions.length,
     isConnected,
     isConnecting,
     showEarnPositions: showPositions,
@@ -47,7 +47,7 @@ export const PositionsPage = () => {
 
   const listData = useGroupedPositions({
     borrowPositions: borrowPositionItems,
-    earnPositions: positionsData.data,
+    earnPositions: positions,
   });
 
   const { t } = useTranslation();

@@ -5,11 +5,14 @@ import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Text } from "../../../components/atoms/typography/text";
-import type { YieldBalanceDto } from "../../../domain/types/positions";
+import type {
+  EarnBalance,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+
 import {
   getExtendedYieldType,
   isDepositYieldType,
-  type Yield,
 } from "../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../utils";
 import { formatDurationUntilDate } from "../../../utils/date";
@@ -18,8 +21,8 @@ export const PositionBalances = ({
   yieldBalance,
   integrationData,
 }: {
-  yieldBalance: YieldBalanceDto & { tokenPriceInUsd: BigNumber };
-  integrationData: Yield;
+  yieldBalance: EarnBalance & { tokenPriceInUsd: BigNumber };
+  integrationData: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
 

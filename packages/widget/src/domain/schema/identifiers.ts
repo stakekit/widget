@@ -1,4 +1,4 @@
-import { Schema, SchemaTransformation } from "effect";
+import { Schema } from "effect";
 
 export const YieldId = Schema.NonEmptyString.pipe(Schema.brand("YieldId"));
 export type YieldId = typeof YieldId.Type;
@@ -30,13 +30,3 @@ export const ValidatorAddress = Schema.NonEmptyString.pipe(
   Schema.brand("ValidatorAddress")
 );
 export type ValidatorAddress = typeof ValidatorAddress.Type;
-
-const EvmAddressString = Schema.String.check(
-  Schema.isPattern(/^0x[0-9a-fA-F]{40}$/)
-);
-
-export const NormalizedEvmAddress = EvmAddressString.pipe(
-  Schema.decode(SchemaTransformation.toLowerCase()),
-  Schema.brand("NormalizedEvmAddress")
-);
-export type NormalizedEvmAddress = typeof NormalizedEvmAddress.Type;

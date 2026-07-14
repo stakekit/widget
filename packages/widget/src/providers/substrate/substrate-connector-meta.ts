@@ -1,5 +1,5 @@
 import type { SignerPayloadJSON } from "@polkadot/types/types";
-import type { EitherAsync } from "purify-ts";
+import type { Effect } from "effect";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
 
@@ -10,7 +10,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     tx: SignerPayloadJSON;
     metadataRpc: string;
     rawTx: string;
-  }) => EitherAsync<Error, string>;
+  }) => Effect.Effect<string, Error>;
 };
 
 export type StorageItem = {

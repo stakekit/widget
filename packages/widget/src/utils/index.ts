@@ -1,8 +1,6 @@
 import BigNumber from "bignumber.js";
-import { Just } from "purify-ts";
 import { config } from "../config";
-import type { Networks } from "../domain/types/chains/networks";
-import { MaybeWindow } from "./maybe-window";
+import type { Network } from "../domain/schema/network-model";
 
 BigNumber.config({
   FORMAT: {
@@ -23,18 +21,16 @@ export const formatNumber = (
 ) => {
   const value = BigNumber(number);
 
-  return Just(value)
-    .map((v) => {
-      if (typeof decimals !== "number") return v;
+  const formatted = (() => {
+    if (typeof decimals !== "number") return value;
 
-      const formattedValue = v.decimalPlaces(decimals, BigNumber.ROUND_DOWN);
+    const formattedValue = value.decimalPlaces(decimals, BigNumber.ROUND_DOWN);
 
-      return decimals > 0 && !v.isZero() && formattedValue.isZero()
-        ? v.precision(decimals, BigNumber.ROUND_DOWN)
-        : formattedValue;
-    })
-    .map((v) => v.toFormat())
-    .unsafeCoerce();
+    return decimals > 0 && !value.isZero() && formattedValue.isZero()
+      ? value.precision(decimals, BigNumber.ROUND_DOWN)
+      : formattedValue;
+  })();
+  return formatted.toFormat();
 };
 
 export const defaultFormattedNumber = (number: string | BigNumber | number) =>
@@ -51,8 +47,7 @@ export const APToPercentage = (ap: number) =>
 //   return colorsTuple[char % colorsTuple.length] ?? colorsTuple[0];
 // };
 
-export const isIframe = () =>
-  MaybeWindow.map((w) => w.parent !== w).orDefault(false);
+export const isIframe = () => window.parent !== window;
 
 export const isLedgerDappBrowserProvider = (() => {
   let state: boolean | null = null;
@@ -60,9 +55,9 @@ export const isLedgerDappBrowserProvider = (() => {
   return (): boolean => {
     if (typeof state === "boolean") return state;
 
-    return MaybeWindow.map((w) => {
+    return (() => {
       try {
-        const params = new URLSearchParams(w.self.location.search);
+        const params = new URLSearchParams(window.self.location.search);
 
         state = !!params.get("embed");
       } catch (_error) {
@@ -70,11 +65,11 @@ export const isLedgerDappBrowserProvider = (() => {
       }
 
       return !!state;
-    }).orDefault(false);
+    })();
   };
 })();
 
-export const getNetworkLogo = (network: Networks) =>
+export const getNetworkLogo = (network: Network) =>
   `${config.assetsUrl}/networks/${network}.svg`;
 
 export const getTokenLogo = (tokenName: string) =>
@@ -116,8 +111,6 @@ export const isMobile = () => {
 
   const hasTouchEvent = () => {
     try {
-      if (typeof window === "undefined") return false;
-
       document.createEvent("TouchEvent");
       return true;
     } catch (_e) {
@@ -126,8 +119,6 @@ export const isMobile = () => {
   };
 
   const hasMobileUserAgent = () => {
-    if (typeof window === "undefined") return false;
-
     if (
       /(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|ipad|iris|kindle|Android|Silk|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(
         navigator.userAgent

@@ -1,29 +1,41 @@
+import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Array as EArray, Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { addLedgerAccountAtom } from "../../../atoms/wallet-workflows";
 import type { NumberInputProps } from "../../../components/atoms/number-input";
 import {
   equalTokens,
   getTokenPriceInUSD,
   stakeTokenSameAsGasToken,
 } from "../../../domain";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { TronResource } from "../../../domain/schema/legacy-models";
 import { getKycProviderName } from "../../../domain/types/kyc";
 import type {
   BalanceDataKey,
   PositionsData,
 } from "../../../domain/types/positions";
 import { getInitSelectedValidators } from "../../../domain/types/stake";
-import type { TronResourceType } from "../../../domain/types/tron";
-import type { Validator, ValidatorKey } from "../../../domain/types/validators";
+
+import type { ValidatorKey } from "../../../domain/types/validators";
 import {
   getYieldActionArg,
+  getYieldProviderYieldIds,
   isYieldValidatorSelectionRequired,
-  type Yield,
 } from "../../../domain/types/yields";
+import {
+  getTokensPricesRequest,
+  PricesKey,
+  pricesAtom,
+} from "../../../hooks/api/prices-atoms";
 import { useTokenBalancesScan } from "../../../hooks/api/use-token-balances-scan";
-import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useYieldKycGate } from "../../../hooks/api/use-yield-kyc-gate";
 import { useYieldValidators } from "../../../hooks/api/use-yield-validators";
 import { useNavigateWithScrollToTop } from "../../../hooks/navigation/use-navigate-with-scroll-to-top";
@@ -32,7 +44,7 @@ import {
   usePositionDetailsStakeMatch,
 } from "../../../hooks/navigation/use-position-details-stake-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
-import { useAddLedgerAccount } from "../../../hooks/use-add-ledger-account";
+import { useCloseChainModal } from "../../../hooks/use-close-chain-modal";
 import { useEstimatedRewards } from "../../../hooks/use-estimated-rewards";
 import { useMaxMinYieldAmount } from "../../../hooks/use-max-min-yield-amount";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
@@ -42,22 +54,31 @@ import { useAmountValidation } from "../../../pages/details/earn-page/state/use-
 import { useStakeEnterRequestDto } from "../../../pages/details/earn-page/state/use-stake-enter-request-dto";
 import { usePositionDetails } from "../../../pages/position-details/hooks/use-position-details";
 import { useSetEnterStakeRequest } from "../../../providers/enter-stake-store";
+import { isLedgerLiveConnector } from "../../../providers/ledger/ledger-live-connector-meta";
 import { useSettings } from "../../../providers/settings";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { defaultFormattedNumber, formatNumber } from "../../../utils";
 import { usePositionDetailsStakeMachine } from "../state/stake-machine";
 
-const resolveProviderYieldId = (selectedStake: Maybe<Yield>) =>
-  selectedStake
-    .chainNullable((stake) => getYieldActionArg(stake, "enter", "providerId"))
-    .filter((arg) => !!arg.required && !!arg.options?.length)
-    .chain((arg) => List.head(arg.options ?? []));
+const resolveProviderYieldId = (
+  selectedStake: EarnYieldWithProvider | null
+) => {
+  const argument = selectedStake
+    ? getYieldActionArg(selectedStake, "enter", "providerId")
+    : null;
+  const providerYieldIds = selectedStake
+    ? getYieldProviderYieldIds(selectedStake)
+    : [];
+  return argument?.required && providerYieldIds.length
+    ? EArray.head(providerYieldIds).pipe(Option.getOrNull)
+    : null;
+};
 
-const resolveTronResource = (selectedStake: Maybe<Yield>) =>
-  selectedStake
-    .chainNullable((stake) => getYieldActionArg(stake, "enter", "tronResource"))
-    .filter((arg) => !!arg.required)
-    .map(() => "ENERGY" as TronResourceType);
+const resolveTronResource = (selectedStake: EarnYieldWithProvider | null) =>
+  selectedStake &&
+  getYieldActionArg(selectedStake, "enter", "tronResource")?.required
+    ? ("ENERGY" as TronResource)
+    : null;
 
 export const usePositionDetailsStake = () => {
   const { t } = useTranslation();
@@ -71,54 +92,52 @@ export const usePositionDetailsStake = () => {
   });
 
   const selectedStake = positionDetails.integrationData;
-  const selectedToken = selectedStake.map((stake) => stake.token);
+  const selectedToken = selectedStake?.token ?? null;
   const selectedProviderYieldId = resolveProviderYieldId(selectedStake);
-  const tronResource = Maybe.fromNullable(intent.tronResource).altLazy(() =>
-    resolveTronResource(selectedStake)
-  );
+  const tronResource =
+    intent.tronResource ?? resolveTronResource(selectedStake);
 
   const tokenBalancesScan = useTokenBalancesScan();
   const availableAmount = useMemo(
     () =>
       selectedToken
-        .chain((token) =>
-          Maybe.fromNullable(
-            tokenBalancesScan.data?.find((balance) =>
-              equalTokens(balance.token, token)
-            )
-          )
-        )
-        .map((balance) => new BigNumber(balance.amount)),
+        ? (() => {
+            const balance = tokenBalancesScan.data?.find((value) =>
+              equalTokens(value.token, selectedToken)
+            );
+            return balance ? new BigNumber(balance.amount) : null;
+          })()
+        : null,
     [selectedToken, tokenBalancesScan.data]
   );
 
   const positionsData = useMemo(
     () =>
       selectedStake
-        .map((stake) => {
-          const balances = [
-            ...positionDetails.positionBalancesByType
-              .map((byType) => [...byType.values()].flat())
-              .orDefault([]),
-          ];
+        ? (() => {
+            const balances = [
+              ...(positionDetails.positionBalancesByType
+                ? [...positionDetails.positionBalancesByType.values()].flat()
+                : []),
+            ];
 
-          return new Map([
-            [
-              stake.id,
-              {
-                yieldId: stake.id,
-                rewardRate: stake.rewardRate,
-                balanceData: new Map([
-                  [
-                    "default" as BalanceDataKey,
-                    { type: "default" as const, balances },
-                  ],
-                ]),
-              },
-            ],
-          ]) as PositionsData;
-        })
-        .orDefault(new Map() as PositionsData),
+            return new Map([
+              [
+                selectedStake.id,
+                {
+                  yieldId: selectedStake.id,
+                  rewardRate: selectedStake.rewardRate,
+                  balanceData: new Map([
+                    [
+                      "default" as BalanceDataKey,
+                      { type: "default" as const, balances },
+                    ],
+                  ]),
+                },
+              ],
+            ]) as PositionsData;
+          })()
+        : (new Map() as PositionsData),
     [positionDetails.positionBalancesByType, selectedStake]
   );
 
@@ -143,34 +162,33 @@ export const usePositionDetailsStake = () => {
 
   const selectedTokenAvailableAmount = useMemo(
     () =>
-      availableAmount.map((amount) => ({
-        symbol: selectedToken.mapOrDefault((token) => token.symbol, ""),
-        shortFormattedAmount: defaultFormattedNumber(amount),
-        fullFormattedAmount: formatNumber(amount),
-        amount,
-      })),
+      availableAmount
+        ? {
+            symbol: selectedToken?.symbol ?? "",
+            shortFormattedAmount: defaultFormattedNumber(availableAmount),
+            fullFormattedAmount: formatNumber(availableAmount),
+            amount: availableAmount,
+          }
+        : null,
     [availableAmount, selectedToken]
   );
 
   const validatorsRequired = selectedStake
-    .map(isYieldValidatorSelectionRequired)
-    .orDefault(false);
+    ? isYieldValidatorSelectionRequired(selectedStake)
+    : false;
   const yieldValidators = useYieldValidators({
     enabled: validatorsRequired,
-    yieldId:
-      selectedStake.map((stake) => stake.id).extractNullable() ?? undefined,
-    network:
-      selectedStake.map((stake) => stake.token.network).extractNullable() ??
-      undefined,
+    yieldId: selectedStake?.id,
+    network: selectedStake?.token.network,
   });
   const selectedValidators = useMemo(() => {
     if (!validatorsRequired) {
-      return new Map<ValidatorKey, Validator>();
+      return new Map<ValidatorKey, EarnValidator>();
     }
 
     const validators = yieldValidators.data ?? [];
     return getInitSelectedValidators({
-      initQueryParams: Maybe.empty(),
+      initQueryParams: null,
       validators,
     });
   }, [validatorsRequired, yieldValidators.data]);
@@ -182,31 +200,29 @@ export const usePositionDetailsStake = () => {
     selectedProviderYieldId,
   });
 
-  const pricesState = useTokensPrices({
+  const pricesRequest = getTokensPricesRequest({
     token: selectedToken,
     yieldDto: selectedStake,
   });
+  const pricesResult = useAtomValue(
+    pricesAtom(new PricesKey({ request: pricesRequest }))
+  );
+  const prices = AsyncResult.getOrElse(pricesResult, () => null);
 
   const formattedPrice = useMemo(
     () =>
-      Maybe.fromRecord({
-        prices: Maybe.fromNullable(pricesState.data),
-        selectedStake,
-        selectedToken,
-      }).mapOrDefault(
-        (value) =>
-          `$${defaultFormattedNumber(
+      prices && selectedStake && selectedToken
+        ? `$${defaultFormattedNumber(
             getTokenPriceInUSD({
-              baseToken: value.selectedStake.token,
+              baseToken: selectedStake.token,
               amount: stakeAmount,
-              token: value.selectedToken,
-              prices: value.prices,
+              token: selectedToken,
+              prices,
               pricePerShare: null,
             })
-          )}`,
-        ""
-      ),
-    [pricesState.data, selectedStake, selectedToken, stakeAmount]
+          )}`
+        : "",
+    [prices, selectedStake, selectedToken, stakeAmount]
   );
 
   const stakeEnterRequestDto = useStakeEnterRequestDto({
@@ -218,16 +234,19 @@ export const usePositionDetailsStake = () => {
     tronResource,
     useMaxAmount: intent.useMaxAmount,
   });
-  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
+  const yieldKycGate = useYieldKycGate({
+    yieldDto: selectedStake,
+  });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
   const kycProviderName = selectedStake
-    .map(getKycProviderName)
-    .extractNullable();
+    ? getKycProviderName(selectedStake)
+    : null;
   const onKycStatusRefresh = () => yieldKycGate.refetch();
   const { openConnectModal } = useConnectModal();
   const navigate = useNavigateWithScrollToTop();
   const setEnterStakeRequest = useSetEnterStakeRequest();
-  const { isConnected, isLedgerLiveAccountPlaceholder, chain } = useSKWallet();
+  const { isConnected, isLedgerLiveAccountPlaceholder, chain, connector } =
+    useSKWallet();
 
   const {
     stakeAmountGreaterThanAvailableAmount,
@@ -245,31 +264,25 @@ export const usePositionDetailsStake = () => {
   const onClickHandler = () => {
     setSubmitted(true);
     if (validation.hasErrors) return;
-    if (stakeEnterRequestDto.isNothing()) return;
+    const selectedTokenValue = selectedToken;
+    if (!stakeEnterRequestDto || !selectedTokenValue) return;
 
     if (!isConnected) return openConnectModal?.();
     if (kycGateIsBlocking) return;
 
-    Maybe.fromRecord({
-      selectedToken,
-      stakeEnterRequestDto,
-    }).ifJust((value) => {
-      setEnterStakeRequest(
-        Maybe.of({
-          actionDto: Maybe.empty(),
-          addresses: value.stakeEnterRequestDto.addresses,
-          requestDto: value.stakeEnterRequestDto.dto,
-          selectedToken: value.selectedToken,
-          gasFeeToken: value.stakeEnterRequestDto.gasFeeToken,
-          selectedStake: value.stakeEnterRequestDto.selectedStake,
-          selectedValidators: value.stakeEnterRequestDto.selectedValidators,
-        })
-      );
-      navigate(
-        getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
-          "/review"
-      );
+    setEnterStakeRequest({
+      actionDto: null,
+      addresses: stakeEnterRequestDto.addresses,
+      requestDto: stakeEnterRequestDto.dto,
+      selectedToken: selectedTokenValue,
+      gasFeeToken: stakeEnterRequestDto.gasFeeToken,
+      selectedStake: stakeEnterRequestDto.selectedStake,
+      selectedValidators: stakeEnterRequestDto.selectedValidators,
     });
+    navigate(
+      getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
+        "/review"
+    );
   };
 
   const validation = useMemo(() => {
@@ -283,13 +296,9 @@ export const usePositionDetailsStake = () => {
 
     if (
       isConnected &&
-      selectedStake
-        .chainNullable((stake) =>
-          getYieldActionArg(stake, "enter", "tronResource")
-        )
-        .filter((arg) => !!arg.required)
-        .isJust() &&
-      tronResource.isNothing()
+      selectedStake &&
+      getYieldActionArg(selectedStake, "enter", "tronResource")?.required &&
+      !tronResource
     ) {
       errors.tronResource = true;
     }
@@ -313,7 +322,7 @@ export const usePositionDetailsStake = () => {
   const trackEvent = useTrackEvent();
   const onMaxClick = () => {
     trackEvent("positionDetailsPageMaxClicked", {
-      yieldId: selectedStake.map((stake) => stake.id).extractNullable(),
+      yieldId: selectedStake?.id,
     });
     dispatch({
       type: "stakeAmount/max",
@@ -322,15 +331,21 @@ export const usePositionDetailsStake = () => {
   };
   const onStakeAmountChange: NumberInputProps["onChange"] = (amount) =>
     dispatch({ type: "stakeAmount/change", amount: amount.toString(10) });
-  const onTronResourceSelect = (value: TronResourceType) =>
+  const onTronResourceSelect = (value: TronResource) =>
     dispatch({ type: "tronResource/select", tronResource: value });
   const onClickRef = useSavedRef(onClickHandler);
 
-  const addLedgerAccount = useAddLedgerAccount();
+  const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
+  const { closeChainModal } = useCloseChainModal();
   const connectClickRef = useSavedRef(() => {
     if (isLedgerLiveAccountPlaceholder && chain) {
       trackEvent("addLedgerAccountClicked");
-      return addLedgerAccount.mutate(chain);
+      return addLedgerAccount({
+        chain,
+        closeChainModal,
+        connector:
+          connector && isLedgerLiveConnector(connector) ? connector : null,
+      });
     }
 
     trackEvent("connectWalletClicked");
@@ -342,15 +357,11 @@ export const usePositionDetailsStake = () => {
     positionDetails.isLoading ||
     tokenBalancesScan.isLoading ||
     yieldValidators.isLoading ||
-    pricesState.isLoading;
-  const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
-    (yieldType) => yieldType.cta,
-    ""
-  );
+    (!!pricesRequest && AsyncResult.isInitial(pricesResult));
+  const buttonCTAText = useYieldType(selectedStake)?.cta ?? "";
   const buttonDisabled =
-    isConnected &&
-    (isFetching || stakeEnterRequestDto.isNothing() || kycGateIsBlocking);
-  const appLoading = positionDetails.isLoading || selectedStake.isNothing();
+    isConnected && (isFetching || !stakeEnterRequestDto || kycGateIsBlocking);
+  const appLoading = positionDetails.isLoading || !selectedStake;
   const cta = useMemo<PageCta>(
     () =>
       isConnected && !isLedgerLiveAccountPlaceholder
@@ -387,24 +398,25 @@ export const usePositionDetailsStake = () => {
     ]
   );
 
-  const stakeMaxAmount = selectedStake
-    .filter(() => maxIntegrationAmount.isJust() && !isForceMax)
-    .map(() => maxEnterOrExitAmount.toNumber());
-  const stakeMinAmount = selectedStake
-    .filter(() => minIntegrationAmount.isJust() && !isForceMax)
-    .map(() => minEnterOrExitAmount.toNumber())
-    .filter((value) => new BigNumber(value).isGreaterThan(0));
-  const isStakeTokenSameAsGasToken = Maybe.fromRecord({
-    selectedStake,
-    selectedToken,
-  }).mapOrDefault(
-    (value) =>
-      stakeTokenSameAsGasToken({
-        stakeToken: value.selectedToken,
-        yieldDto: value.selectedStake,
-      }),
-    false
-  );
+  const stakeMaxAmount =
+    selectedStake && maxIntegrationAmount && !isForceMax
+      ? maxEnterOrExitAmount.toNumber()
+      : null;
+  const candidateMinAmount = minEnterOrExitAmount.toNumber();
+  const stakeMinAmount =
+    selectedStake &&
+    minIntegrationAmount &&
+    !isForceMax &&
+    new BigNumber(candidateMinAmount).isGreaterThan(0)
+      ? candidateMinAmount
+      : null;
+  const isStakeTokenSameAsGasToken =
+    selectedStake && selectedToken
+      ? stakeTokenSameAsGasToken({
+          stakeToken: selectedToken,
+          yieldDto: selectedStake,
+        })
+      : false;
 
   return {
     appLoading,
@@ -432,7 +444,7 @@ export const usePositionDetailsStake = () => {
     stakeAmount,
     stakeMaxAmount,
     stakeMinAmount,
-    symbol: selectedToken.mapOrDefault((token) => token.symbol, ""),
+    symbol: selectedToken?.symbol ?? "",
     tronResource,
     validation,
   };

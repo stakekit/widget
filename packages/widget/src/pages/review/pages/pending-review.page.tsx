@@ -1,5 +1,3 @@
-import { Maybe } from "purify-ts";
-import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { usePendingActionReview } from "../hooks/use-pending-review.hook";
 import { ReviewPage } from "./common-page/common.page";
@@ -20,41 +18,25 @@ export const PendingReviewPage = () => {
 
   useTrackPage("pendingActionReview");
 
-  const info = useMemo(
-    () => token.map((val) => `${amount} ${val.symbol}`).extractNullable(),
-    [amount, token]
-  );
-
-  const { depositFee, managementFee, performanceFee, feeConfigLoading } =
-    useMemo(
-      () => ({
-        depositFee: Maybe.empty(),
-        managementFee: Maybe.empty(),
-        performanceFee: Maybe.empty(),
-        feeConfigLoading: false,
-      }),
-      []
-    );
-
   return (
     <ReviewPage
       rewardTokenDetailsProps={rewardTokenDetailsProps}
-      title={title.orDefault("")}
+      title={title}
       fee={fee}
-      depositFee={depositFee}
-      managementFee={managementFee}
-      performanceFee={performanceFee}
-      feeConfigLoading={feeConfigLoading}
-      info={info}
-      metadata={integrationData.map((yieldDto) => ({
-        logoURI: yieldDto.metadata.logoURI,
-        name: yieldDto.metadata.name,
-        provider: yieldDto.provider,
-      }))}
+      depositFee={null}
+      managementFee={null}
+      performanceFee={null}
+      feeConfigLoading={false}
+      info={`${amount} ${token.symbol}`}
+      metadata={{
+        logoURI: integrationData.metadata.logoURI,
+        name: integrationData.metadata.name,
+        provider: integrationData.provider,
+      }}
       token={token}
       isGasCheckError={isGasCheckWarning}
       loading={gasCheckLoading}
-      commissionFee={Maybe.empty()}
+      commissionFee={null}
       cta={cta}
       {...metaInfo}
     />

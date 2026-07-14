@@ -1,9 +1,9 @@
-import type { Observable } from "rxjs";
+import type { Stream } from "effect";
 import type { Chain } from "viem";
 import type { Connector } from "wagmi";
 
 export type ConnectorWithFilteredChains = {
-  $filteredChains: Observable<Chain[]>;
+  $filteredChains: Stream.Stream<Chain[]>;
 };
 
 export const isConnectorWithFilteredChains = (

@@ -6,9 +6,12 @@ import {
   BorrowAccountPosition,
   BorrowAtomError,
   BorrowDashboardKey,
+  BorrowExecutionEventsService,
   type BorrowFormIntent,
   BorrowPositionsKey,
   BorrowSubmitFailedError,
+  BorrowWalletExecutionService,
+  borrowAtomRuntime,
   borrowIntegrationsAtom,
   borrowPositionsAtom,
   deriveBorrowPositionItems,
@@ -18,12 +21,12 @@ import {
   resolveBorrowDashboardView,
 } from "../../src/borrow";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
-import {
-  StakeKitApiService,
-  stakeKitApiLayerAtom,
-} from "../../src/providers/effect-atom-runtime/stakekit-api-service";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
+import { StakeKitApiService } from "../../src/providers/api/api-service";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 
 const integrationDto = {
   id: "aave-borrow",
@@ -111,28 +114,33 @@ const makeRegistry = (borrow: Record<string, unknown>) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
-        stakeKitApiLayerAtom,
-        Layer.succeed(StakeKitApiService, {
-          borrow,
-          borrowMutations: borrow,
-        } as never)
+        borrowAtomRuntime.layer,
+        Layer.mergeAll(
+          Layer.succeed(StakeKitApiService, { borrow } as never),
+          Layer.succeed(BorrowWalletExecutionService, {} as never),
+          Layer.succeed(BorrowExecutionEventsService, {} as never)
+        )
       ),
     ],
   });
 
 describe("borrow atoms", () => {
   it("fetches, decodes, and derives borrow positions through atom resources", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+      positionDto
+    );
     const registry = makeRegistry({
-      IntegrationsControllerGetIntegrationsV1: () =>
-        Effect.succeed([integrationDto]),
-      MarketsControllerGetMarketsV1: () =>
+      getIntegrations: () => Effect.succeed([integration]),
+      getMarkets: () =>
         Effect.succeed({
-          items: [marketDto],
+          items: [market],
           limit: 100,
           offset: 0,
           total: 1,
         }),
-      PositionsControllerGetPositionsV1: () => Effect.succeed(positionDto),
+      getPositionData: () => Effect.succeed([{ integration, position }]),
     });
 
     const result = registry.get(
@@ -153,8 +161,7 @@ describe("borrow atoms", () => {
 
   it("wraps borrow API failures in AsyncResult failure state", () => {
     const registry = makeRegistry({
-      IntegrationsControllerGetIntegrationsV1: () =>
-        Effect.fail(new Error("borrow unavailable")),
+      getIntegrations: () => Effect.fail(new Error("borrow unavailable")),
     });
     const result = registry.get(borrowIntegrationsAtom);
 

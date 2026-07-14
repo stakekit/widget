@@ -6,7 +6,6 @@ import { images } from "../../../assets/images";
 import type { useGeoBlock } from "../../../hooks/use-geo-block";
 import { TrackingContext } from "../../../providers/tracking";
 import { formatCountryCode } from "../../../utils/formatters";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import { SKAnchor } from "../../atoms/anchor";
 import { Box } from "../../atoms/box";
 import { Button } from "../../atoms/button";
@@ -166,9 +165,7 @@ export const HelpModal = ({ modal, customTrigger }: HelpModalProps) => {
           button: {
             title: t("help_modals.get_in_touch.button"),
             onClick: () =>
-              MaybeWindow.ifJust((w) =>
-                w.open("https://twitter.com/yield_xyz", "_blank")
-              ),
+              window.open("https://twitter.com/yield_xyz", "_blank"),
           },
           description: "",
           image: images.whatIsLiquidStaking,

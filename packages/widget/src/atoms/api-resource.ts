@@ -1,10 +1,7 @@
 import { type Duration, Effect, type Schema } from "effect";
 import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  ApiRequestError,
-  ResponseDecodeError,
-} from "../domain/schema/api-errors";
+import { InputValidationError } from "../domain/schema/api-errors";
 
 type ApiResourcePolicy = {
   readonly focusSignal?: Atom.Atom<unknown>;
@@ -31,36 +28,14 @@ export const withApiResourcePolicy = (policy: ApiResourcePolicy) =>
     );
   };
 
-/**
- * Atom.family uses Effect Hash/Equal semantics. Public callers should pass
- * primitive keys, Schema classes, or Data classes so equivalent key values
- * resolve to the same atom instance.
- */
-export const valueEqualAtomFamily = <Key, Resource extends object>(
-  make: (key: Key) => Resource
-) => Atom.family(make);
-
-export const withApiRequestError = (operation: string) =>
-  function mapApiRequestError<A, E, R>(effect: Effect.Effect<A, E, R>) {
-    return effect.pipe(
-      Effect.mapError(
-        (cause) =>
-          new ApiRequestError({
-            operation,
-            cause,
-          })
-      )
-    );
-  };
-
-export const withResponseDecodeError = (operation: string) =>
-  function mapResponseDecodeError<A, R>(
+export const withInputValidationError = (operation: string) =>
+  function mapInputValidationError<A, R>(
     effect: Effect.Effect<A, Schema.SchemaError, R>
   ) {
     return effect.pipe(
       Effect.mapError(
         (cause) =>
-          new ResponseDecodeError({
+          new InputValidationError({
             operation,
             issue: cause.message,
             cause,
@@ -79,6 +54,3 @@ export const refreshAtomResources = (
 ) => {
   for (const resource of resources) target.refresh(resource);
 };
-
-// Effect Atom invalidation is an explicit refresh of the affected resource.
-export const invalidateAtomResources = refreshAtomResources;

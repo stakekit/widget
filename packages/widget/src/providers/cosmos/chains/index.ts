@@ -1,10 +1,7 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import { Just } from "purify-ts";
 import { mainnet } from "viem/chains";
-import {
-  CosmosNetworks,
-  type Networks,
-} from "../../../domain/types/chains/networks";
+import type { Network } from "../../../domain/schema/network-model";
+import { CosmosNetworks } from "../../../domain/types/chains/networks";
 import { getNetworkLogo, getTokenLogo } from "../../../utils";
 import type { CosmosChainsAssets } from "./types";
 
@@ -12,23 +9,14 @@ export const getWagmiChain = (
   chain: CosmosChainsAssets
 ): Chain & { cosmosChainName: string } => ({
   id: chain.chain_id as unknown as number,
-  iconUrl: Just(chain.chain_id)
-    .map((id) => {
-      if (id === "osmosis-1") {
-        return getNetworkLogo(CosmosNetworks.Osmosis);
-      }
-
-      if (id === "mars-1") {
-        return getTokenLogo("mars");
-      }
-
-      return (
-        chain.logo_URIs?.png ??
-        chain.logo_URIs?.svg ??
-        getNetworkLogo(chain.chain_name as Networks)
-      );
-    })
-    .unsafeCoerce(),
+  iconUrl:
+    chain.chain_id === "osmosis-1"
+      ? getNetworkLogo(CosmosNetworks.Osmosis)
+      : chain.chain_id === "mars-1"
+        ? getTokenLogo("mars")
+        : (chain.logo_URIs?.png ??
+          chain.logo_URIs?.svg ??
+          getNetworkLogo(chain.chain_name as Network)),
 
   name: chain.wagmiName,
   cosmosChainName: chain.chain_name,

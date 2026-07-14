@@ -4,9 +4,8 @@ import type {
 } from "../schema/action-models";
 import type { LegacyPendingAction } from "../schema/legacy-models";
 
-export type YieldPendingActionDto = PendingAction;
 export type YieldPendingActionType =
-  | YieldPendingActionDto["type"]
+  | PendingAction["type"]
   | NonNullable<ManageActionCommand["action"]>;
 
 type PendingActionArgName =
@@ -14,7 +13,7 @@ type PendingActionArgName =
   | "validatorAddress"
   | "validatorAddresses";
 
-export type AnyPendingActionDto = LegacyPendingAction | YieldPendingActionDto;
+export type AnyPendingActionDto = LegacyPendingAction | PendingAction;
 
 type PendingActionAmountConfig = {
   required: boolean;
@@ -59,12 +58,9 @@ const getPendingActionArgument = (
   pendingAction: AnyPendingActionDto,
   name: PendingActionArgName
 ) => {
-  const v2Field = (
-    pendingAction as YieldPendingActionDto
-  ).arguments?.fields?.find(
-    (
-      field: NonNullable<YieldPendingActionDto["arguments"]>["fields"][number]
-    ) => field.name === name
+  const v2Field = (pendingAction as PendingAction).arguments?.fields?.find(
+    (field: NonNullable<PendingAction["arguments"]>["fields"][number]) =>
+      field.name === name
   );
 
   if (v2Field) {

@@ -12,9 +12,9 @@ import { PreferredIcon } from "../../../components/atoms/icons/preferred";
 import { Image } from "../../../components/atoms/image";
 import { Text } from "../../../components/atoms/typography/text";
 import { useMetaInfo } from "../../../components/molecules/select-validator/meta-info";
-import type { Yield } from "../../../domain/types/yields";
-import type { useProvidersDetails } from "../../../hooks/use-provider-details";
-import type { GetMaybeJust } from "../../../types/utils";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
+
+import type { ProviderDetails as ProviderDetailsModel } from "../../../hooks/use-provider-details";
 import { inactiveContainer, noWrap } from "../styles.css";
 
 export const ProviderDetails = ({
@@ -23,13 +23,10 @@ export const ProviderDetails = ({
   integrationData,
   logo,
   ...providerDetails
-}: Omit<
-  GetMaybeJust<ReturnType<typeof useProvidersDetails>>[0],
-  "rewardType"
-> & {
+}: Omit<ProviderDetailsModel, "rewardType"> & {
   isFirst: boolean;
   stakeType: string;
-  integrationData: Yield;
+  integrationData: EarnYieldWithProvider;
   logo: string | undefined;
   name: string;
   rewardRateFormatted: string;

@@ -1,7 +1,8 @@
 import type { Chain as LunoKitChain } from "@luno-kit/core/chains";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, Maybe } from "purify-ts";
-import type { Networks } from "../../domain/types/chains/networks";
+import { Effect } from "effect";
+import type { Network } from "../../domain/schema/network-model";
+
 import {
   type SubstrateChainsMap,
   substrateChainsMap,
@@ -16,15 +17,15 @@ const queryFn = async ({
   enabledNetworks,
   forceWalletConnectOnly,
 }: {
-  enabledNetworks: ReadonlySet<Networks>;
+  enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
 }): Promise<{
   substrateChainsMap: Partial<SubstrateChainsMap>;
   substrateChains: Chain[];
-  connector: Maybe<{
+  connector: {
     groupName: string;
     wallets: WalletList[number]["wallets"];
-  }>;
+  } | null;
 }> => {
   const filteredSubstrateChainsMap: Partial<SubstrateChainsMap> =
     typeSafeObjectFromEntries(
@@ -54,14 +55,12 @@ const queryFn = async ({
   );
 
   const connector = substrateChains.length
-    ? Maybe.of(
-        (await import("./substrate-connector")).getSubstrateConnectors(
-          substrateChains,
-          lunoKitChains,
-          forceWalletConnectOnly
-        )
+    ? (await import("./substrate-connector")).getSubstrateConnectors(
+        substrateChains,
+        lunoKitChains,
+        forceWalletConnectOnly
       )
-    : Maybe.empty();
+    : null;
 
   return {
     substrateChainsMap: filteredSubstrateChainsMap,
@@ -71,7 +70,8 @@ const queryFn = async ({
 };
 
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get substrate config");
+  Effect.tryPromise({
+    try: () => queryFn(opts),
+    catch: (error) =>
+      new Error("Could not get substrate config", { cause: error }),
   });

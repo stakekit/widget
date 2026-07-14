@@ -1,121 +1,125 @@
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, Maybe, Right } from "purify-ts";
+import { Effect } from "effect";
+import type { WalletAddress } from "../../domain/schema/identifiers";
+import type { Network } from "../../domain/schema/network-model";
 import type { CosmosChainsMap } from "../../domain/types/chains/cosmos";
 import { supportedCosmosChains } from "../../domain/types/chains/cosmos";
-import type { Networks } from "../../domain/types/chains/networks";
+
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import { getWagmiChain } from "./chains";
 
-const queryFn = async ({
+const queryFn = ({
   enabledNetworks,
   forceWalletConnectOnly,
+  persistPublicKey,
 }: {
-  enabledNetworks: ReadonlySet<Networks>;
+  enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
+  persistPublicKey: (input: {
+    readonly address: WalletAddress;
+    readonly publicKey: string;
+  }) => Promise<void>;
 }) =>
-  EitherAsync.liftEither(Right(enabledNetworks))
-    .chain<
-      Error,
-      {
+  Effect.gen(function* () {
+    const networks = enabledNetworks;
+    const chainsToUse = supportedCosmosChains.filter((chain) =>
+      networks.has(chain)
+    );
+
+    if (!chainsToUse.length) {
+      return {
+        cosmosChainsMap: {},
+        cosmosWagmiChains: [],
+        connector: null,
+      } satisfies {
         cosmosChainsMap: Partial<CosmosChainsMap>;
         cosmosWagmiChains: Chain[];
-        connector: Maybe<WalletList[number]>;
-      }
-    >((networks) => {
-      const chainsToUse = supportedCosmosChains.filter((chain) =>
-        networks.has(chain)
-      );
+        connector: WalletList[number] | null;
+      };
+    }
 
-      if (!chainsToUse.length) {
-        return EitherAsync.liftEither(
-          Right({
-            cosmosChainsMap: {},
-            cosmosWagmiChains: [],
-            connector: Maybe.empty(),
-          })
-        );
-      }
+    const registry = yield* Effect.tryPromise({
+      try: () => import("./chains/chain-registry"),
+      catch: (error) =>
+        new Error("Could not import cosmos chain registry", { cause: error }),
+    });
+    const chainsToUseSet = new Set(chainsToUse);
 
-      return EitherAsync(() => import("./chains/chain-registry"))
-        .mapLeft(() => new Error("Could not import cosmos chain registry"))
-        .map((v) => {
-          const chainsToUseSet = new Set(chainsToUse);
+    const cosmosChainsMap: Partial<CosmosChainsMap> = typeSafeObjectFromEntries(
+      typeSafeObjectEntries<CosmosChainsMap>(
+        registry.cosmosRegistryChains.reduce((acc, next) => {
+          const skChainName =
+            registry.registryIdsToSKCosmosNetworks[next.chain_id];
 
-          const cosmosChainsMap: Partial<CosmosChainsMap> =
-            typeSafeObjectFromEntries(
-              typeSafeObjectEntries<CosmosChainsMap>(
-                v.cosmosRegistryChains.reduce((acc, next) => {
-                  const skChainName =
-                    v.registryIdsToSKCosmosNetworks[next.chain_id];
-
-                  if (!skChainName || !chainsToUseSet.has(skChainName)) {
-                    return acc;
-                  }
-
-                  return {
-                    // biome-ignore lint: false
-                    ...acc,
-                    [skChainName]: {
-                      type: "cosmos",
-                      skChainName,
-                      chain: next,
-                      wagmiChain: getWagmiChain(next),
-                    },
-                  };
-                }, {} as CosmosChainsMap)
-              ).filter(([_, v]) => networks.has(v.skChainName))
-            );
+          if (!skChainName || !chainsToUseSet.has(skChainName)) {
+            return acc;
+          }
 
           return {
-            cosmosChainsMap,
-            cosmosWagmiChains: Object.values(cosmosChainsMap).map(
-              (val) => val.wagmiChain
-            ),
+            // biome-ignore lint: false
+            ...acc,
+            [skChainName]: {
+              type: "cosmos",
+              skChainName,
+              chain: next,
+              wagmiChain: getWagmiChain(next),
+            },
           };
-        })
-        .chain(({ cosmosChainsMap, cosmosWagmiChains }) =>
-          EitherAsync(() => import("./wallet-manager"))
-            .mapLeft(
-              (e) =>
-                new Error("Could not import cosmos wallet manager", {
-                  cause: e,
-                })
-            )
-            .map((v) =>
-              v.getWalletManager({ cosmosChainsMap, forceWalletConnectOnly })
-            )
-            .map((val) => ({ ...val, cosmosWagmiChains, cosmosChainsMap }))
-        )
-        .chain((v) =>
-          EitherAsync(() => v.walletManager.onMounted())
-            .chainLeft(() =>
-              EitherAsync(() => {
-                // @ts-expect-error
-                return cosmosWalletManager._restoreAccounts().catch(() => {});
-              })
-            )
-            .mapLeft((e) => {
-              console.log(e);
-              return new Error("cosmosWalletManager onMounted failed");
-            })
+        }, {} as CosmosChainsMap)
+      ).filter(([_, v]) => networks.has(v.skChainName))
+    );
 
-            .map(() => ({
-              cosmosChainsMap: v.cosmosChainsMap,
-              cosmosWagmiChains: v.cosmosWagmiChains,
-              connector: Maybe.fromPredicate(
-                () => !!v.cosmosWagmiChains.length,
-                v.connector
-              ),
-            }))
-        );
-    })
-    .caseOf({
-      Right: (val) => Promise.resolve(val),
-      Left: (l) => Promise.reject(l),
+    const cosmosWagmiChains = Object.values(cosmosChainsMap).map(
+      (value) => value.wagmiChain
+    );
+    const walletManagerModule = yield* Effect.tryPromise({
+      try: () => import("./wallet-manager"),
+      catch: (error) =>
+        new Error("Could not import cosmos wallet manager", { cause: error }),
+    });
+    const { connector, walletManager } = yield* Effect.try({
+      try: () =>
+        walletManagerModule.getWalletManager({
+          cosmosChainsMap,
+          forceWalletConnectOnly,
+          persistPublicKey,
+        }),
+      catch: (error) =>
+        new Error("Could not initialize cosmos wallet manager", {
+          cause: error,
+        }),
     });
 
-export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get cosmos config");
+    yield* Effect.matchEffect(
+      Effect.tryPromise({
+        try: () => walletManager.onMounted(),
+        catch: (error) => error,
+      }),
+      {
+        onFailure: () => {
+          const restorableWalletManager = walletManager as unknown as {
+            _restoreAccounts: () => Promise<void>;
+          };
+
+          return Effect.tryPromise({
+            try: () => restorableWalletManager._restoreAccounts(),
+            catch: (error) => error,
+          }).pipe(Effect.ignore);
+        },
+        onSuccess: () => Effect.void,
+      }
+    );
+
+    return {
+      cosmosChainsMap,
+      cosmosWagmiChains,
+      connector: cosmosWagmiChains.length ? connector : null,
+    };
   });
+
+export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
+  queryFn(opts).pipe(
+    Effect.mapError(
+      (error) => new Error("Could not get cosmos config", { cause: error })
+    )
+  );

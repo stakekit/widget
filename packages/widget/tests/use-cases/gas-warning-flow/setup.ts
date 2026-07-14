@@ -1,6 +1,7 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
-import type { YieldCreateActionDto } from "../../../src/domain/types/action";
+import type { ActionCommand } from "../../../src/domain/schema/action-models";
+
 import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
@@ -275,7 +276,7 @@ export const setup = (worker: TestWorker) => {
     http.post(yieldApiRoute("/v1/actions/enter"), async (info) => {
       await mockDelay();
 
-      const body = (await info.request.json()) as YieldCreateActionDto;
+      const body = (await info.request.json()) as ActionCommand;
       const selectedYield =
         body.yieldId === yieldWithSameGasAndStakeToken.yieldDto.id
           ? yieldWithSameGasAndStakeToken

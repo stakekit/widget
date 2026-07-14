@@ -1,6 +1,4 @@
-import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
-import { Just } from "purify-ts";
 import { useNavigate } from "react-router";
 import { Box } from "../../../../components/atoms/box";
 import { Divider } from "../../../../components/atoms/divider";
@@ -83,32 +81,17 @@ export const AnimatedTabs = (props: TabsProps) => {
   const { state } = useMountAnimation();
   const { disableInitLayoutAnimation } = useSettings();
 
-  const { animate, initial } = Just({ opacity: 1, translateY: 0 })
-    .chain<{ animate: TargetAndTransition; initial: MotionProps["initial"] }>(
-      (animateTo) =>
-        Just(null)
-          .map<{
-            transition: MotionProps["transition"];
-            initial: MotionProps["initial"];
-          }>(() => {
-            if (state.layout || disableInitLayoutAnimation) {
-              return {
-                transition: { duration: 0 },
-                initial: { opacity: 1, translateY: 0 },
-              };
-            }
-
-            return {
-              transition: { duration: 1, delay: 0.5 },
-              initial: { opacity: 0, translateY: "-40px" },
-            };
-          })
-          .map((val) => ({
-            animate: { ...animateTo, transition: val.transition },
-            initial: val.initial,
-          }))
-    )
-    .unsafeCoerce();
+  const useImmediateState = state.layout || disableInitLayoutAnimation;
+  const initial = useImmediateState
+    ? { opacity: 1, translateY: 0 }
+    : { opacity: 0, translateY: "-40px" };
+  const animate = {
+    opacity: 1,
+    translateY: 0,
+    transition: useImmediateState
+      ? { duration: 0 }
+      : { duration: 1, delay: 0.5 },
+  };
 
   return (
     <motion.div initial={initial} animate={animate}>

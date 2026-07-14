@@ -1,7 +1,9 @@
 import type { TFunction } from "i18next";
 import type { ReactNode } from "react";
 import {
+  type BorrowNetwork,
   type BorrowPositionPendingActionContext,
+  type BorrowToken,
   type BorrowWithdrawTokenOption,
   buildCollateralToggleActionRequest,
   buildRepayActionRequest,
@@ -10,7 +12,9 @@ import {
   type Position,
   type SupplyBalance,
 } from "../../borrow";
-import type { TokenDto } from "../../domain/types/tokens";
+import type { WalletAddress } from "../../domain/schema/identifiers";
+import type { AppToken } from "../../domain/schema/legacy-models";
+
 import { formatNumber } from "../../utils";
 import { formatCompactUsd } from "../../utils/formatters";
 import { getBorrowMarketPairLabel } from "./model";
@@ -62,18 +66,13 @@ export const borrowTokenToTokenDto = ({
   network,
   token,
 }: {
-  readonly network: string;
-  readonly token: {
-    readonly address?: string;
-    readonly decimals: number;
-    readonly name: string;
-    readonly symbol: string;
-  };
-}): TokenDto => ({
+  readonly network: BorrowNetwork;
+  readonly token: BorrowToken;
+}): AppToken => ({
   address: token.address,
   decimals: token.decimals,
   name: token.name,
-  network: network as TokenDto["network"],
+  network: network as AppToken["network"],
   symbol: token.symbol,
 });
 
@@ -150,7 +149,7 @@ export const getBorrowPositionActions = ({
   position,
   t,
 }: {
-  readonly address: string;
+  readonly address: WalletAddress;
   readonly position: Position;
   readonly t: TFunction;
 }): BorrowPositionAction[] => {

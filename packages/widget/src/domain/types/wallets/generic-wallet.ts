@@ -1,12 +1,15 @@
 import type {
+  ActionTransaction,
+  YieldAction,
+} from "../../schema/action-models";
+import type { AppToken } from "../../schema/legacy-models";
+import type {
   DecodedEVMTransaction,
   DecodedSolanaTransaction,
   DecodedSubstrateTransaction,
   DecodedTonTransaction,
   DecodedTronTransaction,
 } from "../../types/transaction";
-import type { ActionDto, TransactionDto } from "../action";
-import type { TokenDto, YieldTokenDto } from "../tokens";
 
 type EVMTx = {
   type: "evm";
@@ -36,14 +39,14 @@ export type BittensorTx = {
 export type SKTx = EVMTx | SolanaTx | TonTx | TronTx | BittensorTx;
 
 export type ActionMeta = {
-  actionId: ActionDto["id"];
-  actionType: ActionDto["type"];
-  address?: ActionDto["address"];
-  amount: ActionDto["amount"];
-  amountRaw?: ActionDto["amountRaw"];
-  rawArguments?: ActionDto["rawArguments"];
-  yieldId?: ActionDto["yieldId"];
-  inputToken: TokenDto | YieldTokenDto | undefined;
+  actionId: YieldAction["id"];
+  actionType: YieldAction["type"];
+  address?: YieldAction["address"];
+  amount: YieldAction["amount"];
+  amountRaw?: YieldAction["amountRaw"];
+  rawArguments?: YieldAction["rawArguments"];
+  yieldId?: YieldAction["yieldId"];
+  inputToken: AppToken | undefined;
   providersDetails: {
     name: string;
     address: string | undefined;
@@ -55,10 +58,10 @@ export type ActionMeta = {
 };
 
 export type SKTxMeta = ActionMeta & {
-  txId: TransactionDto["id"];
-  txType: TransactionDto["type"];
+  txId: ActionTransaction["id"];
+  txType: ActionTransaction["type"];
 } & Pick<
-    TransactionDto,
+    ActionTransaction,
     "structuredTransaction" | "annotatedTransaction" | "gasEstimate"
   >;
 

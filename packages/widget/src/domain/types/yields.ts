@@ -1,23 +1,19 @@
 import BigNumber from "bignumber.js";
-import { Array as EArray, pipe } from "effect";
+import { Array as EArray, pipe, Schema } from "effect";
 import type { TFunction } from "i18next";
-import { Maybe } from "purify-ts";
 import type {
   EarnProvider,
   EarnYieldWithProvider,
 } from "../schema/earn-models";
+import { YieldId } from "../schema/identifiers";
 import type { SupportedSKChains } from "./chains";
 import { EvmNetworks } from "./chains/networks";
 import { equalTokens, tokenString } from "./tokens";
 
-type YieldProviderDetails = typeof EarnProvider.Encoded;
-
-export type Yield = typeof EarnYieldWithProvider.Encoded;
-
-export type YieldBase = Yield;
-
 type YieldRiskRatingTone = "positive" | "warning" | "danger" | "neutral";
-type YieldRiskEntry = NonNullable<Yield["risk"]>["ratings"][number];
+type YieldRiskEntry = NonNullable<
+  EarnYieldWithProvider["risk"]
+>["ratings"][number];
 type KnownYieldRiskRatingSource = YieldRiskEntry["source"];
 type YieldRiskRatingSource = KnownYieldRiskRatingSource | (string & {});
 export type YieldRiskDisplay = {
@@ -25,8 +21,11 @@ export type YieldRiskDisplay = {
   source: YieldRiskRatingSource;
   tone: YieldRiskRatingTone;
 };
-export type YieldMetadata = Pick<Yield["metadata"], "logoURI" | "name"> & {
-  provider?: YieldProviderDetails;
+export type YieldMetadata = Pick<
+  EarnYieldWithProvider["metadata"],
+  "logoURI" | "name"
+> & {
+  provider?: EarnProvider;
 };
 
 const knownApiYieldTypes = [
@@ -39,14 +38,16 @@ const knownApiYieldTypes = [
   "concentrated_liquidity_pool",
   "liquidity_pool",
   "liquid_staking",
-] as const satisfies ReadonlyArray<Yield["mechanics"]["type"]>;
+] as const satisfies ReadonlyArray<EarnYieldWithProvider["mechanics"]["type"]>;
 
 type KnownApiYieldType = (typeof knownApiYieldTypes)[number];
 type LocallyDerivedYieldType = "native_staking" | "pooled_staking";
 type KnownExtendedYieldType = KnownApiYieldType | LocallyDerivedYieldType;
 export type ExtendedYieldType = KnownExtendedYieldType | "unknown";
 type YieldActionType = "enter" | "exit";
-type YieldArguments = NonNullable<Yield["mechanics"]["arguments"]>;
+type YieldArguments = NonNullable<
+  EarnYieldWithProvider["mechanics"]["arguments"]
+>;
 type YieldArgumentField = NonNullable<
   YieldArguments["enter"]
 >["fields"][number];
@@ -156,7 +157,7 @@ export const getApiYieldTypesForDashboardCategory = (
     .map(([yieldType]) => yieldType);
 
 export const getDashboardYieldCategory = (
-  yieldDto: YieldBase
+  yieldDto: EarnYieldWithProvider
 ): DashboardYieldCategory | null => {
   const yieldType = getExtendedYieldType(yieldDto);
 
@@ -179,14 +180,13 @@ export const filterValidators = <T extends ValidatorDto>({
 }: {
   validatorsConfig: ValidatorsConfig;
   validators: ReadonlyArray<T>;
-  network: Yield["token"]["network"];
-  yieldId?: Yield["id"];
+  network: EarnYieldWithProvider["token"]["network"];
+  yieldId?: EarnYieldWithProvider["id"];
 }): T[] => {
-  const valConfig = Maybe.fromNullable(
-    validatorsConfig.get(network as SupportedSKChains)
-  )
-    .altLazy(() => Maybe.fromNullable(validatorsConfig.get("*")))
-    .extractNullable();
+  const valConfig =
+    validatorsConfig.get(network as SupportedSKChains) ??
+    validatorsConfig.get("*") ??
+    null;
 
   const filtered = !valConfig
     ? [...validators]
@@ -238,7 +238,7 @@ const secondsToDays = (seconds: number | undefined) => {
 };
 
 export const getYieldActionArg = (
-  yieldDto: YieldBase,
+  yieldDto: EarnYieldWithProvider,
   type: YieldActionType,
   name: YieldArgumentName
 ): YieldArgumentConfig | null => {
@@ -259,12 +259,12 @@ export const getYieldActionArg = (
 };
 
 export const isYieldActionArgRequired = (
-  yieldDto: YieldBase,
+  yieldDto: EarnYieldWithProvider,
   type: YieldActionType,
   name: YieldArgumentName
 ) => !!getYieldActionArg(yieldDto, type, name)?.required;
 
-export const getYieldRewardTokens = (yieldDto: YieldBase) =>
+export const getYieldRewardTokens = (yieldDto: EarnYieldWithProvider) =>
   pipe(
     [
       ...(yieldDto.outputToken ? [yieldDto.outputToken] : []),
@@ -291,7 +291,7 @@ const getRiskTone = (rating: string): YieldRiskRatingTone => {
 };
 
 export const getYieldRiskDisplay = (
-  yieldDto: Pick<Yield, "risk">
+  yieldDto: Pick<EarnYieldWithProvider, "risk">
 ): YieldRiskDisplay | null => {
   const firstRating = yieldDto.risk?.ratings[0];
   const rating = firstRating?.rating.trim();
@@ -319,16 +319,17 @@ export const getYieldRiskSourceLabel = (
   }
 };
 
-export const hasYieldFeeConfigurationEnabled = (yieldDto: Yield) =>
-  Object.values(yieldDto.mechanics.fee ?? {}).some(Boolean);
+export const hasYieldFeeConfigurationEnabled = (
+  yieldDto: EarnYieldWithProvider
+) => Object.values(yieldDto.mechanics.fee ?? {}).some(Boolean);
 
-export const getYieldCooldownPeriod = (yieldDto: Yield) =>
+export const getYieldCooldownPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.cooldownPeriod?.seconds);
 
-export const getYieldWarmupPeriod = (yieldDto: Yield) =>
+export const getYieldWarmupPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.warmupPeriod?.seconds);
 
-export const getYieldTvlUsd = (yieldDto: Yield) => {
+export const getYieldTvlUsd = (yieldDto: EarnYieldWithProvider) => {
   const tvlUsd = yieldDto.statistics?.tvlUsd;
 
   if (tvlUsd == null || tvlUsd === "") return null;
@@ -336,7 +337,9 @@ export const getYieldTvlUsd = (yieldDto: Yield) => {
   return tvlUsd;
 };
 
-export const getYieldFeePercent = (yieldDto: Yield): number | null => {
+export const getYieldFeePercent = (
+  yieldDto: EarnYieldWithProvider
+): number | null => {
   const fee = yieldDto.mechanics.fee;
 
   if (!fee) return null;
@@ -352,7 +355,7 @@ export const getYieldFeePercent = (yieldDto: Yield): number | null => {
   return total / 100;
 };
 
-export const getYieldLockupPeriod = (yieldDto: Yield) =>
+export const getYieldLockupPeriod = (yieldDto: EarnYieldWithProvider) =>
   secondsToDays(yieldDto.mechanics.lockupPeriod?.seconds);
 
 const knownApiYieldTypeValues = new Set<string>(knownApiYieldTypes);
@@ -361,7 +364,7 @@ const isKnownApiYieldType = (type: string): type is KnownApiYieldType =>
   knownApiYieldTypeValues.has(type);
 
 export const getExtendedYieldType = (
-  yieldDto: YieldBase
+  yieldDto: EarnYieldWithProvider
 ): ExtendedYieldType => {
   if (isNativeStaking(yieldDto)) {
     return "native_staking";
@@ -376,12 +379,12 @@ export const getExtendedYieldType = (
   return isKnownApiYieldType(type) ? type : "unknown";
 };
 
-export const getYieldOutputToken = (yieldDto: YieldBase) =>
-  Maybe.fromNullable(yieldDto.outputToken).filter(
-    (outputToken) => !equalTokens(outputToken, yieldDto.token)
-  );
+export const getYieldOutputToken = (yieldDto: EarnYieldWithProvider) =>
+  yieldDto.outputToken && !equalTokens(yieldDto.outputToken, yieldDto.token)
+    ? yieldDto.outputToken
+    : null;
 
-const hasPositivePricePerShare = (yieldDto: YieldBase) => {
+const hasPositivePricePerShare = (yieldDto: EarnYieldWithProvider) => {
   const price = yieldDto.state?.pricePerShareState?.price;
 
   if (price === null || price === undefined) return false;
@@ -391,8 +394,8 @@ const hasPositivePricePerShare = (yieldDto: YieldBase) => {
   return amount.isFinite() && amount.isGreaterThan(0);
 };
 
-export const hasYieldBearingOutputToken = (yieldDto: YieldBase) =>
-  getYieldOutputToken(yieldDto).isJust() && hasPositivePricePerShare(yieldDto);
+export const hasYieldBearingOutputToken = (yieldDto: EarnYieldWithProvider) =>
+  getYieldOutputToken(yieldDto) !== null && hasPositivePricePerShare(yieldDto);
 
 const isStakingYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "staking" ||
@@ -412,7 +415,7 @@ export const isDepositYieldType = (yieldType: ExtendedYieldType) =>
   yieldType === "liquidity_pool";
 
 export const getYieldTypeLabels = (
-  yieldDto: YieldBase,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): YieldTypeLabelsMap[keyof YieldTypeLabelsMap] => {
   const map = {
@@ -508,39 +511,43 @@ const yieldTypesSortRank: { [Key in ExtendedYieldType]: number } = {
   unknown: 12,
 };
 
-export const getYieldTypesSortRank = (yieldDto: YieldBase) =>
+export const getYieldTypesSortRank = (yieldDto: EarnYieldWithProvider) =>
   yieldTypesSortRank[getExtendedYieldType(yieldDto)];
 
-const isEthereumStaking = (yieldDto: YieldBase) =>
+const isEthereumStaking = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.mechanics.type === "staking" &&
   yieldDto.token.network === EvmNetworks.Ethereum &&
   yieldDto.token.symbol === "ETH";
 
-const isNativeStaking = (yieldDto: YieldBase) =>
-  Maybe.fromFalsy(isEthereumStaking(yieldDto))
-    .chain(() =>
-      Maybe.fromFalsy(
-        isYieldActionArgRequired(yieldDto, "enter", "amount")
-      ).chain(() =>
-        Maybe.fromNullable(
-          getYieldActionArg(yieldDto, "enter", "amount")?.minimum
-        )
-      )
-    )
-    .map(BigNumber)
-    .filter((v) => v.isEqualTo(32))
-    .isJust();
+const isNativeStaking = (yieldDto: EarnYieldWithProvider) => {
+  if (
+    !isEthereumStaking(yieldDto) ||
+    !isYieldActionArgRequired(yieldDto, "enter", "amount")
+  ) {
+    return false;
+  }
 
-const isPooledStaking = (yieldDto: YieldBase) =>
+  const minimum = getYieldActionArg(yieldDto, "enter", "amount")?.minimum;
+
+  return minimum !== null && minimum !== undefined
+    ? BigNumber(minimum).isEqualTo(32)
+    : false;
+};
+
+const isPooledStaking = (yieldDto: EarnYieldWithProvider) =>
   isEthereumStaking(yieldDto) && !isNativeStaking(yieldDto);
 
-export const isYieldWithProviderOptions = (yieldDto: YieldBase) =>
+export const isYieldWithProviderOptions = (yieldDto: EarnYieldWithProvider) =>
   !!getYieldActionArg(yieldDto, "enter", "providerId")?.required;
 
-export const getYieldProviderYieldIds = (yieldDto: YieldBase) =>
-  getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? [];
+export const getYieldProviderYieldIds = (yieldDto: EarnYieldWithProvider) =>
+  Schema.decodeSync(Schema.Array(YieldId))(
+    getYieldActionArg(yieldDto, "enter", "providerId")?.options ?? []
+  );
 
-export const isYieldValidatorSelectionRequired = (yieldDto: Yield) =>
+export const isYieldValidatorSelectionRequired = (
+  yieldDto: EarnYieldWithProvider
+) =>
   !!(
     yieldDto.mechanics.requiresValidatorSelection ||
     isYieldActionArgRequired(yieldDto, "enter", "validatorAddress") ||
@@ -558,10 +565,10 @@ const zeroRewardRateYieldIdWhitelist = new Set<string>([
 ]);
 
 export const isNonZeroRewardRateYield = (
-  yieldDto: Pick<Yield, "id" | "rewardRate">
+  yieldDto: Pick<EarnYieldWithProvider, "id" | "rewardRate">
 ) =>
   (yieldDto.rewardRate?.total ?? 0) > 0 ||
   zeroRewardRateYieldIdWhitelist.has(yieldDto.id);
 
-export const isERC4626 = (yieldDto: Yield) =>
+export const isERC4626 = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.metadata.supportedStandards?.includes("ERC4626") ?? false;

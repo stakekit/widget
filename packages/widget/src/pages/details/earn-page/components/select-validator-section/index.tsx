@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import { SelectValidator } from "../../../../../components/molecules/select-validator";
 import {
   isYieldActionArgRequired,
@@ -25,45 +24,43 @@ export const SelectValidatorSection = () => {
     onLoadMoreValidators,
   } = useSelectValidator();
 
-  const validators = validatorsData.orDefault([]);
+  const validators = validatorsData ?? [];
 
-  return Maybe.fromRecord({ selectedStake })
-    .filter((val) => isYieldValidatorSelectionRequired(val.selectedStake))
-    .map((val) => {
-      const selectedValidatorsArr = [...selectedValidators.values()];
+  if (!selectedStake || !isYieldValidatorSelectionRequired(selectedStake)) {
+    return null;
+  }
+  const selectedValidatorsArr = [...selectedValidators.values()];
 
-      const multiSelect = isYieldActionArgRequired(
-        val.selectedStake,
-        "enter",
-        "validatorAddresses"
-      );
+  const multiSelect = isYieldActionArgRequired(
+    selectedStake,
+    "enter",
+    "validatorAddresses"
+  );
 
-      return (
-        <SelectValidator
-          trigger={
-            <SelectValidatorTrigger
-              onRemoveValidator={onRemoveValidator}
-              selectedValidatorsArr={selectedValidatorsArr}
-              multiSelect={multiSelect}
-              selectedStake={val.selectedStake}
-            />
-          }
-          selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
+  return (
+    <SelectValidator
+      trigger={
+        <SelectValidatorTrigger
+          onRemoveValidator={onRemoveValidator}
+          selectedValidatorsArr={selectedValidatorsArr}
           multiSelect={multiSelect}
-          selectedStake={val.selectedStake}
-          onItemClick={onItemClick}
-          onViewMoreClick={onViewMoreClick}
-          onClose={onClose}
-          onOpen={onOpen}
-          onSearch={onValidatorSearch}
-          searchValue={validatorSearch}
-          isLoading={isLoading}
-          validators={validators}
-          hasMore={hasMoreValidators}
-          isLoadingMore={isLoadingMoreValidators}
-          onLoadMore={onLoadMoreValidators}
+          selectedStake={selectedStake}
         />
-      );
-    })
-    .extractNullable();
+      }
+      selectedValidators={new Set(selectedValidatorsArr.map((v) => v.key))}
+      multiSelect={multiSelect}
+      selectedStake={selectedStake}
+      onItemClick={onItemClick}
+      onViewMoreClick={onViewMoreClick}
+      onClose={onClose}
+      onOpen={onOpen}
+      onSearch={onValidatorSearch}
+      searchValue={validatorSearch}
+      isLoading={isLoading}
+      validators={validators}
+      hasMore={hasMoreValidators}
+      isLoadingMore={isLoadingMoreValidators}
+      onLoadMore={onLoadMoreValidators}
+    />
+  );
 };

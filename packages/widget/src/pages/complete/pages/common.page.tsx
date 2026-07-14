@@ -1,5 +1,5 @@
+import { capitalize, toLowerCase } from "effect/String";
 import { motion } from "motion/react";
-import { Just, Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
@@ -8,14 +8,14 @@ import { Image } from "../../../components/atoms/image";
 import { TokenIcon } from "../../../components/atoms/token-icon";
 import { Heading } from "../../../components/atoms/typography/heading";
 import { Text } from "../../../components/atoms/typography/text";
+import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
-import type { TokenDto, YieldTokenDto } from "../../../domain/types/tokens";
+
 import {
   type ExtendedYieldType,
   isEthenaUsdeStaking,
 } from "../../../domain/types/yields";
 import { AnimationPage } from "../../../navigation/containers/animation-page";
-import { capitalizeFirstLowerRest } from "../../../utils/text";
 import { PageContainer } from "../../components/page-container";
 import { PageCtaButton } from "../../components/page-cta";
 import { useComplete } from "../hooks/use-complete.hook";
@@ -25,18 +25,16 @@ import {
 } from "../state";
 
 type Props = {
-  token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
+  token: AppToken | null;
+  metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
   network: string;
   amount: string;
   pendingActionType?: YieldPendingActionType;
-  providersDetails: Maybe<
-    {
-      logo: string | undefined;
-      name: string | undefined;
-    }[]
-  >;
-  yieldType: Maybe<ExtendedYieldType>;
+  providersDetails: ReadonlyArray<{
+    logo: string | undefined;
+    name: string | undefined;
+  }> | null;
+  yieldType: ExtendedYieldType | null;
   integrationId: string;
 };
 
@@ -78,27 +76,25 @@ export const CompletePageComponent = ({
             alignItems="center"
             textAlign="center"
           >
-            {Maybe.fromRecord({ token, metadata })
-              .map((v) => (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.1 }}
-                  animate={{
-                    opacity: 1,
-                    scale: 1,
-                    transition: { delay: 0.2, duration: 0.3 },
-                  }}
-                >
-                  <Box my="4">
-                    <TokenIcon
-                      metadata={v.metadata}
-                      tokenLogoHw="32"
-                      tokenNetworkLogoHw="8"
-                      token={v.token}
-                    />
-                  </Box>
-                </motion.div>
-              ))
-              .extractNullable()}
+            {token && metadata ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.1 }}
+                animate={{
+                  opacity: 1,
+                  scale: 1,
+                  transition: { delay: 0.2, duration: 0.3 },
+                }}
+              >
+                <Box my="4">
+                  <TokenIcon
+                    tokenLogoHw="32"
+                    tokenNetworkLogoHw="8"
+                    token={token}
+                    metadata={metadata}
+                  />
+                </Box>
+              </motion.div>
+            ) : null}
 
             <motion.div
               initial={{ opacity: 0, translateX: "-40px" }}
@@ -116,21 +112,19 @@ export const CompletePageComponent = ({
                       ? "complete.successfully_pending_action"
                       : "complete.successfully_staked",
                   {
-                    action: yieldType.mapOrDefault(
-                      (yt) =>
-                        unstakeMatch
-                          ? t(`complete.unstake.${yt}`, {
-                              context: isEthenaUsdeStaking(integrationId)
-                                ? "ethena_usde"
-                                : undefined,
-                            })
-                          : t(`complete.stake.${yt}`, {
-                              context: isEthenaUsdeStaking(integrationId)
-                                ? "ethena_usde"
-                                : undefined,
-                            }),
-                      ""
-                    ),
+                    action: yieldType
+                      ? unstakeMatch
+                        ? t(`complete.unstake.${yieldType}`, {
+                            context: isEthenaUsdeStaking(integrationId)
+                              ? "ethena_usde"
+                              : undefined,
+                          })
+                        : t(`complete.stake.${yieldType}`, {
+                            context: isEthenaUsdeStaking(integrationId)
+                              ? "ethena_usde"
+                              : undefined,
+                          })
+                      : "",
                     amount,
                     tokenNetwork: network,
                     pendingAction: t(
@@ -149,32 +143,28 @@ export const CompletePageComponent = ({
             </motion.div>
 
             {!unstakeMatch && !pendingActionMatch
-              ? providersDetails
-                  .map((val) =>
-                    val.map((v, i) => (
-                      <Box
-                        key={i}
-                        display="flex"
-                        marginTop="2"
-                        justifyContent="center"
-                        alignItems="center"
-                        gap="1"
-                      >
-                        {v.logo && (
-                          <Image
-                            imgProps={{ borderRadius: "full" }}
-                            wrapperProps={{ hw: "5" }}
-                            src={v.logo}
-                            fallbackName={v.name || v.logo}
-                          />
-                        )}
-                        <Text variant={{ type: "muted" }}>
-                          {t("complete.via", { providerName: v.name })}
-                        </Text>
-                      </Box>
-                    ))
-                  )
-                  .extractNullable()
+              ? providersDetails?.map((v, i) => (
+                  <Box
+                    key={i}
+                    display="flex"
+                    marginTop="2"
+                    justifyContent="center"
+                    alignItems="center"
+                    gap="1"
+                  >
+                    {v.logo && (
+                      <Image
+                        imgProps={{ borderRadius: "full" }}
+                        wrapperProps={{ hw: "5" }}
+                        src={v.logo}
+                        fallbackName={v.name || v.logo}
+                      />
+                    )}
+                    <Text variant={{ type: "muted" }}>
+                      {t("complete.via", { providerName: v.name })}
+                    </Text>
+                  </Box>
+                ))
               : null}
 
             {urls.map((val) => (
@@ -197,20 +187,18 @@ export const CompletePageComponent = ({
                 </Box>
                 <Text variant={{ type: "muted" }}>
                   {t("complete.view_transaction", {
-                    type: Just(val.type)
-                      .map(
-                        (v) =>
-                          t(
-                            `steps.tx_type.${v}` as never,
-                            {
-                              context: isEthenaUsdeStaking(integrationId)
-                                ? "ETHENA_USDE"
-                                : undefined,
-                            } as never
-                          ) as unknown as string
+                    type: capitalize(
+                      toLowerCase(
+                        t(
+                          `steps.tx_type.${val.type}` as never,
+                          {
+                            context: isEthenaUsdeStaking(integrationId)
+                              ? "ETHENA_USDE"
+                              : undefined,
+                          } as never
+                        ) as unknown as string
                       )
-                      .map(capitalizeFirstLowerRest)
-                      .extract(),
+                    ),
                   })}
                 </Text>
               </Box>

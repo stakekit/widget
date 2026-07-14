@@ -5,7 +5,6 @@ import { GlobalModals } from "./components/molecules/global-modals";
 import { Header } from "./components/molecules/header";
 import { useDetailsMatch } from "./hooks/navigation/use-details-match";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
-import { useInitParams } from "./hooks/use-init-params";
 import { usePrevious } from "./hooks/use-previous";
 import { useSavedRef } from "./hooks/use-saved-ref";
 import { useUnderMaintenance } from "./hooks/use-under-maintenance";
@@ -33,9 +32,13 @@ import { ActivityStepsPage } from "./pages/steps/pages/activity-steps.page";
 import { PendingStepsPage } from "./pages/steps/pages/pending-steps.page";
 import { UnstakeStepsPage } from "./pages/steps/pages/unstake-steps.page";
 import { useSKLocation } from "./providers/location";
-import { useSKWallet } from "./providers/sk-wallet";
+import { useSettings } from "./providers/settings";
+import { useSKWallet } from "./providers/wallet/react/use-wallet";
+import {
+  WalletInitParamsKey,
+  walletInitParamsAtom,
+} from "./providers/wallet/wagmi/initialization-params";
 import { container } from "./style.css";
-import { MaybeWindow } from "./utils/maybe-window";
 
 export const Widget = () => {
   const underMaintenance = useUnderMaintenance();
@@ -61,20 +64,29 @@ export const Widget = () => {
       ((prevChain && chain !== prevChain) ||
         (prevAddress && address !== prevAddress))
     ) {
-      MaybeWindow.ifJust((w) => {
-        const url = new URL(w.location.href);
-        const newUrl = new URL(w.location.origin);
-        if (url.searchParams.has("embed")) {
-          newUrl.searchParams.set("embed", "true");
-        }
+      const url = new URL(window.location.href);
+      const newUrl = new URL(window.location.origin);
+      if (url.searchParams.has("embed")) {
+        newUrl.searchParams.set("embed", "true");
+      }
 
-        w.history.pushState({}, w.document.title, newUrl.href);
-        navigateRef.current("/", { replace: true });
-      });
+      window.history.pushState({}, window.document.title, newUrl.href);
+      navigateRef.current("/", { replace: true });
     }
   }, [chain, address, pathnameRef, navigateRef, prevChain, prevAddress]);
 
-  const initTab = useInitParams().data?.tab;
+  const { externalProviders } = useSettings();
+  const initParams = AsyncResult.getOrElse(
+    useAtomValue(
+      walletInitParamsAtom(
+        new WalletInitParamsKey({
+          externalProviderInitToken: externalProviders?.initToken ?? null,
+        })
+      )
+    ),
+    () => null
+  );
+  const initTab = initParams?.tab;
 
   useEffect(() => {
     if (!initTab) return;
@@ -181,3 +193,6 @@ export const Widget = () => {
     </>
   );
 };
+
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";

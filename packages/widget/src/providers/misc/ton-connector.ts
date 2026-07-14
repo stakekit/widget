@@ -9,8 +9,7 @@ import {
   toUserFriendlyAddress,
   type Wallet,
 } from "@tonconnect/ui";
-import { Either, EitherAsync } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Effect, Schema, Stream } from "effect";
 import type { Address, Chain } from "viem";
 import { createConnector } from "wagmi";
 import { ton } from "../../domain/types/chains/misc";
@@ -58,32 +57,36 @@ const createTonConnector = (
       name: "TonConnect",
       type: configMeta.type,
       signTransaction: (tx: string) =>
-        EitherAsync(async ({ throwE, liftEither }) => {
+        Effect.gen(function* () {
           if (!connectedWallet) {
-            return throwE(new Error("No wallet connected"));
+            return yield* Effect.fail(new Error("No wallet connected"));
           }
 
-          const parsedTx = await liftEither(
-            Either.encase(() => JSON.parse(tx)).chain((val) =>
-              unsignedTonTransactionTonConnectCodec
-                .decode(val)
-                .mapLeft((e) => new Error(e))
-            )
-          ).then(({ message }) =>
-            loadMessageRelaxed(Cell.fromBase64(message).beginParse())
-          );
+          const { message } = yield* Schema.decodeEffect(
+            Schema.fromJsonString(unsignedTonTransactionTonConnectCodec)
+          )(tx).pipe(Effect.mapError((error) => new Error(error.message)));
+          const parsedTx = yield* Effect.try({
+            try: () =>
+              loadMessageRelaxed(Cell.fromBase64(message).beginParse()),
+            catch: (error) => new Error(String(error)),
+          });
 
           const info = parsedTx.info as CommonMessageInfoRelaxedInternal;
 
-          const result = await tonconnectUI.sendTransaction({
-            messages: [
-              {
-                address: info.dest.toString(),
-                amount: info.value.coins.toString(),
-                payload: parsedTx.body.toBoc().toString("base64"),
-              },
-            ],
-            validUntil: Date.now() + 1000 * 60 * 60 * 24,
+          const result = yield* Effect.tryPromise({
+            try: () =>
+              tonconnectUI.sendTransaction({
+                messages: [
+                  {
+                    address: info.dest.toString(),
+                    amount: info.value.coins.toString(),
+                    payload: parsedTx.body.toBoc().toString("base64"),
+                  },
+                ],
+                validUntil: Date.now() + 1000 * 60 * 60 * 24,
+              }),
+            catch: (error) =>
+              error instanceof Error ? error : new Error(String(error)),
           });
 
           const externalMessageCell = Cell.fromBase64(result.boc);
@@ -169,7 +172,7 @@ const createTonConnector = (
         config.emitter.emit("disconnect");
       },
       getProvider: async () => ({}),
-      $filteredChains: new BehaviorSubject<Chain[]>([ton]).asObservable(),
+      $filteredChains: Stream.succeed<Chain[]>([ton]),
     };
   });
 

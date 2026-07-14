@@ -1,8 +1,13 @@
+import { Array as EArray, Option } from "effect";
 import type { ComponentProps } from "react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import type { Validator, ValidatorKey } from "../../../domain/types/validators";
-import type { Yield } from "../../../domain/types/yields";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { ValidatorKey } from "../../../domain/types/validators";
+
 import { vars } from "../../../styles/theme/contract.css";
 import {
   getRewardRateFormatted,
@@ -31,7 +36,7 @@ import {
   validatorVirtuosoContainer,
 } from "./styles.css";
 
-export type GroupedItem = { items: Validator[]; label: string };
+export type GroupedItem = { items: EarnValidator[]; label: string };
 
 export const SelectValidatorList = ({
   multiSelect,
@@ -45,10 +50,10 @@ export const SelectValidatorList = ({
 }: {
   multiSelect: boolean;
   selectedValidators: Set<ValidatorKey>;
-  onItemClick: (item: Validator) => void;
+  onItemClick: (item: EarnValidator) => void;
   onViewMoreClick: () => void;
-  selectedStake: Yield;
-  tableData: Validator[];
+  selectedStake: EarnYieldWithProvider;
+  tableData: EarnValidator[];
   groupedItems: GroupedItem[];
   groupCounts: number[];
 }) => {
@@ -61,9 +66,12 @@ export const SelectValidatorList = ({
       groupCounts={groupCounts}
       data-rk="select-validator-list"
       groupContent={(index) => {
+        const group = EArray.get(groupedItems, index);
+
         if (
-          groupedItems[index].label === "view_more" ||
-          !groupedItems[index].items.length
+          Option.isNone(group) ||
+          group.value.label === "view_more" ||
+          !group.value.items.length
         ) {
           return null;
         }
@@ -74,7 +82,7 @@ export const SelectValidatorList = ({
               className={groupLabel}
               variant={{ weight: "bold", type: "muted", size: "small" }}
             >
-              {groupedItems[index].label}
+              {group.value.label}
             </Text>
           </Box>
         );
@@ -94,7 +102,11 @@ export const SelectValidatorList = ({
           );
         }
 
-        const item = tableData[index];
+        const itemOption = EArray.get(tableData, index);
+
+        if (Option.isNone(itemOption)) return null;
+
+        const item = itemOption.value;
 
         const isPreferred = item.preferred;
 

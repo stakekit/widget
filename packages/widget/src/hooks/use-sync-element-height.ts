@@ -1,3 +1,4 @@
+import { Array as EArray, Option } from "effect";
 import { useEffect, useRef } from "react";
 import { useSavedRef } from "./use-saved-ref";
 
@@ -11,7 +12,9 @@ export const useSyncElementHeight = (
     if (!containerRef.current) return;
 
     const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
+      const entry = EArray.head(entries).pipe(Option.getOrUndefined);
+
+      if (!entry) return;
 
       setCurrentHeightRef.current(entry.target.clientHeight);
     });

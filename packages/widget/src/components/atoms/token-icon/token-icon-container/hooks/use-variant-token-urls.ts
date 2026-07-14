@@ -1,15 +1,11 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { config } from "../../../../../config";
-import type {
-  TokenDto,
-  YieldTokenDto,
-} from "../../../../../domain/types/tokens";
+import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import type { YieldMetadata } from "../../../../../domain/types/yields";
 import { useSettings } from "../../../../../providers/settings";
 
 export const useVariantTokenUrls = (
-  token: TokenDto | YieldTokenDto,
+  token: AppToken,
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">
 ): {
   mainUrl: string | undefined;
@@ -21,12 +17,11 @@ export const useVariantTokenUrls = (
 
   return useMemo(() => {
     if (metadata) {
-      const mainUrl = Maybe.fromFalsy(variant === "zerion")
-        .filter(() =>
-          skETHIconUrlsSuffix.some((v) => metadata.logoURI.endsWith(v))
-        )
-        .map(() => zerionETHIcon)
-        .orDefault(metadata.logoURI);
+      const mainUrl =
+        variant === "zerion" &&
+        skETHIconUrlsSuffix.some((suffix) => metadata.logoURI.endsWith(suffix))
+          ? zerionETHIcon
+          : metadata.logoURI;
 
       return {
         mainUrl,
@@ -36,41 +31,42 @@ export const useVariantTokenUrls = (
       };
     }
 
-    const tokenMappingResult = Maybe.fromNullable(tokenIconMapping)
-      .chainNullable((mapping) => {
-        if (typeof mapping === "function") {
-          return mapping(token as Parameters<typeof mapping>[0]);
-        }
+    const mappedUrl = tokenIconMapping
+      ? (() => {
+          const mapping = tokenIconMapping;
+          if (typeof mapping === "function") {
+            return mapping(token as Parameters<typeof mapping>[0]);
+          }
 
-        return mapping[token.symbol];
-      })
-      .map((url) => ({
-        mainUrl: url,
-        fallbackUrl: url,
+          return mapping[token.symbol];
+        })()
+      : null;
+
+    if (mappedUrl) {
+      return {
+        mainUrl: mappedUrl,
+        fallbackUrl: mappedUrl,
         name: token.name,
         providerIcon: undefined,
-      }))
-      .extractNullable();
-
-    if (tokenMappingResult) {
-      return tokenMappingResult;
+      };
     }
 
-    const mainUrl = Maybe.fromFalsy(variant === "zerion")
-      .map(() => {
-        /**
-         * Use Zerion's token icons
-         */
-        if (token.address && token.symbol === "MATIC") {
-          return zerionMATICIcon(token.address);
-        }
+    const mainUrl =
+      variant === "zerion"
+        ? (() => {
+            /**
+             * Use Zerion's token icons
+             */
+            if (token.address && token.symbol === "MATIC") {
+              return zerionMATICIcon(token.address);
+            }
 
-        if (token.symbol === "ETH") {
-          return zerionETHIcon;
-        }
-        return token.logoURI;
-      })
-      .orDefault(token.logoURI);
+            if (token.symbol === "ETH") {
+              return zerionETHIcon;
+            }
+            return token.logoURI;
+          })()
+        : token.logoURI;
 
     return {
       mainUrl,

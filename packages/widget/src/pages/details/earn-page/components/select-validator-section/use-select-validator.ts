@@ -1,4 +1,5 @@
-import type { Validator } from "../../../../../domain/types/validators";
+import type { EarnValidator } from "../../../../../domain/schema/earn-models";
+
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
 import { useEarnPageContext } from "../../state/earn-page-context";
 
@@ -26,7 +27,7 @@ export const useSelectValidator = () => {
   const onClose = () => trackEvent("selectValidatorModalClosed");
   const onOpen = () => trackEvent("selectValidatorModalOpened");
 
-  const onItemClick = (item: Validator) => {
+  const onItemClick = (item: EarnValidator) => {
     trackEvent("validatorSelected", {
       validatorName: item.name,
       validatorAddress: item.address,
@@ -34,7 +35,7 @@ export const useSelectValidator = () => {
     onValidatorSelect(item);
   };
 
-  const onRemoveValidator = (item: Validator) => {
+  const onRemoveValidator = (item: EarnValidator) => {
     trackEvent("validatorRemoved", {
       validatorName: item.name,
       validatorAddress: item.address,

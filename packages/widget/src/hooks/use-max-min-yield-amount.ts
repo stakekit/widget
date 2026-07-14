@@ -1,15 +1,15 @@
 import BigNumber from "bignumber.js";
-import type { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import { getMaxAmount } from "../domain";
+import type { EarnYieldWithProvider } from "../domain/schema/earn-models";
 import type { PositionsData } from "../domain/types/positions";
 import { getMinStakeAmount, getMinUnstakeAmount } from "../domain/types/stake";
-import { getYieldActionArg, type Yield } from "../domain/types/yields";
+import { getYieldActionArg } from "../domain/types/yields";
 import { useForceMaxAmount } from "./use-force-max-amount";
 
 type Args = {
-  yieldOpportunity: Maybe<Yield>;
-  availableAmount: Maybe<BigNumber>;
+  yieldOpportunity: EarnYieldWithProvider | null;
+  availableAmount: BigNumber | null;
 } & (
   | { type: "enter"; positionsData: PositionsData; pricePerShare?: never }
   | { type: "exit"; positionsData?: never; pricePerShare: string | null }
@@ -32,12 +32,12 @@ export const useMaxMinYieldAmount = ({
       isForceMax
         ? availableAmount
         : yieldOpportunity
-            .chainNullable((y) =>
+          ? new BigNumber(
               type === "enter"
-                ? getMinStakeAmount(y, positionsData)
-                : getMinUnstakeAmount(y, pricePerShare)
+                ? getMinStakeAmount(yieldOpportunity, positionsData)
+                : getMinUnstakeAmount(yieldOpportunity, pricePerShare)
             )
-            .map((a) => new BigNumber(a)),
+          : null,
     [
       availableAmount,
       isForceMax,
@@ -51,16 +51,19 @@ export const useMaxMinYieldAmount = ({
   const maxIntegrationAmount = useMemo(() => {
     return isForceMax
       ? availableAmount
-      : yieldOpportunity
-          .chainNullable((y) => getYieldActionArg(y, type, "amount")?.maximum)
-          .map((a) => new BigNumber(a))
-          .filter((v) => v.isGreaterThan(0));
+      : (() => {
+          const maximum = yieldOpportunity
+            ? getYieldActionArg(yieldOpportunity, type, "amount")?.maximum
+            : null;
+          const amount = maximum == null ? null : new BigNumber(maximum);
+          return amount?.isGreaterThan(0) ? amount : null;
+        })();
   }, [availableAmount, isForceMax, type, yieldOpportunity]);
 
   const maxEnterOrExitAmount = useMemo(
     () =>
       getMaxAmount({
-        availableAmount: availableAmount.orDefault(new BigNumber(0)),
+        availableAmount: availableAmount ?? new BigNumber(0),
         gasEstimateTotal: new BigNumber(0),
         integrationMaxLimit: maxIntegrationAmount,
       }),
@@ -68,7 +71,7 @@ export const useMaxMinYieldAmount = ({
   );
 
   const minEnterOrExitAmount = useMemo(
-    () => minIntegrationAmount.orDefault(new BigNumber(0)),
+    () => minIntegrationAmount ?? new BigNumber(0),
     [minIntegrationAmount]
   );
 

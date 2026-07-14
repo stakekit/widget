@@ -4,26 +4,22 @@ import {
   useAtomRefresh,
   useAtomValue,
 } from "@effect/atom-react";
-import { Data, Duration, Effect, Option, Schema, Stream } from "effect";
+import { Data, Duration, Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  valueEqualAtomFamily,
-  withApiResourcePolicy,
-} from "../../atoms/api-resource";
+import { withApiResourcePolicy } from "../../atoms/api-resource";
 import { getPullResultItems, paginatedApiStream } from "../../atoms/pagination";
-import { ActivityActionsPage } from "../../domain/schema/activity-models";
-import { WalletAddress } from "../../domain/schema/identifiers";
-import { Network } from "../../domain/schema/wallet-models";
+import type { WalletAddress } from "../../domain/schema/identifiers";
+import type { Network } from "../../domain/schema/network-model";
 import { getActionValidatorAddresses } from "../../domain/types/action";
 import {
   type ActivityFilter,
   activityFilterCategories,
 } from "../../pages/details/activity-page/activity-filters";
 import type { ActivityFilterOption } from "../../pages/details/activity-page/hooks/use-activity-filters";
-import { StakeKitApiService } from "../../providers/api/api-client";
-import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
-import { useSKWallet } from "../../providers/sk-wallet";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import { widgetAtomRuntime } from "../../providers/effect-atom-runtime/widget-runtime";
+import { useSKWallet } from "../../providers/wallet/react/use-wallet";
 import {
   ActivityActionsKey,
   getActivityActionsRequestParams,
@@ -38,15 +34,15 @@ class ActivityActionsError extends Data.TaggedError("ActivityActionsError")<{
   readonly cause: unknown;
 }> {}
 
-const activityTotalAtom = valueEqualAtomFamily((_key: ActivityActionsKey) =>
+const activityTotalAtom = Atom.family((_key: ActivityActionsKey) =>
   Atom.make<number | null>(null)
 );
-const activityHasNextPageAtom = valueEqualAtomFamily(
-  (_key: ActivityActionsKey) => Atom.make(false)
+const activityHasNextPageAtom = Atom.family((_key: ActivityActionsKey) =>
+  Atom.make(false)
 );
 
 const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
-  stakeKitApiRuntime.pull(
+  widgetAtomRuntime.pull(
     (context) => {
       if (!key.enabled || !key.address || !key.network) return Stream.empty;
       const address = key.address;
@@ -56,17 +52,15 @@ const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
         fetchPage: (offset) =>
           Effect.gen(function* () {
             const api = yield* StakeKitApiService;
-            const response = yield* api.yield.ActionsControllerGetActions({
-              params: getActivityActionsRequestParams({
+            const page = yield* api.yield.getActivityActions(
+              getActivityActionsRequestParams({
                 address,
                 filter: key.filter,
                 limit: PAGE_SIZE,
                 network,
                 offset,
-              }),
-            });
-            const page =
-              yield* Schema.decodeUnknownEffect(ActivityActionsPage)(response);
+              })
+            );
             context.set(activityTotalAtom(key), page.total);
             context.set(
               activityHasNextPageAtom(key),
@@ -79,10 +73,7 @@ const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
                   const yieldResult = yield* context
                     .result(
                       yieldOpportunityAtom(
-                        new YieldOpportunityKey({
-                          decodeIssue: null,
-                          yieldId: action.yieldId,
-                        })
+                        new YieldOpportunityKey({ yieldId: action.yieldId })
                       )
                     )
                     .pipe(Effect.option);
@@ -112,75 +103,60 @@ const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
     { initialValue: [] }
   );
 
-const activityActionsPullAtom = valueEqualAtomFamily(
-  makeActivityActionsPullAtom
-);
+const activityActionsPullAtom = Atom.family(makeActivityActionsPullAtom);
 
 class ActivityFilterOptionsKey extends Data.Class<{
   readonly address: typeof WalletAddress.Type | null;
   readonly network: Network | null;
 }> {}
 
-const activityFilterOptionsAtom = valueEqualAtomFamily(
-  (key: ActivityFilterOptionsKey) =>
-    stakeKitApiRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          if (!key.address || !key.network) return [];
+const activityFilterOptionsAtom = Atom.family((key: ActivityFilterOptionsKey) =>
+  widgetAtomRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (!key.address || !key.network) return [];
 
-          const api = yield* StakeKitApiService;
-          const count = (filter: ActivityFilter) =>
-            api.yield
-              .ActionsControllerGetActions({
-                params: getActivityActionsRequestParams({
-                  address: key.address!,
-                  filter,
-                  limit: COUNT_PAGE_SIZE,
-                  network: key.network!,
-                  offset: 0,
-                }),
+        const api = yield* StakeKitApiService;
+        const count = (filter: ActivityFilter) =>
+          api.yield
+            .getActivityActions(
+              getActivityActionsRequestParams({
+                address: key.address!,
+                filter,
+                limit: COUNT_PAGE_SIZE,
+                network: key.network!,
+                offset: 0,
               })
-              .pipe(
-                Effect.flatMap((response) =>
-                  Schema.decodeUnknownEffect(ActivityActionsPage)(response)
-                ),
-                Effect.map((page) => page.total)
-              );
-          const allCount = yield* count("all");
+            )
+            .pipe(Effect.map((page) => page.total));
+        const allCount = yield* count("all");
 
-          if (allCount <= 0) return [];
+        if (allCount <= 0) return [];
 
-          const categoryCounts = yield* Effect.forEach(
-            activityFilterCategories,
-            (filter) =>
-              count(filter).pipe(Effect.map((count) => ({ filter, count }))),
-            { concurrency: 3 }
-          );
-          const visible = categoryCounts.filter((item) => item.count > 0);
+        const categoryCounts = yield* Effect.forEach(
+          activityFilterCategories,
+          (filter) =>
+            count(filter).pipe(Effect.map((count) => ({ filter, count }))),
+          { concurrency: 3 }
+        );
+        const visible = categoryCounts.filter((item) => item.count > 0);
 
-          return visible.length > 0
-            ? [{ filter: "all" as const, count: allCount }, ...visible]
-            : [];
-        }).pipe(Effect.mapError((cause) => new ActivityActionsError({ cause })))
-      )
-      .pipe(
-        withApiResourcePolicy({
-          idleTTL: Duration.minutes(5),
-          staleTime: Duration.minutes(1),
-          revalidateOnMount: true,
-        })
-      )
+        return visible.length > 0
+          ? [{ filter: "all" as const, count: allCount }, ...visible]
+          : [];
+      }).pipe(Effect.mapError((cause) => new ActivityActionsError({ cause })))
+    )
+    .pipe(
+      withApiResourcePolicy({
+        idleTTL: Duration.minutes(5),
+        staleTime: Duration.minutes(1),
+        revalidateOnMount: true,
+      })
+    )
 );
 
 const useActivityKeyValues = () => {
-  const { address: rawAddress, network: rawNetwork } = useSKWallet();
-  const address = rawAddress
-    ? Schema.decodeUnknownSync(WalletAddress)(rawAddress)
-    : null;
-  const network = rawNetwork
-    ? Schema.decodeUnknownSync(Network)(rawNetwork)
-    : null;
-
+  const { address, network } = useSKWallet();
   return { address, network };
 };
 

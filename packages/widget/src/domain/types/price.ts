@@ -1,7 +1,5 @@
 import BigNumber from "bignumber.js";
-import { Prices } from "../schema/health-price-models";
-
-export { Prices };
+import type { Prices } from "../schema/health-price-models";
 
 type PriceLookupToken = {
   readonly symbol: string;
@@ -26,22 +24,14 @@ export const getTokenPriceInUSD = ({
 
   if (pricePerShare && baseToken) {
     const baseTokenPrice = new BigNumber(
-      prices
-        .getByToken(baseToken)
-        .chainNullable((v) => v.price)
-        .orDefault(0)
+      prices.getByToken(baseToken)?.price ?? 0
     );
     const pricePerShareBN = BigNumber(pricePerShare);
 
     return amountBN.times(baseTokenPrice).times(pricePerShareBN);
   }
 
-  const tokenPrice = new BigNumber(
-    prices
-      .getByToken(token)
-      .chainNullable((v) => v.price)
-      .orDefault(0)
-  );
+  const tokenPrice = new BigNumber(prices.getByToken(token)?.price ?? 0);
 
   return amountBN.times(tokenPrice);
 };

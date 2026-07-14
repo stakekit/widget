@@ -29,7 +29,8 @@ import { TokenIcon } from "../../components/atoms/token-icon";
 import { Text } from "../../components/atoms/typography/text";
 import * as AmountToggle from "../../components/molecules/amount-toggle";
 import { ConnectButton } from "../../components/molecules/connect-button";
-import type { TokenDto } from "../../domain/types/tokens";
+import type { AppToken } from "../../domain/schema/legacy-models";
+
 import { useTrackEvent } from "../../hooks/tracking/use-track-event";
 import { useTrackPage } from "../../hooks/tracking/use-track-page";
 import { AnimationPage } from "../../navigation/containers/animation-page";
@@ -49,7 +50,7 @@ import { getBorrowDetailsModel, getBorrowMarketPairLabel } from "./model";
 import * as styles from "./styles.css";
 import { useBorrowDashboard } from "./use-borrow-dashboard";
 
-type DashboardBorrowToken = TokenDto & { network: BorrowNetwork };
+type DashboardBorrowToken = AppToken & { network: BorrowNetwork };
 
 type BorrowMarketGroup = {
   readonly bestRate: number;

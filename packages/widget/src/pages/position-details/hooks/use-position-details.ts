@@ -1,14 +1,15 @@
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import type { AppToken } from "../../../domain/schema/legacy-models";
 import { getKycProviderName } from "../../../domain/types/kyc";
 import {
   getRewardRateBreakdown,
   type YieldRewardRateDto,
 } from "../../../domain/types/reward-rate";
 import { isForceMaxAmount } from "../../../domain/types/stake";
-import type { TokenDto } from "../../../domain/types/tokens";
+
 import {
   getYieldActionArg,
   isYieldValidatorSelectionRequired,
@@ -41,6 +42,7 @@ export const usePositionDetails = () => {
     integrationData,
     yieldOpportunity,
     positionBalances,
+    positionBalancesResult,
     reducedStakedOrLiquidBalance,
     positionBalancesByType,
     positionBalancePrices,
@@ -57,31 +59,43 @@ export const usePositionDetails = () => {
 
   const stakeExitRequestDto = useStakeExitRequestDto();
   const setExitStakeRequest = useSetExitStakeRequest();
-  const yieldKycGate = useYieldKycGate({ yieldDto: integrationData });
+  const yieldKycGate = useYieldKycGate({
+    yieldDto: integrationData,
+  });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
   const kycProviderName = integrationData
-    .map(getKycProviderName)
-    .extractNullable();
+    ? getKycProviderName(integrationData)
+    : null;
   const onKycStatusRefresh = () => {
     void yieldKycGate.refetch();
   };
 
   const unstakeMaxAmount = useMemo(
     () =>
-      integrationData
-        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
-        .filter((val) => !isForceMaxAmount(val))
-        .chainNullable((val) => val.maximum),
+      (() => {
+        const amount = integrationData
+          ? getYieldActionArg(integrationData, "exit", "amount")
+          : null;
+        return amount && !isForceMaxAmount(amount)
+          ? (amount.maximum ?? null)
+          : null;
+      })(),
     [integrationData]
   );
 
   const unstakeMinAmount = useMemo(
     () =>
-      integrationData
-        .chainNullable((val) => getYieldActionArg(val, "exit", "amount"))
-        .filter((val) => !isForceMaxAmount(val))
-        .map(() => minUnstakeAmount.toNumber())
-        .filter((val) => new BigNumber(val).isGreaterThan(0)),
+      (() => {
+        const amount = integrationData
+          ? getYieldActionArg(integrationData, "exit", "amount")
+          : null;
+        const minimum = minUnstakeAmount.toNumber();
+        return amount &&
+          !isForceMaxAmount(amount) &&
+          new BigNumber(minimum).isGreaterThan(0)
+          ? minimum
+          : null;
+      })(),
     [integrationData, minUnstakeAmount]
   );
 
@@ -94,24 +108,18 @@ export const usePositionDetails = () => {
     setUnstakeSubmissionError(false);
     if (kycGateIsBlocking) return;
 
-    Maybe.fromRecord({
-      stakeExitRequestDto,
-      integrationData,
-      unstakeToken,
-    }).ifJust((val) => {
-      setExitStakeRequest(
-        Maybe.of({
-          addresses: val.stakeExitRequestDto.addresses,
-          actionDto: Maybe.empty(),
-          gasFeeToken: val.stakeExitRequestDto.gasFeeToken,
-          integrationData: val.integrationData,
-          requestDto: val.stakeExitRequestDto.dto,
-          unstakeAmount,
-          unstakeToken: val.unstakeToken,
-        })
-      );
+    if (stakeExitRequestDto && integrationData && unstakeToken) {
+      setExitStakeRequest({
+        addresses: stakeExitRequestDto.addresses,
+        actionDto: null,
+        gasFeeToken: stakeExitRequestDto.gasFeeToken,
+        integrationData,
+        requestDto: stakeExitRequestDto.dto,
+        unstakeAmount,
+        unstakeToken,
+      });
       navigate(getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review");
-    });
+    }
   };
 
   const _unstakeAmountError = unstakeSubmissionError || unstakeAmountError;
@@ -120,19 +128,16 @@ export const usePositionDetails = () => {
 
   const trackEvent = useTrackEvent();
 
-  const baseToken = integrationData.map((val) => val.token);
+  const baseToken = integrationData?.token ?? null;
 
   const shouldFetchValidators = integrationData
-    .map(isYieldValidatorSelectionRequired)
-    .orDefault(false);
+    ? isYieldValidatorSelectionRequired(integrationData)
+    : false;
 
   const yieldValidators = useYieldValidators({
     enabled: shouldFetchValidators,
-    yieldId:
-      integrationData.map((val) => val.id).extractNullable() ?? undefined,
-    network:
-      integrationData.map((val) => val.token.network).extractNullable() ??
-      undefined,
+    yieldId: integrationData?.id,
+    network: integrationData?.token.network,
   });
 
   const validatorsData = shouldFetchValidators
@@ -141,27 +146,26 @@ export const usePositionDetails = () => {
 
   const providersDetails = useProvidersDetails({
     integrationData,
-    validators: positionBalances.data.map((b) => {
-      return b.type === "validators" ? b.validators : [];
-    }),
-    selectedProviderYieldId: Maybe.empty(),
+    validators:
+      positionBalances?.type === "validators"
+        ? positionBalances.validators
+        : null,
+    selectedProviderYieldId: null,
   });
 
   const personalizedRewardRate = useMemo(
     () =>
-      positionBalances.data
-        .map((balanceData) => balanceData.rewardRate)
-        .filter(hasCampaignRewardRate)
-        .extractNullable(),
-    [positionBalances.data]
+      positionBalances && hasCampaignRewardRate(positionBalances.rewardRate)
+        ? positionBalances.rewardRate
+        : null,
+    [positionBalances]
   );
 
   const fallbackRewardRate = useMemo(
     () =>
-      integrationData
-        .map((yieldData) => yieldData.rewardRate)
-        .filter(hasCampaignRewardRate)
-        .extractNullable(),
+      integrationData && hasCampaignRewardRate(integrationData.rewardRate)
+        ? integrationData.rewardRate
+        : null,
     [integrationData]
   );
 
@@ -169,7 +173,7 @@ export const usePositionDetails = () => {
   const apyCompositionShowsUpToCampaign =
     !personalizedRewardRate && !!fallbackRewardRate;
 
-  const canUnstake = integrationData.filter((d) => !!d.status.exit).isJust();
+  const canUnstake = !!integrationData?.status.exit;
 
   const onUnstakeAmountChange = (value: BigNumber) =>
     dispatch({ type: "unstake/amount/change", data: value });
@@ -177,23 +181,21 @@ export const usePositionDetails = () => {
   const unstakeFormattedAmount = useMemo(
     () =>
       reducedStakedOrLiquidBalance
-        .map((val) => val.amountUsd)
-        .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
+        ? `$${defaultFormattedNumber(reducedStakedOrLiquidBalance.amountUsd)}`
+        : "",
     [reducedStakedOrLiquidBalance]
   );
 
   const onMaxClick = () => {
+    if (!integrationData) return;
     trackEvent("positionDetailsPageMaxClicked", {
-      yieldId: integrationData.map((v) => v.id).extract(),
+      yieldId: integrationData.id,
     });
 
     dispatch({ type: "unstake/amount/max" });
   };
 
-  const unstakeAvailable = integrationData.mapOrDefault(
-    (d) => d.status.exit,
-    false
-  );
+  const unstakeAvailable = integrationData?.status.exit ?? false;
 
   const {
     onPendingActionAmountChange,
@@ -205,38 +207,36 @@ export const usePositionDetails = () => {
 
   const shareToAmountConversions = useMemo(
     () =>
-      Maybe.fromRecord({
-        integrationData,
-        positionBalancesByType,
-        baseToken,
-      }).map((v) =>
-        [...v.positionBalancesByType.values()].reduce((acc, curr) => {
-          curr
-            .filter((yb) => yb.shareAmount && yb.amount && !yb.token.isPoints)
-            .forEach((yb) => {
-              acc.set(
-                yb.token.symbol,
-                `1 ${yb.token.symbol} = ${defaultFormattedNumber(
-                  new BigNumber(yb.shareAmount ?? 0).dividedBy(
-                    new BigNumber(yb.amount ?? 0)
-                  )
-                )} ${yb.shareToken?.symbol}`
-              );
-            });
+      integrationData && positionBalancesByType && baseToken
+        ? [...positionBalancesByType.values()].reduce((acc, curr) => {
+            curr
+              .filter((yb) => yb.shareAmount && yb.amount && !yb.token.isPoints)
+              .forEach((yb) => {
+                acc.set(
+                  yb.token.symbol,
+                  `1 ${yb.token.symbol} = ${defaultFormattedNumber(
+                    new BigNumber(yb.shareAmount ?? 0).dividedBy(
+                      new BigNumber(yb.amount ?? 0)
+                    )
+                  )} ${yb.shareToken?.symbol}`
+                );
+              });
 
-          return acc;
-        }, new Map<TokenDto["symbol"], string>())
-      ),
+            return acc;
+          }, new Map<AppToken["symbol"], string>())
+        : null,
     [integrationData, positionBalancesByType, baseToken]
   );
 
   const unstakeDisabled =
-    yieldOpportunity.isLoading || !unstakeAvailable || kycGateIsBlocking;
+    AsyncResult.isInitial(yieldOpportunity) ||
+    !unstakeAvailable ||
+    kycGateIsBlocking;
 
   const isLoading =
-    positionBalances.isLoading ||
-    positionBalancePrices.isLoading ||
-    yieldOpportunity.isLoading ||
+    AsyncResult.isInitial(positionBalancesResult) ||
+    AsyncResult.isInitial(positionBalancePrices) ||
+    AsyncResult.isInitial(yieldOpportunity) ||
     yieldValidators.isLoading;
 
   return {

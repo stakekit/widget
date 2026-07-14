@@ -1,0 +1,10 @@
+id: no-unknown-decode-in-internal-composition
+valid:
+  - 'const decoded = Schema.decodeSync(WalletAddress)(address)'
+  - 'const decoded = Schema.decodeOption(YieldId)(yieldId)'
+  - 'const decoded = Schema.decodeEffect(AdditionalAddresses)(addresses)'
+invalid:
+  - 'const decoded = Schema.decodeUnknownSync(WalletAddress)(address)'
+  - 'const decoded = Schema.decodeUnknownOption(YieldId)(yieldId)'
+  - 'const decoded = Schema.decodeUnknownResult(TokenAddress)(address)'
+  - 'const decoded = Schema.decodeUnknownEffect(Command)(command)'

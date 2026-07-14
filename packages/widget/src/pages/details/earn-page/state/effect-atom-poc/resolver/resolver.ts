@@ -1,1 +1,0 @@
-export { resolveEarnView } from "./view";

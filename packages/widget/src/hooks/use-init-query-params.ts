@@ -1,15 +1,13 @@
-import { Codec, Left, Right, string } from "purify-ts";
+import { Option, Schema } from "effect";
 import { useMemo } from "react";
 import {
-  isSupportedChain,
-  type SupportedSKChains,
-} from "../domain/types/chains";
-import type { YieldPendingActionType } from "../domain/types/pending-action";
+  type WalletInitQueryParams,
+  WalletInitQueryParams as WalletInitQueryParamsSchema,
+} from "../domain/schema/wallet-models";
 import type { TokenString } from "../domain/types/tokens";
 import { useSettings } from "../providers/settings";
-import { MaybeWindow } from "../utils/maybe-window";
 
-export const useInitQueryParams = () => {
+export const useInitQueryParams = (): WalletInitQueryParams | null => {
   const { externalProviders } = useSettings();
 
   return useMemo(
@@ -21,110 +19,62 @@ export const useInitQueryParams = () => {
   );
 };
 
-const pendingActionCodec = Codec.custom<YieldPendingActionType>({
-  decode: (val) =>
-    string
-      .decode(val)
-      .chain((v) =>
-        /^[A-Z_]+$/.test(v)
-          ? Right(v as YieldPendingActionType)
-          : Left("invalid pending action")
-      ),
-  encode: (val) => val,
-});
+const decodeAccountId = (value: string | null) => {
+  if (value === null) return null;
 
-const skSupportedChainsCodec = Codec.custom<SupportedSKChains>({
-  decode: (val) =>
-    string
-      .decode(val)
-      .chain((v) => (isSupportedChain(v) ? Right(v) : Left("invalid chain"))),
-  encode: (val) => val,
-});
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
 
-const safeString = /^(?!.*\.\.)[a-zA-Z0-9-_.+]*$/;
+const getTokenNetwork = (value: string | null) => {
+  if (!value?.includes("-")) return null;
 
-const safeParamCodec = Codec.custom<string>({
-  decode: (val) =>
-    string
-      .decode(val)
-      .chain((v) =>
-        safeString.test(v) ? Right(v) : Left("invalid string value")
-      ),
-  encode: (val) => val,
-});
+  return value.split("-").slice(0, -1).join("-");
+};
 
-const yieldIdCodec = Codec.custom<string>({
-  decode: (val) =>
-    string.decode(val).chain((v) => {
-      const [network, token, ...yieldName] = v.split("-");
-
-      if (!network || !token || !yieldName.toString()) {
-        return Left("invalid yieldId format");
-      }
-
-      return Right(v);
-    }),
-  encode: (val) => val,
-});
-
-const tabCodec = Codec.custom<"earn" | "positions">({
-  decode: (val) =>
-    val === "earn" || val === "positions" ? Right(val) : Left("invalid chain"),
-  encode: (val) => val,
-});
-
-const accountIdCodec = Codec.custom<string>({
-  decode: (val) => string.decode(val).map((v) => decodeURIComponent(v)),
-  encode: (val) => val,
-});
+const decodeField = <S extends Schema.ConstraintDecoder<unknown>>(
+  schema: S,
+  value: unknown
+): S["Type"] | null =>
+  Schema.decodeUnknownOption(schema)(value).pipe(Option.getOrNull);
 
 const getAndValidateInitParams = ({
   externalProviderInitToken,
 }: {
-  externalProviderInitToken?: TokenString;
-}) =>
-  MaybeWindow.map((w) => new URL(w.location.href)).map((url) => ({
-    network: safeParamCodec
-      .decode(url.searchParams.get("network"))
-      .alt(
-        safeParamCodec.decode(url.searchParams.get("token")).chain((val) =>
-          val.includes("-")
-            ? Right(val.split("-").slice(0, -1).join("-")) // network is first part of TokenString
-            : Left("invalid TokenString")
-        )
-      )
-      .chain(skSupportedChainsCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-    token: string // Not safeParamCodec as it maybe has some extra special characters
-      .decode(url.searchParams.get("token") ?? externalProviderInitToken)
-      .toMaybe()
-      .extractNullable(),
-    yieldId: safeParamCodec
-      .decode(url.searchParams.get("yieldId"))
-      .chain(yieldIdCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-    balanceId: safeParamCodec
-      .decode(url.searchParams.get("balanceId"))
-      .toMaybe()
-      .extractNullable(),
-    validator: string // Not safeParamCodec as it maybe has ../ or ./
-      .decode(url.searchParams.get("validator"))
-      .toMaybe()
-      .extractNullable(),
-    pendingaction: safeParamCodec
-      .decode(url.searchParams.get("pendingaction"))
-      .chain(pendingActionCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-    accountId: accountIdCodec // Not safeParamCodec as it maybe has ../ or ./
-      .decode(url.searchParams.get("accountId"))
-      .toMaybe()
-      .extractNullable(),
-    tab: safeParamCodec
-      .decode(url.searchParams.get("tab"))
-      .chain(tabCodec.decode)
-      .toMaybe()
-      .extractNullable(),
-  }));
+  readonly externalProviderInitToken?: TokenString;
+}): WalletInitQueryParams | null => {
+  const url = new URL(window.location.href);
+  const token =
+    url.searchParams.get("token") ?? externalProviderInitToken ?? null;
+  const requestedNetwork = url.searchParams.get("network");
+  const network = decodeField(
+    WalletInitQueryParamsSchema.fields.network,
+    requestedNetwork ?? getTokenNetwork(token)
+  );
+
+  return {
+    accountId: decodeAccountId(url.searchParams.get("accountId")),
+    balanceId: decodeField(
+      WalletInitQueryParamsSchema.fields.balanceId,
+      url.searchParams.get("balanceId")
+    ),
+    network,
+    pendingaction: decodeField(
+      WalletInitQueryParamsSchema.fields.pendingaction,
+      url.searchParams.get("pendingaction")
+    ),
+    tab: decodeField(
+      WalletInitQueryParamsSchema.fields.tab,
+      url.searchParams.get("tab")
+    ),
+    token,
+    validator: url.searchParams.get("validator"),
+    yieldId: decodeField(
+      WalletInitQueryParamsSchema.fields.yieldId,
+      url.searchParams.get("yieldId")
+    ),
+  };
+};

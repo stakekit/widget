@@ -12,7 +12,8 @@ import { CheckSteps } from "../../../components/atoms/icons/check-steps";
 import { XIcon } from "../../../components/atoms/icons/x-icon";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
-import type { ActionDto } from "../../../domain/types/action";
+import type { YieldAction } from "../../../domain/schema/action-models";
+
 import { isEthenaUsdeStaking } from "../../../domain/types/yields";
 import type { useSteps } from "../hooks/use-steps.hook";
 import { TxStateEnum } from "../hooks/use-steps.hook";
@@ -28,7 +29,7 @@ type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
   position: "SINGLE" | "FIRST" | "LAST" | "ELSE";
   count: { current: number; total: number };
-  session: ActionDto;
+  session: YieldAction;
 };
 
 export const TxState = ({ txState, position, count, session }: Props) => {

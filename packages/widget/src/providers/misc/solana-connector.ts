@@ -10,8 +10,7 @@ import type {
   WalletDetailsParams,
   WalletList,
 } from "@stakekit/rainbowkit";
-import { Maybe } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import portoIcon from "../../assets/images/porto.svg";
@@ -102,9 +101,9 @@ const createSolanaConnector = ({
       return solanaWallet.adapter.disconnect();
     },
     getAccounts: async () => {
-      return Maybe.fromNullable(solanaWallet.adapter.publicKey?.toBase58())
-        .map((val) => [val as Address])
-        .unsafeCoerce();
+      const address = solanaWallet.adapter.publicKey?.toBase58();
+      if (!address) throw new Error("No account found");
+      return [address as Address];
     },
     switchChain: async () => solana,
     getChainId: async () => solana.id,
@@ -147,7 +146,7 @@ const createSolanaConnector = ({
       config.emitter.emit("disconnect");
     },
     getProvider: async () => ({}),
-    $filteredChains: new BehaviorSubject<Chain[]>([solana]).asObservable(),
+    $filteredChains: Stream.succeed<Chain[]>([solana]),
   }));
 
 export const getSolanaConnectors = ({

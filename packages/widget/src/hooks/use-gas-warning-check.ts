@@ -1,24 +1,16 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Data, Duration, Effect, Option, Schema } from "effect";
+import { Data, Duration, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { Maybe } from "purify-ts";
-import {
-  valueEqualAtomFamily,
-  withApiRequestError,
-  withApiResourcePolicy,
-  withResponseDecodeError,
-} from "../atoms/api-resource";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import { withApiResourcePolicy } from "../atoms/api-resource";
 import { checkGasAmount } from "../common/check-gas-amount";
-import {
-  type GasBalancesCommand,
-  GasBalancesCommand as GasBalancesCommandSchema,
-  GasTokenBalancesResponse,
-} from "../domain/schema/financial-models";
-import type { AddressesDto } from "../domain/types/addresses";
-import type { TokenDto } from "../domain/types/tokens";
-import { StakeKitApiService } from "../providers/api/api-client";
-import { stakeKitApiRuntime } from "../providers/effect-atom-runtime/stakekit-api-service";
+import type { WalletAddresses } from "../domain/schema/address-models";
+import type { GasBalancesCommand } from "../domain/schema/financial-models";
+import type { AppToken } from "../domain/schema/legacy-models";
+
+import { StakeKitApiService } from "../providers/api/api-service";
+import { widgetAtomRuntime } from "../providers/effect-atom-runtime/widget-runtime";
 
 type StakeTokenKey = {
   readonly address?: string;
@@ -33,19 +25,14 @@ class GasWarningKey extends Data.Class<{
   readonly stakeToken: StakeTokenKey | null;
 }> {}
 
-const gasWarningAtom = valueEqualAtomFamily((key: GasWarningKey) =>
-  stakeKitApiRuntime
+const gasWarningAtom = Atom.family((key: GasWarningKey) =>
+  widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
         if (!key.command || !key.gasAmount) return null;
 
         const api = yield* StakeKitApiService;
-        const response = yield* api.legacy
-          .TokenControllerGetTokenBalances({ payload: key.command })
-          .pipe(withApiRequestError("gas-balance-check"));
-        const balances = yield* Schema.decodeUnknownEffect(
-          GasTokenBalancesResponse
-        )(response).pipe(withResponseDecodeError("gas-balance-check"));
+        const balances = yield* api.legacy.getGasTokenBalances(key.command);
 
         return checkGasAmount({
           gasEstimate: new BigNumber(key.gasAmount),
@@ -71,18 +58,18 @@ const gasWarningAtom = valueEqualAtomFamily((key: GasWarningKey) =>
 
 export const useGasWarningCheck = (
   props: {
-    gasAmount: Maybe<BigNumber>;
-    gasFeeToken: TokenDto;
-    address: AddressesDto["address"];
-    additionalAddresses: AddressesDto["additionalAddresses"];
+    gasAmount: BigNumber | null;
+    gasFeeToken: AppToken;
+    address: WalletAddresses["address"];
+    additionalAddresses: WalletAddresses["additionalAddresses"];
     isStake: boolean;
   } & (
-    | { isStake: true; stakeAmount: BigNumber; stakeToken: TokenDto }
+    | { isStake: true; stakeAmount: BigNumber; stakeToken: AppToken }
     | { isStake: false }
   )
 ) => {
-  const gasAmount = props.gasAmount.extractNullable();
-  const command = Schema.decodeUnknownOption(GasBalancesCommandSchema)({
+  const gasAmount = props.gasAmount;
+  const command = {
     addresses: [
       {
         address: props.address,
@@ -95,7 +82,7 @@ export const useGasWarningCheck = (
           : {}),
       },
     ],
-  }).pipe(Option.getOrNull);
+  } satisfies GasBalancesCommand;
   const resource = gasWarningAtom(
     new GasWarningKey({
       command,

@@ -1,6 +1,5 @@
 import "@stakekit/rainbowkit/styles.css";
 import "./translation";
-import "./utils/extend-purify";
 import "./styles/theme/global.css";
 import type { ComponentProps, RefObject } from "react";
 import { createRef, useImperativeHandle, useState } from "react";

@@ -9,8 +9,11 @@ import {
   decodeBorrowForm,
   Market,
 } from "../../src/borrow";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 
-const address = "0x0000000000000000000000000000000000000001";
+const address = Schema.decodeSync(WalletAddress)(
+  "0x0000000000000000000000000000000000000001"
+);
 
 const market = Schema.decodeUnknownSync(Market)({
   id: "aave-v3-ethereum-usdc",

@@ -4,12 +4,12 @@ import {
   getRewardRateBreakdown,
   type YieldRewardRateDto,
 } from "../../src/domain/types/reward-rate";
-import { toValidator } from "../../src/domain/types/validators";
 import {
   yieldApiValidatorFixture,
   yieldApiYieldFixture,
   yieldRewardRateFixture,
 } from "../fixtures";
+import { decodeValidator } from "../utils/validators";
 
 const token = yieldApiYieldFixture().token;
 
@@ -35,14 +35,14 @@ describe("getEffectiveYieldRewardRateDetails", () => {
         selectedValidators: new Map(),
         yieldDto,
       })
-    ).toBe(rewardRate);
+    ).toBe(yieldDto.rewardRate);
   });
 
   it("uses the selected validator reward rate", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const validator = toValidator(
+    const validator = decodeValidator(
       yieldApiValidatorFixture({
         address: "validator-1",
         rewardRate: yieldRewardRateFixture({
@@ -65,7 +65,7 @@ describe("getEffectiveYieldRewardRateDetails", () => {
     const yieldDto = yieldApiYieldFixture({
       rewardRate: yieldRewardRateFixture({ total: 0.1539 }),
     });
-    const firstValidator = toValidator(
+    const firstValidator = decodeValidator(
       yieldApiValidatorFixture({
         address: "validator-1",
         rewardRate: yieldRewardRateFixture({
@@ -74,7 +74,7 @@ describe("getEffectiveYieldRewardRateDetails", () => {
         }),
       })
     );
-    const secondValidator = toValidator(
+    const secondValidator = decodeValidator(
       yieldApiValidatorFixture({
         address: "validator-2",
         rewardRate: yieldRewardRateFixture({

@@ -1,16 +1,16 @@
 import type BigNumber from "bignumber.js";
-import type { Maybe } from "purify-ts";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../domain/schema/earn-models";
+import type {
+  AppToken,
+  TronResource,
+} from "../../../../domain/schema/legacy-models";
 import type { KycGate } from "../../../../domain/types/kyc";
-import type { TokenDto } from "../../../../domain/types/tokens";
-import type { TronResourceType } from "../../../../domain/types/tron";
-import type {
-  Validator,
-  ValidatorKey,
-} from "../../../../domain/types/validators";
-import type {
-  DashboardYieldCategory,
-  Yield,
-} from "../../../../domain/types/yields";
+
+import type { ValidatorKey } from "../../../../domain/types/validators";
+import type { DashboardYieldCategory } from "../../../../domain/types/yields";
 import type { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
 import type { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import type { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -20,31 +20,31 @@ import type {
   EarnMachineStatus,
   EarnMachineView,
   EarnTokenOption,
-} from "./effect-atom-poc/types";
+} from "./atoms-state/types";
 
 export type EarnPageContextType = {
   machine: EarnMachineView;
   machineStatus: EarnMachineStatus;
   cta: PageCta;
-  selectedTokenAvailableAmount: Maybe<{
+  selectedTokenAvailableAmount: {
     symbol: string;
     shortFormattedAmount: string;
     fullFormattedAmount: string;
     amount: BigNumber;
-  }>;
+  } | null;
   formattedPrice: string;
   symbol: string;
   rewardsTokenSymbol: string;
-  selectedStakeData: Maybe<SelectedStakeData>;
-  selectedStake: Maybe<Yield>;
-  selectedProviderYieldId: Maybe<Yield["id"]>;
+  selectedStakeData: SelectedStakeData;
+  selectedStake: EarnYieldWithProvider | null;
+  selectedProviderYieldId: EarnYieldWithProvider["id"] | null;
   selectedDashboardYieldCategory: DashboardYieldCategory | null;
   availableDashboardYieldCategories: DashboardYieldCategory[];
   onDashboardYieldCategorySelect: (category: DashboardYieldCategory) => void;
-  onYieldSelect: (yieldId: string) => void;
+  onYieldSelect: (yieldId: EarnYieldWithProvider["id"]) => void;
   onTokenBalanceSelect: (tokenBalance: EarnTokenOption) => void;
   onStakeAmountChange: (value: BigNumber) => void;
-  onProviderYieldIdSelect: (yieldId: Yield["id"]) => void;
+  onProviderYieldIdSelect: (yieldId: EarnYieldWithProvider["id"]) => void;
   estimatedRewards: ReturnType<typeof useEstimatedRewards>;
   yieldType: string;
   onMaxClick: () => void;
@@ -58,9 +58,9 @@ export type EarnPageContextType = {
   kycProviderName: string | null;
   onKycStatusRefresh: () => void;
   onYieldSearch: (value: string) => void;
-  onValidatorSelect: (item: Validator) => void;
-  onValidatorRemove: (item: Validator) => void;
-  selectedValidators: Map<ValidatorKey, Validator>;
+  onValidatorSelect: (item: EarnValidator) => void;
+  onValidatorRemove: (item: EarnValidator) => void;
+  selectedValidators: Map<ValidatorKey, EarnValidator>;
   isError: boolean;
   rewardToken: ReturnType<typeof useRewardTokenDetails>;
   onSelectOpportunityClose: () => void;
@@ -69,11 +69,11 @@ export type EarnPageContextType = {
   isLedgerLiveAccountPlaceholder: boolean;
   appLoading: boolean;
   yieldOpportunityLoading: boolean;
-  selectedToken: Maybe<TokenDto>;
-  tokenBalancesData: Maybe<{
+  selectedToken: AppToken | null;
+  tokenBalancesData: {
     all: EarnTokenOption[];
     filtered: EarnTokenOption[];
-  }>;
+  };
   onTokenSearch: (value: string) => void;
   onValidatorSearch: (value: string) => void;
   validatorSearch: string;
@@ -81,8 +81,8 @@ export type EarnPageContextType = {
   providersDetails: ReturnType<typeof useProvidersDetails>;
   tokenSearch: string;
   stakeSearch: string;
-  tronResource: Maybe<TronResourceType>;
-  onTronResourceSelect: (value: TronResourceType) => void;
+  tronResource: TronResource | null;
+  onTronResourceSelect: (value: TronResource) => void;
   validation: {
     submitted: boolean;
     hasErrors: boolean;
@@ -94,14 +94,14 @@ export type EarnPageContextType = {
       stakeAmountIsZero: boolean;
     };
   };
-  pointsRewardTokens: Maybe<(TokenDto & { isPoints?: boolean })[]>;
+  pointsRewardTokens: (AppToken & { isPoints?: boolean })[] | null;
   selectTokenIsLoading: boolean;
   selectYieldIsLoading: boolean;
   selectValidatorIsLoading: boolean;
   footerIsLoading: boolean;
-  stakeMaxAmount: Maybe<number>;
-  stakeMinAmount: Maybe<number>;
-  validatorsData: Maybe<Validator[]>;
+  stakeMaxAmount: number | null;
+  stakeMinAmount: number | null;
+  validatorsData: EarnValidator[] | null;
   hasMoreValidators: boolean;
   hasMoreTokens: boolean;
   isLoadingMoreValidators: boolean;

@@ -1,4 +1,3 @@
-import { List } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
 import { ListItem } from "../../../../../components/atoms/list/list-item";
@@ -43,16 +42,13 @@ export const ActionListItem = ({
     unavailableYieldLabel,
   } = useActionListItem(action);
 
-  const providerLabel = providersDetails
-    .chain((val) =>
-      List.head(val).map((p) =>
-        t("positions.via", {
-          providerName: p.name ?? p.address,
-          count: Math.max(val.length - 1, 1),
-        })
-      )
-    )
-    .extractNullable();
+  const firstProvider = providersDetails?.[0];
+  const providerLabel = firstProvider
+    ? t("positions.via", {
+        providerName: firstProvider.name ?? firstProvider.address,
+        count: Math.max((providersDetails?.length ?? 0) - 1, 1),
+      })
+    : null;
 
   return (
     <Box py="1" width="full">
@@ -122,14 +118,12 @@ export const ActionListItem = ({
             gap="3"
             flexShrink={0}
           >
-            {amount
-              .map((val) => (
-                <Text className={isPositive ? amountPositive : amountNeutral}>
-                  {amountSign}
-                  {val} {tokenSymbol}
-                </Text>
-              ))
-              .extractNullable()}
+            {amount ? (
+              <Text className={isPositive ? amountPositive : amountNeutral}>
+                {amountSign}
+                {amount} {tokenSymbol}
+              </Text>
+            ) : null}
 
             <Box className={timeColumn}>
               <Text

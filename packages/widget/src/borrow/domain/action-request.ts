@@ -54,12 +54,10 @@ export const ActionRequest = Schema.Struct({
 });
 export type ActionRequest = typeof ActionRequest.Type;
 
-const makeActionRequest = Schema.decodeUnknownSync(ActionRequest);
-
 type BaseActionRequestInput = {
-  readonly address: WalletAddress | string;
-  readonly integrationId: IntegrationId | string;
-  readonly marketId: MarketId | string;
+  readonly address: WalletAddress;
+  readonly integrationId: IntegrationId;
+  readonly marketId: MarketId;
 };
 
 type RepayActionRequestInput = BaseActionRequestInput &
@@ -73,27 +71,27 @@ type RepayActionRequestInput = BaseActionRequestInput &
         readonly repayAll: true;
       }
   ) & {
-    readonly tokenAddress?: TokenAddress | string;
+    readonly tokenAddress?: TokenAddress;
   };
 
 type WithdrawActionRequestInput = BaseActionRequestInput & {
   readonly amount: AmountValue;
-  readonly tokenAddress?: TokenAddress | string;
+  readonly tokenAddress?: TokenAddress;
 };
 
 type CollateralToggleActionRequestInput = BaseActionRequestInput & {
   readonly action: "enableCollateral" | "disableCollateral";
-  readonly tokenAddress?: TokenAddress | string;
+  readonly tokenAddress?: TokenAddress;
 };
 
 const toAmount = (amount: AmountValue) => new BigNumber(amount);
 
 const toActionAmount = (amount: AmountValue) => toAmount(amount).toString(10);
 
-const tokenAddressArg = (tokenAddress: string | undefined) =>
+const tokenAddressArg = (tokenAddress: TokenAddress | undefined) =>
   tokenAddress ? { tokenAddress } : {};
 
-const collateralTokenAddressArg = (tokenAddress: string | undefined) =>
+const collateralTokenAddressArg = (tokenAddress: TokenAddress | undefined) =>
   tokenAddress ? { collateralTokenAddress: tokenAddress } : {};
 
 export const decodeBorrowForm = (
@@ -153,12 +151,12 @@ export const buildBorrowActionRequest = ({
   form,
   integrationId = form.selectedMarket.integrationId,
 }: {
-  readonly address: WalletAddress | string;
+  readonly address: WalletAddress;
   readonly form: DecodedBorrowForm;
-  readonly integrationId?: IntegrationId | string;
+  readonly integrationId?: IntegrationId;
 }): ActionRequest => {
   if (form._tag === "CollateralOnly") {
-    return makeActionRequest({
+    return {
       action: "supply",
       address,
       args: {
@@ -167,10 +165,10 @@ export const buildBorrowActionRequest = ({
         ...tokenAddressArg(form.selectedCollateralToken.token.address),
       },
       integrationId,
-    });
+    };
   }
 
-  return makeActionRequest({
+  return {
     action: "borrow",
     address,
     args: {
@@ -187,7 +185,7 @@ export const buildBorrowActionRequest = ({
         : {}),
     },
     integrationId,
-  });
+  };
 };
 
 export const buildRepayActionRequest = ({
@@ -197,21 +195,20 @@ export const buildRepayActionRequest = ({
   marketId,
   repayAll,
   tokenAddress,
-}: RepayActionRequestInput): ActionRequest =>
-  makeActionRequest({
-    action: "repay",
-    address,
-    args: {
-      marketId,
-      ...(repayAll
-        ? { repayAll: true }
-        : {
-            amount: toActionAmount(amount),
-          }),
-      ...tokenAddressArg(tokenAddress),
-    },
-    integrationId,
-  });
+}: RepayActionRequestInput): ActionRequest => ({
+  action: "repay",
+  address,
+  args: {
+    marketId,
+    ...(repayAll
+      ? { repayAll: true }
+      : {
+          amount: toActionAmount(amount),
+        }),
+    ...tokenAddressArg(tokenAddress),
+  },
+  integrationId,
+});
 
 export const buildWithdrawActionRequest = ({
   address,
@@ -219,17 +216,16 @@ export const buildWithdrawActionRequest = ({
   integrationId,
   marketId,
   tokenAddress,
-}: WithdrawActionRequestInput): ActionRequest =>
-  makeActionRequest({
-    action: "withdraw",
-    address,
-    args: {
-      amount: toActionAmount(amount),
-      marketId,
-      ...tokenAddressArg(tokenAddress),
-    },
-    integrationId,
-  });
+}: WithdrawActionRequestInput): ActionRequest => ({
+  action: "withdraw",
+  address,
+  args: {
+    amount: toActionAmount(amount),
+    marketId,
+    ...tokenAddressArg(tokenAddress),
+  },
+  integrationId,
+});
 
 export const buildCollateralToggleActionRequest = ({
   action,
@@ -237,13 +233,12 @@ export const buildCollateralToggleActionRequest = ({
   integrationId,
   marketId,
   tokenAddress,
-}: CollateralToggleActionRequestInput): ActionRequest =>
-  makeActionRequest({
-    action,
-    address,
-    args: {
-      marketId,
-      ...tokenAddressArg(tokenAddress),
-    },
-    integrationId,
-  });
+}: CollateralToggleActionRequestInput): ActionRequest => ({
+  action,
+  address,
+  args: {
+    marketId,
+    ...tokenAddressArg(tokenAddress),
+  },
+  integrationId,
+});

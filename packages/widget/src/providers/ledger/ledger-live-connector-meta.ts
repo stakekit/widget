@@ -5,8 +5,7 @@ import type {
 } from "@ledgerhq/wallet-api-client";
 import type { RawTransaction } from "@ledgerhq/wallet-api-core";
 import type { Chain } from "@stakekit/rainbowkit";
-import type { Either, EitherAsync } from "purify-ts";
-import type { Observable } from "rxjs";
+import type { Effect, Result, Stream } from "effect";
 import type { Address } from "viem";
 import type { Connector } from "wagmi";
 import type { ConnectorWithFilteredChains } from "../../domain/types/connectors";
@@ -19,11 +18,11 @@ export const configMeta = {
 };
 
 export type ExtraProps = ConnectorWithFilteredChains & {
-  $disabledChains: Observable<Chain[]>;
-  $currentAccountId: Observable<string | undefined>;
-  $accountsOnCurrentChain: Observable<Account[]>;
+  $disabledChains: Stream.Stream<Chain[]>;
+  $currentAccountId: Stream.Stream<string | undefined>;
+  $accountsOnCurrentChain: Stream.Stream<Account[]>;
   walletApiClient: WalletAPIClient;
-  requestAndSwitchAccount: (chain: Chain) => EitherAsync<Error, Chain>;
+  requestAndSwitchAccount: (chain: Chain) => Effect.Effect<Chain, Error>;
   switchAccount: (account: Account) => void;
   noAccountPlaceholder: Address;
   deserializeTransaction: typeof deserializeTransaction;
@@ -35,7 +34,7 @@ export type ExtraProps = ConnectorWithFilteredChains & {
     network: string;
     tx: string;
     txMeta: SKTxMeta;
-  }) => Either<string, RawTransaction>;
+  }) => Result.Result<RawTransaction, string>;
 };
 
 type LedgerLiveConnector = Connector & ExtraProps;

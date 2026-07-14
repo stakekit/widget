@@ -1,31 +1,34 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { Maybe } from "purify-ts";
 import type {
-  ActionDto,
-  YieldCreateActionDto,
-} from "../../domain/types/action";
-import type { AddressesDto } from "../../domain/types/addresses";
-import type { TokenDto } from "../../domain/types/tokens";
-import type { Validator, ValidatorKey } from "../../domain/types/validators";
-import type { Yield } from "../../domain/types/yields";
+  ActionCommand,
+  YieldAction,
+} from "../../domain/schema/action-models";
+import type { WalletAddresses } from "../../domain/schema/address-models";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../domain/schema/earn-models";
+import type { AppToken } from "../../domain/schema/legacy-models";
+
+import type { ValidatorKey } from "../../domain/types/validators";
 
 type EnterStakeInitData = {
-  requestDto: YieldCreateActionDto;
-  addresses: AddressesDto;
-  gasFeeToken: Yield["token"];
-  selectedStake: Yield;
-  selectedValidators: Map<ValidatorKey, Validator>;
-  selectedToken: TokenDto;
+  requestDto: ActionCommand;
+  addresses: WalletAddresses;
+  gasFeeToken: EarnYieldWithProvider["token"];
+  selectedStake: EarnYieldWithProvider;
+  selectedValidators: Map<ValidatorKey, EarnValidator>;
+  selectedToken: AppToken;
 };
 
 type EnterStakeRequest = EnterStakeInitData & {
-  actionDto: Maybe<ActionDto>;
+  actionDto: YieldAction | null;
 };
 
-type EnterStakeState = Maybe<EnterStakeRequest>;
+type EnterStakeState = EnterStakeRequest | null;
 
-const enterStakeRequestAtom = Atom.make<EnterStakeState>(Maybe.empty()).pipe(
+const enterStakeRequestAtom = Atom.make<EnterStakeState>(null).pipe(
   Atom.keepAlive,
   Atom.withLabel("enterStakeRequestAtom")
 );

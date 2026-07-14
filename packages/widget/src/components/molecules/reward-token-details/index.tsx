@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import type { ComponentProps } from "react";
 import { Trans } from "react-i18next";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
@@ -41,59 +40,54 @@ export const RewardTokenDetails = ({
       ? humanizePendingActionType(rest.pendingAction)
       : undefined;
 
-  return rewardToken
-    .map((rt) => {
-      return (
-        <Box display="flex" alignItems="center" gap="2">
-          {Maybe.fromNullable(rt.logoUri)
-            .filter(() => isMorphoProvider(rt.providerName))
-            .map((logoUri) => (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                gap="1"
-                alignSelf="flex-start"
-              >
-                <Image
-                  imgProps={{ borderRadius: "full" }}
-                  wrapperProps={{ hw: "5" }}
-                  src={logoUri}
-                  fallbackName={rt.providerName}
-                />
+  if (!rewardToken) return null;
 
-                <Box width="5" height="5">
-                  <MorphoStarsIcon />
-                </Box>
-              </Box>
-            ))
-            .extractNullable()}
+  return (
+    <Box display="flex" alignItems="center" gap="2">
+      {rewardToken.logoUri && isMorphoProvider(rewardToken.providerName) ? (
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap="1"
+          alignSelf="flex-start"
+        >
+          <Image
+            imgProps={{ borderRadius: "full" }}
+            wrapperProps={{ hw: "5" }}
+            src={rewardToken.logoUri}
+            fallbackName={rewardToken.providerName}
+          />
 
-          <Text variant={{ weight: "semibold" }}>
-            <Trans
-              i18nKey={i18nKey}
-              defaults={i18nDefaults}
-              values={{ providerName: rt.providerName }}
-              components={{
-                symbols1: (
-                  <Text as="span" variant={{ weight: "semibold" }}>
-                    {rt.symbols}
-                  </Text>
-                ),
-                highlight2: (
-                  <Text
-                    as="span"
-                    className={inlineText}
-                    variant={{ type: "muted", weight: "medium" }}
-                  />
-                ),
-              }}
-            />
-          </Text>
+          <Box width="5" height="5">
+            <MorphoStarsIcon />
+          </Box>
         </Box>
-      );
-    })
-    .extractNullable();
+      ) : null}
+
+      <Text variant={{ weight: "semibold" }}>
+        <Trans
+          i18nKey={i18nKey}
+          defaults={i18nDefaults}
+          values={{ providerName: rewardToken.providerName }}
+          components={{
+            symbols1: (
+              <Text as="span" variant={{ weight: "semibold" }}>
+                {rewardToken.symbols}
+              </Text>
+            ),
+            highlight2: (
+              <Text
+                as="span"
+                className={inlineText}
+                variant={{ type: "muted", weight: "medium" }}
+              />
+            ),
+          }}
+        />
+      </Text>
+    </Box>
+  );
 };
 
 export const isMorphoProvider = (providerName: string) =>

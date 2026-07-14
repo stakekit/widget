@@ -1,5 +1,6 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,8 +8,12 @@ import { useNavigate } from "react-router";
 import type { RewardTokenDetails } from "../../../components/molecules/reward-token-details";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
+import {
+  getTokensPricesRequest,
+  PricesKey,
+  pricesAtom,
+} from "../../../hooks/api/prices-atoms";
 import { useActionPreview } from "../../../hooks/api/use-action-preview";
-import { useTokensPrices } from "../../../hooks/api/use-tokens-prices";
 import { useGasWarningCheck } from "../../../hooks/use-gas-warning-check";
 import { getRewardTokenSymbols } from "../../../hooks/use-reward-token-details/get-reward-token-symbols";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
@@ -24,7 +29,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const usePendingActionReview = () => {
   const setPendingActionRequest = useSetPendingActionRequest();
 
-  const pendingRequest = usePendingActionRequest().unsafeCoerce();
+  const pendingRequest = usePendingActionRequest()!;
 
   const actionPreviewQuery = useActionPreview({
     command: pendingRequest.requestDto,
@@ -32,40 +37,38 @@ export const usePendingActionReview = () => {
     intent: "manage",
   });
 
-  const pendingTxGas = useMemo(
-    () =>
-      Maybe.fromNullable(actionPreviewQuery.data)
-        .map((actionDto) =>
-          actionDto.transactions.reduce((acc, transaction) => {
-            const decoded = getTransactionGasEstimate(transaction);
-
-            return acc.plus(decoded?.amount ?? 0);
-          }, new BigNumber(0))
-        )
-        .map((value) => (value.isZero() ? null : value))
-        .chainNullable((value) => value),
-    [actionPreviewQuery.data]
-  );
+  const pendingTxGas = useMemo(() => {
+    const total = actionPreviewQuery.data?.transactions.reduce(
+      (acc, transaction) => {
+        const decoded = getTransactionGasEstimate(transaction);
+        return acc.plus(decoded?.amount ?? 0);
+      },
+      new BigNumber(0)
+    );
+    return total && !total.isZero() ? total : null;
+  }, [actionPreviewQuery.data]);
 
   const amount = useMemo(
     () => new BigNumber(pendingRequest.requestDto.arguments?.amount ?? 0),
     [pendingRequest.requestDto.arguments?.amount]
   );
 
-  const interactedToken = useMemo(
-    () => Maybe.of(pendingRequest.interactedToken),
-    [pendingRequest.interactedToken]
-  );
+  const interactedToken = pendingRequest.interactedToken;
+  const integrationData = pendingRequest.integrationData;
 
-  const integrationData = useMemo(
-    () => Maybe.of(pendingRequest.integrationData),
-    [pendingRequest.integrationData]
+  const prices = AsyncResult.getOrElse(
+    useAtomValue(
+      pricesAtom(
+        new PricesKey({
+          request: getTokensPricesRequest({
+            token: interactedToken,
+            yieldDto: integrationData,
+          }),
+        })
+      )
+    ),
+    () => null
   );
-
-  const pricesState = useTokensPrices({
-    token: interactedToken,
-    yieldDto: integrationData,
-  });
 
   const gasWarningCheck = useGasWarningCheck({
     gasAmount: pendingTxGas,
@@ -79,12 +82,10 @@ export const usePendingActionReview = () => {
 
   const title = useMemo(
     () =>
-      Maybe.of(
-        t(
-          `position_details.pending_action_button.${
-            pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
-          }` as const
-        )
+      t(
+        `position_details.pending_action_button.${
+          pendingRequest.requestDto.action.toLowerCase() as Lowercase<YieldPendingActionType>
+        }` as const
       ),
     [pendingRequest.requestDto.action, t]
   );
@@ -95,10 +96,10 @@ export const usePendingActionReview = () => {
     () =>
       getGasFeeInUSD({
         gas: pendingTxGas,
-        prices: Maybe.fromNullable(pricesState.data),
+        prices,
         yieldDto: integrationData,
       }),
-    [integrationData, pendingTxGas, pricesState.data]
+    [integrationData, pendingTxGas, prices]
   );
 
   const onClick = () => {
@@ -109,36 +110,31 @@ export const usePendingActionReview = () => {
     }
 
     setPendingActionRequest((request) =>
-      request.map((value) => ({
-        ...value,
-        actionDto: Maybe.of(action),
-      }))
+      request ? { ...request, actionDto: action } : null
     );
     navigate("../steps", { relative: "path" });
   };
 
   const rewardTokenDetailsProps = useMemo(
     () =>
-      integrationData
-        .chainNullable((v) => {
-          const provider = v.provider;
+      integrationData.provider
+        ? (() => {
+            const rewardToken = {
+              logoUri: integrationData.provider.logoURI,
+              providerName: integrationData.provider.name,
+              symbols: getRewardTokenSymbols([integrationData.token]),
+              rewardTokens: [integrationData.token],
+            } satisfies ComponentProps<
+              typeof RewardTokenDetails
+            >["rewardToken"];
 
-          return provider ? { provider, rest: v } : null;
-        })
-        .map((v) => {
-          const rewardToken = Maybe.of({
-            logoUri: v.provider.logoURI,
-            providerName: v.provider.name,
-            symbols: getRewardTokenSymbols([v.rest.token]),
-            rewardTokens: [v.rest.token],
-          }) satisfies ComponentProps<typeof RewardTokenDetails>["rewardToken"];
-
-          return {
-            type: "pendingAction",
-            pendingAction: pendingRequest.requestDto.action,
-            rewardToken,
-          } satisfies ComponentProps<typeof RewardTokenDetails>;
-        }),
+            return {
+              type: "pendingAction",
+              pendingAction: pendingRequest.requestDto.action,
+              rewardToken,
+            } satisfies ComponentProps<typeof RewardTokenDetails>;
+          })()
+        : null,
     [integrationData, pendingRequest.requestDto.action]
   );
 

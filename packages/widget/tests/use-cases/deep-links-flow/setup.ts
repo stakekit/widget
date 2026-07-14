@@ -1,7 +1,8 @@
+import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
-import { Just } from "purify-ts";
 import { vitest } from "vitest";
-import type { YieldCreateManageActionDto } from "../../../src/domain/types/action";
+import type { ManageActionCommand } from "../../../src/domain/schema/action-models";
+
 import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
@@ -392,7 +393,7 @@ export const setup = async (
       }
     ),
     http.post(yieldApiRoute("/v1/actions/manage"), async (info) => {
-      const data = (await info.request.json()) as YieldCreateManageActionDto;
+      const data = (await info.request.json()) as ManageActionCommand;
       await mockDelay();
 
       return HttpResponse.json({
@@ -406,8 +407,8 @@ export const setup = async (
           amountUsd: pendingAction.amountUsd,
           transactions: [
             yieldApiTransactionFixture({
-              id: pendingAction.transactions[0].id,
-              network: pendingAction.transactions[0].network,
+              id: EArray.getUnsafe(pendingAction.transactions, 0).id,
+              network: EArray.getUnsafe(pendingAction.transactions, 0).network,
               type: "CLAIM_REWARDS",
               status: "CREATED",
               unsignedTransaction:
@@ -431,7 +432,7 @@ export const setup = async (
         return HttpResponse.json({
           ...yieldApiTransactionFixture({
             type: "CLAIM_REWARDS",
-            network: pendingAction.transactions[0].network,
+            network: EArray.getUnsafe(pendingAction.transactions, 0).network,
             status: "BROADCASTED",
             id: transactionId,
             hash: "transaction_hash",
@@ -474,9 +475,8 @@ export const setup = async (
         case "eth_requestAccounts":
           return [account];
         case "wallet_switchEthereumChain": {
-          currentChainId = Just(params as { chainId: number }[])
-            .map((val) => Number(val[0].chainId))
-            .unsafeCoerce();
+          const chainParams = params as { chainId: number }[];
+          currentChainId = Number(chainParams[0]?.chainId);
 
           return currentChainId;
         }

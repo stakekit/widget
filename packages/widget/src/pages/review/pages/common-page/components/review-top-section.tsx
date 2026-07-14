@@ -1,5 +1,4 @@
 import { motion } from "motion/react";
-import { Maybe } from "purify-ts";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../../../components/atoms/box";
@@ -8,22 +7,19 @@ import { Heading } from "../../../../../components/atoms/typography/heading";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { EstimatedRewardAmounts } from "../../../../../components/molecules/estimated-reward-amounts";
 import type { RewardTokenDetails } from "../../../../../components/molecules/reward-token-details";
-import type {
-  TokenDto,
-  YieldTokenDto,
-} from "../../../../../domain/types/tokens";
+import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import { headingStyles } from "../../style.css";
 
 type Props = {
   title: string;
-  token: Maybe<TokenDto | YieldTokenDto>;
-  metadata: Maybe<ComponentProps<typeof TokenIcon>["metadata"]>;
+  token: AppToken | null;
+  metadata: ComponentProps<typeof TokenIcon>["metadata"] | null;
   info: ReactNode;
-  rewardTokenDetailsProps?: Maybe<ComponentProps<typeof RewardTokenDetails>>;
-  estimatedRewardAmounts?: Maybe<{
+  rewardTokenDetailsProps?: ComponentProps<typeof RewardTokenDetails> | null;
+  estimatedRewardAmounts?: {
     earnYearly: string;
     earnMonthly: string;
-  }>;
+  } | null;
 };
 
 const ReviewTopSection = ({
@@ -50,11 +46,9 @@ const ReviewTopSection = ({
           marginBottom="1"
         >
           <Heading variant={{ level: "h1" }}>{title}</Heading>
-          {Maybe.fromRecord({ token, metadata })
-            .map((val) => (
-              <TokenIcon token={val.token} metadata={val.metadata} />
-            ))
-            .extractNullable()}
+          {token && metadata ? (
+            <TokenIcon token={token} metadata={metadata} />
+          ) : null}
         </Box>
       </motion.div>
 
@@ -72,24 +66,19 @@ const ReviewTopSection = ({
         </Heading>
       </motion.div>
 
-      {rewardTokenDetailsProps
-        ?.filter((v) => v.type === "stake")
-        .map(() => (
-          <Box marginTop="4" display="flex" flexDirection="column" gap="1">
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("review.estimated_reward")}
-            </Text>
-            {(estimatedRewardAmounts ?? Maybe.empty())
-              .map((amounts) => (
-                <EstimatedRewardAmounts
-                  earnMonthly={amounts.earnMonthly}
-                  earnYearly={amounts.earnYearly}
-                />
-              ))
-              .extractNullable()}
-          </Box>
-        ))
-        .extractNullable()}
+      {rewardTokenDetailsProps?.type === "stake" ? (
+        <Box marginTop="4" display="flex" flexDirection="column" gap="1">
+          <Text variant={{ type: "muted", weight: "normal" }}>
+            {t("review.estimated_reward")}
+          </Text>
+          {estimatedRewardAmounts ? (
+            <EstimatedRewardAmounts
+              earnMonthly={estimatedRewardAmounts.earnMonthly}
+              earnYearly={estimatedRewardAmounts.earnYearly}
+            />
+          ) : null}
+        </Box>
+      ) : null}
     </Box>
   );
 };

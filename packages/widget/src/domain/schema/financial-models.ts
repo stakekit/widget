@@ -4,9 +4,9 @@ import * as YieldApi from "../../generated/api/yield-schema";
 import { AdditionalAddresses } from "./address-models";
 import { RewardsToken } from "./dashboard-models";
 import { TokenAddress, WalletAddress, YieldId } from "./identifiers";
+import { Network } from "./network-model";
 import { TolerantTopLevelArray } from "./response";
 import { PrecisionDecimalFromString } from "./scalars";
-import { Network } from "./wallet-models";
 
 export const TokenBalanceScanCommand = Schema.Struct({
   ...LegacyApi.TokenBalanceScanDto.fields,

@@ -1,6 +1,5 @@
 import { Schema } from "effect";
 import * as BorrowApi from "../../generated/api/borrow";
-import { NumberFromString } from "./scalars";
 import { BorrowToken } from "./token";
 
 export class CollateralToken extends Schema.Class<CollateralToken>(
@@ -8,9 +7,9 @@ export class CollateralToken extends Schema.Class<CollateralToken>(
 )({
   ...BorrowApi.CollateralTokenDto.fields,
   token: BorrowToken,
-  priceUsd: NumberFromString,
-  maxLtv: NumberFromString,
-  liquidationThreshold: NumberFromString,
-  liquidationPenalty: NumberFromString,
-  supplyRate: NumberFromString,
+  priceUsd: Schema.FiniteFromString,
+  maxLtv: Schema.FiniteFromString,
+  liquidationThreshold: Schema.FiniteFromString,
+  liquidationPenalty: Schema.FiniteFromString,
+  supplyRate: Schema.FiniteFromString,
 }) {}

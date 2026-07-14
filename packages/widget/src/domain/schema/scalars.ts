@@ -1,24 +1,12 @@
 import BigNumber from "bignumber.js";
 import { Schema, SchemaTransformation } from "effect";
 
-export const FiniteNumberFromString = Schema.NumberFromString.check(
-  Schema.isFinite()
-);
-export type FiniteNumberFromString = typeof FiniteNumberFromString.Type;
-
-export const SafeIntegerFromString = Schema.NumberFromString.check(
-  Schema.isInt()
-);
-export type SafeIntegerFromString = typeof SafeIntegerFromString.Type;
-
 export const BigIntFromString = Schema.BigIntFromString;
 export type BigIntFromString = typeof BigIntFromString.Type;
 
-const DecimalString = Schema.String.check(
-  Schema.isPattern(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/)
-);
-
-export const PrecisionDecimalFromString = DecimalString.pipe(
+export const PrecisionDecimalFromString = Schema.String.check(
+  Schema.isStringFinite()
+).pipe(
   Schema.decodeTo(
     Schema.instanceOf(BigNumber),
     SchemaTransformation.transform({

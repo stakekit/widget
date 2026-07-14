@@ -1,4 +1,5 @@
 import { assets, chains as RegistryChains } from "chain-registry";
+import { Array as EArray, Option } from "effect";
 import {
   type SupportedCosmosChains,
   supportedCosmosChains,
@@ -175,7 +176,8 @@ const registryIdsSet = new Set(Object.values(skCosmosNetworksToRegistryIds));
 const chainMapper = <T extends AssetList | CosmosChain>(
   val: T
 ): WithWagmiName<T> => {
-  let wagmiName = val.chain_name[0].toUpperCase() + val.chain_name.slice(1);
+  let wagmiName =
+    val.chain_name.charAt(0).toUpperCase() + val.chain_name.slice(1);
 
   if ("chain_id" in val) {
     if (val.chain_id === "crypto-org-chain-mainnet-1") {
@@ -206,7 +208,9 @@ const assetMapper = (
   val: WithWagmiName<AssetList & Pick<CosmosChain, "chain_id">>
 ) => {
   if (val.chain_id === "comdex-1") {
-    val.assets[1].coingecko_id = "harbor-2";
+    const harborAsset = EArray.get(val.assets, 1).pipe(Option.getOrUndefined);
+
+    if (harborAsset) harborAsset.coingecko_id = "harbor-2";
   }
 
   return val;

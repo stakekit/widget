@@ -1,0 +1,22 @@
+id: no-react-memoization
+language: Tsx
+severity: warning
+message: React Compiler is enabled; prefer plain values and functions.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  any:
+    - all:
+        - kind: import_specifier
+        - regex: ^(?:useMemo|useCallback|memo)(?:\s+as\s+\w+)?$
+        - inside:
+            pattern: import { $$$IMPORTS } from "react"
+            stopBy: end
+    - pattern: React.useMemo($$$ARGS)
+    - pattern: React.useCallback($$$ARGS)
+    - pattern: React.memo($$$ARGS)

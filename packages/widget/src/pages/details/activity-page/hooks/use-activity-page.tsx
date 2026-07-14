@@ -4,7 +4,7 @@ import { Box } from "../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../components/atoms/content-loader";
 import { Text } from "../../../../components/atoms/typography/text";
 import { useTrackPage } from "../../../../hooks/tracking/use-track-page";
-import { useSKWallet } from "../../../../providers/sk-wallet";
+import { useSKWallet } from "../../../../providers/wallet/react/use-wallet";
 import { FallbackContent } from "../../positions-page/components/fallback-content";
 import type { ActivityFilter } from "../activity-filters";
 import { useActivityPageContext } from "../state/activity-page.context";

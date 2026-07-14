@@ -1,4 +1,3 @@
-import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box, type BoxProps } from "../../../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../../../components/atoms/content-loader";
@@ -64,16 +63,16 @@ export const SelectTokenSection = ({
 
   const errorBalance = stakeAmountGreaterThanAvailableAmount;
 
-  const minStakeAmount = Just([
-    stakeMinAmount
-      .map((v) => `${t("shared.min")} ${v} ${symbol}`)
-      .extractNullable(),
-    stakeMaxAmount
-      .map((v) => `${t("shared.max")} ${v} ${symbol}`)
-      .extractNullable(),
-  ] as const)
-    .filter((val) => val.some(Boolean))
-    .map(([min, max]) => (
+  const min =
+    stakeMinAmount === null
+      ? null
+      : `${t("shared.min")} ${stakeMinAmount} ${symbol}`;
+  const max =
+    stakeMaxAmount === null
+      ? null
+      : `${t("shared.max")} ${stakeMaxAmount} ${symbol}`;
+  const minStakeAmount =
+    min || max ? (
       <Box
         className={combineRecipeWithVariant({
           rec: minMaxContainer,
@@ -88,8 +87,7 @@ export const SelectTokenSection = ({
           {min && max ? `${min} / ${max}` : (min ?? max)}
         </Text>
       </Box>
-    ))
-    .extractNullable();
+    ) : null;
 
   return isLoading ? (
     <Box marginTop={sectionMarginTop}>
@@ -174,38 +172,38 @@ export const SelectTokenSection = ({
                   variant,
                 })}
               >
-                {selectedTokenAvailableAmount
-                  .map((v) =>
-                    variant === "zerion" ? (
-                      <>
-                        <span>{t("shared.balance")}:&nbsp;</span>
-                        <Box
-                          {...(isStakeTokenSameAsGasToken
-                            ? { as: "span" }
-                            : {
-                                onClick: onMaxClick,
-                                as: "button",
-                              })}
-                        >
-                          {v.shortFormattedAmount}&nbsp;{v.symbol}
-                        </Box>
-                      </>
-                    ) : (
-                      <AmountToggle.Root>
-                        <AmountToggle.Amount>
-                          {({ state }) => (
-                            <span>
-                              {state === "full"
-                                ? v.fullFormattedAmount
-                                : v.shortFormattedAmount}
-                              &nbsp;{v.symbol}&nbsp;{t("shared.available")}
-                            </span>
-                          )}
-                        </AmountToggle.Amount>
-                      </AmountToggle.Root>
-                    )
+                {selectedTokenAvailableAmount ? (
+                  variant === "zerion" ? (
+                    <>
+                      <span>{t("shared.balance")}:&nbsp;</span>
+                      <Box
+                        {...(isStakeTokenSameAsGasToken
+                          ? { as: "span" }
+                          : {
+                              onClick: onMaxClick,
+                              as: "button",
+                            })}
+                      >
+                        {selectedTokenAvailableAmount.shortFormattedAmount}
+                        &nbsp;{selectedTokenAvailableAmount.symbol}
+                      </Box>
+                    </>
+                  ) : (
+                    <AmountToggle.Root>
+                      <AmountToggle.Amount>
+                        {({ state }) => (
+                          <span>
+                            {state === "full"
+                              ? selectedTokenAvailableAmount.fullFormattedAmount
+                              : selectedTokenAvailableAmount.shortFormattedAmount}
+                            &nbsp;{selectedTokenAvailableAmount.symbol}&nbsp;
+                            {t("shared.available")}
+                          </span>
+                        )}
+                      </AmountToggle.Amount>
+                    </AmountToggle.Root>
                   )
-                  .extractNullable()}
+                ) : null}
               </Text>
             </Box>
 

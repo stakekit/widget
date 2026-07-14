@@ -1,13 +1,14 @@
 import type { ReactElement } from "react";
-import type { Networks } from "../../../../domain/types/chains/networks";
-import type { TokenDto, YieldTokenDto } from "../../../../domain/types/tokens";
+import type { AppToken } from "../../../../domain/schema/legacy-models";
+import type { Network } from "../../../../domain/schema/network-model";
+
 import type { YieldMetadata } from "../../../../domain/types/yields";
 import { Box } from "../../box";
 import { useVariantNetworkUrls } from "./hooks/use-variant-network-urls";
 import { useVariantTokenUrls } from "./hooks/use-variant-token-urls";
 
 type TokenIconContainerProps = {
-  token: TokenDto | YieldTokenDto;
+  token: AppToken;
   metadata?: Pick<YieldMetadata, "logoURI" | "name" | "provider">;
   hideNetwork?: boolean;
   children: (props: TokenIconContainerReturnType) => ReactElement;
@@ -28,7 +29,7 @@ export const TokenIconContainer = ({
     metadata
   );
 
-  const networkLogoUri = useVariantNetworkUrls(token.network as Networks);
+  const networkLogoUri = useVariantNetworkUrls(token.network as Network);
 
   return (
     <Box

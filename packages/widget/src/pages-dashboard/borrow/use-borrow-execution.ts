@@ -1,7 +1,6 @@
 import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
 import { Cause, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useMemo } from "react";
 import type { Action } from "../../borrow";
 import {
   BorrowExecutionKey,
@@ -60,14 +59,10 @@ export const useBorrowExecution = ({
 }: {
   readonly action: Action;
 }): BorrowExecutionState => {
-  const executionAtom = useMemo(
-    () =>
-      borrowExecutionAtom(
-        new BorrowExecutionKey({
-          action,
-        })
-      ),
-    [action]
+  const executionAtom = borrowExecutionAtom(
+    new BorrowExecutionKey({
+      action,
+    })
   );
   const result = useAtomValue(executionAtom);
   const retry = useAtomRefresh(executionAtom);

@@ -1,10 +1,10 @@
 import BigNumber from "bignumber.js";
-import { Just } from "purify-ts";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import * as CopyText from "../../../components/atoms/copy-text";
-import type { TokenDto } from "../../../domain/types/tokens";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
 import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import { APToPercentage, formatAddress, formatNumber } from "../../../utils";
 import {
@@ -41,7 +41,7 @@ export const useMetaInfo = ({
   subnetName?: ValidatorSubnet["name"];
   marketCap?: ValidatorSubnet["tvl"];
   tokenSymbol?: ValidatorSubnet["tokenSymbol"];
-  stakedBalanceToken: TokenDto | undefined;
+  stakedBalanceToken: AppToken | undefined;
   rewardRate: number | undefined;
   rewardType: string | undefined;
 }) => {
@@ -71,21 +71,20 @@ export const useMetaInfo = ({
         stakedBalance && stakedBalanceToken
           ? {
               title: t("details.validators_staked_balance"),
-              val: Just(new BigNumber(stakedBalance))
-                .filter((v) => !v.isNaN())
-                .map(
-                  (v) => `${formatNumber(v, 0)} ${stakedBalanceToken.symbol}`
-                )
-                .orDefault("-"),
+              val: formatBigNumber(
+                new BigNumber(stakedBalance),
+                (value) =>
+                  `${formatNumber(value, 0)} ${stakedBalanceToken.symbol}`
+              ),
             }
           : null,
       votingPower: votingPower
         ? {
             title: t("details.validators_voting_power"),
-            val: Just(new BigNumber(votingPower))
-              .filter((v) => !v.isNaN())
-              .map((v) => `${APToPercentage(v.toNumber())}%`)
-              .orDefault("-"),
+            val: formatBigNumber(
+              new BigNumber(votingPower),
+              (value) => `${APToPercentage(value.toNumber())}%`
+            ),
           }
         : null,
       nominatorCount: Number.isInteger(nominatorCount)
@@ -97,10 +96,10 @@ export const useMetaInfo = ({
       commission: commission
         ? {
             title: t("details.validators_comission"),
-            val: Just(new BigNumber(commission))
-              .filter((v) => !v.isNaN())
-              .map((v) => `${formatNumber(APToPercentage(v.toNumber()))}%`)
-              .orDefault("-"),
+            val: formatBigNumber(
+              new BigNumber(commission),
+              (value) => `${formatNumber(APToPercentage(value.toNumber()))}%`
+            ),
           }
         : null,
       address: address
@@ -184,3 +183,8 @@ export const useMetaInfo = ({
     ]
   );
 };
+
+const formatBigNumber = (
+  value: BigNumber,
+  format: (value: BigNumber) => string
+) => (value.isNaN() ? "-" : format(value));

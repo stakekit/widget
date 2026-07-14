@@ -8,12 +8,10 @@ import { Text } from "../../../../../components/atoms/typography/text";
 import { EstimatedRewardAmounts } from "../../../../../components/molecules/estimated-reward-amounts";
 import { RewardRateBreakdown } from "../../../../../components/molecules/reward-rate-breakdown";
 import { isMorphoProvider } from "../../../../../components/molecules/reward-token-details";
+import type { EarnValidator } from "../../../../../domain/schema/earn-models";
+import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import { getEffectiveYieldRewardRateDetails } from "../../../../../domain/types/reward-rate";
-import type {
-  TokenDto,
-  YieldTokenDto,
-} from "../../../../../domain/types/tokens";
-import type { Validator } from "../../../../../domain/types/validators";
+
 import {
   getYieldOutputToken,
   getYieldTypeLabels,
@@ -44,153 +42,150 @@ export const SelectYieldRewardDetails = () => {
     providersDetails,
   } = useEarnPageContext();
 
-  const rewardRateDetails = selectedStake.chainNullable((yieldDto) =>
-    getEffectiveYieldRewardRateDetails({ selectedValidators, yieldDto })
-  );
+  const rewardRateDetails = selectedStake
+    ? getEffectiveYieldRewardRateDetails({
+        selectedValidators,
+        yieldDto: selectedStake,
+      })
+    : null;
 
-  const earnYearly = estimatedRewards.mapOrDefault(
-    (e) => `${e.yearly} ${rewardsTokenSymbol}`,
-    ""
-  );
-  const earnMonthly = estimatedRewards.mapOrDefault(
-    (e) => `${e.monthly} ${rewardsTokenSymbol}`,
-    ""
-  );
-  const strategyDetails = selectedStake.map((yieldDto) => {
-    const outputToken = getYieldOutputToken(yieldDto).extractNullable();
-    const selectedValidatorsArr = [...selectedValidators.values()];
-    const providersDetailsArr = providersDetails.extractNullable() ?? [];
-    const strategyProviders = selectedValidatorsArr.length
-      ? selectedValidatorsArr.map<StrategyProvider>((validator, index) => {
-          const providerDetails = providersDetailsArr[index];
-          const name = getValidatorName(validator);
+  const earnYearly = estimatedRewards
+    ? `${estimatedRewards.yearly} ${rewardsTokenSymbol}`
+    : "";
+  const earnMonthly = estimatedRewards
+    ? `${estimatedRewards.monthly} ${rewardsTokenSymbol}`
+    : "";
+  const strategyDetails = selectedStake
+    ? (() => {
+        const yieldDto = selectedStake;
+        const outputToken = getYieldOutputToken(yieldDto);
+        const selectedValidatorsArr = [...selectedValidators.values()];
+        const providersDetailsArr = providersDetails ?? [];
+        const strategyProviders = selectedValidatorsArr.length
+          ? selectedValidatorsArr.map<StrategyProvider>((validator, index) => {
+              const providerDetails = providersDetailsArr[index];
+              const name = getValidatorName(validator);
 
-          return {
-            key: validator.key,
-            logo: providerDetails?.logo ?? validator.logoURI,
-            name: providerDetails?.name ?? name,
-          };
-        })
-      : [
-          {
-            key: yieldDto.provider?.id ?? yieldDto.providerId ?? yieldDto.id,
-            logo:
-              providersDetailsArr[0]?.logo ??
-              yieldDto.provider?.logoURI ??
-              undefined,
-            name:
-              providersDetailsArr[0]?.name ??
-              yieldDto.provider?.name ??
-              yieldDto.providerId ??
-              yieldDto.metadata.name,
-          },
-        ];
-    const pricePerShare = new BigNumber(
-      yieldDto.state?.pricePerShareState?.price ?? 1
-    );
-    const outputAmount =
-      pricePerShare.isFinite() && !pricePerShare.isZero()
-        ? stakeAmount.dividedBy(pricePerShare)
-        : stakeAmount;
+              return {
+                key: validator.key,
+                logo: providerDetails?.logo ?? validator.logoURI,
+                name: providerDetails?.name ?? name,
+              };
+            })
+          : [
+              {
+                key:
+                  yieldDto.provider?.id ?? yieldDto.providerId ?? yieldDto.id,
+                logo:
+                  providersDetailsArr[0]?.logo ??
+                  yieldDto.provider?.logoURI ??
+                  undefined,
+                name:
+                  providersDetailsArr[0]?.name ??
+                  yieldDto.provider?.name ??
+                  yieldDto.providerId ??
+                  yieldDto.metadata.name,
+              },
+            ];
+        const pricePerShare = new BigNumber(
+          yieldDto.state?.pricePerShareState?.price ?? 1
+        );
+        const outputAmount =
+          pricePerShare.isFinite() && !pricePerShare.isZero()
+            ? stakeAmount.dividedBy(pricePerShare)
+            : stakeAmount;
 
-    return {
-      outputAmount: formatNumber(outputAmount, 6),
-      outputToken,
-      providers: strategyProviders,
-      yieldType: getYieldTypeLabels(yieldDto, t).title,
-    };
-  });
+        return {
+          outputAmount: formatNumber(outputAmount, 6),
+          outputToken,
+          providers: strategyProviders,
+          yieldType: getYieldTypeLabels(yieldDto, t).title,
+        };
+      })()
+    : null;
 
   return (
     <Box data-rk="yield-rewards">
       <Box display="flex" flexDirection="column" gap="4" marginTop="3">
         {showYieldStrategyDetails && (
           <>
-            {strategyDetails
-              .map((details) =>
-                dashboardVariant || details.outputToken ? (
-                  <YieldStrategyDetails {...details} />
-                ) : null
-              )
-              .extractNullable()}
+            {strategyDetails &&
+            (dashboardVariant || strategyDetails.outputToken) ? (
+              <YieldStrategyDetails {...strategyDetails} />
+            ) : null}
 
             {dashboardVariant && <Divider />}
           </>
         )}
 
-        {variant === "zerion" &&
-          rewardToken
-            .map((rt) => (
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                gap="2"
-              >
-                <Text variant={{ type: "muted", weight: "normal" }}>
-                  <Trans
-                    i18nKey="details.rewards.receive"
-                    components={{
-                      symbols1: (
-                        <Box as="span" fontWeight="bold">
-                          {rt.symbols}
-                        </Box>
-                      ),
-                    }}
-                  />
-                </Text>
+        {variant === "zerion" && rewardToken ? (
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            gap="2"
+          >
+            <Text variant={{ type: "muted", weight: "normal" }}>
+              <Trans
+                i18nKey="details.rewards.receive"
+                components={{
+                  symbols1: (
+                    <Box as="span" fontWeight="bold">
+                      {rewardToken.symbols}
+                    </Box>
+                  ),
+                }}
+              />
+            </Text>
 
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              flexShrink={0}
+            >
+              {rewardToken.logoUri && (
                 <Box
+                  marginRight="1"
                   display="flex"
                   justifyContent="center"
                   alignItems="center"
-                  flexShrink={0}
+                  gap="1"
                 >
-                  {rt.logoUri && (
-                    <Box
-                      marginRight="1"
-                      display="flex"
-                      justifyContent="center"
-                      alignItems="center"
-                      gap="1"
-                    >
-                      <Image
-                        imgProps={{ borderRadius: "full" }}
-                        wrapperProps={{ hw: "5" }}
-                        src={rt.logoUri}
-                        fallbackName={rt.providerName}
-                      />
+                  <Image
+                    imgProps={{ borderRadius: "full" }}
+                    wrapperProps={{ hw: "5" }}
+                    src={rewardToken.logoUri}
+                    fallbackName={rewardToken.providerName}
+                  />
 
-                      {isMorphoProvider(rt.providerName) && (
-                        <Box width="5" height="5">
-                          <MorphoStarsIcon />
-                        </Box>
-                      )}
+                  {isMorphoProvider(rewardToken.providerName) && (
+                    <Box width="5" height="5">
+                      <MorphoStarsIcon />
                     </Box>
                   )}
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {rt.providerName}
-                  </Text>
                 </Box>
-              </Box>
-            ))
-            .extractNullable()}
+              )}
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {rewardToken.providerName}
+              </Text>
+            </Box>
+          </Box>
+        ) : null}
 
         <EstimatedRewardAmounts
           earnMonthly={earnMonthly}
           earnYearly={earnYearly}
         />
 
-        {rewardRateDetails
-          .map((rewardRate) => (
-            <RewardRateBreakdown
-              rewardRate={rewardRate}
-              showUpToCampaign
-              title={t("details.apy_composition.title")}
-              testId="reward-rate-breakdown"
-            />
-          ))
-          .extractNullable()}
+        {rewardRateDetails ? (
+          <RewardRateBreakdown
+            rewardRate={rewardRateDetails}
+            showUpToCampaign
+            title={t("details.apy_composition.title")}
+            testId="reward-rate-breakdown"
+          />
+        ) : null}
       </Box>
     </Box>
   );
@@ -203,7 +198,7 @@ const YieldStrategyDetails = ({
   yieldType,
 }: {
   outputAmount: string;
-  outputToken: TokenDto | YieldTokenDto | null;
+  outputToken: AppToken | null;
   providers: StrategyProvider[];
   yieldType: string;
 }) => {
@@ -262,5 +257,5 @@ const YieldStrategyDetails = ({
   );
 };
 
-const getValidatorName = (validator: Validator) =>
+const getValidatorName = (validator: EarnValidator) =>
   validator.name ?? validator.address;

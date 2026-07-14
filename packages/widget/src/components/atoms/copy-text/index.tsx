@@ -8,7 +8,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import { Box } from "../box";
 import { Check } from "../icons/check";
 import { Copy } from "../icons/copy";
@@ -45,7 +44,7 @@ export const Provider = ({
   const onClick = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {
       e.stopPropagation();
-      MaybeWindow.ifJust((w) => w.navigator.clipboard.writeText(text));
+      void window.navigator.clipboard.writeText(text);
       setShowCopySuccess(true);
     },
     [text]

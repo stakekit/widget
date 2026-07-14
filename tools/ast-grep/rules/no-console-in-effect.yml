@@ -1,0 +1,18 @@
+id: no-console-in-effect
+language: Tsx
+severity: error
+message: Use Effect.log* inside Effect programs.
+files:
+  - packages/widget/**/*.ts
+  - packages/widget/**/*.tsx
+ignores:
+  - packages/widget/dist/**
+  - packages/widget/src/generated/**
+  - packages/widget/tests/generated/**
+rule:
+  pattern: console.$METHOD($$$ARGS)
+  inside:
+    any:
+      - pattern: Effect.gen(function* ($$$PARAMS) { $$$BODY })
+      - pattern: Effect.fn($$$FIRST)($$$SECOND)
+    stopBy: end

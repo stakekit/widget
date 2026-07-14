@@ -1,0 +1,7 @@
+id: no-console-in-effect
+valid:
+  - 'Effect.gen(function* () { yield* Effect.logInfo("done") })'
+  - 'const render = () => console.log("done")'
+invalid:
+  - 'Effect.gen(function* () { console.log("done") })'
+  - 'Effect.fn("program")(function* () { console.error("failed") })'

@@ -4,6 +4,7 @@ import { Box } from "../../../components/atoms/box";
 import { ContentLoaderSquare } from "../../../components/atoms/content-loader";
 import { Spinner } from "../../../components/atoms/spinner";
 import { Text } from "../../../components/atoms/typography/text";
+import type { HistoryPoint } from "../../../domain/schema/dashboard-models";
 import { vars } from "../../../styles/theme/contract.css";
 import {
   axisLabel,
@@ -11,11 +12,10 @@ import {
   chartLoadingOverlay,
   emptyChartContainer,
 } from "./styles.css";
-import type { RewardRateHistoryPoint } from "./use-yield-reward-rate-history";
 
 type Props = {
   chartId: string;
-  data: RewardRateHistoryPoint[];
+  data: HistoryPoint[];
   isFetching: boolean;
   isLoading: boolean;
   tickFormatter: (value: number) => string;

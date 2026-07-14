@@ -1,24 +1,28 @@
 import { faker } from "@faker-js/faker";
+import { Schema } from "effect";
+import {
+  ActionTransaction,
+  YieldAction,
+} from "../../src/domain/schema/action-models";
 import type {
   EarnBalance,
   EarnProvider,
   EarnValidator,
 } from "../../src/domain/schema/earn-models";
-import type {
-  LegacyToken,
-  LegacyYield,
-} from "../../src/domain/schema/legacy-models";
-import type { ActionDto, TransactionDto } from "../../src/domain/types/action";
+import {
+  EarnProvider as EarnProviderSchema,
+  EarnYield,
+} from "../../src/domain/schema/earn-models";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
 import type { YieldRewardRateDto } from "../../src/domain/types/reward-rate";
-import type { Yield } from "../../src/domain/types/yields";
+import type {
+  TokenDto as LegacyTokenDto,
+  YieldDto as LegacyYieldDto,
+} from "../generated/legacy-api-types";
 
-type LegacyTokenDto = typeof LegacyToken.Encoded;
-type LegacyYieldDto = typeof LegacyYield.Encoded;
 type ValidatorDto = typeof EarnValidator.Encoded;
 type YieldApiProviderDto = typeof EarnProvider.Encoded;
-
-type YieldApiYieldDto = Omit<Yield, "provider">;
+type YieldApiYieldDto = typeof EarnYield.Encoded;
 
 const apyFaker = () => faker.number.float({ min: 0, max: 0.05 });
 
@@ -45,16 +49,17 @@ const yieldApiTokenFixture = (
 
 export const yieldApiProviderFixture = (
   overrides?: Partial<YieldApiProviderDto>
-): YieldApiProviderDto => ({
-  id: "stakekit",
-  name: "StakeKit",
-  description: "",
-  logoURI: "https://assets.stakek.it/providers/stakekit.svg",
-  website: "https://stakek.it",
-  tvlUsd: null,
-  type: "protocol",
-  ...overrides,
-});
+): EarnProvider =>
+  Schema.decodeUnknownSync(EarnProviderSchema)({
+    id: "stakekit",
+    name: "StakeKit",
+    description: "",
+    logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+    website: "https://stakek.it",
+    tvlUsd: null,
+    type: "protocol",
+    ...overrides,
+  });
 
 type YieldRiskSummaryDto = NonNullable<YieldApiYieldDto["risk"]>;
 type YieldRiskEntryDto = YieldRiskSummaryDto["ratings"][number];
@@ -76,18 +81,18 @@ export const yieldRiskSummaryFixture = (
 
 export const yieldApiYieldFixture = (
   overrides?: Partial<YieldApiYieldDto>
-): YieldApiYieldDto => {
+): typeof EarnYield.Type => {
   const token = overrides?.token ?? yieldApiTokenFixture();
   const tokens = overrides?.tokens ?? [token];
 
-  return {
+  return Schema.decodeUnknownSync(EarnYield)({
     id: "ethereum-eth-native-staking",
     network: token.network,
     inputTokens: overrides?.inputTokens ?? tokens,
     outputToken: overrides?.outputToken ?? token,
     token,
     tokens,
-    rewardRate: yieldRewardRateFixture(overrides?.rewardRate),
+    rewardRate: overrides?.rewardRate ?? yieldRewardRateFixture(),
     status: { enter: true, exit: true },
     metadata: {
       name: "Ethereum Staking",
@@ -121,7 +126,7 @@ export const yieldApiYieldFixture = (
     providerId: "stakekit",
     validators: [],
     ...overrides,
-  } as YieldApiYieldDto;
+  });
 };
 
 export const yieldApiValidatorFixture = (
@@ -228,9 +233,9 @@ export const yieldApiValidatorsFixture = (
   );
 
 export const yieldApiTransactionFixture = (
-  overrides?: Partial<TransactionDto>
-): TransactionDto =>
-  ({
+  overrides?: Partial<typeof ActionTransaction.Encoded>
+): typeof ActionTransaction.Type =>
+  Schema.decodeUnknownSync(ActionTransaction)({
     id: faker.string.uuid(),
     title: "Stake",
     network: "ethereum",
@@ -247,17 +252,17 @@ export const yieldApiTransactionFixture = (
     explorerUrl: null,
     isMessage: false,
     ...overrides,
-  }) as TransactionDto;
+  });
 
 export const yieldApiActionFixture = (
-  overrides?: Partial<ActionDto>
-): ActionDto => {
+  overrides?: Partial<typeof YieldAction.Encoded>
+): typeof YieldAction.Type => {
   const type = overrides?.type ?? "STAKE";
   const intent =
     overrides?.intent ??
     (type === "STAKE" ? "enter" : type === "UNSTAKE" ? "exit" : "manage");
 
-  return {
+  return Schema.decodeUnknownSync(YieldAction)({
     id: faker.string.uuid(),
     intent,
     type,
@@ -267,7 +272,9 @@ export const yieldApiActionFixture = (
     amountRaw: null,
     amountUsd: null,
     transactions: [
-      yieldApiTransactionFixture({ type: type as TransactionDto["type"] }),
+      yieldApiTransactionFixture({
+        type: type as (typeof ActionTransaction.Type)["type"],
+      }),
     ],
     executionPattern: "synchronous",
     rawArguments: null,
@@ -275,5 +282,5 @@ export const yieldApiActionFixture = (
     completedAt: null,
     status: "CREATED",
     ...overrides,
-  } as ActionDto;
+  });
 };

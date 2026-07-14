@@ -1,7 +1,13 @@
 import type BigNumber from "bignumber.js";
-import type { Either } from "purify-ts";
-import { List, Maybe } from "purify-ts";
-import type { YieldCreateManageActionDto } from "../../../domain/types/action";
+import { Array as EArray, Option, Result } from "effect";
+import type { ManageActionCommand } from "../../../domain/schema/action-models";
+import type {
+  EarnBalance,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { WalletAddress as WalletAddressType } from "../../../domain/schema/identifiers";
+import type { AppToken } from "../../../domain/schema/legacy-models";
+
 import {
   type AnyPendingActionDto,
   isPendingActionAmountRequired,
@@ -9,18 +15,25 @@ import {
   isPendingActionValidatorAddressRequired,
   type YieldPendingActionType,
 } from "../../../domain/types/pending-action";
-import type { YieldBalanceDto } from "../../../domain/types/positions";
-import type { YieldTokenDto } from "../../../domain/types/tokens";
+
 import type { ValidatorInput as ValidatorDto } from "../../../domain/types/validators";
 import type { SKWallet } from "../../../domain/types/wallet";
-import type { Yield } from "../../../domain/types/yields";
+
 import type { State } from "../state/types";
 import { getBalanceTokenActionType } from "../state/utils";
 
 type AnyYieldBalanceDto = {
   amount: BigNumber;
-  token: YieldTokenDto;
-  type: YieldBalanceDto["type"];
+  token: AppToken;
+  type: EarnBalance["type"];
+};
+
+type PreparedPendingAction = {
+  requestDto: ManageActionCommand;
+  integrationData: EarnYieldWithProvider;
+  gasFeeToken: EarnYieldWithProvider["token"];
+  address: WalletAddressType;
+  additionalAddresses: NonNullable<SKWallet["additionalAddresses"]> | undefined;
 };
 
 export const preparePendingActionRequestDto = ({
@@ -37,67 +50,49 @@ export const preparePendingActionRequestDto = ({
   additionalAddresses: SKWallet["additionalAddresses"];
   pendingActionDto: AnyPendingActionDto;
   yieldBalance: AnyYieldBalanceDto;
-  integration: Yield;
+  integration: EarnYieldWithProvider;
   selectedValidators: ValidatorDto["address"][];
-}): Either<
-  Error,
-  {
-    requestDto: YieldCreateManageActionDto;
-    integrationData: Yield;
-    gasFeeToken: Yield["token"];
-    address: NonNullable<SKWallet["address"]>;
-    additionalAddresses:
-      | NonNullable<SKWallet["additionalAddresses"]>
-      | undefined;
-  }
-> =>
-  Maybe.fromNullable(address)
-    .toEither(new Error("missing address"))
-    .map((val) => {
-      const validatorArgs =
-        selectedValidators.length &&
-        isPendingActionValidatorAddressesRequired(pendingActionDto)
-          ? { validatorAddresses: selectedValidators }
-          : selectedValidators.length &&
-              isPendingActionValidatorAddressRequired(pendingActionDto)
-            ? { validatorAddress: List.head(selectedValidators).orDefault("") }
-            : {};
+}): Result.Result<PreparedPendingAction, Error> => {
+  if (!address) return Result.fail(new Error("missing address"));
 
-      const amount = Maybe.fromPredicate(
-        Boolean,
-        isPendingActionAmountRequired(pendingActionDto)
+  const selectedValidator = EArray.head(selectedValidators).pipe(
+    Option.getOrUndefined
+  );
+  const validatorArgs =
+    selectedValidators.length > 0 &&
+    isPendingActionValidatorAddressesRequired(pendingActionDto)
+      ? { validatorAddresses: selectedValidators }
+      : selectedValidator &&
+          isPendingActionValidatorAddressRequired(pendingActionDto)
+        ? {
+            validatorAddress: selectedValidator,
+          }
+        : {};
+  const stateAmount = isPendingActionAmountRequired(pendingActionDto)
+    ? pendingActionsState.get(
+        getBalanceTokenActionType({
+          balanceType: yieldBalance.type,
+          token: yieldBalance.token,
+          actionType: pendingActionDto.type as YieldPendingActionType,
+        })
       )
-        .chainNullable(() =>
-          pendingActionsState.get(
-            getBalanceTokenActionType({
-              balanceType: yieldBalance.type as YieldBalanceDto["type"],
-              token: yieldBalance.token,
-              actionType: pendingActionDto.type as YieldPendingActionType,
-            })
-          )
-        )
-        .map((v) => v.toString())
-        .alt(Maybe.of(yieldBalance.amount.toFixed()))
-        .extract();
-      const args = {
-        ...(amount === undefined ? {} : { amount }),
-        ...validatorArgs,
-      } satisfies NonNullable<YieldCreateManageActionDto["arguments"]>;
+    : null;
+  const args = {
+    amount: stateAmount?.toString() ?? yieldBalance.amount.toFixed(),
+    ...validatorArgs,
+  } satisfies NonNullable<ManageActionCommand["arguments"]>;
 
-      return {
-        requestDto: {
-          action: pendingActionDto.type as YieldPendingActionType,
-          address: val,
-          arguments: {
-            ...args,
-            ...(additionalAddresses ?? {}),
-          },
-          passthrough: pendingActionDto.passthrough,
-          yieldId: integration.id,
-        },
-        address: val,
-        additionalAddresses: additionalAddresses ?? undefined,
-        gasFeeToken: integration.mechanics.gasFeeToken,
-        integrationData: integration,
-      };
-    });
+  return Result.succeed({
+    requestDto: {
+      action: pendingActionDto.type as YieldPendingActionType,
+      address,
+      arguments: { ...args, ...(additionalAddresses ?? {}) },
+      passthrough: pendingActionDto.passthrough,
+      yieldId: integration.id,
+    },
+    address,
+    additionalAddresses: additionalAddresses ?? undefined,
+    gasFeeToken: integration.mechanics.gasFeeToken,
+    integrationData: integration,
+  });
+};

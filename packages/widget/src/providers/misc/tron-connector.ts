@@ -9,8 +9,7 @@ import { BitKeepAdapter } from "@tronweb3/tronwallet-adapter-bitkeep";
 import { LedgerAdapter } from "@tronweb3/tronwallet-adapter-ledger";
 import { TronLinkAdapter } from "@tronweb3/tronwallet-adapter-tronlink";
 import { WalletConnectAdapter } from "@tronweb3/tronwallet-adapter-walletconnect";
-import { EitherAsync, Maybe } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Stream } from "effect";
 import type { Address } from "viem";
 import { createConnector } from "wagmi";
 import { images } from "../../assets/images";
@@ -55,13 +54,8 @@ const createTronConnector = ({
       return adapter.disconnect();
     },
     getAccounts: async () => {
-      return (
-        await EitherAsync.liftEither(
-          Maybe.fromNullable([adapter.address as Address]).toEither(
-            new Error("No account found")
-          )
-        )
-      ).unsafeCoerce();
+      if (!adapter.address) throw new Error("No account found");
+      return [adapter.address as Address];
     },
     switchChain: async () => tron,
     getChainId: async () => tron.id,
@@ -88,7 +82,7 @@ const createTronConnector = ({
       config.emitter.emit("disconnect");
     },
     getProvider: async () => adapter,
-    $filteredChains: new BehaviorSubject<Chain[]>([tron]).asObservable(),
+    $filteredChains: Stream.succeed<Chain[]>([tron]),
   }));
 
 export const getTronConnectors = ({

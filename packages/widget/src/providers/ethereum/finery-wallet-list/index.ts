@@ -8,11 +8,9 @@ import {
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
 import { createStore } from "mipd";
-import { Maybe } from "purify-ts";
 import type { EIP1193Provider } from "viem";
 import { injected } from "wagmi";
 import { evmChainGroup } from "../../../domain/types/chains";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import { passCorrectChainsToWallet } from "../utils";
 import bitGoIcon from "./custom-wallet-icons/bitgo.svg";
 import { cactusIcon } from "./custom-wallet-icons/cactus-icon";
@@ -140,22 +138,18 @@ const finoaWallet: CommonWalletOptions = {
 //   },
 // };
 
-const safeWalletWC: CommonWalletOptions = Maybe.of(safeWallet())
-  .map(
-    (val) =>
-      ({
-        iconUrl: val.iconUrl,
-        id: val.id,
-        name: val.name,
-        rdns: val.rdns,
-        iconBackground: val.iconBackground,
-        downloadUrls: {
-          qrCode: "https://app.safe.global/",
-        },
-        chainGroup: evmChainGroup,
-      }) satisfies CommonWalletOptions
-  )
-  .unsafeCoerce();
+const safeWalletOptions = safeWallet();
+const safeWalletWC: CommonWalletOptions = {
+  iconUrl: safeWalletOptions.iconUrl,
+  id: safeWalletOptions.id,
+  name: safeWalletOptions.name,
+  rdns: safeWalletOptions.rdns,
+  iconBackground: safeWalletOptions.iconBackground,
+  downloadUrls: {
+    qrCode: "https://app.safe.global/",
+  },
+  chainGroup: evmChainGroup,
+};
 
 const asEip1193Provider = (
   provider: Record<string, unknown> | undefined
@@ -165,13 +159,6 @@ export const createFineryWallets: (evmChains: Chain[]) => {
   primaryWallets: WalletList[number]["wallets"];
   otherWallets: WalletList[number]["wallets"];
 } = (evmChains: Chain[]) => {
-  if (MaybeWindow.isNothing()) {
-    return {
-      primaryWallets: [],
-      otherWallets: [],
-    };
-  }
-
   const store = createStore();
 
   const providers = store.getProviders();

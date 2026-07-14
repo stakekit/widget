@@ -3,10 +3,8 @@ import { Box } from "../../../../components/atoms/box";
 import { Image } from "../../../../components/atoms/image";
 import { TokenIcon } from "../../../../components/atoms/token-icon";
 import { Text } from "../../../../components/atoms/typography/text";
-import {
-  getDashboardYieldCategory,
-  type Yield,
-} from "../../../../domain/types/yields";
+import type { EarnYieldWithProvider } from "../../../../domain/schema/earn-models";
+import { getDashboardYieldCategory } from "../../../../domain/types/yields";
 import {
   formatDisplayTokenSymbol,
   formatNetworkName,
@@ -21,7 +19,7 @@ export const EarnDetailsHeader = ({
 }: {
   headerBadges: EarnDetailsHeaderBadge[];
   providerName: string;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) => (
   <Box display="flex" alignItems="center" gap="1">
     <TokenIcon
@@ -90,7 +88,7 @@ const ProviderLabel = ({
   yieldDto,
 }: {
   providerName: string;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) => {
   const { t } = useTranslation();
 
@@ -117,7 +115,7 @@ const formatDetailsTitle = ({
   yieldDto,
 }: {
   providerName: string;
-  yieldDto: Yield;
+  yieldDto: EarnYieldWithProvider;
 }) => {
   const name = yieldDto.metadata.name;
 

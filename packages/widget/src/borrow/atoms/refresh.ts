@@ -1,7 +1,7 @@
-import { Effect, Option, Schema, Stream } from "effect";
+import { Effect, Stream } from "effect";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import { invalidateAtomResources } from "../../atoms/api-resource";
-import {
+import { refreshAtomResources } from "../../atoms/api-resource";
+import type {
   TokenBalanceScanCommand,
   YieldBalancesCommand,
 } from "../../domain/schema/financial-models";
@@ -52,29 +52,22 @@ export const getBorrowExecutionRefreshResources = (
     )
   );
 
-  const tokenCommand = Schema.decodeUnknownOption(TokenBalanceScanCommand)({
+  const tokenCommand = {
     addresses: { address: event.action.address },
     network,
-  }).pipe(Option.getOrNull);
-  const yieldCommand = Schema.decodeUnknownOption(YieldBalancesCommand)({
+  } satisfies TokenBalanceScanCommand;
+  const yieldCommand = {
     queries: [{ address: event.action.address, network }],
-  }).pipe(Option.getOrNull);
+  } satisfies YieldBalancesCommand;
 
-  if (tokenCommand) {
-    resources.push(
-      tokenBalancesAtom(
-        new TokenBalancesKey({ command: tokenCommand, enabled: true })
-      )
-    );
-  }
-
-  if (yieldCommand) {
-    resources.push(
-      yieldBalancesAtom(
-        new YieldBalancesKey({ command: yieldCommand, enabled: true })
-      )
-    );
-  }
+  resources.push(
+    tokenBalancesAtom(
+      new TokenBalancesKey({ command: tokenCommand, enabled: true })
+    ),
+    yieldBalancesAtom(
+      new YieldBalancesKey({ command: yieldCommand, enabled: true })
+    )
+  );
 
   return resources;
 };
@@ -85,7 +78,7 @@ export const borrowExecutionRuntimeRefreshAtom = borrowAtomRuntime.atom(
       Stream.flatMap((events) => events.events),
       Stream.tap((event) =>
         Effect.sync(() =>
-          invalidateAtomResources(
+          refreshAtomResources(
             context,
             getBorrowExecutionRefreshResources(event)
           )

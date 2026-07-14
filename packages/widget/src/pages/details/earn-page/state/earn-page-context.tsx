@@ -1,10 +1,9 @@
-import { useAtom, useAtomValue } from "@effect/atom-react";
+import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useConnectModal } from "@stakekit/rainbowkit";
 import BigNumber from "bignumber.js";
-import { Option, Schema } from "effect";
+import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type * as Atom from "effect/unstable/reactivity/Atom";
-import { List, Maybe } from "purify-ts";
 import type { PropsWithChildren } from "react";
 import {
   createContext,
@@ -15,6 +14,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { addLedgerAccountAtom } from "../../../../atoms/wallet-workflows";
 import type { NumberInputProps } from "../../../../components/atoms/number-input";
 import type { SelectModalProps } from "../../../../components/atoms/select-modal";
 import {
@@ -22,12 +22,15 @@ import {
   stakeTokenSameAsGasToken,
   tokenString,
 } from "../../../../domain";
-import { EarnValidatorKey } from "../../../../domain/schema/earn-models";
-import { YieldId } from "../../../../domain/schema/identifiers";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../domain/schema/earn-models";
+import type { YieldId } from "../../../../domain/schema/identifiers";
+import type { TronResource } from "../../../../domain/schema/legacy-models";
 import { getKycProviderName } from "../../../../domain/types/kyc";
 import type { PositionsData } from "../../../../domain/types/positions";
-import type { TronResourceType } from "../../../../domain/types/tron";
-import type { Validator } from "../../../../domain/types/validators";
+
 import {
   type DashboardYieldCategory,
   type ExtendedYieldType,
@@ -40,9 +43,12 @@ import {
   isBittensorStaking,
   isNonZeroRewardRateYield,
   isYieldActionArgRequired,
-  type YieldBase,
 } from "../../../../domain/types/yields";
-import { useTokensPrices } from "../../../../hooks/api/use-tokens-prices";
+import {
+  getTokensPricesRequest,
+  PricesKey,
+  pricesAtom,
+} from "../../../../hooks/api/prices-atoms";
 import { useYieldKycGate } from "../../../../hooks/api/use-yield-kyc-gate";
 import { useNavigateWithScrollToTop } from "../../../../hooks/navigation/use-navigate-with-scroll-to-top";
 import {
@@ -50,10 +56,9 @@ import {
   usePositionDetailsStakeMatch,
 } from "../../../../hooks/navigation/use-position-details-stake-match";
 import { useTrackEvent } from "../../../../hooks/tracking/use-track-event";
-import { useAddLedgerAccount } from "../../../../hooks/use-add-ledger-account";
+import { useCloseChainModal } from "../../../../hooks/use-close-chain-modal";
 import { useDebouncedValue } from "../../../../hooks/use-debounced-value";
 import { useEstimatedRewards } from "../../../../hooks/use-estimated-rewards";
-import { useInitParams } from "../../../../hooks/use-init-params";
 import { useMaxMinYieldAmount } from "../../../../hooks/use-max-min-yield-amount";
 import { useProvidersDetails } from "../../../../hooks/use-provider-details";
 import { useRewardTokenDetails } from "../../../../hooks/use-reward-token-details";
@@ -61,16 +66,21 @@ import { useSavedRef } from "../../../../hooks/use-saved-ref";
 import { useValidatorsConfig } from "../../../../hooks/use-validators-config";
 import { useYieldType } from "../../../../hooks/use-yield-type";
 import { useSetEnterStakeRequest } from "../../../../providers/enter-stake-store";
+import { isLedgerLiveConnector } from "../../../../providers/ledger/ledger-live-connector-meta";
 import { useMountAnimation } from "../../../../providers/mount-animation";
 import { useSettings } from "../../../../providers/settings";
-import { useSKWallet } from "../../../../providers/sk-wallet";
-import { useWagmiConfig } from "../../../../providers/wagmi";
+import { useWalletController } from "../../../../providers/wallet";
+import { useSKWallet } from "../../../../providers/wallet/react/use-wallet";
+import {
+  WalletInitParamsKey,
+  walletInitParamsAtom,
+} from "../../../../providers/wallet/wagmi/initialization-params";
 import { defaultFormattedNumber, formatNumber } from "../../../../utils";
 import type { PageCta } from "../../../components/page-cta";
 import type { SelectedStakeData } from "../types";
-import { YieldValidatorsPullKey } from "./effect-atom-poc/catalog/keys";
-import { useEarnMachine } from "./effect-atom-poc/hooks/use-earn-machine";
-import type { EarnTokenOption } from "./effect-atom-poc/types";
+import { YieldValidatorsPullKey } from "./atoms-state/catalog/keys";
+import { useEarnMachine } from "./atoms-state/hooks/use-earn-machine";
+import type { EarnTokenOption } from "./atoms-state/types";
 import type { EarnPageContextType } from "./types";
 import { useAmountValidation } from "./use-amount-validation";
 import { usePendingActionDeepLink } from "./use-pending-action-deep-link";
@@ -90,15 +100,11 @@ const isAsyncErrorWithoutValue = <A, E>(
   result: AsyncResult.AsyncResult<A, E>
 ) => AsyncResult.isFailure(result) && getAsyncValue(result) === null;
 
-const maybeFromNullable = <A,>(value: A | null | undefined) =>
-  Maybe.fromNullable(value);
-
 export const EarnPageContextProvider = ({
   children,
   registerFooterButton = true,
 }: PropsWithChildren<{ registerFooterButton?: boolean }>) => {
   const { t } = useTranslation();
-  const initParams = useInitParams();
 
   const {
     dashboardVariant,
@@ -109,6 +115,16 @@ export const EarnPageContextProvider = ({
     variant,
     yieldGrouping,
   } = useSettings();
+  const initParams = AsyncResult.getOrElse(
+    useAtomValue(
+      walletInitParamsAtom(
+        new WalletInitParamsKey({
+          externalProviderInitToken: externalProviders?.initToken ?? null,
+        })
+      )
+    ),
+    () => null
+  );
   const dashboardYieldCategoryGroupingEnabled =
     !!dashboardVariant && yieldGrouping === "category";
   const validatorsConfig = useValidatorsConfig();
@@ -120,6 +136,7 @@ export const EarnPageContextProvider = ({
     isConnecting,
     isLedgerLiveAccountPlaceholder,
     chain,
+    connector,
     network,
   } = useSKWallet();
 
@@ -128,7 +145,7 @@ export const EarnPageContextProvider = ({
     additionalAddresses,
     categoryOrder: dashboardYieldCategoryOrder,
     dashboardVariant: dashboardYieldCategoryGroupingEnabled,
-    initParams: initParams.data ?? null,
+    initParams,
     network: network ?? null,
     preferredTokenYieldsPerNetwork: preferredTokenYieldsPerNetwork ?? null,
     tokensForEnabledYieldsOnly: !!tokensForEnabledYieldsOnly,
@@ -147,44 +164,35 @@ export const EarnPageContextProvider = ({
   const positionsData =
     getAsyncValue(positionsDataResult) ?? (new Map() as PositionsData);
 
-  const selectedTokenOption = maybeFromNullable(machine.selection.token);
-  const selectedToken = selectedTokenOption.map((option) => option.token);
-  const selectedStake = maybeFromNullable(machine.selection.yield);
+  const selectedTokenOption = machine.selection.token;
+  const selectedToken = selectedTokenOption?.token ?? null;
+  const selectedStake = machine.selection.yield;
   const selectedStakeId = machine.selection.yield?.id ?? null;
   const filteredSelectedValidators = selectedStake
-    .map((yieldDto) =>
-      filterValidators({
+    ? filterValidators({
         validatorsConfig,
         validators: [...machine.selection.validators],
-        network: yieldDto.token.network,
-        yieldId: yieldDto.id,
+        network: selectedStake.token.network,
+        yieldId: selectedStake.id,
       })
-    )
-    .orDefault([...machine.selection.validators]);
+    : [...machine.selection.validators];
   const selectedValidators = new Map(
     filteredSelectedValidators.map((validator) => [validator.key, validator])
   );
   const stakeAmount = new BigNumber(machine.form.stakeAmount);
-  const selectedProviderYieldId = maybeFromNullable(
-    machine.form.providerYieldId
-  );
-  const tronResource = maybeFromNullable(
-    machine.form.tronResource as TronResourceType | null
-  );
+  const selectedProviderYieldId = machine.form.providerYieldId;
+  const tronResource = machine.form.tronResource as TronResource | null;
   const selectedDashboardYieldCategory = machine.selection.category;
   const availableDashboardYieldCategories =
     dashboardYieldCategoryGroupingEnabled
       ? [...machine.availableCategories]
       : [];
-  const availableAmount = selectedTokenOption.map(
-    (tokenOption) => new BigNumber(tokenOption.amount)
-  );
+  const availableAmount = selectedTokenOption
+    ? new BigNumber(selectedTokenOption.amount)
+    : null;
   const hasNotYieldsForToken = machine.status === "no-yields";
 
-  const yieldType = useYieldType(selectedStake).mapOrDefault(
-    (y) => y.title,
-    ""
-  );
+  const yieldType = useYieldType(selectedStake)?.title ?? "";
 
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
@@ -197,54 +205,57 @@ export const EarnPageContextProvider = ({
   const pointsRewardTokens = useMemo(
     () =>
       selectedStake
-        .map(getYieldRewardTokens)
-        .map((val) => val.filter((rt) => rt.isPoints)),
+        ? getYieldRewardTokens(selectedStake).filter((token) => token.isPoints)
+        : null,
     [selectedStake]
   );
 
-  const pricesState = useTokensPrices({
+  const pricesRequest = getTokensPricesRequest({
     token: selectedToken,
     yieldDto: selectedStake,
   });
+  const pricesResult = useAtomValue(
+    pricesAtom(new PricesKey({ request: pricesRequest }))
+  );
+  const prices = AsyncResult.getOrElse(pricesResult, () => null);
 
-  const symbol = selectedToken.mapOrDefault((val) => val.symbol, "");
+  const symbol = selectedToken?.symbol ?? "";
 
   const rewardsTokenSymbol = useMemo(() => {
-    return selectedStake
-      .filter((val) => isBittensorStaking(val.id))
-      .chain(() => List.head([...selectedValidators.values()]))
-      .map((validator) => validator.subnet?.tokenSymbol ?? "")
-      .orDefault(symbol);
+    return selectedStake && isBittensorStaking(selectedStake.id)
+      ? EArray.head([...selectedValidators.values()]).pipe(
+          Option.map((validator) => validator.subnet?.tokenSymbol ?? ""),
+          Option.getOrElse(() => symbol)
+        )
+      : symbol;
   }, [selectedStake, symbol, selectedValidators]);
 
   const formattedPrice = useMemo(
     () =>
-      Maybe.fromRecord({
-        prices: Maybe.fromNullable(pricesState.data),
-        selectedToken,
-        selectedStake,
-      })
-        .map((val) =>
-          getTokenPriceInUSD({
-            baseToken: val.selectedStake.token,
-            amount: stakeAmount,
-            token: val.selectedToken,
-            prices: val.prices,
-            pricePerShare: null,
-          })
-        )
-        .mapOrDefault((v) => `$${defaultFormattedNumber(v)}`, ""),
-    [pricesState.data, selectedToken, stakeAmount, selectedStake]
+      prices && selectedToken && selectedStake
+        ? `$${defaultFormattedNumber(
+            getTokenPriceInUSD({
+              baseToken: selectedStake.token,
+              amount: stakeAmount,
+              token: selectedToken,
+              prices,
+              pricePerShare: null,
+            })
+          )}`
+        : "",
+    [prices, selectedToken, stakeAmount, selectedStake]
   );
 
   const selectedTokenAvailableAmount = useMemo(
     () =>
-      availableAmount.map((am) => ({
-        symbol,
-        shortFormattedAmount: defaultFormattedNumber(am),
-        fullFormattedAmount: formatNumber(am),
-        amount: am,
-      })),
+      availableAmount
+        ? {
+            symbol,
+            shortFormattedAmount: defaultFormattedNumber(availableAmount),
+            fullFormattedAmount: formatNumber(availableAmount),
+            amount: availableAmount,
+          }
+        : null,
     [availableAmount, symbol]
   );
 
@@ -279,156 +290,140 @@ export const EarnPageContextProvider = ({
 
   const tokenBalancesData = useMemo(
     () =>
-      Maybe.of([...tokenOptions]).chain((tokens) =>
-        Maybe.of(deferredTokenSearch)
-          .chain((val) =>
-            val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-          )
-          .map((lowerSearch) => ({
-            all: tokens,
-            filtered: tokens.filter(
-              (t) =>
-                t.token.name.toLowerCase().includes(lowerSearch) ||
-                t.token.symbol.toLowerCase().includes(lowerSearch)
-            ),
-          }))
-          .alt(Maybe.of({ all: tokens, filtered: tokens }))
-      ),
+      (() => {
+        const tokens = [...tokenOptions];
+        const lowerSearch = deferredTokenSearch.toLowerCase();
+        return {
+          all: tokens,
+          filtered: lowerSearch
+            ? tokens.filter(
+                (t) =>
+                  t.token.name.toLowerCase().includes(lowerSearch) ||
+                  t.token.symbol.toLowerCase().includes(lowerSearch)
+              )
+            : tokens,
+        };
+      })(),
     [deferredTokenSearch, tokenOptions]
   );
 
-  const selectedStakeData = useMemo<Maybe<SelectedStakeData>>(
-    () =>
-      Maybe.of([...yieldOptions])
-        .map((val) =>
-          selectedStake
-            .filter(
-              (stake) => !val.some((yieldDto) => yieldDto.id === stake.id)
+  const selectedStakeData = useMemo<SelectedStakeData>(() => {
+    const combined =
+      selectedStake &&
+      !yieldOptions.some((yieldDto) => yieldDto.id === selectedStake.id)
+        ? [selectedStake, ...yieldOptions]
+        : [...yieldOptions];
+    const all = combined
+      .sort((a, b) => b.rewardRate.total - a.rewardRate.total)
+      .filter(isNonZeroRewardRateYield);
+    const lowerSearch = deferredStakeSearch.toLowerCase();
+    const filteredDtos = lowerSearch
+      ? all.filter(
+          (yieldDto) =>
+            yieldDto.token.name.toLowerCase().includes(lowerSearch) ||
+            yieldDto.token.symbol.toLowerCase().includes(lowerSearch) ||
+            yieldDto.metadata.name.toLowerCase().includes(lowerSearch) ||
+            getYieldRewardTokens(yieldDto).some(
+              (rewardToken) =>
+                rewardToken.name.toLowerCase().includes(lowerSearch) ||
+                rewardToken.symbol.toLowerCase().includes(lowerSearch)
             )
-            .map((stake) => [stake, ...val])
-            .orDefault(val)
         )
-        .map((val) =>
-          [...val].sort((a, b) => b.rewardRate.total - a.rewardRate.total)
-        )
-        .map((val) => val.filter(isNonZeroRewardRateYield))
-        .chain((yieldDtos) =>
-          Maybe.of(deferredStakeSearch)
-            .chain((val) =>
-              val.length >= 1 ? Maybe.of(val.toLowerCase()) : Maybe.empty()
-            )
-            .map((lowerSearch) => ({
-              all: yieldDtos,
-              filteredDtos: yieldDtos.filter(
-                (d) =>
-                  d.token.name.toLowerCase().includes(lowerSearch) ||
-                  d.token.symbol.toLowerCase().includes(lowerSearch) ||
-                  d.metadata.name.toLowerCase().includes(lowerSearch) ||
-                  getYieldRewardTokens(d).some(
-                    (rt) =>
-                      rt.name.toLowerCase().includes(lowerSearch) ||
-                      rt.symbol.toLowerCase().includes(lowerSearch)
-                  )
-              ),
-            }))
-            .alt(Maybe.of({ all: yieldDtos, filteredDtos: yieldDtos }))
-        )
-        .map(({ all, filteredDtos }) => {
-          const dashboardFilteredDtos =
-            dashboardYieldCategoryGroupingEnabled &&
-            selectedDashboardYieldCategory
-              ? filteredDtos.filter(
-                  (yieldDto) =>
-                    getDashboardYieldCategory(yieldDto) ===
-                    selectedDashboardYieldCategory
-                )
-              : filteredDtos;
+      : all;
 
-          const sorted = [...dashboardFilteredDtos].sort(
-            (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
-          );
+    const dashboardFilteredDtos =
+      dashboardYieldCategoryGroupingEnabled && selectedDashboardYieldCategory
+        ? filteredDtos.filter(
+            (yieldDto) =>
+              getDashboardYieldCategory(yieldDto) ===
+              selectedDashboardYieldCategory
+          )
+        : filteredDtos;
 
-          const groupsWithCounts = [
-            ...sorted
-              .reduce(
-                (acc, curr) => {
-                  const extendedYieldType = getExtendedYieldType(curr);
-                  if (!acc.has(extendedYieldType)) {
-                    acc.set(extendedYieldType, {
-                      type: extendedYieldType,
-                      title: getYieldTypeLabels(curr, t).title,
-                      items: [curr],
-                    });
-                  } else {
-                    acc.get(extendedYieldType)?.items.push(curr);
-                  }
+    const sorted = [...dashboardFilteredDtos].sort(
+      (a, b) => getYieldTypesSortRank(a) - getYieldTypesSortRank(b)
+    );
 
-                  return acc;
-                },
-                new Map<
-                  ExtendedYieldType,
-                  {
-                    type: ExtendedYieldType;
-                    title: ReturnType<typeof getYieldTypeLabels>["title"];
-                    items: YieldBase[];
-                  }
-                >()
-              )
-              .values(),
-          ].reduce(
-            (acc, next) => {
-              acc.set(next.type, {
-                title: next.title,
-                itemsLength:
-                  (acc.get(next.type)?.itemsLength ?? 0) + next.items.length,
+    const groupsWithCounts = [
+      ...sorted
+        .reduce(
+          (acc, curr) => {
+            const extendedYieldType = getExtendedYieldType(curr);
+            if (!acc.has(extendedYieldType)) {
+              acc.set(extendedYieldType, {
+                type: extendedYieldType,
+                title: getYieldTypeLabels(curr, t).title,
+                items: [curr],
               });
+            } else {
+              acc.get(extendedYieldType)?.items.push(curr);
+            }
 
-              return acc;
-            },
+            return acc;
+          },
+          new Map<
+            ExtendedYieldType,
+            {
+              type: ExtendedYieldType;
+              title: ReturnType<typeof getYieldTypeLabels>["title"];
+              items: EarnYieldWithProvider[];
+            }
+          >()
+        )
+        .values(),
+    ].reduce(
+      (acc, next) => {
+        acc.set(next.type, {
+          title: next.title,
+          itemsLength:
+            (acc.get(next.type)?.itemsLength ?? 0) + next.items.length,
+        });
 
-            new Map<ExtendedYieldType, { itemsLength: number; title: string }>()
-          );
+        return acc;
+      },
 
-          return {
-            all,
-            filtered: sorted,
-            groupsWithCounts,
-          };
-        }),
-    [
-      dashboardYieldCategoryGroupingEnabled,
-      deferredStakeSearch,
-      selectedStake,
-      yieldOptions,
-      selectedDashboardYieldCategory,
-      t,
-    ]
-  );
+      new Map<ExtendedYieldType, { itemsLength: number; title: string }>()
+    );
+
+    return { all, filtered: sorted, groupsWithCounts };
+  }, [
+    dashboardYieldCategoryGroupingEnabled,
+    deferredStakeSearch,
+    selectedStake,
+    yieldOptions,
+    selectedDashboardYieldCategory,
+    t,
+  ]);
 
   const shouldFetchValidators = validatorsResource.enabled;
 
   const validatorsData = useMemo(
     () =>
-      selectedStake
-        .filter(() => shouldFetchValidators)
-        .map((yieldDto) => {
-          const validators = filterValidators({
-            validatorsConfig,
-            validators: debouncedValidatorSearch
-              ? getPullItems(validatorsPullResult)
-              : [...loadedValidatorsMap.values()],
-            network: yieldDto.token.network,
-            yieldId: yieldDto.id,
-          });
+      selectedStake && shouldFetchValidators
+        ? (() => {
+            const validators = filterValidators({
+              validatorsConfig,
+              validators: debouncedValidatorSearch
+                ? getPullItems(validatorsPullResult)
+                : [...loadedValidatorsMap.values()],
+              network: selectedStake.token.network,
+              yieldId: selectedStake.id,
+            });
 
-          if (dashboardVariant || variant === "utila" || variant === "porto") {
-            return [...validators].sort(
-              (a, b) => (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
-            );
-          }
+            if (
+              dashboardVariant ||
+              variant === "utila" ||
+              variant === "porto"
+            ) {
+              return [...validators].sort(
+                (a, b) =>
+                  (b.rewardRate?.total ?? 0) - (a.rewardRate?.total ?? 0)
+              );
+            }
 
-          return validators;
-        }),
+            return validators;
+          })()
+        : null,
     [
       dashboardVariant,
       debouncedValidatorSearch,
@@ -456,12 +451,8 @@ export const EarnPageContextProvider = ({
       tokenKey: tokenString(tokenBalance.token),
     });
 
-  const onYieldSelect = (yieldId: string) => {
-    const decoded = Schema.decodeUnknownOption(YieldId)(yieldId);
-    if (Option.isSome(decoded)) {
-      dispatch({ type: "yield/select", yieldId: decoded.value });
-    }
-  };
+  const onYieldSelect = (yieldId: YieldId) =>
+    dispatch({ type: "yield/select", yieldId });
 
   const onDashboardYieldCategorySelect = (category: DashboardYieldCategory) => {
     if (!dashboardYieldCategoryGroupingEnabled) return;
@@ -474,36 +465,27 @@ export const EarnPageContextProvider = ({
     });
   };
 
-  const onValidatorSelect = (item: Validator) =>
-    selectedStake.ifJust((ss) =>
-      Schema.decodeUnknownOption(EarnValidatorKey)(item.key).pipe(
-        Option.match({
-          onNone: () => undefined,
-          onSome: (validatorKey) =>
-            isYieldActionArgRequired(ss, "enter", "validatorAddresses")
-              ? dispatch({
-                  type: "validator/multiselect",
-                  validatorKey,
-                })
-              : dispatch({
-                  type: "validator/select",
-                  validatorKey,
-                }),
+  const onValidatorSelect = (item: EarnValidator) => {
+    if (!selectedStake) return;
+    isYieldActionArgRequired(selectedStake, "enter", "validatorAddresses")
+      ? dispatch({
+          type: "validator/multiselect",
+          validatorKey: item.key,
         })
-      )
-    );
+      : dispatch({
+          type: "validator/select",
+          validatorKey: item.key,
+        });
+  };
 
-  const onValidatorRemove = (item: Validator) => {
-    const decoded = Schema.decodeUnknownOption(EarnValidatorKey)(item.key);
-    if (Option.isSome(decoded)) {
-      dispatch({ type: "validator/remove", validatorKey: decoded.value });
-    }
+  const onValidatorRemove = (item: EarnValidator) => {
+    dispatch({ type: "validator/remove", validatorKey: item.key });
   };
 
   const onStakeAmountChange: NumberInputProps["onChange"] = (val) =>
     dispatch({ type: "stakeAmount/change", amount: val.toString(10) });
 
-  const onProviderYieldIdSelect = (yieldId: string) =>
+  const onProviderYieldIdSelect = (yieldId: YieldId) =>
     dispatch({ type: "providerYieldId/select", providerYieldId: yieldId });
 
   const stakeEnterRequestDto = useStakeEnterRequestDto({
@@ -515,11 +497,13 @@ export const EarnPageContextProvider = ({
     tronResource,
     useMaxAmount: machine.form.useMaxAmount,
   });
-  const yieldKycGate = useYieldKycGate({ yieldDto: selectedStake });
+  const yieldKycGate = useYieldKycGate({
+    yieldDto: selectedStake,
+  });
   const kycGateIsBlocking = yieldKycGate.isGateBlocking;
   const kycProviderName = selectedStake
-    .map(getKycProviderName)
-    .extractNullable();
+    ? getKycProviderName(selectedStake)
+    : null;
   const onKycStatusRefresh = () => yieldKycGate.refetch();
 
   const { openConnectModal } = useConnectModal();
@@ -536,27 +520,21 @@ export const EarnPageContextProvider = ({
   const onClickHandler = () => {
     setSubmitted(true);
     if (validation.hasErrors) return;
-    if (stakeEnterRequestDto.isNothing()) return;
+    const selectedTokenValue = selectedToken;
+    if (!stakeEnterRequestDto || !selectedTokenValue) return;
 
     if (!isConnected) return openConnectModal?.();
     if (kycGateIsBlocking) return;
 
-    const val = Maybe.fromRecord({
-      stakeEnterRequestDto,
-      selectedToken,
-    }).unsafeCoerce();
-
-    setEnterStakeRequest(
-      Maybe.of({
-        actionDto: Maybe.empty(),
-        addresses: val.stakeEnterRequestDto.addresses,
-        requestDto: val.stakeEnterRequestDto.dto,
-        selectedToken: val.selectedToken,
-        gasFeeToken: val.stakeEnterRequestDto.gasFeeToken,
-        selectedStake: val.stakeEnterRequestDto.selectedStake,
-        selectedValidators: val.stakeEnterRequestDto.selectedValidators,
-      })
-    );
+    setEnterStakeRequest({
+      actionDto: null,
+      addresses: stakeEnterRequestDto.addresses,
+      requestDto: stakeEnterRequestDto.dto,
+      selectedToken: selectedTokenValue,
+      gasFeeToken: stakeEnterRequestDto.gasFeeToken,
+      selectedStake: stakeEnterRequestDto.selectedStake,
+      selectedValidators: stakeEnterRequestDto.selectedValidators,
+    });
     navigate(positionDetailsStakeReviewPath ?? "/review");
   };
 
@@ -605,14 +583,14 @@ export const EarnPageContextProvider = ({
 
     if (!isConnected) return val;
 
-    selectedStake.ifJust((ss) => {
+    if (selectedStake) {
       if (
-        isYieldActionArgRequired(ss, "enter", "tronResource") &&
-        tronResource.isNothing()
+        isYieldActionArgRequired(selectedStake, "enter", "tronResource") &&
+        !tronResource
       ) {
         val.errors.tronResource = true;
       }
-    });
+    }
 
     val.errors = {
       ...val.errors,
@@ -639,25 +617,27 @@ export const EarnPageContextProvider = ({
 
   const stakeMaxAmount = useMemo(
     () =>
-      selectedStake
-        .filter(() => maxIntegrationAmount.isJust() && !isForceMax)
-        .map(() => maxEnterOrExitAmount.toNumber()),
+      selectedStake && maxIntegrationAmount && !isForceMax
+        ? maxEnterOrExitAmount.toNumber()
+        : null,
     [maxEnterOrExitAmount, maxIntegrationAmount, isForceMax, selectedStake]
   );
 
   const stakeMinAmount = useMemo(
     () =>
-      selectedStake
-        .filter(() => minIntegrationAmount.isJust() && !isForceMax)
-        .map(() => minEnterOrExitAmount.toNumber())
-        .filter((val) => new BigNumber(val).isGreaterThan(0)),
+      selectedStake &&
+      minIntegrationAmount &&
+      !isForceMax &&
+      minEnterOrExitAmount.isGreaterThan(0)
+        ? minEnterOrExitAmount.toNumber()
+        : null,
     [minEnterOrExitAmount, minIntegrationAmount, isForceMax, selectedStake]
   );
 
   const onSelectOpportunityClose = () => setStakeSearch("");
   const onSelectTokenClose = () => setTokenSearch("");
 
-  const wagmiConfig = useWagmiConfig();
+  const wagmiConfig = useWalletController();
 
   const pendingActionDeepLink = usePendingActionDeepLink();
 
@@ -668,7 +648,7 @@ export const EarnPageContextProvider = ({
     !!machine.resources.yieldsResult?.waiting;
 
   const appLoading =
-    selectedToken.isNothing() ||
+    !selectedToken ||
     !wagmiConfig.data ||
     wagmiConfig.isLoading ||
     pendingActionDeepLink.isLoading ||
@@ -691,17 +671,13 @@ export const EarnPageContextProvider = ({
       : false);
 
   const buttonDisabled =
-    isConnected &&
-    (isFetching || stakeEnterRequestDto.isNothing() || kycGateIsBlocking);
+    isConnected && (isFetching || !stakeEnterRequestDto || kycGateIsBlocking);
 
-  const buttonCTAText = useYieldType(selectedStake).mapOrDefault(
-    (v) => v.cta,
-    ""
-  );
+  const buttonCTAText = useYieldType(selectedStake)?.cta ?? "";
 
   const providersDetails = useProvidersDetails({
     integrationData: selectedStake,
-    validators: Maybe.of(selectedValidators),
+    validators: selectedValidators,
     selectedProviderYieldId,
   });
 
@@ -715,17 +691,23 @@ export const EarnPageContextProvider = ({
     });
   };
 
-  const onTronResourceSelect = (value: TronResourceType) =>
+  const onTronResourceSelect = (value: TronResource) =>
     dispatch({ type: "tronResource/select", tronResource: value });
 
   const onClickRef = useSavedRef(onClickHandler);
 
-  const addLedgerAccount = useAddLedgerAccount();
+  const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
+  const { closeChainModal } = useCloseChainModal();
 
   const connectClickRef = useSavedRef(() => {
     if (isLedgerLiveAccountPlaceholder && chain) {
       trackEvent("addLedgerAccountClicked");
-      return addLedgerAccount.mutate(chain);
+      return addLedgerAccount({
+        chain,
+        closeChainModal,
+        connector:
+          connector && isLedgerLiveConnector(connector) ? connector : null,
+      });
     }
 
     trackEvent("connectWalletClicked");
@@ -734,14 +716,12 @@ export const EarnPageContextProvider = ({
 
   const isStakeTokenSameAsGasToken = useMemo(
     () =>
-      Maybe.fromRecord({ selectedStake, selectedToken }).mapOrDefault(
-        (val) =>
-          stakeTokenSameAsGasToken({
-            stakeToken: val.selectedToken,
-            yieldDto: val.selectedStake,
-          }),
-        false
-      ),
+      selectedStake && selectedToken
+        ? stakeTokenSameAsGasToken({
+            stakeToken: selectedToken,
+            yieldDto: selectedStake,
+          })
+        : false,
     [selectedStake, selectedToken]
   );
 

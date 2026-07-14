@@ -1,16 +1,21 @@
 import type BigNumber from "bignumber.js";
-import { List, Maybe } from "purify-ts";
+import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
-import type { YieldCreateActionDto } from "../../../../domain/types/action";
-import type { AddressesDto } from "../../../../domain/types/addresses";
-import type { TokenDto } from "../../../../domain/types/tokens";
-import type { TronResourceType } from "../../../../domain/types/tron";
+import type { ActionCommand } from "../../../../domain/schema/action-models";
+import type { WalletAddresses } from "../../../../domain/schema/address-models";
 import type {
-  Validator,
-  ValidatorKey,
-} from "../../../../domain/types/validators";
-import { getYieldActionArg, type Yield } from "../../../../domain/types/yields";
-import { useSKWallet } from "../../../../providers/sk-wallet";
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../domain/schema/earn-models";
+import type { YieldId } from "../../../../domain/schema/identifiers";
+import type {
+  AppToken,
+  TronResource,
+} from "../../../../domain/schema/legacy-models";
+
+import type { ValidatorKey } from "../../../../domain/types/validators";
+import { getYieldActionArg } from "../../../../domain/types/yields";
+import { useSKWallet } from "../../../../providers/wallet/react/use-wallet";
 
 export const useStakeEnterRequestDto = ({
   selectedProviderYieldId,
@@ -21,119 +26,102 @@ export const useStakeEnterRequestDto = ({
   tronResource,
   useMaxAmount,
 }: {
-  selectedProviderYieldId: Maybe<Yield["id"]>;
-  selectedStake: Maybe<Yield>;
-  selectedToken: Maybe<TokenDto>;
-  selectedValidators: Map<ValidatorKey, Validator>;
+  selectedProviderYieldId: YieldId | null;
+  selectedStake: EarnYieldWithProvider | null;
+  selectedToken: AppToken | null;
+  selectedValidators: Map<ValidatorKey, EarnValidator>;
   stakeAmount: BigNumber;
-  tronResource: Maybe<TronResourceType>;
+  tronResource: TronResource | null;
   useMaxAmount: boolean;
 }) => {
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
-  return useMemo(
-    () =>
-      Maybe.fromRecord({
-        address: Maybe.fromNullable(address),
-        selectedStake,
-        selectedToken,
-      }).chain<{
-        addresses: AddressesDto;
-        gasFeeToken: Yield["token"];
-        dto: YieldCreateActionDto;
-        selectedValidators: Map<ValidatorKey, Validator>;
-        selectedStake: Yield;
-      }>(({ address, selectedStake, selectedToken }) => {
-        const validators = [...selectedValidators.values()];
-        const inputToken = selectedToken.address;
-        const ledgerWalletApiCompatible = isLedgerLive ?? undefined;
-        const selectedTronResource = tronResource.extract();
-        const providerIdRequired = !!getYieldActionArg(
-          selectedStake,
-          "enter",
-          "providerId"
-        )?.required;
-        const providerId = selectedProviderYieldId.extract();
+  return useMemo<{
+    addresses: WalletAddresses;
+    gasFeeToken: EarnYieldWithProvider["token"];
+    dto: ActionCommand;
+    selectedValidators: Map<ValidatorKey, EarnValidator>;
+    selectedStake: EarnYieldWithProvider;
+  } | null>(() => {
+    if (!address || !selectedStake || !selectedToken) return null;
 
-        if (providerIdRequired && !providerId) {
-          return Maybe.empty();
-        }
-
-        const selectedProviderArgs = providerId ? { providerId } : {};
-
-        const validatorsOrProvider = (() => {
-          if (
-            getYieldActionArg(selectedStake, "enter", "validatorAddresses")
-              ?.required
-          ) {
-            return validators.length > 0
-              ? Maybe.of({
-                  validatorAddresses: validators.map((v) => v.address),
-                })
-              : Maybe.empty();
-          }
-
-          const subnetIdRequired = !!getYieldActionArg(
-            selectedStake,
-            "enter",
-            "subnetId"
-          )?.required;
-
-          const validatorAddressRequired = !!getYieldActionArg(
-            selectedStake,
-            "enter",
-            "validatorAddress"
-          )?.required;
-
-          if (!validatorAddressRequired && !subnetIdRequired) {
-            return Maybe.of({});
-          }
-
-          return List.head(validators).map((v) => ({
-            validatorAddress: v.address,
-            subnetId: subnetIdRequired ? v.subnet?.id : undefined,
-          }));
-        })();
-
-        return validatorsOrProvider.map((validatorsOrProvider) => ({
-          selectedValidators,
-          selectedStake: selectedStake,
-          gasFeeToken: selectedStake.mechanics.gasFeeToken,
-          addresses: {
-            address,
-            additionalAddresses: additionalAddresses ?? undefined,
-          },
-          dto: {
-            address,
-            yieldId: selectedStake.id,
-            arguments: {
-              amount: stakeAmount.toString(10),
-              ...(inputToken === undefined ? {} : { inputToken }),
-              ...(ledgerWalletApiCompatible === undefined
-                ? {}
-                : { ledgerWalletApiCompatible }),
-              ...(selectedTronResource === undefined
-                ? {}
-                : { tronResource: selectedTronResource }),
-              ...(useMaxAmount ? { useMaxAmount: true } : {}),
-              ...selectedProviderArgs,
-              ...validatorsOrProvider,
-              ...(additionalAddresses ?? {}),
-            },
-          },
-        }));
-      }),
-    [
-      additionalAddresses,
-      address,
-      isLedgerLive,
+    const providerIdRequired = !!getYieldActionArg(
       selectedStake,
-      selectedToken,
+      "enter",
+      "providerId"
+    )?.required;
+    if (providerIdRequired && !selectedProviderYieldId) return null;
+
+    const validators = [...selectedValidators.values()];
+    const validatorArguments = (() => {
+      if (
+        getYieldActionArg(selectedStake, "enter", "validatorAddresses")
+          ?.required
+      ) {
+        return validators.length > 0
+          ? { validatorAddresses: validators.map((value) => value.address) }
+          : null;
+      }
+
+      const subnetIdRequired = !!getYieldActionArg(
+        selectedStake,
+        "enter",
+        "subnetId"
+      )?.required;
+      const validatorAddressRequired = !!getYieldActionArg(
+        selectedStake,
+        "enter",
+        "validatorAddress"
+      )?.required;
+      if (!validatorAddressRequired && !subnetIdRequired) return {};
+
+      const validator = EArray.head(validators).pipe(Option.getOrNull);
+      return validator
+        ? {
+            validatorAddress: validator.address,
+            subnetId: subnetIdRequired ? validator.subnet?.id : undefined,
+          }
+        : null;
+    })();
+    if (!validatorArguments) return null;
+
+    return {
       selectedValidators,
-      stakeAmount,
-      useMaxAmount,
-      tronResource,
-      selectedProviderYieldId,
-    ]
-  );
+      selectedStake,
+      gasFeeToken: selectedStake.mechanics.gasFeeToken,
+      addresses: {
+        address,
+        additionalAddresses: additionalAddresses ?? undefined,
+      },
+      dto: {
+        address,
+        yieldId: selectedStake.id,
+        arguments: {
+          amount: stakeAmount.toString(10),
+          ...(selectedToken.address
+            ? { inputToken: selectedToken.address }
+            : {}),
+          ...(isLedgerLive ? { ledgerWalletApiCompatible: true } : {}),
+          ...(tronResource ? { tronResource } : {}),
+          ...(useMaxAmount ? { useMaxAmount: true } : {}),
+          ...(selectedProviderYieldId
+            ? { providerId: selectedProviderYieldId }
+            : {}),
+          ...validatorArguments,
+          ...(additionalAddresses ?? {}),
+        },
+      },
+    };
+  }, [
+    additionalAddresses,
+    address,
+    isLedgerLive,
+    selectedStake,
+    selectedToken,
+    selectedValidators,
+    stakeAmount,
+    useMaxAmount,
+    tronResource,
+    selectedProviderYieldId,
+  ]);
 };

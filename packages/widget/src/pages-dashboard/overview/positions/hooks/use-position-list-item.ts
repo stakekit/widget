@@ -1,17 +1,19 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useMemo } from "react";
 import { config } from "../../../../config";
 import { getTokenPriceInUSD } from "../../../../domain";
-import { usePrices } from "../../../../hooks/api/use-prices";
-import { useRewardsSummary } from "../../../../hooks/use-rewards-summary";
+import {
+  CurrentRewardsSummaryKey,
+  currentRewardsSummaryAtom,
+} from "../../../../hooks/api/dashboard-atoms";
+import type { PositionItem } from "../../../../hooks/api/position-atoms";
+import { PricesKey, pricesAtom } from "../../../../hooks/api/prices-atoms";
 import { usePositionListItem as useBasePositionListItem } from "../../../../pages/details/positions-page/hooks/use-position-list-item";
-import type { usePositions } from "../../../../pages/details/positions-page/hooks/use-positions";
 import { defaultFormattedNumber } from "../../../../utils";
 
-export const usePositionListItem = (
-  item: ReturnType<typeof usePositions>["positionsData"]["data"][number]
-) => {
+export const usePositionListItem = (item: PositionItem) => {
   const {
     integrationData,
     providersDetails,
@@ -22,49 +24,62 @@ export const usePositionListItem = (
     totalAmountPriceFormatted,
   } = useBasePositionListItem(item);
 
-  const rewardsSummaryQuery = useRewardsSummary(item.integrationId);
-
-  const rewardsSummary = useMemo(
-    () =>
-      Maybe.fromNullable(rewardsSummaryQuery.data?.data).filter((val) =>
-        BigNumber(val.rewards.total).gt(0)
-      ),
-    [rewardsSummaryQuery.data]
+  const rewardsSummaries = AsyncResult.getOrElse(
+    useAtomValue(
+      currentRewardsSummaryAtom(
+        new CurrentRewardsSummaryKey({
+          enabled: true,
+          yieldIds: [item.integrationId],
+        })
+      )
+    ),
+    () => null
   );
 
-  const prices = usePrices({
-    currency: config.currency,
-    tokenList: [
-      ...baseToken.mapOrDefault((v) => [v], []),
-      ...rewardsSummary.mapOrDefault((v) => [v.token], []),
-    ],
-  });
+  const rewardsSummary = useMemo(() => {
+    const summary = rewardsSummaries?.[item.integrationId];
+
+    return summary && BigNumber(summary.rewards.total).gt(0) ? summary : null;
+  }, [item.integrationId, rewardsSummaries]);
+
+  const prices = AsyncResult.getOrElse(
+    useAtomValue(
+      pricesAtom(
+        new PricesKey({
+          request: {
+            currency: config.currency,
+            tokenList: [
+              ...(baseToken ? [baseToken] : []),
+              ...(rewardsSummary ? [rewardsSummary.token] : []),
+            ],
+          },
+        })
+      )
+    ),
+    () => null
+  );
 
   const rewardsAmountFormatted = useMemo(
     () =>
       rewardsSummary
-        .map((val) => BigNumber(val.rewards.total))
-        .map(defaultFormattedNumber),
+        ? defaultFormattedNumber(BigNumber(rewardsSummary.rewards.total))
+        : null,
     [rewardsSummary]
   );
 
   const rewardsAmountPriceFormatted = useMemo(
     () =>
-      Maybe.fromRecord({
-        baseToken,
-        rewardsSummary,
-        prices: Maybe.fromNullable(prices.data),
-      })
-        .map((val) =>
-          getTokenPriceInUSD({
-            baseToken: val.baseToken,
-            amount: val.rewardsSummary.rewards.total,
-            pricePerShare: null,
-            token: val.rewardsSummary.token,
-            prices: val.prices,
-          })
-        )
-        .map(defaultFormattedNumber),
+      baseToken && rewardsSummary && prices
+        ? defaultFormattedNumber(
+            getTokenPriceInUSD({
+              baseToken,
+              amount: rewardsSummary.rewards.total,
+              pricePerShare: null,
+              token: rewardsSummary.token,
+              prices,
+            })
+          )
+        : null,
     [rewardsSummary, baseToken, prices]
   );
 

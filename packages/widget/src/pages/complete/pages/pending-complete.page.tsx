@@ -1,9 +1,12 @@
+import { useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
-import { Maybe } from "purify-ts";
-import { useMemo } from "react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+} from "../../../hooks/api/position-atoms";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useYieldType } from "../../../hooks/use-yield-type";
 import { usePendingActionRequest } from "../../../providers/pending-action-store";
@@ -12,60 +15,47 @@ import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
-
-  const positionBalances = usePositionBalances({
-    balanceId: plain.balanceId,
-    integrationId: plain.integrationId,
-  });
-
-  const pendingRequest = usePendingActionRequest().unsafeCoerce();
-
-  const integrationData = useMemo(
-    () => Maybe.of(pendingRequest.integrationData),
-    [pendingRequest.integrationData]
+  const positionBalances = AsyncResult.getOrElse(
+    useAtomValue(
+      positionBalancesAtom(
+        new PositionBalancesKey({
+          balanceId: plain.balanceId ?? null,
+          yieldId: plain.integrationId ?? null,
+        })
+      )
+    ),
+    () => null
   );
-
-  const token = useMemo(
-    () => Maybe.of(pendingRequest.interactedToken),
-    [pendingRequest.interactedToken]
-  );
+  const pendingRequest = usePendingActionRequest()!;
+  const integrationData = pendingRequest.integrationData;
+  const token = pendingRequest.interactedToken;
 
   useTrackPage("pendingActionCompelete");
 
   const providerDetails = useProvidersDetails({
     integrationData,
-    validators: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validators : []
-    ),
-    selectedProviderYieldId: Maybe.empty(),
+    validators:
+      positionBalances?.type === "validators"
+        ? positionBalances.validators
+        : null,
+    selectedProviderYieldId: null,
   });
-
-  const metadata = integrationData.map((yieldDto) => ({
-    logoURI: yieldDto.metadata.logoURI,
-    name: yieldDto.metadata.name,
-    provider: yieldDto.provider,
-  }));
-  const network = token.mapOrDefault((t) => t.symbol, "");
-  const amount = useMemo(
-    () =>
-      Maybe.fromNullable(pendingRequest.requestDto.arguments?.amount)
-        .map((val) => new BigNumber(val ?? 0))
-        .mapOrDefault((v) => defaultFormattedNumber(v), ""),
-    [pendingRequest.requestDto.arguments?.amount]
-  );
-
-  const yieldType = useYieldType(integrationData).map((v) => v.type);
+  const rawAmount = pendingRequest.requestDto.arguments?.amount;
 
   return (
     <CompletePage
-      providersDetails={providerDetails}
-      yieldType={yieldType}
-      token={token}
-      metadata={metadata}
-      network={network}
-      amount={amount}
+      amount={rawAmount ? defaultFormattedNumber(new BigNumber(rawAmount)) : ""}
+      integrationId={integrationData.id}
+      metadata={{
+        logoURI: integrationData.metadata.logoURI,
+        name: integrationData.metadata.name,
+        provider: integrationData.provider,
+      }}
+      network={token.symbol}
       pendingActionType={pendingRequest.pendingActionType}
-      integrationId={pendingRequest.integrationData.id}
+      providersDetails={providerDetails}
+      token={token}
+      yieldType={useYieldType(integrationData)?.type ?? null}
     />
   );
 };

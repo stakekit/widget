@@ -1,29 +1,14 @@
-import {
-  Data,
-  Duration,
-  Effect,
-  Match,
-  Ref,
-  Schedule,
-  Schema,
-  Stream,
-} from "effect";
+import { Data, Duration, Effect, Match, Ref, Schedule, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import {
-  Action,
-  type ActionRequest,
-  SubmitTransactionResult,
-  type Transaction,
-} from "../domain";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import type { Action, ActionRequest, Transaction } from "../domain";
 import {
   BorrowActionCompletionFailedError,
   BorrowActionStepFailedError,
-  BorrowApiService,
   BorrowCheckFailedError,
   BorrowExecutionEventsService,
   type BorrowExecutionPhase,
   type BorrowExecutionResult,
-  BorrowMutationApiService,
   type BorrowSignedTransaction,
   BorrowSubmitFailedError,
   type BorrowSubmittedTransaction,
@@ -124,27 +109,6 @@ export const getBorrowExecutionSteps = ({
     return { id, status: "pending" };
   });
 };
-
-const decodeBorrowAction = ({
-  actionId,
-  input,
-  phase,
-}: {
-  readonly actionId?: string;
-  readonly input: unknown;
-  readonly phase: BorrowExecutionPhase;
-}) =>
-  Schema.decodeUnknownEffect(Action)(input).pipe(
-    Effect.mapError(
-      (cause) =>
-        new BorrowActionCompletionFailedError({
-          actionId,
-          cause,
-          message: "Borrow action response could not be decoded.",
-          phase,
-        })
-    )
-  );
 
 const getActionFailureMessage = (action: Action) =>
   `Borrow action ended with ${action.status} status.`;
@@ -269,24 +233,17 @@ const advanceToNextTransaction = ({
 
 const createBorrowAction = ({ request }: { readonly request: ActionRequest }) =>
   Effect.gen(function* () {
-    const api = yield* BorrowMutationApiService;
-    const response = yield* api
-      .ActionsControllerExecuteActionV1({ payload: request })
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new BorrowActionCompletionFailedError({
-              cause,
-              message: "Borrow action could not be created.",
-              phase: "creating",
-            })
-        )
-      );
-
-    const action = yield* decodeBorrowAction({
-      input: response,
-      phase: "creating",
-    });
+    const api = (yield* StakeKitApiService).borrow;
+    const action = yield* api.executeAction(request).pipe(
+      Effect.mapError(
+        (cause) =>
+          new BorrowActionCompletionFailedError({
+            cause,
+            message: "Borrow action could not be created.",
+            phase: "creating",
+          })
+      )
+    );
 
     yield* failIfActionTerminal(action, "creating");
 
@@ -305,23 +262,21 @@ const checkBorrowTransaction = ({
   readonly transaction: Transaction;
 }) =>
   Effect.gen(function* () {
-    const api = yield* BorrowApiService;
-    const response = yield* api
-      .ActionsControllerGetActionV1(action.id, undefined)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new BorrowCheckFailedError({
-              actionId: action.id,
-              cause,
-              message: "Borrow action status could not be checked.",
-              phase: "confirming",
-              transactionId: transaction.id,
-            })
-        )
-      );
+    const api = (yield* StakeKitApiService).borrow;
+    const updatedAction = yield* api.getAction(action.id).pipe(
+      Effect.mapError(
+        (cause) =>
+          new BorrowCheckFailedError({
+            actionId: action.id,
+            cause,
+            message: "Borrow action status could not be checked.",
+            phase: "confirming",
+            transactionId: transaction.id,
+          })
+      )
+    );
 
-    if (!response) {
+    if (!updatedAction) {
       return yield* new BorrowCheckFailedError({
         actionId: action.id,
         message: "Borrow action was not found.",
@@ -329,12 +284,6 @@ const checkBorrowTransaction = ({
         transactionId: transaction.id,
       });
     }
-
-    const updatedAction = yield* decodeBorrowAction({
-      actionId: action.id,
-      input: response,
-      phase: "confirming",
-    });
 
     yield* failIfActionTerminal(updatedAction, "confirming");
 
@@ -387,26 +336,18 @@ const checkBorrowTransaction = ({
 
 const stepBorrowAction = (state: BorrowExecutionMachineState) =>
   Effect.gen(function* () {
-    const api = yield* BorrowMutationApiService;
-    const response = yield* api
-      .ActionsControllerStepV1(state.action.id, undefined)
-      .pipe(
-        Effect.mapError(
-          (cause) =>
-            new BorrowActionStepFailedError({
-              actionId: state.action.id,
-              cause,
-              message: "Borrow action could not advance to the next step.",
-              phase: "stepping",
-            })
-        )
-      );
-    const action = yield* decodeBorrowAction({
-      actionId: state.action.id,
-      input: response,
-      phase: "stepping",
-    });
-
+    const api = (yield* StakeKitApiService).borrow;
+    const action = yield* api.stepAction(state.action.id).pipe(
+      Effect.mapError(
+        (cause) =>
+          new BorrowActionStepFailedError({
+            actionId: state.action.id,
+            cause,
+            message: "Borrow action could not advance to the next step.",
+            phase: "stepping",
+          })
+      )
+    );
     yield* failIfActionTerminal(action, "stepping");
 
     if (action.status === "SUCCESS") {
@@ -528,14 +469,15 @@ const processBorrowExecutionStep = ({
       ),
       Match.when("submit", () =>
         Effect.gen(function* () {
-          const api = yield* BorrowMutationApiService;
+          const api = (yield* StakeKitApiService).borrow;
           const signedTransaction = yield* getSignedTransaction(
             state,
             transaction
           );
-          const response = yield* api
-            .TransactionsControllerSubmitTransactionV1(transaction.id, {
-              payload: getBorrowTransactionSubmitPayload(signedTransaction),
+          const decodedResponse = yield* api
+            .submitTransaction({
+              transactionId: transaction.id,
+              command: getBorrowTransactionSubmitPayload(signedTransaction),
             })
             .pipe(
               Effect.mapError(
@@ -549,20 +491,6 @@ const processBorrowExecutionStep = ({
                   })
               )
             );
-          const decodedResponse = yield* Schema.decodeUnknownEffect(
-            SubmitTransactionResult
-          )(response).pipe(
-            Effect.mapError(
-              (cause) =>
-                new BorrowSubmitFailedError({
-                  actionId: state.action.id,
-                  cause,
-                  message: "Borrow submission response could not be decoded.",
-                  phase: "submitting",
-                  transactionId: transaction.id,
-                })
-            )
-          );
           const submission = getBorrowSubmittedTransaction({
             response: decodedResponse,
             signedTransaction,

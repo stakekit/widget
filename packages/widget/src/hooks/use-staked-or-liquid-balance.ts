@@ -1,15 +1,11 @@
-import { Maybe } from "purify-ts";
 import { useMemo } from "react";
 import type { PositionBalancesByType } from "../domain/types/positions";
 
 export const useStakedOrLiquidBalance = (
-  positionBalancesByType: Maybe<PositionBalancesByType>
+  positionBalancesByType: PositionBalancesByType | null
 ) => {
   return useMemo(
-    () =>
-      positionBalancesByType.chain((pbbt) =>
-        Maybe.fromNullable(pbbt.get("active"))
-      ),
+    () => positionBalancesByType?.get("active") ?? null,
     [positionBalancesByType]
   );
 };

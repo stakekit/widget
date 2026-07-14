@@ -2,7 +2,6 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { KycGate } from "../../../domain/types/kyc";
 import { vars } from "../../../styles/theme/contract.css";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import { Box } from "../../atoms/box";
 import { Button } from "../../atoms/button";
 import { Arrow } from "../../atoms/icons/arrow";
@@ -113,9 +112,7 @@ export const KycGateCard = ({
       return;
     }
 
-    MaybeWindow.ifJust((w) => {
-      w.open(kycUrl, "_blank", "noopener,noreferrer");
-    });
+    window.open(kycUrl, "_blank", "noopener,noreferrer");
   };
 
   const onVerificationModalOpenChange = (isOpen: boolean) => {

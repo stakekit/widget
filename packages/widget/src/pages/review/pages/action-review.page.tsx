@@ -1,5 +1,3 @@
-import { Maybe } from "purify-ts";
-import { useMemo } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Divider } from "../../../components/atoms/divider";
@@ -29,24 +27,18 @@ export const ActionReviewPage = () => {
     cta,
   } = useActionReview();
 
-  const info = useMemo(
-    () =>
-      Maybe.fromNullable(selectedYield.token)
-        .map((val) => `${amount} ${val.symbol}`)
-        .extractNullable(),
-    [amount, selectedYield.token]
-  );
+  const info = `${amount} ${selectedYield.token.symbol}`;
 
   return (
     <AnimationPage>
       <PageContainer>
         <ReviewTopSection
           info={info}
-          metadata={Maybe.of({
+          metadata={{
             logoURI: selectedYield.metadata.logoURI,
             name: selectedYield.metadata.name,
             provider: selectedYield.provider,
-          })}
+          }}
           token={inputToken}
           title={title}
         />
@@ -54,42 +46,33 @@ export const ActionReviewPage = () => {
         <Text marginTop="4" marginBottom="2">
           {t("activity.review.transactions")}:
         </Text>
-        {transactions
-          .map((stx) =>
-            stx.map((tx) => (
-              <Box
-                marginBottom="2"
-                display="flex"
-                justifyContent="space-between"
-                key={tx.id}
-              >
-                <Text as="span" color="textMuted">
-                  {capitalizeFirstLetters(tx.type)}
-                </Text>
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  gap="1"
-                >
-                  <Text color="textMuted">
-                    {Maybe.of(tx.status)
-                      .map((tx) => tx.replaceAll("_", " "))
-                      .map(capitalizeFirstLetters)
-                      .extract()}
-                  </Text>
-                  {Maybe.fromNullable(tx.error)
-                    .map((e) => (
-                      <ToolTip maxWidth={300} label={e}>
-                        <InfoIcon />
-                      </ToolTip>
-                    ))
-                    .extractNullable()}
-                </Box>
-              </Box>
-            ))
-          )
-          .extractNullable()}
+        {transactions.map((tx) => (
+          <Box
+            marginBottom="2"
+            display="flex"
+            justifyContent="space-between"
+            key={tx.id}
+          >
+            <Text as="span" color="textMuted">
+              {capitalizeFirstLetters(tx.type)}
+            </Text>
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              gap="1"
+            >
+              <Text color="textMuted">
+                {capitalizeFirstLetters(tx.status.replaceAll("_", " "))}
+              </Text>
+              {tx.error ? (
+                <ToolTip maxWidth={300} label={tx.error}>
+                  <InfoIcon />
+                </ToolTip>
+              ) : null}
+            </Box>
+          </Box>
+        ))}
         <Divider my="2" />
         {!actionOlderThan7Days && (
           <Box marginTop="4" marginBottom="4">

@@ -30,9 +30,9 @@ export const SelectYieldSection = () => {
   const isLoading = appLoading || selectYieldIsLoading;
 
   const yieldPerc = useAnimateYieldPercent(estimatedRewards);
-  const riskSummary = selectedStake
-    .map((yieldDto) => <YieldRiskRatingSummary yieldDto={yieldDto} />)
-    .extractNullable();
+  const riskSummary = selectedStake ? (
+    <YieldRiskRatingSummary yieldDto={selectedStake} />
+  ) : null;
   const showSectionTitle =
     !dashboardVariant &&
     variant !== "zerion" &&
@@ -44,80 +44,73 @@ export const SelectYieldSection = () => {
       <ContentLoaderSquare heightPx={112.5} />
     </Box>
   ) : (
-    selectedStakeData
-      .map((val) => {
-        const opportunityCount = val.all.length;
+    (() => {
+      const opportunityCount = selectedStakeData.all.length;
 
-        return opportunityCount === 0 ? (
+      return opportunityCount === 0 ? (
+        <Box my="4" display="flex" justifyContent="center" alignItems="center">
+          <Text>{t("details.no_opportunities")}</Text>
+        </Box>
+      ) : (
+        <Box>
+          {showSectionTitle && (
+            <Box my="2">
+              <Text>{t("details.earn")}</Text>
+            </Box>
+          )}
+
           <Box
-            my="4"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
+            data-rk="stake-yield-section"
+            background="stakeSectionBackground"
+            borderRadius="xl"
+            marginTop="2"
+            py="4"
+            px="4"
+            className={combineRecipeWithVariant({
+              rec: selectYieldSection,
+              variant,
+            })}
           >
-            <Text>{t("details.no_opportunities")}</Text>
-          </Box>
-        ) : (
-          <Box>
-            {showSectionTitle && (
-              <Box my="2">
+            {variant === "zerion" && (
+              <Box my="1">
                 <Text>{t("details.earn")}</Text>
               </Box>
             )}
-
             <Box
-              data-rk="stake-yield-section"
-              background="stakeSectionBackground"
-              borderRadius="xl"
-              marginTop="2"
-              py="4"
-              px="4"
-              className={combineRecipeWithVariant({
-                rec: selectYieldSection,
-                variant,
-              })}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
             >
-              {variant === "zerion" && (
-                <Box my="1">
-                  <Text>{t("details.earn")}</Text>
-                </Box>
-              )}
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Box minWidth="0" display="flex" marginRight="2" flex={1}>
-                  <Box
-                    position="relative"
-                    data-testid="estimated-reward__percent"
-                  >
-                    <motion.div className={apyYield}>{yieldPerc}</motion.div>
-                  </Box>
-                </Box>
-
-                <Box display="flex" justifyContent="center" alignItems="center">
-                  <SelectOpportunity />
+              <Box minWidth="0" display="flex" marginRight="2" flex={1}>
+                <Box
+                  position="relative"
+                  data-testid="estimated-reward__percent"
+                >
+                  <motion.div className={apyYield}>{yieldPerc}</motion.div>
                 </Box>
               </Box>
 
-              {variant !== "zerion" && <SelectYieldRewardDetails />}
+              <Box display="flex" justifyContent="center" alignItems="center">
+                <SelectOpportunity />
+              </Box>
             </Box>
 
-            {variant !== "zerion" && !dashboardVariant && riskSummary}
-
-            {variant === "zerion" && (
-              <Box display="flex" flexDirection="column" gap="3">
-                <SelectYieldRewardDetails />
-
-                {!dashboardVariant && riskSummary}
-
-                <Divider />
-              </Box>
-            )}
+            {variant !== "zerion" && <SelectYieldRewardDetails />}
           </Box>
-        );
-      })
-      .extractNullable()
+
+          {variant !== "zerion" && !dashboardVariant && riskSummary}
+
+          {variant === "zerion" && (
+            <Box display="flex" flexDirection="column" gap="3">
+              <SelectYieldRewardDetails />
+
+              {!dashboardVariant && riskSummary}
+
+              <Divider />
+            </Box>
+          )}
+        </Box>
+      );
+    })()
   );
 };

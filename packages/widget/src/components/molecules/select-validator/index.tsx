@@ -1,8 +1,12 @@
 import type { PropsWithChildren } from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Validator, ValidatorKey } from "../../../domain/types/validators";
-import type { Yield } from "../../../domain/types/yields";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../domain/schema/earn-models";
+import type { ValidatorKey } from "../../../domain/types/validators";
+
 import { Box } from "../../atoms/box";
 import type { SelectModalProps } from "../../atoms/select-modal";
 import { SelectModal } from "../../atoms/select-modal";
@@ -17,13 +21,13 @@ type SelectValidatorProps = PropsWithChildren<
     "isLoading" | "onClose" | "onOpen" | "state" | "trigger"
   > & {
     selectedValidators: Set<ValidatorKey>;
-    onItemClick: (item: Validator) => void;
+    onItemClick: (item: EarnValidator) => void;
     onViewMoreClick?: () => void;
     onLoadMore?: () => void;
     hasMore?: boolean;
     isLoadingMore?: boolean;
-    validators: Validator[];
-    selectedStake: Yield;
+    validators: EarnValidator[];
+    selectedStake: EarnYieldWithProvider;
     multiSelect: boolean;
   } & (
       | { onSearch: (value: string) => void; searchValue: string }
@@ -71,7 +75,7 @@ export const SelectValidator = ({
   const showExpandedValidators = multiSelect || hasRequestedMoreValidators;
 
   const data = useMemo<{
-    tableData: Validator[];
+    tableData: EarnValidator[];
     groupedItems: GroupedItem[];
     groupCounts: number[];
   }>(() => {
@@ -106,11 +110,11 @@ export const SelectValidator = ({
       },
       {
         preferred: {
-          items: [] as Validator[],
+          items: [] as EarnValidator[],
           label: t("details.validators_preferred"),
         },
         other: {
-          items: [] as Validator[],
+          items: [] as EarnValidator[],
           label: t("details.validators_other"),
         },
       }

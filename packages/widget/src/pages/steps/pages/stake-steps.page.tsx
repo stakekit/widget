@@ -1,9 +1,7 @@
-import { Maybe } from "purify-ts";
-import { useMemo } from "react";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useEnterStakeRequest } from "../../../providers/enter-stake-store";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { StepsPage } from "./common.page";
 
 export const StakeStepsPage = () => {
@@ -11,30 +9,20 @@ export const StakeStepsPage = () => {
 
   const { address, network } = useSKWallet();
 
-  const enterRequest = useEnterStakeRequest().unsafeCoerce();
+  const enterRequest = useEnterStakeRequest()!;
 
-  const onSignSuccess = () =>
-    Maybe.fromRecord({
-      network: Maybe.fromNullable(network),
-      address: Maybe.fromNullable(address),
-    });
+  const onSignSuccess = () => ({ address, network });
 
   const providersDetails = useProvidersDetails({
-    integrationData: useMemo(
-      () => Maybe.of(enterRequest.selectedStake),
-      [enterRequest.selectedStake]
-    ),
-    validators: useMemo(
-      () => Maybe.of(enterRequest.selectedValidators),
-      [enterRequest.selectedValidators]
-    ),
-    selectedProviderYieldId: Maybe.empty(),
+    integrationData: enterRequest.selectedStake,
+    validators: enterRequest.selectedValidators,
+    selectedProviderYieldId: null,
   });
 
   return (
     <StepsPage
       inputToken={enterRequest.selectedToken}
-      session={enterRequest.actionDto.unsafeCoerce()}
+      session={enterRequest.actionDto!}
       onSignSuccess={onSignSuccess}
       providersDetails={providersDetails}
     />

@@ -9,9 +9,8 @@ import { usePendingActionMatch } from "../../../hooks/navigation/use-pending-act
 import { useUnstakeMatch } from "../../../hooks/navigation/use-unstake-match";
 import { useTrackEvent } from "../../../hooks/tracking/use-track-event";
 import { useSavedRef } from "../../../hooks/use-saved-ref";
-import { useSKWallet } from "../../../providers/sk-wallet";
+import { useSKWallet } from "../../../providers/wallet/react/use-wallet";
 import { isMobile } from "../../../utils";
-import { MaybeWindow } from "../../../utils/maybe-window";
 import type { PageCta } from "../../components/page-cta";
 
 export const useComplete = () => {
@@ -37,12 +36,10 @@ export const useComplete = () => {
     navigate("/");
   };
 
-  const onViewTransactionClick = (url: string) =>
-    MaybeWindow.ifJust((w) => {
-      trackEvent("viewTxClicked");
-
-      w.open(url, "_blank");
-    });
+  const onViewTransactionClick = (url: string) => {
+    trackEvent("viewTxClicked");
+    window.open(url, "_blank");
+  };
 
   const unstakeMatch = useUnstakeMatch();
   const pendingActionMatch = usePendingActionMatch();

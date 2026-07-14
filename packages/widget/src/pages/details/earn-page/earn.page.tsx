@@ -1,6 +1,4 @@
-import type { MotionProps, TargetAndTransition } from "motion/react";
 import { motion } from "motion/react";
-import { Just } from "purify-ts";
 import { useTranslation } from "react-i18next";
 import { Box } from "../../../components/atoms/box";
 import { Text } from "../../../components/atoms/typography/text";
@@ -97,41 +95,26 @@ export const AnimatedEarnPage = () => {
   const { mountAnimationFinished, dispatch } = useMountAnimation();
   const { disableInitLayoutAnimation } = useSettings();
 
-  const { animate, initial } = Just({
+  const animation = mountAnimationFinished
+    ? {
+        transition: { duration: 0.3, delay: 0 },
+        initial: { opacity: 0, translateY: "-10px" },
+      }
+    : disableInitLayoutAnimation
+      ? {
+          transition: { duration: 0 },
+          initial: { opacity: 1, translateY: 0 },
+        }
+      : {
+          transition: { duration: 1, delay: 0.8 },
+          initial: { opacity: 0, translateY: "-40px" },
+        };
+  const initial = animation.initial;
+  const animate = {
     opacity: 1,
     translateY: 0,
-  })
-    .chain<{ animate: TargetAndTransition; initial: MotionProps["initial"] }>(
-      (animateTo) =>
-        Just(null)
-          .map<{
-            transition: MotionProps["transition"];
-            initial: MotionProps["initial"];
-          }>(() => {
-            if (mountAnimationFinished) {
-              return {
-                transition: { duration: 0.3, delay: 0 },
-                initial: { opacity: 0, translateY: "-10px" },
-              };
-            }
-            if (disableInitLayoutAnimation) {
-              return {
-                transition: { duration: 0 },
-                initial: { opacity: 1, translateY: 0 },
-              };
-            }
-
-            return {
-              transition: { duration: 1, delay: 0.8 },
-              initial: { opacity: 0, translateY: "-40px" },
-            };
-          })
-          .map((val) => ({
-            animate: { ...animateTo, transition: val.transition },
-            initial: val.initial,
-          }))
-    )
-    .unsafeCoerce();
+    transition: animation.transition,
+  };
 
   return (
     <motion.div

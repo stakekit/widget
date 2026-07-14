@@ -1,6 +1,6 @@
-import type { Maybe } from "purify-ts";
+import type { EarnYieldWithProvider } from "../domain/schema/earn-models";
 import { isForceMaxAmount } from "../domain/types/stake";
-import { getYieldActionArg, type Yield } from "../domain/types/yields";
+import { getYieldActionArg } from "../domain/types/yields";
 
 /**
  * Check if we need to use max amount for staking/unstaking
@@ -11,9 +11,8 @@ export const useForceMaxAmount = ({
   integration,
 }: {
   type: "enter" | "exit";
-  integration: Maybe<Yield>;
+  integration: EarnYieldWithProvider | null;
 }) =>
-  integration
-    .chainNullable((v) => getYieldActionArg(v, type, "amount"))
-    .map(isForceMaxAmount)
-    .orDefault(false);
+  isForceMaxAmount(
+    integration ? getYieldActionArg(integration, type, "amount") : null
+  );

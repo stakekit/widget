@@ -1,8 +1,11 @@
-import { Maybe } from "purify-ts";
-import { useMemo } from "react";
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+} from "../../../hooks/api/position-atoms";
 import { useUnstakeOrPendingActionParams } from "../../../hooks/navigation/use-unstake-or-pending-action-params";
 import { useTrackPage } from "../../../hooks/tracking/use-track-page";
-import { usePositionBalances } from "../../../hooks/use-position-balances";
 import { useProvidersDetails } from "../../../hooks/use-provider-details";
 import { useExitStakeRequest } from "../../../providers/exit-stake-store";
 import { StepsPage } from "./common.page";
@@ -10,29 +13,34 @@ import { StepsPage } from "./common.page";
 export const UnstakeStepsPage = () => {
   useTrackPage("unstakeSteps");
 
-  const exitRequest = useExitStakeRequest().unsafeCoerce();
+  const exitRequest = useExitStakeRequest()!;
 
   const { plain } = useUnstakeOrPendingActionParams();
-  const positionBalances = usePositionBalances({
-    balanceId: plain.balanceId,
-    integrationId: plain.integrationId,
-  });
+  const positionBalances = AsyncResult.getOrElse(
+    useAtomValue(
+      positionBalancesAtom(
+        new PositionBalancesKey({
+          balanceId: plain.balanceId ?? null,
+          yieldId: plain.integrationId ?? null,
+        })
+      )
+    ),
+    () => null
+  );
 
   const providersDetails = useProvidersDetails({
-    integrationData: useMemo(
-      () => Maybe.of(exitRequest.integrationData),
-      [exitRequest.integrationData]
-    ),
-    validators: positionBalances.data.map((p) =>
-      p.type === "validators" ? p.validators : []
-    ),
-    selectedProviderYieldId: Maybe.empty(),
+    integrationData: exitRequest.integrationData,
+    validators:
+      positionBalances?.type === "validators"
+        ? positionBalances.validators
+        : null,
+    selectedProviderYieldId: null,
   });
 
   return (
     <StepsPage
       inputToken={exitRequest.unstakeToken}
-      session={exitRequest.actionDto.unsafeCoerce()}
+      session={exitRequest.actionDto!}
       providersDetails={providersDetails}
     />
   );

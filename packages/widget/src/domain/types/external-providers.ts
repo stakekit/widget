@@ -1,73 +1,78 @@
-import { EitherAsync, Left, Maybe, Right } from "purify-ts";
+import { Data, Effect } from "effect";
 import type { RefObject } from "react";
 import type { SKExternalProviders } from "./wallets";
 import type { SKTx, SKTxMeta } from "./wallets/generic-wallet";
 
-export class ExternalProviderError extends Error {
-  _tag = "ExternalProviderError";
-
-  constructor(
-    readonly customMessage: string | null,
-    cause?: unknown
-  ) {
-    super(customMessage ?? "External provider failed", { cause });
-  }
-}
+export class ExternalProviderError extends Data.TaggedError(
+  "ExternalProviderError"
+)<{
+  readonly cause?: unknown;
+  readonly customMessage: string | null;
+  readonly message: string;
+}> {}
 
 export class ExternalProvider {
   constructor(private variantProvider: RefObject<SKExternalProviders>) {}
 
   sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
-    return EitherAsync.liftEither(
-      Maybe.fromNullable(
-        this.variantProvider.current.provider.sendTransaction
-      ).toEither(new Error("Invalid provider type"))
-    )
-      .chain((_sendTransaction) =>
-        EitherAsync(() => _sendTransaction(tx, txMeta)).mapLeft((error) =>
-          toExternalProviderError(error)
-        )
-      )
-      .chain((res) => {
+    const sendTransaction =
+      this.variantProvider.current.provider.sendTransaction;
+
+    if (!sendTransaction) {
+      return Effect.fail(new Error("Invalid provider type"));
+    }
+
+    return Effect.tryPromise({
+      try: () => sendTransaction(tx, txMeta),
+      catch: toExternalProviderError,
+    }).pipe(
+      Effect.flatMap((res) => {
         if (typeof res === "string") {
-          return EitherAsync.liftEither(Right(res));
+          return Effect.succeed(res);
         }
 
         if (res.type === "success") {
-          return EitherAsync.liftEither(Right(res.txHash));
+          return Effect.succeed(res.txHash);
         }
 
-        return EitherAsync.liftEither(
-          Left(new ExternalProviderError(res.error))
+        return Effect.fail(
+          new ExternalProviderError({
+            customMessage: res.error,
+            message: res.error ?? "External provider failed",
+          })
         );
-      });
+      })
+    );
   }
 
   switchChain({ chainId }: { chainId: number }) {
-    return EitherAsync(() =>
-      this.variantProvider.current.provider.switchChain(chainId)
-    ).mapLeft((e) => {
-      console.error(e);
-      return new Error("Failed to switch chain");
+    return Effect.tryPromise({
+      try: () => this.variantProvider.current.provider.switchChain(chainId),
+      catch: (error) => new Error("Failed to switch chain", { cause: error }),
     });
   }
 
   signMessage(messageHash: string) {
-    return EitherAsync(() =>
-      this.variantProvider.current.provider.signMessage(messageHash)
-    ).mapLeft((e) => {
-      console.error(e);
-      return toExternalProviderError(e);
+    return Effect.tryPromise({
+      try: () => this.variantProvider.current.provider.signMessage(messageHash),
+      catch: toExternalProviderError,
     });
   }
 }
 
 const toExternalProviderError = (error: unknown) =>
-  new ExternalProviderError(
-    error instanceof Error && error.message
-      ? error.message
-      : typeof error === "string" && error
-        ? error
-        : null,
-    error
-  );
+  new ExternalProviderError({
+    cause: error,
+    customMessage:
+      error instanceof Error && error.message
+        ? error.message
+        : typeof error === "string" && error
+          ? error
+          : null,
+    message:
+      error instanceof Error && error.message
+        ? error.message
+        : typeof error === "string" && error
+          ? error
+          : "External provider failed",
+  });

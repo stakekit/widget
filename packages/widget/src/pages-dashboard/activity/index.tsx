@@ -1,4 +1,3 @@
-import { Maybe } from "purify-ts";
 import { Outlet, useNavigate } from "react-router";
 import { Box } from "../../components/atoms/box";
 import { CaretLeftIcon } from "../../components/atoms/icons/caret-left";
@@ -18,10 +17,10 @@ export const ActivityTabPage = () => {
   const selectedAction = useActivitySelectedAction();
   const setActivitySelection = useSetActivitySelection();
 
-  const showDetails = selectedAction.isJust();
+  const showDetails = selectedAction !== null;
 
   const onBack = () => {
-    setActivitySelection(Maybe.empty());
+    setActivitySelection(null);
     navigate("/activity");
   };
 

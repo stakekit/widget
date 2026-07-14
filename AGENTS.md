@@ -16,7 +16,7 @@
 - `packages/widget/src/hooks/*` — feature and API hooks.
 - `packages/widget/src/domain/*` — shared domain types/helpers.
 - `packages/widget/src/translation/*` — i18n resources (`English`, `French`).
-- `packages/widget/tests/*` — Vitest browser tests (MSW-backed).
+- `packages/widget/tests/*` — Vitest Node and browser tests; browser tests use the `.browser.test.*` suffix and MSW.
 - `packages/examples/*` — integration examples (`with-vite`, `with-vite-bundled`, `with-nextjs`, `with-cdn-script`).
 
 ## Commands Agents Should Use
@@ -30,6 +30,11 @@
 
 ### Focused widget commands (recommended for most tasks)
 - `pnpm --filter @stakekit/widget {command}`
+- `pnpm --filter @stakekit/widget test:unit` — run the fast Node test project.
+- `pnpm --filter @stakekit/widget test:dom` — run React/DOM tests in jsdom.
+- `pnpm --filter @stakekit/widget test:browser` — run the Chromium test project.
+- `pnpm --filter @stakekit/widget test:changed` — run affected Node + jsdom tests.
+- `pnpm --filter @stakekit/widget test:changed:all` — run all affected projects, including Chromium.
 
 ## Agent Working Guidelines (short)
 - Keep public API compatibility in `src/index.package.ts` and `src/index.bundle.ts`.
@@ -44,7 +49,7 @@
 - React Query defaults are in `packages/widget/src/providers/query-client/index.tsx`.
 - App-level config/env mapping is in `packages/widget/src/config/index.ts`.
 - Test bootstrapping + MSW worker setup:
-  - `packages/widget/tests/utils/setup.ts`
+  - `packages/widget/tests/utils/setup.browser.ts`
   - `packages/widget/tests/mocks/worker.ts`
 
 ## Vendored Repositories

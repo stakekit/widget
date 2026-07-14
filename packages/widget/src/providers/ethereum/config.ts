@@ -6,11 +6,12 @@ import {
   metaMaskWallet,
   walletConnectWallet,
 } from "@stakekit/rainbowkit/wallets";
-import { EitherAsync, Maybe } from "purify-ts";
+import { Effect } from "effect";
 import portoIcon from "../../assets/images/porto.svg";
+import type { Network } from "../../domain/schema/network-model";
 import { evmChainGroup } from "../../domain/types/chains";
 import { type EvmChainsMap, evmChainsMap } from "../../domain/types/chains/evm";
-import type { Networks } from "../../domain/types/chains/networks";
+
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import type { VariantProps } from "../settings/types";
 import { createFineryWallets } from "./finery-wallet-list";
@@ -22,14 +23,14 @@ const queryFn = async ({
   institutionalWallets,
   variant,
 }: {
-  enabledNetworks: ReadonlySet<Networks>;
+  enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
   institutionalWallets: boolean;
   variant: VariantProps["variant"];
 }): Promise<{
   evmChainsMap: Partial<EvmChainsMap>;
   evmChains: Chain[];
-  connector: Maybe<WalletList[number]>;
+  connector: WalletList[number] | null;
   institutionalWallets: ReturnType<typeof createFineryWallets> | null;
 }> => {
   const filteredEvmChainsMap: Partial<EvmChainsMap> = typeSafeObjectFromEntries(
@@ -73,7 +74,7 @@ const queryFn = async ({
   return {
     evmChainsMap: filteredEvmChainsMap,
     evmChains,
-    connector: Maybe.fromPredicate(() => !!evmChains.length, connector),
+    connector: evmChains.length > 0 ? connector : null,
     institutionalWallets:
       variant === "finery" || institutionalWallets
         ? createFineryWallets(evmChains)
@@ -82,7 +83,7 @@ const queryFn = async ({
 };
 
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get evm config");
+  Effect.tryPromise({
+    try: () => queryFn(opts),
+    catch: (error) => new Error("Could not get evm config", { cause: error }),
   });

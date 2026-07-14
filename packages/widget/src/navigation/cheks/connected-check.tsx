@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from "react-router";
-import { useSKWallet } from "../../providers/sk-wallet";
+import { useSKWallet } from "../../providers/wallet/react/use-wallet";
 
 export const ConnectedCheck = () => {
   const { isConnected } = useSKWallet();

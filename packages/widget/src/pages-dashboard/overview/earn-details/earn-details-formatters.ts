@@ -1,12 +1,12 @@
 import BigNumber from "bignumber.js";
 import type { TFunction } from "i18next";
+import type { EarnYieldWithProvider } from "../../../domain/schema/earn-models";
 import type { getEffectiveYieldRewardRateDetails } from "../../../domain/types/reward-rate";
 import {
   getDashboardYieldCategory,
   getYieldActionArg,
   hasYieldBearingOutputToken,
   isNonZeroRewardRateYield,
-  type Yield,
 } from "../../../domain/types/yields";
 import { APToPercentage, formatNumber } from "../../../utils";
 import {
@@ -21,11 +21,11 @@ export const formatNetworkName = (network: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-export const formatDisplayTokenSymbol = (yieldDto: Yield) =>
+export const formatDisplayTokenSymbol = (yieldDto: EarnYieldWithProvider) =>
   yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
 
 export const formatRewardRateLabel = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string => {
   const rewardType =
@@ -41,7 +41,7 @@ export const formatRewardRateLabel = (
 
 export const formatRewardRate = (
   effectiveRewardRate: ReturnType<typeof getEffectiveYieldRewardRateDetails>,
-  yieldDto: Yield
+  yieldDto: EarnYieldWithProvider
 ) => {
   if (!effectiveRewardRate) return null;
 
@@ -54,13 +54,16 @@ export const formatRewardRate = (
   return `${APToPercentage(amount.toNumber())}%`;
 };
 
-export const formatMinStakeLabel = (yieldDto: Yield, t: TFunction): string =>
+export const formatMinStakeLabel = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): string =>
   getDashboardYieldCategory(yieldDto) === "rwa"
     ? t("dashboard.earn_details.minimum_subscription")
     : t("dashboard.earn_details.min_stake");
 
 export const formatMinStake = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): { kpiPrimaryEligible: boolean; value: string } | null => {
   const minimum =
@@ -89,7 +92,7 @@ export const formatMinStake = (
 };
 
 export const formatRequirementStatus = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string => {
   return !yieldDto.status.enter
@@ -151,7 +154,7 @@ export const formatProviderWebsiteHref = (website: string) =>
   /^https?:\/\//i.test(website) ? website : `https://${website}`;
 
 export const formatRewardTokenLabel = (
-  yieldDto: Yield,
+  yieldDto: EarnYieldWithProvider,
   t: TFunction
 ): string => {
   const symbol = yieldDto.outputToken?.symbol ?? yieldDto.token.symbol;
@@ -161,7 +164,9 @@ export const formatRewardTokenLabel = (
     : symbol;
 };
 
-export const formatPricePerShare = (yieldDto: Yield): string | null => {
+export const formatPricePerShare = (
+  yieldDto: EarnYieldWithProvider
+): string | null => {
   const price = yieldDto.state?.pricePerShareState?.price;
 
   if (price === null || price === undefined) return null;
@@ -179,7 +184,10 @@ export const formatCooldownDays = (days: number, t: TFunction): string => {
     : t("dashboard.earn_details.instant");
 };
 
-export const formatRewardClaiming = (yieldDto: Yield, t: TFunction): string => {
+export const formatRewardClaiming = (
+  yieldDto: EarnYieldWithProvider,
+  t: TFunction
+): string => {
   return yieldDto.mechanics.rewardClaiming === "auto"
     ? t("dashboard.earn_details.auto_compounding")
     : t("dashboard.earn_details.manual");

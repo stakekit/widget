@@ -1,15 +1,15 @@
 import { Context, Data, Effect, Layer, PubSub, Schema, Stream } from "effect";
-import * as Atom from "effect/unstable/reactivity/Atom";
-import type { Networks } from "../../domain/types/chains/networks";
-import type { SKWallet } from "../../domain/types/wallet";
+import type { Network } from "../../domain/schema/network-model";
+
 import type { SKTxMeta } from "../../domain/types/wallets/generic-wallet";
+import { WalletService } from "../../providers/wallet/runtime/service";
 import type {
   Action,
   SubmitTransactionCommand,
   SubmitTransactionResult,
   Transaction,
-  WalletState,
 } from "../domain";
+import { toBorrowWalletStateProjection } from "../wallet/bridge";
 
 export type BorrowExecutionPhase =
   | "creating"
@@ -42,6 +42,10 @@ type BorrowExecutionErrorFields = {
 
 export class BorrowWalletDisconnectedError extends Data.TaggedError(
   "BorrowWalletDisconnectedError"
+)<BorrowExecutionErrorFields> {}
+
+export class BorrowWalletStateChangedError extends Data.TaggedError(
+  "BorrowWalletStateChangedError"
 )<BorrowExecutionErrorFields> {}
 
 export class BorrowSigningFailedError extends Data.TaggedError(
@@ -78,6 +82,7 @@ export class BorrowActionCompletionFailedError extends Data.TaggedError(
 
 export type BorrowTransactionExecutionError =
   | BorrowWalletDisconnectedError
+  | BorrowWalletStateChangedError
   | BorrowSigningFailedError
   | BorrowPayloadDecodeError
   | BorrowSubmitFailedError
@@ -89,6 +94,7 @@ export type BorrowTransactionExecutionError =
 
 const borrowTransactionExecutionErrorTags = new Set([
   "BorrowWalletDisconnectedError",
+  "BorrowWalletStateChangedError",
   "BorrowSigningFailedError",
   "BorrowPayloadDecodeError",
   "BorrowSubmitFailedError",
@@ -115,104 +121,113 @@ export type BorrowSignedTransaction = {
 
 export type BorrowWalletSignRequest = {
   readonly action: Action;
-  readonly network: Networks;
+  readonly network: Network;
   readonly transaction: Transaction;
   readonly tx: string;
   readonly txMeta: SKTxMeta;
 };
 
-export type BorrowWalletExecutionAdapter = {
-  readonly getState: () => WalletState;
-  readonly signTransaction: (
-    request: BorrowWalletSignRequest
-  ) => Effect.Effect<BorrowSignedTransaction, BorrowTransactionExecutionError>;
-};
+const borrowWalletErrorFields = (
+  request: BorrowWalletSignRequest,
+  message: string,
+  cause?: unknown
+): BorrowExecutionErrorFields => ({
+  actionId: request.action.id,
+  cause,
+  message,
+  phase: "signing",
+  transactionId: request.transaction.id,
+});
 
-export const disconnectedBorrowWalletState: WalletState = {
-  status: "disconnected",
-};
+const validateBorrowWalletState = (
+  request: BorrowWalletSignRequest,
+  wallet: WalletService["Service"]
+) =>
+  Effect.gen(function* () {
+    const projection = toBorrowWalletStateProjection(wallet.getState());
 
-export const makeDisconnectedBorrowWalletExecutionAdapter =
-  (): BorrowWalletExecutionAdapter => ({
-    getState: () => disconnectedBorrowWalletState,
-    signTransaction: (request) =>
-      Effect.fail(
-        new BorrowWalletDisconnectedError({
-          actionId: request.action.id,
-          message: "Wallet is disconnected.",
-          phase: "signing",
-          transactionId: request.transaction.id,
-        })
-      ),
-  });
-
-export const borrowWalletExecutionAdapterAtom =
-  Atom.make<BorrowWalletExecutionAdapter>(
-    makeDisconnectedBorrowWalletExecutionAdapter()
-  ).pipe(Atom.withLabel("borrowWalletExecutionAdapterAtom"));
-
-export class BorrowWalletExecutionService extends Context.Service<
-  BorrowWalletExecutionService,
-  BorrowWalletExecutionAdapter
->()("stakekit/widget/borrow/BorrowWalletExecutionService") {}
-
-export const makeSKWalletBorrowExecutionAdapter = ({
-  getState,
-  signTransaction,
-}: {
-  readonly getState: () => WalletState;
-  readonly signTransaction: SKWallet["signTransaction"];
-}): BorrowWalletExecutionAdapter => ({
-  getState,
-  signTransaction: (request) => {
-    const walletState = getState();
-
-    if (walletState.status !== "connected") {
-      return Effect.fail(
-        new BorrowWalletDisconnectedError({
-          actionId: request.action.id,
-          message: "Wallet is disconnected.",
-          phase: "signing",
-          transactionId: request.transaction.id,
-        })
+    if (projection.status === "disconnected") {
+      return yield* new BorrowWalletDisconnectedError(
+        borrowWalletErrorFields(request, "Wallet is disconnected.")
       );
     }
 
-    return Effect.tryPromise({
-      try: () =>
-        signTransaction({
+    if (projection.status === "unsupported-network") {
+      return yield* new BorrowWalletStateChangedError(
+        borrowWalletErrorFields(
+          request,
+          "Wallet changed to an unsupported borrow network."
+        )
+      );
+    }
+
+    if (
+      projection.wallet.currentAccount.address.toLowerCase() !==
+      request.action.address.toLowerCase()
+    ) {
+      return yield* new BorrowWalletStateChangedError(
+        borrowWalletErrorFields(
+          request,
+          "Wallet account changed during borrow execution."
+        )
+      );
+    }
+
+    if (projection.wallet.network !== request.network) {
+      return yield* new BorrowWalletStateChangedError(
+        borrowWalletErrorFields(
+          request,
+          "Wallet network changed during borrow execution."
+        )
+      );
+    }
+  });
+
+const makeBorrowWalletExecution = (wallet: WalletService["Service"]) => ({
+  signTransaction: (request: BorrowWalletSignRequest) =>
+    Effect.gen(function* () {
+      yield* validateBorrowWalletState(request, wallet);
+
+      return yield* wallet
+        .signTransaction({
           ledgerHwAppId: null,
           network: request.network,
           tx: request.tx,
           txMeta: request.txMeta,
-        }).run(),
-      catch: (cause) =>
-        new BorrowSigningFailedError({
-          actionId: request.action.id,
-          cause,
-          message: "Wallet signing failed.",
-          phase: "signing",
-          transactionId: request.transaction.id,
-        }),
-    }).pipe(
-      Effect.flatMap((result) => {
-        if (result.isLeft()) {
-          return Effect.fail(
-            new BorrowSigningFailedError({
-              actionId: request.action.id,
-              cause: result.extract(),
-              message: "Wallet signing failed.",
-              phase: "signing",
-              transactionId: request.transaction.id,
-            })
-          );
-        }
-
-        return Effect.succeed(result.extract() as BorrowSignedTransaction);
-      })
-    );
-  },
+        })
+        .pipe(
+          Effect.mapError((cause) =>
+            cause._tag === "WalletCapabilityUnavailableError"
+              ? new BorrowWalletDisconnectedError(
+                  borrowWalletErrorFields(
+                    request,
+                    "Wallet disconnected before signing completed.",
+                    cause
+                  )
+                )
+              : new BorrowSigningFailedError(
+                  borrowWalletErrorFields(
+                    request,
+                    "Wallet signing failed.",
+                    cause
+                  )
+                )
+          )
+        );
+    }),
 });
+
+export class BorrowWalletExecutionService extends Context.Service<BorrowWalletExecutionService>()(
+  "stakekit/widget/borrow/BorrowWalletExecutionService",
+  {
+    make: Effect.map(WalletService, makeBorrowWalletExecution),
+  }
+) {
+  static readonly layer = Layer.effect(
+    BorrowWalletExecutionService,
+    BorrowWalletExecutionService.make
+  );
+}
 
 export type BorrowExecutionEvent =
   | {
@@ -229,16 +244,10 @@ export type BorrowExecutionEvent =
 
 const BORROW_EXECUTION_EVENT_REPLAY_SIZE = 8;
 
-export class BorrowExecutionEventsService extends Context.Service<
-  BorrowExecutionEventsService,
+export class BorrowExecutionEventsService extends Context.Service<BorrowExecutionEventsService>()(
+  "stakekit/widget/borrow/BorrowExecutionEventsService",
   {
-    readonly events: Stream.Stream<BorrowExecutionEvent>;
-    readonly publish: (event: BorrowExecutionEvent) => Effect.Effect<void>;
-  }
->()("stakekit/widget/borrow/BorrowExecutionEventsService") {
-  static readonly layer = Layer.effect(
-    BorrowExecutionEventsService,
-    Effect.gen(function* () {
+    make: Effect.gen(function* () {
       const pubsub = yield* PubSub.sliding<BorrowExecutionEvent>({
         capacity: 64,
         replay: BORROW_EXECUTION_EVENT_REPLAY_SIZE,
@@ -246,11 +255,17 @@ export class BorrowExecutionEventsService extends Context.Service<
 
       yield* Effect.addFinalizer(() => PubSub.shutdown(pubsub));
 
-      return BorrowExecutionEventsService.of({
+      return {
         events: Stream.fromPubSub(pubsub),
-        publish: (event) => PubSub.publish(pubsub, event).pipe(Effect.asVoid),
-      });
-    })
+        publish: (event: BorrowExecutionEvent) =>
+          PubSub.publish(pubsub, event).pipe(Effect.asVoid),
+      } as const;
+    }),
+  }
+) {
+  static readonly layer = Layer.effect(
+    BorrowExecutionEventsService,
+    BorrowExecutionEventsService.make
   );
 }
 

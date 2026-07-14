@@ -1,10 +1,10 @@
 import { SafeAppProvider } from "@safe-global/safe-apps-provider";
 import SafeSDK, { TransactionStatus } from "@safe-global/safe-apps-sdk";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, Maybe } from "purify-ts";
-import { BehaviorSubject } from "rxjs";
+import { Effect } from "effect";
 import { getAddress, withTimeout } from "viem";
 import { type Connector, createConnector, ProviderNotFoundError } from "wagmi";
+import { makeCurrentValueStream } from "../../common/current-value-stream";
 import { isIframe } from "../../utils";
 import { configMeta, type ExtraProps } from "./safe-connector-meta";
 
@@ -19,7 +19,7 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
   let disconnect: Connector["onDisconnect"] | undefined;
 
   return createConnector<Provider, ExtraProps, StorageItem>((config) => {
-    const $filteredChains = new BehaviorSubject<Chain[]>([]);
+    const filteredChains = makeCurrentValueStream<Chain[]>([]);
     const sdk = new SafeSDK();
 
     const getProvider = async () => {
@@ -48,11 +48,8 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
 
         const accounts = await this.getAccounts();
         const chainId = await this.getChainId();
-        $filteredChains.next(
-          Maybe.fromNullable(config.chains.find((c) => c.id === chainId))
-            .map((c) => [c])
-            .orDefault([])
-        );
+        const chain = config.chains.find((value) => value.id === chainId);
+        filteredChains.set(chain ? [chain] : []);
 
         if (!disconnect) {
           disconnect = this.onDisconnect.bind(this);
@@ -133,17 +130,21 @@ function safe(parameters: { shimDisconnect?: boolean } = {}) {
       onDisconnect() {
         config.emitter.emit("disconnect");
       },
-      $filteredChains,
+      $filteredChains: filteredChains.changes,
       getTxStatus(txHash) {
-        return EitherAsync(() => sdk.txs.getBySafeTxHash(txHash)).mapLeft(
-          () => new Error("Could not get transaction status")
-        );
+        return Effect.tryPromise({
+          try: () => sdk.txs.getBySafeTxHash(txHash),
+          catch: (error) =>
+            new Error("Could not get transaction status", { cause: error }),
+        });
       },
       txStatus: TransactionStatus,
       sendTransactions(args) {
-        return EitherAsync(() => sdk.txs.send(args)).mapLeft(
-          () => new Error("Could not send transactions")
-        );
+        return Effect.tryPromise({
+          try: () => sdk.txs.send(args),
+          catch: (error) =>
+            new Error("Could not send transactions", { cause: error }),
+        });
       },
     };
   });

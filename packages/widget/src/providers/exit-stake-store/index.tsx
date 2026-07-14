@@ -1,31 +1,30 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import type BigNumber from "bignumber.js";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { Maybe } from "purify-ts";
 import type {
-  ActionDto,
-  YieldCreateActionDto,
-} from "../../domain/types/action";
-import type { AddressesDto } from "../../domain/types/addresses";
-import type { TokenDto, YieldTokenDto } from "../../domain/types/tokens";
-import type { Yield } from "../../domain/types/yields";
+  ActionCommand,
+  YieldAction,
+} from "../../domain/schema/action-models";
+import type { WalletAddresses } from "../../domain/schema/address-models";
+import type { EarnYieldWithProvider } from "../../domain/schema/earn-models";
+import type { AppToken } from "../../domain/schema/legacy-models";
 
 type ExitStakeInitData = {
-  requestDto: YieldCreateActionDto;
-  addresses: AddressesDto;
-  gasFeeToken: Yield["token"];
+  requestDto: ActionCommand;
+  addresses: WalletAddresses;
+  gasFeeToken: EarnYieldWithProvider["token"];
   unstakeAmount: BigNumber;
-  integrationData: Yield;
-  unstakeToken: TokenDto | YieldTokenDto;
+  integrationData: EarnYieldWithProvider;
+  unstakeToken: AppToken;
 };
 
 type ExitStakeRequest = ExitStakeInitData & {
-  actionDto: Maybe<ActionDto>;
+  actionDto: YieldAction | null;
 };
 
-type ExitStakeState = Maybe<ExitStakeRequest>;
+type ExitStakeState = ExitStakeRequest | null;
 
-const exitStakeRequestAtom = Atom.make<ExitStakeState>(Maybe.empty()).pipe(
+const exitStakeRequestAtom = Atom.make<ExitStakeState>(null).pipe(
   Atom.keepAlive,
   Atom.withLabel("exitStakeRequestAtom")
 );

@@ -1,8 +1,6 @@
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
 import {
-  formatPercentage,
-  formatTokenAmount,
   getBorrowNetworkForChainId,
   isBorrowNetwork,
   Market,
@@ -159,7 +157,5 @@ describe("borrow domain", () => {
     expect(projectLtvRatio({ collateralUsd: 1000, debtUsd: 250 })).toBe(0.25);
     expect(projectLtvRatio({ collateralUsd: 100, debtUsd: 250 })).toBe(100);
     expect(projectLtvRatio({ collateralUsd: 0, debtUsd: 1 })).toBe(100);
-    expect(formatTokenAmount(1.234_567)).toBe("1.2346");
-    expect(formatPercentage(12.345)).toBe("12.35%");
   });
 });

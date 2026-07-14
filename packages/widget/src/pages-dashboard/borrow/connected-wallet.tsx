@@ -1,61 +1,50 @@
-import {
-  createContext,
-  type PropsWithChildren,
-  type ReactNode,
-  useContext,
-  useMemo,
-} from "react";
+import { useAtomMount, useAtomValue } from "@effect/atom-react";
+import { Option } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import type { ReactNode } from "react";
 import { Navigate, Outlet } from "react-router";
 import {
   type BorrowWalletBridgeState,
   type BorrowWalletConnectedBridgeState,
-  toBorrowWalletBridgeState,
+  borrowExecutionRuntimeRefreshAtom,
+  disconnectedBorrowWalletProjection,
+  switchBorrowWalletChain,
+  toBorrowSwitchChainCommandInput,
 } from "../../borrow";
-import { useSKWallet } from "../../providers/sk-wallet";
+import { useSavedRef } from "../../hooks/use-saved-ref";
+import {
+  borrowWalletStateAtom,
+  useWalletInitializationKey,
+  walletStateAtom,
+} from "../../providers/wallet";
+import { disconnectedNormalizedWalletState } from "../../providers/wallet/state/wallet";
 
-const BorrowWalletContext = createContext<BorrowWalletBridgeState | undefined>(
-  undefined
-);
-
-export const BorrowWalletProvider = ({ children }: PropsWithChildren) => {
-  const skWallet = useSKWallet();
-  const walletBridge = useMemo(
-    () =>
-      toBorrowWalletBridgeState({
-        address: skWallet.address,
-        chain: skWallet.chain,
-        connector: skWallet.connector,
-        connectorChains: skWallet.connectorChains,
-        isConnected: skWallet.isConnected,
-        network: skWallet.network,
-      }),
-    [
-      skWallet.address,
-      skWallet.chain,
-      skWallet.connector,
-      skWallet.connectorChains,
-      skWallet.isConnected,
-      skWallet.network,
-    ]
+export const useBorrowWalletBridge = (): BorrowWalletBridgeState => {
+  const initializationKey = useWalletInitializationKey();
+  const walletProjection = useAtomValue(
+    borrowWalletStateAtom(initializationKey)
+  ).pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => disconnectedBorrowWalletProjection)
   );
-
-  return (
-    <BorrowWalletContext.Provider value={walletBridge}>
-      {children}
-    </BorrowWalletContext.Provider>
+  const walletState = useAtomValue(walletStateAtom(initializationKey)).pipe(
+    AsyncResult.value,
+    Option.getOrElse(() => disconnectedNormalizedWalletState)
   );
-};
+  const latestWalletState = useSavedRef(walletState);
 
-export const useBorrowWalletBridge = () => {
-  const walletBridge = useContext(BorrowWalletContext);
-
-  if (!walletBridge) {
-    throw new Error(
-      "useBorrowWalletBridge must be used within a BorrowWalletProvider"
-    );
-  }
-
-  return walletBridge;
+  return walletProjection.status === "connected"
+    ? {
+        ...walletProjection,
+        switchChain: (chainId) =>
+          switchBorrowWalletChain(
+            toBorrowSwitchChainCommandInput({
+              chainId,
+              wallet: latestWalletState.current,
+            })
+          ),
+      }
+    : walletProjection;
 };
 
 export const useBorrowConnectedWalletBridge =
@@ -72,6 +61,7 @@ export const useBorrowConnectedWalletBridge =
   };
 
 export const BorrowConnectedWalletRoute = (): ReactNode => {
+  useAtomMount(borrowExecutionRuntimeRefreshAtom);
   const walletBridge = useBorrowWalletBridge();
 
   return walletBridge.status === "connected" ? (

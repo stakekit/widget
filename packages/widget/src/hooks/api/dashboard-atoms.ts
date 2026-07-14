@@ -1,21 +1,17 @@
-import { Data, Duration, Effect, Schema } from "effect";
-import {
-  valueEqualAtomFamily,
-  withApiRequestError,
-  withApiResourcePolicy,
-  withResponseDecodeError,
-} from "../../atoms/api-resource";
-import {
-  type HistoryPeriod,
-  KycStatus,
-  RewardRateHistoryResponse,
-  type RewardsAddresses,
-  RewardsSummaryRecord,
-  TvlHistoryResponse,
+import BigNumber from "bignumber.js";
+import { Data, Duration, Effect } from "effect";
+import * as Atom from "effect/unstable/reactivity/Atom";
+import { withApiResourcePolicy } from "../../atoms/api-resource";
+import type {
+  HistoryPeriod,
+  RewardsAddresses,
+  RewardsSummary,
 } from "../../domain/schema/dashboard-models";
 import type { WalletAddress, YieldId } from "../../domain/schema/identifiers";
-import { StakeKitApiService } from "../../providers/api/api-client";
-import { stakeKitApiRuntime } from "../../providers/effect-atom-runtime/stakekit-api-service";
+import { isValidYieldIdForRewardsSummary } from "../../domain/types/rewards";
+import { StakeKitApiService } from "../../providers/api/api-service";
+import { widgetAtomRuntime } from "../../providers/effect-atom-runtime/widget-runtime";
+import { selectCurrentWalletAtom } from "../../providers/wallet";
 
 const dashboardResourcePolicy = withApiResourcePolicy({
   idleTTL: Duration.minutes(5),
@@ -29,22 +25,17 @@ export class YieldKycKey extends Data.Class<{
   readonly yieldId: YieldId | null;
 }> {}
 
-export const yieldKycStatusAtom = valueEqualAtomFamily((key: YieldKycKey) =>
-  stakeKitApiRuntime
+export const yieldKycStatusAtom = Atom.family((key: YieldKycKey) =>
+  widgetAtomRuntime
     .atom(() =>
       Effect.gen(function* () {
         if (!key.enabled || !key.address || !key.yieldId) return null;
 
         const api = yield* StakeKitApiService;
-        const response = yield* api.yield
-          .KycControllerGetStatus(key.yieldId, {
-            params: { address: key.address },
-          })
-          .pipe(withApiRequestError("yield-kyc-status"));
-
-        return yield* Schema.decodeUnknownEffect(KycStatus)(response).pipe(
-          withResponseDecodeError("yield-kyc-status")
-        );
+        return yield* api.yield.getKycStatus({
+          address: key.address,
+          yieldId: key.yieldId,
+        });
       })
     )
     .pipe(dashboardResourcePolicy)
@@ -58,97 +49,125 @@ export class YieldHistoryKey extends Data.Class<{
 const getYieldHistoryInterval = (period: HistoryPeriod) =>
   period === "1y" || period === "all" ? "week" : "day";
 
-export const yieldRewardRateHistoryAtom = valueEqualAtomFamily(
-  (key: YieldHistoryKey) =>
-    stakeKitApiRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          if (!key.yieldId) return null;
+export const yieldRewardRateHistoryAtom = Atom.family((key: YieldHistoryKey) =>
+  widgetAtomRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (!key.yieldId) return null;
 
-          const api = yield* StakeKitApiService;
-          const response = yield* api.yield
-            .YieldsControllerGetYieldRewardRateHistory(key.yieldId, {
-              params: {
-                interval: getYieldHistoryInterval(key.period),
-                period: key.period,
-              },
-            })
-            .pipe(withApiRequestError("yield-reward-rate-history"));
-
-          return yield* Schema.decodeUnknownEffect(RewardRateHistoryResponse)(
-            response
-          ).pipe(withResponseDecodeError("yield-reward-rate-history"));
-        })
-      )
-      .pipe(dashboardResourcePolicy)
+        const api = yield* StakeKitApiService;
+        return yield* api.yield.getRewardRateHistory({
+          interval: getYieldHistoryInterval(key.period),
+          period: key.period,
+          yieldId: key.yieldId,
+        });
+      })
+    )
+    .pipe(dashboardResourcePolicy)
 );
 
-export const yieldTvlHistoryAtom = valueEqualAtomFamily(
-  (key: YieldHistoryKey) =>
-    stakeKitApiRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          if (!key.yieldId) return null;
+export const yieldTvlHistoryAtom = Atom.family((key: YieldHistoryKey) =>
+  widgetAtomRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (!key.yieldId) return null;
 
-          const api = yield* StakeKitApiService;
-          const response = yield* api.yield
-            .YieldsControllerGetYieldTvlHistory(key.yieldId, {
-              params: {
-                interval: getYieldHistoryInterval(key.period),
-                period: key.period,
-              },
-            })
-            .pipe(withApiRequestError("yield-tvl-history"));
-
-          return yield* Schema.decodeUnknownEffect(TvlHistoryResponse)(
-            response
-          ).pipe(withResponseDecodeError("yield-tvl-history"));
-        })
-      )
-      .pipe(dashboardResourcePolicy)
+        const api = yield* StakeKitApiService;
+        return yield* api.yield.getTvlHistory({
+          interval: getYieldHistoryInterval(key.period),
+          period: key.period,
+          yieldId: key.yieldId,
+        });
+      })
+    )
+    .pipe(dashboardResourcePolicy)
 );
 
-export class RewardsSummaryKey extends Data.Class<{
+class RewardsSummaryKey extends Data.Class<{
   readonly addresses: RewardsAddresses | null;
   readonly enabled: boolean;
   readonly yieldIds: ReadonlyArray<YieldId>;
 }> {}
 
-export const rewardsSummaryAtom = valueEqualAtomFamily(
-  (key: RewardsSummaryKey) =>
-    stakeKitApiRuntime
-      .atom(() =>
-        Effect.gen(function* () {
-          if (!key.enabled || !key.addresses || key.yieldIds.length === 0) {
-            return null;
-          }
+const rewardsSummaryAtom = Atom.family((key: RewardsSummaryKey) =>
+  widgetAtomRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        if (!key.enabled || !key.addresses || key.yieldIds.length === 0) {
+          return null;
+        }
 
-          const api = yield* StakeKitApiService;
-          const addresses = key.addresses;
-          const responses = yield* Effect.forEach(
-            key.yieldIds,
-            (yieldId) =>
-              api.legacy
-                .YieldControllerGetSingleYieldRewardsSummary(yieldId, {
-                  payload: { addresses },
-                })
-                .pipe(
-                  withApiRequestError("yield-rewards-summary"),
-                  Effect.map((response) => [yieldId, response] as const)
-                ),
-            { concurrency: 5 }
-          );
+        const api = yield* StakeKitApiService;
+        return yield* api.legacy.getRewardsSummaries({
+          addresses: key.addresses,
+          yieldIds: key.yieldIds,
+        });
+      })
+    )
+    .pipe(
+      withApiResourcePolicy({
+        idleTTL: Duration.minutes(5),
+        staleTime: Duration.zero,
+        revalidateOnMount: true,
+      })
+    )
+);
 
-          return yield* Schema.decodeUnknownEffect(RewardsSummaryRecord)(
-            Object.fromEntries(responses)
-          ).pipe(withResponseDecodeError("yield-rewards-summary"));
-        })
-      )
-      .pipe(
-        withApiResourcePolicy({
-          idleTTL: Duration.minutes(5),
-          staleTime: Duration.zero,
-          revalidateOnMount: true,
-        })
-      )
+type RewardsSummaryResult = Record<string, RewardsSummary>;
+
+export class CurrentRewardsSummaryKey extends Data.Class<{
+  readonly enabled: boolean;
+  readonly yieldIds: ReadonlyArray<YieldId>;
+}> {}
+
+const currentRewardsAddressesAtom = selectCurrentWalletAtom((walletState) =>
+  walletState.status === "connected"
+    ? {
+        address: walletState.address,
+        ...(walletState.additionalAddresses
+          ? { additionalAddresses: walletState.additionalAddresses }
+          : {}),
+      }
+    : null
+).pipe(Atom.withLabel("currentRewardsAddressesAtom"));
+
+export const currentRewardsSummaryAtom = Atom.family(
+  (key: CurrentRewardsSummaryKey) =>
+    Atom.make((get) => {
+      const filteredIds = key.yieldIds.filter(isValidYieldIdForRewardsSummary);
+      const addresses = get(currentRewardsAddressesAtom);
+
+      return get(
+        rewardsSummaryAtom(
+          new RewardsSummaryKey({
+            addresses,
+            enabled:
+              key.enabled && addresses !== null && filteredIds.length > 0,
+            yieldIds: filteredIds,
+          })
+        )
+      );
+    })
+);
+
+export const positiveRewardsSummaryAtom = Atom.family(
+  (key: CurrentRewardsSummaryKey) =>
+    currentRewardsSummaryAtom(key).pipe(
+      Atom.mapResult((summaries) => {
+        if (!summaries) return null;
+
+        return key.yieldIds.reduce<RewardsSummaryResult>(
+          (positive, yieldId) => {
+            const summary = summaries[yieldId];
+
+            if (summary && BigNumber(summary.rewards.total).gt(0)) {
+              positive[yieldId] = summary;
+            }
+
+            return positive;
+          },
+          {}
+        );
+      })
+    )
 );

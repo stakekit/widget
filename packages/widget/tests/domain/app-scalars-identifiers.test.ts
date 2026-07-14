@@ -2,7 +2,6 @@ import { DateTime, Schema } from "effect";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   type ActionId,
-  NormalizedEvmAddress,
   type ProviderId,
   TokenAddress,
   type TransactionId,
@@ -10,30 +9,12 @@ import {
 } from "../../src/domain/schema/identifiers";
 import {
   BigIntFromString,
-  FiniteNumberFromString,
   PrecisionDecimalFromString,
-  SafeIntegerFromString,
   UtcDateTimeFromString,
   ValidDateFromString,
 } from "../../src/domain/schema/scalars";
 
 describe("application scalar and identifier schemas", () => {
-  it("decodes only finite or safe numeric strings into numbers", () => {
-    expect(Schema.decodeUnknownSync(FiniteNumberFromString)("1.25")).toBe(1.25);
-    expect(
-      Schema.decodeUnknownSync(SafeIntegerFromString)("9007199254740991")
-    ).toBe(Number.MAX_SAFE_INTEGER);
-    expect(() =>
-      Schema.decodeUnknownSync(FiniteNumberFromString)("Infinity")
-    ).toThrow();
-    expect(() =>
-      Schema.decodeUnknownSync(SafeIntegerFromString)("9007199254740992")
-    ).toThrow();
-    expect(() =>
-      Schema.decodeUnknownSync(SafeIntegerFromString)("1.5")
-    ).toThrow();
-  });
-
   it("uses lossless representations for raw units and decimal values", () => {
     expect(
       Schema.decodeUnknownSync(BigIntFromString)(
@@ -65,18 +46,10 @@ describe("application scalar and identifier schemas", () => {
     ).toThrow();
   });
 
-  it("normalizes only the explicitly EVM-specific address schema", () => {
-    expect(
-      Schema.decodeUnknownSync(NormalizedEvmAddress)(
-        "0xABCDEFabcdefABCDEFabcdefABCDEFabcdefABCD"
-      )
-    ).toBe("0xabcdefabcdefabcdefabcdefabcdefabcdefabcd");
+  it("keeps token addresses opaque", () => {
     expect(Schema.decodeUnknownSync(TokenAddress)("CaseSensitiveAddress")).toBe(
       "CaseSensitiveAddress"
     );
-    expect(() =>
-      Schema.decodeUnknownSync(NormalizedEvmAddress)("0xnot-an-address")
-    ).toThrow();
   });
 
   it("keeps identifier roles distinct at compile time", () => {

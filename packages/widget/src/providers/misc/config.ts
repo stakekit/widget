@@ -1,13 +1,14 @@
 import type { Wallet } from "@solana/wallet-adapter-react";
 import type { Connection } from "@solana/web3.js";
 import type { Chain, WalletList } from "@stakekit/rainbowkit";
-import { EitherAsync, Maybe, MaybeAsync } from "purify-ts";
+import { Effect } from "effect";
 import { config } from "../../config";
+import type { Network } from "../../domain/schema/network-model";
 import {
   type MiscChainsMap,
   miscChainsMap,
 } from "../../domain/types/chains/misc";
-import type { Networks } from "../../domain/types/chains/networks";
+
 import { typeSafeObjectEntries, typeSafeObjectFromEntries } from "../../utils";
 import type { VariantProps } from "../settings/types";
 
@@ -19,7 +20,7 @@ const queryFn = async ({
   variant,
   tonConnectManifestUrl,
 }: {
-  enabledNetworks: ReadonlySet<Networks>;
+  enabledNetworks: ReadonlySet<Network>;
   forceWalletConnectOnly: boolean;
   solanaWallets: Wallet[];
   solanaConnection: Connection;
@@ -28,10 +29,10 @@ const queryFn = async ({
 }): Promise<{
   miscChainsMap: Partial<MiscChainsMap>;
   miscChains: Chain[];
-  connectors: Maybe<{
+  connectors: ({
     groupName: string;
     wallets: WalletList[number]["wallets"];
-  }>[];
+  } | null)[];
 }> => {
   const miscChainsEntries = typeSafeObjectEntries<MiscChainsMap>(
     miscChainsMap
@@ -44,45 +45,42 @@ const queryFn = async ({
     (val) => val.wagmiChain
   );
 
-  return Promise.all([
-    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.tron)).chain(
-      () =>
-        MaybeAsync(() => import("./tron-connector")).map((v) =>
-          v.getTronConnectors({ forceWalletConnectOnly })
+  const connectors = await Promise.all([
+    filteredMiscChainsMap.tron
+      ? import("./tron-connector").then((module) =>
+          module.getTronConnectors({ forceWalletConnectOnly })
         )
-    ),
-    MaybeAsync.liftMaybe(
-      Maybe.fromFalsy(filteredMiscChainsMap.solana && !config.env.isTestMode)
-    ).chain(() =>
-      MaybeAsync(() => import("./solana-connector")).map((v) =>
-        v.getSolanaConnectors({
-          forceWalletConnectOnly,
-          wallets: solanaWallets,
-          connection: solanaConnection,
-          variant,
-        })
-      )
-    ),
-    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.cardano)).chain(
-      () =>
-        MaybeAsync(() => import("./cardano-connector")).map((v) =>
-          v.getCardanoConnectors()
+      : null,
+    filteredMiscChainsMap.solana && !config.env.isTestMode
+      ? import("./solana-connector").then((module) =>
+          module.getSolanaConnectors({
+            forceWalletConnectOnly,
+            wallets: solanaWallets,
+            connection: solanaConnection,
+            variant,
+          })
         )
-    ),
-    MaybeAsync.liftMaybe(Maybe.fromFalsy(filteredMiscChainsMap.ton)).chain(() =>
-      MaybeAsync(() => import("./ton-connector")).map((v) =>
-        v.getTonConnectors({ tonConnectManifestUrl })
-      )
-    ),
-  ]).then((connectors) => ({
+      : null,
+    filteredMiscChainsMap.cardano
+      ? import("./cardano-connector").then((module) =>
+          module.getCardanoConnectors()
+        )
+      : null,
+    filteredMiscChainsMap.ton
+      ? import("./ton-connector").then((module) =>
+          module.getTonConnectors({ tonConnectManifestUrl })
+        )
+      : null,
+  ]);
+  return {
     miscChainsMap: filteredMiscChainsMap,
     miscChains,
     connectors,
-  }));
+  };
 };
 
 export const getConfig = (opts: Parameters<typeof queryFn>[0]) =>
-  EitherAsync(() => queryFn(opts)).mapLeft((e) => {
-    console.log(e);
-    return new Error("Could not get misc config");
+  Effect.tryPromise({
+    try: () => queryFn(opts),
+    catch: (error) => new Error("Could not get misc config", { cause: error }),
   });

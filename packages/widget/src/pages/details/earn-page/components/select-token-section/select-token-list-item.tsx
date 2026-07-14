@@ -9,7 +9,7 @@ import {
 import { TokenIcon } from "../../../../../components/atoms/token-icon";
 import { Text } from "../../../../../components/atoms/typography/text";
 import { useTrackEvent } from "../../../../../hooks/tracking/use-track-event";
-import type { EarnTokenOption } from "../../state/effect-atom-poc/types";
+import type { EarnTokenOption } from "../../state/atoms-state/types";
 import { selectItemText } from "../../styles.css";
 
 type Props = {

@@ -5,8 +5,6 @@ import { EarnYield } from "./earn-models";
 import { YieldId } from "./identifiers";
 import { Network } from "./network-model";
 
-export { Network } from "./network-model";
-
 const EnabledNetworkArray = LegacyApi.YieldControllerGetMyNetworksdefault.pipe(
   Schema.decodeTo(Schema.Array(Network))
 );
@@ -31,7 +29,9 @@ const PendingActionType = SafeQueryParam.check(Schema.isPattern(/^[A-Z_]+$/));
 
 const InitTab = Schema.Literals(["earn", "positions"]);
 
-const SafeYieldId = SafeQueryParam.pipe(Schema.decodeTo(YieldId));
+const SafeYieldId = SafeQueryParam.check(
+  Schema.isPattern(/^[^-]+-[^-]+-.+$/)
+).pipe(Schema.decodeTo(YieldId));
 
 const SupportedWalletNetwork = Network.pipe(
   Schema.decodeTo(
