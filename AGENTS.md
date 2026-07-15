@@ -21,20 +21,29 @@
 
 ## Commands Agents Should Use
 
+### Package manager and dependency installation
+
+- Run all pnpm commands through the version pinned by mise: `mise exec -- pnpm ...`.
+- Do not install dependencies unless a dependency manifest or lockfile changed, `node_modules` is missing or invalid, or the requested work otherwise requires it.
+- When sandboxed, request approval to run dependency-installing or dependency-modifying commands outside the sandbox so pnpm can use the normal global store.
+- Do not fall back to a sandboxed install or create a project-local `.pnpm-store`. If approval is denied, report the blocked installation instead of changing the store configuration.
+
 ### From repo root (all workspaces via Turbo)
-- `pnpm build` — build all packages.
-- `pnpm lint` — lint/type-check all packages.
-- `pnpm test` — run all workspace tests.
-- `pnpm format` — run formatting checks/tasks.
-- `pnpm check-hygiene` — check unused deps, unresolved imports, circular deps, etc.
+
+- `mise exec -- pnpm build` — build all packages.
+- `mise exec -- pnpm lint` — lint/type-check all packages.
+- `mise exec -- pnpm test` — run all workspace tests.
+- `mise exec -- pnpm format` — run formatting checks/tasks.
+- `mise exec -- pnpm check-hygiene` — check unused deps, unresolved imports, circular deps, etc.
 
 ### Focused widget commands (recommended for most tasks)
-- `pnpm --filter @stakekit/widget {command}`
-- `pnpm --filter @stakekit/widget test:unit` — run the fast Node test project.
-- `pnpm --filter @stakekit/widget test:dom` — run React/DOM tests in jsdom.
-- `pnpm --filter @stakekit/widget test:browser` — run the Chromium test project.
-- `pnpm --filter @stakekit/widget test:changed` — run affected Node + jsdom tests.
-- `pnpm --filter @stakekit/widget test:changed:all` — run all affected projects, including Chromium.
+
+- `mise exec -- pnpm --filter @stakekit/widget {command}`
+- `mise exec -- pnpm --filter @stakekit/widget test:unit` — run the fast Node test project.
+- `mise exec -- pnpm --filter @stakekit/widget test:dom` — run React/DOM tests in jsdom.
+- `mise exec -- pnpm --filter @stakekit/widget test:browser` — run the Chromium test project.
+- `mise exec -- pnpm --filter @stakekit/widget test:changed` — run affected Node + jsdom tests.
+- `mise exec -- pnpm --filter @stakekit/widget test:changed:all` — run all affected projects, including Chromium.
 
 ## Agent Working Guidelines (short)
 - Keep public API compatibility in `src/index.package.ts` and `src/index.bundle.ts`.

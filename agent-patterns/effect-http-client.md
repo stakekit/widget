@@ -2,8 +2,8 @@
 
 Use this when writing project code that talks to external HTTP APIs with Effect.
 The source of truth reviewed for these patterns is the vendored Effect repo:
-`repos/effect/LLMS.md`, `repos/effect/ai-docs/src/50_http-client/10_basics.ts`,
-and the `repos/effect/packages/effect/src/unstable/http/HttpClient*.ts` modules
+`@repos/effect/LLMS.md`, `@repos/effect/ai-docs/src/50_http-client/10_basics.ts`,
+and the `@repos/effect/packages/effect/src/unstable/http/HttpClient*.ts` modules
 plus their tests.
 
 ## Imports

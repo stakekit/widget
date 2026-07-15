@@ -41,5 +41,5 @@ version = "11.14.1"
 backend = "npm:npm"
 
 [[tools."npm:pnpm"]]
-version = "11.10.0"
+version = "11.12.0"
 backend = "npm:pnpm"
