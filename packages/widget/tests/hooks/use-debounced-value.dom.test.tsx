@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { useDebouncedValue } from "../../src/hooks/use-debounced-value";
+import { useDebouncedValue } from "../../src/shared/react/use-debounced-value";
 import { renderHook } from "../utils/test-utils.dom";
 
 describe("useDebouncedValue", () => {

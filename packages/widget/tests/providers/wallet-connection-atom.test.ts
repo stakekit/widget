@@ -10,7 +10,7 @@ import {
   makeWalletConnectionAtom,
   type WalletConnectionOperations,
   type WalletConnectionSnapshot,
-} from "../../src/providers/wallet/state/connection";
+} from "../../src/features/wallet/state/connection";
 
 const connectedSnapshot = {
   ...disconnectedWalletConnection,

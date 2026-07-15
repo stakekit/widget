@@ -3,9 +3,9 @@ import { Effect, Layer, Schema } from "effect";
 import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
 import { describe, expect, it, vi } from "vitest";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { CosmosConnector } from "../../src/providers/cosmos/cosmos-connector-meta";
-import { WidgetPersistence } from "../../src/providers/effect-atom-runtime/persistence";
-import { getCosmosAdditionalAddresses } from "../../src/providers/wallet/state/additional-addresses";
+import { getCosmosAdditionalAddresses } from "../../src/features/wallet/state/additional-addresses";
+import { WidgetPersistence } from "../../src/services/persistence/widget-persistence";
+import type { CosmosConnector } from "../../src/services/wallet/connectors/cosmos/cosmos-connector-meta";
 
 const address = Schema.decodeSync(WalletAddress)("cosmos1stored");
 const storedPublicKey = "A".repeat(44);

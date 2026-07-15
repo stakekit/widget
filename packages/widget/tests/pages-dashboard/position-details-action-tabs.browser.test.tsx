@@ -8,9 +8,9 @@ import {
 } from "react-router";
 import { describe, expect, it } from "vitest";
 import { userEvent } from "vitest/browser";
-import { shouldRegisterDashboardEarnFooterButton } from "../../src/Dashboard";
-import { getPositionDetailsStakeReviewPath } from "../../src/hooks/navigation/use-position-details-stake-match";
-import { PositionDetailsActionTabs } from "../../src/pages-dashboard/position-details/components/position-details-action-tabs";
+import { shouldRegisterDashboardEarnFooterButton } from "../../src/app/routes";
+import { PositionDetailsActionTabs } from "../../src/features/position-details/ui/dashboard/components/position-details-action-tabs";
+import { getPositionDetailsStakeReviewPath } from "../../src/shared/react/navigation/use-position-details-stake-match";
 import { i18nInstance } from "../../src/translation";
 import { render } from "../utils/test-utils";
 

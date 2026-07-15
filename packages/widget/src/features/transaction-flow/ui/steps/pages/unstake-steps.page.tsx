@@ -1,0 +1,47 @@
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useUnstakeOrPendingActionParams } from "../../../../../shared/react/navigation/use-unstake-or-pending-action-params";
+import { useProvidersDetails } from "../../../../earn";
+import {
+  PositionBalancesKey,
+  positionBalancesAtom,
+} from "../../../../portfolio";
+import { useTrackPage } from "../../../../tracking";
+import { useExitStakeRequest } from "../../../react/use-transaction-flow";
+import { StepsPage } from "./common.page";
+
+export const UnstakeStepsPage = () => {
+  useTrackPage("unstakeSteps");
+
+  const exitRequest = useExitStakeRequest()!;
+
+  const { plain } = useUnstakeOrPendingActionParams();
+  const positionBalances = AsyncResult.getOrElse(
+    useAtomValue(
+      positionBalancesAtom(
+        new PositionBalancesKey({
+          balanceId: plain.balanceId ?? null,
+          yieldId: plain.integrationId ?? null,
+        })
+      )
+    ),
+    () => null
+  );
+
+  const providersDetails = useProvidersDetails({
+    integrationData: exitRequest.integrationData,
+    validators:
+      positionBalances?.type === "validators"
+        ? positionBalances.validators
+        : null,
+    selectedProviderYieldId: null,
+  });
+
+  return (
+    <StepsPage
+      inputToken={exitRequest.unstakeToken}
+      session={exitRequest.actionDto!}
+      providersDetails={providersDetails}
+    />
+  );
+};

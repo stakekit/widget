@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import * as Schema from "effect/Schema";
 import { describe, expect, it } from "vitest";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   buildBorrowActionRequest,
   buildCollateralToggleActionRequest,
@@ -8,8 +9,7 @@ import {
   buildWithdrawActionRequest,
   decodeBorrowForm,
   Market,
-} from "../../src/borrow";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+} from "../../src/features/borrow/core";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

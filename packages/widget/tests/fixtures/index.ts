@@ -54,7 +54,7 @@ export const yieldApiProviderFixture = (
     id: "stakekit",
     name: "StakeKit",
     description: "",
-    logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+    logoURI: "https://assets.stakek.it/app/composition/providers/stakekit.svg",
     website: "https://stakek.it",
     tvlUsd: null,
     type: "protocol",
@@ -205,7 +205,8 @@ export const legacyYieldFixture = (
         name: "StakeKit",
         description: "",
         externalLink: "https://stakek.it",
-        logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+        logoURI:
+          "https://assets.stakek.it/app/composition/providers/stakekit.svg",
       },
       revshare: { enabled: false },
       rewardClaiming: "auto",

@@ -4,7 +4,6 @@ import { avalanche } from "viem/chains";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../src/domain/schema/action-models";
 import type { LegacyTransaction } from "../../../src/domain/schema/legacy-models";
-import { waitForMs } from "../../../src/utils";
 import {
   yieldApiActionFixture,
   yieldApiProviderFixture,
@@ -22,6 +21,7 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type TransactionDto = typeof LegacyTransaction.Encoded;
 
@@ -94,7 +94,7 @@ export const setup = async (worker: TestWorker) => {
         name: "Benqi",
         description: "",
         externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
       revshare: {
         enabled: true,
@@ -432,7 +432,7 @@ export const setup = async (worker: TestWorker) => {
     ...yieldApiYieldOp,
     provider: yieldApiProviderFixture({
       id: "benqi",
-      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+      logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       name: "Benqi",
       website: "https://benqi.fi/",
     }),

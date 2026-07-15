@@ -1,25 +1,27 @@
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
 import type { PropsWithChildren } from "react";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import { YieldId } from "../../src/domain/schema/identifiers";
-import { useYieldValidators } from "../../src/hooks/api/use-yield-validators";
-import { SKAtomRuntimeProvider } from "../../src/providers/effect-atom-runtime";
-import { SettingsContextProvider } from "../../src/providers/settings";
+import { useYieldValidators } from "../../src/features/earn";
 import { yieldApiValidatorFixture } from "../fixtures";
+import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
 const yieldApiUrl = "https://yield.example.com";
 
 const Wrapper = ({ children }: PropsWithChildren) => (
-  <SettingsContextProvider
-    apiKey="test-key"
-    baseUrl="https://api.example.com"
-    yieldsApiUrl={yieldApiUrl}
-    variant="default"
+  <TestAtomRuntimeProvider
+    settings={normalizeWidgetConfig({
+      apiKey: "test-key",
+      baseUrl: "https://api.example.com",
+      variant: "default",
+      yieldsApiUrl: yieldApiUrl,
+    })}
   >
-    <SKAtomRuntimeProvider>{children}</SKAtomRuntimeProvider>
-  </SettingsContextProvider>
+    {children}
+  </TestAtomRuntimeProvider>
 );
 
 describe("validator loading", () => {

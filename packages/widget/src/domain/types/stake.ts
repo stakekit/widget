@@ -4,10 +4,10 @@ import type {
   EarnValidator,
   EarnYieldWithProvider,
 } from "../schema/earn-models";
+import type { InitParams } from "../schema/init-params";
 import type { Network } from "../schema/network-model";
 import { Networks } from "./chains/networks";
 
-import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
 import type { ValidatorKey } from "./validators";
 import { getYieldActionArg, isBittensorStaking } from "./yields";

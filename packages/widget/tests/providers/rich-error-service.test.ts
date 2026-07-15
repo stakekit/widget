@@ -2,15 +2,15 @@ import { Effect, Layer } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
-import { richErrorAtom } from "../../src/hooks/use-rich-errors";
+import { appRuntime } from "../../src/app/runtime";
+import { richErrorAtom } from "../../src/features/widget-shell";
 import {
   defaultWidgetBootstrapConfig,
   WidgetBootstrapConfig,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
-import { RichErrorService } from "../../src/providers/rich-error/service";
+} from "../../src/services/config/widget-config";
+import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
-const richErrorServiceAtom = widgetAtomRuntime.atom(
+const richErrorServiceAtom = appRuntime.atom(
   Effect.map(RichErrorService, (service) => service)
 );
 
@@ -18,7 +18,7 @@ const makeRegistry = (baseUrl: string) =>
   AtomRegistry.make({
     initialValues: [
       [
-        widgetAtomRuntime.layer,
+        appRuntime.layer,
         RichErrorService.layer.pipe(
           Layer.provide(
             WidgetBootstrapConfig.layer({

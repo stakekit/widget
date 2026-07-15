@@ -3,24 +3,29 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { base, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { appRuntime } from "../../src/app/runtime";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/domain/types/wallets/generic-wallet";
 import {
+  tokenBalancesScanResourceAtom,
+  yieldBalancesScanResourceAtom,
+} from "../../src/features/portfolio";
+import { actionHistoryTimestampAtom } from "../../src/features/transaction-flow";
+import {
   getStepsCompletionResources,
   getStepsMachineAtoms,
-  StepsMachineAtomKey,
-} from "../../src/pages/steps/state/steps-machine-atoms";
-import { StepsMachineKey } from "../../src/pages/steps/state/steps-machine-model";
-import { StepsMachineService } from "../../src/pages/steps/state/steps-machine-runtime";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
-import { actionHistoryTimestampAtom } from "../../src/providers/stake-history";
-import { TrackingService } from "../../src/providers/tracking/service";
+} from "../../src/features/transaction-flow/ui/steps/state/steps-machine-atoms";
+import { currentWalletStateAtom } from "../../src/features/wallet";
+import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
+import { LegacyApiService } from "../../src/services/api/legacy-api-service";
+import { YieldApiService } from "../../src/services/api/yield-api-service";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 import {
   WalletCapabilityUnavailableError,
   WalletService,
-} from "../../src/providers/wallet/runtime/service";
-import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
+} from "../../src/services/wallet/wallet-service";
+import { StepsMachineKey } from "../../src/services/workflow/steps-machine-model";
+import { StepsMachineService } from "../../src/services/workflow/steps-machine-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 import type { WalletOperations } from "../utils/wallet-operations";
 
@@ -53,21 +58,19 @@ const makeWalletService = (
 const defaultWalletService = makeWalletService(defaultSignTransaction);
 
 const key = () =>
-  new StepsMachineAtomKey({
-    machineKey: new StepsMachineKey({
-      actionMeta: {} as ActionMeta,
-      confirmationPollAttempts: 1,
-      confirmationPollInterval: Duration.zero,
-      transactions: [
-        yieldApiTransactionFixture({
-          id: "tx-1",
-          network: "ethereum",
-          status: "CREATED",
-          unsignedTransaction: "unsigned",
-        }),
-      ],
-      yieldId,
-    }),
+  new StepsMachineKey({
+    actionMeta: {} as ActionMeta,
+    confirmationPollAttempts: 1,
+    confirmationPollInterval: Duration.zero,
+    transactions: [
+      yieldApiTransactionFixture({
+        id: "tx-1",
+        network: "ethereum",
+        status: "CREATED",
+        unsignedTransaction: "unsigned",
+      }),
+    ],
+    yieldId,
   });
 
 const makeRegistry = ({
@@ -90,18 +93,21 @@ const makeRegistry = ({
   };
   const tokenBalances = vi.fn(() => Effect.succeed([]));
   const yieldBalances = vi.fn(() => Effect.succeed({ errors: [], items: [] }));
-  const apiLayer = Layer.succeed(StakeKitApiService, {
-    legacy: {
+  const apiLayer = Layer.merge(
+    Layer.succeed(LegacyApiService, {
       scanTokenBalances: tokenBalances,
-    },
-    yield: {
+    } as never),
+    Layer.succeed(YieldApiService, {
       getTransactionStatus: () => Effect.succeed(confirmedTransaction),
       getYieldPositions: yieldBalances,
       submitSignedTransaction: () => Effect.succeed(submittedTransaction),
       submitTransactionHash: () => Effect.succeed(submittedTransaction),
-    },
-  } as never);
-  const trackingLayer = Layer.succeed(TrackingService, { trackEvent });
+    } as never)
+  );
+  const trackingLayer = Layer.succeed(TrackingService, {
+    trackEvent,
+    trackPageView: () => Effect.void,
+  });
   const walletLayer = Layer.succeed(
     WalletService,
     walletService as WalletService["Service"]
@@ -113,8 +119,9 @@ const makeRegistry = ({
   return {
     registry: AtomRegistry.make({
       initialValues: [
+        Atom.initialValue(currentWalletStateAtom, connectedState),
         Atom.initialValue(
-          widgetAtomRuntime.layer,
+          appRuntime.layer,
           Layer.mergeAll(apiLayer, trackingLayer, walletLayer, stepsLayer).pipe(
             Layer.fresh
           )
@@ -127,6 +134,13 @@ const makeRegistry = ({
 };
 
 describe("classic steps machine atoms", () => {
+  it("refreshes the balance resources consumed by current portfolio scans", () => {
+    expect(getStepsCompletionResources(connectedState)).toEqual([
+      tokenBalancesScanResourceAtom,
+      yieldBalancesScanResourceAtom,
+    ]);
+  });
+
   it("uses value equality to share one machine atom family instance", () => {
     const first = getStepsMachineAtoms(key());
     const second = getStepsMachineAtoms(key());

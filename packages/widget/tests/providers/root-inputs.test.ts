@@ -1,21 +1,22 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
-import type { SKExternalProviders } from "../../src/domain/types/wallets";
 import {
-  defaultWidgetBootstrapConfig,
   normalizeWidgetBootstrapConfig,
+  normalizeWidgetConfig,
   widgetBootstrapConfigAtom,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
+  widgetConfigAtom,
+} from "../../src/app/config";
 import {
   defaultDynamicExternalProviderInput,
   defaultSolanaWalletInput,
   dynamicExternalProviderInputAtom,
   normalizeDynamicExternalProviderInput,
   solanaWalletInputAtom,
-} from "../../src/providers/effect-atom-runtime/root-inputs";
-import type { SettingsContextType } from "../../src/providers/settings/types";
-import { walletInitializationKeyAtom } from "../../src/providers/wallet";
+} from "../../src/app/runtime/root-inputs";
+import { walletInitializationKeyAtom } from "../../src/features/wallet";
+import type { SKExternalProviders } from "../../src/public-api/types";
+import { defaultWidgetBootstrapConfig } from "../../src/services/config/widget-config";
 
 const makeExternalProvider = (
   overrides: Partial<SKExternalProviders> = {}
@@ -33,14 +34,12 @@ const makeExternalProvider = (
   ...overrides,
 });
 
-const makeSettings = (
-  externalProviders: SKExternalProviders
-): SettingsContextType =>
-  ({
+const makeSettings = (externalProviders: SKExternalProviders) =>
+  normalizeWidgetConfig({
     apiKey: "api-key",
     externalProviders,
     variant: "default",
-  }) as SettingsContextType;
+  });
 
 describe("registry root input models", () => {
   it("keeps static external-provider topology in bootstrap config", () => {
@@ -82,7 +81,7 @@ describe("registry root input models", () => {
   it("exposes deterministic defaults", () => {
     const registry = AtomRegistry.make();
 
-    expect(registry.get(widgetBootstrapConfigAtom)).toBe(
+    expect(registry.get(widgetBootstrapConfigAtom)).toEqual(
       defaultWidgetBootstrapConfig
     );
     expect(registry.get(dynamicExternalProviderInputAtom)).toBe(
@@ -124,14 +123,10 @@ describe("registry root input models", () => {
     const replacementProvider = makeExternalProvider({
       currentAddress: "0x0000000000000000000000000000000000000002",
     });
-    const bootstrapConfig = normalizeWidgetBootstrapConfig({
-      isLedgerLive: false,
-      settings: makeSettings(firstProvider),
-    });
     const firstRegistry = AtomRegistry.make();
     const secondRegistry = AtomRegistry.make();
 
-    firstRegistry.set(widgetBootstrapConfigAtom, bootstrapConfig);
+    firstRegistry.set(widgetConfigAtom, makeSettings(firstProvider));
     firstRegistry.set(
       dynamicExternalProviderInputAtom,
       normalizeDynamicExternalProviderInput(firstProvider)
@@ -150,7 +145,7 @@ describe("registry root input models", () => {
       replacementProvider.currentAddress
     );
 
-    secondRegistry.set(widgetBootstrapConfigAtom, bootstrapConfig);
+    secondRegistry.set(widgetConfigAtom, makeSettings(firstProvider));
     secondRegistry.set(
       dynamicExternalProviderInputAtom,
       normalizeDynamicExternalProviderInput(firstProvider)

@@ -6,12 +6,12 @@ import { evmChainsMap } from "../../src/domain/types/chains/evm";
 import {
   disconnectedWalletConnection,
   type WalletConnectionSnapshot,
-} from "../../src/providers/wallet/state/connection";
-import { disconnectedLedgerConnectorState } from "../../src/providers/wallet/state/ledger";
+} from "../../src/features/wallet/state/connection";
+import { disconnectedLedgerConnectorState } from "../../src/features/wallet/state/ledger";
 import {
   normalizeWalletState,
   type WalletStateController,
-} from "../../src/providers/wallet/state/wallet";
+} from "../../src/features/wallet/state/wallet";
 
 const address = "0x0000000000000000000000000000000000000001";
 const forceAddress = "0x0000000000000000000000000000000000000002";

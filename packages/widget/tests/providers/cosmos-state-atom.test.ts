@@ -2,11 +2,11 @@ import type { ChainWalletBase } from "@cosmos-kit/core";
 import { Effect, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeCurrentValueStream } from "../../src/common/current-value-stream";
 import {
   disconnectedCosmosChainWallet,
   makeCosmosChainWalletStream,
-} from "../../src/providers/wallet/state/cosmos";
+} from "../../src/features/wallet/state/cosmos";
+import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 
 describe("Cosmos chain-wallet atom", () => {
   it("uses a deterministic null value for non-Cosmos connectors", async () => {

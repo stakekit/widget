@@ -1,4 +1,4 @@
-import { Data, Duration, Effect, Option, Schema } from "effect";
+import { Data, Duration, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
@@ -6,8 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   refreshAtomResources,
   withApiResourcePolicy,
-  withInputValidationError,
-} from "../../src/atoms/api-resource";
+} from "../../src/shared/effect/api-resource";
 
 class ResourceKey extends Data.Class<{
   readonly network: string;
@@ -124,19 +123,6 @@ describe("shared API resource conventions", () => {
     await Promise.resolve();
     await vi.advanceTimersByTimeAsync(100);
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
-  });
-
-  it("maps input Schema failures to typed validation errors", async () => {
-    const inputError = await Effect.runPromise(
-      Schema.decodeUnknownEffect(Schema.String)(1).pipe(
-        withInputValidationError("wallet-init-params"),
-        Effect.flip
-      )
-    );
-
-    expect(inputError._tag).toBe("InputValidationError");
-    expect(inputError.operation).toBe("wallet-init-params");
-    expect(inputError.issue).toContain("Expected string");
   });
 
   it("refreshes only explicitly declared resources", () => {

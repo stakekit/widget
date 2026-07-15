@@ -1,6 +1,6 @@
 {
-  "configVersion": "1.10",
-  "$schema": "https://raw.githubusercontent.com/jayu/rev-dep/master/config-schema/1.10.schema.json",
+  "configVersion": "1.11",
+  "$schema": "https://raw.githubusercontent.com/jayu/rev-dep/master/config-schema/1.11.schema.json",
   "rules": [
     {
       "path": "packages/widget",
@@ -24,6 +24,86 @@
         "tests/**/*.test.ts",
         "tests/**/*.test.tsx"
       ],
+      "moduleBoundaries": [
+        {
+          "name": "app",
+          "pattern": "src/app/**",
+          "allow": [
+            "src/app/**",
+            "src/features/**",
+            "src/services/**",
+            "src/domain/**",
+            "src/shared/**",
+            "src/public-api/**",
+            "src/translation/**"
+          ]
+        },
+        {
+          "name": "features",
+          "pattern": "src/features/**",
+          "allow": [
+            "src/features/**",
+            "src/app/config/**",
+            "src/app/runtime/**",
+            "src/services/**",
+            "src/domain/**",
+            "src/shared/**",
+            "src/public-api/**"
+          ]
+        },
+        {
+          "name": "services",
+          "pattern": "src/services/**",
+          "allow": [
+            "src/services/**",
+            "src/domain/**",
+            "src/shared/**",
+            "src/generated/**",
+            "src/public-api/**"
+          ]
+        },
+        {
+          "name": "domain",
+          "pattern": "src/domain/**",
+          "allow": [
+            "src/domain/**",
+            "src/generated/**",
+            "src/public-api/**",
+            "src/shared/**"
+          ]
+        },
+        {
+          "name": "shared",
+          "pattern": "src/shared/**",
+          "allow": ["src/shared/**", "src/domain/**"]
+        },
+        {
+          "name": "generated",
+          "pattern": "src/generated/**",
+          "allow": ["src/generated/**"]
+        },
+        {
+          "name": "translation",
+          "pattern": "src/translation/**",
+          "allow": ["src/translation/**", "src/shared/**"]
+        },
+        {
+          "name": "public-api",
+          "pattern": "src/public-api/**",
+          "allow": ["src/public-api/**"]
+        }
+      ],
+      "restrictedDirectImportersDetection": {
+        "enabled": true,
+        "files": ["src/generated/api/**"],
+        "allowImporters": [
+          "src/domain/borrow/**",
+          "src/domain/schema/**",
+          "src/services/api/**",
+          "scripts/**",
+          "tests/generated/**"
+        ]
+      },
       "orphanFilesDetection": [
         {
           "enabled": true
@@ -38,7 +118,6 @@
             "src/public-api/index.bundle.ts",
             "src/main.tsx",
             "src/translation/i18next.d.ts",
-            "src/types/purify-extend.d.ts",
             "src/types/window.d.ts",
             "src/vite-env.d.ts",
             "postcss.config.js",
@@ -52,8 +131,7 @@
         }
       ],
       "unusedExportsDetection": {
-        "enabled": true,
-        "ignoreFiles": ["src/types/yield-api-schema.d.ts"]
+        "enabled": true
       },
       "unusedNodeModulesDetection": {
         "enabled": true,

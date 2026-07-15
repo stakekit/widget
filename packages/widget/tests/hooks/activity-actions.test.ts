@@ -4,8 +4,8 @@ import { ActivityActionsPage } from "../../src/domain/schema/activity-models";
 import {
   ActivityActionsKey,
   getActivityActionsRequestParams,
-} from "../../src/hooks/api/activity-requests";
-import type { ActivityFilter } from "../../src/pages/details/activity-page/activity-filters";
+} from "../../src/features/activity";
+import type { ActivityFilter } from "../../src/features/activity/model/filters";
 import { yieldApiActionFixture } from "../fixtures";
 
 const address = Schema.decodeUnknownSync(

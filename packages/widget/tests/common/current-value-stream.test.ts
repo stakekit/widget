@@ -1,6 +1,6 @@
 import { Effect, Stream } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { makeCurrentValueStream } from "../../src/common/current-value-stream";
+import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 
 describe("current value stream", () => {
   it("seeds the current snapshot including updates made before subscription", async () => {

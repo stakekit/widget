@@ -1,6 +1,9 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { describe, expect, it } from "vitest";
+import { appRuntime } from "../../src/app/runtime";
+import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   applyBorrowFormAction,
   BorrowAccountPosition,
@@ -11,7 +14,6 @@ import {
   BorrowPositionsKey,
   BorrowSubmitFailedError,
   BorrowWalletExecutionService,
-  borrowAtomRuntime,
   borrowIntegrationsAtom,
   borrowPositionsAtom,
   deriveBorrowPositionItems,
@@ -19,10 +21,8 @@ import {
   Integration,
   Market,
   resolveBorrowDashboardView,
-} from "../../src/borrow";
-import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
+} from "../../src/features/borrow/core";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -114,9 +114,9 @@ const makeRegistry = (borrow: Record<string, unknown>) =>
   AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
-        borrowAtomRuntime.layer,
+        appRuntime.layer,
         Layer.mergeAll(
-          Layer.succeed(StakeKitApiService, { borrow } as never),
+          Layer.succeed(BorrowApiService, borrow as never),
           Layer.succeed(BorrowWalletExecutionService, {} as never),
           Layer.succeed(BorrowExecutionEventsService, {} as never)
         )
@@ -214,23 +214,22 @@ describe("borrow atoms", () => {
       intent,
       key: new BorrowDashboardKey({
         network: "ethereum",
-        scopeId: "test",
-        tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
-          {
-            amount: "2",
-            availableYields: [],
-            token: {
-              address: marketDto.collateralTokens[0].token.address,
-              decimals: 18,
-              name: "Wrapped Ether",
-              network: "ethereum",
-              symbol: "WETH",
-            },
-          },
-        ]),
         walletAddress: address,
       }),
       marketsResult: AsyncResult.success([market]),
+      tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
+        {
+          amount: "2",
+          availableYields: [],
+          token: {
+            address: marketDto.collateralTokens[0].token.address,
+            decimals: 18,
+            name: "Wrapped Ether",
+            network: "ethereum",
+            symbol: "WETH",
+          },
+        },
+      ]),
     });
 
     expect(selectedIntent.collateralAmount).toBe("0");
@@ -291,12 +290,11 @@ describe("borrow atoms", () => {
       },
       key: new BorrowDashboardKey({
         network: "ethereum",
-        scopeId: "test",
-        tokenBalances: [],
         walletAddress: address,
       }),
       marketsResult: AsyncResult.success([market]),
       positionsResult: AsyncResult.success([position]),
+      tokenBalances: [],
     });
 
     expect(view.projection.existingCollateralUsd.toString(10)).toBe("1000");

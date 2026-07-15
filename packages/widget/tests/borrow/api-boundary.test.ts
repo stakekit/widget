@@ -6,7 +6,7 @@ import {
   BorrowIntegrationsResponse,
   BorrowMarketsResponse,
   Integration,
-} from "../../src/borrow";
+} from "../../src/features/borrow/core";
 
 const address = "0x0000000000000000000000000000000000000001";
 

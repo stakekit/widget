@@ -1,0 +1,290 @@
+import BigNumber from "bignumber.js";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useWidgetConfig } from "../../../../../app/config";
+import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
+import type { AppToken } from "../../../../../domain/schema/legacy-models";
+import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import {
+  defaultFormattedNumber,
+  formatNumber,
+} from "../../../../../shared/lib";
+import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-variant";
+import { Box, type BoxProps } from "../../../../../shared/ui/primitives/box";
+import { Button } from "../../../../../shared/ui/primitives/button";
+import { InfoIcon } from "../../../../../shared/ui/primitives/icons/info";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import * as AmountToggle from "../../../../earn/support";
+import { selectTokenSection, useYieldMetaInfo } from "../../../../earn/support";
+import {
+  MaxButton,
+  NumberInput,
+  type NumberInputProps,
+  TokenIcon,
+} from "../../../../widget-shell";
+import { priceTxt } from "../styles.css";
+
+type AmountBlockProps = {
+  onAmountChange: NumberInputProps["onChange"];
+  value: NumberInputProps["value"];
+  canChangeAmount: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  unstakeAmountError?: boolean;
+  onMaxClick: (() => void) | null;
+  label: string;
+  formattedAmount: string;
+  balance: { amount: BigNumber; token: AppToken } | null;
+} & (
+  | {
+      variant: "unstake";
+      unstakeToken: AppToken;
+      yieldDto: EarnYieldWithProvider;
+      validators: {
+        [Key in keyof Pick<
+          ValidatorDto,
+          "name" | "address"
+        >]?: ValidatorDto[Key];
+      }[];
+      canUnstake: boolean;
+      unstakeIsGreaterOrLessIntegrationLimitError: boolean;
+      unstakeMaxAmount: number | null;
+      unstakeMinAmount: number | null;
+      /**
+       * When false, the unstake info (withdrawal time, etc.) is not rendered
+       * inside the card so it can be placed below the section instead.
+       */
+      showUnstakeInfo?: boolean;
+      ctaPlacement?: "card" | "footer";
+    }
+  | { variant: "action" }
+);
+
+export const AmountBlock = ({
+  onAmountChange,
+  value,
+  canChangeAmount,
+  disabled,
+  onClick,
+  label,
+  formattedAmount,
+  onMaxClick,
+  balance,
+  unstakeAmountError,
+  ...rest
+}: AmountBlockProps) => {
+  const { t } = useTranslation();
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
+  const variant = useWidgetConfig("variant");
+
+  const unstakeProps =
+    rest.variant === "unstake"
+      ? (rest as Extract<AmountBlockProps, { variant: "unstake" }>)
+      : null;
+  const min =
+    unstakeProps?.unstakeMinAmount == null
+      ? null
+      : `${t("shared.min")} ${formatNumber(
+          new BigNumber(unstakeProps.unstakeMinAmount)
+        )} ${unstakeProps.unstakeToken.symbol}`;
+  const max =
+    unstakeProps?.unstakeMaxAmount == null
+      ? null
+      : `${t("shared.max")} ${formatNumber(
+          new BigNumber(unstakeProps.unstakeMaxAmount)
+        )} ${unstakeProps.unstakeToken.symbol}`;
+  const minMaxUnstakeAmount =
+    unstakeProps &&
+    (min || max || unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError) ? (
+      <Box
+        display="flex"
+        justifyContent="flex-end"
+        alignItems="center"
+        marginTop="2"
+        marginRight="2"
+      >
+        <Text
+          key="min"
+          variant={{
+            type: unstakeProps.unstakeIsGreaterOrLessIntegrationLimitError
+              ? "danger"
+              : "muted",
+          }}
+          textAlign="right"
+        >
+          {min && max ? `${min} / ${max}` : (min ?? max)}
+        </Text>
+      </Box>
+    ) : null;
+
+  const variantProps: BoxProps =
+    rest.variant === "action"
+      ? {
+          background: "background",
+          borderWidth: 1,
+          borderStyle: "solid",
+          borderColor: "backgroundMuted",
+        }
+      : {
+          background: "stakeSectionBackground",
+          borderWidth: 1,
+          borderStyle: "solid",
+          className: combineRecipeWithVariant({
+            rec: selectTokenSection,
+            variant,
+            state: unstakeAmountError ? "danger" : "default",
+          }),
+        };
+  const showCardCta =
+    rest.variant === "action" || rest.ctaPlacement !== "footer";
+
+  return (
+    <Box {...variantProps} borderRadius="xl" py="4" px="4">
+      {(rest.variant === "action" || rest.canUnstake) && (
+        <Box>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Box minWidth="0" display="flex" marginRight="2" flex={1}>
+              <NumberInput
+                onChange={onAmountChange}
+                value={value}
+                disabled={!canChangeAmount}
+                shakeOnInvalid
+                isInvalid={unstakeAmountError}
+              />
+            </Box>
+
+            {showCardCta ? (
+              <Button
+                onClick={onClick}
+                disabled={disabled}
+                variant={{
+                  size: "small",
+                  color:
+                    rest.variant === "unstake"
+                      ? "smallButton"
+                      : "smallButtonLight",
+                }}
+              >
+                <Text>{label}</Text>
+              </Button>
+            ) : (
+              <Box display="flex" alignItems="center" gap="2">
+                <TokenIcon token={rest.unstakeToken} />
+                <Text variant={{ weight: "bold" }}>
+                  {rest.unstakeToken.symbol}
+                </Text>
+              </Box>
+            )}
+          </Box>
+          {minMaxUnstakeAmount}
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            marginTop="2"
+            flexWrap="wrap"
+          >
+            <Box className={priceTxt}>
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {formattedAmount}
+              </Text>
+            </Box>
+
+            <Box
+              flexGrow={1}
+              display="flex"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              {balance && (
+                <AmountToggle.Root>
+                  <AmountToggle.Amount>
+                    {({ state }) => (
+                      <Text variant={{ weight: "normal" }}>
+                        {t("position_details.available", {
+                          amount:
+                            state === "full"
+                              ? formatNumber(balance.amount)
+                              : defaultFormattedNumber(balance.amount),
+                          symbol: balance.token?.symbol ?? "",
+                        })}
+                      </Text>
+                    )}
+                  </AmountToggle.Amount>
+                </AmountToggle.Root>
+              )}
+              {canChangeAmount && onMaxClick && (
+                <MaxButton
+                  onMaxClick={onMaxClick}
+                  {...(rest.variant === "action"
+                    ? { background: "backgroundMuted" as const }
+                    : {})}
+                />
+              )}
+            </Box>
+          </Box>
+        </Box>
+      )}
+
+      {rest.variant === "unstake" && rest.showUnstakeInfo !== false && (
+        <Box marginTop={dashboardVariant ? "0" : "2"}>
+          <UnstakeInfo
+            validators={rest.validators}
+            yieldDto={rest.yieldDto}
+            unstakeToken={rest.unstakeToken}
+          />
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export const UnstakeInfo = ({
+  validators,
+  yieldDto,
+  unstakeToken,
+}: {
+  yieldDto: EarnYieldWithProvider;
+  validators: {
+    [Key in keyof Pick<ValidatorDto, "name" | "address">]?: ValidatorDto[Key];
+  }[];
+  unstakeToken: AppToken;
+}) => {
+  const { withdrawnTime, withdrawnNotAvailable, positionLocked } =
+    useYieldMetaInfo({
+      validators,
+      selectedStake: yieldDto,
+      tokenDto: unstakeToken,
+    });
+
+  return useMemo(() => {
+    const values = [
+      withdrawnTime,
+      withdrawnNotAvailable,
+      positionLocked,
+    ].filter(Boolean);
+    return values.length > 0 ? (
+      <Box display="flex" flexDirection="column" gap="2">
+        {values.map((v, i) => (
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyContent="flex-start"
+            gap="1"
+            key={i}
+          >
+            <Box display="flex" alignItems="center" justifyContent="center">
+              <InfoIcon />
+            </Box>
+
+            <Text variant={{ type: "muted", size: "small" }}>{v}</Text>
+          </Box>
+        ))}
+      </Box>
+    ) : null;
+  }, [withdrawnTime, withdrawnNotAvailable, positionLocked]);
+};

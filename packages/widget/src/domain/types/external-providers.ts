@@ -1,7 +1,6 @@
 import { Data, Effect } from "effect";
-import type { RefObject } from "react";
+import type { SKTx, SKTxMeta } from "../../public-api/types";
 import type { SKExternalProviders } from "./wallets";
-import type { SKTx, SKTxMeta } from "./wallets/generic-wallet";
 
 export class ExternalProviderError extends Data.TaggedError(
   "ExternalProviderError"
@@ -11,8 +10,12 @@ export class ExternalProviderError extends Data.TaggedError(
   readonly message: string;
 }> {}
 
+export type CurrentRef<A> = {
+  readonly current: A;
+};
+
 export class ExternalProvider {
-  constructor(private variantProvider: RefObject<SKExternalProviders>) {}
+  constructor(private variantProvider: CurrentRef<SKExternalProviders>) {}
 
   sendTransaction(tx: SKTx, txMeta: SKTxMeta) {
     const sendTransaction =

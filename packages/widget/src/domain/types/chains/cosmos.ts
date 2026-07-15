@@ -1,6 +1,10 @@
 import type { Chain } from "@stakekit/rainbowkit";
-import type { CosmosChainsAssets } from "../../../providers/cosmos/chains/types";
+import type { chains } from "chain-registry";
 import { CosmosNetworks } from "./networks";
+
+export type CosmosChain = (typeof chains)[number];
+export type WithWagmiName<T> = T & { readonly wagmiName: string };
+export type CosmosChainsAssets = WithWagmiName<CosmosChain>;
 
 export const supportedCosmosChains = [
   CosmosNetworks.Akash,

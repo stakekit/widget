@@ -6,18 +6,18 @@ import { type Chain, type Hex, zeroAddress } from "viem";
 import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { appRuntime } from "../../../src/app/runtime";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
+import { makeWalletServiceBindingAtom } from "../../../src/features/wallet/runtime/binding-atom";
+import { disconnectedLedgerConnectorState } from "../../../src/features/wallet/state/ledger";
+import type { NormalizedWalletState } from "../../../src/features/wallet/state/wallet";
 import {
   defaultWidgetBootstrapConfig,
   WidgetBootstrapConfig,
-} from "../../../src/providers/effect-atom-runtime/bootstrap-config";
-import { WidgetPersistence } from "../../../src/providers/effect-atom-runtime/persistence";
-import { widgetAtomRuntime } from "../../../src/providers/effect-atom-runtime/widget-runtime";
-import { makeWalletServiceBindingAtom } from "../../../src/providers/wallet/runtime/binding-atom";
-import { WalletService } from "../../../src/providers/wallet/runtime/service";
-import { disconnectedLedgerConnectorState } from "../../../src/providers/wallet/state/ledger";
-import type { NormalizedWalletState } from "../../../src/providers/wallet/state/wallet";
-import type { WagmiActions } from "../../../src/providers/wallet/wagmi/actions";
+} from "../../../src/services/config/widget-config";
+import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
+import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
+import { WalletService } from "../../../src/services/wallet/wallet-service";
 
 const connector = {
   id: "test",
@@ -72,7 +72,7 @@ const makeWalletRuntimeLayer = () => {
   );
 };
 
-const walletServiceProbeAtom = widgetAtomRuntime.atom(
+const walletServiceProbeAtom = appRuntime.atom(
   WalletService.use((wallet) => Effect.succeed(wallet))
 );
 
@@ -86,7 +86,7 @@ const makeHarness = (controllerValue: ReturnType<typeof controller>) => {
     Atom.make(AsyncResult.success(null))
   );
   const registry = AtomRegistry.make({
-    initialValues: [[widgetAtomRuntime.layer, makeWalletRuntimeLayer()]],
+    initialValues: [[appRuntime.layer, makeWalletRuntimeLayer()]],
   });
   const unmountBinding = registry.mount(bindingAtom);
 

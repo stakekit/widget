@@ -3,17 +3,17 @@ import * as KeyValueStore from "effect/unstable/persistence/KeyValueStore";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
+import { appRuntime } from "../../src/app/runtime";
+import {
+  setTosAcceptedAtom,
+  tosAcceptedAtom,
+} from "../../src/features/preferences/state/tos-atoms";
 import {
   StoredPublicKeys,
   TosAccepted,
   WidgetPersistence,
   widgetStorageKeys,
-} from "../../src/providers/effect-atom-runtime/persistence";
-import {
-  setTosAcceptedAtom,
-  tosAcceptedAtom,
-} from "../../src/providers/effect-atom-runtime/persistence-atoms";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
+} from "../../src/services/persistence/widget-persistence";
 
 class MemoryStorage implements Storage {
   readonly values = new Map<string, string>();
@@ -49,7 +49,7 @@ const makeRegistry = (storage: Storage) =>
   AtomRegistry.make({
     initialValues: [
       [
-        widgetAtomRuntime.layer,
+        appRuntime.layer,
         Layer.effect(WidgetPersistence, WidgetPersistence.make).pipe(
           Layer.provide(KeyValueStore.layerStorage(() => storage))
         ),

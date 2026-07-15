@@ -8,7 +8,7 @@ import { EarnBalance } from "../../src/domain/schema/earn-models";
 import { TokenAddress } from "../../src/domain/schema/identifiers";
 import type { PositionBalancesByType } from "../../src/domain/types/positions";
 
-import { getDashboardPositionDetailsModel } from "../../src/pages-dashboard/position-details/position-details-model";
+import { getDashboardPositionDetailsModel } from "../../src/features/position-details/ui/dashboard/position-details-model";
 import {
   yieldApiProviderFixture,
   yieldApiYieldFixture,

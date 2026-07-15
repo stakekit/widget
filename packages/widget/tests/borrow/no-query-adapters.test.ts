@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import borrowPageSource from "../../src/pages-dashboard/borrow/index.tsx?raw";
-import borrowPositionDetailsSource from "../../src/pages-dashboard/borrow/position-details.tsx?raw";
-import borrowDashboardHookSource from "../../src/pages-dashboard/borrow/use-borrow-dashboard.ts?raw";
-import borrowPositionsHookSource from "../../src/pages-dashboard/borrow/use-borrow-positions.ts?raw";
-import managePositionsSource from "../../src/pages-dashboard/overview/positions/positions.page.tsx?raw";
-import summarySource from "../../src/pages-dashboard/overview/summary/index.tsx?raw";
+import borrowPageSource from "../../src/features/borrow/ui/index.tsx?raw";
+import borrowPositionDetailsSource from "../../src/features/borrow/ui/position-details.tsx?raw";
+import borrowDashboardHookSource from "../../src/features/borrow/ui/use-borrow-dashboard.ts?raw";
+import borrowPositionsHookSource from "../../src/features/borrow/ui/use-borrow-positions.ts?raw";
+import managePositionsSource from "../../src/features/portfolio/ui/dashboard/positions/positions.page.tsx?raw";
+import summarySource from "../../src/features/portfolio/ui/dashboard/summary/index.tsx?raw";
 
 const borrowConsumerSources = {
   borrowDashboardHookSource,

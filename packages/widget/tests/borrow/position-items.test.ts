@@ -1,17 +1,17 @@
 import * as Schema from "effect/Schema";
 import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   BorrowAccountPosition,
   deriveBorrowPositionItems,
   Integration,
   Market,
-} from "../../src/borrow";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
+} from "../../src/features/borrow/core";
 import {
   getBorrowPositionActions,
   getBorrowPositionDetailsModel,
-} from "../../src/pages-dashboard/borrow/position-details-model";
+} from "../../src/features/borrow/ui/position-details-model";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

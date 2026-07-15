@@ -3,17 +3,21 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   defaultWidgetBootstrapConfig,
   WidgetBootstrapConfig,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
-import { TrackingService } from "../../src/providers/tracking/service";
+} from "../../src/services/config/widget-config";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 
 const variantTracking = vi.hoisted(() => ({
   initMixpanel: vi.fn(),
   trackEvent: vi.fn(),
+  trackPageView: vi.fn(),
 }));
 
-vi.mock("../../src/providers/tracking/tracking-variants", () => ({
+vi.mock("../../src/services/tracking/tracking-variants", () => ({
   initMixpanel: variantTracking.initMixpanel,
-  tracking: { trackEvent: variantTracking.trackEvent },
+  tracking: {
+    trackEvent: variantTracking.trackEvent,
+    trackPageView: variantTracking.trackPageView,
+  },
 }));
 
 describe("tracking service", () => {
@@ -23,12 +27,13 @@ describe("tracking service", () => {
 
   it("captures immutable tracking configuration during layer construction", async () => {
     const trackEvent = vi.fn();
+    const trackPageView = vi.fn();
     const layer = TrackingService.layer.pipe(
       Layer.provide(
         WidgetBootstrapConfig.layer({
           ...defaultWidgetBootstrapConfig,
           tracking: {
-            tracking: { trackEvent },
+            tracking: { trackEvent, trackPageView },
             variant: "default",
           },
         })
@@ -40,6 +45,7 @@ describe("tracking service", () => {
         Effect.all([
           tracking.trackEvent("txSigned", { txId: "first" }),
           tracking.trackEvent("txSubmitted", { txId: "second" }),
+          tracking.trackPageView("earn", { source: "test" }),
         ])
       ).pipe(Effect.provide(layer))
     );
@@ -50,6 +56,7 @@ describe("tracking service", () => {
     expect(trackEvent).toHaveBeenNthCalledWith(2, "Transaction submitted", {
       txId: "second",
     });
+    expect(trackPageView).toHaveBeenCalledWith("Earn", { source: "test" });
   });
 
   it("initializes variant tracking once during layer construction", async () => {
@@ -70,6 +77,7 @@ describe("tracking service", () => {
         Effect.all([
           tracking.trackEvent("txSigned", { txId: "first" }),
           tracking.trackEvent("txSubmitted", { txId: "second" }),
+          tracking.trackPageView("positions"),
         ])
       ).pipe(Effect.provide(layer))
     );
@@ -85,5 +93,6 @@ describe("tracking service", () => {
       "Transaction submitted",
       { txId: "second" }
     );
+    expect(variantTracking.trackPageView).toHaveBeenCalledWith("Positions");
   });
 });

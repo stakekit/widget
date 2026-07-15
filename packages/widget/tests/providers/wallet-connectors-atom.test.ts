@@ -10,7 +10,7 @@ import {
   makeWalletConnectorsAtom,
   type WalletConnectorsOperations,
   type WalletConnectorsSnapshot,
-} from "../../src/providers/wallet/state/connectors";
+} from "../../src/features/wallet/state/connectors";
 
 describe("wallet connectors atom", () => {
   it("registers the watch before seeding, deduplicates, and finalizes", async () => {

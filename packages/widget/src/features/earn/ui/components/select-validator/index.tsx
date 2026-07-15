@@ -1,0 +1,218 @@
+import type { PropsWithChildren } from "react";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type {
+  EarnValidator,
+  EarnYieldWithProvider,
+} from "../../../../../domain/schema/earn-models";
+import type { ValidatorKey } from "../../../../../domain/types/validators";
+
+import { Box } from "../../../../../shared/ui/primitives/box";
+import { Text } from "../../../../../shared/ui/primitives/typography/text";
+import type { SelectModalProps } from "../../../../widget-shell";
+import { SelectModal } from "../../../../widget-shell";
+import type { GroupedItem } from "./select-validator-list";
+import { SelectValidatorList } from "./select-validator-list";
+import { emptyState } from "./styles.css";
+
+type SelectValidatorProps = PropsWithChildren<
+  Pick<
+    SelectModalProps,
+    "isLoading" | "onClose" | "onOpen" | "state" | "trigger"
+  > & {
+    selectedValidators: Set<ValidatorKey>;
+    onItemClick: (item: EarnValidator) => void;
+    onViewMoreClick?: () => void;
+    onLoadMore?: () => void;
+    hasMore?: boolean;
+    isLoadingMore?: boolean;
+    validators: EarnValidator[];
+    selectedStake: EarnYieldWithProvider;
+    multiSelect: boolean;
+  } & (
+      | { onSearch: (value: string) => void; searchValue: string }
+      | {
+          onSearch?: never;
+          searchValue?: never;
+        }
+    )
+>;
+
+export const SelectValidator = ({
+  state,
+  isLoading,
+  onClose,
+  onOpen,
+  trigger,
+  selectedValidators,
+  onItemClick,
+  onViewMoreClick,
+  onLoadMore,
+  hasMore,
+  isLoadingMore,
+  validators,
+  multiSelect,
+  selectedStake,
+  children,
+  ...rest
+}: SelectValidatorProps) => {
+  const { t } = useTranslation();
+
+  const [_viewMore, setViewMore] = useState(false);
+
+  const _onViewMoreClick = () => {
+    onViewMoreClick?.();
+    onLoadMore?.();
+    setViewMore(true);
+  };
+
+  const _onClose = () => {
+    setViewMore(false);
+    onClose?.();
+  };
+
+  const hasRequestedMoreValidators = _viewMore || !!rest.searchValue;
+  const showExpandedValidators = multiSelect || hasRequestedMoreValidators;
+
+  const data = useMemo<{
+    tableData: EarnValidator[];
+    groupedItems: GroupedItem[];
+    groupCounts: number[];
+  }>(() => {
+    if (!validators.length && hasMore && !hasRequestedMoreValidators) {
+      return {
+        tableData: [],
+        groupedItems: [{ items: [], label: "view_more" }],
+        groupCounts: [1],
+      };
+    }
+
+    if (!validators.length) {
+      return {
+        tableData: [],
+        groupedItems: [],
+        groupCounts: [],
+      };
+    }
+
+    const groupedItems = validators.reduce<{
+      preferred: GroupedItem;
+      other: GroupedItem;
+    }>(
+      (acc, val) => {
+        if (val.preferred) {
+          acc.preferred.items.push(val);
+        } else if (showExpandedValidators) {
+          acc.other.items.push(val);
+        }
+
+        return acc;
+      },
+      {
+        preferred: {
+          items: [] as EarnValidator[],
+          label: t("details.validators_preferred"),
+        },
+        other: {
+          items: [] as EarnValidator[],
+          label: t("details.validators_other"),
+        },
+      }
+    );
+
+    // If we do not have preferred validators, show all other
+    if (!groupedItems.preferred.items.length && validators.length) {
+      const canViewMore = !hasRequestedMoreValidators && !!hasMore;
+
+      return {
+        tableData: validators,
+        groupedItems: [
+          {
+            items: validators,
+            label: t("details.validators_other"),
+          },
+          ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+        ],
+        groupCounts: [validators.length, ...(canViewMore ? [1] : [])],
+      };
+    }
+
+    const canViewMore =
+      !hasRequestedMoreValidators &&
+      (!!hasMore ||
+        (!showExpandedValidators &&
+          groupedItems.preferred.items.length !== validators.length));
+
+    const groupedItemsValues = Object.values(groupedItems);
+
+    return {
+      tableData: groupedItemsValues.flatMap((val) => val.items),
+      groupedItems: [
+        ...groupedItemsValues.filter((val) => !!val.items.length),
+        ...(canViewMore ? [{ items: [], label: "view_more" }] : []),
+      ],
+      groupCounts: [
+        ...groupedItemsValues
+          .filter((val) => !!val.items.length)
+          .map((val) => val.items.length),
+        ...(canViewMore ? [1] : []),
+      ],
+    };
+  }, [
+    hasMore,
+    validators,
+    t,
+    hasRequestedMoreValidators,
+    showExpandedValidators,
+  ]);
+
+  const searchProps = rest.onSearch
+    ? {
+        onSearch: rest.onSearch,
+        searchValue: rest.searchValue,
+      }
+    : {};
+  const infiniteScrollProps =
+    hasRequestedMoreValidators && onLoadMore
+      ? {
+          hasNextPage: !!hasMore,
+          isFetchingNextPage: !!isLoadingMore,
+          fetchNextPage: onLoadMore,
+        }
+      : {};
+  const emptyMessage = rest.searchValue?.trim().length
+    ? t("details.validators_no_results")
+    : t("details.validators_empty");
+
+  return (
+    <SelectModal
+      title={t("details.validator_search_title", {
+        count: multiSelect ? 2 : 1,
+      })}
+      onClose={_onClose}
+      onOpen={onOpen}
+      trigger={trigger}
+      state={state}
+      isLoading={isLoading}
+      {...searchProps}
+    >
+      {data.groupCounts.length ? (
+        <SelectValidatorList
+          {...data}
+          selectedValidators={selectedValidators}
+          multiSelect={multiSelect}
+          onItemClick={onItemClick}
+          onViewMoreClick={_onViewMoreClick}
+          selectedStake={selectedStake}
+          {...infiniteScrollProps}
+        />
+      ) : isLoading ? null : (
+        <Box className={emptyState}>
+          <Text variant={{ type: "muted" }}>{emptyMessage}</Text>
+        </Box>
+      )}
+
+      {children}
+    </SelectModal>
+  );
+};

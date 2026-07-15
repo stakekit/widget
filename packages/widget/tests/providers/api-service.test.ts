@@ -7,9 +7,13 @@ import {
 } from "../../src/domain/schema/api-errors";
 import { RewardsAddresses } from "../../src/domain/schema/dashboard-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
-import { makeLegacyApiService } from "../../src/providers/api/legacy-api-service";
-import { makeYieldApiService } from "../../src/providers/api/yield-api-service";
+import {
+  BorrowApiService,
+  LegacyApiService,
+  YieldApiService,
+} from "../../src/services/api";
+import { makeLegacyApiService } from "../../src/services/api/legacy-api-service";
+import { makeYieldApiService } from "../../src/services/api/yield-api-service";
 import { makeTestStakeKitApiLayer } from "../utils/stakekit-api-layer";
 
 const config = {
@@ -38,14 +42,16 @@ describe("application API services", () => {
     const context = await Effect.runPromise(
       Layer.build(makeTestStakeKitApiLayer(config)).pipe(Effect.scoped)
     );
-    const api = Context.get(context, StakeKitApiService);
+    const borrow = Context.get(context, BorrowApiService);
+    const legacy = Context.get(context, LegacyApiService);
+    const yieldApi = Context.get(context, YieldApiService);
 
-    expect(api.legacy.getPrices).toBeTypeOf("function");
-    expect(api.legacy).not.toHaveProperty("getYields");
-    expect(api.yield.getYields).toBeTypeOf("function");
-    expect(api.yield).not.toHaveProperty("getPrices");
-    expect(api.borrow.getMarkets).toBeTypeOf("function");
-    expect(api.borrow).not.toHaveProperty("getYields");
+    expect(legacy.getPrices).toBeTypeOf("function");
+    expect(legacy).not.toHaveProperty("getYields");
+    expect(yieldApi.getYields).toBeTypeOf("function");
+    expect(yieldApi).not.toHaveProperty("getPrices");
+    expect(borrow.getMarkets).toBeTypeOf("function");
+    expect(borrow).not.toHaveProperty("getYields");
   });
 
   it("fails only Borrow operations when Borrow configuration is missing", async () => {
@@ -54,10 +60,10 @@ describe("application API services", () => {
         makeTestStakeKitApiLayer({ ...config, borrowApiUrl: " " })
       ).pipe(Effect.scoped)
     );
-    const api = Context.get(context, StakeKitApiService);
+    const borrow = Context.get(context, BorrowApiService);
 
     await expect(
-      Effect.runPromise(api.borrow.getIntegrations())
+      Effect.runPromise(borrow.getIntegrations())
     ).rejects.toBeInstanceOf(MissingBorrowApiConfig);
   });
 

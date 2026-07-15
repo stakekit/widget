@@ -1,11 +1,16 @@
 import { Layer } from "effect";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
+import {
+  BorrowApiService,
+  LegacyApiService,
+  YieldApiService,
+} from "../../src/services/api";
+import { ApiTransportService } from "../../src/services/api/transport";
 import {
   defaultWidgetBootstrapConfig,
   type WidgetApiConfig,
   WidgetBootstrapConfig,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
-import { RichErrorService } from "../../src/providers/rich-error/service";
+} from "../../src/services/config/widget-config";
+import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
 const makeTestLayers = (api: WidgetApiConfig) => {
   const bootstrapLayer = WidgetBootstrapConfig.layer({
@@ -15,10 +20,15 @@ const makeTestLayers = (api: WidgetApiConfig) => {
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(bootstrapLayer)
   );
-  const apiLayer = StakeKitApiService.layer.pipe(
+  const transportLayer = ApiTransportService.layer.pipe(
     Layer.provide(richErrorLayer),
     Layer.provide(bootstrapLayer)
   );
+  const apiLayer = Layer.mergeAll(
+    BorrowApiService.layer,
+    LegacyApiService.layer,
+    YieldApiService.layer
+  ).pipe(Layer.provide(transportLayer));
 
   return { apiLayer, richErrorLayer } as const;
 };

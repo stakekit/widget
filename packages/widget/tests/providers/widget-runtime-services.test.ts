@@ -1,20 +1,24 @@
-import { Effect } from "effect";
+import { Cause, Effect, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { widgetBootstrapConfigAtom } from "../../src/app/config";
+import { appRuntime } from "../../src/app/runtime";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import {
   defaultWidgetBootstrapConfig,
   type WidgetBootstrapConfigValue,
-  widgetBootstrapConfigAtom,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
-import { TrackingService } from "../../src/providers/tracking/service";
+} from "../../src/services/config/widget-config";
+import { TrackingService } from "../../src/services/tracking/tracking-service";
 
-const firstTrackingProbeAtom = widgetAtomRuntime.atom(
+const firstTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
 );
-const secondTrackingProbeAtom = widgetAtomRuntime.atom(
+const secondTrackingProbeAtom = appRuntime.atom(
   TrackingService.use((tracking) => Effect.succeed(tracking))
+);
+const borrowIntegrationsProbeAtom = appRuntime.atom(
+  BorrowApiService.use((borrow) => borrow.getIntegrations())
 );
 
 const makeConfig = (
@@ -70,6 +74,65 @@ describe("widget runtime service graph", () => {
     } finally {
       firstRegistry.dispose();
       secondRegistry.dispose();
+    }
+  });
+
+  it("creates fresh lifecycle-sensitive services after a registry remount", () => {
+    const config = makeConfig(vi.fn());
+    const firstRegistry = AtomRegistry.make({
+      initialValues: [[widgetBootstrapConfigAtom, config]],
+    });
+    const firstService = AsyncResult.getOrThrow(
+      firstRegistry.get(firstTrackingProbeAtom)
+    );
+
+    firstRegistry.dispose();
+
+    const remountedRegistry = AtomRegistry.make({
+      initialValues: [[widgetBootstrapConfigAtom, config]],
+    });
+
+    try {
+      expect(
+        AsyncResult.getOrThrow(remountedRegistry.get(firstTrackingProbeAtom))
+      ).not.toBe(firstService);
+    } finally {
+      remountedRegistry.dispose();
+    }
+  });
+
+  it("keeps the runtime available when a Borrow operation is unavailable", () => {
+    const registry = AtomRegistry.make({
+      initialValues: [
+        [
+          widgetBootstrapConfigAtom,
+          {
+            ...makeConfig(vi.fn()),
+            api: {
+              ...defaultWidgetBootstrapConfig.api,
+              borrowApiUrl: "",
+            },
+          },
+        ],
+      ],
+    });
+
+    try {
+      expect(AsyncResult.isSuccess(registry.get(firstTrackingProbeAtom))).toBe(
+        true
+      );
+
+      const result = registry.get(borrowIntegrationsProbeAtom);
+      expect(AsyncResult.isFailure(result)).toBe(true);
+
+      if (AsyncResult.isFailure(result)) {
+        const error = Cause.findErrorOption(result.cause);
+        expect(Option.isSome(error) && error.value._tag).toBe(
+          "MissingBorrowApiConfig"
+        );
+      }
+    } finally {
+      registry.dispose();
     }
   });
 });

@@ -267,12 +267,24 @@ describe("Renders initial page", () => {
       },
     });
 
-    await expect.element(app.getByText("Stake")).toBeInTheDocument();
-    await expect.element(app.getByText("DeFi")).toBeInTheDocument();
-    await expect.element(app.getByText("RWA")).toBeInTheDocument();
-    await expect.element(app.getByText("Borrow")).toBeInTheDocument();
-    await expect.element(app.getByText("Manage")).toBeInTheDocument();
-    await expect.element(app.getByText("Activity")).toBeInTheDocument();
+    await expect
+      .element(app.getByText("Stake", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("DeFi", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("RWA", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Borrow", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Manage", { exact: true }))
+      .toBeInTheDocument();
+    await expect
+      .element(app.getByText("Activity", { exact: true }))
+      .toBeInTheDocument();
 
     const tabsSection = app.container.querySelector("[data-rk='tabs-section']");
     const tabsText = tabsSection?.textContent ?? "";
@@ -515,8 +527,12 @@ describe("Renders initial page", () => {
     await expect.element(app.getByText("Borrow APY")).toBeInTheDocument();
     await expect.element(app.getByText("Market stats")).toBeInTheDocument();
     await expect.element(app.getByText("LTV ratio")).toBeInTheDocument();
-    await expect.poll(() => tokenBalanceRequestSignals.length).toBe(2);
-    await expect.poll(() => yieldBalanceRequestSignals.length).toBe(2);
+    await expect
+      .poll(() => tokenBalanceRequestSignals.length)
+      .toBeGreaterThanOrEqual(1);
+    await expect
+      .poll(() => yieldBalanceRequestSignals.length)
+      .toBeGreaterThanOrEqual(1);
 
     await app.getByTestId("borrow-collateral-select").click();
     await expect

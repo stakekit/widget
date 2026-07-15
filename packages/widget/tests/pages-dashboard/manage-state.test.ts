@@ -1,7 +1,7 @@
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { describe, expect, it } from "vitest";
-import type { Position as BorrowPosition } from "../../src/borrow";
-import { getUnifiedManagePositionsState } from "../../src/pages-dashboard/overview/positions/model";
+import type { Position as BorrowPosition } from "../../src/domain/borrow/position";
+import { getUnifiedManagePositionsState } from "../../src/features/portfolio/ui/dashboard/positions/model";
 
 const borrowPositionsResult = (positions: ReadonlyArray<BorrowPosition> = []) =>
   AsyncResult.success<ReadonlyArray<BorrowPosition>, unknown>(positions);

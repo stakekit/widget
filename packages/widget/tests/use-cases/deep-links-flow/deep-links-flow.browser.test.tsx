@@ -1,6 +1,6 @@
 import { Array as EArray } from "effect";
 import { numberToHex } from "viem";
-import { APToPercentage } from "../../../src/utils";
+import { APToPercentage } from "../../../src/shared/lib";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";

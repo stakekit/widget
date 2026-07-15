@@ -7,7 +7,6 @@ import {
   type EarnYield,
 } from "../../../src/domain/schema/earn-models";
 import type { YieldRewardRateDto } from "../../../src/domain/types/reward-rate";
-import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
   yieldApiYieldFixture,
@@ -18,6 +17,7 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 type YieldApiYieldDto = typeof EarnYield.Encoded;
@@ -220,7 +220,7 @@ export const setup = async (
         name: "Trust",
         description: "",
         externalLink: "https://trustwallet.com",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
     },
     status: {
@@ -248,7 +248,7 @@ export const setup = async (
       ...(rawYieldBase.metadata ?? {}),
       name: "Trust USDA Earn",
       description: "Trust campaign vault",
-      logoURI: "https://assets.stakek.it/providers/benqi.svg",
+      logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
     },
     mechanics: {
       ...(rawYieldBase.mechanics ?? {}),

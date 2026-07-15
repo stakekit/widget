@@ -22,8 +22,8 @@ import {
   viction,
 } from "viem/chains";
 import { EvmChainIds } from "../../../public-api/types";
-import type { KebabToCamelCase } from "../../../types/utils";
-import { getNetworkLogo } from "../../../utils";
+import { getNetworkLogo } from "../../../shared/lib";
+import type { KebabToCamelCase } from "../../../shared/types/utils";
 import { EvmNetworks } from "./networks";
 
 const supportedEVMChains = [

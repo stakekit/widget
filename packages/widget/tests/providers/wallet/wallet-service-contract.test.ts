@@ -10,7 +10,7 @@ import {
   type WalletSignedPayloadResult,
   WalletSigningError,
   WalletSwitchError,
-} from "../../../src/providers/wallet/runtime/service";
+} from "../../../src/services/wallet/wallet-service";
 
 type WalletTransactionResult =
   | WalletSignedPayloadResult

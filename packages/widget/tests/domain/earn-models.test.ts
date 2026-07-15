@@ -26,7 +26,8 @@ describe("Earn application models", () => {
       id: "stakekit",
       name: "StakeKit",
       description: "",
-      logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+      logoURI:
+        "https://assets.stakek.it/app/composition/providers/stakekit.svg",
       website: "https://stakek.it",
       tvlUsd: null,
       type: "protocol",

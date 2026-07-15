@@ -2,7 +2,7 @@ import { Effect, Fiber, Schedule } from "effect";
 import { zeroAddress } from "viem";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeSafeWalletDriver } from "../../../src/providers/wallet/drivers/safe";
+import { makeSafeWalletDriver } from "../../../src/services/wallet/drivers/safe";
 
 const tx = JSON.stringify({
   chainId: 1,

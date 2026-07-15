@@ -1,4 +1,4 @@
-import { config } from "../../src/config";
+import { config } from "../../src/shared/config/widget-defaults";
 
 const getApiRoute = (baseUrl: string, path: string) =>
   new URL(path.startsWith("/") ? path : `/${path}`, baseUrl).toString();

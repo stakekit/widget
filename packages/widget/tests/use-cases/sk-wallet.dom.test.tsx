@@ -8,31 +8,28 @@ import {
 } from "@ton/core";
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
+import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
+import { SolanaProvider } from "../../src/app/composition/providers/solana";
+import { normalizeWidgetConfig } from "../../src/app/config";
+import { appRuntime } from "../../src/app/runtime";
 import { ActionId, TransactionId } from "../../src/domain/schema/identifiers";
 import { solana, ton } from "../../src/domain/types/chains/misc";
 import { MiscNetworks } from "../../src/domain/types/chains/networks";
-import type { SKExternalProviders } from "../../src/domain/types/wallets";
-import type { SKTxMeta } from "../../src/domain/types/wallets/generic-wallet";
-import { SKAtomRuntimeProvider } from "../../src/providers/effect-atom-runtime";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
-import { ThirdPartyQueryClientProvider } from "../../src/providers/query-client";
-import { SettingsContextProvider } from "../../src/providers/settings";
-import { SolanaProvider } from "../../src/providers/solana";
-import { TrackingContextProviderWithProps } from "../../src/providers/tracking";
-import { WagmiConfigProvider } from "../../src/providers/wallet/react/provider";
-import { useSKWallet } from "../../src/providers/wallet/react/use-wallet";
+import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
+import { useSKWallet } from "../../src/features/wallet/react/use-wallet";
+import type { SKExternalProviders, SKTxMeta } from "../../src/public-api/types";
 import {
   WalletService,
   type WalletSignTransactionInput,
-} from "../../src/providers/wallet/runtime/service";
+} from "../../src/services/wallet/wallet-service";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
+import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it, vi } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
-const signTransactionAtom = widgetAtomRuntime.fn(
-  (input: WalletSignTransactionInput) =>
-    WalletService.use((wallet) => wallet.signTransaction(input))
+const signTransactionAtom = appRuntime.fn((input: WalletSignTransactionInput) =>
+  WalletService.use((wallet) => wallet.signTransaction(input))
 );
 
 const useTestWallet = () => {
@@ -50,23 +47,19 @@ const renderHookWithExternalProvider = (
 ) =>
   renderHook(useTestWallet, {
     wrapper: ({ children }) => (
-      <SettingsContextProvider
-        variant={options.variant ?? "default"}
-        apiKey={import.meta.env.VITE_API_KEY}
-        externalProviders={externalProviders}
-      >
-        <ThirdPartyQueryClientProvider>
-          <SolanaProvider>
-            <SKAtomRuntimeProvider>
-              <WagmiConfigProvider>
-                <TrackingContextProviderWithProps>
-                  {children}
-                </TrackingContextProviderWithProps>
-              </WagmiConfigProvider>
-            </SKAtomRuntimeProvider>
-          </SolanaProvider>
-        </ThirdPartyQueryClientProvider>
-      </SettingsContextProvider>
+      <ThirdPartyQueryClientProvider>
+        <SolanaProvider>
+          <TestAtomRuntimeProvider
+            settings={normalizeWidgetConfig({
+              apiKey: import.meta.env.VITE_API_KEY,
+              externalProviders,
+              variant: options.variant ?? "default",
+            })}
+          >
+            <WagmiConfigProvider>{children}</WagmiConfigProvider>
+          </TestAtomRuntimeProvider>
+        </SolanaProvider>
+      </ThirdPartyQueryClientProvider>
     ),
   });
 

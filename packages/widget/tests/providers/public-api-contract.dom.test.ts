@@ -1,22 +1,16 @@
 import { describe, expectTypeOf, it } from "vitest";
 import type * as bundleEntry from "../../src/index.bundle";
+import type * as packageEntry from "../../src/index.package";
 import type {
   BundledSKWidgetProps,
   SKWallet as BundleWallet,
-} from "../../src/index.bundle";
-import type * as packageEntry from "../../src/index.package";
-import type {
-  SKWallet as PackageWallet,
-  SKAppProps,
-} from "../../src/index.package";
-import type {
   BundledSKWidgetProps as DeclaredBundledSKWidgetProps,
   SKWallet as DeclaredBundleWallet,
-} from "../../src/public-api/index.bundle";
-import type {
   SKWallet as DeclaredPackageWallet,
   SKAppProps as DeclaredSKAppProps,
-} from "../../src/public-api/index.package";
+  SKWallet as PackageWallet,
+  SKAppProps,
+} from "../../src/public-api/types";
 
 type PublicBundle = typeof import("../../src/public-api/index.bundle");
 type PublicPackage = typeof import("../../src/public-api/index.package");

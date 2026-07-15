@@ -1,4 +1,4 @@
-import type { WalletService } from "../../src/providers/wallet/runtime/service";
+import type { WalletService } from "../../src/services/wallet/wallet-service";
 
 export type WalletOperations = Omit<
   WalletService["Service"],

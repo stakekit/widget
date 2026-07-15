@@ -7,16 +7,16 @@ import type { Chain } from "viem";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeCurrentValueStream } from "../../src/common/current-value-stream";
 import {
   disconnectedWalletConnection,
   type WalletConnectionSnapshot,
-} from "../../src/providers/wallet/state/connection";
+} from "../../src/features/wallet/state/connection";
 import {
   disconnectedLedgerConnectorState,
   makeLedgerConnectorStateAtom,
   makeLedgerConnectorStateStream,
-} from "../../src/providers/wallet/state/ledger";
+} from "../../src/features/wallet/state/ledger";
+import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 
 describe("Ledger connector state atom", () => {
   it("uses deterministic defaults for non-Ledger connectors", async () => {

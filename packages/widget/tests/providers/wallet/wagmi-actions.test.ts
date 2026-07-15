@@ -6,7 +6,7 @@ import { mainnet } from "wagmi/chains";
 import {
   makeWagmiActions,
   type WagmiActionOperations,
-} from "../../../src/providers/wallet/wagmi/actions";
+} from "../../../src/services/wallet/wagmi-actions";
 
 const connector = {
   id: "test",

@@ -3,8 +3,8 @@ import type { Chain } from "viem";
 import { mainnet, optimism } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeCurrentValueStream } from "../../src/common/current-value-stream";
-import { makeConnectorChainsStream } from "../../src/providers/wallet/state/connector-chains";
+import { makeConnectorChainsStream } from "../../src/features/wallet/state/connector-chains";
+import { makeCurrentValueStream } from "../../src/shared/effect/current-value-stream";
 
 describe("connector chains atom", () => {
   it("uses configured EVM chains when the connector has no filtered source", async () => {

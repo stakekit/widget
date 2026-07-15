@@ -5,18 +5,18 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { appRuntime } from "../../../src/app/runtime";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
-import {
-  defaultWidgetBootstrapConfig,
-  WidgetBootstrapConfig,
-} from "../../../src/providers/effect-atom-runtime/bootstrap-config";
-import { widgetAtomRuntime } from "../../../src/providers/effect-atom-runtime/widget-runtime";
-import { TrackingService } from "../../../src/providers/tracking/service";
-import { makeWalletLifecycleAtom } from "../../../src/providers/wallet/runtime/lifecycle";
+import { makeWalletLifecycleAtom } from "../../../src/features/wallet/runtime/lifecycle";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../../src/providers/wallet/state/wallet";
+} from "../../../src/features/wallet/state/wallet";
+import {
+  defaultWidgetBootstrapConfig,
+  WidgetBootstrapConfig,
+} from "../../../src/services/config/widget-config";
+import { TrackingService } from "../../../src/services/tracking/tracking-service";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
@@ -63,7 +63,7 @@ describe("wallet lifecycle atom", () => {
     const registry = AtomRegistry.make({
       initialValues: [
         [
-          widgetAtomRuntime.layer,
+          appRuntime.layer,
           TrackingService.layer.pipe(
             Layer.provide(
               WidgetBootstrapConfig.layer({

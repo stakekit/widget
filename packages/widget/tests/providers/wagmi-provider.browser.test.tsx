@@ -11,21 +11,21 @@ import {
   WagmiContext,
 } from "wagmi";
 import { optimism } from "wagmi/chains";
+import { ThirdPartyQueryClientProvider } from "../../src/app/composition/providers/query-client";
+import { SolanaProvider } from "../../src/app/composition/providers/solana";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import { EvmNetworks } from "../../src/domain/types/chains/networks";
-import { SKAtomRuntimeProvider } from "../../src/providers/effect-atom-runtime";
-import { ThirdPartyQueryClientProvider } from "../../src/providers/query-client";
-import { SettingsContextProvider } from "../../src/providers/settings";
-import { SolanaProvider } from "../../src/providers/solana";
-import { useWalletController } from "../../src/providers/wallet";
-import { WagmiConfigProvider } from "../../src/providers/wallet/react/provider";
+import { useWalletController } from "../../src/features/wallet";
+import { WagmiConfigProvider } from "../../src/features/wallet/react/provider";
 import { legacyApiRoute } from "../mocks/api-routes";
 import { mockDelay } from "../mocks/delay";
+import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
-import { render, renderHook } from "../utils/test-utils";
+import { render, renderHook } from "../utils/test-utils.dom";
 
 const useWagmiProviderContract = () => ({
-  contextConfig: useContext(WagmiContext),
+  contextConfig: useContext(WagmiContext) as Config | undefined,
   initializedConfig: useWalletController(),
 });
 
@@ -47,7 +47,7 @@ const useRainbowKitWagmiContract = () => ({
   account: useAccount(),
   connect: useConnect(),
   connectors: useConnectors(),
-  contextConfig: useContext(WagmiContext),
+  contextConfig: useContext(WagmiContext) as Config | undefined,
   controller: useWalletController(),
   disconnect: useDisconnect(),
   switchChain: useSwitchChain(),
@@ -60,24 +60,24 @@ const ControllerHarness = ({
   readonly forceWalletConnectOnly: boolean;
   readonly onConfig: (config: Config) => void;
 }) => (
-  <SettingsContextProvider
-    apiKey={import.meta.env.VITE_API_KEY}
-    disableInjectedProviderDiscovery
-    variant="default"
-    wagmi={{ forceWalletConnectOnly }}
-  >
-    <ThirdPartyQueryClientProvider>
-      <SolanaProvider>
-        <StrictMode>
-          <SKAtomRuntimeProvider>
-            <WagmiConfigProvider>
-              <ConfigObserver onConfig={onConfig} />
-            </WagmiConfigProvider>
-          </SKAtomRuntimeProvider>
-        </StrictMode>
-      </SolanaProvider>
-    </ThirdPartyQueryClientProvider>
-  </SettingsContextProvider>
+  <ThirdPartyQueryClientProvider>
+    <SolanaProvider>
+      <StrictMode>
+        <TestAtomRuntimeProvider
+          settings={normalizeWidgetConfig({
+            apiKey: import.meta.env.VITE_API_KEY,
+            disableInjectedProviderDiscovery: true,
+            variant: "default",
+            wagmi: { forceWalletConnectOnly },
+          })}
+        >
+          <WagmiConfigProvider>
+            <ConfigObserver onConfig={onConfig} />
+          </WagmiConfigProvider>
+        </TestAtomRuntimeProvider>
+      </StrictMode>
+    </SolanaProvider>
+  </ThirdPartyQueryClientProvider>
 );
 
 describe("WagmiConfigProvider", () => {
@@ -93,21 +93,21 @@ describe("WagmiConfigProvider", () => {
 
     const hook = await renderHook(useWagmiProviderContract, {
       wrapper: ({ children }) => (
-        <SettingsContextProvider
-          apiKey={import.meta.env.VITE_API_KEY}
-          variant="default"
-          disableInjectedProviderDiscovery
-        >
-          <ThirdPartyQueryClientProvider>
-            <SolanaProvider>
-              <StrictMode>
-                <SKAtomRuntimeProvider>
-                  <WagmiConfigProvider>{children}</WagmiConfigProvider>
-                </SKAtomRuntimeProvider>
-              </StrictMode>
-            </SolanaProvider>
-          </ThirdPartyQueryClientProvider>
-        </SettingsContextProvider>
+        <ThirdPartyQueryClientProvider>
+          <SolanaProvider>
+            <StrictMode>
+              <TestAtomRuntimeProvider
+                settings={normalizeWidgetConfig({
+                  apiKey: import.meta.env.VITE_API_KEY,
+                  disableInjectedProviderDiscovery: true,
+                  variant: "default",
+                })}
+              >
+                <WagmiConfigProvider>{children}</WagmiConfigProvider>
+              </TestAtomRuntimeProvider>
+            </StrictMode>
+          </SolanaProvider>
+        </ThirdPartyQueryClientProvider>
       ),
     });
 
@@ -175,22 +175,22 @@ describe("WagmiConfigProvider", () => {
     const account = "0x0000000000000000000000000000000000000001";
     const hook = await renderHook(useRainbowKitWagmiContract, {
       wrapper: ({ children }) => (
-        <SettingsContextProvider
-          apiKey={import.meta.env.VITE_API_KEY}
-          disableInjectedProviderDiscovery
-          variant="default"
-          wagmi={{
-            __customConnectors__: rkMockWallet({ accounts: [account] }),
-          }}
-        >
-          <ThirdPartyQueryClientProvider>
-            <SolanaProvider>
-              <SKAtomRuntimeProvider>
-                <WagmiConfigProvider>{children}</WagmiConfigProvider>
-              </SKAtomRuntimeProvider>
-            </SolanaProvider>
-          </ThirdPartyQueryClientProvider>
-        </SettingsContextProvider>
+        <ThirdPartyQueryClientProvider>
+          <SolanaProvider>
+            <TestAtomRuntimeProvider
+              settings={normalizeWidgetConfig({
+                apiKey: import.meta.env.VITE_API_KEY,
+                disableInjectedProviderDiscovery: true,
+                variant: "default",
+                wagmi: {
+                  __customConnectors__: rkMockWallet({ accounts: [account] }),
+                },
+              })}
+            >
+              <WagmiConfigProvider>{children}</WagmiConfigProvider>
+            </TestAtomRuntimeProvider>
+          </SolanaProvider>
+        </ThirdPartyQueryClientProvider>
       ),
     });
     const fallbackConfig = hook.result.current.contextConfig;

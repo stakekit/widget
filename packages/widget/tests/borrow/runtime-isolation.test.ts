@@ -2,13 +2,13 @@ import { Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { appRuntime } from "../../src/app/runtime";
 import {
   type BorrowExecutionEvent,
   BorrowExecutionEventsService,
-  borrowAtomRuntime,
-} from "../../src/borrow";
+} from "../../src/features/borrow/core";
 
-const eventAtom = borrowAtomRuntime.atom(
+const eventAtom = appRuntime.atom(
   Stream.fromEffect(BorrowExecutionEventsService).pipe(
     Stream.flatMap((service) => service.events),
     Stream.map((event): BorrowExecutionEvent | null => event)
@@ -16,7 +16,7 @@ const eventAtom = borrowAtomRuntime.atom(
   { initialValue: null }
 );
 
-const publishEventAtom = borrowAtomRuntime.fn((event: BorrowExecutionEvent) =>
+const publishEventAtom = appRuntime.fn((event: BorrowExecutionEvent) =>
   BorrowExecutionEventsService.use((service) => service.publish(event))
 );
 

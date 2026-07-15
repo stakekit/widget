@@ -4,14 +4,14 @@ import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { EarnYieldWithProvider } from "../../src/domain/schema/earn-models";
 
-import type { useSelectValidator } from "../../src/pages/details/earn-page/components/select-validator-section/use-select-validator";
-import { SelectYieldRewardDetails } from "../../src/pages/details/earn-page/components/select-yield-section/select-yield-reward-details";
-import { ProviderSelectionCard } from "../../src/pages-dashboard/overview/earn-details/components/provider-selection-card";
-import { SettingsContextProvider } from "../../src/providers/settings";
+import type { useSelectValidator } from "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator";
+import { SelectYieldRewardDetails } from "../../src/features/earn/ui/classic/earn-page/components/select-yield-section/select-yield-reward-details";
+import { ProviderSelectionCard } from "../../src/features/earn/ui/dashboard/earn-details/components/provider-selection-card";
 import { i18nInstance } from "../../src/translation";
 import { yieldApiValidatorFixture, yieldApiYieldFixture } from "../fixtures";
 import { render } from "../utils/test-utils";
 import { decodeValidator } from "../utils/validators";
+import { TestWidgetConfigProvider } from "../utils/widget-config-provider";
 
 const hookState = vi.hoisted(() => ({
   earnContext: {} as Record<string, unknown>,
@@ -21,20 +21,20 @@ const hookState = vi.hoisted(() => ({
 }));
 
 vi.mock(
-  "../../src/pages/details/earn-page/components/select-validator-section/use-select-validator",
+  "../../src/features/earn/ui/classic/earn-page/components/select-validator-section/use-select-validator",
   () => ({
     useSelectValidator: () => hookState.selectValidator,
   })
 );
 
 vi.mock(
-  "../../src/pages/details/earn-page/state/earn-page-context",
+  "../../src/features/earn/ui/classic/earn-page/state/earn-page-model",
   async (importOriginal) => {
     const actual = await importOriginal<object>();
 
     return {
       ...actual,
-      useEarnPageContext: () => hookState.earnContext,
+      useEarnPageModel: () => hookState.earnContext,
     };
   }
 );
@@ -84,7 +84,7 @@ const createHookValue = (
 const renderProviderSelectionCard = () =>
   render(
     <I18nextProvider i18n={i18nInstance}>
-      <SettingsContextProvider
+      <TestWidgetConfigProvider
         apiKey="test-key"
         baseUrl="https://api.example.com"
         dashboardVariant
@@ -92,7 +92,7 @@ const renderProviderSelectionCard = () =>
         yieldsApiUrl="https://yield.example.com"
       >
         <ProviderSelectionCard />
-      </SettingsContextProvider>
+      </TestWidgetConfigProvider>
     </I18nextProvider>
   );
 
@@ -103,7 +103,7 @@ const renderSelectYieldRewardDetails = ({
 } = {}) =>
   render(
     <I18nextProvider i18n={i18nInstance}>
-      <SettingsContextProvider
+      <TestWidgetConfigProvider
         apiKey="test-key"
         baseUrl="https://api.example.com"
         dashboardVariant={dashboardVariant}
@@ -111,7 +111,7 @@ const renderSelectYieldRewardDetails = ({
         yieldsApiUrl="https://yield.example.com"
       >
         <SelectYieldRewardDetails />
-      </SettingsContextProvider>
+      </TestWidgetConfigProvider>
     </I18nextProvider>
   );
 

@@ -12,23 +12,22 @@ import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import { userEvent } from "vitest/browser";
 import type { Connector } from "wagmi";
+import { appRuntime } from "../../src/app/runtime";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   ActionRequest,
   Action as BorrowAction,
   BorrowExecutionEventsService,
   type Transaction as BorrowTransaction,
   BorrowWalletExecutionService,
-  borrowAtomRuntime,
   type SubmitTransactionCommand,
-} from "../../src/borrow";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { BorrowReviewState } from "../../src/pages-dashboard/borrow/review-state";
-import { useBorrowExecution } from "../../src/pages-dashboard/borrow/use-borrow-execution";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
-import { WalletService } from "../../src/providers/wallet/runtime/service";
-import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
-import { disconnectedNormalizedWalletState } from "../../src/providers/wallet/state/wallet";
+} from "../../src/features/borrow/core";
+import type { BorrowReviewState } from "../../src/features/borrow/ui/review-state";
+import { useBorrowExecution } from "../../src/features/borrow/ui/use-borrow-execution";
+import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
+import { disconnectedNormalizedWalletState } from "../../src/features/wallet/state/wallet";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import { render } from "../utils/test-utils";
 import type { WalletOperations } from "../utils/wallet-operations";
 
@@ -216,14 +215,14 @@ const renderExecution = (
     <RegistryProvider
       initialValues={[
         [
-          borrowAtomRuntime.layer,
+          appRuntime.layer,
           Layer.mergeAll(
-            Layer.succeed(StakeKitApiService, { borrow } as never),
+            Layer.succeed(BorrowApiService, borrow as never),
             BorrowWalletExecutionService.layer.pipe(Layer.provide(walletLayer)),
-            BorrowExecutionEventsService.layer
+            BorrowExecutionEventsService.layer,
+            walletLayer
           ).pipe(Layer.fresh),
         ],
-        [widgetAtomRuntime.layer, walletLayer],
       ]}
     >
       <MemoryRouter initialEntries={["/borrow/steps"]}>

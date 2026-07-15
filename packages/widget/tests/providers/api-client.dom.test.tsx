@@ -1,15 +1,20 @@
 import { Context, Effect, Layer, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
-import { delayAPIRequests } from "../../src/common/delay-api-requests";
-import { config } from "../../src/config";
-import { useGeoBlock } from "../../src/hooks/use-geo-block";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
+import { useGeoBlock } from "../../src/features/preferences";
+import {
+  BorrowApiService,
+  LegacyApiService,
+  YieldApiService,
+} from "../../src/services/api";
+import { delayAPIRequests } from "../../src/services/api/delay-api-requests";
+import { ApiTransportService } from "../../src/services/api/transport";
 import {
   defaultWidgetBootstrapConfig,
   type WidgetApiConfig,
   WidgetBootstrapConfig,
-} from "../../src/providers/effect-atom-runtime/bootstrap-config";
-import { RichErrorService } from "../../src/providers/rich-error/service";
+} from "../../src/services/config/widget-config";
+import { RichErrorService } from "../../src/services/errors/rich-error-service";
+import { config } from "../../src/shared/config/widget-defaults";
 import { describe, expect, it } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
@@ -27,16 +32,25 @@ const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
   const richErrorLayer = RichErrorService.layer.pipe(
     Layer.provide(bootstrapLayer)
   );
-  const clientLayer = StakeKitApiService.layer.pipe(
+  const transportLayer = ApiTransportService.layer.pipe(
     Layer.provide(richErrorLayer),
     Layer.provide(bootstrapLayer)
   );
+  const clientLayer = Layer.mergeAll(
+    BorrowApiService.layer,
+    LegacyApiService.layer,
+    YieldApiService.layer
+  ).pipe(Layer.provide(transportLayer));
   const context = await Effect.runPromise(
     Layer.build(Layer.merge(clientLayer, richErrorLayer)).pipe(Effect.scoped)
   );
 
   return {
-    client: Context.get(context, StakeKitApiService),
+    client: {
+      borrow: Context.get(context, BorrowApiService),
+      legacy: Context.get(context, LegacyApiService),
+      yield: Context.get(context, YieldApiService),
+    },
     richErrors: Context.get(context, RichErrorService),
   };
 };

@@ -6,8 +6,8 @@ import {
   MiscNetworks,
   SubstrateNetworks,
 } from "../../src/domain/types/chains/networks";
-import type { SKTxMeta } from "../../src/domain/types/wallets/generic-wallet";
-import { prepareLedgerLiveTransaction } from "../../src/providers/ledger/prepare-ledger-live-transaction";
+import type { SKTxMeta } from "../../src/public-api/types";
+import { prepareLedgerLiveTransaction } from "../../src/services/wallet/connectors/ledger/prepare-ledger-live-transaction";
 
 const substrateMethod = vi.hoisted(() => ({
   current: {

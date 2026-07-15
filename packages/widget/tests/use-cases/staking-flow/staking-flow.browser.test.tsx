@@ -1,8 +1,8 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray } from "effect";
 import { userEvent } from "vitest/browser";
-import { useRewardTokenDetails } from "../../../src/hooks/use-reward-token-details";
-import { formatAddress, formatNumber } from "../../../src/utils";
+import { useRewardTokenDetails } from "../../../src/features/earn/react/use-reward-token-details";
+import { formatAddress, formatNumber } from "../../../src/shared/lib";
 import { describe, expect, it } from "../../utils/test-extend";
 import { renderApp, renderHook } from "../../utils/test-utils";
 import { setup } from "./setup";

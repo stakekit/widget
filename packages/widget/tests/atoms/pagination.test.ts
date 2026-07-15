@@ -7,7 +7,7 @@ import {
   getPullResultItems,
   loadAllPages,
   paginatedApiStream,
-} from "../../src/atoms/pagination";
+} from "../../src/shared/effect/pagination";
 
 describe("shared pagination conventions", () => {
   it("advances from raw envelope metadata when decoded item counts shrink", async () => {

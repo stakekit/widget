@@ -11,6 +11,7 @@ import {
 import { base, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   Action,
   type BorrowExecutionEvent,
@@ -30,28 +31,19 @@ import {
   getBorrowExecutionRefreshResources,
   getBorrowTransactionSubmitPayload,
   Transaction,
-} from "../../src/borrow";
+} from "../../src/features/borrow/core";
 import {
-  TokenBalanceScanCommand,
-  YieldBalancesCommand,
-} from "../../src/domain/schema/financial-models";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import {
-  TokenBalancesKey,
-  tokenBalancesAtom,
-} from "../../src/hooks/api/token-balances-atoms";
-import {
-  YieldBalancesKey,
-  yieldBalancesAtom,
-} from "../../src/hooks/api/yield-balances-atoms";
-import {
-  WalletService,
-  WalletSigningError,
-} from "../../src/providers/wallet/runtime/service";
+  tokenBalancesScanResourceAtom,
+  yieldBalancesScanResourceAtom,
+} from "../../src/features/portfolio";
 import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
-} from "../../src/providers/wallet/state/wallet";
+} from "../../src/features/wallet/state/wallet";
+import {
+  WalletService,
+  WalletSigningError,
+} from "../../src/services/wallet/wallet-service";
 import type { WalletOperations } from "../utils/wallet-operations";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -296,19 +288,9 @@ describe("borrow transaction execution runtime", () => {
       submissions: [],
       transaction,
     };
-    const resources = getBorrowExecutionRefreshResources(event);
-    const tokenCommand = Schema.decodeUnknownSync(TokenBalanceScanCommand)({
-      addresses: { address },
-      network: "base",
-    });
-    const yieldCommand = Schema.decodeUnknownSync(YieldBalancesCommand)({
-      queries: [{ address, network: "base" }],
-    });
-    const otherTokenCommand = Schema.decodeUnknownSync(TokenBalanceScanCommand)(
-      {
-        addresses: { address },
-        network: "ethereum",
-      }
+    const resources = getBorrowExecutionRefreshResources(
+      event,
+      connectedWalletState
     );
 
     expect(resources).toContain(borrowIntegrationsAtom);
@@ -318,21 +300,16 @@ describe("borrow transaction execution runtime", () => {
     expect(resources).toContain(
       borrowPositionsAtom(new BorrowPositionsKey({ address, network: "base" }))
     );
-    expect(resources).toContain(
-      tokenBalancesAtom(
-        new TokenBalancesKey({ command: tokenCommand, enabled: true })
-      )
-    );
-    expect(resources).toContain(
-      yieldBalancesAtom(
-        new YieldBalancesKey({ command: yieldCommand, enabled: true })
-      )
-    );
-    expect(resources).not.toContain(
-      tokenBalancesAtom(
-        new TokenBalancesKey({ command: otherTokenCommand, enabled: true })
-      )
-    );
+    expect(resources).toContain(tokenBalancesScanResourceAtom);
+    expect(resources).toContain(yieldBalancesScanResourceAtom);
+
+    const otherWalletResources = getBorrowExecutionRefreshResources(event, {
+      ...connectedWalletState,
+      network: "ethereum",
+    });
+
+    expect(otherWalletResources).not.toContain(tokenBalancesScanResourceAtom);
+    expect(otherWalletResources).not.toContain(yieldBalancesScanResourceAtom);
   });
 
   it("fails with a typed wallet error when disconnected", async () => {

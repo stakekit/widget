@@ -3,6 +3,8 @@ import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
 import { base } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { appRuntime } from "../../src/app/runtime";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   ActionRequest,
   Action as BorrowAction,
@@ -13,17 +15,15 @@ import {
   BorrowTransactionFailedError,
   BorrowTransactionNotConfirmedError,
   BorrowWalletExecutionService,
-  borrowAtomRuntime,
   borrowCreateActionAtom,
   borrowExecutionAtom,
   borrowExecutionRuntimeRefreshAtom,
   borrowIntegrationsAtom,
   type SubmitTransactionCommand,
-} from "../../src/borrow";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
-import { WalletService } from "../../src/providers/wallet/runtime/service";
-import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
+} from "../../src/features/borrow/core";
+import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
+import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { WalletService } from "../../src/services/wallet/wallet-service";
 import type { WalletOperations } from "../utils/wallet-operations";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -158,25 +158,24 @@ const createRegistry = ({
       })
   );
   const getIntegrationsOperation = vi.fn(() => Effect.succeed([]));
+  const walletLayer = Layer.succeed(
+    WalletService,
+    wallet as WalletService["Service"]
+  );
   const registry = AtomRegistry.make({
     initialValues: [
       Atom.initialValue(
-        borrowAtomRuntime.layer,
+        appRuntime.layer,
         Layer.mergeAll(
-          Layer.succeed(StakeKitApiService, {
-            borrow: {
-              executeAction: executeActionOperation,
-              getAction: getActionOperation,
-              getIntegrations: getIntegrationsOperation,
-              stepAction: stepActionOperation,
-              submitTransaction: submitTransactionOperation,
-            },
+          Layer.succeed(BorrowApiService, {
+            executeAction: executeActionOperation,
+            getAction: getActionOperation,
+            getIntegrations: getIntegrationsOperation,
+            stepAction: stepActionOperation,
+            submitTransaction: submitTransactionOperation,
           } as never),
-          BorrowWalletExecutionService.layer.pipe(
-            Layer.provide(
-              Layer.succeed(WalletService, wallet as WalletService["Service"])
-            )
-          ),
+          walletLayer,
+          BorrowWalletExecutionService.layer.pipe(Layer.provide(walletLayer)),
           BorrowExecutionEventsService.layer
         ).pipe(Layer.fresh)
       ),

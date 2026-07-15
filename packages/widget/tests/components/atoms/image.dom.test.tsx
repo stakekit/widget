@@ -1,6 +1,6 @@
 import { act } from "react";
 import { describe, expect, it } from "vitest";
-import { Image } from "../../../src/components/atoms/image";
+import { Image } from "../../../src/shared/ui/primitives/image";
 import { render } from "../../utils/test-utils.dom";
 
 const validSrcTwo =

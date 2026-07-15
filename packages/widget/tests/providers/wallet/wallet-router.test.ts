@@ -4,17 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
 import type { Network } from "../../../src/domain/schema/network-model";
+import { disconnectedLedgerConnectorState } from "../../../src/features/wallet/state/ledger";
+import {
+  disconnectedNormalizedWalletState,
+  type NormalizedWalletState,
+} from "../../../src/features/wallet/state/wallet";
 import {
   routeWalletAccountSwitch,
   routeWalletTransaction,
   type WalletBinding,
-} from "../../../src/providers/wallet/runtime/router";
-import { disconnectedLedgerConnectorState } from "../../../src/providers/wallet/state/ledger";
-import {
-  disconnectedNormalizedWalletState,
-  type NormalizedWalletState,
-} from "../../../src/providers/wallet/state/wallet";
-import type { WagmiActions } from "../../../src/providers/wallet/wagmi/actions";
+} from "../../../src/services/wallet/router";
+import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
 
 const transactionInput = {
   ledgerHwAppId: null,

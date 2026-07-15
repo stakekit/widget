@@ -1,11 +1,11 @@
 import type { ComponentProps } from "react";
 import { type RenderOptions, render } from "vitest-browser-react";
 import { SKApp } from "../../src/App";
-import type { SettingsContextProvider } from "../../src/providers/settings";
+import type { SettingsProps } from "../../src/public-api/types";
 
 const renderApp = (opts?: {
   options?: RenderOptions;
-  wagmi?: ComponentProps<typeof SettingsContextProvider>["wagmi"];
+  wagmi?: SettingsProps["wagmi"];
   skProps?: ComponentProps<typeof SKApp>;
 }) => {
   const App = (

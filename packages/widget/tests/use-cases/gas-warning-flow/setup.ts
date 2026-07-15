@@ -1,8 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
 import type { ActionCommand } from "../../../src/domain/schema/action-models";
-
-import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
@@ -14,6 +12,7 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
 

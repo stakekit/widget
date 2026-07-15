@@ -10,7 +10,7 @@ import {
   EarnYield,
   EarnYieldPage,
 } from "../../src/domain/schema/earn-models";
-import { resolveYieldOptions } from "../../src/pages/details/earn-page/state/atoms-state/resolver/yield";
+import { resolveYieldOptions } from "../../src/features/earn/state/atoms-state/resolver/yield";
 import { yieldApiYieldFixture } from "../fixtures";
 
 const token = {
@@ -79,7 +79,8 @@ describe("Earn API boundary policies", () => {
         id: "",
         name: "StakeKit",
         description: "",
-        logoURI: "https://assets.stakek.it/providers/stakekit.svg",
+        logoURI:
+          "https://assets.stakek.it/app/composition/providers/stakekit.svg",
         website: "https://stakek.it",
         tvlUsd: null,
         type: "protocol",

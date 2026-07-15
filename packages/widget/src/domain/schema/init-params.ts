@@ -1,0 +1,52 @@
+import { Effect, Option, Schema, SchemaGetter } from "effect";
+import { isSupportedChain, type SupportedSKChains } from "../types/chains";
+import { YieldId } from "./identifiers";
+import { Network } from "./network-model";
+
+const invalidAsNull = <S extends Schema.Constraint>(schema: S) =>
+  Schema.NullOr(schema).pipe(
+    Schema.catchDecoding(() => Effect.succeed(Option.some(null)))
+  );
+
+const SafeQueryParam = Schema.String.check(
+  Schema.isPattern(/^(?!.*\.\.)[a-zA-Z0-9-_.+]*$/)
+);
+
+const PendingActionType = SafeQueryParam.check(Schema.isPattern(/^[A-Z_]+$/));
+
+const InitTab = Schema.Literals(["earn", "positions"]);
+
+const SafeYieldId = SafeQueryParam.check(
+  Schema.isPattern(/^[^-]+-[^-]+-.+$/)
+).pipe(Schema.decodeTo(YieldId));
+
+const SupportedNetwork = Network.pipe(
+  Schema.decodeTo(
+    Schema.declare<SupportedSKChains>(
+      (value): value is SupportedSKChains =>
+        typeof value === "string" && isSupportedChain(value),
+      {
+        expected: "a widget-supported network",
+      }
+    )
+  )
+);
+
+const AccountId = Schema.String.pipe(
+  Schema.decodeTo(Schema.String, {
+    decode: SchemaGetter.decodeUriComponent(),
+    encode: SchemaGetter.encodeUriComponent(),
+  })
+);
+
+export const InitParams = Schema.Struct({
+  accountId: invalidAsNull(AccountId),
+  balanceId: invalidAsNull(SafeQueryParam),
+  network: invalidAsNull(SupportedNetwork),
+  pendingaction: invalidAsNull(PendingActionType),
+  tab: invalidAsNull(InitTab),
+  token: invalidAsNull(Schema.String),
+  validator: invalidAsNull(Schema.String),
+  yieldId: invalidAsNull(SafeYieldId),
+});
+export type InitParams = typeof InitParams.Type;

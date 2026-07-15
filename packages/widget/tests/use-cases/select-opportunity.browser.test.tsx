@@ -74,7 +74,8 @@ describe("Select opportunity", () => {
             name: "Stakewise",
             description: "",
             externalLink: "https://stakewise.io",
-            logoURI: "https://assets.stakek.it/providers/stakewise.svg",
+            logoURI:
+              "https://assets.stakek.it/app/composition/providers/stakewise.svg",
           },
         },
         status: {

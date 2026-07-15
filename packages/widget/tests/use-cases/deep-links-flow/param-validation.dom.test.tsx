@@ -1,11 +1,13 @@
-import { I18nextProvider } from "react-i18next";
 import { describe, expect, it } from "vitest";
 import type { ActionType } from "../../../src/domain/types/action";
-import { useInitQueryParams } from "../../../src/hooks/use-init-query-params";
-import { SettingsContextProvider } from "../../../src/providers/settings";
-import { i18nInstance } from "../../../src/translation";
-import { renderHook } from "../../utils/test-utils.dom";
+import { decodeInitParams } from "../../../src/features/init-params/decode";
 import { setUrl as _setUrl } from "./utils";
+
+const decodeCurrentUrl = () =>
+  decodeInitParams({
+    externalProviderInitToken: null,
+    href: window.location.href,
+  });
 
 describe("Deep link param validation", () => {
   it("Should validate yieldId param", async () => {
@@ -15,20 +17,7 @@ describe("Deep link param validation", () => {
     ) => {
       _setUrl({ yieldId });
 
-      const result = await renderHook(useInitQueryParams, {
-        wrapper: ({ children }) => (
-          <SettingsContextProvider
-            variant="default"
-            apiKey={import.meta.env.VITE_API_KEY}
-          >
-            <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>
-          </SettingsContextProvider>
-        ),
-      });
-
-      expect(result.result.current?.yieldId ?? null).toEqual(
-        valid ? yieldId : null
-      );
+      expect(decodeCurrentUrl().yieldId).toEqual(valid ? yieldId : null);
     };
 
     await setAndAssertIsValidYieldIdParam("ethereum-eth-native-staking", true);
@@ -65,18 +54,7 @@ describe("Deep link param validation", () => {
     ) => {
       _setUrl({ pendingaction });
 
-      const { result } = await renderHook(useInitQueryParams, {
-        wrapper: ({ children }) => (
-          <SettingsContextProvider
-            variant="default"
-            apiKey={import.meta.env.VITE_API_KEY}
-          >
-            <I18nextProvider i18n={i18nInstance}>{children}</I18nextProvider>
-          </SettingsContextProvider>
-        ),
-      });
-
-      expect(result.current?.pendingaction ?? null).toEqual(
+      expect(decodeCurrentUrl().pendingaction).toEqual(
         valid ? pendingaction : null
       );
     };
@@ -89,5 +67,37 @@ describe("Deep link param validation", () => {
     await setAndAssertIsValidPendingActionParam("ethereum-../STAKE", false);
     await setAndAssertIsValidPendingActionParam("STAKE../", false);
     await setAndAssertIsValidPendingActionParam("UNSTAKE/../", false);
+  });
+
+  it("Keeps valid params when another param is invalid", () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("network", "not-supported");
+    url.searchParams.set("yieldId", "ethereum-eth-native-staking");
+
+    expect(
+      decodeInitParams({
+        externalProviderInitToken: null,
+        href: url.href,
+      })
+    ).toMatchObject({
+      network: null,
+      yieldId: "ethereum-eth-native-staking",
+    });
+  });
+
+  it("Decodes accountId and derives network from the effective token", () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("accountId", encodeURIComponent("js:live:eth:0x123"));
+
+    expect(
+      decodeInitParams({
+        externalProviderInitToken: "ethereum-eth",
+        href: url.href,
+      })
+    ).toMatchObject({
+      accountId: "js:live:eth:0x123",
+      network: "ethereum",
+      token: "ethereum-eth",
+    });
   });
 });

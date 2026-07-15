@@ -11,7 +11,7 @@ import {
   PositionDataKey,
   positionDataAtom,
   toPositionItems,
-} from "../../src/hooks/api/position-atoms";
+} from "../../src/features/portfolio";
 import { yieldApiYieldFixture, yieldBalanceFixture } from "../fixtures";
 
 const makePosition = () => {

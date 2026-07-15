@@ -1,5 +1,5 @@
 import type { ChainGroup } from "@stakekit/rainbowkit";
-import { getNetworkLogo } from "../../../utils";
+import { getNetworkLogo } from "../../../shared/lib";
 import { type SupportedCosmosChains, supportedCosmosChainsSet } from "./cosmos";
 import {
   type EvmChainIds,

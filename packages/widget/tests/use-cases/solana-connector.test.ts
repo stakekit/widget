@@ -10,7 +10,7 @@ import { decodeSolanaTransactionToBuffer } from "../../src/domain/types/transact
 import {
   deserializeSolanaTransaction,
   getSolanaConnectors,
-} from "../../src/providers/misc/solana-connector";
+} from "../../src/services/wallet/connectors/misc/solana-connector";
 
 const createConnectorForTest = ({
   sendTransaction = vi.fn(async () => "signed-hash"),

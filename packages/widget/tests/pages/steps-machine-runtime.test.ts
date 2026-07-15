@@ -14,18 +14,18 @@ import { YieldId } from "../../src/domain/schema/identifiers";
 
 import type { ActionMeta } from "../../src/domain/types/wallets/generic-wallet";
 import {
+  WalletBroadcastError,
+  WalletSigningError,
+} from "../../src/services/wallet/wallet-service";
+import {
   StepsMachineKey,
   type StepsMachineState,
-} from "../../src/pages/steps/state/steps-machine-model";
+} from "../../src/services/workflow/steps-machine-model";
 import {
   makeStepsMachine,
   type StepsMachineHandle,
   type StepsMachineOperations,
-} from "../../src/pages/steps/state/steps-machine-runtime";
-import {
-  WalletBroadcastError,
-  WalletSigningError,
-} from "../../src/providers/wallet/runtime/service";
+} from "../../src/services/workflow/steps-machine-service";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const signedPayload = "signed-payload";

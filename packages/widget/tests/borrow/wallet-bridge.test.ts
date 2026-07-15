@@ -2,14 +2,14 @@ import { Effect, Schema } from "effect";
 import { arbitrum, base, mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   decodeChainId,
   switchBorrowWalletChain,
   toBorrowSwitchChainCommandInput,
   toBorrowWalletStateProjection,
-} from "../../src/borrow";
-import { WalletAddress } from "../../src/domain/schema/identifiers";
-import type { NormalizedWalletState } from "../../src/providers/wallet/state/wallet";
+} from "../../src/features/borrow/core";
+import type { NormalizedWalletState } from "../../src/features/wallet/state/wallet";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"

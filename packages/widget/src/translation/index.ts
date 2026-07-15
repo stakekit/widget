@@ -15,7 +15,7 @@ import { createInstance } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { useEffect } from "react";
 import { initReactI18next, useTranslation } from "react-i18next";
-import { withApiResourcePolicy } from "../atoms/api-resource";
+import { withApiResourcePolicy } from "../shared/effect/api-resource";
 import { localResources } from "./resources";
 
 export const i18nInstance: ReturnType<typeof createInstance> = createInstance();

@@ -6,13 +6,10 @@ node_modules/
 # Build output and caches
 build/
 dist/
-dist-ssr/
-lib/
 .next/
 out/
 .turbo/
 .cache/
-.parcel-cache/
 coverage/
 .nyc_output/
 playwright-report/
@@ -51,11 +48,3 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 *.pfx
 *.crt
 *.cer
-
-# Deployment tooling
-.terraform/
-**/.terraform/**
-*.tfstate
-*.tfstate.*
-*.tfvars
-.vercel/

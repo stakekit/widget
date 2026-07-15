@@ -6,7 +6,7 @@ import {
   makeSolanaWalletDriver,
   makeTonWalletDriver,
   makeTronWalletDriver,
-} from "../../../src/providers/wallet/drivers/misc";
+} from "../../../src/services/wallet/drivers/misc";
 
 const tronTx = JSON.stringify({
   raw_data: {

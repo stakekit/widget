@@ -10,7 +10,7 @@ import {
   type StepsMachineState,
   StepsSignError,
   StepsSubmissionError,
-} from "../../src/pages/steps/state/steps-machine-model";
+} from "../../src/services/workflow/steps-machine-model";
 import { yieldApiTransactionFixture } from "../fixtures";
 
 const yieldId = Schema.decodeSync(YieldId)("yield-1");

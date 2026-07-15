@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   decodeEvmTransaction,
   makeEvmWalletDriver,
-} from "../../../src/providers/wallet/drivers/evm";
-import { WalletBroadcastError } from "../../../src/providers/wallet/runtime/service";
+} from "../../../src/services/wallet/drivers/evm";
+import { WalletBroadcastError } from "../../../src/services/wallet/wallet-service";
 
 const transaction = (fees: object) =>
   JSON.stringify({

@@ -3,7 +3,7 @@ import { zeroAddress } from "viem";
 import { describe, expect, it } from "vitest";
 import type { Connector } from "wagmi";
 import { ExternalProviderError } from "../../../src/domain/types/external-providers";
-import { makeExternalProviderWalletDriver } from "../../../src/providers/wallet/drivers/external-provider";
+import { makeExternalProviderWalletDriver } from "../../../src/services/wallet/drivers/external-provider";
 
 const tx = JSON.stringify({
   chainId: 1,

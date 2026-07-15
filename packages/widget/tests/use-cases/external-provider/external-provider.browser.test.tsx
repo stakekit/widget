@@ -2,7 +2,7 @@ import { avalanche, mainnet } from "viem/chains";
 import { userEvent } from "vitest/browser";
 import { SKApp, type SKAppProps } from "../../../src/App";
 import { solana, ton } from "../../../src/domain/types/chains/misc";
-import { formatAddress } from "../../../src/utils";
+import { formatAddress } from "../../../src/shared/lib/general";
 import { describe, expect, it, vi } from "../../utils/test-extend";
 import { renderApp } from "../../utils/test-utils";
 import { setup } from "./setup";

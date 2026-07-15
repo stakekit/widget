@@ -2,8 +2,6 @@ import { Array as EArray } from "effect";
 import { HttpResponse, http } from "msw";
 import { vitest } from "vitest";
 import type { ManageActionCommand } from "../../../src/domain/schema/action-models";
-
-import { waitForMs } from "../../../src/utils";
 import {
   legacyYieldFixture,
   yieldApiActionFixture,
@@ -16,6 +14,7 @@ import { legacyApiRoute, yieldApiRoute } from "../../mocks/api-routes";
 import { mockDelay } from "../../mocks/delay";
 import { rkMockWallet } from "../../utils/mock-connector";
 import type { TestWorker } from "../../utils/test-extend";
+import { waitForMs } from "../../utils/wait";
 import { setUrl as _setUrl } from "./utils";
 
 type LegacyTokenDto = ReturnType<typeof legacyYieldFixture>["token"];
@@ -123,7 +122,7 @@ export const setup = async (
         name: "Benqi",
         description: "",
         externalLink: "https://benqi.fi/",
-        logoURI: "https://assets.stakek.it/providers/benqi.svg",
+        logoURI: "https://assets.stakek.it/app/composition/providers/benqi.svg",
       },
       rewardTokens: [rewardToken],
     },

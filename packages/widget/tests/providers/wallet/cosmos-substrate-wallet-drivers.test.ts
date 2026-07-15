@@ -2,8 +2,8 @@ import type { ChainWalletBase } from "@cosmos-kit/core";
 import { Effect } from "effect";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
-import { makeCosmosWalletDriver } from "../../../src/providers/wallet/drivers/cosmos";
-import { makeSubstrateWalletDriver } from "../../../src/providers/wallet/drivers/substrate";
+import { makeCosmosWalletDriver } from "../../../src/services/wallet/drivers/cosmos";
+import { makeSubstrateWalletDriver } from "../../../src/services/wallet/drivers/substrate";
 
 const substrateTx = JSON.stringify({
   metadataRpc: "0x00",

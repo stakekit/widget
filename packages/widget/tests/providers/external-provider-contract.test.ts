@@ -6,11 +6,11 @@ import {
   ExternalProvider,
   ExternalProviderError,
 } from "../../src/domain/types/external-providers";
-import type { SKExternalProviders } from "../../src/domain/types/wallets";
 import type {
+  SKExternalProviders,
   SKTx,
   SKTxMeta,
-} from "../../src/domain/types/wallets/generic-wallet";
+} from "../../src/public-api/types";
 
 const transaction = {
   type: "solana",

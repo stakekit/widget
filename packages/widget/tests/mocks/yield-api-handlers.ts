@@ -143,7 +143,7 @@ export const getYieldApiMock = () => [
     return HttpResponse.json(
       yieldApiProviderFixture({
         id: providerId,
-        logoURI: `https://assets.stakek.it/providers/${providerId}.svg`,
+        logoURI: `https://assets.stakek.it/app/composition/providers/${providerId}.svg`,
         name: providerNameById[providerId] ?? providerId,
       })
     );

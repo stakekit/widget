@@ -2,6 +2,7 @@ import { Cause, Effect, Layer, Option, Schema } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { appRuntime } from "../../src/app/runtime";
 import {
   ActionCommand,
   YieldAction,
@@ -9,13 +10,12 @@ import {
 import {
   ActionPreviewKey,
   actionPreviewAtom,
-} from "../../src/hooks/api/action-atoms";
-import { StakeKitApiService } from "../../src/providers/api/api-service";
+} from "../../src/features/transaction-flow";
 import {
   type ActionPreviewRequest,
   makeYieldApiService,
-} from "../../src/providers/api/yield-api-service";
-import { widgetAtomRuntime } from "../../src/providers/effect-atom-runtime/widget-runtime";
+  YieldApiService,
+} from "../../src/services/api/yield-api-service";
 import { yieldApiActionFixture, yieldApiTransactionFixture } from "../fixtures";
 
 const transaction = yieldApiTransactionFixture({
@@ -32,10 +32,10 @@ const action = Schema.decodeUnknownSync(YieldAction)(
 );
 
 const makeRegistry = (api: object) => {
-  const apiLayer = Layer.succeed(StakeKitApiService, { yield: api } as never);
+  const apiLayer = Layer.succeed(YieldApiService, api as never);
 
   return AtomRegistry.make({
-    initialValues: [[widgetAtomRuntime.layer, apiLayer.pipe(Layer.fresh)]],
+    initialValues: [[appRuntime.layer, apiLayer.pipe(Layer.fresh)]],
   });
 };
 
@@ -50,9 +50,7 @@ describe("action and transaction atoms", () => {
       yieldId: "ethereum-eth-native-staking",
     });
     const request: ActionPreviewRequest = { command, intent: "enter" };
-    const resource = actionPreviewAtom(
-      new ActionPreviewKey({ enabled: true, request })
-    );
+    const resource = actionPreviewAtom(new ActionPreviewKey({ request }));
 
     const result = registry.get(resource);
 
@@ -74,7 +72,6 @@ describe("action and transaction atoms", () => {
     } as unknown as ActionPreviewRequest;
     const resource = actionPreviewAtom(
       new ActionPreviewKey({
-        enabled: true,
         request,
       })
     );

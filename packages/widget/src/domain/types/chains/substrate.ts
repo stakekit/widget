@@ -1,7 +1,7 @@
 import type { Chain } from "@stakekit/rainbowkit";
 import { SubstrateChainIds } from "../../../public-api/types";
-import type { KebabToCamelCase } from "../../../types/utils";
-import { getNetworkLogo } from "../../../utils";
+import { getNetworkLogo } from "../../../shared/lib";
+import type { KebabToCamelCase } from "../../../shared/types/utils";
 import { SubstrateNetworks } from "./networks";
 
 const supportedSubstrateChains = [

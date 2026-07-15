@@ -1,32 +1,33 @@
 import "@stakekit/rainbowkit/styles.css";
 import "./translation";
-import "./styles/theme/global.css";
+import "./shared/styles/theme/global.css";
 import type { ComponentProps } from "react";
 import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { createMemoryRouter, RouterProvider } from "react-router";
-import { preloadImages } from "./assets/images";
-import { Box } from "./components/atoms/box";
-import { Dashboard } from "./Dashboard";
-import { Providers } from "./providers";
-import { SettingsContextProvider, useSettings } from "./providers/settings";
+import { Providers } from "./app/composition/providers";
+import { SKAtomRegistryProvider } from "./app/composition/providers/effect-atom-runtime";
+import { normalizeWidgetConfig, useWidgetConfig } from "./app/config";
+import { ClassicRoutes, DashboardRoutes } from "./app/routes";
+import { appContainer } from "./features/widget-shell";
 import type {
   BundledSKWidgetProps,
   SKAppProps,
   VariantProps,
 } from "./public-api/types";
-import { appContainer } from "./style.css";
+import { isLedgerDappBrowserProvider } from "./services/wallet/browser-environment";
+import { preloadImages } from "./shared/assets/images";
+import { Box } from "./shared/ui/primitives/box";
 import { useLoadErrorTranslations } from "./translation";
-import { Widget } from "./Widget";
 
 preloadImages();
 
 const App = () => {
   useLoadErrorTranslations();
 
-  const { dashboardVariant } = useSettings();
+  const dashboardVariant = useWidgetConfig("dashboardVariant");
 
-  return dashboardVariant ? <Dashboard /> : <Widget />;
+  return dashboardVariant ? <DashboardRoutes /> : <ClassicRoutes />;
 };
 
 const Root = () => (
@@ -46,17 +47,21 @@ export const SKApp = (props: SKAppProps) => {
   const [router] = useState(() =>
     createMemoryRouter([{ path: "*", Component: Root }])
   );
+  const settings = normalizeWidgetConfig(
+    { ...props, ...variantProps },
+    { isLedgerLive: isLedgerDappBrowserProvider() }
+  );
 
   return (
-    <SettingsContextProvider {...variantProps} {...props}>
+    <SKAtomRegistryProvider settings={settings}>
       <Box
         className={appContainer({
-          variant: props.dashboardVariant ? "dashboard" : "widget",
+          variant: settings.dashboardVariant ? "dashboard" : "widget",
         })}
       >
         <RouterProvider router={router} />
       </Box>
-    </SettingsContextProvider>
+    </SKAtomRegistryProvider>
   );
 };
 

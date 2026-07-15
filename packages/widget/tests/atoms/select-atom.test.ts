@@ -1,7 +1,7 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
-import { selectAtom } from "../../src/atoms/select-atom";
+import { selectAtom } from "../../src/shared/effect/select-atom";
 
 describe("selectAtom", () => {
   it("does not propagate unrelated source changes", () => {

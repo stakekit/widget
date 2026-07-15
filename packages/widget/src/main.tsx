@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom/client";
 import { SKApp, type SKAppProps } from "./App";
-import type { VariantProps } from "./providers/settings/types";
+import type { VariantProps } from "./public-api/types";
 import {
   rootClassName,
   toggleThemeButtonClassName,
@@ -8,7 +8,7 @@ import {
 } from "./standalone.css";
 import "./standalone.css";
 import { useLayoutEffect, useState } from "react";
-import { darkTheme, lightTheme } from "./styles/theme/themes";
+import { darkTheme, lightTheme } from "./shared/styles/theme/themes";
 
 type StandaloneVariant = Exclude<VariantProps["variant"], "zerion">;
 

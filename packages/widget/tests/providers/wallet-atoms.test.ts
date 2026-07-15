@@ -4,21 +4,19 @@ import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector, createConfig } from "wagmi";
 import { AdditionalAddresses } from "../../src/domain/schema/address-models";
-import {
-  EnabledNetworksResponse,
-  WalletInitQueryParams,
-} from "../../src/domain/schema/wallet-models";
-import type { SKExternalProviders } from "../../src/domain/types/wallets";
-import { getConfig as getEvmConfig } from "../../src/providers/ethereum/config";
+import { InitParams } from "../../src/domain/schema/init-params";
+import { EnabledNetworksResponse } from "../../src/domain/schema/wallet-models";
 import {
   initializeWallet,
   scopedMipdSubscription,
   WalletInitializationKey,
   type WalletInitializationOperations,
   walletControllerAtom,
-} from "../../src/providers/wallet";
+} from "../../src/features/wallet";
+import type { SKExternalProviders } from "../../src/public-api/types";
+import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
 
-const emptyInitQueryParams = {
+const emptyInitParams = {
   accountId: null,
   balanceId: null,
   network: null,
@@ -46,10 +44,10 @@ describe("wallet Effect Atom boundaries", () => {
     ).toThrow("not-a-network");
   });
 
-  it("strictly validates initialization parameters before wallet construction", () => {
+  it("decodes valid initialization parameters and ignores invalid fields", () => {
     expect(
-      Schema.decodeUnknownSync(WalletInitQueryParams)({
-        ...emptyInitQueryParams,
+      Schema.decodeUnknownSync(InitParams)({
+        ...emptyInitParams,
         network: "ethereum",
         pendingaction: "UNSTAKE",
         yieldId: "ethereum-eth-native-staking",
@@ -60,18 +58,18 @@ describe("wallet Effect Atom boundaries", () => {
       yieldId: "ethereum-eth-native-staking",
     });
 
-    expect(() =>
-      Schema.decodeUnknownSync(WalletInitQueryParams)({
-        ...emptyInitQueryParams,
+    expect(
+      Schema.decodeUnknownSync(InitParams)({
+        ...emptyInitParams,
         network: "ethereum-holesky",
       })
-    ).toThrow("widget-supported network");
-    expect(() =>
-      Schema.decodeUnknownSync(WalletInitQueryParams)({
-        ...emptyInitQueryParams,
+    ).toMatchObject({ network: null });
+    expect(
+      Schema.decodeUnknownSync(InitParams)({
+        ...emptyInitParams,
         pendingaction: "unstake",
       })
-    ).toThrow();
+    ).toMatchObject({ pendingaction: null });
   });
 
   it("validates wallet-provided additional address data with Schema", () => {

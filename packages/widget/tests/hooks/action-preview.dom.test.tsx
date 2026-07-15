@@ -1,25 +1,35 @@
 import { Schema } from "effect";
 import { HttpResponse, http } from "msw";
-import type { PropsWithChildren } from "react";
+import { type PropsWithChildren, useEffect } from "react";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import { ActionCommand } from "../../src/domain/schema/action-models";
-import { useActionPreview } from "../../src/hooks/api/use-action-preview";
-import { SKAtomRuntimeProvider } from "../../src/providers/effect-atom-runtime";
-import { SettingsContextProvider } from "../../src/providers/settings";
+import {
+  useActionPreview,
+  useSetEnterStakeRequest,
+} from "../../src/features/transaction-flow";
+import type { EnterStakeRequest } from "../../src/features/transaction-flow/state/enter-request";
 import { yieldApiActionFixture, yieldApiTransactionFixture } from "../fixtures";
+import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { describe, expect, it } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
 const yieldApiUrl = "https://yield.example.com";
+const command = Schema.decodeUnknownSync(ActionCommand)({
+  address: "0xWallet",
+  yieldId: "ethereum-eth-native-staking",
+});
 
 const Wrapper = ({ children }: PropsWithChildren) => (
-  <SettingsContextProvider
-    apiKey="test-key"
-    baseUrl="https://api.example.com"
-    yieldsApiUrl={yieldApiUrl}
-    variant="default"
+  <TestAtomRuntimeProvider
+    settings={normalizeWidgetConfig({
+      apiKey: "test-key",
+      baseUrl: "https://api.example.com",
+      variant: "default",
+      yieldsApiUrl: yieldApiUrl,
+    })}
   >
-    <SKAtomRuntimeProvider>{children}</SKAtomRuntimeProvider>
-  </SettingsContextProvider>
+    {children}
+  </TestAtomRuntimeProvider>
 );
 
 describe("action preview", () => {
@@ -53,15 +63,15 @@ describe("action preview", () => {
     );
 
     const { result } = await renderHook(
-      () =>
-        useActionPreview({
-          command: Schema.decodeUnknownSync(ActionCommand)({
-            address: "0xWallet",
-            yieldId: "ethereum-eth-native-staking",
-          }),
-          enabled: true,
-          intent: "enter",
-        }),
+      () => {
+        const setRequest = useSetEnterStakeRequest();
+
+        useEffect(() => {
+          setRequest({ requestDto: command } as unknown as EnterStakeRequest);
+        }, [setRequest]);
+
+        return useActionPreview({ enabled: true, intent: "enter" });
+      },
       { wrapper: Wrapper }
     );
 

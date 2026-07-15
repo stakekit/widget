@@ -6,7 +6,7 @@ import {
   Market,
   Position,
   projectLtvRatio,
-} from "../../src/borrow";
+} from "../../src/features/borrow/core";
 
 const marketDto = {
   id: "aave-v3-ethereum-usdc",

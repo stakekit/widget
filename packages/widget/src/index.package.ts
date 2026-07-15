@@ -1,6 +1,6 @@
 export type { SKAppProps } from "./App";
 export { SKApp } from "./App";
-export { HelpModal } from "./components/molecules/help-modal";
+export { TrackingContextProvider } from "./app/composition/providers/tracking";
 export type { SupportedSKChainIds } from "./domain/types/chains";
 export { evmChainGroup } from "./domain/types/chains";
 export { EvmChainIds } from "./domain/types/chains/evm";
@@ -8,6 +8,6 @@ export { MiscChainIds } from "./domain/types/chains/misc";
 export { SubstrateChainIds } from "./domain/types/chains/substrate";
 export type * from "./domain/types/wallets/generic-wallet";
 export { DashboardYieldCategory } from "./domain/types/yields";
-export { TrackingContextProvider } from "./providers/tracking";
-export { createWallet } from "./providers/wallet/create-wallet";
-export { darkTheme, lightTheme } from "./styles/theme/themes";
+export { HelpModal } from "./features/preferences/ui/help-modal";
+export { createWallet } from "./services/wallet/create-wallet";
+export { darkTheme, lightTheme } from "./shared/styles/theme/themes";
