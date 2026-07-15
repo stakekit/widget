@@ -4,7 +4,6 @@ import {
   type WalletInitQueryParams,
   WalletInitQueryParams as WalletInitQueryParamsSchema,
 } from "../domain/schema/wallet-models";
-import type { TokenString } from "../domain/types/tokens";
 import { useSettings } from "../providers/settings";
 
 export const useInitQueryParams = (): WalletInitQueryParams | null => {
@@ -44,7 +43,7 @@ const decodeField = <S extends Schema.ConstraintDecoder<unknown>>(
 const getAndValidateInitParams = ({
   externalProviderInitToken,
 }: {
-  readonly externalProviderInitToken?: TokenString;
+  readonly externalProviderInitToken?: string;
 }): WalletInitQueryParams | null => {
   const url = new URL(window.location.href);
   const token =

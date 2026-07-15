@@ -5,21 +5,14 @@ import type {
   EarnYieldWithProvider,
 } from "../schema/earn-models";
 import type { Network } from "../schema/network-model";
-import type { SupportedSKChains } from "./chains";
 import { Networks } from "./chains/networks";
 
 import type { InitParams } from "./init-params";
 import type { PositionsData } from "./positions";
-import type { TokenString } from "./tokens";
 import type { ValidatorKey } from "./validators";
 import { getYieldActionArg, isBittensorStaking } from "./yields";
 
-export type PreferredTokenYieldsPerNetwork = {
-  [Key in SupportedSKChains]?: Record<
-    TokenString,
-    "*" | (EarnYieldWithProvider["id"] & {})
-  >;
-};
+export type { PreferredTokenYieldsPerNetwork } from "../../public-api/types";
 
 export const canBeInitialYield = (args: {
   initQueryParams: InitParams | null;

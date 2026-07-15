@@ -32,6 +32,8 @@ const knipConfig = {
       entry: [
         "src/index.package.ts!",
         "src/index.bundle.ts!",
+        "src/public-api/index.package.ts!",
+        "src/public-api/index.bundle.ts!",
         "src/main.tsx!",
         "src/translation/i18next.d.ts!",
         "src/types/purify-extend.d.ts!",

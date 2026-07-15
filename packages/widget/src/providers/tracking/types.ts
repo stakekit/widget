@@ -21,7 +21,6 @@ export const trackPageMap = {
 } as const;
 
 export type TrackPageKey = keyof typeof trackPageMap;
-export type TrackPageVal = (typeof trackPageMap)[TrackPageKey];
 
 export const trackEventMap = {
   tabClicked: "Tab clicked",
@@ -67,6 +66,5 @@ export const trackEventMap = {
 } as const;
 
 export type TrackEventKey = keyof typeof trackEventMap;
-export type TrackEventVal = (typeof trackEventMap)[TrackEventKey];
 
 export type Properties = Record<string, unknown>;

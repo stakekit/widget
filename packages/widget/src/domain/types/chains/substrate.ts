@@ -1,4 +1,5 @@
 import type { Chain } from "@stakekit/rainbowkit";
+import { SubstrateChainIds } from "../../../public-api/types";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getNetworkLogo } from "../../../utils";
 import { SubstrateNetworks } from "./networks";
@@ -86,10 +87,7 @@ export const substrateChainsMap: SubstrateChainsMap = {
   },
 };
 
-export enum SubstrateChainIds {
-  Polkadot = 9999,
-  Bittensor = 558,
-}
+export { SubstrateChainIds } from "../../../public-api/types";
 
 SubstrateChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedSubstrateChains>>,

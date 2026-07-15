@@ -5,5 +5,3 @@ export const localResources = {
   en: { translation: translationEN },
   fr: { translation: translationFR },
 } as const;
-
-export type Languages = keyof typeof localResources;

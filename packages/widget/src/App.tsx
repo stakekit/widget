@@ -1,7 +1,7 @@
 import "@stakekit/rainbowkit/styles.css";
 import "./translation";
 import "./styles/theme/global.css";
-import type { ComponentProps, RefObject } from "react";
+import type { ComponentProps } from "react";
 import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { createMemoryRouter, RouterProvider } from "react-router";
@@ -10,7 +10,11 @@ import { Box } from "./components/atoms/box";
 import { Dashboard } from "./Dashboard";
 import { Providers } from "./providers";
 import { SettingsContextProvider, useSettings } from "./providers/settings";
-import type { SettingsProps, VariantProps } from "./providers/settings/types";
+import type {
+  BundledSKWidgetProps,
+  SKAppProps,
+  VariantProps,
+} from "./public-api/types";
 import { appContainer } from "./style.css";
 import { useLoadErrorTranslations } from "./translation";
 import { Widget } from "./Widget";
@@ -31,7 +35,7 @@ const Root = () => (
   </Providers>
 );
 
-export type SKAppProps = SettingsProps & (VariantProps | { variant?: never });
+export type { BundledSKWidgetProps, SKAppProps } from "./public-api/types";
 
 export const SKApp = (props: SKAppProps) => {
   const variantProps: VariantProps =
@@ -54,10 +58,6 @@ export const SKApp = (props: SKAppProps) => {
       </Box>
     </SettingsContextProvider>
   );
-};
-
-export type BundledSKWidgetProps = SKAppProps & {
-  ref?: RefObject<{ rerender: (newProps: BundledSKWidgetProps) => void }>;
 };
 
 const BundledSKWidget = (_props: BundledSKWidgetProps) => {

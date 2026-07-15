@@ -96,10 +96,6 @@ export const decodeAndPrepareEvmTransaction = ({
     Result.map((decodedTx) => prepareDecodedEvmTransaction(decodedTx, address))
   );
 
-export type DecodedEVMTransaction = ReturnType<
-  typeof prepareDecodedEvmTransaction
->;
-
 const UnsignedTronTransaction = Schema.Struct({
   raw_data: Schema.Struct({
     contract: Schema.Array(Schema.Record(Schema.String, Schema.Unknown)),
@@ -116,8 +112,6 @@ const UnsignedTronTransaction = Schema.Struct({
 });
 
 export const unsignedTronTransactionCodec = UnsignedTronTransaction;
-
-export type DecodedTronTransaction = typeof UnsignedTronTransaction.Type;
 
 const UnsignedSolanaTransaction = Schema.String;
 export const unsignedSolanaTransactionCodec = UnsignedSolanaTransaction;
@@ -190,7 +184,7 @@ export const unsignedTonTransactionTonConnectCodec =
   UnsignedTonTransactionTonConnect;
 export const unsignedTonTransactionCodec = UnsignedTonTransaction;
 
-export type DecodedTonTransaction = typeof UnsignedTonTransaction.Type;
+type DecodedTonTransaction = typeof UnsignedTonTransaction.Type;
 
 type DecodedTonRawTransaction = Extract<
   DecodedTonTransaction,
@@ -241,5 +235,3 @@ const SubstratePayload = Schema.Struct({
 });
 
 export const substratePayloadCodec = SubstratePayload;
-
-export type DecodedSubstrateTransaction = typeof SubstratePayload.Type;

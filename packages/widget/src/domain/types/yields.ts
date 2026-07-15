@@ -1,6 +1,10 @@
 import BigNumber from "bignumber.js";
 import { Array as EArray, pipe, Schema } from "effect";
 import type { TFunction } from "i18next";
+import {
+  DashboardYieldCategory,
+  type DashboardYieldCategory as DashboardYieldCategoryType,
+} from "../../public-api/types";
 import type {
   EarnProvider,
   EarnYieldWithProvider,
@@ -86,35 +90,28 @@ export type ValidatorsConfig = Map<
   }
 >;
 
-export const DashboardYieldCategory = {
-  RWA: "rwa",
-  DeFi: "defi",
-  Stake: "stake",
-} as const;
-
-export type DashboardYieldCategory =
-  (typeof DashboardYieldCategory)[keyof typeof DashboardYieldCategory];
+export { DashboardYieldCategory };
 
 export const dashboardYieldCategories = [
   DashboardYieldCategory.RWA,
   DashboardYieldCategory.DeFi,
   DashboardYieldCategory.Stake,
-] as const satisfies ReadonlyArray<DashboardYieldCategory>;
+] as const satisfies ReadonlyArray<DashboardYieldCategoryType>;
 
 const dashboardYieldCategoryValues = new Set<string>(dashboardYieldCategories);
 
 export const normalizeDashboardYieldCategoryOrder = (
   order?: ReadonlyArray<unknown> | null
-): DashboardYieldCategory[] => {
-  const normalized: DashboardYieldCategory[] = [];
+): DashboardYieldCategoryType[] => {
+  const normalized: DashboardYieldCategoryType[] = [];
 
   for (const category of order ?? []) {
     if (
       typeof category === "string" &&
       dashboardYieldCategoryValues.has(category) &&
-      !normalized.includes(category as DashboardYieldCategory)
+      !normalized.includes(category as DashboardYieldCategoryType)
     ) {
-      normalized.push(category as DashboardYieldCategory);
+      normalized.push(category as DashboardYieldCategoryType);
     }
   }
 
@@ -142,15 +139,15 @@ const apiYieldTypeToDashboardCategory = {
   concentrated_liquidity_pool: "defi",
   liquidity_pool: "defi",
   real_world_asset: "rwa",
-} as const satisfies Record<KnownApiYieldType, DashboardYieldCategory>;
+} as const satisfies Record<KnownApiYieldType, DashboardYieldCategoryType>;
 
 export const getApiYieldTypesForDashboardCategory = (
-  category: DashboardYieldCategory
+  category: DashboardYieldCategoryType
 ): KnownApiYieldType[] =>
   (
     Object.entries(apiYieldTypeToDashboardCategory) as [
       KnownApiYieldType,
-      DashboardYieldCategory,
+      DashboardYieldCategoryType,
     ][]
   )
     .filter(([, mapped]) => mapped === category)
@@ -158,7 +155,7 @@ export const getApiYieldTypesForDashboardCategory = (
 
 export const getDashboardYieldCategory = (
   yieldDto: EarnYieldWithProvider
-): DashboardYieldCategory | null => {
+): DashboardYieldCategoryType | null => {
   const yieldType = getExtendedYieldType(yieldDto);
 
   if (yieldType === "real_world_asset") return "rwa";

@@ -1,4 +1,5 @@
 import type { Chain } from "@stakekit/rainbowkit";
+import { MiscChainIds } from "../../../public-api/types";
 import type { KebabToCamelCase } from "../../../types/utils";
 import { getTokenLogo } from "../../../utils";
 import { MiscNetworks } from "./networks";
@@ -147,14 +148,7 @@ export const miscChainsMap: MiscChainsMap = {
   },
 };
 
-export enum MiscChainIds {
-  Near = 397,
-  Tezos = 1729,
-  Solana = 501,
-  Tron = 79,
-  Ton = 3412,
-  Cardano = 2000,
-}
+export { MiscChainIds } from "../../../public-api/types";
 
 MiscChainIds satisfies Record<
   Capitalize<KebabToCamelCase<SupportedMiscChains>>,
