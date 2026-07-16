@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../../services/workflow/transaction-workflow-model";
 import { Box } from "../../../../../../../shared/ui/primitives/box";
 import { ListItem } from "../../../../../../../shared/ui/primitives/list/list-item";
 import { Text } from "../../../../../../../shared/ui/primitives/typography/text";
@@ -22,7 +23,10 @@ export const ActionListItem = ({
   onActionSelect,
 }: {
   action: ActionYieldDto;
-  onActionSelect: (action: ActionYieldDto) => void;
+  onActionSelect: (
+    action: ActionYieldDto,
+    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+  ) => void;
 }) => {
   const { t } = useTranslation();
   const {
@@ -53,7 +57,11 @@ export const ActionListItem = ({
   return (
     <Box py="1" width="full">
       <ListItem
-        onClick={canOpenDetails ? () => onActionSelect(action) : undefined}
+        onClick={
+          canOpenDetails
+            ? () => onActionSelect(action, providersDetails ?? [])
+            : undefined
+        }
         className={listItem}
         variant={{ hover: canOpenDetails ? "enabled" : "disabled" }}
       >

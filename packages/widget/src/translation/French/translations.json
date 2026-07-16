@@ -868,23 +868,18 @@
         "unavailable_description": "Revenez à Emprunter et vérifiez une action avant de confirmer.",
         "error_title": "La transaction d'emprunt a échoué",
         "current_transaction": "Transaction {{current}} sur {{total}}",
-        "steps": {
-          "create": {
-            "label": "Créer l'action",
-            "description": "Préparation de l'action d'emprunt."
-          },
-          "sign": {
-            "label": "Approuver dans le portefeuille",
-            "description": "Vérifiez et signez la transaction d'emprunt."
-          },
-          "submit": {
-            "label": "Soumettre la transaction",
-            "description": "Envoi du résultat de transaction à l'API d'emprunt."
-          },
-          "confirm": {
-            "label": "Confirmer la transaction",
-            "description": "Attente de la confirmation par l'API d'emprunt."
-          }
+        "action_progress": "Étape d'action {{current}} sur {{total}}",
+        "batch_progress": "Étape {{current}} sur {{total}}",
+        "history_title": "Historique des transactions",
+        "transaction_complete": "Terminée",
+        "view_transaction": "Voir la transaction",
+        "status": {
+          "signing": "En attente de l'approbation du portefeuille",
+          "submitting": "Soumission de la transaction",
+          "confirming": "Confirmation de la transaction",
+          "advancing": "Préparation de l'étape d'action suivante",
+          "completed": "Action terminée",
+          "disabled": "Aucune transaction requise"
         }
       },
       "success_page": {

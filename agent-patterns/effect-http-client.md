@@ -1,31 +1,54 @@
 # Effect HttpClient Patterns
 
-Use this when writing project code that talks to external HTTP APIs with Effect.
-The source of truth reviewed for these patterns is the vendored Effect repo:
-`@repos/effect/LLMS.md`, `@repos/effect/ai-docs/src/50_http-client/10_basics.ts`,
-and the `@repos/effect/packages/effect/src/unstable/http/HttpClient*.ts` modules
-plus their tests.
+Use this guide for outgoing HTTP APIs: request construction, generated clients,
+middleware, retries, rate limits, response decoding, streaming bodies, and
+tests.
 
-## Imports
+The source of truth is the vendored Effect repository, especially:
 
-Prefer the unstable HTTP barrel unless nearby code imports individual modules.
+- `@repos/effect/packages/effect/src/unstable/http/HttpClient.ts`
+- `@repos/effect/packages/effect/src/unstable/http/HttpClientRequest.ts`
+- `@repos/effect/packages/effect/src/unstable/http/HttpClientResponse.ts`
+- `@repos/effect/packages/effect/src/unstable/http/HttpClientError.ts`
+- `@repos/effect/packages/effect/src/unstable/http/HttpIncomingMessage.ts`
+- `@repos/effect/packages/effect/src/unstable/http/FetchHttpClient.ts`
+- `@repos/effect/packages/effect/src/unstable/persistence/RateLimiter.ts`
+- `@repos/effect/packages/effect/test/unstable/http`
+
+Read `effect-stream.md` as well when a request or response body is streamed.
+
+## Imports And Transport
+
+Match nearby code. The unstable HTTP barrel is convenient for hand-written
+services; generated clients in this repository use module imports.
 
 ```ts
 import { Context, Effect, flow, Layer, Schedule, Schema, Stream } from "effect"
-import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import {
+  FetchHttpClient,
+  HttpClient,
+  HttpClientRequest,
+  HttpClientResponse
+} from "effect/unstable/http"
 import { RateLimiter } from "effect/unstable/persistence"
 ```
 
-Platform implementations are provided as layers. Use `FetchHttpClient.layer` for
-portable fetch-based code unless the runtime has a more specific layer nearby
-(`NodeHttpClient.layerFetch`, `NodeHttpClient.layerNodeHttp`,
-`NodeHttpClient.layerUndici`, `BrowserHttpClient.layerXMLHttpRequest`, etc.).
+An `HttpClient` describes request preprocessing and response postprocessing. A
+platform layer supplies the low-level transport:
 
-## Build API Clients As Services
+- `FetchHttpClient.layer` for browsers, edge runtimes, and portable Fetch code
+- a nearby Node or browser-specific client when its transport behavior is
+  required
 
-Wrap API-specific HTTP behavior in a `Context.Service` layer. Acquire
-`HttpClient.HttpClient` once, then apply shared middleware such as base URL,
-headers, status filtering, retries, tracing spans, and error mapping.
+Fetch behavior such as CORS, credentials, redirect defaults, and streaming
+support still depends on the runtime. Do not assume all platform layers behave
+identically.
+
+## Put API Policy In A Service Boundary
+
+Generated code should describe endpoints. Hand-written transport or service
+layers should own base URLs, authentication, retry policy, observability, and
+domain error mapping.
 
 ```ts
 class Todo extends Schema.Class<Todo>("Todo")({
@@ -57,27 +80,29 @@ export class TodoApi extends Context.Service<TodoApi, {
 
         return yield* client.get(`/todos/${id}`).pipe(
           Effect.flatMap(HttpClientResponse.schemaBodyJson(Todo)),
-          Effect.mapError((cause) => new TodoApiError({ cause })),
-          Effect.withSpan("TodoApi.getTodo")
+          Effect.mapError((cause) => new TodoApiError({ cause }))
         )
       })
 
       return TodoApi.of({ getTodo })
     })
-  ).pipe(
-    Layer.provide(FetchHttpClient.layer)
-  )
+  ).pipe(Layer.provide(FetchHttpClient.layer))
 }
 
-export class TodoApiError extends Schema.TaggedErrorClass<TodoApiError>()("TodoApiError", {
-  cause: Schema.Defect
-}) {}
+export class TodoApiError extends Schema.TaggedErrorClass<TodoApiError>()(
+  "TodoApiError",
+  { cause: Schema.Defect() }
+) {}
 ```
 
-## Requests Are Immutable Values
+Acquire and configure the shared client once while building the service. Keep
+endpoint functions small and map library errors into domain errors at this
+boundary. Do not leak authentication headers or raw response bodies into logs.
+
+## Build Immutable Requests
 
 Use `HttpClientRequest` constructors and combinators instead of hand-building
-fetch options. Each combinator returns a new request.
+Fetch options. Every combinator returns a new request.
 
 ```ts
 const request = HttpClientRequest.post("/todos").pipe(
@@ -90,9 +115,13 @@ const request = HttpClientRequest.post("/todos").pipe(
 const response = yield* client.execute(request)
 ```
 
-Prefer schema-backed encoders when a schema exists. `schemaBodyJson` and
-`bodyJson` fail in the Effect error channel; `bodyJsonUnsafe` may throw during
-JSON encoding and is best reserved for generated code or already-safe payloads.
+Choose body encoding deliberately:
+
+- `schemaBodyJson(schema)(value)` validates/encodes through a schema and can
+  require encoding services.
+- `bodyJson(value)` catches JSON encoding failures as `HttpBodyError`.
+- `bodyJsonUnsafe(value)` is synchronous but may throw. Reserve it for generated
+  code or values whose serializability is already guaranteed.
 
 ```ts
 const createTodo = (input: typeof NewTodo.Type) =>
@@ -103,47 +132,92 @@ const createTodo = (input: typeof NewTodo.Type) =>
   )
 ```
 
-Use `setUrlParams` when replacing query values and `appendUrlParams` when
-multiple values with the same key must be preserved. Passing a `URL` to a
-request constructor extracts search parameters and hash into structured request
-fields.
+Use `setUrlParams` to replace values and `appendUrlParams` to preserve repeated
+keys. Passing a `URL` to a request constructor extracts its query and hash into
+the request's structured fields.
 
-## Status Codes Are Not Errors By Default
+Be careful with middleware that sets headers: later `setHeader` calls replace
+the same header. Prefer one clearly owned authentication transform.
 
-`HttpClient` succeeds with an `HttpClientResponse` for non-2xx statuses. Choose
-one of these explicitly:
+## Decide Status Policy Before Decoding
+
+HTTP status is data by default. `HttpClient` succeeds with a response for 4xx
+and 5xx statuses unless a filter turns them into failures.
+
+Use a client-wide filter only when every endpoint has the same status contract:
 
 ```ts
-// Simple API: fail on anything outside 2xx.
-const json = yield* client.get("/todos/1").pipe(
-  Effect.flatMap(HttpClientResponse.filterStatusOk),
+const okClient = client.pipe(HttpClient.filterStatusOk)
+
+const todo = yield* okClient.get("/todos/1").pipe(
   Effect.flatMap(HttpClientResponse.schemaBodyJson(Todo))
 )
 ```
 
+For typed non-2xx responses, do not apply `filterStatusOk` before matching.
+Branch on the raw response first:
+
 ```ts
-// Typed API: branch by exact status or status class.
 const result = yield* client.post("/todos").pipe(
   Effect.flatMap(HttpClientResponse.matchStatus({
     201: HttpClientResponse.schemaBodyJson(Todo),
     400: (response) =>
-      Effect.flatMap(
-        HttpClientResponse.schemaBodyJson(ApiProblem)(response),
-        (problem) => Effect.fail(new BadRequest({ problem }))
+      HttpClientResponse.schemaBodyJson(ApiProblem)(response).pipe(
+        Effect.flatMap((problem) => Effect.fail(new BadRequest({ problem })))
       ),
-    "5xx": (response) => Effect.fail(new RemoteServiceUnavailable({ status: response.status })),
-    orElse: (response) => Effect.fail(new UnexpectedStatus({ status: response.status }))
+    "5xx": (response) =>
+      Effect.fail(new RemoteServiceUnavailable({ status: response.status })),
+    orElse: (response) =>
+      Effect.fail(new UnexpectedStatus({ status: response.status }))
   }))
 )
 ```
 
-Use `HttpClient.filterStatusOk` on the client when every request made by that
-client expects 2xx responses. Use `HttpClientResponse.matchStatus` when the API
-has typed non-2xx responses.
+Exact status handlers win over status-class handlers. Always include `orElse`
+so new or undocumented statuses have an explicit path.
 
-## Decode Responses Deliberately
+## Know The Error Layers
 
-Body readers are effects and can fail with `HttpClientError`:
+There is not one universal HTTP error type. The operation determines the error
+channel:
+
+| Operation | Typical failure |
+| --- | --- |
+| Request schema/JSON encoding before execution | `HttpBodyError` |
+| Transport, URL construction, status filtering, body reading | `HttpClientError` |
+| Schema validation of decoded body/headers | `SchemaError` |
+| Hand-written API boundary | mapped domain error |
+
+`HttpClientError` wraps a more specific `reason`:
+
+- `TransportError`, `EncodeError`, and `InvalidUrlError` have no response.
+- `StatusCodeError`, `DecodeError`, and `EmptyBodyError` include a response.
+
+Catch the outer `HttpClientError`, then inspect `reason._tag`. Catching
+`StatusCodeError` directly with `Effect.catchTag` does not work on a normal
+client call because it is nested.
+
+```ts
+const recovered = client.get("/todos/1").pipe(
+  Effect.flatMap(HttpClientResponse.filterStatusOk),
+  Effect.catchTag("HttpClientError", (error) => {
+    if (
+      error.reason._tag === "StatusCodeError" &&
+      error.response?.status === 404
+    ) {
+      return Effect.succeedNone
+    }
+    return Effect.fail(error)
+  })
+)
+```
+
+This handler does not catch `SchemaError` from a later schema decoder. Map both
+at the service boundary when the public API exposes one domain error.
+
+## Decode A Body Once, Deliberately
+
+Raw body readers are effects and can fail with `HttpClientError`:
 
 ```ts
 yield* response.text
@@ -152,7 +226,7 @@ yield* response.arrayBuffer
 yield* response.urlParamsBody
 ```
 
-Prefer schema decoders for JSON and headers:
+Prefer schema decoders at trust boundaries:
 
 ```ts
 yield* HttpClientResponse.schemaBodyJson(Todo)(response)
@@ -160,72 +234,84 @@ yield* HttpClientResponse.schemaJson(ResponseEnvelope)(response)
 yield* HttpClientResponse.schemaNoBody(HeaderOnlyResponse)(response)
 ```
 
-Use `schemaBodyJson` for body-only JSON. Use `schemaJson` when the schema covers
-the whole `{ status, headers, body }` response shape. `response.json` parses an
-empty text body as `null`. `response.stream` fails if there is no body.
+- `schemaBodyJson` decodes only the JSON body.
+- `schemaJson` decodes `{ status, headers, body }` together.
+- `schemaNoBody` decodes status and headers without consuming a body.
+- `response.json` treats an empty text body as `null`.
+- `response.stream` fails with `EmptyBodyError` when there is no body.
 
-## Error Handling
+Text and array-buffer access are cached by the Web response wrapper, but a body
+stream is a live consumable resource. Do not inspect a body through `text` or
+`json` and then expect to stream the same body, or stream it and then decode it.
+Choose buffered decoding or streaming at the endpoint boundary.
 
-The public failure is usually `HttpClientError.HttpClientError`. Inspect
-`error.reason._tag` for the precise cause:
+## Understand Middleware Ordering
 
-- `TransportError`, `EncodeError`, and `InvalidUrlError` happen before a
-  response exists.
-- `StatusCodeError`, `DecodeError`, and `EmptyBodyError` include the response.
+Request transforms and response transforms compose differently:
 
-Do not try to catch `StatusCodeError` directly with `Effect.catchTag` on a normal
-client call; the outer tag is `HttpClientError`. Catch `HttpClientError` and
-branch on `reason._tag`, or map errors at the API service boundary.
-
-```ts
-const recovered = client.get("/todos/1").pipe(
-  Effect.flatMap(HttpClientResponse.filterStatusOk),
-  Effect.catchTag("HttpClientError", (error) => {
-    if (error.reason._tag === "StatusCodeError" && error.response?.status === 404) {
-      return Effect.succeedNone
-    }
-    return Effect.fail(error)
-  })
-)
-```
-
-## Middleware Ordering
-
-`HttpClient` middleware transforms a client and is usually read left to right in
-the `pipe`.
+- `mapRequest` appends preprocessing; successive calls execute in pipe order.
+- `mapRequestInput` prepends preprocessing before transforms already installed.
+- Each later response combinator wraps the response behavior built before it.
 
 ```ts
 const client = baseClient.pipe(
-  HttpClient.mapRequest(HttpClientRequest.prependUrl("https://api.example.com")),
-  HttpClient.mapRequest(HttpClientRequest.bearerToken(token)),
+  HttpClient.mapRequest(
+    HttpClientRequest.prependUrl("https://api.example.com")
+  ),
+  HttpClient.followRedirects(),
   HttpClient.filterStatusOk,
   HttpClient.retryTransient({ times: 3 })
 )
 ```
 
-Use `mapRequest` for transformations that should run after existing request
-preprocessing. Use `mapRequestInput` only when a transformation must run before
-previously installed request middleware.
+Ordering consequences:
 
-Useful middleware:
+- Put `followRedirects` before `filterStatusOk`; otherwise a visible 3xx can be
+  rejected before redirect handling sees it.
+- Put `tap` before a status filter to inspect every response, including non-2xx.
+  Put it after the filter to observe accepted responses only; use `tapError` for
+  rejected ones.
+- Middleware inside a retry wrapper runs for every attempt. Middleware added
+  after the retry sees only the final outcome.
+- `filterStatusOk` may appear before `retryTransient`: transient
+  `StatusCodeError` reasons are recognized. Without a filter, transient raw
+  responses are also recognized by the default response retry mode.
 
-- `mapRequest` / `mapRequestEffect` for base URLs, headers, auth, and request
-  normalization.
-- `filterStatus` / `filterStatusOk` for turning unacceptable statuses into
-  failures.
-- `retryTransient` for transport failures, timeouts, and transient statuses
-  (`408`, `429`, `500`, `502`, `503`, `504`). The default `retryOn` is
-  `"errors-and-responses"`.
-- `followRedirects()` for following 3xx `location` headers, defaulting to 10
-  redirects.
-- `withCookiesRef` for cookie jars across requests.
-- `tap`, `tapError`, and `tapRequest` for logging/metrics without changing the
-  response.
+Use `mapRequestInput` rarely. Most base URLs, headers, and auth belong in normal
+`mapRequest` transforms whose order is visible in the pipe.
+
+## Retry Only Safe Operations
+
+`retryTransient` retries timeouts, transport errors, and these statuses:
+`408`, `429`, `500`, `502`, `503`, and `504`. Its default mode is
+`"errors-and-responses"`.
+
+```ts
+const retried = client.pipe(
+  HttpClient.retryTransient({
+    schedule: Schedule.exponential("100 millis"),
+    times: 3
+  })
+)
+```
+
+`times` counts retries, not total attempts. `times: 3` can execute four total
+attempts. A custom `while` predicate adds errors to the built-in transient set;
+it does not replace that set, and it is ignored in `"response-only"` mode.
+
+The client does **not** check whether the HTTP method is idempotent. The same
+policy retries GET and POST. Before applying retries to mutations, require an
+API-supported idempotency key or other proof that replay cannot duplicate a
+side effect. Prefer separate read and mutation clients when their retry policies
+differ.
+
+Also confirm the request body can be replayed. A live stream or external handle
+may not be safe to execute again even when the method is idempotent.
 
 ## Rate Limiting
 
-Use `HttpClient.withRateLimiter` with the `RateLimiter` service when requests
-must share a limit by key.
+`HttpClient.withRateLimiter` coordinates requests that share a key through the
+`RateLimiter` service.
 
 ```ts
 const limited = client.pipe(
@@ -238,73 +324,116 @@ const limited = client.pipe(
 )
 ```
 
-By default, it inspects common rate-limit headers such as `ratelimit-limit`,
-`x-ratelimit-limit`, `ratelimit-remaining`, `retry-after`, and reset headers.
-It also retries `429` responses, including `HttpClientError` values wrapping a
-429 `StatusCodeError`, by sending the retry through the limiter again. Set
-`disableResponseInspection: true` only when response headers should not affect
-future limits.
+Pick keys with intentional cardinality: per upstream, account, or endpoint.
+Avoid accidentally including unique query data when all requests should share a
+limit.
 
-## Streaming And Scope
+By default the middleware learns from common `RateLimit-*`, `X-RateLimit-*`, and
+`Retry-After` headers. It sends 429 responses, including filtered 429
+`HttpClientError` values, back through the limiter. This 429 loop is not bounded
+by a `times` option, so use an enclosing timeout/cancellation policy when the
+upstream may remain rate-limited indefinitely.
 
-For response bodies, prefer `HttpClientResponse.stream(effect)` or unwrap
-`response.stream` and consume it with `Stream` combinators.
+`disableResponseInspection: true` stops header-based learning. It does not turn
+off 429 retries; those still pass through the configured limiter.
+
+Provide both the limiter and its store layer at the application/test boundary.
+Use `TestClock` in rate-limit tests rather than real waits.
+
+## Stream Bodies And Control Scope
+
+Convert a response effect directly into a byte stream:
 
 ```ts
 const text = yield* client.get("/events").pipe(
-  Effect.map((response) => response.stream),
-  Stream.unwrap,
+  HttpClientResponse.stream,
   Stream.decodeText(),
   Stream.mkString
 )
 ```
 
-Non-scoped responses are tied to an abort controller so interrupted body reads
-and early-ending streams abort the underlying request. If a request lifetime
-must be controlled by a surrounding `Scope`, apply `HttpClient.withScope`.
+Keep the body incremental for large or open-ended responses. Do not use
+`Stream.mkString`, `runCollect`, or `mkUint8Array` unless the body is known to be
+finite and bounded.
 
-## Tracing
+Normal responses use an abort controller. Interrupting a body read or ending a
+response stream early aborts the underlying request. Apply
+`HttpClient.withScope` when the request lifetime must instead be attached to an
+explicit surrounding `Scope`; closing that scope aborts it.
+
+## Tracing And Inspection
 
 HttpClient creates client spans by default and records method, URL, status, and
-redacted headers. Use `Effect.withSpan` around domain operations and
-`Effect.annotateCurrentSpan` for request-specific attributes.
+redacted headers. Wrap domain operations in named `Effect.fn` functions or
+`Effect.withSpan`, and add safe request identifiers with
+`Effect.annotateCurrentSpan`.
 
-Context references can tune tracing:
+Context references can tune client tracing:
 
 - `HttpClient.TracerDisabledWhen` disables spans for matching requests.
 - `HttpClient.TracerPropagationEnabled` controls outgoing trace headers.
-- `HttpClient.SpanNameGenerator` customizes span names.
+- `HttpClient.SpanNameGenerator` customizes client span names.
 
-## Testing Patterns
+Use `tap`, `tapError`, and `tapRequest` for logging or metrics without changing
+results. Body inspection is a real decode and can consume a streamed body; do
+it only for endpoints that use buffered bodies. Keep secrets in headers covered
+by Effect's redaction configuration.
 
-Use `it.effect`, `assert` / `strictEqual` helpers from `@effect/vitest`, and
-`TestClock` for time-dependent behavior. Avoid `Effect.runSync` in tests.
+## Testing
 
-Test API code with `HttpClient.make` and `HttpClientResponse.fromWeb` rather
-than real network calls.
+Use a fake `HttpClient.make` transport instead of the network. Build responses
+with `HttpClientResponse.fromWeb` and assert the fully preprocessed request when
+middleware behavior matters.
 
 ```ts
-it.effect("decodes todo", () =>
-  Effect.gen(function*() {
-    const client = HttpClient.make((request) =>
-      Effect.succeed(
-        HttpClientResponse.fromWeb(
-          request,
-          new Response(JSON.stringify({ id: 1, title: "Test", completed: false }), {
+import { expect, it } from "vitest"
+
+it("decodes a todo", async () => {
+  const client = HttpClient.make((request) =>
+    Effect.succeed(
+      HttpClientResponse.fromWeb(
+        request,
+        new Response(
+          JSON.stringify({
+            id: 1,
+            title: "Test",
+            completed: false
+          }),
+          {
             status: 200,
             headers: { "content-type": "application/json" }
-          })
+          }
         )
       )
     )
+  )
 
-    const todo = yield* program.pipe(
+  const todo = await Effect.runPromise(
+    HttpClient.get("https://example.com/todos/1").pipe(
+      Effect.flatMap(HttpClientResponse.schemaBodyJson(Todo)),
       Effect.provide(Layer.succeed(HttpClient.HttpClient, client))
     )
+  )
 
-    strictEqual(todo.id, 1)
-  }))
+  expect(todo.id).toBe(1)
+})
 ```
 
-For retry and rate-limit tests, count attempts in a `Ref`, fork the request, and
-advance `TestClock` instead of waiting in real time.
+Cover at least the status and decode cases in the public contract. For retry,
+redirect, timeout, and rate-limit behavior:
+
+- count attempts with `Ref`
+- fork with `startImmediately: true` when the operation must reach a sleep
+- provide `TestClock.layer()` and advance `TestClock` from `effect/testing`
+- assert interruption and abort signals when lifetime is part of correctness
+
+## Review Checklist
+
+- Generated clients remain generated; policy lives in hand-written layers.
+- Every endpoint explicitly filters or matches status.
+- Request encoding, `HttpClientError`, and `SchemaError` are mapped intentionally.
+- Middleware order matches which attempts/responses each observer should see.
+- Retried methods and bodies are safe to replay.
+- Rate-limit keys are bounded and persistent 429 behavior is cancellable.
+- Large or infinite bodies remain streamed and are consumed once.
+- Tests cover non-2xx, invalid payloads, timing, and cancellation as applicable.

@@ -6,6 +6,7 @@ import {
   ActionStatus,
   type TransactionType,
 } from "../../../../../../domain/types/action";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../../services/workflow/transaction-workflow-model";
 import { Box } from "../../../../../../shared/ui/primitives/box";
 import { ContentLoaderSquare } from "../../../../../../shared/ui/primitives/content-loader";
 import { Text } from "../../../../../../shared/ui/primitives/typography/text";
@@ -27,7 +28,10 @@ import type { ActionYieldDto } from "../types";
 
 type UseActivityPageResult = {
   content: ReactNode;
-  onActionSelect: (val: ActionYieldDto) => void;
+  onActionSelect: (
+    val: ActionYieldDto,
+    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+  ) => void;
   showingCount: number;
   total: number;
   allData: ReturnType<typeof useActivityActions>["allItems"];
@@ -57,11 +61,15 @@ export const useActivityPage = ({
   const activityActions = useActivityActions(selectedFilter);
   usePrefetchActivityActionFilters();
 
-  const onActionSelect = (data: ActionYieldDto) => {
+  const onActionSelect = (
+    data: ActionYieldDto,
+    providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
+  ) => {
     if (!isConnected) return openConnectModal?.();
     if (!data.yieldData) return;
 
     setActivitySelection({
+      providersDetails,
       selectedAction: data.actionData,
       selectedYield: data.yieldData,
       selectedValidators: data.validatorsData,

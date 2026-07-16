@@ -16,6 +16,7 @@ import type {
 import { isPendingActionAmountRequired } from "../../../../../domain/types/pending-action";
 
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import type { ClassicTransactionWorkflowProviderDetail } from "../../../../../services/workflow/transaction-workflow-model";
 import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { usePendingActionSelectValidatorMatch } from "../../../../../shared/react/navigation/use-pending-action-select-validator-match";
 import {
@@ -38,9 +39,11 @@ import { preparePendingActionRequestDto } from "./utils";
 
 export const usePendingActions = ({
   dispatch: pendingActionDispatch,
+  providersDetails,
   workflow,
 }: {
   readonly dispatch: (action: Actions) => void;
+  readonly providersDetails: ReadonlyArray<ClassicTransactionWorkflowProviderDetail>;
   readonly workflow: State & ExtraData;
 }) => {
   const {
@@ -173,6 +176,7 @@ export const usePendingActions = ({
         integrationData: value.integrationData,
         interactedToken: yieldBalance.token,
         pendingActionType: pendingActionDto.type,
+        providersDetails,
         requestDto: value.requestDto,
         addresses: {
           address: value.address,

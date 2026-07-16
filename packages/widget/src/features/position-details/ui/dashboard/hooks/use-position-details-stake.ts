@@ -42,6 +42,7 @@ import {
   getTokensPricesRequest,
   PricesKey,
   pricesAtom,
+  useProvidersDetails,
   useYieldKycGate,
   useYieldValidators,
 } from "../../../../earn";
@@ -197,6 +198,11 @@ export const usePositionDetailsStake = () => {
       validators,
     });
   }, [validatorsRequired, yieldValidators.data]);
+  const providersDetails = useProvidersDetails({
+    integrationData: selectedStake,
+    validators: selectedValidators,
+    selectedProviderYieldId,
+  });
 
   const estimatedRewards = useEstimatedRewards({
     selectedStake,
@@ -281,6 +287,7 @@ export const usePositionDetailsStake = () => {
       requestDto: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
+      providersDetails: providersDetails ?? [],
       selectedStake: stakeEnterRequestDto.selectedStake,
       selectedValidators: stakeEnterRequestDto.selectedValidators,
     });

@@ -1,25 +1,26 @@
 import { Effect, Stream } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import { appRuntime } from "../../../../../app/runtime";
-import { WalletService } from "../../../../../services/wallet/wallet-service";
+import { appRuntime } from "../../../app/runtime";
+import { WalletService } from "../../../services/wallet/wallet-service";
 import type {
-  StepsMachineCommand,
-  StepsMachineKey,
-} from "../../../../../services/workflow/steps-machine-model";
-import { StepsMachineService } from "../../../../../services/workflow/steps-machine-service";
-import { config } from "../../../../../shared/config/widget-defaults";
-import { refreshAtomResources } from "../../../../../shared/effect/api-resource";
+  TransactionWorkflowCommand,
+  TransactionWorkflowKey,
+} from "../../../services/workflow/transaction-workflow-model";
+import { getTransactionWorkflowId } from "../../../services/workflow/transaction-workflow-model";
+import { TransactionWorkflowService } from "../../../services/workflow/transaction-workflow-service";
+import { config } from "../../../shared/config/widget-defaults";
+import { refreshAtomResources } from "../../../shared/effect/api-resource";
 import {
   tokenBalancesScanResourceAtom,
   yieldBalancesScanResourceAtom,
-} from "../../../../portfolio";
-import type { NormalizedWalletState } from "../../../../wallet";
+} from "../../portfolio";
+import type { NormalizedWalletState } from "../../wallet";
 import {
   actionHistoryTimestampAtom,
   markActionHistoryChanged,
-} from "../../../state/action-history";
+} from "./action-history";
 
-export const getStepsCompletionResources = (
+export const getClassicWorkflowCompletionResources = (
   state: NormalizedWalletState
 ): ReadonlyArray<Atom.Atom<unknown>> => {
   if (state.status !== "connected") return [];
@@ -27,13 +28,16 @@ export const getStepsCompletionResources = (
   return [tokenBalancesScanResourceAtom, yieldBalancesScanResourceAtom];
 };
 
-export const getStepsMachineAtoms = Atom.family(
-  (machineKey: StepsMachineKey) => {
+export const getTransactionWorkflowAtoms = Atom.family(
+  (workflowKey: TransactionWorkflowKey) => {
+    const workflowId = getTransactionWorkflowId(workflowKey);
     const machineAtom = appRuntime
-      .atom(StepsMachineService.use((steps) => steps.make(machineKey)))
+      .atom(
+        TransactionWorkflowService.use((service) => service.make(workflowKey))
+      )
       .pipe(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
-        Atom.withLabel(`stepsMachine(${machineKey.yieldId})`)
+        Atom.withLabel(`transactionWorkflow(${workflowId})`)
       );
     const stateAtom = appRuntime
       .atom((context) =>
@@ -44,7 +48,7 @@ export const getStepsMachineAtoms = Atom.family(
       )
       .pipe(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
-        Atom.withLabel(`stepsMachineState(${machineKey.yieldId})`)
+        Atom.withLabel(`transactionWorkflowState(${workflowId})`)
       );
     const eventsAtom = appRuntime
       .atom((context) =>
@@ -55,9 +59,9 @@ export const getStepsMachineAtoms = Atom.family(
       )
       .pipe(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
-        Atom.withLabel(`stepsMachineEvents(${machineKey.yieldId})`)
+        Atom.withLabel(`transactionWorkflowEvents(${workflowId})`)
       );
-    const completionAtom = appRuntime
+    const classicCompletionAtom = appRuntime
       .atom(
         (context) =>
           Effect.gen(function* () {
@@ -67,7 +71,11 @@ export const getStepsMachineAtoms = Atom.family(
             ]);
 
             return machine.events.pipe(
-              Stream.filter((event) => event._tag === "StepsCompleted"),
+              Stream.filter(
+                (event) =>
+                  event._tag === "TransactionWorkflowCompleted" &&
+                  event.context.domain._tag === "Classic"
+              ),
               Stream.tap(() =>
                 Effect.sync(() => {
                   context.set(
@@ -76,7 +84,7 @@ export const getStepsMachineAtoms = Atom.family(
                   );
                   refreshAtomResources(
                     context,
-                    getStepsCompletionResources(wallet.getState())
+                    getClassicWorkflowCompletionResources(wallet.getState())
                   );
                 })
               ),
@@ -87,10 +95,10 @@ export const getStepsMachineAtoms = Atom.family(
       )
       .pipe(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
-        Atom.withLabel(`stepsMachineCompletion(${machineKey.yieldId})`)
+        Atom.withLabel(`transactionWorkflowCompletion(${workflowId})`)
       );
     const dispatchAtom = appRuntime.fn(
-      (command: StepsMachineCommand, context) =>
+      (command: TransactionWorkflowCommand, context) =>
         context
           .result(machineAtom)
           .pipe(Effect.flatMap((machine) => machine.dispatch(command))),
@@ -98,7 +106,7 @@ export const getStepsMachineAtoms = Atom.family(
     );
 
     return {
-      completionAtom,
+      classicCompletionAtom,
       dispatchAtom,
       eventsAtom,
       machineAtom,

@@ -2,11 +2,15 @@ import { useAtomValue } from "@effect/atom-react";
 import { AnimatePresence, LayoutGroup, motion } from "motion/react";
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useNavigate } from "react-router";
+import { activityTransactionWorkflowKeyAtom } from "../../features/activity/state/selection";
 import { AnimatedActivityPage } from "../../features/activity/ui";
 import { AnimatedEarnPage } from "../../features/earn/ui";
 import { initParamsAtom } from "../../features/init-params";
 import { AnimatedPositionsPage } from "../../features/portfolio/ui";
 import { ClassicPositionDetailsPage } from "../../features/position-details/ui";
+import { enterTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/enter-request";
+import { exitTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/exit-request";
+import { pendingTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/pending-action-request";
 import {
   ActionReviewPage,
   ActivityCompletePage,
@@ -40,6 +44,7 @@ import { useSKLocation } from "../../shared/react/location-history";
 import { useDetailsMatch } from "../../shared/react/navigation/use-details-match";
 import { usePrevious } from "../../shared/react/use-previous";
 import { useSavedRef } from "../../shared/react/use-saved-ref";
+import { ClassicTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 import { ConnectedCheck } from "./guards/connected-wallet";
 import { useHandleDeepLinks } from "./hooks/use-handle-deep-links";
 
@@ -128,20 +133,39 @@ export const ClassicRoutes = () => {
                     <Route path="activity">
                       <Route path="review" element={<ActionReviewPage />} />
                       <Route
-                        path=":pendingActionType/steps"
-                        element={<ActivityStepsPage />}
-                      />
-                      <Route
-                        path=":pendingActionType/complete"
-                        element={<ActivityCompletePage />}
-                      />
+                        element={
+                          <ClassicTransactionWorkflowGuard
+                            workflowKeyAtom={activityTransactionWorkflowKeyAtom}
+                          />
+                        }
+                      >
+                        <Route
+                          path=":pendingActionType/steps"
+                          element={<ActivityStepsPage />}
+                        />
+                        <Route
+                          path=":pendingActionType/complete"
+                          element={<ActivityCompletePage />}
+                        />
+                      </Route>
                     </Route>
 
                     {/* Stake flow */}
                     <Route>
                       <Route path="review" element={<StakeReviewPage />} />
-                      <Route path="steps" element={<StakeStepsPage />} />
-                      <Route path="complete" element={<StakeCompletePage />} />
+                      <Route
+                        element={
+                          <ClassicTransactionWorkflowGuard
+                            workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                          />
+                        }
+                      >
+                        <Route path="steps" element={<StakeStepsPage />} />
+                        <Route
+                          path="complete"
+                          element={<StakeCompletePage />}
+                        />
+                      </Route>
                     </Route>
 
                     {/* Unstake or pending actions flow */}
@@ -155,21 +179,39 @@ export const ClassicRoutes = () => {
                       {/* Unstaking */}
                       <Route path="unstake">
                         <Route path="review" element={<UnstakeReviewPage />} />
-                        <Route path="steps" element={<UnstakeStepsPage />} />
                         <Route
-                          path="complete"
-                          element={<UnstakeCompletePage />}
-                        />
+                          element={
+                            <ClassicTransactionWorkflowGuard
+                              workflowKeyAtom={exitTransactionWorkflowKeyAtom}
+                            />
+                          }
+                        >
+                          <Route path="steps" element={<UnstakeStepsPage />} />
+                          <Route
+                            path="complete"
+                            element={<UnstakeCompletePage />}
+                          />
+                        </Route>
                       </Route>
 
                       {/* Pending Actions */}
                       <Route path="pending-action">
                         <Route path="review" element={<PendingReviewPage />} />
-                        <Route path="steps" element={<PendingStepsPage />} />
                         <Route
-                          path="complete"
-                          element={<PendingCompletePage />}
-                        />
+                          element={
+                            <ClassicTransactionWorkflowGuard
+                              workflowKeyAtom={
+                                pendingTransactionWorkflowKeyAtom
+                              }
+                            />
+                          }
+                        >
+                          <Route path="steps" element={<PendingStepsPage />} />
+                          <Route
+                            path="complete"
+                            element={<PendingCompletePage />}
+                          />
+                        </Route>
                       </Route>
                     </Route>
                   </Route>

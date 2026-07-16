@@ -5,6 +5,7 @@ import {
   HttpClientRequest,
   type HttpClientResponse,
 } from "effect/unstable/http";
+import { version as widgetVersion } from "../../../package.json";
 import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
@@ -63,6 +64,7 @@ const configureClient = ({
       flow(
         HttpClientRequest.prependUrl(baseUrl),
         HttpClientRequest.setHeader("X-API-KEY", apiKey),
+        HttpClientRequest.setHeader("X-Yield-Widget-Version", widgetVersion),
         HttpClientRequest.acceptJson
       )
     ),

@@ -519,6 +519,7 @@ export const EarnPageModelBinding = ({
       requestDto: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
+      providersDetails: providersDetails ?? [],
       selectedStake: stakeEnterRequestDto.selectedStake,
       selectedValidators: stakeEnterRequestDto.selectedValidators,
     });

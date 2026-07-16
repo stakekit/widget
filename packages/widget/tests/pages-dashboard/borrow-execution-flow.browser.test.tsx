@@ -17,9 +17,7 @@ import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   ActionRequest,
   Action as BorrowAction,
-  BorrowExecutionEventsService,
   type Transaction as BorrowTransaction,
-  BorrowWalletExecutionService,
   type SubmitTransactionCommand,
 } from "../../src/features/borrow/core";
 import type { BorrowReviewState } from "../../src/features/borrow/ui/review-state";
@@ -28,6 +26,8 @@ import type { NormalizedWalletState } from "../../src/features/wallet/state/wall
 import { disconnectedNormalizedWalletState } from "../../src/features/wallet/state/wallet";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
 import { WalletService } from "../../src/services/wallet/wallet-service";
+import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
+import { TransactionWorkflowService } from "../../src/services/workflow/transaction-workflow-service";
 import { render } from "../utils/test-utils";
 import type { WalletOperations } from "../utils/wallet-operations";
 
@@ -129,11 +129,14 @@ const wallet = {
 const makeBorrowApi = ({
   executeAction = Effect.succeed(action()),
   getActions = [],
+  stepActions = [],
 }: {
   readonly executeAction?: Effect.Effect<ActionDto, never>;
   readonly getActions?: ReadonlyArray<ActionDto>;
+  readonly stepActions?: ReadonlyArray<ActionDto>;
 }) => {
   const queuedGetActions = [...getActions];
+  const queuedStepActions = [...stepActions];
 
   return {
     executeAction: vi.fn(() =>
@@ -144,7 +147,11 @@ const makeBorrowApi = ({
         queuedGetActions.shift() ?? getActions.at(-1) ?? action()
       )
     ),
-    stepAction: vi.fn(() => Schema.decodeEffect(BorrowAction)(action())),
+    stepAction: vi.fn(() =>
+      Schema.decodeEffect(BorrowAction)(
+        queuedStepActions.shift() ?? stepActions.at(-1) ?? action()
+      )
+    ),
     submitTransaction: vi.fn(
       (_request: {
         readonly command: SubmitTransactionDto;
@@ -178,6 +185,13 @@ const ExecutionProbe = ({ action }: { readonly action: BorrowAction }) => {
     <div>
       <div data-testid="phase">{execution.phase}</div>
       <div data-testid="running">{String(execution.isRunning)}</div>
+      <div data-testid="action-step">
+        {execution.currentStep}/{execution.totalSteps}
+      </div>
+      <div data-testid="batch-count">{execution.batches.length}</div>
+      <div data-testid="current-transaction">
+        {execution.currentTransaction?.id ?? "none"}
+      </div>
       {execution.error && (
         <button data-testid="retry" onClick={execution.retry} type="button">
           Retry
@@ -210,6 +224,24 @@ const renderExecution = (
     WalletService,
     activeWallet as WalletService["Service"]
   );
+  const operations = {
+    getBorrowAction: borrow.getAction,
+    getClassicStatus: () => Effect.die("unexpected classic status"),
+    getWalletState: activeWallet.getState,
+    signMessage: () => Effect.die("unexpected message signing"),
+    signTransaction: activeWallet.signTransaction,
+    stepBorrowAction: borrow.stepAction,
+    submitBorrowTransaction: borrow.submitTransaction,
+    submitClassicHash: () => Effect.die("unexpected classic hash submission"),
+    submitClassicSigned: () =>
+      Effect.die("unexpected classic signed submission"),
+    trackEvent: () => Effect.void,
+  } as unknown as TransactionWorkflowOperationsService["Service"];
+  const workflowLayer = TransactionWorkflowService.layer.pipe(
+    Layer.provide(
+      Layer.succeed(TransactionWorkflowOperationsService, operations)
+    )
+  );
 
   return render(
     <RegistryProvider
@@ -218,8 +250,7 @@ const renderExecution = (
           appRuntime.layer,
           Layer.mergeAll(
             Layer.succeed(BorrowApiService, borrow as never),
-            BorrowWalletExecutionService.layer.pipe(Layer.provide(walletLayer)),
-            BorrowExecutionEventsService.layer,
+            workflowLayer,
             walletLayer
           ).pipe(Layer.fresh),
         ],
@@ -336,6 +367,57 @@ describe("borrow execution flow component", () => {
       .element(app.getByTestId("complete"))
       .toHaveTextContent("/borrow/complete with-state");
     expect(signTransaction).toHaveBeenCalledOnce();
+
+    app.unmount();
+  });
+
+  it("shows the next action step while retaining prior transaction batches", async () => {
+    let signCalls = 0;
+    const multiStepWallet = {
+      ...wallet,
+      signTransaction: () => {
+        signCalls += 1;
+        return signCalls === 1
+          ? Effect.succeed({
+              broadcasted: true as const,
+              signedTx: transactionHash,
+            })
+          : Effect.never;
+      },
+    };
+    const first = decodedAction({
+      hasNextStep: true,
+      totalSteps: 2,
+    });
+    const app = await renderExecution(
+      makeBorrowApi({
+        getActions: [
+          action({
+            hasNextStep: true,
+            totalSteps: 2,
+            transactions: [transaction({ status: "CONFIRMED" })],
+          }),
+        ],
+        stepActions: [
+          action({
+            currentStep: 2,
+            id: first.id,
+            totalSteps: 2,
+            transactions: [transaction({ id: "tx-2" })],
+          }),
+        ],
+      }),
+      { action: first, wallet: multiStepWallet }
+    );
+
+    await expect
+      .element(app.getByTestId("action-step"))
+      .toHaveTextContent("2/2");
+    await expect.element(app.getByTestId("batch-count")).toHaveTextContent("2");
+    await expect
+      .element(app.getByTestId("current-transaction"))
+      .toHaveTextContent("tx-2");
+    await expect.element(app.getByTestId("phase")).toHaveTextContent("signing");
 
     app.unmount();
   });

@@ -1,6 +1,7 @@
 import { useAtomValue } from "@effect/atom-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { getProvidersDetails } from "../../../features/earn";
 import { usePendingActionDeepLink } from "../../../features/earn/support";
 import { initParamsAtom } from "../../../features/init-params";
 import { useMountAnimation } from "../../../features/mount-animation";
@@ -59,6 +60,13 @@ export const useHandleDeepLinks = () => {
         integrationData: data.pendingActionDto.integrationData,
         interactedToken: data.balance.token,
         pendingActionType: data.pendingActionDto.requestDto.action,
+        providersDetails:
+          getProvidersDetails({
+            integrationData: data.pendingActionDto.integrationData,
+            validators: [],
+            yields: null,
+            selectedProviderYieldId: null,
+          }) ?? [],
       });
       navigateRef.current(
         `positions/${data.yieldOp.id}/${data.balanceId}/pending-action/review`

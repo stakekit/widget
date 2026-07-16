@@ -114,6 +114,7 @@ export const usePositionDetails = () => {
         actionDto: null,
         gasFeeToken: stakeExitRequestDto.gasFeeToken,
         integrationData,
+        providersDetails: providersDetails ?? [],
         requestDto: stakeExitRequestDto.dto,
         unstakeAmount,
         unstakeToken,
@@ -201,7 +202,11 @@ export const usePositionDetails = () => {
     onPendingActionClick,
     onValidatorsSubmit,
     validatorAddressesHandling,
-  } = usePendingActions({ dispatch, workflow: positionWorkflow });
+  } = usePendingActions({
+    dispatch,
+    providersDetails: providersDetails ?? [],
+    workflow: positionWorkflow,
+  });
 
   const shareToAmountConversions = useMemo(
     () =>

@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router";
+import { activityTransactionWorkflowKeyAtom } from "../../features/activity/state/selection";
 import { ActivityTabPage } from "../../features/activity/ui";
 import {
   BorrowCompletePage,
@@ -19,6 +20,9 @@ import {
   PositionDetailsActions,
   PositionDetailsStakeActions,
 } from "../../features/position-details/ui";
+import { enterTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/enter-request";
+import { exitTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/exit-request";
+import { pendingTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/pending-action-request";
 // import { RewardsTabPage } from "../../domain/types/rewards";
 import {
   ActivityDetailsPage,
@@ -37,6 +41,7 @@ import { GlobalModals } from "../../features/widget-shell/screens";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
+import { ClassicTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
 import { ConnectedCheck } from "./guards/connected-wallet";
 
 const positionDetailsStakeFooterPath =
@@ -98,8 +103,16 @@ export const DashboardRoutes = () => {
 
               <Route element={<ConnectedCheck />}>
                 <Route path="review" element={<StakeReviewPage />} />
-                <Route path="steps" element={<StakeStepsPage />} />
-                <Route path="complete" element={<StakeCompletePage />} />
+                <Route
+                  element={
+                    <ClassicTransactionWorkflowGuard
+                      workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                    />
+                  }
+                >
+                  <Route path="steps" element={<StakeStepsPage />} />
+                  <Route path="complete" element={<StakeCompletePage />} />
+                </Route>
               </Route>
             </Route>
 
@@ -120,8 +133,16 @@ export const DashboardRoutes = () => {
               <Route path="stake">
                 <Route index element={<PositionDetailsStakeActions />} />
                 <Route path="review" element={<StakeReviewPage />} />
-                <Route path="steps" element={<StakeStepsPage />} />
-                <Route path="complete" element={<StakeCompletePage />} />
+                <Route
+                  element={
+                    <ClassicTransactionWorkflowGuard
+                      workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                    />
+                  }
+                >
+                  <Route path="steps" element={<StakeStepsPage />} />
+                  <Route path="complete" element={<StakeCompletePage />} />
+                </Route>
               </Route>
 
               <Route
@@ -133,15 +154,31 @@ export const DashboardRoutes = () => {
               <Route path="unstake">
                 <Route index element={<PositionDetailsActions />} />
                 <Route path="review" element={<UnstakeReviewPage />} />
-                <Route path="steps" element={<UnstakeStepsPage />} />
-                <Route path="complete" element={<UnstakeCompletePage />} />
+                <Route
+                  element={
+                    <ClassicTransactionWorkflowGuard
+                      workflowKeyAtom={exitTransactionWorkflowKeyAtom}
+                    />
+                  }
+                >
+                  <Route path="steps" element={<UnstakeStepsPage />} />
+                  <Route path="complete" element={<UnstakeCompletePage />} />
+                </Route>
               </Route>
 
               {/* Pending Actions */}
               <Route path="pending-action">
                 <Route path="review" element={<PendingReviewPage />} />
-                <Route path="steps" element={<PendingStepsPage />} />
-                <Route path="complete" element={<PendingCompletePage />} />
+                <Route
+                  element={
+                    <ClassicTransactionWorkflowGuard
+                      workflowKeyAtom={pendingTransactionWorkflowKeyAtom}
+                    />
+                  }
+                >
+                  <Route path="steps" element={<PendingStepsPage />} />
+                  <Route path="complete" element={<PendingCompletePage />} />
+                </Route>
               </Route>
             </Route>
 
@@ -152,9 +189,17 @@ export const DashboardRoutes = () => {
             <Route path="activity" element={<ActivityTabPage />}>
               <Route index element={<ActivityDetailsPage />} />
               <Route
-                path=":pendingActionType/steps"
-                element={<ActivityStepsPage />}
-              />
+                element={
+                  <ClassicTransactionWorkflowGuard
+                    workflowKeyAtom={activityTransactionWorkflowKeyAtom}
+                  />
+                }
+              >
+                <Route
+                  path=":pendingActionType/steps"
+                  element={<ActivityStepsPage />}
+                />
+              </Route>
             </Route>
           </Route>
         </Routes>

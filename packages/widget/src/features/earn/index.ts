@@ -1,4 +1,5 @@
 export {
+  getProvidersDetails,
   type ProviderDetails,
   useProvidersDetails,
 } from "./react/use-provider-details";

@@ -1,57 +1,89 @@
-import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
-import { Cause, Option } from "effect";
+import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
+import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import type { Action } from "../core";
+import type { Action, Transaction } from "../../../domain/borrow";
 import {
-  BorrowExecutionKey,
-  type BorrowExecutionMachineState,
-  type BorrowExecutionPhase,
-  type BorrowExecutionResult,
-  type BorrowExecutionStep,
-  type BorrowSubmittedTransaction,
-  type BorrowTransactionExecutionError,
-  borrowExecutionAtom,
-  getBorrowExecutionAction,
-  getBorrowExecutionPhase,
-  getBorrowExecutionResult,
-  getBorrowExecutionSteps,
-  getBorrowExecutionSubmissions,
-  isBorrowExecutionDone,
-  isBorrowTransactionExecutionError,
-} from "../core";
+  BorrowTransactionWorkflowKey,
+  getCurrentTransactionWorkflowBatch,
+  getCurrentTransactionWorkflowTransaction,
+  initializeTransactionWorkflow,
+  type TransactionWorkflowBatch,
+  type TransactionWorkflowError,
+  type TransactionWorkflowState,
+  type TransactionWorkflowSubmission,
+} from "../../../services/workflow/transaction-workflow-model";
+import { getTransactionWorkflowAtoms } from "../../transaction-flow/state/transaction-workflow-atoms";
+import { borrowExecutionRefreshAtom } from "../atoms/refresh";
+
+type BorrowExecutionResult = {
+  readonly action: Action;
+  readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
+};
+
+type BorrowExecutionPhase =
+  | "signing"
+  | "submitting"
+  | "confirming"
+  | "advancing"
+  | "completed"
+  | "disabled";
 
 type BorrowExecutionState = {
-  readonly action: Action | null;
+  readonly action: Action;
+  readonly batches: ReadonlyArray<TransactionWorkflowBatch>;
   readonly completionResult: BorrowExecutionResult | null;
-  readonly currentTransaction: Action["transactions"][number] | null;
+  readonly currentBatchTransactionCount: number;
+  readonly currentStep: number;
+  readonly currentTransaction: Transaction | null;
   readonly currentTransactionIndex: number | null;
-  readonly error: BorrowTransactionExecutionError | null;
+  readonly error: TransactionWorkflowError | null;
   readonly isDone: boolean;
   readonly isRunning: boolean;
   readonly phase: BorrowExecutionPhase;
-  readonly result: AsyncResult.AsyncResult<
-    BorrowExecutionMachineState,
-    unknown
-  >;
+  readonly result: AsyncResult.AsyncResult<TransactionWorkflowState, unknown>;
   readonly retry: () => void;
-  readonly steps: ReadonlyArray<BorrowExecutionStep>;
-  readonly submissions: ReadonlyArray<BorrowSubmittedTransaction>;
+  readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
+  readonly totalSteps: number;
 };
 
-const getExecutionError = (
-  result: AsyncResult.AsyncResult<BorrowExecutionMachineState, unknown>
-) => {
-  if (!AsyncResult.isFailure(result)) {
-    return null;
+const getStateError = (
+  state: TransactionWorkflowState
+): TransactionWorkflowError | null => {
+  switch (state._tag) {
+    case "SignFailed":
+    case "SubmissionFailed":
+    case "ConfirmationFailed":
+    case "AdvanceFailed":
+      return state.error;
+    case "Disabled":
+    case "Signing":
+    case "Submitting":
+    case "Confirming":
+    case "Advancing":
+    case "Completed":
+      return null;
   }
+};
 
-  const error = Cause.findErrorOption(result.cause);
-
-  if (Option.isNone(error)) {
-    return null;
+const getPhase = (state: TransactionWorkflowState): BorrowExecutionPhase => {
+  switch (state._tag) {
+    case "SignFailed":
+    case "Signing":
+      return "signing";
+    case "SubmissionFailed":
+    case "Submitting":
+      return "submitting";
+    case "ConfirmationFailed":
+    case "Confirming":
+      return "confirming";
+    case "AdvanceFailed":
+    case "Advancing":
+      return "advancing";
+    case "Completed":
+      return "completed";
+    case "Disabled":
+      return "disabled";
   }
-
-  return isBorrowTransactionExecutionError(error.value) ? error.value : null;
 };
 
 export const useBorrowExecution = ({
@@ -59,36 +91,45 @@ export const useBorrowExecution = ({
 }: {
   readonly action: Action;
 }): BorrowExecutionState => {
-  const executionAtom = borrowExecutionAtom(
-    new BorrowExecutionKey({
-      action,
-    })
+  const key = new BorrowTransactionWorkflowKey({ action });
+  const atoms = getTransactionWorkflowAtoms(key);
+  useAtomMount(borrowExecutionRefreshAtom(key));
+  const result = useAtomValue(atoms.stateAtom);
+  const dispatch = useAtomSet(atoms.dispatchAtom);
+  const state = Option.getOrElse(AsyncResult.value(result), () =>
+    initializeTransactionWorkflow(key)
   );
-  const result = useAtomValue(executionAtom);
-  const retry = useAtomRefresh(executionAtom);
-  const stateOption = AsyncResult.value(result);
-  const state = Option.isSome(stateOption) ? stateOption.value : null;
-  const error = AsyncResult.isWaiting(result)
-    ? null
-    : getExecutionError(result);
-  const phase = error?.phase ?? getBorrowExecutionPhase(state);
-  const isDone = isBorrowExecutionDone(state);
+  const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
+  const current = getCurrentTransactionWorkflowTransaction(state.context);
+  const latestAction =
+    state.context.domain._tag === "Borrow"
+      ? state.context.domain.action
+      : action;
+  const currentTransaction =
+    current?.source._tag === "Borrow" ? current.source.transaction : null;
+  const isDone = state._tag === "Completed";
 
   return {
-    action: getBorrowExecutionAction(state),
-    completionResult: state && isDone ? getBorrowExecutionResult(state) : null,
-    currentTransaction: state?.transactions[state.currentTxIndex] ?? null,
-    currentTransactionIndex: state?.currentTxIndex ?? null,
-    error,
+    action: latestAction,
+    batches: state.context.batches,
+    completionResult: isDone
+      ? { action: latestAction, submissions: state.context.submissions }
+      : null,
+    currentBatchTransactionCount: currentBatch?.transactions.length ?? 0,
+    currentStep: currentBatch?.currentStep ?? latestAction.currentStep,
+    currentTransaction,
+    currentTransactionIndex: state.context.currentTransactionIndex,
+    error: getStateError(state),
     isDone,
-    isRunning: AsyncResult.isWaiting(result) || (!error && !isDone),
-    phase,
+    isRunning:
+      state._tag === "Signing" ||
+      state._tag === "Submitting" ||
+      state._tag === "Confirming" ||
+      state._tag === "Advancing",
+    phase: getPhase(state),
     result,
-    retry,
-    steps: getBorrowExecutionSteps({
-      error,
-      phase,
-    }),
-    submissions: getBorrowExecutionSubmissions(state),
+    retry: () => dispatch({ _tag: "Retry" }),
+    submissions: state.context.submissions,
+    totalSteps: currentBatch?.totalSteps ?? latestAction.totalSteps,
   };
 };

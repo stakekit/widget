@@ -425,23 +425,18 @@
         "unavailable_description": "Return to Borrow and review an action before confirming.",
         "error_title": "Borrow transaction failed",
         "current_transaction": "Transaction {{current}} of {{total}}",
-        "steps": {
-          "create": {
-            "label": "Create action",
-            "description": "Preparing the borrow action."
-          },
-          "sign": {
-            "label": "Approve in wallet",
-            "description": "Review and sign the borrow transaction."
-          },
-          "submit": {
-            "label": "Submit transaction",
-            "description": "Sending the transaction result to the borrow API."
-          },
-          "confirm": {
-            "label": "Confirm transaction",
-            "description": "Waiting for the borrow API to confirm completion."
-          }
+        "action_progress": "Action step {{current}} of {{total}}",
+        "batch_progress": "Step {{current}} of {{total}}",
+        "history_title": "Transaction history",
+        "transaction_complete": "Complete",
+        "view_transaction": "View transaction",
+        "status": {
+          "signing": "Waiting for wallet approval",
+          "submitting": "Submitting transaction",
+          "confirming": "Confirming transaction",
+          "advancing": "Preparing the next action step",
+          "completed": "Action complete",
+          "disabled": "No transactions required"
         }
       },
       "success_page": {

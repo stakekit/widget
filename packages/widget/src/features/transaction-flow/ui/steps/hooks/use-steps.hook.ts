@@ -1,91 +1,30 @@
-import { useAtomSubscribe } from "@effect/atom-react";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { YieldAction } from "../../../../../domain/schema/action-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import type { TransactionType } from "../../../../../domain/types/action";
 
-import type { ActionMeta } from "../../../../../public-api/types";
 import type {
-  StepsMachineState,
-  StepsTransactionState,
-} from "../../../../../services/workflow/steps-machine-model";
+  TransactionWorkflowState,
+  TransactionWorkflowTransactionMeta,
+} from "../../../../../services/workflow/transaction-workflow-model";
+import {
+  flattenTransactionWorkflowTransactions,
+  getCurrentTransactionWorkflowTransaction,
+} from "../../../../../services/workflow/transaction-workflow-model";
 import { useSavedRef } from "../../../../../shared/react/use-saved-ref";
-import type { useProvidersDetails } from "../../../../earn";
 import { useTrackEvent } from "../../../../tracking";
 import type { PageCta } from "../../../../widget-shell";
-import { useStepsMachine } from "./use-steps-machine.hook";
+import { useTransactionWorkflow } from "./use-transaction-workflow.hook";
 
-export const useSteps = ({
-  inputToken,
-  session,
-  onSignSuccess,
-  providersDetails,
-}: {
-  onSignSuccess?: () => void;
-  session: YieldAction;
-  inputToken?: AppToken;
-  providersDetails: ReturnType<typeof useProvidersDetails>;
-}) => {
+export const useSteps = () => {
   const navigate = useNavigate();
-
-  const callbacksRef = useSavedRef({ onSignSuccess });
-
-  const actionMeta = useMemo(
-    (): ActionMeta => ({
-      actionId: session.id,
-      actionType: session.type,
-      address: session.address,
-      amount: session.amount,
-      amountRaw: session.amountRaw,
-      rawArguments: session.rawArguments,
-      yieldId: session.yieldId,
-      inputToken,
-      providersDetails:
-        providersDetails?.map((v) => ({
-          name: v.name,
-          address: v.address,
-          rewardRate: v.rewardRate,
-          rewardType: v.rewardType,
-          website: v.website,
-          logo: v.logo,
-        })) ?? [],
-    }),
-    [session, providersDetails, inputToken]
-  );
 
   const {
     dispatch,
-    eventsAtom,
     state: machineState,
-  } = useStepsMachine({
-    transactions: session.transactions,
-    yieldId: session.yieldId,
-    actionMeta,
-  });
-
-  /**
-   *
-   * @summary Start sign + check tx on mount
-   */
-  useLayoutEffect(() => {
-    dispatch({ _tag: "Start" });
-  }, [dispatch]);
-
-  /**
-   *
-   * @summary Callbacks
-   */
-  useAtomSubscribe(eventsAtom, (result) => {
-    if (
-      AsyncResult.isSuccess(result) &&
-      result.value._tag === "StepsSignSucceeded"
-    ) {
-      callbacksRef.current.onSignSuccess?.();
-    }
-  });
+    workflowKey,
+  } = useTransactionWorkflow();
 
   /**
    *
@@ -95,8 +34,12 @@ export const useSteps = ({
     if (machineState._tag === "Completed") {
       navigate("../complete", {
         state: {
-          urls: machineState.context.txStates
-            .map((val) => ({ type: val.tx.type, url: val.meta.url }))
+          urls: flattenTransactionWorkflowTransactions(machineState.context)
+            .filter((transaction) => transaction.source._tag === "Classic")
+            .map((transaction) => ({
+              type: transaction.source.transaction.type,
+              url: transaction.meta.url,
+            }))
             .filter(
               (val): val is { type: TransactionType; url: string } => !!val.url
             ),
@@ -105,7 +48,7 @@ export const useSteps = ({
         replace: true,
       });
     }
-  }, [navigate, machineState.context.txStates, machineState._tag]);
+  }, [navigate, machineState.context, machineState._tag]);
 
   const trackEvent = useTrackEvent();
 
@@ -115,50 +58,55 @@ export const useSteps = ({
   };
 
   const retry = (() => {
-    if (machineState._tag === "SignFailed") {
-      return () => dispatch({ _tag: "RetrySign" });
-    }
-
-    if (machineState._tag === "SubmissionFailed") {
-      return () => dispatch({ _tag: "RetrySubmission" });
-    }
-
-    if (machineState._tag === "ConfirmationFailed") {
-      return () => dispatch({ _tag: "RetryConfirmation" });
+    if (
+      machineState._tag === "SignFailed" ||
+      machineState._tag === "SubmissionFailed" ||
+      machineState._tag === "ConfirmationFailed" ||
+      machineState._tag === "AdvanceFailed"
+    ) {
+      return () => dispatch({ _tag: "Retry" });
     }
   })();
 
+  const workflowTransactions = flattenTransactionWorkflowTransactions(
+    machineState.context
+  );
+  const currentTransaction = getCurrentTransactionWorkflowTransaction(
+    machineState.context
+  );
   const txStates = useMemo(
     () =>
-      machineState.context.txStates.map((val) => ({
-        ...val,
-        state: getState({
-          txState: val,
-          machineState,
-          currentTxId:
-            machineState.context.currentTxIndex === null
-              ? null
-              : (machineState.context.txStates[
-                  machineState.context.currentTxIndex
-                ]?.tx.id ?? null),
-        }),
-      })),
-    [machineState, machineState.context.txStates]
+      workflowTransactions.flatMap((transaction) => {
+        if (transaction.source._tag !== "Classic") return [];
+
+        const txState: ClassicTransactionState = {
+          meta: transaction.meta,
+          tx: transaction.source.transaction,
+        };
+
+        return [
+          {
+            ...txState,
+            state: getState({
+              txState,
+              machineState,
+              currentTxId: currentTransaction?.source.transaction.id ?? null,
+            }),
+          },
+        ];
+      }),
+    [currentTransaction, machineState, workflowTransactions]
   );
 
   const customSignErrorMessage = useMemo(() => {
-    const error =
-      machineState.context.currentTxIndex === null
-        ? null
-        : (machineState.context.txStates[machineState.context.currentTxIndex]
-            ?.meta.signError ?? null);
+    const error = currentTransaction?.meta.signError ?? null;
 
     if (!error || !("customMessage" in error)) return null;
 
     return typeof error.customMessage === "string" && error.customMessage
       ? error.customMessage
       : null;
-  }, [machineState.context.currentTxIndex, machineState.context.txStates]);
+  }, [currentTransaction]);
 
   const { t } = useTranslation();
 
@@ -183,6 +131,7 @@ export const useSteps = ({
     txStates,
     cta,
     customSignErrorMessage,
+    yieldId: workflowKey.yieldId,
   };
 };
 
@@ -208,8 +157,8 @@ const getState = ({
   machineState,
   txState,
 }: {
-  txState: StepsTransactionState;
-  machineState: StepsMachineState;
+  txState: ClassicTransactionState;
+  machineState: TransactionWorkflowState;
   currentTxId: string | null;
 }) => {
   const isActive = currentTxId === null ? false : currentTxId === txState.tx.id;
@@ -219,7 +168,6 @@ const getState = ({
     if (!isActive) return TxStateEnum.SIGN_IDLE;
 
     switch (machineState._tag) {
-      case "Idle":
       case "Signing":
         return TxStateEnum.SIGN_LOADING;
       case "SignFailed":
@@ -232,6 +180,10 @@ const getState = ({
         return TxStateEnum.CHECK_TX_STATUS_ERROR;
       case "Confirming":
         return TxStateEnum.CHECK_TX_STATUS_LOADING;
+      case "Advancing":
+        return TxStateEnum.CHECK_TX_STATUS_LOADING;
+      case "AdvanceFailed":
+        return TxStateEnum.CHECK_TX_STATUS_ERROR;
       case "Completed":
         return TxStateEnum.CHECK_TX_STATUS_SUCCESS;
       case "Disabled":
@@ -240,4 +192,9 @@ const getState = ({
   })();
 
   return state;
+};
+
+type ClassicTransactionState = {
+  readonly meta: TransactionWorkflowTransactionMeta;
+  readonly tx: YieldAction["transactions"][number];
 };

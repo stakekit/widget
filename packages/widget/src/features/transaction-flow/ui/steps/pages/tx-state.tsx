@@ -28,10 +28,10 @@ type Props = {
   txState: ReturnType<typeof useSteps>["txStates"][number];
   position: "SINGLE" | "FIRST" | "LAST" | "ELSE";
   count: { current: number; total: number };
-  session: YieldAction;
+  yieldId: YieldAction["yieldId"];
 };
 
-export const TxState = ({ txState, position, count, session }: Props) => {
+export const TxState = ({ txState, position, count, yieldId }: Props) => {
   const { t } = useTranslation();
 
   const canCollapse =
@@ -65,7 +65,7 @@ export const TxState = ({ txState, position, count, session }: Props) => {
               type: t(
                 `steps.tx_type.${txState.tx.type}` as never,
                 {
-                  context: isEthenaUsdeStaking(session.yieldId)
+                  context: isEthenaUsdeStaking(yieldId)
                     ? "ETHENA_USDE"
                     : undefined,
                 } as never

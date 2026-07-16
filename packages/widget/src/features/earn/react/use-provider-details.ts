@@ -87,6 +87,46 @@ const getProviderDetails = ({
   };
 };
 
+export const getProvidersDetails = ({
+  integrationData,
+  validators,
+  yields,
+  selectedProviderYieldId,
+}: {
+  readonly integrationData: EarnYieldWithProvider | null;
+  readonly selectedProviderYieldId: YieldId | null;
+  readonly validators:
+    | Map<ValidatorKey, EarnValidator>
+    | ReadonlyArray<EarnValidator>
+    | null;
+  readonly yields: ReadonlyArray<EarnYieldWithProvider> | null;
+}): ProviderDetails[] | null => {
+  if (!validators) return null;
+
+  const values =
+    validators instanceof Map ? [...validators.values()] : validators;
+  const details = values.map((validator) =>
+    getProviderDetails({
+      integrationData,
+      validator,
+      yields,
+      selectedProviderYieldId,
+    })
+  );
+
+  if (details.some((detail) => detail === null)) return null;
+  if (details.length > 0) return details as ProviderDetails[];
+
+  const fallback = getProviderDetails({
+    integrationData,
+    validator: null,
+    yields,
+    selectedProviderYieldId,
+  });
+
+  return fallback ? [fallback] : null;
+};
+
 export const useProvidersDetails = ({
   integrationData,
   validators,
@@ -113,28 +153,10 @@ export const useProvidersDetails = ({
     () => null
   );
 
-  if (!validators) return null;
-
-  const values =
-    validators instanceof Map ? [...validators.values()] : validators;
-  const details = values.map((validator) =>
-    getProviderDetails({
-      integrationData,
-      validator,
-      yields,
-      selectedProviderYieldId,
-    })
-  );
-
-  if (details.some((detail) => detail === null)) return null;
-  if (details.length > 0) return details as ProviderDetails[];
-
-  const fallback = getProviderDetails({
+  return getProvidersDetails({
     integrationData,
-    validator: null,
+    validators,
     yields,
     selectedProviderYieldId,
   });
-
-  return fallback ? [fallback] : null;
 };

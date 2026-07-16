@@ -8,37 +8,14 @@ import { AnimationPage } from "../../../features/widget-shell";
 import { Box } from "../../../shared/ui/primitives/box";
 import { Button } from "../../../shared/ui/primitives/button";
 import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
-import { CheckCircleIcon } from "../../../shared/ui/primitives/icons/check-circle";
-import { XIcon } from "../../../shared/ui/primitives/icons/x-icon";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { PageContainer, PageCtaButton } from "../../widget-shell";
-import { type BorrowExecutionStepStatus, borrowActionFormAtom } from "../core";
+import { borrowActionFormAtom } from "../core";
 import { getBorrowFlowRoutes } from "./flow-routes";
 import { type BorrowStepsState, isBorrowStepsState } from "./review-state";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
-
-const StepIcon = ({
-  status,
-}: {
-  readonly status: BorrowExecutionStepStatus;
-}) =>
-  status === "active" ? (
-    <Spinner />
-  ) : status === "completed" ? (
-    <CheckCircleIcon height={20} width={20} />
-  ) : status === "failed" ? (
-    <XIcon color="textDanger" />
-  ) : (
-    <Box
-      borderColor="textMuted"
-      borderRadius="half"
-      borderStyle="solid"
-      borderWidth={1}
-      hw="5"
-    />
-  );
 
 export const BorrowStepsPage = () => {
   useTrackPage("borrowSteps");
@@ -97,7 +74,6 @@ const BorrowStepsContent = ({
   const { marketId } = useParams();
   const { basePath, completePath } = getBorrowFlowRoutes(marketId);
   const execution = useBorrowExecution({ action: executionState.action });
-  const totalTransactions = execution.action?.transactions.length ?? 0;
   const transactionPosition =
     execution.currentTransactionIndex == null
       ? null
@@ -153,36 +129,18 @@ const BorrowStepsContent = ({
             px="4"
             py="4"
           >
-            {execution.steps.map((step) => (
-              <Box
-                key={step.id}
-                alignItems="center"
-                className={styles.executionStep}
-                display="flex"
-                gap="3"
-              >
-                <Box
-                  alignItems="center"
-                  display="flex"
-                  hw="8"
-                  justifyContent="center"
-                >
-                  <StepIcon status={step.status} />
-                </Box>
-                <Box display="flex" flexDirection="column" gap="1">
-                  <Text>
-                    {t(
-                      `dashboard.borrow.execution_page.steps.${step.id}.label`
-                    )}
-                  </Text>
-                  <Text variant={{ type: "muted", weight: "normal" }}>
-                    {t(
-                      `dashboard.borrow.execution_page.steps.${step.id}.description`
-                    )}
-                  </Text>
-                </Box>
-              </Box>
-            ))}
+            <Text variant={{ weight: "bold" }}>
+              {t("dashboard.borrow.execution_page.action_progress", {
+                current: execution.currentStep,
+                total: execution.totalSteps,
+              })}
+            </Text>
+            <Box alignItems="center" display="flex" gap="3">
+              {execution.isRunning ? <Spinner /> : null}
+              <Text variant={{ type: "muted", weight: "normal" }}>
+                {t(`dashboard.borrow.execution_page.status.${execution.phase}`)}
+              </Text>
+            </Box>
           </Box>
 
           {execution.error && (
@@ -204,7 +162,7 @@ const BorrowStepsContent = ({
                   <Text variant={{ weight: "bold" }}>
                     {t("dashboard.borrow.execution_page.current_transaction", {
                       current: transactionPosition,
-                      total: totalTransactions,
+                      total: execution.currentBatchTransactionCount,
                     })}
                   </Text>
                   <Text variant={{ type: "muted", weight: "normal" }}>
@@ -214,26 +172,82 @@ const BorrowStepsContent = ({
                   </Text>
                 </>
               ) : null}
-
-              {execution.submissions.map((submission) =>
-                submission.link ? (
-                  <Box
-                    as="button"
-                    background="transparent"
-                    data-rk="borrow-steps-transaction-link"
-                    key={submission.transaction.id}
-                    onClick={() => window.open(submission.link, "_blank")}
-                    style={{ border: 0 }}
-                    type="button"
-                  >
-                    <Text variant={{ type: "muted" }}>
-                      {t("dashboard.borrow.success_page.view_transaction")}
-                    </Text>
-                  </Box>
-                ) : null
-              )}
             </Box>
           )}
+
+          {execution.batches.length > 0 ? (
+            <Box
+              className={styles.formCard}
+              display="flex"
+              flexDirection="column"
+              gap="3"
+            >
+              <Text variant={{ weight: "bold" }}>
+                {t("dashboard.borrow.execution_page.history_title")}
+              </Text>
+              {execution.batches.map((batch) => (
+                <Box
+                  data-rk="borrow-steps-batch"
+                  display="flex"
+                  flexDirection="column"
+                  gap="2"
+                  key={batch.id}
+                >
+                  <Text variant={{ type: "muted", weight: "normal" }}>
+                    {t("dashboard.borrow.execution_page.batch_progress", {
+                      current: batch.currentStep,
+                      total: batch.totalSteps,
+                    })}
+                  </Text>
+                  {batch.transactions.map((transaction) => {
+                    const submission =
+                      transaction.meta.submissionIndex === null
+                        ? null
+                        : execution.submissions[
+                            transaction.meta.submissionIndex
+                          ];
+
+                    return (
+                      <Box
+                        alignItems="center"
+                        display="flex"
+                        justifyContent="space-between"
+                        key={transaction.source.transaction.id}
+                      >
+                        <Text variant={{ type: "muted", weight: "normal" }}>
+                          {transaction.source.transaction.type}
+                          {" · "}
+                          {transaction.meta.done
+                            ? t(
+                                "dashboard.borrow.execution_page.transaction_complete"
+                              )
+                            : transaction.source.transaction.status}
+                        </Text>
+                        {submission?.link ? (
+                          <Box
+                            as="button"
+                            background="transparent"
+                            data-rk="borrow-steps-transaction-link"
+                            onClick={() =>
+                              window.open(submission.link ?? "", "_blank")
+                            }
+                            style={{ border: 0 }}
+                            type="button"
+                          >
+                            <Text variant={{ type: "muted" }}>
+                              {t(
+                                "dashboard.borrow.execution_page.view_transaction"
+                              )}
+                            </Text>
+                          </Box>
+                        ) : null}
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ))}
+            </Box>
+          ) : null}
 
           {execution.error && (
             <Button

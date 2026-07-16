@@ -9,15 +9,11 @@ import {
   BorrowAccountPosition,
   BorrowAtomError,
   BorrowDashboardKey,
-  BorrowExecutionEventsService,
   type BorrowFormIntent,
   BorrowPositionsKey,
-  BorrowSubmitFailedError,
-  BorrowWalletExecutionService,
   borrowIntegrationsAtom,
   borrowPositionsAtom,
   deriveBorrowPositionItems,
-  getBorrowExecutionSteps,
   Integration,
   Market,
   resolveBorrowDashboardView,
@@ -115,11 +111,7 @@ const makeRegistry = (borrow: Record<string, unknown>) =>
     initialValues: [
       Atom.initialValue(
         appRuntime.layer,
-        Layer.mergeAll(
-          Layer.succeed(BorrowApiService, borrow as never),
-          Layer.succeed(BorrowWalletExecutionService, {} as never),
-          Layer.succeed(BorrowExecutionEventsService, {} as never)
-        )
+        Layer.mergeAll(Layer.succeed(BorrowApiService, borrow as never))
       ),
     ],
   });
@@ -303,27 +295,5 @@ describe("borrow atoms", () => {
     expect(view.projection.projectedDebtUsd.toString(10)).toBe("900");
     expect(view.projection.projectedLtv).toBe(0.9);
     expect(view.validation.ltvGreaterThanMax).toBe(true);
-  });
-
-  it("projects execution retry and failure step state", () => {
-    expect(
-      getBorrowExecutionSteps({
-        error: null,
-        phase: "signing",
-      }).map((step) => step.status)
-    ).toEqual(["completed", "active", "pending", "pending"]);
-
-    const error = new BorrowSubmitFailedError({
-      cause: new Error("wallet rejected"),
-      message: "Borrow action failed.",
-      phase: "submitting",
-    });
-
-    expect(
-      getBorrowExecutionSteps({
-        error,
-        phase: "submitting",
-      }).map((step) => step.status)
-    ).toEqual(["completed", "completed", "failed", "pending"]);
   });
 });

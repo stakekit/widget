@@ -1,14 +1,24 @@
 # Effect Stream Patterns
 
-Use this when writing project code that models incremental, pull-based data with
-Effect `Stream`. The source of truth reviewed for these patterns is the vendored
-Effect repo: `@repos/effect/LLMS.md`,
-`@repos/effect/ai-docs/src/02_stream/*`, and
-`@repos/effect/packages/effect/src/Stream.ts`.
+Use this guide when data is incremental, pull-based, potentially large, or
+open-ended: polling, pagination, events, queues, byte streams, concurrent
+pipelines, and resource-backed producers.
+
+The source of truth is the vendored Effect repository, especially:
+
+- `@repos/effect/packages/effect/src/Stream.ts`
+- `@repos/effect/ai-docs/src/02_stream`
+- `@repos/effect/packages/effect/test/Stream.test.ts`
+- platform adapters such as
+  `@repos/effect/packages/platform-node-shared/src/NodeStream.ts`
+
+Read `effect-http-client.md` as well for HTTP response or request bodies, and
+`effect-atoms.md` when a stream backs an atom.
 
 ## Imports
 
-Prefer the stable `effect` barrel unless nearby code imports individual modules.
+Prefer the stable `effect` barrel unless nearby code uses module imports.
+Testing utilities have a separate entry point.
 
 ```ts
 import {
@@ -19,52 +29,54 @@ import {
   Queue,
   Schedule,
   Sink,
-  Stream,
-  TestClock
+  Stream
 } from "effect"
+import { TestClock } from "effect/testing"
 ```
 
-For Node.js readable streams, use the platform adapter in Node-only code.
+For Node.js readable streams, use the platform adapter only in Node-specific
+code.
 
 ```ts
 import { NodeStream } from "@effect/platform-node"
 ```
 
-## Streams Are Lazy Descriptions
+## Mental Model
 
-A `Stream.Stream<A, E, R>` describes a sequence that can emit zero or more `A`
-values, fail with `E`, and require services from `R`. It does not run until it
-is consumed with `Stream.run*`, `Stream.run`, `Stream.toQueue`,
-`Stream.toReadableStream*`, or a similar destructor.
+`Stream.Stream<A, E, R>` is a lazy description that can emit zero or more `A`
+values, fail with `E`, and require services `R`. It does not start until a
+destructor consumes it.
 
 ```ts
-const stream = Stream.fromEffect(loadConfig)
-
-const program = stream.pipe(
-  Stream.map((config) => config.region),
-  Stream.runCollect
+const regions = Stream.fromEffect(loadConfig).pipe(
+  Stream.map((config) => config.region)
 )
+
+const program = regions.pipe(Stream.runCollect)
 ```
 
-Reusing the same stream value reruns the description for each consumer. If
-several consumers must observe one running producer, use `Stream.share`,
-`Stream.broadcast`, `Stream.broadcastN`, a `Queue`, or a `PubSub`.
+Running `program` twice runs the stream description twice. Reusing a stream
+value does not memoize or share a producer. Sharing requires an explicit scoped
+combinator such as `share`, `broadcast`, or `broadcastN`.
 
-## Choose The Smallest Constructor
+## Choose The Smallest Source
 
-Use the constructor that matches the source shape.
+| Source shape | Constructor |
+| --- | --- |
+| In-memory values | `empty`, `succeed`, `make`, `fromIterable` |
+| One effectful value | `fromEffect` |
+| Effect repeated on a schedule | `fromEffectSchedule` |
+| Cursor/page API | `paginate` |
+| Existing async iterable | `fromAsyncIterable` |
+| DOM/EventTarget events | `fromEventListener` |
+| General callback API | `callback` |
+| Effect queue or pubsub | `fromQueue`, `fromPubSub` |
+| Web readable stream | `fromReadableStream` |
+| Node readable stream | `NodeStream.fromReadable` |
 
-- `Stream.empty`, `Stream.succeed`, `Stream.make`, `Stream.fromIterable` for
-  in-memory values.
-- `Stream.fromEffect` for one effectful value.
-- `Stream.fromEffectSchedule` for polling an effect over a schedule.
-- `Stream.paginate` for cursor or page APIs.
-- `Stream.fromAsyncIterable` for existing async iterables.
-- `Stream.fromEventListener` for DOM-style event targets.
-- `Stream.callback` for callback APIs that need explicit queue control.
-- `Stream.fromQueue` and `Stream.fromPubSub` for Effect concurrency primitives.
-- `Stream.fromReadableStream` or `NodeStream.fromReadable` for web or Node
-  readable streams.
+Prefer a structure-preserving constructor over mutable state inside
+`Stream.callback`. Pagination should usually be `Stream.paginate`; polling
+should usually be `Stream.fromEffectSchedule`.
 
 ```ts
 const jobs = Stream.paginate(0, (page) =>
@@ -77,42 +89,45 @@ const jobs = Stream.paginate(0, (page) =>
 )
 ```
 
-Prefer `Stream.paginate` over building a mutable loop with `Stream.callback` for
-normal paginated APIs. Prefer `Stream.fromEffectSchedule` over hand-written
-sleep loops for polling.
+`paginate` emits each item from the iterable returned in the first tuple slot
+and continues only while the second slot is `Option.some(nextState)`. Derive the
+next cursor from validated source metadata, not from the number of domain items
+left after filtering or tolerant decoding.
 
-## Consume With Intent
+`fromEffectSchedule` runs the effect immediately, then follows the schedule.
+Bound it with `take` when the resulting stream must be finite.
 
-Every stream pipeline should end in a clear consumer.
+## End Every Pipeline With An Intentional Consumer
+
+Common destructors:
+
+| Need | Destructor |
+| --- | --- |
+| Execute an effect per element | `runForEach` |
+| Ignore values but run effects | `runDrain` |
+| Fold incrementally | `runFold`, `runFoldEffect`, `run(Sink...)` |
+| Read an optional edge | `runHead`, `runLast` |
+| Collect a bounded stream | `runCollect` |
+| Count without retaining values | `runCount` |
+| Concatenate bounded text/bytes | `mkString`, `mkUint8Array` |
 
 ```ts
 const writeEvents = events.pipe(
-  Stream.runForEach((event) => EventStore.use((store) => store.write(event)))
+  Stream.runForEach((event) =>
+    EventStore.use((store) => store.write(event))
+  )
 )
 ```
 
-Use `Stream.runCollect` only for finite streams with bounded output. For large
-or infinite streams, prefer `Stream.runForEach`, `Stream.runFold`,
-`Stream.runFoldEffect`, `Stream.runDrain`, or `Stream.run(Sink...)`.
+Use `runCollect`, `mkString`, and `mkUint8Array` only when output is finite and
+bounded. Apply `take` first when a test or caller needs a bounded prefix.
 
-```ts
-const firstTen = source.pipe(
-  Stream.take(10),
-  Stream.runCollect
-)
+`runHead` can stop after one element. `runLast` must wait for completion and
+therefore never finishes for a healthy infinite stream.
 
-const total = source.pipe(
-  Stream.map((event) => event.value),
-  Stream.run(Sink.sum)
-)
-```
+## Transform Elements, Arrays, And Windows Deliberately
 
-`Stream.runHead` and `Stream.runLast` return `Option`. `runLast` waits for the
-stream to complete, so do not use it on open-ended streams.
-
-## Transform Per Element Or Per Chunk Deliberately
-
-Use element operators for ordinary domain logic.
+Use element operators for domain logic:
 
 ```ts
 const enriched = orders.pipe(
@@ -121,36 +136,49 @@ const enriched = orders.pipe(
 )
 ```
 
-Use chunk-aware operators only when chunk boundaries matter or performance is
-worth the extra complexity: `Stream.mapArray`, `Stream.mapArrayEffect`,
-`Stream.runForEachArray`, `Stream.grouped`, and `Stream.groupedWithin`.
+Use array-aware operators only when source chunking or batching matters:
+
+- `mapArray` and `mapArrayEffect` transform emitted non-empty arrays.
+- `runForEachArray` consumes arrays without flattening first.
+- `grouped(n)` creates size-bounded batches.
+- `groupedWithin(n, duration)` flushes on size or time.
+- `bufferArray` preserves source arrays; `buffer` buffers elements and destroys
+  the original chunking.
 
 ```ts
 const batched = events.pipe(
   Stream.groupedWithin(100, "1 second"),
-  Stream.mapEffect((batch) => EventStore.use((store) => store.writeBatch(batch)))
+  Stream.mapEffect((batch) =>
+    EventStore.use((store) => store.writeBatch(batch))
+  )
 )
 ```
 
-Do not insert `runCollect` in the middle of a pipeline just to batch values.
-Batch with stream operators so backpressure and interruption still work.
+Do not insert `runCollect` in the middle of a pipeline merely to batch values.
+That ends streaming, retains all prior elements, and changes interruption and
+backpressure behavior.
 
-## Bound Concurrency And Buffers
+## Bound Concurrency And Know Ordering
 
-`Stream.mapEffect`, `Stream.flatMap`, `Stream.mergeAll`, and related operators
-can run work concurrently. Choose a concrete concurrency limit for I/O and only
-use `"unbounded"` when the upstream is already tightly bounded.
+`mapEffect` defaults to sequential execution. With concurrent execution it
+preserves input order unless `{ unordered: true }` is set.
 
 ```ts
 const results = ids.pipe(
-  Stream.mapEffect((id) => RemoteApi.use((api) => api.fetch(id)), {
-    concurrency: 8
-  })
+  Stream.mapEffect(
+    (id) => RemoteApi.use((api) => api.fetch(id)),
+    { concurrency: 8 }
+  )
 )
 ```
 
-Set `unordered: true` only when output order does not matter. Concurrent
-`Stream.mergeAll` emits values as they arrive.
+Use `unordered: true` only when output order is irrelevant and head-of-line
+blocking is undesirable.
+
+`flatMap` has different semantics: with concurrency greater than one, inner
+streams are merged and their values arrive in runtime order. It has no ordered
+concurrent mode. `mergeAll` likewise emits from whichever active stream
+produces first.
 
 ```ts
 const merged = Stream.mergeAll(streams, {
@@ -159,21 +187,43 @@ const merged = Stream.mergeAll(streams, {
 })
 ```
 
-When creating queues, pubsubs, callbacks, broadcasts, or shared streams, avoid
-unbounded capacity by default. Pick a bounded `capacity` and a strategy:
+Choose a concrete I/O concurrency limit. Use `"unbounded"` only when upstream
+cardinality is already tightly bounded and reviewed.
 
-- `suspend` applies backpressure.
-- `sliding` keeps newer values and drops older buffered values.
-- `dropping` keeps older buffered values and drops newer values.
+When processing stateful updates, ask whether concurrent work is valid at all.
+Ordered output does not prevent effects themselves from running concurrently.
 
-## Manage Scope And Cleanup
+## Treat Buffers As A Correctness Choice
 
-Streams run resources for the duration of consumption. Use `Stream.scoped` when
-the stream requires `Scope`, and use `Stream.ensuring` or
-`Effect.acquireRelease` inside constructors to register finalizers.
+Bound queues, callbacks, pubsubs, shared streams, and explicit buffers by
+default. Choose the overflow strategy from the product semantics:
+
+- `"suspend"` applies backpressure and retains every value.
+- `"sliding"` drops older buffered values and keeps recent state.
+- `"dropping"` keeps older buffered values and drops new arrivals.
 
 ```ts
-const resourceStream = Stream.scoped(
+const buffered = source.pipe(
+  Stream.buffer({ capacity: 32, strategy: "suspend" })
+)
+```
+
+Backpressure works only when the producer can await an effectful offer. An
+external synchronous callback cannot pause for `Queue.offer`; with bounded
+callback sources, dropped/coalesced values must be acceptable or the external
+API must provide its own pause/resume mechanism.
+
+Capacity is measured in elements for `buffer` and `toQueue`, but in emitted
+arrays for `bufferArray` and broadcast internals. Do not treat every
+`bufferSize` as the same unit without checking the signature and source.
+
+## Manage Scope And Finalization
+
+Streams hold acquired resources for the duration of one consumption. Use
+`Stream.scoped` to internalize a `Scope` requirement.
+
+```ts
+const connectionStream = Stream.scoped(
   Stream.fromEffect(
     Effect.acquireRelease(
       Connection.open,
@@ -183,9 +233,104 @@ const resourceStream = Stream.scoped(
 )
 ```
 
-`Stream.broadcast`, `Stream.broadcastN`, `Stream.share`, `Stream.toQueue`, and
-`Stream.toPubSub` return scoped effects. Acquire them inside `Effect.scoped` or
-inside a layer so the producer and subscribers are finalized.
+Use `Stream.ensuring` for a finalizer that should run after every consumption,
+regardless of success, failure, or interruption. Use `Effect.acquireRelease`
+when cleanup belongs to an acquired handle.
+
+Scoped destructors and sharing operations include:
+
+- `Stream.toPull`
+- `Stream.toQueue` and `Stream.toPubSub*`
+- `Stream.broadcast`, `broadcastN`, and `share`
+
+Acquire them inside `Effect.scoped` or a layer. Closing the scope must stop the
+producer and release queues, subscriptions, and external handles.
+
+Web readable streams are canceled by default when their Effect stream
+finalizes. `NodeStream.fromReadable` can close Node streams on completion. Keep
+those defaults unless ownership belongs elsewhere.
+
+## Bridge Callback APIs Safely
+
+Use `fromEventListener` for EventTarget-like APIs. It removes the listener when
+the stream ends.
+
+```ts
+const clicks = Stream.fromEventListener<PointerEvent>(
+  button,
+  "click",
+  { passive: true, bufferSize: 16 }
+)
+```
+
+`fromEventListener` exposes `bufferSize` but not an overflow strategy. Its
+synchronous listener cannot suspend; when a bounded buffer is full, a new event
+may be rejected. Use `Stream.callback` when sliding or dropping behavior must be
+chosen explicitly.
+
+Use `Stream.callback` when registration, error, completion, or overflow behavior
+needs explicit control.
+
+```ts
+const messages = Stream.callback<Message, SocketError>(
+  (queue) =>
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        const unsubscribeMessage = socket.onMessage((message) => {
+          Queue.offerUnsafe(queue, message)
+        })
+
+        const unsubscribeClose = socket.onClose(() => {
+          Queue.endUnsafe(queue)
+        })
+
+        const unsubscribeError = socket.onError((error) => {
+          Queue.failCauseUnsafe(queue, Cause.fail(error))
+        })
+
+        return {
+          unsubscribeClose,
+          unsubscribeError,
+          unsubscribeMessage
+        }
+      }),
+      (subscriptions) =>
+        Effect.sync(() => {
+          subscriptions.unsubscribeMessage()
+          subscriptions.unsubscribeClose()
+          subscriptions.unsubscribeError()
+        })
+    ),
+  { bufferSize: 64, strategy: "sliding" }
+)
+```
+
+Signal normal completion with `Queue.endUnsafe` and failure with
+`Queue.failCauseUnsafe(queue, Cause.fail(error))`; otherwise consumers can wait
+forever. Register every external cleanup through the supplied scope.
+
+Use effectful `Queue.offer` when producer code is already inside Effect and can
+honor backpressure. Use `offerUnsafe` only at a synchronous callback boundary,
+and choose an overflow policy that remains correct if it cannot enqueue.
+
+## Choose Sharing Semantics Explicitly
+
+Several consumers of a plain stream each run an independent producer. Use the
+sharing primitive that matches subscriber lifetime:
+
+| Need | Primitive |
+| --- | --- |
+| Dynamic, reference-counted subscribers | `Stream.share` |
+| Dynamic subscribers to one scoped pubsub producer | `Stream.broadcast` |
+| Fixed number of consumers that must all subscribe before start | `Stream.broadcastN` |
+| Competing work consumers | `Queue` / `Stream.toQueue` |
+| Every subscriber receives each published event | `PubSub` |
+
+`share` starts upstream for the first subscriber and stops it after the last
+subscriber leaves. A later subscriber restarts the source unless
+`idleTimeToLive` keeps it alive. `replay` controls what a late subscriber can
+receive from the shared pubsub; it does not turn the source into a permanent
+cache.
 
 ```ts
 const program = Effect.scoped(
@@ -194,103 +339,79 @@ const program = Effect.scoped(
       Stream.share({ capacity: 16, replay: 1 })
     )
 
-    yield* shared.pipe(Stream.take(1), Stream.runCollect)
+    yield* Effect.all([
+      shared.pipe(Stream.runForEach(handleForLeftConsumer)),
+      shared.pipe(Stream.runForEach(handleForRightConsumer))
+    ], { concurrency: "unbounded" })
   })
 )
 ```
 
-When bridging to web or async protocols, make sure cancellation closes the
-underlying handle. `Stream.fromReadableStream` cancels the reader by default.
-`NodeStream.fromReadable` can close Node streams when done.
+`broadcastN` is safer when exactly N consumers must observe a finite source: it
+does not start until all N returned streams are subscribed. For dynamic
+`broadcast` subscribers, use replay or an external readiness protocol if early
+values cannot be missed.
 
-## Bridge Callback APIs Safely
+## Use Queues And PubSubs At Ownership Boundaries
 
-Use `Stream.fromEventListener` for event targets when it fits. It registers and
-removes the listener for the stream lifetime.
-
-```ts
-const clicks = Stream.fromEventListener<PointerEvent>(button, "click", {
-  passive: true,
-  bufferSize: 16
-})
-```
-
-Use `Stream.callback` for custom callback APIs. Register cleanup with
-`Effect.acquireRelease`, and signal completion with the queue API instead of
-leaving consumers waiting forever.
-
-```ts
-const messages = Stream.callback<Message, SocketError>((queue) =>
-  Effect.acquireRelease(
-    Effect.sync(() => {
-      const unsubscribeMessage = socket.onMessage((message) => {
-        Queue.offerUnsafe(queue, message)
-      })
-
-      const unsubscribeClose = socket.onClose(() => {
-        Queue.endUnsafe(queue)
-      })
-
-      return { unsubscribeClose, unsubscribeMessage }
-    }),
-    ({ unsubscribeClose, unsubscribeMessage }) =>
-      Effect.sync(() => {
-        unsubscribeMessage()
-        unsubscribeClose()
-      })
-  ),
-  { bufferSize: 64, strategy: "sliding" }
-)
-```
-
-Prefer effectful `Queue.offer` when producer code is already inside Effect and
-can honor backpressure. Use `Queue.offerUnsafe` only from external synchronous
-callbacks where an Effect cannot be yielded.
-
-## Use Queues And PubSubs For Boundaries
-
-Use `Queue` when one producer coordinates with one or more competing consumers
-that pull work. `Stream.toQueue` creates a scoped dequeue and signals completion
-with `Cause.Done`; stream failures fail the queue.
+`Stream.toQueue` creates a scoped dequeue, feeds it in a child fiber, ends it
+with `Cause.Done`, and fails it with the stream failure.
 
 ```ts
 const program = Effect.scoped(
   Effect.gen(function*() {
-    const queue = yield* source.pipe(Stream.toQueue({ capacity: 32 }))
-    const next = yield* Queue.take(queue)
-    return next
+    const queue = yield* source.pipe(
+      Stream.toQueue({ capacity: 32 })
+    )
+
+    return yield* Queue.take(queue)
   })
 )
 ```
 
-Use `PubSub` when each subscriber should receive published events. Use
-`Stream.fromPubSub` or `Stream.broadcast` instead of manually copying events
-into several queues.
+Multiple queue consumers compete for values. Use a PubSub when every subscriber
+needs a copy. `Stream.fromQueue` treats `Cause.Done` as normal stream completion;
+other queue failures become stream failures.
 
-## Provide Services At The Stream Boundary
+Prefer `Stream.broadcast` or `Stream.fromPubSub` over manually copying each
+event into multiple queues.
 
-Service requirements flow through stream types the same way they flow through
-`Effect`. Provide a layer to the stream or provide a larger program that runs
-the stream.
+## Keep Service Requirements Until The Boundary
+
+Stream service requirements compose like Effect requirements. Provide the
+smallest layer at a stable application or test boundary.
 
 ```ts
-const stream = Stream.fromEffect(
+const users = Stream.fromEffect(
   UserApi.use((api) => api.listUsers())
 ).pipe(
-  Stream.flatMap(Stream.fromIterable),
-  Stream.provide(UserApi.layer)
+  Stream.flatMap(Stream.fromIterable)
+)
+
+const program = users.pipe(
+  Stream.runForEach(renderUser),
+  Effect.provide(UserApi.layer)
 )
 ```
 
-When converting to web APIs outside Effect, use the service-aware variants:
-`Stream.toReadableStreamEffect`, `Stream.toReadableStreamWith`,
-`Stream.toAsyncIterableEffect`, or `Stream.toAsyncIterableWith`.
+When converting a serviceful stream for non-Effect consumers, capture services
+explicitly with `toReadableStreamEffect`, `toReadableStreamWith`,
+`toAsyncIterableEffect`, or `toAsyncIterableWith`. The plain conversion
+variants work only when the stream requires no services.
 
-## Handle Errors In The Pipeline
+Cancellation of the returned readable stream or async iterator is what closes
+the Effect scope. Consumers that abandon a manual iterator must call `return()`;
+`for await...of` does this when the loop exits normally.
 
-Use stream error combinators when recovery should continue as a stream:
-`Stream.catchTag`, `Stream.catchTags`, `Stream.catchIf`, `Stream.catchCause`,
-`Stream.mapError`, and `Stream.retry`.
+## Recover At The Correct Level
+
+Use stream combinators when recovery should continue as a stream:
+
+- `catchTag`, `catchTags`, and `catchIf` for typed recovery
+- `catchCause` when defects/interruption are deliberately part of policy
+- `mapError` to translate the stream failure channel
+- `retry` to restart a failed source
+- `result` to expose successes and the first failure as values
 
 ```ts
 const recovered = source.pipe(
@@ -303,15 +424,20 @@ const recovered = source.pipe(
 )
 ```
 
-Use `Effect.catchTag` after a `Stream.run*` call when the whole consumed stream
-should fail or recover as one effect. Use `Stream.result` when downstream code
-needs successes and the first failure as values; the stream still ends after
-that failure.
+Use `Effect.catchTag` after `Stream.run*` when the entire consumption should be
+handled as one effect.
 
-## Decode And Encode Streaming Data
+`Stream.retry` restarts the source description. Values emitted before failure
+can be emitted again after the restart. Retry only when duplicated prefixes and
+reacquiring the source are safe, or add an explicit cursor/checkpoint protocol.
 
-For byte streams, decode text before string operations and split lines with
-`Stream.splitLines` so delimiters spanning chunks are handled correctly.
+`Stream.result` emits success results and then one failure result; it still ends
+after that first failure. It is not a way to resume the failed source.
+
+## Decode Incremental Bytes Incrementally
+
+Decode bytes before string operations, and use `splitLines` so delimiters split
+across source arrays are handled correctly.
 
 ```ts
 const lines = responseBytes.pipe(
@@ -321,8 +447,8 @@ const lines = responseBytes.pipe(
 )
 ```
 
-For NDJSON or Msgpack, use the encoding channels and schema-backed variants
-instead of hand-parsing inside `Stream.map`.
+For NDJSON and Msgpack, use the encoding channels and schema-backed variants
+instead of `JSON.parse` in `Stream.map`.
 
 ```ts
 import { Ndjson } from "effect/unstable/encoding"
@@ -333,36 +459,61 @@ const events = bytes.pipe(
 )
 ```
 
-Use `ignoreEmptyLines: true` for NDJSON inputs that may contain blank lines.
+Use `ignoreEmptyLines: true` only when blank lines are valid transport noise.
+Schema decoding should remain at the trust boundary so malformed input has a
+typed failure path.
 
-## Testing Patterns
+## Testing
 
-Use `it.effect` and consume the stream in the test. Bound infinite streams with
-`Stream.take`, and use `TestClock` for schedules, debounce, throttle, retries,
-or `groupedWithin`.
+A stream test must consume the stream. Bound infinite streams with `take` and
+test finalization as well as output.
 
 ```ts
-import { strictEqual } from "node:assert"
-import { Effect, Fiber, Schedule, Stream, TestClock } from "effect"
+import { Effect, Fiber, Schedule, Stream } from "effect"
+import { TestClock } from "effect/testing"
+import { expect, it } from "vitest"
 
-it.effect("polls three times", () =>
-  Effect.gen(function*() {
-    const fiber = yield* Stream.fromEffectSchedule(
-      Effect.succeed("tick"),
-      Schedule.spaced("1 second")
-    ).pipe(
-      Stream.take(3),
-      Stream.runCollect,
-      Effect.fork
-    )
+it("polls three times", async () => {
+  const values = await Effect.runPromise(
+    Effect.gen(function*() {
+      const fiber = yield* Stream.fromEffectSchedule(
+        Effect.succeed("tick"),
+        Schedule.spaced("1 second")
+      ).pipe(
+        Stream.take(3),
+        Stream.runCollect,
+        Effect.forkChild({ startImmediately: true })
+      )
 
-    yield* TestClock.adjust("2 seconds")
+      yield* TestClock.adjust("2 seconds")
 
-    const values = yield* Fiber.join(fiber)
-    strictEqual(values.length, 3)
-  }))
+      return yield* Fiber.join(fiber)
+    }).pipe(Effect.provide(TestClock.layer()))
+  )
+
+  expect(values).toEqual(["tick", "tick", "tick"])
+})
 ```
 
-For queue and callback streams, assert finalization as well as emitted values.
-Fork consumers before publishing when the source is live, then interrupt or close
-the scope to verify cleanup.
+For callback, queue, readable-stream, and sharing tests:
+
+- start live consumers before publishing
+- assert overflow behavior with a deliberately slow consumer
+- close or interrupt the scope and assert external cleanup
+- test normal completion and source failure
+- use `TestClock` for schedules, debounce, throttle, retry, and time windows
+
+Avoid real sleeps. A time-controlled test may need a start-immediate fork so the
+stream reaches its scheduled suspension before the clock advances.
+
+## Review Checklist
+
+- The source constructor matches the real source shape.
+- Every collection is proven finite and bounded.
+- Concurrency and output ordering are both intentional.
+- Buffer capacity and overflow strategy match loss/backpressure requirements.
+- Every acquired handle and shared producer has a scoped finalizer.
+- Callback sources signal end/failure and tolerate unsafe-offer overflow.
+- Sharing semantics match dynamic, fixed, competing, or fan-out consumers.
+- Retry cannot duplicate unsafe work or already emitted values.
+- Tests consume the stream and cover time, failure, and cleanup behavior.

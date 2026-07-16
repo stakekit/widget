@@ -1,4 +1,10 @@
-import type { Action, ActionRequest, BorrowExecutionResult } from "../core";
+import type { TransactionWorkflowSubmission } from "../../../services/workflow/transaction-workflow-model";
+import type { Action, ActionRequest } from "../core";
+
+type BorrowExecutionResult = {
+  readonly action: Action;
+  readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
+};
 
 export type BorrowReviewState = {
   readonly request: ActionRequest;

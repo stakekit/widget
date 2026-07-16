@@ -1,5 +1,6 @@
 import { Context, Effect, Layer, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
+import { version as widgetVersion } from "../../package.json";
 import { useGeoBlock } from "../../src/features/preferences";
 import {
   BorrowApiService,
@@ -90,6 +91,11 @@ describe("Effect API client", () => {
     ]);
     expect(
       calls.every((call) => call.headers.get("X-API-KEY") === "test-key")
+    ).toBe(true);
+    expect(
+      calls.every(
+        (call) => call.headers.get("X-Yield-Widget-Version") === widgetVersion
+      )
     ).toBe(true);
   });
 

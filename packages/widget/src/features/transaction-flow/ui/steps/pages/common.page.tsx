@@ -1,13 +1,10 @@
 import { motion } from "motion/react";
 import { useTranslation } from "react-i18next";
 import { useWidgetConfig } from "../../../../../app/config";
-import type { YieldAction } from "../../../../../domain/schema/action-models";
-import type { AppToken } from "../../../../../domain/schema/legacy-models";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Button } from "../../../../../shared/ui/primitives/button";
 import { Heading } from "../../../../../shared/ui/primitives/typography/heading";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import type { useProvidersDetails } from "../../../../earn";
 import {
   AnimationPage,
   PageContainer,
@@ -17,28 +14,11 @@ import { useSteps } from "../hooks/use-steps.hook";
 import { stepsErrorBanner, utilaPendingApprovalsBanner } from "./styles.css";
 import { TxState } from "./tx-state";
 
-type StepsPageProps = {
-  session: YieldAction;
-  inputToken?: AppToken;
-  onSignSuccess?: () => void;
-  providersDetails: ReturnType<typeof useProvidersDetails>;
-};
-
-export const StepsPage = ({
-  session,
-  inputToken,
-  onSignSuccess,
-  providersDetails,
-}: StepsPageProps) => {
+export const StepsPage = () => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const variant = useWidgetConfig("variant");
 
-  const { retry, txStates, cta, customSignErrorMessage } = useSteps({
-    inputToken,
-    session,
-    onSignSuccess,
-    providersDetails,
-  });
+  const { retry, txStates, cta, customSignErrorMessage, yieldId } = useSteps();
 
   const { t } = useTranslation();
   const showUtilaPendingApprovals = variant === "utila";
@@ -96,7 +76,7 @@ export const StepsPage = ({
                   txState={txState}
                   position={getPosition(txStates.length, i)}
                   count={{ current: i + 1, total: txStates.length }}
-                  session={session}
+                  yieldId={yieldId}
                 />
               ))}
             </Box>

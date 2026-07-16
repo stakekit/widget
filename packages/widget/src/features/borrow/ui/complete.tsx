@@ -143,8 +143,10 @@ export const BorrowCompletePage = () => {
                     data-rk="borrow-complete-transaction-link"
                     display="flex"
                     justifyContent="center"
-                    key={submission.transaction.id}
-                    onClick={() => window.open(submission.link, "_blank")}
+                    key={`${submission.batchId}-${submission.transactionId}`}
+                    onClick={() =>
+                      window.open(submission.link ?? undefined, "_blank")
+                    }
                   >
                     <Text variant={{ type: "muted" }}>
                       {t("dashboard.borrow.success_page.view_transaction")}
