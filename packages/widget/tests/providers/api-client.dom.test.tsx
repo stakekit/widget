@@ -136,29 +136,31 @@ describe("Effect API client", () => {
     const { client, richErrors } = await createTestClient({ baseUrl: apiUrl });
 
     try {
-      await expect(
-        Effect.runPromise(client.legacy.getLegacyTokenOptions())
-      ).rejects.toBeTruthy();
-      await expect
-        .poll(() =>
-          Effect.runPromise(SubscriptionRef.get(richErrors.current)).then(
-            (error) => error?.message
+      await geoBlock.act(async () => {
+        await expect(
+          Effect.runPromise(client.legacy.getLegacyTokenOptions())
+        ).rejects.toBeTruthy();
+        await expect
+          .poll(() =>
+            Effect.runPromise(SubscriptionRef.get(richErrors.current)).then(
+              (error) => error?.message
+            )
           )
-        )
-        .toBe("Rich failure");
+          .toBe("Rich failure");
 
-      response = "geo";
-      await expect(
-        Effect.runPromise(client.legacy.getLegacyTokenOptions())
-      ).rejects.toBeTruthy();
-      await expect
-        .poll(() => {
-          const value = geoBlock.result.current;
-          return value === false ? undefined : value.countryCode;
-        })
-        .toBe("CA");
+        response = "geo";
+        await expect(
+          Effect.runPromise(client.legacy.getLegacyTokenOptions())
+        ).rejects.toBeTruthy();
+        await expect
+          .poll(() => {
+            const value = geoBlock.result.current;
+            return value === false ? undefined : value.countryCode;
+          })
+          .toBe("CA");
+      });
     } finally {
-      await Effect.runPromise(richErrors.reset);
+      await geoBlock.act(() => Effect.runPromise(richErrors.reset));
       geoBlock.unmount();
     }
   });

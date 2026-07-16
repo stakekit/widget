@@ -22,7 +22,7 @@ import { mockDelay } from "../mocks/delay";
 import { TestAtomRuntimeProvider } from "../utils/atom-runtime-provider";
 import { rkMockWallet } from "../utils/mock-connector";
 import { describe, expect, it, vi } from "../utils/test-extend";
-import { render, renderHook } from "../utils/test-utils.dom";
+import { render, renderHook } from "../utils/test-utils";
 
 const useWagmiProviderContract = () => ({
   contextConfig: useContext(WagmiContext) as Config | undefined,

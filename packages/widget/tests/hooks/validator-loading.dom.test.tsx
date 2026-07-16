@@ -50,7 +50,7 @@ describe("validator loading", () => {
       )
     );
 
-    const { result } = await renderHook(
+    const hook = await renderHook(
       () =>
         useYieldValidators({
           yieldId: Schema.decodeSync(YieldId)("yield-1"),
@@ -59,12 +59,15 @@ describe("validator loading", () => {
       { wrapper: Wrapper }
     );
 
-    await expect.poll(() => result.current.data.length).toBe(1);
-    expect(result.current.hasNextPage).toBe(true);
+    await hook.act(async () => {
+      await expect.poll(() => hook.result.current.data.length).toBe(1);
+    });
+    expect(hook.result.current.hasNextPage).toBe(true);
 
-    result.current.fetchNextPage();
-
-    await expect.poll(() => result.current.data.length).toBe(2);
-    await expect.poll(() => result.current.hasNextPage).toBe(false);
+    await hook.act(async () => {
+      hook.result.current.fetchNextPage();
+      await expect.poll(() => hook.result.current.data.length).toBe(2);
+      await expect.poll(() => hook.result.current.hasNextPage).toBe(false);
+    });
   });
 });

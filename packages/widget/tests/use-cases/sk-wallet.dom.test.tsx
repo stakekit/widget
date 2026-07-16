@@ -63,6 +63,19 @@ const renderHookWithExternalProvider = (
     ),
   });
 
+const waitForWalletConnection = (
+  wallet: Awaited<ReturnType<typeof renderHookWithExternalProvider>>
+) =>
+  wallet.act(async () => {
+    await expect
+      .poll(
+        () =>
+          !wallet.result.current.isConnecting &&
+          wallet.result.current.isConnected
+      )
+      .toBe(true);
+  });
+
 const createSolanaTxMeta = (): SKTxMeta => ({
   txId: Schema.decodeSync(TransactionId)("transaction-id"),
   actionId: Schema.decodeSync(ActionId)("action-id"),
@@ -150,7 +163,7 @@ describe("SK Wallet", () => {
       },
     });
 
-    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
+    await waitForWalletConnection(solanaWallet);
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       network: "solana",
@@ -197,7 +210,7 @@ describe("SK Wallet", () => {
       },
     });
 
-    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
+    await waitForWalletConnection(solanaWallet);
 
     const solanaRes = await solanaWallet.result.current.signTransaction({
       network: "solana",
@@ -248,7 +261,7 @@ describe("SK Wallet", () => {
       },
     });
 
-    await expect.poll(() => solanaWallet.result.current.isConnected).toBe(true);
+    await waitForWalletConnection(solanaWallet);
 
     const solanaRes = solanaWallet.result.current.signTransaction({
       network: "solana",
@@ -300,13 +313,7 @@ describe("SK Wallet", () => {
         sendTransaction: sendTransactionSpy,
       },
     });
-    await expect
-      .poll(
-        () =>
-          !tonWallet.result.current.isConnecting &&
-          tonWallet.result.current.isConnected
-      )
-      .toBe(true);
+    await waitForWalletConnection(tonWallet);
 
     const tonFixture = createDefaultTonTransactionFixture();
     const tonRes = await tonWallet.result.current.signTransaction({
@@ -360,7 +367,7 @@ describe("SK Wallet", () => {
         sendTransaction: sendTransactionSpy,
       },
     });
-    await expect.poll(() => tonWallet.result.current.isConnected).toBe(true);
+    await waitForWalletConnection(tonWallet);
 
     const tonRes = await tonWallet.result.current.signTransaction({
       network: "ton",
