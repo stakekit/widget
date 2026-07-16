@@ -7,7 +7,7 @@ import { SKLocationProvider } from "../../../shared/react/location-history";
 import { RootElementProvider } from "../../../shared/react/root-element";
 import { i18nInstance } from "../../../translation";
 import { WidgetConfigEffects } from "../../config/widget-config-effects";
-import { SKRootInputProvider } from "./effect-atom-runtime";
+import { SKRootInputProvider } from "./atom-runtime";
 import { MountAnimationEffects } from "./mount-animation";
 import { ThirdPartyQueryClientProvider } from "./query-client";
 import { RainbowProvider } from "./rainbow";

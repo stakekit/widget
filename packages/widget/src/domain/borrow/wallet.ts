@@ -1,4 +1,4 @@
-import { Data, Schema } from "effect";
+import { Schema } from "effect";
 import { ChainId, WalletAddress } from "./ids";
 import { BorrowNetwork } from "./network";
 
@@ -29,9 +29,3 @@ export const ConnectedWalletState = Schema.Struct({
   network: BorrowNetwork,
 });
 export type ConnectedWalletState = typeof ConnectedWalletState.Type;
-
-export class SwitchChainError extends Data.TaggedError(
-  "BorrowSwitchChainError"
-)<{
-  readonly cause: unknown;
-}> {}

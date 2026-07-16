@@ -2,7 +2,7 @@ import { useAtom } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
-import { SKAtomRegistryProvider } from "../../src/app/composition/providers/effect-atom-runtime";
+import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config";
 import {
   earnPageSubmittedAtom,

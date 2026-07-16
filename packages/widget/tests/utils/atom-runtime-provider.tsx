@@ -2,7 +2,7 @@ import type { PropsWithChildren } from "react";
 import {
   SKAtomRegistryProvider,
   SKRootInputProvider,
-} from "../../src/app/composition/providers/effect-atom-runtime";
+} from "../../src/app/composition/providers/atom-runtime";
 import type { WidgetConfig } from "../../src/app/config";
 
 export const TestAtomRuntimeProvider = ({

@@ -1,18 +1,14 @@
-import { Effect } from "effect";
 import type { Chain } from "viem";
-import type { Connector } from "wagmi";
 import {
   type BorrowNetwork,
   borrowChainEntries,
   borrowChainsByNetwork,
   borrowViemChains,
-  type ChainId,
   type ConnectedWalletState,
   type DisconnectedWalletState,
   decodeChainId,
   getBorrowNetworkForChainId,
   isBorrowNetwork,
-  SwitchChainError,
   type WalletChain,
 } from "../../domain/borrow";
 import type { WalletAddress } from "../../domain/schema/identifiers";
@@ -21,7 +17,6 @@ import type { NormalizedWalletState } from "../wallet/domain/state";
 type BorrowWalletBridgeInput = {
   readonly address: WalletAddress | null;
   readonly chain: Chain | null;
-  readonly connector?: Pick<Connector, "switchChain"> | null;
   readonly connectorChains: ReadonlyArray<Chain>;
   readonly isConnected: boolean;
   readonly network: string | null;
@@ -41,9 +36,6 @@ export type BorrowWalletUnsupportedNetworkBridgeState = {
 
 export type BorrowWalletConnectedBridgeState = {
   readonly status: "connected";
-  readonly switchChain: (
-    chainId: ChainId
-  ) => Effect.Effect<void, SwitchChainError>;
   readonly wallet: typeof ConnectedWalletState.Type;
 };
 
@@ -51,21 +43,6 @@ export type BorrowWalletBridgeState =
   | BorrowWalletConnectedBridgeState
   | BorrowWalletDisconnectedBridgeState
   | BorrowWalletUnsupportedNetworkBridgeState;
-
-export type BorrowWalletConnectedStateProjection = Omit<
-  BorrowWalletConnectedBridgeState,
-  "switchChain"
->;
-
-export type BorrowWalletStateProjection =
-  | BorrowWalletConnectedStateProjection
-  | BorrowWalletDisconnectedBridgeState
-  | BorrowWalletUnsupportedNetworkBridgeState;
-
-export type BorrowSwitchChainCommandInput = {
-  readonly chainId: ChainId;
-  readonly connector?: Pick<Connector, "switchChain"> | null;
-};
 
 const toWalletChain = ([network, chain]: readonly [
   BorrowNetwork,
@@ -91,27 +68,9 @@ export const getSupportedBorrowWalletChains = (
   return chains.map(toWalletChain);
 };
 
-export const switchBorrowWalletChain = ({
-  chainId,
-  connector,
-}: BorrowSwitchChainCommandInput) => {
-  const switchChain = connector?.switchChain;
-
-  return switchChain
-    ? Effect.tryPromise({
-        try: () => switchChain({ chainId: Number(chainId) }),
-        catch: (cause) => new SwitchChainError({ cause }),
-      }).pipe(Effect.asVoid)
-    : Effect.fail(
-        new SwitchChainError({
-          cause: new Error("Current wallet connector cannot switch chains."),
-        })
-      );
-};
-
 const projectBorrowWalletState = (
   wallet: BorrowWalletBridgeInput
-): BorrowWalletStateProjection => {
+): BorrowWalletBridgeState => {
   const supportedChains = getSupportedBorrowWalletChains(
     wallet.connectorChains
   );
@@ -167,27 +126,12 @@ const projectBorrowWalletState = (
 
 export const toBorrowWalletStateProjection = (
   wallet: NormalizedWalletState
-): BorrowWalletStateProjection =>
+): BorrowWalletBridgeState =>
   projectBorrowWalletState({
     address: wallet.address,
     chain: wallet.chain,
-    connector: wallet.connector,
     connectorChains: wallet.connectorChains,
     isConnected:
       wallet.status === "connected" || wallet.status === "unsupported",
     network: wallet.network,
   });
-
-export const toBorrowSwitchChainCommandInput = ({
-  chainId,
-  wallet,
-}: {
-  readonly chainId: ChainId;
-  readonly wallet: NormalizedWalletState;
-}): BorrowSwitchChainCommandInput => ({
-  chainId,
-  connector:
-    wallet.status === "connected" || wallet.status === "unsupported"
-      ? wallet.connector
-      : null,
-});

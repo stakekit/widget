@@ -6,7 +6,7 @@ import { createRef, useImperativeHandle, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { Providers } from "./app/composition/providers";
-import { SKAtomRegistryProvider } from "./app/composition/providers/effect-atom-runtime";
+import { SKAtomRegistryProvider } from "./app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig, useWidgetConfig } from "./app/config";
 import { ClassicRoutes, DashboardRoutes } from "./app/routes";
 import { appContainer } from "./features/widget-shell";
