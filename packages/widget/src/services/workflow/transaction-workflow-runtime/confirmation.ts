@@ -171,6 +171,7 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
       Match.exhaustive
     );
 
+    const pollAttempts = key._tag === "Classic" ? 75 : 20;
     const result = yield* check.pipe(
       Effect.retry({
         schedule: Schedule.spaced(
@@ -179,7 +180,7 @@ export const confirmCurrent = Effect.fn("TransactionWorkflow.confirmCurrent")(
             key._tag === "Classic" ? Duration.seconds(4) : Duration.seconds(2)
           )
         ),
-        times: key._tag === "Classic" ? 75 : 20,
+        times: pollAttempts - 1,
         while: (error) => error._tag === "ConfirmationPendingError",
       }),
       Effect.mapError((error) =>

@@ -1,11 +1,13 @@
 import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useRef } from "react";
 import type { Action, Transaction } from "../../../domain/borrow";
 import {
   BorrowTransactionWorkflowKey,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
+  getTransactionWorkflowId,
   initializeTransactionWorkflow,
   type TransactionWorkflowBatch,
   type TransactionWorkflowError,
@@ -91,8 +93,23 @@ export const useBorrowExecution = ({
 }: {
   readonly action: Action;
 }): BorrowExecutionState => {
-  const key = new BorrowTransactionWorkflowKey({ action });
-  const atoms = getTransactionWorkflowAtoms(key);
+  const requestedKey = new BorrowTransactionWorkflowKey({ action });
+  const requestedWorkflowId = getTransactionWorkflowId(requestedKey);
+  const workflowRef = useRef<{
+    readonly atoms: ReturnType<typeof getTransactionWorkflowAtoms>;
+    readonly id: string;
+    readonly key: BorrowTransactionWorkflowKey;
+  } | null>(null);
+
+  if (workflowRef.current?.id !== requestedWorkflowId) {
+    workflowRef.current = {
+      atoms: getTransactionWorkflowAtoms(requestedKey),
+      id: requestedWorkflowId,
+      key: requestedKey,
+    };
+  }
+
+  const { atoms, key } = workflowRef.current;
   useAtomMount(borrowExecutionRefreshAtom(key));
   const result = useAtomValue(atoms.stateAtom);
   const dispatch = useAtomSet(atoms.dispatchAtom);
