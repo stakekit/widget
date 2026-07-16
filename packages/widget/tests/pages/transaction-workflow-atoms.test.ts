@@ -7,8 +7,11 @@ import {
   yieldBalancesScanResourceAtom,
 } from "../../src/features/portfolio";
 import {
+  classicTransactionWorkflowCompletionAtom,
   getClassicWorkflowCompletionResources,
-  getTransactionWorkflowAtoms,
+  transactionWorkflowDispatchAtom,
+  transactionWorkflowMachineAtom,
+  transactionWorkflowStateAtom,
 } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import type { ActionMeta } from "../../src/public-api/types";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
@@ -38,13 +41,18 @@ describe("transaction workflow atoms", () => {
         yieldId,
       });
 
-    const first = getTransactionWorkflowAtoms(makeKey());
-    const second = getTransactionWorkflowAtoms(makeKey());
-
-    expect(first.machineAtom).toBe(second.machineAtom);
-    expect(first.stateAtom).toBe(second.stateAtom);
-    expect(first.eventsAtom).toBe(second.eventsAtom);
-    expect(first.dispatchAtom).toBe(second.dispatchAtom);
+    expect(transactionWorkflowMachineAtom(makeKey())).toBe(
+      transactionWorkflowMachineAtom(makeKey())
+    );
+    expect(transactionWorkflowStateAtom(makeKey())).toBe(
+      transactionWorkflowStateAtom(makeKey())
+    );
+    expect(transactionWorkflowDispatchAtom(makeKey())).toBe(
+      transactionWorkflowDispatchAtom(makeKey())
+    );
+    expect(classicTransactionWorkflowCompletionAtom(makeKey())).toBe(
+      classicTransactionWorkflowCompletionAtom(makeKey())
+    );
   });
 
   it("keeps classic balance completion resources wallet-scoped", () => {

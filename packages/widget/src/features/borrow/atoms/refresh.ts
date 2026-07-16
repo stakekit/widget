@@ -6,7 +6,7 @@ import {
   tokenBalancesScanResourceAtom,
   yieldBalancesScanResourceAtom,
 } from "../../../features/portfolio";
-import { getTransactionWorkflowAtoms } from "../../../features/transaction-flow/state/transaction-workflow-atoms";
+import { transactionWorkflowMachineAtom } from "../../../features/transaction-flow/state/transaction-workflow-atoms";
 import type { NormalizedWalletState } from "../../../features/wallet";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import type {
@@ -85,7 +85,7 @@ export const getBorrowExecutionRefreshResources = (
 
 export const borrowExecutionRefreshAtom = Atom.family(
   (key: BorrowTransactionWorkflowKey) => {
-    const machineAtom = getTransactionWorkflowAtoms(key).machineAtom;
+    const machineAtom = transactionWorkflowMachineAtom(key);
 
     return appRuntime.atom(
       (context) =>

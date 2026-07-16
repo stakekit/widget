@@ -3,6 +3,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
 import { WalletService } from "../../../services/wallet/wallet-service";
 import type {
+  ClassicTransactionWorkflowKey,
   TransactionWorkflowCommand,
   TransactionWorkflowKey,
 } from "../../../services/workflow/transaction-workflow-model";
@@ -28,10 +29,11 @@ export const getClassicWorkflowCompletionResources = (
   return [tokenBalancesScanResourceAtom, yieldBalancesScanResourceAtom];
 };
 
-export const getTransactionWorkflowAtoms = Atom.family(
+export const transactionWorkflowMachineAtom = Atom.family(
   (workflowKey: TransactionWorkflowKey) => {
     const workflowId = getTransactionWorkflowId(workflowKey);
-    const machineAtom = appRuntime
+
+    return appRuntime
       .atom(
         TransactionWorkflowService.use((service) => service.make(workflowKey))
       )
@@ -39,7 +41,15 @@ export const getTransactionWorkflowAtoms = Atom.family(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
         Atom.withLabel(`transactionWorkflow(${workflowId})`)
       );
-    const stateAtom = appRuntime
+  }
+);
+
+export const transactionWorkflowStateAtom = Atom.family(
+  (workflowKey: TransactionWorkflowKey) => {
+    const machineAtom = transactionWorkflowMachineAtom(workflowKey);
+    const workflowId = getTransactionWorkflowId(workflowKey);
+
+    return appRuntime
       .atom((context) =>
         context.result(machineAtom).pipe(
           Effect.map((machine) => machine.states),
@@ -50,18 +60,15 @@ export const getTransactionWorkflowAtoms = Atom.family(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
         Atom.withLabel(`transactionWorkflowState(${workflowId})`)
       );
-    const eventsAtom = appRuntime
-      .atom((context) =>
-        context.result(machineAtom).pipe(
-          Effect.map((machine) => machine.events),
-          Stream.unwrap
-        )
-      )
-      .pipe(
-        Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
-        Atom.withLabel(`transactionWorkflowEvents(${workflowId})`)
-      );
-    const classicCompletionAtom = appRuntime
+  }
+);
+
+export const classicTransactionWorkflowCompletionAtom = Atom.family(
+  (workflowKey: ClassicTransactionWorkflowKey) => {
+    const machineAtom = transactionWorkflowMachineAtom(workflowKey);
+    const workflowId = getTransactionWorkflowId(workflowKey);
+
+    return appRuntime
       .atom(
         (context) =>
           Effect.gen(function* () {
@@ -97,20 +104,19 @@ export const getTransactionWorkflowAtoms = Atom.family(
         Atom.setIdleTTL(config.atomResources.defaultIdleTTL),
         Atom.withLabel(`transactionWorkflowCompletion(${workflowId})`)
       );
-    const dispatchAtom = appRuntime.fn(
+  }
+);
+
+export const transactionWorkflowDispatchAtom = Atom.family(
+  (workflowKey: TransactionWorkflowKey) => {
+    const machineAtom = transactionWorkflowMachineAtom(workflowKey);
+
+    return appRuntime.fn(
       (command: TransactionWorkflowCommand, context) =>
         context
           .result(machineAtom)
           .pipe(Effect.flatMap((machine) => machine.dispatch(command))),
       { concurrent: false }
     );
-
-    return {
-      classicCompletionAtom,
-      dispatchAtom,
-      eventsAtom,
-      machineAtom,
-      stateAtom,
-    } as const;
   }
 );

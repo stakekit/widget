@@ -1,20 +1,21 @@
 import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useRef } from "react";
 import type { Action, Transaction } from "../../../domain/borrow";
 import {
   BorrowTransactionWorkflowKey,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
-  getTransactionWorkflowId,
   initializeTransactionWorkflow,
   type TransactionWorkflowBatch,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
   type TransactionWorkflowSubmission,
 } from "../../../services/workflow/transaction-workflow-model";
-import { getTransactionWorkflowAtoms } from "../../transaction-flow/state/transaction-workflow-atoms";
+import {
+  transactionWorkflowDispatchAtom,
+  transactionWorkflowStateAtom,
+} from "../../transaction-flow/state/transaction-workflow-atoms";
 import { borrowExecutionRefreshAtom } from "../atoms/refresh";
 
 type BorrowExecutionResult = {
@@ -93,26 +94,10 @@ export const useBorrowExecution = ({
 }: {
   readonly action: Action;
 }): BorrowExecutionState => {
-  const requestedKey = new BorrowTransactionWorkflowKey({ action });
-  const requestedWorkflowId = getTransactionWorkflowId(requestedKey);
-  const workflowRef = useRef<{
-    readonly atoms: ReturnType<typeof getTransactionWorkflowAtoms>;
-    readonly id: string;
-    readonly key: BorrowTransactionWorkflowKey;
-  } | null>(null);
-
-  if (workflowRef.current?.id !== requestedWorkflowId) {
-    workflowRef.current = {
-      atoms: getTransactionWorkflowAtoms(requestedKey),
-      id: requestedWorkflowId,
-      key: requestedKey,
-    };
-  }
-
-  const { atoms, key } = workflowRef.current;
+  const key = new BorrowTransactionWorkflowKey({ action });
   useAtomMount(borrowExecutionRefreshAtom(key));
-  const result = useAtomValue(atoms.stateAtom);
-  const dispatch = useAtomSet(atoms.dispatchAtom);
+  const result = useAtomValue(transactionWorkflowStateAtom(key));
+  const dispatch = useAtomSet(transactionWorkflowDispatchAtom(key));
   const state = Option.getOrElse(AsyncResult.value(result), () =>
     initializeTransactionWorkflow(key)
   );

@@ -14,7 +14,7 @@ import {
   tokenBalancesScanResourceAtom,
   yieldBalancesScanResourceAtom,
 } from "../../src/features/portfolio";
-import { getTransactionWorkflowAtoms } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
+import { transactionWorkflowMachineAtom } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import {
   BorrowTransactionWorkflowKey,
   initializeTransactionWorkflow,
@@ -59,8 +59,8 @@ describe("borrow transaction workflow atom identity", () => {
     const secondKey = new BorrowTransactionWorkflowKey({ action });
 
     expect(Equal.equals(firstKey, secondKey)).toBe(true);
-    expect(getTransactionWorkflowAtoms(firstKey).machineAtom).toBe(
-      getTransactionWorkflowAtoms(secondKey).machineAtom
+    expect(transactionWorkflowMachineAtom(firstKey)).toBe(
+      transactionWorkflowMachineAtom(secondKey)
     );
   });
 
