@@ -1,23 +1,39 @@
 import { useAtom } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
+import { Schema } from "effect";
 import { act, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SKAtomRegistryProvider } from "../../src/app/composition/providers/atom-runtime";
 import { normalizeWidgetConfig } from "../../src/app/config";
+import { WalletAddress } from "../../src/domain/schema/identifiers";
 import {
   earnPageSubmittedAtom,
   getEarnPageValidation,
 } from "../../src/features/earn";
 import {
+  PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
 } from "../../src/features/position-details/state";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { render } from "../utils/test-utils.dom";
 
 const settings = normalizeWidgetConfig({
   apiKey: "test-api-key",
   variant: "default",
 });
+
+const positionWorkflowAtom = positionDetailsWorkflowAtom(
+  new PositionDetailsWorkflowKey({
+    balanceId: "balance-1",
+    integrationId: "yield-1",
+    pendingActionType: null,
+    scope: new WalletScopeKey({
+      address: Schema.decodeSync(WalletAddress)("0xwallet-a"),
+      network: "ethereum",
+    }),
+  })
+);
 
 const EarnValidationHarness = () => {
   const [submitted, setSubmitted] = useAtom(earnPageSubmittedAtom);
@@ -45,7 +61,7 @@ const EarnValidationHarness = () => {
 };
 
 const PositionAmountHarness = () => {
-  const [workflow, setWorkflow] = useAtom(positionDetailsWorkflowAtom);
+  const [workflow, setWorkflow] = useAtom(positionWorkflowAtom);
 
   return (
     <>

@@ -4,13 +4,13 @@ import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { useProvidersDetails } from "../../../../earn";
 import { useYieldType } from "../../../../earn/support";
 import { useTrackPage } from "../../../../tracking";
-import { useEnterStakeRequest } from "../../..";
+import { useRequiredEnterStakeRequest } from "../../..";
 import { CompletePage } from "./common.page";
 
 export const StakeCompletePage = () => {
   useTrackPage("stakeComplete");
 
-  const enterRequest = useEnterStakeRequest()!;
+  const enterRequest = useRequiredEnterStakeRequest();
   const selectedStake = enterRequest.selectedStake;
   const selectedToken = enterRequest.selectedToken;
   const providerDetails = useProvidersDetails({

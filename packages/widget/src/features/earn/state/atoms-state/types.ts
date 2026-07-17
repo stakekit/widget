@@ -11,16 +11,12 @@ import type {
   EarnValidatorKey,
   EarnYield,
 } from "../../../../domain/schema/earn-models";
-import type { TokenBalanceScanCommand } from "../../../../domain/schema/financial-models";
-import type {
-  WalletAddress,
-  YieldId,
-} from "../../../../domain/schema/identifiers";
+import type { YieldId } from "../../../../domain/schema/identifiers";
 import type { InitParams } from "../../../../domain/schema/init-params";
-import type { Network } from "../../../../domain/schema/network-model";
 import type { PositionsData } from "../../../../domain/types/positions";
 import type { DashboardYieldCategory } from "../../../../domain/types/yields";
 import type { PreferredTokenYieldsPerNetwork } from "../../../../public-api/types";
+import type { WalletScopeKey } from "../../../../services/wallet/domain/scope";
 import type { YieldValidatorsPullKey } from "./catalog/keys";
 
 export type EarnTokenOption = {
@@ -37,6 +33,7 @@ export type EarnCatalogOperation =
   | "earn-yield-catalog"
   | "init-token-option"
   | "init-yield"
+  | "legacy-token-options"
   | "positions-data"
   | "preferred-validators"
   | "runtime"
@@ -52,11 +49,7 @@ export class EarnCatalogError extends Data.TaggedError("EarnCatalogError")<{
 }> {}
 
 export type EarnEntry = {
-  readonly address: WalletAddress | null;
-  readonly additionalAddresses?:
-    | TokenBalanceScanCommand["addresses"]["additionalAddresses"]
-    | null;
-  readonly network: Network | null;
+  readonly walletScope: WalletScopeKey | null;
   readonly walletResolution: "pending" | "settled";
   readonly dashboardVariant: boolean;
   readonly categoryOrder: ReadonlyArray<DashboardYieldCategory>;

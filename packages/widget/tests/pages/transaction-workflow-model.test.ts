@@ -4,6 +4,7 @@ import { Action, Transaction } from "../../src/domain/borrow";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   appendTransactionWorkflowBatch,
   BorrowTransactionWorkflowKey,
@@ -24,6 +25,11 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
+const classicWalletScope = new WalletScopeKey({
+  address,
+  network: "ethereum",
+});
+const borrowWalletScope = new WalletScopeKey({ address, network: "base" });
 const actionMeta = {
   actionId: "action-1",
   address,
@@ -89,6 +95,7 @@ describe("transaction workflow model", () => {
     const classicInput = {
       actionMeta,
       transactions: [classicTransaction("classic-1", "CREATED", 0)],
+      walletScope: classicWalletScope,
       yieldId,
     };
     const action = borrowAction();
@@ -101,8 +108,14 @@ describe("transaction workflow model", () => {
     ).toBe(true);
     expect(
       Equal.equals(
-        new BorrowTransactionWorkflowKey({ action }),
-        new BorrowTransactionWorkflowKey({ action })
+        new BorrowTransactionWorkflowKey({
+          action,
+          walletScope: borrowWalletScope,
+        }),
+        new BorrowTransactionWorkflowKey({
+          action,
+          walletScope: borrowWalletScope,
+        })
       )
     ).toBe(true);
   });
@@ -116,6 +129,7 @@ describe("transaction workflow model", () => {
           classicTransaction("first", "CONFIRMED", 1),
           classicTransaction("second", "SKIPPED", 2),
         ],
+        walletScope: classicWalletScope,
         yieldId,
       })
     );
@@ -137,6 +151,7 @@ describe("transaction workflow model", () => {
       new ClassicTransactionWorkflowKey({
         actionMeta,
         transactions: [classicTransaction("classic-1", status, 0)],
+        walletScope: classicWalletScope,
         yieldId,
       });
 
@@ -150,6 +165,7 @@ describe("transaction workflow model", () => {
       initializeTransactionWorkflow(
         new BorrowTransactionWorkflowKey({
           action: borrowAction({ status: "SUCCESS" }),
+          walletScope: borrowWalletScope,
         })
       )._tag
     ).toBe("Completed");
@@ -157,7 +173,10 @@ describe("transaction workflow model", () => {
 
   it("updates the current transaction without mutating prior context", () => {
     const initial = initializeTransactionWorkflow(
-      new BorrowTransactionWorkflowKey({ action: borrowAction() })
+      new BorrowTransactionWorkflowKey({
+        action: borrowAction(),
+        walletScope: borrowWalletScope,
+      })
     ).context;
     const updated = updateCurrentTransactionWorkflowTransaction({
       context: initial,
@@ -174,7 +193,10 @@ describe("transaction workflow model", () => {
   it("appends a borrow batch while retaining history and deduplicating a server step", () => {
     const firstAction = borrowAction();
     const initial = initializeTransactionWorkflow(
-      new BorrowTransactionWorkflowKey({ action: firstAction })
+      new BorrowTransactionWorkflowKey({
+        action: firstAction,
+        walletScope: borrowWalletScope,
+      })
     ).context;
     const nextAction = borrowAction({
       currentStep: 2,
@@ -209,6 +231,7 @@ describe("transaction workflow model", () => {
       new ClassicTransactionWorkflowKey({
         actionMeta,
         transactions: [classicTransaction("classic-1", "CREATED", 0)],
+        walletScope: classicWalletScope,
         yieldId,
       })
     ).context;

@@ -9,23 +9,24 @@ import {
   positionBalancesAtom,
 } from "../../../../portfolio";
 import { useTrackPage } from "../../../../tracking";
-import { useExitStakeRequest } from "../../../react/use-transaction-flow";
+import { useRequiredExitStakeRequest } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 
 export const UnstakeCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
+  const exitRequest = useRequiredExitStakeRequest();
   const positionBalances = AsyncResult.getOrElse(
     useAtomValue(
       positionBalancesAtom(
         new PositionBalancesKey({
           balanceId: plain.balanceId ?? null,
+          scope: exitRequest.walletScope,
           yieldId: plain.integrationId ?? null,
         })
       )
     ),
     () => null
   );
-  const exitRequest = useExitStakeRequest()!;
   const integrationData = exitRequest.integrationData;
   const token = exitRequest.unstakeToken;
 

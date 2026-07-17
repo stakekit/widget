@@ -4,6 +4,8 @@ import { Equal } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { SupportedSKChainIds } from "../../domain/types/chains";
 import type { SKExternalProviders } from "../../public-api/types";
+import { selectAtom } from "../../shared/effect/select-atom";
+import { widgetConfigAtom } from "../config/settings";
 
 export type DynamicExternalProviderInput = {
   readonly currentAddress: string;
@@ -46,25 +48,10 @@ const solanaWalletInputEquals: InputEquality<SolanaWalletInput> = (
   first.wallets.length === second.wallets.length &&
   first.wallets.every((wallet, index) => wallet === second.wallets[index]);
 
-export const defaultDynamicExternalProviderInput: DynamicExternalProviderInput =
-  null;
-
 export const defaultSolanaWalletInput: SolanaWalletInput = {
   connection: null,
   wallets: [],
 };
-
-export const dynamicExternalProviderInputAtom =
-  makeRootInputAtom<DynamicExternalProviderInput>(
-    defaultDynamicExternalProviderInput,
-    "dynamicExternalProviderInputAtom"
-  );
-
-export const solanaWalletInputAtom = makeRootInputAtom(
-  defaultSolanaWalletInput,
-  "solanaWalletInputAtom",
-  solanaWalletInputEquals
-);
 
 export const normalizeDynamicExternalProviderInput = (
   externalProviders: SKExternalProviders | undefined
@@ -82,6 +69,18 @@ export const normalizeDynamicExternalProviderInput = (
         type: externalProviders.type,
       }
     : null;
+
+export const dynamicExternalProviderInputAtom = selectAtom(
+  widgetConfigAtom,
+  (settings) =>
+    normalizeDynamicExternalProviderInput(settings.externalProviders)
+).pipe(Atom.withLabel("dynamicExternalProviderInputAtom"));
+
+export const solanaWalletInputAtom = makeRootInputAtom(
+  defaultSolanaWalletInput,
+  "solanaWalletInputAtom",
+  solanaWalletInputEquals
+);
 
 export const normalizeSolanaWalletInput = ({
   connection,

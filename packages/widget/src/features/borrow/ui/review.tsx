@@ -13,6 +13,7 @@ import { DetailRow } from "../../earn/support";
 import { useTrackPage } from "../../tracking";
 import { Divider, PageContainer, PageCtaButton } from "../../widget-shell";
 import { borrowActionFormAtom, borrowCreateActionAtom } from "../core";
+import { borrowExecutionInputAtom } from "./execution-state";
 import { getBorrowFlowRoutes } from "./flow-routes";
 import { isBorrowReviewState } from "./review-state";
 import * as styles from "./styles.css";
@@ -58,6 +59,7 @@ export const BorrowReviewPage = () => {
   const { marketId } = useParams();
   const routes = getBorrowFlowRoutes(marketId);
   const stageBorrowActionForm = useAtomSet(borrowActionFormAtom);
+  const setBorrowExecutionInput = useAtomSet(borrowExecutionInputAtom);
   const [createActionResult, createAction] = useAtom(borrowCreateActionAtom, {
     mode: "promise",
   });
@@ -134,11 +136,9 @@ export const BorrowReviewPage = () => {
       .then((action) => {
         const executionState = { ...reviewState, action };
 
-        stageBorrowActionForm({
-          executionState,
-          type: "prepareExecution",
-        });
-        navigate(routes.stepsPath, { state: executionState });
+        setBorrowExecutionInput(executionState);
+        stageBorrowActionForm({ type: "reset" });
+        navigate(routes.stepsPath);
       })
       .catch(() => undefined);
   };

@@ -8,6 +8,7 @@ import type {
   EarnYield,
 } from "../../../../../domain/schema/earn-models";
 import { YieldId } from "../../../../../domain/schema/identifiers";
+import { getEnterAmountConstraint } from "../../../../../domain/types/stake";
 import {
   getDashboardYieldCategory,
   isYieldValidatorSelectionRequired,
@@ -106,6 +107,8 @@ export const resolveEarnView = ({
   entry: EarnEntry;
   intent: EarnMachineIntent;
 }): EarnMachineView => {
+  const walletScope = entry.walletScope;
+  const network = walletScope?.network ?? null;
   const initYieldId = entry.initParams?.yieldId
     ? Schema.decodeOption(YieldId)(entry.initParams.yieldId).pipe(
         Option.getOrNull
@@ -124,7 +127,7 @@ export const resolveEarnView = ({
   const availableCategoriesAtom = entry.dashboardVariant
     ? availableYieldCategoriesAtom(
         new AvailableYieldCategoriesKey({
-          network: entry.network,
+          network,
           categoryOrder: entry.categoryOrder,
         })
       )
@@ -147,16 +150,14 @@ export const resolveEarnView = ({
 
   const tokenOptionsPullAtomValue = tokenOptionsPullAtom(
     new DefaultTokenOptionsKey({
-      network: entry.network,
+      network,
       category,
       tokensForEnabledYieldsOnly: !!entry.tokensForEnabledYieldsOnly,
     })
   );
   const tokenOptionsAtom = mergedTokenOptionsAtom(
     new TokenOptionsKey({
-      address: entry.address,
-      additionalAddresses: entry.additionalAddresses,
-      network: entry.network,
+      scope: walletScope,
       category,
       initToken: entry.initParams?.token ?? null,
       initTokenNetwork: entry.initParams?.network ?? null,
@@ -172,8 +173,7 @@ export const resolveEarnView = ({
   };
   const positionsDataAtomValue = positionsDataAtom(
     new PositionsDataKey({
-      address: entry.address,
-      network: entry.network,
+      scope: walletScope,
     })
   );
   const positionsData =
@@ -307,6 +307,12 @@ export const resolveEarnView = ({
     selectedValidatorKeys: intent.selectedValidatorKeys,
     validatorOptions,
   });
+  const availableAmount =
+    selectedToken.source === "balance" ? selectedToken.amount : null;
+  const amountConstraint = getEnterAmountConstraint(
+    selectedYield,
+    positionsData
+  );
 
   return {
     status: "ready",
@@ -318,6 +324,7 @@ export const resolveEarnView = ({
       yield: selectedYield,
     },
     form: resolveForm({
+      availableAmount,
       intent,
       positionsData,
       selectedYield,
@@ -332,7 +339,9 @@ export const resolveEarnView = ({
       selectToken: tokenOptions.length > 0,
       selectYield: yieldOptions.length > 0,
       selectValidator: validators.enabled,
-      submit: !validators.enabled || selectedValidators.length > 0,
+      submit:
+        (!validators.enabled || selectedValidators.length > 0) &&
+        (amountConstraint.type !== "force-max" || availableAmount !== null),
     },
   };
 };

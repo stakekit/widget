@@ -1,5 +1,8 @@
 import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
-import { WidgetBootstrapConfig } from "../config/widget-config";
+import {
+  normalizeWidgetApiConfig,
+  WidgetConfigService,
+} from "../config/widget-config";
 
 export interface RichError {
   readonly message: string;
@@ -19,7 +22,8 @@ export class RichErrorService extends Context.Service<RichErrorService>()(
   "stakekit/widget/RichErrorService",
   {
     make: Effect.gen(function* () {
-      const { api } = yield* WidgetBootstrapConfig;
+      const widgetConfig = yield* WidgetConfigService;
+      const api = normalizeWidgetApiConfig(widgetConfig.initial);
       const current = yield* SubscriptionRef.make<RichError | null>(null);
       const allowedUrls = [api.baseUrl, api.borrowApiUrl, api.yieldsApiUrl];
 

@@ -1,59 +1,78 @@
 import { Duration, Effect, Stream } from "effect";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
 import type { TokenBalanceScanCommand } from "../../../domain/schema/financial-models";
-import { selectCurrentWalletAtom } from "../../../features/wallet";
+import {
+  currentWalletScopeAtom,
+  type WalletScopeKey,
+} from "../../../features/wallet";
 import { LegacyApiService } from "../../../services/api/legacy-api-service";
+import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
 
 const scheduledRefreshInterval = Duration.minutes(1);
 
-const tokenBalancesScanCommandAtom = selectCurrentWalletAtom((walletState) => {
-  if (
-    !walletState.address ||
-    !walletState.network ||
-    walletState.isLedgerLiveAccountPlaceholder
-  ) {
-    return null;
-  }
+const getTokenBalancesScanCommand = (
+  scope: WalletScopeKey
+): TokenBalanceScanCommand => ({
+  addresses: {
+    address: scope.address,
+    ...(scope.additionalAddresses
+      ? { additionalAddresses: scope.additionalAddresses }
+      : {}),
+  },
+  network: scope.network,
+});
 
-  return {
-    addresses: {
-      address: walletState.address,
-      ...(walletState.additionalAddresses
-        ? { additionalAddresses: walletState.additionalAddresses }
-        : {}),
-    },
-    network: walletState.network,
-  } satisfies TokenBalanceScanCommand;
-}).pipe(Atom.withLabel("tokenBalancesScanCommandAtom"));
+const tokenBalancesScanResourceAtomFamily = Atom.family(
+  (scope: WalletScopeKey) =>
+    appRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          const api = yield* LegacyApiService;
+          return yield* api.scanTokenBalances(
+            getTokenBalancesScanCommand(scope)
+          );
+        })
+      )
+      .pipe(
+        Atom.withReactivity(resourceInvalidationKeys.walletBalances(scope)),
+        withApiResourcePolicy({
+          idleTTL: Duration.minutes(5),
+          staleTime: Duration.minutes(1),
+          revalidateOnMount: true,
+        }),
+        Atom.withLabel("tokenBalancesScanResourceAtom")
+      )
+);
 
-export const tokenBalancesScanResourceAtom = appRuntime
-  .atom((get) =>
-    Effect.gen(function* () {
-      const command = get(tokenBalancesScanCommandAtom);
-      if (!command) return null;
-
-      const api = yield* LegacyApiService;
-      return yield* api.scanTokenBalances(command);
-    })
+const refreshTokenBalancesScanAtom = Atom.family((scope: WalletScopeKey) =>
+  Atom.fnSync((_input: undefined, get) =>
+    get.refresh(tokenBalancesScanResourceAtomFamily(scope))
   )
-  .pipe(
-    withApiResourcePolicy({
-      idleTTL: Duration.minutes(5),
-      staleTime: Duration.minutes(1),
-      revalidateOnMount: true,
-    }),
-    Atom.withLabel("tokenBalancesScanResourceAtom")
-  );
+);
+
+const tokenBalancesScanResourceAtom = Atom.readable((get) => {
+  const scope = get(currentWalletScopeAtom);
+
+  return scope
+    ? get(tokenBalancesScanResourceAtomFamily(scope))
+    : AsyncResult.success([]);
+}).pipe(Atom.withLabel("currentTokenBalancesScanResourceAtom"));
 
 const tokenBalancesScheduledRefreshAtom = Atom.make(
   (get) =>
-    get(tokenBalancesScanCommandAtom)
+    get(currentWalletScopeAtom)
       ? Stream.tick(scheduledRefreshInterval).pipe(
           Stream.drop(1),
           Stream.tap(() =>
-            Effect.sync(() => get.refresh(tokenBalancesScanResourceAtom))
+            Effect.sync(() => {
+              const scope = get(currentWalletScopeAtom);
+              if (scope) {
+                get.refresh(tokenBalancesScanResourceAtomFamily(scope));
+              }
+            })
           ),
           Stream.map(() => undefined)
         )
@@ -64,14 +83,17 @@ const tokenBalancesScheduledRefreshAtom = Atom.make(
   Atom.withLabel("tokenBalancesScheduledRefreshAtom")
 );
 
-export const tokenBalancesScanAtom = Atom.readable(
+export const tokenBalancesScanAtom = Atom.writable(
   (get) => {
     get(tokenBalancesScheduledRefreshAtom);
 
     return {
-      enabled: get(tokenBalancesScanCommandAtom) !== null,
+      enabled: get(currentWalletScopeAtom) !== null,
       result: get(tokenBalancesScanResourceAtom),
     } as const;
   },
-  (refresh) => refresh(tokenBalancesScanResourceAtom)
+  (get) => {
+    const scope = get.get(currentWalletScopeAtom);
+    if (scope) get.set(refreshTokenBalancesScanAtom(scope), undefined);
+  }
 ).pipe(Atom.withLabel("tokenBalancesScanAtom"));

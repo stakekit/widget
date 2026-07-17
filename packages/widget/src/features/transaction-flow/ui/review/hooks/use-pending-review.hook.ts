@@ -15,7 +15,7 @@ import { getRewardTokenSymbols } from "../../../../earn/support";
 import type { PageCta } from "../../../../widget-shell";
 import {
   useActionPreview,
-  usePendingActionRequest,
+  useRequiredPendingActionRequest,
   useSetPendingActionRequest,
 } from "../../..";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
@@ -25,7 +25,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 export const usePendingActionReview = () => {
   const setPendingActionRequest = useSetPendingActionRequest();
 
-  const pendingRequest = usePendingActionRequest()!;
+  const pendingRequest = useRequiredPendingActionRequest();
 
   const actionPreviewQuery = useActionPreview({
     enabled: !!pendingRequest,

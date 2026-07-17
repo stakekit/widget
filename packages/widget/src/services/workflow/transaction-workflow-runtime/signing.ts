@@ -5,6 +5,7 @@ import {
 } from "../../../domain/borrow";
 import type { Network } from "../../../domain/schema/network-model";
 import type { SKTxMeta } from "../../../public-api/types";
+import { sameWalletScopeOwner } from "../../wallet/domain/scope";
 import {
   TransactionSignError,
   type TransactionWorkflowContext,
@@ -57,17 +58,20 @@ const validateWallet = Effect.fn("TransactionWorkflow.validateWallet")(
       return yield* error("The transaction workflow has no wallet address.");
     }
 
-    if (
-      wallet.address.toLowerCase() !== expectedAddress.toString().toLowerCase()
-    ) {
-      return yield* error(
-        "Wallet account changed during transaction execution."
-      );
-    }
-
     if (wallet.network !== network) {
       return yield* error(
         "Wallet network changed during transaction execution."
+      );
+    }
+
+    if (
+      !sameWalletScopeOwner(
+        { address: wallet.address, network: wallet.network },
+        { address: expectedAddress, network: wallet.network }
+      )
+    ) {
+      return yield* error(
+        "Wallet account changed during transaction execution."
       );
     }
   }

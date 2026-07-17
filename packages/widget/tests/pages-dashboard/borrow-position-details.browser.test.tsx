@@ -131,6 +131,20 @@ const position: PositionDto = {
   totalSuppliedUsd: "1000",
 };
 
+const emptyPosition: PositionDto = {
+  ...position,
+  availableToBorrowUsd: "0",
+  currentLtv: "0",
+  debtBalances: [],
+  healthFactor: null,
+  netApy: "0",
+  netWorthUsd: "0",
+  supplyBalances: [],
+  totalBorrowedUsd: "0",
+  totalCollateralUsd: "0",
+  totalSuppliedUsd: "0",
+};
+
 describe("Borrow position details", () => {
   it("renders borrow positions in Manage and opens borrow details", async ({
     worker,
@@ -222,6 +236,123 @@ describe("Borrow position details", () => {
 
     await expect.element(app.getByText("My positions")).toBeInTheDocument();
     await expect.element(app.getByText("Total supplied")).toBeInTheDocument();
+
+    app.unmount();
+  });
+
+  it("keeps a position execution route mounted while its position refreshes", async ({
+    worker,
+  }) => {
+    let positionRequests = 0;
+    let releasePositionRefresh!: () => void;
+    let releaseActionStatus!: () => void;
+    const positionRefresh = new Promise<void>((resolve) => {
+      releasePositionRefresh = resolve;
+    });
+    const actionStatus = new Promise<void>((resolve) => {
+      releaseActionStatus = resolve;
+    });
+    const transaction = {
+      address: account,
+      chainId: "1",
+      id: "withdraw-transaction",
+      network: "ethereum",
+      status: "BROADCASTED",
+      type: "WITHDRAW",
+    } as const;
+    const action = {
+      action: "withdraw",
+      address: account,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      currentStep: 1,
+      hasNextStep: false,
+      id: "withdraw-action",
+      integrationId: integration.id,
+      status: "CREATED",
+      totalSteps: 1,
+      transactions: [transaction],
+    } as const;
+
+    worker.use(
+      http.get(borrowApiRoute("/v1/integrations"), () =>
+        HttpResponse.json([integration])
+      ),
+      http.get(borrowApiRoute("/v1/markets"), () =>
+        HttpResponse.json({
+          items: [market],
+          limit: 100,
+          offset: 0,
+          total: 1,
+        })
+      ),
+      http.get(borrowApiRoute("/v1/positions"), async () => {
+        positionRequests += 1;
+        if (positionRequests === 1) {
+          return HttpResponse.json(position);
+        }
+        if (positionRequests === 2) {
+          await positionRefresh;
+        }
+        return HttpResponse.json(emptyPosition);
+      }),
+      http.post(borrowApiRoute("/v1/actions"), () => HttpResponse.json(action)),
+      http.get(borrowApiRoute(`/v1/actions/${action.id}`), async () => {
+        await actionStatus;
+        return HttpResponse.json({
+          ...action,
+          status: "SUCCESS",
+          transactions: [{ ...transaction, status: "CONFIRMED" }],
+        });
+      })
+    );
+
+    const app = await renderApp({
+      wagmi: {
+        __customConnectors__: rkMockWallet({ accounts: [account] }),
+      },
+      skProps: {
+        apiKey: import.meta.env.VITE_API_KEY,
+        borrowEnabled: true,
+        dashboardVariant: true,
+      },
+    });
+
+    await userEvent.click(app.getByText("Manage"));
+    await userEvent.click(app.getByText("WETH/USDC"));
+    await app.getByTestId("borrow-position-action__withdraw").click();
+    await userEvent.click(app.getByTestId("number-input"));
+    await userEvent.keyboard("0.1");
+    await app.getByRole("button", { name: "Review borrow" }).click();
+    await app.getByRole("button", { name: "Confirm" }).click();
+
+    await expect
+      .poll(
+        () =>
+          app.container.querySelector('[data-rk="borrow-steps-page"]') !== null
+      )
+      .toBe(true);
+
+    releaseActionStatus();
+    await expect
+      .poll(() => positionRequests, { timeout: 5_000 })
+      .toBeGreaterThanOrEqual(2);
+    await expect
+      .poll(
+        () =>
+          app.container.querySelector('[data-rk="borrow-complete-page"]') !==
+          null
+      )
+      .toBe(true);
+
+    releasePositionRefresh();
+    await expect.element(app.getByText("Something went wrong")).toBeVisible();
+    await expect
+      .poll(
+        () =>
+          app.container.querySelector('[data-rk="borrow-complete-page"]') !==
+          null
+      )
+      .toBe(true);
 
     app.unmount();
   });

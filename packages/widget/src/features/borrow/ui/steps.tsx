@@ -1,7 +1,6 @@
-import { useAtomValue } from "@effect/atom-react";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useWidgetConfig } from "../../../app/config";
 import { useTrackPage } from "../../../features/tracking";
 import { AnimationPage } from "../../../features/widget-shell";
@@ -11,69 +10,20 @@ import { CaretLeftIcon } from "../../../shared/ui/primitives/icons/caret-left";
 import { Spinner } from "../../../shared/ui/primitives/spinner";
 import { Text } from "../../../shared/ui/primitives/typography/text";
 import { PageContainer, PageCtaButton } from "../../widget-shell";
-import { borrowActionFormAtom } from "../core";
 import { getBorrowFlowRoutes } from "./flow-routes";
-import { type BorrowStepsState, isBorrowStepsState } from "./review-state";
 import * as styles from "./styles.css";
 import { useBorrowExecution } from "./use-borrow-execution";
 
 export const BorrowStepsPage = () => {
   useTrackPage("borrowSteps");
 
-  const { t } = useTranslation();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { marketId } = useParams();
-  const { basePath } = getBorrowFlowRoutes(marketId);
-  const actionFormState = useAtomValue(borrowActionFormAtom);
-  const locationExecutionState = isBorrowStepsState(location.state)
-    ? location.state
-    : null;
-  const executionState =
-    locationExecutionState ??
-    (actionFormState.type === "execution"
-      ? actionFormState.executionState
-      : null);
-
-  if (!executionState) {
-    return (
-      <AnimationPage>
-        <PageContainer>
-          <Box display="flex" flexDirection="column" gap="4">
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.execution_page.unavailable_title")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("dashboard.borrow.execution_page.unavailable_description")}
-            </Text>
-            <PageCtaButton
-              cta={{
-                disabled: false,
-                isLoading: false,
-                label: t("dashboard.borrow.review_page.back"),
-                onClick: () => navigate(basePath),
-              }}
-            />
-          </Box>
-        </PageContainer>
-      </AnimationPage>
-    );
-  }
-
-  return <BorrowStepsContent executionState={executionState} />;
-};
-
-const BorrowStepsContent = ({
-  executionState,
-}: {
-  readonly executionState: BorrowStepsState;
-}) => {
   const dashboardVariant = useWidgetConfig("dashboardVariant");
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { marketId } = useParams();
   const { basePath, completePath } = getBorrowFlowRoutes(marketId);
-  const execution = useBorrowExecution({ action: executionState.action });
+  const execution = useBorrowExecution();
+  const executionState = execution.input;
   const transactionPosition =
     execution.currentTransactionIndex == null
       ? null
@@ -84,11 +34,8 @@ const BorrowStepsContent = ({
       return;
     }
 
-    navigate(completePath, {
-      replace: true,
-      state: { ...executionState, result: execution.completionResult },
-    });
-  }, [completePath, execution.completionResult, executionState, navigate]);
+    navigate(completePath, { replace: true });
+  }, [completePath, execution.completionResult, navigate]);
 
   return (
     <AnimationPage>

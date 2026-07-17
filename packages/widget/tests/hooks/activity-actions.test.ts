@@ -6,6 +6,7 @@ import {
   getActivityActionsRequestParams,
 } from "../../src/features/activity";
 import type { ActivityFilter } from "../../src/features/activity/model/filters";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { yieldApiActionFixture } from "../fixtures";
 
 const address = Schema.decodeUnknownSync(
@@ -63,10 +64,8 @@ describe("activity action atom boundary", () => {
 
   it("constructs value-equal activity resource keys", () => {
     const fields = {
-      address,
-      enabled: true,
       filter: "stake" as const,
-      network,
+      scope: new WalletScopeKey({ address, network }),
     };
 
     expect(new ActivityActionsKey(fields)).toEqual(

@@ -9,7 +9,10 @@ import { version as widgetVersion } from "../../../package.json";
 import * as BorrowApi from "../../generated/api/borrow-client";
 import * as LegacyApi from "../../generated/api/legacy";
 import * as YieldApi from "../../generated/api/yield";
-import { WidgetBootstrapConfig } from "../config/widget-config";
+import {
+  normalizeWidgetApiConfig,
+  WidgetConfigService,
+} from "../config/widget-config";
 import { RichErrorService } from "../errors/rich-error-service";
 import { waitForDelayedApiRequests } from "./delay-api-requests";
 import { handleGeoBlockResponse } from "./geo-block-state";
@@ -75,7 +78,8 @@ const configureClient = ({
   );
 
 const makeApiTransport = Effect.gen(function* () {
-  const { api } = yield* WidgetBootstrapConfig;
+  const widgetConfig = yield* WidgetConfigService;
+  const api = normalizeWidgetApiConfig(widgetConfig.initial);
   const httpClient = yield* HttpClient.HttpClient;
   const richErrors = yield* RichErrorService;
   const borrowApiUrl = api.borrowApiUrl.trim();

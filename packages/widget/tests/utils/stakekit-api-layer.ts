@@ -1,4 +1,5 @@
-import { Layer } from "effect";
+import { Effect, Layer, Stream } from "effect";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import {
   BorrowApiService,
   LegacyApiService,
@@ -6,23 +7,24 @@ import {
 } from "../../src/services/api";
 import { ApiTransportService } from "../../src/services/api/transport";
 import {
-  defaultWidgetBootstrapConfig,
   type WidgetApiConfig,
-  WidgetBootstrapConfig,
+  WidgetConfigService,
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
 const makeTestLayers = (api: WidgetApiConfig) => {
-  const bootstrapLayer = WidgetBootstrapConfig.layer({
-    ...defaultWidgetBootstrapConfig,
-    api,
+  const config = normalizeWidgetConfig({ ...api, variant: "default" });
+  const configLayer = WidgetConfigService.layer({
+    initial: config,
+    changes: Stream.never,
+    current: Effect.succeed(config),
   });
   const richErrorLayer = RichErrorService.layer.pipe(
-    Layer.provide(bootstrapLayer)
+    Layer.provide(configLayer)
   );
   const transportLayer = ApiTransportService.layer.pipe(
     Layer.provide(richErrorLayer),
-    Layer.provide(bootstrapLayer)
+    Layer.provide(configLayer)
   );
   const apiLayer = Layer.mergeAll(
     BorrowApiService.layer,

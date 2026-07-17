@@ -3,7 +3,10 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import type { PreferredTokenYieldsPerNetwork } from "../../domain/types/stake";
 import { normalizeDashboardYieldCategoryOrder } from "../../domain/types/yields";
 import type { SettingsProps, VariantProps } from "../../public-api/types";
-import { defaultWidgetBootstrapConfig } from "../../services/config/widget-config";
+import {
+  defaultWidgetBootstrapConfig,
+  type WidgetConfig,
+} from "../../services/config/widget-config";
 import { config } from "../../shared/config/widget-defaults";
 import { selectAtom } from "../../shared/effect/select-atom";
 
@@ -12,27 +15,7 @@ type TokenYieldPreferences = Exclude<
   undefined
 >;
 
-type ResolvedSettingsProps = Omit<
-  SettingsProps,
-  "borrowEnabled" | "dashboardYieldCategoryOrder" | "yieldGrouping"
-> & {
-  readonly borrowEnabled: boolean;
-  readonly dashboardYieldCategoryOrder: NonNullable<
-    SettingsProps["dashboardYieldCategoryOrder"]
-  >;
-  readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;
-};
-
-type ZerionChainModal = Extract<
-  VariantProps,
-  { readonly variant: "zerion" }
->["chainModal"];
-
-export type WidgetConfig = ResolvedSettingsProps & {
-  readonly chainModal?: ZerionChainModal;
-  readonly isLedgerLive: boolean;
-  readonly variant: VariantProps["variant"];
-};
+export type { WidgetConfig } from "../../services/config/widget-config";
 
 export const normalizeWidgetConfig = (
   input: SettingsProps & VariantProps,
@@ -86,11 +69,6 @@ export const widgetConfigAtom = Atom.make<WidgetConfig>(
   defaultWidgetConfig
 ).pipe(Atom.keepAlive, Atom.withLabel("widgetConfigAtom"));
 
-const widgetConfigFieldAtomFamily = Atom.family((field: keyof WidgetConfig) =>
+export const widgetConfigFieldAtom = Atom.family((field: keyof WidgetConfig) =>
   selectAtom(widgetConfigAtom, (settings) => settings[field])
 );
-
-export const widgetConfigFieldAtom = <Field extends keyof WidgetConfig>(
-  field: Field
-): Atom.Atom<WidgetConfig[Field]> =>
-  widgetConfigFieldAtomFamily(field) as Atom.Atom<WidgetConfig[Field]>;

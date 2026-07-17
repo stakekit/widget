@@ -8,7 +8,6 @@ import {
   widgetConfigAtom,
 } from "../../src/app/config";
 import {
-  defaultDynamicExternalProviderInput,
   defaultSolanaWalletInput,
   dynamicExternalProviderInputAtom,
   normalizeDynamicExternalProviderInput,
@@ -78,15 +77,45 @@ describe("registry root input models", () => {
     expect(normalized?.provider).toBe(externalProvider.provider);
   });
 
+  it("publishes derived external-provider changes only when its settings change", () => {
+    const firstProvider = makeExternalProvider();
+    const replacementProvider = makeExternalProvider({
+      currentAddress: "0x0000000000000000000000000000000000000002",
+    });
+    const registry = AtomRegistry.make();
+    const onChange = vi.fn();
+    const firstSettings = makeSettings(firstProvider);
+
+    registry.set(widgetConfigAtom, firstSettings);
+    const unsubscribe = registry.subscribe(
+      dynamicExternalProviderInputAtom,
+      onChange,
+      { immediate: true }
+    );
+    expect(onChange).toHaveBeenCalledOnce();
+    onChange.mockClear();
+    registry.set(widgetConfigAtom, {
+      ...firstSettings,
+      tracking: { trackEvent: vi.fn() },
+    });
+    expect(onChange).not.toHaveBeenCalled();
+
+    registry.set(widgetConfigAtom, makeSettings(replacementProvider));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        currentAddress: replacementProvider.currentAddress,
+      })
+    );
+    unsubscribe();
+  });
+
   it("exposes deterministic defaults", () => {
     const registry = AtomRegistry.make();
 
     expect(registry.get(widgetBootstrapConfigAtom)).toEqual(
       defaultWidgetBootstrapConfig
     );
-    expect(registry.get(dynamicExternalProviderInputAtom)).toBe(
-      defaultDynamicExternalProviderInput
-    );
+    expect(registry.get(dynamicExternalProviderInputAtom)).toBeNull();
     expect(registry.get(solanaWalletInputAtom)).toBe(defaultSolanaWalletInput);
   });
 
@@ -127,17 +156,10 @@ describe("registry root input models", () => {
     const secondRegistry = AtomRegistry.make();
 
     firstRegistry.set(widgetConfigAtom, makeSettings(firstProvider));
-    firstRegistry.set(
-      dynamicExternalProviderInputAtom,
-      normalizeDynamicExternalProviderInput(firstProvider)
-    );
     const firstKey = firstRegistry.get(walletInitializationKeyAtom);
     const firstRef = firstKey.externalProviders;
 
-    firstRegistry.set(
-      dynamicExternalProviderInputAtom,
-      normalizeDynamicExternalProviderInput(replacementProvider)
-    );
+    firstRegistry.set(widgetConfigAtom, makeSettings(replacementProvider));
     const replacementKey = firstRegistry.get(walletInitializationKeyAtom);
 
     expect(replacementKey.externalProviders).toBe(firstRef);
@@ -146,10 +168,6 @@ describe("registry root input models", () => {
     );
 
     secondRegistry.set(widgetConfigAtom, makeSettings(firstProvider));
-    secondRegistry.set(
-      dynamicExternalProviderInputAtom,
-      normalizeDynamicExternalProviderInput(firstProvider)
-    );
     const secondKey = secondRegistry.get(walletInitializationKeyAtom);
 
     expect(secondKey.externalProviders).not.toBe(firstRef);

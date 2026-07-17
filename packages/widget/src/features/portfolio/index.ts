@@ -17,8 +17,5 @@ export {
   getPositionsTotal,
   rewardsPositionsSummaryAtom,
 } from "./resources/summary";
-export {
-  tokenBalancesScanAtom,
-  tokenBalancesScanResourceAtom,
-} from "./resources/token-balances";
-export { yieldBalancesScanResourceAtom } from "./resources/yield-balances";
+export { tokenBalancesScanAtom } from "./resources/token-balances";
+export { yieldBalancesScanResourceAtomFamily } from "./resources/yield-balances";

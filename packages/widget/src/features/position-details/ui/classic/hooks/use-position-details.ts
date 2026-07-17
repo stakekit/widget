@@ -52,6 +52,7 @@ export const usePositionDetails = () => {
     canChangeUnstakeAmount,
     unstakeIsGreaterOrLessIntegrationLimitError,
     minUnstakeAmount,
+    currentWalletScope,
   } = positionWorkflow;
 
   const navigate = useNavigate();
@@ -110,7 +111,6 @@ export const usePositionDetails = () => {
 
     if (stakeExitRequestDto && integrationData && unstakeToken) {
       setExitStakeRequest({
-        addresses: stakeExitRequestDto.addresses,
         actionDto: null,
         gasFeeToken: stakeExitRequestDto.gasFeeToken,
         integrationData,
@@ -118,6 +118,7 @@ export const usePositionDetails = () => {
         requestDto: stakeExitRequestDto.dto,
         unstakeAmount,
         unstakeToken,
+        walletScope: currentWalletScope,
       });
       navigate(getPositionDetailsUnstakeReviewPath(plain) ?? "unstake/review");
     }

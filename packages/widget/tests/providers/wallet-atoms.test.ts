@@ -15,6 +15,7 @@ import {
 } from "../../src/features/wallet";
 import type { SKExternalProviders } from "../../src/public-api/types";
 import { getConfig as getEvmConfig } from "../../src/services/wallet/connectors/ethereum/config";
+import { buildWagmiConfig } from "../../src/services/wallet/wagmi-config";
 
 const emptyInitParams = {
   accountId: null,
@@ -136,7 +137,7 @@ describe("wallet Effect Atom boundaries", () => {
     expect(operations.switchChain).toHaveBeenCalledOnce();
   });
 
-  it("maps reconnect, fallback connect, and initial switch failures to typed phases", async () => {
+  it("continues after reconnect, fallback connect, and initial switch failures", async () => {
     const injectedConnector = { id: "injected" } as Connector;
     const wagmiConfig = {
       connectors: [injectedConnector],
@@ -150,54 +151,118 @@ describe("wallet Effect Atom boundaries", () => {
       reconnect: vi.fn(async () => [{} as never]),
       switchChain: vi.fn(async () => ({ id: 2 })),
     };
-    const readError = (operations: WalletInitializationOperations) =>
+    const initialize = (operations: WalletInitializationOperations) =>
       Effect.runPromise(
-        Effect.flip(
-          initializeWallet({
-            hasExternalProvider: false,
-            operations,
-            queryParamsInitChainId: 2,
-            wagmiConfig,
-          })
-        )
+        initializeWallet({
+          hasExternalProvider: false,
+          operations,
+          queryParamsInitChainId: 2,
+          wagmiConfig,
+        })
       );
 
-    const reconnectError = await readError({
-      ...baseOperations,
-      reconnect: vi.fn(async () => {
-        throw cause;
-      }),
+    const reconnectFailure = vi.fn(async () => {
+      throw cause;
     });
-    const fallbackError = await readError({
+    const reconnectConnect = vi.fn(async () => ({ accounts: [], chainId: 1 }));
+    const reconnectSwitch = vi.fn(async () => ({ id: 2 }));
+    await initialize({
       ...baseOperations,
-      connect: vi.fn(async () => {
-        throw cause;
-      }),
+      connect: reconnectConnect,
+      isMobile: () => true,
+      reconnect: reconnectFailure,
+      switchChain: reconnectSwitch,
+    });
+    const fallbackConnectFailure = vi.fn(async () => {
+      throw cause;
+    });
+    await initialize({
+      ...baseOperations,
+      connect: fallbackConnectFailure,
       isMobile: () => true,
       reconnect: vi.fn(async () => []),
     });
-    const switchError = await readError({
+    const switchFailure = vi.fn(async () => {
+      throw cause;
+    });
+    await initialize({
       ...baseOperations,
-      switchChain: vi.fn(async () => {
-        throw cause;
-      }),
+      switchChain: switchFailure,
     });
 
-    expect(reconnectError).toMatchObject({
-      _tag: "WalletInitializationError",
-      cause,
-      phase: "reconnect",
+    expect(reconnectFailure).toHaveBeenCalledOnce();
+    expect(reconnectSwitch).toHaveBeenCalledOnce();
+    expect(reconnectConnect).toHaveBeenCalledOnce();
+    expect(reconnectConnect).toHaveBeenCalledWith(wagmiConfig, {
+      chainId: 2,
+      connector: injectedConnector,
     });
-    expect(fallbackError).toMatchObject({
-      _tag: "WalletInitializationError",
-      cause,
-      phase: "mobile-fallback-connect",
+    expect(fallbackConnectFailure).toHaveBeenCalledOnce();
+    expect(switchFailure).toHaveBeenCalledOnce();
+  });
+
+  it("retains configured connectors and manual connect after initial switching fails", async () => {
+    const configuredConnector = { id: "configured" } as Connector;
+    const wagmiConfig = {
+      connectors: [configuredConnector],
+      state: { chainId: 1 },
+    } as unknown as ReturnType<typeof createConfig>;
+    const connect = vi.fn(async () => ({ accounts: [], chainId: 1 }));
+    const operations: WalletInitializationOperations = {
+      connect,
+      isLedgerLive: () => false,
+      isMobile: () => false,
+      reconnect: vi.fn(async () => [{} as never]),
+      switchChain: vi.fn(async () => {
+        throw new Error("switch rejected");
+      }),
+    };
+
+    await Effect.runPromise(
+      initializeWallet({
+        hasExternalProvider: false,
+        operations,
+        queryParamsInitChainId: 2,
+        wagmiConfig,
+      })
+    );
+
+    expect(wagmiConfig.connectors).toEqual([configuredConnector]);
+
+    await operations.connect(wagmiConfig, {
+      connector: configuredConnector,
     });
-    expect(switchError).toMatchObject({
-      _tag: "WalletInitializationError",
-      cause,
-      phase: "initial-chain-switch",
-    });
+    expect(connect).toHaveBeenCalledOnce();
+  });
+
+  it("keeps wallet configuration construction failures fatal", async () => {
+    const cause = new Error("connector construction failed");
+    await expect(
+      Effect.runPromise(
+        Effect.scoped(
+          buildWagmiConfig({
+            chainIconMapping: undefined,
+            customConnectors: () => {
+              throw cause;
+            },
+            disableInjectedProviderDiscovery: true,
+            enabledNetworks: new Set(["ethereum"]),
+            forceWalletConnectOnly: false,
+            institutionalWallets: false,
+            isLedgerLive: false,
+            isSafe: false,
+            mapWalletFn: undefined,
+            mapWalletListFn: undefined,
+            persistPublicKey: async () => undefined,
+            queryParams: Schema.decodeSync(InitParams)(emptyInitParams),
+            solanaConnection: {} as Connection,
+            solanaWallets: [],
+            tonConnectManifestUrl: undefined,
+            variant: "default",
+          })
+        )
+      )
+    ).rejects.toThrow(cause.message);
   });
 
   it("deduplicates equivalent lifecycle keys and replaces changed keys", () => {

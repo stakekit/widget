@@ -1,9 +1,11 @@
 import BigNumber from "bignumber.js";
+import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import type { YieldPendingActionType } from "../../../domain/types/pending-action";
 import type { YieldBalanceType } from "../../../domain/types/positions";
 import type { TokenString } from "../../../domain/types/tokens";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 
 export type BalanceTokenActionType =
   `${YieldBalanceType}-${TokenString}-${YieldPendingActionType}`;
@@ -72,7 +74,18 @@ export const reducePositionDetailsWorkflow = ({
   }
 };
 
-export const positionDetailsWorkflowAtom =
-  Atom.make<PositionDetailsWorkflowState>(
-    makePositionDetailsWorkflowState()
-  ).pipe(Atom.keepAlive, Atom.withLabel("positionDetailsWorkflowAtom"));
+export class PositionDetailsWorkflowKey extends Data.TaggedClass(
+  "PositionDetailsWorkflowKey"
+)<{
+  readonly balanceId: string | null;
+  readonly integrationId: string | null;
+  readonly pendingActionType: YieldPendingActionType | null;
+  readonly scope: WalletScopeKey;
+}> {}
+
+export const positionDetailsWorkflowAtom = Atom.family(
+  (_key: PositionDetailsWorkflowKey) =>
+    Atom.make<PositionDetailsWorkflowState>(
+      makePositionDetailsWorkflowState()
+    ).pipe(Atom.withLabel("positionDetailsWorkflowAtom"))
+);

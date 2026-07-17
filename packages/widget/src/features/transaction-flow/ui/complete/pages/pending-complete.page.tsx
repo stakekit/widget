@@ -10,23 +10,24 @@ import {
   positionBalancesAtom,
 } from "../../../../portfolio";
 import { useTrackPage } from "../../../../tracking";
-import { usePendingActionRequest } from "../../../react/use-transaction-flow";
+import { useRequiredPendingActionRequest } from "../../../react/request-route-guards";
 import { CompletePage } from "./common.page";
 
 export const PendingCompletePage = () => {
   const { plain } = useUnstakeOrPendingActionParams();
+  const pendingRequest = useRequiredPendingActionRequest();
   const positionBalances = AsyncResult.getOrElse(
     useAtomValue(
       positionBalancesAtom(
         new PositionBalancesKey({
           balanceId: plain.balanceId ?? null,
+          scope: pendingRequest.walletScope,
           yieldId: plain.integrationId ?? null,
         })
       )
     ),
     () => null
   );
-  const pendingRequest = usePendingActionRequest()!;
   const integrationData = pendingRequest.integrationData;
   const token = pendingRequest.interactedToken;
 

@@ -1,9 +1,7 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Stream } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  defaultWidgetBootstrapConfig,
-  WidgetBootstrapConfig,
-} from "../../src/services/config/widget-config";
+import { normalizeWidgetConfig } from "../../src/app/config";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { TrackingService } from "../../src/services/tracking/tracking-service";
 
 const variantTracking = vi.hoisted(() => ({
@@ -25,49 +23,64 @@ describe("tracking service", () => {
     vi.clearAllMocks();
   });
 
-  it("captures immutable tracking configuration during layer construction", async () => {
-    const trackEvent = vi.fn();
+  it("resolves the latest live tracking configuration per invocation", async () => {
+    const firstTrackEvent = vi.fn();
+    const secondTrackEvent = vi.fn();
     const trackPageView = vi.fn();
+    let input = normalizeWidgetConfig({
+      apiKey: "",
+      tracking: { trackEvent: firstTrackEvent, trackPageView },
+      variant: "default",
+    });
     const layer = TrackingService.layer.pipe(
       Layer.provide(
-        WidgetBootstrapConfig.layer({
-          ...defaultWidgetBootstrapConfig,
-          tracking: {
-            tracking: { trackEvent, trackPageView },
-            variant: "default",
-          },
+        WidgetConfigService.layer({
+          initial: input,
+          changes: Stream.never,
+          current: Effect.sync(() => input),
         })
       )
     );
 
     await Effect.runPromise(
       TrackingService.use((tracking) =>
-        Effect.all([
-          tracking.trackEvent("txSigned", { txId: "first" }),
-          tracking.trackEvent("txSubmitted", { txId: "second" }),
-          tracking.trackPageView("earn", { source: "test" }),
-        ])
+        Effect.gen(function* () {
+          yield* tracking.trackEvent("txSigned", { txId: "first" });
+          input = normalizeWidgetConfig({
+            apiKey: "",
+            tracking: { trackEvent: secondTrackEvent, trackPageView },
+            variant: "default",
+          });
+          yield* tracking.trackEvent("txSubmitted", { txId: "second" });
+          yield* tracking.trackPageView("earn", { source: "test" });
+        })
       ).pipe(Effect.provide(layer))
     );
 
-    expect(trackEvent).toHaveBeenNthCalledWith(1, "Transaction signed", {
+    expect(firstTrackEvent).toHaveBeenCalledOnce();
+    expect(firstTrackEvent).toHaveBeenCalledWith("Transaction signed", {
       txId: "first",
     });
-    expect(trackEvent).toHaveBeenNthCalledWith(2, "Transaction submitted", {
+    expect(secondTrackEvent).toHaveBeenCalledOnce();
+    expect(secondTrackEvent).toHaveBeenCalledWith("Transaction submitted", {
       txId: "second",
     });
     expect(trackPageView).toHaveBeenCalledWith("Earn", { source: "test" });
   });
 
   it("initializes variant tracking once during layer construction", async () => {
+    const input = normalizeWidgetConfig({
+      apiKey: "",
+      chainModal: () => null,
+      tracking: undefined,
+      variant: "zerion",
+    });
     const layer = TrackingService.layer.pipe(
       Layer.provide(
-        WidgetBootstrapConfig.layer({
-          ...defaultWidgetBootstrapConfig,
-          tracking: {
-            tracking: undefined,
-            variant: "zerion",
-          },
+        WidgetConfigService.layer({
+          initial: input,
+          changes: Stream.never,
+          current: Effect.succeed(input),
         })
       )
     );

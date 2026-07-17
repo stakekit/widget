@@ -4,8 +4,9 @@ import { combineRecipeWithVariant } from "../../../../../shared/styles/recipe-va
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { CaretLeftIcon } from "../../../../../shared/ui/primitives/icons/caret-left";
 import { AnimationPage } from "../../../../widget-shell";
+import { ActivitySelectionProvider } from "../../../react/activity-selection-route";
 import {
-  useActivitySelectedAction,
+  useActivitySelection,
   useSetActivitySelection,
 } from "../../../react/use-activity-selection";
 import { ActivityPage } from "./activity.page";
@@ -14,10 +15,10 @@ import { activityDetailsContainer } from "./styles.css";
 export const ActivityTabPage = () => {
   const variant = useWidgetConfig("variant");
   const navigate = useNavigate();
-  const selectedAction = useActivitySelectedAction();
+  const selection = useActivitySelection();
   const setActivitySelection = useSetActivitySelection();
 
-  const showDetails = selectedAction !== null;
+  const showDetails = selection !== null;
 
   const onBack = () => {
     setActivitySelection(null);
@@ -39,14 +40,16 @@ export const ActivityTabPage = () => {
               <CaretLeftIcon />
             </Box>
 
-            <Box
-              className={combineRecipeWithVariant({
-                rec: activityDetailsContainer,
-                variant,
-              })}
-            >
-              <Outlet />
-            </Box>
+            <ActivitySelectionProvider value={selection}>
+              <Box
+                className={combineRecipeWithVariant({
+                  rec: activityDetailsContainer,
+                  variant,
+                })}
+              >
+                <Outlet />
+              </Box>
+            </ActivitySelectionProvider>
           </>
         ) : (
           <Box display="flex" flex={1} flexDirection="column" width="full">

@@ -1,7 +1,7 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type {
-  Action,
   ActionRequest,
+  BorrowNetwork,
   CollateralToken,
   DebtBalance,
   DisableCollateralPendingAction,
@@ -57,17 +57,13 @@ export type BorrowActionFormReviewState = {
     readonly existingDebtUsd?: string;
     readonly loanTokenSymbol?: string;
     readonly marketLabel: string;
-    readonly network: string;
+    readonly network: BorrowNetwork;
     readonly projectedCollateralUsd?: string;
     readonly projectedDebtUsd?: string;
     readonly projectedHealthFactor?: string;
     readonly projectedLtv?: string;
     readonly providerName: string;
   };
-};
-
-export type BorrowActionFormExecutionState = BorrowActionFormReviewState & {
-  readonly action: Action;
 };
 
 export type BorrowActionFormState =
@@ -81,10 +77,6 @@ export type BorrowActionFormState =
   | {
       readonly reviewState: BorrowActionFormReviewState;
       readonly type: "review";
-    }
-  | {
-      readonly executionState: BorrowActionFormExecutionState;
-      readonly type: "execution";
     };
 
 export type BorrowActionFormAction =
@@ -95,10 +87,6 @@ export type BorrowActionFormAction =
   | {
       readonly reviewState: BorrowActionFormReviewState;
       readonly type: "prepareReview";
-    }
-  | {
-      readonly executionState: BorrowActionFormExecutionState;
-      readonly type: "prepareExecution";
     }
   | {
       readonly type: "reset";
@@ -125,12 +113,6 @@ export const borrowActionFormAtom = Atom.writable<
         context.setSelf({
           reviewState: action.reviewState,
           type: "review",
-        });
-        return;
-      case "prepareExecution":
-        context.setSelf({
-          executionState: action.executionState,
-          type: "execution",
         });
         return;
       case "reset":

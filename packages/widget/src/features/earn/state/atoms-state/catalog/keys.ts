@@ -1,12 +1,8 @@
 import { Data } from "effect";
-import type { TokenBalanceScanCommand } from "../../../../../domain/schema/financial-models";
-import type {
-  WalletAddress,
-  YieldId,
-} from "../../../../../domain/schema/identifiers";
+import type { YieldId } from "../../../../../domain/schema/identifiers";
 import type { Network } from "../../../../../domain/schema/network-model";
-
 import type { DashboardYieldCategory } from "../../../../../domain/types/yields";
+import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
 export class AvailableYieldCategoriesKey extends Data.TaggedClass(
   "AvailableYieldCategoriesKey"
@@ -37,16 +33,11 @@ export class InitYieldKey extends Data.TaggedClass("InitYieldKey")<{
 }> {}
 
 export class PositionsDataKey extends Data.TaggedClass("PositionsDataKey")<{
-  address: WalletAddress | null;
-  network: Network | null;
+  scope: WalletScopeKey | null;
 }> {}
 
 export class TokenOptionsKey extends Data.TaggedClass("TokenOptionsKey")<{
-  address: WalletAddress | null;
-  additionalAddresses?:
-    | TokenBalanceScanCommand["addresses"]["additionalAddresses"]
-    | null;
-  network: Network | null;
+  scope: WalletScopeKey | null;
   category: DashboardYieldCategory | null;
   initToken: string | null;
   initTokenNetwork: Network | null;
@@ -80,11 +71,7 @@ export class DefaultTokenOptionsKey extends Data.TaggedClass(
 export class TokenBalancesScanKey extends Data.TaggedClass(
   "TokenBalancesScanKey"
 )<{
-  address: WalletAddress | null;
-  additionalAddresses?:
-    | TokenBalanceScanCommand["addresses"]["additionalAddresses"]
-    | null;
-  network: Network | null;
+  scope: WalletScopeKey | null;
 }> {}
 
 export class InitTokenOptionKey extends Data.TaggedClass("InitTokenOptionKey")<{

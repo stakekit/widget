@@ -1,8 +1,18 @@
-import { useCallback, useMemo, useReducer } from "react";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from "react";
 import type { PendingAction } from "../../../../../domain/schema/action-models";
 import type { EarnBalance } from "../../../../../domain/schema/earn-models";
 import { isPendingActionValidatorAddressesRequired } from "../../../../../domain/types/pending-action";
 import type { ValidatorInput as ValidatorDto } from "../../../../../domain/types/validators";
+import {
+  sameWalletScopeOwner,
+  type WalletScopeKey,
+} from "../../../../../services/wallet/domain/scope";
 import type { Action } from "../../../../../shared/types/utils";
 import type { SelectModalProps } from "../../../../widget-shell";
 
@@ -113,8 +123,19 @@ const getInitialState = (): State => ({
   multiSelect: false,
 });
 
-export const useValidatorAddressesHandling = () => {
+export const useValidatorAddressesHandling = (walletScope: WalletScopeKey) => {
   const [state, dispatch] = useReducer(reducer, getInitialState());
+  const previousWalletScope = useRef(walletScope);
+
+  useLayoutEffect(() => {
+    const previous = previousWalletScope.current;
+    if (sameWalletScopeOwner(previous, walletScope)) {
+      return;
+    }
+
+    previousWalletScope.current = walletScope;
+    dispatch({ type: "validator/close" });
+  }, [walletScope]);
 
   const closeModal = useCallback(
     () => dispatch({ type: "validator/close" }),

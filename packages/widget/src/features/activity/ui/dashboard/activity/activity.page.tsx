@@ -1,14 +1,8 @@
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { VirtualList } from "../../../../../shared/ui/components/virtual-list";
 import { Box } from "../../../../../shared/ui/primitives/box";
 import { Text } from "../../../../../shared/ui/primitives/typography/text";
-import { useSKWallet } from "../../../../wallet";
 import { FallbackContent } from "../../../../widget-shell";
-import {
-  useActivitySelectedAction,
-  useSetActivitySelection,
-} from "../../../react/use-activity-selection";
 import { ActionListItem } from "../../classic/activity-page/components/action-list-item";
 import { ActivityFilters } from "../../classic/activity-page/components/activity-filters";
 import { useActivityPage } from "../../classic/activity-page/hooks/use-activity-page";
@@ -90,24 +84,4 @@ const ActivityPageComponent = () => {
   );
 };
 
-const _ActivityPage = () => {
-  const setActivitySelection = useSetActivitySelection();
-  const { isConnected, network } = useSKWallet();
-
-  const selectedAction = useActivitySelectedAction();
-
-  // biome-ignore lint: false
-  useEffect(() => {
-    setActivitySelection(null);
-  }, [network, setActivitySelection]);
-
-  useEffect(() => {
-    if (!isConnected && selectedAction) {
-      setActivitySelection(null);
-    }
-  }, [isConnected, selectedAction, setActivitySelection]);
-
-  return <ActivityPageComponent />;
-};
-
-export const ActivityPage = () => <_ActivityPage />;
+export const ActivityPage = ActivityPageComponent;

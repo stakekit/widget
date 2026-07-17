@@ -52,10 +52,6 @@ export const useHandleDeepLinks = () => {
       setPendingActionRequest({
         actionDto: null,
         requestDto: data.pendingActionDto.requestDto,
-        addresses: {
-          address: data.pendingActionDto.address,
-          additionalAddresses: data.pendingActionDto.additionalAddresses,
-        },
         gasFeeToken: data.pendingActionDto.gasFeeToken,
         integrationData: data.pendingActionDto.integrationData,
         interactedToken: data.balance.token,
@@ -67,6 +63,7 @@ export const useHandleDeepLinks = () => {
             yields: null,
             selectedProviderYieldId: null,
           }) ?? [],
+        walletScope: data.walletScope,
       });
       navigateRef.current(
         `positions/${data.yieldOp.id}/${data.balanceId}/pending-action/review`

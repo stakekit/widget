@@ -3,6 +3,7 @@ export {
   makePositionDetailsWorkflowState,
   type PendingActionAmountChange,
   type PositionDetailsWorkflowAction,
+  PositionDetailsWorkflowKey,
   type PositionDetailsWorkflowState,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,

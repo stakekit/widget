@@ -3,10 +3,7 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  refreshAtomResources,
-  withApiResourcePolicy,
-} from "../../src/shared/effect/api-resource";
+import { withApiResourcePolicy } from "../../src/shared/effect/api-resource";
 
 class ResourceKey extends Data.Class<{
   readonly network: string;
@@ -123,22 +120,5 @@ describe("shared API resource conventions", () => {
     await Promise.resolve();
     await vi.advanceTimersByTimeAsync(100);
     expect(AsyncResult.getOrThrow(registry.get(resource))).toBe(2);
-  });
-
-  it("refreshes only explicitly declared resources", () => {
-    const first = Atom.make(1);
-    const second = Atom.make(2);
-    const third = Atom.make(3);
-    const refreshed: Array<object> = [];
-    const target = {
-      refresh: <A>(atom: Atom.Atom<A>) => {
-        refreshed.push(atom);
-      },
-    };
-
-    refreshAtomResources(target, [first, second]);
-    refreshAtomResources(target, [third]);
-
-    expect(refreshed).toEqual([first, second, third]);
   });
 });

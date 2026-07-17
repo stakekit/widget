@@ -39,8 +39,16 @@ const resolveWalletInitParams = Effect.fn("resolveWalletInitParams")(function* (
   };
 });
 
-export const walletControllerAtom = Atom.family(
-  (key: WalletInitializationKey) =>
+type WalletControllerDependencies = {
+  readonly buildConfig: typeof buildWagmiConfig;
+  readonly initialize: typeof initializeWallet;
+};
+
+export const makeWalletControllerAtom = ({
+  buildConfig = buildWagmiConfig,
+  initialize = initializeWallet,
+}: Partial<WalletControllerDependencies> = {}) =>
+  Atom.family((key: WalletInitializationKey) =>
     appRuntime
       .atom((get) =>
         Effect.gen(function* () {
@@ -49,7 +57,7 @@ export const walletControllerAtom = Atom.family(
           const queryParams = yield* resolveWalletInitParams(
             get(initParamsAtom)
           );
-          const result = yield* buildWagmiConfig({
+          const result = yield* buildConfig({
             ...key,
             enabledNetworks,
             persistPublicKey: (input) =>
@@ -64,14 +72,16 @@ export const walletControllerAtom = Atom.family(
                 })
             )
           );
-          yield* initializeWallet({
+          yield* initialize({
             hasExternalProvider: key.hasExternalProvider,
             queryParamsInitChainId: result.queryParamsInitChainId,
             wagmiConfig: result.wagmiConfig,
-          });
+          }).pipe(Effect.forkScoped);
 
           return result;
         })
       )
       .pipe(Atom.setIdleTTL(0))
-);
+  );
+
+export const walletControllerAtom = makeWalletControllerAtom();

@@ -15,8 +15,12 @@ import {
   toPositionsData,
 } from "../../../domain/types/positions";
 import type { YieldBalanceLabelDto } from "../../../domain/types/token-balance";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { defaultFormattedNumber } from "../../../shared/lib/number-format";
-import { yieldBalancesScanAtom } from "./yield-balances";
+import {
+  yieldBalancesScanAtom,
+  yieldBalancesScanResourceAtomFamily,
+} from "./yield-balances";
 
 export type PositionItem = {
   readonly integrationId: YieldId;
@@ -92,30 +96,41 @@ export const toPositionItems = (
     : rows;
 };
 
+const positionsDataAtomFamily = Atom.family((scope: WalletScopeKey) =>
+  yieldBalancesScanResourceAtomFamily(scope).pipe(
+    Atom.mapResult((page) => toPositionsData(page.items)),
+    Atom.withLabel("positionsDataAtom")
+  )
+);
+
 const positionsDataAtom = yieldBalancesScanAtom.pipe(
   Atom.map(({ result }) =>
-    result.pipe(AsyncResult.map((page) => toPositionsData(page?.items ?? [])))
+    result.pipe(AsyncResult.map((page) => toPositionsData(page.items)))
   ),
-  Atom.withLabel("positionsDataAtom")
+  Atom.withLabel("currentPositionsDataAtom")
 );
 
 export class PositionDataKey extends Data.Class<{
+  readonly scope: WalletScopeKey;
   readonly yieldId: YieldId | null;
 }> {}
 
 export const positionDataAtom = Atom.family((key: PositionDataKey) =>
-  positionsDataAtom.pipe(
+  positionsDataAtomFamily(key.scope).pipe(
     Atom.mapResult((positions) => getPositionData(positions, key.yieldId))
   )
 );
 
 export class PositionBalancesKey extends Data.Class<{
   readonly balanceId: string | null;
+  readonly scope: WalletScopeKey;
   readonly yieldId: YieldId | null;
 }> {}
 
 export const positionBalancesAtom = Atom.family((key: PositionBalancesKey) =>
-  positionDataAtom(new PositionDataKey({ yieldId: key.yieldId })).pipe(
+  positionDataAtom(
+    new PositionDataKey({ scope: key.scope, yieldId: key.yieldId })
+  ).pipe(
     Atom.mapResult((position) => getPositionBalances(position, key.balanceId))
   )
 );

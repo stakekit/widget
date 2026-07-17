@@ -1,10 +1,4 @@
-import type { TransactionWorkflowSubmission } from "../../../services/workflow/transaction-workflow-model";
-import type { Action, ActionRequest } from "../core";
-
-type BorrowExecutionResult = {
-  readonly action: Action;
-  readonly submissions: ReadonlyArray<TransactionWorkflowSubmission>;
-};
+import type { Action, ActionRequest, BorrowNetwork } from "../core";
 
 export type BorrowReviewState = {
   readonly request: ActionRequest;
@@ -24,7 +18,7 @@ export type BorrowReviewState = {
     readonly existingDebtUsd?: string;
     readonly loanTokenSymbol?: string;
     readonly marketLabel: string;
-    readonly network: string;
+    readonly network: BorrowNetwork;
     readonly projectedCollateralUsd?: string;
     readonly projectedDebtUsd?: string;
     readonly projectedHealthFactor?: string;
@@ -33,12 +27,8 @@ export type BorrowReviewState = {
   };
 };
 
-export type BorrowStepsState = BorrowReviewState & {
+export type BorrowExecutionInput = BorrowReviewState & {
   readonly action: Action;
-};
-
-type BorrowCompleteState = BorrowStepsState & {
-  readonly result: BorrowExecutionResult;
 };
 
 export const isBorrowReviewState = (
@@ -57,26 +47,3 @@ export const isBorrowReviewState = (
     typeof maybeState.summary.providerName === "string"
   );
 };
-
-export const isBorrowStepsState = (
-  value: unknown
-): value is BorrowStepsState => {
-  if (!isBorrowReviewState(value)) {
-    return false;
-  }
-
-  const maybeState = value as Partial<BorrowStepsState>;
-
-  return (
-    !!maybeState.action &&
-    typeof maybeState.action.id === "string" &&
-    Array.isArray(maybeState.action.transactions)
-  );
-};
-
-export const isBorrowCompleteState = (
-  value: unknown
-): value is BorrowCompleteState =>
-  isBorrowStepsState(value) &&
-  "result" in value &&
-  !!(value as Partial<BorrowCompleteState>).result;

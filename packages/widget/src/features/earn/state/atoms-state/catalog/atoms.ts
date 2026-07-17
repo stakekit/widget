@@ -24,6 +24,7 @@ import {
 } from "../../../../../domain/types/yields";
 import { LegacyApiService } from "../../../../../services/api/legacy-api-service";
 import { YieldApiService } from "../../../../../services/api/yield-api-service";
+import { resourceInvalidationKeys } from "../../../../../services/resource-invalidation";
 import { withApiResourcePolicy } from "../../../../../shared/effect/api-resource";
 import {
   loadAllPages,
@@ -173,20 +174,23 @@ export const positionsDataAtom = Atom.family((key: PositionsDataKey) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
-        if (!key.address || !key.network) {
+        if (!key.scope) {
           return new Map() as PositionsData;
         }
 
         const api = yield* YieldApiService;
         const positions = yield* api.getCatalogPositions({
-          address: key.address,
-          network: key.network,
+          address: key.scope.address,
+          network: key.scope.network,
         });
 
         return toPositionsData(positions.items);
       }).pipe(withCatalogError("positions-data"))
     )
-    .pipe(catalogSWR)
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.yieldPositions(key.scope)),
+      catalogSWR
+    )
 );
 
 const toDefaultTokenOption = (tokenWithYields: {
@@ -293,8 +297,19 @@ const findInitTokenOption = ({
     return (tokenSymbolCompare && tokenNetworkCompare) || tokenStringCompare;
   }) ?? null;
 
+const legacyTokenOptionsAtom = Atom.family((network: Network | null) =>
+  appRuntime
+    .atom(() =>
+      Effect.gen(function* () {
+        const api = yield* LegacyApiService;
+        return yield* api.getLegacyTokenOptions(network ?? undefined);
+      }).pipe(withCatalogError("legacy-token-options"))
+    )
+    .pipe(catalogSWR)
+);
+
 const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
-  appRuntime.pull(() =>
+  appRuntime.pull((context) =>
     paginatedApiStream({
       fetchPage: (offset) =>
         Effect.gen(function* () {
@@ -305,12 +320,14 @@ const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
             })
           ) {
             const api = yield* YieldApiService;
-            const page = yield* api.getYieldTokens({
-              limit: DEFAULT_PAGE_SIZE,
-              offset,
-              networks: toNetworksParam(key.network),
-              yieldTypes: toYieldTypesParam(key.category),
-            });
+            const page = yield* api
+              .getYieldTokens({
+                limit: DEFAULT_PAGE_SIZE,
+                offset,
+                networks: toNetworksParam(key.network),
+                yieldTypes: toYieldTypesParam(key.category),
+              })
+              .pipe(withCatalogError("default-token-options"));
             const items = (page.items ?? []).map(toDefaultTokenOption);
 
             return {
@@ -325,9 +342,8 @@ const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
             return { items: [], limit: 1, offset, total: 0 };
           }
 
-          const api = yield* LegacyApiService;
-          const tokens = yield* api.getLegacyTokenOptions(
-            key.network ?? undefined
+          const tokens = yield* context.result(
+            legacyTokenOptionsAtom(key.network)
           );
 
           return {
@@ -337,52 +353,50 @@ const defaultTokenOptionsPullAtom = Atom.family((key: DefaultTokenOptionsKey) =>
             total: tokens.length,
           };
         }),
-    }).pipe(mapCatalogStreamError("default-token-options"))
+    })
   )
 );
 
-const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.token) {
-          return null;
-        }
+const initTokenOptionAtom = Atom.family((key: InitTokenOptionKey) => {
+  const source = legacyTokenOptionsAtom(key.network);
 
-        const api = yield* LegacyApiService;
-        const tokens = yield* api.getLegacyTokenOptions(
-          key.network ?? undefined
-        );
-
-        return findInitTokenOption({
-          network: key.network,
-          token: key.token,
-          tokenOptions: tokens.map(toInitTokenOption),
-        });
-      }).pipe(withCatalogError("init-token-option"))
-    )
-    .pipe(catalogSWR)
-);
+  return Atom.readable(
+    (get) =>
+      key.token
+        ? AsyncResult.map(get(source), (tokens) =>
+            findInitTokenOption({
+              network: key.network,
+              token: key.token!,
+              tokenOptions: tokens.map(toInitTokenOption),
+            })
+          )
+        : AsyncResult.success(null),
+    (refresh) => refresh(source)
+  );
+});
 
 const tokenBalancesScanAtom = Atom.family((key: TokenBalancesScanKey) =>
   appRuntime
     .atom(() =>
       Effect.gen(function* () {
-        if (!key.address || !key.network) {
+        if (!key.scope) {
           return [];
         }
 
         const api = yield* LegacyApiService;
         const balances = yield* api.scanEarnTokenBalances({
-          address: key.address,
-          additionalAddresses: key.additionalAddresses ?? undefined,
-          network: key.network as TokenBalanceScanCommand["network"],
+          address: key.scope.address,
+          additionalAddresses: key.scope.additionalAddresses ?? undefined,
+          network: key.scope.network as TokenBalanceScanCommand["network"],
         });
 
         return balances.map(toBalanceTokenOption);
       }).pipe(withCatalogError("token-balances-scan"))
     )
-    .pipe(catalogSWR)
+    .pipe(
+      Atom.withReactivity(resourceInvalidationKeys.walletBalances(key.scope)),
+      catalogSWR
+    )
 );
 
 const tokenYieldScopeAtom = Atom.family((key: TokenYieldScopeKey) =>
@@ -521,15 +535,13 @@ export const mergedTokenOptionsAtom = Atom.family((key: TokenOptionsKey) => {
   const defaultTokenOptionsAtom = defaultTokenOptionsPullAtom(
     new DefaultTokenOptionsKey({
       category: key.category,
-      network: key.network,
+      network: key.scope?.network ?? null,
       tokensForEnabledYieldsOnly: key.tokensForEnabledYieldsOnly,
     })
   );
   const tokenBalancesAtom = tokenBalancesScanAtom(
     new TokenBalancesScanKey({
-      address: key.address,
-      additionalAddresses: key.additionalAddresses,
-      network: key.network,
+      scope: key.scope,
     })
   );
   const initTokenAtom = initTokenOptionAtom(

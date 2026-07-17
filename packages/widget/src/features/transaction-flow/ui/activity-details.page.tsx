@@ -3,22 +3,14 @@ import {
   type TransactionType,
 } from "../../../domain/types/action";
 import { Box } from "../../../shared/ui/primitives/box";
-import {
-  useActivitySelectedAction,
-  useActivitySelectedYield,
-} from "../../activity";
+import { useRequiredActivitySelection } from "../../activity";
 import { useActivityComplete } from "./complete/hooks/use-activity-complete.hook";
 import { useComplete } from "./complete/hooks/use-complete.hook";
 import { CompletePageComponent } from "./complete/pages/common.page";
 import { ActionReviewPage } from "./review/pages/action-review.page";
 
 export const ActivityDetailsPage = () => {
-  const selectedAction = useActivitySelectedAction();
-  const selectedYield = useActivitySelectedYield();
-
-  if (!selectedYield || !selectedAction) {
-    return null;
-  }
+  const { selectedAction } = useRequiredActivitySelection();
 
   if (
     selectedAction.status === ActionStatus.SUCCESS ||

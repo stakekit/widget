@@ -26,14 +26,3 @@ export const withApiResourcePolicy = (policy: ApiResourcePolicy) =>
       Atom.setIdleTTL(policy.idleTTL)
     );
   };
-
-interface AtomRefreshTarget {
-  readonly refresh: <A>(atom: Atom.Atom<A>) => void;
-}
-
-export const refreshAtomResources = (
-  target: AtomRefreshTarget,
-  resources: ReadonlyArray<Atom.Atom<unknown>>
-) => {
-  for (const resource of resources) target.refresh(resource);
-};

@@ -3,10 +3,10 @@ import { Data, Duration, Effect, Option, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
-import type { WalletAddress } from "../../../domain/schema/identifiers";
-import type { Network } from "../../../domain/schema/network-model";
 import { getActionValidatorAddresses } from "../../../domain/types/action";
 import { YieldApiService } from "../../../services/api/yield-api-service";
+import { resourceInvalidationKeys } from "../../../services/resource-invalidation";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
 import {
   getPullResultItems,
@@ -17,7 +17,7 @@ import {
   YieldOpportunityKey,
   yieldOpportunityAtom,
 } from "../../earn";
-import { currentWalletStateAtom } from "../../wallet";
+import { currentWalletScopeAtom } from "../../wallet";
 import {
   type ActivityFilter,
   type ActivityFilterOption,
@@ -43,77 +43,83 @@ const activityHasNextPageAtom = Atom.family((_key: ActivityActionsKey) =>
 );
 
 const makeActivityActionsPullAtom = (key: ActivityActionsKey) =>
-  appRuntime.pull(
-    (context) => {
-      if (!key.address || !key.network) return Stream.empty;
-      const address = key.address;
-      const network = key.network;
+  appRuntime
+    .pull(
+      (context) => {
+        if (!key.scope) return Stream.empty;
+        const walletScope = key.scope;
+        const { address, network } = walletScope;
 
-      return paginatedApiStream({
-        fetchPage: (offset) =>
-          Effect.gen(function* () {
-            const api = yield* YieldApiService;
-            const page = yield* api.getActivityActions(
-              getActivityActionsRequestParams({
-                address,
-                filter: key.filter,
-                limit: PAGE_SIZE,
-                network,
-                offset,
-              })
-            );
-            context.set(activityTotalAtom(key), page.total);
-            context.set(
-              activityHasNextPageAtom(key),
-              page.offset + page.limit < page.total
-            );
-            const data = yield* Effect.forEach(
-              page.items ?? [],
-              (action) =>
-                Effect.gen(function* () {
-                  const yieldResult = yield* context
-                    .result(
-                      yieldOpportunityAtom(
-                        new YieldOpportunityKey({ yieldId: action.yieldId })
+        return paginatedApiStream({
+          fetchPage: (offset) =>
+            Effect.gen(function* () {
+              const api = yield* YieldApiService;
+              const page = yield* api.getActivityActions(
+                getActivityActionsRequestParams({
+                  address,
+                  filter: key.filter,
+                  limit: PAGE_SIZE,
+                  network,
+                  offset,
+                })
+              );
+              context.set(activityTotalAtom(key), page.total);
+              context.set(
+                activityHasNextPageAtom(key),
+                page.offset + page.limit < page.total
+              );
+              const data = yield* Effect.forEach(
+                page.items ?? [],
+                (action) =>
+                  Effect.gen(function* () {
+                    const yieldResult = yield* context
+                      .result(
+                        yieldOpportunityAtom(
+                          new YieldOpportunityKey({ yieldId: action.yieldId })
+                        )
                       )
-                    )
-                    .pipe(Effect.option);
-                  const yieldData = Option.getOrNull(yieldResult);
-                  const validatorsData =
-                    yield* getYieldValidatorsByAddressesEffect({
-                      addresses: getActionValidatorAddresses(action) ?? [],
-                      yieldId: action.yieldId,
-                    }).pipe(Effect.orElseSucceed(() => []));
+                      .pipe(Effect.option);
+                    const yieldData = Option.getOrNull(yieldResult);
+                    const validatorsData =
+                      yield* getYieldValidatorsByAddressesEffect({
+                        addresses: getActionValidatorAddresses(action) ?? [],
+                        yieldId: action.yieldId,
+                      }).pipe(Effect.orElseSucceed(() => []));
 
-                  return { actionData: action, validatorsData, yieldData };
-                }),
-              { concurrency: 5 }
-            );
+                    return {
+                      actionData: action,
+                      validatorsData,
+                      walletScope,
+                      yieldData,
+                    };
+                  }),
+                { concurrency: 5 }
+              );
 
-            return {
-              items: data,
-              limit: page.limit,
-              offset: page.offset,
-              total: page.total,
-            };
-          }).pipe(
-            Effect.mapError((cause) => new ActivityActionsError({ cause }))
-          ),
-      });
-    },
-    { initialValue: [] }
-  );
+              return {
+                items: data,
+                limit: page.limit,
+                offset: page.offset,
+                total: page.total,
+              };
+            }).pipe(
+              Effect.mapError((cause) => new ActivityActionsError({ cause }))
+            ),
+        });
+      },
+      { initialValue: [] }
+    )
+    .pipe(Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)));
 
-const activityActionsPullAtom = Atom.family(makeActivityActionsPullAtom);
+export const activityActionsPullAtom = Atom.family(makeActivityActionsPullAtom);
 
 const currentActivityActionsKeyAtom = Atom.family((filter: ActivityFilter) =>
   Atom.make((get) => {
-    const wallet = get(currentWalletStateAtom);
+    const scope = get(currentWalletScopeAtom);
 
     return new ActivityActionsKey({
-      address: wallet.status === "connected" ? wallet.address : null,
       filter,
-      network: wallet.status === "connected" ? wallet.network : null,
+      scope,
     });
   })
 );
@@ -139,7 +145,7 @@ const currentActivityActionsPullAtom = Atom.family((filter: ActivityFilter) =>
 const currentPrefetchActivityActionsKeyAtom = Atom.family(
   (filter: ActivityFilter) =>
     Atom.make((get) => {
-      const wallet = get(currentWalletStateAtom);
+      const scope = get(currentWalletScopeAtom);
       const filterOptions = get(currentActivityFilterOptionsAtom).pipe(
         AsyncResult.value,
         Option.getOrElse(() => [])
@@ -147,11 +153,8 @@ const currentPrefetchActivityActionsKeyAtom = Atom.family(
       const enabled = filterOptions.length > 0;
 
       return new ActivityActionsKey({
-        address:
-          enabled && wallet.status === "connected" ? wallet.address : null,
         filter,
-        network:
-          enabled && wallet.status === "connected" ? wallet.network : null,
+        scope: enabled ? scope : null,
       });
     })
 );
@@ -197,64 +200,65 @@ const currentActivityActionsRefreshAtom = Atom.family(
     )
 );
 
-class ActivityFilterOptionsKey extends Data.Class<{
-  readonly address: typeof WalletAddress.Type | null;
-  readonly network: Network | null;
+export class ActivityFilterOptionsKey extends Data.Class<{
+  readonly scope: WalletScopeKey | null;
 }> {}
 
-const activityFilterOptionsAtom = Atom.family((key: ActivityFilterOptionsKey) =>
-  appRuntime
-    .atom(() =>
-      Effect.gen(function* () {
-        if (!key.address || !key.network) return [];
+export const activityFilterOptionsAtom = Atom.family(
+  (key: ActivityFilterOptionsKey) =>
+    appRuntime
+      .atom(() =>
+        Effect.gen(function* () {
+          if (!key.scope) return [];
+          const scope = key.scope;
 
-        const api = yield* YieldApiService;
-        const count = (filter: ActivityFilter) =>
-          api
-            .getActivityActions(
-              getActivityActionsRequestParams({
-                address: key.address!,
-                filter,
-                limit: COUNT_PAGE_SIZE,
-                network: key.network!,
-                offset: 0,
-              })
-            )
-            .pipe(Effect.map((page) => page.total));
-        const allCount = yield* count("all");
+          const api = yield* YieldApiService;
+          const count = (filter: ActivityFilter) =>
+            api
+              .getActivityActions(
+                getActivityActionsRequestParams({
+                  address: scope.address,
+                  filter,
+                  limit: COUNT_PAGE_SIZE,
+                  network: scope.network,
+                  offset: 0,
+                })
+              )
+              .pipe(Effect.map((page) => page.total));
+          const allCount = yield* count("all");
 
-        if (allCount <= 0) return [];
+          if (allCount <= 0) return [];
 
-        const categoryCounts = yield* Effect.forEach(
-          activityFilterCategories,
-          (filter) =>
-            count(filter).pipe(Effect.map((count) => ({ filter, count }))),
-          { concurrency: 3 }
-        );
-        const visible = categoryCounts.filter((item) => item.count > 0);
+          const categoryCounts = yield* Effect.forEach(
+            activityFilterCategories,
+            (filter) =>
+              count(filter).pipe(Effect.map((count) => ({ filter, count }))),
+            { concurrency: 3 }
+          );
+          const visible = categoryCounts.filter((item) => item.count > 0);
 
-        return visible.length > 0
-          ? [{ filter: "all" as const, count: allCount }, ...visible]
-          : [];
-      }).pipe(Effect.mapError((cause) => new ActivityActionsError({ cause })))
-    )
-    .pipe(
-      withApiResourcePolicy({
-        idleTTL: Duration.minutes(5),
-        staleTime: Duration.minutes(1),
-        revalidateOnMount: true,
-      })
-    )
+          return visible.length > 0
+            ? [{ filter: "all" as const, count: allCount }, ...visible]
+            : [];
+        }).pipe(Effect.mapError((cause) => new ActivityActionsError({ cause })))
+      )
+      .pipe(
+        Atom.withReactivity(resourceInvalidationKeys.activity(key.scope)),
+        withApiResourcePolicy({
+          idleTTL: Duration.minutes(5),
+          staleTime: Duration.minutes(1),
+          revalidateOnMount: true,
+        })
+      )
 );
 
 const currentActivityFilterOptionsAtom = Atom.make((get) => {
-  const wallet = get(currentWalletStateAtom);
+  const scope = get(currentWalletScopeAtom);
 
   return get(
     activityFilterOptionsAtom(
       new ActivityFilterOptionsKey({
-        address: wallet.status === "connected" ? wallet.address : null,
-        network: wallet.status === "connected" ? wallet.network : null,
+        scope,
       })
     )
   );

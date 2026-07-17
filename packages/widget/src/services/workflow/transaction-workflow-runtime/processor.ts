@@ -12,7 +12,7 @@ import {
   type TransactionWorkflowState,
   updateCurrentTransactionWorkflowTransaction,
 } from "../transaction-workflow-model";
-import type { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
+import { TransactionWorkflowOperationsService } from "../transaction-workflow-operations-service";
 import { advanceBatch } from "./advancement";
 import { confirmCurrent } from "./confirmation";
 import { prepareAndSign } from "./signing";
@@ -30,7 +30,12 @@ export const makeTransactionWorkflowProcessor = ({
   readonly stateRef: SubscriptionRef.SubscriptionRef<TransactionWorkflowState>;
 }) => {
   const complete = (context: TransactionWorkflowContext) =>
-    SubscriptionRef.set(stateRef, { _tag: "Completed", context }).pipe(
+    TransactionWorkflowOperationsService.use((operations) =>
+      operations.completeWorkflow(key)
+    ).pipe(
+      Effect.andThen(
+        SubscriptionRef.set(stateRef, { _tag: "Completed", context })
+      ),
       Effect.andThen(
         PubSub.publish(events, {
           _tag: "TransactionWorkflowCompleted",
@@ -118,11 +123,19 @@ export const makeTransactionWorkflowProcessor = ({
             error,
           }),
         onSuccess: ({ context: submitted, submission }) =>
-          PubSub.publish(events, {
-            _tag: "TransactionWorkflowSubmitted",
-            context: submitted,
-            submission,
-          }).pipe(Effect.andThen(runConfirmation(submitted)), Effect.asVoid),
+          TransactionWorkflowOperationsService.use((operations) =>
+            operations.submitWorkflow(key)
+          ).pipe(
+            Effect.andThen(
+              PubSub.publish(events, {
+                _tag: "TransactionWorkflowSubmitted",
+                context: submitted,
+                submission,
+              })
+            ),
+            Effect.andThen(runConfirmation(submitted)),
+            Effect.asVoid
+          ),
       })
     );
 

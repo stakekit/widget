@@ -1,9 +1,15 @@
+export { WalletScopeKey } from "../../services/wallet/domain/scope";
 export { scopedMipdSubscription } from "../../services/wallet/wagmi-config";
 export { WagmiConfigProvider } from "./react/provider";
 export { useCloseChainModal } from "./react/use-close-chain-modal";
 export { useLedgerDisabledChain } from "./react/use-ledger-disabled-chains";
 export { useLogout } from "./react/use-logout";
 export { useSKWallet } from "./react/use-wallet";
+export {
+  useWalletScopeRoute,
+  WalletScopeRouteGuard,
+} from "./react/wallet-scope-route";
+export { makeWalletScopedAtomRoute } from "./react/wallet-scoped-atom-route";
 export {
   currentWalletLedgerStateAtom,
   currentWalletStateResultAtom,
@@ -12,13 +18,11 @@ export {
 } from "./runtime/root-atom";
 export {
   currentWalletConnectedNetworkAtom,
+  currentWalletScopeAtom,
   currentWalletStateAtom,
   selectCurrentWalletAtom,
 } from "./runtime/selectors";
-export {
-  disconnectedNormalizedWalletState,
-  type NormalizedWalletState,
-} from "./state/wallet";
+export { disconnectedNormalizedWalletState } from "./state/wallet";
 export {
   addLedgerAccountAtom,
   runLogout,

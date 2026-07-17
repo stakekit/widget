@@ -1,8 +1,13 @@
+export {
+  EnterStakeRequestRouteGuard,
+  ExitStakeRequestRouteGuard,
+  PendingActionRequestRouteGuard,
+  useRequiredEnterStakeRequest,
+  useRequiredExitStakeRequest,
+  useRequiredPendingActionRequest,
+} from "./react/request-route-guards";
 export { useActionPreview } from "./react/use-action-preview";
 export {
-  useEnterStakeRequest,
-  useExitStakeRequest,
-  usePendingActionRequest,
   useSetEnterStakeRequest,
   useSetExitStakeRequest,
   useSetPendingActionRequest,

@@ -23,7 +23,7 @@ import { useTrackEvent } from "../../../../tracking";
 import type { PageCta } from "../../../../widget-shell";
 import {
   useActionPreview,
-  useExitStakeRequest,
+  useRequiredExitStakeRequest,
   useSetExitStakeRequest,
 } from "../../..";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
@@ -31,7 +31,7 @@ import { currentReviewPricesAtom } from "../../../resources/review-prices";
 import type { MetaInfoProps } from "../pages/common-page/common.page";
 
 export const useUnstakeActionReview = () => {
-  const exitRequest = useExitStakeRequest()!;
+  const exitRequest = useRequiredExitStakeRequest();
 
   const setExitStakeRequest = useSetExitStakeRequest();
   const trackEvent = useTrackEvent();

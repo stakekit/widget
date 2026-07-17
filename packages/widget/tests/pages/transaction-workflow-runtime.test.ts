@@ -6,11 +6,20 @@ import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import type { ActionMeta } from "../../src/public-api/types";
 import {
+  ActivityInvalidationKey,
+  WalletBalancesInvalidationKey,
+  YieldPositionsInvalidationKey,
+} from "../../src/services/resource-invalidation";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
+import {
   BorrowTransactionWorkflowKey,
   ClassicTransactionWorkflowKey,
   type TransactionWorkflowState,
 } from "../../src/services/workflow/transaction-workflow-model";
-import { TransactionWorkflowOperationsService } from "../../src/services/workflow/transaction-workflow-operations-service";
+import {
+  getTransactionWorkflowSubmissionInvalidationKeys,
+  TransactionWorkflowOperationsService,
+} from "../../src/services/workflow/transaction-workflow-operations-service";
 import {
   type TransactionWorkflowHandle,
   TransactionWorkflowService,
@@ -24,6 +33,11 @@ const otherAddress = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000009"
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
+const classicWalletScope = new WalletScopeKey({
+  address,
+  network: "ethereum",
+});
+const borrowWalletScope = new WalletScopeKey({ address, network: "base" });
 const signedPayload = "0xsigned-payload";
 const transactionHash =
   "0x1111111111111111111111111111111111111111111111111111111111111111";
@@ -116,6 +130,7 @@ const makeOperations = (
   overrides: Partial<Record<keyof TransactionWorkflowOperations, unknown>> = {}
 ): TransactionWorkflowOperations =>
   ({
+    completeWorkflow: () => Effect.void,
     getBorrowAction: () => Effect.succeed(null),
     getClassicStatus: () =>
       Effect.succeed({
@@ -135,6 +150,7 @@ const makeOperations = (
       }),
     submitClassicHash: () => Effect.void,
     submitClassicSigned: () => Effect.void,
+    submitWorkflow: () => Effect.void,
     trackEvent: () => Effect.void,
     ...overrides,
   }) as unknown as TransactionWorkflowOperations;
@@ -192,12 +208,128 @@ const runToCompletion = (
   );
 
 describe("transaction workflow runtime", () => {
+  it("invalidates a submitted classic workflow before confirmation", async () => {
+    const getClassicStatus = vi.fn(() => Effect.never);
+    const submittedKey = new ClassicTransactionWorkflowKey({
+      actionMeta,
+      transactions: [classicTransaction("submitted-before-route-exit")],
+      walletScope: classicWalletScope,
+      yieldId,
+    });
+    let invalidatedKeys: ReadonlyArray<unknown> = [];
+    const submitWorkflow = vi.fn((workflowKey: ClassicTransactionWorkflowKey) =>
+      Effect.sync(() => {
+        invalidatedKeys =
+          getTransactionWorkflowSubmissionInvalidationKeys(workflowKey);
+      })
+    );
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          yield* makeWorkflowFromService({
+            key: submittedKey,
+            operations: makeOperations({
+              getClassicStatus,
+              submitClassicSigned: () => Effect.void,
+              submitWorkflow,
+            }),
+          });
+
+          yield* Effect.promise(() =>
+            vi.waitFor(() =>
+              expect(submitWorkflow).toHaveBeenCalledWith(submittedKey)
+            )
+          );
+        })
+      )
+    );
+
+    expect(invalidatedKeys).toEqual([
+      new WalletBalancesInvalidationKey({ scope: classicWalletScope }),
+      new YieldPositionsInvalidationKey({ scope: classicWalletScope }),
+      new ActivityInvalidationKey({ scope: classicWalletScope }),
+    ]);
+    expect(getClassicStatus).toHaveBeenCalledOnce();
+  });
+
+  it("awaits semantic invalidation before completion and skips it on failure", async () => {
+    const invalidationStarted = await Effect.runPromise(
+      Deferred.make<ClassicTransactionWorkflowKey>()
+    );
+    const invalidationRelease = await Effect.runPromise(Deferred.make<void>());
+    const completedKey = new ClassicTransactionWorkflowKey({
+      actionMeta,
+      transactions: [classicTransaction("awaited-invalidation")],
+      walletScope: classicWalletScope,
+      yieldId,
+    });
+
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const machine = yield* makeWorkflowFromService({
+            key: completedKey,
+            operations: makeOperations({
+              completeWorkflow: (workflowKey: ClassicTransactionWorkflowKey) =>
+                Deferred.succeed(invalidationStarted, workflowKey).pipe(
+                  Effect.andThen(Deferred.await(invalidationRelease))
+                ),
+            }),
+          });
+          const completed = yield* waitForState(
+            machine,
+            (state) => state._tag === "Completed"
+          );
+
+          expect(yield* Deferred.await(invalidationStarted)).toEqual(
+            completedKey
+          );
+          expect(completed.pollUnsafe()).toBeUndefined();
+
+          yield* Deferred.succeed(invalidationRelease, undefined);
+          expect(Option.getOrThrow(yield* Fiber.join(completed))._tag).toBe(
+            "Completed"
+          );
+        })
+      )
+    );
+
+    const completeWorkflow = vi.fn(() => Effect.void);
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const machine = yield* makeWorkflowFromService({
+            key: new ClassicTransactionWorkflowKey({
+              actionMeta,
+              transactions: [classicTransaction("failed-before-invalidation")],
+              walletScope: classicWalletScope,
+              yieldId,
+            }),
+            operations: makeOperations({
+              completeWorkflow,
+              signTransaction: () => Effect.fail(new Error("rejected")),
+            }),
+          });
+          const failed = yield* waitForState(
+            machine,
+            (state) => state._tag === "SignFailed"
+          );
+          yield* Fiber.join(failed);
+        })
+      )
+    );
+
+    expect(completeWorkflow).not.toHaveBeenCalled();
+  });
+
   it("auto-starts classic signed-payload and broadcast submission paths", async () => {
     const submitSigned = vi.fn(() => Effect.void);
     const signed = await runToCompletion(
       new ClassicTransactionWorkflowKey({
         actionMeta,
         transactions: [classicTransaction("classic-signed")],
+        walletScope: classicWalletScope,
         yieldId,
       }),
       makeOperations({ submitClassicSigned: submitSigned })
@@ -218,6 +350,7 @@ describe("transaction workflow runtime", () => {
       new ClassicTransactionWorkflowKey({
         actionMeta,
         transactions: [classicTransaction("classic-broadcast")],
+        walletScope: classicWalletScope,
         yieldId,
       }),
       makeOperations({
@@ -263,6 +396,7 @@ describe("transaction workflow runtime", () => {
             key: new ClassicTransactionWorkflowKey({
               actionMeta,
               transactions: [classicTransaction("retry")],
+              walletScope: classicWalletScope,
               yieldId,
             }),
             operations,
@@ -303,7 +437,10 @@ describe("transaction workflow runtime", () => {
 
   it("validates wallet identity and borrow payloads before signing", async () => {
     const action = borrowAction();
-    const key = new BorrowTransactionWorkflowKey({ action });
+    const key = new BorrowTransactionWorkflowKey({
+      action,
+      walletScope: borrowWalletScope,
+    });
     const wrongWallet = await Effect.runPromise(
       Effect.scoped(
         Effect.gen(function* () {
@@ -336,7 +473,10 @@ describe("transaction workflow runtime", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const machine = yield* makeWorkflowFromService({
-            key: new BorrowTransactionWorkflowKey({ action: invalidAction }),
+            key: new BorrowTransactionWorkflowKey({
+              action: invalidAction,
+              walletScope: borrowWalletScope,
+            }),
             operations: makeOperations({
               getWalletState: () => walletState("base"),
             }),
@@ -380,6 +520,7 @@ describe("transaction workflow runtime", () => {
       const result = await runToCompletion(
         new BorrowTransactionWorkflowKey({
           action,
+          walletScope: borrowWalletScope,
         }),
         makeOperations({
           getBorrowAction: () => Effect.succeed(confirmed(action)),
@@ -428,6 +569,7 @@ describe("transaction workflow runtime", () => {
               key: new ClassicTransactionWorkflowKey({
                 actionMeta,
                 transactions: [classicTransaction("pending")],
+                walletScope: classicWalletScope,
                 yieldId,
               }),
               operations,
@@ -454,6 +596,7 @@ describe("transaction workflow runtime", () => {
             key: new ClassicTransactionWorkflowKey({
               actionMeta,
               transactions: [classicTransaction("exhausted")],
+              walletScope: classicWalletScope,
               yieldId,
             }),
             operations: makeOperations({
@@ -516,6 +659,7 @@ describe("transaction workflow runtime", () => {
     const result = await runToCompletion(
       new BorrowTransactionWorkflowKey({
         action: first,
+        walletScope: borrowWalletScope,
       }),
       makeOperations({
         getBorrowAction: () => {
@@ -563,6 +707,7 @@ describe("transaction workflow runtime", () => {
     const result = await runToCompletion(
       new BorrowTransactionWorkflowKey({
         action: first,
+        walletScope: borrowWalletScope,
       }),
       makeOperations({
         getBorrowAction: () => {
@@ -614,6 +759,7 @@ describe("transaction workflow runtime", () => {
           const machine = yield* makeWorkflowFromService({
             key: new BorrowTransactionWorkflowKey({
               action: first,
+              walletScope: borrowWalletScope,
             }),
             operations: makeOperations({
               getBorrowAction: () => {
@@ -671,7 +817,10 @@ describe("transaction workflow runtime", () => {
       Effect.scoped(
         Effect.gen(function* () {
           const machine = yield* makeWorkflowFromService({
-            key: new BorrowTransactionWorkflowKey({ action: first }),
+            key: new BorrowTransactionWorkflowKey({
+              action: first,
+              walletScope: borrowWalletScope,
+            }),
             operations: makeOperations({
               getBorrowAction: () => {
                 statusChecks += 1;

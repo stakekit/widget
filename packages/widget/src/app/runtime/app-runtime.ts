@@ -1,5 +1,6 @@
-import { Layer } from "effect";
+import { Effect, Layer } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
+import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import {
   BorrowApiService,
   LegacyApiService,
@@ -7,8 +8,8 @@ import {
 } from "../../services/api";
 import { ApiTransportService } from "../../services/api/transport";
 import {
-  WidgetBootstrapConfig,
-  type WidgetBootstrapConfigValue,
+  type WidgetConfig,
+  WidgetConfigService,
 } from "../../services/config/widget-config";
 import { RichErrorService } from "../../services/errors/rich-error-service";
 import { WidgetPersistence } from "../../services/persistence/widget-persistence";
@@ -16,14 +17,23 @@ import { TrackingService } from "../../services/tracking/tracking-service";
 import { WalletService } from "../../services/wallet/wallet-service";
 import { TransactionWorkflowOperationsService } from "../../services/workflow/transaction-workflow-operations-service";
 import { TransactionWorkflowService } from "../../services/workflow/transaction-workflow-service";
-import { widgetBootstrapConfigAtom } from "../config";
+import { widgetConfigAtom } from "../config";
 
-const makeAppLayer = (config: WidgetBootstrapConfigValue) => {
-  const configurationLayer = WidgetBootstrapConfig.layer(config);
-  const richErrorLayer = RichErrorService.layer;
+const makeAppLayer = (
+  config: WidgetConfig,
+  registry: AtomRegistry.AtomRegistry
+) => {
+  const widgetConfigLayer = WidgetConfigService.layer({
+    initial: config,
+    changes: AtomRegistry.toStream(registry, widgetConfigAtom),
+    current: Effect.sync(() => registry.get(widgetConfigAtom)),
+  });
+  const richErrorLayer = RichErrorService.layer.pipe(
+    Layer.provide(widgetConfigLayer)
+  );
   const apiTransportLayer = ApiTransportService.layer.pipe(
     Layer.provide(richErrorLayer),
-    Layer.provide(configurationLayer)
+    Layer.provide(widgetConfigLayer)
   );
   const apiLayer = Layer.mergeAll(
     BorrowApiService.layer,
@@ -32,7 +42,7 @@ const makeAppLayer = (config: WidgetBootstrapConfigValue) => {
   ).pipe(Layer.provide(apiTransportLayer));
   const persistenceLayer = WidgetPersistence.layer;
   const trackingLayer = TrackingService.layer.pipe(
-    Layer.provide(configurationLayer)
+    Layer.provide(widgetConfigLayer)
   );
   const walletLayer = WalletService.layer.pipe(Layer.provide(persistenceLayer));
   const transactionWorkflowLayer = TransactionWorkflowService.layer.pipe(
@@ -44,16 +54,18 @@ const makeAppLayer = (config: WidgetBootstrapConfigValue) => {
   );
 
   return Layer.mergeAll(
-    configurationLayer,
+    widgetConfigLayer,
     richErrorLayer,
     apiLayer,
     persistenceLayer,
     trackingLayer,
     walletLayer,
     transactionWorkflowLayer
-  ).pipe(Layer.provide(configurationLayer), Layer.fresh);
+  ).pipe(Layer.fresh);
 };
 
-export const appRuntime = Atom.runtime((get) =>
-  makeAppLayer(get(widgetBootstrapConfigAtom))
-);
+export const appRuntime = Atom.runtime((get) => {
+  const registry = get.registry;
+
+  return makeAppLayer(registry.get(widgetConfigAtom), registry);
+});

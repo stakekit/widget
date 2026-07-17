@@ -1,7 +1,11 @@
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { WidgetBootstrapConfigValue } from "../../services/config/widget-config";
-import { config } from "../../shared/config/widget-defaults";
+import {
+  normalizeWidgetApiConfig,
+  type WidgetBootstrapConfigValue,
+} from "../../services/config/widget-config";
 import { type WidgetConfig, widgetConfigAtom } from "./settings";
+
+export { normalizeWidgetApiConfig };
 
 export const normalizeWidgetBootstrapConfig = ({
   isLedgerLive,
@@ -10,12 +14,7 @@ export const normalizeWidgetBootstrapConfig = ({
   readonly isLedgerLive: boolean;
   readonly settings: WidgetConfig;
 }): WidgetBootstrapConfigValue => ({
-  api: {
-    apiKey: settings.apiKey,
-    baseUrl: settings.baseUrl ?? config.env.apiUrl,
-    borrowApiUrl: settings.borrowApiUrl ?? config.env.borrowApiUrl,
-    yieldsApiUrl: settings.yieldsApiUrl ?? config.env.yieldsApiUrl,
-  },
+  api: normalizeWidgetApiConfig(settings),
   tracking: {
     tracking: settings.tracking,
     variant: settings.variant,

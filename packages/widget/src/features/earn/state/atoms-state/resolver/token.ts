@@ -1,7 +1,6 @@
 import { Option, Schema } from "effect";
 import { tokenString } from "../../../../../domain";
 import { YieldId } from "../../../../../domain/schema/identifiers";
-import type { SupportedSKChains } from "../../../../../domain/types/chains";
 import type { EarnEntry, EarnTokenKey, EarnTokenOption } from "../types";
 
 export const resolveToken = ({
@@ -43,7 +42,7 @@ export const resolveToken = ({
     }
   }
 
-  const network = entry.network as SupportedSKChains | null;
+  const network = entry.walletScope?.network ?? null;
   const preferredTokens = network
     ? (entry.preferredTokenYieldsPerNetwork?.[network] ??
       Object.values(entry.preferredTokenYieldsPerNetwork ?? {})[0])

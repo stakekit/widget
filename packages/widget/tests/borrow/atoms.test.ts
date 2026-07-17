@@ -1,6 +1,6 @@
 import { Cause, Effect, Layer, Option, Schema } from "effect";
 import { AsyncResult, Atom, AtomRegistry } from "effect/unstable/reactivity";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { appRuntime } from "../../src/app/runtime";
 import { TokenBalancesResponse } from "../../src/domain/schema/financial-models";
 import { WalletAddress } from "../../src/domain/schema/identifiers";
@@ -10,19 +10,31 @@ import {
   BorrowAtomError,
   BorrowDashboardKey,
   type BorrowFormIntent,
+  BorrowMarketsKey,
+  BorrowPositionKey,
+  BorrowPositionNotFound,
   BorrowPositionsKey,
   borrowIntegrationsAtom,
+  borrowMarketsAtom,
+  borrowPositionAtom,
   borrowPositionsAtom,
+  currentBorrowPositionsAtom,
   deriveBorrowPositionItems,
   Integration,
   Market,
   resolveBorrowDashboardView,
 } from "../../src/features/borrow/core";
+import { currentWalletScopeAtom } from "../../src/features/wallet";
 import { BorrowApiService } from "../../src/services/api/borrow-api-service";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 
 const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
+const walletScope = new WalletScopeKey({
+  address,
+  network: "ethereum",
+});
 
 const integrationDto = {
   id: "aave-borrow",
@@ -138,8 +150,7 @@ describe("borrow atoms", () => {
     const result = registry.get(
       borrowPositionsAtom(
         new BorrowPositionsKey({
-          address,
-          network: "ethereum",
+          scope: walletScope,
         })
       )
     );
@@ -149,6 +160,151 @@ describe("borrow atoms", () => {
       expect(result.value[0]?.id).toBe(marketDto.id);
       expect(result.value[0]?.debtBalance?.balance).toBe(400);
     }
+  });
+
+  it("resolves current borrow positions from wallet scope inside the atom runtime", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+      positionDto
+    );
+    const registry = AtomRegistry.make({
+      initialValues: [
+        Atom.initialValue(
+          appRuntime.layer,
+          Layer.mergeAll(
+            Layer.succeed(BorrowApiService, {
+              getIntegrations: () => Effect.succeed([integration]),
+              getMarkets: () =>
+                Effect.succeed({
+                  items: [market],
+                  limit: 100,
+                  offset: 0,
+                  total: 1,
+                }),
+              getPositionData: () =>
+                Effect.succeed([{ integration, position }]),
+            } as never)
+          )
+        ),
+        Atom.initialValue(currentWalletScopeAtom, walletScope),
+      ],
+    });
+
+    expect(
+      AsyncResult.getOrThrow(registry.get(currentBorrowPositionsAtom(true)))[0]
+        ?.id
+    ).toBe(market.id);
+  });
+
+  it("shares one positions request between list and detail consumers", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const position = Schema.decodeUnknownSync(BorrowAccountPosition)(
+      positionDto
+    );
+    const getIntegrations = vi.fn(() => Effect.succeed([integration]));
+    const getMarkets = vi.fn(() =>
+      Effect.succeed({
+        items: [market],
+        limit: 100,
+        offset: 0,
+        total: 1,
+      })
+    );
+    const getPositionData = vi.fn(() =>
+      Effect.succeed([{ integration, position }])
+    );
+    const registry = makeRegistry({
+      getIntegrations,
+      getMarkets,
+      getPositionData,
+    });
+
+    expect(
+      AsyncResult.getOrThrow(registry.get(borrowIntegrationsAtom))
+    ).toHaveLength(1);
+    expect(
+      AsyncResult.getOrThrow(
+        registry.get(
+          borrowMarketsAtom(new BorrowMarketsKey({ network: "ethereum" }))
+        )
+      )
+    ).toHaveLength(1);
+    const list = registry.get(
+      borrowPositionsAtom(new BorrowPositionsKey({ scope: walletScope }))
+    );
+    const detail = registry.get(
+      borrowPositionAtom(
+        new BorrowPositionKey({ marketId: market.id, scope: walletScope })
+      )
+    );
+
+    expect(AsyncResult.getOrThrow(list)[0]?.id).toBe(market.id);
+    expect(AsyncResult.getOrThrow(detail).id).toBe(market.id);
+    expect(getIntegrations).toHaveBeenCalledOnce();
+    expect(getMarkets).toHaveBeenCalledOnce();
+    expect(getPositionData).toHaveBeenCalledOnce();
+  });
+
+  it("preserves base previous values and errors while typing absent details", () => {
+    const integration = Schema.decodeUnknownSync(Integration)(integrationDto);
+    const market = Schema.decodeUnknownSync(Market)(marketDto);
+    const accountPosition = Schema.decodeUnknownSync(BorrowAccountPosition)(
+      positionDto
+    );
+    const position = deriveBorrowPositionItems({
+      integrationPositions: [{ integration, position: accountPosition }],
+      markets: [market],
+    })[0]!;
+    const base = borrowPositionsAtom(
+      new BorrowPositionsKey({ scope: walletScope })
+    );
+    const detail = borrowPositionAtom(
+      new BorrowPositionKey({ marketId: market.id, scope: walletScope })
+    );
+    const waitingRegistry = AtomRegistry.make({
+      initialValues: [
+        [base, AsyncResult.waiting(AsyncResult.success([position]))],
+      ],
+    });
+    const waiting = waitingRegistry.get(detail);
+
+    expect(waiting.waiting).toBe(true);
+    expect(AsyncResult.getOrThrow(waiting).id).toBe(market.id);
+
+    const error = new BorrowAtomError({
+      cause: new Error("refresh failed"),
+      operation: "borrow-positions",
+    });
+    const failureRegistry = AtomRegistry.make({
+      initialValues: [
+        [
+          base,
+          AsyncResult.failWithPrevious(error, {
+            previous: Option.some(AsyncResult.success([position])),
+            waiting: false,
+          }),
+        ],
+      ],
+    });
+    const failure = failureRegistry.get(detail);
+
+    expect(AsyncResult.isFailure(failure)).toBe(true);
+    expect(Option.getOrThrow(AsyncResult.value(failure)).id).toBe(market.id);
+    if (!AsyncResult.isFailure(failure)) throw new Error("Expected failure");
+    expect(Option.getOrThrow(Cause.findErrorOption(failure.cause))).toBe(error);
+
+    const absentRegistry = AtomRegistry.make({
+      initialValues: [[base, AsyncResult.success([])]],
+    });
+    const absent = absentRegistry.get(detail);
+
+    expect(AsyncResult.isFailure(absent)).toBe(true);
+    if (!AsyncResult.isFailure(absent)) throw new Error("Expected failure");
+    expect(Option.getOrThrow(Cause.findErrorOption(absent.cause))).toEqual(
+      new BorrowPositionNotFound({ marketId: market.id })
+    );
   });
 
   it("wraps borrow API failures in AsyncResult failure state", () => {
@@ -206,7 +362,7 @@ describe("borrow atoms", () => {
       intent,
       key: new BorrowDashboardKey({
         network: "ethereum",
-        walletAddress: address,
+        scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
       tokenBalances: Schema.decodeUnknownSync(TokenBalancesResponse)([
@@ -282,7 +438,7 @@ describe("borrow atoms", () => {
       },
       key: new BorrowDashboardKey({
         network: "ethereum",
-        walletAddress: address,
+        scope: walletScope,
       }),
       marketsResult: AsyncResult.success([market]),
       positionsResult: AsyncResult.success([position]),

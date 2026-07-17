@@ -8,10 +8,12 @@ import type {
   YieldAction,
 } from "../../domain/schema/action-models";
 import type { ActionMeta } from "../../public-api/types";
+import type { WalletScopeKey } from "../wallet/domain/scope";
 
 export class ClassicTransactionWorkflowKey extends Data.TaggedClass("Classic")<{
   readonly actionMeta: ActionMeta;
   readonly transactions: YieldAction["transactions"];
+  readonly walletScope: WalletScopeKey;
   readonly yieldId: YieldAction["yieldId"];
 }> {}
 
@@ -28,6 +30,7 @@ export const makeClassicTransactionWorkflowKey = ({
   action,
   inputToken,
   providersDetails,
+  walletScope,
 }: {
   readonly action: YieldAction;
   readonly inputToken: ActionMeta["inputToken"];
@@ -35,6 +38,7 @@ export const makeClassicTransactionWorkflowKey = ({
     | ReadonlyArray<ClassicTransactionWorkflowProviderDetail>
     | null
     | undefined;
+  readonly walletScope: WalletScopeKey;
 }) =>
   new ClassicTransactionWorkflowKey({
     actionMeta: {
@@ -57,11 +61,13 @@ export const makeClassicTransactionWorkflowKey = ({
         })) ?? [],
     },
     transactions: action.transactions,
+    walletScope,
     yieldId: action.yieldId,
   });
 
 export class BorrowTransactionWorkflowKey extends Data.TaggedClass("Borrow")<{
   readonly action: BorrowAction;
+  readonly walletScope: WalletScopeKey;
 }> {}
 
 export type TransactionWorkflowKey =

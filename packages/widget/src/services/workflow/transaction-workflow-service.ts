@@ -45,7 +45,6 @@ export class TransactionWorkflowService extends Context.Service<TransactionWorkf
           capacity: 32,
           replay: 8,
         });
-
         yield* Effect.addFinalizer(() =>
           Effect.all([Queue.shutdown(queue), PubSub.shutdown(events)], {
             concurrency: "unbounded",

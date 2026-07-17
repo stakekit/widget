@@ -7,6 +7,7 @@ import type {
   PositionBalances,
   PositionBalancesByType,
 } from "../../../../../domain/types/positions";
+import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
 export type {
   BalanceTokenActionType,
@@ -19,6 +20,7 @@ import type { pricesAtom, yieldOpportunityAtom } from "../../../../earn";
 import type { positionBalancesAtom } from "../../../../portfolio";
 import type { useStakedOrLiquidBalance } from "../../../react/use-staked-or-liquid-balance";
 export type ExtraData = {
+  currentWalletScope: WalletScopeKey;
   pendingActionType: YieldPendingActionType | null;
   integrationData: EarnYieldWithProvider | null;
   positionBalances: PositionBalances | null;

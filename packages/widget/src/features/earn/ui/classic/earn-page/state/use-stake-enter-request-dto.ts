@@ -2,7 +2,6 @@ import type BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import type { ActionCommand } from "../../../../../../domain/schema/action-models";
-import type { WalletAddresses } from "../../../../../../domain/schema/address-models";
 import type {
   EarnValidator,
   EarnYieldWithProvider,
@@ -37,7 +36,6 @@ export const useStakeEnterRequestDto = ({
   const { address, additionalAddresses, isLedgerLive } = useSKWallet();
 
   return useMemo<{
-    addresses: WalletAddresses;
     gasFeeToken: EarnYieldWithProvider["token"];
     dto: ActionCommand;
     selectedValidators: Map<ValidatorKey, EarnValidator>;
@@ -89,10 +87,6 @@ export const useStakeEnterRequestDto = ({
       selectedValidators,
       selectedStake,
       gasFeeToken: selectedStake.mechanics.gasFeeToken,
-      addresses: {
-        address,
-        additionalAddresses: additionalAddresses ?? undefined,
-      },
       dto: {
         address,
         yieldId: selectedStake.id,

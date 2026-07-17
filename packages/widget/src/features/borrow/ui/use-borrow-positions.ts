@@ -1,9 +1,9 @@
 import { useAtomValue } from "@effect/atom-react";
+import { useWalletScopeRoute } from "../../wallet";
 import {
   BorrowPositionKey,
-  BorrowPositionsKey,
   borrowPositionAtom,
-  borrowPositionsAtom,
+  currentBorrowPositionsAtom,
 } from "../atoms/resources";
 import {
   useBorrowConnectedWalletBridge,
@@ -18,16 +18,7 @@ export const useBorrowPositions = ({
   enabled = true,
 }: BorrowPositionsOptions = {}) => {
   const walletBridge = useBorrowWalletBridge();
-  const connectedWallet =
-    enabled && walletBridge.status === "connected" ? walletBridge.wallet : null;
-  const positionsResult = useAtomValue(
-    borrowPositionsAtom(
-      new BorrowPositionsKey({
-        address: connectedWallet?.currentAccount.address ?? null,
-        network: connectedWallet?.network ?? null,
-      })
-    )
-  );
+  const positionsResult = useAtomValue(currentBorrowPositionsAtom(enabled));
 
   return {
     positionsResult,
@@ -37,14 +28,10 @@ export const useBorrowPositions = ({
 
 export const useBorrowPosition = (marketId: string | null | undefined) => {
   const walletBridge = useBorrowConnectedWalletBridge();
-  const wallet = walletBridge.wallet;
+  const walletScope = useWalletScopeRoute();
   const positionResult = useAtomValue(
     borrowPositionAtom(
-      new BorrowPositionKey({
-        address: wallet.currentAccount.address,
-        marketId: marketId ?? null,
-        network: wallet.network,
-      })
+      new BorrowPositionKey({ marketId: marketId ?? null, scope: walletScope })
     )
   );
 

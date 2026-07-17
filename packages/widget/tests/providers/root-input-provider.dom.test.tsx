@@ -71,7 +71,9 @@ const RootInputPublicationObserver = ({
   readonly onDynamicWallet: () => void;
 }) => {
   useAtomSubscribe(widgetConfigAtom, onConfig);
-  useAtomSubscribe(dynamicExternalProviderInputAtom, onDynamicWallet);
+  useAtomSubscribe(dynamicExternalProviderInputAtom, onDynamicWallet, {
+    immediate: true,
+  });
 
   return null;
 };
@@ -93,7 +95,7 @@ const makeExternalProvider = (
 });
 
 describe("TestAtomRuntimeProvider root inputs", () => {
-  it("seeds immutable bootstrap and React-owned live inputs", async () => {
+  it("seeds derived settings and React-owned live inputs", async () => {
     const provider = makeExternalProvider({
       currentChain: optimism.id,
       supportedChainIds: [optimism.id, mainnet.id, optimism.id],
@@ -193,6 +195,8 @@ describe("TestAtomRuntimeProvider root inputs", () => {
 
   it("publishes only live input changes after the registry is created", async () => {
     const firstProvider = makeExternalProvider();
+    const firstTrackEvent = vi.fn();
+    const replacementTrackEvent = vi.fn();
     const dynamicReplacement = makeExternalProvider({
       currentAddress: "0x0000000000000000000000000000000000000002",
       currentChain: optimism.id,
@@ -202,13 +206,14 @@ describe("TestAtomRuntimeProvider root inputs", () => {
     const onDynamicWallet = vi.fn();
     const renderHarness = (
       externalProviders: SKExternalProviders,
-      apiKey = "api-key"
+      trackEvent = firstTrackEvent
     ) => (
       <SolanaProvider>
         <TestAtomRuntimeProvider
           settings={normalizeWidgetConfig({
-            apiKey,
+            apiKey: "api-key",
             externalProviders,
+            tracking: { trackEvent },
             variant: "default",
           })}
         >
@@ -225,12 +230,14 @@ describe("TestAtomRuntimeProvider root inputs", () => {
     expect(onDynamicWallet).toHaveBeenCalledOnce();
     onDynamicWallet.mockClear();
 
-    await app.rerender(renderHarness(firstProvider, "replacement-key"));
+    await app.rerender(renderHarness(firstProvider, replacementTrackEvent));
     await vi.waitFor(() => expect(onConfig).toHaveBeenCalled());
     expect(onDynamicWallet).not.toHaveBeenCalled();
     onConfig.mockClear();
 
-    await app.rerender(renderHarness(dynamicReplacement, "replacement-key"));
+    await app.rerender(
+      renderHarness(dynamicReplacement, replacementTrackEvent)
+    );
     await vi.waitFor(() => expect(onDynamicWallet).toHaveBeenCalled());
     expect(onConfig).toHaveBeenCalled();
   });

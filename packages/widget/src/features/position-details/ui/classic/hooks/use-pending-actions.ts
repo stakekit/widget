@@ -53,6 +53,7 @@ export const usePendingActions = ({
     positionBalancesByType,
     integrationData,
     positionBalancePrices,
+    currentWalletScope,
   } = workflow;
   const trackEvent = useTrackEvent();
   const navigate = useNavigate();
@@ -117,7 +118,8 @@ export const usePendingActions = ({
     data: PendingActionAmountChange["data"]
   ) => pendingActionDispatch({ type: "pendingAction/amount/change", data });
 
-  const validatorAddressesHandling = useValidatorAddressesHandling();
+  const validatorAddressesHandling =
+    useValidatorAddressesHandling(currentWalletScope);
   const validatorAddressesHandlingRef = useSavedRef(validatorAddressesHandling);
   const selectValidatorModalShown = useRef(false);
 
@@ -178,10 +180,7 @@ export const usePendingActions = ({
         pendingActionType: pendingActionDto.type,
         providersDetails,
         requestDto: value.requestDto,
-        addresses: {
-          address: value.address,
-          additionalAddresses: value.additionalAddresses,
-        },
+        walletScope: currentWalletScope,
       });
 
       const reviewPath = getPositionDetailsPendingActionReviewPath(plain);

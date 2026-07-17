@@ -1,3 +1,4 @@
+export { makeWidgetRuntimeGenerationKey } from "./runtime-generation";
 export {
   normalizeWidgetConfig,
   type WidgetConfig,

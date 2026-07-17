@@ -11,10 +11,6 @@ import { WalletAddress } from "../../../src/domain/schema/identifiers";
 import { makeWalletServiceBindingAtom } from "../../../src/features/wallet/runtime/binding-atom";
 import { disconnectedLedgerConnectorState } from "../../../src/features/wallet/state/ledger";
 import type { NormalizedWalletState } from "../../../src/features/wallet/state/wallet";
-import {
-  defaultWidgetBootstrapConfig,
-  WidgetBootstrapConfig,
-} from "../../../src/services/config/widget-config";
 import { WidgetPersistence } from "../../../src/services/persistence/widget-persistence";
 import type { WagmiActions } from "../../../src/services/wallet/wagmi-actions";
 import { WalletService } from "../../../src/services/wallet/wallet-service";
@@ -59,17 +55,9 @@ const controller = (marker: Hex) => {
 };
 
 const makeWalletRuntimeLayer = () => {
-  const bootstrapLayer = WidgetBootstrapConfig.layer(
-    defaultWidgetBootstrapConfig
-  );
-  const persistenceLayer = WidgetPersistence.layer.pipe(
-    Layer.provide(bootstrapLayer)
-  );
+  const persistenceLayer = WidgetPersistence.layer;
 
-  return WalletService.layer.pipe(
-    Layer.provide(Layer.mergeAll(bootstrapLayer, persistenceLayer)),
-    Layer.fresh
-  );
+  return WalletService.layer.pipe(Layer.provide(persistenceLayer), Layer.fresh);
 };
 
 const walletServiceProbeAtom = appRuntime.atom(

@@ -1,6 +1,6 @@
 import { useAtomSet } from "@effect/atom-react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useTrackPage } from "../../../features/tracking";
 import { AnimationPage } from "../../../features/widget-shell";
 import { Box } from "../../../shared/ui/primitives/box";
@@ -10,56 +10,28 @@ import { Text } from "../../../shared/ui/primitives/typography/text";
 import { DetailRow } from "../../earn/support";
 import { PageContainer, PageCtaButton } from "../../widget-shell";
 import { borrowActionFormAtom, currentBorrowDashboardAtom } from "../core";
+import { useBorrowCompletionRouteState } from "./borrow-execution-route";
 import { useBorrowConnectedWalletBridge } from "./connected-wallet";
 import { getBorrowFlowRoutes } from "./flow-routes";
-import { isBorrowCompleteState } from "./review-state";
 
 export const BorrowCompletePage = () => {
   useTrackPage("borrowComplete");
 
   const { t } = useTranslation();
-  const location = useLocation();
   const navigate = useNavigate();
   const { marketId } = useParams();
   const { basePath } = getBorrowFlowRoutes(marketId);
   useBorrowConnectedWalletBridge();
   const resetActionForm = useAtomSet(borrowActionFormAtom);
   const resetBorrowDashboard = useAtomSet(currentBorrowDashboardAtom);
-  const completeState = isBorrowCompleteState(location.state)
-    ? location.state
-    : null;
+  const { input, result } = useBorrowCompletionRouteState();
+  const { summary } = input;
   const onDone = () => {
     resetActionForm({ type: "reset" });
     resetBorrowDashboard({ type: "reset" });
     navigate(basePath, { replace: true });
   };
 
-  if (!completeState) {
-    return (
-      <AnimationPage>
-        <PageContainer>
-          <Box display="flex" flexDirection="column" gap="4">
-            <Text variant={{ weight: "bold" }}>
-              {t("dashboard.borrow.success_page.unavailable_title")}
-            </Text>
-            <Text variant={{ type: "muted", weight: "normal" }}>
-              {t("dashboard.borrow.success_page.unavailable_description")}
-            </Text>
-            <PageCtaButton
-              cta={{
-                disabled: false,
-                isLoading: false,
-                label: t("dashboard.borrow.review_page.back"),
-                onClick: () => navigate(basePath),
-              }}
-            />
-          </Box>
-        </PageContainer>
-      </AnimationPage>
-    );
-  }
-
-  const { result, summary } = completeState;
   const rows = [
     summary.borrowAmount && summary.loanTokenSymbol
       ? {

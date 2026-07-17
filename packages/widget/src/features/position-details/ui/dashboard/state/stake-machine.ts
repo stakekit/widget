@@ -2,10 +2,12 @@ import { useAtom } from "@effect/atom-react";
 import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import type { TronResource } from "../../../../../domain/schema/legacy-models";
+import type { WalletScopeKey } from "../../../../../services/wallet/domain/scope";
 
 type PositionDetailsStakeEntryParams = {
   integrationId: string;
   balanceId: string;
+  walletScope: WalletScopeKey;
 };
 
 class PositionDetailsStakeEntryKey extends Data.Class<PositionDetailsStakeEntryParams> {}

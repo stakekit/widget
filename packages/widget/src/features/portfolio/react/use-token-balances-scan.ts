@@ -1,11 +1,10 @@
-import { useAtomRefresh, useAtomValue } from "@effect/atom-react";
+import { useAtom } from "@effect/atom-react";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { tokenBalancesScanAtom } from "../resources/token-balances";
 
 export const useTokenBalancesScan = () => {
-  const { enabled, result } = useAtomValue(tokenBalancesScanAtom);
-  const refresh = useAtomRefresh(tokenBalancesScanAtom);
+  const [{ enabled, result }, refresh] = useAtom(tokenBalancesScanAtom);
   const value = result.pipe(AsyncResult.value, Option.getOrUndefined);
 
   return {
@@ -14,6 +13,6 @@ export const useTokenBalancesScan = () => {
     isError: AsyncResult.isFailure(result),
     isLoading: enabled && AsyncResult.isInitial(result),
     isPending: enabled && AsyncResult.isInitial(result),
-    refetch: refresh,
+    refetch: () => refresh(undefined),
   } as const;
 };

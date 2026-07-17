@@ -3,17 +3,13 @@ import { describe, expect, it } from "vitest";
 import type { ActionTransaction } from "../../src/domain/schema/action-models";
 import { WalletAddress, YieldId } from "../../src/domain/schema/identifiers";
 import {
-  tokenBalancesScanResourceAtom,
-  yieldBalancesScanResourceAtom,
-} from "../../src/features/portfolio";
-import {
   classicTransactionWorkflowCompletionAtom,
-  getClassicWorkflowCompletionResources,
   transactionWorkflowDispatchAtom,
   transactionWorkflowMachineAtom,
   transactionWorkflowStateAtom,
 } from "../../src/features/transaction-flow/state/transaction-workflow-atoms";
 import type { ActionMeta } from "../../src/public-api/types";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import { ClassicTransactionWorkflowKey } from "../../src/services/workflow/transaction-workflow-model";
 import { yieldApiTransactionFixture } from "../fixtures";
 
@@ -21,6 +17,7 @@ const address = Schema.decodeSync(WalletAddress)(
   "0x0000000000000000000000000000000000000001"
 );
 const yieldId = Schema.decodeSync(YieldId)("yield-1");
+const walletScope = new WalletScopeKey({ address, network: "ethereum" });
 const actionMeta = {
   actionId: "action-1",
   address,
@@ -38,6 +35,7 @@ describe("transaction workflow atoms", () => {
       new ClassicTransactionWorkflowKey({
         actionMeta,
         transactions: [transaction],
+        walletScope,
         yieldId,
       });
 
@@ -53,18 +51,5 @@ describe("transaction workflow atoms", () => {
     expect(classicTransactionWorkflowCompletionAtom(makeKey())).toBe(
       classicTransactionWorkflowCompletionAtom(makeKey())
     );
-  });
-
-  it("keeps classic balance completion resources wallet-scoped", () => {
-    expect(
-      getClassicWorkflowCompletionResources({ status: "disconnected" } as never)
-    ).toEqual([]);
-    expect(
-      getClassicWorkflowCompletionResources({
-        address,
-        network: "ethereum",
-        status: "connected",
-      } as never)
-    ).toEqual([tokenBalancesScanResourceAtom, yieldBalancesScanResourceAtom]);
   });
 });

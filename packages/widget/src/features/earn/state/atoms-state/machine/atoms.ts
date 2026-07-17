@@ -2,7 +2,10 @@ import { Option } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { widgetConfigAtom } from "../../../../../app/config";
 import { initParamsAtom } from "../../../../init-params";
-import { selectCurrentWalletAtom } from "../../../../wallet";
+import {
+  currentWalletScopeAtom,
+  selectCurrentWalletAtom,
+} from "../../../../wallet";
 import { resolveEarnView } from "../resolver/view";
 import {
   type EarnEntry,
@@ -18,20 +21,18 @@ const earnWalletStateAtom = selectCurrentWalletAtom((state) => state);
 export const earnMachineEntryAtom = Atom.make<EarnEntry>((context) => {
   const config = context.get(widgetConfigAtom);
   const wallet = context.get(earnWalletStateAtom);
+  const walletScope = context.get(currentWalletScopeAtom);
   const initParams = context.get(initParamsAtom);
-  const connected = wallet.status === "connected";
 
   return {
-    address: connected ? wallet.address : null,
-    additionalAddresses: connected ? wallet.additionalAddresses : null,
     categoryOrder: config.dashboardYieldCategoryOrder,
     dashboardVariant:
       !!config.dashboardVariant && config.yieldGrouping === "category",
     initParams,
-    network: connected ? wallet.network : null,
     preferredTokenYieldsPerNetwork:
       config.preferredTokenYieldsPerNetwork ?? null,
     tokensForEnabledYieldsOnly: !!config.tokensForEnabledYieldsOnly,
+    walletScope,
     walletResolution: wallet.status === "connecting" ? "pending" : "settled",
   };
 }).pipe(Atom.withLabel("earnMachineEntryAtom"));

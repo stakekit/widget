@@ -2,7 +2,7 @@ import { useAtom, useAtomValue } from "@effect/atom-react";
 import BigNumber from "bignumber.js";
 import { Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { PendingAction } from "../../../../../domain/schema/action-models";
 import type { EarnBalance } from "../../../../../domain/schema/earn-models";
 import type { AppToken } from "../../../../../domain/schema/legacy-models";
@@ -28,10 +28,11 @@ import {
   positionBalancesAtom,
   positionBalancesByTypeAtom,
 } from "../../../../portfolio";
+import { useWalletScopeRoute } from "../../../../wallet";
 import { useStakedOrLiquidBalance } from "../../../react/use-staked-or-liquid-balance";
 import {
-  makePositionDetailsWorkflowState,
   type PositionDetailsWorkflowAction,
+  PositionDetailsWorkflowKey,
   positionDetailsWorkflowAtom,
   reducePositionDetailsWorkflow,
 } from "../../../state";
@@ -43,6 +44,7 @@ export const useUnstakeOrPendingAction = () => {
 
   const balanceId = plain.balanceId;
   const integrationId = plain.integrationId;
+  const walletScope = useWalletScopeRoute();
 
   const yieldOpportunity = useAtomValue(
     yieldOpportunityAtom(
@@ -58,6 +60,7 @@ export const useUnstakeOrPendingAction = () => {
 
   const positionKey = new PositionBalancesKey({
     balanceId: balanceId ?? null,
+    scope: walletScope,
     yieldId: integrationId ?? null,
   });
   const positionBalancesResult = useAtomValue(
@@ -68,22 +71,7 @@ export const useUnstakeOrPendingAction = () => {
     () => null
   );
 
-  const lastExistingPositionBalances = useRef(positionBalancesRemote);
-
-  useEffect(() => {
-    if (!positionBalancesRemote) {
-      return;
-    }
-
-    lastExistingPositionBalances.current = positionBalancesRemote;
-  }, [positionBalancesRemote]);
-
-  /**
-   * Prevent position balance being removed after unstake
-   */
-  const positionBalances = positionBalancesRemote
-    ? positionBalancesRemote
-    : lastExistingPositionBalances.current;
+  const positionBalances = positionBalancesRemote;
 
   const positionBalancePrices = useAtomValue(
     pricesAtom(
@@ -106,18 +94,7 @@ export const useUnstakeOrPendingAction = () => {
     useAtomValue(positionBalancesByTypeAtom(positionKey)),
     () => null
   );
-  const lastExistingPositionBalancesByType = useRef(
-    positionBalancesByTypeRemote
-  );
-
-  useEffect(() => {
-    if (positionBalancesByTypeRemote) {
-      lastExistingPositionBalancesByType.current = positionBalancesByTypeRemote;
-    }
-  }, [positionBalancesByTypeRemote]);
-
-  const positionBalancesByType =
-    positionBalancesByTypeRemote ?? lastExistingPositionBalancesByType.current;
+  const positionBalancesByType = positionBalancesByTypeRemote;
 
   const stakedOrLiquidBalances = useStakedOrLiquidBalance(
     positionBalancesByType
@@ -235,16 +212,16 @@ export const useUnstakeOrPendingAction = () => {
     return newMap;
   };
 
-  const [state, setState] = useAtom(positionDetailsWorkflowAtom);
-  const workflowKey = `${balanceId ?? ""}:${integrationId ?? ""}:${pendingActionType ?? ""}`;
-  const previousWorkflowKey = useRef(workflowKey);
-
-  useEffect(() => {
-    if (previousWorkflowKey.current === workflowKey) return;
-
-    previousWorkflowKey.current = workflowKey;
-    setState(makePositionDetailsWorkflowState(minEnterOrExitAmount));
-  }, [minEnterOrExitAmount, setState, workflowKey]);
+  const [state, setState] = useAtom(
+    positionDetailsWorkflowAtom(
+      new PositionDetailsWorkflowKey({
+        balanceId: balanceId ?? null,
+        integrationId: integrationId ?? null,
+        pendingActionType: pendingActionType ?? null,
+        scope: walletScope,
+      })
+    )
+  );
 
   const dispatch = (action: PositionDetailsWorkflowAction) => {
     setState(
@@ -332,6 +309,7 @@ export const useUnstakeOrPendingAction = () => {
 
   const value: State & ExtraData = useMemo(
     () => ({
+      currentWalletScope: walletScope,
       canChangeUnstakeAmount,
       unstakeAmountError,
       unstakeToken,
@@ -353,6 +331,7 @@ export const useUnstakeOrPendingAction = () => {
     }),
     [
       canChangeUnstakeAmount,
+      walletScope,
       unstakeAmountError,
       unstakeToken,
       unstakeAmount,

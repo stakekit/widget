@@ -1,22 +1,17 @@
-import { useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Option } from "effect";
-import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useAtomSet } from "@effect/atom-react";
+import type * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import type { Action, Transaction } from "../../../domain/borrow";
 import {
-  BorrowTransactionWorkflowKey,
   getCurrentTransactionWorkflowBatch,
   getCurrentTransactionWorkflowTransaction,
-  initializeTransactionWorkflow,
   type TransactionWorkflowBatch,
   type TransactionWorkflowError,
   type TransactionWorkflowState,
   type TransactionWorkflowSubmission,
 } from "../../../services/workflow/transaction-workflow-model";
-import {
-  transactionWorkflowDispatchAtom,
-  transactionWorkflowStateAtom,
-} from "../../transaction-flow/state/transaction-workflow-atoms";
-import { borrowExecutionRefreshAtom } from "../atoms/refresh";
+import { transactionWorkflowDispatchAtom } from "../../transaction-flow/state/transaction-workflow-atoms";
+import { useBorrowExecutionRouteState } from "./borrow-execution-route";
+import type { BorrowExecutionInput } from "./review-state";
 
 type BorrowExecutionResult = {
   readonly action: Action;
@@ -42,6 +37,7 @@ type BorrowExecutionState = {
   readonly error: TransactionWorkflowError | null;
   readonly isDone: boolean;
   readonly isRunning: boolean;
+  readonly input: BorrowExecutionInput;
   readonly phase: BorrowExecutionPhase;
   readonly result: AsyncResult.AsyncResult<TransactionWorkflowState, unknown>;
   readonly retry: () => void;
@@ -89,24 +85,15 @@ const getPhase = (state: TransactionWorkflowState): BorrowExecutionPhase => {
   }
 };
 
-export const useBorrowExecution = ({
-  action,
-}: {
-  readonly action: Action;
-}): BorrowExecutionState => {
-  const key = new BorrowTransactionWorkflowKey({ action });
-  useAtomMount(borrowExecutionRefreshAtom(key));
-  const result = useAtomValue(transactionWorkflowStateAtom(key));
+export const useBorrowExecution = (): BorrowExecutionState => {
+  const { input, key, result, state } = useBorrowExecutionRouteState();
   const dispatch = useAtomSet(transactionWorkflowDispatchAtom(key));
-  const state = Option.getOrElse(AsyncResult.value(result), () =>
-    initializeTransactionWorkflow(key)
-  );
   const currentBatch = getCurrentTransactionWorkflowBatch(state.context);
   const current = getCurrentTransactionWorkflowTransaction(state.context);
   const latestAction =
     state.context.domain._tag === "Borrow"
       ? state.context.domain.action
-      : action;
+      : key.action;
   const currentTransaction =
     current?.source._tag === "Borrow" ? current.source.transaction : null;
   const isDone = state._tag === "Completed";
@@ -128,6 +115,7 @@ export const useBorrowExecution = ({
       state._tag === "Submitting" ||
       state._tag === "Confirming" ||
       state._tag === "Advancing",
+    input,
     phase: getPhase(state),
     result,
     retry: () => dispatch({ _tag: "Retry" }),

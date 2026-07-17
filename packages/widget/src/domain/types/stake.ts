@@ -70,6 +70,33 @@ export const isForceMaxAmount = (
   args: { minimum?: number | null; maximum?: number | null } | null | undefined
 ) => args?.minimum === -1 && args?.maximum === -1;
 
+type EnterAmountConstraint =
+  | { readonly type: "force-max" }
+  | {
+      readonly maximum: BigNumber | null;
+      readonly minimum: BigNumber;
+      readonly type: "range";
+    };
+
+export const getEnterAmountConstraint = (
+  yieldDto: EarnYieldWithProvider,
+  positionsData: PositionsData
+): EnterAmountConstraint => {
+  const amountArgument = getYieldActionArg(yieldDto, "enter", "amount");
+
+  if (isForceMaxAmount(amountArgument)) {
+    return { type: "force-max" };
+  }
+
+  const maximum = new BigNumber(amountArgument?.maximum ?? 0);
+
+  return {
+    maximum: maximum.isGreaterThan(0) ? maximum : null,
+    minimum: getMinStakeAmount(yieldDto, positionsData),
+    type: "range",
+  };
+};
+
 const yieldsWithEnterMinBasedOnPosition = new Map<Network, Set<string>>([
   [Networks.Polkadot, new Set(["polkadot-dot-validator-staking"])],
 ]);

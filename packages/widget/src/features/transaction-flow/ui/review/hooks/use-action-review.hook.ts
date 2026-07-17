@@ -13,10 +13,7 @@ import {
 } from "../../../../../domain/types/yields";
 import { defaultFormattedNumber } from "../../../../../shared/lib";
 import { dateOlderThen7Days } from "../../../../../shared/lib/date";
-import {
-  useActivitySelectedAction,
-  useActivitySelectedYield,
-} from "../../../../activity";
+import { useRequiredActivitySelection } from "../../../../activity";
 import { useYieldType } from "../../../../earn/support";
 import { useTrackPage } from "../../../../tracking";
 import type { PageCta } from "../../../../widget-shell";
@@ -27,8 +24,7 @@ export const useActionReview = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const selectedAction = useActivitySelectedAction()!;
-  const selectedYield = useActivitySelectedYield()!;
+  const { selectedAction, selectedYield } = useRequiredActivitySelection();
 
   const inputToken = useMemo(
     () =>

@@ -73,6 +73,7 @@ export const useActivityPage = ({
       selectedAction: data.actionData,
       selectedYield: data.yieldData,
       selectedValidators: data.validatorsData,
+      walletScope: data.walletScope,
     });
 
     if (selectionMode === "select") return;

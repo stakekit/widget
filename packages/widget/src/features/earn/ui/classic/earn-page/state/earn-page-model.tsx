@@ -56,6 +56,7 @@ import { useTrackEvent } from "../../../../../tracking";
 import { useSetEnterStakeRequest } from "../../../../../transaction-flow";
 import {
   addLedgerAccountAtom,
+  currentWalletScopeAtom,
   useCloseChainModal,
   useSKWallet,
   useWalletController,
@@ -126,6 +127,7 @@ export const EarnPageModelBinding = ({
     chain,
     connector,
   } = useSKWallet();
+  const walletScope = useAtomValue(currentWalletScopeAtom);
 
   const {
     dispatch,
@@ -510,18 +512,18 @@ export const EarnPageModelBinding = ({
     const selectedTokenValue = selectedToken;
     if (!stakeEnterRequestDto || !selectedTokenValue) return;
 
-    if (!isConnected) return openConnectModal?.();
+    if (!isConnected || !walletScope) return openConnectModal?.();
     if (kycGateIsBlocking) return;
 
     setEnterStakeRequest({
       actionDto: null,
-      addresses: stakeEnterRequestDto.addresses,
       requestDto: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
       providersDetails: providersDetails ?? [],
       selectedStake: stakeEnterRequestDto.selectedStake,
       selectedValidators: stakeEnterRequestDto.selectedValidators,
+      walletScope,
     });
     navigate(positionDetailsStakeReviewPath ?? "/review");
   };

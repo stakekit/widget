@@ -121,15 +121,20 @@ export const initializeWallet = ({
   readonly wagmiConfig: ReturnType<typeof createConfig>;
 }) =>
   Effect.gen(function* () {
-    const reconnected = yield* Effect.tryPromise({
+    const reconnectedCount = yield* Effect.tryPromise({
       try: () => operations.reconnect(wagmiConfig),
       catch: (cause) =>
         new WalletInitializationError({ cause, phase: "reconnect" }),
-    });
+    }).pipe(
+      Effect.match({
+        onFailure: () => 0,
+        onSuccess: (connections) => connections.length,
+      })
+    );
 
     if (
       !hasExternalProvider &&
-      reconnected.length === 0 &&
+      reconnectedCount === 0 &&
       !operations.isLedgerLive() &&
       operations.isMobile()
     ) {
@@ -150,7 +155,7 @@ export const initializeWallet = ({
               cause,
               phase: "mobile-fallback-connect",
             }),
-        });
+        }).pipe(Effect.ignore);
       }
     }
 
@@ -168,6 +173,6 @@ export const initializeWallet = ({
             cause,
             phase: "initial-chain-switch",
           }),
-      });
+      }).pipe(Effect.ignore);
     }
   });

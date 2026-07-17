@@ -1,10 +1,11 @@
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, Schema, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { mainnet } from "viem/chains";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector } from "wagmi";
+import { normalizeWidgetConfig } from "../../../src/app/config";
 import { appRuntime } from "../../../src/app/runtime";
 import { WalletAddress } from "../../../src/domain/schema/identifiers";
 import { makeWalletLifecycleAtom } from "../../../src/features/wallet/runtime/lifecycle";
@@ -12,10 +13,7 @@ import {
   disconnectedNormalizedWalletState,
   type NormalizedWalletState,
 } from "../../../src/features/wallet/state/wallet";
-import {
-  defaultWidgetBootstrapConfig,
-  WidgetBootstrapConfig,
-} from "../../../src/services/config/widget-config";
+import { WidgetConfigService } from "../../../src/services/config/widget-config";
 import { TrackingService } from "../../../src/services/tracking/tracking-service";
 
 const address = Schema.decodeSync(WalletAddress)(
@@ -60,18 +58,21 @@ describe("wallet lifecycle atom", () => {
       AsyncResult.success(connectedState);
     const stateAtom = Atom.make(initialState);
     const lifecycleAtom = makeWalletLifecycleAtom(controllerAtom, stateAtom);
+    const config = normalizeWidgetConfig({
+      apiKey: "",
+      tracking: { trackEvent },
+      variant: "default",
+    });
     const registry = AtomRegistry.make({
       initialValues: [
         [
           appRuntime.layer,
           TrackingService.layer.pipe(
             Layer.provide(
-              WidgetBootstrapConfig.layer({
-                ...defaultWidgetBootstrapConfig,
-                tracking: {
-                  tracking: { trackEvent },
-                  variant: "default",
-                },
+              WidgetConfigService.layer({
+                initial: config,
+                changes: Stream.never,
+                current: Effect.succeed(config),
               })
             )
           ),

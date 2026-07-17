@@ -1,8 +1,13 @@
 import { Navigate, Route, Routes } from "react-router";
-import { activityTransactionWorkflowKeyAtom } from "../../features/activity/state/selection";
+import { ActivitySelectionRouteGuard } from "../../features/activity";
+import {
+  activityTransactionWorkflowKeyAtom,
+  activityTransactionWorkflowLifecycleAtom,
+} from "../../features/activity/state/selection";
 import { ActivityTabPage } from "../../features/activity/ui";
 import {
   BorrowCompletePage,
+  BorrowCompletionRouteGuard,
   BorrowConnectedWalletRoute,
   BorrowFormPage,
   BorrowLayout,
@@ -11,6 +16,7 @@ import {
   BorrowPositionDetailsPage,
   BorrowReviewPage,
   BorrowStepsPage,
+  BorrowTransactionWorkflowGuard,
   useBorrowFeatureEnabled,
 } from "../../features/borrow/ui-entry";
 import { EarnPageContent, EarnPageModelBinding } from "../../features/earn/ui";
@@ -20,10 +26,24 @@ import {
   PositionDetailsActions,
   PositionDetailsStakeActions,
 } from "../../features/position-details/ui";
-import { enterTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/enter-request";
-import { exitTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/exit-request";
-import { pendingTransactionWorkflowKeyAtom } from "../../features/transaction-flow/state/pending-action-request";
 // import { RewardsTabPage } from "../../domain/types/rewards";
+import {
+  EnterStakeRequestRouteGuard,
+  ExitStakeRequestRouteGuard,
+  PendingActionRequestRouteGuard,
+} from "../../features/transaction-flow";
+import {
+  enterTransactionWorkflowKeyAtom,
+  enterTransactionWorkflowLifecycleAtom,
+} from "../../features/transaction-flow/state/enter-request";
+import {
+  exitTransactionWorkflowKeyAtom,
+  exitTransactionWorkflowLifecycleAtom,
+} from "../../features/transaction-flow/state/exit-request";
+import {
+  pendingTransactionWorkflowKeyAtom,
+  pendingTransactionWorkflowLifecycleAtom,
+} from "../../features/transaction-flow/state/pending-action-request";
 import {
   ActivityDetailsPage,
   ActivityStepsPage,
@@ -37,12 +57,12 @@ import {
   UnstakeReviewPage,
   UnstakeStepsPage,
 } from "../../features/transaction-flow/ui";
+import { WalletScopeRouteGuard } from "../../features/wallet";
 import { GlobalModals } from "../../features/widget-shell/screens";
 import { useSKLocation } from "../../shared/react/location-history";
 import { DashboardOverview } from "./dashboard-overview";
 import { DashboardShell } from "./dashboard-shell";
 import { ClassicTransactionWorkflowGuard } from "./guards/classic-transaction-workflow";
-import { ConnectedCheck } from "./guards/connected-wallet";
 
 const positionDetailsStakeFooterPath =
   /^\/positions\/[^/]+\/[^/]+(?:\/stake)?$/;
@@ -60,25 +80,37 @@ export const DashboardRoutes = () => {
     <>
       <Route path="borrow" element={<BorrowLayout />}>
         <Route index element={<BorrowFormPage />} />
-        <Route element={<BorrowConnectedWalletRoute />}>
-          <Route path="review" element={<BorrowReviewPage />} />
-          <Route path="steps" element={<BorrowStepsPage />} />
-          <Route path="complete" element={<BorrowCompletePage />} />
+        <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
+          <Route element={<BorrowConnectedWalletRoute />}>
+            <Route path="review" element={<BorrowReviewPage />} />
+            <Route element={<BorrowTransactionWorkflowGuard />}>
+              <Route path="steps" element={<BorrowStepsPage />} />
+              <Route element={<BorrowCompletionRouteGuard />}>
+                <Route path="complete" element={<BorrowCompletePage />} />
+              </Route>
+            </Route>
+          </Route>
         </Route>
       </Route>
-      <Route element={<BorrowConnectedWalletRoute />}>
-        <Route
-          path="positions/borrow/:marketId"
-          element={<BorrowPositionDetailsPage />}
-        >
-          <Route index element={<BorrowPositionActionsPage />} />
+      <Route element={<WalletScopeRouteGuard fallbackPath="/borrow" />}>
+        <Route element={<BorrowConnectedWalletRoute />}>
           <Route
-            path="action/:actionId"
-            element={<BorrowPositionActionPage />}
-          />
-          <Route path="review" element={<BorrowReviewPage />} />
-          <Route path="steps" element={<BorrowStepsPage />} />
-          <Route path="complete" element={<BorrowCompletePage />} />
+            path="positions/borrow/:marketId"
+            element={<BorrowPositionDetailsPage />}
+          >
+            <Route index element={<BorrowPositionActionsPage />} />
+            <Route
+              path="action/:actionId"
+              element={<BorrowPositionActionPage />}
+            />
+            <Route path="review" element={<BorrowReviewPage />} />
+            <Route element={<BorrowTransactionWorkflowGuard />}>
+              <Route path="steps" element={<BorrowStepsPage />} />
+              <Route element={<BorrowCompletionRouteGuard />}>
+                <Route path="complete" element={<BorrowCompletePage />} />
+              </Route>
+            </Route>
+          </Route>
         </Route>
       </Route>
     </>
@@ -101,17 +133,22 @@ export const DashboardRoutes = () => {
             <Route element={<DashboardOverview />}>
               <Route index element={<EarnPageContent />} />
 
-              <Route element={<ConnectedCheck />}>
-                <Route path="review" element={<StakeReviewPage />} />
-                <Route
-                  element={
-                    <ClassicTransactionWorkflowGuard
-                      workflowKeyAtom={enterTransactionWorkflowKeyAtom}
-                    />
-                  }
-                >
-                  <Route path="steps" element={<StakeStepsPage />} />
-                  <Route path="complete" element={<StakeCompletePage />} />
+              <Route element={<WalletScopeRouteGuard fallbackPath="/" />}>
+                <Route element={<EnterStakeRequestRouteGuard />}>
+                  <Route path="review" element={<StakeReviewPage />} />
+                  <Route
+                    element={
+                      <ClassicTransactionWorkflowGuard
+                        workflowLifecycleAtom={
+                          enterTransactionWorkflowLifecycleAtom
+                        }
+                        workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                      />
+                    }
+                  >
+                    <Route path="steps" element={<StakeStepsPage />} />
+                    <Route path="complete" element={<StakeCompletePage />} />
+                  </Route>
                 </Route>
               </Route>
             </Route>
@@ -123,61 +160,84 @@ export const DashboardRoutes = () => {
             {borrowRoutes}
 
             {/* Position Details */}
-            <Route
-              path="positions/:integrationId/:balanceId"
-              element={<DashboardPositionDetailsPage />}
-            >
-              <Route index element={<PositionDetailsStakeActions />} />
-
-              {/* Staking */}
-              <Route path="stake">
-                <Route index element={<PositionDetailsStakeActions />} />
-                <Route path="review" element={<StakeReviewPage />} />
-                <Route
-                  element={
-                    <ClassicTransactionWorkflowGuard
-                      workflowKeyAtom={enterTransactionWorkflowKeyAtom}
-                    />
-                  }
-                >
-                  <Route path="steps" element={<StakeStepsPage />} />
-                  <Route path="complete" element={<StakeCompletePage />} />
-                </Route>
-              </Route>
-
+            <Route element={<WalletScopeRouteGuard fallbackPath="/manage" />}>
               <Route
-                path="select-validator/:pendingActionType"
+                path="positions/:integrationId/:balanceId"
                 element={<DashboardPositionDetailsPage />}
-              />
+              >
+                <Route index element={<PositionDetailsStakeActions />} />
 
-              {/* Unstaking */}
-              <Route path="unstake">
-                <Route index element={<PositionDetailsActions />} />
-                <Route path="review" element={<UnstakeReviewPage />} />
-                <Route
-                  element={
-                    <ClassicTransactionWorkflowGuard
-                      workflowKeyAtom={exitTransactionWorkflowKeyAtom}
-                    />
-                  }
-                >
-                  <Route path="steps" element={<UnstakeStepsPage />} />
-                  <Route path="complete" element={<UnstakeCompletePage />} />
+                {/* Staking */}
+                <Route path="stake">
+                  <Route index element={<PositionDetailsStakeActions />} />
+                  <Route element={<EnterStakeRequestRouteGuard />}>
+                    <Route path="review" element={<StakeReviewPage />} />
+                    <Route
+                      element={
+                        <ClassicTransactionWorkflowGuard
+                          workflowLifecycleAtom={
+                            enterTransactionWorkflowLifecycleAtom
+                          }
+                          workflowKeyAtom={enterTransactionWorkflowKeyAtom}
+                        />
+                      }
+                    >
+                      <Route path="steps" element={<StakeStepsPage />} />
+                      <Route path="complete" element={<StakeCompletePage />} />
+                    </Route>
+                  </Route>
                 </Route>
-              </Route>
 
-              {/* Pending Actions */}
-              <Route path="pending-action">
-                <Route path="review" element={<PendingReviewPage />} />
                 <Route
-                  element={
-                    <ClassicTransactionWorkflowGuard
-                      workflowKeyAtom={pendingTransactionWorkflowKeyAtom}
-                    />
-                  }
-                >
-                  <Route path="steps" element={<PendingStepsPage />} />
-                  <Route path="complete" element={<PendingCompletePage />} />
+                  path="select-validator/:pendingActionType"
+                  element={<DashboardPositionDetailsPage />}
+                />
+
+                {/* Unstaking */}
+                <Route path="unstake">
+                  <Route index element={<PositionDetailsActions />} />
+                  <Route element={<ExitStakeRequestRouteGuard />}>
+                    <Route path="review" element={<UnstakeReviewPage />} />
+                    <Route
+                      element={
+                        <ClassicTransactionWorkflowGuard
+                          workflowLifecycleAtom={
+                            exitTransactionWorkflowLifecycleAtom
+                          }
+                          workflowKeyAtom={exitTransactionWorkflowKeyAtom}
+                        />
+                      }
+                    >
+                      <Route path="steps" element={<UnstakeStepsPage />} />
+                      <Route
+                        path="complete"
+                        element={<UnstakeCompletePage />}
+                      />
+                    </Route>
+                  </Route>
+                </Route>
+
+                {/* Pending Actions */}
+                <Route path="pending-action">
+                  <Route element={<PendingActionRequestRouteGuard />}>
+                    <Route path="review" element={<PendingReviewPage />} />
+                    <Route
+                      element={
+                        <ClassicTransactionWorkflowGuard
+                          workflowLifecycleAtom={
+                            pendingTransactionWorkflowLifecycleAtom
+                          }
+                          workflowKeyAtom={pendingTransactionWorkflowKeyAtom}
+                        />
+                      }
+                    >
+                      <Route path="steps" element={<PendingStepsPage />} />
+                      <Route
+                        path="complete"
+                        element={<PendingCompletePage />}
+                      />
+                    </Route>
+                  </Route>
                 </Route>
               </Route>
             </Route>
@@ -187,18 +247,27 @@ export const DashboardRoutes = () => {
 
             {/* Activity Tab */}
             <Route path="activity" element={<ActivityTabPage />}>
-              <Route index element={<ActivityDetailsPage />} />
               <Route
-                element={
-                  <ClassicTransactionWorkflowGuard
-                    workflowKeyAtom={activityTransactionWorkflowKeyAtom}
-                  />
-                }
+                element={<WalletScopeRouteGuard fallbackPath="/activity" />}
               >
-                <Route
-                  path=":pendingActionType/steps"
-                  element={<ActivityStepsPage />}
-                />
+                <Route element={<ActivitySelectionRouteGuard />}>
+                  <Route index element={<ActivityDetailsPage />} />
+                  <Route
+                    element={
+                      <ClassicTransactionWorkflowGuard
+                        workflowLifecycleAtom={
+                          activityTransactionWorkflowLifecycleAtom
+                        }
+                        workflowKeyAtom={activityTransactionWorkflowKeyAtom}
+                      />
+                    }
+                  >
+                    <Route
+                      path=":pendingActionType/steps"
+                      element={<ActivityStepsPage />}
+                    />
+                  </Route>
+                </Route>
               </Route>
             </Route>
           </Route>

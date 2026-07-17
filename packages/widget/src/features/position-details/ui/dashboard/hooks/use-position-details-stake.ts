@@ -1,5 +1,4 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { useConnectModal } from "@stakekit/rainbowkit";
 import BigNumber from "bignumber.js";
 import { Array as EArray, Option } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
@@ -60,6 +59,7 @@ import {
   addLedgerAccountAtom,
   useCloseChainModal,
   useSKWallet,
+  useWalletScopeRoute,
 } from "../../../../wallet";
 import type { NumberInputProps, PageCta } from "../../../../widget-shell";
 import { useNavigateWithScrollToTop } from "../../../../widget-shell";
@@ -88,6 +88,7 @@ const resolveTronResource = (selectedStake: EarnYieldWithProvider | null) =>
 
 export const usePositionDetailsStake = () => {
   const { t } = useTranslation();
+  const walletScope = useWalletScopeRoute();
   const positionDetails = usePositionDetails();
   const positionDetailsStakeMatch = usePositionDetailsStakeMatch();
   const integrationId = positionDetailsStakeMatch?.params.integrationId ?? "";
@@ -95,6 +96,7 @@ export const usePositionDetailsStake = () => {
   const { intent, dispatch } = usePositionDetailsStakeMachine({
     integrationId,
     balanceId,
+    walletScope,
   });
 
   const selectedStake = positionDetails.integrationData;
@@ -253,11 +255,9 @@ export const usePositionDetailsStake = () => {
     ? getKycProviderName(selectedStake)
     : null;
   const onKycStatusRefresh = () => yieldKycGate.refetch();
-  const { openConnectModal } = useConnectModal();
   const navigate = useNavigateWithScrollToTop();
   const setEnterStakeRequest = useSetEnterStakeRequest();
-  const { isConnected, isLedgerLiveAccountPlaceholder, chain, connector } =
-    useSKWallet();
+  const { isLedgerLiveAccountPlaceholder, chain, connector } = useSKWallet();
 
   const {
     stakeAmountGreaterThanAvailableAmount,
@@ -278,18 +278,17 @@ export const usePositionDetailsStake = () => {
     const selectedTokenValue = selectedToken;
     if (!stakeEnterRequestDto || !selectedTokenValue) return;
 
-    if (!isConnected) return openConnectModal?.();
     if (kycGateIsBlocking) return;
 
     setEnterStakeRequest({
       actionDto: null,
-      addresses: stakeEnterRequestDto.addresses,
       requestDto: stakeEnterRequestDto.dto,
       selectedToken: selectedTokenValue,
       gasFeeToken: stakeEnterRequestDto.gasFeeToken,
       providersDetails: providersDetails ?? [],
       selectedStake: stakeEnterRequestDto.selectedStake,
       selectedValidators: stakeEnterRequestDto.selectedValidators,
+      walletScope,
     });
     navigate(
       getPositionDetailsStakeReviewPath({ balanceId, integrationId }) ??
@@ -307,7 +306,6 @@ export const usePositionDetailsStake = () => {
     };
 
     if (
-      isConnected &&
       selectedStake &&
       getYieldActionArg(selectedStake, "enter", "tronResource")?.required &&
       !tronResource
@@ -321,7 +319,6 @@ export const usePositionDetailsStake = () => {
       errors,
     };
   }, [
-    isConnected,
     submitted,
     selectedStake,
     stakeAmountGreaterThanAvailableAmount,
@@ -350,18 +347,15 @@ export const usePositionDetailsStake = () => {
   const addLedgerAccount = useAtomSet(addLedgerAccountAtom);
   const { closeChainModal } = useCloseChainModal();
   const connectClickRef = useSavedRef(() => {
-    if (isLedgerLiveAccountPlaceholder && chain) {
-      trackEvent("addLedgerAccountClicked");
-      return addLedgerAccount({
-        chain,
-        closeChainModal,
-        connector:
-          connector && isLedgerLiveConnector(connector) ? connector : null,
-      });
-    }
+    if (!isLedgerLiveAccountPlaceholder || !chain) return;
 
-    trackEvent("connectWalletClicked");
-    openConnectModal?.();
+    trackEvent("addLedgerAccountClicked");
+    return addLedgerAccount({
+      chain,
+      closeChainModal,
+      connector:
+        connector && isLedgerLiveConnector(connector) ? connector : null,
+    });
   });
 
   const externalProviders = useWidgetConfig("externalProviders");
@@ -372,11 +366,11 @@ export const usePositionDetailsStake = () => {
     (!!pricesRequest && AsyncResult.isInitial(pricesResult));
   const buttonCTAText = useYieldType(selectedStake)?.cta ?? "";
   const buttonDisabled =
-    isConnected && (isFetching || !stakeEnterRequestDto || kycGateIsBlocking);
+    isFetching || !stakeEnterRequestDto || kycGateIsBlocking;
   const appLoading = positionDetails.isLoading || !selectedStake;
   const cta = useMemo<PageCta>(
     () =>
-      isConnected && !isLedgerLiveAccountPlaceholder
+      !isLedgerLiveAccountPlaceholder
         ? {
             disabled: buttonDisabled,
             isLoading: !buttonCTAText || isFetching || yieldKycGate.isLoading,
@@ -401,7 +395,6 @@ export const usePositionDetailsStake = () => {
       buttonDisabled,
       connectClickRef,
       externalProviders,
-      isConnected,
       isFetching,
       isLedgerLiveAccountPlaceholder,
       onClickRef,

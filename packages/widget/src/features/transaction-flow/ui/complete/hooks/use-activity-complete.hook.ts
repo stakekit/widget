@@ -1,10 +1,6 @@
 import { getActionInputToken } from "../../../../../domain/types/action";
 import { defaultFormattedNumber } from "../../../../../shared/lib";
-import {
-  useActivitySelectedAction,
-  useActivitySelectedValidators,
-  useActivitySelectedYield,
-} from "../../../../activity";
+import { useRequiredActivitySelection } from "../../../../activity";
 import { useProvidersDetails } from "../../../../earn";
 import { useYieldType } from "../../../../earn/support";
 import { useTrackPage } from "../../../../tracking";
@@ -12,12 +8,11 @@ import { useTrackPage } from "../../../../tracking";
 export const useActivityComplete = () => {
   useTrackPage("activityComplete");
 
-  const selectedAction = useActivitySelectedAction()!;
-  const selectedYield = useActivitySelectedYield();
-  const selectedValidators = useActivitySelectedValidators();
+  const { selectedAction, selectedValidators, selectedYield } =
+    useRequiredActivitySelection();
   const inputToken = getActionInputToken({
     actionDto: selectedAction,
-    yieldDto: selectedYield ?? undefined,
+    yieldDto: selectedYield,
   });
   const providerDetails = useProvidersDetails({
     integrationData: selectedYield,

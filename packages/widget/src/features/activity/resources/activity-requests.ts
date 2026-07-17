@@ -1,6 +1,6 @@
 import { Data } from "effect";
-import type { WalletAddress } from "../../../domain/schema/identifiers";
 import type { Network } from "../../../domain/schema/network-model";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import {
   type ActivityFilter,
   getActivityFilterYieldTypes,
@@ -34,7 +34,6 @@ export const getActivityActionsRequestParams = ({
 };
 
 export class ActivityActionsKey extends Data.Class<{
-  readonly address: WalletAddress | null;
   readonly filter: ActivityFilter;
-  readonly network: Network | null;
+  readonly scope: WalletScopeKey | null;
 }> {}

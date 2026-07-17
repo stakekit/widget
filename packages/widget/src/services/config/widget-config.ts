@@ -1,7 +1,29 @@
-import { Context, Effect, Layer } from "effect";
+import { Context, type Effect, Layer, type Stream } from "effect";
 import type { SKExternalProviders } from "../../domain/types/wallets";
 import type { SettingsProps, VariantProps } from "../../public-api/types";
 import { config } from "../../shared/config/widget-defaults";
+
+type ResolvedSettingsProps = Omit<
+  SettingsProps,
+  "borrowEnabled" | "dashboardYieldCategoryOrder" | "yieldGrouping"
+> & {
+  readonly borrowEnabled: boolean;
+  readonly dashboardYieldCategoryOrder: NonNullable<
+    SettingsProps["dashboardYieldCategoryOrder"]
+  >;
+  readonly yieldGrouping: NonNullable<SettingsProps["yieldGrouping"]>;
+};
+
+type ZerionChainModal = Extract<
+  VariantProps,
+  { readonly variant: "zerion" }
+>["chainModal"];
+
+export type WidgetConfig = ResolvedSettingsProps & {
+  readonly chainModal?: ZerionChainModal;
+  readonly isLedgerLive: boolean;
+  readonly variant: VariantProps["variant"];
+};
 
 type WagmiSettings = NonNullable<SettingsProps["wagmi"]>;
 
@@ -11,6 +33,15 @@ export type WidgetApiConfig = {
   readonly borrowApiUrl: string;
   readonly yieldsApiUrl: string;
 };
+
+export const normalizeWidgetApiConfig = (
+  settings: WidgetConfig
+): WidgetApiConfig => ({
+  apiKey: settings.apiKey,
+  baseUrl: settings.baseUrl ?? config.env.apiUrl,
+  borrowApiUrl: settings.borrowApiUrl ?? config.env.borrowApiUrl,
+  yieldsApiUrl: settings.yieldsApiUrl ?? config.env.yieldsApiUrl,
+});
 
 type WidgetTrackingConfig = {
   readonly tracking: SettingsProps["tracking"];
@@ -69,16 +100,17 @@ export type WidgetBootstrapConfigValue = {
   readonly wallet: WidgetWalletConfig;
 };
 
-export class WidgetBootstrapConfig extends Context.Service<WidgetBootstrapConfig>()(
-  "stakekit/widget/WidgetBootstrapConfig",
-  {
-    make: (value: WidgetBootstrapConfigValue) => Effect.succeed(value),
-  }
-) {
-  static layer(value: WidgetBootstrapConfigValue) {
-    return Layer.effect(
-      WidgetBootstrapConfig,
-      WidgetBootstrapConfig.make(value)
-    );
+type WidgetConfigServiceValue = {
+  readonly initial: WidgetConfig;
+  readonly current: Effect.Effect<WidgetConfig>;
+  readonly changes: Stream.Stream<WidgetConfig>;
+};
+
+export class WidgetConfigService extends Context.Service<
+  WidgetConfigService,
+  WidgetConfigServiceValue
+>()("stakekit/widget/WidgetConfigService") {
+  static layer(value: WidgetConfigServiceValue) {
+    return Layer.succeed(WidgetConfigService, value);
   }
 }

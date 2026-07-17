@@ -1,4 +1,8 @@
 export { BorrowFormPage, BorrowLayout } from "./ui";
+export {
+  BorrowCompletionRouteGuard,
+  BorrowTransactionWorkflowGuard,
+} from "./ui/borrow-execution-route";
 export { BorrowCompletePage } from "./ui/complete";
 export { BorrowConnectedWalletRoute } from "./ui/connected-wallet";
 export {

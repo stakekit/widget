@@ -5,12 +5,12 @@ import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { appRuntime } from "../../../app/runtime";
 import type { YieldAction } from "../../../domain/schema/action-models";
-import type { WalletAddresses } from "../../../domain/schema/address-models";
 import type { GasBalancesCommand } from "../../../domain/schema/financial-models";
 import type { AppToken } from "../../../domain/schema/legacy-models";
 import { getTransactionGasEstimate } from "../../../domain/types/action";
 import { checkGasAmount } from "../../../domain/types/gas";
 import { LegacyApiService } from "../../../services/api/legacy-api-service";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../shared/effect/api-resource";
 import {
   type ActionPreviewIntent,
@@ -48,11 +48,10 @@ class CurrentGasWarningKey extends Data.Class<{
 }> {}
 
 type CurrentGasWarningInput = {
-  readonly additionalAddresses: WalletAddresses["additionalAddresses"];
-  readonly address: WalletAddresses["address"];
   readonly gasFeeToken: AppToken;
   readonly stakeAmount: BigNumber | null;
   readonly stakeToken: AppToken | null;
+  readonly walletScope: WalletScopeKey;
 };
 
 const getCurrentGasWarningInput = (
@@ -64,13 +63,12 @@ const getCurrentGasWarningInput = (
       const request = get(enterStakeRequestAtom);
       return request
         ? {
-            additionalAddresses: request.addresses.additionalAddresses,
-            address: request.addresses.address,
             gasFeeToken: request.gasFeeToken,
             stakeAmount: new BigNumber(
               request.requestDto.arguments?.amount ?? 0
             ),
             stakeToken: request.selectedToken,
+            walletScope: request.walletScope,
           }
         : null;
     }
@@ -78,11 +76,10 @@ const getCurrentGasWarningInput = (
       const request = get(exitStakeRequestAtom);
       return request
         ? {
-            additionalAddresses: request.addresses.additionalAddresses,
-            address: request.addresses.address,
             gasFeeToken: request.gasFeeToken,
             stakeAmount: null,
             stakeToken: null,
+            walletScope: request.walletScope,
           }
         : null;
     }
@@ -90,11 +87,10 @@ const getCurrentGasWarningInput = (
       const request = get(pendingActionRequestAtom);
       return request
         ? {
-            additionalAddresses: request.addresses.additionalAddresses,
-            address: request.addresses.address,
             gasFeeToken: request.gasFeeToken,
             stakeAmount: null,
             stakeToken: null,
+            walletScope: request.walletScope,
           }
         : null;
     }
@@ -117,20 +113,22 @@ const getGasAmount = (
 
 const getGasBalancesCommand = (
   input: CurrentGasWarningInput
-): GasBalancesCommand => ({
-  addresses: [
-    {
-      address: input.address,
-      ...(input.additionalAddresses
-        ? { additionalAddresses: input.additionalAddresses }
-        : {}),
-      network: input.gasFeeToken.network,
-      ...(input.gasFeeToken.address
-        ? { tokenAddress: input.gasFeeToken.address }
-        : {}),
-    },
-  ],
-});
+): GasBalancesCommand => {
+  const { additionalAddresses, address } = input.walletScope;
+
+  return {
+    addresses: [
+      {
+        address,
+        ...(additionalAddresses ? { additionalAddresses } : {}),
+        network: input.gasFeeToken.network,
+        ...(input.gasFeeToken.address
+          ? { tokenAddress: input.gasFeeToken.address }
+          : {}),
+      },
+    ],
+  };
+};
 
 const currentGasWarningAtom = Atom.family((key: CurrentGasWarningKey) =>
   Atom.make((get) => {

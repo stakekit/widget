@@ -1,6 +1,7 @@
-import { Context, Effect, Layer, SubscriptionRef } from "effect";
+import { Context, Effect, Layer, Stream, SubscriptionRef } from "effect";
 import { HttpResponse, http } from "msw";
 import { version as widgetVersion } from "../../package.json";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import { useGeoBlock } from "../../src/features/preferences";
 import {
   BorrowApiService,
@@ -10,9 +11,8 @@ import {
 import { delayAPIRequests } from "../../src/services/api/delay-api-requests";
 import { ApiTransportService } from "../../src/services/api/transport";
 import {
-  defaultWidgetBootstrapConfig,
   type WidgetApiConfig,
-  WidgetBootstrapConfig,
+  WidgetConfigService,
 } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 import { config } from "../../src/shared/config/widget-defaults";
@@ -20,22 +20,25 @@ import { describe, expect, it } from "../utils/test-extend.dom";
 import { renderHook } from "../utils/test-utils.dom";
 
 const createTestClient = async (options: Partial<WidgetApiConfig> = {}) => {
-  const bootstrapLayer = WidgetBootstrapConfig.layer({
-    ...defaultWidgetBootstrapConfig,
-    api: {
-      apiKey: "test-key",
-      baseUrl: "https://api.example.com",
-      borrowApiUrl: "https://borrow.example.com",
-      yieldsApiUrl: "https://yield.example.com",
-      ...options,
-    },
+  const config = normalizeWidgetConfig({
+    apiKey: "test-key",
+    baseUrl: "https://api.example.com",
+    borrowApiUrl: "https://borrow.example.com",
+    yieldsApiUrl: "https://yield.example.com",
+    variant: "default",
+    ...options,
+  });
+  const configLayer = WidgetConfigService.layer({
+    initial: config,
+    changes: Stream.never,
+    current: Effect.succeed(config),
   });
   const richErrorLayer = RichErrorService.layer.pipe(
-    Layer.provide(bootstrapLayer)
+    Layer.provide(configLayer)
   );
   const transportLayer = ApiTransportService.layer.pipe(
     Layer.provide(richErrorLayer),
-    Layer.provide(bootstrapLayer)
+    Layer.provide(configLayer)
   );
   const clientLayer = Layer.mergeAll(
     BorrowApiService.layer,

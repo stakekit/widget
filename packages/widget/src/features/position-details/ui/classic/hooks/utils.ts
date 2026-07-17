@@ -5,7 +5,6 @@ import type {
   EarnBalance,
   EarnYieldWithProvider,
 } from "../../../../../domain/schema/earn-models";
-import type { WalletAddress as WalletAddressType } from "../../../../../domain/schema/identifiers";
 import type { AppToken } from "../../../../../domain/schema/legacy-models";
 
 import {
@@ -32,8 +31,6 @@ type PreparedPendingAction = {
   requestDto: ManageActionCommand;
   integrationData: EarnYieldWithProvider;
   gasFeeToken: EarnYieldWithProvider["token"];
-  address: WalletAddressType;
-  additionalAddresses: NonNullable<SKWallet["additionalAddresses"]> | undefined;
 };
 
 export const preparePendingActionRequestDto = ({
@@ -90,8 +87,6 @@ export const preparePendingActionRequestDto = ({
       passthrough: pendingActionDto.passthrough,
       yieldId: integration.id,
     },
-    address,
-    additionalAddresses: additionalAddresses ?? undefined,
     gasFeeToken: integration.mechanics.gasFeeToken,
     integrationData: integration,
   });

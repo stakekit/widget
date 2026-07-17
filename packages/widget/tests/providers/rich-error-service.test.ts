@@ -1,13 +1,11 @@
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Stream } from "effect";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it, vi } from "vitest";
+import { normalizeWidgetConfig } from "../../src/app/config";
 import { appRuntime } from "../../src/app/runtime";
 import { richErrorAtom } from "../../src/features/widget-shell";
-import {
-  defaultWidgetBootstrapConfig,
-  WidgetBootstrapConfig,
-} from "../../src/services/config/widget-config";
+import { WidgetConfigService } from "../../src/services/config/widget-config";
 import { RichErrorService } from "../../src/services/errors/rich-error-service";
 
 const richErrorServiceAtom = appRuntime.atom(
@@ -21,12 +19,14 @@ const makeRegistry = (baseUrl: string) =>
         appRuntime.layer,
         RichErrorService.layer.pipe(
           Layer.provide(
-            WidgetBootstrapConfig.layer({
-              ...defaultWidgetBootstrapConfig,
-              api: {
-                ...defaultWidgetBootstrapConfig.api,
+            WidgetConfigService.layer({
+              initial: normalizeWidgetConfig({
+                apiKey: "",
                 baseUrl,
-              },
+                variant: "default",
+              }),
+              changes: Stream.never,
+              current: Effect.never,
             })
           ),
           Layer.fresh

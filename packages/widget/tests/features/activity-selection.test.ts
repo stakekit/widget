@@ -1,12 +1,11 @@
 import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import { describe, expect, it } from "vitest";
 import {
-  activitySelectedActionAtom,
-  activitySelectedValidatorsAtom,
-  activitySelectedYieldAtom,
   activitySelectionAtom,
   activityTransactionWorkflowKeyAtom,
 } from "../../src/features/activity/state/selection";
+import { currentWalletScopeAtom } from "../../src/features/wallet/runtime/selectors";
+import { WalletScopeKey } from "../../src/services/wallet/domain/scope";
 import {
   yieldApiActionFixture,
   yieldApiValidatorFixture,
@@ -16,9 +15,12 @@ import { decodeValidator } from "../utils/validators";
 
 describe("activity selection atoms", () => {
   it("initializes empty, exposes focused selections, and resets", () => {
-    const registry = AtomRegistry.make();
     const action = yieldApiActionFixture();
     const selectedYield = yieldApiYieldFixture();
+    const walletScope = new WalletScopeKey({
+      address: action.address!,
+      network: "ethereum",
+    });
     const validators = [decodeValidator(yieldApiValidatorFixture())];
     const providersDetails = [
       {
@@ -30,10 +32,11 @@ describe("activity selection atoms", () => {
         website: "https://example.com",
       },
     ];
+    const registry = AtomRegistry.make({
+      initialValues: [[currentWalletScopeAtom, walletScope]],
+    });
 
-    expect(registry.get(activitySelectedActionAtom)).toBeNull();
-    expect(registry.get(activitySelectedYieldAtom)).toBeNull();
-    expect(registry.get(activitySelectedValidatorsAtom)).toBeNull();
+    expect(registry.get(activitySelectionAtom)).toBeNull();
     expect(registry.get(activityTransactionWorkflowKeyAtom)).toBeNull();
 
     registry.set(activitySelectionAtom, {
@@ -41,21 +44,50 @@ describe("activity selection atoms", () => {
       selectedAction: action,
       selectedValidators: validators,
       selectedYield,
+      walletScope,
     });
 
-    expect(registry.get(activitySelectedActionAtom)).toBe(action);
-    expect(registry.get(activitySelectedYieldAtom)).toBe(selectedYield);
-    expect(registry.get(activitySelectedValidatorsAtom)).toBe(validators);
+    expect(registry.get(activitySelectionAtom)?.selectedAction).toBe(action);
     expect(
       registry.get(activityTransactionWorkflowKeyAtom)?.actionMeta
         .providersDetails
     ).toEqual(providersDetails);
+    expect(registry.get(activityTransactionWorkflowKeyAtom)?.walletScope).toBe(
+      walletScope
+    );
 
     registry.set(activitySelectionAtom, null);
 
-    expect(registry.get(activitySelectedActionAtom)).toBeNull();
-    expect(registry.get(activitySelectedYieldAtom)).toBeNull();
-    expect(registry.get(activitySelectedValidatorsAtom)).toBeNull();
+    expect(registry.get(activitySelectionAtom)).toBeNull();
     expect(registry.get(activityTransactionWorkflowKeyAtom)).toBeNull();
+  });
+
+  it("discards a selection when its wallet scope is no longer current", () => {
+    const action = yieldApiActionFixture();
+    const walletScope = new WalletScopeKey({
+      address: action.address!,
+      network: "ethereum",
+    });
+    const registry = AtomRegistry.make({
+      initialValues: [[currentWalletScopeAtom, walletScope]],
+    });
+    const unmount = registry.mount(activitySelectionAtom);
+
+    registry.set(activitySelectionAtom, {
+      providersDetails: [],
+      selectedAction: action,
+      selectedValidators: [],
+      selectedYield: yieldApiYieldFixture(),
+      walletScope,
+    });
+
+    expect(registry.get(activitySelectionAtom)?.selectedAction).toBe(action);
+
+    registry.refresh(currentWalletScopeAtom);
+
+    expect(registry.get(activitySelectionAtom)).toBeNull();
+
+    unmount();
+    registry.dispose();
   });
 });

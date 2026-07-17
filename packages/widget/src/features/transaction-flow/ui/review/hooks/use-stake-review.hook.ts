@@ -22,7 +22,7 @@ import {
 import type { PageCta } from "../../../../widget-shell";
 import {
   useActionPreview,
-  useEnterStakeRequest,
+  useRequiredEnterStakeRequest,
   useSetEnterStakeRequest,
 } from "../../..";
 import { useGasWarningCheck } from "../../../react/use-gas-warning-check";
@@ -31,7 +31,7 @@ import type { MetaInfoProps } from "../pages/common-page/common.page";
 import { useFees } from "./use-fees";
 
 export const useStakeReview = () => {
-  const enterRequest = useEnterStakeRequest()!;
+  const enterRequest = useRequiredEnterStakeRequest();
   const setEnterStakeRequest = useSetEnterStakeRequest();
 
   const stakeAmount = useMemo(

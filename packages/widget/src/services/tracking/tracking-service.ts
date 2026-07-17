@@ -1,6 +1,6 @@
 import { Context, Effect, Layer } from "effect";
 import { config } from "../../shared/config/widget-defaults";
-import { WidgetBootstrapConfig } from "../config/widget-config";
+import { WidgetConfigService } from "../config/widget-config";
 import {
   type Properties,
   type TrackEventKey,
@@ -13,21 +13,24 @@ export class TrackingService extends Context.Service<TrackingService>()(
   "stakekit/widget/TrackingService",
   {
     make: Effect.gen(function* () {
-      const { tracking, variant } = (yield* WidgetBootstrapConfig).tracking;
-      const variantTracking =
-        variant === "zerion"
-          ? yield* Effect.tryPromise({
-              try: async () => {
-                const module = await import("./tracking-variants");
-                module.initMixpanel(config.zerion.tracking);
-                return module.tracking;
-              },
-              catch: () => undefined,
-            }).pipe(Effect.orElseSucceed(() => undefined))
-          : undefined;
+      const widgetConfig = yield* WidgetConfigService;
+      const getVariantTracking = yield* Effect.cached(
+        Effect.tryPromise({
+          try: async () => {
+            const module = await import("./tracking-variants");
+            module.initMixpanel(config.zerion.tracking);
+            return module.tracking;
+          },
+          catch: () => undefined,
+        }).pipe(Effect.orElseSucceed(() => undefined))
+      );
 
       const trackEvent = Effect.fn("TrackingService.trackEvent")(
         function* (event: TrackEventKey, properties?: Properties) {
+          const { tracking, variant } = yield* widgetConfig.current;
+          const variantTracking =
+            variant === "zerion" ? yield* getVariantTracking : undefined;
+
           yield* Effect.try({
             try: () =>
               tracking?.trackEvent?.(
@@ -51,6 +54,10 @@ export class TrackingService extends Context.Service<TrackingService>()(
 
       const trackPageView = Effect.fn("TrackingService.trackPageView")(
         function* (page: TrackPageKey, properties?: Properties) {
+          const { tracking, variant } = yield* widgetConfig.current;
+          const variantTracking =
+            variant === "zerion" ? yield* getVariantTracking : undefined;
+
           yield* Effect.try({
             try: () =>
               tracking?.trackPageView?.(

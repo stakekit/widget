@@ -4,7 +4,13 @@ import clsx from "clsx";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet, useNavigate, useOutletContext, useParams } from "react-router";
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+  useParams,
+} from "react-router";
 import { useTrackPage } from "../../../features/tracking";
 import { AnimationPage } from "../../../features/widget-shell";
 import { formatNumber } from "../../../shared/lib";
@@ -1064,9 +1070,15 @@ export const BorrowPositionActionPage = () => {
             {t("dashboard.borrow.position_details.empty")}
           </Text>
         ) : action.type === "repay" ? (
-          <RepayActionForm action={action} />
+          <RepayActionForm
+            action={action}
+            key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
+          />
         ) : action.type === "withdraw" ? (
-          <WithdrawActionForm action={action} />
+          <WithdrawActionForm
+            action={action}
+            key={`${action.reviewState.summary.network}:${action.reviewState.request.address.toLowerCase()}`}
+          />
         ) : (
           <ToggleCollateralActionForm action={action} />
         )}
@@ -1179,6 +1191,7 @@ export const BorrowPositionDetailsPage = () => {
   useTrackPage("positionDetails");
 
   const { marketId } = useParams();
+  const location = useLocation();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const stageBorrowActionForm = useAtomSet(borrowActionFormAtom);
@@ -1197,7 +1210,10 @@ export const BorrowPositionDetailsPage = () => {
   const isPositionLoading =
     AsyncResult.isInitial(borrowPosition.positionResult) ||
     AsyncResult.isWaiting(borrowPosition.positionResult);
-  const shouldShowLeftPane = actions.length > 0 || !!position;
+  const positionBasePath = getBorrowPositionBasePath(marketId);
+  const normalizedPathname = location.pathname.replace(/\/+$/u, "");
+  const hasNestedRoute = normalizedPathname !== positionBasePath;
+  const shouldShowLeftPane = hasNestedRoute || actions.length > 0 || !!position;
   const context: BorrowPositionContext = {
     actions,
     borrowPosition,
@@ -1213,7 +1229,7 @@ export const BorrowPositionDetailsPage = () => {
     navigate(`${getBorrowPositionBasePath(marketId)}/action/${action.id}`);
   };
 
-  if (isPositionLoading) {
+  if (isPositionLoading && !hasNestedRoute) {
     return (
       <AnimationPage>
         <TabPageContainer>
@@ -1245,6 +1261,10 @@ export const BorrowPositionDetailsPage = () => {
   }
 
   const rightContent = (() => {
+    if (isPositionLoading) {
+      return <BorrowPositionInfoSkeleton />;
+    }
+
     if (AsyncResult.isFailure(borrowPosition.positionResult)) {
       return (
         <Text variant={{ type: "danger", weight: "normal" }}>

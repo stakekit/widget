@@ -11,6 +11,7 @@ import type { WalletAddress } from "../../../../../../domain/schema/identifiers"
 import type { InitParams } from "../../../../../../domain/schema/init-params";
 import { getPositionBalanceDataKey } from "../../../../../../domain/types/positions";
 import { YieldApiService } from "../../../../../../services/api/yield-api-service";
+import { walletScopeFromState } from "../../../../../../services/wallet/domain/scope";
 import { withApiResourcePolicy } from "../../../../../../shared/effect/api-resource";
 import { initParamsAtom } from "../../../../../init-params";
 import { preparePendingActionRequestDto } from "../../../../../position-details/support";
@@ -100,6 +101,8 @@ const currentPendingActionDeepLinkAtom = Atom.make((get) => {
   ) {
     return AsyncResult.success(null);
   }
+  const walletScope = walletScopeFromState(wallet);
+  if (!walletScope) return AsyncResult.success(null);
 
   return get(
     pendingActionDeepLinkResourceAtom(
@@ -113,7 +116,11 @@ const currentPendingActionDeepLinkAtom = Atom.make((get) => {
   ).pipe(
     AsyncResult.map((value) =>
       value
-        ? { ...value, additionalAddresses: wallet.additionalAddresses }
+        ? {
+            ...value,
+            additionalAddresses: wallet.additionalAddresses,
+            walletScope,
+          }
         : null
     )
   );
@@ -156,6 +163,7 @@ export const usePendingActionDeepLink = () => {
               pendingActionDto: prepared.success,
               balance,
               balanceId,
+              walletScope: value.walletScope,
             }
           : null;
       })()

@@ -16,8 +16,9 @@ import {
 } from "../../../domain/borrow";
 import type { TokenBalance } from "../../../domain/schema/financial-models";
 import type { WalletAddress } from "../../../domain/schema/identifiers";
+import type { WalletScopeKey } from "../../../services/wallet/domain/scope";
 import { tokenBalancesScanAtom } from "../../portfolio";
-import { currentWalletStateAtom } from "../../wallet";
+import { currentWalletScopeAtom } from "../../wallet";
 import {
   type BorrowMarketWalletBalances,
   deriveBorrowMarketWalletBalances,
@@ -74,7 +75,7 @@ export type BorrowPreparedReviewState = {
     readonly projectedLtv?: string;
     readonly loanTokenSymbol?: string;
     readonly marketLabel: string;
-    readonly network: string;
+    readonly network: BorrowNetwork;
     readonly providerName: string;
   };
 };
@@ -130,12 +131,12 @@ export type BorrowDashboardView = {
 };
 
 export class BorrowFormScopeKey extends Data.Class<{
-  readonly scopeId: string;
+  readonly scope: WalletScopeKey;
 }> {}
 
 export class BorrowDashboardKey extends Data.Class<{
   readonly network: BorrowNetwork;
-  readonly walletAddress: WalletAddress;
+  readonly scope: WalletScopeKey;
 }> {}
 
 export const makeDefaultBorrowFormIntent = (): BorrowFormIntent => ({
@@ -448,7 +449,7 @@ export const resolveBorrowDashboardView = ({
       selectedCollateralToken,
       selectedIntegration,
       selectedMarket,
-      walletAddress: key.walletAddress,
+      walletAddress: key.scope.address,
     }),
     projection: {
       borrowMaxAmount,
@@ -483,7 +484,7 @@ export const resolveBorrowDashboardView = ({
 
 export const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
   const scope = new BorrowFormScopeKey({
-    scopeId: `${key.walletAddress}:${key.network}`,
+    scope: key.scope,
   });
 
   return Atom.writable<BorrowDashboardView, BorrowFormAction>(
@@ -498,8 +499,7 @@ export const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
         positionsResult: context.get(
           borrowPositionsAtom(
             new BorrowPositionsKey({
-              address: key.walletAddress,
-              network: key.network,
+              scope: key.scope,
             })
           )
         ),
@@ -525,12 +525,12 @@ export const borrowDashboardAtom = Atom.family((key: BorrowDashboardKey) => {
 });
 
 const currentBorrowDashboardKeyAtom = Atom.make((get) => {
-  const wallet = get(currentWalletStateAtom);
+  const scope = get(currentWalletScopeAtom);
 
-  return wallet.status === "connected" && isBorrowNetwork(wallet.network)
+  return scope && isBorrowNetwork(scope.network)
     ? new BorrowDashboardKey({
-        network: wallet.network,
-        walletAddress: wallet.address,
+        network: scope.network,
+        scope,
       })
     : null;
 }).pipe(Atom.withLabel("currentBorrowDashboardKeyAtom"));

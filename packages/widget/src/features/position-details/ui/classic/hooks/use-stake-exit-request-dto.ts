@@ -1,7 +1,6 @@
 import { Array as EArray, Option } from "effect";
 import { useMemo } from "react";
 import type { ActionCommand } from "../../../../../domain/schema/action-models";
-import type { WalletAddresses } from "../../../../../domain/schema/address-models";
 import type { EarnYieldWithProvider } from "../../../../../domain/schema/earn-models";
 
 import { getYieldActionArg } from "../../../../../domain/types/yields";
@@ -26,7 +25,6 @@ export const useStakeExitRequestDto = (
   } = workflow;
 
   return useMemo((): {
-    addresses: WalletAddresses;
     gasFeeToken: EarnYieldWithProvider["token"];
     dto: ActionCommand;
   } | null => {
@@ -77,10 +75,6 @@ export const useStakeExitRequestDto = (
 
     return {
       gasFeeToken: integrationData.mechanics.gasFeeToken,
-      addresses: {
-        address,
-        additionalAddresses: additionalAddresses ?? undefined,
-      },
       dto: {
         address,
         yieldId: integrationData.id,

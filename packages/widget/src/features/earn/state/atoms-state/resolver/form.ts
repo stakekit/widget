@@ -1,6 +1,6 @@
 import type { EarnYield } from "../../../../../domain/schema/earn-models";
 import type { PositionsData } from "../../../../../domain/types/positions";
-import { getMinStakeAmount } from "../../../../../domain/types/stake";
+import { getEnterAmountConstraint } from "../../../../../domain/types/stake";
 import {
   getYieldActionArg,
   getYieldProviderYieldIds,
@@ -8,24 +8,30 @@ import {
 import type { EarnMachineForm, EarnMachineIntent } from "../types";
 
 export const resolveForm = ({
+  availableAmount,
   intent,
   positionsData,
   selectedYield,
 }: {
+  availableAmount: string | null;
   intent: EarnMachineIntent;
   positionsData: PositionsData;
   selectedYield: EarnYield;
-}): EarnMachineForm => ({
-  providerYieldId:
-    intent.selectedProviderYieldId ?? resolveProviderYieldId(selectedYield),
-  stakeAmount: resolveStakeAmount({
-    intent,
-    positionsData,
-    selectedYield,
-  }),
-  tronResource: intent.tronResource ?? resolveTronResource(selectedYield),
-  useMaxAmount: intent.useMaxAmount,
-});
+}): EarnMachineForm => {
+  const constraint = getEnterAmountConstraint(selectedYield, positionsData);
+
+  return {
+    providerYieldId:
+      intent.selectedProviderYieldId ?? resolveProviderYieldId(selectedYield),
+    stakeAmount: resolveStakeAmount({
+      availableAmount,
+      constraint,
+      intent,
+    }),
+    tronResource: intent.tronResource ?? resolveTronResource(selectedYield),
+    useMaxAmount: constraint.type === "force-max" ? true : intent.useMaxAmount,
+  };
+};
 
 const resolveProviderYieldId = (selectedYield: EarnYield) => {
   const providerArg = getYieldActionArg(selectedYield, "enter", "providerId");
@@ -44,17 +50,21 @@ const resolveTronResource = (selectedYield: EarnYield) =>
     : null;
 
 const resolveStakeAmount = ({
+  availableAmount,
+  constraint,
   intent,
-  positionsData,
-  selectedYield,
 }: {
+  availableAmount: string | null;
+  constraint: ReturnType<typeof getEnterAmountConstraint>;
   intent: EarnMachineIntent;
-  positionsData: PositionsData;
-  selectedYield: EarnYield;
 }) => {
+  if (constraint.type === "force-max") {
+    return availableAmount ?? "0";
+  }
+
   if (intent.useMaxAmount || intent.stakeAmount !== "0") {
     return intent.stakeAmount;
   }
 
-  return getMinStakeAmount(selectedYield, positionsData).toString(10);
+  return constraint.minimum.toString(10);
 };
