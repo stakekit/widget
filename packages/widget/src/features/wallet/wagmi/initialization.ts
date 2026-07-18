@@ -1,7 +1,6 @@
 import type { Connection } from "@solana/web3.js";
-import { Data, Effect } from "effect";
+import { Data } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
-import type { Connector, createConfig } from "wagmi";
 import {
   dynamicExternalProviderInputAtom,
   solanaWalletInputAtom,
@@ -9,27 +8,13 @@ import {
 } from "../../../app/runtime";
 import type { CurrentRef } from "../../../domain/types/external-providers";
 import type { SKExternalProviders } from "../../../public-api/types";
-import {
-  isLedgerDappBrowserProvider,
-  isMobileWalletEnvironment,
-} from "../../../services/wallet/browser-environment";
-import { configMeta as safeConfigMeta } from "../../../services/wallet/connectors/safe/safe-connector-meta";
-import {
-  type WagmiActionOperations,
-  wagmiActionOperations,
-} from "../../../services/wallet/wagmi-actions";
 import type { BuildWagmiConfigOptions } from "../../../services/wallet/wagmi-config";
 
-export class WalletInitializationError extends Data.TaggedError(
-  "WalletInitializationError"
-)<{
-  readonly cause: unknown;
-  readonly phase:
-    | "configuration"
-    | "initial-chain-switch"
-    | "mobile-fallback-connect"
-    | "reconnect";
-}> {}
+export {
+  initializeWallet,
+  WalletInitializationError,
+  type WalletInitializationOperations,
+} from "../../../services/wallet/initialization";
 
 type WalletInitializationKeyFields = Omit<
   BuildWagmiConfigOptions,
@@ -92,87 +77,3 @@ export const walletInitializationKeyAtom = (() => {
     });
   }).pipe(Atom.withLabel("walletInitializationKeyAtom"));
 })();
-
-export type WalletInitializationOperations = Pick<
-  WagmiActionOperations,
-  "connect" | "reconnect" | "switchChain"
-> & {
-  readonly isLedgerLive: () => boolean;
-  readonly isMobile: () => boolean;
-};
-
-const walletInitializationOperations: WalletInitializationOperations = {
-  connect: wagmiActionOperations.connect,
-  isLedgerLive: isLedgerDappBrowserProvider,
-  isMobile: isMobileWalletEnvironment,
-  reconnect: wagmiActionOperations.reconnect,
-  switchChain: wagmiActionOperations.switchChain,
-};
-
-export const initializeWallet = ({
-  hasExternalProvider,
-  operations = walletInitializationOperations,
-  queryParamsInitChainId,
-  wagmiConfig,
-}: {
-  readonly hasExternalProvider: boolean;
-  readonly operations?: WalletInitializationOperations;
-  readonly queryParamsInitChainId: number | undefined;
-  readonly wagmiConfig: ReturnType<typeof createConfig>;
-}) =>
-  Effect.gen(function* () {
-    const reconnectedCount = yield* Effect.tryPromise({
-      try: () => operations.reconnect(wagmiConfig),
-      catch: (cause) =>
-        new WalletInitializationError({ cause, phase: "reconnect" }),
-    }).pipe(
-      Effect.match({
-        onFailure: () => 0,
-        onSuccess: (connections) => connections.length,
-      })
-    );
-
-    if (
-      !hasExternalProvider &&
-      reconnectedCount === 0 &&
-      !operations.isLedgerLive() &&
-      operations.isMobile()
-    ) {
-      const injectedConnector = wagmiConfig.connectors.find(
-        (connector: Connector) =>
-          connector.id === "injected" || connector.id === safeConfigMeta.id
-      );
-
-      if (injectedConnector) {
-        yield* Effect.tryPromise({
-          try: () =>
-            operations.connect(wagmiConfig, {
-              connector: injectedConnector,
-              chainId: queryParamsInitChainId,
-            }),
-          catch: (cause) =>
-            new WalletInitializationError({
-              cause,
-              phase: "mobile-fallback-connect",
-            }),
-        }).pipe(Effect.ignore);
-      }
-    }
-
-    if (
-      queryParamsInitChainId &&
-      wagmiConfig.state.chainId !== queryParamsInitChainId
-    ) {
-      yield* Effect.tryPromise({
-        try: () =>
-          operations.switchChain(wagmiConfig, {
-            chainId: queryParamsInitChainId,
-          }),
-        catch: (cause) =>
-          new WalletInitializationError({
-            cause,
-            phase: "initial-chain-switch",
-          }),
-      }).pipe(Effect.ignore);
-    }
-  });

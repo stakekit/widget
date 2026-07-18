@@ -1,5 +1,5 @@
 import type { Connection } from "@solana/web3.js";
-import { Effect, Schema } from "effect";
+import { Effect, Fiber, Schema } from "effect";
 import type { RefObject } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { Connector, createConfig } from "wagmi";
@@ -135,6 +135,59 @@ describe("wallet Effect Atom boundaries", () => {
     expect(operations.reconnect).toHaveBeenCalledOnce();
     expect(operations.connect).toHaveBeenCalledOnce();
     expect(operations.switchChain).toHaveBeenCalledOnce();
+  });
+
+  it("does not start a queued reconnect after its initializer is interrupted", async () => {
+    const wagmiConfig = {
+      connectors: [],
+      state: { chainId: 1 },
+    } as unknown as ReturnType<typeof createConfig>;
+    let markFirstStarted: () => void = () => undefined;
+    const firstStarted = new Promise<void>((resolve) => {
+      markFirstStarted = resolve;
+    });
+    let releaseFirst: () => void = () => undefined;
+    const firstResult = new Promise<[]>((resolve) => {
+      releaseFirst = () => resolve([]);
+    });
+    const secondReconnect = vi.fn(async () => []);
+    const baseOperations = {
+      connect: vi.fn(async () => ({ accounts: [], chainId: 1 })),
+      isLedgerLive: () => false,
+      isMobile: () => false,
+      switchChain: vi.fn(async () => ({ id: 1 })),
+    } satisfies Omit<WalletInitializationOperations, "reconnect">;
+    const firstFiber = Effect.runFork(
+      initializeWallet({
+        hasExternalProvider: false,
+        operations: {
+          ...baseOperations,
+          reconnect: async () => {
+            markFirstStarted();
+            return firstResult;
+          },
+        },
+        queryParamsInitChainId: undefined,
+        wagmiConfig,
+      })
+    );
+    await firstStarted;
+    const secondFiber = Effect.runFork(
+      initializeWallet({
+        hasExternalProvider: false,
+        operations: { ...baseOperations, reconnect: secondReconnect },
+        queryParamsInitChainId: undefined,
+        wagmiConfig,
+      })
+    );
+    await Promise.resolve();
+
+    await Effect.runPromise(Fiber.interrupt(secondFiber));
+    releaseFirst();
+    await Effect.runPromise(Fiber.join(firstFiber));
+    await Promise.resolve();
+
+    expect(secondReconnect).not.toHaveBeenCalled();
   });
 
   it("continues after reconnect, fallback connect, and initial switch failures", async () => {

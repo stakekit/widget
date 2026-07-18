@@ -57,7 +57,10 @@ const controller = (marker: Hex) => {
 const makeWalletRuntimeLayer = () => {
   const persistenceLayer = WidgetPersistence.layer;
 
-  return WalletService.layer.pipe(Layer.provide(persistenceLayer), Layer.fresh);
+  return WalletService.legacyLayer.pipe(
+    Layer.provide(persistenceLayer),
+    Layer.fresh
+  );
 };
 
 const walletServiceProbeAtom = appRuntime.atom(
